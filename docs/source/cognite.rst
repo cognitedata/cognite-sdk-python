@@ -3,15 +3,26 @@ Quickstart
 Authenticate
 ------------
 
-The preferred way to authenticating against the Cognite API is using OpenID Connect (OIDC). To enable this, the CogniteClient
-accepts a token provider function.
-
+The preferred way to authenticating against the Cognite API is using OpenID Connect (OIDC).
+To enable this, use one of the credential providers such as OAuthClientCredentials:
 .. code:: python
 
     >>> from cognite.client import CogniteClient, ClientConfig
+    >>> from cognite.client.credentials import OAuthClientCredentials
+    >>>
+    >>> creds = OAuthClientCredentials(token_url=..., client_id=..., client_secret=..., scopes=[...])
+    >>> cnf = ClientConfig(client_name="my-special-client", project="my-project", credentials=creds)
+    >>> c = CogniteClient(cnf)
+
+or make your own credential provider:
+.. code:: python
+
+    >>> from cognite.client import CogniteClient, ClientConfig
+    >>> from cognite.client.credentials import Token
     >>> def token_provider():
     >>>     ...
-    >>> cnf = ClientConfig(client_name="my-special-client", project="my-project", token=token_provider)
+    >>>
+    >>> cnf = ClientConfig(client_name="my-special-client", project="my-project", credentials=Token(token_provider))
     >>> c = CogniteClient(cnf)
 
 For details on different ways of implementing the token provider, take a look at
@@ -22,7 +33,8 @@ If OIDC has not been enabled for your CDF project, you will want to authenticate
 .. code:: python
 
     >>> from cognite.client import CogniteClient, ClientConfig
-    >>> cnf = ClientConfig(api_key="<your-api-key>", client_name="<your-client-name>", project="my-project")
+    >>> from cognite.client.credentials import APIKey
+    >>> cnf = ClientConfig(client_name="<your-client-name>", project="my-project", credentials=APIKey("very-secret"))
     >>> c = CogniteClient(cnf)
 
 Instantiate a new client
@@ -38,7 +50,8 @@ All examples in this documentation assume that a default configuration has been 
 .. code:: python
 
     >>> from cognite.client import CogniteClient, ClientConfig, global_config
-    >>> cnf = ClientConfig(client_name="my-special-client", project="my-project")
+    >>> from cognite.client.credentials import APIKey
+    >>> cnf = ClientConfig(client_name="my-special-client", project="my-project", credentials=APIKey("very-secret"))
     >>> global_config.default_client_config = cnf
     >>> c = CogniteClient()
     >>> status = c.login.status()
@@ -188,10 +201,10 @@ You can set global configuration options like this:
 
 .. code:: python
 
-    from cognite.client imporg global_config, ClientConfig
-
+    from cognite.client import global_config, ClientConfig
+    from cognite.client.credentials import APIKey
     global_config.default_client_config = ClientConfig(
-        client_name="my-client", project="myproj", api_key="verysecret"
+        client_name="my-client", project="myproj", credentials=APIKey("verysecret")
     )
     global_config.disable_pypi_version_check = True
     global_config.disable_gzip = False

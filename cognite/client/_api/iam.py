@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Optional, Sequence, Union
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.config import ClientConfig
+from cognite.client.credentials import OAuthClientCredentials
 from cognite.client.data_classes import (
     APIKey,
     APIKeyList,
@@ -398,8 +399,10 @@ class SessionsAPI(APIClient):
         Returns:
             CreatedSession: The object with token inspection details.
         """
-        if client_credentials is None and self._config.token_client_id and self._config.token_client_secret:
-            client_credentials = ClientCredentials(self._config.token_client_id, self._config.token_client_secret)
+        if client_credentials is None and isinstance(self._config.credentials, OAuthClientCredentials):
+            client_credentials = ClientCredentials(
+                self._config.credentials.client_id, self._config.credentials.client_secret
+            )
 
         json = {"items": [client_credentials.dump(True) if client_credentials else {"tokenExchange": True}]}
 

@@ -7,8 +7,8 @@ from cognite.client import ClientConfig, CogniteClient, global_config
 from cognite.client._api.assets import AssetList
 from cognite.client._api.files import FileMetadataList
 from cognite.client._api.time_series import TimeSeriesList
+from cognite.client.credentials import APIKey, OAuthClientCredentials, Token
 from cognite.client.data_classes import Asset, Event, FileMetadata, TimeSeries
-from cognite.client.exceptions import CogniteAuthError
 from cognite.client.utils._logging import DebugLogFormatter
 
 BASE_URL = "http://blabla.cognitedata.com"
@@ -29,7 +29,12 @@ def rsps_with_login_mock(rsps):
 @pytest.fixture
 def client_config_w_api_key():
     return ClientConfig(
-        client_name="test-client", project="test-project", base_url=BASE_URL, max_workers=1, timeout=10, api_key="bla"
+        client_name="test-client",
+        project="test-project",
+        base_url=BASE_URL,
+        max_workers=1,
+        timeout=10,
+        credentials=APIKey("bla"),
     )
 
 
@@ -41,7 +46,7 @@ def client_config_w_token_factory():
         base_url=BASE_URL,
         max_workers=1,
         timeout=10,
-        token=lambda: "abc",
+        credentials=Token(lambda: "abc"),
     )
 
 
@@ -53,10 +58,12 @@ def client_config_w_client_credentials():
         base_url=BASE_URL,
         max_workers=1,
         timeout=10,
-        token_client_id="test-client-id",
-        token_client_secret="test-client-secret",
-        token_url=TOKEN_URL,
-        token_scopes=["https://test.com/.default", "https://test.com/.admin"],
+        credentials=OAuthClientCredentials(
+            client_id="test-client-id",
+            client_secret="test-client-secret",
+            token_url=TOKEN_URL,
+            scopes=["https://test.com/.default", "https://test.com/.admin"],
+        ),
     )
 
 
@@ -75,19 +82,13 @@ class TestCogniteClient:
         with pytest.raises(ValueError, match="No ClientConfig has been provided"):
             CogniteClient()
 
-    def test_no_api_key_no_token_set(self):
-        with pytest.raises(
-            CogniteAuthError, match="No API key or token or token generation arguments have been specified"
-        ):
-            CogniteClient(ClientConfig(project="test", client_name="bla"))
-
     def test_token_factory_set_no_api_key(self):
-        c = CogniteClient(ClientConfig(project="test", client_name="bla", token=lambda: "abc"))
-        assert c.config.token() == "abc"
+        c = CogniteClient(ClientConfig(project="test", client_name="bla", credentials=Token(lambda: "abc")))
+        assert c.config.credentials.authorization_header() == ("Authorization", "Bearer abc")
 
     def test_token_set_no_api_key(self):
-        c = CogniteClient(ClientConfig(project="test", client_name="bla", token="abc"))
-        assert c.config.token == "abc"
+        c = CogniteClient(ClientConfig(project="test", client_name="bla", credentials=Token("abc")))
+        assert c.config.credentials.authorization_header() == ("Authorization", "Bearer abc")
 
     def test_token_gen_no_api_key(self, rsps, client_config_w_client_credentials):
         rsps.add(
@@ -98,14 +99,14 @@ class TestCogniteClient:
         )
 
         c = CogniteClient(client_config_w_client_credentials)
-        assert c.config.token() == "abc"
+        assert c.config.credentials.authorization_header() == ("Authorization", "Bearer abc")
 
     def test_token_factory_set_no_api_key_and_no_project(self, client_config_w_token_factory):
         c = CogniteClient(client_config_w_token_factory)
         assert c.config.project == "test-project"
 
     def test_client_debug_mode(self):
-        CogniteClient(ClientConfig(client_name="bla", project="bla", api_key="bla", debug=True))
+        CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=APIKey("bla"), debug=True))
         log = logging.getLogger("cognite-sdk")
         assert isinstance(log.handlers[0].formatter, DebugLogFormatter)
         log.handlers = []

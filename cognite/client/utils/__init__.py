@@ -3,7 +3,6 @@ from cognite.client.utils import (  # isort: skip
     _concurrency,
     _logging,
     _time,
-    _token_generator,
     _version_checker,
 )
 
