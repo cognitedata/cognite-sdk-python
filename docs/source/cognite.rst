@@ -289,6 +289,15 @@ CogniteClient
 
 Authentication
 --------------
+Credential Providers
+^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: cognite.client.credentials.Token
+    :members:
+    :member-order: bysource
+.. autoclass:: cognite.client.credentials.OAuthClientCredentials
+    :members:
+    :member-order: bysource
+
 Get login status
 ^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.login.LoginAPI.status
