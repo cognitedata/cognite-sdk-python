@@ -5,7 +5,7 @@ import pytest
 from oauthlib.oauth2 import InvalidClientIdError
 
 from cognite.client import utils
-from cognite.client.exceptions import CogniteAPIKeyError
+from cognite.client.exceptions import CogniteAuthError
 
 
 def default_token_generator_args():
@@ -13,19 +13,14 @@ def default_token_generator_args():
         "client_id": "azure-client-id",
         "client_secret": "azure-client-secret",
         "token_url": "https://login.microsoftonline.com/testingabc123/oauth2/v2.0/token",
-        "token_scopes": ["https://greenfield.cognitedata.com/.default"],
-        "token_custom_args": {},
+        "scopes": ["https://greenfield.cognitedata.com/.default"],
+        "custom_args": {},
     }
 
 
 def setup_token_generator(generator_args=default_token_generator_args()):
-    return utils._token_generator.TokenGenerator(
-        generator_args["token_url"],
-        generator_args["client_id"],
-        generator_args["client_secret"],
-        generator_args["token_scopes"],
-        generator_args["token_custom_args"],
-    )
+    token_generator = utils._token_generator.TokenGenerator(**generator_args)
+    return token_generator
 
 
 class TestTokenGeneration:
@@ -37,7 +32,7 @@ class TestTokenGeneration:
         generator = setup_token_generator()
         assert generator.token_params_set() is True
 
-    @pytest.mark.parametrize("missing", ["token_url", "client_id", "client_secret", "token_scopes"])
+    @pytest.mark.parametrize("missing", ["token_url", "client_id", "client_secret", "scopes"])
     def test_missing_token_environment_vars(self, missing):
         generator_args = default_token_generator_args()
         generator_args[missing] = None
@@ -62,7 +57,7 @@ class TestTokenGeneration:
         mock_oauth_session().fetch_token.return_value = {}
         generator = setup_token_generator()
         with pytest.raises(
-            CogniteAPIKeyError, match="Could not generate access token from provided token generation arguments"
+            CogniteAuthError, match="Could not generate access token from provided token generation arguments"
         ):
             generator.return_access_token()
 
@@ -72,24 +67,18 @@ class TestTokenGeneration:
         mock_backend_client().return_value = Mock()
         mock_oauth_session().fetch_token.side_effect = InvalidClientIdError()
         with pytest.raises(
-            CogniteAPIKeyError,
+            CogniteAuthError,
             match="Error generating access token: invalid_request, 400, Invalid client_id parameter value.",
         ):
-            args = default_token_generator_args()
-            utils._token_generator.TokenGenerator(
-                args["token_url"],
-                args["client_id"],
-                args["client_secret"],
-                args["token_scopes"],
-                args["token_custom_args"],
-            )
+            token_generator = utils._token_generator.TokenGenerator(**default_token_generator_args())
+            token_generator.return_access_token()
 
     def test_access_token_not_generated_missing_args(self):
         generator_args = default_token_generator_args()
         generator_args["client_secret"] = None
         generator = setup_token_generator(generator_args)
         with pytest.raises(
-            CogniteAPIKeyError, match="Could not generate access token - missing token generation arguments"
+            CogniteAuthError, match="Could not generate access token - missing token generation arguments"
         ):
             generator.return_access_token()
 
@@ -102,5 +91,6 @@ class TestTokenGeneration:
             {"access_token": "azure_token_refreshed", "expires_at": datetime.datetime.now().timestamp() + 1000},
         ]
         generator = setup_token_generator()
+        generator.return_access_token()
         assert "azure_token_expired" == generator._access_token
         assert "azure_token_refreshed" == generator.return_access_token()

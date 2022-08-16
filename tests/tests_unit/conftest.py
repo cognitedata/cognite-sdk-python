@@ -1,10 +1,9 @@
 import pytest
 
-from cognite.client import CogniteClient
-from tests.utils import set_env_var
+from cognite.client import ClientConfig, CogniteClient
 
 
 @pytest.fixture(scope="module")
 def cognite_client():
-    with set_env_var("COGNITE_API_KEY", "bla"):
-        yield CogniteClient()
+    cnf = ClientConfig(client_name="any", project="dummy", api_key="bla")
+    yield CogniteClient(cnf)

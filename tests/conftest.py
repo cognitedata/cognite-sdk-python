@@ -5,7 +5,7 @@ import dotenv
 import pytest
 import responses
 
-from cognite.client import CogniteClient
+from cognite.client import CogniteClient, global_config
 from cognite.client._api.assets import AssetsAPI
 from cognite.client._api.data_sets import DataSetsAPI
 from cognite.client._api.datapoints import DatapointsAPI
@@ -25,21 +25,10 @@ from cognite.client._api.three_d import (
     ThreeDRevisionsAPI,
 )
 from cognite.client._api.time_series import TimeSeriesAPI
-from tests.utils import BASE_URL
 
 dotenv.load_dotenv()
 
-
-@pytest.fixture
-def rsps_with_login_mock():
-    with responses.RequestsMock() as rsps:
-        rsps.add(
-            rsps.GET,
-            BASE_URL + "/login/status",
-            status=200,
-            json={"data": {"project": "test", "loggedIn": True, "user": "bla", "projectId": "bla", "apiKeyId": 1}},
-        )
-        yield rsps
+global_config.disable_pypi_version_check = True
 
 
 @pytest.fixture

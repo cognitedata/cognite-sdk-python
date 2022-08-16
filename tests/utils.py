@@ -2,10 +2,7 @@ import cProfile
 import functools
 import gzip
 import json
-import os
 from contextlib import contextmanager
-
-BASE_URL = "https://greenfield.cognitedata.com"
 
 
 def jsgz_load(s):
@@ -53,29 +50,3 @@ def set_request_limit(client, limit):
     for limit_name, limit_val in tmp.items():
         if hasattr(client, limit_name):
             setattr(client, limit_name, limit_val)
-
-
-@contextmanager
-def unset_env_var(*name: str):
-    if isinstance(name, str):
-        name = [name]
-    tmp = {}
-    for n in name:
-        tmp[n] = os.getenv(n)
-        if tmp[n] is not None:
-            del os.environ[n]
-    yield
-    for n in name:
-        if tmp[n] is not None:
-            os.environ[n] = tmp[n]
-
-
-@contextmanager
-def set_env_var(name: str, value: str):
-    tmp = os.getenv(name)
-    os.environ[name] = value
-    yield
-    if tmp is not None:
-        os.environ[name] = tmp
-    else:
-        del os.environ[name]

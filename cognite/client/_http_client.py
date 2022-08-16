@@ -9,7 +9,7 @@ import requests
 import requests.adapters
 import urllib3
 
-from cognite.client import utils
+from cognite.client.config import global_config
 from cognite.client.exceptions import CogniteConnectionError, CogniteConnectionRefused, CogniteReadTimeout
 
 
@@ -19,22 +19,21 @@ class BlockAll(cookiejar.CookiePolicy):
     rfc2965 = hide_cookie2 = False
 
 
-def _init_requests_session() -> requests.Session:
+@functools.lru_cache(1)
+def get_global_requests_session() -> requests.Session:
     session = requests.Session()
     session.cookies.set_policy(BlockAll())
-    cognite_config = utils._client_config._DefaultConfig()
     adapter = requests.adapters.HTTPAdapter(
-        pool_maxsize=cognite_config.max_connection_pool_size, max_retries=urllib3.Retry(False)
+        pool_maxsize=global_config.max_connection_pool_size, max_retries=urllib3.Retry(False)
     )
     session.mount("http://", adapter)
     session.mount("https://", adapter)
-    if cognite_config.disable_ssl:
+    if global_config.disable_ssl:
         urllib3.disable_warnings()
         session.verify = False
+    if global_config.proxies is not None:
+        session.proxies.update(global_config.proxies)
     return session
-
-
-GLOBAL_REQUEST_SESSION = _init_requests_session()
 
 
 class HTTPClientConfig:
@@ -94,7 +93,7 @@ class HTTPClient:
     def __init__(
         self,
         config: HTTPClientConfig,
-        session: requests.Session = GLOBAL_REQUEST_SESSION,
+        session: requests.Session,
         retry_tracker_factory: Callable[[HTTPClientConfig], _RetryTracker] = _RetryTracker,
     ):
         self.session = session

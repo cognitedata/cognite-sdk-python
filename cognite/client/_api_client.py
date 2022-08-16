@@ -31,7 +31,8 @@ from requests import Response
 from requests.structures import CaseInsensitiveDict
 
 from cognite.client import utils
-from cognite.client._http_client import GLOBAL_REQUEST_SESSION, HTTPClient, HTTPClientConfig
+from cognite.client._http_client import HTTPClient, HTTPClientConfig, get_global_requests_session
+from cognite.client.config import ClientConfig, global_config
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteResource,
@@ -89,39 +90,37 @@ class APIClient:
     }
 
     def __init__(
-        self, config: utils._client_config.ClientConfig, api_version: str = None, cognite_client: "CogniteClient" = None
+        self, config: ClientConfig, api_version: Optional[str] = None, cognite_client: "CogniteClient" = None
     ) -> None:
         self._config = config
         self._api_version = api_version
         self._api_subversion = config.api_subversion
         self._cognite_client = cognite_client
 
-        session = GLOBAL_REQUEST_SESSION
-        if self._config.proxies is not None:
-            session.proxies.update(self._config.proxies)
+        session = get_global_requests_session()
 
         self._http_client = HTTPClient(
             config=HTTPClientConfig(
                 status_codes_to_retry={429},
                 backoff_factor=0.5,
-                max_backoff_seconds=config.max_retry_backoff,
-                max_retries_total=self._config.max_retries,
+                max_backoff_seconds=global_config.max_retry_backoff,
+                max_retries_total=global_config.max_retries,
                 max_retries_read=0,
-                max_retries_connect=self._config.max_retries,
-                max_retries_status=self._config.max_retries,
+                max_retries_connect=global_config.max_retries,
+                max_retries_status=global_config.max_retries,
             ),
             session=session,
         )
 
         self._http_client_with_retry = HTTPClient(
             config=HTTPClientConfig(
-                status_codes_to_retry=self._config.status_forcelist,
+                status_codes_to_retry=global_config.status_forcelist,
                 backoff_factor=0.5,
-                max_backoff_seconds=config.max_retry_backoff,
-                max_retries_total=self._config.max_retries,
-                max_retries_read=self._config.max_retries,
-                max_retries_connect=self._config.max_retries,
-                max_retries_status=self._config.max_retries,
+                max_backoff_seconds=global_config.max_retry_backoff,
+                max_retries_total=global_config.max_retries,
+                max_retries_read=global_config.max_retries,
+                max_retries_connect=global_config.max_retries,
+                max_retries_status=global_config.max_retries,
             ),
             session=session,
         )
