@@ -14,7 +14,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [3.9.0] - 2002-08-11
+## [3.9.0] - 2022-08-11
 ### Added
 - Moved Cognite Functions from Experimental SDK to Main SDK.
 
