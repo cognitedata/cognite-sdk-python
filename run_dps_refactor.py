@@ -5,20 +5,18 @@ import pandas as pd
 
 from local_cog_client import setup_local_cog_client
 
-# START = 0
-# END = "now"  # 112548548397  # 31569600000
-START = pd.Timestamp("1975-01-01 00:00:00").value // int(1e6)
-END = pd.Timestamp("1982-01-01 00:00:00").value // int(1e6)
-LIMIT = None
+START = pd.Timestamp("1972-01-01").value // int(1e6)
+END = pd.Timestamp("1980-01-01").value // int(1e6)
+LIMIT = 500_000
 AGGREGATES = None
-AGGREGATES = ["count"]
+# AGGREGATES = ["totalVariation"]
 # AGGREGATES = [
 #     "average", "max", "min", "count", "sum", "interpolation", "stepInterpolation",
 #     "continuousVariance", "discreteVariance", "totalVariation"
 # ]
 GRANULARITY = None
-GRANULARITY = "1m"
-INCLUDE_OUTSIDE_POINTS = False
+# GRANULARITY = "1m"
+INCLUDE_OUTSIDE_POINTS = True
 IGNORE_UNKNOWN_IDS = False
 # ID = None
 ID = [
@@ -28,7 +26,7 @@ ID = [
     # {"id": 2546012653669, "aggregates": ["max", "average"], "granularity": "1d"},  # string
 ]
 EXTERNAL_ID = [
-    {"external_id": "ts-test-#04-ten-mill-dps-1/1"},
+    # {"external_id": "ts-test-#04-ten-mill-dps-1/1"},
     # {"external_id": "ts-test-#01-daily-111/650"},
     # {"external_id": "ts-test-#01-daily-222/650"},
     # {"external_id": "benchmark:11-1mill-blob-sec-after-1990-#1/10"},
@@ -40,7 +38,7 @@ EXTERNAL_ID = [
     # {"external_id": "benchmark:10-1mill-blob-ms-after-1990-#2/10"},
     # {"limit": 99_999 + 3, "external_id": "benchmark:1-string-1h-gran-#3/50"},  # string
     # {"limit": -1, "external_id": "8400074_destination"},  # string
-    # {"external_id": "benchmark:2-string-5m-gran-#1/1"},  # string
+    {"external_id": "benchmark:2-strfing-5m-gran-#1/1"},  # string
     # {"external_id": "benchmark:1-string-1h-gran-#1/50"},  # string
     # {"external_id": "benchmark:1-string-1h-gran-#8/50"},  # string
     # {"external_id": "benchmark:1-string-1h-gran-#3/50"},  # string
@@ -58,36 +56,12 @@ EXTERNAL_ID = [
     # {"external_id": "benchmark:1-string-#4/50"},  # string
     # {"external_id": "benchmark:1-string-#5/50"},  # string
     # {"limit": math.inf, "external_id": "9694359_cargo_type", "end": 1534031491000},  # string
-    # {
-    #     "include_outside_points": True,
-    #     "limit": 1,
-    #     "external_id": "ts-test-#04-ten-mill-dps-1/1",
-    #     "start": 31536472487 - 1,
-    #     "end": 31536698071 + 1,
-    #     # To override "top level" settings (if given) or fails on include_outside not allowed for agg. q:
-    #     "granularity": None,
-    #     "aggregates": None,
-    # },
-    # {
-    #     "include_outside_points": False,
-    #     "limit": 10,
-    #     "external_id": "8400074_destination",
-    #     "start": 0,  # 1533945852000-1,
-    #     "end": "now",  # 1533945852000+1,
-    # },
-    # {
-    #     "include_outside_points": False,
-    #     "limit": None,
-    #     "external_id": "ts-test-#04-ten-mill-dps-1/1",
-    #     "start": 31536472487 - 1,
-    #     "end": 2 * 31536698071 + 1,
-    # },
 ]
 # EXTERNAL_ID = [
 #     f"ts-test-#01-daily-{i}/650" for i in range(1, 651)
 # ]
 
-max_workers = 10
+max_workers = 20
 client = setup_local_cog_client(max_workers, debug=False)
 
 t0 = timer()
@@ -95,7 +69,7 @@ res = client.datapoints.retrieve_new(
     start=START,
     end=END,
     id=ID,
-    external_id=EXTERNAL_ID,
+    external_id=EXTERNAL_ID,  # [0]["external_id"],
     aggregates=AGGREGATES,
     granularity=GRANULARITY,
     include_outside_points=INCLUDE_OUTSIDE_POINTS,

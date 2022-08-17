@@ -6,7 +6,7 @@ import math
 import numbers
 import re as regexp
 import warnings
-from dataclasses import dataclass
+from dataclasses import InitVar, dataclass
 from datetime import datetime
 from functools import cached_property
 from typing import (
@@ -42,6 +42,7 @@ from cognite.client._api.datapoint_constants import (
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.exceptions import CogniteDuplicateColumnsError
 from cognite.client.utils._auxiliary import to_camel_case, to_snake_case
+from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._time import (
     UNIT_IN_MS,
     align_start_and_end_for_granularity,
@@ -204,19 +205,15 @@ class DatapointsArray(CogniteResource):
                 "to silence this warning.",
                 UserWarning,
             )
-
+        idx = pd.to_datetime(self.timestamp, unit="ms")
         if self.value is not None:
-            columns = {identifier: self.value}
-        else:
+            return pd.DataFrame({identifier: self.value}, index=idx)
 
-            def col_name(agg):
-                return identifier + include_aggregate_name * f"|{to_camel_case(agg)}"
+        def col_name(agg):
+            return identifier + include_aggregate_name * f"|{to_camel_case(agg)}"
 
-            columns = {
-                col_name(agg): arr for agg in ALL_DATAPOINT_AGGREGATES if (arr := getattr(self, agg)) is not None
-            }
-
-        return pd.DataFrame(columns, index=pd.to_datetime(self.timestamp, unit="ms"))
+        cols = {col_name(agg): arr for agg in ALL_DATAPOINT_AGGREGATES if (arr := getattr(self, agg)) is not None}
+        return pd.DataFrame(cols, index=idx)
 
 
 class Datapoints(CogniteResource):
@@ -679,8 +676,8 @@ class DatapointsQueryNew(CogniteResource):
 # similar queries. With `eq=False`, we inherit __hash__ from `object` (just id(self)) - exactly what we need!
 @dataclass(eq=False)
 class SingleTSQuery:
-    id: Optional[int] = None
-    external_id: Optional[str] = None
+    id: InitVar[int] = None
+    external_id: InitVar[str] = None
     start: Union[int, str, datetime, None] = None
     end: Union[int, str, datetime, None] = None
     aggregates: Optional[List[str]] = None
@@ -688,10 +685,10 @@ class SingleTSQuery:
     limit: Optional[int] = None
     include_outside_points: Optional[bool] = False
     ignore_unknown_ids: Optional[bool] = False
+    identifier: Identifier = dataclasses.field(default=None, init=False)
 
-    def __post_init__(self):
-        # NB: Do not change order of _verify fns without care:
-        self._verify_identifier()
+    def __post_init__(self, id, external_id):
+        self.identifier = Identifier.of_either(id, external_id)
         self._verify_limit()
         self._verify_time_range()
         self._is_missing = None  # I.e. not set...
@@ -706,63 +703,6 @@ class SingleTSQuery:
                 "yield 5, 6 or 7. It's a feature, not a bug ;)",
                 UserWarning,
             )
-
-    def to_payload(self) -> Union[DatapointsQueryId, DatapointsQueryExternalId]:
-        payload = dataclasses.asdict(self)
-        payload["limit"] = self.capped_limit
-        # `ignore_unknown_ids` is only allowed as top-level parameter, not as part of `items`:
-        del payload["ignore_unknown_ids"]
-        if self.id is None:
-            del payload["id"]
-        else:
-            del payload["external_id"]
-        if not self.is_raw_query:
-            payload["aggregates"] = self.aggregates_cc
-        return dict(zip(map(to_camel_case, payload.keys()), payload.values()))
-
-    def to_count_agg_payload(self, max_windows: int) -> Optional[Dict]:
-        # Returns payload to get count aggs when useful, else None
-        if not self.is_raw_query:
-            return None
-        if self.limit and self.limit < 3 * DPS_LIMIT + 1:
-            return None  # This cut-off is just @haakonvt sticking a finger in the air
-        limit, granularity = self._compute_granularity_for_count_agg_query(max_windows)
-        return {
-            **self.identifier_dct,
-            "start": self.start,
-            "end": self.end,
-            "aggregates": ["count"],
-            "granularity": granularity,
-            "limit": limit,
-        }
-
-    def _compute_granularity_for_count_agg_query(self, max_windows: int) -> Tuple[int, str]:
-        # For the sake of fetching count aggregates, we ignore the `limit` parameter, as getting
-        # a more coarse resolution of the point density is detrimental: In order to use the counts
-        # to create "perfect requests" we need the full resolution.
-        n_max_dps = tot_ms = self.end - self.start
-        n_windows_estimate = min(max_windows, math.ceil(n_max_dps / DPS_LIMIT))
-        window_gran_ms = tot_ms / n_windows_estimate
-
-        if window_gran_ms < 40 * (min_ms := UNIT_IN_MS["m"]):
-            n = math.ceil(window_gran_ms / min_ms)
-            n_windows = math.ceil(tot_ms / (n * min_ms))
-            return n_windows, f"{n}m"
-
-        # Although the API support up to 100k hour granularity, we'd much rather send "7d" than "168h"
-        elif window_gran_ms < 40 * (hour_ms := UNIT_IN_MS["h"]):
-            n = math.ceil(window_gran_ms / hour_ms)
-            n_windows = math.ceil(tot_ms / (n * hour_ms))
-            return n_windows, f"{n}h"
-
-        elif window_gran_ms < 100_000 * (day_ms := UNIT_IN_MS["d"]):
-            n = math.ceil(window_gran_ms / day_ms)
-            n_windows = math.ceil(tot_ms / (n * day_ms))
-            return n_windows, f"{n}d"
-
-        raise RuntimeError(
-            f"Unable to find count granularity for start={self.start}, end={self.end} and {max_windows=}"
-        )
 
     @classmethod
     def from_dict_with_validation(cls, ts_dct, defaults) -> SingleTSQuery:
@@ -792,16 +732,6 @@ class SingleTSQuery:
             raise ValueError("'Include outside points' is not supported for aggregates.")
         return cls(**dct)  # Request for one or more aggregates
 
-    def _verify_identifier(self):
-        if self.id is not None:
-            self.identifier_type = "id"
-            self.identifier = int(self.id)
-        elif self.external_id is not None:
-            self.identifier_type = "externalId"
-            self.identifier = str(self.external_id)
-        else:
-            raise ValueError("Pass exactly one of `id` or `external_id`. Got neither.")
-
     def _verify_limit(self):
         if self.limit in {None, -1, math.inf}:
             self.limit = None
@@ -821,22 +751,10 @@ class SingleTSQuery:
 
         if self.end <= self.start:
             raise ValueError(
-                f"Invalid time range, `end` must be later than `start` (from query: {self.identifier_dct_sc})"
+                f"Invalid time range, `end` must be later than `start` (from query: {self.identifier.as_dict(camel_case=False)})"
             )
         if not self.is_raw_query:  # API rounds aggregate queries in a very particular fashion
             self.start, self.end = align_start_and_end_for_granularity(self.start, self.end, self.granularity)
-
-    @property
-    def identifier_tpl(self):
-        return (self.identifier_type, self.identifier)
-
-    @property
-    def identifier_dct(self):
-        return {self.identifier_type: self.identifier}
-
-    @property
-    def identifier_dct_sc(self):
-        return {to_snake_case(self.identifier_type): self.identifier}
 
     @property
     def is_missing(self):

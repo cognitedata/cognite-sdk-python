@@ -12,24 +12,32 @@ class Identifier(Generic[T_ID]):
     def of_either(cls, id: Optional[int], external_id: Optional[str]) -> "Identifier":
         if (id is None) == (external_id is None):
             raise ValueError("Exactly one of id or external id must be specified")
-        return Identifier(id or external_id)
+        return cls(id or external_id)
 
     @classmethod
     def load(cls, id: Optional[int] = None, external_id: Optional[str] = None) -> "Identifier":
         if id is not None:
-            return Identifier(id)
+            return cls(id)
         if external_id is not None:
-            return Identifier(external_id)
+            return cls(external_id)
         raise ValueError("At least one of id and external id must be specified")
 
     def as_primitive(self) -> T_ID:
         return self.__value
 
-    def as_dict(self) -> Dict[str, T_ID]:
+    def as_dict(self, camel_case: bool = True) -> Dict[str, T_ID]:
         if isinstance(self.__value, str):
-            return {"externalId": self.__value}
+            if camel_case:
+                return {"externalId": self.__value}
+            return {"external_id": self.__value}
         else:
             return {"id": self.__value}
+
+    def as_tuple(self) -> Dict[str, T_ID]:
+        if isinstance(self.__value, str):
+            return ("externalId", self.__value)
+        else:
+            return ("id", self.__value)
 
 
 class ExternalId(Identifier[str]):

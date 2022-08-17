@@ -31,11 +31,11 @@ SOFTWARE.
 
 import atexit
 import inspect
-import queue
 import sys
 import threading
 import weakref
 from concurrent.futures.thread import ThreadPoolExecutor, _base, _python_exit, _threads_queues, _WorkItem
+from queue import PriorityQueue
 from time import monotonic_ns
 
 NULL_ENTRY = (sys.maxsize, None, _WorkItem(None, None, (), {}))
@@ -46,10 +46,10 @@ def python_exit():
     global _SHUTDOWN
     _SHUTDOWN = True
     items = list(_threads_queues.items())
-    for t, q in items:
-        q.put(NULL_ENTRY)
-    for t, q in items:
-        t.join()
+    for thread, queue in items:
+        queue.put(NULL_ENTRY)
+    for thread, queue in items:
+        thread.join()
 
 
 atexit.unregister(_python_exit)
@@ -79,46 +79,46 @@ class PriorityThreadPoolExecutor(ThreadPoolExecutor):
 
     def __init__(self, max_workers=None):
         super().__init__(max_workers)
-        self._work_queue = queue.PriorityQueue()
+        self._work_queue = PriorityQueue()
 
     def submit(self, fn, *args, **kwargs):
+        if "priority" in inspect.signature(fn).parameters:
+            raise TypeError(f"Given function {fn} cannot accept reserved parameter name `priority`")
+
         with self._shutdown_lock:
             if self._shutdown:
                 raise RuntimeError("Cannot schedule new futures after shutdown")
-
-            if "priority" in inspect.signature(fn).parameters:
-                raise TypeError(f"Given function {fn} cannot accept reserved parameter name `priority`")
 
             priority = kwargs.pop("priority", None)
             assert isinstance(priority, int), "`priority` has to be an integer"
 
             # print(f"Submitted task with: {args[0]}")  # TODO: remove
 
-            f = _base.Future()
-            w = _WorkItem(f, fn, args, kwargs)
+            future = _base.Future()
+            work_item = _WorkItem(future, fn, args, kwargs)
 
-            self._work_queue.put((priority, monotonic_ns(), w))  # monotonic_ns() to break ties, but keep order
+            self._work_queue.put((priority, monotonic_ns(), work_item))  # monotonic_ns() to break ties, but keep order
             self._adjust_thread_count()
-            return f
+            return future
 
     def _adjust_thread_count(self):
-        def weak_ref_cb(_, q=self._work_queue):
-            q.put(NULL_ENTRY)
+        def weak_ref_cb(_, queue=self._work_queue):
+            queue.put(NULL_ENTRY)
 
         if len(self._threads) < self._max_workers:
-            t = threading.Thread(target=_worker, args=(weakref.ref(self, weak_ref_cb), self._work_queue))
-            t.daemon = True
-            t.start()
-            self._threads.add(t)
-            _threads_queues[t] = self._work_queue
+            thread = threading.Thread(target=_worker, args=(weakref.ref(self, weak_ref_cb), self._work_queue))
+            thread.daemon = True
+            thread.start()
+            self._threads.add(thread)
+            _threads_queues[thread] = self._work_queue
 
     def shutdown(self, wait=True):
         with self._shutdown_lock:
             self._shutdown = True
             self._work_queue.put(NULL_ENTRY)
         if wait:
-            for t in self._threads:
-                t.join()
+            for thread in self._threads:
+                thread.join()
         else:
             # See: https://gist.github.com/clchiou/f2608cbe54403edb0b13
             self._threads.clear()
