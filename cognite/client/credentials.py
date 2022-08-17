@@ -1,7 +1,7 @@
 import threading
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from oauthlib.oauth2 import BackendApplicationClient, OAuth2Error
 from requests_oauthlib import OAuth2Session
@@ -67,6 +67,7 @@ class OAuthClientCredentials(CredentialProvider):
         client_id (str): Your application's client id.
         client_secret (str): Your application's client secret
         scopes (List[str]): A list of scopes.
+        **token_custom_args (Any): Optional additional arguments to pass as query parameters to the token fetch request.
 
     Examples:
 
@@ -77,6 +78,8 @@ class OAuthClientCredentials(CredentialProvider):
             ...     client_id="abcd",
             ...     client_secret=os.environ["OAUTH_CLIENT_SECRET"],
             ...     scopes=["https://greenfield.cognitedata.com/.default"],
+            ...     # Any additional IDP-specific token args. e.g.
+            ...     audience="some-audience"
             ... )
             >>> token_factory_provider = Token(lambda: "my secret token")
     """
@@ -84,11 +87,19 @@ class OAuthClientCredentials(CredentialProvider):
     # This ensures we don't return a token which expires immediately, but within minimum 3 seconds.
     __TOKEN_EXPIRY_LEEWAY_SECONDS = 3
 
-    def __init__(self, token_url: str, client_id: str, client_secret: str, scopes: List[str]):
+    def __init__(
+        self,
+        token_url: str,
+        client_id: str,
+        client_secret: str,
+        scopes: List[str],
+        **token_custom_args: Any,
+    ):
         self.__token_url = token_url
         self.__client_id = client_id
         self.__client_secret = client_secret
         self.__scopes = scopes
+        self.__token_custom_args: Dict[str, Any] = token_custom_args
         self.__oauth = OAuth2Session(client=BackendApplicationClient(client_id=self.__client_id))
 
         self.__token_refresh_lock = threading.Lock()
@@ -111,16 +122,36 @@ class OAuthClientCredentials(CredentialProvider):
     def scopes(self) -> List[str]:
         return self.__scopes
 
+    @property
+    def token_custom_args(self) -> Dict[str, Any]:
+        return self.__token_custom_args
+
     def _refresh_access_token(self) -> None:
         from cognite.client.config import global_config
 
         try:
+            # We need to explicitly pass all the arguments to fetch_token (even if they are the same as the defaults).
+            # This will ensure that whatever is passed in token_custom_args can't set/override those args.
             token_result = self.__oauth.fetch_token(
                 token_url=self.__token_url,
-                client_id=self.__client_id,
-                client_secret=self.__client_secret,
-                scope=self.__scopes,
+                code=None,
+                authorization_response=None,
+                body="",
+                auth=None,
+                username=None,
+                password=None,
+                method="POST",
+                force_querystring=False,
+                timeout=None,
+                headers=None,
                 verify=not global_config.disable_ssl,
+                proxies=None,
+                include_client_id=None,
+                client_secret=self.__client_secret,
+                cert=None,
+                client_id=self.__client_id,
+                scope=self.__scopes,
+                **self.__token_custom_args,
             )
             self.__access_token = token_result.get("access_token")
             self.__access_token_expires_at = token_result.get("expires_at")
