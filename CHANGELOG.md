@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [4.0.1] - 2022-08-17
+### Added
+- OAuthClientCredentials now supports token_custom_args.
+
 ## [4.0.0] - 2022-08-15
 ### Changed
 - Client configuration no longer respects any environment variables. There are other libraries better 
