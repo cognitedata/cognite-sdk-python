@@ -128,12 +128,13 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
     aggregates: Optional[List[str]]
     granularity: Optional[str]
     subtask_idx: Tuple[int, ...]
+    n_dps_left: float = dataclasses.field(default=math.inf, init=False)
+    n_dps_fetched: float = dataclasses.field(default=0, init=False)
     agg_kwargs: Dict[str, Union[str, List[str]]] = dataclasses.field(default_factory=dict, init=False)
 
     def __post_init__(self):
-        self.n_dps_left = self.limit
-        if self.n_dps_left is None:
-            self.n_dps_left = math.inf
+        if self.limit is not None:
+            self.n_dps_left = self.limit
         self.next_start = self.start
         if not self.parent.query.is_raw_query:
             self.agg_kwargs = {"aggregates": self.aggregates, "granularity": self.granularity}
@@ -171,6 +172,7 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
     def _update_state_for_next_payload(self, last_ts, n):
         self.next_start = last_ts + self.parent.offset_next  # Move `start` to prepare for next query
         self.n_dps_left -= n
+        self.n_dps_fetched += n  # Used to quit limited queries asap
 
     def _is_task_done(self, n):
         return self.n_dps_left == 0 or n < self.parent.query.max_query_limit or self.next_start == self.end
@@ -202,11 +204,17 @@ class SplittingFetchSubtask(SerialFetchSubtask):
         yield from ((*self.subtask_idx, i) for i in range(self.split_subidx, end))
 
     def _split_self_into_new_subtasks_if_needed(self, last_ts: int) -> Optional[List[BaseDpsFetchSubtask]]:
+        # How many new tasks because of % of time range was fetched?
         tot_ms = self.end - (start := self.prev_start)
         remaining_ms = tot_ms - (part_ms := last_ts - start)
         ratio_retrieved = part_ms / tot_ms
-        # We assume the point density of dps is a good estimate for the entire time domain and split accordingly:
-        n_new_tasks = min(self.max_splitting_factor + 1, math.floor(1 / ratio_retrieved))  # +1 for "self next"
+        n_new_pct = math.floor(1 / ratio_retrieved)
+        # How many new tasks because of limit left (if limit)?
+        n_new_lim = math.inf
+        if (remaining_limit := self.parent.remaining_limit(self)) is not None:
+            n_new_lim = math.ceil(remaining_limit / self.parent.query.max_query_limit)
+        # We pick strictest criterion:
+        n_new_tasks = min(n_new_lim, n_new_pct, self.max_splitting_factor + 1)  # +1 for "self next"
         if n_new_tasks <= 1:  # No point in splitting; no faster than this task just continuing
             return
         # Find a `delta_ms` thats a multiple of granularity in ms (trivial for raw queries).
@@ -216,9 +224,8 @@ class SplittingFetchSubtask(SerialFetchSubtask):
         self.end = boundaries[1]  # We shift end of 'self' backwards
 
         split_idxs = self._create_subtasks_idxs(n_new_tasks)
-        limit = self.n_dps_left if self.parent.has_limit else None
         new_subtasks = [
-            dataclasses.replace(self, start=start, end=end, limit=limit, subtask_idx=idx)  # Returns a copy
+            dataclasses.replace(self, start=start, end=end, limit=remaining_limit, subtask_idx=idx)  # Returns a copy
             for start, end, idx in zip(boundaries[1:-1], boundaries[2:], split_idxs)
         ]
         self.parent.subtasks.update(new_subtasks)
@@ -286,11 +293,22 @@ class BaseConcurrentTask:
 
         self._unpack_and_store((0,), dps)
 
+    def remaining_limit(self, subtask):
+        if (remaining := self.query.limit) is None:
+            return None
+        # For limited queries: if the sum of fetched points of earlier tasks have already hit/surpassed
+        # `limit`, we know for sure we can cancel future tasks:
+        for task in self.subtasks:
+            # Sum up to - but not including - given subtask:
+            if task is subtask or (remaining := remaining - task.n_dps_fetched) <= 0:
+                break
+        return max(0, remaining)
+
     @property
     def n_dps_first_batch(self):
         if self.eager_mode:
             return 0
-        raise NotImplementedError  # TODO: After the switch to Sorted containers, go back to prev
+        return len(self.ts_data[(0,)][0])
 
     @property
     def is_done(self):
@@ -298,15 +316,16 @@ class BaseConcurrentTask:
             self._is_done = self._is_done or all(task.is_done for task in self.subtasks)
         return self._is_done
 
+    @is_done.setter
+    def is_done(self, value: bool):
+        self._is_done = value
+
     @abstractmethod
     def _find_number_of_subtasks_uniform_split(self, tot_ms: int, max_workers: int) -> int:
         ...
 
     def _create_uniformly_split_subtasks(self, max_workers: int) -> List[BaseDpsFetchSubtask]:
-        if self.eager_mode:
-            start = self.query.start
-        else:
-            start = self.first_start
+        start = self.query.start if self.eager_mode else self.first_start
         tot_ms = (end := self.query.end) - start
         n_periods = self._find_number_of_subtasks_uniform_split(tot_ms, max_workers)
         # Find a `delta_ms` thats a multiple of granularity in ms (trivial for raw queries).
@@ -346,21 +365,19 @@ class ConcurrentLimitedMixin(BaseConcurrentTask):
             # reached in the first (chronologically) non-finished subtask:
             i_first_in_progress = True
             n_dps_to_fetch = self.query.limit - self.n_dps_first_batch
-            # TODO: After the switch to Sorted containers, go back to prev:
-            ordered_subtasks = sorted(self.subtasks, key=op.attrgetter("subtask_idx"))
-            for i, subtask in enumerate(ordered_subtasks):
-                if not (subtask.is_done or i_first_in_progress):
+            for i, task in enumerate(self.subtasks):
+                if not (task.is_done or i_first_in_progress):
                     break
 
-                n_dps_to_fetch -= sum(map(len, self.ts_data[subtask.subtask_idx]))
+                n_dps_to_fetch -= task.n_dps_fetched
                 if i_first_in_progress:
                     i_first_in_progress = False
 
-                if n_dps_to_fetch <= 0:
+                if n_dps_to_fetch == 0:
                     self._is_done = True
                     # Update all consecutive subtasks to "is done":
-                    for subtask in ordered_subtasks[i + 1 :]:
-                        subtask.is_done = True
+                    for task in self.subtasks[i + 1 :]:
+                        task.is_done = True
                     break
                 # Stop forward search as current task is not done, and limit was not reached:
                 # (We risk that the next task is already done, and will thus miscount)
@@ -370,6 +387,10 @@ class ConcurrentLimitedMixin(BaseConcurrentTask):
                 # All subtasks are done, but limit was -not- reached:
                 self._is_done = True
         return self._is_done
+
+    @is_done.setter
+    def is_done(self, value: bool):
+        self._is_done = value
 
 
 @dataclass(eq=False)
@@ -409,24 +430,23 @@ class BaseConcurrentRawTask(BaseConcurrentTask):
         # Note 1: Outside points do not count towards given limit (API specs)
         # Note 2: Lock not needed; called after pool is shut down
         count = 0
-        in_order = sorted(self.ts_data)  # TODO: After the switch to Sorted containers, go back to prev
-        for i, key in enumerate(in_order):
-            for j, arr in enumerate(self.ts_data[key]):
+        for i, (subtask_idx, sublist) in enumerate(self.ts_data.items()):
+            for j, arr in enumerate(sublist):
                 if count + len(arr) < self.query.limit:
                     count += len(arr)
                     continue
                 end = self.query.limit - count
-                self.ts_data[key][j] = arr[:end]
-                self.dps_data[key][j] = self.dps_data[key][j][:end]
+                self.ts_data[subtask_idx][j] = arr[:end]
+                self.dps_data[subtask_idx][j] = self.dps_data[subtask_idx][j][:end]
                 # Chop off later arrays in same sublist (if any):
-                self.ts_data[key] = self.ts_data[key][: j + 1]
-                self.dps_data[key] = self.dps_data[key][: j + 1]
-                # Remove later sublists (if any). We keep using defaultdicts due to the possibility of
+                self.ts_data[subtask_idx] = self.ts_data[subtask_idx][: j + 1]
+                self.dps_data[subtask_idx] = self.dps_data[subtask_idx][: j + 1]
+                # Remove later sublists (if any). We keep using DefaultSortedDictdicts due to the possibility of
                 # having to insert/add 'outside points' later:
-                new_ts, new_dps = dps_container(), dps_container()
-                new_ts.update({k: self.ts_data[k] for k in in_order[: i + 1]})
-                new_dps.update({k: self.dps_data[k] for k in in_order[: i + 1]})
+                (new_ts := dps_container()).update(self.ts_data.items()[: i + 1])
+                (new_dps := dps_container()).update(self.dps_data.items()[: i + 1])
                 self.ts_data, self.dps_data = new_ts, new_dps
+                return
 
     def _include_outside_points_in_result(self):
         if self.dp_outside_start:
@@ -534,19 +554,18 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
         if self.has_non_count_aggs:
             to_update.append("dps_data")
 
-        in_order = sorted(self.ts_data)  # TODO: After the switch to Sorted containers, go back to prev
-        for i, key in enumerate(in_order):
-            for j, arr in enumerate(self.ts_data[key]):
+        for i, (subtask_idx, sublist) in enumerate(self.ts_data.items()):
+            for j, arr in enumerate(sublist):
                 if count + len(arr) < self.query.limit:
                     count += len(arr)
                     continue
                 end = self.query.limit - count
-                in_order = in_order[: i + 1]
+
                 for attr in to_update:
                     data = getattr(self, attr)
-                    data[key][j] = data[key][j][:end]
-                    data[key] = data[key][: j + 1]
-                    setattr(self, attr, {k: data[k] for k in in_order})  # regular dict, no further inserts
+                    data[subtask_idx][j] = data[subtask_idx][j][:end]
+                    data[subtask_idx] = data[subtask_idx][: j + 1]
+                    setattr(self, attr, dict(data.items()[: i + 1]))  # regular dict, no further inserts
                 return
 
     def _unpack_and_store(self, idx, dps):

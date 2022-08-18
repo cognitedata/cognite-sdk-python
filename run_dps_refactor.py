@@ -6,18 +6,18 @@ import pandas as pd
 from local_cog_client import setup_local_cog_client
 
 START = pd.Timestamp("1972-01-01").value // int(1e6)
-END = pd.Timestamp("1980-01-01").value // int(1e6)
-LIMIT = 500_000
+END = pd.Timestamp("1995-01-01").value // int(1e6)
+LIMIT = 200_000
 AGGREGATES = None
-# AGGREGATES = ["totalVariation"]
+AGGREGATES = ["totalVariation"]
 # AGGREGATES = [
 #     "average", "max", "min", "count", "sum", "interpolation", "stepInterpolation",
 #     "continuousVariance", "discreteVariance", "totalVariation"
 # ]
 GRANULARITY = None
-# GRANULARITY = "1m"
-INCLUDE_OUTSIDE_POINTS = True
-IGNORE_UNKNOWN_IDS = False
+GRANULARITY = "1m"
+INCLUDE_OUTSIDE_POINTS = False
+IGNORE_UNKNOWN_IDS = True
 # ID = None
 ID = [
     # {"id": 226740051491},
@@ -29,7 +29,7 @@ EXTERNAL_ID = [
     # {"external_id": "ts-test-#04-ten-mill-dps-1/1"},
     # {"external_id": "ts-test-#01-daily-111/650"},
     # {"external_id": "ts-test-#01-daily-222/650"},
-    # {"external_id": "benchmark:11-1mill-blob-sec-after-1990-#1/10"},
+    {"external_id": "benchmark:11-1mill-blob-sec-after-1990-#1/10"},
     # {"external_id": "benchmark:11-1mill-blob-sec-after-1990-#2/10"},
     # {"external_id": "benchmark:11-1mill-blob-sec-after-1990-#3/10"},
     # {"external_id": "benchmark:11-1mill-blob-sec-after-1990-#4/10"},
@@ -38,7 +38,7 @@ EXTERNAL_ID = [
     # {"external_id": "benchmark:10-1mill-blob-ms-after-1990-#2/10"},
     # {"limit": 99_999 + 3, "external_id": "benchmark:1-string-1h-gran-#3/50"},  # string
     # {"limit": -1, "external_id": "8400074_destination"},  # string
-    {"external_id": "benchmark:2-strfing-5m-gran-#1/1"},  # string
+    # {"external_id": "benchmark:2-string-5m-gran-#1/1"},  # string
     # {"external_id": "benchmark:1-string-1h-gran-#1/50"},  # string
     # {"external_id": "benchmark:1-string-1h-gran-#8/50"},  # string
     # {"external_id": "benchmark:1-string-1h-gran-#3/50"},  # string
