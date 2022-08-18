@@ -3,6 +3,7 @@ from __future__ import annotations
 import dataclasses
 import math
 import operator as op
+import threading
 from abc import abstractmethod
 from dataclasses import InitVar, dataclass
 from itertools import chain
@@ -26,6 +27,8 @@ from cognite.client.data_classes.datapoints import SingleTSQuery
 from cognite.client.utils._auxiliary import to_camel_case
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._time import granularity_to_ms
+
+LOCK = threading.Lock()
 
 if TYPE_CHECKING:
     pprint("type checkin'")  # TODO: Remove.
@@ -58,7 +61,7 @@ def select_dps_fetching_task_type(query: SingleTSQuery) -> BaseConcurrentTask:
 
 
 class DefaultSortedDict(SortedDict):
-    def __init__(self, default_factory=None, /, **kw):
+    def __init__(self, default_factory: Callable = None, /, **kw):
         self.default_factory = default_factory
         super().__init__(**kw)
 
@@ -67,14 +70,14 @@ class DefaultSortedDict(SortedDict):
         return self[key]
 
 
-def subtask_lst() -> SortedList[BaseDpsFetchSubtask]:
-    """Initialises a new sorted list for subtasks"""
-    return SortedList(key=op.attrgetter("subtask_idx"))
-
-
 def dps_container() -> DefaultDict[Hashable, List]:
     """Initialises a new sorted container for datapoints storage"""
     return DefaultSortedDict(list)
+
+
+def subtask_lst() -> SortedList[BaseDpsFetchSubtask]:
+    """Initialises a new sorted list for subtasks"""
+    return SortedList(key=op.attrgetter("subtask_idx"))
 
 
 def create_array_from_dps_container(container: DefaultSortedDict) -> npt.NDArray:
@@ -128,6 +131,7 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
     aggregates: Optional[List[str]]
     granularity: Optional[str]
     subtask_idx: Tuple[int, ...]
+    max_query_limit: int
     n_dps_left: float = dataclasses.field(default=math.inf, init=False)
     n_dps_fetched: float = dataclasses.field(default=0, init=False)
     agg_kwargs: Dict[str, Union[str, List[str]]] = dataclasses.field(default_factory=dict, init=False)
@@ -142,14 +146,24 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
     def get_next_payload(self):
         if self.is_done:
             return None
-        return self._create_payload_item()
+        if not (remaining_limit := self.parent.remaining_limit(self)):
+            # Since last time this task fetched points, earlier tasks have already fetched >= limit dps:
+            self.is_done, ts_task = True, self.parent
+            with LOCK:  # Keep sorted list `subtasks` from being mutated
+                _ = ts_task.is_done  # Trigger a check of parent task
+                # Update all consecutive subtasks to "is done":
+                i_start = 1 + ts_task.subtasks.index(self)
+                for task in ts_task.subtasks[i_start:]:
+                    task.is_done = True
+            return None
+        return self._create_payload_item(remaining_limit)
 
-    def _create_payload_item(self):
+    def _create_payload_item(self, remaining_limit: float = math.inf):
         return {
             **self.identifier.as_dict(),
             "start": self.next_start,
             "end": self.end,
-            "limit": min(self.n_dps_left, self.parent.query.max_query_limit),
+            "limit": min(remaining_limit, self.n_dps_left, self.max_query_limit),
             **self.agg_kwargs,
         }
 
@@ -175,7 +189,7 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
         self.n_dps_fetched += n  # Used to quit limited queries asap
 
     def _is_task_done(self, n):
-        return self.n_dps_left == 0 or n < self.parent.query.max_query_limit or self.next_start == self.end
+        return self.n_dps_left == 0 or n < self.max_query_limit or self.next_start == self.end
 
 
 @dataclass(eq=False)
@@ -212,7 +226,7 @@ class SplittingFetchSubtask(SerialFetchSubtask):
         # How many new tasks because of limit left (if limit)?
         n_new_lim = math.inf
         if (remaining_limit := self.parent.remaining_limit(self)) is not None:
-            n_new_lim = math.ceil(remaining_limit / self.parent.query.max_query_limit)
+            n_new_lim = math.ceil(remaining_limit / self.max_query_limit)
         # We pick strictest criterion:
         n_new_tasks = min(n_new_lim, n_new_pct, self.max_splitting_factor + 1)  # +1 for "self next"
         if n_new_tasks <= 1:  # No point in splitting; no faster than this task just continuing
@@ -294,10 +308,11 @@ class BaseConcurrentTask:
         self._unpack_and_store((0,), dps)
 
     def remaining_limit(self, subtask):
-        if (remaining := self.query.limit) is None:
+        if not self.has_limit:
             return None
         # For limited queries: if the sum of fetched points of earlier tasks have already hit/surpassed
         # `limit`, we know for sure we can cancel future tasks:
+        remaining = self.query.limit
         for task in self.subtasks:
             # Sum up to - but not including - given subtask:
             if task is subtask or (remaining := remaining - task.n_dps_fetched) <= 0:
@@ -345,6 +360,7 @@ class BaseConcurrentTask:
                 aggregates=self.query.aggregates_cc,
                 granularity=self.query.granularity,
                 subtask_idx=(i,),
+                max_query_limit=self.query.max_query_limit,
             )
             for i, (start, end) in enumerate(zip(boundaries[:-1], boundaries[1:]), 1)
         ]
@@ -358,7 +374,7 @@ class ConcurrentLimitedMixin(BaseConcurrentTask):
             return True
         elif self.subtask_outside_points and not self.subtask_outside_points.is_done:
             return False
-        elif self.subtasks:  # No lock needed; this - and storing dps - is only run by the main thread
+        elif self.subtasks:
             # Checking if subtasks are done is not enough; we need to check if the sum of
             # "len of dps takewhile is_done" has reached the limit. Additionally, each subtask might
             # need to fetch a lot of the time subdomain. We want to quit early also when the limit is
@@ -368,11 +384,10 @@ class ConcurrentLimitedMixin(BaseConcurrentTask):
             for i, task in enumerate(self.subtasks):
                 if not (task.is_done or i_first_in_progress):
                     break
-
-                n_dps_to_fetch -= task.n_dps_fetched
                 if i_first_in_progress:
                     i_first_in_progress = False
 
+                n_dps_to_fetch -= task.n_dps_fetched
                 if n_dps_to_fetch == 0:
                     self._is_done = True
                     # Update all consecutive subtasks to "is done":

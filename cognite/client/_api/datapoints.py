@@ -20,6 +20,7 @@ from cognite.client._api.datapoint_constants import (
     FETCH_TS_LIMIT,
     POST_DPS_OBJECTS_LIMIT,
     RETRIEVE_LATEST_LIMIT,
+    CustomDatapoints,
     DatapointsExternalIdTypes,
     DatapointsFromAPI,
     DatapointsIdTypes,
@@ -58,6 +59,8 @@ COUNTER = 1
 
 
 class DpsFetchOrchestrator:
+    SKIP_TASK = object()
+
     def __init__(self, dps_client: DatapointsAPI, user_queries: List[DatapointsQueryNew]):
         self.dps_client = dps_client
         self.max_workers = self.dps_client._config.max_workers
@@ -67,14 +70,22 @@ class DpsFetchOrchestrator:
         # Set flag for fastpath used for small queries:
         self.eager_mode = self._decide_run_mode()
 
-    def request_datapoints(self, payload) -> DatapointsFromAPI:
+    def request_datapoints_single(
+        self,
+        task: BaseDpsFetchSubtask,
+        payload: Optional[CustomDatapoints] = None,
+    ) -> DatapointsFromAPI:
+        # Note: We delay getting the next payload as much as possible; this way, when we count number of
+        # points left to fetch JIT, we have the most up-to-date estimate (and may quit early):
+        if (item := task.get_next_payload()) is None:
+            return [self.SKIP_TASK]
+        (payload := payload or {})["items"] = [item]
         return self.dps_client._post(self.dps_client._RESOURCE_PATH + "/list", json=payload).json()["items"]
 
     def fetch_all_datapoints(self):
         with PriorityThreadPoolExecutor(max_workers=self.max_workers) as pool:
             if self.eager_mode:
                 ordered_results = self._fetch_all_eager(pool)
-                # ordered_results = self._fetch_all_eager_old(pool, futures_dct)
             # else:
             #     initial_futures_dct = self._create_initial_tasks_chunk(pool, self._chunk_queries_for_initial_request)
             #     ordered_results = self._fetch_all_with_query_chunking(pool, initial_futures_dct)
@@ -86,16 +97,16 @@ class DpsFetchOrchestrator:
         ts_task: BaseConcurrentTask,
         ts_task_lookup: Dict[SingleTSQuery, BaseConcurrentTask],
         futures_dct: Dict[Future, BaseDpsFetchSubtask],
-    ) -> Optional[DatapointsFromAPI]:
+    ) -> Union[DatapointsFromAPI, object]:
         try:
             return future.result()[0]
         except CancelledError:
-            return
+            return self.SKIP_TASK
         except CogniteAPIError as e:
             if not (e.code == 400 and e.missing and ts_task.query.ignore_unknown_ids):
                 raise
             elif ts_task.is_done:
-                return
+                return self.SKIP_TASK
             ts_task.is_done = True
             del ts_task_lookup[ts_task.query]
             self._cancel_futures_for_finished_ts_task(ts_task, futures_dct)
@@ -108,7 +119,7 @@ class DpsFetchOrchestrator:
             future = next(as_completed(futures_dct))
             ts_task = (subtask := futures_dct.pop(future)).parent
             res = self._get_result_with_exception_handling(future, ts_task, ts_task_lookup, futures_dct)
-            if res is None:
+            if res is self.SKIP_TASK:
                 continue
             # We may dynamically split subtasks based on what % of time range was returned:
             if new_subtasks := subtask.store_partial_result(res):
@@ -185,8 +196,7 @@ class DpsFetchOrchestrator:
 
     def _queue_new_subtasks(self, pool, future_dct, new_subtasks):
         for task in new_subtasks:
-            payload = {"items": [task.get_next_payload()]}
-            new_future = pool.submit(self.request_datapoints, payload, priority=task.priority)
+            new_future = pool.submit(self.request_datapoints_single, task, priority=task.priority)
             future_dct[new_future] = task
 
     def _cancel_futures_for_finished_ts_task(self, ts_task, future_dct):
@@ -227,13 +237,12 @@ class DpsFetchOrchestrator:
         return all_queries, split_qs
 
     def _create_initial_tasks_eager(self, pool):
-        futures_dct, ts_task_lookup = {}, {}
+        futures_dct, ts_task_lookup, payload = {}, {}, {"ignoreUnknownIds": False}
         for query in self.all_queries:
             ts_task = select_dps_fetching_task_type(query)
             ts_task = ts_task_lookup[query] = ts_task(query, eager_mode=self.eager_mode)
             for subtask in ts_task.split_into_subtasks(self.max_workers):
-                payload = {"ignoreUnknownIds": False, "items": [subtask.get_next_payload()]}
-                future = pool.submit(self.request_datapoints, payload, priority=subtask.priority)
+                future = pool.submit(self.request_datapoints_single, subtask, payload, priority=subtask.priority)
                 futures_dct[future] = subtask
         return futures_dct, ts_task_lookup
 
