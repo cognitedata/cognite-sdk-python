@@ -10,8 +10,6 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Union, cast
 from zipfile import ZipFile
 
-from pip._internal.req.constructors import install_req_from_line
-
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client._constants import LIST_LIMIT_CEILING, LIST_LIMIT_DEFAULT
@@ -721,6 +719,8 @@ def _validate_and_parse_requirements(requirements: List[str]) -> List[str]:
     parsed_reqs: List[str] = []
     for req in requirements:
         try:
+            from pip._internal.req.constructors import install_req_from_line
+
             parsed = install_req_from_line(req)
         except Exception as e:
             raise ValueError(str(e))
