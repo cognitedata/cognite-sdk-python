@@ -3,7 +3,6 @@ from __future__ import annotations
 import functools
 import math
 import re as regexp
-import threading
 from concurrent.futures import CancelledError, as_completed
 from copy import copy
 from datetime import datetime
@@ -54,9 +53,6 @@ if TYPE_CHECKING:
 
 pprint("RUNNING REPOS/COG-SDK, NOT FROM PIP")
 
-LOCK = threading.Lock()
-COUNTER = 1
-
 
 class DpsFetchOrchestrator:
     SKIP_TASK = object()
@@ -66,6 +62,7 @@ class DpsFetchOrchestrator:
         self.max_workers = self.dps_client._config.max_workers
         assert self.max_workers >= 1, "Invalid option for `max_workers`. Must be at least 1"
         self.all_queries, (self.agg_queries, self.raw_queries) = self._validate_and_split_user_queries(user_queries)
+        self.n_queries = len(self.all_queries)
 
         # Set flag for fastpath used for small queries:
         self.eager_mode = self._decide_run_mode()
@@ -77,7 +74,6 @@ class DpsFetchOrchestrator:
     ) -> List[Union[DatapointsFromAPI, object]]:
         # Note: We delay getting the next payload as much as possible; this way, when we count number of
         # points left to fetch JIT, we have the most up-to-date estimate (and may quit early):
-        # breakpoint()
         if (item := task.get_next_payload()) is None:
             return [self.SKIP_TASK]
 
@@ -140,61 +136,6 @@ class DpsFetchOrchestrator:
         # Return only actual tasks in correct order given by `all_queries`:
         return list(filter(None, map(ts_task_lookup.get, self.all_queries)))
 
-    # def _fetch_all_eager_old(self, pool, initial_futures_dct) -> List[BaseConcurrentTask]:
-    #     failed_queries, future_dct, parent_task_lookup = set(), {}, {}
-    #     while initial_futures_dct:
-    #         future = next(as_completed(initial_futures_dct))
-    #         query = initial_futures_dct.pop(future)
-    #         try:
-    #             res = future.result()
-    #         except CogniteAPIError as err:
-    #             # One of our optimizations is to assume most queries ask for numeric data and thus we ask
-    #             # for count aggregates in the same initial query to save one API-request. This however fails
-    #             # for string time series, so we need to retry those (we don't know up front which are string):
-    #             if query.is_raw_query and query not in failed_queries and err.code == 400:
-    #                 failed_queries.add(query)  # Break ∞ retries (retry exactly once)
-    #                 future = self._requeue_ts_query_without_count_agg(query, pool)
-    #                 initial_futures_dct[future] = query
-    #                 continue
-    #             raise
-    #         if not res and query.ignore_unknown_ids:
-    #             continue
-    #         (ts_task,) = self._create_task_from_initial_result(res[:1], query)  # Unpack with "comma operator" :D
-    #         parent_task_lookup[query] = ts_task
-    #         if ts_task.is_done:
-    #             continue
-    #         # Thanks to `as_completed` we are able to schedule new work asap:
-    #         count_aggs = res[1:2] or None
-    #         count_agg_gran = self.count_agg_payloads.get(query)
-    #         subtasks = ts_task.split_into_subtasks(self.max_workers, count_aggs, count_agg_gran)
-    #         self._queue_new_subtasks(pool, future_dct, subtasks)
-    #
-    #     # Run until all top level tasks are complete:
-    #     while future_dct:
-    #         future = next(as_completed(future_dct))
-    #         subtask = future_dct.pop(future)
-    #         try:
-    #             (res,) = future.result()
-    #         except CancelledError:
-    #             continue
-    #         new_subtasks = subtask.store_partial_result(res)
-    #         if new_subtasks:  # We may dynamically split subtasks based on what % of time range was returned
-    #             self._queue_new_subtasks(pool, future_dct, new_subtasks)
-    #
-    #         if subtask.parent.is_done:  # Parent might be done before a serial subtask is finished
-    #             if all(p.is_done for p in parent_task_lookup.values()):
-    #                 pool.shutdown(wait=False)
-    #                 break
-    #             if subtask.parent.has_limit:
-    #                 # For finished limited queries, cancel all unstarted futures for same parent:
-    #                 self._cancel_futures_for_finished_ts_task(subtask.parent, future_dct)
-    #             continue
-    #         elif subtask.is_done:
-    #             continue
-    #         self._queue_new_subtasks(pool, future_dct, [subtask])
-    #     # Return only actual tasks in correct order given by `all_queries`:
-    #     return list(filter(None, map(parent_task_lookup.get, self.all_queries)))
-
     def _queue_new_subtasks(self, pool, future_dct, new_subtasks):
         for task in new_subtasks:
             new_future = pool.submit(self.request_datapoints_single, task, priority=task.priority)
@@ -221,8 +162,7 @@ class DpsFetchOrchestrator:
     def _decide_run_mode(self):
         # If we have a worker for each single dps query, we run with `eager_mode=True` as we
         # don't have to group/chunk requests together.
-        tot_queries = len(self.agg_queries) + len(self.raw_queries)
-        return tot_queries <= self.max_workers
+        return self.n_queries <= self.max_workers
 
     def _finalize_tasks(self, ordered_results) -> DatapointsArrayList:
         return DatapointsArrayList(
@@ -242,7 +182,7 @@ class DpsFetchOrchestrator:
         for query in self.all_queries:
             ts_task = select_dps_fetching_task_type(query)
             ts_task = ts_task_lookup[query] = ts_task(query, eager_mode=self.eager_mode)
-            for subtask in ts_task.split_into_subtasks(self.max_workers):
+            for subtask in ts_task.split_into_subtasks(self.max_workers, self.n_queries):
                 future = pool.submit(self.request_datapoints_single, subtask, payload, priority=subtask.priority)
                 futures_dct[future] = subtask
         return futures_dct, ts_task_lookup
@@ -297,7 +237,7 @@ class DpsFetchOrchestrator:
 
         # Optimal queries uses the entire worker pool. We may be forced to use more (queue) when we
         # can't fit all individual time series (maxes out at `FETCH_TS_LIMIT * max_workers`):
-        n_queries = max(self.max_workers, math.ceil(len(self.all_queries) / FETCH_TS_LIMIT))
+        n_queries = max(self.max_workers, math.ceil(self.n_queries / FETCH_TS_LIMIT))
         query_lst, items_lst = [], []
         splitter = functools.partial(split_into_n_parts, n=n_queries)
         for chunks in zip(splitter(self.agg_queries), splitter(self.raw_queries)):
