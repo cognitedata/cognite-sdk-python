@@ -337,13 +337,14 @@ class BaseConcurrentTask:
         self._is_done = value
 
     @abstractmethod
-    def _find_number_of_subtasks_uniform_split(self, tot_ms: int, max_workers: int, n_tot_queries: int) -> int:
+    def _find_number_of_subtasks_uniform_split(self, tot_ms: int, n_workers_per_queries: int) -> int:
         ...
 
     def _create_uniformly_split_subtasks(self, max_workers: int, n_tot_queries: int) -> List[BaseDpsFetchSubtask]:
         start = self.query.start if self.eager_mode else self.first_start
         tot_ms = (end := self.query.end) - start
-        n_periods = self._find_number_of_subtasks_uniform_split(tot_ms, max_workers, n_tot_queries)
+        n_workers_per_queries = round(max_workers / n_tot_queries)
+        n_periods = self._find_number_of_subtasks_uniform_split(tot_ms, n_workers_per_queries)
         # Find a `delta_ms` thats a multiple of granularity in ms (trivial for raw queries).
         # ...we use `ceil` instead of `round` to make sure we "overshoot" `end`:
         delta_ms = self.offset_next * math.ceil(tot_ms / n_periods / self.offset_next)
@@ -405,7 +406,7 @@ class ConcurrentLimitedMixin(BaseConcurrentTask):
         return self._is_done
 
     @is_done.setter
-    def is_done(self, value: bool):
+    def is_done(self, value: bool):  # Kill switch
         self._is_done = value
 
 
@@ -436,11 +437,10 @@ class BaseConcurrentRawTask(BaseConcurrentTask):
             }
         )
 
-    def _find_number_of_subtasks_uniform_split(self, tot_ms: int, max_workers: int, n_tot_queries: int) -> int:
+    def _find_number_of_subtasks_uniform_split(self, tot_ms: int, n_workers_per_queries: int) -> int:
         # It makes no sense to split beyond what the max-size of a query allows (for a maximally dense
         # time series), but that is rarely useful as 100k dps is just 1 min 40 sec... we guess an
         # average density of points at 1 dp/sec, giving us split-windows no smaller than ~1 day:
-        n_workers_per_queries = math.ceil(max_workers / n_tot_queries)
         return min(n_workers_per_queries, math.ceil((tot_ms / 1000) / self.query.max_query_limit))
 
     def _cap_dps_at_limit(self):
@@ -458,7 +458,7 @@ class BaseConcurrentRawTask(BaseConcurrentTask):
                 # Chop off later arrays in same sublist (if any):
                 self.ts_data[subtask_idx] = self.ts_data[subtask_idx][: j + 1]
                 self.dps_data[subtask_idx] = self.dps_data[subtask_idx][: j + 1]
-                # Remove later sublists (if any). We keep using DefaultSortedDictdicts due to the possibility of
+                # Remove later sublists (if any). We keep using DefaultSortedDicts due to the possibility of
                 # having to insert/add 'outside points' later:
                 (new_ts := dps_container()).update(self.ts_data.items()[: i + 1])
                 (new_dps := dps_container()).update(self.dps_data.items()[: i + 1])
@@ -498,13 +498,12 @@ class ParallelUnlimitedRawTask(BaseConcurrentRawTask):
 
 @dataclass(eq=False)
 class ParallelLimitedRawTask(ConcurrentLimitedMixin, BaseConcurrentRawTask):
-    def _find_number_of_subtasks_uniform_split(self, tot_ms: int, max_workers: int, n_tot_queries: int) -> int:
+    def _find_number_of_subtasks_uniform_split(self, tot_ms: int, n_workers_per_queries: int) -> int:
         # We make the guess that the time series has ~1 dp/sec and use this in combination with the given
         # limit to not split into too many queries (highest throughput when each request is close to max limit)
         n_estimate_periods = math.ceil((tot_ms / 1000) / self.query.max_query_limit)
         remaining_limit = self.query.limit - self.n_dps_first_batch
         n_periods = math.ceil(remaining_limit / self.query.max_query_limit)
-        n_workers_per_queries = math.ceil(max_workers / n_tot_queries)
         # Pick the smallest N from constraints:
         return min(n_workers_per_queries, n_periods, n_estimate_periods)
 
@@ -539,9 +538,8 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
             else:
                 self.dtype_aggs = np.dtype(np.float64)  # (.., 1) is deprecated
 
-    def _find_number_of_subtasks_uniform_split(self, tot_ms: int, max_workers: int, n_tot_queries: int) -> int:
+    def _find_number_of_subtasks_uniform_split(self, tot_ms: int, n_workers_per_queries: int) -> int:
         n_max_dps = tot_ms // self.offset_next  # evenly divides
-        n_workers_per_queries = math.ceil(max_workers / n_tot_queries)
         return min(n_workers_per_queries, math.ceil(n_max_dps / DPS_LIMIT_AGG))
 
     def _create_empty_result(self) -> DatapointsArray:
@@ -584,7 +582,7 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
                     data = getattr(self, attr)
                     data[subtask_idx][j] = data[subtask_idx][j][:end]
                     data[subtask_idx] = data[subtask_idx][: j + 1]
-                    setattr(self, attr, dict(data.items()[: i + 1]))  # regular dict, no further inserts
+                    setattr(self, attr, dict(data.items()[: i + 1]))  # regular dict (no further inserts)
                 return
 
     def _unpack_and_store(self, idx, dps):
@@ -610,8 +608,7 @@ class ParallelUnlimitedAggTask(BaseConcurrentAggTask):
 
 @dataclass(eq=False)
 class ParallelLimitedAggTask(ConcurrentLimitedMixin, BaseConcurrentAggTask):
-    def _find_number_of_subtasks_uniform_split(self, tot_ms: int, max_workers: int, n_tot_queries: int) -> int:
+    def _find_number_of_subtasks_uniform_split(self, tot_ms: int, n_workers_per_queries: int) -> int:
         remaining_limit = self.query.limit - self.n_dps_first_batch
         n_max_dps = min(remaining_limit, tot_ms // self.offset_next)
-        n_workers_per_queries = math.ceil(max_workers / n_tot_queries)
         return min(n_workers_per_queries, math.ceil(n_max_dps / DPS_LIMIT_AGG))

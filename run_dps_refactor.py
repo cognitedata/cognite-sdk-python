@@ -7,16 +7,16 @@ import pandas as pd
 from local_cog_client import setup_local_cog_client
 
 payload = None
-payload = dict(
-    start=pd.Timestamp("1970-01-01 00:00:00").value // int(1e6),
-    end=pd.Timestamp("1985-01-01 00:00:00").value // int(1e6),
-    external_id=["ts-test-#04-ten-mill-dps-1/1"],
-    aggregates=["totalVariation", "sum", "max", "stepInterpolation"],
-    granularity="1s",
-    limit=5_000_000,
-    include_outside_points=False,
-    ignore_unknown_ids=False,
-)
+# payload = dict(
+#     start=pd.Timestamp("1970-01-01 00:00:00").value // int(1e6),
+#     end=pd.Timestamp("1985-01-01 00:00:00").value // int(1e6),
+#     external_id=["ts-test-#04-ten-mill-dps-1/1"],
+#     aggregates=["totalVariation", "sum", "max", "stepInterpolation"],
+#     granularity="1s",
+#     limit=5_000_000,
+#     include_outside_points=False,
+#     ignore_unknown_ids=False,
+# )
 
 START = pd.Timestamp("1972-01-01").value // int(1e6)
 END = pd.Timestamp("1995-01-01").value // int(1e6)
@@ -126,5 +126,3 @@ print(f"Dps/sec, (counting all aggs.): {tot_dps_ps}")
 #     ignore_unknown_ids=IGNORE_UNKNOWN_IDS,
 # )
 # res = client.datapoints.query_new([query1, query2])
-
-df.to_csv("no_locks.csv")
