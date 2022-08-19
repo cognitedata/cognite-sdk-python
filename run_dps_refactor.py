@@ -1,9 +1,22 @@
 import math  # noqa
+from pprint import pprint
 from timeit import default_timer as timer
 
 import pandas as pd
 
 from local_cog_client import setup_local_cog_client
+
+payload = None
+payload = dict(
+    start=pd.Timestamp("1970-01-01 00:00:00").value // int(1e6),
+    end=pd.Timestamp("1985-01-01 00:00:00").value // int(1e6),
+    external_id=["ts-test-#04-ten-mill-dps-1/1"],
+    aggregates=["totalVariation", "sum", "max", "stepInterpolation"],
+    granularity="1s",
+    limit=5_000_000,
+    include_outside_points=False,
+    ignore_unknown_ids=False,
+)
 
 START = pd.Timestamp("1972-01-01").value // int(1e6)
 END = pd.Timestamp("1995-01-01").value // int(1e6)
@@ -65,17 +78,25 @@ max_workers = 20
 client = setup_local_cog_client(max_workers, debug=False)
 
 t0 = timer()
-res = client.datapoints.retrieve_new(
-    start=START,
-    end=END,
-    id=ID,
-    external_id=EXTERNAL_ID,  # [0]["external_id"],
-    aggregates=AGGREGATES,
-    granularity=GRANULARITY,
-    include_outside_points=INCLUDE_OUTSIDE_POINTS,
-    limit=LIMIT,
-    ignore_unknown_ids=IGNORE_UNKNOWN_IDS,
-)
+if payload is not None:
+    print("Ran payload:")
+    pprint(payload)
+    res = client.datapoints.retrieve_new(**payload)
+else:
+    print("Did not use payload. Settings used:")
+    settings = dict(
+        start=START,
+        end=END,
+        id=ID,
+        external_id=EXTERNAL_ID,
+        aggregates=AGGREGATES,
+        granularity=GRANULARITY,
+        include_outside_points=INCLUDE_OUTSIDE_POINTS,
+        limit=LIMIT,
+        ignore_unknown_ids=IGNORE_UNKNOWN_IDS,
+    )
+    pprint(settings)
+    res = client.datapoints.retrieve_new(**settings)
 t1 = timer()
 df = res.to_pandas()
 print(df.head())
@@ -105,3 +126,5 @@ print(f"Dps/sec, (counting all aggs.): {tot_dps_ps}")
 #     ignore_unknown_ids=IGNORE_UNKNOWN_IDS,
 # )
 # res = client.datapoints.query_new([query1, query2])
+
+df.to_csv("no_locks.csv")

@@ -146,19 +146,19 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
     def get_next_payload(self):
         if self.is_done:
             return None
-        if not (remaining_limit := self.parent.remaining_limit(self)):
+        if (remaining_limit := self.parent.remaining_limit(self)) == 0:
             # Since last time this task fetched points, earlier tasks have already fetched >= limit dps:
             self.is_done, ts_task = True, self.parent
             with LOCK:  # Keep sorted list `subtasks` from being mutated
                 _ = ts_task.is_done  # Trigger a check of parent task
-                # Update all consecutive subtasks to "is done":
+                # Update all subsequent subtasks to "is done":
                 i_start = 1 + ts_task.subtasks.index(self)
                 for task in ts_task.subtasks[i_start:]:
                     task.is_done = True
             return None
-        return self._create_payload_item(remaining_limit)
+        return self._create_payload_item(remaining_limit or math.inf)
 
-    def _create_payload_item(self, remaining_limit: float = math.inf):
+    def _create_payload_item(self, remaining_limit: float):
         return {
             **self.identifier.as_dict(),
             "start": self.next_start,
@@ -307,32 +307,33 @@ class BaseConcurrentTask:
 
         self._unpack_and_store((0,), dps)
 
-    def remaining_limit(self, subtask):
+    def remaining_limit(self, subtask) -> Optional[int]:
         if not self.has_limit:
             return None
         # For limited queries: if the sum of fetched points of earlier tasks have already hit/surpassed
         # `limit`, we know for sure we can cancel future tasks:
         remaining = self.query.limit
-        for task in self.subtasks:
-            # Sum up to - but not including - given subtask:
-            if task is subtask or (remaining := remaining - task.n_dps_fetched) <= 0:
-                break
+        with LOCK:  # Keep sorted list `subtasks` from being mutated
+            for task in self.subtasks:
+                # Sum up to - but not including - given subtask:
+                if task is subtask or (remaining := remaining - task.n_dps_fetched) <= 0:
+                    break
         return max(0, remaining)
 
     @property
-    def n_dps_first_batch(self):
+    def n_dps_first_batch(self) -> int:
         if self.eager_mode:
             return 0
         return len(self.ts_data[(0,)][0])
 
     @property
-    def is_done(self):
+    def is_done(self) -> bool:
         if self.subtasks:
             self._is_done = self._is_done or all(task.is_done for task in self.subtasks)
         return self._is_done
 
     @is_done.setter
-    def is_done(self, value: bool):
+    def is_done(self, value: bool) -> None:
         self._is_done = value
 
     @abstractmethod

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import copy
 import functools
 import math
 import re as regexp
 import threading
 from concurrent.futures import CancelledError, as_completed
+from copy import copy
 from datetime import datetime
 from itertools import chain
 from pprint import pprint
@@ -74,12 +74,14 @@ class DpsFetchOrchestrator:
         self,
         task: BaseDpsFetchSubtask,
         payload: Optional[CustomDatapoints] = None,
-    ) -> DatapointsFromAPI:
+    ) -> List[Union[DatapointsFromAPI, object]]:
         # Note: We delay getting the next payload as much as possible; this way, when we count number of
         # points left to fetch JIT, we have the most up-to-date estimate (and may quit early):
+        # breakpoint()
         if (item := task.get_next_payload()) is None:
             return [self.SKIP_TASK]
-        (payload := payload or {})["items"] = [item]
+
+        (payload := copy(payload) or {})["items"] = [item]
         return self.dps_client._post(self.dps_client._RESOURCE_PATH + "/list", json=payload).json()["items"]
 
     def fetch_all_datapoints(self):
@@ -124,7 +126,6 @@ class DpsFetchOrchestrator:
             # We may dynamically split subtasks based on what % of time range was returned:
             if new_subtasks := subtask.store_partial_result(res):
                 self._queue_new_subtasks(pool, futures_dct, new_subtasks)
-
             if ts_task.is_done:  # "Parent" ts task might be done before a subtask is finished
                 if all(parent.is_done for parent in ts_task_lookup.values()):
                     pool.shutdown(wait=False)
@@ -1189,7 +1190,7 @@ class _DPTask:
 
         if self.include_outside_points and raw_data["datapoints"]:
             # assumes first query has full start/end range
-            copy_data = copy.copy(raw_data)  # shallow copy
+            copy_data = copy(raw_data)  # shallow copy
             if raw_data["datapoints"][0]["timestamp"] < start:
                 if not self.point_before:
                     copy_data["datapoints"] = raw_data["datapoints"][:1]
