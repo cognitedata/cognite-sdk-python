@@ -14,6 +14,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [4.1.1] - 2022-08-19
+### Fixed
+- Fixed the issue on SDK when Python installation didn't include pip.
+
+### Added
+- Added Optional dependency called functions. Usage: `pip install cognite-sdk[functions]`
+ 
 ## [4.1.0] - 2022-08-18
 ### Added
 - ensure_parent parameter to client.raw.insert_dataframe method

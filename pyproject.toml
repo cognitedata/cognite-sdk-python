@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "cognite-sdk"
 
-version = "4.1.0"
+version = "4.1.1"
 
 description = "Cognite Python SDK"
 readme = "README.md"
@@ -20,12 +20,14 @@ sympy = { version = "*", optional = true }
 pandas = { version = "*", optional = true }
 geopandas = { version = ">=0.10.0", optional = true }
 shapely = { version = ">=1.7.0", optional = true }
+pip = { version = ">=20.0.0", optional = true}
 
 [tool.poetry.extras]
 pandas = ["pandas"]
 geo = ["geopandas", "shapely"]
 sympy = ["sympy"]
-all = ["pandas", "geopandas", "shapely", "sympy"]
+functions = ["pip"]
+all = ["pandas", "geopandas", "shapely", "sympy", "pip"]
 
 [tool.poetry.dev-dependencies]
 docutils = "==0.15.2"
