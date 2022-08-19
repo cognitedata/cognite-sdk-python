@@ -5,6 +5,7 @@ Authenticate
 
 The preferred way to authenticating against the Cognite API is using OpenID Connect (OIDC).
 To enable this, use one of the credential providers such as OAuthClientCredentials:
+
 .. code:: python
 
     >>> from cognite.client import CogniteClient, ClientConfig
@@ -15,6 +16,7 @@ To enable this, use one of the credential providers such as OAuthClientCredentia
     >>> c = CogniteClient(cnf)
 
 or make your own credential provider:
+
 .. code:: python
 
     >>> from cognite.client import CogniteClient, ClientConfig
