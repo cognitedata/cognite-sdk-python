@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [4.0.2] - 2022-08-19
+### Fixed
+- Fixed the issue on SDK when Python installation didn't include pip.
+ 
 ## [4.0.1] - 2022-08-17
 ### Added
 - OAuthClientCredentials now supports token_custom_args.
