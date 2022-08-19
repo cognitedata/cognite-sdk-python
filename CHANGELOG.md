@@ -17,6 +17,9 @@ Changes are grouped as follows
 ## [4.0.2] - 2022-08-19
 ### Fixed
 - Fixed the issue on SDK when Python installation didn't include pip.
+
+### Added
+- Added Optional dependency called functions. Usage: `pip install cognite-sdk[functions]`
  
 ## [4.0.1] - 2022-08-17
 ### Added

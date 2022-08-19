@@ -716,11 +716,11 @@ def _validate_and_parse_requirements(requirements: List[str]) -> List[str]:
     Returns:
         List[str]: The parsed requirements
     """
+    install_req_from_line = cast(Any, utils._auxiliary.local_import("pip._internal.req.constructors.install_req_from_line"))
+    
     parsed_reqs: List[str] = []
     for req in requirements:
         try:
-            from pip._internal.req.constructors import install_req_from_line
-
             parsed = install_req_from_line(req)
         except Exception as e:
             raise ValueError(str(e))
