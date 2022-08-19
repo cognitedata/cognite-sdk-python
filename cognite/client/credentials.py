@@ -253,7 +253,6 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
             ...     # Any additional IDP-specific token args. e.g.
             ...     audience="some-audience"
             ... )
-            >>> token_factory_provider = Token(lambda: "my secret token")
     """
 
     def __init__(
