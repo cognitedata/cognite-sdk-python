@@ -10,11 +10,10 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Union, cast
 from zipfile import ZipFile
 
-from pip._internal.req.constructors import install_req_from_line
-
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client._constants import LIST_LIMIT_CEILING, LIST_LIMIT_DEFAULT
+from cognite.client.credentials import OAuthClientCredentials, Token
 from cognite.client.data_classes import (
     Function,
     FunctionCall,
@@ -391,8 +390,7 @@ class FunctionsAPI(APIClient):
         nonce = None
         if _using_client_credential_flow(self._cognite_client):
             nonce = _use_client_credentials(self._cognite_client, client_credentials=None)
-
-        elif self._cognite_client.config.token is not None:
+        elif _using_token_exchange_flow(self._cognite_client):
             nonce = _use_token_exchange(self._cognite_client)
 
         if data is None:
@@ -434,26 +432,25 @@ class FunctionsAPI(APIClient):
         try:
             with TemporaryDirectory() as tmpdir:
                 zip_path = os.path.join(tmpdir, "function.zip")
-                zf = ZipFile(zip_path, "w")
-                for root, dirs, files in os.walk("."):
-                    zf.write(root)
+                with ZipFile(zip_path, "w") as zf:
+                    for root, dirs, files in os.walk("."):
+                        zf.write(root)
 
-                    # Validate requirements.txt in root-dir only
-                    if root == "." and REQUIREMENTS_FILE_NAME in files:
-                        # Remove requirement from file list
-                        path = files.pop(files.index(REQUIREMENTS_FILE_NAME))
-                        reqs = _extract_requirements_from_file(path)
-                        # Validate and format requirements
-                        req_path = _validate_requirements(reqs)
+                        # Validate requirements.txt in root-dir only
+                        if root == "." and REQUIREMENTS_FILE_NAME in files:
+                            # Remove requirement from file list
+                            path = files.pop(files.index(REQUIREMENTS_FILE_NAME))
+                            reqs = _extract_requirements_from_file(path)
+                            # Validate and format requirements
+                            parsed_reqs = _validate_and_parse_requirements(reqs)
+                            with NamedTemporaryFile() as nth:
+                                _write_requirements_to_file(nth.name, parsed_reqs)
+                                # NOTE: the actual file is not written.
+                                # A temporary formatted file is used instead
+                                zf.write(nth.name, arcname=REQUIREMENTS_FILE_NAME)
 
-                        # NOTE: the actual file is not written.
-                        # A temporary formatted file is used instead
-                        zf.write(req_path, arcname=REQUIREMENTS_FILE_NAME)
-
-                    for filename in files:
-                        zf.write(os.path.join(root, filename))
-
-                zf.close()
+                        for filename in files:
+                            zf.write(os.path.join(root, filename))
 
                 overwrite = True if external_id else False
                 file = cast(
@@ -466,8 +463,6 @@ class FunctionsAPI(APIClient):
             file_id = cast(int, file.id)
 
             return file_id
-        except Exception as e:
-            raise e
         finally:
             os.chdir(current_dir)
 
@@ -482,16 +477,16 @@ class FunctionsAPI(APIClient):
                 f.write(source)
 
             # Read and validate requirements
-            req_path = _get_requirements_handle(fn=function_handle)
+            with NamedTemporaryFile() as named_temp_file:
+                requirements_written = _write_fn_docstring_requirements_to_file(function_handle, named_temp_file.name)
 
-            zip_path = os.path.join(tmpdir, "function.zip")
-            zf = ZipFile(zip_path, "w")
-            zf.write(handle_path, arcname=HANDLER_FILE_NAME)
+                zip_path = os.path.join(tmpdir, "function.zip")
+                with ZipFile(zip_path, "w") as zf:
+                    zf.write(handle_path, arcname=HANDLER_FILE_NAME)
 
-            # Zip requirements.txt
-            if req_path:
-                zf.write(req_path, arcname=REQUIREMENTS_FILE_NAME)
-            zf.close()
+                    # Zip requirements.txt
+                    if requirements_written:
+                        zf.write(named_temp_file.name, arcname=REQUIREMENTS_FILE_NAME)
 
             overwrite = True if external_id else False
             file = cast(
@@ -576,8 +571,9 @@ def _use_client_credentials(
         client_id = client_credentials["client_id"]
         client_secret = client_credentials["client_secret"]
     else:
-        client_id = cognite_client.config.token_client_id
-        client_secret = cognite_client.config.token_client_secret
+        assert isinstance(cognite_client.config.credentials, OAuthClientCredentials)
+        client_id = cognite_client.config.credentials.client_id
+        client_secret = cognite_client.config.credentials.client_secret
 
     session_url = f"/api/v1/projects/{cognite_client.config.project}/sessions"
     payload = {"items": [{"clientId": client_id, "clientSecret": client_secret}]}
@@ -602,20 +598,14 @@ def _use_token_exchange(
         raise CogniteAPIError("Failed to create session using token exchange flow.", 403) from e
 
 
-def _using_client_credential_flow(
-    cognite_client: "CogniteClient",
-) -> bool:
-    """
-    Determine whether the Cognite client is configured for client-credential flow.
-    """
-    client_config = cognite_client.config
-    return cast(
-        bool,
-        client_config.token_client_secret
-        and client_config.token_client_id
-        and client_config.token_url
-        and client_config.token_scopes,
-    )
+def _using_token_exchange_flow(cognite_client: "CogniteClient") -> bool:
+    """Determine whether the Cognite client is configured with a token or token factory."""
+    return isinstance(cognite_client.config.credentials, Token)
+
+
+def _using_client_credential_flow(cognite_client: "CogniteClient") -> bool:
+    """Determine whether the Cognite client is configured for client-credential flow."""
+    return isinstance(cognite_client.config.credentials, OAuthClientCredentials)
 
 
 def convert_file_path_to_module_path(file_path: str) -> str:
@@ -716,18 +706,18 @@ def _extract_requirements_from_doc_string(docstr: str) -> Optional[List[str]]:
     return None
 
 
-def _validate_requirements(requirements: List[str]) -> str:
+def _validate_and_parse_requirements(requirements: List[str]) -> List[str]:
     """Validates the requirement specifications
 
     Args:
         requirements (list[str]): list of requirement specifications
-
     Raises:
         ValueError: if validation of requirements fails
-
     Returns:
-        str: output path of the requirements file
+        List[str]: The parsed requirements
     """
+    constructors = cast(Any, utils._auxiliary.local_import("pip._internal.req.constructors"))
+    install_req_from_line = constructors.install_req_from_line
     parsed_reqs: List[str] = []
     for req in requirements:
         try:
@@ -736,34 +726,34 @@ def _validate_requirements(requirements: List[str]) -> str:
             raise ValueError(str(e))
 
         parsed_reqs.append(str(parsed).strip())
-
-    tmp = NamedTemporaryFile()
-
-    # Write requirements to temporary file
-    with open(tmp.name, "w+") as f:
-        f.write("\n".join(parsed_reqs))
-        f.close()
-
-    return tmp.name
+    return parsed_reqs
 
 
-def _get_requirements_handle(fn: Callable) -> Optional[str]:
-    """Read requirements from a function docstring, and validate them
+def _write_requirements_to_file(file_path: str, requirements: List[str]) -> None:
+    with open(file_path, "w+") as f:
+        f.write("\n".join(requirements))
+
+
+def _write_fn_docstring_requirements_to_file(fn: Callable, file_path: str) -> bool:
+    """Read requirements from a function docstring, validate them, and write contents to the provided file path
 
     Args:
         fn (Callable): the function to read requirements from
+        file_path (str): Path of file to write requirements to
 
     Returns:
-        str: output path of the requirements file, or None if no requirements are specified
+        bool: whether or not anything was written to the file
     """
     docstr = getdoc(fn)
 
     if docstr:
         reqs = _extract_requirements_from_doc_string(docstr)
         if reqs:
-            return _validate_requirements(reqs)
+            parsed_reqs = _validate_and_parse_requirements(reqs)
+            _write_requirements_to_file(file_path, parsed_reqs)
+            return True
 
-    return None
+    return False
 
 
 class FunctionCallsAPI(APIClient):
@@ -1063,11 +1053,12 @@ class FunctionSchedulesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> schedule = c.functions.schedules.create(
-                    name= "My schedule",
-                    function_id=123,
-                    cron_expression="*/5 * * * *",
-                    client_credentials={"client_id": "...", "client_secret": "..."},
-                    description="This schedule does magic stuff.")
+                ...     name= "My schedule",
+                ...     function_id=123,
+                ...     cron_expression="*/5 * * * *",
+                ...     client_credentials={"client_id": "...", "client_secret": "..."},
+                ...     description="This schedule does magic stuff."
+                ... )
 
         """
         _get_function_identifier(function_id, function_external_id)

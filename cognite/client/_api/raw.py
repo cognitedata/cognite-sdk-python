@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence,
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
+from cognite.client.config import ClientConfig
 from cognite.client.data_classes import Database, DatabaseList, Row, RowList, Table, TableList
 from cognite.client.utils._auxiliary import local_import
 from cognite.client.utils._identifier import Identifier
@@ -295,7 +296,7 @@ class RawRowsAPI(APIClient):
 
     def __init__(
         self,
-        config: utils._client_config.ClientConfig,
+        config: ClientConfig,
         api_version: Optional[str] = None,
         cognite_client: "CogniteClient" = None,
     ) -> None:
@@ -378,7 +379,7 @@ class RawRowsAPI(APIClient):
             task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda row: row.get("key")
         )
 
-    def insert_dataframe(self, db_name: str, table_name: str, dataframe: Any) -> None:
+    def insert_dataframe(self, db_name: str, table_name: str, dataframe: Any, ensure_parent: bool = False) -> None:
         """`Insert pandas dataframe into a table <https://docs.cognite.com/api/v1/#operation/postRows>`_
 
         Use index as rowkeys.
@@ -405,7 +406,7 @@ class RawRowsAPI(APIClient):
         """
         df_dict = dataframe.to_dict(orient="index")
         rows = [Row(key=key, columns=cols) for key, cols in df_dict.items()]
-        self.insert(db_name, table_name, rows)
+        self.insert(db_name=db_name, table_name=table_name, row=rows, ensure_parent=ensure_parent)
 
     def _process_row_input(self, row: Union[Sequence[Row], Row, Dict]) -> List[Union[List, Dict]]:
         utils._auxiliary.assert_type(row, "row", [Sequence, dict, Row])

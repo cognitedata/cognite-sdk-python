@@ -5,6 +5,7 @@ import time
 
 import pytest
 
+from cognite.client.credentials import OAuthClientCredentials
 from cognite.client.data_classes import (
     OidcCredentials,
     Transformation,
@@ -16,23 +17,25 @@ from cognite.client.data_classes import (
 @pytest.fixture
 def new_transformation(cognite_client):
     prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
+    creds = cognite_client.config.credentials
+    assert isinstance(creds, OAuthClientCredentials)
     transform = Transformation(
         name="any",
         external_id=f"{prefix}-transformation",
         destination=TransformationDestination.assets(),
         query="select 'test-sdk-transfornations' as externalId, 'test-sdk-transfornations' as name",
         source_oidc_credentials=OidcCredentials(
-            client_id=cognite_client.config.token_client_id,
-            client_secret=cognite_client.config.token_client_secret,
-            scopes=",".join(cognite_client.config.token_scopes),
-            token_uri=cognite_client.config.token_url,
+            client_id=creds.client_id,
+            client_secret=creds.client_secret,
+            scopes=",".join(creds.scopes),
+            token_uri=creds.token_url,
             cdf_project_name=cognite_client.config.project,
         ),
         destination_oidc_credentials=OidcCredentials(
-            client_id=cognite_client.config.token_client_id,
-            client_secret=cognite_client.config.token_client_secret,
-            scopes=",".join(cognite_client.config.token_scopes),
-            token_uri=cognite_client.config.token_url,
+            client_id=creds.client_id,
+            client_secret=creds.client_secret,
+            scopes=",".join(creds.scopes),
+            token_uri=creds.token_url,
             cdf_project_name=cognite_client.config.project,
         ),
         ignore_null_fields=True,
