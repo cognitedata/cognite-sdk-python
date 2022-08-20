@@ -82,8 +82,8 @@ class DpsFetchOrchestrator:
     def _validate_and_split_user_queries(self, user_queries):
         split_qs = [], []
         all_queries = list(chain.from_iterable(uq.validate_and_create_queries() for uq in user_queries))
-        for q in all_queries:
-            split_qs[q.is_raw_query].append(q)
+        for query in all_queries:
+            split_qs[query.is_raw_query].append(query)
         return (all_queries, *split_qs)
 
     def _finalize_tasks(self, ordered_results) -> DatapointsArrayList:

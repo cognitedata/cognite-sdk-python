@@ -26,7 +26,7 @@ from cognite.client.data_classes import DatapointsArray
 from cognite.client.data_classes.datapoints import SingleTSQuery
 from cognite.client.utils._auxiliary import to_camel_case
 from cognite.client.utils._identifier import Identifier
-from cognite.client.utils._time import granularity_to_ms
+from cognite.client.utils._time import granularity_to_ms, split_time_range
 
 LOCK = threading.Lock()
 
@@ -220,7 +220,7 @@ class SplittingFetchSubtask(SerialFetchSubtask):
     def _split_self_into_new_subtasks_if_needed(self, last_ts: int) -> Optional[List[BaseDpsFetchSubtask]]:
         # How many new tasks because of % of time range was fetched?
         tot_ms = self.end - (start := self.prev_start)
-        remaining_ms = tot_ms - (part_ms := last_ts - start)
+        part_ms = last_ts - start
         ratio_retrieved = part_ms / tot_ms
         n_new_pct = math.floor(1 / ratio_retrieved)
         # How many new tasks because of limit left (if limit)?
@@ -233,8 +233,7 @@ class SplittingFetchSubtask(SerialFetchSubtask):
             return
         # Find a `delta_ms` thats a multiple of granularity in ms (trivial for raw queries).
         # ...we use `ceil` instead of `round` to make sure we "overshoot" `end`:
-        delta_ms = self.parent.offset_next * math.ceil(remaining_ms / n_new_tasks / self.parent.offset_next)
-        boundaries = [min(self.end, last_ts + delta_ms * i) for i in range(n_new_tasks + 1)]
+        boundaries = split_time_range(last_ts, self.end, n_new_tasks, self.parent.offset_next)
         self.end = boundaries[1]  # We shift end of 'self' backwards
 
         split_idxs = self._create_subtasks_idxs(n_new_tasks)
@@ -347,8 +346,7 @@ class BaseConcurrentTask:
         n_periods = self._find_number_of_subtasks_uniform_split(tot_ms, n_workers_per_queries)
         # Find a `delta_ms` thats a multiple of granularity in ms (trivial for raw queries).
         # ...we use `ceil` instead of `round` to make sure we "overshoot" `end`:
-        delta_ms = self.offset_next * math.ceil(tot_ms / n_periods / self.offset_next)
-        boundaries = [min(end, start + delta_ms * i) for i in range(n_periods + 1)]
+        boundaries = split_time_range(start, end, n_periods, self.offset_next)
         limit = self.query.limit - self.n_dps_first_batch if self.has_limit else None
         # Limited queries will be prioritised in chrono. order (to quit as early as possible):
         return [
@@ -590,7 +588,14 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
         self.ts_data[idx].append(np.fromiter(map(DpsUnpackFns.ts, dps), dtype=np.int64, count=n))
 
         if self.is_count_query:
-            self.count_data[idx].append(np.fromiter(map(DpsUnpackFns.count, dps), dtype=np.int64, count=n))
+            try:
+                arr = np.fromiter(map(DpsUnpackFns.count, dps), dtype=np.int64, count=n)
+            except KeyError:
+                # An interval with no datapoints (hence count does not exist) has data for another aggregate
+                # Since the resulting arrays share timestamp, we must cast count to float in order to store
+                # missing values as NaNs:
+                arr = np.array([dp.get("count") for dp in dps], dtype=np.float64)
+            self.count_data[idx].append(arr)
 
         if self.has_non_count_aggs:
             try:  # Fast method uses multi-key unpacking:
