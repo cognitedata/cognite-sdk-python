@@ -249,15 +249,17 @@ class FeatureList(CogniteResourceList):
             feature = Feature(external_id=row[external_id_column], data_set_id=row.get(data_set_id_column, None))
             for prop in feature_type.properties.items():
                 prop_name = prop[0]
-                # skip generated columns
-                if prop_name.startswith("_") or prop_name in ["createdTime", "lastUpdatedTime"]:
+                # skip generated columns and externalId, dataSetId columns
+                if prop_name.startswith("_") or prop_name in [
+                    "createdTime",
+                    "lastUpdatedTime",
+                    "externalId",
+                    "dataSetId",
+                ]:
                     continue
                 prop_type = prop[1]["type"]
                 prop_optional = prop[1].get("optional", False)
                 column_name = property_column_mapping.get(prop_name, None)
-                # skip parsed columns
-                if column_name in [external_id_column, data_set_id_column]:
-                    continue
                 column_value = row.get(column_name, None)
                 if column_name is None or column_value is None:
                     if prop_optional:
