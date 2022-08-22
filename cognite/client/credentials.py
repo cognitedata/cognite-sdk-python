@@ -94,7 +94,84 @@ class _OAuthCredentialProviderWithTokenRefresh(CredentialProvider):
         return "Authorization", f"Bearer {self.__access_token}"
 
 
-class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh):
+class _WithMsalSerializableTokenCache:
+    @staticmethod
+    def _create_serializable_token_cache(cache_path: Path) -> SerializableTokenCache:
+        token_cache = SerializableTokenCache()
+
+        if cache_path.exists():
+            with cache_path.open() as fh:
+                token_cache.deserialize(fh.read())
+
+        def __at_exit() -> None:
+            if token_cache.has_state_changed:
+                with open(cache_path, "w") as fh:
+                    fh.write(token_cache.serialize())
+
+        atexit.register(__at_exit)
+        return token_cache
+
+
+class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerializableTokenCache):
+    """OAuth credential provider for the device code login flow.
+
+    Args:
+        authority_url (str): OAuth authority url
+        client_id (str): Your application's client id.
+        scopes (List[str]): A list of scopes.
+
+    Examples:
+
+            >>> from cognite.client.credentials import OAuthInteractive
+            >>> import os
+            >>> oauth_provider = OAuthDeviceCode(
+            ...     authority_url="https://login.microsoftonline.com/xyz",
+            ...     client_id="abcd",
+            ...     scopes=["https://greenfield.cognitedata.com/.default"],
+            ... )
+    """
+
+    def __init__(self, authority_url: str, client_id: str, scopes: List[str]) -> None:
+        super().__init__()
+        self.__authority_url = authority_url
+        self.__client_id = client_id
+        self.__scopes = scopes
+
+        # In addition to caching in memory, we also cache the token on disk so it can be reused across processes.
+        token_cache_path = Path(f"/tmp/cognitetokencache.{self.__client_id}.bin")
+        serializable_token_cache = self._create_serializable_token_cache(token_cache_path)
+        self.__app = PublicClientApplication(
+            client_id=self.__client_id, authority=self.__authority_url, token_cache=serializable_token_cache
+        )
+
+    @property
+    def authority_url(self) -> str:
+        return self.__authority_url
+
+    @property
+    def client_id(self) -> str:
+        return self.__client_id
+
+    @property
+    def scopes(self) -> List[str]:
+        return self.__scopes
+
+    def _refresh_access_token(self) -> Tuple[str, float]:
+        # First check if there is a serialized token cached on disk.
+        accounts = self.__app.get_accounts()
+        credentials = self.__app.acquire_token_silent(scopes=self.__scopes, account=accounts[0]) if accounts else None
+
+        # If not, we acquire a new token interactively
+        if credentials is None:
+            device_flow = self.__app.initiate_device_flow(scopes=self.__scopes)
+            # print device code to screen
+            print(f"Device code: {device_flow['message']}")
+            credentials = self.__app.acquire_token_by_device_flow(flow=device_flow)
+
+        return credentials["access_token"], datetime.now().timestamp() + credentials["expires_in"]
+
+
+class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerializableTokenCache):
     """OAuth credential provider for an interactive login flow.
 
     Make sure you have http://localhost:port in Redirect URI in App Registration as type "Mobile and desktop applications".
@@ -110,7 +187,7 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh):
             >>> from cognite.client.credentials import OAuthInteractive
             >>> import os
             >>> oauth_provider = OAuthInteractive(
-            ...     token_url="https://login.microsoftonline.com/xyz",
+            ...     authority_url="https://login.microsoftonline.com/xyz",
             ...     client_id="abcd",
             ...     scopes=["https://greenfield.cognitedata.com/.default"],
             ... )
@@ -125,26 +202,10 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh):
 
         # In addition to caching in memory, we also cache the token on disk so it can be reused across processes.
         token_cache_path = Path(f"/tmp/cognitetokencache.{self.__client_id}.bin")
-        serializable_token_cache = self.__create_serializable_token_cache(token_cache_path)
+        serializable_token_cache = self._create_serializable_token_cache(token_cache_path)
         self.__app = PublicClientApplication(
             client_id=self.__client_id, authority=self.__authority_url, token_cache=serializable_token_cache
         )
-
-    @staticmethod
-    def __create_serializable_token_cache(cache_path: Path) -> SerializableTokenCache:
-        token_cache = SerializableTokenCache()
-
-        if cache_path.exists():
-            with cache_path.open() as fh:
-                token_cache.deserialize(fh.read())
-
-        def __at_exit() -> None:
-            if token_cache.has_state_changed:
-                with open(cache_path, "w") as fh:
-                    fh.write(token_cache.serialize())
-
-        atexit.register(__at_exit)
-        return token_cache
 
     @property
     def authority_url(self) -> str:
