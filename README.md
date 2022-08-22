@@ -21,18 +21,31 @@ Fusion (CDF).
 
 ## Installation
 
-### without pandas or geopandas support
+### Without any optional dependencies
 
 To install this package without pandas and geopandas support:
 ```bash
 $ pip install cognite-sdk
 ```
 
-### with pandas and geopandas support
+### With optional dependencies
+A number of optional dependencies may be specified in order to support a wider set of features.
+The available extras are:
+- pandas ["pandas"]
+- geo ["geopandas", "shapely"]
+- sympy ["sympy"]
+- functions ["pip"]
+- all ["pandas", "geopandas", "shapely", "sympy", "pip"]
 
-To install with pandas, geopandas and shapely support.
+To include optional dependencies, specify them like this with pip:
+
 ```bash
 $ pip install cognite-sdk[pandas, geo]
+```
+
+or like this if you are using poetry:
+```bash
+$ poetry add cognite-sdk -E pandas -E geo
 ```
 
 ### Windows specific
@@ -47,10 +60,6 @@ conda activate geo_env
 conda install --channel conda-forge geopandas
 pip install cognite-sdk
 ```
-
-## Examples
-For a collection of scripts and Jupyter Notebooks that explain how to perform various tasks in Cognite Data Fusion (CDF) 
-using Python, see the GitHub repository [here](https://github.com/cognitedata/cognite-python-docs)
 
 ## Changelog
 Wondering about upcoming or previous changes to the SDK? Take a look at the [CHANGELOG](https://github.com/cognitedata/cognite-sdk-python/blob/master/CHANGELOG.md).
