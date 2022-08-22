@@ -110,7 +110,7 @@ class Feature(CogniteResource):
         instance = cls(cognite_client=cognite_client)
         for key, value in resource.items():
             # Keep properties defined in Feature Type as is
-            normalized_key = to_feature_property_name(key)
+            normalized_key = _to_feature_property_name(key)
             setattr(instance, normalized_key, value)
         return instance
 
@@ -169,7 +169,7 @@ def _is_reserved_property(property_name: str) -> bool:
     return property_name.startswith("_") or property_name in RESERVED_PROPERTIES
 
 
-def to_feature_property_name(property_name: str) -> str:
+def _to_feature_property_name(property_name: str) -> str:
     return utils._auxiliary.to_snake_case(property_name) if property_name in RESERVED_PROPERTIES else property_name
 
 
@@ -265,7 +265,7 @@ class FeatureList(CogniteResourceList):
                     else:
                         raise ValueError(f"Missing value for property {prop_name}")
 
-                prop_name = to_feature_property_name(prop_name)
+                prop_name = _to_feature_property_name(prop_name)
                 if _is_geometry_type(prop_type):
                     setattr(feature, prop_name, {"wkt": column_value.wkt})
                 else:
