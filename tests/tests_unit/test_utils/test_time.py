@@ -49,14 +49,17 @@ class TestTimestampToMs:
     def test_ms(self):
         assert 1514760000000 == utils._time.timestamp_to_ms(1514760000000)
         assert 1514764800000 == utils._time.timestamp_to_ms(1514764800000)
+        assert -1514764800000 == utils._time.timestamp_to_ms(-1514764800000)
 
     def test_datetime(self):
         assert 1514764800000 == utils._time.timestamp_to_ms(datetime(2018, 1, 1))
         assert 1546300800000 == utils._time.timestamp_to_ms(datetime(2019, 1, 1))
+        assert -2208988800000 == utils._time.timestamp_to_ms(datetime(1900, 1, 1))
 
     def test_float(self):
         assert 1514760000000 == utils._time.timestamp_to_ms(1514760000000.0)
         assert 1514764800000 == utils._time.timestamp_to_ms(1514764800000.0)
+        assert -1514764800000 == utils._time.timestamp_to_ms(-1514764800000.0)
 
     @mock.patch("cognite.client.utils._time.time.time")
     @pytest.mark.parametrize(
