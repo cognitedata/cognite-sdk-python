@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [4.1.2] - 2022-08-22
+### Changed
+- Change timeseries datapoints' time range to start from 01.01.1900
+
 ## [4.1.1] - 2022-08-19
 ### Fixed
 - Fixed the issue on SDK when Python installation didn't include pip.
