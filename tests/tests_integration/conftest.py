@@ -4,7 +4,8 @@ import random
 import pytest
 from msal import PublicClientApplication
 
-from cognite.client import CogniteClient
+from cognite.client import ClientConfig, CogniteClient
+from cognite.client.credentials import OAuthClientCredentials, Token
 
 
 def make_cognite_client_with_interactive_flow() -> CogniteClient:
@@ -14,14 +15,31 @@ def make_cognite_client_with_interactive_flow() -> CogniteClient:
     app = PublicClientApplication(client_id=client_id, authority=authority_url)
     redirect_port = random.randint(53000, 60000)  # random port so we can run the test suite in parallel
     creds = app.acquire_token_interactive(scopes=scopes, port=redirect_port)
-    return CogniteClient(token=creds["access_token"])
+    cnf = ClientConfig(
+        client_name=os.environ["COGNITE_CLIENT_NAME"],
+        project=os.environ["COGNITE_PROJECT"],
+        base_url=os.environ["COGNITE_BASE_URL"],
+        credentials=Token(creds["access_token"]),
+    )
+    return CogniteClient(cnf)
 
 
 @pytest.fixture(scope="session")
 def cognite_client() -> CogniteClient:
     login_flow = os.environ["LOGIN_FLOW"].lower()
     if login_flow == "client_credentials":
-        return CogniteClient()
+        cnf = ClientConfig(
+            client_name=os.environ["COGNITE_CLIENT_NAME"],
+            project=os.environ["COGNITE_PROJECT"],
+            base_url=os.environ["COGNITE_BASE_URL"],
+            credentials=OAuthClientCredentials(
+                token_url=os.environ["COGNITE_TOKEN_URL"],
+                client_id=os.environ["COGNITE_CLIENT_ID"],
+                client_secret=os.environ["COGNITE_CLIENT_SECRET"],
+                scopes=os.environ["COGNITE_TOKEN_SCOPES"].split(","),
+            ),
+        )
+        return CogniteClient(cnf)
     elif login_flow == "interactive":
         return make_cognite_client_with_interactive_flow()
     else:

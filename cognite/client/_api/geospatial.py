@@ -34,17 +34,17 @@ class GeospatialAPI(APIClient):
         ...
 
     @overload
-    def create_feature_types(self, feature_type: List[FeatureType]) -> FeatureTypeList:
+    def create_feature_types(self, feature_type: Sequence[FeatureType]) -> FeatureTypeList:
         ...
 
     def create_feature_types(
-        self, feature_type: Union[FeatureType, List[FeatureType]]
+        self, feature_type: Union[FeatureType, Sequence[FeatureType]]
     ) -> Union[FeatureType, FeatureTypeList]:
         """`Creates feature types`
         <https://docs.cognite.com/api/v1/#operation/createFeatureTypes>
 
         Args:
-            feature_type (Union[FeatureType, List[FeatureType]]): feature type definition or list of feature type definitions to create.
+            feature_type (Union[FeatureType, Sequence[FeatureType]]): feature type definition or list of feature type definitions to create.
 
         Returns:
             Union[FeatureType, FeatureTypeList]: Created feature type definition(s)
@@ -73,12 +73,12 @@ class GeospatialAPI(APIClient):
             resource_path=f"{self._RESOURCE_PATH}/featuretypes",
         )
 
-    def delete_feature_types(self, external_id: Union[str, List[str]], recursive: bool = False) -> None:
+    def delete_feature_types(self, external_id: Union[str, Sequence[str]], recursive: bool = False) -> None:
         """`Delete one or more feature type`
         <https://docs.cognite.com/api/v1/#operation/GeospatialDeleteFeatureTypes>
 
         Args:
-            external_id (Union[str, List[str]]): External ID or list of external ids
+            external_id (Union[str, Sequence[str]]): External ID or list of external ids
             recursive (bool): if `true` the features will also be dropped
 
         Returns:
@@ -157,12 +157,12 @@ class GeospatialAPI(APIClient):
             resource_path=f"{self._RESOURCE_PATH}/featuretypes",
         )
 
-    def update_feature_types(self, update: Union[FeatureTypeUpdate, List[FeatureTypeUpdate]]) -> FeatureTypeList:
+    def update_feature_types(self, update: Union[FeatureTypeUpdate, Sequence[FeatureTypeUpdate]]) -> FeatureTypeList:
         """`Update feature types (Deprecated)`
         <https://docs.cognite.com/api/v1/#operation/updateFeatureTypes>
 
         Args:
-            update (Union[FeatureTypeUpdate, List[FeatureTypeUpdate]]): the update to apply
+            update (Union[FeatureTypeUpdate, Sequence[FeatureTypeUpdate]]): the update to apply
 
         Returns:
             FeatureTypeList: The updated feature types.
@@ -213,12 +213,12 @@ class GeospatialAPI(APIClient):
         res = self._post(url_path=f"{self._RESOURCE_PATH}/featuretypes/update", json=json)
         return FeatureTypeList._load(res.json()["items"], cognite_client=self._cognite_client)
 
-    def patch_feature_types(self, patch: Union[FeatureTypePatch, List[FeatureTypePatch]]) -> FeatureTypeList:
+    def patch_feature_types(self, patch: Union[FeatureTypePatch, Sequence[FeatureTypePatch]]) -> FeatureTypeList:
         """`Patch feature types`
         <https://docs.cognite.com/api/v1/#operation/updateFeatureTypes>
 
         Args:
-            patch (Union[FeatureTypePatch, List[FeatureTypePatch]]): the patch to apply
+            patch (Union[FeatureTypePatch, Sequence[FeatureTypePatch]]): the patch to apply
 
         Returns:
             FeatureTypeList: The patched feature types.
@@ -283,7 +283,7 @@ class GeospatialAPI(APIClient):
     def create_features(
         self,
         feature_type_external_id: str,
-        feature: Union[List[Feature], FeatureList],
+        feature: Union[Sequence[Feature], FeatureList],
         allow_crs_transformation: bool = False,
         chunk_size: int = None,
     ) -> FeatureList:
@@ -292,7 +292,7 @@ class GeospatialAPI(APIClient):
     def create_features(
         self,
         feature_type_external_id: str,
-        feature: Union[Feature, List[Feature], FeatureList],
+        feature: Union[Feature, Sequence[Feature], FeatureList],
         allow_crs_transformation: bool = False,
         chunk_size: int = None,
     ) -> Union[Feature, FeatureList]:
@@ -351,13 +351,13 @@ class GeospatialAPI(APIClient):
             limit=chunk_size,
         )
 
-    def delete_features(self, feature_type_external_id: str, external_id: Union[str, List[str]] = None) -> None:
+    def delete_features(self, feature_type_external_id: str, external_id: Union[str, Sequence[str]] = None) -> None:
         """`Delete one or more feature`
         <https://docs.cognite.com/api/v1/#operation/deleteFeatures>
 
         Args:
             feature_type_external_id : Feature type external id for the features to delete.
-            external_id (Union[str, List[str]]): External ID or list of external ids
+            external_id (Union[str, Sequence[str]]): External ID or list of external ids
 
         Returns:
             None
@@ -437,7 +437,7 @@ class GeospatialAPI(APIClient):
     def update_features(
         self,
         feature_type_external_id: str,
-        feature: Union[Feature, List[Feature]],
+        feature: Union[Feature, Sequence[Feature]],
         allow_crs_transformation: bool = False,
         chunk_size: int = None,
     ) -> FeatureList:
@@ -446,7 +446,7 @@ class GeospatialAPI(APIClient):
 
         Args:
             feature_type_external_id : Feature type definition for the features to update.
-            feature (Union[Feature, List[Feature]]): feature or list of features.
+            feature (Union[Feature, Sequence[Feature]]): feature or list of features.
             allow_crs_transformation: If true, then input geometries will be transformed into the Coordinate Reference
                 System defined in the feature type specification. When it is false, then requests with geometries in
                 Coordinate Reference System different from the ones defined in the feature type will result in
@@ -497,7 +497,7 @@ class GeospatialAPI(APIClient):
         filter: Optional[Dict[str, Any]] = None,
         properties: Dict[str, Any] = None,
         limit: int = 100,
-        order_by: List[OrderSpec] = None,
+        order_by: Sequence[OrderSpec] = None,
         allow_crs_transformation: bool = False,
     ) -> FeatureList:
         """`Search for features`
@@ -512,7 +512,7 @@ class GeospatialAPI(APIClient):
             filter (Dict[str, Any]): the search filter
             limit (int): maximum number of results
             properties (Dict[str, Any]): the output property selection
-            order_by (List[OrderSpec]): the order specification
+            order_by (Sequence[OrderSpec]): the order specification
             allow_crs_transformation: If true, then input geometries will be transformed into the Coordinate Reference
                 System defined in the feature type specification. When it is false, then requests with geometries in
                 Coordinate Reference System different from the ones defined in the feature type will result in
@@ -683,9 +683,9 @@ class GeospatialAPI(APIClient):
         self,
         feature_type_external_id: str,
         property: str,
-        aggregates: List[str],
+        aggregates: Sequence[str],
         filter: Optional[Dict[str, Any]] = None,
-        group_by: List[str] = None,
+        group_by: Sequence[str] = None,
     ) -> FeatureAggregateList:
         """`Aggregate filtered features`
         <https://docs.cognite.com/api/v1/#operation/aggregateFeatures>
@@ -694,8 +694,8 @@ class GeospatialAPI(APIClient):
             feature_type_external_id: the feature type to filter features from
             filter (Dict[str, Any]): the search filter
             property (str): the property for which aggregates should be calculated
-            aggregates (List[str]): list of aggregates to be calculated
-            group_by (List[str]): list of properties to group by with
+            aggregates (Sequence[str]): list of aggregates to be calculated
+            group_by (Sequence[str]): list of properties to group by with
 
         Returns:
             FeatureAggregateList: the filtered features
@@ -728,12 +728,12 @@ class GeospatialAPI(APIClient):
         )
         return cls._load(res.json()["items"], cognite_client=self._cognite_client)
 
-    def get_coordinate_reference_systems(self, srids: Union[int, List[int]]) -> CoordinateReferenceSystemList:
+    def get_coordinate_reference_systems(self, srids: Union[int, Sequence[int]]) -> CoordinateReferenceSystemList:
         """`Get Coordinate Reference Systems`
         <https://docs.cognite.com/api/v1/#operation/getCoordinateReferenceSystem>
 
         Args:
-            srids: (Union[int, List[int]]): SRID or list of SRIDs
+            srids: (Union[int, Sequence[int]]): SRID or list of SRIDs
 
         Returns:
             CoordinateReferenceSystemList: Requested CRSs.
@@ -778,7 +778,7 @@ class GeospatialAPI(APIClient):
         return CoordinateReferenceSystemList._load(res.json()["items"], cognite_client=self._cognite_client)
 
     def create_coordinate_reference_systems(
-        self, crs: Union[CoordinateReferenceSystem, List[CoordinateReferenceSystem]]
+        self, crs: Union[CoordinateReferenceSystem, Sequence[CoordinateReferenceSystem]]
     ) -> CoordinateReferenceSystemList:
         """`Create Coordinate Reference System`
         <https://docs.cognite.com/api/v1/#operation/createGeospatialCoordinateReferenceSystems>
@@ -838,12 +838,12 @@ class GeospatialAPI(APIClient):
         )
         return CoordinateReferenceSystemList._load(res.json()["items"], cognite_client=self._cognite_client)
 
-    def delete_coordinate_reference_systems(self, srids: Union[int, List[int]]) -> None:
+    def delete_coordinate_reference_systems(self, srids: Union[int, Sequence[int]]) -> None:
         """`Delete Coordinate Reference System`
         <https://docs.cognite.com/api/v1/#operation/deleteGeospatialCoordinateReferenceSystems>
 
         Args:
-            srids: (Union[int, List[int]]): SRID or list of SRIDs
+            srids: (Union[int, Sequence[int]]): SRID or list of SRIDs
 
         Returns:
             None

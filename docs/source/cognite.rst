@@ -3,44 +3,58 @@ Quickstart
 Authenticate
 ------------
 
-The preferred way to authenticating against the Cognite API is using OpenID Connect (OIDC). To enable this, the CogniteClient
-accepts a token provider function.
+The preferred way to authenticating against the Cognite API is using OpenID Connect (OIDC).
+To enable this, use one of the credential providers such as OAuthClientCredentials:
 
 .. code:: python
 
-    >>> from cognite.client import CogniteClient
+    >>> from cognite.client import CogniteClient, ClientConfig
+    >>> from cognite.client.credentials import OAuthClientCredentials
+    >>>
+    >>> creds = OAuthClientCredentials(token_url=..., client_id=..., client_secret=..., scopes=[...])
+    >>> cnf = ClientConfig(client_name="my-special-client", project="my-project", credentials=creds)
+    >>> c = CogniteClient(cnf)
+
+or make your own credential provider:
+
+.. code:: python
+
+    >>> from cognite.client import CogniteClient, ClientConfig
+    >>> from cognite.client.credentials import Token
     >>> def token_provider():
     >>>     ...
-    >>> c = CogniteClient(token=token_provider)
+    >>>
+    >>> cnf = ClientConfig(client_name="my-special-client", project="my-project", credentials=Token(token_provider))
+    >>> c = CogniteClient(cnf)
 
 For details on different ways of implementing the token provider, take a look at
 `this guide <https://github.com/cognitedata/python-oidc-authentication>`_.
 
-If OIDC has not been enabled for your CDF project, you will want to authenticate using an API key. You can do this by setting the following environment
-variable
-
-.. code:: bash
-
-    $ export COGNITE_API_KEY = <your-api-key>
-
-or by passing the API key directly to the CogniteClient.
+If OIDC has not been enabled for your CDF project, you will want to authenticate using an API key.
 
 .. code:: python
 
-    >>> from cognite.client import CogniteClient
-    >>> c = CogniteClient(api_key="<your-api-key>", client_name="<your-client-name>")
+    >>> from cognite.client import CogniteClient, ClientConfig
+    >>> from cognite.client.credentials import APIKey
+    >>> cnf = ClientConfig(client_name="<your-client-name>", project="my-project", credentials=APIKey("very-secret"))
+    >>> c = CogniteClient(cnf)
 
 Instantiate a new client
 ------------------------
 Use this code to instantiate a client and get your login status. CDF returns an object with
 attributes that describe which project and service account your API key belongs to. The :code:`client_name`
-is an user-defined string intended to give the client a unique identifier. You
-can provide the :code:`client_name` through the :code:`COGNITE_CLIENT_NAME` environment variable or by passing it directly to the :code:`CogniteClient` constructor.
-All examples in this documentation assume that :code:`COGNITE_CLIENT_NAME` has been set.
+is a user-defined string intended to give the client a unique identifier. You
+can provide the :code:`client_name` by passing it directly to the :code:`ClientConfig` constructor.
+
+You may set a default client configuration which will be used if no config is passed to CogniteClient.
+All examples in this documentation assume that a default configuration has been set.
 
 .. code:: python
 
-    >>> from cognite.client import CogniteClient
+    >>> from cognite.client import CogniteClient, ClientConfig, global_config
+    >>> from cognite.client.credentials import APIKey
+    >>> cnf = ClientConfig(client_name="my-special-client", project="my-project", credentials=APIKey("very-secret"))
+    >>> global_config.default_client_config = cnf
     >>> c = CogniteClient()
     >>> status = c.login.status()
 
@@ -183,38 +197,35 @@ Client configuration
 --------------------
 You can pass configuration arguments directly to the :code:`CogniteClient` constructor, for example to configure the base url of your requests and additional headers. For a list of all configuration arguments, see the `CogniteClient`_ class definition.
 
-Environment configuration
+global configuration
 -------------------------
-You can set default configurations with these environment variables:
+You can set global configuration options like this:
 
-.. code:: bash
+.. code:: python
 
-    # Can be overridden by Client Configuration
-    $ export COGNITE_API_KEY = <your-api-key>
-    $ export COGNITE_PROJECT = <your-default-project>
-    $ export COGNITE_BASE_URL = http://<host>:<port>
-    $ export COGNITE_CLIENT_NAME = <user-defined-client-or-app-name>
-    $ export COGNITE_MAX_WORKERS = <number-of-workers>
-    $ export COGNITE_TIMEOUT = <num-of-seconds>
-    $ export COGNITE_FILE_TRANSFER_TIMEOUT = <num-of-seconds>
+    from cognite.client import global_config, ClientConfig
+    from cognite.client.credentials import APIKey
+    global_config.default_client_config = ClientConfig(
+        client_name="my-client", project="myproj", credentials=APIKey("verysecret")
+    )
+    global_config.disable_pypi_version_check = True
+    global_config.disable_gzip = False
+    global_config.disable_ssl = False
+    global_config.max_retries = 10
+    global_config.max_retry_backoff = 10
+    global_config.max_connection_pool_size = 10
+    global_config.status_forcelist = {429, 502, 503}
 
-    # Global Configuration
-    $ export COGNITE_DISABLE_PYPI_VERSION_CHECK = "0"
-    $ export COGNITE_DISABLE_GZIP = "0"
-    $ export COGNITE_DISABLE_SSL = "0"
-    $ export COGNITE_MAX_RETRIES = <number-of-retries>
-    $ export COGNITE_MAX_RETRY_BACKOFF = <number-of-seconds>
-    $ export COGNITE_MAX_CONNECTION_POOL_SIZE = <number-of-connections-in-pool>
-    $ export COGNITE_STATUS_FORCELIST = "429,502,503"
+These must be set prior to instantiating a CogniteClient in order for them to take effect.
 
 Concurrency and connection pooling
 ----------------------------------
 This library does not expose API limits to the user. If your request exceeds API limits, the SDK splits your
 request into chunks and performs the sub-requests in parallel. To control how many concurrent requests you send
-to the API, you can either pass the :code:`max_workers` attribute when you instantiate the :code:`CogniteClient` or set the :code:`COGNITE_MAX_WORKERS` environment variable.
+to the API, you can either pass the :code:`max_workers` attribute when you instantiate the :code:`CogniteClient` or set the :code:`max_workers` config option.
 
 If you are working with multiple instances of :code:`CogniteClient`, all instances will share the same connection pool.
-If you have several instances, you can increase the max connection pool size to reuse connections if you are performing a large amount of concurrent requests. You can increase the max connection pool size by setting the :code:`COGNITE_MAX_CONNECTION_POOL_SIZE` environment variable.
+If you have several instances, you can increase the max connection pool size to reuse connections if you are performing a large amount of concurrent requests. You can increase the max connection pool size by setting the :code:`max_connection_pool_size` config option.
 
 Extensions and optional dependencies
 ====================================
@@ -269,8 +280,26 @@ CogniteClient
     :members:
     :member-order: bysource
 
+.. autoclass:: cognite.client.config.ClientConfig
+    :members:
+    :member-order: bysource
+
+.. autoclass:: cognite.client.config.GlobalConfig
+    :members:
+    :member-order: bysource
+
+
 Authentication
 --------------
+Credential Providers
+^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: cognite.client.credentials.Token
+    :members:
+    :member-order: bysource
+.. autoclass:: cognite.client.credentials.OAuthClientCredentials
+    :members:
+    :member-order: bysource
+
 Get login status
 ^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.login.LoginAPI.status
@@ -496,6 +525,71 @@ Data classes
     :members:
     :show-inheritance:
 
+Functions
+---------
+
+Create function
+^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.functions.FunctionsAPI.create
+
+Delete function
+^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.functions.FunctionsAPI.delete
+
+List functions
+^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.functions.FunctionsAPI.list
+
+Retrieve function
+^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.functions.FunctionsAPI.retrieve
+
+Retrieve multiple functions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.functions.FunctionsAPI.retrieve_multiple
+
+Call function
+^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.functions.FunctionsAPI.call
+
+
+Function calls
+^^^^^^^^^^^^^^
+List function calls
+~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.functions.FunctionCallsAPI.list
+
+Retrieve function call
+~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.functions.FunctionCallsAPI.retrieve
+
+Retrieve function call response
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.functions.FunctionCallsAPI.get_response
+
+Retrieve function call logs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.functions.FunctionCallsAPI.get_logs
+
+Function schedules
+^^^^^^^^^^^^^^^^^^
+List function schedules
+~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.functions.FunctionSchedulesAPI.list
+
+Create function schedule
+~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.functions.FunctionSchedulesAPI.create
+
+Delete function schedule
+~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.functions.FunctionSchedulesAPI.delete
+
+Data classes
+^^^^^^^^^^^^
+.. automodule:: cognite.client.data_classes.functions
+    :members:
+    :show-inheritance:
 
 Time series
 -----------

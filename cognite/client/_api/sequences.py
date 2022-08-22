@@ -1,6 +1,8 @@
 import copy
 import math
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional
+from typing import Sequence as SequenceType
+from typing import Tuple, Union, cast, overload
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -33,11 +35,11 @@ class SequencesAPI(APIClient):
         name: str = None,
         external_id_prefix: str = None,
         metadata: Dict[str, str] = None,
-        asset_ids: List[int] = None,
-        asset_subtree_ids: List[int] = None,
-        asset_subtree_external_ids: List[str] = None,
-        data_set_ids: List[int] = None,
-        data_set_external_ids: List[str] = None,
+        asset_ids: SequenceType[int] = None,
+        asset_subtree_ids: SequenceType[int] = None,
+        asset_subtree_external_ids: SequenceType[str] = None,
+        data_set_ids: SequenceType[int] = None,
+        data_set_external_ids: SequenceType[str] = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         limit: int = None,
@@ -51,11 +53,11 @@ class SequencesAPI(APIClient):
             name (str): Filter out sequences that do not have this *exact* name.
             external_id_prefix (str): Filter out sequences that do not have this string as the start of the externalId
             metadata (Dict[str, Any]): Filter out sequences that do not match these metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
-            asset_ids (List[int]): Filter out sequences that are not linked to any of these assets.
-            asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
-            asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
-            data_set_ids (List[int]): Return only events in the specified data sets with these ids.
-            data_set_external_ids (List[str]): Return only events in the specified data sets with these external ids.
+            asset_ids (SequenceType[int]): Filter out sequences that are not linked to any of these assets.
+            asset_subtree_ids (SequenceType[int]): List of asset subtrees ids to filter on.
+            asset_subtree_external_ids (SequenceType[str]): List of asset subtrees external ids to filter on.
+            data_set_ids (SequenceType[int]): Return only events in the specified data sets with these ids.
+            data_set_external_ids (SequenceType[str]): Return only events in the specified data sets with these external ids.
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             limit (int, optional): Max number of sequences to return. Defaults to return all items.
@@ -131,15 +133,15 @@ class SequencesAPI(APIClient):
 
     def retrieve_multiple(
         self,
-        ids: Optional[List[int]] = None,
-        external_ids: Optional[List[str]] = None,
+        ids: Optional[SequenceType[int]] = None,
+        external_ids: Optional[SequenceType[str]] = None,
         ignore_unknown_ids: bool = False,
     ) -> SequenceList:
         """`Retrieve multiple sequences by id. <https://docs.cognite.com/api/v1/#operation/getSequenceById>`_
 
         Args:
-            ids (List[int], optional): IDs
-            external_ids (List[str], optional): External IDs
+            ids (SequenceType[int], optional): IDs
+            external_ids (SequenceType[str], optional): External IDs
             ignore_unknown_ids (bool, optional): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -169,11 +171,11 @@ class SequencesAPI(APIClient):
         name: str = None,
         external_id_prefix: str = None,
         metadata: Dict[str, str] = None,
-        asset_ids: List[int] = None,
-        asset_subtree_ids: List[int] = None,
-        asset_subtree_external_ids: List[str] = None,
-        data_set_ids: List[int] = None,
-        data_set_external_ids: List[str] = None,
+        asset_ids: SequenceType[int] = None,
+        asset_subtree_ids: SequenceType[int] = None,
+        asset_subtree_external_ids: SequenceType[str] = None,
+        data_set_ids: SequenceType[int] = None,
+        data_set_external_ids: SequenceType[str] = None,
         created_time: (Union[Dict[str, Any], TimestampRange]) = None,
         last_updated_time: (Union[Dict[str, Any], TimestampRange]) = None,
         limit: Optional[int] = 25,
@@ -186,11 +188,11 @@ class SequencesAPI(APIClient):
             name (str): Filter out sequences that do not have this *exact* name.
             external_id_prefix (str): Filter out sequences that do not have this string as the start of the externalId
             metadata (Dict[str, Any]): Filter out sequences that do not match these metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
-            asset_ids (List[int]): Filter out sequences that are not linked to any of these assets.
-            asset_subtree_ids (List[int]): List of asset subtrees ids to filter on.
-            asset_subtree_external_ids (List[str]): List of asset subtrees external ids to filter on.
-            data_set_ids (List[int]): Return only events in the specified data sets with these ids.
-            data_set_external_ids (List[str]): Return only events in the specified data sets with these external ids.
+            asset_ids (SequenceType[int]): Filter out sequences that are not linked to any of these assets.
+            asset_subtree_ids (SequenceType[int]): List of asset subtrees ids to filter on.
+            asset_subtree_external_ids (SequenceType[str]): List of asset subtrees external ids to filter on.
+            data_set_ids (SequenceType[int]): Return only events in the specified data sets with these ids.
+            data_set_external_ids (SequenceType[str]): Return only events in the specified data sets with these external ids.
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             limit (int, optional): Max number of sequences to return. Defaults to 25. Set to -1, float("inf") or None
@@ -268,14 +270,14 @@ class SequencesAPI(APIClient):
         ...
 
     @overload
-    def create(self, sequence: List[Sequence]) -> SequenceList:
+    def create(self, sequence: SequenceType[Sequence]) -> SequenceList:
         ...
 
-    def create(self, sequence: Union[Sequence, List[Sequence]]) -> Union[Sequence, SequenceList]:
+    def create(self, sequence: Union[Sequence, SequenceType[Sequence]]) -> Union[Sequence, SequenceList]:
         """`Create one or more sequences. <https://docs.cognite.com/api/v1/#operation/createSequence>`_
 
         Args:
-            sequence (Union[Sequence, List[Sequence]]): Sequence or list of Sequence to create.
+            sequence (Union[Sequence, SequenceType[Sequence]]): Sequence or list of Sequence to create.
                 The Sequence columns parameter is a list of objects with fields
                 `externalId` (external id of the column, when omitted, they will be given ids of 'column0, column1, ...'),
                 `valueType` (data type of the column, either STRING, LONG, or DOUBLE, with default DOUBLE),
@@ -300,8 +302,8 @@ class SequencesAPI(APIClient):
                 >>> seq2 = c.sequences.create(Sequence(external_id="my_copied_sequence", columns=seq.columns))
 
         """
-        utils._auxiliary.assert_type(sequence, "sequences", [List, Sequence])
-        if isinstance(sequence, list):
+        utils._auxiliary.assert_type(sequence, "sequences", [SequenceType, Sequence])
+        if isinstance(sequence, SequenceType):
             sequence = [self._clean_columns(seq) for seq in sequence]
         else:
             sequence = self._clean_columns(sequence)
@@ -324,12 +326,14 @@ class SequencesAPI(APIClient):
                 sequence.columns[i]["valueType"] = sequence.columns[i]["valueType"].upper()
         return sequence
 
-    def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
+    def delete(
+        self, id: Union[int, SequenceType[int]] = None, external_id: Union[str, SequenceType[str]] = None
+    ) -> None:
         """`Delete one or more sequences. <https://docs.cognite.com/api/v1/#operation/deleteSequences>`_
 
         Args:
-            id (Union[int, List[int]): Id or list of ids
-            external_id (Union[str, List[str]]): External ID or list of external ids
+            id (Union[int, SequenceType[int]): Id or list of ids
+            external_id (Union[str, SequenceType[str]]): External ID or list of external ids
 
         Returns:
             None
@@ -349,16 +353,16 @@ class SequencesAPI(APIClient):
         ...
 
     @overload
-    def update(self, item: List[Union[Sequence, SequenceUpdate]]) -> SequenceList:
+    def update(self, item: SequenceType[Union[Sequence, SequenceUpdate]]) -> SequenceList:
         ...
 
     def update(
-        self, item: Union[Sequence, SequenceUpdate, List[Union[Sequence, SequenceUpdate]]]
+        self, item: Union[Sequence, SequenceUpdate, SequenceType[Union[Sequence, SequenceUpdate]]]
     ) -> Union[Sequence, SequenceList]:
         """`Update one or more sequences. <https://docs.cognite.com/api/v1/#operation/updateSequences>`_
 
         Args:
-            item (Union[Sequence, SequenceUpdate, List[Union[Sequence, SequenceUpdate]]]): Sequences to update
+            item (Union[Sequence, SequenceUpdate, SequenceType[Union[Sequence, SequenceUpdate]]]): Sequences to update
 
         Returns:
             Union[Sequence, SequenceList]: Updated sequences.
@@ -490,20 +494,20 @@ class SequencesDataAPI(APIClient):
     def insert(
         self,
         rows: Union[
-            Dict[int, List[Union[int, float, str]]],
-            List[Tuple[int, List[Union[int, float, str]]]],
-            List[Dict[str, Any]],
+            Dict[int, SequenceType[Union[int, float, str]]],
+            SequenceType[Tuple[int, SequenceType[Union[int, float, str]]]],
+            SequenceType[Dict[str, Any]],
             SequenceData,
         ],
-        column_external_ids: Optional[List[str]],
+        column_external_ids: Optional[SequenceType[str]],
         id: int = None,
         external_id: str = None,
     ) -> None:
         """`Insert rows into a sequence <https://docs.cognite.com/api/v1/#operation/postSequenceData>`_
 
         Args:
-            column_external_ids (Optional[List[str]]): List of external id for the columns of the sequence.
-            rows (Union[ Dict[int, List[Union[int, float, str]]], List[Tuple[int, List[Union[int, float, str]]]], List[Dict[str,Any]], SequenceData]):  The rows you wish to insert.
+            column_external_ids (Optional[SequenceType[str]]): List of external id for the columns of the sequence.
+            rows (Union[ Dict[int, SequenceType[Union[int, float, str]]], SequenceType[Tuple[int, SequenceType[Union[int, float, str]]]], SequenceType[Dict[str,Any]], SequenceData]):  The rows you wish to insert.
                 Can either be a list of tuples, a list of {"rowNumber":... ,"values": ...} objects, a dictionary of rowNumber: data, or a SequenceData object. See examples below.
             id (int): Id of sequence to insert rows into.
             external_id (str): External id of sequence to insert rows into.
@@ -546,10 +550,10 @@ class SequencesDataAPI(APIClient):
             rows = [{"rowNumber": k, "values": v} for k, v in rows.items()]
 
         if isinstance(rows, dict):
-            all_rows: Union[Dict, List] = [{"rowNumber": k, "values": v} for k, v in rows.items()]
-        elif isinstance(rows, list) and len(rows) > 0 and isinstance(rows[0], dict):
+            all_rows: Union[Dict, SequenceType] = [{"rowNumber": k, "values": v} for k, v in rows.items()]
+        elif isinstance(rows, SequenceType) and len(rows) > 0 and isinstance(rows[0], dict):
             all_rows = rows
-        elif isinstance(rows, list) and (len(rows) == 0 or isinstance(rows[0], tuple)):
+        elif isinstance(rows, SequenceType) and (len(rows) == 0 or isinstance(rows[0], tuple)):
             all_rows = [{"rowNumber": k, "values": v} for k, v in rows]
         else:
             raise ValueError("Invalid format for 'rows', expected a list of tuples, list of dict or dict")
@@ -601,11 +605,11 @@ class SequencesDataAPI(APIClient):
     def _insert_data(self, task: Dict[str, Any]) -> None:
         self._post(url_path=self._DATA_PATH, json={"items": [task]})
 
-    def delete(self, rows: List[int], id: int = None, external_id: str = None) -> None:
+    def delete(self, rows: SequenceType[int], id: int = None, external_id: str = None) -> None:
         """`Delete rows from a sequence <https://docs.cognite.com/api/v1/#operation/deleteSequenceData>`_
 
         Args:
-            rows (List[int]): List of row numbers.
+            rows (SequenceType[int]): List of row numbers.
             id (int): Id of sequence to delete rows from.
             external_id (str): External id of sequence to delete rows from.
 
@@ -655,9 +659,9 @@ class SequencesDataAPI(APIClient):
         self,
         start: int,
         end: Union[int, None],
-        column_external_ids: Optional[List[str]] = None,
-        external_id: Union[str, List[str]] = None,
-        id: Union[int, List[int]] = None,
+        column_external_ids: Optional[SequenceType[str]] = None,
+        external_id: Union[str, SequenceType[str]] = None,
+        id: Union[int, SequenceType[int]] = None,
         limit: int = None,
     ) -> Union[SequenceData, SequenceDataList]:
         """`Retrieve data from a sequence <https://docs.cognite.com/api/v1/#operation/getSequenceData>`_
@@ -666,7 +670,7 @@ class SequencesDataAPI(APIClient):
             start (int): Row number to start from (inclusive).
             end (Union[int, None]): Upper limit on the row number (exclusive). Set to None or -1 to get all rows
                 until end of sequence.
-            column_external_ids (Optional[List[str]]): List of external id for the columns of the sequence. If 'None' is passed, all columns will be retrieved.
+            column_external_ids (Optional[SequenceType[str]]): List of external id for the columns of the sequence. If 'None' is passed, all columns will be retrieved.
             id (int): Id of sequence.
             external_id (str): External id of sequence.
             limit (int): Maximum number of rows to return per sequence. 10000 is the maximum limit per request.
@@ -725,7 +729,7 @@ class SequencesDataAPI(APIClient):
             start (int): (inclusive) row number to start from.
             end (Union[int, None]): (exclusive) upper limit on the row number. Set to None or -1 to get all rows
                 until end of sequence.
-            column_external_ids (Optional[List[str]]): List of external id for the columns of the sequence.  If 'None' is passed, all columns will be retrieved.
+            column_external_ids (Optional[SequenceType[str]]): List of external id for the columns of the sequence.  If 'None' is passed, all columns will be retrieved.
             id (int): Id of sequence
             external_id (str): External id of sequence.
             column_names (str):  Which field(s) to use as column header. Can use "externalId", "id", "columnExternalId", "id|columnExternalId" or "externalId|columnExternalId". Default is "externalId|columnExternalId" for queries on more than one sequence, and "columnExternalId" for queries on a single sequence.
@@ -767,7 +771,7 @@ class SequencesDataAPI(APIClient):
             if not cursor or (remaining_limit is not None and remaining_limit <= 0):
                 break
 
-    def _process_columns(self, column_external_ids: Optional[List[str]]) -> Dict[str, List[str]]:
+    def _process_columns(self, column_external_ids: Optional[SequenceType[str]]) -> Dict[str, SequenceType[str]]:
         if column_external_ids is None:
             return {}  # for defaults
         return {"columns": column_external_ids}

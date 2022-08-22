@@ -31,7 +31,8 @@ from requests import Response
 from requests.structures import CaseInsensitiveDict
 
 from cognite.client import utils
-from cognite.client._http_client import GLOBAL_REQUEST_SESSION, HTTPClient, HTTPClientConfig
+from cognite.client._http_client import HTTPClient, HTTPClientConfig, get_global_requests_session
+from cognite.client.config import ClientConfig, global_config
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteResource,
@@ -89,39 +90,37 @@ class APIClient:
     }
 
     def __init__(
-        self, config: utils._client_config.ClientConfig, api_version: str = None, cognite_client: "CogniteClient" = None
+        self, config: ClientConfig, api_version: Optional[str] = None, cognite_client: "CogniteClient" = None
     ) -> None:
         self._config = config
         self._api_version = api_version
         self._api_subversion = config.api_subversion
         self._cognite_client = cognite_client
 
-        session = GLOBAL_REQUEST_SESSION
-        if self._config.proxies is not None:
-            session.proxies.update(self._config.proxies)
+        session = get_global_requests_session()
 
         self._http_client = HTTPClient(
             config=HTTPClientConfig(
                 status_codes_to_retry={429},
                 backoff_factor=0.5,
-                max_backoff_seconds=config.max_retry_backoff,
-                max_retries_total=self._config.max_retries,
+                max_backoff_seconds=global_config.max_retry_backoff,
+                max_retries_total=global_config.max_retries,
                 max_retries_read=0,
-                max_retries_connect=self._config.max_retries,
-                max_retries_status=self._config.max_retries,
+                max_retries_connect=global_config.max_retries,
+                max_retries_status=global_config.max_retries,
             ),
             session=session,
         )
 
         self._http_client_with_retry = HTTPClient(
             config=HTTPClientConfig(
-                status_codes_to_retry=self._config.status_forcelist,
+                status_codes_to_retry=global_config.status_forcelist,
                 backoff_factor=0.5,
-                max_backoff_seconds=config.max_retry_backoff,
-                max_retries_total=self._config.max_retries,
-                max_retries_read=self._config.max_retries,
-                max_retries_connect=self._config.max_retries,
-                max_retries_status=self._config.max_retries,
+                max_backoff_seconds=global_config.max_retry_backoff,
+                max_retries_total=global_config.max_retries,
+                max_retries_read=global_config.max_retries,
+                max_retries_connect=global_config.max_retries,
+                max_retries_status=global_config.max_retries,
             ),
             session=session,
         )
@@ -204,14 +203,8 @@ class APIClient:
     def _configure_headers(self, additional_headers: Dict[str, str]) -> MutableMapping[str, Any]:
         headers: MutableMapping[str, Any] = CaseInsensitiveDict()
         headers.update(requests.utils.default_headers())
-        if self._config.token is None:
-            headers["api-key"] = self._config.api_key
-        elif isinstance(self._config.token, str):
-            headers["Authorization"] = "Bearer {}".format(self._config.token)
-        elif callable(self._config.token):
-            headers["Authorization"] = "Bearer {}".format(self._config.token())
-        else:
-            raise TypeError("'token' must be str, Callable, or None.")
+        auth_header_name, auth_header_value = self._config.credentials.authorization_header()
+        headers[auth_header_name] = auth_header_value
         headers["content-type"] = "application/json"
         headers["accept"] = "application/json"
         headers["x-cdp-sdk"] = "CognitePythonSDK:{}".format(utils._auxiliary.get_current_sdk_version())
@@ -355,7 +348,7 @@ class APIClient:
         limit: Optional[int] = None,
         chunk_size: Optional[int] = None,
         filter: Optional[Dict[str, Any]] = None,
-        sort: Optional[List[str]] = None,
+        sort: Optional[Sequence[str]] = None,
         other_params: Optional[Dict[str, Any]] = None,
         partitions: Optional[int] = None,
         headers: Optional[Dict[str, Any]] = None,
@@ -478,7 +471,7 @@ class APIClient:
         filter: Optional[Dict] = None,
         other_params: Optional[Dict] = None,
         partitions: Optional[int] = None,
-        sort: Optional[List[str]] = None,
+        sort: Optional[Sequence[str]] = None,
         headers: Optional[Dict] = None,
         initial_cursor: Optional[str] = None,
     ) -> T_CogniteResourceList:
@@ -570,7 +563,7 @@ class APIClient:
         resource_path: Optional[str] = None,
         filter: Optional[Union[CogniteFilter, Dict]] = None,
         aggregate: Optional[str] = None,
-        fields: Optional[List[str]] = None,
+        fields: Optional[Sequence[str]] = None,
         headers: Optional[Dict] = None,
     ) -> List[T]:
         utils._auxiliary.assert_type(filter, "filter", [dict, CogniteFilter], allow_none=True)
@@ -631,7 +624,7 @@ class APIClient:
     ) -> Union[T_CogniteResourceList, T_CogniteResource]:
         resource_path = resource_path or self._RESOURCE_PATH
         limit = limit or self._CREATE_LIMIT
-        single_item = not isinstance(items, list)
+        single_item = not isinstance(items, Sequence)
         if single_item:
             items = cast(Union[Sequence[CogniteResource], Sequence[Dict[str, Any]]], [items])
         else:
@@ -741,7 +734,7 @@ class APIClient:
     ) -> Union[T_CogniteResourceList, T_CogniteResource]:
         resource_path = resource_path or self._RESOURCE_PATH
         patch_objects = []
-        single_item = not isinstance(items, (list, UserList))
+        single_item = not isinstance(items, (Sequence, UserList))
         if single_item:
             item_list = cast(Union[Sequence[CogniteResource], Sequence[CogniteUpdate]], [items])
         else:

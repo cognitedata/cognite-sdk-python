@@ -1,7 +1,8 @@
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence, Union, cast, overload
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
+from cognite.client.config import ClientConfig
 from cognite.client.data_classes import Database, DatabaseList, Row, RowList, Table, TableList
 from cognite.client.utils._auxiliary import local_import
 from cognite.client.utils._identifier import Identifier
@@ -64,18 +65,18 @@ class RawDatabasesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.raw.databases.create("db1")
         """
-        utils._auxiliary.assert_type(name, "name", [str, list])
+        utils._auxiliary.assert_type(name, "name", [str, Sequence])
         if isinstance(name, str):
             items: Union[Dict[str, Any], List[Dict[str, Any]]] = {"name": name}
         else:
             items = [{"name": n} for n in name]
         return self._create_multiple(list_cls=DatabaseList, resource_cls=Database, items=items)
 
-    def delete(self, name: Union[str, List[str]], recursive: bool = False) -> None:
+    def delete(self, name: Union[str, Sequence[str]], recursive: bool = False) -> None:
         """`Delete one or more databases. <https://docs.cognite.com/api/v1/#operation/deleteDBs>`_
 
         Args:
-            name (Union[str, List[str]]): A db name or list of db names to delete.
+            name (Union[str, Sequence[str]]): A db name or list of db names to delete.
             recursive (bool): Recursively delete all tables in the database(s).
 
         Returns:
@@ -89,7 +90,7 @@ class RawDatabasesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.raw.databases.delete(["db1", "db2"])
         """
-        utils._auxiliary.assert_type(name, "name", [str, list])
+        utils._auxiliary.assert_type(name, "name", [str, Sequence])
         if isinstance(name, str):
             name = [name]
         items = [{"name": n} for n in name]
@@ -189,7 +190,7 @@ class RawTablesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.raw.tables.create("db1", "table1")
         """
-        utils._auxiliary.assert_type(name, "name", [str, list])
+        utils._auxiliary.assert_type(name, "name", [str, Sequence])
         if isinstance(name, str):
             items: Union[Dict[str, Any], List[Dict[str, Any]]] = {"name": name}
         else:
@@ -202,12 +203,12 @@ class RawTablesAPI(APIClient):
         )
         return self._set_db_name_on_tables(tb, db_name)
 
-    def delete(self, db_name: str, name: Union[str, List[str]]) -> None:
+    def delete(self, db_name: str, name: Union[str, Sequence[str]]) -> None:
         """`Delete one or more tables. <https://docs.cognite.com/api/v1/#operation/deleteTables>`_
 
         Args:
             db_name (str): Database to delete tables from.
-            name (Union[str, List[str]]): A table name or list of table names to delete.
+            name (Union[str, Sequence[str]]): A table name or list of table names to delete.
 
         Returns:
             None
@@ -220,7 +221,7 @@ class RawTablesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.raw.tables.delete("db1", ["table1", "table2"])
         """
-        utils._auxiliary.assert_type(name, "name", [str, list])
+        utils._auxiliary.assert_type(name, "name", [str, Sequence])
         if isinstance(name, str):
             name = [name]
         items = [{"name": n} for n in name]
@@ -295,7 +296,7 @@ class RawRowsAPI(APIClient):
 
     def __init__(
         self,
-        config: utils._client_config.ClientConfig,
+        config: ClientConfig,
         api_version: Optional[str] = None,
         cognite_client: "CogniteClient" = None,
     ) -> None:
@@ -341,14 +342,14 @@ class RawRowsAPI(APIClient):
         )
 
     def insert(
-        self, db_name: str, table_name: str, row: Union[List[Row], Row, Dict], ensure_parent: bool = False
+        self, db_name: str, table_name: str, row: Union[Sequence[Row], Row, Dict], ensure_parent: bool = False
     ) -> None:
         """`Insert one or more rows into a table. <https://docs.cognite.com/api/v1/#operation/postRows>`_
 
         Args:
             db_name (str): Name of the database.
             table_name (str): Name of the table.
-            row (Union[List[Row], Row, Dict]): The row(s) to insert
+            row (Union[Sequence[Row], Row, Dict]): The row(s) to insert
             ensure_parent (bool): Create database/table if they don't already exist.
 
         Returns:
@@ -378,7 +379,7 @@ class RawRowsAPI(APIClient):
             task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda row: row.get("key")
         )
 
-    def insert_dataframe(self, db_name: str, table_name: str, dataframe: Any) -> None:
+    def insert_dataframe(self, db_name: str, table_name: str, dataframe: Any, ensure_parent: bool = False) -> None:
         """`Insert pandas dataframe into a table <https://docs.cognite.com/api/v1/#operation/postRows>`_
 
         Use index as rowkeys.
@@ -405,10 +406,10 @@ class RawRowsAPI(APIClient):
         """
         df_dict = dataframe.to_dict(orient="index")
         rows = [Row(key=key, columns=cols) for key, cols in df_dict.items()]
-        self.insert(db_name, table_name, rows)
+        self.insert(db_name=db_name, table_name=table_name, row=rows, ensure_parent=ensure_parent)
 
-    def _process_row_input(self, row: Union[List[Row], Row, Dict]) -> List[Union[List, Dict]]:
-        utils._auxiliary.assert_type(row, "row", [list, dict, Row])
+    def _process_row_input(self, row: Union[Sequence[Row], Row, Dict]) -> List[Union[List, Dict]]:
+        utils._auxiliary.assert_type(row, "row", [Sequence, dict, Row])
         rows = []
         if isinstance(row, dict):
             for key, columns in row.items():
@@ -423,13 +424,13 @@ class RawRowsAPI(APIClient):
             rows.append(row.dump(camel_case=True))
         return utils._auxiliary.split_into_chunks(rows, self._CREATE_LIMIT)
 
-    def delete(self, db_name: str, table_name: str, key: Union[str, List[str]]) -> None:
+    def delete(self, db_name: str, table_name: str, key: Union[str, Sequence[str]]) -> None:
         """`Delete rows from a table. <https://docs.cognite.com/api/v1/#operation/deleteRows>`_
 
         Args:
             db_name (str): Name of the database.
             table_name (str): Name of the table.
-            key (Union[str, List[str]]): The key(s) of the row(s) to delete.
+            key (Union[str, Sequence[str]]): The key(s) of the row(s) to delete.
 
         Returns:
             None
@@ -443,7 +444,7 @@ class RawRowsAPI(APIClient):
                 >>> keys_to_delete = ["k1", "k2", "k3"]
                 >>> c.raw.rows.delete("db1", "table1", keys_to_delete)
         """
-        utils._auxiliary.assert_type(key, "key", [str, list])
+        utils._auxiliary.assert_type(key, "key", [str, Sequence])
         if isinstance(key, str):
             key = [key]
         items = [{"key": k} for k in key]

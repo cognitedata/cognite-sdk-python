@@ -195,7 +195,11 @@ class CogniteMissingClientError(CogniteException):
         return "A CogniteClient has not been set on this object. Pass it in the constructor to use it."
 
 
-class CogniteAPIKeyError(CogniteException):
+class CogniteAuthError(CogniteException):
+    ...
+
+
+class CogniteAPIKeyError(CogniteAuthError):
     """Cognite API Key Error.
 
     Raised if the API key is missing or invalid.
