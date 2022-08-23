@@ -98,7 +98,7 @@ class TestTimestampToMs:
         time_now = utils._time.timestamp_to_ms("now")
         assert abs(expected_time_now - time_now) > 190
 
-    @pytest.mark.parametrize("t", [-1, datetime(1899, 12, 31), "100000000w-ago"])
+    @pytest.mark.parametrize("t", [-2208988800001, datetime(1899, 12, 31), "100000000w-ago"])
     def test_negative(self, t):
         with pytest.raises(ValueError, match="must represent a time after 1.1.1900"):
             utils._time.timestamp_to_ms(t)
