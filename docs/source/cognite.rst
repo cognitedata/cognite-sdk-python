@@ -1,44 +1,5 @@
 Quickstart
 ==========
-Authenticate
-------------
-
-The preferred way to authenticating against the Cognite API is using OpenID Connect (OIDC).
-To enable this, use one of the credential providers such as OAuthClientCredentials:
-
-.. code:: python
-
-    >>> from cognite.client import CogniteClient, ClientConfig
-    >>> from cognite.client.credentials import OAuthClientCredentials
-    >>>
-    >>> creds = OAuthClientCredentials(token_url=..., client_id=..., client_secret=..., scopes=[...])
-    >>> cnf = ClientConfig(client_name="my-special-client", project="my-project", credentials=creds)
-    >>> c = CogniteClient(cnf)
-
-or make your own credential provider:
-
-.. code:: python
-
-    >>> from cognite.client import CogniteClient, ClientConfig
-    >>> from cognite.client.credentials import Token
-    >>> def token_provider():
-    >>>     ...
-    >>>
-    >>> cnf = ClientConfig(client_name="my-special-client", project="my-project", credentials=Token(token_provider))
-    >>> c = CogniteClient(cnf)
-
-For details on different ways of implementing the token provider, take a look at
-`this guide <https://github.com/cognitedata/python-oidc-authentication>`_.
-
-If OIDC has not been enabled for your CDF project, you will want to authenticate using an API key.
-
-.. code:: python
-
-    >>> from cognite.client import CogniteClient, ClientConfig
-    >>> from cognite.client.credentials import APIKey
-    >>> cnf = ClientConfig(client_name="<your-client-name>", project="my-project", credentials=APIKey("very-secret"))
-    >>> c = CogniteClient(cnf)
-
 Instantiate a new client
 ------------------------
 Use this code to instantiate a client and get your login status. CDF returns an object with
@@ -60,9 +21,48 @@ All examples in this documentation assume that a default configuration has been 
 
 Read more about the `CogniteClient`_ and the functionality it exposes below.
 
+Authenticate
+------------
+
+The preferred way to authenticating against the Cognite API is using OpenID Connect (OIDC).
+To enable this, use one of the credential providers such as OAuthClientCredentials:
+
+.. code:: python
+
+    >>> from cognite.client import CogniteClient, ClientConfig
+    >>> from cognite.client.credentials import OAuthClientCredentials
+    >>>
+    >>> creds = OAuthClientCredentials(token_url=..., client_id=..., client_secret=..., scopes=[...])
+    >>> cnf = ClientConfig(client_name="my-special-client", project="my-project", credentials=creds)
+    >>> c = CogniteClient(cnf)
+
+Examples for all OAuth credential providers can be found in the `Credential Providers`_ section.
+
+You can also make your own credential provider:
+
+.. code:: python
+
+    >>> from cognite.client import CogniteClient, ClientConfig
+    >>> from cognite.client.credentials import Token
+    >>> def token_provider():
+    >>>     ...
+    >>>
+    >>> cnf = ClientConfig(client_name="my-special-client", project="my-project", credentials=Token(token_provider))
+    >>> c = CogniteClient(cnf)
+
+If OIDC has not been enabled for your CDF project, you will want to authenticate using an API key.
+
+.. code:: python
+
+    >>> from cognite.client import CogniteClient, ClientConfig
+    >>> from cognite.client.credentials import APIKey
+    >>> cnf = ClientConfig(client_name="<your-client-name>", project="my-project", credentials=APIKey("very-secret"))
+    >>> c = CogniteClient(cnf)
+
 Discover time series
 --------------------
-For the next examples, you will need to supply ids for the time series that you want to retrieve. You can find some ids by listing the available time series. Limits for listing resources default to 25, so the following code will return the first 25 time series resources.
+For the next examples, you will need to supply ids for the time series that you want to retrieve. You can find some ids by listing the available time series.
+Limits for listing resources default to 25, so the following code will return the first 25 time series resources.
 
 .. code:: python
 
@@ -225,7 +225,8 @@ request into chunks and performs the sub-requests in parallel. To control how ma
 to the API, you can either pass the :code:`max_workers` attribute when you instantiate the :code:`CogniteClient` or set the :code:`max_workers` config option.
 
 If you are working with multiple instances of :code:`CogniteClient`, all instances will share the same connection pool.
-If you have several instances, you can increase the max connection pool size to reuse connections if you are performing a large amount of concurrent requests. You can increase the max connection pool size by setting the :code:`max_connection_pool_size` config option.
+If you have several instances, you can increase the max connection pool size to reuse connections if you are performing a large amount of concurrent requests.
+You can increase the max connection pool size by setting the :code:`max_connection_pool_size` config option.
 
 Extensions and optional dependencies
 ====================================
@@ -297,6 +298,12 @@ Credential Providers
     :members:
     :member-order: bysource
 .. autoclass:: cognite.client.credentials.OAuthClientCredentials
+    :members:
+    :member-order: bysource
+.. autoclass:: cognite.client.credentials.OAuthInteractive
+    :members:
+    :member-order: bysource
+.. autoclass:: cognite.client.credentials.OAuthDeviceCode
     :members:
     :member-order: bysource
 

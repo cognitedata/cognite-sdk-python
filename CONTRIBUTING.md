@@ -25,7 +25,7 @@ Install pre-commit hooks
 pre-commit install
 ```
 
-### Getting access to python-sdk-test tenant for running integration tests
+### Getting access to python-sdk-test CDF project for running integration tests
 
 - Request access to python-sdk AAD tenant.
 - Set environment variables as per the interactive login flow below
@@ -36,22 +36,24 @@ Set the following environment variables in a .env file:
 
 ```bash
 COGNITE_CLIENT_NAME=python-sdk-integration-tests-<your-name>
-COGNITE_MAX_RETRIES=20
-COGNITE_DISABLE_PYPI_VERSION_CHECK=1
-
-# Only necessary for running integration tests
-LOGIN_FLOW=interactive
 COGNITE_PROJECT=python-sdk-test
 COGNITE_BASE_URL=https://greenfield.cognitedata.com
+
+# There are two ways of configuring auth against the test project.
+# 1) Interactive flow. If you don't have a specific reason to do otherwise, this is the method you
+# should use.
+LOGIN_FLOW=interactive
+COGNITE_TOKEN_SCOPES=https://greenfield.cognitedata.com/.default
 COGNITE_AUTHORITY_URL=https://login.microsoftonline.com/dff7763f-e2f5-4ffd-9b8a-4ba4bafba5ea
 COGNITE_CLIENT_ID=6b0b4266-ffa4-4b9b-8e13-ddbbc8a19ea6
-COGNITE_TOKEN_SCOPES=https://greenfield.cognitedata.com/.default
 
-# To run transformations tests locally:
-# login flow should be client credentials
-LOGIN_FLOW=client_credentials
-# and client secret should be provided along with the variables above
-COGNITE_CLIENT_SECRET=....
+# 2) Client credentials flow. To run tests which require client credentials to be set 
+# (such as transformations).
+#LOGIN_FLOW=client_credentials
+#COGNITE_TOKEN_SCOPES=https://greenfield.cognitedata.com/.default
+#COGNITE_TOKEN_URL=https://login.microsoftonline.com/dff7763f-e2f5-4ffd-9b8a-4ba4bafba5ea/oauth/v2.0/token
+#COGNITE_CLIENT_ID=6b0b4266-ffa4-4b9b-8e13-ddbbc8a19ea6
+#COGNITE_CLIENT_SECRET=....
 ```
 
 ### Testing

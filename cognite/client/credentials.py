@@ -1,15 +1,18 @@
+import atexit
 import threading
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple, Union
 
+from msal import PublicClientApplication, SerializableTokenCache
 from oauthlib.oauth2 import BackendApplicationClient, OAuth2Error
 from requests_oauthlib import OAuth2Session
 
 from cognite.client.exceptions import CogniteAuthError
 
 
-class CredentialProvider(ABC):
+class CredentialProvider(Protocol):
     @abstractmethod
     def authorization_header(self) -> Tuple[str, str]:
         ...
@@ -59,7 +62,176 @@ class Token(CredentialProvider):
         return "Authorization", f"Bearer {self.__token_factory()}"
 
 
-class OAuthClientCredentials(CredentialProvider):
+class _OAuthCredentialProviderWithTokenRefresh(CredentialProvider):
+    # This ensures we don't return a token which expires immediately, but within minimum 3 seconds.
+    __TOKEN_EXPIRY_LEEWAY_SECONDS = 3
+
+    def __init__(self) -> None:
+        self.__token_refresh_lock = threading.Lock()
+        self.__access_token: Optional[str] = None
+        self.__access_token_expires_at: Optional[float] = None
+
+    @abstractmethod
+    def _refresh_access_token(self) -> Tuple[str, float]:
+        """This method should return the access_token and expiry time"""
+        raise NotImplementedError
+
+    @classmethod
+    def __should_refresh_token(cls, token: Optional[str], expires_at: Optional[float]) -> bool:
+        no_token = token is None
+        token_is_expired = (
+            expires_at is None or datetime.now().timestamp() > expires_at - cls.__TOKEN_EXPIRY_LEEWAY_SECONDS
+        )
+        return no_token or token_is_expired
+
+    def authorization_header(self) -> Tuple[str, str]:
+        # We lock here to ensure we don't issue a herd of refresh requests in concurrent scenarios.
+        # This means we will block all requests for the duration of the token refresh.
+        # TODO: Consider instead having a background thread periodically refresh the token to avoid this blocking.
+        with self.__token_refresh_lock:
+            if self.__should_refresh_token(self.__access_token, self.__access_token_expires_at):
+                self.__access_token, self.__access_token_expires_at = self._refresh_access_token()
+        return "Authorization", f"Bearer {self.__access_token}"
+
+
+class _WithMsalSerializableTokenCache:
+    @staticmethod
+    def _create_serializable_token_cache(cache_path: Path) -> SerializableTokenCache:
+        token_cache = SerializableTokenCache()
+
+        if cache_path.exists():
+            with cache_path.open() as fh:
+                token_cache.deserialize(fh.read())
+
+        def __at_exit() -> None:
+            if token_cache.has_state_changed:
+                with open(cache_path, "w") as fh:
+                    fh.write(token_cache.serialize())
+
+        atexit.register(__at_exit)
+        return token_cache
+
+
+class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerializableTokenCache):
+    """OAuth credential provider for the device code login flow.
+
+    Args:
+        authority_url (str): OAuth authority url
+        client_id (str): Your application's client id.
+        scopes (List[str]): A list of scopes.
+
+    Examples:
+
+            >>> from cognite.client.credentials import OAuthInteractive
+            >>> import os
+            >>> oauth_provider = OAuthDeviceCode(
+            ...     authority_url="https://login.microsoftonline.com/xyz",
+            ...     client_id="abcd",
+            ...     scopes=["https://greenfield.cognitedata.com/.default"],
+            ... )
+    """
+
+    def __init__(self, authority_url: str, client_id: str, scopes: List[str]) -> None:
+        super().__init__()
+        self.__authority_url = authority_url
+        self.__client_id = client_id
+        self.__scopes = scopes
+
+        # In addition to caching in memory, we also cache the token on disk so it can be reused across processes.
+        token_cache_path = Path(f"/tmp/cognitetokencache.{self.__client_id}.bin")
+        serializable_token_cache = self._create_serializable_token_cache(token_cache_path)
+        self.__app = PublicClientApplication(
+            client_id=self.__client_id, authority=self.__authority_url, token_cache=serializable_token_cache
+        )
+
+    @property
+    def authority_url(self) -> str:
+        return self.__authority_url
+
+    @property
+    def client_id(self) -> str:
+        return self.__client_id
+
+    @property
+    def scopes(self) -> List[str]:
+        return self.__scopes
+
+    def _refresh_access_token(self) -> Tuple[str, float]:
+        # First check if there is a serialized token cached on disk.
+        accounts = self.__app.get_accounts()
+        credentials = self.__app.acquire_token_silent(scopes=self.__scopes, account=accounts[0]) if accounts else None
+
+        # If not, we acquire a new token interactively
+        if credentials is None:
+            device_flow = self.__app.initiate_device_flow(scopes=self.__scopes)
+            # print device code to screen
+            print(f"Device code: {device_flow['message']}")
+            credentials = self.__app.acquire_token_by_device_flow(flow=device_flow)
+
+        return credentials["access_token"], datetime.now().timestamp() + credentials["expires_in"]
+
+
+class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerializableTokenCache):
+    """OAuth credential provider for an interactive login flow.
+
+    Make sure you have http://localhost:port in Redirect URI in App Registration as type "Mobile and desktop applications".
+
+    Args:
+        authority_url (str): OAuth authority url
+        client_id (str): Your application's client id.
+        scopes (List[str]): A list of scopes.
+        redirect_port (List[str]): Redirect port defaults to 53000.
+
+    Examples:
+
+            >>> from cognite.client.credentials import OAuthInteractive
+            >>> import os
+            >>> oauth_provider = OAuthInteractive(
+            ...     authority_url="https://login.microsoftonline.com/xyz",
+            ...     client_id="abcd",
+            ...     scopes=["https://greenfield.cognitedata.com/.default"],
+            ... )
+    """
+
+    def __init__(self, authority_url: str, client_id: str, scopes: List[str], redirect_port: int = 53000) -> None:
+        super().__init__()
+        self.__authority_url = authority_url
+        self.__client_id = client_id
+        self.__scopes = scopes
+        self.__redirect_port = redirect_port
+
+        # In addition to caching in memory, we also cache the token on disk so it can be reused across processes.
+        token_cache_path = Path(f"/tmp/cognitetokencache.{self.__client_id}.bin")
+        serializable_token_cache = self._create_serializable_token_cache(token_cache_path)
+        self.__app = PublicClientApplication(
+            client_id=self.__client_id, authority=self.__authority_url, token_cache=serializable_token_cache
+        )
+
+    @property
+    def authority_url(self) -> str:
+        return self.__authority_url
+
+    @property
+    def client_id(self) -> str:
+        return self.__client_id
+
+    @property
+    def scopes(self) -> List[str]:
+        return self.__scopes
+
+    def _refresh_access_token(self) -> Tuple[str, float]:
+        # First check if there is a serialized token cached on disk.
+        accounts = self.__app.get_accounts()
+        credentials = self.__app.acquire_token_silent(scopes=self.__scopes, account=accounts[0]) if accounts else None
+
+        # If not, we acquire a new token interactively
+        if credentials is None:
+            credentials = self.__app.acquire_token_interactive(scopes=self.__scopes, port=self.__redirect_port)
+
+        return credentials["access_token"], datetime.now().timestamp() + credentials["expires_in"]
+
+
+class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
     """OAuth credential provider for the "Client Credentials" flow.
 
     Args:
@@ -81,11 +253,7 @@ class OAuthClientCredentials(CredentialProvider):
             ...     # Any additional IDP-specific token args. e.g.
             ...     audience="some-audience"
             ... )
-            >>> token_factory_provider = Token(lambda: "my secret token")
     """
-
-    # This ensures we don't return a token which expires immediately, but within minimum 3 seconds.
-    __TOKEN_EXPIRY_LEEWAY_SECONDS = 3
 
     def __init__(
         self,
@@ -95,16 +263,13 @@ class OAuthClientCredentials(CredentialProvider):
         scopes: List[str],
         **token_custom_args: Any,
     ):
+        super().__init__()
         self.__token_url = token_url
         self.__client_id = client_id
         self.__client_secret = client_secret
         self.__scopes = scopes
         self.__token_custom_args: Dict[str, Any] = token_custom_args
         self.__oauth = OAuth2Session(client=BackendApplicationClient(client_id=self.__client_id))
-
-        self.__token_refresh_lock = threading.Lock()
-        self.__access_token: Optional[str] = None
-        self.__access_token_expires_at: Optional[float] = None
 
     @property
     def token_url(self) -> str:
@@ -126,7 +291,7 @@ class OAuthClientCredentials(CredentialProvider):
     def token_custom_args(self) -> Dict[str, Any]:
         return self.__token_custom_args
 
-    def _refresh_access_token(self) -> None:
+    def _refresh_access_token(self) -> Tuple[str, float]:
         from cognite.client.config import global_config
 
         try:
@@ -153,28 +318,10 @@ class OAuthClientCredentials(CredentialProvider):
                 scope=self.__scopes,
                 **self.__token_custom_args,
             )
-            self.__access_token = token_result.get("access_token")
-            self.__access_token_expires_at = token_result.get("expires_at")
+            return token_result["access_token"], token_result["expires_at"]
         except OAuth2Error as oauth_error:
             raise CogniteAuthError(
                 "Error generating access token: {0}, {1}, {2}".format(
                     oauth_error.error, oauth_error.status_code, oauth_error.description
                 )
             ) from oauth_error
-
-    @classmethod
-    def __should_refresh_token(cls, token: Optional[str], expires_at: Optional[float]) -> bool:
-        no_token = token is None
-        token_is_expired = (
-            expires_at is not None and datetime.now().timestamp() > expires_at - cls.__TOKEN_EXPIRY_LEEWAY_SECONDS
-        )
-        return no_token or token_is_expired
-
-    def authorization_header(self) -> Tuple[str, str]:
-        # We lock here to ensure we don't issue a herd of refresh requests in concurrent scenarios.
-        # This means we will block all requests for the duration of the token refresh.
-        # TODO: Consider instead having a background thread periodically refresh the token to avoid this blocking.
-        with self.__token_refresh_lock:
-            if self.__should_refresh_token(self.__access_token, self.__access_token_expires_at):
-                self._refresh_access_token()
-        return "Authorization", f"Bearer {self.__access_token}"
