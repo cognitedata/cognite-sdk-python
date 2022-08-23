@@ -15,7 +15,7 @@ The package is tightly integrated with pandas, and helps you work easily and eff
 Fusion (CDF).
 
 ## Documentation
-* [SDK Documentation](https://cognite-docs.readthedocs-hosted.com/projects/cognite-sdk-python)
+* [SDK Documentation](https://cognite-sdk-python.readthedocs-hosted.com/en/latest/)
 * [API Documentation](https://doc.cognitedata.com/)
 * [Cognite Developer Documentation](https://docs.cognite.com/dev/)
 
