@@ -104,9 +104,7 @@ def timestamp_to_ms(timestamp: Union[int, float, str, datetime]) -> int:
         )
 
     if ms < -2208988800000:
-        raise ValueError(
-            "Timestamps must represent a time after 1.1.1900, but {} was provided".format(ms)
-        )
+        raise ValueError("Timestamps must represent a time after 1.1.1900, but {} was provided".format(ms))
 
     return ms
 
