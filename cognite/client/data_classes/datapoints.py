@@ -18,7 +18,7 @@ class Datapoint(CogniteResource):
     """An object representing a datapoint.
 
     Args:
-        timestamp (Union[int, float]): The data timestamp in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1.1.1900
+        timestamp (Union[int, float]): The data timestamp in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1.1.1900 00:00:00 UTC
         value (Union[str, int, float]): The data value. Can be String or numeric depending on the metric
         average (float): The integral average value in the aggregate period
         max (float): The maximum value in the aggregate period
