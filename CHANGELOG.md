@@ -14,9 +14,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [4.1.2] - 2022-08-22
+## [4.1.3] - 2022-08-23
 ### Changed
 - Change timeseries datapoints' time range to start from 01.01.1900
+
+## [4.1.2] - 2022-08-22
+### Fixed
+- geospatial: support asset links for features
 
 ## [4.1.1] - 2022-08-19
 ### Fixed
