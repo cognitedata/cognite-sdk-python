@@ -8,6 +8,7 @@ from typing import Dict, List, Optional, Union
 _unit_in_ms_without_week = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000}
 _unit_in_ms = {**_unit_in_ms_without_week, "w": 604800000}
 
+MIN_TIMESTAMP_MS = -2208988800000
 
 def datetime_to_ms(dt: datetime) -> int:
     if dt.tzinfo is None:
@@ -103,7 +104,7 @@ def timestamp_to_ms(timestamp: Union[int, float, str, datetime]) -> int:
             "Timestamp `{}` was of type {}, but must be int, float, str or datetime,".format(timestamp, type(timestamp))
         )
 
-    if ms < -2208988800000:
+    if ms < MIN_TIMESTAMP_MS:
         raise ValueError("Timestamps must represent a time after 1.1.1900, but {} was provided".format(ms))
 
     return ms

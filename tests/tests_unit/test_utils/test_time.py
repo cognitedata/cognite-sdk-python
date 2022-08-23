@@ -5,6 +5,7 @@ from unittest import mock
 import pytest
 
 from cognite.client import utils
+from cognite.client.utils._time import MIN_TIMESTAMP_MS
 
 
 class TestDatetimeToMs:
@@ -54,7 +55,7 @@ class TestTimestampToMs:
     def test_datetime(self):
         assert 1514764800000 == utils._time.timestamp_to_ms(datetime(2018, 1, 1))
         assert 1546300800000 == utils._time.timestamp_to_ms(datetime(2019, 1, 1))
-        assert -2208988800000 == utils._time.timestamp_to_ms(datetime(1900, 1, 1))
+        assert MIN_TIMESTAMP_MS == utils._time.timestamp_to_ms(datetime(1900, 1, 1))
 
     def test_float(self):
         assert 1514760000000 == utils._time.timestamp_to_ms(1514760000000.0)
@@ -98,7 +99,7 @@ class TestTimestampToMs:
         time_now = utils._time.timestamp_to_ms("now")
         assert abs(expected_time_now - time_now) > 190
 
-    @pytest.mark.parametrize("t", [-2208988800001, datetime(1899, 12, 31), "100000000w-ago"])
+    @pytest.mark.parametrize("t", [MIN_TIMESTAMP_MS - 1, datetime(1899, 12, 31), "100000000w-ago"])
     def test_negative(self, t):
         with pytest.raises(ValueError, match="must represent a time after 1.1.1900"):
             utils._time.timestamp_to_ms(t)

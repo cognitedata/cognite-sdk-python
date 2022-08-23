@@ -9,7 +9,7 @@ import pytest
 from cognite.client import utils
 from cognite.client.data_classes import DatapointsList, DatapointsQuery, TimeSeries
 from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils._time import timestamp_to_ms
+from cognite.client.utils._time import timestamp_to_ms, MIN_TIMESTAMP_MS
 from tests.utils import set_request_limit
 
 
@@ -53,7 +53,7 @@ class TestDatapointsAPI:
 
     def test_retrieve_before_epoch(self, cognite_client, test_time_series):
         ts = test_time_series[0]
-        dps = cognite_client.datapoints.retrieve(id=ts.id, start=-2208988800000, end="now")
+        dps = cognite_client.datapoints.retrieve(id=ts.id, start=MIN_TIMESTAMP_MS, end="now")
         assert len(dps) > 0
 
     def test_retrieve_unknown(self, cognite_client, test_time_series):
@@ -281,7 +281,7 @@ class TestDatapointsAPI:
         cognite_client.datapoints.delete_range(start="2d-ago", end="now", id=new_ts.id)
 
     def test_delete_range_before_epoch(self, cognite_client, new_ts):
-        cognite_client.datapoints.delete_range(start=-2208988800000, end="now", id=new_ts.id)
+        cognite_client.datapoints.delete_range(start=MIN_TIMESTAMP_MS, end="now", id=new_ts.id)
 
     def test_delete_ranges(self, cognite_client, new_ts):
         cognite_client.datapoints.delete_ranges([{"start": "2d-ago", "end": "now", "id": new_ts.id}])
