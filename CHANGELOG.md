@@ -14,9 +14,17 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [4.1.3] - 2022-08-23
+
+## [4.2.1] - 2022-08-23
 ### Changed
 - Change timeseries datapoints' time range to start from 01.01.1900
+
+## [4.2.0] - 2022-08-23
+### Added
+- OAuthInteractive credential provider. This credential provider will redirect you to a login page
+and require that the user authenticates. It will also cache the token between runs.
+- OAuthDeviceCode credential provider. Display a device code to enter into a trusted device.
+It will also cache the token between runs.
 
 ## [4.1.2] - 2022-08-22
 ### Fixed
