@@ -18,7 +18,7 @@ class Datapoint(CogniteResource):
     """An object representing a datapoint.
 
     Args:
-        timestamp (Union[int, float]): The data timestamp in milliseconds since the epoch (Jan 1, 1970).
+        timestamp (Union[int, float]): The data timestamp in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1.1.1900
         value (Union[str, int, float]): The data value. Can be String or numeric depending on the metric
         average (float): The integral average value in the aggregate period
         max (float): The maximum value in the aggregate period
@@ -84,7 +84,7 @@ class Datapoints(CogniteResource):
         is_string (bool): Whether the time series is string valued or not.
         is_step (bool): Whether the time series is a step series or not.
         unit (str): The physical unit of the time series.
-        timestamp (List[Union[int, float]]): The data timestamps in milliseconds since the epoch (Jan 1, 1970).
+        timestamp (List[Union[int, float]]): The data timestamps in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1.1.1900
         value (List[Union[int, str, float]]): The data values. Can be String or numeric depending on the metric
         average (List[float]): The integral average values in the aggregate period
         max (List[float]): The maximum values in the aggregate period
