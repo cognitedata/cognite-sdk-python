@@ -9,7 +9,7 @@ import pytest
 from cognite.client import utils
 from cognite.client.data_classes import DatapointsList, DatapointsQuery, TimeSeries
 from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils._time import timestamp_to_ms, MIN_TIMESTAMP_MS
+from cognite.client.utils._time import MIN_TIMESTAMP_MS, timestamp_to_ms
 from tests.utils import set_request_limit
 
 

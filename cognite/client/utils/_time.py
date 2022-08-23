@@ -10,6 +10,7 @@ _unit_in_ms = {**_unit_in_ms_without_week, "w": 604800000}
 
 MIN_TIMESTAMP_MS = -2208988800000
 
+
 def datetime_to_ms(dt: datetime) -> int:
     if dt.tzinfo is None:
         warnings.warn(
