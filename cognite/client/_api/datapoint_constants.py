@@ -31,6 +31,7 @@ class DatapointsQueryExternalId(CustomDatapoints):
 
 
 DatapointsTypes = Union[int, float, str]
+DatapointsPayload = Dict[str, Union[str, List[CustomDatapoints]]]
 
 
 class DatapointsFromAPI(TypedDict):

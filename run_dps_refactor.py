@@ -4,7 +4,7 @@ from timeit import default_timer as timer
 
 import pandas as pd
 
-from local_cog_client import setup_local_cog_client
+from setup_client import setup_cog_client
 
 payload = None
 # payload = dict(
@@ -18,8 +18,8 @@ payload = None
 #     ignore_unknown_ids=False,
 # )
 
-START = pd.Timestamp("1971-01-12 13:00:00").value // int(1e6)
-END = pd.Timestamp("1971-03-01").value // int(1e6)
+START = pd.Timestamp("1972-01-01 00:00:00").value // int(1e6)
+END = pd.Timestamp("2030-01-01 00:00:00").value // int(1e6)
 LIMIT = None
 AGGREGATES = None
 # AGGREGATES = ["average", "interpolation", "stepInterpolation"]
@@ -36,7 +36,10 @@ ID = [
     # {"id": 226740051491},
     # {"id": 2546012653669, "start": 1031539300000},  # string, xid=9694359_cargo_type
     # {"id": 1111111111111},  # missing...
-    # {"id": 2546012653669, "aggregates": ["max", "average"], "granularity": "1d"},  # string
+    # {"id": 1111111111112},  # missing...
+    # {"id": 1111111111113},  # missing...
+    # {"id": 1111111111114},  # missing...
+    # {"id": 2546012653669},  # string
 ]
 EXTERNAL_ID = [
     # {"external_id": "ts-test-#04-ten-mill-dps-1/1"},
@@ -70,12 +73,16 @@ EXTERNAL_ID = [
     # {"external_id": "benchmark:1-string-#5/50"},  # string
     # {"limit": math.inf, "external_id": "9694359_cargo_type", "end": 1534031491000},  # string
 ]
-# EXTERNAL_ID = [
-#     f"ts-test-#01-daily-{i}/650" for i in range(1, 651)
-# ]
+EXTERNAL_ID = [
+    f"ts-test-#01-daily-{i}/650"
+    for i in range(1, 651)
+    # {"external_id": f"ts-test-#01-daily-{i}/650", "aggregates": ["average"], "granularity": "12h"}
+    # for i in range(1, 651)
+]
+# EXTERNAL_ID = random.sample(EXTERNAL_ID, 650)
 
 max_workers = 20
-client = setup_local_cog_client(max_workers, debug=False)
+client = setup_cog_client(max_workers, debug=False)
 
 t0 = timer()
 if payload is not None:

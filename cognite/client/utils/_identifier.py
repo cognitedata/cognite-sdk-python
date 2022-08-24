@@ -33,11 +33,20 @@ class Identifier(Generic[T_ID]):
         else:
             return {"id": self.__value}
 
-    def as_tuple(self) -> Dict[str, T_ID]:
+    def as_tuple(self, camel_case: bool = True) -> Dict[str, T_ID]:
         if isinstance(self.__value, str):
-            return ("externalId", self.__value)
+            if camel_case:
+                return ("externalId", self.__value)
+            return ("external_id", self.__value)
         else:
             return ("id", self.__value)
+
+    def __str__(self) -> str:
+        identifier_type, identifier = self.as_tuple(camel_case=False)
+        return f"{type(self).__name__}({identifier_type}={identifier!r})"
+
+    def __repr__(self) -> str:
+        return str(self)
 
 
 class ExternalId(Identifier[str]):

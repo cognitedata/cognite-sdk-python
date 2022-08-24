@@ -1,14 +1,13 @@
 import pytest
 
-from cognite.client import utils
 from cognite.client.data_classes import Row
 from cognite.client.utils._auxiliary import random_string
 
 
 @pytest.fixture(scope="session")
 def new_database_with_table(cognite_client):
-    db_name = "db_" + utils._auxiliary.random_string(10)
-    table_name = "table_" + utils._auxiliary.random_string(10)
+    db_name = "db_" + random_string(10)
+    table_name = "table_" + random_string(10)
     db = cognite_client.raw.databases.create(db_name)
     table = cognite_client.raw.tables.create(db_name, table_name)
     yield db, table
@@ -31,7 +30,7 @@ class TestRawTablesAPI:
 
     def test_create_and_delete_table(self, cognite_client, new_database_with_table):
         db, _ = new_database_with_table
-        table_name = "table_" + utils._auxiliary.random_string(10)
+        table_name = "table_" + random_string(10)
         table = cognite_client.raw.tables.create(db.name, table_name)
         assert table in cognite_client.raw.tables.list(db.name)
         cognite_client.raw.tables.delete(db.name, table.name)

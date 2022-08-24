@@ -35,11 +35,8 @@ def to_snake_case(camel_case_string: str) -> str:
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
 
 
-def convert_all_keys_to_camel_case(d: dict) -> dict:
-    new_d = {}
-    for k, v in d.items():
-        new_d[to_camel_case(k)] = v
-    return new_d
+def convert_all_keys_to_camel_case(d: Dict[str, object]) -> Dict[str, object]:
+    return dict(zip(map(to_camel_case, d.keys()), d.values()))
 
 
 def json_dump_default(x: Any) -> Any:
@@ -124,11 +121,12 @@ def _check_client_has_newest_major_version() -> None:
         )
 
 
-def random_string(size: int = 100) -> str:
-    return "".join(random.choices(string.ascii_uppercase + string.digits, k=size))
+def random_string(size: int = 100, sample_from: str = string.ascii_uppercase + string.digits) -> str:
+    return "".join(random.choices(sample_from, k=size))
 
 
 class PriorityQueue:
+    # TODO: Just use queue.PriorityQueue()
     def __init__(self) -> None:
         self.__heap: List[Any] = []
         self.__id = 0

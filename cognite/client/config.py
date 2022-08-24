@@ -70,7 +70,6 @@ class ClientConfig:
         file_transfer_timeout: Optional[int] = None,
         debug: bool = False,
     ) -> None:
-        super().__init__()
         self.client_name = client_name
         self.project = project
         self.credentials = credentials

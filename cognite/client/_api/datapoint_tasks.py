@@ -132,6 +132,7 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
     granularity: Optional[str]
     subtask_idx: Tuple[int, ...]
     max_query_limit: int
+    is_raw_query: bool
     n_dps_left: float = dataclasses.field(default=math.inf, init=False)
     n_dps_fetched: float = dataclasses.field(default=0, init=False)
     agg_kwargs: Dict[str, Union[str, List[str]]] = dataclasses.field(default_factory=dict, init=False)
@@ -140,7 +141,7 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
         if self.limit is not None:
             self.n_dps_left = self.limit
         self.next_start = self.start
-        if not self.parent.query.is_raw_query:
+        if not self.is_raw_query:
             self.agg_kwargs = {"aggregates": self.aggregates, "granularity": self.granularity}
 
     def get_next_payload(self):
@@ -277,7 +278,11 @@ class BaseConcurrentTask:
             self._store_first_batch(dps)
 
     def split_into_subtasks(self, max_workers: int, n_tot_queries: int) -> List[BaseDpsFetchSubtask]:
-        subtasks = self._create_uniformly_split_subtasks(max_workers, n_tot_queries)
+        # Given e.g. a single time series, we want to put all our workers to work by splitting into lots of pieces!
+        # As the number grows - or we start combining multiple into the same query - we want to split less:
+        # we hold back to not create too many subtasks:
+        n_workers_per_queries = round(max_workers / n_tot_queries)
+        subtasks = self._create_uniformly_split_subtasks(n_workers_per_queries)
         self.subtasks.update(subtasks)
         if self.eager_mode and self.query.include_outside_points:
             # In eager mode we do not get the "first dps batch" to extract outside points from:
@@ -287,9 +292,37 @@ class BaseConcurrentTask:
                 identifier=self.query.identifier,
                 parent=self,
             )
-            # Append the outside subtask to returned subtasks so that it will get fetched:
+            # Append the outside subtask to returned subtasks so that it will be queued:
             subtasks.append(self.subtask_outside_points)
         return subtasks
+
+    def _create_uniformly_split_subtasks(self, n_workers_per_queries: int) -> List[BaseDpsFetchSubtask]:
+        start = self.query.start if self.eager_mode else self.first_start
+        tot_ms = (end := self.query.end) - start
+        n_periods = self._find_number_of_subtasks_uniform_split(tot_ms, n_workers_per_queries)
+        boundaries = split_time_range(start, end, n_periods, self.offset_next)
+        limit = self.query.limit - self.n_dps_first_batch if self.has_limit else None
+        # Limited queries will be prioritised in chrono. order (to quit as early as possible):
+        return [
+            SplittingFetchSubtask(
+                start=start,
+                end=end,
+                limit=limit,
+                subtask_idx=(i,),
+                parent=self,
+                priority=i - 1 if self.has_limit else 0,
+                identifier=self.query.identifier,
+                aggregates=self.query.aggregates_cc,
+                granularity=self.query.granularity,
+                max_query_limit=self.query.max_query_limit,
+                is_raw_query=self.query.is_raw_query,
+            )
+            for i, (start, end) in enumerate(zip(boundaries[:-1], boundaries[1:]), 1)
+        ]
+
+    @abstractmethod
+    def _find_number_of_subtasks_uniform_split(self, tot_ms: int, n_workers_per_queries: int) -> int:
+        ...
 
     def _store_first_batch(self, dps):
         if self.query.is_raw_query and self.query.include_outside_points:
@@ -334,36 +367,6 @@ class BaseConcurrentTask:
     @is_done.setter
     def is_done(self, value: bool) -> None:
         self._is_done = value
-
-    @abstractmethod
-    def _find_number_of_subtasks_uniform_split(self, tot_ms: int, n_workers_per_queries: int) -> int:
-        ...
-
-    def _create_uniformly_split_subtasks(self, max_workers: int, n_tot_queries: int) -> List[BaseDpsFetchSubtask]:
-        start = self.query.start if self.eager_mode else self.first_start
-        tot_ms = (end := self.query.end) - start
-        n_workers_per_queries = round(max_workers / n_tot_queries)
-        n_periods = self._find_number_of_subtasks_uniform_split(tot_ms, n_workers_per_queries)
-        # Find a `delta_ms` thats a multiple of granularity in ms (trivial for raw queries).
-        # ...we use `ceil` instead of `round` to make sure we "overshoot" `end`:
-        boundaries = split_time_range(start, end, n_periods, self.offset_next)
-        limit = self.query.limit - self.n_dps_first_batch if self.has_limit else None
-        # Limited queries will be prioritised in chrono. order (to quit as early as possible):
-        return [
-            SplittingFetchSubtask(
-                start=start,
-                end=end,
-                identifier=self.query.identifier,
-                parent=self,
-                priority=i - 1 if self.has_limit else 0,
-                limit=limit,
-                aggregates=self.query.aggregates_cc,
-                granularity=self.query.granularity,
-                subtask_idx=(i,),
-                max_query_limit=self.query.max_query_limit,
-            )
-            for i, (start, end) in enumerate(zip(boundaries[:-1], boundaries[1:]), 1)
-        ]
 
 
 @dataclass(eq=False)

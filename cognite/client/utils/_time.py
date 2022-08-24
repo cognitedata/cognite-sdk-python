@@ -145,8 +145,8 @@ def align_start_and_end_for_granularity(start: int, end: int, granularity: str) 
 
 
 def split_time_range(start: int, end: int, n_splits: int, granularity_in_ms: int) -> List[int]:
+    tot_ms = end - start
     # Find a `delta_ms` thats a multiple of granularity in ms (trivial for raw queries).
     # ...we use `ceil` instead of `round` to make sure we "overshoot" `end`:
-    tot_ms = end - start
     delta_ms = granularity_in_ms * math.ceil(tot_ms / n_splits / granularity_in_ms)
     return [min(end, start + delta_ms * i) for i in range(n_splits + 1)]

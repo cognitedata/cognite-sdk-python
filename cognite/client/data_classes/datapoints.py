@@ -654,9 +654,9 @@ class DatapointsQueryNew(CogniteResource):
         if arg_name not in dct:
             if (arg_name_cc := to_camel_case(arg_name)) not in dct:
                 raise KeyError(f"Missing key `{arg_name}` in dict passed as, or part of argument `{arg_name}`")
-            # For backwards compatability we accept identifier in camel case:
-            dct = dct.copy()  # Avoid side effects for user's input. Also means we need to return it.
-            dct[arg_name] = dct.pop(arg_name_cc)
+            # For backwards compatability we accept identifier in camel case: (Make copy to avoid side effects
+            # for user's input). Also means we need to return it.
+            dct[arg_name] = (dct := dct.copy()).pop(arg_name_cc)
 
         ts_identifier = dct[arg_name]
         if not isinstance(ts_identifier, exp_type):
@@ -704,6 +704,17 @@ class SingleTSQuery:
                 UserWarning,
             )
 
+    def to_payload(self):
+        return {
+            **self.identifier.as_dict(),
+            "start": self.start,
+            "end": self.end,
+            "aggregates": self.aggregates_cc,  # camel case
+            "granularity": self.granularity,
+            "limit": self.capped_limit,
+            "includeOutsidePoints": self.include_outside_points,
+        }
+
     @classmethod
     def from_dict_with_validation(cls, ts_dct, defaults) -> SingleTSQuery:
         # We merge 'defaults' and given ts-dict, ts-dict takes precedence:
@@ -739,6 +750,8 @@ class SingleTSQuery:
             self.limit = int(self.limit)  # We don't want weird stuff like numpy dtypes etc.
         else:
             raise TypeError(f"Limit must be a non-negative integer -or- one of [None, -1, inf], got {type(self.limit)}")
+        self._max_raw_query_limit = DPS_LIMIT
+        self._max_agg_query_limit = DPS_LIMIT_AGG
 
     def _verify_time_range(self):
         if self.start is None:
@@ -768,7 +781,7 @@ class SingleTSQuery:
         self._is_missing = value
 
     @property
-    def is_string(self):
+    def is_string(self) -> bool:
         if self._is_string is None:
             raise RuntimeError(
                 "For queries asking for raw datapoints, the `is_string` status is unknown before "
@@ -777,27 +790,36 @@ class SingleTSQuery:
         return self._is_string
 
     @is_string.setter
-    def is_string(self, value):
+    def is_string(self, value) -> None:
         assert isinstance(value, bool)
         self._is_string = value
 
     @property
-    def is_raw_query(self):
+    def is_raw_query(self) -> bool:
         return self.aggregates is None
 
     @cached_property
-    def aggregates_cc(self):
+    def aggregates_cc(self) -> List[str]:
         if not self.is_raw_query:
             return list(map(to_camel_case, self.aggregates))
 
-    @cached_property
-    def capped_limit(self):
+    @property
+    def capped_limit(self) -> int:
         if self.limit is None:
             return self.max_query_limit
         return min(self.limit, self.max_query_limit)
 
+    def override_max_limits(self, max_raw: int, max_agg: int) -> None:
+        if not isinstance(max_raw, int) or not isinstance(max_agg, int):
+            raise TypeError("Only `int` allowed as override for max query limits")
+        if max_raw > DPS_LIMIT or max_agg > DPS_LIMIT_AGG:
+            raise ValueError("Can't override max query limits above API specs")
+
+        self._max_raw_query_limit = max_raw
+        self._max_agg_query_limit = max_agg
+
     @property
-    def max_query_limit(self):
+    def max_query_limit(self) -> int:
         if self.is_raw_query:
-            return DPS_LIMIT
-        return DPS_LIMIT_AGG
+            return self._max_raw_query_limit
+        return self._max_agg_query_limit

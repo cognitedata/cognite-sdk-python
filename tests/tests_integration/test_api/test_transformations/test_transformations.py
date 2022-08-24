@@ -1,4 +1,3 @@
-import random
 import string
 
 import pytest
@@ -6,6 +5,7 @@ import pytest
 from cognite.client.data_classes import DataSet, Transformation, TransformationDestination, TransformationUpdate
 from cognite.client.data_classes.transformations._alphatypes import AlphaDataModelInstances
 from cognite.client.data_classes.transformations.common import SequenceRows
+from cognite.client.utils._auxiliary import random_string
 
 
 @pytest.fixture
@@ -25,7 +25,7 @@ def new_datasets(cognite_client):
 
 @pytest.fixture
 def new_transformation(cognite_client, new_datasets):
-    prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
+    prefix = random_string(6, string.ascii_letters)
     transform = Transformation(
         name="any",
         external_id=f"{prefix}-transformation",
@@ -45,7 +45,7 @@ other_transformation = new_transformation
 
 class TestTransformationsAPI:
     def test_create_transformation_error(self, cognite_client):
-        prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
+        prefix = random_string(6, string.ascii_letters)
         transform_without_name = Transformation(
             external_id=f"{prefix}-transformation", destination=TransformationDestination.assets()
         )
@@ -59,7 +59,7 @@ class TestTransformationsAPI:
         assert failed
 
     def test_create_asset_transformation(self, cognite_client):
-        prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
+        prefix = random_string(6, string.ascii_letters)
         transform = Transformation(
             name="any", external_id=f"{prefix}-transformation", destination=TransformationDestination.assets()
         )
@@ -67,7 +67,7 @@ class TestTransformationsAPI:
         cognite_client.transformations.delete(id=ts.id)
 
     def test_create_raw_transformation(self, cognite_client):
-        prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
+        prefix = random_string(6, string.ascii_letters)
         transform = Transformation(
             name="any",
             external_id=f"{prefix}-transformation",
@@ -78,7 +78,7 @@ class TestTransformationsAPI:
         assert ts.destination == TransformationDestination.raw("myDatabase", "myTable")
 
     def test_create_asset_hierarchy_transformation(self, cognite_client):
-        prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
+        prefix = random_string(6, string.ascii_letters)
         transform = Transformation(
             name="any", external_id=f"{prefix}-transformation", destination=TransformationDestination.asset_hierarchy()
         )
@@ -86,7 +86,7 @@ class TestTransformationsAPI:
         cognite_client.transformations.delete(id=ts.id)
 
     def test_create_string_datapoints_transformation(self, cognite_client):
-        prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
+        prefix = random_string(6, string.ascii_letters)
         transform = Transformation(
             name="any",
             external_id=f"{prefix}-transformation",
@@ -97,7 +97,7 @@ class TestTransformationsAPI:
 
     @pytest.mark.skip
     def test_create_alpha_dmi_transformation(self, cognite_client):
-        prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
+        prefix = random_string(6, string.ascii_letters)
         transform = Transformation(
             name="any",
             external_id=f"{prefix}-transformation",
@@ -117,7 +117,7 @@ class TestTransformationsAPI:
         cognite_client.transformations.delete(id=ts.id)
 
     def test_create_sequence_rows_transformation(self, cognite_client):
-        prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
+        prefix = random_string(6, string.ascii_letters)
         transform = Transformation(
             name="any",
             external_id=f"{prefix}-transformation",
