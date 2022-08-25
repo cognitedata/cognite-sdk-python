@@ -8,7 +8,7 @@ import pytest
 
 from cognite.client.data_classes import Datapoints, DatapointsList, DatapointsQuery, TimeSeries
 from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils._time import granularity_to_ms, timestamp_to_ms
+from cognite.client.utils._time import MIN_TIMESTAMP_MS, granularity_to_ms, timestamp_to_ms
 from tests.utils import set_request_limit
 
 
@@ -45,6 +45,11 @@ class TestDatapointsAPI:
         ts = test_time_series[0]
         dps = cognite_client.datapoints.retrieve(id=ts.id, start="1d-ago", end="now")
         assert isinstance(dps, Datapoints)
+        assert len(dps) > 0
+
+    def test_retrieve_before_epoch(self, cognite_client, test_time_series):
+        ts = test_time_series[0]
+        dps = cognite_client.datapoints.retrieve(id=ts.id, start=MIN_TIMESTAMP_MS, end="now")
         assert len(dps) > 0
 
     def test_retrieve_unknown(self, cognite_client, test_time_series):
@@ -245,6 +250,12 @@ class TestDatapointsAPI:
             cognite_client.datapoints.insert(datapoints, id=new_ts.id)
         assert 2 == cognite_client.datapoints._post.call_count
 
+    def test_insert_before_epoch(self, cognite_client, new_ts, post_spy):
+        datapoints = [(datetime(year=1950, month=1, day=1, hour=1, minute=i), i) for i in range(60)]
+        with set_request_limit(cognite_client.datapoints, 30):
+            cognite_client.datapoints.insert(datapoints, id=new_ts.id)
+        assert 2 == cognite_client.datapoints._post.call_count
+
     def test_insert_copy(self, cognite_client, test_time_series, new_ts, post_spy):
         data = cognite_client.datapoints.retrieve(id=test_time_series[0].id, start="600d-ago", end="now", limit=100)
         assert 100 == len(data)
@@ -262,6 +273,9 @@ class TestDatapointsAPI:
 
     def test_delete_range(self, cognite_client, new_ts):
         cognite_client.datapoints.delete_range(start="2d-ago", end="now", id=new_ts.id)
+
+    def test_delete_range_before_epoch(self, cognite_client, new_ts):
+        cognite_client.datapoints.delete_range(start=MIN_TIMESTAMP_MS, end="now", id=new_ts.id)
 
     def test_delete_ranges(self, cognite_client, new_ts):
         cognite_client.datapoints.delete_ranges([{"start": "2d-ago", "end": "now", "id": new_ts.id}])

@@ -8,6 +8,8 @@ from typing import Dict, List, Optional, Tuple, Union
 UNIT_IN_MS_WITHOUT_WEEK = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000}
 UNIT_IN_MS = {**UNIT_IN_MS_WITHOUT_WEEK, "w": 604800000}
 
+MIN_TIMESTAMP_MS = -2208988800000
+
 
 def datetime_to_ms(dt: datetime) -> int:
     return int(1000 * dt.timestamp())
@@ -89,10 +91,8 @@ def timestamp_to_ms(timestamp: Union[int, float, str, datetime]) -> int:
             "Timestamp `{}` was of type {}, but must be int, float, str or datetime,".format(timestamp, type(timestamp))
         )
 
-    if ms < 0:
-        raise ValueError(
-            "Timestamps can't be negative - they must represent a time after 1.1.1970, but {} was provided".format(ms)
-        )
+    if ms < MIN_TIMESTAMP_MS:
+        raise ValueError("Timestamps must represent a time after 1.1.1900, but {} was provided".format(ms))
 
     return ms
 

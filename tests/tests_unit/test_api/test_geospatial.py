@@ -18,6 +18,7 @@ def test_feature_type():
             "pressure": {"type": "DOUBLE"},
             "description": {"type": "STRING", "optional": "true"},
             "dataSetId": {"type": "LONG", "optional": "true"},
+            "assetIds": {"type": "LONGARRAY", "optional": "true"},
         },
         search_spec={"vol_press_idx": {"properties": ["volume", "pressure"]}},
     )
@@ -34,6 +35,7 @@ def test_features(test_feature_type):
                 temperature=12.4,
                 volume=1212.0,
                 pressure=2121.0,
+                assetIds=[1, 2],
             ),
             Feature(
                 external_id=external_ids[1],
@@ -66,12 +68,12 @@ class TestGeospatialAPI:
     @pytest.mark.dsl
     def test_to_pandas(self, test_feature_type, test_features):
         df = test_features.to_pandas()
-        assert set(list(df)) == {"externalId", "dataSetId", "position", "volume", "temperature", "pressure"}
+        assert set(list(df)) == {"externalId", "dataSetId", "position", "volume", "temperature", "pressure", "assetIds"}
 
     @pytest.mark.dsl
     def test_to_geopandas(self, test_feature_type, test_features):
         gdf = test_features.to_geopandas(geometry="position")
-        assert set(gdf) == {"externalId", "dataSetId", "position", "volume", "temperature", "pressure"}
+        assert set(gdf) == {"externalId", "dataSetId", "position", "volume", "temperature", "pressure", "assetIds"}
         geopandas = utils._auxiliary.local_import("geopandas")
         assert type(gdf.dtypes["position"]) == geopandas.array.GeometryDtype
 
@@ -83,10 +85,12 @@ class TestGeospatialAPI:
         assert len(fl) == 4
         for idx, f in enumerate(fl):
             for attr_name in test_feature_type.properties:
-                if attr_name.startswith("_") or attr_name in ["description", "dataSetId"]:
+                if attr_name.startswith("_") or attr_name in ["description", "dataSetId", "assetIds"]:
                     continue
                 assert hasattr(f, attr_name)
             assert not hasattr(f, "description")
+            if idx == 0:
+                assert hasattr(f, "asset_ids")
             if idx > 1:
                 assert hasattr(f, "data_set_id")
 
