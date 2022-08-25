@@ -5,6 +5,8 @@
 Cognite Python SDK
 ==========================
 [![build](https://github.com/cognitedata/cognite-sdk-python/workflows/release/badge.svg)](https://github.com/cognitedata/cognite-sdk-python/actions?query=workflow:release)
+[![Downloads](https://img.shields.io/pypi/dm/cognite-sdk)](https://pypistats.org/packages/cognite-sdk)
+[![GitHub](https://img.shields.io/github/license/cognitedata/cognite-sdk-python)](https://github.com/cognitedata/cognite-sdk-python/blob/master/LICENSE)
 [![codecov](https://codecov.io/gh/cognitedata/cognite-sdk-python/branch/master/graph/badge.svg)](https://codecov.io/gh/cognitedata/cognite-sdk-python)
 [![Documentation Status](https://readthedocs.com/projects/cognite-sdk-python/badge/?version=latest)](https://cognite-sdk-python.readthedocs-hosted.com/en/latest/)
 [![PyPI version](https://badge.fury.io/py/cognite-sdk.svg)](https://pypi.org/project/cognite-sdk/)
