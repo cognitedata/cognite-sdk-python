@@ -9,20 +9,26 @@ git clone https://github.com/cognitedata/cognite-sdk-python.git
 cd cognite-sdk-python
 ```
 
-Install dependencies and initialize a shell within the virtual environment.
-To get the virtual environment, install [poetry](https://pypi.org/project/poetry/).
+We use [poetry](https://pypi.org/project/poetry/) for dependency- and virtual environment 
+management.
 
-Then execute:
+Install dependencies and initialize a shell within the virtual environment, with these commands:
 
 ```bash
 poetry shell
 poetry install
 ```
 
-Install pre-commit hooks
+Install pre-commit hooks to run static code checks on every commit.
 
 ```bash
 pre-commit install
+```
+
+You can also manually trigger the static checks with:
+
+```bash
+pre-commit run --all-files
 ```
 
 ### Getting access to python-sdk-test CDF project for running integration tests
@@ -58,9 +64,6 @@ COGNITE_CLIENT_ID=6b0b4266-ffa4-4b9b-8e13-ddbbc8a19ea6
 
 ### Testing
 
-Set up tests for all new functionality. Running the tests will require setting the environment
-variable 'COGNITE_API_KEY'.
-
 Initiate unit tests by running the following command from the root directory:
 
 `pytest tests/tests_unit`
@@ -86,11 +89,9 @@ pytest -n4 --dist loadscope tests
 ```
 
 ### Documentation
-
 Build html files of documentation locally by running
 
 ```bash
-export PYTHONPATH=$(pwd)
 cd docs
 make html
 ```

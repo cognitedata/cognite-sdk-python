@@ -17,9 +17,9 @@ This is the Cognite Python SDK for developers and data scientists working with C
 The package is tightly integrated with pandas, and helps you work easily and efficiently with data in Cognite Data 
 Fusion (CDF).
 
-## Documentation
+## Refererence documentation
 * [SDK Documentation](https://cognite-sdk-python.readthedocs-hosted.com/en/latest/)
-* [API Documentation](https://doc.cognitedata.com/)
+* [CDF API Documentation](https://doc.cognitedata.com/)
 * [Cognite Developer Documentation](https://docs.cognite.com/dev/)
 
 ## Installation
@@ -33,12 +33,12 @@ $ pip install cognite-sdk
 
 ### With optional dependencies
 A number of optional dependencies may be specified in order to support a wider set of features.
-The available extras are:
-- pandas ["pandas"]
-- geo ["geopandas", "shapely"]
-- sympy ["sympy"]
-- functions ["pip"]
-- all ["pandas", "geopandas", "shapely", "sympy", "pip"]
+The available extras (along with the libraries they include) are:
+- pandas `[pandas]`
+- geo `[geopandas, shapely]`
+- sympy `[sympy]`
+- functions `[pip]`
+- all `[pandas, geopandas, shapely, sympy, pip]`
 
 To include optional dependencies, specify them like this with pip:
 
