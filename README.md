@@ -5,18 +5,21 @@
 Cognite Python SDK
 ==========================
 [![build](https://github.com/cognitedata/cognite-sdk-python/workflows/release/badge.svg)](https://github.com/cognitedata/cognite-sdk-python/actions?query=workflow:release)
+[![Downloads](https://img.shields.io/pypi/dm/cognite-sdk)](https://pypistats.org/packages/cognite-sdk)
+[![GitHub](https://img.shields.io/github/license/cognitedata/cognite-sdk-python)](https://github.com/cognitedata/cognite-sdk-python/blob/master/LICENSE)
 [![codecov](https://codecov.io/gh/cognitedata/cognite-sdk-python/branch/master/graph/badge.svg)](https://codecov.io/gh/cognitedata/cognite-sdk-python)
 [![Documentation Status](https://readthedocs.com/projects/cognite-sdk-python/badge/?version=latest)](https://cognite-sdk-python.readthedocs-hosted.com/en/latest/)
 [![PyPI version](https://badge.fury.io/py/cognite-sdk.svg)](https://pypi.org/project/cognite-sdk/)
+[![mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
 This is the Cognite Python SDK for developers and data scientists working with Cognite Data Fusion (CDF). 
 The package is tightly integrated with pandas, and helps you work easily and efficiently with data in Cognite Data 
 Fusion (CDF).
 
-## Documentation
+## Refererence documentation
 * [SDK Documentation](https://cognite-sdk-python.readthedocs-hosted.com/en/latest/)
-* [API Documentation](https://doc.cognitedata.com/)
+* [CDF API Documentation](https://doc.cognitedata.com/)
 * [Cognite Developer Documentation](https://docs.cognite.com/dev/)
 
 ## Installation
@@ -30,12 +33,12 @@ $ pip install cognite-sdk
 
 ### With optional dependencies
 A number of optional dependencies may be specified in order to support a wider set of features.
-The available extras are:
-- pandas ["pandas"]
-- geo ["geopandas", "shapely"]
-- sympy ["sympy"]
-- functions ["pip"]
-- all ["pandas", "geopandas", "shapely", "sympy", "pip"]
+The available extras (along with the libraries they include) are:
+- pandas `[pandas]`
+- geo `[geopandas, shapely]`
+- sympy `[sympy]`
+- functions `[pip]`
+- all `[pandas, geopandas, shapely, sympy, pip]`
 
 To include optional dependencies, specify them like this with pip:
 
