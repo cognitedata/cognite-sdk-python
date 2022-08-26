@@ -1,4 +1,5 @@
 import math  # noqa
+import random
 from pprint import pprint
 from timeit import default_timer as timer
 
@@ -6,17 +7,25 @@ import pandas as pd
 
 from setup_client import setup_cog_client
 
-payload = None
-# payload = dict(
-#     start=pd.Timestamp("1970-01-01 00:00:00").value // int(1e6),
-#     end=pd.Timestamp("1985-01-01 00:00:00").value // int(1e6),
-#     external_id=["ts-test-#04-ten-mill-dps-1/1"],
-#     aggregates=["totalVariation", "sum", "max", "stepInterpolation"],
-#     granularity="1s",
-#     limit=5_000_000,
-#     include_outside_points=False,
-#     ignore_unknown_ids=False,
-# )
+xids = random.sample(
+    [
+        f"ts-test-#01-daily-{i}/650"
+        for i in range(1, 651)
+        # f"benchmark:1-weekly-gran-#{i}/10000" for i in range(1, 10001)
+    ],
+    k=6,
+)
+payload = {
+    "start": 63072000000,
+    "end": 1 + pd.Timestamp("1972-01-10").value // int(1e6),  # 1893456000000,
+    "id": [],
+    "external_id": [*xids, {"external_id": "ts-test-#01-daily-650/650", "limit": 10}],
+    "aggregates": None,
+    "limit": 0,
+    "granularity": None,
+    "ignore_unknown_ids": True,
+    "include_outside_points": False,
+}
 
 START = pd.Timestamp("1972-01-01 00:00:00").value // int(1e6)
 END = pd.Timestamp("2030-01-01 00:00:00").value // int(1e6)
@@ -81,7 +90,7 @@ EXTERNAL_ID = [
 ]
 # EXTERNAL_ID = random.sample(EXTERNAL_ID, 650)
 
-max_workers = 20
+max_workers = 5
 client = setup_cog_client(max_workers, debug=False)
 
 t0 = timer()
@@ -120,6 +129,7 @@ tot_dps = df.count().sum()  # Ignores simultaneously fetched aggs
 tot_dps_ps = round(tot_dps / tot_t, 2)
 print(f"Dps/sec={dps_ps}, (double counting aggs: {tot_dps_ps}) ~t: {round(tot_t, 4)} sec")
 print(f"Dps/sec, (counting all aggs.): {tot_dps_ps}")
+print(df.count().sort_values(ascending=False).head(10))
 
 # query2 = DatapointsQuery(
 #     start=START,

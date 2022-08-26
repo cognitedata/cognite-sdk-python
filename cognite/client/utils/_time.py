@@ -145,6 +145,8 @@ def align_start_and_end_for_granularity(start: int, end: int, granularity: str) 
 
 
 def split_time_range(start: int, end: int, n_splits: int, granularity_in_ms: int) -> List[int]:
+    if n_splits < 1:
+        raise ValueError(f"Cannot split into less than 1 piece, got {n_splits=}")
     tot_ms = end - start
     # Find a `delta_ms` thats a multiple of granularity in ms (trivial for raw queries).
     # ...we use `ceil` instead of `round` to make sure we "overshoot" `end`:

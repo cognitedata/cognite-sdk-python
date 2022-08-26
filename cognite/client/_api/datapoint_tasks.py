@@ -3,12 +3,11 @@ from __future__ import annotations
 import dataclasses
 import math
 import operator as op
-import threading
 from abc import abstractmethod
 from dataclasses import InitVar, dataclass
 from itertools import chain
-from pprint import pprint
-from typing import TYPE_CHECKING, Callable, DefaultDict, Dict, Hashable, Iterable, List, Optional, Tuple, Union
+from threading import Lock
+from typing import Callable, DefaultDict, Dict, Hashable, Iterable, List, Optional, Tuple, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -27,11 +26,6 @@ from cognite.client.data_classes.datapoints import SingleTSQuery
 from cognite.client.utils._auxiliary import to_camel_case
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._time import granularity_to_ms, split_time_range
-
-LOCK = threading.Lock()
-
-if TYPE_CHECKING:
-    pprint("type checkin'")  # TODO: Remove.
 
 
 class DpsUnpackFns:
@@ -150,7 +144,7 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
         if (remaining_limit := self.parent.remaining_limit(self)) == 0:
             # Since last time this task fetched points, earlier tasks have already fetched >= limit dps:
             self.is_done, ts_task = True, self.parent
-            with LOCK:  # Keep sorted list `subtasks` from being mutated
+            with self.parent.lock:  # Keep sorted list `subtasks` from being mutated
                 _ = ts_task.is_done  # Trigger a check of parent task
                 # Update all subsequent subtasks to "is done":
                 i_start = 1 + ts_task.subtasks.index(self)
@@ -251,6 +245,7 @@ class BaseConcurrentTask:
     query: SingleTSQuery
     eager_mode: bool
     first_dps_batch: InitVar[DatapointsFromAPI] = None
+    first_limit: InitVar[int] = None
     first_start: Optional[int] = dataclasses.field(default=None, init=False)
     offset_next: int = dataclasses.field(default=None, init=False)
     ts_info: DatapointsFromAPI = dataclasses.field(default=None, init=False)
@@ -264,8 +259,9 @@ class BaseConcurrentTask:
     subtasks: SortedList[BaseDpsFetchSubtask] = dataclasses.field(default_factory=subtask_lst, init=False)
     subtask_outside_points: Optional[BaseDpsFetchSubtask] = dataclasses.field(default=None, init=False)
     _is_done: bool = dataclasses.field(default=False, init=False)
+    lock: Lock = dataclasses.field(default=Lock(), init=False)
 
-    def __post_init__(self, first_dps_batch):
+    def __post_init__(self, first_dps_batch, first_limit):
         self.has_limit = self.query.limit is not None
         # When running large queries (i.e. not "eager"), all time series have a first batch fetched before
         # further subtasks are created. This gives us e.g. outside points (if asked for) and ts info:
@@ -275,13 +271,15 @@ class BaseConcurrentTask:
             if not dps:
                 self._is_done = True
                 return
-            self._store_first_batch(dps)
+            self._store_first_batch(dps, first_limit)
 
     def split_into_subtasks(self, max_workers: int, n_tot_queries: int) -> List[BaseDpsFetchSubtask]:
         # Given e.g. a single time series, we want to put all our workers to work by splitting into lots of pieces!
         # As the number grows - or we start combining multiple into the same query - we want to split less:
         # we hold back to not create too many subtasks:
-        n_workers_per_queries = round(max_workers / n_tot_queries)
+        if self.is_done:
+            return []
+        n_workers_per_queries = max(1, round(max_workers / n_tot_queries))
         subtasks = self._create_uniformly_split_subtasks(n_workers_per_queries)
         self.subtasks.update(subtasks)
         if self.eager_mode and self.query.include_outside_points:
@@ -302,7 +300,6 @@ class BaseConcurrentTask:
         n_periods = self._find_number_of_subtasks_uniform_split(tot_ms, n_workers_per_queries)
         boundaries = split_time_range(start, end, n_periods, self.offset_next)
         limit = self.query.limit - self.n_dps_first_batch if self.has_limit else None
-        # Limited queries will be prioritised in chrono. order (to quit as early as possible):
         return [
             SplittingFetchSubtask(
                 start=start,
@@ -310,7 +307,7 @@ class BaseConcurrentTask:
                 limit=limit,
                 subtask_idx=(i,),
                 parent=self,
-                priority=i - 1 if self.has_limit else 0,
+                priority=i - 1 if self.has_limit else 0,  # Prioritise in chrono. order
                 identifier=self.query.identifier,
                 aggregates=self.query.aggregates_cc,
                 granularity=self.query.granularity,
@@ -324,7 +321,7 @@ class BaseConcurrentTask:
     def _find_number_of_subtasks_uniform_split(self, tot_ms: int, n_workers_per_queries: int) -> int:
         ...
 
-    def _store_first_batch(self, dps):
+    def _store_first_batch(self, dps, first_limit):
         if self.query.is_raw_query and self.query.include_outside_points:
             self._extract_outside_points(dps)
             if not dps:  # We might have only gotten outside points
@@ -333,11 +330,17 @@ class BaseConcurrentTask:
 
         # Set `start` for the first subtask:
         self.first_start = dps[-1]["timestamp"] + self.offset_next
+        self._unpack_and_store((0,), dps)
+
+        # Are we done after first batch?
         if self.first_start == self.query.end:
             self._is_done = True
-            return
-
-        self._unpack_and_store((0,), dps)
+        elif self.has_limit:
+            if len(dps) <= self.query.limit <= first_limit:
+                self._is_done = True
+        else:
+            if len(dps) < first_limit:
+                self._is_done = True
 
     def remaining_limit(self, subtask) -> Optional[int]:
         if not self.has_limit:
@@ -345,7 +348,7 @@ class BaseConcurrentTask:
         # For limited queries: if the sum of fetched points of earlier tasks have already hit/surpassed
         # `limit`, we know for sure we can cancel future tasks:
         remaining = self.query.limit
-        with LOCK:  # Keep sorted list `subtasks` from being mutated
+        with self.lock:  # Keep sorted list `subtasks` from being mutated
             for task in self.subtasks:
                 # Sum up to - but not including - given subtask:
                 if task is subtask or (remaining := remaining - task.n_dps_fetched) <= 0:
@@ -445,7 +448,7 @@ class BaseConcurrentRawTask(BaseConcurrentTask):
         return min(n_workers_per_queries, math.ceil((tot_ms / 1000) / self.query.max_query_limit))
 
     def _cap_dps_at_limit(self):
-        # Note 1: Outside points do not count towards given limit (API specs)
+        # Note 1: Outside points do not count towards given limit (API spec)
         # Note 2: Lock not needed; called after pool is shut down
         count = 0
         for i, (subtask_idx, sublist) in enumerate(self.ts_data.items()):
@@ -594,7 +597,7 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
             try:
                 arr = np.fromiter(map(DpsUnpackFns.count, dps), dtype=np.int64, count=n)
             except KeyError:
-                # An interval with no datapoints (hence count does not exist) has data for another aggregate
+                # An interval with no datapoints (hence count does not exist) has data from another aggregate...
                 # Since the resulting arrays share timestamp, we must cast count to float in order to store
                 # missing values as NaNs:
                 arr = np.array([dp.get("count") for dp in dps], dtype=np.float64)
