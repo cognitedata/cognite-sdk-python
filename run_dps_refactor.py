@@ -19,7 +19,7 @@ payload = {
     "start": 63072000000,
     "end": 1 + pd.Timestamp("1972-01-10").value // int(1e6),  # 1893456000000,
     "id": [],
-    "external_id": [*xids, {"external_id": "ts-test-#01-daily-650/650", "limit": 10}],
+    "external_id": [*xids, {"external_id": "ts-test-#01-daily-650/650", "limit": 0}],
     "aggregates": None,
     "limit": 0,
     "granularity": None,
@@ -90,14 +90,14 @@ EXTERNAL_ID = [
 ]
 # EXTERNAL_ID = random.sample(EXTERNAL_ID, 650)
 
-max_workers = 5
+max_workers = 20
 client = setup_cog_client(max_workers, debug=False)
 
 t0 = timer()
 if payload is not None:
     print("Ran payload:")
     pprint(payload)
-    res = client.datapoints.retrieve_new(**payload)
+    res = client.datapoints.retrieve(**payload)
 else:
     print("Did not use payload. Settings used:")
     settings = dict(

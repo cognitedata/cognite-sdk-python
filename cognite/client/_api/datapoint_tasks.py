@@ -11,18 +11,11 @@ from typing import Callable, DefaultDict, Dict, Hashable, Iterable, List, Option
 
 import numpy as np
 import numpy.typing as npt
-import pandas as pd  # noqa  TODO remove
 from sortedcontainers import SortedDict, SortedList
 
-from cognite.client._api.datapoint_constants import (
-    DPS_LIMIT,
-    DPS_LIMIT_AGG,
-    DatapointsFromAPI,
-    DatapointsTypes,
-    NumpyInt64Array,
-)
+from cognite.client._api.datapoint_constants import DatapointsFromAPI, DatapointsTypes, NumpyInt64Array
 from cognite.client.data_classes import DatapointsArray
-from cognite.client.data_classes.datapoints import SingleTSQuery
+from cognite.client.data_classes.datapoints import _SingleTSQuery
 from cognite.client.utils._auxiliary import to_camel_case
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._time import granularity_to_ms, split_time_range
@@ -42,7 +35,7 @@ class DpsUnpackFns:
         return op.itemgetter(*map(to_camel_case, lst))
 
 
-def select_dps_fetching_task_type(query: SingleTSQuery) -> BaseConcurrentTask:
+def select_dps_fetching_task_type(query: _SingleTSQuery) -> BaseConcurrentTask:
     conditions = (query.is_raw_query, query.limit is None)
     return {  # O'pattern matching, where art thou?
         # Raw numeric or string tasks:
@@ -114,9 +107,6 @@ class OutsideDpsFetchSubtask(BaseDpsFetchSubtask):
         self.is_done = True
 
 
-# TODO: Split into (?):
-#       - Unlimited SerialFetchSubtask
-#       - Limited SerialFetchSubtask (this can quit if sum of dps of tasks prior >= limit)
 @dataclass(eq=False)  # __hash__ cant be inherited (for safety), so we add eq=False for all
 class SerialFetchSubtask(BaseDpsFetchSubtask):
     """Fetches datapoints serially until complete, nice and simple. Stores data in parent"""
@@ -141,8 +131,10 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
     def get_next_payload(self):
         if self.is_done:
             return None
-        if (remaining_limit := self.parent.remaining_limit(self)) == 0:
-            # Since last time this task fetched points, earlier tasks have already fetched >= limit dps:
+        remaining = self.parent.remaining_limit(self)
+        if self.parent.ts_info is not None and remaining == 0:
+            # Since last time this task fetched points, earlier tasks have already fetched >= limit dps.
+            # (If ts_info isn't known, it means we still have to send out a request, happens when given limit=0)
             self.is_done, ts_task = True, self.parent
             with self.parent.lock:  # Keep sorted list `subtasks` from being mutated
                 _ = ts_task.is_done  # Trigger a check of parent task
@@ -151,7 +143,7 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
                 for task in ts_task.subtasks[i_start:]:
                     task.is_done = True
             return None
-        return self._create_payload_item(remaining_limit or math.inf)
+        return self._create_payload_item(math.inf if remaining is None else remaining)
 
     def _create_payload_item(self, remaining_limit: float):
         return {
@@ -242,7 +234,7 @@ class SplittingFetchSubtask(SerialFetchSubtask):
 
 @dataclass(eq=False)  # __hash__ cant be inherited (for safety), so we add eq=False for all
 class BaseConcurrentTask:
-    query: SingleTSQuery
+    query: _SingleTSQuery
     eager_mode: bool
     first_dps_batch: InitVar[DatapointsFromAPI] = None
     first_limit: InitVar[int] = None
@@ -363,6 +355,8 @@ class BaseConcurrentTask:
 
     @property
     def is_done(self) -> bool:
+        if self.ts_info is None:
+            return False
         if self.subtasks:
             self._is_done = self._is_done or all(task.is_done for task in self.subtasks)
         return self._is_done
@@ -376,7 +370,9 @@ class BaseConcurrentTask:
 class ConcurrentLimitedMixin(BaseConcurrentTask):
     @property
     def is_done(self):
-        if self._is_done:
+        if self.ts_info is None:
+            return False
+        elif self._is_done:
             return True
         elif self.subtask_outside_points and not self.subtask_outside_points.is_done:
             return False
@@ -507,7 +503,7 @@ class ParallelLimitedRawTask(ConcurrentLimitedMixin, BaseConcurrentRawTask):
         # limit to not split into too many queries (highest throughput when each request is close to max limit)
         n_estimate_periods = math.ceil((tot_ms / 1000) / self.query.max_query_limit)
         remaining_limit = self.query.limit - self.n_dps_first_batch
-        n_periods = math.ceil(remaining_limit / self.query.max_query_limit)
+        n_periods = max(1, math.ceil(remaining_limit / self.query.max_query_limit))
         # Pick the smallest N from constraints:
         return min(n_workers_per_queries, n_periods, n_estimate_periods)
 
@@ -544,7 +540,7 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
 
     def _find_number_of_subtasks_uniform_split(self, tot_ms: int, n_workers_per_queries: int) -> int:
         n_max_dps = tot_ms // self.offset_next  # evenly divides
-        return min(n_workers_per_queries, math.ceil(n_max_dps / DPS_LIMIT_AGG))
+        return min(n_workers_per_queries, math.ceil(n_max_dps / self.query.max_query_limit))
 
     def _create_empty_result(self) -> DatapointsArray:
         arr_dct = {"timestamp": np.array([], dtype=np.int64)}
@@ -622,4 +618,4 @@ class ParallelLimitedAggTask(ConcurrentLimitedMixin, BaseConcurrentAggTask):
     def _find_number_of_subtasks_uniform_split(self, tot_ms: int, n_workers_per_queries: int) -> int:
         remaining_limit = self.query.limit - self.n_dps_first_batch
         n_max_dps = min(remaining_limit, tot_ms // self.offset_next)
-        return min(n_workers_per_queries, math.ceil(n_max_dps / DPS_LIMIT_AGG))
+        return min(n_workers_per_queries, math.ceil(n_max_dps / self.query.max_query_limit))

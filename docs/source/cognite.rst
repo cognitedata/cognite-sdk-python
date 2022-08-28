@@ -90,20 +90,19 @@ request.
 
     >>> my_time_series.plot(start="365d-ago", end="now", aggregates=["average"], granularity="1d")
 
-The :code:`Datapoints` and :code:`DatapointsList` objects that are returned when you fetch data points, also have :code:`.plot()`
+The :code:`DatapointsArray` and :code:`DatapointsArrayList` objects that are returned when you fetch data points, also have :code:`.plot()`
 methods you can use to plot the data.
 
 .. code:: python
 
     >>> from cognite.client import CogniteClient
     >>> c = CogniteClient()
-    >>> my_datapoints = c.datapoints.retrieve(
-    ...                     id=[<time-series-ids>],
-    ...                     start="10d-ago",
-    ...                     end="now",
-    ...                     aggregates=["max"],
-    ...                     granularity="1h"
-    ...                 )
+    >>> my_datapoints = c.time_series.data.retrieve(
+    ...     id=[<time-series-ids>],
+    ...     start="10d-ago",
+    ...     aggregates=["max"],
+    ...     granularity="1h"
+    ... )
     >>> my_datapoints.plot()
 
 .. NOTE::
@@ -650,43 +649,43 @@ Data points
 -----------
 Retrieve datapoints
 ^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve
+.. automethod:: cognite.client._api.time_series.data.DatapointsAPI.retrieve
 
 Retrieve pandas dataframe
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve_dataframe
+.. automethod:: cognite.client._api.time_series.data.DatapointsAPI.retrieve_dataframe
 
 Retrieve pandas dataframes indexed by aggregate
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve_dataframe_dict
+.. automethod:: cognite.client._api.time_series.data.DatapointsAPI.retrieve_dataframe_dict
 
 Perform data points queries
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.datapoints.DatapointsAPI.query
+.. automethod:: cognite.client._api.time_series.data.DatapointsAPI.query
 
 Retrieve latest datapoint
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve_latest
+.. automethod:: cognite.client._api.time_series.data.DatapointsAPI.retrieve_latest
 
 Insert data points
 ^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.datapoints.DatapointsAPI.insert
+.. automethod:: cognite.client._api.time_series.data.DatapointsAPI.insert
 
 Insert data points into multiple time series
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.datapoints.DatapointsAPI.insert_multiple
+.. automethod:: cognite.client._api.time_series.data.DatapointsAPI.insert_multiple
 
 Insert pandas dataframe
 ^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.datapoints.DatapointsAPI.insert_dataframe
+.. automethod:: cognite.client._api.time_series.data.DatapointsAPI.insert_dataframe
 
 Delete a range of data points
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.datapoints.DatapointsAPI.delete_range
+.. automethod:: cognite.client._api.time_series.data.DatapointsAPI.delete_range
 
 Delete ranges of data points
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.datapoints.DatapointsAPI.delete_ranges
+.. automethod:: cognite.client._api.time_series.data.DatapointsAPI.delete_ranges
 
 
 Data classes
@@ -1373,7 +1372,7 @@ Run transformations by id
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.transformations.TransformationsAPI.run
 .. automethod:: cognite.client._api.transformations.TransformationsAPI.run_async
-    
+
 Preview transformations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.transformations.TransformationsAPI.preview

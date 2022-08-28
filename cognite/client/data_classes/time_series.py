@@ -87,7 +87,7 @@ class TimeSeries(CogniteResource):
     ) -> None:
         plt = utils._auxiliary.local_import("matplotlib.pyplot")
         identifier = Identifier.load(self.id, self.external_id).as_dict()
-        dps = self._cognite_client.datapoints.retrieve(
+        dps = self._cognite_client.time_series.data.retrieve(
             start=start, end=end, aggregates=aggregates, granularity=granularity, **identifier
         )
         if id_labels:
@@ -110,7 +110,7 @@ class TimeSeries(CogniteResource):
             int: The number of datapoints in this time series.
         """
         identifier = Identifier.load(self.id, self.external_id).as_dict()
-        dps = self._cognite_client.datapoints.retrieve(
+        dps = self._cognite_client.time_series.data.retrieve(
             start=0, end="now", aggregates=["count"], granularity="10d", **identifier
         )
         return sum(dps.count)
@@ -122,7 +122,7 @@ class TimeSeries(CogniteResource):
             Datapoint: A datapoint object containing the value and timestamp of the latest datapoint.
         """
         identifier = Identifier.load(self.id, self.external_id).as_dict()
-        dps = self._cognite_client.datapoints.retrieve_latest(**identifier)
+        dps = self._cognite_client.time_series.data.retrieve_latest(**identifier)
         if len(dps) > 0:
             return list(dps)[0]
         return None
@@ -134,7 +134,7 @@ class TimeSeries(CogniteResource):
             Datapoint: A datapoint object containing the value and timestamp of the first datapoint.
         """
         identifier = Identifier.load(self.id, self.external_id).as_dict()
-        dps = self._cognite_client.datapoints.retrieve(**identifier, start=0, end="now", limit=1)
+        dps = self._cognite_client.time_series.data.retrieve(**identifier, start=0, end="now", limit=1)
         if len(dps) > 0:
             return list(dps)[0]
         return None
@@ -316,7 +316,7 @@ class TimeSeriesList(CogniteResourceList):
         plt = utils._auxiliary.local_import("matplotlib.pyplot")
         dps = cast(
             "DatapointsList",
-            self._cognite_client.datapoints.retrieve(
+            self._cognite_client.time_series.data.retrieve(
                 id=[ts.id for ts in self.data], start=start, end=end, aggregates=aggregates, granularity=granularity
             ),
         )

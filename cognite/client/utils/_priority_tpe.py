@@ -61,7 +61,6 @@ def _worker(executor_reference, work_queue):
         while True:
             priority, _, work_item = work_queue.get(block=True)
             if priority != sys.maxsize:
-                # print(f"Running task with priority {priority}")  # TODO(haakonvt): remove
                 work_item.run()
                 del work_item
                 continue
@@ -91,8 +90,6 @@ class PriorityThreadPoolExecutor(ThreadPoolExecutor):
 
             priority = kwargs.pop("priority", None)
             assert isinstance(priority, int), "`priority` has to be an integer"
-
-            # print(f"Submitted task with: {args[0]}")  # TODO: remove
 
             future = _base.Future()
             work_item = _WorkItem(future, fn, args, kwargs)

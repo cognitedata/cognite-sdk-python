@@ -3,7 +3,6 @@ import json as _json
 import logging
 import os
 import re
-import threading
 from collections import UserList
 from json.decoder import JSONDecodeError
 from pprint import pprint  # noqa
@@ -51,10 +50,6 @@ if TYPE_CHECKING:
 log = logging.getLogger("cognite-sdk")
 
 T = TypeVar("T")
-
-
-LOCK = threading.Lock()
-COUNTER = 0
 
 
 class APIClient:
@@ -154,28 +149,9 @@ class APIClient:
         params: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, Any]] = None,
     ) -> requests.Response:
-        # with LOCK:  # TODO: remove
-        #     js2 = deepcopy(json)
-        #     if "start" in js2:
-        #         js2["start"] = str(pd.Timestamp(js2["start"], unit="ms"))
-        #         js2["end"] = str(pd.Timestamp(js2["end"], unit="ms"))
-        #     else:
-        #         for it in js2["items"]:
-        #             it["start"] = str(pd.Timestamp(it["start"], unit="ms"))
-        #             it["end"] = str(pd.Timestamp(it["end"], unit="ms"))
-        #     pprint(js2, sort_dicts=False)
-        # global COUNTER
-        # with LOCK:
-        #     COUNTER += 1
-        #     print(f"{COUNTER=}")
-        res = self._do_request(
+        return self._do_request(
             "POST", url_path, json=json, headers=headers, params=params, timeout=self._config.timeout
         )
-        # sec = res.elapsed / timedelta(seconds=1)
-        # n_dps = sum(len(x["datapoints"]) for x in res.json()["items"])
-        # dps_ps = round(n_dps / sec, 2)
-        # print(f"Req. time: {sec=}, {n_dps=}, dps/s={dps_ps}")
-        return res
 
     def _put(
         self, url_path: str, json: Optional[Dict[str, Any]] = None, headers: Optional[Dict[str, Any]] = None
