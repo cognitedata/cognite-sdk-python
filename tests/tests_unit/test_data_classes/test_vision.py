@@ -183,7 +183,7 @@ class TestVisionExtractItem:
 
 
 class TestVisionExtractJob:
-    @patch("cognite.experimental.data_classes.vision.ContextualizationJob.result", new_callable=PropertyMock)
+    @patch("cognite.client.data_classes.vision.ContextualizationJob.result", new_callable=PropertyMock)
     @pytest.mark.parametrize(
         "status, result, expected_items",
         [
@@ -204,7 +204,7 @@ class TestVisionExtractJob:
         job = VisionExtractJob(status=status.value, cognite_client=cognite_client)
         assert job.items == expected_items
 
-    @patch("cognite.experimental.data_classes.vision.ContextualizationJob.result", new_callable=PropertyMock)
+    @patch("cognite.client.data_classes.vision.ContextualizationJob.result", new_callable=PropertyMock)
     @pytest.mark.parametrize(
         "file_id, expected_item, error_message",
         [
@@ -238,7 +238,7 @@ class TestVisionExtractJob:
         else:
             assert job[file_id] == expected_item
 
-    @patch("cognite.experimental.data_classes.vision.ContextualizationJob.result", new_callable=PropertyMock)
+    @patch("cognite.client.data_classes.vision.ContextualizationJob.result", new_callable=PropertyMock)
     @pytest.mark.parametrize(
         "result, params, expected_items",
         [

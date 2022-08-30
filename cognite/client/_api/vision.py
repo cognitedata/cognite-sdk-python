@@ -90,8 +90,8 @@ class VisionAPI(ContextAPI):
         Examples:
             Start a job, wait for completion and then get the parsed results::
 
-                >>> from cognite.experimental import CogniteClient
-                >>> from cognite.experimental.data_classes.vision import Feature
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.vision import Feature
                 >>> c = CogniteClient()
                 >>> extract_job = c.vision.extract(features=Feature.ASSET_TAG_DETECTION, file_ids=[1])
                 >>> extract_job.wait_for_completion()
@@ -129,7 +129,7 @@ class VisionAPI(ContextAPI):
         Examples:
             Retrieve a vision extract job by ID::
 
-                >>> from cognite.experimental import CogniteClient
+                >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> extract_job = c.vision.get_extract_job(job_id=1)
                 >>> extract_job.wait_for_completion()

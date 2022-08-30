@@ -1094,8 +1094,8 @@ their visual content. For example, you can can extract features such as text, as
 
 Start an asynchronous job to extract information from image files stored in CDF:
 .. code:: python
-    >>> from cognite.experimental import CogniteClient
-    >>> from cognite.experimental.data_classes.vision import Feature
+    >>> from cognite.client import CogniteClient
+    >>> from cognite.client.data_classes.vision import Feature
     >>> c = CogniteClient()
     >>> extract_job = c.vision.extract(
     ...     features=[Feature.ASSET_TAG_DETECTION, Feature.PEOPLE_DETECTION], 
@@ -1123,7 +1123,7 @@ Tweaking the parameters of a feature extractor:
 
 .. code:: python
 
-    >>> from cognite.experimental.data_classes.vision import FeatureParameters, TextDetectionParameters
+    >>> from cognite.client.data_classes.vision import FeatureParameters, TextDetectionParameters
     >>> extract_job = c.vision.extract(
     ...     features=Feature.TEXT_DETECTION,
     ...     file_ids=[1, 2],
@@ -1133,19 +1133,19 @@ Tweaking the parameters of a feature extractor:
 Extract
 ^^^^^^^
 
-.. automethod:: cognite.experimental._api.vision.VisionAPI.extract
+.. automethod:: cognite.client._api.vision.VisionAPI.extract
 
 Get vision extract job
 ^^^^^^^^^^^^^^^^^^^^^^
 
-.. automethod:: cognite.experimental._api.vision.VisionAPI.get_extract_job
+.. automethod:: cognite.client._api.vision.VisionAPI.get_extract_job
 
 Data classes
 ^^^^^^^^^^^^^
 
 Vision data classes
 ~~~~~~~~~~~~~~~~~~~
-.. automodule:: cognite.experimental.data_classes.vision
+.. automodule:: cognite.client.data_classes.vision
     :members:
     :undoc-members:
     :show-inheritance:
@@ -1155,7 +1155,7 @@ Image type data classes
 ~~~~~~~~~~~~~~~~~~~~~~~
 Minimal containers for the image annotations returned by the Annotations API.
 
-.. automodule:: cognite.experimental.data_classes.annotation_types.images
+.. automodule:: cognite.client.data_classes.annotation_types.images
     :members:
     :undoc-members:
     :show-inheritance:
@@ -1165,13 +1165,13 @@ Primitive type data classes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Minimal containers for the primitive annotations returned by the Annotations API.
 
-.. automodule:: cognite.experimental.data_classes.annotation_types.primitives
+.. automodule:: cognite.client.data_classes.annotation_types.primitives
     :members:
     :undoc-members:
     :show-inheritance:
     :inherited-members:
 
-    
+
 Templates
 ---------
 Create Template groups
