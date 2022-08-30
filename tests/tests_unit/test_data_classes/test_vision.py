@@ -20,7 +20,10 @@ from cognite.client.data_classes.vision import (
     VisionExtractJob,
     VisionExtractPredictions,
 )
-from cognite.experimental.utils import resource_to_camel_case, resource_to_snake_case
+from cognite.client.utils._case_conversion import (
+    resource_to_camel_case,
+    resource_to_snake_case,
+)
 
 mock_vision_predictions_dict: Dict[str, Any] = {
     "textPredictions": [

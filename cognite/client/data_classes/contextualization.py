@@ -39,6 +39,7 @@ class JobStatus(Enum):
 class ContextualizationJobType(Enum):
     ENTITY_MATCHING = "entity_matching"
     DIAGRAMS = "diagrams"
+    VISION = "vision"
 
 
 T_ContextualizationJob = TypeVar("T_ContextualizationJob", bound="ContextualizationJob")
