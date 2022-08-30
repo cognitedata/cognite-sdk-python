@@ -1,7 +1,6 @@
 import gzip
 import json as _json
 import logging
-import os
 import re
 from collections import UserList
 from json.decoder import JSONDecodeError
@@ -176,7 +175,7 @@ class APIClient:
                     ) from None
                 raise
             kwargs["data"] = data
-            if method in ["PUT", "POST"] and not os.getenv("COGNITE_DISABLE_GZIP", False):
+            if method in ["PUT", "POST"] and not global_config.disable_gzip:
                 kwargs["data"] = gzip.compress(data.encode())
                 headers["Content-Encoding"] = "gzip"
 
