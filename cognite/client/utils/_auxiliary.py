@@ -117,11 +117,10 @@ def _check_client_has_newest_major_version() -> None:
     newest_version = get_newest_version_in_major_release("cognite-sdk", version)
     if newest_version != version:
         warnings.warn(
-            f"You are using {version=} of the SDK, however version {newest_version} is available."
+            f"You are using {version=} of the SDK, however version='{newest_version}' is available. "
             "To suppress this warning, either upgrade or do the following:\n"
             ">>> from cognite.client.config import global_config\n"
-            ">>> global_config.disable_pypi_version_check = True\n"
-            "to suppress this warning",
+            ">>> global_config.disable_pypi_version_check = True",
             stacklevel=3,
         )
 
