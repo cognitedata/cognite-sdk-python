@@ -80,12 +80,10 @@ def rsps():
 
 @pytest.fixture
 def disable_gzip():
-    try:
-        old = global_config.disable_gzip
-        global_config.disable_gzip = True
-        yield
-    finally:
-        global_config.disable_gzip = old
+    old = global_config.disable_gzip
+    global_config.disable_gzip = True
+    yield
+    global_config.disable_gzip = old
 
 
 def pytest_addoption(parser):
