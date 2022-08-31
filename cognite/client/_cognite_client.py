@@ -1,5 +1,7 @@
 from typing import Any, Dict, Optional
 
+from requests import Response
+
 from cognite.client import utils
 from cognite.client._api.annotations import AnnotationsAPI
 from cognite.client._api.assets import AssetsAPI
@@ -8,10 +10,7 @@ from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.diagrams import DiagramsAPI
 from cognite.client._api.entity_matching import EntityMatchingAPI
 from cognite.client._api.events import EventsAPI
-from cognite.client._api.extractionpipelines import (
-    ExtractionPipelineRunsAPI,
-    ExtractionPipelinesAPI,
-)
+from cognite.client._api.extractionpipelines import ExtractionPipelineRunsAPI, ExtractionPipelinesAPI
 from cognite.client._api.files import FilesAPI
 from cognite.client._api.functions import FunctionsAPI
 from cognite.client._api.geospatial import GeospatialAPI
@@ -28,7 +27,6 @@ from cognite.client._api.transformations import TransformationsAPI
 from cognite.client._api.vision import VisionAPI
 from cognite.client._api_client import APIClient
 from cognite.client.config import ClientConfig, global_config
-from requests import Response
 
 
 class CogniteClient:

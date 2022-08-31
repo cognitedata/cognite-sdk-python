@@ -3,26 +3,16 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional, Type, Union, cast, get_type_hints
 
-from cognite.client.data_classes import (
-    Annotation,
-    ContextualizationJob,
-    ContextualizationJobType,
-)
+from typing_extensions import get_args
+
+from cognite.client.data_classes import Annotation, ContextualizationJob, ContextualizationJobType
 from cognite.client.data_classes._base import CogniteResource
-from cognite.client.data_classes.annotation_types.images import (
-    AssetLink,
-    ObjectDetection,
-    TextRegion,
-)
+from cognite.client.data_classes.annotation_types.images import AssetLink, ObjectDetection, TextRegion
 from cognite.client.data_classes.annotation_types.primitives import VisionResource
 from cognite.client.data_classes.annotations import AnnotationList
 from cognite.client.data_classes.contextualization import JobStatus
 from cognite.client.exceptions import CogniteException
-from cognite.client.utils._case_conversion import (
-    resource_to_camel_case,
-    resource_to_snake_case,
-)
-from typing_extensions import get_args
+from cognite.client.utils._case_conversion import resource_to_camel_case, resource_to_snake_case
 
 FeatureClass = Union[Type[TextRegion], Type[AssetLink], Type[ObjectDetection]]
 ExternalId = str
@@ -360,7 +350,7 @@ class VisionExtractItem(CogniteResource):
         predictions: Dict[str, Any] = None,
         file_external_id: str = None,
         error_message: str = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: "CogniteClient" = None,  # noqa: F821
     ) -> None:
         """Data class for storing predictions for a single image file"""
         self.file_id = file_id
@@ -369,11 +359,11 @@ class VisionExtractItem(CogniteResource):
         self.predictions = self._process_predictions_dict(predictions) if isinstance(predictions, Dict) else predictions
 
         self._predictions_dict = predictions  # The "raw" predictions dict returned by the endpoint
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cast("CogniteClient", cognite_client)  # noqa: F821
 
     @classmethod
     def _load(
-        cls: "VisionExtractItem", resource: Union[Dict, str], cognite_client: "CogniteClient" = None
+        cls: "VisionExtractItem", resource: Union[Dict, str], cognite_client: "CogniteClient" = None  # noqa: F821
     ) -> Dict[str, Any]:
         """Override CogniteResource._load so that we can convert the dicts returned by the API to data classes"""
         extracted_item = super(VisionExtractItem, cls)._load(resource, cognite_client=cognite_client)

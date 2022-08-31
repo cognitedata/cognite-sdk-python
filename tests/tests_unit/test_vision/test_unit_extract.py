@@ -2,6 +2,8 @@ import re
 from typing import Any, Dict, List, Optional, Union
 
 import pytest
+from responses import RequestsMock
+
 from cognite.client import CogniteClient
 from cognite.client.data_classes.contextualization import JobStatus
 from cognite.client.data_classes.vision import (
@@ -11,7 +13,6 @@ from cognite.client.data_classes.vision import (
     TextDetectionParameters,
     VisionExtractJob,
 )
-from responses import RequestsMock
 from tests.utils import jsgz_load
 
 
@@ -115,7 +116,7 @@ class TestExtract_unit:
         features: Union[Feature, List[Feature]],
         parameters: Optional[FeatureParameters],
         error_message: Optional[str],
-        cognite_client: CogniteClient
+        cognite_client: CogniteClient,
     ) -> None:
         VAPI = cognite_client.vision
         file_ids = [1, 2, 3]
@@ -159,10 +160,7 @@ class TestExtract_unit:
             assert 1 == num_get_requests
 
     def test_get_extract(
-        self,
-        mock_post_extract: RequestsMock,
-        mock_get_extract: RequestsMock,
-        cognite_client: CogniteClient
+        self, mock_post_extract: RequestsMock, mock_get_extract: RequestsMock, cognite_client: CogniteClient
     ) -> None:
         VAPI = cognite_client.vision
         file_ids = [1, 2, 3]

@@ -1,12 +1,8 @@
 import pytest
+
 from cognite.client import CogniteClient
 from cognite.client.data_classes.contextualization import JobStatus
-from cognite.client.data_classes.vision import (
-    Feature,
-    FeatureParameters,
-    PeopleDetectionParameters,
-    VisionExtractJob,
-)
+from cognite.client.data_classes.vision import Feature, FeatureParameters, PeopleDetectionParameters, VisionExtractJob
 
 
 @pytest.fixture(scope="class")
@@ -14,6 +10,7 @@ def file_id(cognite_client: CogniteClient) -> int:
     # Create a test file
     file = cognite_client.files.retrieve(external_id="vision_extract_test_file")
     yield file.id
+
 
 class TestExtract_integration:
     def test_extract_integration(self, cognite_client: CogniteClient, file_id: int) -> None:

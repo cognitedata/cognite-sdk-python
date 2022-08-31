@@ -1,16 +1,12 @@
-import json
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Union
 from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
+
 from cognite.client import CogniteClient, utils
 from cognite.client.data_classes import Annotation
 from cognite.client.data_classes.annotation_types.images import TextRegion
-from cognite.client.data_classes.annotation_types.primitives import (
-    BoundingBox,
-    CdfResourceRef,
-    VisionResource,
-)
+from cognite.client.data_classes.annotation_types.primitives import BoundingBox, CdfResourceRef, VisionResource
 from cognite.client.data_classes.contextualization import JobStatus
 from cognite.client.data_classes.vision import (
     AssetTagDetectionParameters,
@@ -20,10 +16,7 @@ from cognite.client.data_classes.vision import (
     VisionExtractJob,
     VisionExtractPredictions,
 )
-from cognite.client.utils._case_conversion import (
-    resource_to_camel_case,
-    resource_to_snake_case,
-)
+from cognite.client.utils._case_conversion import resource_to_camel_case, resource_to_snake_case
 
 mock_vision_predictions_dict: Dict[str, Any] = {
     "textPredictions": [

@@ -1,6 +1,7 @@
 from typing import List, Optional, Union
 
 from cognite.client._api._context_client import ContextAPI
+from cognite.client.data_classes.contextualization import ContextualizationJob
 from cognite.client.data_classes.vision import (
     CreatedDetectAssetsInFilesJob,
     DetectAssetsInFilesJob,
@@ -77,7 +78,7 @@ class VisionAPI(ContextAPI):
         file_ids: Optional[List[int]] = None,
         file_external_ids: Optional[List[str]] = None,
         parameters: Optional[FeatureParameters] = None,
-    ) -> VisionExtractJob:
+    ) -> ContextualizationJob:
         """Start an asynchronous job to extract features from image files.
 
         Args:
@@ -118,7 +119,7 @@ class VisionAPI(ContextAPI):
             job_cls=VisionExtractJob,
         )
 
-    def get_extract_job(self, job_id: InternalId) -> VisionExtractJob:
+    def get_extract_job(self, job_id: InternalId) -> ContextualizationJob:
         """Retrieve an existing extract job by ID.
 
         Args:
