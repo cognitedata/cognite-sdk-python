@@ -1,8 +1,6 @@
 import pytest
-from cognite.client.data_classes import FileMetadata
-from cognite.client.data_classes.contextualization import JobStatus
-
 from cognite.client import CogniteClient
+from cognite.client.data_classes.contextualization import JobStatus
 from cognite.client.data_classes.vision import (
     Feature,
     FeatureParameters,
@@ -10,27 +8,16 @@ from cognite.client.data_classes.vision import (
     VisionExtractJob,
 )
 
-COGNITE_CLIENT = CogniteClient()
-VAPI = COGNITE_CLIENT.vision
-
-
-@pytest.fixture(scope="class")
-def cognite_client() -> CogniteClient:
-    return CogniteClient()
-
 
 @pytest.fixture(scope="class")
 def file_id(cognite_client: CogniteClient) -> int:
     # Create a test file
-    name = "vision_extract_test_file"
-    file = cognite_client.files.create(FileMetadata(external_id=name, name=name), overwrite=True)[0]
+    file = cognite_client.files.retrieve(external_id="vision_extract_test_file")
     yield file.id
 
-    cognite_client.files.delete(id=file.id)
-
-
-class TestExtract:
-    def test_extract(self, file_id: int) -> None:
+class TestExtract_integration:
+    def test_extract_integration(self, cognite_client: CogniteClient, file_id: int) -> None:
+        VAPI = cognite_client.vision
         job = VAPI.extract(
             features=Feature.PEOPLE_DETECTION,
             file_ids=[file_id],

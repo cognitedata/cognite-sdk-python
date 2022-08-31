@@ -14,9 +14,6 @@ from cognite.client.data_classes.vision import (
 from responses import RequestsMock
 from tests.utils import jsgz_load
 
-COGNITE_CLIENT = CogniteClient()
-VAPI = COGNITE_CLIENT.vision
-
 
 @pytest.fixture
 def mock_post_response_body() -> Dict[str, Any]:
@@ -78,7 +75,7 @@ def mock_get_extract(rsps: RequestsMock, mock_get_response_body_ok: Dict[str, An
     yield rsps
 
 
-class TestExtract:
+class TestExtract_unit:
     @pytest.mark.parametrize(
         "features, parameters, error_message",
         [
@@ -111,14 +108,16 @@ class TestExtract:
             "multiple_features with parameters",
         ],
     )
-    def test_extract(
+    def test_extract_unit(
         self,
         mock_post_extract: RequestsMock,
         mock_get_extract: RequestsMock,
         features: Union[Feature, List[Feature]],
         parameters: Optional[FeatureParameters],
         error_message: Optional[str],
+        cognite_client: CogniteClient
     ) -> None:
+        VAPI = cognite_client.vision
         file_ids = [1, 2, 3]
         file_external_ids = []
         if error_message is not None:
@@ -163,7 +162,9 @@ class TestExtract:
         self,
         mock_post_extract: RequestsMock,
         mock_get_extract: RequestsMock,
+        cognite_client: CogniteClient
     ) -> None:
+        VAPI = cognite_client.vision
         file_ids = [1, 2, 3]
         file_external_ids = []
 
