@@ -15,6 +15,11 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 
+## [4.2.2] - 2022-09-01
+### Fixed
+- Fixes the issue when updating transformations with new nonce credentials
+
+
 ## [4.2.1] - 2022-08-23
 ### Changed
 - Change timeseries datapoints' time range to start from 01.01.1900
