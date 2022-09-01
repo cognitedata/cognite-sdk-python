@@ -5,7 +5,6 @@ import os
 import re
 from collections import UserList
 from json.decoder import JSONDecodeError
-from pprint import pprint  # noqa
 from typing import (
     TYPE_CHECKING,
     Any,

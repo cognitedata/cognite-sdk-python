@@ -68,45 +68,7 @@ Limits for listing resources default to 25, so the following code will return th
 
     >>> from cognite.client import CogniteClient
     >>> c = CogniteClient()
-    >>> ts_list = c.time_series.list(include_metadata=False)
-
-Plot time series
-----------------
-There are several ways of plotting a time series you have fetched from the API. The easiest is to call
-:code:`.plot()` on the returned :code:`TimeSeries` or :code:`TimeSeriesList` objects. By default, this plots the raw
-data points for the last 24 hours. If there are no data points for the last 24 hours, :code:`plot` will throw an exception.
-
-.. code:: python
-
-    >>> from cognite.client import CogniteClient
-    >>> c = CogniteClient()
-    >>> my_time_series = c.time_series.retrieve(id=<time-series-id>)
-    >>> my_time_series.plot()
-
-You can also pass arguments to the :code:`.plot()` method to change the start, end, aggregates, and granularity of the
-request.
-
-.. code:: python
-
-    >>> my_time_series.plot(start="365d-ago", end="now", aggregates=["average"], granularity="1d")
-
-The :code:`DatapointsArray` and :code:`DatapointsArrayList` objects that are returned when you fetch data points, also have :code:`.plot()`
-methods you can use to plot the data.
-
-.. code:: python
-
-    >>> from cognite.client import CogniteClient
-    >>> c = CogniteClient()
-    >>> my_datapoints = c.time_series.data.retrieve(
-    ...     id=[<time-series-ids>],
-    ...     start="10d-ago",
-    ...     aggregates=["max"],
-    ...     granularity="1h"
-    ... )
-    >>> my_datapoints.plot()
-
-.. NOTE::
-    To use the :code:`.plot()` functionality you need to install :code:`matplotlib`.
+    >>> ts_list = c.time_series.list()
 
 Create an asset hierarchy
 -------------------------
@@ -236,26 +198,15 @@ You can use the :code:`.to_pandas()` method on pretty much any object and get a 
 
 This is particularly useful when you are working with time series data and with tabular data from the Raw API.
 
-Matplotlib integration
-----------------------
-You can use the :code:`.plot()` method on any time series or data points result that the SDK returns. The method takes keyword
-arguments which are passed on to the underlying matplotlib plot function, allowing you to configure for example the
-size and layout of your plots.
-
-You need to install the matplotlib package manually:
-
-.. code:: bash
-
-    $ pip install matplotlib
-
 How to install extra dependencies
 ---------------------------------
-If your application requires the functionality from e.g. the :code:`pandas`, :code:`numpy`, or :code:`geopandas` dependencies,
-you should install the sdk along with its optional dependencies. The available extras are:
+If your application requires the functionality from e.g. the :code:`pandas`, :code:`sympy`, or :code:`geopandas` dependencies,
+you should install the SDK along with its optional dependencies. The available extras are:
 
-- pandas
-- geo
-- sympy
+- pandas: pandas
+- geo: geopanda, shapely
+- sympy: sympy
+- functions: pip
 - all (will install dependencies for all the above)
 
 These can be installed with the following command:

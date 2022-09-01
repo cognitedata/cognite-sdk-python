@@ -123,7 +123,6 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
     Examples:
 
             >>> from cognite.client.credentials import OAuthInteractive
-            >>> import os
             >>> oauth_provider = OAuthDeviceCode(
             ...     authority_url="https://login.microsoftonline.com/xyz",
             ...     client_id="abcd",
@@ -185,7 +184,6 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
     Examples:
 
             >>> from cognite.client.credentials import OAuthInteractive
-            >>> import os
             >>> oauth_provider = OAuthInteractive(
             ...     authority_url="https://login.microsoftonline.com/xyz",
             ...     client_id="abcd",

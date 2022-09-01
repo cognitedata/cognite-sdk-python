@@ -2,7 +2,19 @@ import cProfile
 import functools
 import gzip
 import json
+import os
 from contextlib import contextmanager
+
+
+@contextmanager
+def tmp_set_envvar(envvar: str, value: str):
+    old = os.getenv(envvar)
+    os.environ[envvar] = value
+    yield
+    if old is None:
+        del os.environ[envvar]
+    else:
+        os.environ[envvar] = old
 
 
 def jsgz_load(s):

@@ -10,19 +10,36 @@ Changes are grouped as follows
 - `Added` for new features.
 - `Changed` for changes in existing functionality.
 - `Deprecated` for soon-to-be removed features.
+- `Improved` for transparent changes, e.g. better performance.
 - `Removed` for now removed features.
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [5.0.0] - xx-yy-zz
-### Added/Changed/Fixed
-- Increased speed of varied datapoints fetch queries, especially when fetching many time series. Now matches API endpoint more closely:
-- DatapointsAPI/retrieve does no longer require `start` (default: `0`) and `end` (default: `now`)
-- DatapointsAPI/retrieve accepts a list of full query dictionaries for `id` and `external_id` giving full flexibility for e.g. individual start times, limits etc.
-- `limit=0` returns 0, not "unlimited"
-- `return_outside_points` returns both outside points (if they exist), regardless of `limit` setting
-- Aggregates returned now include the time period(s) (given by `granularity` unit) that start and end are part of (as opposed to only "fully in-between" points).
-- Aggregates now work properly with the `limit` parameter (used to only return first few batches).
+## [5.0.0] - 05-09-22
+### Improved
+- Greatly increased speed of varied datapoints fetch queries, especially when fetching huge numbers of many time series (100+) and very few (1-3) and all queries using a limit or for string datapoints.
+- Fetching datapoints fast is no longer reliant on up-to-date and correct count aggregates, and rather uses a recursive time-domain splitting approach based on the returned number of datapoints.
+
+### Changed
+- `DatapointsAPI.retrieve` does no longer require `start` (default: `0`) and `end` (default: `now`)
+- `DatapointsAPI.retrieve` accepts a list of full query dictionaries for `id` and `external_id` giving full flexibility for individual settings like `start` time, `limit` and `granularity` (to name a few), previously only possible with the `DatapointsAPI.query` endpoint.
+- Aggregates returned now include the time period(s) (given by `granularity` unit) that `start` and `end` are part of (as opposed to only "fully in-between" points). This is now aligned with the API.
+
+### Added
+- Vastly better integration tests for fetching datapoints.
+
+### Fixed
+- `TimeSeries.first()` and `TimeSeries.count()` now work with the expanded time domain (see 4.2.1). Additionally, they now also consider future points (previously used `end="now"`).
+- Fetching datapoints using `limit=0` now returns 0 datapoints, instead of "unlimited", inline with the API.
+- Fetching datapoints using `return_outside_points=True` returns both outside points (if they exist), regardless of `limit` setting. Previously, it was capped at `limit`, now up-to `limit+2` datapoints are returned, inline with the API.
+- Aggregates now work properly with the `limit` parameter. Due to the old implementation of using count aggregates *also when fetching aggregates* very often led to just a few returned batches.
+
+### Deprecated
+
+### Removed
+- All convenience methods related to plotting and the use of `matplotlib`.
+- DatapointsAPI.retrieve_dataframe_dict TODO
+- `DatapointsAPI.retrieve_dataframe` no longer support the `complete` keyword argument. Rationale: Weird and unintuitive syntax (passing a string using comma to separate options). Also, `aggregates` & `granularity` are no longer required arguments, and as such, interpolating or forward-filling to a fixed frequency, does not make sense anymore.
 
 ## [4.2.1] - 2022-08-23
 ### Changed

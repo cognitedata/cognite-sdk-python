@@ -4,7 +4,6 @@ import functools
 import heapq
 import math
 import statistics
-import warnings
 from abc import abstractmethod
 from concurrent.futures import CancelledError, as_completed
 from copy import copy
@@ -482,26 +481,9 @@ class DatapointsAPI(APIClient):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.__synthetic = SyntheticDatapointsAPI(
+        self.synthetic = SyntheticDatapointsAPI(
             self._config, api_version=self._api_version, cognite_client=self._cognite_client
         )
-        self.synthetic_query = self.__synthetic.query
-
-    @property
-    def synthetic(self) -> SyntheticDatapointsAPI:
-        # TODO (v6.0.0): Delete this whole property
-        warnings.warn(
-            "Accessing the SyntheticDatapointsAPI through `client.datapoints.synthetic` is deprecated and will be "
-            "removed in major version 6.0.0. The `synthetic.query` endpoint is now `client.time_series.data.synthetic_query`.",
-            DeprecationWarning,
-        )
-        if int(self.version.split(".")[0]) >= 6:
-            # In case we forget to delete this property in v6...
-            raise AttributeError(
-                "'DatapointsAPI' object has no attribute 'synthetic'. "
-                "Use `client.time_series.data.synthetic_query` instead."
-            )
-        return self.__synthetic
 
     def retrieve(
         self,
@@ -561,8 +543,8 @@ class DatapointsAPI(APIClient):
 
                 >>> dps = client.time_series.data.retrieve(
                 ...     id=[
-                ...         {"id": 42, end="2d-ago", "aggregates": ["average"]},
-                ...         {"id": 11, end="1d-ago", "aggregates": ["min", "max", "count"]},
+                ...         {"id": 42, "end": "2d-ago", "aggregates": ["average"]},
+                ...         {"id": 11, "end": "1d-ago", "aggregates": ["min", "max", "count"]},
                 ...     ],
                 ...     external_id={"external_id": "1", "aggregates": ["max"]},
                 ...     start="5d-ago",
@@ -953,7 +935,7 @@ class DatapointsAPI(APIClient):
                 >>> ts_xid = "my-foo-ts"
                 >>> idx = pd.date_range(start="2018-01-01", periods=100, freq="1d")
                 >>> noise = np.random.normal(0, 1, 100)
-                >>> df = pd.DataFrame({ts_id: noise}, index=idx)
+                >>> df = pd.DataFrame({ts_xid: noise}, index=idx)
                 >>> c.time_series.data.insert_dataframe(df)
         """
         np = cast(Any, local_import("numpy"))
@@ -1043,15 +1025,15 @@ class DatapointsPoster:
 
     def _bin_datapoints(self, dps_object_list: List[Dict[str, Any]]) -> List[List[Dict[str, Any]]]:
         for dps_object in dps_object_list:
-            for i in range(0, len(dps_object["datapoints"]), self.client._DPS_LIMIT):
+            for i in range(0, len(dps_object["datapoints"]), DPS_LIMIT):
                 dps_object_chunk = {k: dps_object[k] for k in ["id", "externalId"] if k in dps_object}
-                dps_object_chunk["datapoints"] = dps_object["datapoints"][i : i + self.client._DPS_LIMIT]
+                dps_object_chunk["datapoints"] = dps_object["datapoints"][i : i + DPS_LIMIT]
                 for bin in self.bins:
                     if bin.will_fit(len(dps_object_chunk["datapoints"])):
                         bin.add(dps_object_chunk)
                         break
                 else:
-                    bin = DatapointsBin(self.client._DPS_LIMIT, self.client._POST_DPS_OBJECTS_LIMIT)
+                    bin = DatapointsBin(DPS_LIMIT, POST_DPS_OBJECTS_LIMIT)
                     bin.add(dps_object_chunk)
                     self.bins.append(bin)
         binned_dps_object_list = []

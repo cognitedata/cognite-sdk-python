@@ -1,4 +1,3 @@
-import math
 import numbers
 import re
 import time
@@ -9,6 +8,7 @@ UNIT_IN_MS_WITHOUT_WEEK = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000}
 UNIT_IN_MS = {**UNIT_IN_MS_WITHOUT_WEEK, "w": 604800000}
 
 MIN_TIMESTAMP_MS = -2208988800000
+MAX_TIMESTAMP_MS = 2556143999999
 
 
 def datetime_to_ms(dt: datetime) -> int:
@@ -148,7 +148,11 @@ def split_time_range(start: int, end: int, n_splits: int, granularity_in_ms: int
     if n_splits < 1:
         raise ValueError(f"Cannot split into less than 1 piece, got {n_splits=}")
     tot_ms = end - start
+    if n_splits * granularity_in_ms > tot_ms:
+        raise ValueError(
+            f"Given time interval ({tot_ms=}) could not be split as `{n_splits=}` times `{granularity_in_ms=}` "
+            "is larger than the interval itself."
+        )
     # Find a `delta_ms` thats a multiple of granularity in ms (trivial for raw queries).
-    # ...we use `ceil` instead of `round` to make sure we "overshoot" `end`:
-    delta_ms = granularity_in_ms * math.ceil(tot_ms / n_splits / granularity_in_ms)
-    return [min(end, start + delta_ms * i) for i in range(n_splits + 1)]
+    delta_ms = granularity_in_ms * round(tot_ms / n_splits / granularity_in_ms)
+    return [*(start + delta_ms * i for i in range(n_splits)), end]

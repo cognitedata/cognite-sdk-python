@@ -15,6 +15,7 @@ from typing import (
     Dict,
     Generator,
     Iterable,
+    Iterator,
     List,
     Literal,
     NoReturn,
@@ -174,6 +175,16 @@ class DatapointsArray(CogniteResource):
         self.discrete_variance = discrete_variance
         self.total_variation = total_variation
 
+    @property
+    def _ts_info(self):
+        return {
+            "id": self.id,
+            "external_id": self.external_id,
+            "is_string": self.is_string,
+            "is_step": self.is_step,
+            "unit": self.unit,
+        }
+
     @classmethod
     def _load(
         cls,
@@ -188,11 +199,42 @@ class DatapointsArray(CogniteResource):
             return 0
         return len(self.timestamp)
 
+    def __eq__(self, other):
+        # Override CogniteResource __eq__ which checks exact type & dump being equal. We do not want
+        # this: comparing arrays with mostly floats is a bad idea - and dump is exceedingly expensive.
+        return id(self) == id(other)
+
     def __str__(self) -> str:
         return json.dumps(self.dump(convert_timestamps=True), indent=4)
 
     def _repr_html_(self) -> str:
         return self.to_pandas()._repr_html_()
+
+    def __getitem__(self, item: Any) -> Union[Datapoint, DatapointsArray]:
+        if isinstance(item, slice):
+            return self._slice(item)
+        return Datapoint(**{attr: arr[item].item() for attr, arr in zip(*self._data_fields())})
+
+    def _slice(self, part: slice) -> DatapointsArray:
+        return DatapointsArray(**self._ts_info, **{attr: arr[part] for attr, arr in zip(*self._data_fields())})
+
+    def __iter__(self) -> Iterator[Datapoint]:
+        # Let's not create a single Datapoint more than we have too:
+        attrs, arrays = self._data_fields()
+        yield from (Datapoint(**dict(zip(attrs, row))) for row in zip(*arrays))
+
+    def _data_fields(self) -> Tuple[List[str], List[npt.NDArray]]:
+        attrs, arrays = map(
+            list,
+            zip(
+                *[
+                    (attr, arr)
+                    for attr in ("timestamp", "value", *ALL_DATAPOINT_AGGREGATES)
+                    if (arr := getattr(self, attr)) is not None
+                ]
+            ),
+        )
+        return attrs, arrays
 
     def dump(self, camel_case: bool = False, convert_timestamps: bool = False) -> Dict[str, Any]:
         """Dump the datapoints into a json serializable Python data type.
@@ -204,25 +246,19 @@ class DatapointsArray(CogniteResource):
         Returns:
             List[Dict[str, Any]]: A list of dicts representing the instance.
         """
-        dps_to_dump = {
-            attr: dps
-            for attr in ["timestamp", "value", *ALL_DATAPOINT_AGGREGATES]
-            if (dps := getattr(attr, self)) is not None
-        }
+        attrs, arrays = self._data_fields()
         if convert_timestamps:
+            assert attrs[0] == "timestamp"
             # Note: numpy does not have a strftime method to get the exact format we want (hence the datetime detour):
-            dps_to_dump["timestamp"] = dps_to_dump["timestamp"].astype("datetime64[ms]").astype(datetime).astype(str)
+            arrays[0] = arrays[0].astype("datetime64[ms]").astype(datetime).astype(str)
 
         if camel_case:
-            dps_to_dump = convert_all_keys_to_camel_case(dps_to_dump)
+            attrs = list(map(to_camel_case, attrs))
 
         dumped = {
-            "id": self.id,
-            "external_id": self.external_id,
-            "is_string": self.is_string,
-            "is_step": self.is_step,
-            "unit": self.unit,
-            "datapoints": [dict(zip(dps_to_dump.keys(), row)) for row in zip(*dps_to_dump.values())],
+            **self._ts_info,
+            # Using .item() is not strictly necessary, but it gives us vanilla python types:
+            "datapoints": [dict(zip(attrs, [v.item() for v in row])) for row in zip(*arrays)],
         }
         if camel_case:
             dumped = convert_all_keys_to_camel_case(dumped)
@@ -406,12 +442,6 @@ class Datapoints(CogniteResource):
             df = Datapoints._strip_aggregate_names(df)
         return df
 
-    def plot(self, *args: Any, **kwargs: Any) -> None:
-        """Plot the datapoints."""
-        plt = cast(Any, local_import("matplotlib.pyplot"))
-        self.to_pandas().plot(*args, **kwargs)
-        plt.show()
-
     @staticmethod
     def _strip_aggregate_names(df: "pandas.DataFrame") -> "pandas.DataFrame":
         expr = f"\\|({'|'.join(ALL_DATAPOINT_AGGREGATES)})$"
@@ -426,10 +456,10 @@ class Datapoints(CogniteResource):
     ) -> "Datapoints":
         del cognite_client  # just needed for signature
         instance = cls(
-            id=dps_object["id"],
+            id=dps_object.get("id"),
             external_id=dps_object.get("externalId"),
             is_string=dps_object["isString"],
-            is_step=dps_object["isStep"],
+            is_step=dps_object.get("isStep"),
             unit=dps_object.get("unit"),
         )
         expected_fields = (expected_fields or ["value"]) + ["timestamp"]
@@ -561,12 +591,6 @@ class DatapointsList(CogniteResourceList):
 
     def _repr_html_(self) -> str:
         return self.to_pandas()._repr_html_()
-
-    def plot(self, *args: Any, **kwargs: Any) -> None:
-        """Plot the list of datapoints."""
-        plt = local_import("matplotlib.pyplot")
-        self.to_pandas().plot(*args, **kwargs)
-        plt.show()  # type: ignore
 
 
 @dataclass

@@ -519,10 +519,10 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
         default_factory=dps_container, init=False
     )
 
-    def __post_init__(self, first_dps_batch):
+    def __post_init__(self, first_dps_batch, first_limit):
         self.offset_next = granularity_to_ms(self.query.granularity)
         self._set_aggregate_vars()
-        super().__post_init__(first_dps_batch)
+        super().__post_init__(first_dps_batch, first_limit)
 
     def _set_aggregate_vars(self):
         self.float_aggs = self.query.aggregates[:]
