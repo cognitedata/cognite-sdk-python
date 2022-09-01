@@ -1,5 +1,6 @@
+import platform
+import time
 from datetime import datetime, timezone
-from time import sleep
 from unittest import mock
 
 import numpy as np
@@ -21,6 +22,7 @@ from tests.utils import tmp_set_envvar
 
 
 class TestDatetimeToMs:
+    @pytest.mark.skipif(platform.system() == "Windows", reason="Overriding timezone is too much hassle on Windows")
     @pytest.mark.parametrize(
         "local_tz, expected_ms",
         [
@@ -31,6 +33,7 @@ class TestDatetimeToMs:
     )
     def test_naive_datetime_to_ms(self, local_tz, expected_ms):
         with tmp_set_envvar("TZ", local_tz):
+            time.tzset()
             assert datetime_to_ms(datetime(2018, 1, 31, tzinfo=None)) == expected_ms
             assert timestamp_to_ms(datetime(2018, 1, 31, tzinfo=None)) == expected_ms
 
@@ -65,8 +68,9 @@ class TestTimestampToMs:
         assert -1514764800000 == timestamp_to_ms(-1514764800000)
 
     def test_datetime(self):
-        # Also see: `TestDatetimeToMs.test_naive_datetime_to_ms`
+        # Note: See also `TestDatetimeToMs.test_naive_datetime_to_ms`
         with tmp_set_envvar("TZ", "UTC"):
+            time.tzset()
             assert 1514764800000 == timestamp_to_ms(datetime(2018, 1, 1))
             assert 1546300800000 == timestamp_to_ms(datetime(2019, 1, 1))
             assert MIN_TIMESTAMP_MS == timestamp_to_ms(datetime(1900, 1, 1))
@@ -109,7 +113,7 @@ class TestTimestampToMs:
         time_now = timestamp_to_ms("now")
         assert abs(expected_time_now - time_now) < 10
 
-        sleep(0.2)
+        time.sleep(0.2)
 
         time_now = timestamp_to_ms("now")
         assert abs(expected_time_now - time_now) > 190
