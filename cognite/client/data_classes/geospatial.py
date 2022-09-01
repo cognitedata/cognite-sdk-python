@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 
 from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
+from cognite.client.utils._auxiliary import to_snake_case
 
 if TYPE_CHECKING:
     import geopandas
@@ -40,7 +41,7 @@ class FeatureType(CogniteResource):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
         instance = cls(cognite_client=cognite_client)
         for key, value in resource.items():
-            snake_case_key = utils._auxiliary.to_snake_case(key)
+            snake_case_key = to_snake_case(key)
             setattr(instance, snake_case_key, value)
         return instance
 
@@ -95,7 +96,7 @@ class FeatureTypeUpdateList:
 class Feature(CogniteResource):
     """A representation of a feature in the geospatial api."""
 
-    PRE_DEFINED_SNAKE_CASE_NAMES = {utils._auxiliary.to_snake_case(key) for key in RESERVED_PROPERTIES}
+    PRE_DEFINED_SNAKE_CASE_NAMES = {to_snake_case(key) for key in RESERVED_PROPERTIES}
 
     def __init__(self, external_id: str = None, cognite_client: "CogniteClient" = None, **properties: Any):
         self.external_id = external_id
@@ -170,7 +171,7 @@ def _is_reserved_property(property_name: str) -> bool:
 
 
 def _to_feature_property_name(property_name: str) -> str:
-    return utils._auxiliary.to_snake_case(property_name) if property_name in RESERVED_PROPERTIES else property_name
+    return to_snake_case(property_name) if property_name in RESERVED_PROPERTIES else property_name
 
 
 class FeatureList(CogniteResourceList):
@@ -288,7 +289,7 @@ class FeatureAggregate(CogniteResource):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
         instance = cls(cognite_client=cognite_client)
         for key, value in resource.items():
-            snake_case_key = utils._auxiliary.to_snake_case(key)
+            snake_case_key = to_snake_case(key)
             setattr(instance, snake_case_key, value)
         return instance
 
@@ -316,7 +317,7 @@ class CoordinateReferenceSystem(CogniteResource):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
         instance = cls(cognite_client=cognite_client)
         for key, value in resource.items():
-            snake_case_key = utils._auxiliary.to_snake_case(key)
+            snake_case_key = to_snake_case(key)
             setattr(instance, snake_case_key, value)
         return instance
 
