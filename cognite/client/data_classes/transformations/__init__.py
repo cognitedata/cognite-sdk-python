@@ -313,6 +313,14 @@ class TransformationUpdate(CogniteUpdate):
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "destinationOidcCredentials")
 
     @property
+    def source_nonce(self) -> _PrimitiveTransformationUpdate:
+        return TransformationUpdate._PrimitiveTransformationUpdate(self, "sourceNonce")
+
+    @property
+    def destination_nonce(self) -> _PrimitiveTransformationUpdate:
+        return TransformationUpdate._PrimitiveTransformationUpdate(self, "destinationNonce")
+
+    @property
     def source_api_key(self) -> _PrimitiveTransformationUpdate:
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "sourceApiKey")
 
@@ -334,9 +342,11 @@ class TransformationUpdate(CogniteUpdate):
 
     def dump(self, camel_case: bool = True) -> Dict[str, Any]:
         obj = super().dump()
-        dest = obj.get("update", {}).get("destination", {}).get("set")
-        if isinstance(dest, AlphaDataModelInstances) or isinstance(dest, SequenceRows):
-            obj["update"]["destination"]["set"] = dest.dump(camel_case=camel_case)
+
+        for update in obj.get("update", {}).values():
+            item = update.get("set")
+            if isinstance(item, (AlphaDataModelInstances, SequenceRows, OidcCredentials, NonceCredentials)):
+                update["set"] = item.dump(camel_case=camel_case)
         return obj
 
 
