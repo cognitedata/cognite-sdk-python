@@ -67,6 +67,7 @@ class TestTimestampToMs:
         assert 1514764800000 == timestamp_to_ms(1514764800000)
         assert -1514764800000 == timestamp_to_ms(-1514764800000)
 
+    @pytest.mark.skipif(platform.system() == "Windows", reason="Overriding timezone is too much hassle on Windows")
     def test_datetime(self):
         # Note: See also `TestDatetimeToMs.test_naive_datetime_to_ms`
         with tmp_set_envvar("TZ", "UTC"):

@@ -32,14 +32,14 @@ repos:
               - '\.py$'
       repo: https://github.com/psf/black
       rev: 22.3.0
-  # -   hooks:  # TODO: Reactivate
-  #       - id: mypy
-  #         name: mypy
-  #         entry: mypy cognite --non-interactive --install-types
-  #         language: system
-  #         files: ^.*.(py|pyi)$
-  #         pass_filenames: false
-  #     repo: local
+  -   hooks:
+        - id: mypy
+          name: mypy
+          entry: poetry run mypy cognite --non-interactive --install-types
+          language: system
+          files: ^.*.(py|pyi)$
+          pass_filenames: false
+      repo: local
   -   hooks:
         -   id: flake8
 # TODO: add this too

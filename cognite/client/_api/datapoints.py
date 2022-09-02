@@ -497,7 +497,7 @@ class DatapointsAPI(APIClient):
     ) -> Union[None, DatapointsArray, DatapointsArrayList]:
         """`Retrieve datapoints for one or more time series. <https://docs.cognite.com/api/v1/#operation/getMultiTimeSeriesDatapoints>`_
 
-        Note: All arguments are optional, as long as at least one identifier is given. When passing aggregates, granularity must also be given.
+        **Note**: All arguments are optional, as long as at least one identifier is given. When passing aggregates, granularity must also be given.
         When passing dict objects with specific parameters, these will take precedence. See examples below.
 
         Args:
@@ -512,7 +512,7 @@ class DatapointsAPI(APIClient):
             ignore_unknown_ids (bool): Whether or not to ignore missing time series rather than raising an exception. Default: False
 
         Returns:
-            Union[None, DatapointsArray, DatapointsArrayList]: An object containing the requested data, or a list of such objects. If `ignore_unknown_ids` is True, a single time series is requested and it is not found, the function will return `None`.
+            Union[None, DatapointsArray, DatapointsArrayList]: A `DatapointsArray` containing the requested data, or a `DatapointsArrayList` if multiple time series was asked for. If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
 
         Examples:
 
@@ -528,7 +528,7 @@ class DatapointsAPI(APIClient):
 
                 >>> from datetime import datetime, timezone
                 >>> dps = client.time_series.data.retrieve(
-                ...    external_id=["abc", "def"],
+                ...    external_id=["foo", "bar"],
                 ...    start=datetime(2018, 1, 1, tzinfo=timezone.utc),
                 ...    end=datetime(2018, 1, 1, tzinfo=timezone.utc),
                 ...    aggregates=["average"],
@@ -544,20 +544,33 @@ class DatapointsAPI(APIClient):
                 ...         {"id": 42, "end": "2d-ago", "aggregates": ["average"]},
                 ...         {"id": 11, "end": "1d-ago", "aggregates": ["min", "max", "count"]},
                 ...     ],
-                ...     external_id={"external_id": "1", "aggregates": ["max"]},
+                ...     external_id={"external_id": "foo", "aggregates": ["max"]},
                 ...     start="5d-ago",
                 ...     granularity="1h")
 
             All parameters except `ignore_unknown_ids` can be individually set (if you want to specify multiple values
             for this, you'll have to use the `.query` endpoint).
 
+                >>> start_time = "2w-ago"
+                >>> limit = None
+                >>> ts1 = 1337
+                >>> ts2 = {
+                ...     "id": 42,
+                ...     "start": -12345,  # Overrides `start_time`
+                ...     "end": "1h-ago",
+                ...     "limit": 1000,  # Overrides `limit`
+                ...     "include_outside_points": True
+                ... }
+                >>> ts3 = {
+                ...     "id": 11,
+                ...     "end": "1h-ago",
+                ...     "aggregates": ["max"],
+                ...     "granularity": "42h",
+                ...     "include_outside_points": False
+                ... }
                 >>> dps = client.time_series.data.retrieve(
-                ...     start="2w-ago",  # To illustrate: This will be overruled by 2/3 time series below:
-                ...     id=[
-                ...         1337,
-                ...         {"id": 42, "start": -12345, "end": "1h-ago", "limit": 1000, "include_outside_points": True},
-                ...         {"id": 11, "start": 123456, "end": "1h-ago", "aggregates": ["max"], "granularity": "42h", "limit": None, "include_outside_points": False},
-                ...     ])
+                ...    id=[ts1, ts2, ts3], start=start_time, limit=limit
+                ... )
         """
         query = DatapointsQuery(
             start=start,
@@ -588,9 +601,9 @@ class DatapointsAPI(APIClient):
         """`Get the latest datapoint for one or more time series <https://docs.cognite.com/api/v1/#operation/getLatest>`_
 
         Args:
-            id (Union[int, List[int]]: Id or list of ids.
+            id (Union[int, List[int]]): Id or list of ids.
             external_id (Union[str, List[str]): External id or list of external ids.
-            before: Union[int, str, datetime]: Get latest datapoint before this time.
+            before: (Union[int, str, datetime]): Get latest datapoint before this time.
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -648,7 +661,7 @@ class DatapointsAPI(APIClient):
     ) -> DatapointsArrayList:
         """Get datapoints for one or more time series by passing query objects directly.
 
-        Note: Before version 5.0.0, this method was the only way to retrieve datapoints easily with individual fetch settings.
+        **Note**: Before version 5.0.0, this method was the only way to retrieve datapoints easily with individual fetch settings.
         This is no longer the case: `query` only differs from `retrieve` in that you can specify different values for `ignore_unknown_ids` for the multiple
         query objects you pass, which is quite a niche feature. Since this is a boolean parameter, the only real use case is to pass exactly
         two queries to this method; the "can be" missing and the "can't be" missing groups. If you do not need this functionality,
@@ -658,8 +671,7 @@ class DatapointsAPI(APIClient):
             query (Union[DatapointsQuery, Iterable[DatapointsQuery]): The datapoint queries
 
         Returns:
-            DatapointsArrayList: The requested datapoints. Note that you always get a single DatapointsArrayList returned. The order is the ids
-                of the first query, then the external ids of the first query, then similarly for the next queries.
+            DatapointsArrayList: The requested datapoints. Note that you always get a single `DatapointsArrayList` returned. The order is the ids of the first query, then the external ids of the first query, then similarly for the next queries.
 
         Examples:
 
@@ -708,32 +720,29 @@ class DatapointsAPI(APIClient):
 
 
                 >>> from cognite.client import CogniteClient
+                >>> from datetime import datetime, timezone
                 >>> c = CogniteClient()
-                >>> # with datetime objects
-                >>> datapoints = [(datetime(2018,1,1), 1000), (datetime(2018,1,2), 2000)]
+                >>> # With datetime objects:
+                >>> datapoints = [
+                ...     (datetime(2018,1,1, tzinfo=timezone.utc), 1000),
+                ...     (datetime(2018,1,2, tzinfo=timezone.utc), 2000),
+                ... ]
                 >>> c.time_series.data.insert(datapoints, id=1)
-                >>> # with ms since epoch
+                >>> # With ms since epoch:
                 >>> datapoints = [(150000000000, 1000), (160000000000, 2000)]
                 >>> c.time_series.data.insert(datapoints, id=2)
 
             Or they can be a list of dictionaries::
 
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> # with datetime objects
-                >>> datapoints = [{"timestamp": datetime(2018,1,1), "value": 1000},
-                ...    {"timestamp": datetime(2018,1,2), "value": 2000}]
-                >>> c.time_series.data.insert(datapoints, external_id="abc")
-                >>> # with ms since epoch
-                >>> datapoints = [{"timestamp": 150000000000, "value": 1000},
-                ...    {"timestamp": 160000000000, "value": 2000}]
+                >>> datapoints = [
+                ...     {"timestamp": 150000000000, "value": 1000},
+                ...     {"timestamp": 160000000000, "value": 2000},
+                ... ]
                 >>> c.time_series.data.insert(datapoints, external_id="def")
 
-            Or they can be a Datapoints object::
+            Or they can be a Datapoints or DatapointsArray object (raw datapoints only)::
 
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> data = c.time_series.data.retrieve(external_id="abc",start=datetime(2018,1,1),end=datetime(2018,2,2))
+                >>> data = c.time_series.data.retrieve(external_id="abc", start="1w-ago", end="now")
                 >>> c.time_series.data.insert(data, external_id="def")
         """
         post_dps_object = Identifier.of_either(id, external_id).as_dict()
@@ -763,29 +772,18 @@ class DatapointsAPI(APIClient):
             the value::
 
                 >>> from cognite.client import CogniteClient
+                >>> from datetime import datetime, timezone
                 >>> c = CogniteClient()
 
                 >>> datapoints = []
-                >>> # with datetime objects and id
-                >>> datapoints.append({"id": 1, "datapoints": [(datetime(2018,1,1), 1000), (datetime(2018,1,2), 2000)]})
+                >>> # With datetime objects and id
+                >>> datapoints.append(
+                ...     {"id": 1, "datapoints": [
+                ...         (datetime(2018,1,1,tzinfo=timezone.utc), 1000),
+                ...         (datetime(2018,1,2,tzinfo=timezone.utc), 2000)
+                ... ]})
                 >>> # with ms since epoch and externalId
                 >>> datapoints.append({"externalId": 1, "datapoints": [(150000000000, 1000), (160000000000, 2000)]})
-
-                >>> c.time_series.data.insert_multiple(datapoints)
-
-            Or they can be a list of dictionaries::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-
-                >>> datapoints = []
-                >>> # with datetime objects and external id
-                >>> datapoints.append({"externalId": "1", "datapoints": [{"timestamp": datetime(2018,1,1), "value": 1000},
-                ...                     {"timestamp": datetime(2018,1,2), "value": 2000}]})
-                >>> # with ms since epoch and id
-                >>> datapoints.append({"id": 1, "datapoints": [{"timestamp": 150000000000, "value": 1000},
-                ...                     {"timestamp": 160000000000, "value": 2000}]})
-
                 >>> c.time_series.data.insert_multiple(datapoints)
         """
         dps_poster = DatapointsPoster(self)
@@ -868,7 +866,7 @@ class DatapointsAPI(APIClient):
     ) -> pd.DataFrame:
         """Get datapoints directly in a pandas dataframe (convenience method wrapping the `retrieve` method).
 
-        Note: If you have duplicated time series in your query, the dataframe columns will also contain duplicates.
+        **Note**: If you have duplicated time series in your query, the dataframe columns will also contain duplicates.
 
         See `DatapointsAPI.retrieve` method for a description of the parameters, must be passed by keywords.
 
