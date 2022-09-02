@@ -6,7 +6,6 @@ from random import random
 from unittest.mock import patch
 
 import numpy as np
-import pandas as pd
 import pytest
 
 from cognite.client._api.datapoints import DatapointsBin
@@ -885,11 +884,15 @@ class TestDatapointsObject:
 @pytest.mark.dsl
 class TestPandasIntegration:
     def test_datapoint(self, cognite_client):
+        import pandas as pd
+
         d = Datapoint(timestamp=0, value=2, max=3)
         expected_df = pd.DataFrame({"value": [2], "max": [3]}, index=[pd.Timestamp(0, unit="ms")])
         pd.testing.assert_frame_equal(expected_df, d.to_pandas(), check_like=True)
 
     def test_datapoints(self, cognite_client):
+        import pandas as pd
+
         d = Datapoints(id=1, timestamp=[1, 2, 3], average=[2, 3, 4], step_interpolation=[3, 4, 5])
         expected_df = pd.DataFrame(
             {"1|average": [2, 3, 4], "1|stepInterpolation": [3, 4, 5]},
@@ -898,6 +901,8 @@ class TestPandasIntegration:
         pd.testing.assert_frame_equal(expected_df, d.to_pandas())
 
     def test_datapoints_no_names(self, cognite_client):
+        import pandas as pd
+
         d = Datapoints(id=1, timestamp=[1, 2, 3], average=[2, 3, 4])
         expected_df = pd.DataFrame({"1": [2, 3, 4]}, index=pd.to_datetime(range(1, 4), unit="ms"))
         pd.testing.assert_frame_equal(expected_df, d.to_pandas(include_aggregate_name=False))
@@ -905,6 +910,8 @@ class TestPandasIntegration:
         pd.testing.assert_frame_equal(expected_df, d.to_pandas(include_aggregate_name=True))
 
     def test_id_and_external_id_set_gives_external_id_columns(self, cognite_client):
+        import pandas as pd
+
         d = Datapoints(id=0, external_id="abc", timestamp=[1, 2, 3], average=[2, 3, 4], step_interpolation=[3, 4, 5])
         expected_df = pd.DataFrame(
             {"abc|average": [2, 3, 4], "abc|stepInterpolation": [3, 4, 5]},
@@ -917,6 +924,8 @@ class TestPandasIntegration:
         assert d.to_pandas().empty
 
     def test_datapoints_list(self, cognite_client):
+        import pandas as pd
+
         d1 = Datapoints(id=1, timestamp=[1, 2, 3], average=[2, 3, 4], step_interpolation=[3, 4, 5])
         d2 = Datapoints(id=2, timestamp=[1, 2, 3], max=[2, 3, 4], step_interpolation=[3, 4, 5])
         d3 = Datapoints(id=3, timestamp=[1, 3], value=[1, 3])
@@ -934,6 +943,8 @@ class TestPandasIntegration:
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(), check_freq=False)
 
     def test_datapoints_list_names(self, cognite_client):
+        import pandas as pd
+
         d1 = Datapoints(id=2, timestamp=[1, 2, 3], max=[2, 3, 4])
         d2 = Datapoints(id=3, timestamp=[1, 3], average=[1, 3])
         dps_list = DatapointsList([d1, d2])
@@ -945,6 +956,8 @@ class TestPandasIntegration:
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(include_aggregate_name=False), check_freq=False)
 
     def test_datapoints_list_names_dup(self, cognite_client):
+        import pandas as pd
+
         d1 = Datapoints(id=2, timestamp=[1, 2, 3], max=[2, 3, 4])
         d2 = Datapoints(id=2, timestamp=[1, 3], average=[1, 3])
         dps_list = DatapointsList([d1, d2])
@@ -958,6 +971,8 @@ class TestPandasIntegration:
             dps_list.to_pandas(include_aggregate_name=False)
 
     def test_datapoints_list_non_aligned(self, cognite_client):
+        import pandas as pd
+
         d1 = Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3])
         d2 = Datapoints(id=2, timestamp=[3, 4, 5], value=[3, 4, 5])
 
@@ -989,6 +1004,8 @@ class TestPandasIntegration:
     def test_retrieve_datapoints_some_aggregates_omitted(
         self, cognite_client, mock_get_datapoints_one_ts_has_missing_aggregates
     ):
+        import pandas as pd
+
         df = cognite_client.time_series.data.retrieve_dataframe(
             id={"id": 1, "aggregates": ["average"]},
             external_id={"externalId": "def", "aggregates": ["interpolation"]},
@@ -1006,6 +1023,8 @@ class TestPandasIntegration:
         pd.testing.assert_frame_equal(df, expected_df)
 
     def test_retrieve_dataframe_several_missing(self, cognite_client, mock_get_datapoints_several_missing):
+        import pandas as pd
+
         df = cognite_client.time_series.data.retrieve_dataframe(
             id=[
                 {"id": 1, "aggregates": ["average"]},
@@ -1026,6 +1045,8 @@ class TestPandasIntegration:
         pd.testing.assert_frame_equal(df, expected_df)
 
     def test_insert_dataframe(self, cognite_client, mock_post_datapoints):
+        import pandas as pd
+
         timestamps = [1500000000000, 1510000000000, 1520000000000, 1530000000000]
         df = pd.DataFrame(
             {"123": [1, 2, 3, 4], "456": [5.0, 6.0, 7.0, 8.0]},
@@ -1048,6 +1069,8 @@ class TestPandasIntegration:
         } == request_body
 
     def test_insert_dataframe_external_ids(self, cognite_client, mock_post_datapoints):
+        import pandas as pd
+
         timestamps = [1500000000000, 1510000000000, 1520000000000, 1530000000000]
         df = pd.DataFrame(
             {"123": [1, 2, 3, 4], "456": [5.0, 6.0, 7.0, 8.0]},
@@ -1070,6 +1093,8 @@ class TestPandasIntegration:
         } == request_body
 
     def test_insert_dataframe_with_nans(self, cognite_client):
+        import pandas as pd
+
         timestamps = [1500000000000, 1510000000000, 1520000000000, 1530000000000]
         df = pd.DataFrame(
             {"123": [1, 2, None, 4], "456": [5.0, 6.0, 7.0, 8.0]},
@@ -1079,6 +1104,8 @@ class TestPandasIntegration:
             cognite_client.time_series.data.insert_dataframe(df, dropna=False)
 
     def test_insert_dataframe_with_dropna(self, cognite_client, mock_post_datapoints):
+        import pandas as pd
+
         timestamps = [1500000000000, 1510000000000, 1520000000000, 1530000000000]
         df = pd.DataFrame(
             {"123": [1, 2, None, 4], "456": [5.0, 6.0, 7.0, 8.0]},
@@ -1103,13 +1130,15 @@ class TestPandasIntegration:
         } == request_body
 
     def test_insert_dataframe_single_dp(self, cognite_client, mock_post_datapoints):
+        import pandas as pd
+
         timestamps = [1500000000000]
         df = pd.DataFrame({"a": [1.0], "b": [2.0]}, index=pd.to_datetime(timestamps, unit="ms"))
         res = cognite_client.time_series.data.insert_dataframe(df, external_id_headers=True)
         assert res is None
 
     def test_insert_dataframe_with_infs(self, cognite_client):
-        import numpy as np
+        import pandas as pd
 
         timestamps = [1500000000000, 1510000000000, 1520000000000, 1530000000000]
         df = pd.DataFrame(
@@ -1120,6 +1149,8 @@ class TestPandasIntegration:
             cognite_client.time_series.data.insert_dataframe(df)
 
     def test_insert_dataframe_with_strings(self, cognite_client, mock_post_datapoints):
+        import pandas as pd
+
         timestamps = [1500000000000, 1510000000000, 1520000000000, 1530000000000]
         df = pd.DataFrame(
             {"123": ["a", "b", "c", "d"], "456": [5.0, 6.0, 7.0, 8.0]},
