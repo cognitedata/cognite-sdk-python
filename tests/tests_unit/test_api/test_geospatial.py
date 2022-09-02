@@ -67,7 +67,7 @@ def test_features(test_feature_type):
 class TestGeospatialAPI:
     @pytest.mark.dsl
     def test_to_pandas(self, test_feature_type, test_features):
-        df = test_features.to_pandas()
+        df = test_features.to_pandas(camel_case=True)
         assert set(list(df)) == {"externalId", "dataSetId", "position", "volume", "temperature", "pressure", "assetIds"}
 
     @pytest.mark.dsl

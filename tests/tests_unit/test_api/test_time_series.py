@@ -226,7 +226,7 @@ class TestPandasIntegration:
     def test_time_series_to_pandas(self, cognite_client, mock_ts_response):
         import pandas as pd
 
-        df = cognite_client.time_series.retrieve(id=1).to_pandas()
+        df = cognite_client.time_series.retrieve(id=1).to_pandas(camel_case=True)
         assert isinstance(df, pd.DataFrame)
         assert "metadata" not in df.columns
         assert [0] == df.loc["securityCategories"][0]
