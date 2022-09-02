@@ -117,10 +117,10 @@ class CogniteResource:
                 if hasattr(instance, snake_case_key):
                     setattr(instance, snake_case_key, value)
             return instance
-        raise TypeError("Resource must be json str or Dict, not {}".format(type(resource)))
+        raise TypeError("Resource must be json str or dict, not {}".format(type(resource)))
 
     def to_pandas(
-        self, expand: Sequence[str] = ("metadata",), ignore: List[str] = None, camel_case: bool = True
+        self, expand: Sequence[str] = ("metadata",), ignore: List[str] = None, camel_case: bool = False
     ) -> "pandas.DataFrame":
         """Convert the instance into a pandas DataFrame.
 
@@ -241,7 +241,7 @@ class CogniteResourceList(UserList):
             return self._id_to_item.get(id)
         return self._external_id_to_item.get(external_id)
 
-    def to_pandas(self, camel_case: bool = True) -> "pandas.DataFrame":
+    def to_pandas(self, camel_case: bool = False) -> "pandas.DataFrame":
         """Convert the instance into a pandas DataFrame.
 
         Returns:

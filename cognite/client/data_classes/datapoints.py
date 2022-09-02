@@ -117,7 +117,7 @@ class Datapoint(CogniteResource):
         self.discrete_variance = discrete_variance
         self.total_variation = total_variation
 
-    def to_pandas(self, camel_case: bool = True) -> "pandas.DataFrame":  # type: ignore[override]
+    def to_pandas(self, camel_case: bool = False) -> "pandas.DataFrame":  # type: ignore[override]
         """Convert the datapoint into a pandas DataFrame.
 
         Args:
@@ -273,7 +273,7 @@ class DatapointsArray(CogniteResource):
             raise ValueError("Argument `column_names` must be either 'external_id' or 'id'")
         identifier = identifier_dct[column_names]
         if identifier is None:  # Time series are not required to have an external_id unfortunately...
-            identifier = self.id
+            identifier = identifier_dct["id"]
             warnings.warn(
                 f"Time series does not have an external ID, so its ID ({self.id}) was used instead as "
                 'the column name in the DataFrame. If this is expected, consider passing `column_names="id"` '

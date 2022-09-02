@@ -50,8 +50,6 @@ if TYPE_CHECKING:
 
 
 class DpsFetchOrchestrator:
-    SKIP_TASK = object()
-
     def __init__(self, dps_client: DatapointsAPI, user_queries: List[DatapointsQuery]):
         self.dps_client = dps_client
         self.max_workers = self.dps_client._config.max_workers
@@ -124,7 +122,7 @@ class EagerDpsFetcher(DpsFetchOrchestrator):
         # Note: We delay getting the next payload as much as possible; this way, when we count number of
         # points left to fetch JIT, we have the most up-to-date estimate (and may quit early):
         if (item := task.get_next_payload()) is None:
-            return [self.SKIP_TASK]
+            return [None]
 
         (payload := copy(payload) or {})["items"] = [item]
         return self.dps_client._post(self.dps_client._RESOURCE_PATH + "/list", json=payload).json()["items"]
@@ -137,7 +135,7 @@ class EagerDpsFetcher(DpsFetchOrchestrator):
             future = next(as_completed(futures_dct))
             ts_task = (subtask := futures_dct.pop(future)).parent
             res = self._get_result_with_exception_handling(future, ts_task, ts_task_lookup, futures_dct)
-            if res is self.SKIP_TASK:
+            if res is None:
                 continue
             # We may dynamically split subtasks based on what % of time range was returned:
             if new_subtasks := subtask.store_partial_result(res):
@@ -185,12 +183,12 @@ class EagerDpsFetcher(DpsFetchOrchestrator):
         try:
             return future.result()[0]
         except CancelledError:
-            return self.SKIP_TASK
+            return
         except CogniteAPIError as e:
             if not (e.code == 400 and e.missing and ts_task.query.ignore_unknown_ids):
                 raise
             elif ts_task.is_done:
-                return self.SKIP_TASK
+                return
             ts_task.is_done = True
             del ts_task_lookup[ts_task.query]
             self._cancel_futures_for_finished_ts_task(ts_task, futures_dct)

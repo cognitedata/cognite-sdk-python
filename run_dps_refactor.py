@@ -7,6 +7,9 @@ import pandas as pd
 
 from setup_client import setup_cog_client
 
+which_client = "py-sdk-tests"
+print(f"Running with {which_client=}")
+
 xids = random.sample(
     [
         f"ts-test-#01-daily-{i}/650"
@@ -26,9 +29,10 @@ payload = {
     "ignore_unknown_ids": True,
     "include_outside_points": False,
 }
+payload = None
 
-START = pd.Timestamp("1972-01-01 00:00:00").value // int(1e6)
-END = pd.Timestamp("2030-01-01 00:00:00").value // int(1e6)
+START = 0  # pd.Timestamp("1972-01-01 00:00:00").value // int(1e6)
+END = "now"  # pd.Timestamp("2030-01-01 00:00:00").value // int(1e6)
 LIMIT = None
 AGGREGATES = None
 # AGGREGATES = ["average", "interpolation", "stepInterpolation"]
@@ -42,6 +46,8 @@ INCLUDE_OUTSIDE_POINTS = False
 IGNORE_UNKNOWN_IDS = True
 # ID = None
 ID = [
+    1581323881658399,
+    42,
     # {"id": 226740051491},
     # {"id": 2546012653669, "start": 1031539300000},  # string, xid=9694359_cargo_type
     # {"id": 1111111111111},  # missing...
@@ -89,9 +95,11 @@ EXTERNAL_ID = [
     # for i in range(1, 651)
 ]
 # EXTERNAL_ID = random.sample(EXTERNAL_ID, 650)
+EXTERNAL_ID = "test__constant_0_with_noise"
+# EXTERNAL_ID = None
 
 max_workers = 20
-client = setup_cog_client(max_workers, debug=False)
+client = setup_cog_client(which_client, max_workers, debug=False)
 
 t0 = timer()
 if payload is not None:
@@ -112,7 +120,7 @@ else:
         ignore_unknown_ids=IGNORE_UNKNOWN_IDS,
     )
     pprint(settings)
-    res = client.datapoints.retrieve_new(**settings)
+    res = client.datapoints.retrieve(**settings)
 t1 = timer()
 df = res.to_pandas().rename(columns=lambda s: s.split("|")[-1])
 print(df.head())
