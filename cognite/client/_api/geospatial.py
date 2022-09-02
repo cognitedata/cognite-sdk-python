@@ -491,6 +491,88 @@ class GeospatialAPI(APIClient):
             ),
         )
 
+    def list_features(
+        self,
+        feature_type_external_id: str,
+        filter: Optional[Dict[str, Any]] = None,
+        properties: Dict[str, Any] = None,
+        limit: int = 100,
+        allow_crs_transformation: bool = False,
+    ) -> FeatureList:
+        """`List features`
+        <https://docs.cognite.com/api/v1/#operation/listFeatures>
+
+        This method allows to filter all features.
+
+        Args:
+            feature_type_external_id: the feature type to list features for
+            filter (Dict[str, Any]): the list filter
+            limit (int, optional): Maximum number of features to return. Defaults to 25. Set to -1, float("inf") or None
+                to return all features.
+            properties (Dict[str, Any]): the output property selection
+            allow_crs_transformation: If true, then input geometries will be transformed into the Coordinate Reference
+                System defined in the feature type specification. When it is false, then requests with geometries in
+                Coordinate Reference System different from the ones defined in the feature type will result in
+                CogniteAPIError exception.
+
+        Returns:
+            FeatureList: the filtered features
+
+        Examples:
+
+            List features:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> my_feature_type = c.geospatial.retrieve_feature_types(
+                ...     external_id="my_feature_type"
+                ... )
+                >>> my_feature = c.geospatial.create_features(
+                ...     feature_type_external_id=my_feature_type,
+                ...     feature=Feature(
+                ...         external_id="my_feature",
+                ...         temperature=12.4,
+                ...         location={"wkt": "POINT(0 1)"}
+                ...     )
+                ... )
+                >>> res = c.geospatial.list_features(
+                ...     feature_type_external_id="my_feature_type",
+                ...     filter={"range": {"property": "temperature", "gt": 12.0}}
+                ... )
+                >>> for f in res:
+                ...     # do something with the features
+
+            Search for features and select output properties:
+
+                >>> res = c.geospatial.list_features(
+                ...     feature_type_external_id=my_feature_type,
+                ...     filter={},
+                ...     properties={"temperature": {}, "pressure": {}}
+                ... )
+
+            Search for features with spatial filters:
+
+                >>> res = c.geospatial.list_features(
+                ...     feature_type_external_id=my_feature_type,
+                ...     filter={"stWithin": {
+                ...         "property": "location",
+                ...         "value": {"wkt": "POLYGON((0 0, 0 1, 1 1, 0 0))"}
+                ...     }}
+                ... )
+        """
+        return self._list(
+            list_cls=FeatureList,
+            resource_cls=Feature,
+            resource_path=self._feature_resource_path(feature_type_external_id),
+            method="POST",
+            limit=limit,
+            filter=filter,
+            other_params={
+                "allowCrsTransformation": (True if allow_crs_transformation else None),
+                "output": {"properties": properties},
+            },
+        )
+
     def search_features(
         self,
         feature_type_external_id: str,

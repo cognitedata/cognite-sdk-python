@@ -14,6 +14,9 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [4.3.0] - 2022-09-02
+### Added
+- Add geospatial.list_features
 
 ## [4.2.1] - 2022-08-23
 ### Changed

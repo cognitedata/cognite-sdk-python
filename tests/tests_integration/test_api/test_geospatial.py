@@ -449,6 +449,10 @@ class TestGeospatialAPI:
         feature_list = FeatureList(list(features))
         assert len(feature_list) == len(many_features)
 
+    def test_list(self, cognite_client, test_feature_type, test_features):
+        res = cognite_client.geospatial.list_features(feature_type_external_id=test_feature_type.external_id, limit=4)
+        assert len(res) == 4
+
     def test_to_pandas(self, test_feature_type, test_features):
         df = test_features.to_pandas()
         assert list(df) == [
