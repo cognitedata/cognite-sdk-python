@@ -2,10 +2,6 @@
 __pycache__/
 *.py[cod]
 
-# Local credentials  # TODO: remove before merge->master
-local_cog_client.py
-cache.bin
-
 # Distribution / packaging
 .Python
 env/

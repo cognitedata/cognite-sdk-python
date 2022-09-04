@@ -1,6 +1,6 @@
 import re
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Tuple, Union, cast
 
 import cognite.client.utils._time
 from cognite.client import utils
@@ -20,7 +20,7 @@ class SyntheticDatapointsAPI(APIClient):
 
     def query(
         self,
-        expressions: Union[str, "sympy.Expr", List[Union[str, "sympy.Expr"]]],
+        expressions: Union[str, "sympy.Expr", Sequence[Union[str, "sympy.Expr"]]],
         start: Union[int, str, datetime],
         end: Union[int, str, datetime],
         limit: int = None,
@@ -31,7 +31,7 @@ class SyntheticDatapointsAPI(APIClient):
         """`Calculate the result of a function on time series. <https://docs.cognite.com/api/v1/#operation/querySyntheticTimeseries>`_
 
         Args:
-            expressions (Union[str, "sympy.Expr", List[Union[str, "sympy.Expr"]]]): Functions to be calculated. Supports both strings and sympy expressions. Strings can have either the API `ts{}` syntax, or contain variable names to be replaced using the `variables` parameter.
+            expressions (Union[str, "sympy.Expr", Sequence[Union[str, "sympy.Expr"]]]): Functions to be calculated. Supports both strings and sympy expressions. Strings can have either the API `ts{}` syntax, or contain variable names to be replaced using the `variables` parameter.
             start (Union[int, str, datetime]): Inclusive start.
             end (Union[int, str, datetime]): Exclusive end
             limit (int): Number of datapoints per expression to retrieve.
@@ -48,28 +48,26 @@ class SyntheticDatapointsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> dps = c.datapoints.synthetic.query(expressions="TS{id:123} + TS{externalId:'abc'}", start="2w-ago", end="now")
+                >>> dps = c.time_series.data.synthetic.query(expressions="TS{id:123} + TS{externalId:'abc'}", start="2w-ago", end="now")
 
             Use variables to re-use an expression:
 
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
                 >>> vars = {"A": "my_ts_external_id", "B": client.time_series.retrieve(id=1)}
-                >>> dps = c.datapoints.synthetic.query(expressions="A+B", start="2w-ago", end="now", variables=vars)
+                >>> dps = c.time_series.data.synthetic.query(expressions="A+B", start="2w-ago", end="now", variables=vars)
 
             Use sympy to build complex expressions:
 
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
                 >>> from sympy import symbols, cos, sin
                 >>> a = symbols('a')
-                >>> dps = c.datapoints.synthetic.query([sin(a), cos(a)], start="2w-ago", end="now", variables={"a": "my_ts_external_id"}, aggregate='interpolation', granularity='1m')
+                >>> dps = c.time_series.data.synthetic.query([sin(a), cos(a)], start="2w-ago", end="now", variables={"a": "my_ts_external_id"}, aggregate='interpolation', granularity='1m')
         """
         if limit is None or limit == -1:
             limit = cast(int, float("inf"))
 
         tasks = []
-        expressions_to_iterate = expressions if isinstance(expressions, List) else [expressions]
+        expressions_to_iterate = (
+            expressions if (isinstance(expressions, Sequence) and not isinstance(expressions, str)) else [expressions]
+        )
 
         for i in range(len(expressions_to_iterate)):
             expression, short_expression = self._build_expression(

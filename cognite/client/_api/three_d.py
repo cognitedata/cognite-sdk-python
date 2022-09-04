@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterator, List, Optional, Sequence, Union, cast
+from typing import Any, Dict, Iterator, Optional, Sequence, Union, cast
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -14,6 +14,7 @@ from cognite.client.data_classes import (
     ThreeDNode,
     ThreeDNodeList,
 )
+from cognite.client.utils._identifier import IdentifierSequence, InternalId
 
 
 class ThreeDAPI(APIClient):
@@ -79,7 +80,7 @@ class ThreeDModelsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.three_d.models.retrieve(id=1)
         """
-        return self._retrieve(cls=ThreeDModel, id=id)
+        return self._retrieve(cls=ThreeDModel, identifier=InternalId(id))
 
     def list(self, published: bool = None, limit: int = 25) -> ThreeDModelList:
         """`List 3d models. <https://docs.cognite.com/api/v1/#operation/get3DModels>`_
@@ -122,11 +123,11 @@ class ThreeDModelsAPI(APIClient):
             limit=limit,
         )
 
-    def create(self, name: Union[str, List[str]]) -> Union[ThreeDModel, ThreeDModelList]:
+    def create(self, name: Union[str, Sequence[str]]) -> Union[ThreeDModel, ThreeDModelList]:
         """`Create new 3d models. <https://docs.cognite.com/api/v1/#operation/create3DModels>`_
 
         Args:
-            name (Union[str, List[str]): The name of the 3d model(s) to create.
+            name (Union[str, Sequence[str]): The name of the 3d model(s) to create.
 
         Returns:
             Union[ThreeDModel, ThreeDModelList]: The created 3d model(s).
@@ -139,7 +140,7 @@ class ThreeDModelsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.three_d.models.create(name="My Model")
         """
-        utils._auxiliary.assert_type(name, "name", [str, list])
+        utils._auxiliary.assert_type(name, "name", [str, Sequence])
         if isinstance(name, str):
             name_processed: Union[Dict[str, Any], Sequence[Dict[str, Any]]] = {"name": name}
         else:
@@ -147,12 +148,12 @@ class ThreeDModelsAPI(APIClient):
         return self._create_multiple(list_cls=ThreeDModelList, resource_cls=ThreeDModel, items=name_processed)
 
     def update(
-        self, item: Union[ThreeDModel, ThreeDModelUpdate, List[Union[ThreeDModel, ThreeDModelUpdate]]]
+        self, item: Union[ThreeDModel, ThreeDModelUpdate, Sequence[Union[ThreeDModel, ThreeDModelUpdate]]]
     ) -> Union[ThreeDModel, ThreeDModelList]:
         """`Update 3d models. <https://docs.cognite.com/api/v1/#operation/update3DModels>`_
 
         Args:
-            item (Union[ThreeDModel, ThreeDModelUpdate, List[Union[ThreeDModel, ThreeDModelUpdate]]]): ThreeDModel(s) to update
+            item (Union[ThreeDModel, ThreeDModelUpdate, Sequence[Union[ThreeDModel, ThreeDModelUpdate]]]): ThreeDModel(s) to update
 
         Returns:
             Union[ThreeDModel, ThreeDModelList]: Updated ThreeDModel(s)
@@ -180,11 +181,11 @@ class ThreeDModelsAPI(APIClient):
             list_cls=ThreeDModelList, resource_cls=ThreeDModel, update_cls=ThreeDModelUpdate, items=item
         )
 
-    def delete(self, id: Union[int, List[int]]) -> None:
+    def delete(self, id: Union[int, Sequence[int]]) -> None:
         """`Delete 3d models. <https://docs.cognite.com/api/v1/#operation/delete3DModels>`_
 
         Args:
-            id (Union[int, List[int]]): ID or list of IDs to delete.
+            id (Union[int, Sequence[int]]): ID or list of IDs to delete.
 
         Returns:
             None
@@ -197,7 +198,7 @@ class ThreeDModelsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.three_d.models.delete(id=1)
         """
-        self._delete_multiple(ids=id, wrap_ids=True)
+        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=True)
 
 
 class ThreeDRevisionsAPI(APIClient):
@@ -251,17 +252,17 @@ class ThreeDRevisionsAPI(APIClient):
         return self._retrieve(
             cls=ThreeDModelRevision,
             resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
-            id=id,
+            identifier=InternalId(id),
         )
 
     def create(
-        self, model_id: int, revision: Union[ThreeDModelRevision, List[ThreeDModelRevision]]
+        self, model_id: int, revision: Union[ThreeDModelRevision, Sequence[ThreeDModelRevision]]
     ) -> Union[ThreeDModelRevision, ThreeDModelRevisionList]:
         """`Create a revisions for a specified 3d model. <https://docs.cognite.com/api/v1/#operation/create3DRevisions>`_
 
         Args:
             model_id (int): Create revisions for this model.
-            revision (Union[ThreeDModelRevision, List[ThreeDModelRevision]]): The revision(s) to create.
+            revision (Union[ThreeDModelRevision, Sequence[ThreeDModelRevision]]): The revision(s) to create.
 
         Returns:
             Union[ThreeDModelRevision, ThreeDModelRevisionList]: The created revision(s)
@@ -316,14 +317,16 @@ class ThreeDRevisionsAPI(APIClient):
         self,
         model_id: int,
         item: Union[
-            ThreeDModelRevision, ThreeDModelRevisionUpdate, List[Union[ThreeDModelRevision, ThreeDModelRevisionUpdate]]
+            ThreeDModelRevision,
+            ThreeDModelRevisionUpdate,
+            Sequence[Union[ThreeDModelRevision, ThreeDModelRevisionUpdate]],
         ],
     ) -> Union[ThreeDModelRevision, ThreeDModelRevisionList]:
         """`Update 3d model revisions. <https://docs.cognite.com/api/v1/#operation/update3DRevisions>`_
 
         Args:
             model_id (int): Update the revision under the model with this id.
-            item (Union[ThreeDModelRevision, ThreeDModelRevisionUpdate, List[Union[ThreeDModelRevision, ThreeDModelRevisionUpdate]]]):
+            item (Union[ThreeDModelRevision, ThreeDModelRevisionUpdate, Sequence[Union[ThreeDModelRevision, ThreeDModelRevisionUpdate]]]):
                 ThreeDModelRevision(s) to update
 
         Returns:
@@ -355,12 +358,12 @@ class ThreeDRevisionsAPI(APIClient):
             items=item,
         )
 
-    def delete(self, model_id: int, id: Union[int, List[int]]) -> None:
+    def delete(self, model_id: int, id: Union[int, Sequence[int]]) -> None:
         """`Delete 3d model revisions. <https://docs.cognite.com/api/v1/#operation/delete3DRevisions>`_
 
         Args:
             model_id (int): Delete the revision under the model with this id.
-            id (Union[int, List[int]]): ID or list of IDs to delete.
+            id (Union[int, Sequence[int]]): ID or list of IDs to delete.
 
         Returns:
             None
@@ -375,7 +378,7 @@ class ThreeDRevisionsAPI(APIClient):
         """
         self._delete_multiple(
             resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
-            ids=id,
+            identifiers=IdentifierSequence.load(ids=id),
             wrap_ids=True,
         )
 
@@ -458,7 +461,7 @@ class ThreeDRevisionsAPI(APIClient):
         self,
         model_id: int,
         revision_id: int,
-        properties: Dict[str, Dict[str, List[str]]] = None,
+        properties: Dict[str, Dict[str, Sequence[str]]] = None,
         limit: int = 25,
         partitions: int = None,
     ) -> ThreeDNodeList:
@@ -467,7 +470,7 @@ class ThreeDRevisionsAPI(APIClient):
         Args:
             model_id (int): Id of the model.
             revision_id (int): Id of the revision.
-            properties (Dict[str, Dict[str, List[str]]]): Properties for filtering. The object contains one or more category. Each category references one or more properties. Each property is associated with a list of values. For a node to satisfy the filter, it must, for each category/property in the filter, contain the catogery+property combination with a value that is contained within the corresponding list in the filter.
+            properties (Dict[str, Dict[str, Sequence[str]]]): Properties for filtering. The object contains one or more category. Each category references one or more properties. Each property is associated with a list of values. For a node to satisfy the filter, it must, for each category/property in the filter, contain the catogery+property combination with a value that is contained within the corresponding list in the filter.
             limit (int): Maximun number of nodes to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
             partitions (int): The result is retrieved in this many parts in parallel. Requires `sort_by_node_id` to be set to `true`.
@@ -595,14 +598,14 @@ class ThreeDAssetMappingAPI(APIClient):
         )
 
     def create(
-        self, model_id: int, revision_id: int, asset_mapping: Union[ThreeDAssetMapping, List[ThreeDAssetMapping]]
+        self, model_id: int, revision_id: int, asset_mapping: Union[ThreeDAssetMapping, Sequence[ThreeDAssetMapping]]
     ) -> Union[ThreeDAssetMapping, ThreeDAssetMappingList]:
         """`Create 3d node asset mappings. <https://docs.cognite.com/api/v1/#operation/create3DMappings>`_
 
         Args:
             model_id (int): Id of the model.
             revision_id (int): Id of the revision.
-            asset_mapping (Union[ThreeDAssetMapping, List[ThreeDAssetMapping]]): The asset mapping(s) to create.
+            asset_mapping (Union[ThreeDAssetMapping, Sequence[ThreeDAssetMapping]]): The asset mapping(s) to create.
 
         Returns:
             Union[ThreeDAssetMapping, ThreeDAssetMappingList]: The created asset mapping(s).
@@ -623,14 +626,14 @@ class ThreeDAssetMappingAPI(APIClient):
         )
 
     def delete(
-        self, model_id: int, revision_id: int, asset_mapping: Union[ThreeDAssetMapping, List[ThreeDAssetMapping]]
+        self, model_id: int, revision_id: int, asset_mapping: Union[ThreeDAssetMapping, Sequence[ThreeDAssetMapping]]
     ) -> None:
         """`Delete 3d node asset mappings. <https://docs.cognite.com/api/v1/#operation/delete3DMappings>`_
 
         Args:
             model_id (int): Id of the model.
             revision_id (int): Id of the revision.
-            asset_mapping (Union[ThreeDAssetMapping, List[ThreeDAssetMapping]]): The asset mapping(s) to delete.
+            asset_mapping (Union[ThreeDAssetMapping, Sequence[ThreeDAssetMapping]]): The asset mapping(s) to delete.
 
         Returns:
             None
@@ -645,7 +648,7 @@ class ThreeDAssetMappingAPI(APIClient):
                 >>> res = c.three_d.asset_mappings.delete(model_id=1, revision_id=1, asset_mapping=mapping_to_delete)
         """
         path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
-        utils._auxiliary.assert_type(asset_mapping, "asset_mapping", [list, ThreeDAssetMapping])
+        utils._auxiliary.assert_type(asset_mapping, "asset_mapping", [Sequence, ThreeDAssetMapping])
         if isinstance(asset_mapping, ThreeDAssetMapping):
             asset_mapping = [asset_mapping]
         chunks = utils._auxiliary.split_into_chunks(

@@ -8,6 +8,10 @@ class LoginAPI(APIClient):
     def status(self) -> LoginStatus:
         """`Check login status <https://docs.cognite.com/api/v1/#operation/status>`_
 
+        Note:
+            This endpoint is only applicable if the client has been authenticated with an api key. If not,
+            use `client.iam.token.inspect` instead
+
         Returns:
             LoginStatus: The login status of the current api key.
 

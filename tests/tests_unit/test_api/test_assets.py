@@ -84,7 +84,7 @@ def mock_get_subtree_w_request_failure(mock_get_subtree_base, cognite_client):
     mock_get_subtree_base.add(
         mock_get_subtree_base.POST,
         cognite_client.assets._get_base_url_with_base_path() + "/assets/list",
-        status=503,
+        status=500,
         json={"error": {"message": "Service Unavailable"}},
     )
     yield mock_get_subtree_base

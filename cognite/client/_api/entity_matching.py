@@ -1,6 +1,5 @@
-from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union, cast
+from typing import Any, Dict, Optional, Sequence, Tuple, Type, TypeVar, Union
 
-from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes._base import CogniteResource
 from cognite.client.data_classes.contextualization import (
@@ -11,6 +10,7 @@ from cognite.client.data_classes.contextualization import (
     EntityMatchingModelUpdate,
 )
 from cognite.client.utils._auxiliary import convert_true_match
+from cognite.client.utils._identifier import IdentifierSequence
 
 T_ContextualizationJob = TypeVar("T_ContextualizationJob", bound=ContextualizationJob)
 
@@ -43,52 +43,39 @@ class EntityMatchingAPI(APIClient):
 
         Returns:
             EntityMatchingModel: Model requested."""
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        return cast(
-            Optional[EntityMatchingModel],
-            self._retrieve_multiple(
-                list_cls=EntityMatchingModelList,
-                resource_cls=EntityMatchingModel,
-                ids=id,
-                external_ids=external_id,
-                wrap_ids=True,
-            ),
+        identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
+        return self._retrieve_multiple(
+            list_cls=EntityMatchingModelList, resource_cls=EntityMatchingModel, identifiers=identifiers
         )
 
     def retrieve_multiple(
-        self, ids: Optional[List[int]] = None, external_ids: Optional[List[str]] = None
+        self, ids: Optional[Sequence[int]] = None, external_ids: Optional[Sequence[str]] = None
     ) -> EntityMatchingModelList:
         """Retrieve models
 
         Args:
-            ids (List[int]): ids of the model to retrieve.
-            external_ids (List[str]): external ids of the model to retrieve.
+            ids (Sequence[int]): ids of the model to retrieve.
+            external_ids (Sequence[str]): external ids of the model to retrieve.
 
         Returns:
             EntityMatchingModelList: Models requested."""
-        utils._auxiliary.assert_type(ids, "id", [List], allow_none=True)
-        utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=True)
-        return cast(
-            EntityMatchingModelList,
-            self._retrieve_multiple(
-                list_cls=EntityMatchingModelList,
-                resource_cls=EntityMatchingModel,
-                ids=ids,
-                external_ids=external_ids,
-                wrap_ids=True,
-            ),
+        identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
+        return self._retrieve_multiple(
+            list_cls=EntityMatchingModelList, resource_cls=EntityMatchingModel, identifiers=identifiers
         )
 
     def update(
         self,
         item: Union[
-            EntityMatchingModel, EntityMatchingModelUpdate, List[Union[EntityMatchingModel, EntityMatchingModelUpdate]]
+            EntityMatchingModel,
+            EntityMatchingModelUpdate,
+            Sequence[Union[EntityMatchingModel, EntityMatchingModelUpdate]],
         ],
     ) -> Union[EntityMatchingModelList, EntityMatchingModel]:
         """Update model
 
         Args:
-            item (Union[EntityMatchingModel,EntityMatchingModelUpdate,List[Union[EntityMatchingModel,EntityMatchingModelUpdate]]) : Model(s) to update
+            item (Union[EntityMatchingModel,EntityMatchingModelUpdate, Sequence[Union[EntityMatchingModel,EntityMatchingModelUpdate]]) : Model(s) to update
         """
         return self._update_multiple(
             list_cls=EntityMatchingModelList,
@@ -143,20 +130,21 @@ class EntityMatchingAPI(APIClient):
             self._get(self._RESOURCE_PATH + "/jobs").json()["items"], cognite_client=self._cognite_client
         )
 
-    def delete(self, id: Union[int, List[int]] = None, external_id: Union[str, List[str]] = None) -> None:
+    def delete(self, id: Union[int, Sequence[int]] = None, external_id: Union[str, Sequence[str]] = None) -> None:
         """Delete models
 
         Args:
-            id (Union[int, List[int]): Id or list of ids
-            external_id (Union[str, List[str]]): External ID or list of external ids"""
-        self._delete_multiple(ids=id, external_ids=external_id, wrap_ids=True)
+            id (Union[int, Sequence[int]): Id or list of ids
+            external_id (Union[str, Sequence[str]]): External ID or list of external ids"""
+
+        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id, external_ids=external_id), wrap_ids=True)
 
     def fit(
         self,
-        sources: List[Union[Dict, CogniteResource]],
-        targets: List[Union[Dict, CogniteResource]],
-        true_matches: List[Union[Dict, Tuple[Union[int, str], Union[int, str]]]] = None,
-        match_fields: Union[Dict, List[Tuple[str, str]]] = None,
+        sources: Sequence[Union[Dict, CogniteResource]],
+        targets: Sequence[Union[Dict, CogniteResource]],
+        true_matches: Sequence[Union[Dict, Tuple[Union[int, str], Union[int, str]]]] = None,
+        match_fields: Union[Dict, Sequence[Tuple[str, str]]] = None,
         feature_type: str = None,
         classifier: str = None,
         ignore_missing_fields: bool = False,
@@ -165,13 +153,13 @@ class EntityMatchingAPI(APIClient):
         external_id: str = None,
     ) -> EntityMatchingModel:
         """Fit entity matching model.
-        Note: All users on this CDF subscription with assets read-all and entitymatching read-all and write-all
+        **Note**: All users on this CDF subscription with assets read-all and entitymatching read-all and write-all
         capabilities in the project, are able to access the data sent to this endpoint.
 
         Args:
             sources: entities to match from, should have an 'id' field. Tolerant to passing more than is needed or used (e.g. json dump of time series list). Metadata fields are automatically flattened to "metadata.key" entries, such that they can be used in match_fields.
             targets: entities to match to, should have an 'id' field.  Tolerant to passing more than is needed or used.
-            true_matches: Known valid matches given as a list of dicts with keys 'sourceId', 'sourceExternalId', 'sourceId', 'sourceExternalId'). If omitted, uses an unsupervised model.
+            true_matches: Known valid matches given as a list of dicts with keys 'sourceId', 'sourceExternalId', 'targetId', 'targetExternalId'). If omitted, uses an unsupervised model.
              A tuple can be used instead of the dictionary for convenience, interpreted as id/externalId based on type.
             match_fields: List of (from,to) keys to use in matching. Default in the API is [('name','name')]. Also accepts {"source": .., "target": ..}.
             feature_type (str): feature type that defines the combination of features used, see API docs for details.
@@ -210,20 +198,20 @@ class EntityMatchingAPI(APIClient):
 
     def predict(
         self,
-        sources: Optional[List[Dict]] = None,
-        targets: Optional[List[Dict]] = None,
+        sources: Optional[Sequence[Dict]] = None,
+        targets: Optional[Sequence[Dict]] = None,
         num_matches: int = 1,
         score_threshold: float = None,
         id: Optional[int] = None,
         external_id: Optional[str] = None,
     ) -> ContextualizationJob:
         """Predict entity matching. NB. blocks and waits for the model to be ready if it has been recently created.
-        Note: All users on this CDF subscription with assets read-all and entitymatching read-all and write-all
+        **Note**: All users on this CDF subscription with assets read-all and entitymatching read-all and write-all
         capabilities in the project, are able to access the data sent to this endpoint.
 
         Args:
-            sources: entities to match from, does not need an 'id' field. Tolerant to passing more than is needed or used (e.g. json dump of time series list). If omitted, will use data from fit.
-            targets: entities to match to, does not need an 'id' field.  Tolerant to passing more than is needed or used. If omitted, will use data from fit.
+            sources (Optional[Sequence[Dict]]): entities to match from, does not need an 'id' field. Tolerant to passing more than is needed or used (e.g. json dump of time series list). If omitted, will use data from fit.
+            targets (Optional[Sequence[Dict]]): entities to match to, does not need an 'id' field.  Tolerant to passing more than is needed or used. If omitted, will use data from fit.
             num_matches (int): number of matches to return for each item.
             score_threshold (float): only return matches with a score above this threshold
             ignore_missing_fields (bool): whether missing data in match_fields should be filled in with an empty string.
@@ -242,17 +230,18 @@ class EntityMatchingAPI(APIClient):
 
     def refit(
         self,
-        true_matches: List[Union[Dict, Tuple[Union[int, str], Union[int, str]]]],
+        true_matches: Sequence[Union[Dict, Tuple[Union[int, str], Union[int, str]]]],
         id: Optional[int] = None,
         external_id: Optional[str] = None,
     ) -> EntityMatchingModel:
         """Re-fits an entity matching model, using the combination of the old and new true matches.
-        Note: All users on this CDF subscription with assets read-all and entitymatching read-all and write-all
+        **Note**: All users on this CDF subscription with assets read-all and entitymatching read-all and write-all
         capabilities in the project, are able to access the data sent to this endpoint.
 
         Args:
-            true_matches: Updated known valid matches given as a list of dicts with keys 'fromId', 'fromExternalId', 'toId', 'toExternalId').
-                 A tuple can be used instead of the dictionary for convenience, interpreted as id/externalId based on type.
+            true_matches(Sequence[Union[Dict, Tuple[Union[int, str], Union[int, str]]]]): Updated known valid matches
+                given as a list of dicts with keys 'fromId', 'fromExternalId', 'toId', 'toExternalId').
+                A tuple can be used instead of the dictionary for convenience, interpreted as id/externalId based on type.
             id: ids of the model to use.
             external_id: external ids of the model to use.
         Returns:

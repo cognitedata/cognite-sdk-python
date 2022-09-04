@@ -4,13 +4,14 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 
 from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
+from cognite.client.utils._auxiliary import to_snake_case
 
 if TYPE_CHECKING:
     import geopandas
 
     from cognite.client import CogniteClient
 
-RESERVED_PROPERTIES = {"externalId", "dataSetId", "createdTime", "lastUpdatedTime"}
+RESERVED_PROPERTIES = {"externalId", "dataSetId", "assetIds", "createdTime", "lastUpdatedTime"}
 
 
 class FeatureType(CogniteResource):
@@ -40,7 +41,7 @@ class FeatureType(CogniteResource):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
         instance = cls(cognite_client=cognite_client)
         for key, value in resource.items():
-            snake_case_key = utils._auxiliary.to_snake_case(key)
+            snake_case_key = to_snake_case(key)
             setattr(instance, snake_case_key, value)
         return instance
 
@@ -95,7 +96,7 @@ class FeatureTypeUpdateList:
 class Feature(CogniteResource):
     """A representation of a feature in the geospatial api."""
 
-    PRE_DEFINED_SNAKE_CASE_NAMES = {utils._auxiliary.to_snake_case(key) for key in RESERVED_PROPERTIES}
+    PRE_DEFINED_SNAKE_CASE_NAMES = {to_snake_case(key) for key in RESERVED_PROPERTIES}
 
     def __init__(self, external_id: str = None, cognite_client: "CogniteClient" = None, **properties: Any):
         self.external_id = external_id
@@ -110,7 +111,7 @@ class Feature(CogniteResource):
         instance = cls(cognite_client=cognite_client)
         for key, value in resource.items():
             # Keep properties defined in Feature Type as is
-            normalized_key = utils._auxiliary.to_snake_case(key) if key in RESERVED_PROPERTIES else key
+            normalized_key = _to_feature_property_name(key)
             setattr(instance, normalized_key, value)
         return instance
 
@@ -169,10 +170,14 @@ def _is_reserved_property(property_name: str) -> bool:
     return property_name.startswith("_") or property_name in RESERVED_PROPERTIES
 
 
+def _to_feature_property_name(property_name: str) -> str:
+    return to_snake_case(property_name) if property_name in RESERVED_PROPERTIES else property_name
+
+
 class FeatureList(CogniteResourceList):
     _RESOURCE = Feature
 
-    def to_geopandas(self, geometry: str, camel_case: bool = True) -> "geopandas.GeoDataFrame":  # noqa: F821
+    def to_geopandas(self, geometry: str, camel_case: bool = False) -> "geopandas.GeoDataFrame":  # noqa: F821
         """Convert the instance into a GeoPandas GeoDataFrame.
 
         Args:
@@ -200,8 +205,7 @@ class FeatureList(CogniteResourceList):
         wkt = cast(Any, utils._auxiliary.local_import("shapely.wkt"))
         df[geometry] = df[geometry].apply(lambda g: wkt.loads(g["wkt"]))
         geopandas = cast(Any, utils._auxiliary.local_import("geopandas"))
-        gdf = geopandas.GeoDataFrame(df, geometry=geometry)
-        return gdf
+        return geopandas.GeoDataFrame(df, geometry=geometry)
 
     @staticmethod
     def from_geopandas(
@@ -245,11 +249,17 @@ class FeatureList(CogniteResourceList):
             feature = Feature(external_id=row[external_id_column], data_set_id=row.get(data_set_id_column, None))
             for prop in feature_type.properties.items():
                 prop_name = prop[0]
+                # skip generated columns and externalId, dataSetId columns
+                if prop_name.startswith("_") or prop_name in [
+                    "createdTime",
+                    "lastUpdatedTime",
+                    "externalId",
+                    "dataSetId",
+                ]:
+                    continue
                 prop_type = prop[1]["type"]
                 prop_optional = prop[1].get("optional", False)
-                if _is_reserved_property(prop_name):
-                    continue
-                column_name = property_column_mapping.get(prop[0], None)
+                column_name = property_column_mapping.get(prop_name, None)
                 column_value = row.get(column_name, None)
                 if column_name is None or column_value is None:
                     if prop_optional:
@@ -257,6 +267,7 @@ class FeatureList(CogniteResourceList):
                     else:
                         raise ValueError(f"Missing value for property {prop_name}")
 
+                prop_name = _to_feature_property_name(prop_name)
                 if _is_geometry_type(prop_type):
                     setattr(feature, prop_name, {"wkt": column_value.wkt})
                 else:
@@ -277,7 +288,7 @@ class FeatureAggregate(CogniteResource):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
         instance = cls(cognite_client=cognite_client)
         for key, value in resource.items():
-            snake_case_key = utils._auxiliary.to_snake_case(key)
+            snake_case_key = to_snake_case(key)
             setattr(instance, snake_case_key, value)
         return instance
 
@@ -305,7 +316,7 @@ class CoordinateReferenceSystem(CogniteResource):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
         instance = cls(cognite_client=cognite_client)
         for key, value in resource.items():
-            snake_case_key = utils._auxiliary.to_snake_case(key)
+            snake_case_key = to_snake_case(key)
             setattr(instance, snake_case_key, value)
         return instance
 

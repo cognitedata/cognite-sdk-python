@@ -1,12 +1,12 @@
 import random
 import re
-import sys
 import time
 import uuid
 
 import pytest
 
 from cognite.client import utils
+from cognite.client.data_classes import Asset
 from cognite.client.data_classes.geospatial import (
     CoordinateReferenceSystem,
     Feature,
@@ -20,8 +20,7 @@ from cognite.client.data_classes.geospatial import (
 )
 from cognite.client.exceptions import CogniteAPIError
 
-# sdk integration tests run concurrently on 3 python versions so this makes the CI builds independent from each other
-FIXED_SRID = 121111 + sys.version_info.minor
+FIXED_SRID = 121111 + random.randint(0, 1_000)
 
 
 @pytest.fixture()
@@ -101,7 +100,7 @@ def test_feature(cognite_client, test_feature_type):
 
 
 @pytest.fixture
-def test_features(cognite_client, test_feature_type):
+def test_features(cognite_client, test_feature_type, new_asset):
     external_ids = [f"F{i}_{uuid.uuid4().hex[:10]}" for i in range(4)]
     features = [
         Feature(
@@ -110,6 +109,7 @@ def test_features(cognite_client, test_feature_type):
             temperature=12.4,
             volume=1212.0,
             pressure=2121.0,
+            asset_ids=[new_asset.id],
         ),
         Feature(
             external_id=external_ids[1],
@@ -194,8 +194,15 @@ def clean_old_custom_crs(cognite_client):
         pass
 
 
+@pytest.fixture(autouse=True, scope="module")
+def new_asset(cognite_client):
+    asset = cognite_client.assets.create(Asset(name="any", description="haha", metadata={"a": "b"}))
+    yield asset
+    cognite_client.assets.delete(id=asset.id)
+
+
 class TestGeospatialAPI:
-    def test_create_features(self, cognite_client, test_feature_type, allow_crs_transformation):
+    def test_create_features(self, cognite_client, test_feature_type, allow_crs_transformation, new_asset):
         external_id = f"F_{uuid.uuid4().hex[:10]}"
         cognite_client.geospatial.create_features(
             test_feature_type.external_id,
@@ -205,6 +212,7 @@ class TestGeospatialAPI:
                 temperature=12.4,
                 volume=1212.0,
                 pressure=2121.0,
+                asset_ids=[new_asset.id],
             ),
             allow_crs_transformation=allow_crs_transformation,
         )
@@ -226,14 +234,23 @@ class TestGeospatialAPI:
         )
         assert res.external_id == test_feature.external_id
 
-    def test_update_single_feature(self, cognite_client, allow_crs_transformation, test_feature_type, test_feature):
+    def test_update_single_feature(
+        self, cognite_client, allow_crs_transformation, test_feature_type, test_feature, new_asset
+    ):
         res = cognite_client.geospatial.update_features(
             feature_type_external_id=test_feature_type.external_id,
-            feature=Feature(external_id=test_feature.external_id, temperature=6.237, pressure=12.21, volume=34.43),
+            feature=Feature(
+                external_id=test_feature.external_id,
+                temperature=6.237,
+                pressure=12.21,
+                volume=34.43,
+                asset_ids=[new_asset.id],
+            ),
             allow_crs_transformation=allow_crs_transformation,
         )
         assert res.external_id == test_feature.external_id
         assert res.temperature == 6.237
+        assert res.asset_ids == [new_asset.id]
 
     def test_update_multiple_features(self, cognite_client, allow_crs_transformation, test_feature_type, test_features):
         res = cognite_client.geospatial.update_features(
@@ -433,7 +450,7 @@ class TestGeospatialAPI:
         assert len(feature_list) == len(many_features)
 
     def test_to_pandas(self, test_feature_type, test_features):
-        df = test_features.to_pandas()
+        df = test_features.to_pandas(camel_case=True)
         assert list(df) == [
             "externalId",
             "position",
@@ -442,10 +459,11 @@ class TestGeospatialAPI:
             "pressure",
             "createdTime",
             "lastUpdatedTime",
+            "assetIds",
         ]
 
     def test_to_geopandas(self, test_feature_type, test_features):
-        gdf = test_features.to_geopandas(geometry="position")
+        gdf = test_features.to_geopandas(geometry="position", camel_case=True)
         assert list(gdf) == [
             "externalId",
             "position",
@@ -454,6 +472,7 @@ class TestGeospatialAPI:
             "pressure",
             "createdTime",
             "lastUpdatedTime",
+            "assetIds",
         ]
         geopandas = utils._auxiliary.local_import("geopandas")
         assert type(gdf.dtypes["position"]) == geopandas.array.GeometryDtype

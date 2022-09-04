@@ -30,12 +30,16 @@ class DatapointsQueryExternalId(CustomDatapoints):
     external_id: str  # required field
 
 
+DatapointsTypes = Union[int, float, str]
+DatapointsPayload = Dict[str, Union[str, List[CustomDatapoints]]]
+
+
 class DatapointsFromAPI(TypedDict):
     id: int
     externalId: Optional[str]
     isString: bool
     isStep: bool
-    datapoints: List[Dict[str, Union[int, float, str]]]
+    datapoints: List[Dict[str, DatapointsTypes]]
 
 
 DatapointsIdTypes = Union[int, DatapointsQueryId, Iterable[Union[int, DatapointsQueryId]]]

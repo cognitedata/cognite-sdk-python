@@ -1,6 +1,5 @@
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
 
-from cognite.client import utils
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteLabelUpdate,
@@ -13,10 +12,12 @@ from cognite.client.data_classes._base import (
     CogniteUpdate,
 )
 from cognite.client.data_classes.shared import TimestampRange
+from cognite.client.utils._identifier import Identifier
+from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
-    from cognite.client.data_classes import Asset, Datapoint, DatapointsList
+    from cognite.client.data_classes import Asset, Datapoint
 
 
 class TimeSeries(CogniteResource):
@@ -32,7 +33,7 @@ class TimeSeries(CogniteResource):
         asset_id (int): Asset ID of equipment linked to this time series.
         is_step (bool): Whether the time series is a step series or not.
         description (str): Description of the time series.
-        security_categories (List[int]): The required security categories to access this time series.
+        security_categories (Sequence[int]): The required security categories to access this time series.
         data_set_id (int): The dataSet Id for the item.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -51,7 +52,7 @@ class TimeSeries(CogniteResource):
         asset_id: int = None,
         is_step: bool = None,
         description: str = None,
-        security_categories: List[int] = None,
+        security_categories: Sequence[int] = None,
         data_set_id: int = None,
         created_time: int = None,
         last_updated_time: int = None,
@@ -74,32 +75,6 @@ class TimeSeries(CogniteResource):
         self.legacy_name = legacy_name
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def plot(
-        self,
-        start: str = "1d-ago",
-        end: str = "now",
-        aggregates: List[str] = None,
-        granularity: str = None,
-        id_labels: bool = False,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
-        plt = utils._auxiliary.local_import("matplotlib.pyplot")
-        identifier = utils._auxiliary.assert_at_least_one_of_id_or_external_id(self.id, self.external_id)
-        dps = self._cognite_client.datapoints.retrieve(
-            start=start, end=end, aggregates=aggregates, granularity=granularity, **identifier
-        )
-        if id_labels:
-            dps.plot(*args, **kwargs)
-        else:
-            assert self.id is not None
-            columns: Dict[Union[int, str], Any] = {self.id: self.name}
-            for agg in aggregates or []:
-                columns["{}|{}".format(self.id, agg)] = "{}|{}".format(self.name, agg)
-            df = dps.to_pandas().rename(columns=columns)
-            df.plot(*args, **kwargs)
-            plt.show()  # type: ignore
-
     def count(self) -> int:
         """Returns the number of datapoints in this time series.
 
@@ -108,11 +83,11 @@ class TimeSeries(CogniteResource):
         Returns:
             int: The number of datapoints in this time series.
         """
-        identifier = utils._auxiliary.assert_at_least_one_of_id_or_external_id(self.id, self.external_id)
-        dps = self._cognite_client.datapoints.retrieve(
-            start=0, end="now", aggregates=["count"], granularity="10d", **identifier
+        identifier = Identifier.load(self.id, self.external_id).as_dict()
+        dps = self._cognite_client.time_series.data.retrieve(
+            **identifier, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS, aggregates=["count"], granularity="100d"
         )
-        return sum(dps.count)
+        return dps.count.sum()
 
     def latest(self) -> Optional["Datapoint"]:  # noqa: F821
         """Returns the latest datapoint in this time series
@@ -120,20 +95,22 @@ class TimeSeries(CogniteResource):
         Returns:
             Datapoint: A datapoint object containing the value and timestamp of the latest datapoint.
         """
-        identifier = utils._auxiliary.assert_at_least_one_of_id_or_external_id(self.id, self.external_id)
-        dps = self._cognite_client.datapoints.retrieve_latest(**identifier)
+        identifier = Identifier.load(self.id, self.external_id).as_dict()
+        dps = self._cognite_client.time_series.data.retrieve_latest(**identifier)
         if len(dps) > 0:
             return list(dps)[0]
         return None
 
     def first(self) -> Optional["Datapoint"]:  # noqa: F821
-        """Returns the first datapoint in this time series.
+        """Returns the first datapoint in this time series. If empty, returns None.
 
         Returns:
             Datapoint: A datapoint object containing the value and timestamp of the first datapoint.
         """
-        identifier = utils._auxiliary.assert_at_least_one_of_id_or_external_id(self.id, self.external_id)
-        dps = self._cognite_client.datapoints.retrieve(**identifier, start=0, end="now", limit=1)
+        identifier = Identifier.load(self.id, self.external_id).as_dict()
+        dps = self._cognite_client.time_series.data.retrieve(
+            **identifier, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS, limit=1
+        )
         if len(dps) > 0:
             return list(dps)[0]
         return None
@@ -158,10 +135,10 @@ class TimeSeriesFilter(CogniteFilter):
         is_string (bool): Filter on isString.
         is_step (bool): Filter on isStep.
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        asset_ids (List[int]): Only include time series that reference these specific asset IDs.
-        asset_external_ids (List[str]): Asset External IDs of related equipment that this time series relates to.
-        asset_subtree_ids (List[Dict[str, Any]]): Only include time series that are related to an asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-        data_set_ids (List[Dict[str, Any]]): No description.
+        asset_ids (Sequence[int]): Only include time series that reference these specific asset IDs.
+        asset_external_ids (Sequence[str]): Asset External IDs of related equipment that this time series relates to.
+        asset_subtree_ids (Sequence[Dict[str, Any]]): Only include time series that are related to an asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        data_set_ids (Sequence[Dict[str, Any]]): No description.
         external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
         created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
         last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
@@ -175,10 +152,10 @@ class TimeSeriesFilter(CogniteFilter):
         is_string: bool = None,
         is_step: bool = None,
         metadata: Dict[str, str] = None,
-        asset_ids: List[int] = None,
-        asset_external_ids: List[str] = None,
-        asset_subtree_ids: List[Dict[str, Any]] = None,
-        data_set_ids: List[Dict[str, Any]] = None,
+        asset_ids: Sequence[int] = None,
+        asset_external_ids: Sequence[str] = None,
+        asset_subtree_ids: Sequence[Dict[str, Any]] = None,
+        data_set_ids: Sequence[Dict[str, Any]] = None,
         external_id_prefix: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -301,32 +278,3 @@ class TimeSeriesAggregate(dict):
 
 class TimeSeriesList(CogniteResourceList):
     _RESOURCE = TimeSeries
-
-    def plot(
-        self,
-        start: str = "1d-ago",
-        end: str = "now",
-        aggregates: List[str] = None,
-        granularity: str = None,
-        id_labels: bool = False,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
-        plt = utils._auxiliary.local_import("matplotlib.pyplot")
-        dps = cast(
-            "DatapointsList",
-            self._cognite_client.datapoints.retrieve(
-                id=[ts.id for ts in self.data], start=start, end=end, aggregates=aggregates, granularity=granularity
-            ),
-        )
-        if id_labels:
-            dps.plot(*args, **kwargs)
-        else:
-            columns = {}
-            for ts in self.data:
-                columns[ts.id] = ts.name
-                for agg in aggregates or []:
-                    columns["{}|{}".format(ts.id, agg)] = "{}|{}".format(ts.name, agg)
-            df = dps.to_pandas().rename(columns=columns)
-            df.plot(*args, **kwargs)
-            plt.show()  # type: ignore

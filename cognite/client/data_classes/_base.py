@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Collection, Dict, Generic, List, Optional
 
 from cognite.client import utils
 from cognite.client.exceptions import CogniteMissingClientError
+from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
     import pandas
@@ -116,10 +117,10 @@ class CogniteResource:
                 if hasattr(instance, snake_case_key):
                     setattr(instance, snake_case_key, value)
             return instance
-        raise TypeError("Resource must be json str or Dict, not {}".format(type(resource)))
+        raise TypeError("Resource must be json str or dict, not {}".format(type(resource)))
 
     def to_pandas(
-        self, expand: Sequence[str] = ("metadata",), ignore: List[str] = None, camel_case: bool = True
+        self, expand: Sequence[str] = ("metadata",), ignore: List[str] = None, camel_case: bool = False
     ) -> "pandas.DataFrame":
         """Convert the instance into a pandas DataFrame.
 
@@ -235,12 +236,12 @@ class CogniteResourceList(UserList):
         Returns:
             Optional[CogniteResource]: The requested item
         """
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
+        IdentifierSequence.load(id, external_id).assert_singleton()
         if id:
             return self._id_to_item.get(id)
         return self._external_id_to_item.get(external_id)
 
-    def to_pandas(self, camel_case: bool = True) -> "pandas.DataFrame":
+    def to_pandas(self, camel_case: bool = False) -> "pandas.DataFrame":
         """Convert the instance into a pandas DataFrame.
 
         Returns:

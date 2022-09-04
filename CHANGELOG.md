@@ -10,18 +10,133 @@ Changes are grouped as follows
 - `Added` for new features.
 - `Changed` for changes in existing functionality.
 - `Deprecated` for soon-to-be removed features.
+- `Improved` for transparent changes, e.g. better performance.
 - `Removed` for now removed features.
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [4.0.0] - xx-yy-zz
-### Added/Changed/Fixed
-- Increased speed of varied datapoints fetch queries, especially when fetching many time series. Now matches API endpoint more closely:
-  - DatapointsAPI/retrieve does no longer require `start` (default: `0`) and `end` (default: `now`)
-  - DatapointsAPI/retrieve accepts a list of full query dictionaries for `id` and `external_id` giving full flexibility for e.g. individual start times, limits etc.
-  - `limit=0` returns 0, not "unlimited"
-  - `return_outside_points` returns both outside points (if they exist), regardless of `limit` setting
-  - Aggregates returned now include the time period(s) (given by `granularity` unit) that start and end are part of (as opposed to only "fully in-between" points).
+## [5.0.0] - 05-09-22
+### Improved
+- Greatly increased speed of varied datapoints fetch queries, especially when fetching huge numbers of many time series (100+) and very few (1-3) and all queries using a limit or for string datapoints.
+- Fetching datapoints fast is no longer reliant on up-to-date and correct count aggregates, and rather uses a recursive time-domain splitting approach based on the returned number of datapoints.
+
+### Changed
+- `DatapointsAPI.retrieve` does no longer require `start` (default: `0`) and `end` (default: `now`)
+- `DatapointsAPI.retrieve` accepts a list of full query dictionaries for `id` and `external_id` giving full flexibility for individual settings like `start` time, `limit` and `granularity` (to name a few), previously only possible with the `DatapointsAPI.query` endpoint.
+- Aggregates returned now include the time period(s) (given by `granularity` unit) that `start` and `end` are part of (as opposed to only "fully in-between" points). This is now aligned with the API.
+
+### Added
+- Vastly better integration tests for fetching datapoints.
+
+### Fixed
+- `TimeSeries.first()` and `TimeSeries.count()` now work with the expanded time domain (see 4.2.1). Additionally, they now also consider future points (previously used `end="now"`).
+- Fetching datapoints using `limit=0` now returns 0 datapoints, instead of "unlimited", inline with the API.
+- Fetching datapoints using `return_outside_points=True` returns both outside points (if they exist), regardless of `limit` setting. Previously, it was capped at `limit`, now up-to `limit+2` datapoints are returned, inline with the API.
+- Aggregates now work properly with the `limit` parameter. Due to the old implementation of using count aggregates *also when fetching aggregates* very often led to just a few returned batches.
+
+### Deprecated
+
+### Removed
+- All convenience methods related to plotting and the use of `matplotlib`.
+- DatapointsAPI.retrieve_dataframe_dict TODO
+- `DatapointsAPI.retrieve_dataframe` no longer support the `complete` keyword argument. Rationale: Weird and unintuitive syntax (passing a string using comma to separate options). Also, `aggregates` & `granularity` are no longer required arguments, and as such, interpolating or forward-filling to a fixed frequency, does not make sense anymore.
+
+## [4.2.1] - 2022-08-23
+### Changed
+- Change timeseries datapoints' time range to start from 01.01.1900
+
+## [4.2.0] - 2022-08-23
+### Added
+- OAuthInteractive credential provider. This credential provider will redirect you to a login page
+and require that the user authenticates. It will also cache the token between runs.
+- OAuthDeviceCode credential provider. Display a device code to enter into a trusted device.
+It will also cache the token between runs.
+
+## [4.1.2] - 2022-08-22
+### Fixed
+- geospatial: support asset links for features
+
+## [4.1.1] - 2022-08-19
+### Fixed
+- Fixed the issue on SDK when Python installation didn't include pip.
+
+### Added
+- Added Optional dependency called functions. Usage: `pip install cognite-sdk[functions]`
+
+## [4.1.0] - 2022-08-18
+### Added
+- ensure_parent parameter to client.raw.insert_dataframe method
+
+## [4.0.1] - 2022-08-17
+### Added
+- OAuthClientCredentials now supports token_custom_args.
+
+## [4.0.0] - 2022-08-15
+### Changed
+- Client configuration no longer respects any environment variables. There are other libraries better
+suited for loading configuration from the environment (such as builtin `os` or `pydantic`). There have also
+been several reports of ennvar name clash issues in tools built on top the SDK. We therefore
+consider this something that should be handled by the application consuming the SDK. All configuration of
+`cognite.client.CogniteClient` now happens using a `cognite.client.ClientConfig` object. Global configuration such as
+`max_connection_pool_size` and other options which apply to all client instances are now configured through
+the `cognite.client.global_config` object which is an instance of `cognite.client.GlobalConfig`. Examples
+have been added to the docs.
+- Auth has been reworked. The client configuration no longer accepts the `api_key` and `token_...` arguments.
+It accepts only a single `credentials` argument which must be a `CredentialProvider` object. A few
+implementations have been provided (`APIKey`, `Token`, `OAuthClientCredentials`). Example usage has
+been added to the docs. More credential provider implementations will be added in the future to accommodate
+other OAuth flows.
+
+### Fixed
+- A bug in the Functions SDK where the lifecycle of temporary files was not properly managed.  
+
+## [3.9.0] - 2022-08-11
+### Added
+- Moved Cognite Functions from Experimental SDK to Main SDK.
+
+## [3.8.0] - 2022-08-11
+### Added
+- Add ignore_unknown_ids parameter to sequences.retrieve_multiple
+
+## [3.7.0] - 2022-08-10
+### Changed
+- Changed grouping of Sequence rows on insert. Each group now contains at most 100k values and at most 10k rows.
+
+## [3.6.1] - 2022-08-10
+### Fixed
+- Fixed a minor casing error for the geo_location field on files
+
+## [3.6.0] - 2022-08-10
+### Added
+- Add ignore_unknown_ids parameter to files.retrieve_multiple
+
+## [3.5.0] - 2022-08-10
+### Changed
+- Improve type annotations. Use overloads in more places to help static type checkers.
+
+## [3.4.3] - 2022-08-10
+### Changed
+- Cache result from pypi version check so it's not executed for every client instantiation.
+
+## [3.4.2] - 2022-07-28
+### Fixed
+- Fix the wrong destination name in transformations.
+
+## [3.4.1] - 2022-07-27
+### Fixed
+- fixed exception when printing exceptions generated on transformations creation/update.
+
+## [3.4.0] - 2022-07-21
+### Added
+- added support for nonce authentication on transformations
+
+### Changed
+- if no source or destination credentials are provided on transformation create, an attempt will be made to create a session with the CogniteClient credentials, if it succeeds the acquired nonce will be used.
+- if OIDC credentials are provided on transformation create/update, an attempt will be made to create a session with the given credentials, if it succeeds the acquired nonce credentials will replace the given client credentials before sending the request.
+
+## [3.3.0] - 2022-07-21
+### Added
+- added the sessions API
 
 ## [3.2.0] - 2022-07-15
 ### Removed

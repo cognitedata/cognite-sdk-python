@@ -1,99 +1,74 @@
 Quickstart
 ==========
-Authenticate
-------------
-
-The preferred way to authenticating against the Cognite API is using OpenID Connect (OIDC). To enable this, the CogniteClient
-accepts a token provider function.
-
-.. code:: python
-
-    >>> from cognite.client import CogniteClient
-    >>> def token_provider():
-    >>>     ...
-    >>> c = CogniteClient(token=token_provider)
-
-For details on different ways of implementing the token provider, take a look at
-`this guide <https://github.com/cognitedata/python-oidc-authentication>`_.
-
-If OIDC has not been enabled for your CDF project, you will want to authenticate using an API key. You can do this by setting the following environment
-variable
-
-.. code:: bash
-
-    $ export COGNITE_API_KEY = <your-api-key>
-
-or by passing the API key directly to the CogniteClient.
-
-.. code:: python
-
-    >>> from cognite.client import CogniteClient
-    >>> c = CogniteClient(api_key="<your-api-key>", client_name="<your-client-name>")
-
 Instantiate a new client
 ------------------------
 Use this code to instantiate a client and get your login status. CDF returns an object with
 attributes that describe which project and service account your API key belongs to. The :code:`client_name`
-is an user-defined string intended to give the client a unique identifier. You
-can provide the :code:`client_name` through the :code:`COGNITE_CLIENT_NAME` environment variable or by passing it directly to the :code:`CogniteClient` constructor.
-All examples in this documentation assume that :code:`COGNITE_CLIENT_NAME` has been set.
+is a user-defined string intended to give the client a unique identifier. You
+can provide the :code:`client_name` by passing it directly to the :code:`ClientConfig` constructor.
+
+You may set a default client configuration which will be used if no config is passed to CogniteClient.
+All examples in this documentation assume that a default configuration has been set.
 
 .. code:: python
 
-    >>> from cognite.client import CogniteClient
+    >>> from cognite.client import CogniteClient, ClientConfig, global_config
+    >>> from cognite.client.credentials import APIKey
+    >>> cnf = ClientConfig(client_name="my-special-client", project="my-project", credentials=APIKey("very-secret"))
+    >>> global_config.default_client_config = cnf
     >>> c = CogniteClient()
     >>> status = c.login.status()
 
 Read more about the `CogniteClient`_ and the functionality it exposes below.
 
+Authenticate
+------------
+
+The preferred way to authenticating against the Cognite API is using OpenID Connect (OIDC).
+To enable this, use one of the credential providers such as OAuthClientCredentials:
+
+.. code:: python
+
+    >>> from cognite.client import CogniteClient, ClientConfig
+    >>> from cognite.client.credentials import OAuthClientCredentials
+    >>>
+    >>> creds = OAuthClientCredentials(token_url=..., client_id=..., client_secret=..., scopes=[...])
+    >>> cnf = ClientConfig(client_name="my-special-client", project="my-project", credentials=creds)
+    >>> c = CogniteClient(cnf)
+
+Examples for all OAuth credential providers can be found in the `Credential Providers`_ section.
+
+You can also make your own credential provider:
+
+.. code:: python
+
+    >>> from cognite.client import CogniteClient, ClientConfig
+    >>> from cognite.client.credentials import Token
+    >>> def token_provider():
+    >>>     ...
+    >>>
+    >>> cnf = ClientConfig(client_name="my-special-client", project="my-project", credentials=Token(token_provider))
+    >>> c = CogniteClient(cnf)
+
+If OIDC has not been enabled for your CDF project, you will want to authenticate using an API key.
+
+.. code:: python
+
+    >>> from cognite.client import CogniteClient, ClientConfig
+    >>> from cognite.client.credentials import APIKey
+    >>> cnf = ClientConfig(client_name="<your-client-name>", project="my-project", credentials=APIKey("very-secret"))
+    >>> c = CogniteClient(cnf)
+
 Discover time series
 --------------------
-For the next examples, you will need to supply ids for the time series that you want to retrieve. You can find some ids by listing the available time series. Limits for listing resources default to 25, so the following code will return the first 25 time series resources.
+For the next examples, you will need to supply ids for the time series that you want to retrieve. You can find some ids by listing the available time series.
+Limits for listing resources default to 25, so the following code will return the first 25 time series resources.
 
 .. code:: python
 
     >>> from cognite.client import CogniteClient
     >>> c = CogniteClient()
-    >>> ts_list = c.time_series.list(include_metadata=False)
-
-Plot time series
-----------------
-There are several ways of plotting a time series you have fetched from the API. The easiest is to call
-:code:`.plot()` on the returned :code:`TimeSeries` or :code:`TimeSeriesList` objects. By default, this plots the raw
-data points for the last 24 hours. If there are no data points for the last 24 hours, :code:`plot` will throw an exception.
-
-.. code:: python
-
-    >>> from cognite.client import CogniteClient
-    >>> c = CogniteClient()
-    >>> my_time_series = c.time_series.retrieve(id=<time-series-id>)
-    >>> my_time_series.plot()
-
-You can also pass arguments to the :code:`.plot()` method to change the start, end, aggregates, and granularity of the
-request.
-
-.. code:: python
-
-    >>> my_time_series.plot(start="365d-ago", end="now", aggregates=["average"], granularity="1d")
-
-The :code:`Datapoints` and :code:`DatapointsList` objects that are returned when you fetch data points, also have :code:`.plot()`
-methods you can use to plot the data.
-
-.. code:: python
-
-    >>> from cognite.client import CogniteClient
-    >>> c = CogniteClient()
-    >>> my_datapoints = c.datapoints.retrieve(
-    ...                     id=[<time-series-ids>],
-    ...                     start="10d-ago",
-    ...                     end="now",
-    ...                     aggregates=["max"],
-    ...                     granularity="1h"
-    ...                 )
-    >>> my_datapoints.plot()
-
-.. NOTE::
-    To use the :code:`.plot()` functionality you need to install :code:`matplotlib`.
+    >>> ts_list = c.time_series.list()
 
 Create an asset hierarchy
 -------------------------
@@ -183,38 +158,36 @@ Client configuration
 --------------------
 You can pass configuration arguments directly to the :code:`CogniteClient` constructor, for example to configure the base url of your requests and additional headers. For a list of all configuration arguments, see the `CogniteClient`_ class definition.
 
-Environment configuration
+global configuration
 -------------------------
-You can set default configurations with these environment variables:
+You can set global configuration options like this:
 
-.. code:: bash
+.. code:: python
 
-    # Can be overridden by Client Configuration
-    $ export COGNITE_API_KEY = <your-api-key>
-    $ export COGNITE_PROJECT = <your-default-project>
-    $ export COGNITE_BASE_URL = http://<host>:<port>
-    $ export COGNITE_CLIENT_NAME = <user-defined-client-or-app-name>
-    $ export COGNITE_MAX_WORKERS = <number-of-workers>
-    $ export COGNITE_TIMEOUT = <num-of-seconds>
-    $ export COGNITE_FILE_TRANSFER_TIMEOUT = <num-of-seconds>
+    from cognite.client import global_config, ClientConfig
+    from cognite.client.credentials import APIKey
+    global_config.default_client_config = ClientConfig(
+        client_name="my-client", project="myproj", credentials=APIKey("verysecret")
+    )
+    global_config.disable_pypi_version_check = True
+    global_config.disable_gzip = False
+    global_config.disable_ssl = False
+    global_config.max_retries = 10
+    global_config.max_retry_backoff = 10
+    global_config.max_connection_pool_size = 10
+    global_config.status_forcelist = {429, 502, 503}
 
-    # Global Configuration
-    $ export COGNITE_DISABLE_PYPI_VERSION_CHECK = "0"
-    $ export COGNITE_DISABLE_GZIP = "0"
-    $ export COGNITE_DISABLE_SSL = "0"
-    $ export COGNITE_MAX_RETRIES = <number-of-retries>
-    $ export COGNITE_MAX_RETRY_BACKOFF = <number-of-seconds>
-    $ export COGNITE_MAX_CONNECTION_POOL_SIZE = <number-of-connections-in-pool>
-    $ export COGNITE_STATUS_FORCELIST = "429,502,503"
+These must be set prior to instantiating a CogniteClient in order for them to take effect.
 
 Concurrency and connection pooling
 ----------------------------------
 This library does not expose API limits to the user. If your request exceeds API limits, the SDK splits your
 request into chunks and performs the sub-requests in parallel. To control how many concurrent requests you send
-to the API, you can either pass the :code:`max_workers` attribute when you instantiate the :code:`CogniteClient` or set the :code:`COGNITE_MAX_WORKERS` environment variable.
+to the API, you can either pass the :code:`max_workers` attribute when you instantiate the :code:`CogniteClient` or set the :code:`max_workers` config option.
 
 If you are working with multiple instances of :code:`CogniteClient`, all instances will share the same connection pool.
-If you have several instances, you can increase the max connection pool size to reuse connections if you are performing a large amount of concurrent requests. You can increase the max connection pool size by setting the :code:`COGNITE_MAX_CONNECTION_POOL_SIZE` environment variable.
+If you have several instances, you can increase the max connection pool size to reuse connections if you are performing a large amount of concurrent requests.
+You can increase the max connection pool size by setting the :code:`max_connection_pool_size` config option.
 
 Extensions and optional dependencies
 ====================================
@@ -225,26 +198,15 @@ You can use the :code:`.to_pandas()` method on pretty much any object and get a 
 
 This is particularly useful when you are working with time series data and with tabular data from the Raw API.
 
-Matplotlib integration
-----------------------
-You can use the :code:`.plot()` method on any time series or data points result that the SDK returns. The method takes keyword
-arguments which are passed on to the underlying matplotlib plot function, allowing you to configure for example the
-size and layout of your plots.
-
-You need to install the matplotlib package manually:
-
-.. code:: bash
-
-    $ pip install matplotlib
-
 How to install extra dependencies
 ---------------------------------
-If your application requires the functionality from e.g. the :code:`pandas`, :code:`numpy`, or :code:`geopandas` dependencies,
-you should install the sdk along with its optional dependencies. The available extras are:
+If your application requires the functionality from e.g. the :code:`pandas`, :code:`sympy`, or :code:`geopandas` dependencies,
+you should install the SDK along with its optional dependencies. The available extras are:
 
-- pandas
-- geo
-- sympy
+- pandas: pandas
+- geo: geopanda, shapely
+- sympy: sympy
+- functions: pip
 - all (will install dependencies for all the above)
 
 These can be installed with the following command:
@@ -269,8 +231,32 @@ CogniteClient
     :members:
     :member-order: bysource
 
+.. autoclass:: cognite.client.config.ClientConfig
+    :members:
+    :member-order: bysource
+
+.. autoclass:: cognite.client.config.GlobalConfig
+    :members:
+    :member-order: bysource
+
+
 Authentication
 --------------
+Credential Providers
+^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: cognite.client.credentials.Token
+    :members:
+    :member-order: bysource
+.. autoclass:: cognite.client.credentials.OAuthClientCredentials
+    :members:
+    :member-order: bysource
+.. autoclass:: cognite.client.credentials.OAuthInteractive
+    :members:
+    :member-order: bysource
+.. autoclass:: cognite.client.credentials.OAuthDeviceCode
+    :members:
+    :member-order: bysource
+
 Get login status
 ^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.login.LoginAPI.status
@@ -496,6 +482,71 @@ Data classes
     :members:
     :show-inheritance:
 
+Functions
+---------
+
+Create function
+^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.functions.FunctionsAPI.create
+
+Delete function
+^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.functions.FunctionsAPI.delete
+
+List functions
+^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.functions.FunctionsAPI.list
+
+Retrieve function
+^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.functions.FunctionsAPI.retrieve
+
+Retrieve multiple functions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.functions.FunctionsAPI.retrieve_multiple
+
+Call function
+^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.functions.FunctionsAPI.call
+
+
+Function calls
+^^^^^^^^^^^^^^
+List function calls
+~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.functions.FunctionCallsAPI.list
+
+Retrieve function call
+~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.functions.FunctionCallsAPI.retrieve
+
+Retrieve function call response
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.functions.FunctionCallsAPI.get_response
+
+Retrieve function call logs
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.functions.FunctionCallsAPI.get_logs
+
+Function schedules
+^^^^^^^^^^^^^^^^^^
+List function schedules
+~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.functions.FunctionSchedulesAPI.list
+
+Create function schedule
+~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.functions.FunctionSchedulesAPI.create
+
+Delete function schedule
+~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.functions.FunctionSchedulesAPI.delete
+
+Data classes
+^^^^^^^^^^^^
+.. automodule:: cognite.client.data_classes.functions
+    :members:
+    :show-inheritance:
 
 Time series
 -----------
@@ -554,10 +605,6 @@ Retrieve datapoints
 Retrieve pandas dataframe
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve_dataframe
-
-Retrieve pandas dataframes indexed by aggregate
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve_dataframe_dict
 
 Perform data points queries
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -701,21 +748,22 @@ List rows in a table
 ~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.raw.RawRowsAPI.list
 
-Retrieve pandas dataframe
-^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.raw.RawRowsAPI.retrieve_dataframe
-
 Insert rows into a table
 ~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.raw.RawRowsAPI.insert
 
-Insert pandas dataframe
-^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.raw.RawRowsAPI.insert_dataframe
-
 Delete rows from a table
 ~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.raw.RawRowsAPI.delete
+
+Retrieve pandas dataframe
+~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.raw.RawRowsAPI.retrieve_dataframe
+
+Insert pandas dataframe
+~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.raw.RawRowsAPI.insert_dataframe
+
 
 Data classes
 ^^^^^^^^^^^^
@@ -968,11 +1016,11 @@ Predict Using an Entity Matching Model
 
 Detect entities in Engineering Diagrams
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.pnid_parsing.DiagramsAPI.detect
+.. automethod:: cognite.client._api.diagrams.DiagramsAPI.detect
 
 Convert to an interactive SVG where the provided annotations are highlighted
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.pnid_parsing.DiagramsAPI.convert
+.. automethod:: cognite.client._api.diagrams.DiagramsAPI.convert
 
 Contextualization Data Classes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1187,6 +1235,21 @@ Delete security categories
 .. automethod:: cognite.client._api.iam.SecurityCategoriesAPI.delete
 
 
+Sessions
+^^^^^^^^^^^^^^^^^^^
+List sessions
+~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.iam.SessionsAPI.list
+
+Create a session
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.iam.SessionsAPI.create
+
+Revoke a session
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.iam.SessionsAPI.revoke
+
+
 Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.iam
@@ -1238,10 +1301,6 @@ Data classes
     :members:
     :show-inheritance:
 
-.. automodule:: cognite.client.data_classes.extractionpipelineruns
-    :members:
-    :show-inheritance:
-
 
 Transformations
 ------------------------
@@ -1259,6 +1318,11 @@ Retrieve transformations by id
 Run transformations by id
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.transformations.TransformationsAPI.run
+.. automethod:: cognite.client._api.transformations.TransformationsAPI.run_async
+
+Preview transformations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.transformations.TransformationsAPI.preview
 
 Cancel transformation run by id
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

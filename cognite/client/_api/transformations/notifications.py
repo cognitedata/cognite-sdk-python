@@ -1,17 +1,10 @@
-from typing import Any, List, Optional, Union
+from typing import Any, Optional, Sequence, Union
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import (
-    OidcCredentials,
-    Transformation,
-    TransformationBlockedInfo,
-    TransformationDestination,
-    TransformationList,
-    TransformationNotification,
-    TransformationNotificationList,
-)
+from cognite.client.data_classes import TransformationNotification, TransformationNotificationList
 from cognite.client.data_classes.transformations.notifications import TransformationNotificationFilter
+from cognite.client.utils._identifier import IdentifierSequence
 
 
 class TransformationNotificationsAPI(APIClient):
@@ -22,12 +15,12 @@ class TransformationNotificationsAPI(APIClient):
         super().__init__(*args, **kwargs)
 
     def create(
-        self, notification: Union[TransformationNotification, List[TransformationNotification]]
+        self, notification: Union[TransformationNotification, Sequence[TransformationNotification]]
     ) -> Union[TransformationNotification, TransformationNotificationList]:
         """`Subscribe for notifications on the transformation errors. <https://docs.cognite.com/api/v1/#operation/createTransformationNotifications>`_
 
         Args:
-            notification (Union[TransformationNotification, List[TransformationNotification]]): Notification or list of notifications to create.
+            notification (Union[TransformationNotification, Sequence[TransformationNotification]]): Notification or list of notifications to create.
 
         Returns:
             Created notification(s)
@@ -42,7 +35,7 @@ class TransformationNotificationsAPI(APIClient):
                 >>> notifications = [TransformationNotification(transformation_id = 1, destination="my@email.com"), TransformationNotification(transformation_external_id="transformation2", destination="other@email.com"))]
                 >>> res = c.transformations.notifications.create(notifications)
         """
-        utils._auxiliary.assert_type(notification, "notification", [TransformationNotification, list])
+        utils._auxiliary.assert_type(notification, "notification", [TransformationNotification, Sequence])
         return self._create_multiple(
             list_cls=TransformationNotificationList, resource_cls=TransformationNotification, items=notification
         )
@@ -93,11 +86,11 @@ class TransformationNotificationsAPI(APIClient):
             filter=filter,
         )
 
-    def delete(self, id: Union[int, List[int]] = None) -> None:
+    def delete(self, id: Union[int, Sequence[int]] = None) -> None:
         """`Deletes the specified notification subscriptions on the transformation. Does nothing when the subscriptions already don't exist <https://docs.cognite.com/api/v1/#operation/deleteTransformationNotifications>`_
 
         Args:
-            id (Union[int, List[int]): Id or list of transformation notification ids
+            id (Union[int, Sequence[int]): Id or list of transformation notification ids
 
         Returns:
             None
@@ -110,4 +103,4 @@ class TransformationNotificationsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.transformations.notifications.delete(id=[1,2,3])
         """
-        self._delete_multiple(ids=id, wrap_ids=True)
+        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=True)

@@ -1,3 +1,4 @@
+import uuid
 from copy import deepcopy
 from typing import Any, Dict, List, Optional
 
@@ -54,7 +55,8 @@ def annotation() -> Annotation:
 @pytest.fixture
 def file_id(cognite_client: CogniteClient) -> int:
     # Create a test file
-    name = "annotation_unit_test_file"
+    random_id = uuid.uuid4()
+    name = f"annotation_unit_test_file_{random_id}"
     file = cognite_client.files.create(FileMetadata(external_id=name, name=name), overwrite=True)[0]
     yield file.id
     # Teardown all annotations to the file

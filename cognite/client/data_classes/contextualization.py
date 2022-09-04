@@ -235,12 +235,14 @@ class EntityMatchingModel(CogniteResource):
             },
         )
 
-    def refit(self, true_matches: List[Union[Dict, Tuple[Union[int, str], Union[int, str]]]]) -> "EntityMatchingModel":
+    def refit(
+        self, true_matches: Sequence[Union[Dict, Tuple[Union[int, str], Union[int, str]]]]
+    ) -> "EntityMatchingModel":
         """Re-fits an entity matching model, using the combination of the old and new true matches.
 
         Args:
             true_matches: Updated known valid matches given as a list of dicts with keys 'fromId', 'fromExternalId', 'toId', 'toExternalId').
-                 A tuple can be used instead of the dictionary for convenience, interpreted as id/externalId based on type.
+                A tuple can be used instead of the dictionary for convenience, interpreted as id/externalId based on type.
         Returns:
             EntityMatchingModel: new model refitted to true_matches."""
         true_matches = [convert_true_match(true_match) for true_match in true_matches]

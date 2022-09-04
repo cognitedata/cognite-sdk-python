@@ -1,10 +1,11 @@
 import copy
-from typing import Any, Dict, Iterator, List, Optional, Union, cast
+from typing import Any, Dict, Iterator, List, Optional, Sequence, Union, cast
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Relationship, RelationshipFilter, RelationshipList, RelationshipUpdate
 from cognite.client.data_classes.labels import LabelFilter
+from cognite.client.utils._identifier import IdentifierSequence
 
 
 class RelationshipsAPI(APIClient):
@@ -17,11 +18,11 @@ class RelationshipsAPI(APIClient):
 
     def _create_filter(
         self,
-        source_external_ids: List[str] = None,
-        source_types: List[str] = None,
-        target_external_ids: List[str] = None,
-        target_types: List[str] = None,
-        data_set_ids: List[Dict[str, Any]] = None,
+        source_external_ids: Sequence[str] = None,
+        source_types: Sequence[str] = None,
+        target_external_ids: Sequence[str] = None,
+        target_types: Sequence[str] = None,
+        data_set_ids: Sequence[Dict[str, Any]] = None,
         start_time: Dict[str, int] = None,
         end_time: Dict[str, int] = None,
         confidence: Dict[str, int] = None,
@@ -47,12 +48,12 @@ class RelationshipsAPI(APIClient):
 
     def __call__(
         self,
-        source_external_ids: List[str] = None,
-        source_types: List[str] = None,
-        target_external_ids: List[str] = None,
-        target_types: List[str] = None,
-        data_set_ids: List[int] = None,
-        data_set_external_ids: List[str] = None,
+        source_external_ids: Sequence[str] = None,
+        source_types: Sequence[str] = None,
+        target_external_ids: Sequence[str] = None,
+        target_types: Sequence[str] = None,
+        data_set_ids: Sequence[int] = None,
+        data_set_external_ids: Sequence[str] = None,
         start_time: Dict[str, int] = None,
         end_time: Dict[str, int] = None,
         confidence: Dict[str, int] = None,
@@ -70,12 +71,12 @@ class RelationshipsAPI(APIClient):
         Fetches relationships as they are iterated over, so you keep a limited number of relationships in memory.
 
         Args:
-            source_external_ids (List[str]): Include relationships that have any of these values in their source External Id field
-            source_types (List[str]): Include relationships that have any of these values in their source Type field
-            target_external_ids (List[str]): Include relationships that have any of these values in their target External Id field
-            target_types (List[str]): Include relationships that have any of these values in their target Type field
-            data_set_ids (List[int]): Return only relationships in the specified data sets with these ids.
-            data_set_external_ids (List[str]): Return only relationships in the specified data sets with these external ids.
+            source_external_ids (Sequence[str]): Include relationships that have any of these values in their source External Id field
+            source_types (Sequence[str]): Include relationships that have any of these values in their source Type field
+            target_external_ids (Sequence[str]): Include relationships that have any of these values in their target External Id field
+            target_types (Sequence[str]): Include relationships that have any of these values in their target Type field
+            data_set_ids (Sequence[int]): Return only relationships in the specified data sets with these ids.
+            data_set_external_ids (Sequence[str]): Return only relationships in the specified data sets with these external ids.
             start_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
             end_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
             confidence (Dict[str, int]): Range to filter the field for. (inclusive)
@@ -91,9 +92,7 @@ class RelationshipsAPI(APIClient):
         """
         data_set_ids_processed = None
         if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = cast(
-                List[Dict[str, Any]], self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
-            )
+            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
 
         filter = self._create_filter(
             source_external_ids=source_external_ids,
@@ -159,22 +158,19 @@ class RelationshipsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.relationships.retrieve(external_id="1")
         """
-        return cast(
-            Optional[Relationship],
-            self._retrieve_multiple(
-                list_cls=RelationshipList,
-                resource_cls=Relationship,
-                external_ids=external_id,
-                wrap_ids=True,
-                other_params={"fetchResources": fetch_resources},
-            ),
+        identifiers = IdentifierSequence.load(ids=None, external_ids=external_id).as_singleton()
+        return self._retrieve_multiple(
+            list_cls=RelationshipList,
+            resource_cls=Relationship,
+            identifiers=identifiers,
+            other_params={"fetchResources": fetch_resources},
         )
 
-    def retrieve_multiple(self, external_ids: List[str], fetch_resources: bool = False) -> RelationshipList:
+    def retrieve_multiple(self, external_ids: Sequence[str], fetch_resources: bool = False) -> RelationshipList:
         """`Retrieve multiple relationships by external id.  <https://docs.cognite.com/api/v1/#operation/byidsRelationships>`_
 
         Args:
-            external_ids (List[str]): External IDs
+            external_ids (Sequence[str]): External IDs
             fetch_resources (bool): if true, will try to return the full resources referenced by the relationship in the
                 source and target fields.
 
@@ -189,26 +185,22 @@ class RelationshipsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.relationships.retrieve_multiple(external_ids=["abc", "def"])
         """
-        utils._auxiliary.assert_type(external_ids, "external_id", [List], allow_none=False)
-        return cast(
-            RelationshipList,
-            self._retrieve_multiple(
-                list_cls=RelationshipList,
-                resource_cls=Relationship,
-                external_ids=external_ids,
-                wrap_ids=True,
-                other_params={"fetchResources": fetch_resources},
-            ),
+        identifiers = IdentifierSequence.load(ids=None, external_ids=external_ids)
+        return self._retrieve_multiple(
+            list_cls=RelationshipList,
+            resource_cls=Relationship,
+            identifiers=identifiers,
+            other_params={"fetchResources": fetch_resources},
         )
 
     def list(
         self,
-        source_external_ids: List[str] = None,
-        source_types: List[str] = None,
-        target_external_ids: List[str] = None,
-        target_types: List[str] = None,
-        data_set_ids: List[int] = None,
-        data_set_external_ids: List[str] = None,
+        source_external_ids: Sequence[str] = None,
+        source_types: Sequence[str] = None,
+        target_external_ids: Sequence[str] = None,
+        target_types: Sequence[str] = None,
+        data_set_ids: Sequence[int] = None,
+        data_set_external_ids: Sequence[str] = None,
         start_time: Dict[str, int] = None,
         end_time: Dict[str, int] = None,
         confidence: Dict[str, int] = None,
@@ -223,12 +215,12 @@ class RelationshipsAPI(APIClient):
         """`Lists relationships stored in the project based on a query filter given in the payload of this request. Up to 1000 relationships can be retrieved in one operation.  <https://docs.cognite.com/api/v1/#operation/listRelationships>`_
 
         Args:
-            source_external_ids (List[str]): Include relationships that have any of these values in their source External Id field
-            source_types (List[str]): Include relationships that have any of these values in their source Type field
-            target_external_ids (List[str]): Include relationships that have any of these values in their target External Id field
-            target_types (List[str]): Include relationships that have any of these values in their target Type field
-            data_set_ids (List[int]): Return only relationships in the specified data sets with these ids.
-            data_set_external_ids (List[str]): Return only relationships in the specified data sets with these external ids.
+            source_external_ids (Sequence[str]): Include relationships that have any of these values in their source External Id field
+            source_types (Sequence[str]): Include relationships that have any of these values in their source Type field
+            target_external_ids (Sequence[str]): Include relationships that have any of these values in their target External Id field
+            target_types (Sequence[str]): Include relationships that have any of these values in their target Type field
+            data_set_ids (Sequence[int]): Return only relationships in the specified data sets with these ids.
+            data_set_external_ids (Sequence[str]): Return only relationships in the specified data sets with these external ids.
             start_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
             end_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
             confidence (Dict[str, int]): Range to filter the field for. (inclusive)
@@ -260,12 +252,9 @@ class RelationshipsAPI(APIClient):
                 >>> for relationship in c.relationships:
                 ...     relationship # do something with the relationship
         """
-
         data_set_ids_processed = None
         if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = cast(
-                List[Dict[str, Any]], self._process_ids(data_set_ids, data_set_external_ids, wrap_ids=True)
-            )
+            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
 
         filter = self._create_filter(
             source_external_ids=source_external_ids,
@@ -329,12 +318,16 @@ class RelationshipsAPI(APIClient):
             other_params={"fetchResources": fetch_resources},
         )
 
-    def create(self, relationship: Union[Relationship, List[Relationship]]) -> Union[Relationship, RelationshipList]:
+    def create(
+        self, relationship: Union[Relationship, Sequence[Relationship]]
+    ) -> Union[Relationship, RelationshipList]:
         """`Create one or more relationships. <https://docs.cognite.com/api/v1/#operation/createRelationships>`_
 
         Args:
-            relationship (Union[Relationship, List[Relationship]]): Relationship or list of relationships to create.
-                Note: the source_type and target_type field in the Relationship(s) can be any string among "Asset", "TimeSeries", "FileMetadata", "Event", "Sequence"
+            relationship (Union[Relationship, Sequence[Relationship]]): Relationship or list of relationships to create.
+                Note:
+                    - the source_type and target_type field in the Relationship(s) can be any string among "Asset", "TimeSeries", "File", "Event", "Sequence";
+                    - do not provide the value for the source and target arguments of the Relationship class, only source_external_id / source_type and target_external_id / target_type. These (source and target) are used as part of fetching actual resources specified in other fields.
 
         Returns:
             Union[Relationship, RelationshipList]: Created relationship(s)
@@ -350,8 +343,8 @@ class RelationshipsAPI(APIClient):
                 >>> flowrel2 = Relationship(external_id="flow_2", source_external_id="source_ext_id", source_type="asset", target_external_id="target_ext_id", target_type="event", confidence=0.1, data_set_id=1234)
                 >>> res = c.relationships.create([flowrel1,flowrel2])
         """
-        utils._auxiliary.assert_type(relationship, "relationship", [Relationship, list])
-        if isinstance(relationship, list):
+        utils._auxiliary.assert_type(relationship, "relationship", [Relationship, Sequence])
+        if isinstance(relationship, Sequence):
             relationship = [r._validate_resource_types() for r in relationship]
         else:
             relationship = relationship._validate_resource_types()
@@ -359,13 +352,13 @@ class RelationshipsAPI(APIClient):
         return self._create_multiple(list_cls=RelationshipList, resource_cls=Relationship, items=relationship)
 
     def update(
-        self, item: Union[Relationship, RelationshipUpdate, List[Union[Relationship, RelationshipUpdate]]]
+        self, item: Union[Relationship, RelationshipUpdate, Sequence[Union[Relationship, RelationshipUpdate]]]
     ) -> Union[Relationship, RelationshipList]:
         """`Update one or more relationships <https://docs.cognite.com/api/v1/#operation/updateRelationships>`_
         Currently, a full replacement of labels on a relationship is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.
 
         Args:
-            item (Union[Relationship, RelationshipUpdate, List[Union[Relationship, RelationshipUpdate]]]): Relationships(s) to update
+            item (Union[Relationship, RelationshipUpdate, Sequence[Union[Relationship, RelationshipUpdate]]]): Relationships(s) to update
 
         Returns:
             Union[Relationship, RelationshipsList]: Updated relationship(s)
@@ -410,11 +403,11 @@ class RelationshipsAPI(APIClient):
             list_cls=RelationshipList, resource_cls=Relationship, update_cls=RelationshipUpdate, items=item
         )
 
-    def delete(self, external_id: Union[str, List[str]], ignore_unknown_ids: bool = False) -> None:
+    def delete(self, external_id: Union[str, Sequence[str]], ignore_unknown_ids: bool = False) -> None:
         """`Delete one or more relationships. <https://docs.cognite.com/api/v1/#operation/deleteRelationships>`_
 
         Args:
-            external_id (Union[str, List[str]]): External ID or list of external ids
+            external_id (Union[str, Sequence[str]]): External ID or list of external ids
             ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
         Returns:
             None
@@ -428,5 +421,7 @@ class RelationshipsAPI(APIClient):
                 >>> c.relationships.delete(external_id=["a","b"])
         """
         self._delete_multiple(
-            external_ids=external_id, wrap_ids=True, extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids}
+            identifiers=IdentifierSequence.load(external_ids=external_id),
+            wrap_ids=True,
+            extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
         )

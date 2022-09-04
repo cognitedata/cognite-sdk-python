@@ -1,46 +1,60 @@
 from copy import deepcopy
-from typing import Any, Collection, Dict, List, Optional, Union, cast
+from typing import Any, Collection, Dict, List, Optional, Sequence, Union, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Annotation, AnnotationFilter, AnnotationList, AnnotationUpdate
 from cognite.client.data_classes._base import CogniteResource
 from cognite.client.utils._auxiliary import assert_type, to_camel_case
+from cognite.client.utils._identifier import IdentifierSequence
 
 
 class AnnotationsAPI(APIClient):
     _RESOURCE_PATH = "/annotations"
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
+    @overload
+    def create(self, annotations: Annotation) -> Annotation:
+        ...
 
-    def create(self, annotations: Union[Annotation, List[Annotation]]) -> Union[Annotation, AnnotationList]:
+    @overload
+    def create(self, annotations: Sequence[Annotation]) -> AnnotationList:
+        ...
+
+    def create(self, annotations: Union[Annotation, Sequence[Annotation]]) -> Union[Annotation, AnnotationList]:
         """Create annotations
 
         Args:
-            annotations (Union[Annotation, List[Annotation]]): annotation(s) to create
+            annotations (Union[Annotation, Sequence[Annotation]]): annotation(s) to create
 
         Returns:
             Union[Annotation, AnnotationList]: created annotation(s)
         """
-        assert_type(annotations, "annotations", [Annotation, list])
+        assert_type(annotations, "annotations", [Annotation, Sequence])
         return self._create_multiple(
             list_cls=AnnotationList, resource_cls=Annotation, resource_path=self._RESOURCE_PATH + "/", items=annotations
         )
 
-    def suggest(self, annotations: Union[Annotation, List[Annotation]]) -> Union[Annotation, AnnotationList]:
+    @overload
+    def suggest(self, annotations: Annotation) -> Annotation:
+        ...
+
+    @overload
+    def suggest(self, annotations: Sequence[Annotation]) -> AnnotationList:
+        ...
+
+    def suggest(self, annotations: Union[Annotation, Sequence[Annotation]]) -> Union[Annotation, AnnotationList]:
         """Suggest annotations
 
         Args:
-            annotations (Union[Annotation, List[Annotation]]): annotation(s) to suggest. They must have status set to "suggested".
+            annotations (Union[Annotation, Sequence[Annotation]]): annotation(s) to suggest. They must have status set to "suggested".
 
         Returns:
             Union[Annotation, AnnotationList]: suggested annotation(s)
         """
-        assert_type(annotations, "annotations", [Annotation, list])
+        assert_type(annotations, "annotations", [Annotation, Sequence])
         # Deal with status fields in both cases: Single item and list of items
-        items = (
+        items: Union[List[Dict[str, Any]], Dict[str, Any]] = (
             [self._sanitize_suggest_item(ann) for ann in annotations]
-            if isinstance(annotations, list)
+            if isinstance(annotations, Sequence)
             else self._sanitize_suggest_item(annotations)
         )
         return self._create_multiple(
@@ -100,40 +114,45 @@ class AnnotationsAPI(APIClient):
             getattr(annotation_update, attr).set(getattr(annotation, attr))
         return annotation_update.dump()
 
+    @overload
+    def update(self, item: Union[Annotation, AnnotationUpdate]) -> Annotation:
+        ...
+
+    @overload
+    def update(self, item: Sequence[Union[Annotation, AnnotationUpdate]]) -> AnnotationList:
+        ...
+
     def update(
-        self, item: Union[Annotation, AnnotationUpdate, List[Union[Annotation, AnnotationUpdate]]]
+        self, item: Union[Annotation, AnnotationUpdate, Sequence[Union[Annotation, AnnotationUpdate]]]
     ) -> Union[Annotation, AnnotationList]:
         """Update annotations
 
         Args:
-            id (Union[int, List[int]]): ID or list of IDs to be deleted
+            id (Union[int, Sequence[int]]): ID or list of IDs to be deleted
         """
         return self._update_multiple(
             list_cls=AnnotationList, resource_cls=Annotation, update_cls=AnnotationUpdate, items=item
         )
 
-    def delete(self, id: Union[int, List[int]]) -> None:
+    def delete(self, id: Union[int, Sequence[int]]) -> None:
         """Delete annotations
 
         Args:
-            id (Union[int, List[int]]): ID or list of IDs to be deleted
+            id (Union[int, Sequence[int]]): ID or list of IDs to be deleted
         """
-        self._delete_multiple(ids=id, wrap_ids=True)
+        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=True)
 
-    def retrieve_multiple(self, ids: List[int]) -> AnnotationList:
+    def retrieve_multiple(self, ids: Sequence[int]) -> AnnotationList:
         """Retrieve annotations by IDs
 
         Args:
-            ids (List[int]]: list of IDs to be retrieved
+            ids (Sequence[int]]: list of IDs to be retrieved
 
         Returns:
             AnnotationList: list of annotations
         """
-        assert_type(ids, "ids", [List], allow_none=False)
-        return cast(
-            AnnotationList,
-            self._retrieve_multiple(list_cls=AnnotationList, resource_cls=Annotation, ids=ids, wrap_ids=True),
-        )
+        identifiers = IdentifierSequence.load(ids=ids, external_ids=None)
+        return self._retrieve_multiple(list_cls=AnnotationList, resource_cls=Annotation, identifiers=identifiers)
 
     def retrieve(self, id: int) -> Optional[Annotation]:
         """Retrieve an annotation by id
@@ -144,8 +163,5 @@ class AnnotationsAPI(APIClient):
         Returns:
             Annotation: annotation requested
         """
-        assert_type(id, "id", [int], allow_none=False)
-        return cast(
-            Optional[Annotation],
-            self._retrieve_multiple(list_cls=AnnotationList, resource_cls=Annotation, ids=id, wrap_ids=True),
-        )
+        identifiers = IdentifierSequence.load(ids=id, external_ids=None).as_singleton()
+        return self._retrieve_multiple(list_cls=AnnotationList, resource_cls=Annotation, identifiers=identifiers)

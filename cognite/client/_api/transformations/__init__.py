@@ -1,6 +1,5 @@
-from typing import Any, Awaitable, Dict, List, Optional, Union, cast
+from typing import Any, Awaitable, Dict, List, Optional, Sequence, Union
 
-from cognite.client import utils
 from cognite.client._api.transformations.jobs import TransformationJobsAPI
 from cognite.client._api.transformations.notifications import TransformationNotificationsAPI
 from cognite.client._api.transformations.schedules import TransformationSchedulesAPI
@@ -9,10 +8,12 @@ from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Transformation, TransformationJob, TransformationList
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.data_classes.transformations import (
+    NonceCredentials,
     TransformationFilter,
     TransformationPreviewResult,
     TransformationUpdate,
 )
+from cognite.client.utils._identifier import IdentifierSequence
 
 
 class TransformationsAPI(APIClient):
@@ -27,7 +28,7 @@ class TransformationsAPI(APIClient):
         self.notifications = TransformationNotificationsAPI(*args, **kwargs)
 
     def create(
-        self, transformation: Union[Transformation, List[Transformation]]
+        self, transformation: Union[Transformation, Sequence[Transformation]]
     ) -> Union[Transformation, TransformationList]:
         """`Create one or more transformations. <https://docs.cognite.com/api/v1/#operation/createTransformations>`_
 
@@ -56,13 +57,25 @@ class TransformationsAPI(APIClient):
                 >>> ]
                 >>> res = c.transformations.create(transformations)
         """
-        utils._auxiliary.assert_type(transformation, "transformation", [Transformation, list])
+        if isinstance(transformation, Sequence):
+            sessions: Dict[str, NonceCredentials] = {}
+            transformation = [t.copy() for t in transformation]
+            for t in transformation:
+                t._cognite_client = self._cognite_client
+                t._process_credentials(sessions_cache=sessions)
+        elif isinstance(transformation, Transformation):
+            transformation = transformation.copy()
+            transformation._cognite_client = self._cognite_client
+            transformation._process_credentials()
+        else:
+            raise TypeError("transformation must be Sequence[Transformation] or Transformation")
+
         return self._create_multiple(list_cls=TransformationList, resource_cls=Transformation, items=transformation)
 
     def delete(
         self,
-        id: Union[int, List[int]] = None,
-        external_id: Union[str, List[str]] = None,
+        id: Union[int, Sequence[int]] = None,
+        external_id: Union[str, Sequence[str]] = None,
         ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete one or more transformations. <https://docs.cognite.com/api/v1/#operation/deleteTransformations>`_
@@ -84,7 +97,9 @@ class TransformationsAPI(APIClient):
                 >>> c.transformations.delete(id=[1,2,3], external_id="function3")
         """
         self._delete_multiple(
-            ids=id, external_ids=external_id, wrap_ids=True, extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids}
+            identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
+            wrap_ids=True,
+            extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
         )
 
     def list(
@@ -182,20 +197,15 @@ class TransformationsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.transformations.retrieve(external_id="1")
         """
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(id, external_id)
-        return cast(
-            Optional[Transformation],
-            self._retrieve_multiple(
-                list_cls=TransformationList,
-                resource_cls=Transformation,
-                ids=id,
-                external_ids=external_id,
-                wrap_ids=True,
-            ),
+        identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
+        return self._retrieve_multiple(
+            list_cls=TransformationList,
+            resource_cls=Transformation,
+            identifiers=identifiers,
         )
 
     def retrieve_multiple(
-        self, ids: List[int] = None, external_ids: List[str] = None, ignore_unknown_ids: bool = False
+        self, ids: Sequence[int] = None, external_ids: Sequence[str] = None, ignore_unknown_ids: bool = False
     ) -> TransformationList:
         """`Retrieve multiple transformations. <https://docs.cognite.com/api/v1/#operation/getTransformationsByIds>`_
 
@@ -215,23 +225,16 @@ class TransformationsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.transformations.retrieve_multiple(ids=[1,2,3], external_ids=['transform-1','transform-2'])
         """
-        utils._auxiliary.assert_type(ids, "ids", [list], True)
-        utils._auxiliary.assert_type(external_ids, "external_ids", [list], True)
-
-        return cast(
-            TransformationList,
-            self._retrieve_multiple(
-                list_cls=TransformationList,
-                resource_cls=Transformation,
-                ids=ids,
-                external_ids=external_ids,
-                wrap_ids=True,
-                ignore_unknown_ids=ignore_unknown_ids,
-            ),
+        identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
+        return self._retrieve_multiple(
+            list_cls=TransformationList,
+            resource_cls=Transformation,
+            identifiers=identifiers,
+            ignore_unknown_ids=ignore_unknown_ids,
         )
 
     def update(
-        self, item: Union[Transformation, TransformationUpdate, List[Union[Transformation, TransformationUpdate]]]
+        self, item: Union[Transformation, TransformationUpdate, Sequence[Union[Transformation, TransformationUpdate]]]
     ) -> Union[Transformation, TransformationList]:
         """`Update one or more transformations <https://docs.cognite.com/api/v1/#operation/updateTransformations>`_
 
@@ -259,6 +262,23 @@ class TransformationsAPI(APIClient):
                 >>> my_update = TransformationUpdate(id=1).query.set("SELECT * FROM _cdf.assets").is_public.set(False)
                 >>> res = c.transformations.update(my_update)
         """
+
+        if isinstance(item, Sequence):
+            item = list(item).copy()
+            sessions: Dict[str, NonceCredentials] = {}
+            for (i, t) in enumerate(item):
+                if isinstance(t, Transformation):
+                    t = t.copy()
+                    item[i] = t
+                    t._cognite_client = self._cognite_client
+                    t._process_credentials(sessions_cache=sessions, keep_none=True)
+        elif isinstance(item, Transformation):
+            item = item.copy()
+            item._cognite_client = self._cognite_client
+            item._process_credentials(keep_none=True)
+        else:
+            raise TypeError("item must be Sequence[Transformation] or Transformation")
+
         return self._update_multiple(
             list_cls=TransformationList, resource_cls=Transformation, update_cls=TransformationUpdate, items=item
         )
@@ -297,7 +317,7 @@ class TransformationsAPI(APIClient):
                 >>>
                 >>> res = c.transformations.run(transformation_id = 1, wait = False)
         """
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(transformation_id, transformation_external_id)
+        IdentifierSequence.load(transformation_id, transformation_external_id).assert_singleton()
 
         id = {"externalId": transformation_external_id, "id": transformation_id}
 
@@ -363,7 +383,7 @@ class TransformationsAPI(APIClient):
                 >>> if res.status == TransformationJobStatus.RUNNING:
                 >>>     res.cancel()
         """
-        utils._auxiliary.assert_exactly_one_of_id_or_external_id(transformation_id, transformation_external_id)
+        IdentifierSequence.load(transformation_id, transformation_external_id).assert_singleton()
 
         id = {"externalId": transformation_external_id, "id": transformation_id}
 

@@ -203,7 +203,7 @@ class Asset(CogniteResource):
         return result
 
     def to_pandas(
-        self, expand: Sequence[str] = ("metadata", "aggregates"), ignore: List[str] = None, camel_case: bool = True
+        self, expand: Sequence[str] = ("metadata", "aggregates"), ignore: List[str] = None, camel_case: bool = False
     ) -> "pandas.DataFrame":
         """Convert the instance into a pandas DataFrame.
 
@@ -382,10 +382,10 @@ class AssetFilter(CogniteFilter):
 
     Args:
         name (str): The name of the asset.
-        parent_ids (List[int]): Return only the direct descendants of the specified assets.
-        parent_external_ids (List[str]): Return only the direct descendants of the specified assets.
-        asset_subtree_ids (List[Dict[str, Any]]): Only include assets in subtrees rooted at the specified assets (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-        data_set_ids (List[Dict[str, Any]]): No description.
+        parent_ids (Sequence[int]): Return only the direct descendants of the specified assets.
+        parent_external_ids (Sequence[str]): Return only the direct descendants of the specified assets.
+        asset_subtree_ids (Sequence[Dict[str, Any]]): Only include assets in subtrees rooted at the specified assets (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        data_set_ids (Sequence[Dict[str, Any]]): No description.
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
         source (str): The source of the asset.
         created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
@@ -400,10 +400,10 @@ class AssetFilter(CogniteFilter):
     def __init__(
         self,
         name: str = None,
-        parent_ids: List[int] = None,
-        parent_external_ids: List[str] = None,
-        asset_subtree_ids: List[Dict[str, Any]] = None,
-        data_set_ids: List[Dict[str, Any]] = None,
+        parent_ids: Sequence[int] = None,
+        parent_external_ids: Sequence[str] = None,
+        asset_subtree_ids: Sequence[Dict[str, Any]] = None,
+        data_set_ids: Sequence[Dict[str, Any]] = None,
         metadata: Dict[str, str] = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,

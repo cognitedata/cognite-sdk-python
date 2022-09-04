@@ -1,5 +1,5 @@
 import numbers
-from typing import Any, Dict, List, Type, Union
+from typing import Any, Dict, List, Sequence, Type, Union
 
 from requests import Response
 
@@ -48,7 +48,7 @@ class DiagramsAPI(APIClient):
         )
 
     @staticmethod
-    def _process_file_ids(ids: Union[List[int], int, None], external_ids: Union[List[str], str, None]) -> List:
+    def _process_file_ids(ids: Union[Sequence[int], int, None], external_ids: Union[Sequence[str], str, None]) -> List:
         if external_ids is None and ids is None:
             raise ValueError("No ids specified")
 
@@ -72,25 +72,25 @@ class DiagramsAPI(APIClient):
 
     def detect(
         self,
-        entities: List[Union[dict, CogniteResource]],
+        entities: Sequence[Union[dict, CogniteResource]],
         search_field: str = "name",
         partial_match: bool = False,
         min_tokens: int = 2,
-        file_ids: List[int] = None,
-        file_external_ids: List[str] = None,
+        file_ids: Union[int, Sequence[int]] = None,
+        file_external_ids: Union[str, Sequence[str]] = None,
     ) -> DiagramDetectResults:
         """Detect entities in a PNID.
         The results are not written to CDF.
-        Note: All users on this CDF subscription with assets read-all and files read-all capabilities in the project,
+        **Note**: All users on this CDF subscription with assets read-all and files read-all capabilities in the project,
         are able to access the data sent to this endpoint.
 
         Args:
-            entities (List[Union[dict,CogniteResource]]): List of entities to detect
+            entities (Sequence[Union[dict,CogniteResource]]): List of entities to detect
             search_field (str): If entities is a list of dictionaries, this is the key to the values to detect in the PnId
             partial_match (bool): Allow for a partial match (e.g. missing prefix).
             min_tokens (int): Minimal number of tokens a match must be based on
-            file_ids (int): ID of the files, should already be uploaded in the same tenant.
-            file_external_ids: File external ids.
+            file_ids (Sequence[int]): ID of the files, should already be uploaded in the same tenant.
+            file_external_ids (Sequence[str]): File external ids.
         Returns:
             DiagramDetectResults: Resulting queued job. Note that .result property of this job will block waiting for results."""
 

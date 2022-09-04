@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, List, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -28,13 +28,13 @@ class FileMetadata(CogniteResource):
         mime_type (str): File type. E.g. text/plain, application/pdf, ..
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
         directory (str): Directory associated with the file. Must be an absolute, unix-style path.
-        asset_ids (List[int]): No description.
+        asset_ids (Sequence[int]): No description.
         data_set_id (int): The dataSet Id for the item.
-        labels (List[Label]): A list of the labels associated with this resource item.
+        labels (Sequence[Label]): A list of the labels associated with this resource item.
         geo_location (GeoLocation): The geographic metadata of the file.
         source_created_time (int): The timestamp for when the file was originally created in the source system.
         source_modified_time (int): The timestamp for when the file was last modified in the source system.
-        security_categories (List[int]): The security category IDs required to access this file.
+        security_categories (Sequence[int]): The security category IDs required to access this file.
         id (int): A server-generated ID for the object.
         uploaded (bool): Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body.
         uploaded_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -51,13 +51,13 @@ class FileMetadata(CogniteResource):
         mime_type: str = None,
         metadata: Dict[str, str] = None,
         directory: str = None,
-        asset_ids: List[int] = None,
+        asset_ids: Sequence[int] = None,
         data_set_id: int = None,
-        labels: List[Label] = None,
+        labels: Sequence[Label] = None,
         geo_location: GeoLocation = None,
         source_created_time: int = None,
         source_modified_time: int = None,
-        security_categories: List[int] = None,
+        security_categories: Sequence[int] = None,
         id: int = None,
         uploaded: bool = None,
         uploaded_time: int = None,
@@ -103,12 +103,12 @@ class FileMetadataFilter(CogniteFilter):
         name (str): Name of the file.
         mime_type (str): File type. E.g. text/plain, application/pdf, ..
         metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        asset_ids (List[int]): Only include files that reference these specific asset IDs.
-        asset_external_ids (List[str]): Only include files that reference these specific asset external IDs.
-        data_set_ids (List[Dict[str, Any]]): Only include files that belong to these datasets.
+        asset_ids (Sequence[int]): Only include files that reference these specific asset IDs.
+        asset_external_ids (Sequence[str]): Only include files that reference these specific asset external IDs.
+        data_set_ids (Sequence[Dict[str, Any]]): Only include files that belong to these datasets.
         labels (LabelFilter): Return only the files matching the specified label(s).
         geo_location (GeoLocationFilter): Only include files matching the specified geographic relation.
-        asset_subtree_ids (List[Dict[str, Any]]): Only include files that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        asset_subtree_ids (Sequence[Dict[str, Any]]): Only include files that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
         source (str): The source of this event.
         created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
         last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
@@ -126,12 +126,12 @@ class FileMetadataFilter(CogniteFilter):
         name: str = None,
         mime_type: str = None,
         metadata: Dict[str, str] = None,
-        asset_ids: List[int] = None,
-        asset_external_ids: List[str] = None,
-        data_set_ids: List[Dict[str, Any]] = None,
+        asset_ids: Sequence[int] = None,
+        asset_external_ids: Sequence[str] = None,
+        data_set_ids: Sequence[Dict[str, Any]] = None,
         labels: LabelFilter = None,
         geo_location: GeoLocationFilter = None,
-        asset_subtree_ids: List[Dict[str, Any]] = None,
+        asset_subtree_ids: Sequence[Dict[str, Any]] = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -271,7 +271,7 @@ class FileMetadataUpdate(CogniteUpdate):
         return FileMetadataUpdate._LabelFileMetadataUpdate(self, "labels")
 
     @property
-    def geoLocation(self) -> _PrimitiveFileMetadataUpdate:
+    def geo_location(self) -> _PrimitiveFileMetadataUpdate:
         return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "geoLocation")
 
     @property

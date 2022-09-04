@@ -6,7 +6,7 @@ import math
 import numbers
 import re as regexp
 import warnings
-from dataclasses import dataclass
+from dataclasses import InitVar, dataclass
 from datetime import datetime
 from functools import cached_property
 from typing import (
@@ -15,7 +15,9 @@ from typing import (
     Dict,
     Generator,
     Iterable,
+    Iterator,
     List,
+    Literal,
     NoReturn,
     Optional,
     Tuple,
@@ -40,8 +42,14 @@ from cognite.client._api.datapoint_constants import (
 )
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.exceptions import CogniteDuplicateColumnsError
-from cognite.client.utils._auxiliary import to_camel_case, to_snake_case, valfilter
-from cognite.client.utils._time import align_start_and_end_for_granularity, timestamp_to_ms
+from cognite.client.utils._auxiliary import convert_all_keys_to_camel_case, local_import, to_camel_case, to_snake_case
+from cognite.client.utils._identifier import Identifier
+from cognite.client.utils._time import (
+    UNIT_IN_MS,
+    align_start_and_end_for_granularity,
+    granularity_to_ms,
+    timestamp_to_ms,
+)
 
 if TYPE_CHECKING:
     import pandas
@@ -67,8 +75,8 @@ class Datapoint(CogniteResource):
     """An object representing a datapoint.
 
     Args:
-        timestamp (int): The data timestamp in milliseconds since the epoch (Jan 1, 1970).
-        value (Union[str, float]): The data value. Can be String or numeric depending on the metric
+        timestamp (Union[int, float]): The data timestamp in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
+        value (Union[str, int, float]): The data value. Can be string or numeric depending on the metric
         average (float): The integral average value in the aggregate period
         max (float): The maximum value in the aggregate period
         min (float): The minimum value in the aggregate period
@@ -109,14 +117,16 @@ class Datapoint(CogniteResource):
         self.discrete_variance = discrete_variance
         self.total_variation = total_variation
 
-    def to_pandas(self, camel_case: bool = True) -> "pandas.DataFrame":  # type: ignore[override]
+    def to_pandas(self, camel_case: bool = False) -> "pandas.DataFrame":  # type: ignore[override]
         """Convert the datapoint into a pandas DataFrame.
-             camel_case (bool): Convert column names to camel case (e.g. `stepInterpolation` instead of `step_interpolation`)
+
+        Args:
+            camel_case (bool): Convert column names to camel case (e.g. `stepInterpolation` instead of `step_interpolation`)
 
         Returns:
-            pandas.DataFrame: The dataframe.
+            pandas.DataFrame
         """
-        pd = cast(Any, utils._auxiliary.local_import("pandas"))
+        pd = cast(Any, local_import("pandas"))
 
         dumped = self.dump(camel_case=camel_case)
         timestamp = dumped.pop("timestamp")
@@ -165,6 +175,16 @@ class DatapointsArray(CogniteResource):
         self.discrete_variance = discrete_variance
         self.total_variation = total_variation
 
+    @property
+    def _ts_info(self):
+        return {
+            "id": self.id,
+            "external_id": self.external_id,
+            "is_string": self.is_string,
+            "is_step": self.is_step,
+            "unit": self.unit,
+        }
+
     @classmethod
     def _load(
         cls,
@@ -179,30 +199,98 @@ class DatapointsArray(CogniteResource):
             return 0
         return len(self.timestamp)
 
-    def to_pandas(self, column_names: str = "external_id", include_aggregate_name: bool = True) -> "pandas.DataFrame":
-        pd = utils._auxiliary.local_import("pandas")
-        if column_names not in {"id", "external_id"}:
+    def __eq__(self, other):
+        # Override CogniteResource __eq__ which checks exact type & dump being equal. We do not want
+        # this: comparing arrays with mostly floats is a bad idea - and dump is exceedingly expensive.
+        return id(self) == id(other)
+
+    def __str__(self) -> str:
+        return json.dumps(self.dump(convert_timestamps=True), indent=4)
+
+    def _repr_html_(self) -> str:
+        return self.to_pandas()._repr_html_()
+
+    def __getitem__(self, item: Any) -> Union[Datapoint, DatapointsArray]:
+        if isinstance(item, slice):
+            return self._slice(item)
+        return Datapoint(**{attr: arr[item].item() for attr, arr in zip(*self._data_fields())})
+
+    def _slice(self, part: slice) -> DatapointsArray:
+        return DatapointsArray(**self._ts_info, **{attr: arr[part] for attr, arr in zip(*self._data_fields())})
+
+    def __iter__(self) -> Iterator[Datapoint]:
+        # Let's not create a single Datapoint more than we have too:
+        attrs, arrays = self._data_fields()
+        yield from (Datapoint(**dict(zip(attrs, row))) for row in zip(*arrays))
+
+    def _data_fields(self) -> Tuple[List[str], List[npt.NDArray]]:
+        attrs, arrays = map(
+            list,
+            zip(
+                *[
+                    (attr, arr)
+                    for attr in ("timestamp", "value", *ALL_DATAPOINT_AGGREGATES)
+                    if (arr := getattr(self, attr)) is not None
+                ]
+            ),
+        )
+        return attrs, arrays
+
+    def dump(self, camel_case: bool = False, convert_timestamps: bool = False) -> Dict[str, Any]:
+        """Dump the datapoints into a json serializable Python data type.
+
+        Args:
+            camel_case (bool): Use camelCase for attribute names. Default: False.
+            convert_timestamps (bool): Convert integer timestamps to ISO 8601 formatted strings. Default: False.
+
+        Returns:
+            List[Dict[str, Any]]: A list of dicts representing the instance.
+        """
+        attrs, arrays = self._data_fields()
+        if convert_timestamps:
+            assert attrs[0] == "timestamp"
+            # Note: numpy does not have a strftime method to get the exact format we want (hence the datetime detour):
+            arrays[0] = arrays[0].astype("datetime64[ms]").astype(datetime).astype(str)
+
+        if camel_case:
+            attrs = list(map(to_camel_case, attrs))
+
+        dumped = {
+            **self._ts_info,
+            # Using .item() is not strictly necessary, but it gives us vanilla python types:
+            "datapoints": [dict(zip(attrs, [v.item() for v in row])) for row in zip(*arrays)],
+        }
+        if camel_case:
+            dumped = convert_all_keys_to_camel_case(dumped)
+        return {k: v for k, v in dumped.items() if v is not None}
+
+    def to_pandas(
+        self, column_names: Literal["id", "external_id"] = "external_id", include_aggregate_name: bool = True
+    ) -> "pandas.DataFrame":
+        pd = local_import("pandas")
+        identifier_dct = {"id": str(self.id), "external_id": self.external_id}
+        if column_names not in identifier_dct:
             raise ValueError("Argument `column_names` must be either 'external_id' or 'id'")
-        identifier = {"id": str(self.id), "external_id": self.external_id}[column_names]
-        if identifier is None:
-            identifier = self.id
+        identifier = identifier_dct[column_names]
+        if identifier is None:  # Time series are not required to have an external_id unfortunately...
+            identifier = identifier_dct["id"]
             warnings.warn(
                 f"Time series does not have an external ID, so its ID ({self.id}) was used instead as "
                 'the column name in the DataFrame. If this is expected, consider passing `column_names="id"` '
                 "to silence this warning.",
                 UserWarning,
             )
-
+        idx = pd.to_datetime(self.timestamp, unit="ms")
         if self.value is not None:
-            columns = {identifier: self.value}
-        else:
+            return pd.DataFrame({identifier: self.value}, index=idx)
 
-            def col_name(agg):
-                return identifier + include_aggregate_name * f"|{to_camel_case(agg)}"
+        def col_name(agg):
+            return identifier + include_aggregate_name * f"|{agg}"
 
-            columns = valfilter({col_name(agg): getattr(self, agg) for agg in ALL_DATAPOINT_AGGREGATES})
-
-        return pd.DataFrame(columns, index=pd.to_datetime(self.timestamp, unit="ms"))
+        return pd.DataFrame(
+            {col_name(agg): arr for agg in ALL_DATAPOINT_AGGREGATES if (arr := getattr(self, agg)) is not None},
+            index=idx,
+        )
 
 
 class Datapoints(CogniteResource):
@@ -214,8 +302,8 @@ class Datapoints(CogniteResource):
         is_string (bool): Whether the time series is string valued or not.
         is_step (bool): Whether the time series is a step series or not.
         unit (str): The physical unit of the time series.
-        timestamp (List[int]): The data timestamps in milliseconds since the epoch (Jan 1, 1970).
-        value (List[Union[str, float]]): The data values. Can be String or numeric depending on the metric
+        timestamp (List[Union[int, float]]): The data timestamps in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
+        value (List[Union[int, str, float]]): The data values. Can be string or numeric depending on the metric
         average (List[float]): The integral average values in the aggregate period
         max (List[float]): The maximum values in the aggregate period
         min (List[float]): The minimum values in the aggregate period
@@ -236,7 +324,7 @@ class Datapoints(CogniteResource):
         is_step: bool = None,
         unit: str = None,
         timestamp: List[int] = None,
-        value: List[Union[str, float]] = None,
+        value: Union[List[str], List[float]] = None,
         average: List[float] = None,
         max: List[float] = None,
         min: List[float] = None,
@@ -315,6 +403,7 @@ class Datapoints(CogniteResource):
             "datapoints": [dp.dump(camel_case=camel_case) for dp in self.__get_datapoint_objects()],
         }
         if camel_case:
+            # TODO: Keys in dicts in `datapoints`, i.e. `step_interpolation` are still snake_cased.
             dumped = {utils._auxiliary.to_camel_case(key): value for key, value in dumped.items()}
         return {key: value for key, value in dumped.items() if value is not None}
 
@@ -331,7 +420,7 @@ class Datapoints(CogniteResource):
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        pd = utils._auxiliary.local_import("pandas")
+        pd = local_import("pandas")
         data_fields = {}
         timestamps = []
         if column_names in ["external_id", "externalId"]:  # Camel case for backwards compat
@@ -353,12 +442,6 @@ class Datapoints(CogniteResource):
             df = Datapoints._strip_aggregate_names(df)
         return df
 
-    def plot(self, *args: Any, **kwargs: Any) -> None:
-        """Plot the datapoints."""
-        plt = cast(Any, utils._auxiliary.local_import("matplotlib.pyplot"))
-        self.to_pandas().plot(*args, **kwargs)
-        plt.show()
-
     @staticmethod
     def _strip_aggregate_names(df: "pandas.DataFrame") -> "pandas.DataFrame":
         expr = f"\\|({'|'.join(ALL_DATAPOINT_AGGREGATES)})$"
@@ -368,14 +451,15 @@ class Datapoints(CogniteResource):
         return df
 
     @classmethod
-    def _load(  # type: ignore[override]
+    def _load(
         cls, dps_object: Dict[str, Any], expected_fields: List[str] = None, cognite_client: "CogniteClient" = None
     ) -> "Datapoints":
+        del cognite_client  # just needed for signature
         instance = cls(
-            id=dps_object["id"],
+            id=dps_object.get("id"),
             external_id=dps_object.get("externalId"),
             is_string=dps_object["isString"],
-            is_step=dps_object["isStep"],
+            is_step=dps_object.get("isStep"),
             unit=dps_object.get("unit"),
         )
         expected_fields = (expected_fields or ["value"]) + ["timestamp"]
@@ -447,20 +531,30 @@ class DatapointsArrayList(CogniteResourceList):
     _RESOURCE = DatapointsArray
 
     def __str__(self) -> str:
-        return "DatapointsArrayList.__str__ not implemented"  # No really, TODO
-        # item = utils._time.convert_time_attributes_to_datetime(self.dump())
-        # return json.dumps(item, default=utils._auxiliary.json_dump_default, indent=4)
+        return json.dumps(self.dump(convert_timestamps=True), indent=4)
 
-    def to_pandas(self, column_names: str = "external_id", include_aggregate_name: bool = True) -> "pandas.DataFrame":
-        pd = cast(Any, utils._auxiliary.local_import("pandas"))
-        dfs = [dps_arr.to_pandas(column_names=column_names) for dps_arr in self.data]
-        if dfs:
-            df = pd.concat(dfs, axis="columns")
-            if not include_aggregate_name:  # do not pass in to_pandas above, so we check for duplicate columns
-                df = Datapoints._strip_aggregate_names(df)
-            return df
+    def _repr_html_(self) -> str:
+        return self.to_pandas()._repr_html_()
 
+    def to_pandas(
+        self, column_names: Literal["id", "external_id"] = "external_id", include_aggregate_name: bool = True
+    ) -> "pandas.DataFrame":
+        pd = cast(Any, local_import("pandas"))
+        if dfs := [arr.to_pandas(column_names, include_aggregate_name) for arr in self.data]:
+            return pd.concat(dfs, axis="columns")
         return pd.DataFrame()
+
+    def dump(self, camel_case: bool = False, convert_timestamps: bool = False) -> List[Dict[str, Any]]:
+        """Dump the instance into a json serializable Python data type.
+
+        Args:
+            camel_case (bool): Use camelCase for attribute names. Default: False.
+            convert_timestamps (bool): Convert integer timestamps to ISO 8601 formatted strings. Default: False.
+
+        Returns:
+            List[Dict[str, Any]]: A list of dicts representing the instance.
+        """
+        return [dps.dump(camel_case, convert_timestamps) for dps in self.data]
 
 
 class DatapointsList(CogniteResourceList):
@@ -484,7 +578,7 @@ class DatapointsList(CogniteResourceList):
         Returns:
             pandas.DataFrame: The datapoints list as a pandas DataFrame.
         """
-        pd = cast(Any, utils._auxiliary.local_import("pandas"))
+        pd = cast(Any, local_import("pandas"))
 
         dfs = [df.to_pandas(column_names=column_names) for df in self.data]
         if dfs:
@@ -498,63 +592,14 @@ class DatapointsList(CogniteResourceList):
     def _repr_html_(self) -> str:
         return self.to_pandas()._repr_html_()
 
-    def plot(self, *args: Any, **kwargs: Any) -> None:
-        """Plot the list of datapoints."""
-        plt = utils._auxiliary.local_import("matplotlib.pyplot")
-        self.to_pandas().plot(*args, **kwargs)
-        plt.show()  # type: ignore
 
-
-DatapointsIdMaybeAggregate = Union[
-    int, List[int], Dict[str, Union[int, List[str]]], List[Dict[str, Union[int, List[str]]]]
-]
-DatapointsExternalIdMaybeAggregate = Union[
-    str, List[str], Dict[str, Union[str, List[str]]], List[Dict[str, Union[str, List[str]]]]
-]
-
-
+@dataclass
 class DatapointsQuery(CogniteResource):
     """Parameters describing a query for datapoints.
 
-    Args:
-        start (Union[str, int, datetime]): Get datapoints starting from this time. Format is N[timeunit]-ago where timeunit is w,d,h,m,s. Example: '2d-ago' will get everything that is up to 2 days old. Can also send time in ms since epoch.
-        end (Union[str, int, datetime]): Get datapoints up to this time. The format is the same as for start.
-        id (Union[int, List[int], Dict[str, Any], List[Dict[str, Any]]]: Id or list of ids. Can also be object
-                specifying aggregates. See example below.
-        external_id (Union[str, List[str], Dict[str, Any], List[Dict[str, Any]]]): External id or list of external
-            ids. Can also be object specifying aggregates. See example below (TODO: Where?).
-        limit (int): Return up to this number of datapoints.
-        aggregates (List[str]): The aggregates to be returned.  Use default if null. An empty string must be sent to get raw data if the default is a set of aggregates.
-        granularity (str): The granularity size and granularity of the aggregates.
-        include_outside_points (bool): Whether to include the last datapoint before the requested time period,and the first one after the requested period. This can be useful for interpolating data. Not available for aggregates.
-        ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception. Note that in this case the function always returns a DatapointsList even when a single id is requested.
+    See `DatapointsAPI.retrieve` method for a description of the parameters.
     """
 
-    def __init__(
-        self,
-        start: Union[str, int, datetime],
-        end: Union[str, int, datetime],
-        id: DatapointsIdMaybeAggregate = None,
-        external_id: DatapointsExternalIdMaybeAggregate = None,
-        limit: int = None,
-        aggregates: List[str] = None,
-        granularity: str = None,
-        include_outside_points: bool = None,
-        ignore_unknown_ids: bool = False,
-    ):
-        self.id = id
-        self.external_id = external_id
-        self.start = start
-        self.end = end
-        self.limit = limit
-        self.aggregates = aggregates
-        self.granularity = granularity
-        self.include_outside_points = include_outside_points
-        self.ignore_unknown_ids = ignore_unknown_ids
-
-
-@dataclass
-class DatapointsQueryNew(CogniteResource):
     start: Union[int, str, datetime, None] = None
     end: Union[int, str, datetime, None] = None
     id: Optional[DatapointsIdTypes] = None
@@ -589,10 +634,7 @@ class DatapointsQueryNew(CogniteResource):
             and self.id is None
         )
 
-    def validate(self) -> None:
-        self.validate_and_create_queries()
-
-    def validate_and_create_queries(self) -> List[SingleTSQuery]:
+    def validate_and_create_queries(self) -> List[_SingleTSQuery]:
         queries = []
         if self.id is not None:
             queries.extend(self._validate_id_or_xid(id_or_xid=self.id, is_external_id=False))
@@ -602,7 +644,9 @@ class DatapointsQueryNew(CogniteResource):
             return queries
         raise ValueError("Pass at least one time series `id` or `external_id`!")
 
-    def _validate_id_or_xid(self, id_or_xid, is_external_id: bool):
+    def _validate_id_or_xid(
+        self, id_or_xid: Union[DatapointsIdTypes, DatapointsExternalIdTypes], is_external_id: bool
+    ) -> List[_SingleTSQuery]:
         if is_external_id:
             arg_name, exp_type = "external_id", str
         else:
@@ -617,35 +661,40 @@ class DatapointsQueryNew(CogniteResource):
         queries = []
         for ts in id_or_xid:
             if isinstance(ts, exp_type):
-                queries.append(SingleTSQuery.from_dict_with_validation({arg_name: ts}, self.defaults))
+                queries.append(_SingleTSQuery.from_dict_with_validation({arg_name: ts}, self.defaults))
 
             elif isinstance(ts, dict):
                 ts_validated = self._validate_ts_query_dct(ts, arg_name, exp_type)
-                queries.append(SingleTSQuery.from_dict_with_validation(ts_validated, self.defaults))
+                queries.append(_SingleTSQuery.from_dict_with_validation(ts_validated, self.defaults))
             else:
                 self._raise_on_wrong_ts_identifier_type(ts, arg_name, exp_type)
         return queries
 
     @staticmethod
-    def _raise_on_wrong_ts_identifier_type(id_or_xid, arg_name, exp_type) -> NoReturn:
+    def _raise_on_wrong_ts_identifier_type(
+        id_or_xid: Union[DatapointsIdTypes, DatapointsExternalIdTypes],
+        arg_name: str,
+        exp_type: Union[str, numbers.Integral],
+    ) -> NoReturn:
         raise TypeError(
             f"Got unsupported type {type(id_or_xid)}, as, or part of argument `{arg_name}`. Expected one of "
             f"{exp_type}, {dict} or a (mixed) list of these, but got `{id_or_xid}`."
         )
 
     @staticmethod
-    def _validate_ts_query_dct(dct, arg_name, exp_type) -> Union[DatapointsQueryId, DatapointsQueryExternalId]:
+    def _validate_ts_query_dct(
+        dct: Dict[str, Any], arg_name: str, exp_type: Union[str, numbers.Integral]
+    ) -> Union[DatapointsQueryId, DatapointsQueryExternalId]:
         if arg_name not in dct:
-            if to_camel_case(arg_name) in dct:
-                # For backwards compatability we accept identifier in camel case:
-                dct = dct.copy()  # Avoid side effects for user's input. Also means we need to return it.
-                dct[arg_name] = dct.pop(to_camel_case(arg_name))
-            else:
+            if (arg_name_cc := to_camel_case(arg_name)) not in dct:
                 raise KeyError(f"Missing key `{arg_name}` in dict passed as, or part of argument `{arg_name}`")
+            # For backwards compatability we accept identifier in camel case: (Make copy to avoid side effects
+            # for user's input). Also means we need to return it.
+            dct[arg_name] = (dct := dct.copy()).pop(arg_name_cc)
 
         ts_identifier = dct[arg_name]
         if not isinstance(ts_identifier, exp_type):
-            DatapointsQueryNew._raise_on_wrong_ts_identifier_type(ts_identifier, arg_name, exp_type)
+            DatapointsQuery._raise_on_wrong_ts_identifier_type(ts_identifier, arg_name, exp_type)
 
         opt_dct_keys = {"start", "end", "aggregates", "granularity", "include_outside_points", "limit"}
         bad_keys = set(dct) - opt_dct_keys - {arg_name}
@@ -660,9 +709,9 @@ class DatapointsQueryNew(CogniteResource):
 # Note on `@dataclass(eq=False)`: We need all individual queries to be hashable (and unique), even two exactly
 # similar queries. With `eq=False`, we inherit __hash__ from `object` (just id(self)) - exactly what we need!
 @dataclass(eq=False)
-class SingleTSQuery:
-    id: Optional[int] = None
-    external_id: Optional[str] = None
+class _SingleTSQuery:
+    id: InitVar[int] = None
+    external_id: InitVar[str] = None
     start: Union[int, str, datetime, None] = None
     end: Union[int, str, datetime, None] = None
     aggregates: Optional[List[str]] = None
@@ -670,10 +719,10 @@ class SingleTSQuery:
     limit: Optional[int] = None
     include_outside_points: Optional[bool] = False
     ignore_unknown_ids: Optional[bool] = False
+    identifier: Identifier = dataclasses.field(default=None, init=False)
 
-    def __post_init__(self):
-        # NB: Do not change order of _verify fns without care:
-        self._verify_identifier()
+    def __post_init__(self, id, external_id):
+        self.identifier = Identifier.of_either(id, external_id)
         self._verify_limit()
         self._verify_time_range()
         self._is_missing = None  # I.e. not set...
@@ -690,14 +739,22 @@ class SingleTSQuery:
             )
 
     def to_payload(self):
-        payload = dataclasses.asdict(self)
-        for k in ("id", "external_id", "ignore_unknown_ids", "include_outside_points"):
-            del payload[k]
-        payload["includeOutsidePoints"] = self.include_outside_points  # Camel case...
-        return {**payload, **self.identifier_dct}
+        return {
+            **self.identifier.as_dict(),
+            "start": self.start,
+            "end": self.end,
+            "aggregates": self.aggregates_cc,  # camel case
+            "granularity": self.granularity,
+            "limit": self.capped_limit,
+            "includeOutsidePoints": self.include_outside_points,
+        }
 
     @classmethod
-    def from_dict_with_validation(cls, ts_dct, defaults) -> SingleTSQuery:
+    def from_dict_with_validation(
+        cls,
+        ts_dct: Union[DatapointsQueryId, DatapointsQueryExternalId],
+        defaults: Union[DatapointsQueryId, DatapointsQueryExternalId],
+    ) -> _SingleTSQuery:
         # We merge 'defaults' and given ts-dict, ts-dict takes precedence:
         dct = {**defaults, **ts_dct}
         granularity, aggregates = dct["granularity"], dct["aggregates"]
@@ -724,29 +781,17 @@ class SingleTSQuery:
             raise ValueError("'Include outside points' is not supported for aggregates.")
         return cls(**dct)  # Request for one or more aggregates
 
-    def _verify_identifier(self):
-        if self.id is not None:
-            self.identifier_type = "id"
-            self.identifier = int(self.id)
-        elif self.external_id is not None:
-            self.identifier_type = "externalId"
-            self.identifier = str(self.external_id)
-        else:
-            raise ValueError("Pass exactly one of `id` or `external_id`. Got neither.")
-        # Shortcuts for hashing and API queries:
-        self.identifier_tpl = (self.identifier_type, self.identifier)
-        self.identifier_dct = {self.identifier_type: self.identifier}
-        self.identifier_dct_sc = {to_snake_case(self.identifier_type): self.identifier}
-
-    def _verify_limit(self):
+    def _verify_limit(self) -> None:
         if self.limit in {None, -1, math.inf}:
             self.limit = None
-        elif isinstance(self.limit, numbers.Integral):  # limit=0 is accepted by the API
+        elif isinstance(self.limit, numbers.Integral) and self.limit >= 0:  # limit=0 is accepted by the API
             self.limit = int(self.limit)  # We don't want weird stuff like numpy dtypes etc.
         else:
-            raise TypeError(f"Limit must be an integer or one of [None, -1, inf], got {type(self.limit)}")
+            raise TypeError(f"Limit must be a non-negative integer -or- one of [None, -1, inf], got {type(self.limit)}")
+        self._max_raw_query_limit = DPS_LIMIT
+        self._max_agg_query_limit = DPS_LIMIT_AGG
 
-    def _verify_time_range(self):
+    def _verify_time_range(self) -> None:
         if self.start is None:
             self.start = 0  # 1970-01-01
         else:
@@ -757,25 +802,24 @@ class SingleTSQuery:
 
         if self.end <= self.start:
             raise ValueError(
-                f"Invalid time range, `end` must be later than `start` (from query: {self.identifier_dct_sc})"
+                f"Invalid time range, `end` must be later than `start` (from query: {self.identifier.as_dict(camel_case=False)})"
             )
-
         if not self.is_raw_query:  # API rounds aggregate queries in a very particular fashion
             self.start, self.end = align_start_and_end_for_granularity(self.start, self.end, self.granularity)
 
     @property
-    def is_missing(self):
+    def is_missing(self) -> bool:
         if self._is_missing is None:
             raise RuntimeError("Before making API-calls the `is_missing` status is unknown")
         return self._is_missing
 
     @is_missing.setter
-    def is_missing(self, value):
+    def is_missing(self, value) -> None:
         assert isinstance(value, bool)
         self._is_missing = value
 
     @property
-    def is_string(self):
+    def is_string(self) -> bool:
         if self._is_string is None:
             raise RuntimeError(
                 "For queries asking for raw datapoints, the `is_string` status is unknown before "
@@ -784,16 +828,33 @@ class SingleTSQuery:
         return self._is_string
 
     @is_string.setter
-    def is_string(self, value):
+    def is_string(self, value) -> None:
         assert isinstance(value, bool)
         self._is_string = value
 
     @property
-    def is_raw_query(self):
+    def is_raw_query(self) -> bool:
         return self.aggregates is None
 
+    @cached_property
+    def aggregates_cc(self) -> List[str]:
+        if not self.is_raw_query:
+            return list(map(to_camel_case, self.aggregates))
+
     @property
-    def max_query_limit(self):
+    def capped_limit(self) -> int:
+        if self.limit is None:
+            return self.max_query_limit
+        return min(self.limit, self.max_query_limit)
+
+    def override_max_limits(self, max_raw: int, max_agg: int) -> None:
+        assert isinstance(max_raw, int) and isinstance(max_agg, int)
+        assert max_raw <= DPS_LIMIT and max_agg <= DPS_LIMIT_AGG
+        self._max_raw_query_limit = max_raw
+        self._max_agg_query_limit = max_agg
+
+    @property
+    def max_query_limit(self) -> int:
         if self.is_raw_query:
-            return DPS_LIMIT
-        return DPS_LIMIT_AGG
+            return self._max_raw_query_limit
+        return self._max_agg_query_limit

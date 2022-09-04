@@ -1,8 +1,6 @@
 import gzip
 import json as _json
 import logging
-import numbers
-import os
 import re
 from collections import UserList
 from json.decoder import JSONDecodeError
@@ -23,6 +21,7 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    overload,
 )
 from urllib.parse import urljoin
 
@@ -31,16 +30,17 @@ from requests import Response
 from requests.structures import CaseInsensitiveDict
 
 from cognite.client import utils
-from cognite.client._http_client import GLOBAL_REQUEST_SESSION, HTTPClient, HTTPClientConfig
+from cognite.client._http_client import HTTPClient, HTTPClientConfig, get_global_requests_session
+from cognite.client.config import ClientConfig, global_config
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteResource,
-    CogniteResourceList,
     CogniteUpdate,
     T_CogniteResource,
     T_CogniteResourceList,
 )
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
+from cognite.client.utils._identifier import Identifier, IdentifierSequence, SingletonIdentifierSequence
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -89,39 +89,37 @@ class APIClient:
     }
 
     def __init__(
-        self, config: utils._client_config.ClientConfig, api_version: str = None, cognite_client: "CogniteClient" = None
+        self, config: ClientConfig, api_version: Optional[str] = None, cognite_client: "CogniteClient" = None
     ) -> None:
         self._config = config
         self._api_version = api_version
         self._api_subversion = config.api_subversion
         self._cognite_client = cognite_client
 
-        session = GLOBAL_REQUEST_SESSION
-        if self._config.proxies is not None:
-            session.proxies.update(self._config.proxies)
+        session = get_global_requests_session()
 
         self._http_client = HTTPClient(
             config=HTTPClientConfig(
                 status_codes_to_retry={429},
                 backoff_factor=0.5,
-                max_backoff_seconds=config.max_retry_backoff,
-                max_retries_total=self._config.max_retries,
+                max_backoff_seconds=global_config.max_retry_backoff,
+                max_retries_total=global_config.max_retries,
                 max_retries_read=0,
-                max_retries_connect=self._config.max_retries,
-                max_retries_status=self._config.max_retries,
+                max_retries_connect=global_config.max_retries,
+                max_retries_status=global_config.max_retries,
             ),
             session=session,
         )
 
         self._http_client_with_retry = HTTPClient(
             config=HTTPClientConfig(
-                status_codes_to_retry=self._config.status_forcelist,
+                status_codes_to_retry=global_config.status_forcelist,
                 backoff_factor=0.5,
-                max_backoff_seconds=config.max_retry_backoff,
-                max_retries_total=self._config.max_retries,
-                max_retries_read=self._config.max_retries,
-                max_retries_connect=self._config.max_retries,
-                max_retries_status=self._config.max_retries,
+                max_backoff_seconds=global_config.max_retry_backoff,
+                max_retries_total=global_config.max_retries,
+                max_retries_read=global_config.max_retries,
+                max_retries_connect=global_config.max_retries,
+                max_retries_status=global_config.max_retries,
             ),
             session=session,
         )
@@ -177,7 +175,7 @@ class APIClient:
                     ) from None
                 raise
             kwargs["data"] = data
-            if method in ["PUT", "POST"] and not os.getenv("COGNITE_DISABLE_GZIP", False):
+            if method in ["PUT", "POST"] and not global_config.disable_gzip:
                 kwargs["data"] = gzip.compress(data.encode())
                 headers["Content-Encoding"] = "gzip"
 
@@ -204,14 +202,8 @@ class APIClient:
     def _configure_headers(self, additional_headers: Dict[str, str]) -> MutableMapping[str, Any]:
         headers: MutableMapping[str, Any] = CaseInsensitiveDict()
         headers.update(requests.utils.default_headers())
-        if self._config.token is None:
-            headers["api-key"] = self._config.api_key
-        elif isinstance(self._config.token, str):
-            headers["Authorization"] = "Bearer {}".format(self._config.token)
-        elif callable(self._config.token):
-            headers["Authorization"] = "Bearer {}".format(self._config.token())
-        else:
-            raise TypeError("'token' must be str, Callable, or None.")
+        auth_header_name, auth_header_value = self._config.credentials.authorization_header()
+        headers[auth_header_name] = auth_header_value
         headers["content-type"] = "application/json"
         headers["accept"] = "application/json"
         headers["x-cdp-sdk"] = "CognitePythonSDK:{}".format(utils._auxiliary.get_current_sdk_version())
@@ -239,7 +231,7 @@ class APIClient:
     def _is_retryable(self, method: str, path: str) -> bool:
         valid_methods = ["GET", "POST", "PUT", "DELETE", "PATCH"]
         match = re.match(
-            "(?:http|https)://[a-z\d.:\-]+(?:/api/(?:v1|playground)/projects/[^/]+)?(/[^\?]+)?(\?.+)?", path
+            r"(?:http|https)://[a-z\d.:\-]+(?:/api/(?:v1|playground)/projects/[^/]+)?(/[^\?]+)?(\?.+)?", path
         )
         if not match:
             raise ValueError("Path {} is not valid. Cannot resolve whether or not it is retryable".format(path))
@@ -255,7 +247,7 @@ class APIClient:
 
     def _retrieve(
         self,
-        id: Union[int, str],
+        identifier: Identifier,
         cls: Type[T_CogniteResource],
         resource_path: str = None,
         params: Dict = None,
@@ -264,7 +256,9 @@ class APIClient:
         resource_path = resource_path or self._RESOURCE_PATH
         try:
             res = self._get(
-                url_path=utils._auxiliary.interpolate_and_url_encode(resource_path + "/{}", str(id)),
+                url_path=utils._auxiliary.interpolate_and_url_encode(
+                    resource_path + "/{}", str(identifier.as_primitive())
+                ),
                 params=params,
                 headers=headers,
             )
@@ -274,30 +268,56 @@ class APIClient:
                 raise
         return None
 
+    @overload
     def _retrieve_multiple(
         self,
-        wrap_ids: bool,
         list_cls: Type[T_CogniteResourceList],
         resource_cls: Type[T_CogniteResource],
+        identifiers: SingletonIdentifierSequence,
         resource_path: Optional[str] = None,
-        ids: Optional[Union[List[int], int]] = None,
-        external_ids: Optional[Union[List[str], str]] = None,
         ignore_unknown_ids: Optional[bool] = None,
         headers: Optional[Dict[str, Any]] = None,
         other_params: Optional[Dict[str, Any]] = None,
-    ) -> Optional[Union[T_CogniteResourceList, T_CogniteResource]]:
+    ) -> Optional[T_CogniteResource]:
+        ...
+
+    @overload
+    def _retrieve_multiple(
+        self,
+        list_cls: Type[T_CogniteResourceList],
+        resource_cls: Type[T_CogniteResource],
+        identifiers: IdentifierSequence,
+        resource_path: Optional[str] = None,
+        ignore_unknown_ids: Optional[bool] = None,
+        headers: Optional[Dict[str, Any]] = None,
+        other_params: Optional[Dict[str, Any]] = None,
+    ) -> T_CogniteResourceList:
+        ...
+
+    def _retrieve_multiple(
+        self,
+        list_cls: Type[T_CogniteResourceList],
+        resource_cls: Type[T_CogniteResource],
+        identifiers: Union[SingletonIdentifierSequence, IdentifierSequence],
+        resource_path: Optional[str] = None,
+        ignore_unknown_ids: Optional[bool] = None,
+        headers: Optional[Dict[str, Any]] = None,
+        other_params: Optional[Dict[str, Any]] = None,
+    ) -> Union[T_CogniteResourceList, Optional[T_CogniteResource]]:
         resource_path = resource_path or self._RESOURCE_PATH
-        all_ids = self._process_ids(ids, external_ids, wrap_ids=wrap_ids)
-        id_chunks = utils._auxiliary.split_into_chunks(all_ids, self._RETRIEVE_LIMIT)
 
         ignore_unknown_obj = {} if ignore_unknown_ids is None else {"ignoreUnknownIds": ignore_unknown_ids}
         tasks: List[Dict[str, Union[str, Dict[str, Any], None]]] = [
             {
                 "url_path": resource_path + "/byids",
-                "json": {"items": id_chunk, **ignore_unknown_obj, **(other_params or {})},
+                "json": {
+                    "items": id_chunk.as_dicts(),
+                    **ignore_unknown_obj,
+                    **(other_params or {}),
+                },
                 "headers": headers,
             }
-            for id_chunk in id_chunks
+            for id_chunk in identifiers.chunked(self._RETRIEVE_LIMIT)
         ]
         tasks_summary = utils._concurrency.execute_tasks_concurrently(
             self._post, tasks, max_workers=self._config.max_workers
@@ -307,13 +327,13 @@ class APIClient:
             try:
                 utils._concurrency.collect_exc_info_and_raise(tasks_summary.exceptions)
             except CogniteNotFoundError:
-                if self._is_single_identifier(ids, external_ids):
+                if identifiers.is_singleton():
                     return None
                 raise
 
         retrieved_items = tasks_summary.joined_results(lambda res: res.json()["items"])
 
-        if self._is_single_identifier(ids, external_ids):
+        if identifiers.is_singleton():
             return resource_cls._load(retrieved_items[0], cognite_client=self._cognite_client)
         return list_cls._load(retrieved_items, cognite_client=self._cognite_client)
 
@@ -327,7 +347,7 @@ class APIClient:
         limit: Optional[int] = None,
         chunk_size: Optional[int] = None,
         filter: Optional[Dict[str, Any]] = None,
-        sort: Optional[List[str]] = None,
+        sort: Optional[Sequence[str]] = None,
         other_params: Optional[Dict[str, Any]] = None,
         partitions: Optional[int] = None,
         headers: Optional[Dict[str, Any]] = None,
@@ -450,7 +470,7 @@ class APIClient:
         filter: Optional[Dict] = None,
         other_params: Optional[Dict] = None,
         partitions: Optional[int] = None,
-        sort: Optional[List[str]] = None,
+        sort: Optional[Sequence[str]] = None,
         headers: Optional[Dict] = None,
         initial_cursor: Optional[str] = None,
     ) -> T_CogniteResourceList:
@@ -542,7 +562,7 @@ class APIClient:
         resource_path: Optional[str] = None,
         filter: Optional[Union[CogniteFilter, Dict]] = None,
         aggregate: Optional[str] = None,
-        fields: Optional[List[str]] = None,
+        fields: Optional[Sequence[str]] = None,
         headers: Optional[Dict] = None,
     ) -> List[T]:
         utils._auxiliary.assert_type(filter, "filter", [dict, CogniteFilter], allow_none=True)
@@ -562,6 +582,34 @@ class APIClient:
         res = self._post(url_path=resource_path + "/aggregate", json=body, headers=headers)
         return [cls(**agg) for agg in res.json()["items"]]
 
+    @overload
+    def _create_multiple(
+        self,
+        items: Union[Sequence[T_CogniteResource], Sequence[Dict[str, Any]]],
+        list_cls: Type[T_CogniteResourceList],
+        resource_cls: Type[T_CogniteResource],
+        resource_path: Optional[str] = None,
+        params: Optional[Dict] = None,
+        headers: Optional[Dict] = None,
+        extra_body_fields: Optional[Dict] = None,
+        limit: Optional[int] = None,
+    ) -> T_CogniteResourceList:
+        ...
+
+    @overload
+    def _create_multiple(
+        self,
+        items: Union[T_CogniteResource, Dict[str, Any]],
+        list_cls: Type[T_CogniteResourceList],
+        resource_cls: Type[T_CogniteResource],
+        resource_path: Optional[str] = None,
+        params: Optional[Dict] = None,
+        headers: Optional[Dict] = None,
+        extra_body_fields: Optional[Dict] = None,
+        limit: Optional[int] = None,
+    ) -> T_CogniteResource:
+        ...
+
     def _create_multiple(
         self,
         items: Union[Sequence[CogniteResource], Sequence[Dict[str, Any]], CogniteResource, Dict[str, Any]],
@@ -575,7 +623,7 @@ class APIClient:
     ) -> Union[T_CogniteResourceList, T_CogniteResource]:
         resource_path = resource_path or self._RESOURCE_PATH
         limit = limit or self._CREATE_LIMIT
-        single_item = not isinstance(items, list)
+        single_item = not isinstance(items, Sequence)
         if single_item:
             items = cast(Union[Sequence[CogniteResource], Sequence[Dict[str, Any]]], [items])
         else:
@@ -621,31 +669,57 @@ class APIClient:
 
     def _delete_multiple(
         self,
+        identifiers: IdentifierSequence,
         wrap_ids: bool,
         resource_path: Optional[str] = None,
-        ids: Optional[Union[List[int], int]] = None,
-        external_ids: Optional[Union[List[str], str]] = None,
         params: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, Any]] = None,
         extra_body_fields: Optional[Dict[str, Any]] = None,
     ) -> None:
         resource_path = resource_path or self._RESOURCE_PATH
-        all_ids = self._process_ids(ids, external_ids, wrap_ids)
-        id_chunks = utils._auxiliary.split_into_chunks(all_ids, self._DELETE_LIMIT)
         tasks = [
             {
                 "url_path": resource_path + "/delete",
-                "json": {"items": chunk, **(extra_body_fields or {})},
+                "json": {
+                    "items": chunk.as_dicts() if wrap_ids else chunk.as_primitives(),
+                    **(extra_body_fields or {}),
+                },
                 "params": params,
                 "headers": headers,
             }
-            for chunk in id_chunks
+            for chunk in identifiers.chunked(self._DELETE_LIMIT)
         ]
         summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"],
             task_list_element_unwrap_fn=utils._auxiliary.unwrap_identifer,
         )
+
+    @overload
+    def _update_multiple(
+        self,
+        items: Union[CogniteResource, CogniteUpdate],
+        list_cls: Type[T_CogniteResourceList],
+        resource_cls: Type[T_CogniteResource],
+        update_cls: Type[CogniteUpdate],
+        resource_path: str = None,
+        params: Dict = None,
+        headers: Dict = None,
+    ) -> T_CogniteResource:
+        ...
+
+    @overload
+    def _update_multiple(
+        self,
+        items: Sequence[Union[CogniteResource, CogniteUpdate]],
+        list_cls: Type[T_CogniteResourceList],
+        resource_cls: Type[T_CogniteResource],
+        update_cls: Type[CogniteUpdate],
+        resource_path: str = None,
+        params: Dict = None,
+        headers: Dict = None,
+    ) -> T_CogniteResourceList:
+        ...
 
     def _update_multiple(
         self,
@@ -659,7 +733,7 @@ class APIClient:
     ) -> Union[T_CogniteResourceList, T_CogniteResource]:
         resource_path = resource_path or self._RESOURCE_PATH
         patch_objects = []
-        single_item = not isinstance(items, (list, UserList))
+        single_item = not isinstance(items, (Sequence, UserList))
         if single_item:
             item_list = cast(Union[Sequence[CogniteResource], Sequence[CogniteUpdate]], [items])
         else:
@@ -737,47 +811,6 @@ class APIClient:
             if utils._auxiliary.to_snake_case(key) in update_attributes:
                 patch_object["update"][key] = {"set": value}
         return patch_object
-
-    @staticmethod
-    def _process_ids(
-        ids: Union[List[int], int, None], external_ids: Union[List[str], str, None], wrap_ids: bool
-    ) -> Union[List[Union[Dict[str, int], Dict[str, str]]], List[Union[int, str]]]:
-        if external_ids is None and ids is None:
-            raise ValueError("No ids specified")
-        if external_ids and not wrap_ids:
-            raise ValueError("externalIds must be wrapped")
-
-        if isinstance(ids, numbers.Integral):
-            id_list = [ids]
-        elif isinstance(ids, list) or ids is None:
-            id_list = ids or []
-        else:
-            raise TypeError("ids must be int or list of int")
-
-        if isinstance(external_ids, str):
-            external_id_list = [external_ids]
-        elif isinstance(external_ids, list) or external_ids is None:
-            external_id_list = external_ids or []
-        else:
-            raise TypeError("external_ids must be str or list of str")
-
-        if wrap_ids:
-            id_objs = [{"id": id} for id in id_list]
-            external_id_objs = [{"externalId": external_id} for external_id in external_id_list]
-            all_wrapped_ids: List[Union[Dict[str, int], Dict[str, str]]] = [*id_objs, *external_id_objs]
-            return all_wrapped_ids
-
-        all_ids: List[Union[int, str]] = [*id_list, *external_id_list]
-        return all_ids
-
-    @staticmethod
-    def _is_single_identifier(
-        ids: Optional[Union[int, numbers.Integral, Sequence[numbers.Integral], Sequence[int]]],
-        external_ids: Optional[Union[str, Sequence[str]]],
-    ) -> bool:
-        single_id = isinstance(ids, (numbers.Integral, int)) and external_ids is None
-        single_external_id = isinstance(external_ids, str) and ids is None
-        return single_id or single_external_id
 
     @staticmethod
     def _status_ok(status_code: int) -> bool:

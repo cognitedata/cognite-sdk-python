@@ -15,12 +15,12 @@ import string
 import warnings
 from decimal import Decimal
 from types import ModuleType
-from typing import Any, Collection, Dict, List, Mapping, Optional, Sequence, Tuple, Union, cast
+from typing import Any, Dict, List, Sequence, Tuple, Union
 from urllib.parse import quote
 
 import cognite.client
-from cognite.client import utils
 from cognite.client.exceptions import CogniteImportError
+from cognite.client.utils._version_checker import get_newest_version_in_major_release
 
 
 @functools.lru_cache(maxsize=128)
@@ -35,11 +35,8 @@ def to_snake_case(camel_case_string: str) -> str:
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
 
 
-def convert_all_keys_to_camel_case(d: dict) -> dict:
-    new_d = {}
-    for k, v in d.items():
-        new_d[to_camel_case(k)] = v
-    return new_d
+def convert_all_keys_to_camel_case(d: Dict[str, object]) -> Dict[str, object]:
+    return dict(zip(map(to_camel_case, d.keys()), d.values()))
 
 
 def json_dump_default(x: Any) -> Any:
@@ -50,40 +47,6 @@ def json_dump_default(x: Any) -> Any:
     if hasattr(x, "__dict__"):
         return x.__dict__
     raise TypeError("Object {} of type {} can't be serialized by the JSON encoder".format(x, x.__class__))
-
-
-def assert_exactly_one_of_id_or_external_id(
-    id: Optional[int], external_id: Optional[str]
-) -> Dict[str, Union[str, int]]:
-    assert_type(id, "id", [numbers.Integral], allow_none=True)
-    assert_type(external_id, "external_id", [str], allow_none=True)
-    has_id = id is not None
-    has_external_id = external_id is not None
-
-    assert (has_id or has_external_id) and not (
-        has_id and has_external_id
-    ), "Exactly one of id and external id must be specified"
-
-    if has_id:
-        return {"id": cast(int, id)}
-    elif has_external_id:
-        return {"external_id": cast(str, external_id)}
-    raise RuntimeError("shouldn't reach this")
-
-
-def assert_at_least_one_of_id_or_external_id(
-    id: Optional[int], external_id: Optional[str]
-) -> Dict[str, Union[str, int]]:
-    assert_type(id, "id", [numbers.Integral], allow_none=True)
-    assert_type(external_id, "external_id", [str], allow_none=True)
-    has_id = id is not None
-    has_external_id = external_id is not None
-    assert has_id or has_external_id, "At least one of id and external id must be specified"
-    if has_id:
-        return {"id": cast(int, id)}
-    elif has_external_id:
-        return {"external_id": cast(str, external_id)}
-    raise RuntimeError("shouldn't reach this")
 
 
 def unwrap_identifer(identifier: Union[str, int, Dict]) -> Union[str, int]:
@@ -147,22 +110,24 @@ def get_user_agent() -> str:
 
 
 def _check_client_has_newest_major_version() -> None:
-    this_version = utils._auxiliary.get_current_sdk_version()
-    newest_version = utils._version_checker.get_newest_version_in_major_release("cognite-sdk", this_version)
-    if newest_version != this_version:
+    version = get_current_sdk_version()
+    newest_version = get_newest_version_in_major_release("cognite-sdk", version)
+    if newest_version != version:
         warnings.warn(
-            "You are using version {} of the SDK, however version {} is available. "
-            "Upgrade or set the environment variable 'COGNITE_DISABLE_PYPI_VERSION_CHECK' to suppress this "
-            "warning.".format(this_version, newest_version),
+            f"You are using {version=} of the SDK, however version='{newest_version}' is available. "
+            "To suppress this warning, either upgrade or do the following:\n"
+            ">>> from cognite.client.config import global_config\n"
+            ">>> global_config.disable_pypi_version_check = True",
             stacklevel=3,
         )
 
 
-def random_string(size: int = 100) -> str:
-    return "".join(random.choices(string.ascii_uppercase + string.digits, k=size))
+def random_string(size: int = 100, sample_from: str = string.ascii_uppercase + string.digits) -> str:
+    return "".join(random.choices(sample_from, k=size))
 
 
 class PriorityQueue:
+    # TODO: Just use queue.PriorityQueue()
     def __init__(self) -> None:
         self.__heap: List[Any] = []
         self.__id = 0
@@ -211,11 +176,3 @@ def convert_true_match(true_match: Union[dict, list, Tuple[Union[int, str], Unio
         return true_match
     else:
         raise ValueError("true_matches should be a dictionary or a two-element list: found {}".format(true_match))
-
-
-def valfilter(d: Mapping, to_remove: Collection = frozenset({None})) -> Mapping:
-    new = type(d)()
-    for k, v in d.items():
-        if v not in to_remove:
-            new[k] = v
-    return new
