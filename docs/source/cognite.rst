@@ -898,6 +898,10 @@ Update features
 ^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.geospatial.GeospatialAPI.update_features
 
+List features
+^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.geospatial.GeospatialAPI.list_features
+
 Search features
 ^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.geospatial.GeospatialAPI.search_features
