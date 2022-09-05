@@ -510,10 +510,10 @@ class GeospatialAPI(APIClient):
             limit (int, optional): Maximum number of features to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all features.
             properties (Dict[str, Any]): the output property selection
-            allow_crs_transformation: If true, then input geometries will be transformed into the Coordinate Reference
-                System defined in the feature type specification. When it is false, then requests with geometries in
-                Coordinate Reference System different from the ones defined in the feature type will result in
-                CogniteAPIError exception.
+            allow_crs_transformation: If true, then input geometries if existing in the filter will be transformed into
+                the Coordinate Reference System defined in the feature type specification. When it is false, then
+                requests with geometries in Coordinate Reference System different from the ones defined in the feature
+                type will result in CogniteAPIError exception.
 
         Returns:
             FeatureList: the filtered features

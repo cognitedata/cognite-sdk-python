@@ -19,6 +19,7 @@ from cognite.client.data_classes.geospatial import (
     PropertyAndSearchSpec,
 )
 from cognite.client.exceptions import CogniteAPIError
+from tests.utils import set_request_limit
 
 FIXED_SRID = 121111 + random.randint(0, 1_000)
 
@@ -450,8 +451,14 @@ class TestGeospatialAPI:
         assert len(feature_list) == len(many_features)
 
     def test_list(self, cognite_client, test_feature_type, test_features):
-        res = cognite_client.geospatial.list_features(feature_type_external_id=test_feature_type.external_id, limit=4)
+        with set_request_limit(cognite_client.geospatial, 2):
+            res = cognite_client.geospatial.list_features(
+                feature_type_external_id=test_feature_type.external_id, properties={"externalId": {}}, limit=4
+            )
+
         assert len(res) == 4
+        df = res.to_pandas()
+        assert list(df) == ["externalId"]
 
     def test_to_pandas(self, test_feature_type, test_features):
         df = test_features.to_pandas()
