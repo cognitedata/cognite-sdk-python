@@ -1,4 +1,3 @@
-import os
 from unittest import mock
 
 import dotenv
@@ -81,9 +80,10 @@ def rsps():
 
 @pytest.fixture
 def disable_gzip():
-    os.environ["COGNITE_DISABLE_GZIP"] = "1"
+    old = global_config.disable_gzip
+    global_config.disable_gzip = True
     yield
-    del os.environ["COGNITE_DISABLE_GZIP"]
+    global_config.disable_gzip = old
 
 
 def pytest_addoption(parser):

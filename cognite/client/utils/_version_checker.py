@@ -1,10 +1,11 @@
 import argparse
 import functools
-import os
 import re
 from typing import List, Optional, Tuple
 
 import requests
+
+from cognite.client.config import global_config
 
 
 def check_if_version_exists(package_name: str, version: str) -> bool:
@@ -23,11 +24,9 @@ def get_newest_version_in_major_release(package_name: str, version: str) -> str:
 
 
 def get_all_versions(package_name: str) -> List[str]:
-    disable_ssl = os.getenv("COGNITE_DISABLE_SSL", False)
-    verify_ssl = not disable_ssl
-    res = requests.get("https://pypi.python.org/simple/{}/#history".format(package_name), verify=verify_ssl, timeout=5)
-    versions = re.findall(r"cognite-sdk-(\d+\.\d+.[\dabrc]+)", res.content.decode())
-    return versions
+    verify_ssl = not global_config.disable_ssl
+    res = requests.get(f"https://pypi.python.org/simple/{package_name}/#history", verify=verify_ssl, timeout=5)
+    return re.findall(r"cognite-sdk-(\d+\.\d+.[\dabrc]+)", res.content.decode())
 
 
 def _is_newer_major(version_a: str, version_b: str) -> bool:
