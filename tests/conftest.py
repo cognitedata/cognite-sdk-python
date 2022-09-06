@@ -1,9 +1,9 @@
+import re
 from unittest import mock
 
 import dotenv
 import pytest
 import responses
-
 from cognite.client import CogniteClient, global_config
 from cognite.client._api.assets import AssetsAPI
 from cognite.client._api.data_sets import DataSetsAPI
@@ -11,7 +11,13 @@ from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.entity_matching import EntityMatchingAPI
 from cognite.client._api.events import EventsAPI
 from cognite.client._api.files import FilesAPI
-from cognite.client._api.iam import IAMAPI, APIKeysAPI, GroupsAPI, SecurityCategoriesAPI, ServiceAccountsAPI
+from cognite.client._api.iam import (
+    IAMAPI,
+    APIKeysAPI,
+    GroupsAPI,
+    SecurityCategoriesAPI,
+    ServiceAccountsAPI,
+)
 from cognite.client._api.login import LoginAPI
 from cognite.client._api.raw import RawAPI, RawDatabasesAPI, RawRowsAPI, RawTablesAPI
 from cognite.client._api.relationships import RelationshipsAPI
@@ -24,6 +30,7 @@ from cognite.client._api.three_d import (
     ThreeDRevisionsAPI,
 )
 from cognite.client._api.time_series import TimeSeriesAPI
+from cognite.client._api.vision import VisionAPI
 
 dotenv.load_dotenv()
 
@@ -54,6 +61,7 @@ def mock_cognite_client():
         cog_client_mock.sequences = mock.MagicMock(spec=SequencesAPI)
         cog_client_mock.sequences.data = mock.MagicMock(spec=SequencesDataAPI)
         cog_client_mock.relationships = mock.MagicMock(spec=RelationshipsAPI)
+        cog_client_mock.vision = mock.MagicMock(spec=VisionAPI)
         raw_mock = mock.MagicMock(spec=RawAPI)
         raw_mock.databases = mock.MagicMock(spec=RawDatabasesAPI)
         raw_mock.tables = mock.MagicMock(spec=RawTablesAPI)
@@ -75,6 +83,13 @@ def mock_cognite_beta_client(mock_cognite_client):
 @pytest.fixture
 def rsps():
     with responses.RequestsMock() as rsps:
+        rsps.add(
+            rsps.POST,
+            re.compile("https://login.microsoftonline.com.*"),
+            status=200,
+            json={"token_type": "Bearer", "expires_in": 3599, "ext_expires_in": 3599, "access_token": "a.b.c"},
+        )
+        rsps.assert_all_requests_are_fired = False
         yield rsps
 
 
