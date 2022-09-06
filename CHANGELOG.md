@@ -15,10 +15,13 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 
-## [4.2.2] - 2022-09-01
+## [4.3.1] - 2022-09-06
 ### Fixed
 - Fixes the issue when updating transformations with new nonce credentials
 
+## [4.3.0] - 2022-09-02
+### Added
+- Add geospatial.list_features
 
 ## [4.2.1] - 2022-08-23
 ### Changed
