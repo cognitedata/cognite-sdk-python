@@ -570,3 +570,22 @@ class TestGeospatialAPI:
             group_by=["externalId"],
         )
         assert len(res) == 4
+
+    def test_aggregate_with_order_by(self, cognite_client, test_feature_type, test_features):
+        res = cognite_client.geospatial.aggregate_features(
+            feature_type_external_id=test_feature_type.external_id,
+            property="temperature",
+            aggregates=["count"],
+            group_by=["externalId"],
+            order_by=[OrderSpec("externalId", "DESC")],
+        )
+        external_ids = [item.external_id for item in res]
+        external_ids.reverse()
+        res_asc = cognite_client.geospatial.aggregate_features(
+            feature_type_external_id=test_feature_type.external_id,
+            property="temperature",
+            aggregates=["count"],
+            group_by=["externalId"],
+            order_by=[OrderSpec("externalId", "ASC")],
+        )
+        assert external_ids == [item.external_id for item in res_asc]
