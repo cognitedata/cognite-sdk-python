@@ -1,5 +1,6 @@
 import uuid
 
+import numpy as np
 import pytest
 
 from cognite.client import utils
@@ -16,6 +17,7 @@ def test_feature_type():
             "volume": {"type": "DOUBLE"},
             "temperature": {"type": "DOUBLE"},
             "pressure": {"type": "DOUBLE"},
+            "weight": {"type": "DOUBLE", "optional": "true"},
             "description": {"type": "STRING", "optional": "true"},
             "dataSetId": {"type": "LONG", "optional": "true"},
             "assetIds": {"type": "LONGARRAY", "optional": "true"},
@@ -85,10 +87,11 @@ class TestGeospatialAPI:
         assert len(fl) == 4
         for idx, f in enumerate(fl):
             for attr_name in test_feature_type.properties:
-                if attr_name.startswith("_") or attr_name in ["description", "dataSetId", "assetIds"]:
+                if attr_name.startswith("_") or attr_name in ["description", "dataSetId", "assetIds", "weight"]:
                     continue
                 assert hasattr(f, attr_name)
             assert not hasattr(f, "description")
+            assert not hasattr(f, "weight")
             if idx == 0:
                 assert hasattr(f, "asset_ids")
             if idx > 1:
@@ -103,3 +106,17 @@ class TestGeospatialAPI:
         with pytest.raises(ValueError) as error:
             FeatureList.from_geopandas(test_feature_type, gdf)
         assert str(error.value) == "Missing value for property temperature"
+
+    def test_from_geopandas_nan_values(self, test_feature_type):
+        pd = utils._auxiliary.local_import("pandas")
+        df = pd.DataFrame(
+            [
+                {"externalId": "12", "temperature": 11.0, "pressure": 10.0, "volume": 12.0, "weight": 10.0},
+                {"externalId": "13", "temperature": 0.0, "pressure": 1.0, "volume": 11.0, "weight": np.nan},
+            ]
+        )
+        geopandas = utils._auxiliary.local_import("geopandas")
+        gdf = geopandas.GeoDataFrame(df)
+        features = FeatureList.from_geopandas(test_feature_type, gdf)
+        assert features[0].weight == 10.0
+        assert not hasattr(features[1], "weight")

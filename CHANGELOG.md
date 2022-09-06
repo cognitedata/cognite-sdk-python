@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [4.4.1] - 2022-09-06
+### Fixed
+- Fixed FeatureList.from_geopandas to handle NaN values
+
 ## [4.4.0] - 2022-09-06
 ### Changed
 - Change geospatial.aggregate_features to support order_by
