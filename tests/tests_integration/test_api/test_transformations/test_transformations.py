@@ -211,7 +211,12 @@ class TestTransformationsAPI:
 
         updated_transformation = cognite_client.transformations.update(update_transformation)
         retrieved_transformation = cognite_client.transformations.retrieve(new_transformation.id)
-        assert updated_transformation.id == retrieved_transformation.id
+        assert (
+            updated_transformation.source_session.session_id == session.id
+            and updated_transformation.destination_session.session_id == session.id
+            and retrieved_transformation.source_session.session_id == session.id
+            and retrieved_transformation.destination_session.session_id == session.id
+        )
 
     def test_update_nonce_full(self, cognite_client, new_transformation):
         session = cognite_client.iam.sessions.create()

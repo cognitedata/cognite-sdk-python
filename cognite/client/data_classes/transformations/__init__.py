@@ -27,6 +27,26 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
+class SessionDetails:
+    """Details of a session which provid.
+
+    Args:
+        session_id (int): CDF session ID
+        client_id (str): Idp client ID
+        project_name (str): CDF project name
+    """
+
+    def __init__(
+        self,
+        session_id: int = None,
+        client_id: str = None,
+        project_name: str = None,
+    ):
+        self.session_id = session_id
+        self.client_id = client_id
+        self.project_name = project_name
+
+
 class Transformation(CogniteResource):
     """The transformations resource allows transforming data in CDF.
 
@@ -56,6 +76,10 @@ class Transformation(CogniteResource):
         blocked (TransformationBlockedInfo): Provides reason and time if the transformation is blocked.
         schedule (TransformationSchedule): Details for the schedule if the transformation is scheduled.
         cognite_client (CogniteClient): The client to associate with this object.
+        source_nonce (NonceCredentials): Single use credentials to bind to a CDF session for reading.
+        destination_nonce (NonceCredentials): Single use credentials to bind to a CDF session for writing.
+        source_session (SessionDetails): Details for the session used to read from the source project.
+        destination_session (SessionDetails): Details for the session used to write to the destination project.
     """
 
     def __init__(
@@ -88,6 +112,8 @@ class Transformation(CogniteResource):
         cognite_client: "CogniteClient" = None,
         source_nonce: Optional[NonceCredentials] = None,
         destination_nonce: Optional[NonceCredentials] = None,
+        source_session: Optional[SessionDetails] = None,
+        destination_session: Optional[SessionDetails] = None,
     ):
         self.id = id
         self.external_id = external_id
@@ -118,6 +144,8 @@ class Transformation(CogniteResource):
         self.data_set_id = data_set_id
         self.source_nonce = source_nonce
         self.destination_nonce = destination_nonce
+        self.source_session = source_session
+        self.destination_session = destination_session
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     def copy(self) -> "Transformation":
@@ -150,6 +178,8 @@ class Transformation(CogniteResource):
             None,
             self.source_nonce,
             self.destination_nonce,
+            self.source_session,
+            self.destination_session,
         )
 
     def _process_credentials(self, sessions_cache: Dict[str, NonceCredentials] = None, keep_none: bool = False) -> None:
@@ -213,17 +243,15 @@ class Transformation(CogniteResource):
         instance = super(Transformation, cls)._load(resource, cognite_client)
         if isinstance(instance.destination, Dict):
             snake_dict = {utils._auxiliary.to_snake_case(key): value for (key, value) in instance.destination.items()}
-            if instance.destination.get("type") == "raw":
-                snake_dict.pop("type")
+            destination_type = snake_dict.pop("type")
+            if destination_type == "raw":
                 instance.destination = RawTable(**snake_dict)
-            elif instance.destination.get("type") == "alpha_data_model_instances":
-                snake_dict.pop("type")
+            elif destination_type == "alpha_data_model_instances":
                 instance.destination = AlphaDataModelInstances(**snake_dict)
-            elif instance.destination.get("type") == "sequence_rows":
-                snake_dict.pop("type")
+            elif destination_type == "sequence_rows":
                 instance.destination = SequenceRows(**snake_dict)
             else:
-                instance.destination = TransformationDestination(**snake_dict)
+                instance.destination = TransformationDestination(destination_type)
         if isinstance(instance.running_job, Dict):
             snake_dict = {utils._auxiliary.to_snake_case(key): value for (key, value) in instance.running_job.items()}
             instance.running_job = TransformationJob._load(snake_dict, cognite_client=cognite_client)
@@ -239,6 +267,16 @@ class Transformation(CogniteResource):
         if isinstance(instance.schedule, Dict):
             snake_dict = {utils._auxiliary.to_snake_case(key): value for (key, value) in instance.schedule.items()}
             instance.schedule = TransformationSchedule._load(snake_dict, cognite_client=cognite_client)
+        if isinstance(instance.source_session, Dict):
+            snake_dict = {
+                utils._auxiliary.to_snake_case(key): value for (key, value) in instance.source_session.items()
+            }
+            instance.source_session = SessionDetails(**snake_dict)
+        if isinstance(instance.destination_session, Dict):
+            snake_dict = {
+                utils._auxiliary.to_snake_case(key): value for (key, value) in instance.destination_session.items()
+            }
+            instance.destination_session = SessionDetails(**snake_dict)
         return instance
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
@@ -251,21 +289,10 @@ class Transformation(CogniteResource):
             Dict[str, Any]: A dictionary representation of the instance.
         """
         ret = super().dump(camel_case=camel_case)
-        if isinstance(self.source_oidc_credentials, OidcCredentials):
-            source_key = "sourceOidcCredentials" if camel_case else "source_oidc_credentials"
-            ret[source_key] = self.source_oidc_credentials.dump(camel_case=camel_case)
-        if isinstance(self.destination_oidc_credentials, OidcCredentials):
-            destination_key = "destinationOidcCredentials" if camel_case else "destination_oidc_credentials"
-            ret[destination_key] = self.destination_oidc_credentials.dump(camel_case=camel_case)
 
-        if isinstance(self.source_nonce, NonceCredentials):
-            destination_key = "sourceNonce" if camel_case else "source_nonce"
-            ret[destination_key] = self.source_nonce.dump(camel_case=camel_case)
-        if isinstance(self.destination_nonce, NonceCredentials):
-            destination_key = "destinationNonce" if camel_case else "destination_nonce"
-            ret[destination_key] = self.destination_nonce.dump(camel_case=camel_case)
-        if isinstance(self.destination, AlphaDataModelInstances) or isinstance(self.destination, SequenceRows):
-            ret["destination"] = self.destination.dump(camel_case=camel_case)
+        for (name, prop) in ret.items():
+            if isinstance(prop, (OidcCredentials, NonceCredentials, AlphaDataModelInstances, SequenceRows)):
+                ret[name] = prop.dump(camel_case=camel_case)
         return ret
 
     def __hash__(self) -> int:
