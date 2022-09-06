@@ -1,13 +1,9 @@
 import pytest
+
 from cognite.client import CogniteClient
 from cognite.client.data_classes import FileMetadata
 from cognite.client.data_classes.contextualization import JobStatus
-from cognite.client.data_classes.vision import (
-    Feature,
-    FeatureParameters,
-    PeopleDetectionParameters,
-    VisionExtractJob,
-)
+from cognite.client.data_classes.vision import Feature, FeatureParameters, PeopleDetectionParameters, VisionExtractJob
 
 
 # TODO(VIS-986): replace this file generator with a hard-coded ID of an actual image

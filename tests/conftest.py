@@ -4,6 +4,7 @@ from unittest import mock
 import dotenv
 import pytest
 import responses
+
 from cognite.client import CogniteClient, global_config
 from cognite.client._api.assets import AssetsAPI
 from cognite.client._api.data_sets import DataSetsAPI
@@ -11,13 +12,7 @@ from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.entity_matching import EntityMatchingAPI
 from cognite.client._api.events import EventsAPI
 from cognite.client._api.files import FilesAPI
-from cognite.client._api.iam import (
-    IAMAPI,
-    APIKeysAPI,
-    GroupsAPI,
-    SecurityCategoriesAPI,
-    ServiceAccountsAPI,
-)
+from cognite.client._api.iam import IAMAPI, APIKeysAPI, GroupsAPI, SecurityCategoriesAPI, ServiceAccountsAPI
 from cognite.client._api.login import LoginAPI
 from cognite.client._api.raw import RawAPI, RawDatabasesAPI, RawRowsAPI, RawTablesAPI
 from cognite.client._api.relationships import RelationshipsAPI
