@@ -178,3 +178,16 @@ from cognite.client.data_classes.functions import (  # isort: skip
     FunctionCallLog,
     FunctionsLimits,
 )
+from cognite.client.data_classes.geospatial import (  # isort: skip
+    Feature,
+    FeatureList,
+    FeatureType,
+    FeatureTypeList,
+    FeatureTypePatch,
+    FeatureAggregate,
+    FeatureTypeUpdate,
+    FeatureAggregateList,
+    FeatureTypeUpdateList,
+    CoordinateReferenceSystemList,
+    CoordinateReferenceSystem,
+)
