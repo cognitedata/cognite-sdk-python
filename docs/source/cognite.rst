@@ -1126,7 +1126,7 @@ Save the prediction results in CDF as `Annotations <https://docs.cognite.com/api
     >>> extract_job.save_predictions()
 
 .. note:: 
-    Prediction results are stored in CDF as `Annotations <https://docs.cognite.com/api/v1/#tag/Annotations/operation/annotationsCreate>`_ using the :code:`images.*` annotation types. In particular, text detections are stored as :code:`images.TextRegion`, asset tag detections are stored as :code:`images.AssetLink`, while other detections are stored as :code:`images.ObjectDetection`.    
+    Prediction results are stored in CDF as `Annotations <https://docs.cognite.com/api/v1/#tag/Annotations>`_ using the :code:`images.*` annotation types. In particular, text detections are stored as :code:`images.TextRegion`, asset tag detections are stored as :code:`images.AssetLink`, while other detections are stored as :code:`images.ObjectDetection`.    
 
 Tweaking the parameters of a feature extractor:
 
