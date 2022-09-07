@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [4.4.2] - 2022-09-07
+### Fixed
+- Don't import numpy in the global space in geospatial module as it's an optional dependency
+
 ## [4.4.1] - 2022-09-06
 ### Fixed
 - Fixed FeatureList.from_geopandas to handle NaN values
