@@ -13,8 +13,8 @@ Cognite Python SDK
 [![mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
-This is the Cognite Python SDK for developers and data scientists working with Cognite Data Fusion (CDF). 
-The package is tightly integrated with pandas, and helps you work easily and efficiently with data in Cognite Data 
+This is the Cognite Python SDK for developers and data scientists working with Cognite Data Fusion (CDF).
+The package is tightly integrated with pandas, and helps you work easily and efficiently with data in Cognite Data
 Fusion (CDF).
 
 ## Refererence documentation
@@ -34,6 +34,7 @@ $ pip install cognite-sdk
 ### With optional dependencies
 A number of optional dependencies may be specified in order to support a wider set of features.
 The available extras (along with the libraries they include) are:
+- numpy `[numpy]`
 - pandas `[pandas]`
 - geo `[geopandas, shapely]`
 - sympy `[sympy]`
@@ -50,6 +51,11 @@ or like this if you are using poetry:
 ```bash
 $ poetry add cognite-sdk -E pandas -E geo
 ```
+
+### Performance notes
+If you regularly need to fetch large amounts of datapoints, consider installing with `numpy`
+(or with `pandas`, as it depends on numpy) for best performance. This avoids building large
+pure Python data structures, and instead reads data directly into `numpy.ndarrays`.
 
 ### Windows specific
 

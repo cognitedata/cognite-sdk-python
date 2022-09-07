@@ -429,9 +429,12 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
                     or (return_partial_payload and not any(self.subtask_pools))
                 )
                 if payload_done:
+                    if not len(self.next_subtasks):
+                        # Happens with limited queries as more and more "later" tasks get cancelled.
+                        break
                     priority = statistics.mean(task.priority for task in self.next_subtasks)
                     payload: DatapointsPayload = {"items": self.next_items[:]}  # type: ignore [typeddict-item]
-                    yield payload, self.next_subtasks[:], cast(float, priority)
+                    yield payload, self.next_subtasks[:], priority
 
                     self.next_items, self.next_subtasks = [], []
                     break

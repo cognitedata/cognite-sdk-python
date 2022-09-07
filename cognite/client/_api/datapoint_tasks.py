@@ -195,8 +195,16 @@ class _SingleTSQueryValidator:
     ) -> Dict[str, Any]:
         identifier = Identifier.of_either(dct.get("id"), dct.get("external_id"))  # type: ignore [arg-type]
         start, end = self._verify_time_range(dct["start"], dct["end"], dct["granularity"], is_raw, identifier)
-        converted = {"identifier": identifier, "start": start, "end": end, "limit": limit}
+        converted = {
+            "identifier": identifier,
+            "start": start,
+            "end": end,
+            "limit": limit,
+            "ignore_unknown_ids": dct["ignore_unknown_ids"],
+        }
         if is_raw:
+            converted["include_outside_points"] = dct["include_outside_points"]
+        else:
             converted["aggregates"] = dct["aggregates"]
             converted["granularity"] = dct["granularity"]
         return converted
