@@ -768,6 +768,7 @@ class GeospatialAPI(APIClient):
         aggregates: Sequence[str],
         filter: Optional[Dict[str, Any]] = None,
         group_by: Sequence[str] = None,
+        order_by: Sequence[OrderSpec] = None,
     ) -> FeatureAggregateList:
         """`Aggregate filtered features`
         <https://docs.cognite.com/api/v1/#operation/aggregateFeatures>
@@ -778,6 +779,7 @@ class GeospatialAPI(APIClient):
             property (str): the property for which aggregates should be calculated
             aggregates (Sequence[str]): list of aggregates to be calculated
             group_by (Sequence[str]): list of properties to group by with
+            order_by (Sequence[OrderSpec]): the order specification
 
         Returns:
             FeatureAggregateList: the filtered features
@@ -797,16 +799,24 @@ class GeospatialAPI(APIClient):
                 ...     filter={"range": {"property": "temperature", "gt": 12.0}},
                 ...     property="temperature",
                 ...     aggregates=["max", "min"],
-                ...     groupBy=["category"]
+                ...     group_by=["category"],
+                ...     order_by=[OrderSpec("category", "ASC")]
                 ... )
                 >>> for a in res:
                 ...     # loop over aggregates in different groups
         """
         resource_path = self._feature_resource_path(feature_type_external_id) + "/aggregate"
         cls = FeatureAggregateList
+        order = None if order_by is None else [f"{item.property}:{item.direction}" for item in order_by]
         res = self._post(
             url_path=resource_path,
-            json={"filter": filter or {}, "property": property, "aggregates": aggregates, "groupBy": group_by},
+            json={
+                "filter": filter or {},
+                "property": property,
+                "aggregates": aggregates,
+                "groupBy": group_by,
+                "sort": order,
+            },
         )
         return cls._load(res.json()["items"], cognite_client=self._cognite_client)
 
