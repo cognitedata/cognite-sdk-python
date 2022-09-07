@@ -36,7 +36,6 @@ Changes are grouped as follows
 ### Added
 - Add geospatial.list_features
 
-
 ## [4.2.1] - 2022-08-23
 ### Changed
 - Change timeseries datapoints' time range to start from 01.01.1900
