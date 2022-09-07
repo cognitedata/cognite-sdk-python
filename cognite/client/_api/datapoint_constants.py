@@ -12,26 +12,40 @@ FETCH_TS_LIMIT = 100
 RETRIEVE_LATEST_LIMIT = 100
 
 
-class CustomDatapoints(TypedDict, total=False):
+class CustomDatapointsQuery(TypedDict, total=False):
     # No field required
     start: Union[int, str, datetime, None]
     end: Union[int, str, datetime, None]
     aggregates: Optional[List[str]]
     granularity: Optional[str]
     limit: Optional[int]
-    include_outside_points: bool
+    include_outside_points: Optional[bool]
+    ignore_unknown_ids: Optional[bool]
 
 
-class DatapointsQueryId(CustomDatapoints):
+class DatapointsQueryId(CustomDatapointsQuery):
     id: int  # required field
 
 
-class DatapointsQueryExternalId(CustomDatapoints):
+class DatapointsQueryExternalId(CustomDatapointsQuery):
     external_id: str  # required field
 
 
+class CustomDatapoints(TypedDict, total=False):
+    # No field required
+    start: int
+    end: int
+    aggregates: Optional[List[str]]
+    granularity: Optional[str]
+    limit: int
+    include_outside_points: bool
+
+
+class DatapointsPayload(CustomDatapoints):
+    items: List[CustomDatapoints]
+
+
 DatapointsTypes = Union[int, float, str]
-DatapointsPayload = Dict[str, Union[str, List[CustomDatapoints]]]
 
 
 class DatapointsFromAPI(TypedDict):

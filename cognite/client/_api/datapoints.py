@@ -4,13 +4,28 @@ import functools
 import heapq
 import math
 import statistics
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from concurrent.futures import CancelledError, as_completed
 from copy import copy
 from datetime import datetime
 from itertools import chain
+from random import random
 from time import monotonic_ns
-from typing import TYPE_CHECKING, Any, Dict, Iterable, Iterator, List, Literal, Optional, Set, Tuple, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+    cast,
+)
 
 from cognite.client._api.datapoint_constants import (
     DPS_LIMIT,
@@ -24,7 +39,12 @@ from cognite.client._api.datapoint_constants import (
     DatapointsIdTypes,
     DatapointsPayload,
 )
-from cognite.client._api.datapoint_tasks import BaseConcurrentTask, BaseDpsFetchSubtask, select_dps_fetching_task_type
+from cognite.client._api.datapoint_tasks import (
+    BaseConcurrentTask,
+    SplittingFetchSubtask,
+    _SingleTSQueryBase,
+    _SingleTSQueryValidator,
+)
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import (
@@ -38,7 +58,7 @@ from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import assert_type, local_import, split_into_chunks, split_into_n_parts
 from cognite.client.utils._concurrency import execute_tasks_concurrently
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
-from cognite.client.utils._priority_tpe import PriorityThreadPoolExecutor
+from cognite.client.utils._priority_tpe import PriorityThreadPoolExecutor  # type: ignore
 from cognite.client.utils._time import timestamp_to_ms
 
 if TYPE_CHECKING:
@@ -46,39 +66,59 @@ if TYPE_CHECKING:
 
     import pandas as pd
 
-    from cognite.client.data_classes.datapoints import _SingleTSQuery
+
+TSQueryList = List[_SingleTSQueryBase]
+PoolSubtaskType = Tuple[int, float, int, SplittingFetchSubtask]
 
 
-class DpsFetchOrchestrator:
-    def __init__(self, dps_client: DatapointsAPI, user_queries: List[DatapointsQuery]):
+def dps_fetch_selector(dps_client: DatapointsAPI, user_queries: Sequence[DatapointsQuery]) -> DpsFetchStrategy:
+    max_workers = dps_client._config.max_workers
+    if max_workers < 1:
+        raise RuntimeError(f"Invalid option for `max_workers={max_workers}`. Must be at least 1")
+    all_queries, agg_queries, raw_queries = validate_and_split_user_queries(user_queries)
+
+    # Running mode is decided based on how many time series are requested VS. number of workers:
+    if len(all_queries) <= max_workers:
+        # Start shooting requests from the hip immediately:
+        return EagerDpsFetcher(dps_client, all_queries, agg_queries, raw_queries, max_workers)
+    # Fetch a smaller, chunked batch from all time series - then chunk away:
+    return ChunkingDpsFetcher(dps_client, all_queries, agg_queries, raw_queries, max_workers)
+
+
+def validate_and_split_user_queries(
+    user_queries: Sequence[DatapointsQuery],
+) -> Tuple[TSQueryList, TSQueryList, TSQueryList]:
+    split_qs: Tuple[TSQueryList, TSQueryList] = [], []
+    all_queries = list(
+        chain.from_iterable(
+            query.validate_and_create_single_queries() for query in map(_SingleTSQueryValidator, user_queries)
+        )
+    )
+    for query in all_queries:
+        split_qs[query.is_raw_query].append(query)
+    return (all_queries, *split_qs)
+
+
+class DpsFetchStrategy(ABC):
+    def __init__(
+        self,
+        dps_client: DatapointsAPI,
+        all_queries: TSQueryList,
+        agg_queries: TSQueryList,
+        raw_queries: TSQueryList,
+        max_workers: int,
+    ) -> None:
         self.dps_client = dps_client
-        self.max_workers = self.dps_client._config.max_workers
-        if self.max_workers < 1:
-            raise RuntimeError(f"Invalid option for `max_workers={self.max_workers}`. Must be at least 1")
-        self._validate_and_split_user_queries(user_queries)
-        self.n_queries = len(self.all_queries)
-
-        # Running mode is decided based on how many time series are requested VS. number of workers:
-        if self.n_queries <= self.max_workers:
-            # Start shooting requests from the hip immediately:
-            self.dps_fetcher = EagerDpsFetcher(self.dps_client, self.all_queries, self.max_workers)
-        else:
-            # Fetch a smaller, chunked batch from all time series - then chunk away:
-            self.dps_fetcher = ChunkingDpsFetcher(
-                self.dps_client, self.all_queries, self.agg_queries, self.raw_queries, self.max_workers
-            )
+        self.all_queries = all_queries
+        self.agg_queries = agg_queries
+        self.raw_queries = raw_queries
+        self.max_workers = max_workers
+        self.n_queries = len(all_queries)
 
     def fetch_all_datapoints(self) -> DatapointsArrayList:
         with PriorityThreadPoolExecutor(max_workers=self.max_workers) as pool:
-            ordered_results = self.dps_fetcher.fetch_all(pool)
+            ordered_results = self.fetch_all(pool)
         return self._finalize_tasks(ordered_results)
-
-    def _validate_and_split_user_queries(self, user_queries: List[DatapointsQuery]) -> None:
-        split_qs = [], []
-        self.all_queries = list(chain.from_iterable(uq.validate_and_create_queries() for uq in user_queries))
-        for query in self.all_queries:
-            split_qs[query.is_raw_query].append(query)
-        self.agg_queries, self.raw_queries = split_qs
 
     def _finalize_tasks(self, ordered_results: List[BaseConcurrentTask]) -> DatapointsArrayList:
         return DatapointsArrayList(
@@ -87,45 +127,29 @@ class DpsFetchOrchestrator:
         )
 
     @abstractmethod
-    def request_datapoints(self):
+    def fetch_all(self, pool: PriorityThreadPoolExecutor) -> List[BaseConcurrentTask]:
         ...
 
     @abstractmethod
-    def fetch_all(self):
-        ...
-
-    @abstractmethod
-    def _create_initial_tasks(self):
-        ...
-
-    @abstractmethod
-    def _queue_new_subtasks(self):
-        ...
-
-    @abstractmethod
-    def _get_result_with_exception_handling(self):
+    def _create_initial_tasks(self, pool: PriorityThreadPoolExecutor) -> Tuple[Dict, Dict]:
         ...
 
 
-class EagerDpsFetcher(DpsFetchOrchestrator):
-    def __init__(self, dps_client: DatapointsAPI, all_queries: List[_SingleTSQuery], max_workers: int) -> None:
-        self.dps_client = dps_client
-        self.all_queries = all_queries
-        self.max_workers = max_workers
-        self.n_queries = len(all_queries)
-
-    def request_datapoints(
+class EagerDpsFetcher(DpsFetchStrategy):
+    def request_datapoints_jit(
         self,
-        task: BaseDpsFetchSubtask,
+        task: SplittingFetchSubtask,
         payload: Optional[CustomDatapoints] = None,
-    ) -> List[Union[DatapointsFromAPI, object]]:
+    ) -> List[Optional[DatapointsFromAPI]]:
         # Note: We delay getting the next payload as much as possible; this way, when we count number of
         # points left to fetch JIT, we have the most up-to-date estimate (and may quit early):
         if (item := task.get_next_payload()) is None:
             return [None]
 
-        (payload := copy(payload) or {})["items"] = [item]
-        return self.dps_client._post(self.dps_client._RESOURCE_PATH + "/list", json=payload).json()["items"]
+        (payload := copy(payload) or {})["items"] = [item]  # type: ignore [typeddict-item]
+        return self.dps_client._post(
+            self.dps_client._RESOURCE_PATH + "/list", json=cast(Dict[str, Any], payload)
+        ).json()["items"]
 
     def fetch_all(self, pool: PriorityThreadPoolExecutor) -> List[BaseConcurrentTask]:
         futures_dct, ts_task_lookup = self._create_initial_tasks(pool)
@@ -156,75 +180,68 @@ class EagerDpsFetcher(DpsFetchOrchestrator):
 
     def _create_initial_tasks(
         self, pool: PriorityThreadPoolExecutor
-    ) -> Tuple[Dict[Future, BaseDpsFetchSubtask], Dict[_SingleTSQuery, BaseConcurrentTask]]:
-        futures_dct, ts_task_lookup, payload = {}, {}, {"ignoreUnknownIds": False}
+    ) -> Tuple[Dict[Future, SplittingFetchSubtask], Dict[_SingleTSQueryBase, BaseConcurrentTask]]:
+        futures_dct: Dict[Future, SplittingFetchSubtask] = {}
+        ts_task_lookup, payload = {}, {"ignoreUnknownIds": False}
         for query in self.all_queries:
-            ts_task = select_dps_fetching_task_type(query)
-            ts_task = ts_task_lookup[query] = ts_task(query, eager_mode=True)
+            ts_task = ts_task_lookup[query] = query.ts_task_type(query, eager_mode=True)
             for subtask in ts_task.split_into_subtasks(self.max_workers, self.n_queries):
-                future = pool.submit(self.request_datapoints, subtask, payload, priority=subtask.priority)
+                future = pool.submit(self.request_datapoints_jit, subtask, payload, priority=subtask.priority)
                 futures_dct[future] = subtask
         return futures_dct, ts_task_lookup
 
     def _queue_new_subtasks(
-        self, pool, futures_dct: Dict[Future, BaseDpsFetchSubtask], new_subtasks: List[BaseConcurrentTask]
-    ):
+        self,
+        pool: PriorityThreadPoolExecutor,
+        futures_dct: Dict[Future, SplittingFetchSubtask],
+        new_subtasks: List[SplittingFetchSubtask],
+    ) -> None:
         for task in new_subtasks:
-            future = pool.submit(self.request_datapoints, task, priority=task.priority)
+            future = pool.submit(self.request_datapoints_jit, task, priority=task.priority)
             futures_dct[future] = task
 
     def _get_result_with_exception_handling(
         self,
         future: Future,
         ts_task: BaseConcurrentTask,
-        ts_task_lookup: Dict[_SingleTSQuery, BaseConcurrentTask],
-        futures_dct: Dict[Future, BaseDpsFetchSubtask],
-    ) -> Union[DatapointsFromAPI, object]:
+        ts_task_lookup: Dict[_SingleTSQueryBase, BaseConcurrentTask],
+        futures_dct: Dict[Future, SplittingFetchSubtask],
+    ) -> Optional[DatapointsFromAPI]:
         try:
             return future.result()[0]
         except CancelledError:
-            return
+            return None
         except CogniteAPIError as e:
             if not (e.code == 400 and e.missing and ts_task.query.ignore_unknown_ids):
                 raise
             elif ts_task.is_done:
-                return
+                return None
             ts_task.is_done = True
             del ts_task_lookup[ts_task.query]
             self._cancel_futures_for_finished_ts_task(ts_task, futures_dct)
+            return None
 
     def _cancel_futures_for_finished_ts_task(
-        self, ts_task: BaseConcurrentTask, futures_dct: Dict[Future, BaseDpsFetchSubtask]
-    ):
+        self, ts_task: BaseConcurrentTask, futures_dct: Dict[Future, SplittingFetchSubtask]
+    ) -> None:
         for future, subtask in futures_dct.copy().items():
+            # TODO: Change to loop over parent.subtasks?
             if subtask.parent is ts_task:
                 future.cancel()
                 del futures_dct[future]
 
 
-class ChunkingDpsFetcher(DpsFetchOrchestrator):
-    def __init__(
-        self,
-        dps_client: DatapointsAPI,
-        all_queries: List[_SingleTSQuery],
-        agg_queries: List[_SingleTSQuery],
-        raw_queries: List[_SingleTSQuery],
-        max_workers: int,
-    ) -> None:
-        self.dps_client = dps_client
-        self.all_queries = all_queries
-        self.agg_queries = agg_queries
-        self.raw_queries = raw_queries
-        self.max_workers = max_workers
-        self.n_queries = len(all_queries)
+class ChunkingDpsFetcher(DpsFetchStrategy):
+    def __init__(self, *args: Any) -> None:
+        super().__init__(*args)
         # To chunk efficiently, we have subtask pools (heap queues) that we use to prioritise subtasks
         # when building/combining subtasks into a full query:
-        self.raw_subtask_pool = []
-        self.agg_subtask_pool = []
+        self.raw_subtask_pool: List[PoolSubtaskType] = []
+        self.agg_subtask_pool: List[PoolSubtaskType] = []
         self.subtask_pools = (self.agg_subtask_pool, self.raw_subtask_pool)
         # Combined partial queries storage (chunked, but not enough to fill a request):
-        self.next_items = []
-        self.next_subtasks = []
+        self.next_items: List[CustomDatapoints] = []
+        self.next_subtasks: List[SplittingFetchSubtask] = []
 
     def fetch_all(self, pool: PriorityThreadPoolExecutor) -> List[BaseConcurrentTask]:
         # The initial tasks are important - as they tell us which time series are missing,
@@ -251,7 +268,8 @@ class ChunkingDpsFetcher(DpsFetchOrchestrator):
                     for task in ts_tasks_left
                 )
             )
-            self._queue_new_subtasks(pool, (futures_dct := {}))
+            futures_dct: Dict[Future, List[SplittingFetchSubtask]] = {}
+            self._queue_new_subtasks(pool, futures_dct)
             self._fetch_until_complete(pool, futures_dct, ts_task_lookup)
         # Return only non-missing time series tasks in correct order given by `all_queries`:
         return list(filter(None, map(ts_task_lookup.get, self.all_queries)))
@@ -259,9 +277,9 @@ class ChunkingDpsFetcher(DpsFetchOrchestrator):
     def _fetch_until_complete(
         self,
         pool: PriorityThreadPoolExecutor,
-        futures_dct: Dict[Future, BaseDpsFetchSubtask],
-        ts_task_lookup: Dict[_SingleTSQuery, BaseConcurrentTask],
-    ):
+        futures_dct: Dict[Future, List[SplittingFetchSubtask]],
+        ts_task_lookup: Dict[_SingleTSQueryBase, BaseConcurrentTask],
+    ) -> None:
         while futures_dct:
             future = next(as_completed(futures_dct))
             res_lst, subtask_lst = future.result(), futures_dct.pop(future)
@@ -279,15 +297,18 @@ class ChunkingDpsFetcher(DpsFetchOrchestrator):
 
             if all(task.is_done for task in ts_task_lookup.values()):
                 pool.shutdown(wait=False)
-                return
+                return None
 
-    def request_datapoints(self, payload: DatapointsPayload) -> List[DatapointsFromAPI]:
-        return self.dps_client._post(self.dps_client._RESOURCE_PATH + "/list", json=payload).json()["items"]
+    def request_datapoints(self, payload: DatapointsPayload) -> List[Optional[DatapointsFromAPI]]:
+        return self.dps_client._post(
+            self.dps_client._RESOURCE_PATH + "/list", json=cast(Dict[str, Any], payload)
+        ).json()["items"]
 
     def _create_initial_tasks(
         self, pool: PriorityThreadPoolExecutor
-    ) -> Tuple[Dict[_SingleTSQuery, int], Dict[Future, Tuple[List[_SingleTSQuery], List[_SingleTSQuery]]]]:
-        initial_query_limits, initial_futures_dct = {}, {}
+    ) -> Tuple[Dict[_SingleTSQueryBase, int], Dict[Future, Tuple[TSQueryList, TSQueryList]]]:
+        initial_query_limits: Dict[_SingleTSQueryBase, int] = {}
+        initial_futures_dct: Dict[Future, Tuple[TSQueryList, TSQueryList]] = {}
         # Optimal queries uses the entire worker pool. We may be forced to use more (queue) when we
         # can't fit all individual time series (maxes out at `FETCH_TS_LIMIT * max_workers`):
         n_queries = max(self.max_workers, math.ceil(self.n_queries / FETCH_TS_LIMIT))
@@ -296,52 +317,57 @@ class ChunkingDpsFetcher(DpsFetchOrchestrator):
             # Agg and raw limits are independent in the query, so we max out on both:
             items = []
             for queries, max_lim in zip(query_chunks, [DPS_LIMIT_AGG, DPS_LIMIT]):
-                maxed_limits = self._find_initial_query_limits([q.capped_limit for q in queries], max_lim)
-                initial_query_limits.update(chunk_query_limits := dict(zip(queries, maxed_limits)))
+                maxed_limits = self._find_initial_query_limits(
+                    [q.capped_limit for q in queries], max_lim  # type: ignore [attr-defined]
+                )
+                initial_query_limits.update(
+                    chunk_query_limits := dict(zip(queries, maxed_limits))  # type: ignore [call-overload]
+                )
                 items.extend([{**q.to_payload(), "limit": lim} for q, lim in chunk_query_limits.items()])
 
             payload = {"ignoreUnknownIds": True, "items": items}
             future = pool.submit(self.request_datapoints, payload, priority=0)
-            initial_futures_dct[future] = query_chunks
+            initial_futures_dct[future] = query_chunks  # type: ignore [assignment]
         return initial_query_limits, initial_futures_dct
 
     def _create_ts_tasks_and_handle_missing(
         self,
         results: List[DatapointsFromAPI],
-        chunk_agg_qs: List[_SingleTSQuery],
-        chunk_raw_qs: List[_SingleTSQuery],
-        initial_query_limits: Dict[_SingleTSQuery, int],
-    ) -> Tuple[Dict[_SingleTSQuery, BaseConcurrentTask], Set[_SingleTSQuery]]:
+        chunk_agg_qs: TSQueryList,
+        chunk_raw_qs: TSQueryList,
+        initial_query_limits: Dict[_SingleTSQueryBase, int],
+    ) -> Tuple[Dict[_SingleTSQueryBase, BaseConcurrentTask], Set[_SingleTSQueryBase]]:
         if len(results) == len(chunk_agg_qs) + len(chunk_raw_qs):
-            to_raise = set()
+            to_raise: Set[_SingleTSQueryBase] = set()
         else:
             # We have at least 1 missing time series:
             chunk_agg_qs, chunk_raw_qs, to_raise = self._handle_missing_ts(results, chunk_agg_qs, chunk_raw_qs)
         self._update_queries_is_string(results, chunk_raw_qs)
         # Align initial results with corresponding queries and create tasks:
         ts_tasks = {
-            query: select_dps_fetching_task_type(query)(
+            query: query.ts_task_type(
                 query, eager_mode=False, first_dps_batch=res, first_limit=initial_query_limits[query]
             )
             for res, query in zip(results, chain(chunk_agg_qs, chunk_raw_qs))
         }
         return ts_tasks, to_raise
 
-    def _add_to_subtask_pools(self, new_subtasks: Iterable[BaseDpsFetchSubtask]) -> None:
+    def _add_to_subtask_pools(self, new_subtasks: Iterable[SplittingFetchSubtask]) -> None:
         for task in new_subtasks:
             # We leverage how tuples are compared to prioritise items. First `priority`, then `payload limit`
-            # (to easily group smaller queries), then `monotonic_ns()` to always break ties (never use tasks themselves):
+            # (to easily group smaller queries), then an element to always break ties, but keep order (never use tasks themselves):
             limit = min(task.n_dps_left, task.max_query_limit)
-            heapq.heappush(self.subtask_pools[task.is_raw_query], (task.priority, limit, monotonic_ns(), task))
+            new_subtask: PoolSubtaskType = (task.priority, limit, monotonic_ns() + random(), task)
+            heapq.heappush(self.subtask_pools[task.is_raw_query], new_subtask)
 
     def _queue_new_subtasks(
-        self, pool: PriorityThreadPoolExecutor, futures_dct: Dict[Future, BaseConcurrentTask]
+        self, pool: PriorityThreadPoolExecutor, futures_dct: Dict[Future, List[SplittingFetchSubtask]]
     ) -> None:
         qsize = pool._work_queue.qsize()  # Approximate size of the queue (number of unstarted tasks)
         if qsize > 2 * self.max_workers:
             # Each worker has more than 2 tasks already awaiting in the thread pool queue already, so we
             # hold off on combining new subtasks just yet (allows better prioritisation as more new tasks arrive).
-            return
+            return None
         # When pool queue has few awaiting tasks, we empty the subtasks pool into a partial request:
         return_partial_payload = qsize <= min(5, math.ceil(self.max_workers / 2))
         combined_requests = self._combine_subtasks_into_requests(return_partial_payload)
@@ -353,12 +379,13 @@ class ChunkingDpsFetcher(DpsFetchOrchestrator):
     def _combine_subtasks_into_requests(
         self,
         return_partial_payload: bool,
-    ) -> Iterator[Tuple[DatapointsPayload, List[BaseDpsFetchSubtask], float]]:
-        alternating_pools = (self.subtask_pools, (DPS_LIMIT_AGG, DPS_LIMIT), [False, True])
+    ) -> Iterator[Tuple[DatapointsPayload, List[SplittingFetchSubtask], float]]:
 
         while any(self.subtask_pools):  # As long as both are not empty
             payload_at_max_items, payload_is_full = False, [False, False]
-            for task_pool, request_max_limit, is_raw in zip(alternating_pools):
+            for task_pool, request_max_limit, is_raw in zip(
+                self.subtask_pools, (DPS_LIMIT_AGG, DPS_LIMIT), [False, True]
+            ):
                 if not task_pool:
                     continue
                 limit_used = 0
@@ -374,18 +401,19 @@ class ChunkingDpsFetcher(DpsFetchOrchestrator):
                         break
                     # Highest priority task is always at index 0 (heap magic):
                     *_, next_task = task_pool[0]
-                    if next_task.is_done:
+                    next_payload = next_task.get_next_payload()
+                    if next_payload is None or next_task.is_done:
                         # Parent task finished before subtask and has been marked done already:
                         heapq.heappop(task_pool)  # Pop to remove from heap
                         continue
-                    next_limit = (next_payload := next_task.get_next_payload())["limit"]
+                    next_limit = next_payload["limit"]
                     if limit_used + next_limit <= request_max_limit:
                         self.next_items.append(next_payload)
                         self.next_subtasks.append(next_task)
                         limit_used += next_limit
                         heapq.heappop(task_pool)
                     else:
-                        payload_is_full[is_raw] = True
+                        payload_is_full[is_raw] = True  # type: ignore [has-type]
                         break
 
                 payload_done = (
@@ -397,14 +425,14 @@ class ChunkingDpsFetcher(DpsFetchOrchestrator):
                 )
                 if payload_done:
                     priority = statistics.mean(task.priority for task in self.next_subtasks)
-                    payload = {"items": self.next_items[:]}
-                    yield payload, self.next_subtasks[:], priority
+                    payload: DatapointsPayload = {"items": self.next_items[:]}
+                    yield payload, self.next_subtasks[:], cast(float, priority)
 
                     self.next_items, self.next_subtasks = [], []
                     break
 
     def _update_queries_with_new_chunking_limit(
-        self, ts_task_lookup: Dict[_SingleTSQuery, BaseConcurrentTask]
+        self, ts_task_lookup: Dict[_SingleTSQueryBase, BaseConcurrentTask]
     ) -> List[BaseConcurrentTask]:
         queries = [query for query, task in ts_task_lookup.items() if not task.is_done]
         tot_raw = sum(q.is_raw_query for q in queries)
@@ -414,7 +442,10 @@ class ChunkingDpsFetcher(DpsFetchOrchestrator):
         max_limit_raw = math.floor(DPS_LIMIT / n_raw_chunk)
         max_limit_agg = math.floor(DPS_LIMIT_AGG / n_agg_chunk)
         for query in queries:
-            query.override_max_limits(max_limit_raw, max_limit_agg)
+            if query.is_raw_query:
+                query.override_max_query_limit(max_limit_raw)
+            else:
+                query.override_max_query_limit(max_limit_agg)
         return [ts_task_lookup[query] for query in queries]
 
     def _cancel_subtasks(self, done_ts_tasks: Set[BaseConcurrentTask]) -> None:
@@ -445,7 +476,7 @@ class ChunkingDpsFetcher(DpsFetchOrchestrator):
         return actual_lims
 
     @staticmethod
-    def _update_queries_is_string(res: List[DatapointsFromAPI], queries: List[_SingleTSQuery]) -> None:
+    def _update_queries_is_string(res: List[DatapointsFromAPI], queries: TSQueryList) -> None:
         is_string = {("id", r["id"]) for r in res if r["isString"]}.union(
             ("externalId", r["externalId"]) for r in res if r["isString"]
         )
@@ -455,13 +486,13 @@ class ChunkingDpsFetcher(DpsFetchOrchestrator):
     @staticmethod
     def _handle_missing_ts(
         res: List[DatapointsFromAPI],
-        agg_queries: List[_SingleTSQuery],
-        raw_queries: List[_SingleTSQuery],
-    ) -> Tuple[List[_SingleTSQuery], List[_SingleTSQuery], Set[_SingleTSQuery]]:
+        agg_queries: TSQueryList,
+        raw_queries: TSQueryList,
+    ) -> Tuple[TSQueryList, TSQueryList, Set[_SingleTSQueryBase]]:
         missing, to_raise = set(), set()
         not_missing = {("id", r["id"]) for r in res}.union(("externalId", r["externalId"]) for r in res)
         for query in chain(agg_queries, raw_queries):
-            # Update _SingleTSQuery objects with `is_missing` status:
+            # Update _SingleTSQueryBase objects with `is_missing` status:
             query.is_missing = query.identifier.as_tuple() not in not_missing
             if query.is_missing:
                 missing.add(query)
@@ -583,7 +614,7 @@ class DatapointsAPI(APIClient):
             include_outside_points=include_outside_points,
             ignore_unknown_ids=ignore_unknown_ids,
         )
-        fetcher = DpsFetchOrchestrator(self, user_queries=[query])
+        fetcher = dps_fetch_selector(self, user_queries=[query])
         dps_list = fetcher.fetch_all_datapoints()
         if not query.is_single_identifier:
             return dps_list
@@ -657,7 +688,7 @@ class DatapointsAPI(APIClient):
 
     def query(
         self,
-        query: Union[Iterable[DatapointsQuery], DatapointsQuery],
+        query: Union[Sequence[DatapointsQuery], DatapointsQuery],
     ) -> DatapointsArrayList:
         """Get datapoints for one or more time series by passing query objects directly.
 
@@ -668,7 +699,7 @@ class DatapointsAPI(APIClient):
         stick with the `retrieve` endpoint.
 
         Args:
-            query (Union[DatapointsQuery, Iterable[DatapointsQuery]): The datapoint queries
+            query (Union[DatapointsQuery, Sequence[DatapointsQuery]): The datapoint queries
 
         Returns:
             DatapointsArrayList: The requested datapoints. Note that you always get a single `DatapointsArrayList` returned. The order is the ids of the first query, then the external ids of the first query, then similarly for the next queries.
@@ -686,7 +717,7 @@ class DatapointsAPI(APIClient):
         """
         if isinstance(query, DatapointsQuery):
             query = [query]
-        fetcher = DpsFetchOrchestrator(self, user_queries=query)
+        fetcher = dps_fetch_selector(self, user_queries=query)
         return fetcher.fetch_all_datapoints()
 
     def insert(
@@ -751,7 +782,7 @@ class DatapointsAPI(APIClient):
                 raise ValueError(
                     "When inserting data using a `Datapoints` or `DatapointsArray` object, only raw datapoints are supported"
                 )
-            datapoints = list(zip(datapoints.timestamp, datapoints.value))
+            datapoints = list(zip(datapoints.timestamp, datapoints.value))  # type: ignore [arg-type]
         post_dps_object["datapoints"] = datapoints
         dps_poster = DatapointsPoster(self)
         dps_poster.insert([post_dps_object])
@@ -862,7 +893,7 @@ class DatapointsAPI(APIClient):
         *,
         include_aggregate_name: bool = True,
         column_names: Literal["id", "external_id"] = "external_id",
-        **kwargs,
+        **kwargs: Any,
     ) -> pd.DataFrame:
         """Get datapoints directly in a pandas dataframe (convenience method wrapping the `retrieve` method).
 
@@ -902,7 +933,9 @@ class DatapointsAPI(APIClient):
         if column_names not in {"id", "external_id"}:
             raise ValueError(f"Given parameter {column_names=} must be one of 'id' or 'external_id'")
 
-        return self.retrieve(**kwargs).to_pandas(column_names, include_aggregate_name)
+        if (dps_arr := self.retrieve(**kwargs)) is None:
+            return pd.DataFrame(index=pd.to_datetime([]))
+        return dps_arr.to_pandas(column_names, include_aggregate_name)
 
     def insert_dataframe(self, dataframe: pd.DataFrame, external_id_headers: bool = True, dropna: bool = True) -> None:
         """Insert a dataframe.

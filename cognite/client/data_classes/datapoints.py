@@ -1,14 +1,11 @@
 from __future__ import annotations
 
-import dataclasses
 import json
-import math
 import numbers
 import re as regexp
 import warnings
-from dataclasses import InitVar, dataclass
+from dataclasses import dataclass
 from datetime import datetime
-from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -20,7 +17,9 @@ from typing import (
     Literal,
     NoReturn,
     Optional,
+    Sequence,
     Tuple,
+    Type,
     TypedDict,
     Union,
     cast,
@@ -32,6 +31,7 @@ from cognite.client import utils
 from cognite.client._api.datapoint_constants import (
     DPS_LIMIT,
     DPS_LIMIT_AGG,
+    CustomDatapointsQuery,
     DatapointsExternalIdTypes,
     DatapointsIdTypes,
     DatapointsQueryExternalId,
@@ -43,7 +43,6 @@ from cognite.client._api.datapoint_constants import (
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.exceptions import CogniteDuplicateColumnsError
 from cognite.client.utils._auxiliary import convert_all_keys_to_camel_case, local_import, to_camel_case, to_snake_case
-from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._time import (
     UNIT_IN_MS,
     align_start_and_end_for_granularity,
@@ -224,16 +223,12 @@ class DatapointsArray(CogniteResource):
         yield from (Datapoint(**dict(zip(attrs, row))) for row in zip(*arrays))
 
     def _data_fields(self) -> Tuple[List[str], List[npt.NDArray]]:
-        attrs, arrays = map(
-            list,
-            zip(
-                *[
-                    (attr, arr)
-                    for attr in ("timestamp", "value", *ALL_DATAPOINT_AGGREGATES)
-                    if (arr := getattr(self, attr)) is not None
-                ]
-            ),
-        )
+        data_field_tuples = [
+            (attr, arr)
+            for attr in ("timestamp", "value", *ALL_DATAPOINT_AGGREGATES)
+            if (arr := getattr(self, attr)) is not None
+        ]
+        attrs, arrays = map(list, zip(*data_field_tuples))
         return attrs, arrays
 
     def dump(self, camel_case: bool = False, convert_timestamps: bool = False) -> Dict[str, Any]:
@@ -610,22 +605,8 @@ class DatapointsQuery(CogniteResource):
     include_outside_points: bool = False
     ignore_unknown_ids: bool = False
 
-    @cached_property
-    def defaults(self):
-        return dict(
-            id=None,  # We have to parse these
-            external_id=None,  # We have to parse these
-            start=self.start,
-            end=self.end,
-            limit=self.limit,
-            aggregates=self.aggregates,
-            granularity=self.granularity,
-            include_outside_points=self.include_outside_points,
-            ignore_unknown_ids=self.ignore_unknown_ids,
-        )
-
     @property
-    def is_single_identifier(self):
+    def is_single_identifier(self) -> bool:
         # No lists given and exactly one of id/xid was given:
         return (
             isinstance(self.id, (dict, numbers.Integral))
@@ -633,228 +614,3 @@ class DatapointsQuery(CogniteResource):
             or isinstance(self.external_id, (dict, str))
             and self.id is None
         )
-
-    def validate_and_create_queries(self) -> List[_SingleTSQuery]:
-        queries = []
-        if self.id is not None:
-            queries.extend(self._validate_id_or_xid(id_or_xid=self.id, is_external_id=False))
-        if self.external_id is not None:
-            queries.extend(self._validate_id_or_xid(id_or_xid=self.external_id, is_external_id=True))
-        if queries:
-            return queries
-        raise ValueError("Pass at least one time series `id` or `external_id`!")
-
-    def _validate_id_or_xid(
-        self, id_or_xid: Union[DatapointsIdTypes, DatapointsExternalIdTypes], is_external_id: bool
-    ) -> List[_SingleTSQuery]:
-        if is_external_id:
-            arg_name, exp_type = "external_id", str
-        else:
-            arg_name, exp_type = "id", numbers.Integral
-
-        if isinstance(id_or_xid, (exp_type, dict)):
-            id_or_xid = [id_or_xid]  # Lazy - we postpone evaluation
-
-        if not isinstance(id_or_xid, Iterable):
-            self._raise_on_wrong_ts_identifier_type(id_or_xid, arg_name, exp_type)
-
-        queries = []
-        for ts in id_or_xid:
-            if isinstance(ts, exp_type):
-                queries.append(_SingleTSQuery.from_dict_with_validation({arg_name: ts}, self.defaults))
-
-            elif isinstance(ts, dict):
-                ts_validated = self._validate_ts_query_dct(ts, arg_name, exp_type)
-                queries.append(_SingleTSQuery.from_dict_with_validation(ts_validated, self.defaults))
-            else:
-                self._raise_on_wrong_ts_identifier_type(ts, arg_name, exp_type)
-        return queries
-
-    @staticmethod
-    def _raise_on_wrong_ts_identifier_type(
-        id_or_xid: Union[DatapointsIdTypes, DatapointsExternalIdTypes],
-        arg_name: str,
-        exp_type: Union[str, numbers.Integral],
-    ) -> NoReturn:
-        raise TypeError(
-            f"Got unsupported type {type(id_or_xid)}, as, or part of argument `{arg_name}`. Expected one of "
-            f"{exp_type}, {dict} or a (mixed) list of these, but got `{id_or_xid}`."
-        )
-
-    @staticmethod
-    def _validate_ts_query_dct(
-        dct: Dict[str, Any], arg_name: str, exp_type: Union[str, numbers.Integral]
-    ) -> Union[DatapointsQueryId, DatapointsQueryExternalId]:
-        if arg_name not in dct:
-            if (arg_name_cc := to_camel_case(arg_name)) not in dct:
-                raise KeyError(f"Missing key `{arg_name}` in dict passed as, or part of argument `{arg_name}`")
-            # For backwards compatability we accept identifier in camel case: (Make copy to avoid side effects
-            # for user's input). Also means we need to return it.
-            dct[arg_name] = (dct := dct.copy()).pop(arg_name_cc)
-
-        ts_identifier = dct[arg_name]
-        if not isinstance(ts_identifier, exp_type):
-            DatapointsQuery._raise_on_wrong_ts_identifier_type(ts_identifier, arg_name, exp_type)
-
-        opt_dct_keys = {"start", "end", "aggregates", "granularity", "include_outside_points", "limit"}
-        bad_keys = set(dct) - opt_dct_keys - {arg_name}
-        if not bad_keys:
-            return dct
-        raise KeyError(
-            f"Dict provided by argument `{arg_name}` included key(s) not understood: {sorted(bad_keys)}. "
-            f"Required key: `{arg_name}`. Optional: {list(opt_dct_keys)}."
-        )
-
-
-# Note on `@dataclass(eq=False)`: We need all individual queries to be hashable (and unique), even two exactly
-# similar queries. With `eq=False`, we inherit __hash__ from `object` (just id(self)) - exactly what we need!
-@dataclass(eq=False)
-class _SingleTSQuery:
-    id: InitVar[int] = None
-    external_id: InitVar[str] = None
-    start: Union[int, str, datetime, None] = None
-    end: Union[int, str, datetime, None] = None
-    aggregates: Optional[List[str]] = None
-    granularity: Optional[str] = None
-    limit: Optional[int] = None
-    include_outside_points: Optional[bool] = False
-    ignore_unknown_ids: Optional[bool] = False
-    identifier: Identifier = dataclasses.field(default=None, init=False)
-
-    def __post_init__(self, id, external_id):
-        self.identifier = Identifier.of_either(id, external_id)
-        self._verify_limit()
-        self._verify_time_range()
-        self._is_missing = None  # I.e. not set...
-        self._is_string = None  # ...or unknown
-        if not self.is_raw_query:
-            self._is_string = False  # No aggregates exist for string time series, yet ;)
-        if self.include_outside_points and self.limit is not None:
-            warnings.warn(
-                "When using `include_outside_points=True` with a non-infinite `limit` you may get a large gap "
-                "between the last 'inside datapoint' and the 'after/outside' datapoint. Note also that the "
-                "up-to-two outside points come in addition to your given `limit`; asking for 5 datapoints might "
-                "yield 5, 6 or 7. It's a feature, not a bug ;)",
-                UserWarning,
-            )
-
-    def to_payload(self):
-        return {
-            **self.identifier.as_dict(),
-            "start": self.start,
-            "end": self.end,
-            "aggregates": self.aggregates_cc,  # camel case
-            "granularity": self.granularity,
-            "limit": self.capped_limit,
-            "includeOutsidePoints": self.include_outside_points,
-        }
-
-    @classmethod
-    def from_dict_with_validation(
-        cls,
-        ts_dct: Union[DatapointsQueryId, DatapointsQueryExternalId],
-        defaults: Union[DatapointsQueryId, DatapointsQueryExternalId],
-    ) -> _SingleTSQuery:
-        # We merge 'defaults' and given ts-dict, ts-dict takes precedence:
-        dct = {**defaults, **ts_dct}
-        granularity, aggregates = dct["granularity"], dct["aggregates"]
-
-        if not (granularity is None or isinstance(granularity, str)):
-            raise TypeError(f"Expected `granularity` to be of type `str` or None, not {type(granularity)}")
-
-        elif not (aggregates is None or isinstance(aggregates, list)):
-            raise TypeError(f"Expected `aggregates` to be of type `list[str]` or None, not {type(aggregates)}")
-
-        elif aggregates is None:
-            if granularity is None:
-                return cls(**dct)  # Request for raw datapoints
-            raise ValueError("When passing `granularity`, argument `aggregates` is also required.")
-
-        # Aggregates must be a list at this point:
-        elif len(aggregates) == 0:
-            raise ValueError("Empty list of `aggregates` passed, expected at least one!")
-
-        elif granularity is None:
-            raise ValueError("When passing `aggregates`, argument `granularity` is also required.")
-
-        elif dct["include_outside_points"] is True:
-            raise ValueError("'Include outside points' is not supported for aggregates.")
-        return cls(**dct)  # Request for one or more aggregates
-
-    def _verify_limit(self) -> None:
-        if self.limit in {None, -1, math.inf}:
-            self.limit = None
-        elif isinstance(self.limit, numbers.Integral) and self.limit >= 0:  # limit=0 is accepted by the API
-            self.limit = int(self.limit)  # We don't want weird stuff like numpy dtypes etc.
-        else:
-            raise TypeError(f"Limit must be a non-negative integer -or- one of [None, -1, inf], got {type(self.limit)}")
-        self._max_raw_query_limit = DPS_LIMIT
-        self._max_agg_query_limit = DPS_LIMIT_AGG
-
-    def _verify_time_range(self) -> None:
-        if self.start is None:
-            self.start = 0  # 1970-01-01
-        else:
-            self.start = timestamp_to_ms(self.start)
-        if self.end is None:
-            self.end = "now"
-        self.end = timestamp_to_ms(self.end)
-
-        if self.end <= self.start:
-            raise ValueError(
-                f"Invalid time range, `end` must be later than `start` (from query: {self.identifier.as_dict(camel_case=False)})"
-            )
-        if not self.is_raw_query:  # API rounds aggregate queries in a very particular fashion
-            self.start, self.end = align_start_and_end_for_granularity(self.start, self.end, self.granularity)
-
-    @property
-    def is_missing(self) -> bool:
-        if self._is_missing is None:
-            raise RuntimeError("Before making API-calls the `is_missing` status is unknown")
-        return self._is_missing
-
-    @is_missing.setter
-    def is_missing(self, value) -> None:
-        assert isinstance(value, bool)
-        self._is_missing = value
-
-    @property
-    def is_string(self) -> bool:
-        if self._is_string is None:
-            raise RuntimeError(
-                "For queries asking for raw datapoints, the `is_string` status is unknown before "
-                "any API-calls have been made"
-            )
-        return self._is_string
-
-    @is_string.setter
-    def is_string(self, value) -> None:
-        assert isinstance(value, bool)
-        self._is_string = value
-
-    @property
-    def is_raw_query(self) -> bool:
-        return self.aggregates is None
-
-    @cached_property
-    def aggregates_cc(self) -> List[str]:
-        if not self.is_raw_query:
-            return list(map(to_camel_case, self.aggregates))
-
-    @property
-    def capped_limit(self) -> int:
-        if self.limit is None:
-            return self.max_query_limit
-        return min(self.limit, self.max_query_limit)
-
-    def override_max_limits(self, max_raw: int, max_agg: int) -> None:
-        assert isinstance(max_raw, int) and isinstance(max_agg, int)
-        assert max_raw <= DPS_LIMIT and max_agg <= DPS_LIMIT_AGG
-        self._max_raw_query_limit = max_raw
-        self._max_agg_query_limit = max_agg
-
-    @property
-    def max_query_limit(self) -> int:
-        if self.is_raw_query:
-            return self._max_raw_query_limit
-        return self._max_agg_query_limit

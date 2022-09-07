@@ -1,3 +1,4 @@
+# type: ignore
 """
 This code has been modified from the original created by Oleg Lupats, 2019, under an MIT license:
 project = 'PriorityThreadPoolExecutor'
@@ -36,6 +37,7 @@ import threading
 import weakref
 from concurrent.futures.thread import ThreadPoolExecutor, _base, _python_exit, _threads_queues, _WorkItem
 from queue import PriorityQueue
+from random import random
 from time import monotonic_ns
 
 NULL_ENTRY = (sys.maxsize, None, _WorkItem(None, None, (), {}))
@@ -67,7 +69,7 @@ def _worker(executor_reference, work_queue):
             executor = executor_reference()
             if _SHUTDOWN or executor is None or executor._shutdown:
                 work_queue.put(NULL_ENTRY)
-                return
+                return None
             del executor
     except BaseException:
         _base.LOGGER.critical("Exception in worker", exc_info=True)
@@ -94,7 +96,9 @@ class PriorityThreadPoolExecutor(ThreadPoolExecutor):
             future = _base.Future()
             work_item = _WorkItem(future, fn, args, kwargs)
 
-            self._work_queue.put((priority, monotonic_ns(), work_item))  # monotonic_ns() to break ties, but keep order
+            self._work_queue.put(
+                (priority, monotonic_ns() + random(), work_item)
+            )  # monotonic_ns() to break ties, but keep order
             self._adjust_thread_count()
             return future
 

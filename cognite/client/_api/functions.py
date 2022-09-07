@@ -73,6 +73,7 @@ class FunctionsAPI(APIClient):
         super().__init__(*args, **kwargs)
         self.calls = FunctionCallsAPI(*args, **kwargs)
         self.schedules = FunctionSchedulesAPI(*args, **kwargs)
+        self._cognite_client: "CogniteClient" = cast("CogniteClient", self._cognite_client)
 
     def create(
         self,
