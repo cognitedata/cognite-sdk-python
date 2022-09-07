@@ -18,20 +18,9 @@ ExternalId = str
 InternalId = int
 
 
-@dataclass
-class ExternalFileId:
-    file_external_id: ExternalId
-
-
-@dataclass
-class InternalFileId:
-    file_id: InternalId
-
-
 if TYPE_CHECKING:
 
     from cognite.client import CogniteClient
-
 
 
 class Feature(str, Enum):

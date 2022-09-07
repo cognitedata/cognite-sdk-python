@@ -1,8 +1,11 @@
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 
 from cognite.client import utils
 from cognite.client.data_classes._base import EXCLUDE_VALUE
+
+if TYPE_CHECKING:
+    import pandas
 
 
 class VisionResource:
@@ -25,8 +28,8 @@ class VisionResource:
             if value not in EXCLUDE_VALUE and not key.startswith("_")
         }
 
-    def to_pandas(self, camel_case: bool = False) -> Dict[str, Any]:
-        pd = utils._auxiliary.local_import("pandas")
+    def to_pandas(self, camel_case: bool = False) -> "pandas.DataFrame":
+        pd = cast(Any, utils._auxiliary.local_import("pandas"))
         df = pd.DataFrame(columns=["value"])
 
         for key, value in self.__dict__.items():
@@ -42,7 +45,7 @@ class VisionResource:
 
         return df
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         return self.to_pandas(camel_case=False)._repr_html_()
 
 
@@ -55,13 +58,13 @@ class Point(VisionResource):
 PointDict = Dict[str, float]
 
 
-def _process_vertices(vertices: List[Union[PointDict, Point]]) -> List[Point]:
-    processed_vertices = []
+def _process_vertices(vertices: Union[List[PointDict], List[Point]]) -> List[Point]:
+    processed_vertices: List[Point] = []
     for v in vertices:
         if isinstance(v, Point):
-            processed_vertices.push(v)
+            processed_vertices.append(v)
         elif isinstance(v, Dict) and v.keys() == ["x", "y"]:
-            processed_vertices.push(Point(**v))
+            processed_vertices.append(Point(**v))
         else:
             raise ValueError(f"{v} is an invalid point.")
     return processed_vertices
