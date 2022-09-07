@@ -14,10 +14,23 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [4.3.1] - 2022-09-06
+
+## [4.5.0] - 2022-09-08
 ### Added
 
-- Implemented support for providing feature parameters to `client.vision.extract`
+- Vision extract implementation, providing access to the corresponding [Vision Extract API](https://docs.cognite.com/api/v1/#tag/Vision).
+
+## [4.4.2] - 2022-09-07
+### Fixed
+- Don't import numpy in the global space in geospatial module as it's an optional dependency
+
+## [4.4.1] - 2022-09-06
+### Fixed
+- Fixed FeatureList.from_geopandas to handle NaN values
+
+## [4.4.0] - 2022-09-06
+### Changed
+- Change geospatial.aggregate_features to support order_by
 
 ## [4.3.0] - 2022-09-02
 ### Added
