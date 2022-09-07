@@ -1097,7 +1097,9 @@ their visual content. For example, you can can extract features such as text, as
 **Quickstart**
 
 Start an asynchronous job to extract information from image files stored in CDF:
+
 .. code:: python
+
     >>> from cognite.client import CogniteClient
     >>> from cognite.client.data_classes.vision import Feature
     >>> c = CogniteClient()
@@ -1106,10 +1108,12 @@ Start an asynchronous job to extract information from image files stored in CDF:
     ...     file_ids=[1, 2],
     ... )
 
+
 The returned job object, :code:`extract_job`, can be used to retrieve the status of the job and the prediction results once the job is completed. 
 Wait for job completion and get the parsed results:
 
 .. code:: python
+
     >>> extract_job.wait_for_completion()
     >>> for item in extract_job.items:
     ...     predictions = item.predictions
@@ -1118,6 +1122,7 @@ Wait for job completion and get the parsed results:
 Save the prediction results in CDF as `Annotations <https://docs.cognite.com/api/v1/#tag/Annotations>`_:
 
 .. code:: python
+
     >>> extract_job.save_predictions()
 
 .. note:: 
