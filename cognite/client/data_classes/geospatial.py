@@ -261,6 +261,7 @@ class FeatureList(CogniteResourceList):
                 prop_optional = prop[1].get("optional", False)
                 column_name = property_column_mapping.get(prop_name, None)
                 column_value = row.get(column_name, None)
+                column_value = nan_to_none(column_value)
                 if column_name is None or column_value is None:
                     if prop_optional:
                         continue
@@ -274,6 +275,13 @@ class FeatureList(CogniteResourceList):
                     setattr(feature, prop_name, column_value)
             features.append(feature)
         return FeatureList(features)
+
+
+def nan_to_none(column_value: Any) -> Any:
+    """Convert NaN value to None."""
+    import numpy as np
+
+    return None if np.isscalar(column_value) and np.isnan(column_value) else column_value
 
 
 class FeatureAggregate(CogniteResource):

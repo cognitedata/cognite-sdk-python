@@ -491,6 +491,88 @@ class GeospatialAPI(APIClient):
             ),
         )
 
+    def list_features(
+        self,
+        feature_type_external_id: str,
+        filter: Optional[Dict[str, Any]] = None,
+        properties: Dict[str, Any] = None,
+        limit: int = 100,
+        allow_crs_transformation: bool = False,
+    ) -> FeatureList:
+        """`List features`
+        <https://docs.cognite.com/api/v1/#operation/listFeatures>
+
+        This method allows to filter all features.
+
+        Args:
+            feature_type_external_id: the feature type to list features for
+            filter (Dict[str, Any]): the list filter
+            limit (int, optional): Maximum number of features to return. Defaults to 25. Set to -1, float("inf") or None
+                to return all features.
+            properties (Dict[str, Any]): the output property selection
+            allow_crs_transformation: If true, then input geometries if existing in the filter will be transformed into
+                the Coordinate Reference System defined in the feature type specification. When it is false, then
+                requests with geometries in Coordinate Reference System different from the ones defined in the feature
+                type will result in CogniteAPIError exception.
+
+        Returns:
+            FeatureList: the filtered features
+
+        Examples:
+
+            List features:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> my_feature_type = c.geospatial.retrieve_feature_types(
+                ...     external_id="my_feature_type"
+                ... )
+                >>> my_feature = c.geospatial.create_features(
+                ...     feature_type_external_id=my_feature_type,
+                ...     feature=Feature(
+                ...         external_id="my_feature",
+                ...         temperature=12.4,
+                ...         location={"wkt": "POINT(0 1)"}
+                ...     )
+                ... )
+                >>> res = c.geospatial.list_features(
+                ...     feature_type_external_id="my_feature_type",
+                ...     filter={"range": {"property": "temperature", "gt": 12.0}}
+                ... )
+                >>> for f in res:
+                ...     # do something with the features
+
+            Search for features and select output properties:
+
+                >>> res = c.geospatial.list_features(
+                ...     feature_type_external_id=my_feature_type,
+                ...     filter={},
+                ...     properties={"temperature": {}, "pressure": {}}
+                ... )
+
+            Search for features with spatial filters:
+
+                >>> res = c.geospatial.list_features(
+                ...     feature_type_external_id=my_feature_type,
+                ...     filter={"stWithin": {
+                ...         "property": "location",
+                ...         "value": {"wkt": "POLYGON((0 0, 0 1, 1 1, 0 0))"}
+                ...     }}
+                ... )
+        """
+        return self._list(
+            list_cls=FeatureList,
+            resource_cls=Feature,
+            resource_path=self._feature_resource_path(feature_type_external_id),
+            method="POST",
+            limit=limit,
+            filter=filter,
+            other_params={
+                "allowCrsTransformation": (True if allow_crs_transformation else None),
+                "output": {"properties": properties},
+            },
+        )
+
     def search_features(
         self,
         feature_type_external_id: str,
@@ -686,6 +768,7 @@ class GeospatialAPI(APIClient):
         aggregates: Sequence[str],
         filter: Optional[Dict[str, Any]] = None,
         group_by: Sequence[str] = None,
+        order_by: Sequence[OrderSpec] = None,
     ) -> FeatureAggregateList:
         """`Aggregate filtered features`
         <https://docs.cognite.com/api/v1/#operation/aggregateFeatures>
@@ -696,6 +779,7 @@ class GeospatialAPI(APIClient):
             property (str): the property for which aggregates should be calculated
             aggregates (Sequence[str]): list of aggregates to be calculated
             group_by (Sequence[str]): list of properties to group by with
+            order_by (Sequence[OrderSpec]): the order specification
 
         Returns:
             FeatureAggregateList: the filtered features
@@ -715,16 +799,24 @@ class GeospatialAPI(APIClient):
                 ...     filter={"range": {"property": "temperature", "gt": 12.0}},
                 ...     property="temperature",
                 ...     aggregates=["max", "min"],
-                ...     groupBy=["category"]
+                ...     group_by=["category"],
+                ...     order_by=[OrderSpec("category", "ASC")]
                 ... )
                 >>> for a in res:
                 ...     # loop over aggregates in different groups
         """
         resource_path = self._feature_resource_path(feature_type_external_id) + "/aggregate"
         cls = FeatureAggregateList
+        order = None if order_by is None else [f"{item.property}:{item.direction}" for item in order_by]
         res = self._post(
             url_path=resource_path,
-            json={"filter": filter or {}, "property": property, "aggregates": aggregates, "groupBy": group_by},
+            json={
+                "filter": filter or {},
+                "property": property,
+                "aggregates": aggregates,
+                "groupBy": group_by,
+                "sort": order,
+            },
         )
         return cls._load(res.json()["items"], cognite_client=self._cognite_client)
 

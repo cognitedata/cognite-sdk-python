@@ -41,6 +41,22 @@ Changes are grouped as follows
 - DatapointsAPI.retrieve_dataframe_dict TODO
 - `DatapointsAPI.retrieve_dataframe` no longer support the `complete` keyword argument. Rationale: Weird and unintuitive syntax (passing a string using comma to separate options). Also, `aggregates` & `granularity` are no longer required arguments, and as such, interpolating or forward-filling to a fixed frequency, does not make sense anymore.
 
+## [4.4.2] - 2022-09-07
+### Fixed
+- Don't import numpy in the global space in geospatial module as it's an optional dependency
+
+## [4.4.1] - 2022-09-06
+### Fixed
+- Fixed FeatureList.from_geopandas to handle NaN values
+
+## [4.4.0] - 2022-09-06
+### Changed
+- Change geospatial.aggregate_features to support order_by
+
+## [4.3.0] - 2022-09-02
+### Added
+- Add geospatial.list_features
+
 ## [4.2.1] - 2022-08-23
 ### Changed
 - Change timeseries datapoints' time range to start from 01.01.1900

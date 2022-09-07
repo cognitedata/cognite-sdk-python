@@ -182,9 +182,7 @@ class TestDatapointsAPI:
         assert df.shape[1] == 1
 
     def test_retrieve_string(self, cognite_client):
-        dps = cognite_client.time_series.data.retrieve(
-            external_id="test__string_b", start=1563000000000, end=1564100000000
-        )
+        dps = cognite_client.datapoints.retrieve(external_id="test__string_b", start="2d-ago", end="now")
         assert len(dps) > 100_000
 
     def test_query(self, cognite_client, test_time_series):
