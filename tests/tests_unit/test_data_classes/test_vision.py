@@ -116,6 +116,7 @@ class TestVisionResource:
         ],
         ids=["valid_dump", "valid_dump_camel_case", "valid_dump_mix", "valid_dump_list"],
     )
+    @pytest.mark.dsl
     def test_to_pandas(self, item: VisionResource, expected_dump: Dict[str, Any], camel_case: bool) -> None:
         pd = utils._auxiliary.local_import("pandas")
 
