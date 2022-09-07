@@ -260,7 +260,7 @@ class TestVisionExtractJob:
                         data=resource_to_snake_case(mock_vision_predictions_dict)["text_predictions"][0],
                         annotated_resource_type="file",
                         status="suggested",
-                        creating_app="cognite-sdk-experimental",
+                        creating_app="cognite-sdk",
                         creating_app_version=1,
                         creating_user=None,
                     )

@@ -1,10 +1,10 @@
 import numbers
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
 from requests import Response
 
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import ContextualizationJob
+from cognite.client.data_classes.contextualization import T_ContextualizationJob
 from cognite.client.utils._auxiliary import to_camel_case
 
 
@@ -58,8 +58,14 @@ class ContextAPI(APIClient):
         external_id_objs = [{"fileExternalId": external_id} for external_id in external_ids]
         return [*id_objs, *external_id_objs]
 
-    def _run_job(self, job_path, status_path=None, headers=None, job_cls=None, **kwargs) -> ContextualizationJob:
-        job_cls = job_cls or ContextualizationJob
+    def _run_job(
+        self,
+        job_path: str,
+        job_cls: Type[T_ContextualizationJob],
+        status_path: Optional[str] = None,
+        headers: Dict = None,
+        **kwargs: Any,
+    ) -> T_ContextualizationJob:
         if status_path is None:
             status_path = job_path + "/"
         return job_cls._load_with_status(

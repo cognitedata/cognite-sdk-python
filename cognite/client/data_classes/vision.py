@@ -142,11 +142,11 @@ class VisionExtractItem(CogniteResource):
 
     @classmethod
     def _load(
-        cls: "VisionExtractItem", resource: Union[Dict, str], cognite_client: "CogniteClient" = None  # noqa: F821
-    ) -> Dict[str, Any]:
+        cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None  # noqa: F821
+    ) -> "VisionExtractItem":
         """Override CogniteResource._load so that we can convert the dicts returned by the API to data classes"""
         extracted_item = super(VisionExtractItem, cls)._load(resource, cognite_client=cognite_client)
-        if extracted_item.predictions is not None:
+        if isinstance(extracted_item.predictions, dict):
             extracted_item._predictions_dict = extracted_item.predictions
             extracted_item.predictions = cls._process_predictions_dict(extracted_item._predictions_dict)
         return extracted_item
@@ -218,11 +218,12 @@ class VisionExtractJob(VisionJob):
                 data=data.dump(),
                 annotated_resource_type="file",
                 status="suggested",
-                creating_app=creating_app or "cognite-sdk-experimental",
+                creating_app=creating_app or "cognite-sdk",
                 creating_app_version=creating_app_version or self._cognite_client.version,
                 creating_user=creating_user or None,
             )
             for item in self.items or []
+            if item.predictions is not None
             for prediction_type, prediction_data_list in item.predictions.dump().items()
             for data in prediction_data_list
         ]
