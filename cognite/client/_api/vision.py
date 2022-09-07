@@ -21,7 +21,7 @@ class VisionAPI(ContextAPI):
         """Start an asynchronous job to extract features from image files.
 
         Args:
-            features (Union[Feature, List[Feature]]): The feature(s) to extract from the provided image files.
+            features (Union[cognite.client.data_classes.vision.Feature, List[cognite.client.data_classes.vision.Feature]]): The feature(s) to extract from the provided image files.
             file_ids (List[int]): IDs of the image files to analyze. The images must already be uploaded in the same CDF project.
             file_external_ids (List[str]): The external file ids of the image files to analyze.
         Returns:
