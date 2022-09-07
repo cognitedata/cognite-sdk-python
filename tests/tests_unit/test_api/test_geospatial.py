@@ -107,6 +107,7 @@ class TestGeospatialAPI:
             FeatureList.from_geopandas(test_feature_type, gdf)
         assert str(error.value) == "Missing value for property temperature"
 
+    @pytest.mark.dsl
     def test_from_geopandas_nan_values(self, test_feature_type):
         pd = utils._auxiliary.local_import("pandas")
         df = pd.DataFrame(
