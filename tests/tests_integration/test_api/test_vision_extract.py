@@ -17,7 +17,7 @@ def file_id(cognite_client: CogniteClient) -> int:
     cognite_client.files.delete(id=file.id)
 
 
-class TestExtract_integration:
+class TestVisionExtractAPI:
     def test_extract_integration(self, cognite_client: CogniteClient, file_id: int) -> None:
         VAPI = cognite_client.vision
         job = VAPI.extract(

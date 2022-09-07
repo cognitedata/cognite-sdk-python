@@ -76,7 +76,7 @@ def mock_get_extract(rsps: RequestsMock, mock_get_response_body_ok: Dict[str, An
     yield rsps
 
 
-class TestExtract_unit:
+class TestVisionExtract:
     @pytest.mark.parametrize(
         "features, parameters, error_message",
         [
