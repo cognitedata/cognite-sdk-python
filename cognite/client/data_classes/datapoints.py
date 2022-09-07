@@ -175,7 +175,7 @@ class DatapointsArray(CogniteResource):
         self.total_variation = total_variation
 
     @property
-    def _ts_info(self):
+    def _ts_info(self) -> Dict[str, Any]:
         return {
             "id": self.id,
             "external_id": self.external_id,
@@ -185,20 +185,18 @@ class DatapointsArray(CogniteResource):
         }
 
     @classmethod
-    def _load(
+    def _load(  # type: ignore [override]
         cls,
         dps_dct: Dict[str, Union[int, str, bool, npt.NDArray]],
-        cognite_client: "CogniteClient" = None,
     ) -> DatapointsArray:
-        del cognite_client  # Just needed for signature
-        return cls(**dict(zip(map(to_snake_case, dps_dct.keys()), dps_dct.values())))
+        return cls(**dict(zip(map(to_snake_case, dps_dct.keys()), dps_dct.values())))  # type: ignore [arg-type]
 
-    def __len__(self):
+    def __len__(self) -> int:
         if self.timestamp is None:
             return 0
         return len(self.timestamp)
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         # Override CogniteResource __eq__ which checks exact type & dump being equal. We do not want
         # this: comparing arrays with mostly floats is a bad idea - and dump is exceedingly expensive.
         return id(self) == id(other)
@@ -215,7 +213,9 @@ class DatapointsArray(CogniteResource):
         return Datapoint(**{attr: arr[item].item() for attr, arr in zip(*self._data_fields())})
 
     def _slice(self, part: slice) -> DatapointsArray:
-        return DatapointsArray(**self._ts_info, **{attr: arr[part] for attr, arr in zip(*self._data_fields())})
+        return DatapointsArray(
+            **self._ts_info, **{attr: arr[part] for attr, arr in zip(*self._data_fields())}  # type: ignore [arg-type]
+        )
 
     def __iter__(self) -> Iterator[Datapoint]:
         # Let's not create a single Datapoint more than we have too:
@@ -229,7 +229,7 @@ class DatapointsArray(CogniteResource):
             if (arr := getattr(self, attr)) is not None
         ]
         attrs, arrays = map(list, zip(*data_field_tuples))
-        return attrs, arrays
+        return attrs, arrays  # type: ignore [return-value]
 
     def dump(self, camel_case: bool = False, convert_timestamps: bool = False) -> Dict[str, Any]:
         """Dump the datapoints into a json serializable Python data type.
@@ -259,16 +259,17 @@ class DatapointsArray(CogniteResource):
             dumped = convert_all_keys_to_camel_case(dumped)
         return {k: v for k, v in dumped.items() if v is not None}
 
-    def to_pandas(
+    def to_pandas(  # type: ignore [override]
         self, column_names: Literal["id", "external_id"] = "external_id", include_aggregate_name: bool = True
     ) -> "pandas.DataFrame":
-        pd = local_import("pandas")
-        identifier_dct = {"id": str(self.id), "external_id": self.external_id}
+        pd = cast(Any, local_import("pandas"))
+        identifier_dct = {"id": self.id, "external_id": self.external_id}
         if column_names not in identifier_dct:
             raise ValueError("Argument `column_names` must be either 'external_id' or 'id'")
         identifier = identifier_dct[column_names]
         if identifier is None:  # Time series are not required to have an external_id unfortunately...
             identifier = identifier_dct["id"]
+            assert identifier is not None  # Only happens if a user has created DatapointsArray themselves
             warnings.warn(
                 f"Time series does not have an external ID, so its ID ({self.id}) was used instead as "
                 'the column name in the DataFrame. If this is expected, consider passing `column_names="id"` '
@@ -279,8 +280,8 @@ class DatapointsArray(CogniteResource):
         if self.value is not None:
             return pd.DataFrame({identifier: self.value}, index=idx)
 
-        def col_name(agg):
-            return identifier + include_aggregate_name * f"|{agg}"
+        def col_name(agg: str) -> str:
+            return f"{identifier}{include_aggregate_name * f'|{agg}'}"
 
         return pd.DataFrame(
             {col_name(agg): arr for agg in ALL_DATAPOINT_AGGREGATES if (arr := getattr(self, agg)) is not None},
@@ -415,7 +416,7 @@ class Datapoints(CogniteResource):
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        pd = local_import("pandas")
+        pd = cast(Any, local_import("pandas"))
         data_fields = {}
         timestamps = []
         if column_names in ["external_id", "externalId"]:  # Camel case for backwards compat
@@ -446,7 +447,7 @@ class Datapoints(CogniteResource):
         return df
 
     @classmethod
-    def _load(
+    def _load(  # type: ignore [override]
         cls, dps_object: Dict[str, Any], expected_fields: List[str] = None, cognite_client: "CogniteClient" = None
     ) -> "Datapoints":
         del cognite_client  # just needed for signature
@@ -531,7 +532,7 @@ class DatapointsArrayList(CogniteResourceList):
     def _repr_html_(self) -> str:
         return self.to_pandas()._repr_html_()
 
-    def to_pandas(
+    def to_pandas(  # type: ignore [override]
         self, column_names: Literal["id", "external_id"] = "external_id", include_aggregate_name: bool = True
     ) -> "pandas.DataFrame":
         pd = cast(Any, local_import("pandas"))

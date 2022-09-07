@@ -68,7 +68,7 @@ if TYPE_CHECKING:
 
 
 TSQueryList = List[_SingleTSQueryBase]
-PoolSubtaskType = Tuple[int, float, int, SplittingFetchSubtask]
+PoolSubtaskType = Tuple[int, float, float, SplittingFetchSubtask]
 
 
 def dps_fetch_selector(dps_client: DatapointsAPI, user_queries: Sequence[DatapointsQuery]) -> DpsFetchStrategy:
@@ -240,7 +240,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         self.agg_subtask_pool: List[PoolSubtaskType] = []
         self.subtask_pools = (self.agg_subtask_pool, self.raw_subtask_pool)
         # Combined partial queries storage (chunked, but not enough to fill a request):
-        self.next_items: List[CustomDatapoints] = []
+        self.next_items: List[Dict[str, Any]] = []
         self.next_subtasks: List[SplittingFetchSubtask] = []
 
     def fetch_all(self, pool: PriorityThreadPoolExecutor) -> List[BaseConcurrentTask]:
@@ -321,9 +321,14 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
                     [q.capped_limit for q in queries], max_lim  # type: ignore [attr-defined]
                 )
                 initial_query_limits.update(
-                    chunk_query_limits := dict(zip(queries, maxed_limits))  # type: ignore [call-overload]
+                    chunk_query_limits := dict(zip(queries, maxed_limits))  # type: ignore [arg-type]
                 )
-                items.extend([{**q.to_payload(), "limit": lim} for q, lim in chunk_query_limits.items()])
+                items.extend(
+                    [
+                        {**q.to_payload(), "limit": lim}  # type: ignore [attr-defined]
+                        for q, lim in chunk_query_limits.items()
+                    ]
+                )
 
             payload = {"ignoreUnknownIds": True, "items": items}
             future = pool.submit(self.request_datapoints, payload, priority=0)
@@ -425,7 +430,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
                 )
                 if payload_done:
                     priority = statistics.mean(task.priority for task in self.next_subtasks)
-                    payload: DatapointsPayload = {"items": self.next_items[:]}
+                    payload: DatapointsPayload = {"items": self.next_items[:]}  # type: ignore [typeddict-item]
                     yield payload, self.next_subtasks[:], cast(float, priority)
 
                     self.next_items, self.next_subtasks = [], []

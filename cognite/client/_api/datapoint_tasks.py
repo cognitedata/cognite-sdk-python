@@ -90,12 +90,13 @@ class _SingleTSQueryValidator:
         self,
         id_or_xid: Union[DatapointsIdTypes, DatapointsExternalIdTypes],
         arg_name: str,
-        exp_type: Literal[str, numbers.Integral],
+        exp_type: type,
         is_external_id: bool,
     ) -> List[_SingleTSQueryBase]:
 
         if isinstance(id_or_xid, (exp_type, dict)):
-            id_or_xid = [id_or_xid]  # Lazy - we postpone evaluation
+            # Lazy - we postpone evaluation:
+            id_or_xid = [id_or_xid]  # type: ignore [assignment]
 
         if not isinstance(id_or_xid, Sequence):
             self._raise_on_wrong_ts_identifier_type(id_or_xid, arg_name, exp_type)
@@ -105,12 +106,12 @@ class _SingleTSQueryValidator:
             if isinstance(ts, exp_type):
                 # We merge 'defaults' and given ts-dict, ts-dict takes precedence:
                 ts_dct = {**self.defaults, arg_name: ts}
-                queries.append(self._validate_and_create_query(ts_dct))
+                queries.append(self._validate_and_create_query(ts_dct))  # type: ignore [arg-type]
 
             elif isinstance(ts, dict):
                 ts_validated = self._validate_ts_query_dict_keys(ts, arg_name, exp_type)
                 ts_dct = {**self.defaults, **ts_validated}
-                queries.append(self._validate_and_create_query(ts_dct))
+                queries.append(self._validate_and_create_query(ts_dct))  # type: ignore [arg-type]
             else:
                 self._raise_on_wrong_ts_identifier_type(ts, arg_name, exp_type)
         return queries
@@ -119,7 +120,7 @@ class _SingleTSQueryValidator:
     def _raise_on_wrong_ts_identifier_type(
         id_or_xid: Union[DatapointsIdTypes, DatapointsExternalIdTypes],
         arg_name: str,
-        exp_type: Literal[str, numbers.Integral],
+        exp_type: type,
     ) -> NoReturn:
         raise TypeError(
             f"Got unsupported type {type(id_or_xid)}, as, or part of argument `{arg_name}`. Expected one of "
@@ -128,7 +129,7 @@ class _SingleTSQueryValidator:
 
     @staticmethod
     def _validate_ts_query_dict_keys(
-        dct: Dict[str, Any], arg_name: str, exp_type: Literal[str, numbers.Integral]
+        dct: Dict[str, Any], arg_name: str, exp_type: type
     ) -> Union[DatapointsQueryId, DatapointsQueryExternalId]:
         if arg_name not in dct:
             if (arg_name_cc := to_camel_case(arg_name)) not in dct:
@@ -139,12 +140,12 @@ class _SingleTSQueryValidator:
 
         ts_identifier = dct[arg_name]
         if not isinstance(ts_identifier, exp_type):
-            DatapointsQuery._raise_on_wrong_ts_identifier_type(ts_identifier, arg_name, exp_type)
+            _SingleTSQueryValidator._raise_on_wrong_ts_identifier_type(ts_identifier, arg_name, exp_type)
 
         opt_dct_keys = {"start", "end", "aggregates", "granularity", "include_outside_points", "limit"}
         bad_keys = set(dct) - opt_dct_keys - {arg_name}
         if not bad_keys:
-            return dct
+            return dct  # type: ignore [return-value]
         raise KeyError(
             f"Dict provided by argument `{arg_name}` included key(s) not understood: {sorted(bad_keys)}. "
             f"Required key: `{arg_name}`. Optional: {list(opt_dct_keys)}."
@@ -192,13 +193,13 @@ class _SingleTSQueryValidator:
         limit: Optional[int],
         is_raw: bool,
     ) -> Dict[str, Any]:
-        identifier = Identifier.of_either(dct.pop("id", None), dct.pop("external_id", None))
+        identifier = Identifier.of_either(dct.get("id"), dct.get("external_id"))  # type: ignore [arg-type]
         start, end = self._verify_time_range(dct["start"], dct["end"], dct["granularity"], is_raw, identifier)
-        dct.update({"identifier": identifier, "start": start, "end": end, "limit": limit})
+        converted = {"identifier": identifier, "start": start, "end": end, "limit": limit}
         if is_raw:
-            dct.pop("aggregates")
-            dct.pop("granularity")
-        return dct
+            converted["aggregates"] = dct["aggregates"]
+            converted["granularity"] = dct["granularity"]
+        return converted
 
     def _verify_limit(self, limit: Optional[int]) -> Optional[int]:
         if limit in {None, -1, math.inf}:
@@ -231,7 +232,7 @@ class _SingleTSQueryValidator:
                 f"Invalid time range, `end` must be later than `start` (from query: {identifier.as_dict(camel_case=False)})"
             )
         if not is_raw:  # API rounds aggregate query timestamps in a very particular fashion
-            start, end = align_start_and_end_for_granularity(start, end, granularity)
+            start, end = align_start_and_end_for_granularity(start, end, cast(str, granularity))
         return start, end
 
 
@@ -255,8 +256,8 @@ class _SingleTSQueryBase:
         self.include_outside_points = include_outside_points
         self.ignore_unknown_ids = ignore_unknown_ids
 
-        self._is_missing = None
-        self._is_string = None
+        self._is_missing: Optional[bool] = None
+        self._is_string: Optional[bool] = None
 
         if self.include_outside_points and self.limit is not None:
             warnings.warn(
@@ -294,7 +295,7 @@ class _SingleTSQueryBase:
         return self._is_missing
 
     @is_missing.setter
-    def is_missing(self, value) -> None:
+    def is_missing(self, value: bool) -> None:
         assert isinstance(value, bool)
         self._is_missing = value
 
@@ -308,7 +309,7 @@ class _SingleTSQueryBase:
         return self._is_string
 
     @is_string.setter
-    def is_string(self, value) -> None:
+    def is_string(self, value: bool) -> None:
         assert isinstance(value, bool)
         self._is_string = value
 
@@ -323,7 +324,7 @@ class _SingleTSQueryRaw(_SingleTSQueryBase):
     def is_raw_query(self) -> bool:
         return True
 
-    def to_payload(self):
+    def to_payload(self) -> Dict[str, Any]:
         return {
             **self.identifier.as_dict(),
             "start": self.start,
@@ -344,7 +345,7 @@ class _SingleTSQueryRawLimited(_SingleTSQueryRaw):
 
 
 class _SingleTSQueryRawUnlimited(_SingleTSQueryRaw):
-    def __init__(self, *, limit: None, **kwargs) -> None:
+    def __init__(self, *, limit: None, **kwargs: Any) -> None:
         super().__init__(limit=limit, **kwargs)
 
     @property
@@ -366,7 +367,7 @@ class _SingleTSQueryAgg(_SingleTSQueryBase):
     def aggregates_cc(self) -> List[str]:
         return list(map(to_camel_case, self.aggregates))
 
-    def to_payload(self):
+    def to_payload(self) -> Dict[str, Any]:
         return {
             **self.identifier.as_dict(),
             "start": self.start,
@@ -459,7 +460,7 @@ class BaseDpsFetchSubtask:
         self.is_done = False
 
     @abstractmethod
-    def get_next_payload(self) -> Optional[CustomDatapoints]:
+    def get_next_payload(self) -> Optional[Dict[str, Any]]:
         ...
 
     @abstractmethod
@@ -474,7 +475,7 @@ class OutsideDpsFetchSubtask(BaseDpsFetchSubtask):
         super().__init__(**kwargs, is_raw_query=True, max_query_limit=0, n_dps_left=0)
         self.priority = 0  # Should always be 'highest'
 
-    def get_next_payload(self) -> Optional[CustomDatapoints]:
+    def get_next_payload(self) -> Optional[Dict[str, Any]]:
         if self.is_done:
             return None
         return self._create_payload_item()
@@ -519,7 +520,7 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
         if not self.is_raw_query:
             self.agg_kwargs = {"aggregates": self.aggregates, "granularity": self.granularity}
 
-    def get_next_payload(self) -> Optional[CustomDatapoints]:
+    def get_next_payload(self) -> Optional[Dict[str, Any]]:
         if self.is_done:
             return None
         remaining = self.parent.remaining_limit(self)
@@ -548,7 +549,7 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
     def store_partial_result(self, res: DatapointsFromAPI) -> None:
         if self.parent.ts_info is None:
             # In eager mode, first task to complete gets the honor to store ts info:
-            self.parent.ts_info = {k: v for k, v in res.items() if k != "datapoints"}
+            self.parent.ts_info = {k: v for k, v in res.items() if k != "datapoints"}  # type: ignore [assignment]
             self.parent.raw_dtype = np.object_ if res["isString"] else np.float64
 
         if not (dps := res["datapoints"]):
