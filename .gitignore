@@ -32,6 +32,8 @@ wheels/
 test.py
 do_release.py
 .env
+cache.bin
+local_cog_client.py
 
 # Coverage
 .coverage
