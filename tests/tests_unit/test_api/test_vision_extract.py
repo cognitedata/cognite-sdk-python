@@ -123,6 +123,9 @@ class TestVisionExtract:
         file_external_ids = []
         if error_message is not None:
             with pytest.raises(TypeError, match=error_message):
+                # GET request will not be executed due to invalid parameters in POST
+                # thus relax the assertion requirements
+                mock_post_extract.assert_all_requests_are_fired = False
                 VAPI.extract(features=features, file_ids=file_ids, file_external_ids=file_external_ids)
         else:
             # Job should be queued immediately after a successfully POST
