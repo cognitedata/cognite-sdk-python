@@ -2,6 +2,8 @@ import dataclasses
 import json
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 
+import numpy as np
+
 from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.utils._auxiliary import to_snake_case
@@ -262,6 +264,7 @@ class FeatureList(CogniteResourceList):
                 prop_optional = prop[1].get("optional", False)
                 column_name = property_column_mapping.get(prop_name, None)
                 column_value = row.get(column_name, None)
+                column_value = nan_to_none(column_value)
                 if column_name is None or column_value is None:
                     if prop_optional:
                         continue
@@ -275,6 +278,11 @@ class FeatureList(CogniteResourceList):
                     setattr(feature, prop_name, column_value)
             features.append(feature)
         return FeatureList(features)
+
+
+def nan_to_none(column_value: Any) -> Any:
+    """Convert NaN value to None."""
+    return None if np.isscalar(column_value) and np.isnan(column_value) else column_value
 
 
 class FeatureAggregate(CogniteResource):
