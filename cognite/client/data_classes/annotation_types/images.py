@@ -23,7 +23,7 @@ class ObjectDetection(VisionResource):
         if isinstance(self.bounding_box, Dict):
             self.bounding_box = BoundingBox(**self.bounding_box)
         if isinstance(self.polygon, Dict):
-            self.polygon = Polygon(self.polygon)
+            self.polygon = Polygon(**self.polygon)
         if isinstance(self.polyline, Dict):
             self.polyline = PolyLine(**self.polyline)
 
