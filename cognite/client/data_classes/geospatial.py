@@ -280,9 +280,10 @@ class FeatureList(CogniteResourceList):
 
 def nan_to_none(column_value: Any) -> Any:
     """Convert NaN value to None."""
-    import numpy as np
+    from pandas import isna
+    from pandas.api.types import is_scalar
 
-    return None if np.isscalar(column_value) and np.isnan(column_value) else column_value
+    return None if is_scalar(column_value) and isna(column_value) else column_value
 
 
 class FeatureAggregate(CogniteResource):
