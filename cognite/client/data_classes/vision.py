@@ -219,7 +219,7 @@ class VisionExtractJob(VisionJob):
                 data=data.dump(),
                 annotated_resource_type="file",
                 status="suggested",
-                creating_app=creating_app or "cognite-sdk",
+                creating_app=creating_app or "cognite-sdk-python",
                 creating_app_version=creating_app_version or self._cognite_client.version,
                 creating_user=creating_user or None,
             )
