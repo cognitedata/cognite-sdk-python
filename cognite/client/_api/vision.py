@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional, Type, Union
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.contextualization import T_ContextualizationJob
-from cognite.client.data_classes.vision import Feature, FeatureParameters, InternalId, VisionExtractJob
+from cognite.client.data_classes.vision import FeatureParameters, InternalId, VisionExtractJob, VisionFeature
 from cognite.client.utils._auxiliary import assert_type, to_camel_case
 from cognite.client.utils._identifier import IdentifierSequence
 
@@ -50,7 +50,7 @@ class VisionAPI(APIClient):
 
     def extract(
         self,
-        features: Union[Feature, List[Feature]],
+        features: Union[VisionFeature, List[VisionFeature]],
         file_ids: Optional[List[int]] = None,
         file_external_ids: Optional[List[str]] = None,
         parameters: Optional[FeatureParameters] = None,
@@ -58,7 +58,7 @@ class VisionAPI(APIClient):
         """Start an asynchronous job to extract features from image files.
 
         Args:
-            features (Union[cognite.client.data_classes.vision.Feature, List[cognite.client.data_classes.vision.Feature]]): The feature(s) to extract from the provided image files.
+            features (Union[cognite.client.data_classes.vision.VisionFeature, List[cognite.client.data_classes.vision.VisionFeature]]): The feature(s) to extract from the provided image files.
             file_ids (List[int]): IDs of the image files to analyze. The images must already be uploaded in the same CDF project.
             file_external_ids (List[str]): The external file ids of the image files to analyze.
         Returns:
@@ -68,9 +68,9 @@ class VisionAPI(APIClient):
             Start a job, wait for completion and then get the parsed results::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.vision import Feature
+                >>> from cognite.client.data_classes.vision import VisionFeature
                 >>> c = CogniteClient()
-                >>> extract_job = c.vision.extract(features=Feature.ASSET_TAG_DETECTION, file_ids=[1])
+                >>> extract_job = c.vision.extract(features=VisionFeature.ASSET_TAG_DETECTION, file_ids=[1])
                 >>> extract_job.wait_for_completion()
                 >>> for item in extract_job.items:
                 ...     predictions = item.predictions
@@ -79,11 +79,11 @@ class VisionAPI(APIClient):
                 >>> extract_job.save_predictions()
         """
         # Sanitize input(s)
-        assert_type(features, "features", [Feature, list], allow_none=False)
+        assert_type(features, "features", [VisionFeature, list], allow_none=False)
         if isinstance(features, list):
             for f in features:
-                assert_type(f, f"feature '{f}'", [Feature], allow_none=False)
-        if isinstance(features, Feature):
+                assert_type(f, f"feature '{f}'", [VisionFeature], allow_none=False)
+        if isinstance(features, VisionFeature):
             features = [features]
 
         return self._run_job(

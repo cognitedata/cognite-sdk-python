@@ -309,7 +309,7 @@ class GeospatialAPI(APIClient):
             chunk_size: maximum number of items in a single request to the api
 
         Returns:
-            Union[cognite.client.data_classes.geospatial.Feature, FeatureList]: Created features
+            Union[Feature, FeatureList]: Created features
 
         Examples:
 
@@ -446,7 +446,7 @@ class GeospatialAPI(APIClient):
 
         Args:
             feature_type_external_id : Feature type definition for the features to update.
-            feature (Union[cognite.client.data_classes.geospatial.Feature, Sequence[cognite.client.data_classes.geospatial.Feature]]): feature or list of features.
+            feature (Union[Feature, Sequence[Feature]]): feature or list of features.
             allow_crs_transformation: If true, then input geometries will be transformed into the Coordinate Reference
                 System defined in the feature type specification. When it is false, then requests with geometries in
                 Coordinate Reference System different from the ones defined in the feature type will result in
@@ -718,7 +718,7 @@ class GeospatialAPI(APIClient):
                 CogniteAPIError exception.
 
         Returns:
-            Generator[cognite.client.data_classes.geospatial.Feature]: a generator for the filtered features
+            Generator[Feature]: a generator for the filtered features
 
         Examples:
 

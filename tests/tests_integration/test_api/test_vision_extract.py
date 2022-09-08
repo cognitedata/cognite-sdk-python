@@ -3,7 +3,12 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.data_classes import FileMetadata
 from cognite.client.data_classes.contextualization import JobStatus
-from cognite.client.data_classes.vision import Feature, FeatureParameters, PeopleDetectionParameters, VisionExtractJob
+from cognite.client.data_classes.vision import (
+    FeatureParameters,
+    PeopleDetectionParameters,
+    VisionExtractJob,
+    VisionFeature,
+)
 
 
 # TODO(VIS-986): replace this file generator with a hard-coded ID of an actual image
@@ -21,7 +26,7 @@ class TestVisionExtractAPI:
     def test_extract_integration(self, cognite_client: CogniteClient, file_id: int) -> None:
         VAPI = cognite_client.vision
         job = VAPI.extract(
-            features=Feature.PEOPLE_DETECTION,
+            features=VisionFeature.PEOPLE_DETECTION,
             file_ids=[file_id],
             parameters=FeatureParameters(people_detection_parameters=PeopleDetectionParameters(threshold=0.1)),
         )

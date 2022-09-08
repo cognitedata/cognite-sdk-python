@@ -7,11 +7,11 @@ from responses import RequestsMock
 from cognite.client import CogniteClient
 from cognite.client.data_classes.contextualization import JobStatus
 from cognite.client.data_classes.vision import (
-    Feature,
     FeatureParameters,
     PersonalProtectiveEquipmentDetectionParameters,
     TextDetectionParameters,
     VisionExtractJob,
+    VisionFeature,
 )
 from tests.utils import jsgz_load
 
@@ -80,17 +80,21 @@ class TestVisionExtract:
     @pytest.mark.parametrize(
         "features, parameters, error_message",
         [
-            ("foo", None, "features must be one of types \\[<enum 'Feature'>, <class 'list'>\\]"),
-            ([Feature.TEXT_DETECTION, "foo"], None, "feature 'foo' must be one of types \\[<enum 'Feature'>]"),
-            (None, None, "features cannot be None"),
-            (Feature.TEXT_DETECTION, None, None),
+            ("foo", None, "features must be one of types \\[<enum 'VisionFeature'>, <class 'list'>\\]"),
             (
-                Feature.TEXT_DETECTION,
+                [VisionFeature.TEXT_DETECTION, "foo"],
+                None,
+                "feature 'foo' must be one of types \\[<enum 'VisionFeature'>]",
+            ),
+            (None, None, "features cannot be None"),
+            (VisionFeature.TEXT_DETECTION, None, None),
+            (
+                VisionFeature.TEXT_DETECTION,
                 FeatureParameters(text_detection_parameters=TextDetectionParameters(threshold=0.5)),
                 None,
             ),
             (
-                [Feature.TEXT_DETECTION, Feature.PERSONAL_PROTECTIVE_EQUIPMENT_DETECTION],
+                [VisionFeature.TEXT_DETECTION, VisionFeature.PERSONAL_PROTECTIVE_EQUIPMENT_DETECTION],
                 FeatureParameters(
                     text_detection_parameters=TextDetectionParameters(threshold=0.1),
                     personal_protective_equipment_detection_parameters=PersonalProtectiveEquipmentDetectionParameters(
@@ -113,7 +117,7 @@ class TestVisionExtract:
         self,
         mock_post_extract: RequestsMock,
         mock_get_extract: RequestsMock,
-        features: Union[Feature, List[Feature]],
+        features: Union[VisionFeature, List[VisionFeature]],
         parameters: Optional[FeatureParameters],
         error_message: Optional[str],
         cognite_client: CogniteClient,
@@ -169,7 +173,9 @@ class TestVisionExtract:
         file_ids = [1, 2, 3]
         file_external_ids = []
 
-        job = VAPI.extract(features=Feature.TEXT_DETECTION, file_ids=file_ids, file_external_ids=file_external_ids)
+        job = VAPI.extract(
+            features=VisionFeature.TEXT_DETECTION, file_ids=file_ids, file_external_ids=file_external_ids
+        )
 
         # retrieved job should correspond to the started job:
         retrieved_job = VAPI.get_extract_job(job_id=job.job_id)

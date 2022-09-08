@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class Feature(str, Enum):
+class VisionFeature(str, Enum):
     TEXT_DETECTION = "TextDetection"
     ASSET_TAG_DETECTION = "AssetTagDetection"
     PEOPLE_DETECTION = "PeopleDetection"
