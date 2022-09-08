@@ -11,7 +11,7 @@ from cognite.client.data_classes.annotation_types.primitives import VisionResour
 from cognite.client.data_classes.annotations import AnnotationList
 from cognite.client.data_classes.contextualization import JobStatus
 from cognite.client.exceptions import CogniteException
-from cognite.client.utils._case_conversion import resource_to_snake_case
+from cognite.client.utils._auxiliary import to_snake_case
 
 FeatureClass = Union[Type[TextRegion], Type[AssetLink], Type[ObjectDetection]]
 ExternalId = str
@@ -158,20 +158,30 @@ class VisionExtractItem(CogniteResource):
         # Replace the loaded VisionExtractPredictions with its corresponding dict representation
         if "predictions" in item_dump and isinstance(self._predictions_dict, Dict):
             item_dump["predictions"] = (
-                self._predictions_dict if camel_case else resource_to_snake_case(self._predictions_dict)
+                self._predictions_dict if camel_case else self._resource_to_snake_case(self._predictions_dict)
             )
         return item_dump
 
-    @staticmethod
-    def _process_predictions_dict(predictions_dict: Dict[str, Any]) -> VisionExtractPredictions:
+    @classmethod
+    def _process_predictions_dict(cls, predictions_dict: Dict[str, Any]) -> VisionExtractPredictions:
         """Converts a (validated) predictions dict to a corresponding VisionExtractPredictions"""
         prediction_object = VisionExtractPredictions()
-        snake_case_predictions_dict = resource_to_snake_case(predictions_dict)
+        snake_case_predictions_dict = cls._resource_to_snake_case(predictions_dict)
         for key, value in snake_case_predictions_dict.items():
             if hasattr(prediction_object, key):
                 feature_class = VISION_FEATURE_MAP[key]
                 setattr(prediction_object, key, [feature_class(**v) for v in value])
         return prediction_object
+
+    @classmethod
+    def _resource_to_snake_case(cls, resource: Any) -> Any:
+        if isinstance(resource, list):
+            return [cls._resource_to_snake_case(element) for element in resource]
+        elif isinstance(resource, dict):
+            return {to_snake_case(k): cls._resource_to_snake_case(v) for k, v in resource.items() if v is not None}
+        elif hasattr(resource, "__dict__"):
+            return cls._resource_to_snake_case(resource.__dict__)
+        return resource
 
 
 class VisionExtractJob(VisionJob):

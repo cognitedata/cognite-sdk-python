@@ -16,9 +16,8 @@ from cognite.client.data_classes.vision import (
     VisionExtractJob,
     VisionExtractPredictions,
 )
-from cognite.client.utils._case_conversion import resource_to_camel_case, resource_to_snake_case
 
-mock_vision_predictions_dict: Dict[str, Any] = {
+mock_vision_predictions_dict: Dict[str, List[Dict[str, Any]]] = {
     "textPredictions": [
         {"text": "a", "textRegion": {"xMin": 0.1, "xMax": 0.2, "yMin": 0.3, "yMax": 0.4}, "confidence": 0.1}
     ]
@@ -165,7 +164,7 @@ class TestVisionExtractItem:
                 {
                     "fileId": 1,
                     "fileExternalId": "a",
-                    "predictions": resource_to_camel_case(mock_vision_predictions_dict),
+                    "predictions": mock_vision_predictions_dict,
                 },
                 True,
             ),
@@ -258,7 +257,11 @@ class TestVisionExtractJob:
                     Annotation(
                         annotated_resource_id=1,
                         annotation_type="images.TextRegion",
-                        data=resource_to_snake_case(mock_vision_predictions_dict)["text_predictions"][0],
+                        data={
+                            "text": "a",
+                            "text_region": {"x_min": 0.1, "x_max": 0.2, "y_min": 0.3, "y_max": 0.4},
+                            "confidence": 0.1,
+                        },
                         annotated_resource_type="file",
                         status="suggested",
                         creating_app="cognite-sdk-python",
@@ -274,7 +277,11 @@ class TestVisionExtractJob:
                     Annotation(
                         annotated_resource_id=1,
                         annotation_type="images.TextRegion",
-                        data=resource_to_snake_case(mock_vision_predictions_dict)["text_predictions"][0],
+                        data={
+                            "text": "a",
+                            "text_region": {"x_min": 0.1, "x_max": 0.2, "y_min": 0.3, "y_max": 0.4},
+                            "confidence": 0.1,
+                        },
                         annotated_resource_type="file",
                         status="suggested",
                         creating_app="bar",
