@@ -5,9 +5,9 @@ import pytest
 from responses import RequestsMock
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes.contextualization import JobStatus
-from cognite.client.data_classes.vision import (
+from cognite.client.data_classes.contextualization import (
     FeatureParameters,
+    JobStatus,
     PersonalProtectiveEquipmentDetectionParameters,
     TextDetectionParameters,
     VisionExtractJob,

@@ -7,10 +7,10 @@ from cognite.client import CogniteClient, utils
 from cognite.client.data_classes import Annotation
 from cognite.client.data_classes.annotation_types.images import TextRegion
 from cognite.client.data_classes.annotation_types.primitives import BoundingBox, CdfResourceRef, VisionResource
-from cognite.client.data_classes.contextualization import JobStatus
-from cognite.client.data_classes.vision import (
+from cognite.client.data_classes.contextualization import (
     AssetTagDetectionParameters,
     FeatureParameters,
+    JobStatus,
     TextDetectionParameters,
     VisionExtractItem,
     VisionExtractJob,
@@ -176,7 +176,7 @@ class TestVisionExtractItem:
 
 
 class TestVisionExtractJob:
-    @patch("cognite.client.data_classes.vision.ContextualizationJob.result", new_callable=PropertyMock)
+    @patch("cognite.client.data_classes.contextualization.ContextualizationJob.result", new_callable=PropertyMock)
     @pytest.mark.parametrize(
         "status, result, expected_items",
         [
@@ -197,7 +197,7 @@ class TestVisionExtractJob:
         job = VisionExtractJob(status=status.value, cognite_client=cognite_client)
         assert job.items == expected_items
 
-    @patch("cognite.client.data_classes.vision.ContextualizationJob.result", new_callable=PropertyMock)
+    @patch("cognite.client.data_classes.contextualization.ContextualizationJob.result", new_callable=PropertyMock)
     @pytest.mark.parametrize(
         "file_id, expected_item, error_message",
         [
@@ -231,7 +231,7 @@ class TestVisionExtractJob:
         else:
             assert job[file_id] == expected_item
 
-    @patch("cognite.client.data_classes.vision.ContextualizationJob.result", new_callable=PropertyMock)
+    @patch("cognite.client.data_classes.contextualization.ContextualizationJob.result", new_callable=PropertyMock)
     @pytest.mark.parametrize(
         "result, params, expected_items",
         [
