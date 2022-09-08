@@ -1,15 +1,52 @@
-from typing import Any, List, Optional, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
-from cognite.client._api._context_client import ContextAPI
+from cognite.client._api_client import APIClient
+from cognite.client.data_classes.contextualization import T_ContextualizationJob
 from cognite.client.data_classes.vision import Feature, FeatureParameters, InternalId, VisionExtractJob
-from cognite.client.utils._auxiliary import assert_type
+from cognite.client.utils._auxiliary import assert_type, to_camel_case
+from cognite.client.utils._identifier import IdentifierSequence
 
 
-class VisionAPI(ContextAPI):
+class VisionAPI(APIClient):
     _RESOURCE_PATH = "/context/vision"
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
+
+    @staticmethod
+    def _process_file_ids(ids: Union[List[int], int, None], external_ids: Union[List[str], str, None]) -> List:
+        """
+        Utility for sanitizing a given lists of ids and external ids.
+        Returns the concatenation of the ids an external ids in the format
+        expected by the Context API.
+        """
+        identifier_sequence = IdentifierSequence.load(ids=ids, external_ids=external_ids).as_primitives()
+        id_objs = [{"fileId": id} for id in identifier_sequence if isinstance(id, int)]
+        external_id_objs = [
+            {"fileExternalId": external_id} for external_id in identifier_sequence if isinstance(external_id, str)
+        ]
+        return [*id_objs, *external_id_objs]
+
+    def _run_job(
+        self,
+        job_path: str,
+        job_cls: Type[T_ContextualizationJob],
+        status_path: Optional[str] = None,
+        headers: Dict = None,
+        **kwargs: Any,
+    ) -> T_ContextualizationJob:
+        if status_path is None:
+            status_path = job_path + "/"
+        res = self._post(
+            self._RESOURCE_PATH + job_path,
+            json={to_camel_case(k): v for k, v in (kwargs or {}).items() if v is not None},
+            headers=headers,
+        )
+        return job_cls._load_with_status(
+            res.json(),
+            status_path=self._RESOURCE_PATH + status_path,
+            cognite_client=self._cognite_client,
+        )
 
     def extract(
         self,
