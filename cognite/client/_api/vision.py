@@ -10,9 +10,6 @@ from cognite.client.utils._identifier import IdentifierSequence
 class VisionAPI(APIClient):
     _RESOURCE_PATH = "/context/vision"
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-
     @staticmethod
     def _process_file_ids(ids: Union[List[int], int, None], external_ids: Union[List[str], str, None]) -> List:
         """
