@@ -26,8 +26,9 @@ if TYPE_CHECKING:
 class Feature(str, Enum):
     TEXT_DETECTION = "TextDetection"
     ASSET_TAG_DETECTION = "AssetTagDetection"
-    INDUSTRIAL_OBJECT_DETECTION = "IndustrialObjectDetection"
     PEOPLE_DETECTION = "PeopleDetection"
+    # The features below are in beta
+    INDUSTRIAL_OBJECT_DETECTION = "IndustrialObjectDetection"
     PERSONAL_PROTECTIVE_EQUIPMENT_DETECTION = "PersonalProtectiveEquipmentDetection"
 
 
