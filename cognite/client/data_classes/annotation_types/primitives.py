@@ -2,13 +2,13 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 
 from cognite.client import utils
-from cognite.client.data_classes._base import EXCLUDE_VALUE
+from cognite.client.data_classes._base import EXCLUDE_VALUE, CogniteResource
 
 if TYPE_CHECKING:
     import pandas
 
 
-class VisionResource:
+class VisionResource(CogniteResource):
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
@@ -28,7 +28,7 @@ class VisionResource:
             if value not in EXCLUDE_VALUE and not key.startswith("_")
         }
 
-    def to_pandas(self, camel_case: bool = False) -> "pandas.DataFrame":
+    def to_pandas(self, camel_case: bool = False) -> "pandas.DataFrame":  # type: ignore[override]
         pd = cast(Any, utils._auxiliary.local_import("pandas"))
         df = pd.DataFrame(columns=["value"])
 

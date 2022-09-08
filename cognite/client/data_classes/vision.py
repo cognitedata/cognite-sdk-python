@@ -54,6 +54,7 @@ class VisionExtractPredictions(VisionResource):
 VISION_FEATURE_MAP: Dict[str, FeatureClass] = {
     key: VisionExtractPredictions._get_feature_class(value)
     for key, value in get_type_hints(VisionExtractPredictions).items()
+    if not key == "_cognite_client"
 }
 
 
