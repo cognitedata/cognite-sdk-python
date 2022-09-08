@@ -1080,16 +1080,10 @@ Convert to an interactive SVG where the provided annotations are highlighted
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.diagrams.DiagramsAPI.convert
 
-Contextualization Data Classes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.contextualization
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    :inherited-members:
+
 
 Vision
---------
+^^^^^^
 
 The Vision API enable extraction of information from imagery data based on
 their visual content. For example, you can can extract features such as text, asset tags or industrial objects from images using this service.
@@ -1101,10 +1095,10 @@ Start an asynchronous job to extract information from image files stored in CDF:
 .. code:: python
 
     >>> from cognite.client import CogniteClient
-    >>> from cognite.client.data_classes.vision import Feature
+    >>> from cognite.client.data_classes.contextualization import VisionFeature
     >>> c = CogniteClient()
     >>> extract_job = c.vision.extract(
-    ...     features=[Feature.ASSET_TAG_DETECTION, Feature.PEOPLE_DETECTION], 
+    ...     features=[VisionFeature.ASSET_TAG_DETECTION, VisionFeature.PEOPLE_DETECTION], 
     ...     file_ids=[1, 2],
     ... )
 
@@ -1132,37 +1126,32 @@ Tweaking the parameters of a feature extractor:
 
 .. code:: python
 
-    >>> from cognite.client.data_classes.vision import FeatureParameters, TextDetectionParameters
+    >>> from cognite.client.data_classes.contextualization import FeatureParameters, TextDetectionParameters
     >>> extract_job = c.vision.extract(
-    ...     features=Feature.TEXT_DETECTION,
+    ...     features=VisionFeature.TEXT_DETECTION,
     ...     file_ids=[1, 2],
     ...     parameters=FeatureParameters(TextDetectionParameters(threshold=0.9))
     ... )
 
 Extract
-^^^^^^^
+~~~~~~~
 
 .. automethod:: cognite.client._api.vision.VisionAPI.extract
 
 Get vision extract job
-^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automethod:: cognite.client._api.vision.VisionAPI.get_extract_job
 
-Data classes
-^^^^^^^^^^^^^
 
-Vision data classes
-~~~~~~~~~~~~~~~~~~~
-.. automodule:: cognite.client.data_classes.vision
+Contextualization Data Classes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: cognite.client.data_classes.contextualization
     :members:
     :undoc-members:
     :show-inheritance:
     :inherited-members:
 
-Image type data classes
-~~~~~~~~~~~~~~~~~~~~~~~
-Minimal containers for the image annotations returned by the Annotations API.
 
 .. automodule:: cognite.client.data_classes.annotation_types.images
     :members:
@@ -1170,9 +1159,6 @@ Minimal containers for the image annotations returned by the Annotations API.
     :show-inheritance:
     :inherited-members:
 
-Primitive type data classes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Minimal containers for the primitive annotations returned by the Annotations API.
 
 .. automodule:: cognite.client.data_classes.annotation_types.primitives
     :members:
