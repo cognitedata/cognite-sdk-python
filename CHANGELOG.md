@@ -17,8 +17,11 @@ Changes are grouped as follows
 
 ## [4.5.0] - 2022-09-08
 ### Added
-
 - Vision extract implementation, providing access to the corresponding [Vision Extract API](https://docs.cognite.com/api/v1/#tag/Vision).
+
+## [4.4.3] - 2022-09-08
+### Fixed
+- Fixed NaN/NA value check in geospatial FeatureList
 
 ## [4.4.2] - 2022-09-07
 ### Fixed
