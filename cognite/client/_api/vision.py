@@ -1,3 +1,4 @@
+import warnings
 from typing import Any, Dict, List, Optional, Type, Union
 
 from cognite.client._api_client import APIClient
@@ -34,7 +35,7 @@ class VisionAPI(APIClient):
         job_path: str,
         job_cls: Type[T_ContextualizationJob],
         status_path: Optional[str] = None,
-        headers: Dict = None,
+        headers: Dict[str, Any] = None,
         **kwargs: Any,
     ) -> T_ContextualizationJob:
         if status_path is None:
@@ -88,6 +89,10 @@ class VisionAPI(APIClient):
         if isinstance(features, VisionFeature):
             features = [features]
 
+        beta_features = [f for f in features if f in VisionFeature.beta_features()]
+        if len(beta_features) > 0:
+            warnings.warn(f"Features {beta_features} are in beta and are still in development")
+
         return self._run_job(
             job_path="/extract",
             status_path="/extract/",
@@ -95,6 +100,7 @@ class VisionAPI(APIClient):
             features=features,
             parameters=parameters.dump(camel_case=True) if parameters is not None else None,
             job_cls=VisionExtractJob,
+            headers={"cdf-version": "beta"} if len(beta_features) > 0 else None,
         )
 
     def get_extract_job(self, job_id: InternalId) -> VisionExtractJob:

@@ -1,7 +1,21 @@
 import time
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Type, TypeVar, Union, cast, get_type_hints
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    get_type_hints,
+)
 
 from typing_extensions import get_args
 
@@ -454,6 +468,10 @@ class VisionFeature(str, Enum):
     # The features below are in beta
     INDUSTRIAL_OBJECT_DETECTION = "IndustrialObjectDetection"
     PERSONAL_PROTECTIVE_EQUIPMENT_DETECTION = "PersonalProtectiveEquipmentDetection"
+
+    @classmethod
+    def beta_features(cls) -> Set["VisionFeature"]:
+        return {VisionFeature.INDUSTRIAL_OBJECT_DETECTION, VisionFeature.PERSONAL_PROTECTIVE_EQUIPMENT_DETECTION}
 
 
 @dataclass

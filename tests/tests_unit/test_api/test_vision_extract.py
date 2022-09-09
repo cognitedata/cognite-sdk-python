@@ -1,4 +1,5 @@
 import re
+from contextlib import nullcontext as does_not_raise
 from typing import Any, Dict, List, Optional, Union
 
 import pytest
@@ -8,7 +9,7 @@ from cognite.client import CogniteClient
 from cognite.client.data_classes.contextualization import (
     FeatureParameters,
     JobStatus,
-    PersonalProtectiveEquipmentDetectionParameters,
+    PeopleDetectionParameters,
     TextDetectionParameters,
     VisionExtractJob,
     VisionFeature,
@@ -94,15 +95,14 @@ class TestVisionExtract:
                 None,
             ),
             (
-                [VisionFeature.TEXT_DETECTION, VisionFeature.PERSONAL_PROTECTIVE_EQUIPMENT_DETECTION],
+                [VisionFeature.TEXT_DETECTION, VisionFeature.PEOPLE_DETECTION],
                 FeatureParameters(
                     text_detection_parameters=TextDetectionParameters(threshold=0.1),
-                    personal_protective_equipment_detection_parameters=PersonalProtectiveEquipmentDetectionParameters(
-                        threshold=0.2
-                    ),
+                    people_detection_parameters=PeopleDetectionParameters(threshold=0.2),
                 ),
                 None,
             ),
+            (list(VisionFeature.beta_features())[0], None, None),
         ],
         ids=[
             "invalid_feature",
@@ -111,6 +111,7 @@ class TestVisionExtract:
             "one_feature",
             "one_feature with parameter",
             "multiple_features with parameters",
+            "beta_feature",
         ],
     )
     def test_extract_unit(
@@ -132,10 +133,13 @@ class TestVisionExtract:
                 mock_post_extract.assert_all_requests_are_fired = False
                 VAPI.extract(features=features, file_ids=file_ids, file_external_ids=file_external_ids)
         else:
+            is_beta_feature: bool = len([f for f in features if f in VisionFeature.beta_features()]) > 0
+            error_handling = UserWarning if is_beta_feature else does_not_raise()
             # Job should be queued immediately after a successfully POST
-            job = VAPI.extract(
-                features=features, file_ids=file_ids, file_external_ids=file_external_ids, parameters=parameters
-            )
+            with error_handling:
+                job = VAPI.extract(
+                    features=features, file_ids=file_ids, file_external_ids=file_external_ids, parameters=parameters
+                )
             assert isinstance(job, VisionExtractJob)
             assert "Queued" == job.status
             # Wait for job to complete and check its content
@@ -159,6 +163,8 @@ class TestVisionExtract:
                         if parameters is None
                         else {**expected_features_and_items, "parameters": parameters.dump(camel_case=True)}
                     )
+                    if is_beta_feature:
+                        assert call.request.headers.get("cdf-version") == "beta"
                     assert expected_request_body == jsgz_load(call.request.body)
                 else:
                     num_get_requests += 1
