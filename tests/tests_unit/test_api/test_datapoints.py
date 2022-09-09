@@ -5,18 +5,10 @@ from datetime import datetime, timezone
 from random import random
 from unittest.mock import patch
 
-import numpy as np
 import pytest
 
 from cognite.client._api.datapoints import DatapointsBin
-from cognite.client.data_classes import (
-    Datapoint,
-    Datapoints,
-    DatapointsArray,
-    DatapointsArrayList,
-    DatapointsList,
-    DatapointsQuery,
-)
+from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, DatapointsQuery
 from cognite.client.exceptions import CogniteAPIError, CogniteDuplicateColumnsError, CogniteNotFoundError
 from cognite.client.utils._time import granularity_to_ms
 from tests.utils import jsgz_load
@@ -333,7 +325,7 @@ def assert_dps_response_is_correct(calls, dps_object):
 class TestGetDatapoints:
     def test_retrieve_datapoints_by_id(self, cognite_client, mock_get_datapoints):
         dps_res = cognite_client.time_series.data.retrieve(id=123, start=1000000, end=1100000)
-        assert isinstance(dps_res, DatapointsArray)
+        assert isinstance(dps_res, Datapoints)
         assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
 
     def test_retrieve_datapoints_500(self, cognite_client, rsps):
@@ -368,10 +360,13 @@ class TestGetDatapoints:
         for dps_res in dps_res_list:
             assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
 
+    @pytest.mark.dsl  # TODO: Revert to old code and use `retrieve`, not `retrieve_arrays`
     def test_retrieve_datapoints_some_aggregates_omitted(
         self, cognite_client, mock_get_datapoints_one_ts_has_missing_aggregates
     ):
-        dps_res_list = cognite_client.time_series.data.retrieve(
+        import numpy as np
+
+        dps_res_list = cognite_client.time_series.data.retrieve_arrays(
             id={"id": 1, "aggregates": ["average"]},
             external_id={"externalId": "def", "aggregates": ["interpolation"]},
             start=0,
@@ -427,7 +422,7 @@ class TestGetDatapoints:
         ids = [1, 2, 3]
         external_ids = ["4", "5", "6"]
         dps_res_list = cognite_client.time_series.data.retrieve(id=ids, external_id=external_ids, start=0, end=100000)
-        assert isinstance(dps_res_list, DatapointsArrayList), type(dps_res_list)
+        assert isinstance(dps_res_list, DatapointsList), type(dps_res_list)
         for dps_res in dps_res_list:
             if dps_res.id in ids:
                 ids.remove(dps_res.id)
@@ -462,7 +457,7 @@ class TestGetDatapoints:
 class TestQueryDatapoints:
     def test_query_single(self, cognite_client, mock_get_datapoints):
         dps_res = cognite_client.time_series.data.query(query=DatapointsQuery(id=1, start=0, end=10000))
-        assert isinstance(dps_res, DatapointsArrayList)
+        assert isinstance(dps_res, DatapointsList)
         assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res[0])
 
     def test_query_multiple(self, cognite_client, mock_get_datapoints):
@@ -472,13 +467,13 @@ class TestQueryDatapoints:
                 DatapointsQuery(external_id="2", start=10000, end=20000, aggregates=["average"], granularity="2s"),
             ]
         )
-        assert isinstance(dps_res_list, DatapointsArrayList)
+        assert isinstance(dps_res_list, DatapointsList)
         for dps_res in dps_res_list:
             assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
 
     def test_query_empty(self, cognite_client, mock_get_datapoints_empty):
         dps_res = cognite_client.time_series.data.query(query=DatapointsQuery(id=1, start=0, end=10000))
-        assert isinstance(dps_res, DatapointsArrayList)
+        assert isinstance(dps_res, DatapointsList)
         assert 1 == len(dps_res)
         assert 0 == len(dps_res[0])
 
@@ -1142,7 +1137,7 @@ class TestPandasIntegration:
 
         timestamps = [1500000000000, 1510000000000, 1520000000000, 1530000000000]
         df = pd.DataFrame(
-            {"123": [1, 2, np.inf, 4], "456": [5.0, 6.0, 7.0, 8.0], "xyz": ["a", "b", "c", "d"]},
+            {"123": [1, 2, math.inf, 4], "456": [5.0, 6.0, 7.0, 8.0], "xyz": ["a", "b", "c", "d"]},
             index=pd.to_datetime(timestamps, unit="ms"),
         )
         with pytest.raises(ValueError, match=re.escape("contains one or more (+/-) Infinity")):

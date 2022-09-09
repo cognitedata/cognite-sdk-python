@@ -56,14 +56,6 @@ jobs:
 
     - name: Test core
       env:
-          LOGIN_FLOW: client_credentials
-          COGNITE_CLIENT_SECRET: ${{ secrets.COGNITE_CLIENT_SECRET }}
-          COGNITE_TOKEN_URL: https://login.microsoftonline.com/dff7763f-e2f5-4ffd-9b8a-4ba4bafba5ea/oauth2/v2.0/token
-          COGNITE_TOKEN_SCOPES: https://greenfield.cognitedata.com/.default
-          COGNITE_CLIENT_ID: 14fd282e-f77a-457d-add5-928ec2bcbf04
-          COGNITE_PROJECT: python-sdk-test
-          COGNITE_BASE_URL: https://greenfield.cognitedata.com
-          COGNITE_CLIENT_NAME: python-sdk-integration-tests
           CI: 1
       run: pytest tests/tests_unit -n8 --dist loadscope --maxfail 10 -m 'not dsl' --test-deps-only-core
 

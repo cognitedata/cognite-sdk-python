@@ -1,6 +1,6 @@
+import math
 import uuid
 
-import numpy as np
 import pytest
 
 from cognite.client import utils
@@ -113,7 +113,7 @@ class TestGeospatialAPI:
         df = pd.DataFrame(
             [
                 {"externalId": "12", "temperature": 11.0, "pressure": 10.0, "volume": 12.0, "weight": 10.0},
-                {"externalId": "13", "temperature": 0.0, "pressure": 1.0, "volume": 11.0, "weight": np.nan},
+                {"externalId": "13", "temperature": 0.0, "pressure": 1.0, "volume": 11.0, "weight": math.nan},
             ]
         )
         geopandas = utils._auxiliary.local_import("geopandas")

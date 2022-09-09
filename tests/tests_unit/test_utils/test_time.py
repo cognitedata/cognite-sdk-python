@@ -3,7 +3,6 @@ import time
 from datetime import datetime, timezone
 from unittest import mock
 
-import numpy as np
 import pytest
 
 from cognite.client.utils._time import (
@@ -228,8 +227,9 @@ class TestSplitTimeDomain:
         one_day_ms, gran_ms = 86_400_000, granularity_to_ms(granularity)
         res = split_time_range(-2 * one_day_ms, 9 * one_day_ms, n_splits, gran_ms)
         assert n_splits == len(res) - 1
-        assert expected == np.unique(np.diff(res)).item()
-        assert np.all((np.array(res) % gran_ms) == 0)
+        (single_diff,) = set(next - prev for next, prev in zip(res[1:], res[:-1]))
+        assert expected == single_diff
+        assert all(val % gran_ms == 0 for val in res)
 
 
 class TestAlignToGranularity:

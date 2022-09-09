@@ -16,6 +16,7 @@ from typing import (
     Dict,
     Hashable,
     Iterable,
+    Iterator,
     List,
     Literal,
     NoReturn,
@@ -372,7 +373,8 @@ class _SingleTSQueryRawUnlimited(_SingleTSQueryRaw):
 
 class _SingleTSQueryAgg(_SingleTSQueryBase):
     def __init__(self, *, aggregates: List[str], granularity: str, **kwargs: Any) -> None:
-        super().__init__(**kwargs, max_query_limit=DPS_LIMIT_AGG)
+        agg_query_settings = dict(include_outside_points=False, max_query_limit=DPS_LIMIT_AGG)
+        super().__init__(**kwargs, **agg_query_settings)
         self.aggregates = aggregates
         self.granularity = granularity
 
@@ -455,6 +457,11 @@ def create_array_from_dps_container(container: DefaultSortedDict) -> npt.NDArray
 
 def create_list_from_dps_container(container: DefaultSortedDict) -> List:
     return list(chain.from_iterable(chain.from_iterable(container.values())))
+
+
+def create_aggregates_list_from_dps_container(container: DefaultSortedDict) -> Iterator[List[List]]:
+    concatenated = chain.from_iterable(chain.from_iterable(container.values()))
+    return map(list, zip(*concatenated))  # rows to columns
 
 
 class BaseDpsFetchSubtask:
@@ -984,15 +991,16 @@ class ParallelLimitedRawTask(ConcurrentLimitedMixin, BaseConcurrentRawTask):
 
 
 class BaseConcurrentAggTask(BaseConcurrentTask):
-    def __init__(self, **kwargs: Any) -> None:
-        self._set_aggregate_vars(kwargs["aggregates"])
-        super().__init__(**kwargs)
+    def __init__(self, *, query: _SingleTSQueryAgg, use_numpy: bool, **kwargs: Any) -> None:
+        aggregates = query.aggregates
+        self._set_aggregate_vars(aggregates, use_numpy)
+        super().__init__(query=query, use_numpy=use_numpy, **kwargs)
 
     @cached_property
     def offset_next(self) -> int:
         return granularity_to_ms(self.query.granularity)
 
-    def _set_aggregate_vars(self, aggregates: List[str]) -> None:
+    def _set_aggregate_vars(self, aggregates: List[str], use_numpy: bool) -> None:
         self.float_aggs = aggregates[:]
         self.is_count_query = "count" in self.float_aggs
         if self.is_count_query:
@@ -1002,7 +1010,7 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
         self.has_non_count_aggs = bool(self.float_aggs)
         if self.has_non_count_aggs:
             self.agg_unpack_fn = DpsUnpackFns.custom_from_aggregates(self.float_aggs)
-            if self.use_numpy:
+            if use_numpy:
                 if len(self.float_aggs) > 1:
                     self.dtype_aggs = np.dtype((np.float64, len(self.float_aggs)))
                 else:  # (.., 1) is deprecated for some reason
@@ -1026,7 +1034,7 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
             lst_dct["count"] = []
         if self.has_non_count_aggs:
             lst_dct.update({agg: [] for agg in self.float_aggs})
-        return Datapoints(convert_all_keys_to_snake_case({**cast(dict, self.ts_info), **lst_dct}))
+        return Datapoints(**convert_all_keys_to_snake_case({**cast(dict, self.ts_info), **lst_dct}))
 
     def get_result(self) -> Union[Datapoints, DatapointsArray]:
         if not self.ts_data or self.query.limit == 0:
@@ -1047,9 +1055,9 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
         if self.is_count_query:
             lst_dct["count"] = create_list_from_dps_container(self.count_data)
         if self.has_non_count_aggs:
-            # TODO, some magic zip-unzip action?? idk yet
-            raise NotImplementedError
-        return Datapoints(convert_all_keys_to_snake_case({**cast(dict, self.ts_info), **lst_dct}))
+            aggs_iter = create_aggregates_list_from_dps_container(self.dps_data)
+            lst_dct.update(dict(zip(self.float_aggs, aggs_iter)))
+        return Datapoints(**convert_all_keys_to_snake_case({**cast(dict, self.ts_info), **lst_dct}))
 
     def _cap_dps_at_limit(self) -> None:
         # assert isinstance(self.query.limit, int)  # mypy
@@ -1131,4 +1139,4 @@ class ParallelLimitedAggTask(ConcurrentLimitedMixin, BaseConcurrentAggTask):
     def _find_number_of_subtasks_uniform_split(self, tot_ms: int, n_workers_per_queries: int) -> int:
         remaining_limit = self.query.limit - self.n_dps_first_batch
         n_max_dps = min(remaining_limit, tot_ms // self.offset_next)
-        return min(n_workers_per_queries, math.ceil(n_max_dps / self.query.max_query_limit))
+        return max(1, min(n_workers_per_queries, math.ceil(n_max_dps / self.query.max_query_limit)))
