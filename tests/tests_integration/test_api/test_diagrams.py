@@ -4,10 +4,10 @@ PNID_FILE_ID = 3261066797848581
 
 
 class TestPNIDParsingIntegration:
-    def test_run_diagram_detect(self, cognite_client):
+    def test_run_diagram_detect(self, cognite_beta_client):
         entities = [{"name": "YT-96122"}, {"name": "XE-96125", "ee": 123}, {"name": "XWDW-9615"}]
         file_id = PNID_FILE_ID
-        job = cognite_client.diagrams.detect(file_ids=[file_id], entities=entities)
+        job = cognite_beta_client.diagrams.detect(file_ids=[file_id], entities=entities)
         assert isinstance(job, DiagramDetectResults)
         assert {"statusCount", "numFiles", "items", "partialMatch", "minTokens", "searchField"}.issubset(job.result)
         assert {"fileId", "annotations"}.issubset(job.result["items"][0])
