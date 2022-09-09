@@ -14,10 +14,9 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    get_args,
     get_type_hints,
 )
-
-from typing_extensions import get_args
 
 from cognite.client.data_classes import Annotation
 from cognite.client.data_classes._base import (
