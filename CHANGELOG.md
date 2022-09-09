@@ -14,9 +14,9 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [4.5.1] - 2022-09-08
+## [5.0.0] - 2022-09-08
 ### Fixed
-- Fixed EM and diagrams tests by using the beta clients there. This is because the mentioned APIs now check for `cdf-version` in the request headers.
+- Fixed EM and Diagrams API by using the beta clients for them. This is because the mentioned APIs now check for `cdf-version` in the request headers.
 
 ## [4.5.0] - 2022-09-08
 ### Added
