@@ -14,9 +14,14 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [4.4.4] - 2022-09-09
+## [4.5.1] - 2022-09-09
 ### Fixed
 - Fixes the issue when updating transformations with new nonce credentials
+
+
+## [4.5.0] - 2022-09-08
+### Added
+- Vision extract implementation, providing access to the corresponding [Vision Extract API](https://docs.cognite.com/api/v1/#tag/Vision).
 
 ## [4.4.3] - 2022-09-08
 ### Fixed
