@@ -3,9 +3,10 @@ import string
 
 import pytest
 
+from cognite.client.credentials import OAuthClientCredentials
 from cognite.client.data_classes import DataSet, Transformation, TransformationDestination, TransformationUpdate
 from cognite.client.data_classes.transformations._alphatypes import AlphaDataModelInstances
-from cognite.client.data_classes.transformations.common import SequenceRows
+from cognite.client.data_classes.transformations.common import NonceCredentials, OidcCredentials, SequenceRows
 
 
 @pytest.fixture
@@ -26,11 +27,27 @@ def new_datasets(cognite_client):
 @pytest.fixture
 def new_transformation(cognite_client, new_datasets):
     prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
+    creds = cognite_client.config.credentials
+    assert isinstance(creds, OAuthClientCredentials)
     transform = Transformation(
         name="any",
         external_id=f"{prefix}-transformation",
         destination=TransformationDestination.assets(),
         data_set_id=new_datasets[0].id,
+        source_oidc_credentials=OidcCredentials(
+            client_id="invalidClientId",
+            client_secret="InvalidClientSecret",
+            scopes=",".join(creds.scopes),
+            token_uri=creds.token_url,
+            cdf_project_name=cognite_client.config.project,
+        ),
+        destination_oidc_credentials=OidcCredentials(
+            client_id="invalidClientId",
+            client_secret="InvalidClientSecret",
+            scopes=",".join(creds.scopes),
+            token_uri=creds.token_url,
+            cdf_project_name=cognite_client.config.project,
+        ),
     )
     ts = cognite_client.transformations.create(transform)
 
@@ -183,6 +200,34 @@ class TestTransformationsAPI:
             and updated_transformation.name == retrieved_transformation.name == "new name"
             and updated_transformation.query == retrieved_transformation.query == "SELECT * from _cdf.assets"
         )
+
+    def test_update_nonce(self, cognite_client, new_transformation):
+        session = cognite_client.iam.sessions.create()
+        update_transformation = (
+            TransformationUpdate(id=new_transformation.id)
+            .source_nonce.set(NonceCredentials(session.id, session.nonce, cognite_client._config.project))
+            .destination_nonce.set(NonceCredentials(session.id, session.nonce, cognite_client._config.project))
+        )
+
+        updated_transformation = cognite_client.transformations.update(update_transformation)
+        retrieved_transformation = cognite_client.transformations.retrieve(new_transformation.id)
+        assert (
+            updated_transformation.source_session.session_id == session.id
+            and updated_transformation.destination_session.session_id == session.id
+            and retrieved_transformation.source_session.session_id == session.id
+            and retrieved_transformation.destination_session.session_id == session.id
+        )
+
+    def test_update_nonce_full(self, cognite_client, new_transformation):
+        session = cognite_client.iam.sessions.create()
+        new_transformation.source_nonce = NonceCredentials(session.id, session.nonce, cognite_client._config.project)
+        new_transformation.destination_nonce = NonceCredentials(
+            session.id, session.nonce, cognite_client._config.project
+        )
+
+        updated_transformation = cognite_client.transformations.update(new_transformation)
+        retrieved_transformation = cognite_client.transformations.retrieve(new_transformation.id)
+        assert updated_transformation.id == retrieved_transformation.id
 
     def test_list(self, cognite_client, new_transformation, new_datasets):
         # Filter by destination type
