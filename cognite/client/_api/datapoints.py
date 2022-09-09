@@ -707,31 +707,43 @@ class DatapointsAPI(APIClient):
 
             **Note:** For more usage examples, see `DatapointsAPI.retrieve` method (which accepts exactly the same arguments).
 
-            Get weekly `min` and `max` aggregates for a time series with id=42 since year 2000, then compute the range of values:
+            Get weekly `min` and `max` aggregates for a time series with id=42 since the year 2000, then compute the range of values:
 
                 >>> from cognite.client import CogniteClient
                 >>> from datetime import datetime, timezone
                 >>> client = CogniteClient()
                 >>> dps = client.time_series.data.retrieve_arrays(
                 ...     id=42,
-                ...     start=(datetime(2020, 1, 1, tzinfo=timezone.utc),
+                ...     start=datetime(2020, 1, 1, tzinfo=timezone.utc),
                 ...     aggregates=["min", "max"],
                 ...     granularity="7d")
                 >>> weekly_range = dps.max - dps.min
 
-            Get raw datapoints for a multiple time series from the last 2 hours, then find the largest gap between two consecutive
-            values, also taking the previous value into account:
+            Get up-to 2 million raw datapoints for the last 48 hours for a noisy time series with external_id="ts-noisy",
+            then use a small and wide moving average filter to smooth it out:
+
+                >>> dps = client.time_series.data.retrieve_arrays(
+                ...     external_id="ts-noisy",
+                ...     start="2d-ago",
+                ...     limit=2_000_000)
+                >>> smooth = np.convolve(dps.value, np.ones(5) / 5)
+                >>> smoother = np.convolve(dps.value, np.ones(20) / 20)
+
+            Get raw datapoints for a multiple time series, that may or may not exist, from the last 2 hours, then find the
+            largest gap between two consecutive values for all time series, also taking the previous value into account (outside point).
 
                 >>> id_lst = [42, 43, 44]
                 >>> dps_lst = client.time_series.data.retrieve_arrays(
                 ...     id=id_lst,
                 ...     start="2h-ago",
-                ...     include_outside_points=True)
-                >>> largest_gaps = [np.max(np.diff(dps.timestamp)) for dps in dps_lst)]
+                ...     include_outside_points=True,
+                ...     ignore_unknown_ids=True)
+                >>> largest_gaps = [np.max(np.diff(dps.timestamp)) for dps in dps_lst]
 
             Get raw datapoints for a time series with external_id="bar" from the last 10 weeks, then convert to a `pandas.Series`
             (you can of course also use the `to_pandas()` convenience method if you want a `pandas.DataFrame`):
 
+                >>> import pandas as pd
                 >>> dps = client.time_series.data.retrieve_arrays(external_id="bar", start="10w-ago")
                 >>> series = pd.Series(dps.value, index=dps.timestamp)
         """

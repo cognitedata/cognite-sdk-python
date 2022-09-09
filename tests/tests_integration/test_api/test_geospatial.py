@@ -458,7 +458,7 @@ class TestGeospatialAPI:
 
         assert len(res) == 4
         df = res.to_pandas()
-        assert list(df) == ["externalId"]
+        assert list(df) == ["external_id"]
 
     def test_to_pandas(self, test_feature_type, test_features):
         df = test_features.to_pandas(camel_case=True)
