@@ -32,7 +32,6 @@ from cognite.client._api.datapoint_constants import (
     DPS_LIMIT,
     DPS_LIMIT_AGG,
     FETCH_TS_LIMIT,
-    NUMPY_IS_AVAILABLE,
     POST_DPS_OBJECTS_LIMIT,
     RETRIEVE_LATEST_LIMIT,
     CustomDatapoints,
@@ -722,6 +721,7 @@ class DatapointsAPI(APIClient):
             Get up-to 2 million raw datapoints for the last 48 hours for a noisy time series with external_id="ts-noisy",
             then use a small and wide moving average filter to smooth it out:
 
+                >>> import numpy as np
                 >>> dps = client.time_series.data.retrieve_arrays(
                 ...     external_id="ts-noisy",
                 ...     start="2d-ago",

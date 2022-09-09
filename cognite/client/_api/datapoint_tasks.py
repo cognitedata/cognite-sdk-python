@@ -374,7 +374,7 @@ class _SingleTSQueryRawUnlimited(_SingleTSQueryRaw):
 class _SingleTSQueryAgg(_SingleTSQueryBase):
     def __init__(self, *, aggregates: List[str], granularity: str, **kwargs: Any) -> None:
         agg_query_settings = dict(include_outside_points=False, max_query_limit=DPS_LIMIT_AGG)
-        super().__init__(**kwargs, **agg_query_settings)
+        super().__init__(**kwargs, **agg_query_settings)  # type: ignore [arg-type]
         self.aggregates = aggregates
         self.granularity = granularity
 
@@ -501,7 +501,7 @@ class OutsideDpsFetchSubtask(BaseDpsFetchSubtask):
 
     def __init__(self, **kwargs: Any) -> None:
         outside_dps_settings = dict(priority=0, is_raw_query=True, max_query_limit=0, n_dps_left=0)
-        super().__init__(**kwargs, **outside_dps_settings)
+        super().__init__(**kwargs, **outside_dps_settings)  # type: ignore [arg-type]
 
     def get_next_payload(self) -> Optional[Dict[str, Any]]:
         if self.is_done:

@@ -10,7 +10,7 @@ except ImportError:
     NUMPY_IS_AVAILABLE = False
 
 if NUMPY_IS_AVAILABLE:
-    NumpyDatetime64NSArray = npt.NDArray["np.datetime64[ns]"]
+    NumpyDatetime64NSArray = npt.NDArray[np.datetime64]
     NumpyInt64Array = npt.NDArray[np.int64]
     NumpyFloat64Array = npt.NDArray[np.float64]
     NumpyObjArray = npt.NDArray[np.object_]
