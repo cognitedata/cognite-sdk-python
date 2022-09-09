@@ -41,6 +41,22 @@ Changes are grouped as follows
 - DatapointsAPI.retrieve_dataframe_dict TODO
 - `DatapointsAPI.retrieve_dataframe` no longer support the `complete` keyword argument. Rationale: Weird and unintuitive syntax (passing a string using comma to separate options). Also, `aggregates` & `granularity` are no longer required arguments, and as such, interpolating or forward-filling to a fixed frequency, does not make sense anymore.
 
+## [4.5.2] - 2022-09-09
+### Fixed
+- Fixes the issue when updating transformations with new nonce credentials
+
+## [4.5.1] - 2022-09-08
+### Fixed
+- Don't depend on typing_extensions module, since we don't have it as a dependency.
+
+## [4.5.0] - 2022-09-08
+### Added
+- Vision extract implementation, providing access to the corresponding [Vision Extract API](https://docs.cognite.com/api/v1/#tag/Vision).
+
+## [4.4.3] - 2022-09-08
+### Fixed
+- Fixed NaN/NA value check in geospatial FeatureList
+
 ## [4.4.2] - 2022-09-07
 ### Fixed
 - Don't import numpy in the global space in geospatial module as it's an optional dependency

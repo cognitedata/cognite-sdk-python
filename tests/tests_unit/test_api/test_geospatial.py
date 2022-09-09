@@ -113,7 +113,15 @@ class TestGeospatialAPI:
         df = pd.DataFrame(
             [
                 {"externalId": "12", "temperature": 11.0, "pressure": 10.0, "volume": 12.0, "weight": 10.0},
-                {"externalId": "13", "temperature": 0.0, "pressure": 1.0, "volume": 11.0, "weight": math.nan},
+                {
+                    "externalId": "13",
+                    "temperature": 0.0,
+                    "pressure": 1.0,
+                    "volume": 11.0,
+                    "weight": math.nan,
+                    "description": "string",
+                    "assetIds": [1, 2],
+                },
             ]
         )
         geopandas = utils._auxiliary.local_import("geopandas")
@@ -121,3 +129,5 @@ class TestGeospatialAPI:
         features = FeatureList.from_geopandas(test_feature_type, gdf)
         assert features[0].weight == 10.0
         assert not hasattr(features[1], "weight")
+        assert features[1].description == "string"
+        assert features[1].asset_ids == [1, 2]
