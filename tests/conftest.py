@@ -24,6 +24,7 @@ from cognite.client._api.three_d import (
     ThreeDRevisionsAPI,
 )
 from cognite.client._api.time_series import TimeSeriesAPI
+from cognite.client._api.vision import VisionAPI
 
 dotenv.load_dotenv()
 
@@ -54,6 +55,7 @@ def mock_cognite_client():
         cog_client_mock.sequences = mock.MagicMock(spec=SequencesAPI)
         cog_client_mock.sequences.data = mock.MagicMock(spec=SequencesDataAPI)
         cog_client_mock.relationships = mock.MagicMock(spec=RelationshipsAPI)
+        cog_client_mock.vision = mock.MagicMock(spec=VisionAPI)
         raw_mock = mock.MagicMock(spec=RawAPI)
         raw_mock.databases = mock.MagicMock(spec=RawDatabasesAPI)
         raw_mock.tables = mock.MagicMock(spec=RawTablesAPI)
