@@ -726,8 +726,8 @@ class DatapointsAPI(APIClient):
                 ...     external_id="ts-noisy",
                 ...     start="2d-ago",
                 ...     limit=2_000_000)
-                >>> smooth = np.convolve(dps.value, np.ones(5) / 5)
-                >>> smoother = np.convolve(dps.value, np.ones(20) / 20)
+                >>> smooth = np.convolve(dps.value, np.ones(5) / 5)  # doctest: +SKIP
+                >>> smoother = np.convolve(dps.value, np.ones(20) / 20)  # doctest: +SKIP
 
             Get raw datapoints for a multiple time series, that may or may not exist, from the last 2 hours, then find the
             largest gap between two consecutive values for all time series, also taking the previous value into account (outside point).
