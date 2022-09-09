@@ -8,6 +8,7 @@ from cognite.client.beta import CogniteClient as CogniteBetaClient
 from cognite.client.credentials import CredentialProvider, OAuthClientCredentials, OAuthInteractive
 
 
+@pytest.fixture(scope="session")
 def _get_credentials() -> CredentialProvider:
     login_flow = os.environ["LOGIN_FLOW"].lower()
     if login_flow == "client_credentials":
