@@ -9,7 +9,7 @@ from cognite.client.credentials import CredentialProvider, OAuthClientCredential
 
 
 @pytest.fixture(scope="session")
-def _get_credentials() -> CredentialProvider:
+def credentials() -> CredentialProvider:
     login_flow = os.environ["LOGIN_FLOW"].lower()
     if login_flow == "client_credentials":
         return OAuthClientCredentials(
@@ -31,24 +31,24 @@ def _get_credentials() -> CredentialProvider:
 
 
 @pytest.fixture(scope="session")
-def cognite_client() -> CogniteClient:
+def cognite_client(credentials: CredentialProvider) -> CogniteClient:
     return CogniteClient(
         ClientConfig(
             client_name=os.environ["COGNITE_CLIENT_NAME"],
             project=os.environ["COGNITE_PROJECT"],
             base_url=os.environ["COGNITE_BASE_URL"],
-            credentials=_get_credentials(),
+            credentials=credentials,
         )
     )
 
 
 @pytest.fixture(scope="session")
-def cognite_beta_client() -> CogniteBetaClient:
+def cognite_beta_client(credentials: CredentialProvider) -> CogniteBetaClient:
     return CogniteBetaClient(
         ClientConfig(
             client_name=os.environ["COGNITE_CLIENT_NAME"],
             project=os.environ["COGNITE_PROJECT"],
             base_url=os.environ["COGNITE_BASE_URL"],
-            credentials=_get_credentials(),
+            credentials=credentials,
         )
     )
