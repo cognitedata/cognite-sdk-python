@@ -62,7 +62,7 @@ class CogniteClient:
         self.three_d = ThreeDAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.labels = LabelsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.relationships = RelationshipsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
-        self.entity_matching = EntityMatchingAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
+        self.entity_matching = EntityMatchingAPI(self._config, api_version="beta", cognite_client=self)
         self.templates = TemplatesAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.vision = VisionAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.extraction_pipelines = ExtractionPipelinesAPI(self._config, api_version="playground", cognite_client=self)
@@ -70,7 +70,7 @@ class CogniteClient:
             self._config, api_version="playground", cognite_client=self
         )
         self.transformations = TransformationsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
-        self.diagrams = DiagramsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
+        self.diagrams = DiagramsAPI(self._config, api_version="beta", cognite_client=self)
         self.annotations = AnnotationsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.functions = FunctionsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
 
