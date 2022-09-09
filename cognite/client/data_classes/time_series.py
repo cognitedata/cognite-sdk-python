@@ -87,7 +87,7 @@ class TimeSeries(CogniteResource):
         dps = self._cognite_client.time_series.data.retrieve(
             **identifier, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS, aggregates=["count"], granularity="100d"
         )
-        return dps.count.sum()
+        return sum(dps.count)
 
     def latest(self) -> Optional["Datapoint"]:  # noqa: F821
         """Returns the latest datapoint in this time series

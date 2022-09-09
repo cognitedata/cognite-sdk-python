@@ -577,8 +577,7 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
     def store_partial_result(self, res: DatapointsFromAPI) -> None:
         if self.parent.ts_info is None:
             # In eager mode, first task to complete gets the honor to store ts info:
-            self.parent.ts_info = {k: v for k, v in res.items() if k != "datapoints"}  # type: ignore [assignment]
-            self.parent.raw_dtype = np.object_ if res["isString"] else np.float64
+            self.parent._store_ts_info(res)
 
         if not (dps := res["datapoints"]):
             self.is_done = True
@@ -782,6 +781,11 @@ class BaseConcurrentTask:
             )
             for i, (start, end) in enumerate(zip(boundaries[:-1], boundaries[1:]), 1)
         ]
+
+    def _store_ts_info(self, res: DatapointsFromAPI) -> None:
+        self.ts_info = {k: v for k, v in res.items() if k != "datapoints"}  # type: ignore [assignment]
+        if self.use_numpy:
+            self.raw_dtype = np.object_ if res["isString"] else np.float64
 
     def _store_first_batch(self, dps: List[Dict[str, DatapointsTypes]], first_limit: int) -> None:
         # Set `start` for the first subtask:
@@ -1055,8 +1059,11 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
         if self.is_count_query:
             lst_dct["count"] = create_list_from_dps_container(self.count_data)
         if self.has_non_count_aggs:
-            aggs_iter = create_aggregates_list_from_dps_container(self.dps_data)
-            lst_dct.update(dict(zip(self.float_aggs, aggs_iter)))
+            if len(self.float_aggs) == 1:
+                lst_dct[self.float_aggs[0]] = create_list_from_dps_container(self.dps_data)
+            else:
+                aggs_iter = create_aggregates_list_from_dps_container(self.dps_data)
+                lst_dct.update(dict(zip(self.float_aggs, aggs_iter)))
         return Datapoints(**convert_all_keys_to_snake_case({**cast(dict, self.ts_info), **lst_dct}))
 
     def _cap_dps_at_limit(self) -> None:

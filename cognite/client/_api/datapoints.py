@@ -124,7 +124,11 @@ class DpsFetchStrategy(ABC):
     def fetch_all_datapoints(self, use_numpy: Literal[True]) -> DatapointsArrayList:
         ...
 
+    @overload
     def fetch_all_datapoints(self, use_numpy: Literal[False]) -> DatapointsList:
+        ...
+
+    def fetch_all_datapoints(self, use_numpy: bool) -> Union[DatapointsList, DatapointsArrayList]:
         with PriorityThreadPoolExecutor(max_workers=self.max_workers) as pool:
             ordered_results = self.fetch_all(pool, use_numpy)
         return self._finalize_tasks(ordered_results, use_numpy)
@@ -137,7 +141,19 @@ class DpsFetchStrategy(ABC):
     ) -> DatapointsArrayList:
         ...
 
-    def _finalize_tasks(self, ordered_results: List[BaseConcurrentTask], use_numpy: Literal[False]) -> DatapointsList:
+    @overload
+    def _finalize_tasks(
+        self,
+        ordered_results: List[BaseConcurrentTask],
+        use_numpy: Literal[False],
+    ) -> DatapointsList:
+        ...
+
+    def _finalize_tasks(
+        self,
+        ordered_results: List[BaseConcurrentTask],
+        use_numpy: bool,
+    ) -> Union[DatapointsList, DatapointsArrayList]:
         lst_class = DatapointsArrayList if use_numpy else DatapointsList
         return lst_class(
             [ts_task.get_result() for ts_task in ordered_results],
@@ -855,7 +871,7 @@ class DatapointsAPI(APIClient):
     def query(
         self,
         query: Union[Sequence[DatapointsQuery], DatapointsQuery],
-    ) -> DatapointsArrayList:
+    ) -> DatapointsList:
         """Get datapoints for one or more time series by passing query objects directly.
 
         **Note**: Before version 5.0.0, this method was the only way to retrieve datapoints easily with individual fetch settings.
@@ -868,7 +884,7 @@ class DatapointsAPI(APIClient):
             query (Union[DatapointsQuery, Sequence[DatapointsQuery]): The datapoint queries
 
         Returns:
-            DatapointsArrayList: The requested datapoints. Note that you always get a single `DatapointsArrayList` returned. The order is the ids of the first query, then the external ids of the first query, then similarly for the next queries.
+            DatapointsList: The requested datapoints. Note that you always get a single `DatapointsList` returned. The order is the ids of the first query, then the external ids of the first query, then similarly for the next queries.
 
         Examples:
 
@@ -884,7 +900,7 @@ class DatapointsAPI(APIClient):
         if isinstance(query, DatapointsQuery):
             query = [query]
         fetcher = dps_fetch_selector(self, user_queries=query)
-        return fetcher.fetch_all_datapoints()
+        return fetcher.fetch_all_datapoints(use_numpy=False)
 
     def insert(
         self,
