@@ -5,10 +5,10 @@ import pytest
 
 from cognite.client import ClientConfig, CogniteClient
 from cognite.client.beta import CogniteClient as CogniteBetaClient
-from cognite.client.credentials import ClientCredentials, OAuthClientCredentials, OAuthInteractive
+from cognite.client.credentials import CredentialProvider, OAuthClientCredentials, OAuthInteractive
 
 
-def _get_credentials() -> ClientCredentials:
+def _get_credentials() -> CredentialProvider:
     login_flow = os.environ["LOGIN_FLOW"].lower()
     if login_flow == "client_credentials":
         return OAuthClientCredentials(
