@@ -1,8 +1,19 @@
 from datetime import datetime
 from typing import Dict, Iterable, List, Optional, TypedDict, Union
 
-import numpy as np
-import numpy.typing as npt
+try:
+    import numpy as np
+    import numpy.typing as npt
+
+    NUMPY_IS_AVAILABLE = True
+except ImportError:
+    NUMPY_IS_AVAILABLE = False
+
+if NUMPY_IS_AVAILABLE:
+    NumpyDatetime64NSArray = npt.NDArray["np.datetime64[ns]"]
+    NumpyInt64Array = npt.NDArray[np.int64]
+    NumpyFloat64Array = npt.NDArray[np.float64]
+    NumpyObjArray = npt.NDArray[np.object_]
 
 # Datapoints API-limits:
 DPS_LIMIT_AGG = 10_000
@@ -58,7 +69,3 @@ class DatapointsFromAPI(TypedDict):
 
 DatapointsIdTypes = Union[int, DatapointsQueryId, Iterable[Union[int, DatapointsQueryId]]]
 DatapointsExternalIdTypes = Union[str, DatapointsQueryExternalId, Iterable[Union[str, DatapointsQueryExternalId]]]
-
-NumpyInt64Array = npt.NDArray[np.int64]
-NumpyFloat64Array = npt.NDArray[np.float64]
-NumpyObjArray = npt.NDArray[np.object_]

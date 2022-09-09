@@ -41,6 +41,10 @@ def convert_all_keys_to_camel_case(d: Dict[str, Any]) -> Dict[str, Any]:
     return dict(zip(map(to_camel_case, d.keys()), d.values()))
 
 
+def convert_all_keys_to_snake_case(d: Dict[str, Any]) -> Dict[str, Any]:
+    return dict(zip(map(to_snake_case, d.keys()), d.values()))
+
+
 def json_dump_default(x: Any) -> Any:
     if isinstance(x, numbers.Integral):
         return int(x)

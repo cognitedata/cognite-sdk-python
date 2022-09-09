@@ -25,8 +25,6 @@ from typing import (
     cast,
 )
 
-import numpy.typing as npt
-
 from cognite.client import utils
 from cognite.client._api.datapoint_constants import (
     DPS_LIMIT,
@@ -36,13 +34,15 @@ from cognite.client._api.datapoint_constants import (
     DatapointsIdTypes,
     DatapointsQueryExternalId,
     DatapointsQueryId,
-    NumpyFloat64Array,
-    NumpyInt64Array,
-    NumpyObjArray,
 )
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.exceptions import CogniteDuplicateColumnsError
-from cognite.client.utils._auxiliary import convert_all_keys_to_camel_case, local_import, to_camel_case, to_snake_case
+from cognite.client.utils._auxiliary import (
+    convert_all_keys_to_camel_case,
+    convert_all_keys_to_snake_case,
+    local_import,
+    to_camel_case,
+)
 from cognite.client.utils._time import (
     UNIT_IN_MS,
     align_start_and_end_for_granularity,
@@ -51,9 +51,16 @@ from cognite.client.utils._time import (
 )
 
 if TYPE_CHECKING:
+    import numpy.typing as npt
     import pandas
 
     from cognite.client import CogniteClient
+    from cognite.client._api.datapoint_constants import (
+        NumpyDatetime64NSArray,
+        NumpyFloat64Array,
+        NumpyInt64Array,
+        NumpyObjArray,
+    )
 
 
 ALL_DATAPOINT_AGGREGATES = [
@@ -143,7 +150,7 @@ class DatapointsArray(CogniteResource):
         is_string: bool = None,
         is_step: bool = None,
         unit: str = None,
-        timestamp: NumpyInt64Array = None,
+        timestamp: NumpyDatetime64NSArray = None,
         value: Union[NumpyFloat64Array, NumpyObjArray] = None,
         average: NumpyFloat64Array = None,
         max: NumpyFloat64Array = None,
@@ -189,7 +196,9 @@ class DatapointsArray(CogniteResource):
         cls,
         dps_dct: Dict[str, Union[int, str, bool, npt.NDArray]],
     ) -> DatapointsArray:
-        return cls(**dict(zip(map(to_snake_case, dps_dct.keys()), dps_dct.values())))  # type: ignore [arg-type]
+        # Since pandas always uses nanoseconds for datetime, we stick with the same:
+        dps_dct["timestamp"] = dps_dct["timestamp"].astype("datetime64[ms]").astype("datetime64[ns]")
+        return cls(**convert_all_keys_to_snake_case(dps_dct))
 
     def __len__(self) -> int:
         if self.timestamp is None:
@@ -198,7 +207,7 @@ class DatapointsArray(CogniteResource):
 
     def __eq__(self, other: Any) -> bool:
         # Override CogniteResource __eq__ which checks exact type & dump being equal. We do not want
-        # this: comparing arrays with mostly floats is a bad idea - and dump is exceedingly expensive.
+        # this: comparing arrays with (mostly) floats is a very bad idea; also dump is exceedingly expensive.
         return id(self) == id(other)
 
     def __str__(self) -> str:

@@ -25,12 +25,14 @@ from typing import (
     Tuple,
     Union,
     cast,
+    overload,
 )
 
 from cognite.client._api.datapoint_constants import (
     DPS_LIMIT,
     DPS_LIMIT_AGG,
     FETCH_TS_LIMIT,
+    NUMPY_IS_AVAILABLE,
     POST_DPS_OBJECTS_LIMIT,
     RETRIEVE_LATEST_LIMIT,
     CustomDatapoints,
@@ -71,7 +73,10 @@ TSQueryList = List[_SingleTSQueryBase]
 PoolSubtaskType = Tuple[int, float, float, SplittingFetchSubtask]
 
 
-def dps_fetch_selector(dps_client: DatapointsAPI, user_queries: Sequence[DatapointsQuery]) -> DpsFetchStrategy:
+def dps_fetch_selector(
+    dps_client: DatapointsAPI,
+    user_queries: Sequence[DatapointsQuery],
+) -> DpsFetchStrategy:
     max_workers = dps_client._config.max_workers
     if max_workers < 1:
         raise RuntimeError(f"Invalid option for `max_workers={max_workers}`. Must be at least 1")
@@ -115,23 +120,36 @@ class DpsFetchStrategy(ABC):
         self.max_workers = max_workers
         self.n_queries = len(all_queries)
 
-    def fetch_all_datapoints(self) -> DatapointsArrayList:
-        with PriorityThreadPoolExecutor(max_workers=self.max_workers) as pool:
-            ordered_results = self.fetch_all(pool)
-        return self._finalize_tasks(ordered_results)
+    @overload
+    def fetch_all_datapoints(self, use_numpy: Literal[True]) -> DatapointsArrayList:
+        ...
 
-    def _finalize_tasks(self, ordered_results: List[BaseConcurrentTask]) -> DatapointsArrayList:
-        return DatapointsArrayList(
+    def fetch_all_datapoints(self, use_numpy: Literal[False]) -> DatapointsList:
+        with PriorityThreadPoolExecutor(max_workers=self.max_workers) as pool:
+            ordered_results = self.fetch_all(pool, use_numpy)
+        return self._finalize_tasks(ordered_results, use_numpy)
+
+    @overload
+    def _finalize_tasks(
+        self,
+        ordered_results: List[BaseConcurrentTask],
+        use_numpy: Literal[True],
+    ) -> DatapointsArrayList:
+        ...
+
+    def _finalize_tasks(self, ordered_results: List[BaseConcurrentTask], use_numpy: Literal[False]) -> DatapointsList:
+        lst_class = DatapointsArrayList if use_numpy else DatapointsList
+        return lst_class(
             [ts_task.get_result() for ts_task in ordered_results],
             cognite_client=self.dps_client._cognite_client,
         )
 
     @abstractmethod
-    def fetch_all(self, pool: PriorityThreadPoolExecutor) -> List[BaseConcurrentTask]:
+    def fetch_all(self, pool: PriorityThreadPoolExecutor, use_numpy: bool) -> List[BaseConcurrentTask]:
         ...
 
     @abstractmethod
-    def _create_initial_tasks(self, pool: PriorityThreadPoolExecutor) -> Tuple[Dict, Dict]:
+    def _create_initial_tasks(self, pool: PriorityThreadPoolExecutor, use_numpy: bool) -> Tuple[Dict, Dict]:
         ...
 
 
@@ -151,8 +169,8 @@ class EagerDpsFetcher(DpsFetchStrategy):
             self.dps_client._RESOURCE_PATH + "/list", json=cast(Dict[str, Any], payload)
         ).json()["items"]
 
-    def fetch_all(self, pool: PriorityThreadPoolExecutor) -> List[BaseConcurrentTask]:
-        futures_dct, ts_task_lookup = self._create_initial_tasks(pool)
+    def fetch_all(self, pool: PriorityThreadPoolExecutor, use_numpy: bool) -> List[BaseConcurrentTask]:
+        futures_dct, ts_task_lookup = self._create_initial_tasks(pool, use_numpy)
 
         # Run until all top level tasks are complete:
         while futures_dct:
@@ -179,12 +197,14 @@ class EagerDpsFetcher(DpsFetchStrategy):
         return list(filter(None, map(ts_task_lookup.get, self.all_queries)))
 
     def _create_initial_tasks(
-        self, pool: PriorityThreadPoolExecutor
+        self,
+        pool: PriorityThreadPoolExecutor,
+        use_numpy: bool,
     ) -> Tuple[Dict[Future, SplittingFetchSubtask], Dict[_SingleTSQueryBase, BaseConcurrentTask]]:
         futures_dct: Dict[Future, SplittingFetchSubtask] = {}
         ts_task_lookup, payload = {}, {"ignoreUnknownIds": False}
         for query in self.all_queries:
-            ts_task = ts_task_lookup[query] = query.ts_task_type(query, eager_mode=True)
+            ts_task = ts_task_lookup[query] = query.ts_task_type(query=query, eager_mode=True, use_numpy=use_numpy)
             for subtask in ts_task.split_into_subtasks(self.max_workers, self.n_queries):
                 future = pool.submit(self.request_datapoints_jit, subtask, payload, priority=subtask.priority)
                 futures_dct[future] = subtask
@@ -243,7 +263,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         self.next_items: List[Dict[str, Any]] = []
         self.next_subtasks: List[SplittingFetchSubtask] = []
 
-    def fetch_all(self, pool: PriorityThreadPoolExecutor) -> List[BaseConcurrentTask]:
+    def fetch_all(self, pool: PriorityThreadPoolExecutor, use_numpy: bool) -> List[BaseConcurrentTask]:
         # The initial tasks are important - as they tell us which time series are missing,
         # which are string etc. We use this info when we choose the best fetch-strategy.
         ts_task_lookup, missing_to_raise = {}, set()
@@ -253,7 +273,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
             res = future.result()
             chunk_agg_qs, chunk_raw_qs = initial_futures_dct.pop(future)
             new_ts_tasks, chunk_missing = self._create_ts_tasks_and_handle_missing(
-                res, chunk_agg_qs, chunk_raw_qs, initial_query_limits
+                res, chunk_agg_qs, chunk_raw_qs, initial_query_limits, use_numpy
             )
             missing_to_raise.update(chunk_missing)
             ts_task_lookup.update(new_ts_tasks)
@@ -341,6 +361,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         chunk_agg_qs: TSQueryList,
         chunk_raw_qs: TSQueryList,
         initial_query_limits: Dict[_SingleTSQueryBase, int],
+        use_numpy: bool,
     ) -> Tuple[Dict[_SingleTSQueryBase, BaseConcurrentTask], Set[_SingleTSQueryBase]]:
         if len(results) == len(chunk_agg_qs) + len(chunk_raw_qs):
             to_raise: Set[_SingleTSQueryBase] = set()
@@ -351,7 +372,11 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         # Align initial results with corresponding queries and create tasks:
         ts_tasks = {
             query: query.ts_task_type(
-                query, eager_mode=False, first_dps_batch=res, first_limit=initial_query_limits[query]
+                query=query,
+                eager_mode=False,
+                use_numpy=use_numpy,
+                first_dps_batch=res,
+                first_limit=initial_query_limits[query],
             )
             for res, query in zip(results, chain(chunk_agg_qs, chunk_raw_qs))
         }
@@ -533,11 +558,13 @@ class DatapointsAPI(APIClient):
         limit: Optional[int] = None,
         include_outside_points: bool = False,
         ignore_unknown_ids: bool = False,
-    ) -> Union[None, DatapointsArray, DatapointsArrayList]:
+    ) -> Union[None, Datapoints, DatapointsList]:
         """`Retrieve datapoints for one or more time series. <https://docs.cognite.com/api/v1/#operation/getMultiTimeSeriesDatapoints>`_
 
         **Note**: All arguments are optional, as long as at least one identifier is given. When passing aggregates, granularity must also be given.
         When passing dict objects with specific parameters, these will take precedence. See examples below.
+
+        **Performance hint:**: For better performance, consider using `retrieve_arrays(...)` which uses `numpy.ndarrays` for data storage.
 
         Args:
             start (Union[int, str, datetime]): Inclusive start. Default: 1970-01-01 UTC.
@@ -551,7 +578,7 @@ class DatapointsAPI(APIClient):
             ignore_unknown_ids (bool): Whether or not to ignore missing time series rather than raising an exception. Default: False
 
         Returns:
-            Union[None, DatapointsArray, DatapointsArrayList]: A `DatapointsArray` containing the requested data, or a `DatapointsArrayList` if multiple time series was asked for. If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
+            Union[None, Datapoints, DatapointsList]: A `Datapoints` object containing the requested data, or a `DatapointsList` if multiple time series was asked for. If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
 
         Examples:
 
@@ -623,12 +650,143 @@ class DatapointsAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
         fetcher = dps_fetch_selector(self, user_queries=[query])
-        dps_list = fetcher.fetch_all_datapoints()
+        dps_list = fetcher.fetch_all_datapoints(use_numpy=False)
         if not query.is_single_identifier:
             return dps_list
         elif not dps_list and ignore_unknown_ids:
             return None
         return dps_list[0]
+
+    def retrieve_arrays(
+        self,
+        start: Union[int, str, datetime, None] = None,
+        end: Union[int, str, datetime, None] = None,
+        id: Optional[DatapointsIdTypes] = None,
+        external_id: Optional[DatapointsExternalIdTypes] = None,
+        aggregates: Optional[List[str]] = None,
+        granularity: Optional[str] = None,
+        limit: Optional[int] = None,
+        include_outside_points: bool = False,
+        ignore_unknown_ids: bool = False,
+    ) -> Union[None, DatapointsArray, DatapointsArrayList]:
+        """`Retrieve datapoints for one or more time series. <https://docs.cognite.com/api/v1/#operation/getMultiTimeSeriesDatapoints>`_
+
+        **Note**: This method requires `numpy`.
+
+        Args:
+            start (Union[int, str, datetime]): Inclusive start. Default: 1970-01-01 UTC.
+            end (Union[int, str, datetime]): Exclusive end. Default: "now"
+            id (DatapointsIdTypes): Id, dict (with id) or (mixed) list of these. See examples below.
+            external_id (DatapointsExternalIdTypes): External id, dict (with external id) or (mixed) list of these. See examples below.
+            aggregates (List[str]): List of aggregate functions to apply. Default: No aggregates (raw datapoints)
+            granularity (str): The granularity to fetch aggregates at. e.g. '1s', '2h', '10d'. Default: None.
+            limit (int): Maximum number of datapoints to return for each time series. Default: None (no limit)
+            include_outside_points (bool): Whether or not to include outside points. Not allowed when fetching aggregates. Default: False
+            ignore_unknown_ids (bool): Whether or not to ignore missing time series rather than raising an exception. Default: False
+
+        Returns:
+            Union[None, DatapointsArray, DatapointsArrayList]: A `DatapointsArray` object containing the requested data, or a `DatapointsArrayList` if multiple time series was asked for. If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
+
+        Examples:
+
+            **Note:** For more usage examples, see `DatapointsAPI.retrieve` method (which accepts exactly the same arguments).
+
+            Get weekly `min` and `max` aggregates for a time series with id=42 since year 2000, then compute the range of values:
+
+                >>> from cognite.client import CogniteClient
+                >>> from datetime import datetime, timezone
+                >>> client = CogniteClient()
+                >>> dps = client.time_series.data.retrieve_arrays(
+                ...     id=42,
+                ...     start=(datetime(2020, 1, 1, tzinfo=timezone.utc),
+                ...     aggregates=["min", "max"],
+                ...     granularity="7d")
+                >>> weekly_range = dps.max - dps.min
+
+            Get raw datapoints for a multiple time series from the last 2 hours, then find the largest gap between two consecutive
+            values, also taking the previous value into account:
+
+                >>> id_lst = [42, 43, 44]
+                >>> dps_lst = client.time_series.data.retrieve_arrays(
+                ...     id=id_lst,
+                ...     start="2h-ago",
+                ...     include_outside_points=True)
+                >>> largest_gaps = [np.max(np.diff(dps.timestamp)) for dps in dps_lst)]
+
+            Get raw datapoints for a time series with external_id="bar" from the last 10 weeks, then convert to a `pandas.Series`
+            (you can of course also use the `to_pandas()` convenience method if you want a `pandas.DataFrame`):
+
+                >>> dps = client.time_series.data.retrieve_arrays(external_id="bar", start="10w-ago")
+                >>> series = pd.Series(dps.value, index=dps.timestamp)
+        """
+        local_import("numpy")  # Verify that numpy is available or raise CogniteImportError
+        query = DatapointsQuery(
+            start=start,
+            end=end,
+            id=id,
+            external_id=external_id,
+            aggregates=aggregates,
+            granularity=granularity,
+            limit=limit,
+            include_outside_points=include_outside_points,
+            ignore_unknown_ids=ignore_unknown_ids,
+        )
+        fetcher = dps_fetch_selector(self, user_queries=[query])
+        dps_list = fetcher.fetch_all_datapoints(use_numpy=True)
+        if not query.is_single_identifier:
+            return dps_list
+        elif not dps_list and ignore_unknown_ids:
+            return None
+        return dps_list[0]
+
+    def retrieve_dataframe(
+        self,
+        *,
+        include_aggregate_name: bool = True,
+        column_names: Literal["id", "external_id"] = "external_id",
+        **kwargs: Any,
+    ) -> pd.DataFrame:
+        """Get datapoints directly in a pandas dataframe (convenience method wrapping the `retrieve_arrays` method).
+
+        **Note**: If you have duplicated time series in your query, the dataframe columns will also contain duplicates.
+
+        See `DatapointsAPI.retrieve_arrays` method for a description of the parameters, must be passed by keywords.
+
+        Args:
+            include_aggregate_name (bool): Include 'aggregate' in the column name, e.g. `my-ts|average`. Ignored for raw time series. Default: True
+            column_names ("id" | "external_id"): Use either ids or external ids as column names. Time series missing external id will use id as backup. Default: "external_id"
+            **kwargs (Any): Passed directly to `DatapointsAPI.retrieve_arrays`.
+
+        Returns:
+            pandas.DataFrame
+
+        Examples:
+
+            Get a pandas dataframe using a single id, and use this id as column name::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> df = c.time_series.data.retrieve_dataframe(
+                ...     id=12345,
+                ...     start="2w-ago",
+                ...     end="now",
+                ...     column_names="id")
+
+            Get a pandas dataframe containing the 'average' aggregate for two time series using a 30 day granularity,
+            starting Jan 1, 1970 all the way up to present, without having the aggregate name in the column names::
+
+                >>> df = c.time_series.data.retrieve_dataframe(
+                ...     external_id=["foo", "bar"],
+                ...     aggregates=["average"],
+                ...     granularity="30d",
+                ...     include_aggregate_name=False)
+        """
+        if column_names not in {"id", "external_id"}:
+            raise ValueError(f"Given parameter {column_names=} must be one of 'id' or 'external_id'")
+
+        if (dps_arr := self.retrieve_arrays(**kwargs)) is None:
+            return pd.DataFrame(index=pd.to_datetime([]))
+        return dps_arr.to_pandas(column_names, include_aggregate_name)
 
     def retrieve_latest(
         self,
@@ -895,55 +1053,6 @@ class DatapointsAPI(APIClient):
 
     def _delete_datapoints_ranges(self, delete_range_objects: List[Union[Dict]]) -> None:
         self._post(url_path=self._RESOURCE_PATH + "/delete", json={"items": delete_range_objects})
-
-    def retrieve_dataframe(
-        self,
-        *,
-        include_aggregate_name: bool = True,
-        column_names: Literal["id", "external_id"] = "external_id",
-        **kwargs: Any,
-    ) -> pd.DataFrame:
-        """Get datapoints directly in a pandas dataframe (convenience method wrapping the `retrieve` method).
-
-        **Note**: If you have duplicated time series in your query, the dataframe columns will also contain duplicates.
-
-        See `DatapointsAPI.retrieve` method for a description of the parameters, must be passed by keywords.
-
-        Args:
-            include_aggregate_name (bool): Include 'aggregate' in the column name, e.g. `my-ts|average`. Ignored for raw time series. Default: True
-            column_names ("id" | "external_id"): Use either ids or external ids as column names. Time series missing external id will use id as backup. Default: "external_id"
-            **kwargs (Any): Passed directly to `DatapointsAPI.retrieve`.
-
-        Returns:
-            pandas.DataFrame
-
-        Examples:
-
-            Get a pandas dataframe using a single id, and use this id as column name::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> df = c.time_series.data.retrieve_dataframe(
-                ...     id=12345,
-                ...     start="2w-ago",
-                ...     end="now",
-                ...     column_names="id")
-
-            Get a pandas dataframe containing the 'average' aggregate for two time series using a 30 day granularity,
-            starting Jan 1, 1970 all the way up to present, without having the aggregate name in the column names::
-
-                >>> df = c.time_series.data.retrieve_dataframe(
-                ...     external_id=["foo", "bar"],
-                ...     aggregates=["average"],
-                ...     granularity="30d",
-                ...     include_aggregate_name=False)
-        """
-        if column_names not in {"id", "external_id"}:
-            raise ValueError(f"Given parameter {column_names=} must be one of 'id' or 'external_id'")
-
-        if (dps_arr := self.retrieve(**kwargs)) is None:
-            return pd.DataFrame(index=pd.to_datetime([]))
-        return dps_arr.to_pandas(column_names, include_aggregate_name)
 
     def insert_dataframe(self, dataframe: pd.DataFrame, external_id_headers: bool = True, dropna: bool = True) -> None:
         """Insert a dataframe.
