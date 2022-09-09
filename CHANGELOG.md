@@ -16,7 +16,7 @@ Changes are grouped as follows
 
 ## [4.5.1] - 2022-09-08
 ### Fixed
-- Fixed requests to the Diagrams and Entity Matching API by setting their API version to "beta".
+- Fixed EM and diagrams tests by using the beta clients there. This is because the mentioned APIs now check for `cdf-version` in the request headers.
 
 ## [4.5.0] - 2022-09-08
 ### Added
