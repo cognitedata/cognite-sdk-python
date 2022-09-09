@@ -13,8 +13,8 @@ from cognite.client.exceptions import CogniteAPIError, CogniteDuplicateColumnsEr
 from cognite.client.utils._time import granularity_to_ms
 from tests.utils import jsgz_load
 
-REQ_LIM_PATCH = "cognite.client._api.datapoints.{}"
-TS_QUERY_LIM_PATCH = "cognite.client.data_classes.datapoints.{}"
+DATAPOINTS_API = "cognite.client._api.datapoints.{}"
+DPS_DATA_CLASSES = "cognite.client.data_classes.datapoints.{}"
 
 
 def generate_datapoints(start: int, end: int, aggregates=None, granularity=None):
@@ -380,8 +380,8 @@ class TestGetDatapoints:
                 np.testing.assert_array_equal(dps.interpolation, [np.nan, 1, np.nan, 3, np.nan])
 
     def test_datapoints_paging_with_limit(self, cognite_client, mock_get_datapoints):
-        with patch(TS_QUERY_LIM_PATCH.format("DPS_LIMIT_AGG"), 3):
-            with patch(REQ_LIM_PATCH.format("DPS_LIMIT_AGG"), 3):
+        with patch(DPS_DATA_CLASSES.format("DPS_LIMIT_AGG"), 3):
+            with patch(DATAPOINTS_API.format("DPS_LIMIT_AGG"), 3):
                 dps_res = cognite_client.time_series.data.retrieve(
                     id=123, start=0, end=10000, aggregates=["average"], granularity="1s", limit=4
                 )
@@ -555,7 +555,7 @@ class TestGetLatest:
             assert 0 == len(res)
 
     def test_retrieve_latest_concurrent_fails(self, cognite_client, mock_retrieve_latest_with_failure):
-        with patch(REQ_LIM_PATCH.format("RETRIEVE_LATEST_LIMIT"), 2):
+        with patch(DATAPOINTS_API.format("RETRIEVE_LATEST_LIMIT"), 2):
             with pytest.raises(CogniteAPIError) as e:
                 cognite_client.time_series.data.retrieve_latest(id=[1, 2, 3])
             assert e.value.code == 500
@@ -617,8 +617,8 @@ class TestInsertDatapoints:
 
     def test_insert_datapoints_over_limit(self, cognite_client, mock_post_datapoints):
         dps = [(i * 1e11, i) for i in range(1, 11)]
-        with patch(REQ_LIM_PATCH.format("DPS_LIMIT"), 5):
-            with patch(REQ_LIM_PATCH.format("POST_DPS_OBJECTS_LIMIT"), 5):
+        with patch(DATAPOINTS_API.format("DPS_LIMIT"), 5):
+            with patch(DATAPOINTS_API.format("POST_DPS_OBJECTS_LIMIT"), 5):
                 res = cognite_client.time_series.data.insert(dps, id=1)
         assert res is None
         request_bodies = [jsgz_load(call.request.body) for call in mock_post_datapoints.calls]
@@ -666,7 +666,7 @@ class TestInsertDatapoints:
             assert i == dps["id"]
 
     def test_insert_multiple_ts_single_call__below_dps_limit_above_ts_limit(self, cognite_client, mock_post_datapoints):
-        with patch(REQ_LIM_PATCH.format("POST_DPS_OBJECTS_LIMIT"), 100):
+        with patch(DATAPOINTS_API.format("POST_DPS_OBJECTS_LIMIT"), 100):
             dps = [{"timestamp": i * 1e11, "value": i} for i in range(1, 2)]
             dps_objects = [{"id": i, "datapoints": dps} for i in range(101)]
             cognite_client.time_series.data.insert_multiple(dps_objects)

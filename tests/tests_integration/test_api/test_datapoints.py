@@ -5,13 +5,19 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from cognite.client.data_classes import DatapointsArray, DatapointsArrayList, DatapointsQuery, TimeSeries
+from cognite.client.data_classes import (
+    Datapoints,
+    DatapointsArray,
+    DatapointsArrayList,
+    DatapointsList,
+    DatapointsQuery,
+    TimeSeries,
+)
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._time import MIN_TIMESTAMP_MS, granularity_to_ms, timestamp_to_ms
 from tests.utils import set_request_limit
 
-REQ_LIM_PATCH = "cognite.client._api.datapoints.{}"
-TS_QUERY_LIM_PATCH = "cognite.client.data_classes.datapoints.{}"
+DATAPOINTS_API = "cognite.client._api.datapoints.{}"
 
 
 @pytest.fixture(scope="session")
@@ -43,62 +49,76 @@ def post_spy(cognite_client):
 
 
 class TestDatapointsAPI:
-    def test_retrieve(self, cognite_client, test_time_series):
+    @pytest.mark.parametrize(
+        "endpoint_attr, expected_type", [("retrieve", Datapoints), ("retrieve_arrays", DatapointsArray)]
+    )
+    def test_retrieve(self, cognite_client, test_time_series, endpoint_attr, expected_type):
         ts = test_time_series[0]
-        dps = cognite_client.time_series.data.retrieve(id=ts.id, start=0, end="now", limit=50)
-        assert isinstance(dps, DatapointsArray)
+        dps_endpoint = getattr(cognite_client.time_series.data, endpoint_attr)
+        dps = dps_endpoint(id=ts.id, start=0, end="now", limit=50)
+        assert isinstance(dps, expected_type)
         assert len(dps) > 0
 
-    def test_retrieve_before_epoch(self, cognite_client, test_time_series):
+    @pytest.mark.parametrize("endpoint_attr", ["retrieve", "retrieve_arrays"])
+    def test_retrieve_before_epoch(self, cognite_client, test_time_series, endpoint_attr):
         ts = test_time_series[0]
-        dps = cognite_client.time_series.data.retrieve(id=ts.id, start=MIN_TIMESTAMP_MS, end="now", limit=50)
+        dps_endpoint = getattr(cognite_client.time_series.data, endpoint_attr)
+        dps = dps_endpoint(id=ts.id, start=MIN_TIMESTAMP_MS, end="now", limit=50)
         assert len(dps) > 0
 
-    def test_retrieve_unknown(self, cognite_client, test_time_series):
+    @pytest.mark.parametrize(
+        "endpoint_attr, expected_type", [("retrieve", DatapointsList), ("retrieve_arrays", DatapointsArrayList)]
+    )
+    def test_retrieve_unknown(self, cognite_client, test_time_series, endpoint_attr, expected_type):
         ts = test_time_series[0]
-        dps_lst = cognite_client.time_series.data.retrieve(
-            id=[ts.id, 42], start=0, end="now", ignore_unknown_ids=True, limit=50
-        )
-        assert isinstance(dps_lst, DatapointsArrayList)
+        dps_endpoint = getattr(cognite_client.time_series.data, endpoint_attr)
+        dps_lst = dps_endpoint(id=[ts.id, 42], start=0, end="now", ignore_unknown_ids=True, limit=50)
+        assert isinstance(dps_lst, expected_type)
         assert 1 == len(dps_lst)
         assert 50 == len(dps_lst[0])
 
-    def test_retrieve_all_unknown(self, cognite_client, test_time_series):
-        dps_lst = cognite_client.time_series.data.retrieve(
-            id=[42], external_id="missing", start="1d-ago", end="now", ignore_unknown_ids=True
-        )
-        assert isinstance(dps_lst, DatapointsArrayList)
+    @pytest.mark.parametrize(
+        "endpoint_attr, expected_type", [("retrieve", DatapointsList), ("retrieve_arrays", DatapointsArrayList)]
+    )
+    def test_retrieve_all_unknown(self, cognite_client, test_time_series, endpoint_attr, expected_type):
+        dps_endpoint = getattr(cognite_client.time_series.data, endpoint_attr)
+        dps_lst = dps_endpoint(id=[42], external_id="missing", start="1d-ago", end="now", ignore_unknown_ids=True)
+        assert isinstance(dps_lst, expected_type)
         assert 0 == len(dps_lst)
 
-    def test_retrieve_all_unknown_single(self, cognite_client, test_time_series):
-        dps = cognite_client.time_series.data.retrieve(
-            external_id="missing", start="1d-ago", end="now", ignore_unknown_ids=True
-        )
-        assert dps is None
+    @pytest.mark.parametrize("endpoint_attr", ["retrieve", "retrieve_arrays"])
+    def test_retrieve_all_unknown_single(self, cognite_client, test_time_series, endpoint_attr):
+        dps_endpoint = getattr(cognite_client.time_series.data, endpoint_attr)
+        res = dps_endpoint(external_id="missing", start="1d-ago", end="now", ignore_unknown_ids=True)
+        assert res is None
 
-    def test_retrieve_multiple_aggregates(self, cognite_client, test_time_series):
+    @pytest.mark.parametrize("endpoint_attr", ["retrieve", "retrieve_arrays"])
+    def test_retrieve_multiple_aggregates(self, cognite_client, test_time_series, endpoint_attr):
         id1, id2, id3 = [test_time_series[i].id for i in range(3)]
         ids = [id1, id2, {"id": id3, "aggregates": ["max"]}]
 
-        dps = cognite_client.time_series.data.retrieve(
-            id=ids, start="6h-ago", end="now", aggregates=["min"], granularity="1s"
-        )
+        dps_endpoint = getattr(cognite_client.time_series.data, endpoint_attr)
+        dps = dps_endpoint(id=ids, start="6h-ago", end="now", aggregates=["min"], granularity="1s")
         df = dps.to_pandas(column_names="id")
-        assert sorted(df.columns) == sorted([f"{id1}|min", f"{id2}|min", f"{id3}|max"])
-        assert len(df) > 0
+        assert (df.columns == [f"{id1}|min", f"{id2}|min", f"{id3}|max"]).all()
+        assert not df.empty
         assert has_expected_timestamp_spacing(df, "1s")
         assert all(dp.is_step is not None for dp in dps)
         assert all(dp.is_string is not None for dp in dps)
 
-    def test_retrieve_nothing(self, cognite_client, test_time_series):
-        dpl = cognite_client.time_series.data.retrieve(id=test_time_series[0].id, start=0, end=1)
+    @pytest.mark.parametrize("endpoint_attr", ["retrieve", "retrieve_arrays"])
+    def test_retrieve_nothing(self, cognite_client, test_time_series, endpoint_attr):
+        dps_endpoint = getattr(cognite_client.time_series.data, endpoint_attr)
+        dpl = dps_endpoint(id=test_time_series[0].id, start=0, end=1)
         assert 0 == len(dpl)
         assert dpl.is_step is not None
         assert dpl.is_string is not None
 
-    def test_retrieve_multiple_raise_exception_invalid_id(self, cognite_client, test_time_series):
-        with pytest.raises(CogniteAPIError):
-            cognite_client.time_series.data.retrieve(
+    @pytest.mark.parametrize("endpoint_attr", ["retrieve", "retrieve_arrays"])
+    def test_retrieve_multiple_raise_exception_invalid_id(self, cognite_client, test_time_series, endpoint_attr):
+        with pytest.raises(CogniteAPIError, match="Exactly one of 'id' or 'externalId' must be set"):
+            dps_endpoint = getattr(cognite_client.time_series.data, endpoint_attr)
+            dps_endpoint(
                 id=[test_time_series[0].id, test_time_series[1].id, 0],
                 start="1m-ago",
                 end="now",
@@ -106,23 +126,16 @@ class TestDatapointsAPI:
                 granularity="1s",
             )
 
-    def test_stop_pagination_in_time(self, cognite_client, test_time_series, post_spy):
-        limit = 152_225
-        ts = test_time_series[0]
-        dps = cognite_client.time_series.data.retrieve(id=ts.id, start=0, end="now", limit=limit)
-        assert limit == len(dps)
-        # Todo Adjust lower limit with new implementation
-        # first page 100k, counts 1, paginate 2 windows (+1 potential for 1st day uncertainty)
-        assert 3 <= cognite_client.time_series.data._post.call_count <= 4
+    @pytest.mark.parametrize("endpoint_attr", ["retrieve", "retrieve_arrays"])
+    def test_retrieve_include_outside_points(self, cognite_client, test_time_series, endpoint_attr):
+        dps_endpoint = getattr(cognite_client.time_series.data, endpoint_attr)
+        kwargs = dict(id=test_time_series[0].id, start=timestamp_to_ms("360m-ago"), end=timestamp_to_ms("359m-ago"))
+        outside_yes = dps_endpoint(include_outside_points=True, **kwargs)
+        outside_noo = dps_endpoint(include_outside_points=False, **kwargs)
 
-    def test_retrieve_include_outside_points(self, cognite_client, test_time_series):
-        kwargs = dict(id=test_time_series[0].id, start=timestamp_to_ms("6h-ago"), end=timestamp_to_ms("1h-ago"))
-        dps = cognite_client.time_series.data.retrieve(include_outside_points=False, **kwargs)
-
-        outside_included = cognite_client.time_series.data.retrieve(include_outside_points=True, **kwargs).to_pandas()
-
-        assert outside_included.duplicated().sum() == 0
-        assert len(dps) + 1 <= len(outside_included) <= len(dps) + 2
+        assert len(outside_yes.timestamp) == len(set(outside_yes.timestamp))
+        # TODO: fix check after making test non-relative in time:
+        assert len(outside_noo) + 1 <= len(outside_yes) <= len(outside_noo) + 2
 
     def test_retrieve_include_outside_points_with_limit(self, cognite_client, test_time_series, post_spy):
         kwargs = dict(
@@ -182,7 +195,7 @@ class TestDatapointsAPI:
         assert df.shape[1] == 1
 
     def test_retrieve_string(self, cognite_client):
-        dps = cognite_client.datapoints.retrieve(external_id="test__string_b", start="2d-ago", end="now")
+        dps = cognite_client.time_series.data.retrieve(external_id="test__string_b", start="2d-ago", end="now")
         assert len(dps) > 100_000
 
     def test_query(self, cognite_client, test_time_series):
@@ -230,7 +243,7 @@ class TestDatapointsAPI:
         ]  # more than one page
         assert len(ids) > 10
 
-        with patch(REQ_LIM_PATCH.format("RETRIEVE_LATEST_LIMIT"), 10):
+        with patch(DATAPOINTS_API.format("RETRIEVE_LATEST_LIMIT"), 10):
             res = cognite_client.time_series.data.retrieve_latest(id=ids, ignore_unknown_ids=True)
 
         assert {dps.id for dps in res}.issubset(set(ids))
@@ -246,13 +259,13 @@ class TestDatapointsAPI:
 
     def test_insert(self, cognite_client, new_ts, post_spy):
         datapoints = [(datetime(year=2018, month=1, day=1, hour=1, minute=i), i) for i in range(60)]
-        with patch(REQ_LIM_PATCH.format("DPS_LIMIT"), 30), patch(REQ_LIM_PATCH.format("POST_DPS_OBJECTS_LIMIT"), 30):
+        with patch(DATAPOINTS_API.format("DPS_LIMIT"), 30), patch(DATAPOINTS_API.format("POST_DPS_OBJECTS_LIMIT"), 30):
             cognite_client.time_series.data.insert(datapoints, id=new_ts.id)
         assert 2 == cognite_client.time_series.data._post.call_count
 
     def test_insert_before_epoch(self, cognite_client, new_ts, post_spy):
         datapoints = [(datetime(year=1950, month=1, day=1, hour=1, minute=i), i) for i in range(60)]
-        with patch(REQ_LIM_PATCH.format("DPS_LIMIT"), 30), patch(REQ_LIM_PATCH.format("POST_DPS_OBJECTS_LIMIT"), 30):
+        with patch(DATAPOINTS_API.format("DPS_LIMIT"), 30), patch(DATAPOINTS_API.format("POST_DPS_OBJECTS_LIMIT"), 30):
             cognite_client.time_series.data.insert(datapoints, id=new_ts.id)
         assert 2 == cognite_client.time_series.data._post.call_count
 
@@ -277,7 +290,7 @@ class TestDatapointsAPI:
             {new_ts.id: np.random.normal(0, 1, 30)},
             index=pd.date_range(start="2018", freq="1D", periods=30),
         )
-        with patch(REQ_LIM_PATCH.format("DPS_LIMIT"), 20), patch(REQ_LIM_PATCH.format("POST_DPS_OBJECTS_LIMIT"), 20):
+        with patch(DATAPOINTS_API.format("DPS_LIMIT"), 20), patch(DATAPOINTS_API.format("POST_DPS_OBJECTS_LIMIT"), 20):
             cognite_client.time_series.data.insert_dataframe(df, external_id_headers=False)
         assert 2 == cognite_client.time_series.data._post.call_count
 
