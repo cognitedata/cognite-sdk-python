@@ -23,6 +23,23 @@ jobs:
         run: |
           pre-commit run --all-files
 
+  build_docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+
+      - name: Install core dependencies
+        run: |
+          python3 -m pip install --upgrade pip "poetry<1.2.0"
+          poetry config virtualenvs.create false
+          poetry install
+
+      - name: Build docs
+        run: cd docs && make html SPHINXOPTS="-W --keep-going"
+
   test_core:
     runs-on: ubuntu-latest
     steps:
@@ -85,6 +102,3 @@ jobs:
 
     - name: Build package
       run: poetry build
-
-    - name: Build docs
-      run: cd docs && make html SPHINXOPTS="-W --keep-going"

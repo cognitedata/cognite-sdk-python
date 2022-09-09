@@ -2,8 +2,6 @@ import dataclasses
 import json
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 
-import numpy as np
-
 from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.utils._auxiliary import to_snake_case
@@ -282,7 +280,10 @@ class FeatureList(CogniteResourceList):
 
 def nan_to_none(column_value: Any) -> Any:
     """Convert NaN value to None."""
-    return None if np.isscalar(column_value) and np.isnan(column_value) else column_value
+    from pandas import isna
+    from pandas.api.types import is_scalar
+
+    return None if is_scalar(column_value) and isna(column_value) else column_value
 
 
 class FeatureAggregate(CogniteResource):
