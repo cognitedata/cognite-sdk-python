@@ -14,6 +14,9 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [4.5.1] - 2022-09-08
+### Fixed
+- Fixed requests to the Diagrams and Entity Matching API by setting their API version to "beta".
 
 ## [4.5.0] - 2022-09-08
 ### Added
