@@ -15,6 +15,10 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 
+## [4.5.1] - 2022-09-08
+### Fixed
+- Don't depend on typing_extensions module, since we don't have it as a dependency.
+
 ## [4.5.0] - 2022-09-08
 ### Added
 - Vision extract implementation, providing access to the corresponding [Vision Extract API](https://docs.cognite.com/api/v1/#tag/Vision).
