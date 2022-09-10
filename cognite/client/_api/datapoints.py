@@ -797,8 +797,8 @@ class DatapointsAPI(APIClient):
             limit (int): Maximum number of datapoints to return for each time series. Default: None (no limit)
             include_outside_points (bool): Whether or not to include outside points. Not allowed when fetching aggregates. Default: False
             ignore_unknown_ids (bool): Whether or not to ignore missing time series rather than raising an exception. Default: False
-            uniform_index (bool): If only querying aggregates AND a single granularity is used, specifying `uniform_index=True` will return a dataframe with an equidistant
-                datetime index from the earliest `start` to the latest `end` (missing values will be NaNs). If these requirements are not met, a ValueError is raised. Default: False
+            uniform_index (bool): If only querying aggregates AND a single granularity is used AND no limit is used, specifying `uniform_index=True` will return a dataframe with an
+                equidistant datetime index from the earliest `start` to the latest `end` (missing values will be NaNs). If these requirements are not met, a ValueError is raised. Default: False
             include_aggregate_name (bool): Include 'aggregate' in the column name, e.g. `my-ts|average`. Ignored for raw time series. Default: True
             column_names ("id" | "external_id"): Use either ids or external ids as column names. Time series missing external id will use id as backup. Default: "external_id"
 
@@ -859,20 +859,22 @@ class DatapointsAPI(APIClient):
         fetcher = dps_fetch_selector(self, user_queries=[query])
         if uniform_index:
             grans_given = set(q.granularity for q in fetcher.all_queries)
-            if fetcher.raw_queries or len(grans_given) > 1:
+            is_limited = any(q.limit is not None for q in fetcher.all_queries)
+            if fetcher.raw_queries or len(grans_given) > 1 or is_limited:
                 raise ValueError(
                     "Cannot return a uniform index when asking for aggregates with multiple granularities "
-                    f"({grans_given}) OR when some queries are for raw datapoints."
+                    f"({grans_given}) OR when (partly) querying raw datapoints OR when a limit is used."
                 )
         df = fetcher.fetch_all_datapoints(use_numpy=True).to_pandas(column_names, include_aggregate_name)
         if not uniform_index:
             return df
 
+        pd = local_import("pandas")
         start = pd.Timestamp(min(q.start for q in fetcher.agg_queries), unit="ms")
         end = pd.Timestamp(max(q.end for q in fetcher.agg_queries), unit="ms")
         (granularity,) = grans_given
         # Pandas understand "Cognite granularities" except `m` (minutes) which we must translate:
-        return df.reindex(pd.date_range(start=start, end=end, freq=granularity.replace("m", "T")))
+        return df.reindex(pd.date_range(start=start, end=end, freq=granularity.replace("m", "T"), inclusive="left"))
 
     def retrieve_latest(
         self,
