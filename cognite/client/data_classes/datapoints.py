@@ -547,7 +547,7 @@ class DatapointsArrayList(CogniteResourceList):
         pd = cast(Any, local_import("pandas"))
         if dfs := [arr.to_pandas(column_names, include_aggregate_name) for arr in self.data]:
             return pd.concat(dfs, axis="columns")
-        return pd.DataFrame()
+        return pd.DataFrame(index=pd.to_datetime([]))
 
     def dump(self, camel_case: bool = False, convert_timestamps: bool = False) -> List[Dict[str, Any]]:
         """Dump the instance into a json serializable Python data type.

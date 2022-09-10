@@ -769,7 +769,16 @@ class DatapointsAPI(APIClient):
 
     def retrieve_dataframe(
         self,
-        *,
+        start: Union[int, str, datetime, None] = None,
+        end: Union[int, str, datetime, None] = None,
+        id: Optional[DatapointsIdTypes] = None,
+        external_id: Optional[DatapointsExternalIdTypes] = None,
+        aggregates: Optional[List[str]] = None,
+        granularity: Optional[str] = None,
+        limit: Optional[int] = None,
+        include_outside_points: bool = False,
+        ignore_unknown_ids: bool = False,
+        uniform_index: bool = False,
         include_aggregate_name: bool = True,
         column_names: Literal["id", "external_id"] = "external_id",
         **kwargs: Any,
@@ -778,43 +787,92 @@ class DatapointsAPI(APIClient):
 
         **Note**: If you have duplicated time series in your query, the dataframe columns will also contain duplicates.
 
-        See `DatapointsAPI.retrieve_arrays` method for a description of the parameters, must be passed by keywords.
-
         Args:
+            start (Union[int, str, datetime]): Inclusive start. Default: 1970-01-01 UTC.
+            end (Union[int, str, datetime]): Exclusive end. Default: "now"
+            id (DatapointsIdTypes): Id, dict (with id) or (mixed) list of these. See examples below.
+            external_id (DatapointsExternalIdTypes): External id, dict (with external id) or (mixed) list of these. See examples below.
+            aggregates (List[str]): List of aggregate functions to apply. Default: No aggregates (raw datapoints)
+            granularity (str): The granularity to fetch aggregates at. e.g. '1s', '2h', '10d'. Default: None.
+            limit (int): Maximum number of datapoints to return for each time series. Default: None (no limit)
+            include_outside_points (bool): Whether or not to include outside points. Not allowed when fetching aggregates. Default: False
+            ignore_unknown_ids (bool): Whether or not to ignore missing time series rather than raising an exception. Default: False
+            uniform_index (bool): If only querying aggregates AND a single granularity is used, specifying `uniform_index=True` will return a dataframe with an equidistant
+                datetime index from the earliest `start` to the latest `end` (missing values will be NaNs). If these requirements are not met, a ValueError is raised. Default: False
             include_aggregate_name (bool): Include 'aggregate' in the column name, e.g. `my-ts|average`. Ignored for raw time series. Default: True
             column_names ("id" | "external_id"): Use either ids or external ids as column names. Time series missing external id will use id as backup. Default: "external_id"
-            **kwargs (Any): Passed directly to `DatapointsAPI.retrieve_arrays`.
 
         Returns:
             pandas.DataFrame
 
         Examples:
 
-            Get a pandas dataframe using a single id, and use this id as column name::
+            Get a pandas dataframe using a single id, and use this id as column name, with no more than 100 datapoints::
 
                 >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> df = c.time_series.data.retrieve_dataframe(
+                >>> client = CogniteClient()
+                >>> df = client.time_series.data.retrieve_dataframe(
                 ...     id=12345,
                 ...     start="2w-ago",
                 ...     end="now",
+                ...     limit=100,
                 ...     column_names="id")
+
+            Get the  pandas dataframe with a uniform index (fixed spacing between points) of 1 day, for two time series with
+            individually specified aggregates, from 1990 through 2020::
+
+                >>> from datetime import datetime, timezone
+                >>> df = client.time_series.data.retrieve_dataframe(
+                ...     id=[
+                ...         {"external_id": "foo", "aggregates": ["discrete_variance"]},
+                ...         {"external_id": "bar", "aggregates": ["total_variation", "continuous_variance"]},
+                ...     ],
+                ...     granularity="1d",
+                ...     start=datetime(1990, 1, 1, tzinfo=timezone.utc),
+                ...     end=datetime(2020, 12, 31, tzinfo=timezone.utc),
+                ...     uniform_index=True)
 
             Get a pandas dataframe containing the 'average' aggregate for two time series using a 30 day granularity,
             starting Jan 1, 1970 all the way up to present, without having the aggregate name in the column names::
 
-                >>> df = c.time_series.data.retrieve_dataframe(
+                >>> df = client.time_series.data.retrieve_dataframe(
                 ...     external_id=["foo", "bar"],
                 ...     aggregates=["average"],
                 ...     granularity="30d",
                 ...     include_aggregate_name=False)
         """
+        local_import("numpy")  # Verify that numpy is available or raise CogniteImportError
         if column_names not in {"id", "external_id"}:
             raise ValueError(f"Given parameter {column_names=} must be one of 'id' or 'external_id'")
 
-        if (dps_arr := self.retrieve_arrays(**kwargs)) is None:
-            return pd.DataFrame(index=pd.to_datetime([]))
-        return dps_arr.to_pandas(column_names, include_aggregate_name)
+        query = DatapointsQuery(
+            start=start,
+            end=end,
+            id=id,
+            external_id=external_id,
+            aggregates=aggregates,
+            granularity=granularity,
+            limit=limit,
+            include_outside_points=include_outside_points,
+            ignore_unknown_ids=ignore_unknown_ids,
+        )
+        fetcher = dps_fetch_selector(self, user_queries=[query])
+        if uniform_index:
+            grans_given = set(q.granularity for q in fetcher.all_queries)
+            if fetcher.raw_queries or len(grans_given) > 1:
+                raise ValueError(
+                    "Cannot return a uniform index when asking for aggregates with multiple granularities "
+                    f"({grans_given}) OR when some queries are for raw datapoints."
+                )
+        df = fetcher.fetch_all_datapoints(use_numpy=True).to_pandas(column_names, include_aggregate_name)
+        if not uniform_index:
+            return df
+
+        start = pd.Timestamp(min(q.start for q in fetcher.agg_queries), unit="ms")
+        end = pd.Timestamp(max(q.end for q in fetcher.agg_queries), unit="ms")
+        (granularity,) = grans_given
+        # Pandas understand "Cognite granularities" except `m` (minutes) which we must translate:
+        return df.reindex(pd.date_range(start=start, end=end, freq=granularity.replace("m", "T")))
 
     def retrieve_latest(
         self,
