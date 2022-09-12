@@ -841,7 +841,7 @@ class DatapointsAPI(APIClient):
                 ...     granularity="30d",
                 ...     include_aggregate_name=False)
         """
-        local_import("numpy")  # Verify that numpy is available or raise CogniteImportError
+        _, pd = local_import("numpy", "pandas")  # Verify that deps are available or raise CogniteImportError
         if column_names not in {"id", "external_id"}:
             raise ValueError(f"Given parameter {column_names=} must be one of 'id' or 'external_id'")
 
@@ -869,7 +869,6 @@ class DatapointsAPI(APIClient):
         if not uniform_index:
             return df
 
-        pd = local_import("pandas")
         start = pd.Timestamp(min(q.start for q in fetcher.agg_queries), unit="ms")
         end = pd.Timestamp(max(q.end for q in fetcher.agg_queries), unit="ms")
         (granularity,) = grans_given

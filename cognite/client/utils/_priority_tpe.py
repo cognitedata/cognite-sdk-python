@@ -96,9 +96,8 @@ class PriorityThreadPoolExecutor(ThreadPoolExecutor):
             future = _base.Future()
             work_item = _WorkItem(future, fn, args, kwargs)
 
-            self._work_queue.put(
-                (priority, monotonic_ns() + random(), work_item)
-            )  # monotonic_ns() to break ties, but keep order
+            # `monotonic_ns + random` to break ties, but keep order:
+            self._work_queue.put((priority, monotonic_ns() + random(), work_item))
             self._adjust_thread_count()
             return future
 
