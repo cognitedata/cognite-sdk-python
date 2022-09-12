@@ -276,8 +276,10 @@ class TransformationsAPI(APIClient):
             item = item.copy()
             item._cognite_client = self._cognite_client
             item._process_credentials(keep_none=True)
-        else:
-            raise TypeError("item must be Sequence[Transformation] or Transformation")
+        elif not isinstance(item, TransformationUpdate):
+            raise TypeError(
+                "item must be Sequence[Transformation], Transformation, Sequence[TransformationUpdate] or TransformationUpdate"
+            )
 
         return self._update_multiple(
             list_cls=TransformationList, resource_cls=Transformation, update_cls=TransformationUpdate, items=item

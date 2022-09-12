@@ -156,7 +156,7 @@ class Function(CogniteResource):
         """
         latest = self._cognite_client.functions.retrieve(id=self.id)
         if latest is None:
-            return
+            return None
 
         for attribute in self.__dict__:
             if attribute.startswith("_"):

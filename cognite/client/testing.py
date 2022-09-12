@@ -54,7 +54,7 @@ class CogniteClientMock(MagicMock):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         if "parent" in kwargs:
             super().__init__(*args, **kwargs)
-            return
+            return None
         super().__init__(spec=CogniteClient, *args, **kwargs)
 
         self.datapoints = MagicMock(spec=DatapointsAPI)

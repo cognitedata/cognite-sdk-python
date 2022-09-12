@@ -74,7 +74,7 @@ class _OAuthCredentialProviderWithTokenRefresh(CredentialProvider):
     @abstractmethod
     def _refresh_access_token(self) -> Tuple[str, float]:
         """This method should return the access_token and expiry time"""
-        raise NotImplementedError
+        ...
 
     @classmethod
     def __should_refresh_token(cls, token: Optional[str], expires_at: Optional[float]) -> bool:

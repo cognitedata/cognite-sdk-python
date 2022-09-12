@@ -1,5 +1,5 @@
 import numbers
-from typing import Dict, Generic, Iterable, List, Optional, Sequence, TypeVar, Union, cast, overload
+from typing import Dict, Generic, Iterable, List, Optional, Sequence, Tuple, TypeVar, Union, cast, overload
 
 T_ID = TypeVar("T_ID", int, str)
 
@@ -12,14 +12,14 @@ class Identifier(Generic[T_ID]):
     def of_either(cls, id: Optional[int], external_id: Optional[str]) -> "Identifier":
         if (id is None) == (external_id is None):
             raise ValueError("Exactly one of id or external id must be specified")
-        return cls(id or external_id)
+        return Identifier(id or external_id)
 
     @classmethod
     def load(cls, id: Optional[int] = None, external_id: Optional[str] = None) -> "Identifier":
         if id is not None:
-            return cls(id)
+            return Identifier(id)
         if external_id is not None:
-            return cls(external_id)
+            return Identifier(external_id)
         raise ValueError("At least one of id and external id must be specified")
 
     def as_primitive(self) -> T_ID:
@@ -33,7 +33,7 @@ class Identifier(Generic[T_ID]):
         else:
             return {"id": self.__value}
 
-    def as_tuple(self, camel_case: bool = True) -> Dict[str, T_ID]:
+    def as_tuple(self, camel_case: bool = True) -> Tuple[str, T_ID]:
         if isinstance(self.__value, str):
             if camel_case:
                 return ("externalId", self.__value)

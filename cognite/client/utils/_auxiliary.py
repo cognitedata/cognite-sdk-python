@@ -15,12 +15,14 @@ import string
 import warnings
 from decimal import Decimal
 from types import ModuleType
-from typing import Any, Dict, List, Sequence, Tuple, Union
+from typing import Any, Dict, Iterator, List, Sequence, Tuple, TypeVar, Union
 from urllib.parse import quote
 
 import cognite.client
 from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._version_checker import get_newest_version_in_major_release
+
+T = TypeVar("T")
 
 
 @functools.lru_cache(maxsize=128)
@@ -35,8 +37,12 @@ def to_snake_case(camel_case_string: str) -> str:
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
 
 
-def convert_all_keys_to_camel_case(d: Dict[str, object]) -> Dict[str, object]:
+def convert_all_keys_to_camel_case(d: Dict[str, Any]) -> Dict[str, Any]:
     return dict(zip(map(to_camel_case, d.keys()), d.values()))
+
+
+def convert_all_keys_to_snake_case(d: Dict[str, Any]) -> Dict[str, Any]:
+    return dict(zip(map(to_snake_case, d.keys()), d.values()))
 
 
 def json_dump_default(x: Any) -> Any:
@@ -144,7 +150,7 @@ class PriorityQueue:
         return len(self.__heap) > 0
 
 
-def split_into_n_parts(seq: Sequence, /, n: int):
+def split_into_n_parts(seq: Sequence[T], /, n: int) -> Iterator[Sequence[T]]:
     # NB: Chaotic sampling: jumps n for each starting position
     yield from (seq[i::n] for i in range(n))
 

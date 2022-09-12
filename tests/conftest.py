@@ -31,7 +31,7 @@ def pytest_addoption(parser):
 
 def pytest_collection_modifyitems(config, items):
     if config.getoption("--test-deps-only-core"):
-        return
+        return None
     skip_core = pytest.mark.skip(reason="need --test-deps-only-core option to run")
     for item in items:
         if "coredeps" in item.keywords:

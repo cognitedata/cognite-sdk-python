@@ -5,24 +5,16 @@ from datetime import datetime, timezone
 from random import random
 from unittest.mock import patch
 
-import numpy as np
 import pytest
 
 from cognite.client._api.datapoints import DatapointsBin
-from cognite.client.data_classes import (
-    Datapoint,
-    Datapoints,
-    DatapointsArray,
-    DatapointsArrayList,
-    DatapointsList,
-    DatapointsQuery,
-)
+from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, DatapointsQuery
 from cognite.client.exceptions import CogniteAPIError, CogniteDuplicateColumnsError, CogniteNotFoundError
 from cognite.client.utils._time import granularity_to_ms
 from tests.utils import jsgz_load
 
-REQ_LIM_PATCH = "cognite.client._api.datapoints.{}"
-TS_QUERY_LIM_PATCH = "cognite.client.data_classes.datapoints.{}"
+DATAPOINTS_API = "cognite.client._api.datapoints.{}"
+DPS_DATA_CLASSES = "cognite.client.data_classes.datapoints.{}"
 
 
 def generate_datapoints(start: int, end: int, aggregates=None, granularity=None):
@@ -333,7 +325,7 @@ def assert_dps_response_is_correct(calls, dps_object):
 class TestGetDatapoints:
     def test_retrieve_datapoints_by_id(self, cognite_client, mock_get_datapoints):
         dps_res = cognite_client.time_series.data.retrieve(id=123, start=1000000, end=1100000)
-        assert isinstance(dps_res, DatapointsArray)
+        assert isinstance(dps_res, Datapoints)
         assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
 
     def test_retrieve_datapoints_500(self, cognite_client, rsps):
@@ -368,10 +360,13 @@ class TestGetDatapoints:
         for dps_res in dps_res_list:
             assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
 
+    @pytest.mark.dsl  # TODO: Revert to old code and use `retrieve`, not `retrieve_arrays`
     def test_retrieve_datapoints_some_aggregates_omitted(
         self, cognite_client, mock_get_datapoints_one_ts_has_missing_aggregates
     ):
-        dps_res_list = cognite_client.time_series.data.retrieve(
+        import numpy as np
+
+        dps_res_list = cognite_client.time_series.data.retrieve_arrays(
             id={"id": 1, "aggregates": ["average"]},
             external_id={"externalId": "def", "aggregates": ["interpolation"]},
             start=0,
@@ -384,40 +379,9 @@ class TestGetDatapoints:
             elif dps.id == 2:
                 np.testing.assert_array_equal(dps.interpolation, [np.nan, 1, np.nan, 3, np.nan])
 
-    def test_datapoints_paging(self, cognite_client, mock_get_datapoints, set_dps_workers):
-        set_dps_workers(6)
-        with patch(TS_QUERY_LIM_PATCH.format("DPS_LIMIT_AGG"), 2):
-            with patch(REQ_LIM_PATCH.format("DPS_LIMIT_AGG"), 2):
-                cognite_client.time_series.data.retrieve(
-                    id=123, start=0, end=1_000 * 2 * 6, aggregates=["average"], granularity="1s"
-                )
-        assert 6 == len(mock_get_datapoints.calls)
-
-    def test_datapoints_concurrent(self, cognite_client, mock_get_datapoints):
-        with patch(TS_QUERY_LIM_PATCH.format("DPS_LIMIT_AGG"), 20):
-            with patch(REQ_LIM_PATCH.format("DPS_LIMIT_AGG"), 20):
-                dps_res = cognite_client.time_series.data.retrieve(
-                    id=123, start=0, end=100_000, aggregates=["average"], granularity="1s"
-                )
-        requested_windows = sorted(
-            [
-                (jsgz_load(call.request.body)["items"][0]["start"], jsgz_load(call.request.body)["items"][0]["end"])
-                for call in mock_get_datapoints.calls
-            ],
-            key=lambda x: x[0],
-        )
-        assert [
-            (0, 20_000),
-            (20_000, 40_000),
-            (40_000, 60_000),
-            (60_000, 80_000),
-            (80_000, 100_000),
-        ] == requested_windows
-        assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
-
     def test_datapoints_paging_with_limit(self, cognite_client, mock_get_datapoints):
-        with patch(TS_QUERY_LIM_PATCH.format("DPS_LIMIT_AGG"), 3):
-            with patch(REQ_LIM_PATCH.format("DPS_LIMIT_AGG"), 3):
+        with patch(DPS_DATA_CLASSES.format("DPS_LIMIT_AGG"), 3):
+            with patch(DATAPOINTS_API.format("DPS_LIMIT_AGG"), 3):
                 dps_res = cognite_client.time_series.data.retrieve(
                     id=123, start=0, end=10000, aggregates=["average"], granularity="1s", limit=4
                 )
@@ -427,7 +391,7 @@ class TestGetDatapoints:
         ids = [1, 2, 3]
         external_ids = ["4", "5", "6"]
         dps_res_list = cognite_client.time_series.data.retrieve(id=ids, external_id=external_ids, start=0, end=100000)
-        assert isinstance(dps_res_list, DatapointsArrayList), type(dps_res_list)
+        assert isinstance(dps_res_list, DatapointsList), type(dps_res_list)
         for dps_res in dps_res_list:
             if dps_res.id in ids:
                 ids.remove(dps_res.id)
@@ -462,7 +426,7 @@ class TestGetDatapoints:
 class TestQueryDatapoints:
     def test_query_single(self, cognite_client, mock_get_datapoints):
         dps_res = cognite_client.time_series.data.query(query=DatapointsQuery(id=1, start=0, end=10000))
-        assert isinstance(dps_res, DatapointsArrayList)
+        assert isinstance(dps_res, DatapointsList)
         assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res[0])
 
     def test_query_multiple(self, cognite_client, mock_get_datapoints):
@@ -472,13 +436,13 @@ class TestQueryDatapoints:
                 DatapointsQuery(external_id="2", start=10000, end=20000, aggregates=["average"], granularity="2s"),
             ]
         )
-        assert isinstance(dps_res_list, DatapointsArrayList)
+        assert isinstance(dps_res_list, DatapointsList)
         for dps_res in dps_res_list:
             assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
 
     def test_query_empty(self, cognite_client, mock_get_datapoints_empty):
         dps_res = cognite_client.time_series.data.query(query=DatapointsQuery(id=1, start=0, end=10000))
-        assert isinstance(dps_res, DatapointsArrayList)
+        assert isinstance(dps_res, DatapointsList)
         assert 1 == len(dps_res)
         assert 0 == len(dps_res[0])
 
@@ -591,7 +555,7 @@ class TestGetLatest:
             assert 0 == len(res)
 
     def test_retrieve_latest_concurrent_fails(self, cognite_client, mock_retrieve_latest_with_failure):
-        with patch(REQ_LIM_PATCH.format("RETRIEVE_LATEST_LIMIT"), 2):
+        with patch(DATAPOINTS_API.format("RETRIEVE_LATEST_LIMIT"), 2):
             with pytest.raises(CogniteAPIError) as e:
                 cognite_client.time_series.data.retrieve_latest(id=[1, 2, 3])
             assert e.value.code == 500
@@ -653,8 +617,8 @@ class TestInsertDatapoints:
 
     def test_insert_datapoints_over_limit(self, cognite_client, mock_post_datapoints):
         dps = [(i * 1e11, i) for i in range(1, 11)]
-        with patch(REQ_LIM_PATCH.format("DPS_LIMIT"), 5):
-            with patch(REQ_LIM_PATCH.format("POST_DPS_OBJECTS_LIMIT"), 5):
+        with patch(DATAPOINTS_API.format("DPS_LIMIT"), 5):
+            with patch(DATAPOINTS_API.format("POST_DPS_OBJECTS_LIMIT"), 5):
                 res = cognite_client.time_series.data.insert(dps, id=1)
         assert res is None
         request_bodies = [jsgz_load(call.request.body) for call in mock_post_datapoints.calls]
@@ -702,7 +666,7 @@ class TestInsertDatapoints:
             assert i == dps["id"]
 
     def test_insert_multiple_ts_single_call__below_dps_limit_above_ts_limit(self, cognite_client, mock_post_datapoints):
-        with patch(REQ_LIM_PATCH.format("POST_DPS_OBJECTS_LIMIT"), 100):
+        with patch(DATAPOINTS_API.format("POST_DPS_OBJECTS_LIMIT"), 100):
             dps = [{"timestamp": i * 1e11, "value": i} for i in range(1, 2)]
             dps_objects = [{"id": i, "datapoints": dps} for i in range(101)]
             cognite_client.time_series.data.insert_multiple(dps_objects)
@@ -1142,7 +1106,7 @@ class TestPandasIntegration:
 
         timestamps = [1500000000000, 1510000000000, 1520000000000, 1530000000000]
         df = pd.DataFrame(
-            {"123": [1, 2, np.inf, 4], "456": [5.0, 6.0, 7.0, 8.0], "xyz": ["a", "b", "c", "d"]},
+            {"123": [1, 2, math.inf, 4], "456": [5.0, 6.0, 7.0, 8.0], "xyz": ["a", "b", "c", "d"]},
             index=pd.to_datetime(timestamps, unit="ms"),
         )
         with pytest.raises(ValueError, match=re.escape("contains one or more (+/-) Infinity")):
@@ -1222,182 +1186,4 @@ class TestDataPoster:
 
 
 class TestDataFetcher:
-    pass
-    # @pytest.mark.parametrize(
-    #     "q, exc, message",
-    #     [
-    #         (
-    #             DatapointsQuery(start=1, end=2, id=1, aggregates=["average"]),
-    #             ValueError,
-    #             "granularity must also be provided",
-    #         ),
-    #         (DatapointsQuery(start=1, end=2, id=1, granularity="1d"), ValueError, "aggregates must also be provided"),
-    #         (
-    #             DatapointsQuery(start=1, end=2, id=[1, 1], granularity="1d", aggregates=["average"]),
-    #             ValueError,
-    #             "identifier '1' is duplicated in query",
-    #         ),
-    #         (
-    #             DatapointsQuery(
-    #                 start=1, end=2, id=[1, {"id": 1, "aggregates": ["max"]}], granularity="1d", aggregates=["average"]
-    #             ),
-    #             ValueError,
-    #             "identifier '1' is duplicated in query",
-    #         ),
-    #     ],
-    # )
-    # def test_validate_query(self, cognite_client, q, exc, message):
-    #     with pytest.raises(exc, match=message):
-    #         DatapointsFetcher(cognite_client.time_series.data).fetch(q)
-
-    # @pytest.mark.parametrize(
-    #     "fn",
-    #     [
-    #         lambda cognite_client: (
-    #             [_DPTask(cognite_client.time_series.data, 1, 2, {}, None, None, None, None, False)],
-    #             [_DPTask(cognite_client.time_series.data, 1, 2, {}, None, None, None, None, False)],
-    #         ),
-    #         lambda cognite_client: (
-    #             [
-    #                 _DPTask(
-    #                     cognite_client.time_series.data,
-    #                     datetime(2018, 1, 1),
-    #                     datetime(2019, 1, 1),
-    #                     {},
-    #                     None,
-    #                     None,
-    #                     None,
-    #                     None,
-    #                     False,
-    #                 )
-    #             ],
-    #             [_DPTask(cognite_client.time_series.data, 1514764800000, 1546300800000, {}, None, None, None, None, False)],
-    #         ),
-    #         lambda cognite_client: (
-    #             [_DPTask(cognite_client.time_series.data, granularity_to_ms("1h"), granularity_to_ms(("25h")), {}, ["average"], "1d", None, None, False)],
-    #             [_DPTask(cognite_client.time_series.data, granularity_to_ms("1d"), granularity_to_ms("2d"), {}, ["average"], "1d", None, None, False)],
-    #         ),
-    #     ],
-    # )
-    # def test_preprocess_tasks(self, cognite_client, fn):
-    #     q, expected_q = fn(cognite_client)
-    #     DatapointsFetcher(cognite_client.time_series.data)._preprocess_tasks(q)
-    #     for actual, expected in zip(q, expected_q):
-    #         assert expected.start == actual.start
-    #         assert expected.end == actual.end
-
-    # @pytest.mark.parametrize(
-    #     "ts, granularity, expected_output",
-    #     [
-    #         (granularity_to_ms("1h"), "1d", granularity_to_ms("1d")),
-    #         (granularity_to_ms("23h"), "10d", granularity_to_ms("1d")),
-    #         (granularity_to_ms("24h"), "5d", granularity_to_ms("1d")),
-    #         (granularity_to_ms("25h"), "3d", granularity_to_ms("2d")),
-    #         (granularity_to_ms("1m"), "1h", granularity_to_ms("1h")),
-    #         (granularity_to_ms("90s"), "10m", granularity_to_ms("2m")),
-    #         (granularity_to_ms("90s"), "1s", granularity_to_ms("90s")),
-    #     ],
-    # )
-    # def test_align_with_granularity_unit(self, cognite_client, ts, granularity, expected_output):
-    #     assert expected_output == DatapointsFetcher._align_with_granularity_unit(ts, granularity)
-
-    # @pytest.mark.parametrize(
-    #     "start, end, granularity, request_limit, user_limit, expected_output",
-    #     [
-    #         (0, granularity_to_ms("20d"), "10d", 2, None, [_DPWindow(0, 1728000000)]),
-    #         (0, granularity_to_ms("20d"), "10d", 1, None, [_DPWindow(0, 864000000), _DPWindow(864000000, 1728000000)]),
-    #         (
-    #             0,
-    #             granularity_to_ms("6d"),
-    #             "1s",
-    #             2000,
-    #             None,
-    #             [_DPWindow(0, granularity_to_ms("2d")), _DPWindow(granularity_to_ms("2d"), granularity_to_ms("4d")), _DPWindow(granularity_to_ms("4d"), granularity_to_ms("6d"))],
-    #         ),
-    #         (
-    #             0,
-    #             granularity_to_ms("3d"),
-    #             None,
-    #             1000,
-    #             None,
-    #             [_DPWindow(0, granularity_to_ms("1d")), _DPWindow(granularity_to_ms("1d"), granularity_to_ms("2d")), _DPWindow(granularity_to_ms("2d"), granularity_to_ms("3d"))],
-    #         ),
-    #         (0, granularity_to_ms("1h"), None, 2000, None, [_DPWindow(0, 3600000)]),
-    #         (0, granularity_to_ms("1s"), None, 1, None, [_DPWindow(0, 1000)]),
-    #         (0, granularity_to_ms("1s"), None, 1, None, [_DPWindow(0, 1000)]),
-    #         (0, granularity_to_ms("3d"), None, 1000, 500, [_DPWindow(0, granularity_to_ms("1d"))]),
-    #     ],
-    # )
-    # def test_get_datapoints_windows(
-    #     self, cognite_client, start, end, granularity, request_limit, user_limit, expected_output, mock_get_dps_count
-    # ):
-    #     user_limit = user_limit or float("inf")
-    #     task = _DPTask(
-    #         client=cognite_client.time_series.data,
-    #         start=start,
-    #         end=end,
-    #         ts_item={},
-    #         granularity=granularity,
-    #         aggregates=[],
-    #         limit=None,
-    #         include_outside_points=False,
-    #         ignore_unknown_ids=False,
-    #     )
-    #     task.request_limit = request_limit
-    #     res = DatapointsFetcher(cognite_client.time_series.data)._get_windows(
-    #         id=0, task=task, remaining_user_limit=user_limit
-    #     )
-    #     for w in expected_output:
-    #         w.limit = user_limit
-    #     assert expected_output == res
-
-    # @pytest.mark.parametrize(
-    #     "start, end, granularity, expected_output",
-    #     [
-    #         (0, 10001, "1s", 10000),
-    #         (0, 10000, "1m", 0),
-    #         (0, 110000, "1m", granularity_to_ms("1m")),
-    #         (0, granularity_to_ms("10d") - 1, "2d", granularity_to_ms("8d")),
-    #         (0, granularity_to_ms("10d") - 1, "1m", granularity_to_ms("10d") - granularity_to_ms("1m")),
-    #         (0, 10000, "1s", 10000),
-    #     ],
-    # )
-    # def test_align_window_end(self, cognite_client, start, end, granularity, expected_output):
-    #     assert expected_output == DatapointsFetcher._align_window_end(start, end, granularity)
-
-    # @pytest.mark.parametrize(
-    #     "ids, external_ids, expected_output",
-    #     [
-    #         (1, None, ([{"id": 1}], True)),
-    #         (None, "1", ([{"externalId": "1"}], True)),
-    #         (1, "1", ([{"id": 1}, {"externalId": "1"}], False)),
-    #         ([1], ["1"], ([{"id": 1}, {"externalId": "1"}], False)),
-    #         ([1], None, ([{"id": 1}], False)),
-    #         ({"id": 1, "aggregates": ["average"]}, None, ([{"id": 1, "aggregates": ["average"]}], True)),
-    #         ({"id": 1}, {"externalId": "1"}, ([{"id": 1}, {"externalId": "1"}], False)),
-    #         (
-    #             [{"id": 1, "aggregates": ["average"]}],
-    #             [{"externalId": "1", "aggregates": ["average", "sum"]}],
-    #             ([{"id": 1, "aggregates": ["average"]}, {"externalId": "1", "aggregates": ["average", "sum"]}], False),
-    #         ),
-    #     ],
-    # )
-    # def test_process_time_series_input_ok(self, cognite_client, ids, external_ids, expected_output):
-    #     assert expected_output == DatapointsFetcher._process_ts_identifiers(ids, external_ids)
-
-    # @pytest.mark.parametrize(
-    #     "ids, external_ids, exception, match",
-    #     [
-    #         (1.0, None, TypeError, "Invalid type '<class 'float'>'"),
-    #         ([1.0], None, TypeError, "Invalid type '<class 'float'>'"),
-    #         (None, 1, TypeError, "Invalid type '<class 'int'>'"),
-    #         (None, [1], TypeError, "Invalid type '<class 'int'>'"),
-    #         ({"wrong": 1, "aggregates": ["average"]}, None, ValueError, "Unknown key 'wrong'"),
-    #         (None, [{"externalId": 1, "wrong": ["average"]}], ValueError, "Unknown key 'wrong'"),
-    #         (None, {"id": 1, "aggregates": ["average"]}, ValueError, "Unknown key 'id'"),
-    #         ({"externalId": 1}, None, ValueError, "Unknown key 'externalId'"),
-    #     ],
-    # )
-    # def test_process_time_series_input_fail(self, cognite_client, ids, external_ids, exception, match):
-    #     with pytest.raises(exception, match=match):
-    #         DatapointsFetcher._process_ts_identifiers(ids, external_ids)
+    pass  # TODO(haakonvt): Get to it!

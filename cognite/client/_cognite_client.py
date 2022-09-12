@@ -26,6 +26,7 @@ from cognite.client._api.templates import TemplatesAPI
 from cognite.client._api.three_d import ThreeDAPI
 from cognite.client._api.time_series import TimeSeriesAPI
 from cognite.client._api.transformations import TransformationsAPI
+from cognite.client._api.vision import VisionAPI
 from cognite.client._api_client import APIClient
 from cognite.client.config import ClientConfig, global_config
 
@@ -67,6 +68,7 @@ class CogniteClient:
         self.relationships = RelationshipsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.entity_matching = EntityMatchingAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.templates = TemplatesAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
+        self.vision = VisionAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.extraction_pipelines = ExtractionPipelinesAPI(self._config, api_version="playground", cognite_client=self)
         self.extraction_pipeline_runs = ExtractionPipelineRunsAPI(
             self._config, api_version="playground", cognite_client=self
