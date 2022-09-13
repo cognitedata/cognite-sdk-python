@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 from typing import Any, Iterator
-from unittest.mock import MagicMock, seal
+from unittest.mock import MagicMock
 
 from cognite.client import CogniteClient
 from cognite.client._api.annotations import AnnotationsAPI
@@ -118,9 +118,6 @@ class CogniteClientMock(MagicMock):
         self.functions.schedules = MagicMock(spec_set=FunctionSchedulesAPI)
 
         self.vision = MagicMock(spec_set=VisionAPI)
-        # Disable the automatic creation of mocks when accessing an attribute of the mock being sealed
-        # or any of its attributes that are already mocks recursively:
-        seal(self)
 
 
 @contextmanager
