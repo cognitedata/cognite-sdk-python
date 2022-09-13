@@ -885,7 +885,7 @@ class BaseConcurrentRawTask(BaseConcurrentTask):
         return not any((self.ts_data, self.dp_outside_start, self.dp_outside_end))
 
     def get_result(self) -> Union[Datapoints, DatapointsArray]:
-        if self._no_data_fetched() or self.query.limit == 0:
+        if self._no_data_fetched():
             return self._create_empty_result()
         if self.has_limit:
             self._cap_dps_at_limit()

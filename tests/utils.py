@@ -6,6 +6,19 @@ import os
 from contextlib import contextmanager
 
 
+def assert_all_equal(seq):  # TODO Remove??
+    first = seq[0]
+    assert all(first == item for item in seq[1:])
+
+
+@contextmanager
+def set_max_workers(cognite_client, new):
+    old = cognite_client._config.max_workers
+    cognite_client._config.max_workers = new
+    yield
+    cognite_client._config.max_workers = old
+
+
 @contextmanager
 def tmp_set_envvar(envvar: str, value: str):
     old = os.getenv(envvar)
@@ -48,7 +61,6 @@ def set_request_limit(client, limit):
         "_UPDATE_LIMIT",
         "_DELETE_LIMIT",
         "_DPS_LIMIT",
-        "_DPS_LIMIT_AGG",
         "_POST_DPS_OBJECTS_LIMIT",
         "_RETRIEVE_LATEST_LIMIT",
     ]

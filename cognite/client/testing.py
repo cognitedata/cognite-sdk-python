@@ -43,6 +43,7 @@ from cognite.client._api.transformations import (
     TransformationSchedulesAPI,
     TransformationSchemaAPI,
 )
+from cognite.client._api.vision import VisionAPI
 
 
 class CogniteClientMock(MagicMock):
@@ -115,6 +116,8 @@ class CogniteClientMock(MagicMock):
         self.functions = MagicMock(spec=FunctionsAPI)
         self.functions.calls = MagicMock(spec_set=FunctionCallsAPI)
         self.functions.schedules = MagicMock(spec_set=FunctionSchedulesAPI)
+
+        self.vision = MagicMock(spec_set=VisionAPI)
 
 
 @contextmanager

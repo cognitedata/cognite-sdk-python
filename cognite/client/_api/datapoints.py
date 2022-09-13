@@ -8,9 +8,8 @@ from abc import ABC, abstractmethod
 from concurrent.futures import CancelledError, as_completed
 from copy import copy
 from datetime import datetime
-from itertools import chain
-from random import random
-from time import monotonic_ns
+from itertools import chain, count
+from threading import Lock
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -278,6 +277,9 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         self.next_items: List[Dict[str, Any]] = []
         self.next_subtasks: List[SplittingFetchSubtask] = []
 
+        self._lock = Lock()
+        self._counter = count()
+
     def fetch_all(self, pool: PriorityThreadPoolExecutor, use_numpy: bool) -> List[BaseConcurrentTask]:
         # The initial tasks are important - as they tell us which time series are missing,
         # which are string etc. We use this info when we choose the best fetch-strategy.
@@ -397,12 +399,16 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         }
         return ts_tasks, to_raise
 
+    def counter(self):
+        with self._lock:
+            return next(self._counter)
+
     def _add_to_subtask_pools(self, new_subtasks: Iterable[SplittingFetchSubtask]) -> None:
         for task in new_subtasks:
             # We leverage how tuples are compared to prioritise items. First `priority`, then `payload limit`
             # (to easily group smaller queries), then an element to always break ties, but keep order (never use tasks themselves):
             limit = min(task.n_dps_left, task.max_query_limit)
-            new_subtask: PoolSubtaskType = (task.priority, limit, monotonic_ns() + random(), task)
+            new_subtask: PoolSubtaskType = (task.priority, limit, self.counter(), task)
             heapq.heappush(self.subtask_pools[task.is_raw_query], new_subtask)
 
     def _queue_new_subtasks(
@@ -841,7 +847,7 @@ class DatapointsAPI(APIClient):
                 ...     granularity="30d",
                 ...     include_aggregate_name=False)
         """
-        local_import("numpy")  # Verify that numpy is available or raise CogniteImportError
+        _, pd = local_import("numpy", "pandas")  # Verify that deps are available or raise CogniteImportError
         if column_names not in {"id", "external_id"}:
             raise ValueError(f"Given parameter {column_names=} must be one of 'id' or 'external_id'")
 
@@ -869,7 +875,6 @@ class DatapointsAPI(APIClient):
         if not uniform_index:
             return df
 
-        pd = local_import("pandas")
         start = pd.Timestamp(min(q.start for q in fetcher.agg_queries), unit="ms")
         end = pd.Timestamp(max(q.end for q in fetcher.agg_queries), unit="ms")
         (granularity,) = grans_given
