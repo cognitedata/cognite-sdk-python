@@ -14,7 +14,7 @@ All examples in this documentation assume that a default configuration has been 
 
     >>> from cognite.client import CogniteClient, ClientConfig, global_config
     >>> from cognite.client.credentials import APIKey
-    >>> cnf = ClientConfig(client_name="my-special-client", project="my-project", credentials=APIKey("very-secret"))
+    >>> cnf = ClientConfig(client_name="my-special-client", base_url="https://<cluster>.cognitedata.com", project="my-project", credentials=APIKey("very-secret"))
     >>> global_config.default_client_config = cnf
     >>> c = CogniteClient()
     >>> status = c.login.status()
@@ -33,7 +33,7 @@ To enable this, use one of the credential providers such as OAuthClientCredentia
     >>> from cognite.client.credentials import OAuthClientCredentials
     >>>
     >>> creds = OAuthClientCredentials(token_url=..., client_id=..., client_secret=..., scopes=[...])
-    >>> cnf = ClientConfig(client_name="my-special-client", project="my-project", credentials=creds)
+    >>> cnf = ClientConfig(client_name="my-special-client", base_url="https://<cluster>.cognitedata.com", project="my-project", credentials=creds)
     >>> c = CogniteClient(cnf)
 
 Examples for all OAuth credential providers can be found in the `Credential Providers`_ section.
@@ -47,7 +47,7 @@ You can also make your own credential provider:
     >>> def token_provider():
     >>>     ...
     >>>
-    >>> cnf = ClientConfig(client_name="my-special-client", project="my-project", credentials=Token(token_provider))
+    >>> cnf = ClientConfig(client_name="my-special-client", base_url="https://<cluster>.cognitedata.com", project="my-project", credentials=Token(token_provider))
     >>> c = CogniteClient(cnf)
 
 If OIDC has not been enabled for your CDF project, you will want to authenticate using an API key.
@@ -56,7 +56,7 @@ If OIDC has not been enabled for your CDF project, you will want to authenticate
 
     >>> from cognite.client import CogniteClient, ClientConfig
     >>> from cognite.client.credentials import APIKey
-    >>> cnf = ClientConfig(client_name="<your-client-name>", project="my-project", credentials=APIKey("very-secret"))
+    >>> cnf = ClientConfig(client_name="<your-client-name>", base_url="https://<cluster>.cognitedata.com", project="my-project", credentials=APIKey("very-secret"))
     >>> c = CogniteClient(cnf)
 
 Discover time series
