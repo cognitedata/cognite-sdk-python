@@ -32,13 +32,13 @@ SOFTWARE.
 
 import atexit
 import inspect
+import itertools
 import sys
 import threading
 import weakref
 from concurrent.futures.thread import ThreadPoolExecutor, _base, _python_exit, _threads_queues, _WorkItem
 from queue import PriorityQueue
-from random import random
-from time import monotonic_ns
+from threading import Lock
 
 NULL_ENTRY = (sys.maxsize, None, _WorkItem(None, None, (), {}))
 _SHUTDOWN = False
@@ -81,6 +81,12 @@ class PriorityThreadPoolExecutor(ThreadPoolExecutor):
     def __init__(self, max_workers=None):
         super().__init__(max_workers)
         self._work_queue = PriorityQueue()
+        self._lock = Lock()
+        self._counter = itertools.count()
+
+    def counter(self):
+        with self._lock:
+            return next(self._counter)
 
     def submit(self, fn, *args, **kwargs):
         if "priority" in inspect.signature(fn).parameters:
@@ -96,8 +102,8 @@ class PriorityThreadPoolExecutor(ThreadPoolExecutor):
             future = _base.Future()
             work_item = _WorkItem(future, fn, args, kwargs)
 
-            # `monotonic_ns + random` to break ties, but keep order:
-            self._work_queue.put((priority, monotonic_ns() + random(), work_item))
+            # `counter` to break ties, but keep order:
+            self._work_queue.put((priority, self.counter(), work_item))
             self._adjust_thread_count()
             return future
 
