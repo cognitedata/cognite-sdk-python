@@ -293,16 +293,6 @@ def mock_get_datapoints_single_isstep(rsps, cognite_client):
     yield rsps
 
 
-@pytest.fixture
-def set_dps_workers(cognite_client):
-    def set_workers(limit):
-        cognite_client.time_series.data._config.max_workers = limit
-
-    workers_tmp = cognite_client.time_series.data._config.max_workers
-    yield set_workers
-    cognite_client.time_series.data._config.max_workers = workers_tmp
-
-
 def assert_dps_response_is_correct(calls, dps_object):
     datapoints = []
     for call in calls:

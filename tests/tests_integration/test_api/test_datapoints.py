@@ -4,12 +4,14 @@ Note: If tests related to fetching datapoints are broken, all time series + thei
       credentials to the `CogniteClient` for the Python SDK integration test CDF project:
 >>> python scripts/create_ts_for_integration_tests.py
 """
-
 import itertools
+import random
+from unittest.mock import patch
 
 import numpy as np
 import pytest
 
+from cognite.client._api.datapoint_constants import DPS_LIMIT  # DPS_LIMIT_AGG,
 from cognite.client.data_classes import (
     Datapoints,
     DatapointsArray,
@@ -18,18 +20,40 @@ from cognite.client.data_classes import (
     DatapointsQuery,
     TimeSeries,
 )
+from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS
+from tests.utils import set_max_workers
 
 DATAPOINTS_API = "cognite.client._api.datapoints.{}"
 
 
 @pytest.fixture(scope="session")
-def outside_points_ts(cognite_client):
+def all_test_time_series(cognite_client):
     return cognite_client.time_series.retrieve_multiple(
         external_ids=[
-            "PYSDK integration test 001",
-            "PYSDK integration test 002",
+            "PYSDK integration test 001: outside points, numeric",
+            "PYSDK integration test 002: outside points, string",
+            *[f"PYSDK integration test {i:03d}: weekly values, 1950-2000, numeric" for i in range(3, 54)],
+            *[f"PYSDK integration test {i:03d}: weekly values, 1950-2000, string" for i in range(54, 104)],
         ]
     )
+
+
+@pytest.fixture
+def outside_points_ts(all_test_time_series):
+    return all_test_time_series[:2]
+
+
+@pytest.fixture
+def weekly_dps_ts(all_test_time_series):
+    return all_test_time_series[2:53], all_test_time_series[53:103]
+
+
+@pytest.fixture(scope="session")
+def new_ts(cognite_client):
+    ts = cognite_client.time_series.create(TimeSeries())
+    yield ts
+    cognite_client.time_series.delete(id=ts.id)
+    assert cognite_client.time_series.retrieve(ts.id) is None
 
 
 @pytest.fixture
@@ -40,46 +64,43 @@ def retrieve_endpoints(cognite_client):
     ]
 
 
-def validate_raw_datapoints_lst(ts_lst, dps_lst):
-    if isinstance(dps_lst, (DatapointsList, DatapointsArrayList)):
-        for ts, dps in zip(ts_lst, dps_lst):
-            validate_raw_datapoints(ts, dps)
-    else:
-        assert False, "Datapoints(Array)List not given"
+def validate_raw_datapoints_lst(ts_lst, dps_lst, **kw):
+    assert isinstance(dps_lst, (DatapointsList, DatapointsArrayList)), "Datapoints(Array)List not given"
+    for ts, dps in zip(ts_lst, dps_lst):
+        validate_raw_datapoints(ts, dps, **kw)
 
 
 def validate_raw_datapoints(ts, dps, check_offset=True, check_delta=True):
     assert isinstance(dps, (Datapoints, DatapointsArray)), "Datapoints(Array) not given"
-    # Verify the actual datapoint values:
+    # Convert both dps types to arrays for simple comparisons:
+    # (also convert string datapoints - which are also integers)
+    values = np.array(dps.value, dtype=np.int64)
     index = np.array(dps.timestamp, dtype=np.int64)
     if isinstance(dps, DatapointsArray):
         index = index // int(1e6)
-    values = np.array(dps.value, dtype=np.int64)  # if string datapoints or list type, convert to int-array
+    # Verify index is sorted:
+    assert np.all(index[:-1] < index[1:])
+    # Verify the actual datapoint values:
     if check_offset:
         offset = int(ts.metadata["offset"])
         assert np.all(index == values - offset)
-    # Verify index is sorted:
-    assert np.all(index[:-1] < index[1:])
     # Verify spacing between points:
     if check_delta:
         delta = int(ts.metadata["delta"])
         assert np.all(np.diff(values) == delta)
+
     return index, values
 
 
 PARAMETRIZED_VALUES_OUTSIDE_POINTS = [
     (-100, 100, False, True),
-    (-100, 100, False, True),
-    (-99, 100, True, True),
     (-99, 100, True, True),
     (-99, 101, True, False),
-    (-99, 101, True, False),
-    (-100, 101, False, False),
     (-100, 101, False, False),
 ]
 
 
-class TestRetrieveDatapointsAPI_NEW:
+class TestRetrieveDatapoints:
     """Note: Since `retrieve` and `retrieve_arrays` endspoints should give identical results,
     except for the data container types, all tests run both endpoints.
     """
@@ -93,40 +114,128 @@ class TestRetrieveDatapointsAPI_NEW:
             res = endpoint(id=ts.id, limit=0, start=start, end=end, include_outside_points=True)
             index, values = validate_raw_datapoints(ts, res, check_delta=False)
             assert len(res) == has_before + has_after
-            if has_before:
-                assert start > index[0] == -100
-            if has_after:
-                assert end <= index[-1] == 100
+
+            if has_before or has_after:
+                first_ts, last_ts = index[0].item(), index[-1].item()  # numpy bool != py bool
+                assert (start > first_ts) is has_before
+                assert (end <= last_ts) is has_after
+                if has_before:
+                    assert start > first_ts == -100
+                if has_after:
+                    assert end <= last_ts == 100
 
     @pytest.mark.parametrize("start, end, has_before, has_after", PARAMETRIZED_VALUES_OUTSIDE_POINTS)
-    def test_retrieve_outside_points_no_limit(
+    def test_retrieve_outside_points_nonzero_limit(
         self, retrieve_endpoints, outside_points_ts, start, end, has_before, has_after
     ):
-        ts = outside_points_ts
-        for ts, endpoint in itertools.product(outside_points_ts, retrieve_endpoints):
-            res = endpoint(id=ts.id, limit=None, start=start, end=end, include_outside_points=True)
-            index, values = validate_raw_datapoints(ts, res)
+        for ts, endpoint, limit in itertools.product(outside_points_ts, retrieve_endpoints, [3, None]):
+            res = endpoint(id=ts.id, limit=limit, start=start, end=end, include_outside_points=True)
+            index, values = validate_raw_datapoints(ts, res, check_delta=limit is None)
+            if limit == 3:
+                assert len(res) - 3 == has_before + has_after
+            first_ts, last_ts = index[0].item(), index[-1].item()  # numpy bool != py bool
+            assert (start > first_ts) is has_before
+            assert (end <= last_ts) is has_after
             if has_before:
-                assert start > index[0] == -100
+                assert start > first_ts == -100
             if has_after:
-                assert end <= index[-1] == 100
+                assert end <= last_ts == 100
+
+    @pytest.mark.parametrize("start, end, has_before, has_after", PARAMETRIZED_VALUES_OUTSIDE_POINTS)
+    def test_retrieve_outside_points__query_limit_plusminus1_tests(
+        self, retrieve_endpoints, outside_points_ts, start, end, has_before, has_after
+    ):
+        limit = 3
+        for dps_limit in range(limit - 1, limit + 2):
+            with patch(DATAPOINTS_API.format("DPS_LIMIT"), dps_limit):
+                for ts, endpoint in itertools.product(outside_points_ts, retrieve_endpoints):
+                    res = endpoint(id=ts.id, limit=limit, start=start, end=end, include_outside_points=True)
+                    index, values = validate_raw_datapoints(ts, res, check_delta=False)
+                    assert len(res) - 3 == has_before + has_after
+                    first_ts, last_ts = index[0].item(), index[-1].item()  # numpy bool != py bool
+                    assert (start > first_ts) is has_before
+                    assert (end <= last_ts) is has_after
+                    if has_before:
+                        assert start > first_ts == -100
+                    if has_after:
+                        assert end <= last_ts == 100
+
+    @pytest.mark.parametrize(
+        "n_ts, identifier",
+        [
+            (1, "id"),
+            (1, "external_id"),
+            (2, "id"),
+            (2, "external_id"),
+            (5, "id"),
+            (5, "external_id"),
+        ],
+    )
+    def test_retrieve_raw_eager_mode_single_identifier_type(
+        self, cognite_client, n_ts, identifier, retrieve_endpoints, weekly_dps_ts
+    ):
+        # We patch out ChunkingDpsFetcher to make sure we fail if we're not in eager mode:
+        with set_max_workers(cognite_client, 5), patch(DATAPOINTS_API.format("ChunkingDpsFetcher")):
+            for ts_lst, endpoint, limit in itertools.product(weekly_dps_ts, retrieve_endpoints, [0, 50, None]):
+                ts_lst = random.sample(ts_lst, n_ts)
+                res_lst = endpoint(
+                    **{identifier: [getattr(ts, identifier) for ts in ts_lst]},
+                    limit=limit,
+                    start=MIN_TIMESTAMP_MS,
+                    end=MAX_TIMESTAMP_MS,
+                    include_outside_points=False,
+                )
+                validate_raw_datapoints_lst(ts_lst, res_lst)
+                exp_len = 2609 if limit is None else limit
+                for res in res_lst:
+                    assert len(res) == exp_len
+
+    @pytest.mark.parametrize(
+        "n_ts, identifier",
+        [
+            (3, "id"),
+            (3, "external_id"),
+            (10, "id"),
+            (10, "external_id"),
+            (50, "id"),
+            (50, "external_id"),
+        ],
+    )
+    def test_retrieve_raw_chunking_mode_single_identifier_type(
+        self, cognite_client, n_ts, identifier, retrieve_endpoints, weekly_dps_ts
+    ):
+        # We patch out EagerDpsFetcher to make sure we fail if we're not in chunking mode:
+        with set_max_workers(cognite_client, 2), patch(DATAPOINTS_API.format("EagerDpsFetcher")):
+            for ts_lst, endpoint, limit in itertools.product(weekly_dps_ts, retrieve_endpoints, [0, 50, None]):
+                ts_lst = random.sample(ts_lst, n_ts)
+                res_lst = endpoint(
+                    **{identifier: [getattr(ts, identifier) for ts in ts_lst]},
+                    limit=limit,
+                    start=MIN_TIMESTAMP_MS,
+                    end=MAX_TIMESTAMP_MS,
+                    include_outside_points=False,
+                )
+                validate_raw_datapoints_lst(ts_lst, res_lst)
+                exp_len = 2609 if limit is None else limit
+                for res in res_lst:
+                    assert len(res) == exp_len
+
+    def test_a(self):
+        pass
+
+    def test_b(self):
+        pass
+
+    def test_c(self):
+        pass
+
+    def test_d(self):
+        pass
+
+    def test_e(self):
+        pass
 
 
-# @pytest.fixture(scope="session")
-# def test_time_series(cognite_client):
-#     eids = ["test__constant_%d_with_noise" % i for i in range(10)]
-#     ts = cognite_client.time_series.retrieve_multiple(external_ids=eids)
-#     yield dict(zip(range(10), ts))
-#
-#
-# @pytest.fixture(scope="session")
-# def new_ts(cognite_client):
-#     ts = cognite_client.time_series.create(TimeSeries())
-#     yield ts
-#     cognite_client.time_series.delete(id=ts.id)
-#     assert cognite_client.time_series.retrieve(ts.id) is None
-#
-#
 # def has_expected_timestamp_spacing(df: pd.DataFrame, granularity: str):
 #     timestamps = df.index.values.astype("datetime64[ms]").astype(np.int64)
 #     deltas = np.diff(timestamps)

@@ -6,9 +6,17 @@ import os
 from contextlib import contextmanager
 
 
-def assert_all_equal(seq):
+def assert_all_equal(seq):  # TODO Remove??
     first = seq[0]
     assert all(first == item for item in seq[1:])
+
+
+@contextmanager
+def set_max_workers(cognite_client, new):
+    old = cognite_client._config.max_workers
+    cognite_client._config.max_workers = new
+    yield
+    cognite_client._config.max_workers = old
 
 
 @contextmanager
