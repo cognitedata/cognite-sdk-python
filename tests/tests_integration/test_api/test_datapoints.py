@@ -20,10 +20,11 @@ from cognite.client.data_classes import (
     DatapointsQuery,
     TimeSeries,
 )
-from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS
+from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS, UNIT_IN_MS
 from tests.utils import set_max_workers
 
 DATAPOINTS_API = "cognite.client._api.datapoints.{}"
+WEEK_MS = UNIT_IN_MS["w"]
 
 
 @pytest.fixture(scope="session")
@@ -161,18 +162,19 @@ class TestRetrieveDatapoints:
                         assert end <= last_ts == 100
 
     @pytest.mark.parametrize(
-        "start, end, before_ts_is_start, after_ts_is_end",
+        "start, end, exp_first_ts, exp_last_ts",
+        # fmt: off
         [
-            (631670400000 + 1, 693964800000 + 0, False, True),
-            (631670400000 + 0, 693964800000 + 0, True, True),
-            (631670400000 + 0, 693964800000 + 1, True, False),
-            (631670400000 + 1, 693964800000 + 1, False, False),
+            (631670400000 + 1, 693964800000,     631670400000,           693964800000),  # noqa: E241
+            (631670400000,     693964800000,     631670400000 - WEEK_MS, 693964800000),  # noqa: E241
+            (631670400000,     693964800000 + 1, 631670400000 - WEEK_MS, 693964800000 + WEEK_MS),  # noqa: E241
+            (631670400000 + 1, 693964800000 + 1, 631670400000,           693964800000 + WEEK_MS),  # noqa: E241
         ],
+        # fmt: on
     )
     def test_retrieve_outside_points__query_chunking_mode(
-        self, start, end, before_ts_is_start, after_ts_is_end, cognite_client, retrieve_endpoints, weekly_dps_ts
+        self, start, end, exp_first_ts, exp_last_ts, cognite_client, retrieve_endpoints, weekly_dps_ts
     ):
-        assert False, "WORK in PROGRESS"
         ts_lst = weekly_dps_ts[0] + weekly_dps_ts[1]  # chain numeric & string
         limits = [0, 1, 50, int(1e9), None]  # None ~ 100 dps (max dps returned)
         with set_max_workers(cognite_client, 5), patch(DATAPOINTS_API.format("EagerDpsFetcher")):
@@ -189,16 +191,8 @@ class TestRetrieveDatapoints:
                 requested_ts = id_ts_lst + xid_ts_lst
                 for ts, res in zip(requested_ts, res_lst):
                     index, values = validate_raw_datapoints(ts, res, check_delta=False)
-                    first_ts, last_ts = index[0].item(), index[-1].item()
-                    if before_ts_is_start:
-                        assert start == first_ts
-                    else:
-                        assert start > first_ts
-
-                    if after_ts_is_end:
-                        assert end == last_ts
-                    else:
-                        assert end < last_ts
+                    assert exp_first_ts == index[0]
+                    assert exp_last_ts == index[-1]
 
     @pytest.mark.parametrize(
         "n_ts, identifier",
