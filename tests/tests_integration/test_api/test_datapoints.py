@@ -161,6 +161,46 @@ class TestRetrieveDatapoints:
                         assert end <= last_ts == 100
 
     @pytest.mark.parametrize(
+        "start, end, before_ts_is_start, after_ts_is_end",
+        [
+            (631670400000 + 1, 693964800000 + 0, False, True),
+            (631670400000 + 0, 693964800000 + 0, True, True),
+            (631670400000 + 0, 693964800000 + 1, True, False),
+            (631670400000 + 1, 693964800000 + 1, False, False),
+        ],
+    )
+    def test_retrieve_outside_points__query_chunking_mode(
+        self, start, end, before_ts_is_start, after_ts_is_end, cognite_client, retrieve_endpoints, weekly_dps_ts
+    ):
+        assert False, "WORK in PROGRESS"
+        ts_lst = weekly_dps_ts[0] + weekly_dps_ts[1]  # chain numeric & string
+        limits = [0, 1, 50, int(1e9), None]  # None ~ 100 dps (max dps returned)
+        with set_max_workers(cognite_client, 5), patch(DATAPOINTS_API.format("EagerDpsFetcher")):
+            # `n_ts` is per identifier (id + xid). At least 3, since 3 x 2 > 5
+            for n_ts, endpoint in itertools.product([3, 10, 50], retrieve_endpoints):
+                id_ts_lst, xid_ts_lst = random.sample(ts_lst, k=n_ts), random.sample(ts_lst, k=n_ts)
+                res_lst = endpoint(
+                    external_id=[{"external_id": ts.external_id, "limit": random.choice(limits)} for ts in xid_ts_lst],
+                    id=[{"id": ts.id, "limit": random.choice(limits)} for ts in id_ts_lst],
+                    start=start,
+                    end=end,
+                    include_outside_points=True,
+                )
+                requested_ts = id_ts_lst + xid_ts_lst
+                for ts, res in zip(requested_ts, res_lst):
+                    index, values = validate_raw_datapoints(ts, res, check_delta=False)
+                    first_ts, last_ts = index[0].item(), index[-1].item()
+                    if before_ts_is_start:
+                        assert start == first_ts
+                    else:
+                        assert start > first_ts
+
+                    if after_ts_is_end:
+                        assert end == last_ts
+                    else:
+                        assert end < last_ts
+
+    @pytest.mark.parametrize(
         "n_ts, identifier",
         [
             (1, "id"),
@@ -220,20 +260,20 @@ class TestRetrieveDatapoints:
                 for res in res_lst:
                     assert len(res) == exp_len
 
-    def test_a(self):
-        pass
-
-    def test_b(self):
-        pass
-
-    def test_c(self):
-        pass
-
-    def test_d(self):
-        pass
-
-    def test_e(self):
-        pass
+    # def test_a(self):
+    #     pass
+    #
+    # def test_b(self):
+    #     pass
+    #
+    # def test_c(self):
+    #     pass
+    #
+    # def test_d(self):
+    #     pass
+    #
+    # def test_e(self):
+    #     pass
 
 
 # def has_expected_timestamp_spacing(df: pd.DataFrame, granularity: str):

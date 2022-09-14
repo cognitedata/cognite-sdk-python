@@ -279,7 +279,7 @@ class _SingleTSQueryBase:
 
         if self.include_outside_points and self.limit is not None:
             warnings.warn(
-                "When using `include_outside_points=True` with a non-infinite `limit` you may get a large gap "
+                "When using `include_outside_points=True` with a finite `limit` you may get a large gap "
                 "between the last 'inside datapoint' and the 'after/outside' datapoint. Note also that the "
                 "up-to-two outside points come in addition to your given `limit`; asking for 5 datapoints might "
                 "yield 5, 6 or 7. It's a feature, not a bug ;)",
@@ -690,6 +690,7 @@ class BaseConcurrentTask:
             assert first_limit is not None and first_dps_batch is not None  # mypy...
             dps = first_dps_batch.pop("datapoints")  # type: ignore [misc]
             self.ts_info = first_dps_batch  # Store just the ts info
+            self.raw_dtype = np.object_ if first_dps_batch["isString"] else np.float64
             if not dps:
                 self._is_done = True
                 return None
@@ -861,7 +862,6 @@ class ConcurrentLimitedMixin(BaseConcurrentTask):
 
 class BaseConcurrentRawTask(BaseConcurrentTask):
     def __init__(self, **kwargs: Any) -> None:
-        self.raw_dtype = None
         self.dp_outside_start: Optional[Tuple[int, DatapointsTypes]] = None
         self.dp_outside_end: Optional[Tuple[int, DatapointsTypes]] = None
         super().__init__(**kwargs)

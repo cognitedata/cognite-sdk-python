@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import functools
 import heapq
+import itertools
 import math
 import statistics
 from abc import ABC, abstractmethod
 from concurrent.futures import CancelledError, as_completed
 from copy import copy
 from datetime import datetime
-from itertools import chain, count
-from threading import Lock
+from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -277,8 +277,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         self.next_items: List[Dict[str, Any]] = []
         self.next_subtasks: List[SplittingFetchSubtask] = []
 
-        self._lock = Lock()
-        self._counter = count()
+        self.counter = itertools.count()
 
     def fetch_all(self, pool: PriorityThreadPoolExecutor, use_numpy: bool) -> List[BaseConcurrentTask]:
         # The initial tasks are important - as they tell us which time series are missing,
@@ -399,16 +398,12 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         }
         return ts_tasks, to_raise
 
-    def counter(self):
-        with self._lock:
-            return next(self._counter)
-
     def _add_to_subtask_pools(self, new_subtasks: Iterable[SplittingFetchSubtask]) -> None:
         for task in new_subtasks:
             # We leverage how tuples are compared to prioritise items. First `priority`, then `payload limit`
-            # (to easily group smaller queries), then an element to always break ties, but keep order (never use tasks themselves):
+            # (to easily group smaller queries), then counter to always break ties, but keep order (never use tasks themselves):
             limit = min(task.n_dps_left, task.max_query_limit)
-            new_subtask: PoolSubtaskType = (task.priority, limit, self.counter(), task)
+            new_subtask: PoolSubtaskType = (task.priority, limit, next(self.counter), task)
             heapq.heappush(self.subtask_pools[task.is_raw_query], new_subtask)
 
     def _queue_new_subtasks(

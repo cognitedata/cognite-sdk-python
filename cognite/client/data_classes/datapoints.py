@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import json
 import numbers
+import operator as op
 import re as regexp
 import warnings
 from dataclasses import dataclass
 from datetime import datetime
+from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     Dict,
     Generator,
     Iterable,
@@ -219,7 +222,7 @@ class DatapointsArray(CogniteResource):
     def __getitem__(self, item: Any) -> Union[Datapoint, DatapointsArray]:
         if isinstance(item, slice):
             return self._slice(item)
-        return Datapoint(**{attr: arr[item].item() for attr, arr in zip(*self._data_fields())})
+        return Datapoint(**{attr: self._dtype_fix(arr[item]) for attr, arr in zip(*self._data_fields())})
 
     def _slice(self, part: slice) -> DatapointsArray:
         return DatapointsArray(
@@ -229,7 +232,15 @@ class DatapointsArray(CogniteResource):
     def __iter__(self) -> Iterator[Datapoint]:
         # Let's not create a single Datapoint more than we have too:
         attrs, arrays = self._data_fields()
-        yield from (Datapoint(**dict(zip(attrs, row))) for row in zip(*arrays))
+        yield from (Datapoint(**dict(zip(attrs, map(self._dtype_fix, row)))) for row in zip(*arrays))
+
+    @cached_property
+    def _dtype_fix(self) -> Callable:
+        if self.is_string:
+            # Return no-op as array contains just references to vanilla python objects:
+            return lambda s: s
+        # Using .item() on numpy scalars gives us vanilla python types:
+        return op.methodcaller("item")
 
     def _data_fields(self) -> Tuple[List[str], List[npt.NDArray]]:
         data_field_tuples = [
@@ -259,11 +270,7 @@ class DatapointsArray(CogniteResource):
         if camel_case:
             attrs = list(map(to_camel_case, attrs))
 
-        dumped = {
-            **self._ts_info,
-            # Using .item() is not strictly necessary, but it gives us vanilla python types:
-            "datapoints": [dict(zip(attrs, [v.item() for v in row])) for row in zip(*arrays)],
-        }
+        dumped = {**self._ts_info, "datapoints": [dict(zip(attrs, map(self._dtype_fix, row))) for row in zip(*arrays)]}
         if camel_case:
             dumped = convert_all_keys_to_camel_case(dumped)
         return {k: v for k, v in dumped.items() if v is not None}
