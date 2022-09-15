@@ -407,7 +407,11 @@ class Datapoints(CogniteResource):
         return {key: value for key, value in dumped.items() if value is not None}
 
     def to_pandas(  # type: ignore[override]
-        self, column_names: str = "external_id", include_aggregate_name: bool = True, include_errors: bool = False
+        self,
+        column_names: str = "external_id",
+        include_aggregate_name: bool = True,
+        camel_case: bool = False,
+        include_errors: bool = False,
     ) -> "pandas.DataFrame":
         """Convert the datapoints into a pandas DataFrame.
 
@@ -415,6 +419,7 @@ class Datapoints(CogniteResource):
             column_names (str):  Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
             include_aggregate_name (bool): Include aggregate in the column name
             include_errors (bool): For synthetic datapoint queries, include a column with errors.
+            camel_case (bool): Convert column names to camel case (e.g. `stepInterpolation` instead of `step_interpolation`)
 
         Returns:
             pandas.DataFrame: The dataframe.
@@ -434,16 +439,21 @@ class Datapoints(CogniteResource):
             else:
                 id_with_agg = str(identifier)
                 if attr != "value":
-                    id_with_agg += "|{}".format(utils._auxiliary.to_camel_case(attr))
+                    id_with_agg += "|{}".format(to_camel_case(attr) if camel_case else attr)
+                    value = pd.to_numeric(value, errors="coerce")  # Avoids object dtype for missing aggs
                 data_fields[id_with_agg] = value
+
         df = pd.DataFrame(data_fields, index=pd.to_datetime(timestamps, unit="ms"))
         if not include_aggregate_name:
-            df = Datapoints._strip_aggregate_names(df)
+            df = Datapoints._strip_aggregate_names(df, camel_case)
         return df
 
     @staticmethod
-    def _strip_aggregate_names(df: "pandas.DataFrame") -> "pandas.DataFrame":
-        expr = f"\\|({'|'.join(ALL_DATAPOINT_AGGREGATES)})$"
+    def _strip_aggregate_names(df: "pandas.DataFrame", camel_case: bool) -> "pandas.DataFrame":
+        all_aggs = ALL_DATAPOINT_AGGREGATES[:]
+        if camel_case:
+            all_aggs = map(to_camel_case, all_aggs)
+        expr = f"\\|({'|'.join(all_aggs)})$"
         df = df.rename(columns=lambda col: regexp.sub(expr, "", col))
         if not df.columns.is_unique:
             raise CogniteDuplicateColumnsError([col for col, count in df.columns.value_counts().items() if count > 1])

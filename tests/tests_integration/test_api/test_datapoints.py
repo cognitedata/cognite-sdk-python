@@ -32,8 +32,9 @@ WEEK_MS = UNIT_IN_MS["w"]
 DPS_TYPES = [Datapoints, DatapointsArray]
 DPS_LST_TYPES = [DatapointsList, DatapointsArrayList]
 
-# To avoid "different tests were collected between...", we must make sure all parallel test-runners
-# generate the same tests. We also want different random values over time, so we set seed based on time:
+# To avoid the error "different tests were collected between...", we must make sure all parallel test-runners
+# generate the same tests random test data. We also want different random values over time (...thats the point),
+# so we set seed based on time, but round to have some buffer:
 random.seed(round(time.time(), -3))
 
 
@@ -108,6 +109,10 @@ def validate_raw_datapoints(ts, dps, check_offset=True, check_delta=True):
     return index, values
 
 
+def validate_agg_datapoints(ts, dps, check_offset=True, check_delta=True):
+    pass
+
+
 PARAMETRIZED_VALUES_OUTSIDE_POINTS = [
     (-100, 100, False, True),
     (-99, 100, True, True),
@@ -115,13 +120,7 @@ PARAMETRIZED_VALUES_OUTSIDE_POINTS = [
     (-100, 101, False, False),
 ]
 
-# def has_expected_timestamp_spacing(df: pd.DataFrame, granularity: str):
-#     timestamps = df.index.values.astype("datetime64[ms]").astype(np.int64)
-#     deltas = np.diff(timestamps)
-#     granularity_ms = granularity_to_ms(granularity)
-#     return np.all(deltas != 0) and np.all(deltas % granularity_ms == 0)
-#
-#
+
 # @pytest.fixture
 # def post_spy(cognite_client):
 #     with patch.object(cognite_client.time_series.data, "_post", wraps=cognite_client.time_series.data._post):

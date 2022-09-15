@@ -247,7 +247,8 @@ class _SingleTSQueryValidator:
 
         if end <= start:
             raise ValueError(
-                f"Invalid time range, `end` must be later than `start` (from query: {identifier.as_dict(camel_case=False)})"
+                f"Invalid time range, {end=} must be later than {start=} "
+                f"(from query: {identifier.as_dict(camel_case=False)})"
             )
         if not is_raw:  # API rounds aggregate query timestamps in a very particular fashion
             start, end = align_start_and_end_for_granularity(start, end, cast(str, granularity))
@@ -996,16 +997,16 @@ class ParallelLimitedRawTask(ConcurrentLimitedMixin, BaseConcurrentRawTask):
 
 class BaseConcurrentAggTask(BaseConcurrentTask):
     def __init__(self, *, query: _SingleTSQueryAgg, use_numpy: bool, **kwargs: Any) -> None:
-        aggregates = query.aggregates
-        self._set_aggregate_vars(aggregates, use_numpy)
+        aggregates_cc = query.aggregates_cc
+        self._set_aggregate_vars(aggregates_cc, use_numpy)
         super().__init__(query=query, use_numpy=use_numpy, **kwargs)
 
     @cached_property
     def offset_next(self) -> int:
         return granularity_to_ms(self.query.granularity)
 
-    def _set_aggregate_vars(self, aggregates: List[str], use_numpy: bool) -> None:
-        self.float_aggs = aggregates[:]
+    def _set_aggregate_vars(self, aggregates_cc: List[str], use_numpy: bool) -> None:
+        self.float_aggs = aggregates_cc[:]
         self.is_count_query = "count" in self.float_aggs
         if self.is_count_query:
             self.count_data = dps_container()
