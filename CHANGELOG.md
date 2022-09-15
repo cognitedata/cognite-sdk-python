@@ -14,6 +14,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [4.5.3] - 2022-09-15
+### Fixed
+- Fixes the OS specific issue where the `requirements.txt`-validation failed 
+  with `Permission Denied` on Windows.
+
 ## [4.5.2] - 2022-09-09
 ### Fixed
 - Fixes the issue when updating transformations with new nonce credentials
