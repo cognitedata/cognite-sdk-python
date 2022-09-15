@@ -764,11 +764,12 @@ class GeospatialAPI(APIClient):
     def aggregate_features(
         self,
         feature_type_external_id: str,
-        property: str,
-        aggregates: Sequence[str],
+        property: str = None,
+        aggregates: Sequence[str] = None,
         filter: Optional[Dict[str, Any]] = None,
         group_by: Sequence[str] = None,
         order_by: Sequence[OrderSpec] = None,
+        aggregate_output: Dict[str, Any] = None,
     ) -> FeatureAggregateList:
         """`Aggregate filtered features`
         <https://docs.cognite.com/api/v1/#operation/aggregateFeatures>
@@ -780,6 +781,7 @@ class GeospatialAPI(APIClient):
             aggregates (Sequence[str]): list of aggregates to be calculated
             group_by (Sequence[str]): list of properties to group by with
             order_by (Sequence[OrderSpec]): the order specification
+            aggregate_output (Dict[str, Any]): the aggregate output
 
         Returns:
             FeatureAggregateList: the filtered features
@@ -794,17 +796,28 @@ class GeospatialAPI(APIClient):
                 ...     feature_type_external_id="my_feature_type",
                 ...     feature=Feature(external_id="my_feature", temperature=12.4)
                 ... )
-                >>> res = c.geospatial.aggregate_features(
+                >>> res_deprecated = c.geospatial.aggregate_features(
                 ...     feature_type_external_id="my_feature_type",
                 ...     filter={"range": {"property": "temperature", "gt": 12.0}},
                 ...     property="temperature",
                 ...     aggregates=["max", "min"],
                 ...     group_by=["category"],
                 ...     order_by=[OrderSpec("category", "ASC")]
+                ... ) # deprecated
+                >>> res = c.geospatial.aggregate_features(
+                ...     feature_type_external_id="my_feature_type",
+                ...     filter={"range": {"property": "temperature", "gt": 12.0}},
+                ...     group_by=["category"],
+                ...     order_by=[OrderSpec("category", "ASC")],
+                ...     aggregate_output={"min_temperature": {"min": {"property": "temperature"}},
+                ...         "max_temperature": {"max": {"property": "temperature"}}
+                ...     }
                 ... )
                 >>> for a in res:
                 ...     # loop over aggregates in different groups
         """
+        if property or aggregates:
+            warnings.warn("property and aggregates are deprecated, use aggregate_output instead.", DeprecationWarning)
         resource_path = self._feature_resource_path(feature_type_external_id) + "/aggregate"
         cls = FeatureAggregateList
         order = None if order_by is None else [f"{item.property}:{item.direction}" for item in order_by]
@@ -816,6 +829,7 @@ class GeospatialAPI(APIClient):
                 "aggregates": aggregates,
                 "groupBy": group_by,
                 "sort": order,
+                "output": aggregate_output
             },
         )
         return cls._load(res.json()["items"], cognite_client=self._cognite_client)
