@@ -688,14 +688,14 @@ class TestRequirementsParser:
             """
             return None
 
-        with NamedTemporaryFile(mode='w+') as ntf:
+        with NamedTemporaryFile(mode="w+") as ntf:
             assert _write_fn_docstring_requirements_to_file(fn, ntf) is True
 
     def test_get_requirements_handle_error(self):
         def fn():
             return None
 
-        with NamedTemporaryFile(mode='w+') as ntf:
+        with NamedTemporaryFile(mode="w+") as ntf:
             assert _write_fn_docstring_requirements_to_file(fn, ntf) is False
 
     def test_get_requirements_handle_no_docstr(self):
@@ -708,7 +708,7 @@ class TestRequirementsParser:
             return None
 
         with pytest.raises(Exception):
-            with NamedTemporaryFile(mode='w+') as ntf:
+            with NamedTemporaryFile(mode="w+") as ntf:
                 assert _write_fn_docstring_requirements_to_file(fn, ntf) is False
 
     def test_get_requirements_handle_no_reqs(self):
@@ -719,7 +719,7 @@ class TestRequirementsParser:
             """
             return None
 
-        with NamedTemporaryFile(mode='w+') as ntf:
+        with NamedTemporaryFile(mode="w+") as ntf:
             assert _write_fn_docstring_requirements_to_file(fn, ntf) is False
 
     def test_extract_requirements_from_file(self, tmpdir):

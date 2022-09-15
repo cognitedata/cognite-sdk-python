@@ -7,7 +7,7 @@ from inspect import getdoc, getsource
 from numbers import Integral, Number
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Union, cast, IO
+from typing import IO, TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Union, cast
 from zipfile import ZipFile
 
 from cognite.client import utils
@@ -443,7 +443,7 @@ class FunctionsAPI(APIClient):
                             reqs = _extract_requirements_from_file(path)
                             # Validate and format requirements
                             parsed_reqs = _validate_and_parse_requirements(reqs)
-                            with NamedTemporaryFile(mode='w+') as nth:
+                            with NamedTemporaryFile(mode="w+") as nth:
                                 _write_requirements_to_file(nth, parsed_reqs)
                                 # NOTE: the actual file is not written.
                                 # A temporary formatted file is used instead
@@ -477,7 +477,7 @@ class FunctionsAPI(APIClient):
                 f.write(source)
 
             # Read and validate requirements
-            with NamedTemporaryFile(mode='w+') as named_temp_file:
+            with NamedTemporaryFile(mode="w+") as named_temp_file:
                 requirements_written = _write_fn_docstring_requirements_to_file(function_handle, named_temp_file)
 
                 zip_path = os.path.join(tmpdir, "function.zip")
