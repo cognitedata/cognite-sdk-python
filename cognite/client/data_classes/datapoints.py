@@ -30,6 +30,7 @@ from typing import (
 
 from cognite.client import utils
 from cognite.client._api.datapoint_constants import (
+    ALL_DATAPOINT_AGGREGATES,
     DPS_LIMIT,
     DPS_LIMIT_AGG,
     CustomDatapointsQuery,
@@ -59,7 +60,6 @@ if TYPE_CHECKING:
 
     from cognite.client import CogniteClient
     from cognite.client._api.datapoint_constants import (
-        ALL_DATAPOINT_AGGREGATES,
         NumpyDatetime64NSArray,
         NumpyFloat64Array,
         NumpyInt64Array,
