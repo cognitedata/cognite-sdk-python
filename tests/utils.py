@@ -3,12 +3,20 @@ import functools
 import gzip
 import json
 import os
+import random
 from contextlib import contextmanager
 
+from cognite.client.utils._auxiliary import random_string
 
-def assert_all_equal(seq):  # TODO Remove??
-    first = seq[0]
-    assert all(first == item for item in seq[1:])
+
+def random_cognite_ids(n):
+    # Returns list of random, valid Cognite internal IDs:
+    return random.choices(range(1, 9007199254740992), k=n)
+
+
+def random_cognite_external_ids(n):
+    # Returns list of random, valid Cognite external IDs:
+    return [random_string(50) for _ in range(n)]
 
 
 @contextmanager

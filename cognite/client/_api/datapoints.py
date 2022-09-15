@@ -56,7 +56,7 @@ from cognite.client.data_classes import (
 )
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import assert_type, local_import, split_into_chunks, split_into_n_parts
-from cognite.client.utils._concurrency import execute_tasks_concurrently
+from cognite.client.utils._concurrency import collect_exc_info_and_raise, execute_tasks_concurrently
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._priority_tpe import PriorityThreadPoolExecutor  # type: ignore
 from cognite.client.utils._time import timestamp_to_ms
@@ -247,7 +247,7 @@ class EagerDpsFetcher(DpsFetchStrategy):
             return None
         except CogniteAPIError as e:
             if not (e.code == 400 and e.missing and ts_task.query.ignore_unknown_ids):
-                raise
+                collect_exc_info_and_raise([e])
             elif ts_task.is_done:
                 return None
             ts_task.is_done = True

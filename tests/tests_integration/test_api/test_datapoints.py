@@ -6,12 +6,14 @@ Note: If tests related to fetching datapoints are broken, all time series + thei
 """
 import itertools
 import random
+import re
+from contextlib import nullcontext as does_not_raise
 from unittest.mock import patch
 
 import numpy as np
 import pytest
 
-from cognite.client._api.datapoint_constants import DPS_LIMIT  # DPS_LIMIT_AGG,
+from cognite.client._api.datapoint_constants import ALL_DATAPOINT_AGGREGATES, DPS_LIMIT  # DPS_LIMIT_AGG,
 from cognite.client.data_classes import (
     Datapoints,
     DatapointsArray,
@@ -20,11 +22,14 @@ from cognite.client.data_classes import (
     DatapointsQuery,
     TimeSeries,
 )
+from cognite.client.exceptions import CogniteNotFoundError
 from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS, UNIT_IN_MS
-from tests.utils import set_max_workers
+from tests.utils import random_cognite_external_ids, random_cognite_ids, set_max_workers
 
 DATAPOINTS_API = "cognite.client._api.datapoints.{}"
 WEEK_MS = UNIT_IN_MS["w"]
+DPS_TYPES = [Datapoints, DatapointsArray]
+DPS_LST_TYPES = [DatapointsList, DatapointsArrayList]
 
 
 @pytest.fixture(scope="session")
@@ -35,6 +40,11 @@ def all_test_time_series(cognite_client):
             "PYSDK integration test 002: outside points, string",
             *[f"PYSDK integration test {i:03d}: weekly values, 1950-2000, numeric" for i in range(3, 54)],
             *[f"PYSDK integration test {i:03d}: weekly values, 1950-2000, string" for i in range(54, 104)],
+            "PYSDK integration test 104: daily values, 1965-1975, numeric",
+            "PYSDK integration test 105: hourly values, 1969-10-01 - 1970-03-01, numeric",
+            "PYSDK integration test 106: every minute, 1969-12-31 - 1970-01-02, numeric",
+            "PYSDK integration test 107: every second, 1969-12-31 23:30:00 - 1970-01-01 00:30:00, numeric",
+            "PYSDK integration test 108: every millisecond, 1969-12-31 23:59:58.500 - 1970-01-01 00:00:01.500, numeric",
         ]
     )
 
@@ -100,8 +110,20 @@ PARAMETRIZED_VALUES_OUTSIDE_POINTS = [
     (-100, 101, False, False),
 ]
 
+# def has_expected_timestamp_spacing(df: pd.DataFrame, granularity: str):
+#     timestamps = df.index.values.astype("datetime64[ms]").astype(np.int64)
+#     deltas = np.diff(timestamps)
+#     granularity_ms = granularity_to_ms(granularity)
+#     return np.all(deltas != 0) and np.all(deltas % granularity_ms == 0)
+#
+#
+# @pytest.fixture
+# def post_spy(cognite_client):
+#     with patch.object(cognite_client.time_series.data, "_post", wraps=cognite_client.time_series.data._post):
+#         yield
 
-class TestRetrieveDatapoints:
+
+class TestRetrieveDatapointsAPI:
     """Note: Since `retrieve` and `retrieve_arrays` endspoints should give identical results,
     except for the data container types, all tests run both endpoints.
     """
@@ -254,157 +276,211 @@ class TestRetrieveDatapoints:
                 for res in res_lst:
                     assert len(res) == exp_len
 
-    # def test_a(self):
-    #     pass
-    #
-    # def test_b(self):
-    #     pass
-    #
-    # def test_c(self):
-    #     pass
-    #
-    # def test_d(self):
-    #     pass
-    #
-    # def test_e(self):
-    #     pass
+    @pytest.mark.parametrize(
+        "n_ts, ignore_unknown_ids, mock_out_eager_or_chunk, expected_raise",
+        [
+            (1, True, "ChunkingDpsFetcher", does_not_raise()),
+            (1, False, "ChunkingDpsFetcher", pytest.raises(CogniteNotFoundError, match=re.escape("Not found: ["))),
+            (3, True, "ChunkingDpsFetcher", does_not_raise()),
+            (3, False, "ChunkingDpsFetcher", pytest.raises(CogniteNotFoundError, match=re.escape("Not found: ["))),
+            (10, True, "EagerDpsFetcher", does_not_raise()),
+            (10, False, "EagerDpsFetcher", pytest.raises(CogniteNotFoundError, match=re.escape("Not found: ["))),
+            (50, True, "EagerDpsFetcher", does_not_raise()),
+            (50, False, "EagerDpsFetcher", pytest.raises(CogniteNotFoundError, match=re.escape("Not found: ["))),
+        ],
+    )
+    def test_retrieve_unknown__check_raises_or_returns_existing_only(
+        self,
+        n_ts,
+        ignore_unknown_ids,
+        mock_out_eager_or_chunk,
+        expected_raise,
+        cognite_client,
+        retrieve_endpoints,
+        all_test_time_series,
+    ):
+        ts_exists = all_test_time_series[0]
+        with set_max_workers(cognite_client, 9), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
+            identifier = {
+                "id": [ts_exists.id] + random_cognite_ids(n_ts),
+                "external_id": [ts_exists.external_id] + random_cognite_external_ids(n_ts),
+            }
+            drop_id = random.choice(["id", "external_id", "keep"])
+            if drop_id != "keep":
+                identifier.pop(drop_id)
+            for endpoint in retrieve_endpoints:
+                with expected_raise:
+                    res_lst = endpoint(
+                        **identifier,
+                        start=random.randint(MIN_TIMESTAMP_MS, 100),
+                        end=random.randint(101, MAX_TIMESTAMP_MS),
+                        ignore_unknown_ids=ignore_unknown_ids,
+                        limit=5,
+                    )
+                    exp_len = 2 if drop_id == "keep" else 1
+                    assert exp_len == len(res_lst)
+                    validate_raw_datapoints_lst([ts_exists] * exp_len, res_lst)
+
+    @pytest.mark.parametrize(
+        "max_workers, mock_out_eager_or_chunk, ids, external_ids, exp_res_types",
+        [
+            # Single identifier given as base type (int/str) or as dict
+            (1, "ChunkingDpsFetcher", random_cognite_ids(1)[0], None, [None, None]),
+            (1, "ChunkingDpsFetcher", None, random_cognite_external_ids(1)[0], [None, None]),
+            (1, "ChunkingDpsFetcher", {"id": random_cognite_ids(1)[0]}, None, [None, None]),
+            (1, "ChunkingDpsFetcher", None, {"external_id": random_cognite_external_ids(1)[0]}, [None, None]),
+            # Single identifier given as length-1 list:
+            (1, "ChunkingDpsFetcher", random_cognite_ids(1), None, DPS_LST_TYPES),
+            (1, "ChunkingDpsFetcher", None, random_cognite_external_ids(1), DPS_LST_TYPES),
+            # Single identifier given by BOTH id and external id:
+            (2, "ChunkingDpsFetcher", random_cognite_ids(1)[0], random_cognite_external_ids(1)[0], DPS_LST_TYPES),
+            (
+                2,
+                "ChunkingDpsFetcher",
+                {"id": random_cognite_ids(1)[0]},
+                {"external_id": random_cognite_external_ids(1)[0]},
+                DPS_LST_TYPES,
+            ),
+            (
+                2,
+                "ChunkingDpsFetcher",
+                {"id": random_cognite_ids(1)[0]},
+                random_cognite_external_ids(1)[0],
+                DPS_LST_TYPES,
+            ),
+            (
+                2,
+                "ChunkingDpsFetcher",
+                random_cognite_ids(1)[0],
+                {"external_id": random_cognite_external_ids(1)[0]},
+                DPS_LST_TYPES,
+            ),
+            (1, "EagerDpsFetcher", random_cognite_ids(1)[0], random_cognite_external_ids(1)[0], DPS_LST_TYPES),
+            (
+                1,
+                "EagerDpsFetcher",
+                {"id": random_cognite_ids(1)[0]},
+                {"external_id": random_cognite_external_ids(1)[0]},
+                DPS_LST_TYPES,
+            ),
+            (
+                1,
+                "EagerDpsFetcher",
+                random_cognite_ids(1)[0],
+                {"external_id": random_cognite_external_ids(1)[0]},
+                DPS_LST_TYPES,
+            ),
+            (1, "EagerDpsFetcher", {"id": random_cognite_ids(1)[0]}, random_cognite_external_ids(1)[0], DPS_LST_TYPES),
+            # Multiple identifiers given by single identifier:
+            (4, "ChunkingDpsFetcher", random_cognite_ids(3), None, DPS_LST_TYPES),
+            (4, "ChunkingDpsFetcher", None, random_cognite_external_ids(3), DPS_LST_TYPES),
+            (2, "EagerDpsFetcher", random_cognite_ids(3), None, DPS_LST_TYPES),
+            (2, "EagerDpsFetcher", None, random_cognite_external_ids(3), DPS_LST_TYPES),
+            # Multiple identifiers given by BOTH identifiers:
+            (5, "ChunkingDpsFetcher", random_cognite_ids(2), random_cognite_external_ids(2), DPS_LST_TYPES),
+            (5, "ChunkingDpsFetcher", random_cognite_ids(2), random_cognite_external_ids(2), DPS_LST_TYPES),
+            (3, "EagerDpsFetcher", random_cognite_ids(2), random_cognite_external_ids(2), DPS_LST_TYPES),
+            (3, "EagerDpsFetcher", random_cognite_ids(2), random_cognite_external_ids(2), DPS_LST_TYPES),
+            (
+                5,
+                "ChunkingDpsFetcher",
+                [{"id": id} for id in random_cognite_ids(2)],
+                [{"external_id": xid} for xid in random_cognite_external_ids(2)],
+                DPS_LST_TYPES,
+            ),
+            (
+                3,
+                "EagerDpsFetcher",
+                [{"id": id} for id in random_cognite_ids(2)],
+                [{"external_id": xid} for xid in random_cognite_external_ids(2)],
+                DPS_LST_TYPES,
+            ),
+        ],
+    )
+    def test_retrieve__all_unknown_single_multiple_given(
+        self, max_workers, mock_out_eager_or_chunk, ids, external_ids, exp_res_types, cognite_client, retrieve_endpoints
+    ):
+        with set_max_workers(cognite_client, max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
+            for endpoint, exp_res_type in zip(retrieve_endpoints, exp_res_types):
+                res = endpoint(
+                    id=ids,
+                    external_id=external_ids,
+                    ignore_unknown_ids=True,
+                )
+                if exp_res_type is None:
+                    assert res is None
+                else:
+                    assert isinstance(res, exp_res_type)
+                    assert len(res) == 0
+
+    @pytest.mark.parametrize(
+        "max_workers, mock_out_eager_or_chunk, identifier, exp_res_types",
+        [
+            (1, "ChunkingDpsFetcher", "id", DPS_TYPES),
+            (1, "ChunkingDpsFetcher", "external_id", DPS_TYPES),
+        ],
+    )
+    def test_retrieve_nothing__single(
+        self,
+        max_workers,
+        mock_out_eager_or_chunk,
+        identifier,
+        exp_res_types,
+        outside_points_ts,
+        retrieve_endpoints,
+        cognite_client,
+    ):
+        ts = outside_points_ts[0]
+        with set_max_workers(cognite_client, max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
+            for endpoint, exp_res_type in zip(retrieve_endpoints, exp_res_types):
+                res = endpoint(**{identifier: getattr(ts, identifier)}, start=1, end=9)
+                assert isinstance(res, exp_res_type)
+                assert len(res) == 0
+                assert isinstance(res.is_step, bool)
+                assert isinstance(res.is_string, bool)
+
+    @pytest.mark.parametrize(
+        "max_workers, mock_out_eager_or_chunk, exp_res_types",
+        [
+            (1, "EagerDpsFetcher", DPS_LST_TYPES),
+            (3, "ChunkingDpsFetcher", DPS_LST_TYPES),
+        ],
+    )
+    def test_retrieve_nothing__multiple(
+        self, max_workers, mock_out_eager_or_chunk, exp_res_types, outside_points_ts, retrieve_endpoints, cognite_client
+    ):
+        ts1, ts2 = outside_points_ts
+        with set_max_workers(cognite_client, max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
+            for endpoint, exp_res_type in zip(retrieve_endpoints, exp_res_types):
+                res = endpoint(id=ts1.id, external_id=[ts2.external_id], start=1, end=9)
+                assert isinstance(res, exp_res_type)
+                assert len(res) == 2
+                for r in res:
+                    assert len(r) == 0
+                    assert isinstance(r.is_step, bool)
+                    assert isinstance(r.is_string, bool)
+
+    # TODO: WIP
+    def test_retrieve_aggregates__string_ts_raises(self):
+        pass
+
+    def test_retrieve_aggregates(self):
+        # ALL_DATAPOINT_AGGREGATES = [
+        #     "average",
+        #     "max",
+        #     "min",
+        #     "count",
+        #     "sum",
+        #     "interpolation",
+        #     "step_interpolation",
+        #     "continuous_variance",
+        #     "discrete_variance",
+        #     "total_variation",
+        # ]
+        pass
 
 
-# def has_expected_timestamp_spacing(df: pd.DataFrame, granularity: str):
-#     timestamps = df.index.values.astype("datetime64[ms]").astype(np.int64)
-#     deltas = np.diff(timestamps)
-#     granularity_ms = granularity_to_ms(granularity)
-#     return np.all(deltas != 0) and np.all(deltas % granularity_ms == 0)
-#
-#
-# @pytest.fixture
-# def post_spy(cognite_client):
-#     with patch.object(cognite_client.time_series.data, "_post", wraps=cognite_client.time_series.data._post):
-#         yield
-
-
-# class TestRetrieveDatapointsAPI:
-#     @pytest.mark.parametrize(
-#         "endpoint_attr, res_exp_type", [("retrieve", Datapoints), ("retrieve_arrays", DatapointsArray)]
-#     )
-#     def test_retrieve(self, cognite_client, test_time_series, endpoint_attr, res_exp_type):
-#         ts = test_time_series[0]
-#         endpoint = getattr(cognite_client.time_series.data, endpoint_attr)
-#         dps = endpoint(id=ts.id, start=0, end="now", limit=50)
-#         assert isinstance(dps, res_exp_type)
-#         assert len(dps) > 0
-#
-#     @pytest.mark.parametrize("endpoint_attr", ["retrieve", "retrieve_arrays"])
-#     def test_retrieve_before_epoch(self, cognite_client, test_time_series, endpoint_attr):
-#         ts = test_time_series[0]
-#         endpoint = getattr(cognite_client.time_series.data, endpoint_attr)
-#         dps = endpoint(id=ts.id, start=MIN_TIMESTAMP_MS, end="now", limit=50)
-#         assert len(dps) > 0
-#
-#     @pytest.mark.parametrize(
-#         "endpoint_attr, res_exp_type", [("retrieve", DatapointsList), ("retrieve_arrays", DatapointsArrayList)]
-#     )
-#     def test_retrieve_unknown(self, cognite_client, test_time_series, endpoint_attr, res_exp_type):
-#         ts = test_time_series[0]
-#         endpoint = getattr(cognite_client.time_series.data, endpoint_attr)
-#         dps_lst = endpoint(id=[ts.id, 42], start=0, end="now", ignore_unknown_ids=True, limit=50)
-#         assert isinstance(dps_lst, res_exp_type)
-#         assert 1 == len(dps_lst)
-#         assert 50 == len(dps_lst[0])
-#
-#     @pytest.mark.parametrize(
-#         "endpoint_attr, res_exp_type", [("retrieve", DatapointsList), ("retrieve_arrays", DatapointsArrayList)]
-#     )
-#     def test_retrieve_all_unknown(self, cognite_client, test_time_series, endpoint_attr, res_exp_type):
-#         endpoint = getattr(cognite_client.time_series.data, endpoint_attr)
-#         dps_lst = endpoint(id=[42], external_id="missing", start="1d-ago", end="now", ignore_unknown_ids=True)
-#         assert isinstance(dps_lst, res_exp_type)
-#         assert 0 == len(dps_lst)
-#
-#     @pytest.mark.parametrize("endpoint_attr", ["retrieve", "retrieve_arrays"])
-#     def test_retrieve_all_unknown_single(self, cognite_client, test_time_series, endpoint_attr):
-#         endpoint = getattr(cognite_client.time_series.data, endpoint_attr)
-#         res = endpoint(external_id="missing", start="1d-ago", end="now", ignore_unknown_ids=True)
-#         assert res is None
-#
-#     @pytest.mark.parametrize("endpoint_attr", ["retrieve", "retrieve_arrays"])
-#     def test_retrieve_multiple_aggregates(self, cognite_client, test_time_series, endpoint_attr):
-#         id1, id2, id3 = [test_time_series[i].id for i in range(3)]
-#         ids = [id1, id2, {"id": id3, "aggregates": ["max"]}]
-#
-#         endpoint = getattr(cognite_client.time_series.data, endpoint_attr)
-#         dps = endpoint(id=ids, start="6h-ago", end="now", aggregates=["min"], granularity="1s")
-#         df = dps.to_pandas(column_names="id")
-#         assert (df.columns == [f"{id1}|min", f"{id2}|min", f"{id3}|max"]).all()
-#         assert not df.empty
-#         assert has_expected_timestamp_spacing(df, "1s")
-#         assert all(dp.is_step is not None for dp in dps)
-#         assert all(dp.is_string is not None for dp in dps)
-#
-#     @pytest.mark.parametrize("endpoint_attr", ["retrieve", "retrieve_arrays"])
-#     def test_retrieve_nothing(self, cognite_client, test_time_series, endpoint_attr):
-#         endpoint = getattr(cognite_client.time_series.data, endpoint_attr)
-#         dpl = endpoint(id=test_time_series[0].id, start=0, end=1)
-#         assert 0 == len(dpl)
-#         assert dpl.is_step is not None
-#         assert dpl.is_string is not None
-#
-#     @pytest.mark.parametrize("endpoint_attr", ["retrieve", "retrieve_arrays"])
-#     def test_retrieve_multiple_raise_exception_invalid_id(self, cognite_client, test_time_series, endpoint_attr):
-#         with pytest.raises(CogniteAPIError, match="Exactly one of 'id' or 'externalId' must be set"):
-#             endpoint = getattr(cognite_client.time_series.data, endpoint_attr)
-#             endpoint(
-#                 id=[test_time_series[0].id, test_time_series[1].id, 0],
-#                 start="1m-ago",
-#                 end="now",
-#                 aggregates=["min"],
-#                 granularity="1s",
-#             )
-#
-#     @pytest.mark.parametrize("endpoint_attr", ["retrieve", "retrieve_arrays"])
-#     def test_retrieve_include_outside_points(self, cognite_client, test_time_series, endpoint_attr):
-#         endpoint = getattr(cognite_client.time_series.data, endpoint_attr)
-#         kwargs = dict(id=test_time_series[0].id, start=timestamp_to_ms("360m-ago"), end=timestamp_to_ms("359m-ago"))
-#         outside_yes = endpoint(include_outside_points=True, **kwargs)
-#         outside_noo = endpoint(include_outside_points=False, **kwargs)
-#
-#         assert len(outside_yes.timestamp) == len(set(outside_yes.timestamp))
-#         # TODO: fix check after making test non-relative in time:
-#         assert len(outside_noo) + 1 <= len(outside_yes) <= len(outside_noo) + 2
-#
-#     def test_retrieve_include_outside_points_with_limit(self, cognite_client, test_time_series, post_spy):
-#         kwargs = dict(
-#             id=test_time_series[0].id,
-#             start=timestamp_to_ms("156w-ago"),
-#             end=timestamp_to_ms("1d-ago"),
-#             limit=1234,
-#         )
-#         dps = cognite_client.time_series.data.retrieve(**kwargs)
-#
-#         with set_request_limit(cognite_client.time_series.data, limit=250):
-#             outside_included = cognite_client.time_series.data.retrieve(include_outside_points=True, **kwargs)
-#
-#         assert len(outside_included) == len(dps) + 1
-#         assert outside_included.to_pandas().duplicated().sum() == 0
-#         outside_timestamps = set(outside_included.timestamp) - set(dps.timestamp)
-#         assert len(outside_timestamps) == 1
-#
-#     def test_retrieve_include_outside_points_paginate_outside_exists(self, cognite_client, test_time_series, post_spy):
-#         # Arrange
-#         start, end = timestamp_to_ms("720m-ago"), timestamp_to_ms("710m-ago")
-#         kwargs = dict(id=test_time_series[0].id, start=start, end=end)
-#         dps = cognite_client.time_series.data.retrieve(**kwargs)
-#
-#         # Act
-#         with set_request_limit(cognite_client.time_series.data, limit=2_500):
-#             outside_included = cognite_client.time_series.data.retrieve(include_outside_points=True, **kwargs)
-#
-#         outside_timestamps = sorted(set(outside_included.timestamp) - set(dps.timestamp))
-#         assert len(outside_timestamps) == 2
-#         assert outside_timestamps[0] < start
-#         assert outside_timestamps[1] > end
-#         assert set(outside_included.timestamp) - set(outside_timestamps) == set(dps.timestamp)
-#
+# class TestRetrieveDataFrameAPI:
 #     def test_retrieve_dataframe(self, cognite_client, test_time_series):
 #         ts = test_time_series[0]
 #         df = cognite_client.time_series.data.retrieve_dataframe(
@@ -427,10 +503,6 @@ class TestRetrieveDatapoints:
 #         )
 #         assert df.shape[0] > 0
 #         assert df.shape[1] == 1
-#
-#     def test_retrieve_string(self, cognite_client):
-#         dps = cognite_client.time_series.data.retrieve(external_id="test__string_b", start="48h-ago", end="45h-ago")
-#         assert len(dps) > 10_000
 #
 #
 # class TestQueryDatapointsAPI:
@@ -462,6 +534,7 @@ class TestRetrieveDatapoints:
 
 
 # class TestRetrieveLatestDatapointsAPI:
+#
 #     def test_retrieve_latest(self, cognite_client, test_time_series):
 #         ids = [test_time_series[0].id, test_time_series[1].id]
 #         res = cognite_client.time_series.data.retrieve_latest(id=ids)

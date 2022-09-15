@@ -59,25 +59,12 @@ if TYPE_CHECKING:
 
     from cognite.client import CogniteClient
     from cognite.client._api.datapoint_constants import (
+        ALL_DATAPOINT_AGGREGATES,
         NumpyDatetime64NSArray,
         NumpyFloat64Array,
         NumpyInt64Array,
         NumpyObjArray,
     )
-
-
-ALL_DATAPOINT_AGGREGATES = [
-    "average",
-    "max",
-    "min",
-    "count",
-    "sum",
-    "interpolation",
-    "step_interpolation",
-    "continuous_variance",
-    "discrete_variance",
-    "total_variation",
-]
 
 
 class Datapoint(CogniteResource):

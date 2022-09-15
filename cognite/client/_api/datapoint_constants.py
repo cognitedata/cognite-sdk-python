@@ -23,6 +23,20 @@ FETCH_TS_LIMIT = 100
 RETRIEVE_LATEST_LIMIT = 100
 
 
+ALL_DATAPOINT_AGGREGATES = [
+    "average",
+    "max",
+    "min",
+    "count",
+    "sum",
+    "interpolation",
+    "step_interpolation",
+    "continuous_variance",
+    "discrete_variance",
+    "total_variation",
+]
+
+
 class CustomDatapointsQuery(TypedDict, total=False):
     # No field required
     start: Union[int, str, datetime, None]
