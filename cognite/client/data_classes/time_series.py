@@ -82,6 +82,12 @@ class TimeSeries(CogniteResource):
 
         Returns:
             int: The number of datapoints in this time series.
+
+        Raises:
+            ValueError: If the time series is string as count aggregate is only supported for numeric data
+
+        Returns:
+            int: The total number of datapoints
         """
         if self.is_string:
             raise ValueError("String time series does not support count aggregate.")
