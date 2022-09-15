@@ -7,6 +7,7 @@ Note: If tests related to fetching datapoints are broken, all time series + thei
 import itertools
 import random
 import re
+import time
 from contextlib import nullcontext as does_not_raise
 from unittest.mock import patch
 
@@ -30,6 +31,10 @@ DATAPOINTS_API = "cognite.client._api.datapoints.{}"
 WEEK_MS = UNIT_IN_MS["w"]
 DPS_TYPES = [Datapoints, DatapointsArray]
 DPS_LST_TYPES = [DatapointsList, DatapointsArrayList]
+
+# To avoid "different tests were collected between...", we must make sure all parallel test-runners
+# generate the same tests. We also want different random values over time, so we set seed based on time:
+random.seed(round(time.time(), -3))
 
 
 @pytest.fixture(scope="session")
