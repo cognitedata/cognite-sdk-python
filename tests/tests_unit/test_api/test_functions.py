@@ -688,15 +688,15 @@ class TestRequirementsParser:
             """
             return None
 
-        with NamedTemporaryFile() as ntf:
-            assert _write_fn_docstring_requirements_to_file(fn, ntf.name) is True
+        with NamedTemporaryFile(mode='w+') as ntf:
+            assert _write_fn_docstring_requirements_to_file(fn, ntf) is True
 
     def test_get_requirements_handle_error(self):
         def fn():
             return None
 
-        with NamedTemporaryFile() as ntf:
-            assert _write_fn_docstring_requirements_to_file(fn, ntf.name) is False
+        with NamedTemporaryFile(mode='w+') as ntf:
+            assert _write_fn_docstring_requirements_to_file(fn, ntf) is False
 
     def test_get_requirements_handle_no_docstr(self):
         def fn():
@@ -708,8 +708,8 @@ class TestRequirementsParser:
             return None
 
         with pytest.raises(Exception):
-            with NamedTemporaryFile() as ntf:
-                assert _write_fn_docstring_requirements_to_file(fn, ntf.name) is False
+            with NamedTemporaryFile(mode='w+') as ntf:
+                assert _write_fn_docstring_requirements_to_file(fn, ntf) is False
 
     def test_get_requirements_handle_no_reqs(self):
         def fn():
@@ -719,8 +719,8 @@ class TestRequirementsParser:
             """
             return None
 
-        with NamedTemporaryFile() as ntf:
-            assert _write_fn_docstring_requirements_to_file(fn, ntf.name) is False
+        with NamedTemporaryFile(mode='w+') as ntf:
+            assert _write_fn_docstring_requirements_to_file(fn, ntf) is False
 
     def test_extract_requirements_from_file(self, tmpdir):
         req = "somepackage == 3.8.1"
