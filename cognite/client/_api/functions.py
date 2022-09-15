@@ -7,7 +7,7 @@ from inspect import getdoc, getsource
 from numbers import Integral, Number
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Union, cast, IO
 from zipfile import ZipFile
 
 from cognite.client import utils
@@ -443,8 +443,8 @@ class FunctionsAPI(APIClient):
                             reqs = _extract_requirements_from_file(path)
                             # Validate and format requirements
                             parsed_reqs = _validate_and_parse_requirements(reqs)
-                            with NamedTemporaryFile() as nth:
-                                _write_requirements_to_file(nth.name, parsed_reqs)
+                            with NamedTemporaryFile(mode='w+') as nth:
+                                _write_requirements_to_file(nth, parsed_reqs)
                                 # NOTE: the actual file is not written.
                                 # A temporary formatted file is used instead
                                 zf.write(nth.name, arcname=REQUIREMENTS_FILE_NAME)
@@ -477,8 +477,8 @@ class FunctionsAPI(APIClient):
                 f.write(source)
 
             # Read and validate requirements
-            with NamedTemporaryFile() as named_temp_file:
-                requirements_written = _write_fn_docstring_requirements_to_file(function_handle, named_temp_file.name)
+            with NamedTemporaryFile(mode='w+') as named_temp_file:
+                requirements_written = _write_fn_docstring_requirements_to_file(function_handle, named_temp_file)
 
                 zip_path = os.path.join(tmpdir, "function.zip")
                 with ZipFile(zip_path, "w") as zf:
@@ -729,12 +729,12 @@ def _validate_and_parse_requirements(requirements: List[str]) -> List[str]:
     return parsed_reqs
 
 
-def _write_requirements_to_file(file_path: str, requirements: List[str]) -> None:
-    with open(file_path, "w+") as f:
-        f.write("\n".join(requirements))
+def _write_requirements_to_file(file: IO, requirements: List[str]) -> None:
+    if not file.closed:
+        file.write("\n".join(requirements))
 
 
-def _write_fn_docstring_requirements_to_file(fn: Callable, file_path: str) -> bool:
+def _write_fn_docstring_requirements_to_file(fn: Callable, file: IO) -> bool:
     """Read requirements from a function docstring, validate them, and write contents to the provided file path
 
     Args:
@@ -750,7 +750,7 @@ def _write_fn_docstring_requirements_to_file(fn: Callable, file_path: str) -> bo
         reqs = _extract_requirements_from_doc_string(docstr)
         if reqs:
             parsed_reqs = _validate_and_parse_requirements(reqs)
-            _write_requirements_to_file(file_path, parsed_reqs)
+            _write_requirements_to_file(file, parsed_reqs)
             return True
 
     return False
