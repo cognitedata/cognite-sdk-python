@@ -829,7 +829,7 @@ class GeospatialAPI(APIClient):
                 "aggregates": aggregates,
                 "groupBy": group_by,
                 "sort": order,
-                "output": aggregate_output
+                "output": aggregate_output,
             },
         )
         return cls._load(res.json()["items"], cognite_client=self._cognite_client)
