@@ -80,6 +80,8 @@ jobs:
         python-version: 3.8
 
     - name: Install full dependencies
+      env:
+        GDAL_VERSION: 3.4.2
       run: |
         python3 -m pip install --upgrade pip "poetry<1.2.0"
         poetry config virtualenvs.create false
