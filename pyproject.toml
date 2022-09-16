@@ -21,14 +21,14 @@ pandas = { version = "*", optional = true }
 geopandas = { version = ">=0.10.0", optional = true }
 shapely = { version = ">=1.7.0", optional = true }
 pip = { version = ">=20.0.0", optional = true}
-gdal = {url = "https://download.lfd.uci.edu/pythonlibs/archived/GDAL-3.4.3-pp38-pypy38_pp73-win_amd64.whl", optional = true, platform = "windows"}
+pyogrio = {version = "^0.4.1", optional = true}
 
 [tool.poetry.extras]
 pandas = ["pandas"]
-geo = ["geopandas", "shapely", "gdal"]
+geo = ["geopandas", "shapely", "pygorio"]
 sympy = ["sympy"]
 functions = ["pip"]
-all = ["pandas", "geopandas", "shapely", "sympy", "pip"]
+all = ["pandas", "geopandas", "shapely", "sympy", "pip", "pyogrio"]
 
 [tool.poetry.dev-dependencies]
 docutils = "==0.15.2"
