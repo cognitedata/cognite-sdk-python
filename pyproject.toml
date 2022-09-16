@@ -21,6 +21,7 @@ pandas = { version = "*", optional = true }
 geopandas = { version = ">=0.10.0", optional = true }
 shapely = { version = ">=1.7.0", optional = true }
 pip = { version = ">=20.0.0", optional = true}
+gdal = {url = "https://download.lfd.uci.edu/pythonlibs/archived/GDAL-3.4.3-pp38-pypy38_pp73-win_amd64.whl", optional = true, platform = "windows"}
 
 [tool.poetry.extras]
 pandas = ["pandas"]
