@@ -1286,7 +1286,7 @@ sympy = ["sympy"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "050045410e55bcaf73945b18d2a654931baf71ed938e3d6def6fd79d7ad10a29"
+content-hash = "3e231e55d461d5cbb9ec9e1f7986dabcb967d781ac0701521cdea9e9790c5627"
 
 [metadata.files]
 alabaster = [
