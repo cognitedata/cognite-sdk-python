@@ -730,8 +730,7 @@ def _validate_and_parse_requirements(requirements: List[str]) -> List[str]:
 
 
 def _write_requirements_to_named_temp_file(file: IO, requirements: List[str]) -> None:
-    if not file.closed:
-        file.write("\n".join(requirements))
+    file.write("\n".join(requirements))
 
 
 def _write_fn_docstring_requirements_to_file(fn: Callable, file: IO) -> bool:
