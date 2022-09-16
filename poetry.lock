@@ -265,6 +265,7 @@ click-plugins = ">=1.0"
 cligj = ">=0.5"
 munch = "*"
 six = ">=1.7"
+pyogrio = "*"
 
 [package.extras]
 test = ["mock", "boto3 (>=1.2.4)", "pytest-cov", "pytest (>=3)"]
