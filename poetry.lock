@@ -268,14 +268,14 @@ munch = "*"
 six = ">=1.7"
 
 [package.extras]
-all = ["boto3 (>=1.2.4)", "pytest (>=3)", "pytest-cov", "shapely", "mock"]
+all = ["shapely", "pytest-cov", "pytest (>=3)", "boto3 (>=1.2.4)", "mock"]
 calc = ["shapely"]
 s3 = ["boto3 (>=1.2.4)"]
 test = ["pytest (>=3)", "pytest-cov", "boto3 (>=1.2.4)", "mock"]
 
 [package.source]
 type = "url"
-url = "https://download.lfd.uci.edu/pythonlibs/archived/Fiona-1.8.21-cp311-cp311-win_amd64.whl"
+url = "https://download.lfd.uci.edu/pythonlibs/archived/Fiona-1.8.21-cp38-cp38-win_amd64.whl"
 [[package]]
 name = "fonttools"
 version = "4.37.2"
@@ -311,7 +311,7 @@ numpy = ["numpy (>1.19.0)"]
 
 [package.source]
 type = "url"
-url = "https://download.lfd.uci.edu/pythonlibs/archived/GDAL-3.4.3-cp311-cp311-win_amd64.whl"
+url = "https://download.lfd.uci.edu/pythonlibs/archived/GDAL-3.4.3-cp38-cp38-win_amd64.whl"
 [[package]]
 name = "geopandas"
 version = "0.11.1"
@@ -1286,7 +1286,7 @@ sympy = ["sympy"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "5267673876b337866a1237757228b7cbc0ab4da3bdab2a8a3b8e7c70ea5f5431"
+content-hash = "595d9b7ecdde525750ddde88050de5167a8826265dbf29a67e214f8fbdf76a52"
 
 [metadata.files]
 alabaster = [
