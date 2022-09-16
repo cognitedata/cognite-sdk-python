@@ -444,7 +444,7 @@ class FunctionsAPI(APIClient):
                             # Validate and format requirements
                             parsed_reqs = _validate_and_parse_requirements(reqs)
                             with NamedTemporaryFile(mode="w+") as nth:
-                                _write_requirements_to_file(nth, parsed_reqs)
+                                _write_requirements_to_named_temp_file(nth, parsed_reqs)
                                 # NOTE: the actual file is not written.
                                 # A temporary formatted file is used instead
                                 zf.write(nth.name, arcname=REQUIREMENTS_FILE_NAME)
@@ -729,7 +729,7 @@ def _validate_and_parse_requirements(requirements: List[str]) -> List[str]:
     return parsed_reqs
 
 
-def _write_requirements_to_file(file: IO, requirements: List[str]) -> None:
+def _write_requirements_to_named_temp_file(file: IO, requirements: List[str]) -> None:
     if not file.closed:
         file.write("\n".join(requirements))
 
@@ -750,7 +750,7 @@ def _write_fn_docstring_requirements_to_file(fn: Callable, file: IO) -> bool:
         reqs = _extract_requirements_from_doc_string(docstr)
         if reqs:
             parsed_reqs = _validate_and_parse_requirements(reqs)
-            _write_requirements_to_file(file, parsed_reqs)
+            _write_requirements_to_named_temp_file(file, parsed_reqs)
             return True
 
     return False
