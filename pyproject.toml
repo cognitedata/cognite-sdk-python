@@ -8,7 +8,7 @@ readme = "README.md"
 documentation = "https://cognite-sdk-python.readthedocs-hosted.com"
 authors = ["Erlend Vollset <erlend.vollset@cognite.com>"]
 
-packages = [{ include="cognite", from="." }]
+packages = [{ include = "cognite", from = "." }]
 
 [tool.poetry.dependencies]
 python = "^3.8"
@@ -19,16 +19,26 @@ msal = "^1"
 sympy = { version = "*", optional = true }
 pandas = { version = "*", optional = true }
 shapely = { version = ">=1.7.0", optional = true }
-pip = { version = ">=20.0.0", optional = true}
-pyogrio = {version = "^0.4.1", optional = true}
-geopandas = {version = "^0.11.1", optional = true}
-
+pip = { version = ">=20.0.0", optional = true }
+geopandas = { version = "^0.11.1", optional = true }
+gdal = [
+    { url = "https://download.lfd.uci.edu/pythonlibs/archived/GDAL-3.4.3-cp311-cp311-win_amd64.whl", optional = true, platform = "windows" },
+    { url = "https://download.lfd.uci.edu/pythonlibs/archived/GDAL-3.4.3-cp310-cp310-win_amd64.whl", optional = true, platform = "windows" },
+    { url = "https://download.lfd.uci.edu/pythonlibs/archived/GDAL-3.4.3-cp39-cp39-win_amd64.whl", optional = true, platform = "windows" },
+    { url = "https://download.lfd.uci.edu/pythonlibs/archived/GDAL-3.4.3-cp38-cp38-win_amd64.whl", optional = true, platform = "windows" }
+]
+fiona = [
+    { url = "https://download.lfd.uci.edu/pythonlibs/archived/Fiona-1.8.21-cp311-cp311-win_amd64.whl", optional = true, platform = "windows" },
+    { url = "https://download.lfd.uci.edu/pythonlibs/archived/Fiona-1.8.21-cp310-cp310-win_amd64.whl", optional = true, platform = "windows" },
+    { url = "https://download.lfd.uci.edu/pythonlibs/archived/Fiona-1.8.21-cp39-cp39-win_amd64.whl", optional = true, platform = "windows" },
+    { url = "https://download.lfd.uci.edu/pythonlibs/archived/Fiona-1.8.21-cp38-cp38-win_amd64.whl", optional = true, platform = "windows" }
+]
 [tool.poetry.extras]
 pandas = ["pandas"]
-geo = ["geopandas", "shapely", "pygorio"]
+geo = ["geopandas", "shapely"]
 sympy = ["sympy"]
 functions = ["pip"]
-all = ["pandas", "geopandas", "shapely", "sympy", "pip", "pyogrio"]
+all = ["pandas", "geopandas", "shapely", "sympy", "pip"]
 
 [tool.poetry.dev-dependencies]
 docutils = "==0.15.2"

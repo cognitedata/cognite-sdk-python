@@ -265,7 +265,6 @@ click-plugins = ">=1.0"
 cligj = ">=0.5"
 munch = "*"
 six = ">=1.7"
-pyogrio = "*"
 
 [package.extras]
 test = ["mock", "boto3 (>=1.2.4)", "pytest-cov", "pytest (>=3)"]
@@ -295,6 +294,20 @@ ufo = ["fs (>=2.2.0,<3)"]
 unicode = ["unicodedata2 (>=14.0.0)"]
 woff = ["zopfli (>=0.1.4)", "brotlicffi (>=0.8.0)", "brotli (>=1.0.1)"]
 
+[[package]]
+name = "GDAL"
+version = "3.4.3"
+description = "GDAL: Geospatial Data Abstraction Library"
+category = "main"
+optional = true
+python-versions = ">=3.6.0"
+
+[package.extras]
+numpy = ["numpy (>1.19.0)"]
+
+[package.source]
+type = "url"
+url = "https://download.lfd.uci.edu/pythonlibs/archived/GDAL-3.4.3-cp311-cp311-win_amd64.whl"
 [[package]]
 name = "geopandas"
 version = "0.11.1"
@@ -698,24 +711,6 @@ crypto = ["cryptography (>=3.3.1)"]
 dev = ["sphinx", "sphinx-rtd-theme", "zope.interface", "cryptography (>=3.3.1)", "pytest (>=6.0.0,<7.0.0)", "coverage[toml] (==5.0.4)", "mypy", "pre-commit"]
 docs = ["sphinx", "sphinx-rtd-theme", "zope.interface"]
 tests = ["pytest (>=6.0.0,<7.0.0)", "coverage[toml] (==5.0.4)"]
-
-[[package]]
-name = "pyogrio"
-version = "0.4.1"
-description = "Vectorized spatial vector file format I/O using GDAL/OGR"
-category = "main"
-optional = true
-python-versions = ">=3.8"
-
-[package.dependencies]
-certifi = "*"
-numpy = "*"
-
-[package.extras]
-test = ["pytest-cov", "pytest"]
-geopandas = ["geopandas", "pygeos"]
-dev = ["cython"]
-benchmark = ["pytest-benchmark"]
 
 [[package]]
 name = "pyparsing"
@@ -1278,7 +1273,7 @@ docs = ["sphinx", "jaraco.packaging (>=9)", "rst.linker (>=1.9)", "jaraco.tideli
 testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-cov", "pytest-enabler (>=1.3)", "jaraco.itertools", "func-timeout", "pytest-black (>=0.3.7)", "pytest-mypy (>=0.9.1)"]
 
 [extras]
-all = ["pandas", "geopandas", "shapely", "sympy", "pip", "pyogrio"]
+all = ["pandas", "geopandas", "shapely", "sympy", "pip"]
 functions = ["pip"]
 geo = ["geopandas", "shapely"]
 pandas = ["pandas"]
@@ -1287,7 +1282,7 @@ sympy = ["sympy"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "3e231e55d461d5cbb9ec9e1f7986dabcb967d781ac0701521cdea9e9790c5627"
+content-hash = "ce4063c0567cbac7f64eef06030b960f8d61db176e0b9f69fda490254efb8e75"
 
 [metadata.files]
 alabaster = [
@@ -1588,6 +1583,7 @@ fonttools = [
     {file = "fonttools-4.37.2-py3-none-any.whl", hash = "sha256:88d48ef24486137c864dc56707b4b54ef8a97ab9162c2721ec61434baf1c4d13"},
     {file = "fonttools-4.37.2.zip", hash = "sha256:b6d86ffd0a5f83d3da6a34d5f99a90398638e423cd6a8d93c5808af703432c7f"},
 ]
+GDAL = []
 geopandas = [
     {file = "geopandas-0.11.1-py3-none-any.whl", hash = "sha256:f3344937f3866e52996c7e505d56dae78be117dc840cd1c23507da0b33c0af71"},
     {file = "geopandas-0.11.1.tar.gz", hash = "sha256:f0f0c8d0423d30cf81de2056d853145c4362739350a7f8f2d72cc7409ef1eca1"},
@@ -1912,18 +1908,6 @@ pygments = [
 pyjwt = [
     {file = "PyJWT-2.4.0-py3-none-any.whl", hash = "sha256:72d1d253f32dbd4f5c88eaf1fdc62f3a19f676ccbadb9dbc5d07e951b2b26daf"},
     {file = "PyJWT-2.4.0.tar.gz", hash = "sha256:d42908208c699b3b973cbeb01a969ba6a96c821eefb1c5bfe4c390c01d67abba"},
-]
-pyogrio = [
-    {file = "pyogrio-0.4.1-cp310-cp310-macosx_10_15_x86_64.whl", hash = "sha256:55ed6be0e77d69b8cdc90dc8cd643ff418c7cc229826f94156b51a2978375351"},
-    {file = "pyogrio-0.4.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b2456e3d9679d8b571698294049f697f5e6de5d443c2e451eca6b719819f5bd4"},
-    {file = "pyogrio-0.4.1-cp310-cp310-win_amd64.whl", hash = "sha256:0ab9a2c17758c55b4ca5105b3dbfc98e8a08011eb3257c14701f1cb687ff0b12"},
-    {file = "pyogrio-0.4.1-cp38-cp38-macosx_10_15_x86_64.whl", hash = "sha256:a5270242029cfccc39032a983891392de2d8f95b9bb95018e27f87b8c4f34cc3"},
-    {file = "pyogrio-0.4.1-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5a0c2052b94d348725d2210136e1405e37ae3590d7cad85f94834ce3b7d9800d"},
-    {file = "pyogrio-0.4.1-cp38-cp38-win_amd64.whl", hash = "sha256:d2d4cd83d5565c9419ad16881e4e62b443b655a0c95afdc175d615d0a84a5a92"},
-    {file = "pyogrio-0.4.1-cp39-cp39-macosx_10_15_x86_64.whl", hash = "sha256:d607a85b8cc1f972fc1700b258b50b8f19e8dd993dc3b3e2ac56c7fb55557af0"},
-    {file = "pyogrio-0.4.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:50ebe2e62789f13229465bbdba03bae8eb24290b8381008a8cf4c9805ca55205"},
-    {file = "pyogrio-0.4.1-cp39-cp39-win_amd64.whl", hash = "sha256:0fc4ff4d6364a9a05eff550c8216893092befa34228956902bacc8bf4e0ce714"},
-    {file = "pyogrio-0.4.1.tar.gz", hash = "sha256:7c3ba67a1a0b0c43b94d3d8be0c80b1f3f4645b94c9e25167f75779cf895ea9d"},
 ]
 pyparsing = [
     {file = "pyparsing-3.0.9-py3-none-any.whl", hash = "sha256:5026bae9a10eeaefb61dab2f09052b9f4307d44aee4eda64b309723d8d206bbc"},
