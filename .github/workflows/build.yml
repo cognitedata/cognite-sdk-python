@@ -95,6 +95,7 @@ jobs:
         COGNITE_PROJECT: python-sdk-test
         COGNITE_BASE_URL: https://greenfield.cognitedata.com
         COGNITE_CLIENT_NAME: python-sdk-integration-tests
+        GDAL_VERSION: 3.0
         CI: 1
       run: |
         pytest tests --cov --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2
