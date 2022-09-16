@@ -25,7 +25,7 @@ gdal = {url = "https://download.lfd.uci.edu/pythonlibs/archived/GDAL-3.4.3-pp38-
 
 [tool.poetry.extras]
 pandas = ["pandas"]
-geo = ["geopandas", "shapely"]
+geo = ["geopandas", "shapely", "gdal"]
 sympy = ["sympy"]
 functions = ["pip"]
 all = ["pandas", "geopandas", "shapely", "sympy", "pip"]
