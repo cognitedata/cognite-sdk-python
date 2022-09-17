@@ -580,7 +580,7 @@ class DatapointsAPI(APIClient):
         **Note**: All arguments are optional, as long as at least one identifier is given. When passing aggregates, granularity must also be given.
         When passing dict objects with specific parameters, these will take precedence. See examples below.
 
-        **Performance hint:**: For better performance, consider using `retrieve_arrays(...)` which uses `numpy.ndarrays` for data storage.
+        **Performance hint:**: For better performance and memory usage, consider using `retrieve_arrays(...)` which uses `numpy.ndarrays` for data storage.
 
         Args:
             start (Union[int, str, datetime]): Inclusive start. Default: 1970-01-01 UTC.
@@ -594,7 +594,9 @@ class DatapointsAPI(APIClient):
             ignore_unknown_ids (bool): Whether or not to ignore missing time series rather than raising an exception. Default: False
 
         Returns:
-            Union[None, Datapoints, DatapointsList]: A `Datapoints` object containing the requested data, or a `DatapointsList` if multiple time series was asked for. If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
+            Union[None, Datapoints, DatapointsList]: A `Datapoints` object containing the requested data, or a `DatapointsList` if multiple
+                time series was asked for. If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function
+                will return `None`. The ordering is first ids, then external_ids.
 
         Examples:
 
@@ -608,16 +610,16 @@ class DatapointsAPI(APIClient):
             You can also get aggregated values, such as the average. Here we are getting daily averages for all of 2018 for
             two different time series. Note that we are fetching them using their external ids::
 
-                >>> from datetime import datetime, timezone
                 >>> dps = client.time_series.data.retrieve(
                 ...    external_id=["foo", "bar"],
-                ...    start=datetime(2018, 1, 1, tzinfo=timezone.utc),
-                ...    end=datetime(2018, 1, 1, tzinfo=timezone.utc),
+                ...    start=datetime(2018, 1, 1, tzinfo=utc),
+                ...    end=datetime(2018, 1, 1, tzinfo=utc),
                 ...    aggregates=["average"],
                 ...    granularity="1d")
 
-            Note that all parameters can be individually set if you pass (one or more) dictionaries. If you also pass top-level
-            parameters, these will be overwritten by the individual parameters (when both exist). You are free to mix ids and external ids.
+            Note that all parameters (except `ignore_unknown_ids`) can be individually set if you pass (one or more) dictionaries.
+            If you also pass top-level parameters, these will be overwritten by the individual parameters (when both exist). You are
+            free to mix ids and external ids.
 
             Let's say you want different aggregates and end-times for few time series:
 
@@ -630,17 +632,37 @@ class DatapointsAPI(APIClient):
                 ...     start="5d-ago",
                 ...     granularity="1h")
 
-            All parameters except `ignore_unknown_ids` can be individually set (if you want to specify multiple values
-            for this, you'll have to use the `.query` endpoint).
+            When requesting multiple time series, an easy way to get the datapoints of a specific one is to use the `.get` method
+            on the returned `DatapointsList` object, then specify if you want `id` or `external_id`. Note: If you fetch a time series
+            by using `id`, you can still access it with its `external_id` (and the opposite way around)::
 
-                >>> start_time = "2w-ago"
-                >>> limit = None
+                >>> dps_lst = client.time_series.data.retrieve(
+                ...     id=[42, 43, ..., 500], start="2w-ago")
+                >>> ts_350 = dps_lst.get(id=350)  # `Datapoints` object
+
+            ...but what happens if you request duplicate `id`s or `external_id`s? Let's say you need to fetch data from multiple
+            disconnected periods, e.g. stock data only from recessions. In this case the `.get` method will return a list of `Datapoints` instead:
+
+                >>> from datetime import datetime, timezone
+                >>> utc = timezone.utc
+                >>> dps_lst = client.time_series.data.retrieve(
+                ...     id=[
+                ...         42, 43, 44, 45,
+                ...         {"id": 350, start=datetime(1950, 1, 1, tzinfo=utc), end=datetime(1980, 1, 1, tzinfo=utc)}
+                ...         {"id": 350, start=datetime(2010, 1, 1, tzinfo=utc), end=datetime(2020, 1, 1, tzinfo=utc)}
+                ...     ])
+                >>> ts_44 = dps_lst.get(id=44)  # Single `Datapoints` object
+                >>> ts_350_lst = dps_lst.get(id=350)  # List of two `Datapoints` objects
+
+            Last example showcases the great flexibility of the `retrieve` endpoint, with a very custom query. If you want to
+            also specify multiple values for `ignore_unknown_ids`, you'll need to use the `.query` endpoint.
+
                 >>> ts1 = 1337
                 >>> ts2 = {
                 ...     "id": 42,
-                ...     "start": -12345,  # Overrides `start_time`
+                ...     "start": -12345,  # Overrides `start` argument below
                 ...     "end": "1h-ago",
-                ...     "limit": 1000,  # Overrides `limit`
+                ...     "limit": 1000,  # Overrides `limit` argument below
                 ...     "include_outside_points": True
                 ... }
                 >>> ts3 = {
@@ -651,7 +673,7 @@ class DatapointsAPI(APIClient):
                 ...     "include_outside_points": False
                 ... }
                 >>> dps = client.time_series.data.retrieve(
-                ...    id=[ts1, ts2, ts3], start=start_time, limit=limit
+                ...    id=[ts1, ts2, ts3], start="2w-ago", limit=None
                 ... )
         """
         query = DatapointsQuery(
@@ -701,7 +723,9 @@ class DatapointsAPI(APIClient):
             ignore_unknown_ids (bool): Whether or not to ignore missing time series rather than raising an exception. Default: False
 
         Returns:
-            Union[None, DatapointsArray, DatapointsArrayList]: A `DatapointsArray` object containing the requested data, or a `DatapointsArrayList` if multiple time series was asked for. If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
+            Union[None, DatapointsArray, DatapointsArrayList]: A `DatapointsArray` object containing the requested data, or a `DatapointsArrayList` if multiple
+                time series was asked for. If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function
+                will return `None`. The ordering is first ids, then external_ids.
 
         Examples:
 
@@ -806,6 +830,10 @@ class DatapointsAPI(APIClient):
         Returns:
             pandas.DataFrame
 
+        Returns:
+            pandas.DataFrame: A pandas DataFrame containing the requested time series. The ordering of columns is ids first, then external_ids.
+                For time series with multiple aggregates, they will be sorted in alphabetical order ("average" before "max").
+
         Examples:
 
             Get a pandas dataframe using a single id, and use this id as column name, with no more than 100 datapoints::
@@ -819,7 +847,7 @@ class DatapointsAPI(APIClient):
                 ...     limit=100,
                 ...     column_names="id")
 
-            Get the  pandas dataframe with a uniform index (fixed spacing between points) of 1 day, for two time series with
+            Get the pandas dataframe with a uniform index (fixed spacing between points) of 1 day, for two time series with
             individually specified aggregates, from 1990 through 2020::
 
                 >>> from datetime import datetime, timezone
@@ -864,7 +892,7 @@ class DatapointsAPI(APIClient):
             if fetcher.raw_queries or len(grans_given) > 1 or is_limited:
                 raise ValueError(
                     "Cannot return a uniform index when asking for aggregates with multiple granularities "
-                    f"({grans_given}) OR when (partly) querying raw datapoints OR when a limit is used."
+                    f"({grans_given}) OR when (partly) querying raw datapoints OR when a finite limit is used."
                 )
         df = fetcher.fetch_all_datapoints(use_numpy=True).to_pandas(column_names, include_aggregate_name)
         if not uniform_index:

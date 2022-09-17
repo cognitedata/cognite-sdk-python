@@ -5,6 +5,7 @@ import numbers
 import operator as op
 import re as regexp
 import warnings
+from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
 from functools import cached_property
@@ -12,6 +13,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Collection,
     Dict,
     Generator,
     Iterable,
@@ -30,7 +32,7 @@ from typing import (
 
 from cognite.client import utils
 from cognite.client._api.datapoint_constants import (
-    ALL_DATAPOINT_AGGREGATES,
+    ALL_SORTED_DP_AGGS,
     DPS_LIMIT,
     DPS_LIMIT_AGG,
     CustomDatapointsQuery,
@@ -44,6 +46,7 @@ from cognite.client.exceptions import CogniteDuplicateColumnsError
 from cognite.client.utils._auxiliary import (
     convert_all_keys_to_camel_case,
     convert_all_keys_to_snake_case,
+    find_duplicates,
     local_import,
     to_camel_case,
 )
@@ -232,7 +235,7 @@ class DatapointsArray(CogniteResource):
     def _data_fields(self) -> Tuple[List[str], List[npt.NDArray]]:
         data_field_tuples = [
             (attr, arr)
-            for attr in ("timestamp", "value", *ALL_DATAPOINT_AGGREGATES)
+            for attr in ("timestamp", "value", *ALL_SORTED_DP_AGGS)
             if (arr := getattr(self, attr)) is not None
         ]
         attrs, arrays = map(list, zip(*data_field_tuples))
@@ -251,7 +254,8 @@ class DatapointsArray(CogniteResource):
         attrs, arrays = self._data_fields()
         if convert_timestamps:
             assert attrs[0] == "timestamp"
-            # Note: numpy does not have a strftime method to get the exact format we want (hence the datetime detour):
+            # Note: numpy does not have a strftime method to get the exact format we want (hence the datetime detour)
+            #       and for some weird reason .astype(datetime) directly from dt64 returns native integer... whatwhyy
             arrays[0] = arrays[0].astype("datetime64[ms]").astype(datetime).astype(str)
 
         if camel_case:
@@ -269,6 +273,7 @@ class DatapointsArray(CogniteResource):
         identifier_dct = {"id": self.id, "external_id": self.external_id}
         if column_names not in identifier_dct:
             raise ValueError("Argument `column_names` must be either 'external_id' or 'id'")
+
         identifier = identifier_dct[column_names]
         if identifier is None:  # Time series are not required to have an external_id unfortunately...
             identifier = identifier_dct["id"]
@@ -279,17 +284,19 @@ class DatapointsArray(CogniteResource):
                 "to silence this warning.",
                 UserWarning,
             )
-        idx = pd.to_datetime(self.timestamp, unit="ms")
         if self.value is not None:
-            return pd.DataFrame({identifier: self.value}, index=idx)
+            return pd.DataFrame({identifier: self.value}, index=self.timestamp)
 
-        def col_name(agg: str) -> str:
-            return f"{identifier}{include_aggregate_name * f'|{agg}'}"
+        columns, data = [], []
+        for agg in ALL_SORTED_DP_AGGS:
+            if (arr := getattr(self, agg)) is not None:
+                data.append(arr)
+                columns.append(f"{identifier}{include_aggregate_name * f'|{agg}'}")
 
-        return pd.DataFrame(
-            {col_name(agg): arr for agg in ALL_DATAPOINT_AGGREGATES if (arr := getattr(self, agg)) is not None},
-            index=idx,
-        )
+        # Since columns might contain duplicates, we can't instantiate from dict as only the
+        # last key (array/column) would be kept:
+        (df := pd.DataFrame(dict(enumerate(data)), index=self.timestamp)).columns = columns
+        return df
 
 
 class Datapoints(CogniteResource):
@@ -402,7 +409,6 @@ class Datapoints(CogniteResource):
             "datapoints": [dp.dump(camel_case=camel_case) for dp in self.__get_datapoint_objects()],
         }
         if camel_case:
-            # TODO: Keys in dicts in `datapoints`, i.e. `step_interpolation` are still snake_cased.
             dumped = {utils._auxiliary.to_camel_case(key): value for key, value in dumped.items()}
         return {key: value for key, value in dumped.items() if value is not None}
 
@@ -410,7 +416,6 @@ class Datapoints(CogniteResource):
         self,
         column_names: str = "external_id",
         include_aggregate_name: bool = True,
-        camel_case: bool = False,
         include_errors: bool = False,
     ) -> "pandas.DataFrame":
         """Convert the datapoints into a pandas DataFrame.
@@ -419,7 +424,6 @@ class Datapoints(CogniteResource):
             column_names (str):  Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
             include_aggregate_name (bool): Include aggregate in the column name
             include_errors (bool): For synthetic datapoint queries, include a column with errors.
-            camel_case (bool): Convert column names to camel case (e.g. `stepInterpolation` instead of `step_interpolation`)
 
         Returns:
             pandas.DataFrame: The dataframe.
@@ -439,21 +443,18 @@ class Datapoints(CogniteResource):
             else:
                 id_with_agg = str(identifier)
                 if attr != "value":
-                    id_with_agg += "|{}".format(to_camel_case(attr) if camel_case else attr)
+                    id_with_agg += f"|{attr}"
                     value = pd.to_numeric(value, errors="coerce")  # Avoids object dtype for missing aggs
                 data_fields[id_with_agg] = value
 
         df = pd.DataFrame(data_fields, index=pd.to_datetime(timestamps, unit="ms"))
         if not include_aggregate_name:
-            df = Datapoints._strip_aggregate_names(df, camel_case)
+            df = Datapoints._strip_aggregate_names(df)
         return df
 
     @staticmethod
-    def _strip_aggregate_names(df: "pandas.DataFrame", camel_case: bool) -> "pandas.DataFrame":
-        all_aggs = ALL_DATAPOINT_AGGREGATES[:]
-        if camel_case:
-            all_aggs = map(to_camel_case, all_aggs)
-        expr = f"\\|({'|'.join(all_aggs)})$"
+    def _strip_aggregate_names(df: "pandas.DataFrame") -> "pandas.DataFrame":
+        expr = f"\\|({'|'.join(ALL_SORTED_DP_AGGS)})$"
         df = df.rename(columns=lambda col: regexp.sub(expr, "", col))
         if not df.columns.is_unique:
             raise CogniteDuplicateColumnsError([col for col, count in df.columns.value_counts().items() if count > 1])
@@ -539,6 +540,30 @@ class Datapoints(CogniteResource):
 class DatapointsArrayList(CogniteResourceList):
     _RESOURCE = DatapointsArray
 
+    def __init__(self, resources: Collection[Any], cognite_client: "CogniteClient" = None):
+        super().__init__(resources, cognite_client)
+
+        # Fix what happens for duplicated identifiers:
+        ids = {x.id: x for x in self.data if x.id is not None}
+        xids = {x.external_id: x for x in self.data if x.external_id is not None}
+        dupe_ids, id_dct = find_duplicates(ids), defaultdict(list)
+        dupe_xids, xid_dct = find_duplicates(xids), defaultdict(list)
+
+        for id, dps_arr in ids.items():
+            if id in dupe_ids:
+                id_dct[id].append(dps_arr)
+
+        for xid, dps_arr in xids.items():
+            if xid in dupe_xids:
+                xid_dct[xid].append(dps_arr)
+
+        self._id_to_item.update(id_dct)
+        self._external_id_to_item.update(xid_dct)
+
+    def get(self, id: int = None, external_id: str = None) -> Optional[Union[DatapointsArray, List[DatapointsArray]]]:
+        # TODO: Question, can we type annotate without specifying the function?
+        return super().get(id, external_id)
+
     def __str__(self) -> str:
         return json.dumps(self.dump(convert_timestamps=True), indent=4)
 
@@ -568,6 +593,30 @@ class DatapointsArrayList(CogniteResourceList):
 
 class DatapointsList(CogniteResourceList):
     _RESOURCE = Datapoints
+
+    def __init__(self, resources: Collection[Any], cognite_client: "CogniteClient" = None):
+        super().__init__(resources, cognite_client)
+
+        # Fix what happens for duplicated identifiers:
+        ids = {x.id: x for x in self.data if x.id is not None}
+        xids = {x.external_id: x for x in self.data if x.external_id is not None}
+        dupe_ids, id_dct = find_duplicates(ids), defaultdict(list)
+        dupe_xids, xid_dct = find_duplicates(xids), defaultdict(list)
+
+        for id, dps in ids.items():
+            if id in dupe_ids:
+                id_dct[id].append(dps)
+
+        for xid, dps in xids.items():
+            if xid in dupe_xids:
+                xid_dct[xid].append(dps)
+
+        self._id_to_item.update(id_dct)
+        self._external_id_to_item.update(xid_dct)
+
+    def get(self, id: int = None, external_id: str = None) -> Optional[Union[DatapointsList, List[DatapointsList]]]:
+        # TODO: Question, can we type annotate without specifying the function?
+        return super().get(id, external_id)
 
     def __str__(self) -> str:
         item = self.dump()

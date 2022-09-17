@@ -147,15 +147,9 @@ class APIClient:
         params: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, Any]] = None,
     ) -> requests.Response:
-        # print()
-        # print(f"{json=}")
-        res = self._do_request(
+        return self._do_request(
             "POST", url_path, json=json, headers=headers, params=params, timeout=self._config.timeout
         )
-        # print()
-        # print(f"{res.json()=}")
-        # print()
-        return res
 
     def _put(
         self, url_path: str, json: Optional[Dict[str, Any]] = None, headers: Optional[Dict[str, Any]] = None

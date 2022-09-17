@@ -1015,11 +1015,15 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
         self.has_non_count_aggs = bool(self.float_aggs)
         if self.has_non_count_aggs:
             self.agg_unpack_fn = DpsUnpackFns.custom_from_aggregates(self.float_aggs)
+
+            self.first_non_count_agg, *others = self.float_aggs
+            self.single_non_count_agg = not others
+
             if use_numpy:
-                if len(self.float_aggs) > 1:
-                    self.dtype_aggs = np.dtype((np.float64, len(self.float_aggs)))
-                else:  # (.., 1) is deprecated for some reason
+                if self.single_non_count_agg:
                     self.dtype_aggs = np.dtype(np.float64)  # type: ignore [assignment]
+                else:  # (.., 1) is deprecated for some reason
+                    self.dtype_aggs = np.dtype((np.float64, len(self.float_aggs)))
 
     def _find_number_of_subtasks_uniform_split(self, tot_ms: int, n_workers_per_queries: int) -> int:
         n_max_dps = tot_ms // self.offset_next  # evenly divides
@@ -1113,7 +1117,7 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
             try:  # Fast method uses multi-key unpacking:
                 arr = np.fromiter(map(self.agg_unpack_fn, dps), dtype=self.dtype_aggs, count=n)  # type: ignore [arg-type]
             except KeyError:  # An aggregate is missing, fallback to slower `dict.get(agg)`.
-                # This can happen when certain aggregates are undefined, e.g. `interpolate` at first interval.
+                # This can happen when certain aggs. are undefined, e.g. `interpolate` at first interval if rounded down
                 arr = np.array([tuple(map(dp.get, self.float_aggs)) for dp in dps], dtype=np.float64)
             self.dps_data[idx].append(arr.reshape(n, len(self.float_aggs)))
 
@@ -1127,7 +1131,10 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
             try:
                 lst = list(map(self.agg_unpack_fn, dps))
             except KeyError:
-                lst = [tuple(map(dp.get, self.float_aggs)) for dp in dps]
+                if self.single_non_count_agg:
+                    lst = [dp.get(self.first_non_count_agg) for dp in dps]
+                else:
+                    lst = [tuple(map(dp.get, self.float_aggs)) for dp in dps]
             self.dps_data[idx].append(lst)
 
 

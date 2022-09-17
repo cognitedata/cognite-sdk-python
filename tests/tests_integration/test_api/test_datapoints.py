@@ -14,7 +14,7 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 
-from cognite.client._api.datapoint_constants import ALL_DATAPOINT_AGGREGATES, DPS_LIMIT  # DPS_LIMIT_AGG,
+from cognite.client._api.datapoint_constants import ALL_SORTED_DP_AGGS, DPS_LIMIT  # DPS_LIMIT_AGG,
 from cognite.client.data_classes import (
     Datapoints,
     DatapointsArray,
@@ -40,17 +40,18 @@ random.seed(round(time.time(), -3))
 
 @pytest.fixture(scope="session")
 def all_test_time_series(cognite_client):
+    prefix = "PYSDK integration test"
     return cognite_client.time_series.retrieve_multiple(
         external_ids=[
-            "PYSDK integration test 001: outside points, numeric",
-            "PYSDK integration test 002: outside points, string",
-            *[f"PYSDK integration test {i:03d}: weekly values, 1950-2000, numeric" for i in range(3, 54)],
-            *[f"PYSDK integration test {i:03d}: weekly values, 1950-2000, string" for i in range(54, 104)],
-            "PYSDK integration test 104: daily values, 1965-1975, numeric",
-            "PYSDK integration test 105: hourly values, 1969-10-01 - 1970-03-01, numeric",
-            "PYSDK integration test 106: every minute, 1969-12-31 - 1970-01-02, numeric",
-            "PYSDK integration test 107: every second, 1969-12-31 23:30:00 - 1970-01-01 00:30:00, numeric",
-            "PYSDK integration test 108: every millisecond, 1969-12-31 23:59:58.500 - 1970-01-01 00:00:01.500, numeric",
+            f"{prefix} 001: outside points, numeric",
+            f"{prefix} 002: outside points, string",
+            *[f"{prefix} {i:03d}: weekly values, 1950-2000, numeric" for i in range(3, 54)],
+            *[f"{prefix} {i:03d}: weekly values, 1950-2000, string" for i in range(54, 104)],
+            f"{prefix} 104: daily values, 1965-1975, numeric",
+            f"{prefix} 105: hourly values, 1969-10-01 - 1970-03-01, numeric",
+            f"{prefix} 106: every minute, 1969-12-31 - 1970-01-02, numeric",
+            f"{prefix} 107: every second, 1969-12-31 23:30:00 - 1970-01-01 00:30:00, numeric",
+            f"{prefix} 108: every millisecond, 1969-12-31 23:59:58.500 - 1970-01-01 00:00:01.500, numeric",
         ]
     )
 
@@ -127,7 +128,7 @@ PARAMETRIZED_VALUES_OUTSIDE_POINTS = [
 #         yield
 
 
-class TestRetrieveDatapointsAPI:
+class TestRetrieveRawDatapointsAPI:
     """Note: Since `retrieve` and `retrieve_arrays` endspoints should give identical results,
     except for the data container types, all tests run both endpoints.
     """
@@ -464,12 +465,14 @@ class TestRetrieveDatapointsAPI:
                     assert isinstance(r.is_step, bool)
                     assert isinstance(r.is_string, bool)
 
+
+class TestRetrieveAggregateDatapointsAPI:
     # TODO: WIP
     def test_retrieve_aggregates__string_ts_raises(self):
         pass
 
     def test_retrieve_aggregates(self):
-        # ALL_DATAPOINT_AGGREGATES = [
+        # ALL_SORTED_DP_AGGS = [
         #     "average",
         #     "max",
         #     "min",
@@ -482,6 +485,34 @@ class TestRetrieveDatapointsAPI:
         #     "total_variation",
         # ]
         pass
+
+    # def unpacking_failed
+    #     res = pysdk_client.time_series.data.retrieve(
+    #         external_id="PYSDK integration test 108: every millisecond, 1969-12-31 23:59:58.500 - 1970-01-01 00:00:01.500, numeric",
+    #         granularity="1s",
+    #         # aggregates=["interpolation", "stepInterpolation", "totalVariation"],
+    #         aggregates=["stepInterpolation"],
+    #         start=-5000,  # -10000,
+    #         end=5000,  # pd.Timestamp("1980").value // int(1e6),
+    #         limit=None,
+    #     )
+    #     df = res.to_pandas(include_aggregate_name=True)
+    #     df.index = df.index.to_numpy("datetime64[ms]").astype(np.int64)
+    #     df
+    #
+    #
+    #     res = pysdk_client.time_series.data.retrieve(
+    #         id=5823269796769815,
+    #         granularity="1h",
+    #         # aggregates=["interpolation", "stepInterpolation", "totalVariation"],
+    #         aggregates=["stepInterpolation"],
+    #         start=-10000,
+    #         end=105177600000,  #pd.Timestamp("1980").value // int(1e6),
+    #         limit=None,
+    #     )
+    #     df = res.to_pandas(include_aggregate_name=False)
+    #     df.index = df.index.to_numpy("datetime64[ms]").astype(np.int64)
+    #     df
 
 
 # class TestRetrieveDataFrameAPI:
