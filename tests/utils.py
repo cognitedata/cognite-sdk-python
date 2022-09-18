@@ -6,6 +6,7 @@ import os
 import random
 from contextlib import contextmanager
 
+from cognite.client._api.datapoint_constants import ALL_SORTED_DP_AGGS
 from cognite.client.utils._auxiliary import random_string
 
 
@@ -17,6 +18,19 @@ def random_cognite_ids(n):
 def random_cognite_external_ids(n):
     # Returns list of random, valid Cognite external IDs:
     return [random_string(50) for _ in range(n)]
+
+
+def random_valid_granularity():
+    gran = random.choice("smhd")
+    upper = {"s": 120, "m": 120, "h": 100000, "d": 100000}
+    unit = random.randint(1, upper[gran])
+    return f"{unit}{gran}"
+
+
+def random_valid_aggregates(n=None):
+    """Return n random aggregates in a list or random (at least 1) if n is None"""
+    n = n or random.randint(1, len(ALL_SORTED_DP_AGGS))
+    return random.sample(ALL_SORTED_DP_AGGS, k=n)
 
 
 @contextmanager

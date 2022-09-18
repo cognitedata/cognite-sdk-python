@@ -23,9 +23,15 @@ from cognite.client.data_classes import (
     DatapointsQuery,
     TimeSeries,
 )
-from cognite.client.exceptions import CogniteNotFoundError
+from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS, UNIT_IN_MS
-from tests.utils import random_cognite_external_ids, random_cognite_ids, set_max_workers
+from tests.utils import (
+    random_cognite_external_ids,
+    random_cognite_ids,
+    random_valid_aggregates,
+    random_valid_granularity,
+    set_max_workers,
+)
 
 DATAPOINTS_API = "cognite.client._api.datapoints.{}"
 WEEK_MS = UNIT_IN_MS["w"]
@@ -467,24 +473,52 @@ class TestRetrieveRawDatapointsAPI:
 
 
 class TestRetrieveAggregateDatapointsAPI:
-    # TODO: WIP
-    def test_retrieve_aggregates__string_ts_raises(self):
-        pass
+    @pytest.mark.parametrize(
+        "max_workers, n_ts, mock_out_eager_or_chunk",
+        [
+            (1, 1, "ChunkingDpsFetcher"),
+            (5, 1, "ChunkingDpsFetcher"),
+            (5, 5, "ChunkingDpsFetcher"),
+            (1, 2, "EagerDpsFetcher"),
+            (1, 10, "EagerDpsFetcher"),
+            (9, 10, "EagerDpsFetcher"),
+            (9, 50, "EagerDpsFetcher"),
+        ],
+    )
+    def test_retrieve_aggregates__string_ts_raises(
+        self, max_workers, n_ts, mock_out_eager_or_chunk, weekly_dps_ts, cognite_client, retrieve_endpoints
+    ):
+        _, string_ts = weekly_dps_ts
+        with set_max_workers(cognite_client, max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
+            ts_chunk = random.sample(string_ts, k=n_ts)
+            for endpoint in retrieve_endpoints:
+                with pytest.raises(CogniteAPIError) as exc:
+                    endpoint(
+                        granularity=random_valid_granularity(),
+                        aggregates=random_valid_aggregates(),
+                        id=[ts.id for ts in ts_chunk],
+                        ignore_unknown_ids=random.choice((True, False)),
+                    )
+                assert exc.value.code == 400
+                assert exc.value.message == "Aggregates are not supported for string time series"
 
-    def test_retrieve_aggregates(self):
-        # ALL_SORTED_DP_AGGS = [
-        #     "average",
-        #     "max",
-        #     "min",
-        #     "count",
-        #     "sum",
-        #     "interpolation",
-        #     "step_interpolation",
-        #     "continuous_variance",
-        #     "discrete_variance",
-        #     "total_variation",
-        # ]
-        pass
+    # def test_retrieve_aggregates__include_outside_points_raises(self):
+    #     pass
+    #
+    # def test_retrieve_aggregates(self):
+    #     # ALL_SORTED_DP_AGGS = [
+    #     #     "average",
+    #     #     "max",
+    #     #     "min",
+    #     #     "count",
+    #     #     "sum",
+    #     #     "interpolation",
+    #     #     "step_interpolation",
+    #     #     "continuous_variance",
+    #     #     "discrete_variance",
+    #     #     "total_variation",
+    #     # ]
+    #     pass
 
     # def unpacking_failed
     #     res = pysdk_client.time_series.data.retrieve(
