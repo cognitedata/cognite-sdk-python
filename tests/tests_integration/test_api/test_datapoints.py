@@ -12,6 +12,7 @@ from contextlib import nullcontext as does_not_raise
 from unittest.mock import patch
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from cognite.client._api.datapoint_constants import ALL_SORTED_DP_AGGS, DPS_LIMIT  # DPS_LIMIT_AGG,
@@ -23,7 +24,7 @@ from cognite.client.data_classes import (
     DatapointsQuery,
     TimeSeries,
 )
-from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
+from cognite.client.exceptions import CogniteNotFoundError
 from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS, UNIT_IN_MS
 from tests.utils import (
     random_cognite_external_ids,
@@ -35,6 +36,9 @@ from tests.utils import (
 
 DATAPOINTS_API = "cognite.client._api.datapoints.{}"
 WEEK_MS = UNIT_IN_MS["w"]
+DAY_MS = UNIT_IN_MS["d"]
+MS_1975 = 157766400000
+MS_1965 = -MS_1975  # yes
 DPS_TYPES = [Datapoints, DatapointsArray]
 DPS_LST_TYPES = [DatapointsList, DatapointsArrayList]
 
@@ -58,6 +62,11 @@ def all_test_time_series(cognite_client):
             f"{prefix} 106: every minute, 1969-12-31 - 1970-01-02, numeric",
             f"{prefix} 107: every second, 1969-12-31 23:30:00 - 1970-01-01 00:30:00, numeric",
             f"{prefix} 108: every millisecond, 1969-12-31 23:59:58.500 - 1970-01-01 00:00:01.500, numeric",
+            f"{prefix} 109: daily values, is_step=True, 1965-1975, numeric",
+            f"{prefix} 110: hourly values, is_step=True, 1969-10-01 - 1970-03-01, numeric",
+            f"{prefix} 111: every minute, is_step=True, 1969-12-31 - 1970-01-02, numeric",
+            f"{prefix} 112: every second, is_step=True, 1969-12-31 23:30:00 - 1970-01-01 00:30:00, numeric",
+            f"{prefix} 113: every millisecond, is_step=True, 1969-12-31 23:59:58.500 - 1970-01-01 00:00:01.500, numeric",
         ]
     )
 
@@ -70,6 +79,11 @@ def outside_points_ts(all_test_time_series):
 @pytest.fixture
 def weekly_dps_ts(all_test_time_series):
     return all_test_time_series[2:53], all_test_time_series[53:103]
+
+
+@pytest.fixture
+def fixed_freq_dps_ts(all_test_time_series):
+    return all_test_time_series[103:109]
 
 
 @pytest.fixture(scope="session")
@@ -474,79 +488,140 @@ class TestRetrieveRawDatapointsAPI:
 
 class TestRetrieveAggregateDatapointsAPI:
     @pytest.mark.parametrize(
-        "max_workers, n_ts, mock_out_eager_or_chunk",
-        [
-            (1, 1, "ChunkingDpsFetcher"),
-            (5, 1, "ChunkingDpsFetcher"),
-            (5, 5, "ChunkingDpsFetcher"),
-            (1, 2, "EagerDpsFetcher"),
-            (1, 10, "EagerDpsFetcher"),
-            (9, 10, "EagerDpsFetcher"),
-            (9, 50, "EagerDpsFetcher"),
-        ],
+        "start, end, exp_start, exp_end, max_workers, mock_out_eager_or_chunk",
+        (
+            (MIN_TIMESTAMP_MS, MAX_TIMESTAMP_MS, MS_1965, MS_1975, 4, "ChunkingDpsFetcher"),
+            (MIN_TIMESTAMP_MS, MAX_TIMESTAMP_MS, MS_1965, MS_1975, 1, "EagerDpsFetcher"),
+            (MS_1965, MS_1975, MS_1965, MS_1975 - DAY_MS, 4, "ChunkingDpsFetcher"),
+            (MS_1965, MS_1975, MS_1965, MS_1975 - DAY_MS, 1, "EagerDpsFetcher"),
+            (-WEEK_MS, WEEK_MS + 1, -WEEK_MS, WEEK_MS, 4, "ChunkingDpsFetcher"),
+            (-WEEK_MS, WEEK_MS + 1, -WEEK_MS, WEEK_MS, 1, "EagerDpsFetcher"),
+            (-DAY_MS, DAY_MS + 1, -DAY_MS, DAY_MS, 4, "ChunkingDpsFetcher"),
+            (-DAY_MS, DAY_MS + 1, -DAY_MS, DAY_MS, 1, "EagerDpsFetcher"),
+        ),
     )
-    def test_retrieve_aggregates__string_ts_raises(
-        self, max_workers, n_ts, mock_out_eager_or_chunk, weekly_dps_ts, cognite_client, retrieve_endpoints
+    def test_retrieve_aggregates__is_step_false(
+        self,
+        start,
+        end,
+        exp_start,
+        exp_end,
+        max_workers,
+        mock_out_eager_or_chunk,
+        cognite_client,
+        retrieve_endpoints,
+        fixed_freq_dps_ts,
     ):
-        _, string_ts = weekly_dps_ts
+        # Underlying time series has daily values, we ask for 1d, 1h, 1m and 1s and make sure all share
+        # the exact same timestamps.
+        ts_daily, *_ = fixed_freq_dps_ts
+        assert ts_daily.is_step is False
+
         with set_max_workers(cognite_client, max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
-            ts_chunk = random.sample(string_ts, k=n_ts)
             for endpoint in retrieve_endpoints:
-                with pytest.raises(CogniteAPIError) as exc:
-                    endpoint(
-                        granularity=random_valid_granularity(),
-                        aggregates=random_valid_aggregates(),
-                        id=[ts.id for ts in ts_chunk],
-                        ignore_unknown_ids=random.choice((True, False)),
-                    )
-                assert exc.value.code == 400
-                assert exc.value.message == "Aggregates are not supported for string time series"
+                # Give each "granularity" a random list of aggregates:
+                aggs = [random_valid_aggregates(exclude={"step_interpolation"}) for _ in range(4)]
+                res = endpoint(
+                    start=start,
+                    end=end,
+                    id=[
+                        {"id": ts_daily.id, "granularity": "1d", "aggregates": aggs[0]},
+                        {"id": ts_daily.id, "granularity": "1h", "aggregates": aggs[1]},
+                    ],
+                    external_id=[
+                        {"external_id": ts_daily.external_id, "granularity": "1m", "aggregates": aggs[2]},
+                        {"external_id": ts_daily.external_id, "granularity": "1s", "aggregates": aggs[3]},
+                    ],
+                )
+                assert ((df := res.to_pandas()).isna().sum() == 0).all()
+                assert df.index[0] == pd.Timestamp(exp_start, unit="ms")
+                assert df.index[-1] == pd.Timestamp(exp_end, unit="ms")
 
-    # def test_retrieve_aggregates__include_outside_points_raises(self):
-    #     pass
-    #
-    # def test_retrieve_aggregates(self):
-    #     # ALL_SORTED_DP_AGGS = [
-    #     #     "average",
-    #     #     "max",
-    #     #     "min",
-    #     #     "count",
-    #     #     "sum",
-    #     #     "interpolation",
-    #     #     "step_interpolation",
-    #     #     "continuous_variance",
-    #     #     "discrete_variance",
-    #     #     "total_variation",
-    #     # ]
-    #     pass
+    # @pytest.mark.parametrize(
+    #     "is_step, start, end, is_empty",
+    #     (
+    #         (True, None, None, None),
+    #         (False, None, None, None),
+    #     )
+    # )
+    # def test_interpolation_and_step_interpolation__is_step_tf(self, is_step, start, end, is_empty, fixed_freq_dps_ts):
+    #     print()
+    #     for ts in fixed_freq_dps_ts:
+    #         print(ts.name)
+    # ts_h = "PYSDK integration test 105: hourly values, 1969-10-01 - 1970-03-01, numeric"
 
-    # def unpacking_failed
-    #     res = pysdk_client.time_series.data.retrieve(
-    #         external_id="PYSDK integration test 108: every millisecond, 1969-12-31 23:59:58.500 - 1970-01-01 00:00:01.500, numeric",
-    #         granularity="1s",
-    #         # aggregates=["interpolation", "stepInterpolation", "totalVariation"],
-    #         aggregates=["stepInterpolation"],
-    #         start=-5000,  # -10000,
-    #         end=5000,  # pd.Timestamp("1980").value // int(1e6),
-    #         limit=None,
-    #     )
-    #     df = res.to_pandas(include_aggregate_name=True)
-    #     df.index = df.index.to_numpy("datetime64[ms]").astype(np.int64)
-    #     df
-    #
-    #
-    #     res = pysdk_client.time_series.data.retrieve(
-    #         id=5823269796769815,
-    #         granularity="1h",
-    #         # aggregates=["interpolation", "stepInterpolation", "totalVariation"],
-    #         aggregates=["stepInterpolation"],
-    #         start=-10000,
-    #         end=105177600000,  #pd.Timestamp("1980").value // int(1e6),
-    #         limit=None,
-    #     )
-    #     df = res.to_pandas(include_aggregate_name=False)
-    #     df.index = df.index.to_numpy("datetime64[ms]").astype(np.int64)
-    #     df
+
+#     @pytest.mark.parametrize(
+#         "max_workers, n_ts, mock_out_eager_or_chunk",
+#         [
+#             (1, 1, "ChunkingDpsFetcher"),
+#             (5, 1, "ChunkingDpsFetcher"),
+#             (5, 5, "ChunkingDpsFetcher"),
+#             (1, 2, "EagerDpsFetcher"),
+#             (1, 10, "EagerDpsFetcher"),
+#             (9, 10, "EagerDpsFetcher"),
+#             (9, 50, "EagerDpsFetcher"),
+#         ],
+#     )
+#     def test_retrieve_aggregates__string_ts_raises(
+#         self, max_workers, n_ts, mock_out_eager_or_chunk, weekly_dps_ts, cognite_client, retrieve_endpoints
+#     ):
+#         _, string_ts = weekly_dps_ts
+#         with set_max_workers(cognite_client, max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
+#             ts_chunk = random.sample(string_ts, k=n_ts)
+#             for endpoint in retrieve_endpoints:
+#                 with pytest.raises(CogniteAPIError) as exc:
+#                     endpoint(
+#                         granularity=random_valid_granularity(),
+#                         aggregates=random_valid_aggregates(),
+#                         id=[ts.id for ts in ts_chunk],
+#                         ignore_unknown_ids=random.choice((True, False)),
+#                     )
+#                 assert exc.value.code == 400
+#                 assert exc.value.message == "Aggregates are not supported for string time series"
+
+# def test_retrieve_aggregates(self):
+#     # ALL_SORTED_DP_AGGS = [
+#     #     "average",
+#     #     "max",
+#     #     "min",
+#     #     "count",
+#     #     "sum",
+#     #     "interpolation",
+#     #     "step_interpolation",
+#     #     "continuous_variance",
+#     #     "discrete_variance",
+#     #     "total_variation",
+#     # ]
+#     pass
+
+# def unpacking_failed
+#     res = pysdk_client.time_series.data.retrieve(
+#         external_id="PYSDK integration test 108: every millisecond, 1969-12-31 23:59:58.500 - 1970-01-01 00:00:01.500, numeric",
+#         granularity="1s",
+#         # aggregates=["interpolation", "stepInterpolation", "totalVariation"],
+#         aggregates=["stepInterpolation"],
+#         start=-5000,  # -10000,
+#         end=5000,  # pd.Timestamp("1980").value // int(1e6),
+#         limit=None,
+#     )
+#     df = res.to_pandas(include_aggregate_name=True)
+#     df.index = df.index.to_numpy("datetime64[ms]").astype(np.int64)
+#     df
+#
+#
+#     res = pysdk_client.time_series.data.retrieve(
+#         id=5823269796769815,
+#         granularity="1h",
+#         # aggregates=["interpolation", "stepInterpolation", "totalVariation"],
+#         aggregates=["stepInterpolation"],
+#         start=-10000,
+#         end=105177600000,  #pd.Timestamp("1980").value // int(1e6),
+#         limit=None,
+#     )
+#     df = res.to_pandas(include_aggregate_name=False)
+#     df.index = df.index.to_numpy("datetime64[ms]").astype(np.int64)
+#     df
 
 
 # class TestRetrieveDataFrameAPI:

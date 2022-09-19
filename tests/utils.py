@@ -15,22 +15,29 @@ def random_cognite_ids(n):
     return random.choices(range(1, 9007199254740992), k=n)
 
 
-def random_cognite_external_ids(n):
+def random_cognite_external_ids(n, str_len=50):
     # Returns list of random, valid Cognite external IDs:
-    return [random_string(50) for _ in range(n)]
+    return [random_string(str_len) for _ in range(n)]
 
 
 def random_valid_granularity():
     gran = random.choice("smhd")
     upper = {"s": 120, "m": 120, "h": 100000, "d": 100000}
-    unit = random.randint(1, upper[gran])
+    # We skew random int towards smaller values:
+    # (larger are more backend heavy and smaller are typically whats most used anyhow)
+    unit = min(random.sample(range(1, upper[gran] + 1), 10))
     return f"{unit}{gran}"
 
 
-def random_valid_aggregates(n=None):
-    """Return n random aggregates in a list or random (at least 1) if n is None"""
-    n = n or random.randint(1, len(ALL_SORTED_DP_AGGS))
-    return random.sample(ALL_SORTED_DP_AGGS, k=n)
+def random_valid_aggregates(n=None, exclude=None):
+    """Return n random aggregates in a list - or random (at least 1) if n is None.
+    Accepts a container object of aggregates to `exclude`
+    """
+    agg_lst = ALL_SORTED_DP_AGGS
+    if exclude:
+        agg_lst = [a for a in agg_lst if a not in exclude]
+    n = n or random.randint(1, len(agg_lst))
+    return random.sample(agg_lst, k=n)
 
 
 @contextmanager
