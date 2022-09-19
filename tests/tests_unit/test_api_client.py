@@ -1147,6 +1147,7 @@ class TestHelpers:
             ("PUT", "https://localhost:8000.com/api/v1/projects/blabla/assets", True),
             ("PATCH", "https://localhost:8000.com/api/v1/projects/blabla/patchy", True),
             ("GET", "https://another-cluster.cognitedata.com/login/status", True),
+            ("POST", "https://another-cluster.cognitedata.com/api/v1/projects/hey/raw", True),
         ],
     )
     def test_is_retryable(self, api_client_with_api_key, method, path, expected):

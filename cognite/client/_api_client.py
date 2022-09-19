@@ -82,6 +82,7 @@ class APIClient:
         "/datasets/byids",
         "/relationships/list",
         "/relationships/byids",
+        "/raw",
         "/context/entitymatching/byids",
         "/context/entitymatching/list",
         "/context/entitymatching/jobs",
