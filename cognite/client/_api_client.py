@@ -56,20 +56,23 @@ class APIClient:
 
     # TODO: This following set should be generated from the openapi spec somehow.
     _RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS = {
-        "/(assets|events|files|timeseries|sequences|datasets|relationships)/(list|byids|search|aggregate)",
-        "/files/downloadlink",
-        "/timeseries/data",
-        "/timeseries/data/list",
-        "/timeseries/data/latest",
-        "/timeseries/data/delete",
-        "/sequences/data",
-        "/sequences/data/list",
-        "/sequences/data/delete",
-        "/raw/dbs/[^/]+/tables/[^/]+",
-        "/context/entitymatching/byids",
-        "/context/entitymatching/list",
-        "/context/entitymatching/jobs",
-        "/sessions/revoke",
+        "^" + path + "?.*$"
+        for path in (
+            "/(assets|events|files|timeseries|sequences|datasets|relationships)/(list|byids|search|aggregate)",
+            "/files/downloadlink",
+            "/timeseries/data",
+            "/timeseries/data/list",
+            "/timeseries/data/latest",
+            "/timeseries/data/delete",
+            "/sequences/data",
+            "/sequences/data/list",
+            "/sequences/data/delete",
+            "/raw/dbs/[^/]+/tables/[^/]+",
+            "/context/entitymatching/byids",
+            "/context/entitymatching/list",
+            "/context/entitymatching/jobs",
+            "/sessions/revoke",
+        )
     }
 
     def __init__(
@@ -220,18 +223,22 @@ class APIClient:
 
         if method in ["GET", "PUT", "PATCH"]:
             return True
-        if method == "POST" and self._endpoint_path_is_retryable(path):
+        if method == "POST" and self._url_is_retryable(path):
             return True
         return False
 
     @classmethod
     @functools.lru_cache(64)
-    def _endpoint_path_is_retryable(cls, path: str) -> bool:
-        valid_path_pattern = r"(?:http|https)://[a-z\d.:\-]+(?:/api/(?:v1|playground)/projects/[^/]+)?(/[^\?]+)?(\?.+)?"
-        if not re.match(valid_path_pattern, path):
-            raise ValueError("Path {} is not valid. Cannot resolve whether or not it is retryable".format(path))
+    def _url_is_retryable(cls, url: str) -> bool:
+        valid_url_pattern = (
+            r"^(?:http|https)://[a-z\d.:\-]+(?:/api/(?:v1|playground)/projects/[^/]+)?((/[^\?]+)?(\?.+)?)"
+        )
+        match = re.match(valid_url_pattern, url)
+        if not match:
+            raise ValueError("URL {} is not valid. Cannot resolve whether or not it is retryable".format(url))
+        path = match.group(1)
         for pattern in cls._RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS:
-            if re.search(pattern, path):
+            if re.match(pattern, path):
                 return True
         return False
 
