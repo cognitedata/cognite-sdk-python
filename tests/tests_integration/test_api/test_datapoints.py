@@ -31,6 +31,7 @@ from cognite.client.utils._time import (
     MIN_TIMESTAMP_MS,
     UNIT_IN_MS,
     align_start_and_end_for_granularity,
+    granularity_to_ms,
 )
 from tests.utils import (
     random_cognite_external_ids,
@@ -43,8 +44,12 @@ from tests.utils import (
 DATAPOINTS_API = "cognite.client._api.datapoints.{}"
 WEEK_MS = UNIT_IN_MS["w"]
 DAY_MS = UNIT_IN_MS["d"]
-MS_1975 = 157766400000
-MS_1965 = -MS_1975  # yes
+YEAR_MS = {
+    1950: -631152000000,
+    1965: -157766400000,
+    1975: 157766400000,
+    2000: 946684800000,
+}
 DPS_TYPES = [Datapoints, DatapointsArray]
 DPS_LST_TYPES = [DatapointsList, DatapointsArrayList]
 
@@ -511,14 +516,14 @@ class TestRetrieveAggregateDatapointsAPI:
     @pytest.mark.parametrize(
         "is_step, start, end, exp_start, exp_end, max_workers, mock_out_eager_or_chunk",
         (
-            (True, MIN_TIMESTAMP_MS, MAX_TIMESTAMP_MS, MS_1965, MS_1975, 4, "ChunkingDpsFetcher"),
-            (False, MIN_TIMESTAMP_MS, MAX_TIMESTAMP_MS, MS_1965, MS_1975, 4, "ChunkingDpsFetcher"),
-            (True, MIN_TIMESTAMP_MS, MAX_TIMESTAMP_MS, MS_1965, MS_1975, 1, "EagerDpsFetcher"),
-            (False, MIN_TIMESTAMP_MS, MAX_TIMESTAMP_MS, MS_1965, MS_1975, 1, "EagerDpsFetcher"),
-            (True, MS_1965, MS_1975, MS_1965, MS_1975 - DAY_MS, 4, "ChunkingDpsFetcher"),
-            (False, MS_1965, MS_1975, MS_1965, MS_1975 - DAY_MS, 4, "ChunkingDpsFetcher"),
-            (True, MS_1965, MS_1975, MS_1965, MS_1975 - DAY_MS, 1, "EagerDpsFetcher"),
-            (False, MS_1965, MS_1975, MS_1965, MS_1975 - DAY_MS, 1, "EagerDpsFetcher"),
+            (True, MIN_TIMESTAMP_MS, MAX_TIMESTAMP_MS, YEAR_MS[1965], YEAR_MS[1975], 4, "ChunkingDpsFetcher"),
+            (False, MIN_TIMESTAMP_MS, MAX_TIMESTAMP_MS, YEAR_MS[1965], YEAR_MS[1975], 4, "ChunkingDpsFetcher"),
+            (True, MIN_TIMESTAMP_MS, MAX_TIMESTAMP_MS, YEAR_MS[1965], YEAR_MS[1975], 1, "EagerDpsFetcher"),
+            (False, MIN_TIMESTAMP_MS, MAX_TIMESTAMP_MS, YEAR_MS[1965], YEAR_MS[1975], 1, "EagerDpsFetcher"),
+            (True, YEAR_MS[1965], YEAR_MS[1975], YEAR_MS[1965], YEAR_MS[1975] - DAY_MS, 4, "ChunkingDpsFetcher"),
+            (False, YEAR_MS[1965], YEAR_MS[1975], YEAR_MS[1965], YEAR_MS[1975] - DAY_MS, 4, "ChunkingDpsFetcher"),
+            (True, YEAR_MS[1965], YEAR_MS[1975], YEAR_MS[1965], YEAR_MS[1975] - DAY_MS, 1, "EagerDpsFetcher"),
+            (False, YEAR_MS[1965], YEAR_MS[1975], YEAR_MS[1965], YEAR_MS[1975] - DAY_MS, 1, "EagerDpsFetcher"),
             (True, -WEEK_MS, WEEK_MS + 1, -WEEK_MS, WEEK_MS, 4, "ChunkingDpsFetcher"),
             (False, -WEEK_MS, WEEK_MS + 1, -WEEK_MS, WEEK_MS, 4, "ChunkingDpsFetcher"),
             (True, -WEEK_MS, WEEK_MS + 1, -WEEK_MS, WEEK_MS, 1, "EagerDpsFetcher"),
@@ -687,16 +692,56 @@ class TestRetrieveAggregateDatapointsAPI:
             assert sum(res.count) == 1_000_000
             assert sum(res.sum) == 500_000
 
-    def test_equivalent_granularities(self):
-        # - 60 sec == 1m
-        # - 120 sec == 2m
-        # - 60 min == 1h
-        # - 120 min == 2h
-        # - 24 hour == 1d
-        # - 48 hour == 2d
-        # - 240 hour == 2d
-        # - 96000 hour == 4000d
-        pass
+    @pytest.mark.parametrize(
+        "first_gran, second_gran",
+        (
+            ("60s", "1m"),
+            ("120s", "2m"),
+            ("60m", "1h"),
+            ("120m", "2h"),
+            ("24h", "1d"),
+            ("48h", "2d"),
+            ("240h", "10d"),
+            ("4800h", "200d"),
+        ),
+    )
+    def test_can_be_equivalent_granularities(self, first_gran, second_gran, one_mill_dps_ts, retrieve_endpoints):
+        ts, _ = one_mill_dps_ts  # data: 1950-2020
+        gran_ms = granularity_to_ms(first_gran)
+        for endpoint in retrieve_endpoints:
+            start = random.randint(YEAR_MS[1950], YEAR_MS[2000])
+            # Make sure start is NOT aligned with granularity unit:
+            if start % gran_ms == 0:
+                start += gran_ms // 2
+            end = start + gran_ms * random.randint(10, 1000)
+            start_aligned, end_aligned = align_start_and_end_for_granularity(start, end, second_gran)
+            res_lst = endpoint(
+                aggregates=random_valid_aggregates(),
+                id=[
+                    # These should return different results:
+                    {"id": ts.id, "granularity": first_gran, "start": start, "end": end},
+                    {"id": ts.id, "granularity": second_gran, "start": start, "end": end},
+                ],
+                external_id=[
+                    # These should return identical results (up to float precision):
+                    {
+                        "external_id": ts.external_id,
+                        "granularity": first_gran,
+                        "start": start_aligned,
+                        "end": end_aligned,
+                    },
+                    {
+                        "external_id": ts.external_id,
+                        "granularity": second_gran,
+                        "start": start_aligned,
+                        "end": end_aligned,
+                    },
+                ],
+            )
+            dps1, dps2, dps3, dps4 = res_lst
+            pd.testing.assert_frame_equal(dps3.to_pandas(), dps4.to_pandas())
+            with pytest.raises(AssertionError):
+                pd.testing.assert_frame_equal(dps1.to_pandas(), dps2.to_pandas())
 
     # @pytest.mark.parametrize(
     #     "is_step, start, end, is_empty",
