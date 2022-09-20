@@ -20,12 +20,10 @@ def random_cognite_external_ids(n, str_len=50):
     return [random_string(str_len) for _ in range(n)]
 
 
-def random_valid_granularity():
-    gran = random.choice("smhd")
+def random_valid_granularity(granularities="smhd", lower_lim=1, upper_lim=100000):
+    gran = random.choice(granularities)
     upper = {"s": 120, "m": 120, "h": 100000, "d": 100000}
-    # We skew random int towards smaller values:
-    # (larger are more backend heavy and smaller are typically whats most used anyhow)
-    unit = min(random.sample(range(1, upper[gran] + 1), 10))
+    unit = random.choice(range(max(lower_lim, 1), min(upper_lim, upper[gran]) + 1))
     return f"{unit}{gran}"
 
 

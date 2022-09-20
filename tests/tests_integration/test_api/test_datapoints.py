@@ -73,6 +73,8 @@ def all_test_time_series(cognite_client):
             f"{prefix} 111: every minute, is_step=True, 1969-12-31 - 1970-01-02, numeric",
             f"{prefix} 112: every second, is_step=True, 1969-12-31 23:30:00 - 1970-01-01 00:30:00, numeric",
             f"{prefix} 113: every millisecond, is_step=True, 1969-12-31 23:59:58.500 - 1970-01-01 00:00:01.500, numeric",
+            f"{prefix} 114: 1mill dps, random distribution, 1950-2020, numeric",
+            f"{prefix} 115: 1mill dps, random distribution, 1950-2020, string",
         ]
     )
 
@@ -90,6 +92,11 @@ def weekly_dps_ts(all_test_time_series):
 @pytest.fixture
 def fixed_freq_dps_ts(all_test_time_series):
     return all_test_time_series[103:108], all_test_time_series[108:113]
+
+
+@pytest.fixture
+def one_mill_dps_ts(all_test_time_series):
+    return all_test_time_series[113], all_test_time_series[114]
 
 
 @pytest.fixture(scope="session")
@@ -660,13 +667,25 @@ class TestRetrieveAggregateDatapointsAPI:
                 assert exc.value.code == 400
                 assert exc.value.message == "Aggregates are not supported for string time series"
 
-    def test_sum_of_count_is_independant_of_granularity(self):
-        # Sum of count is independent of granularity
-        pass
-
-    def test_sum_of_sum_is_independant_of_granularity(self):
-        # Sum of sum is independent of granularity
-        pass
+    @pytest.mark.parametrize(
+        "granularity, lower_lim, upper_lim",
+        (
+            ("h", 30, 1000),
+            ("d", 1, 200),
+        ),
+    )
+    def test_granularity_invariants(self, granularity, lower_lim, upper_lim, one_mill_dps_ts, retrieve_endpoints):
+        # Sum of count and sum of sum is independent of granularity
+        ts, _ = one_mill_dps_ts
+        for endpoint in retrieve_endpoints:
+            res = endpoint(
+                start=MIN_TIMESTAMP_MS,
+                end=MAX_TIMESTAMP_MS,
+                id={"id": ts.id, "aggregates": ["count", "sum"]},
+                granularity=random_valid_granularity(granularity, lower_lim, upper_lim),
+            )
+            assert sum(res.count) == 1_000_000
+            assert sum(res.sum) == 500_000
 
     def test_equivalent_granularities(self):
         # - 60 sec == 1m
