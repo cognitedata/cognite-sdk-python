@@ -456,6 +456,11 @@ def create_array_from_dps_container(container: DefaultSortedDict) -> npt.NDArray
     return np.hstack(list(chain.from_iterable(container.values())))
 
 
+def create_aggregates_arrays_from_dps_container(container: DefaultSortedDict, n_aggs: int) -> List[npt.NDArray]:
+    all_aggs_arr = np.vstack(list(chain.from_iterable(container.values())))
+    return list(map(np.ravel, np.hsplit(all_aggs_arr, n_aggs)))
+
+
 def create_list_from_dps_container(container: DefaultSortedDict) -> List:
     return list(chain.from_iterable(chain.from_iterable(container.values())))
 
@@ -1056,8 +1061,8 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
             if self.is_count_query:
                 arr_dct["count"] = create_array_from_dps_container(self.count_data)
             if self.has_non_count_aggs:
-                arr_lst = np.hsplit(np.vstack(list(chain.from_iterable(self.dps_data.values()))), len(self.float_aggs))
-                arr_dct.update(dict(zip(self.float_aggs, map(np.squeeze, arr_lst))))
+                arr_lst = create_aggregates_arrays_from_dps_container(self.dps_data, len(self.float_aggs))
+                arr_dct.update(dict(zip(self.float_aggs, arr_lst)))
             return DatapointsArray._load({**cast(dict, self.ts_info), **arr_dct})
 
         lst_dct = {"timestamp": create_list_from_dps_container(self.ts_data)}

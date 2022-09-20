@@ -9,6 +9,7 @@ import random
 import re
 import time
 from contextlib import nullcontext as does_not_raise
+from random import randint
 from unittest.mock import patch
 
 import numpy as np
@@ -24,8 +25,13 @@ from cognite.client.data_classes import (
     DatapointsQuery,
     TimeSeries,
 )
-from cognite.client.exceptions import CogniteNotFoundError
-from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS, UNIT_IN_MS
+from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
+from cognite.client.utils._time import (
+    MAX_TIMESTAMP_MS,
+    MIN_TIMESTAMP_MS,
+    UNIT_IN_MS,
+    align_start_and_end_for_granularity,
+)
 from tests.utils import (
     random_cognite_external_ids,
     random_cognite_ids,
@@ -83,7 +89,7 @@ def weekly_dps_ts(all_test_time_series):
 
 @pytest.fixture
 def fixed_freq_dps_ts(all_test_time_series):
-    return all_test_time_series[103:109]
+    return all_test_time_series[103:108], all_test_time_series[108:113]
 
 
 @pytest.fixture(scope="session")
@@ -100,6 +106,14 @@ def retrieve_endpoints(cognite_client):
         cognite_client.time_series.data.retrieve,
         cognite_client.time_series.data.retrieve_arrays,
     ]
+
+
+def convert_any_ts_to_integer(ts):
+    if isinstance(ts, int):
+        return ts
+    elif isinstance(ts, np.datetime64):
+        return ts.astype("datetime64[ms]").astype(int)
+    raise ValueError
 
 
 def validate_raw_datapoints_lst(ts_lst, dps_lst, **kw):
@@ -337,8 +351,8 @@ class TestRetrieveRawDatapointsAPI:
                 with expected_raise:
                     res_lst = endpoint(
                         **identifier,
-                        start=random.randint(MIN_TIMESTAMP_MS, 100),
-                        end=random.randint(101, MAX_TIMESTAMP_MS),
+                        start=randint(MIN_TIMESTAMP_MS, 100),
+                        end=randint(101, MAX_TIMESTAMP_MS),
                         ignore_unknown_ids=ignore_unknown_ids,
                         limit=5,
                     )
@@ -488,20 +502,29 @@ class TestRetrieveRawDatapointsAPI:
 
 class TestRetrieveAggregateDatapointsAPI:
     @pytest.mark.parametrize(
-        "start, end, exp_start, exp_end, max_workers, mock_out_eager_or_chunk",
+        "is_step, start, end, exp_start, exp_end, max_workers, mock_out_eager_or_chunk",
         (
-            (MIN_TIMESTAMP_MS, MAX_TIMESTAMP_MS, MS_1965, MS_1975, 4, "ChunkingDpsFetcher"),
-            (MIN_TIMESTAMP_MS, MAX_TIMESTAMP_MS, MS_1965, MS_1975, 1, "EagerDpsFetcher"),
-            (MS_1965, MS_1975, MS_1965, MS_1975 - DAY_MS, 4, "ChunkingDpsFetcher"),
-            (MS_1965, MS_1975, MS_1965, MS_1975 - DAY_MS, 1, "EagerDpsFetcher"),
-            (-WEEK_MS, WEEK_MS + 1, -WEEK_MS, WEEK_MS, 4, "ChunkingDpsFetcher"),
-            (-WEEK_MS, WEEK_MS + 1, -WEEK_MS, WEEK_MS, 1, "EagerDpsFetcher"),
-            (-DAY_MS, DAY_MS + 1, -DAY_MS, DAY_MS, 4, "ChunkingDpsFetcher"),
-            (-DAY_MS, DAY_MS + 1, -DAY_MS, DAY_MS, 1, "EagerDpsFetcher"),
+            (True, MIN_TIMESTAMP_MS, MAX_TIMESTAMP_MS, MS_1965, MS_1975, 4, "ChunkingDpsFetcher"),
+            (False, MIN_TIMESTAMP_MS, MAX_TIMESTAMP_MS, MS_1965, MS_1975, 4, "ChunkingDpsFetcher"),
+            (True, MIN_TIMESTAMP_MS, MAX_TIMESTAMP_MS, MS_1965, MS_1975, 1, "EagerDpsFetcher"),
+            (False, MIN_TIMESTAMP_MS, MAX_TIMESTAMP_MS, MS_1965, MS_1975, 1, "EagerDpsFetcher"),
+            (True, MS_1965, MS_1975, MS_1965, MS_1975 - DAY_MS, 4, "ChunkingDpsFetcher"),
+            (False, MS_1965, MS_1975, MS_1965, MS_1975 - DAY_MS, 4, "ChunkingDpsFetcher"),
+            (True, MS_1965, MS_1975, MS_1965, MS_1975 - DAY_MS, 1, "EagerDpsFetcher"),
+            (False, MS_1965, MS_1975, MS_1965, MS_1975 - DAY_MS, 1, "EagerDpsFetcher"),
+            (True, -WEEK_MS, WEEK_MS + 1, -WEEK_MS, WEEK_MS, 4, "ChunkingDpsFetcher"),
+            (False, -WEEK_MS, WEEK_MS + 1, -WEEK_MS, WEEK_MS, 4, "ChunkingDpsFetcher"),
+            (True, -WEEK_MS, WEEK_MS + 1, -WEEK_MS, WEEK_MS, 1, "EagerDpsFetcher"),
+            (False, -WEEK_MS, WEEK_MS + 1, -WEEK_MS, WEEK_MS, 1, "EagerDpsFetcher"),
+            (True, -DAY_MS, DAY_MS + 1, -DAY_MS, DAY_MS, 4, "ChunkingDpsFetcher"),
+            (False, -DAY_MS, DAY_MS + 1, -DAY_MS, DAY_MS, 4, "ChunkingDpsFetcher"),
+            (True, -DAY_MS, DAY_MS + 1, -DAY_MS, DAY_MS, 1, "EagerDpsFetcher"),
+            (False, -DAY_MS, DAY_MS + 1, -DAY_MS, DAY_MS, 1, "EagerDpsFetcher"),
         ),
     )
-    def test_retrieve_aggregates__is_step_false(
+    def test_sparse_data__multiple_granularities_is_step_true_false(
         self,
+        is_step,
         start,
         end,
         exp_start,
@@ -513,29 +536,139 @@ class TestRetrieveAggregateDatapointsAPI:
         fixed_freq_dps_ts,
     ):
         # Underlying time series has daily values, we ask for 1d, 1h, 1m and 1s and make sure all share
-        # the exact same timestamps.
-        ts_daily, *_ = fixed_freq_dps_ts
-        assert ts_daily.is_step is False
+        # the exact same timestamps. Interpolation aggregates tested separately because they return data
+        # also in empty regions.
+        (ts_daily, *_), (ts_daily_is_step, *_) = fixed_freq_dps_ts
+        ts, exclude = ts_daily, {"step_interpolation"}
+        if is_step:
+            exclude.add("interpolation")
+            ts = ts_daily_is_step
+
+        assert ts.is_step is is_step
 
         with set_max_workers(cognite_client, max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
             for endpoint in retrieve_endpoints:
                 # Give each "granularity" a random list of aggregates:
-                aggs = [random_valid_aggregates(exclude={"step_interpolation"}) for _ in range(4)]
+                aggs = [random_valid_aggregates(exclude=exclude) for _ in range(4)]
                 res = endpoint(
                     start=start,
                     end=end,
                     id=[
-                        {"id": ts_daily.id, "granularity": "1d", "aggregates": aggs[0]},
-                        {"id": ts_daily.id, "granularity": "1h", "aggregates": aggs[1]},
+                        {"id": ts.id, "granularity": "1d", "aggregates": aggs[0]},
+                        {"id": ts.id, "granularity": "1h", "aggregates": aggs[1]},
                     ],
                     external_id=[
-                        {"external_id": ts_daily.external_id, "granularity": "1m", "aggregates": aggs[2]},
-                        {"external_id": ts_daily.external_id, "granularity": "1s", "aggregates": aggs[3]},
+                        {"external_id": ts.external_id, "granularity": "1m", "aggregates": aggs[2]},
+                        {"external_id": ts.external_id, "granularity": "1s", "aggregates": aggs[3]},
                     ],
                 )
                 assert ((df := res.to_pandas()).isna().sum() == 0).all()
                 assert df.index[0] == pd.Timestamp(exp_start, unit="ms")
                 assert df.index[-1] == pd.Timestamp(exp_end, unit="ms")
+
+    @pytest.mark.parametrize(
+        "is_step, aggregates, empty",
+        (
+            (False, ["interpolation"], True),
+            (False, ["step_interpolation"], False),
+            (True, ["interpolation"], False),
+            (True, ["step_interpolation"], False),
+        ),
+    )
+    def test_interpolation_returns_data_from_empty_periods(
+        self,
+        is_step,
+        aggregates,
+        empty,
+        retrieve_endpoints,
+        fixed_freq_dps_ts,
+    ):
+        # Ts: has ms resolution data from:
+        # 1969-12-31 23:59:58.500 (-1500 ms) to 1970-01-01 00:00:01.500 (1500 ms)
+        (*_, ts_ms), (*_, ts_ms_is_step) = fixed_freq_dps_ts
+        ts = ts_ms_is_step if is_step else ts_ms
+        assert ts.is_step is is_step
+
+        # Pick random start and end in an empty region:
+        start = randint(31536000000, 2524608000000)  # 1971 -> 2050
+        end = randint(start, MAX_TIMESTAMP_MS)  # start -> (2051 minus 1ms)
+        granularities = f"{randint(1, 15)}d", f"{randint(1, 50)}h", f"{randint(1, 120)}m", f"{randint(1, 120)}s"
+
+        for endpoint in retrieve_endpoints:
+            res_lst = endpoint(
+                start=start,
+                end=end,
+                aggregates=aggregates,
+                id=[
+                    {"id": ts.id, "granularity": granularities[0]},
+                    {"id": ts.id, "granularity": granularities[1]},
+                ],
+                external_id=[
+                    {"external_id": ts.external_id, "granularity": granularities[2]},
+                    {"external_id": ts.external_id, "granularity": granularities[3]},
+                    # Verify empty with `count`:
+                    {"external_id": ts.external_id, "granularity": granularities[0], "aggregates": ["count"]},
+                ],
+            )
+            *interp_res_lst, count_dps = res_lst
+            assert sum(count_dps.count) == 0
+
+            for dps, gran in zip(interp_res_lst, granularities):
+                interp_dps = getattr(dps, aggregates[0])
+                assert (len(interp_dps) == 0) is empty
+
+                if not empty:
+                    first_ts = convert_any_ts_to_integer(dps.timestamp[0])
+                    aligned_start, _ = align_start_and_end_for_granularity(start, end, gran)
+                    assert first_ts == aligned_start
+
+    @pytest.mark.parametrize(
+        "max_workers, n_ts, mock_out_eager_or_chunk",
+        [
+            (1, 1, "ChunkingDpsFetcher"),
+            (5, 1, "ChunkingDpsFetcher"),
+            (5, 5, "ChunkingDpsFetcher"),
+            (1, 2, "EagerDpsFetcher"),
+            (1, 10, "EagerDpsFetcher"),
+            (9, 10, "EagerDpsFetcher"),
+            (9, 50, "EagerDpsFetcher"),
+        ],
+    )
+    def test_retrieve_aggregates__string_ts_raises(
+        self, max_workers, n_ts, mock_out_eager_or_chunk, weekly_dps_ts, cognite_client, retrieve_endpoints
+    ):
+        _, string_ts = weekly_dps_ts
+        with set_max_workers(cognite_client, max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
+            ts_chunk = random.sample(string_ts, k=n_ts)
+            for endpoint in retrieve_endpoints:
+                with pytest.raises(CogniteAPIError) as exc:
+                    endpoint(
+                        granularity=random_valid_granularity(),
+                        aggregates=random_valid_aggregates(),
+                        id=[ts.id for ts in ts_chunk],
+                        ignore_unknown_ids=random.choice((True, False)),
+                    )
+                assert exc.value.code == 400
+                assert exc.value.message == "Aggregates are not supported for string time series"
+
+    def test_sum_of_count_is_independant_of_granularity(self):
+        # Sum of count is independent of granularity
+        pass
+
+    def test_sum_of_sum_is_independant_of_granularity(self):
+        # Sum of sum is independent of granularity
+        pass
+
+    def test_equivalent_granularities(self):
+        # - 60 sec == 1m
+        # - 120 sec == 2m
+        # - 60 min == 1h
+        # - 120 min == 2h
+        # - 24 hour == 1d
+        # - 48 hour == 2d
+        # - 240 hour == 2d
+        # - 96000 hour == 4000d
+        pass
 
     # @pytest.mark.parametrize(
     #     "is_step, start, end, is_empty",
@@ -550,35 +683,6 @@ class TestRetrieveAggregateDatapointsAPI:
     #         print(ts.name)
     # ts_h = "PYSDK integration test 105: hourly values, 1969-10-01 - 1970-03-01, numeric"
 
-
-#     @pytest.mark.parametrize(
-#         "max_workers, n_ts, mock_out_eager_or_chunk",
-#         [
-#             (1, 1, "ChunkingDpsFetcher"),
-#             (5, 1, "ChunkingDpsFetcher"),
-#             (5, 5, "ChunkingDpsFetcher"),
-#             (1, 2, "EagerDpsFetcher"),
-#             (1, 10, "EagerDpsFetcher"),
-#             (9, 10, "EagerDpsFetcher"),
-#             (9, 50, "EagerDpsFetcher"),
-#         ],
-#     )
-#     def test_retrieve_aggregates__string_ts_raises(
-#         self, max_workers, n_ts, mock_out_eager_or_chunk, weekly_dps_ts, cognite_client, retrieve_endpoints
-#     ):
-#         _, string_ts = weekly_dps_ts
-#         with set_max_workers(cognite_client, max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
-#             ts_chunk = random.sample(string_ts, k=n_ts)
-#             for endpoint in retrieve_endpoints:
-#                 with pytest.raises(CogniteAPIError) as exc:
-#                     endpoint(
-#                         granularity=random_valid_granularity(),
-#                         aggregates=random_valid_aggregates(),
-#                         id=[ts.id for ts in ts_chunk],
-#                         ignore_unknown_ids=random.choice((True, False)),
-#                     )
-#                 assert exc.value.code == 400
-#                 assert exc.value.message == "Aggregates are not supported for string time series"
 
 # def test_retrieve_aggregates(self):
 #     # ALL_SORTED_DP_AGGS = [
