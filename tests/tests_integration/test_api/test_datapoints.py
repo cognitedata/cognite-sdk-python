@@ -567,19 +567,24 @@ class TestRetrieveAggregateDatapointsAPI:
                 assert df.index[-1] == pd.Timestamp(exp_end, unit="ms")
 
     @pytest.mark.parametrize(
-        "is_step, aggregates, empty",
+        "is_step, aggregates, empty, before_first_dp",
         (
-            (False, ["interpolation"], True),
-            (False, ["step_interpolation"], False),
-            (True, ["interpolation"], False),
-            (True, ["step_interpolation"], False),
+            (False, ["interpolation"], True, False),
+            (False, ["interpolation"], True, True),
+            (False, ["step_interpolation"], False, False),
+            (False, ["step_interpolation"], True, True),
+            (True, ["interpolation"], False, False),
+            (True, ["interpolation"], True, True),
+            (True, ["step_interpolation"], False, False),
+            (True, ["step_interpolation"], True, True),
         ),
     )
-    def test_interpolation_returns_data_from_empty_periods(
+    def test_interpolation_returns_data_from_empty_periods_before_and_after_data(
         self,
         is_step,
         aggregates,
         empty,
+        before_first_dp,
         retrieve_endpoints,
         fixed_freq_dps_ts,
     ):
@@ -590,8 +595,12 @@ class TestRetrieveAggregateDatapointsAPI:
         assert ts.is_step is is_step
 
         # Pick random start and end in an empty region:
-        start = randint(31536000000, 2524608000000)  # 1971 -> 2050
-        end = randint(start, MAX_TIMESTAMP_MS)  # start -> (2051 minus 1ms)
+        if before_first_dp:
+            start = randint(MIN_TIMESTAMP_MS, -315619200000)  # 1900 -> 1960
+            end = randint(start, -31536000000)  # start -> 1969
+        else:  # after last dp
+            start = randint(31536000000, 2524608000000)  # 1971 -> 2050
+            end = randint(start, MAX_TIMESTAMP_MS)  # start -> (2051 minus 1ms)
         granularities = f"{randint(1, 15)}d", f"{randint(1, 50)}h", f"{randint(1, 120)}m", f"{randint(1, 120)}s"
 
         for endpoint in retrieve_endpoints:
