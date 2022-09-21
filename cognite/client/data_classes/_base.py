@@ -188,6 +188,7 @@ class CogniteResourceList(UserList):
                 )
         self._cognite_client = cast("CogniteClient", cognite_client)
         super().__init__(resources)
+        self._id_to_item, self._external_id_to_item = {}, {}
         if self.data:
             if hasattr(self.data[0], "external_id"):
                 self._external_id_to_item = {

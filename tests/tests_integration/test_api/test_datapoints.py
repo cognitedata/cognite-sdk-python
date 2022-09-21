@@ -5,6 +5,7 @@ Note: If tests related to fetching datapoints are broken, all time series + thei
 >>> python scripts/create_ts_for_integration_tests.py
 """
 import itertools
+import math
 import random
 import re
 import time
@@ -16,7 +17,6 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from cognite.client._api.datapoint_constants import ALL_SORTED_DP_AGGS, DPS_LIMIT  # DPS_LIMIT_AGG,
 from cognite.client.data_classes import (
     Datapoints,
     DatapointsArray,
@@ -34,10 +34,11 @@ from cognite.client.utils._time import (
     granularity_to_ms,
 )
 from tests.utils import (
+    random_aggregates,
     random_cognite_external_ids,
     random_cognite_ids,
-    random_valid_aggregates,
-    random_valid_granularity,
+    random_gamma_dist_integer,
+    random_granularity,
     set_max_workers,
 )
 
@@ -49,6 +50,8 @@ YEAR_MS = {
     1965: -157766400000,
     1975: 157766400000,
     2000: 946684800000,
+    2014: 1388534400000,
+    2020: 1577836800000,
 }
 DPS_TYPES = [Datapoints, DatapointsArray]
 DPS_LST_TYPES = [DatapointsList, DatapointsArrayList]
@@ -80,6 +83,7 @@ def all_test_time_series(cognite_client):
             f"{prefix} 113: every millisecond, is_step=True, 1969-12-31 23:59:58.500 - 1970-01-01 00:00:01.500, numeric",
             f"{prefix} 114: 1mill dps, random distribution, 1950-2020, numeric",
             f"{prefix} 115: 1mill dps, random distribution, 1950-2020, string",
+            f"{prefix} 116: 5mill dps, 1k ms burst per day, 2000-01-01 12:00:00 - 2013-09-08 12:03:19.900, numeric",
         ]
     )
 
@@ -102,6 +106,11 @@ def fixed_freq_dps_ts(all_test_time_series):
 @pytest.fixture
 def one_mill_dps_ts(all_test_time_series):
     return all_test_time_series[113], all_test_time_series[114]
+
+
+@pytest.fixture
+def ms_bursty_ts(all_test_time_series):
+    return all_test_time_series[115]
 
 
 @pytest.fixture(scope="session")
@@ -549,7 +558,7 @@ class TestRetrieveAggregateDatapointsAPI:
     ):
         # Underlying time series has daily values, we ask for 1d, 1h, 1m and 1s and make sure all share
         # the exact same timestamps. Interpolation aggregates tested separately because they return data
-        # also in empty regions.
+        # also in empty regions... why:(
         (ts_daily, *_), (ts_daily_is_step, *_) = fixed_freq_dps_ts
         ts, exclude = ts_daily, {"step_interpolation"}
         if is_step:
@@ -561,7 +570,7 @@ class TestRetrieveAggregateDatapointsAPI:
         with set_max_workers(cognite_client, max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
             for endpoint in retrieve_endpoints:
                 # Give each "granularity" a random list of aggregates:
-                aggs = [random_valid_aggregates(exclude=exclude) for _ in range(4)]
+                aggs = [random_aggregates(exclude=exclude) for _ in range(4)]
                 res = endpoint(
                     start=start,
                     end=end,
@@ -664,8 +673,8 @@ class TestRetrieveAggregateDatapointsAPI:
             for endpoint in retrieve_endpoints:
                 with pytest.raises(CogniteAPIError) as exc:
                     endpoint(
-                        granularity=random_valid_granularity(),
-                        aggregates=random_valid_aggregates(),
+                        granularity=random_granularity(),
+                        aggregates=random_aggregates(),
                         id=[ts.id for ts in ts_chunk],
                         ignore_unknown_ids=random.choice((True, False)),
                     )
@@ -687,7 +696,7 @@ class TestRetrieveAggregateDatapointsAPI:
                 start=MIN_TIMESTAMP_MS,
                 end=MAX_TIMESTAMP_MS,
                 id={"id": ts.id, "aggregates": ["count", "sum"]},
-                granularity=random_valid_granularity(granularity, lower_lim, upper_lim),
+                granularity=random_granularity(granularity, lower_lim, upper_lim),
             )
             assert sum(res.count) == 1_000_000
             assert sum(res.sum) == 500_000
@@ -712,11 +721,11 @@ class TestRetrieveAggregateDatapointsAPI:
             start = random.randint(YEAR_MS[1950], YEAR_MS[2000])
             # Make sure start is NOT aligned with granularity unit:
             if start % gran_ms == 0:
-                start += gran_ms // 2
+                start += int(math.sqrt(gran_ms))
             end = start + gran_ms * random.randint(10, 1000)
             start_aligned, end_aligned = align_start_and_end_for_granularity(start, end, second_gran)
             res_lst = endpoint(
-                aggregates=random_valid_aggregates(),
+                aggregates=random_aggregates(),
                 id=[
                     # These should return different results:
                     {"id": ts.id, "granularity": first_gran, "start": start, "end": end},
@@ -743,62 +752,54 @@ class TestRetrieveAggregateDatapointsAPI:
             with pytest.raises(AssertionError):
                 pd.testing.assert_frame_equal(dps1.to_pandas(), dps2.to_pandas())
 
-    # @pytest.mark.parametrize(
-    #     "is_step, start, end, is_empty",
-    #     (
-    #         (True, None, None, None),
-    #         (False, None, None, None),
-    #     )
-    # )
-    # def test_interpolation_and_step_interpolation__is_step_tf(self, is_step, start, end, is_empty, fixed_freq_dps_ts):
-    #     print()
-    #     for ts in fixed_freq_dps_ts:
-    #         print(ts.name)
-    # ts_h = "PYSDK integration test 105: hourly values, 1969-10-01 - 1970-03-01, numeric"
-
-
-# def test_retrieve_aggregates(self):
-#     # ALL_SORTED_DP_AGGS = [
-#     #     "average",
-#     #     "max",
-#     #     "min",
-#     #     "count",
-#     #     "sum",
-#     #     "interpolation",
-#     #     "step_interpolation",
-#     #     "continuous_variance",
-#     #     "discrete_variance",
-#     #     "total_variation",
-#     # ]
-#     pass
-
-# def unpacking_failed
-#     res = pysdk_client.time_series.data.retrieve(
-#         external_id="PYSDK integration test 108: every millisecond, 1969-12-31 23:59:58.500 - 1970-01-01 00:00:01.500, numeric",
-#         granularity="1s",
-#         # aggregates=["interpolation", "stepInterpolation", "totalVariation"],
-#         aggregates=["stepInterpolation"],
-#         start=-5000,  # -10000,
-#         end=5000,  # pd.Timestamp("1980").value // int(1e6),
-#         limit=None,
-#     )
-#     df = res.to_pandas(include_aggregate_name=True)
-#     df.index = df.index.to_numpy("datetime64[ms]").astype(np.int64)
-#     df
-#
-#
-#     res = pysdk_client.time_series.data.retrieve(
-#         id=5823269796769815,
-#         granularity="1h",
-#         # aggregates=["interpolation", "stepInterpolation", "totalVariation"],
-#         aggregates=["stepInterpolation"],
-#         start=-10000,
-#         end=105177600000,  #pd.Timestamp("1980").value // int(1e6),
-#         limit=None,
-#     )
-#     df = res.to_pandas(include_aggregate_name=False)
-#     df.index = df.index.to_numpy("datetime64[ms]").astype(np.int64)
-#     df
+    @pytest.mark.parametrize(
+        "max_workers, n_ts, mock_out_eager_or_chunk, use_bursty",
+        (
+            (3, 1, "ChunkingDpsFetcher", True),
+            (3, 1, "ChunkingDpsFetcher", False),
+            (10, 10, "ChunkingDpsFetcher", True),
+            (10, 10, "ChunkingDpsFetcher", False),
+            (1, 2, "EagerDpsFetcher", True),
+            (1, 2, "EagerDpsFetcher", False),
+            (2, 10, "EagerDpsFetcher", True),
+            (2, 10, "EagerDpsFetcher", False),
+        ),
+    )
+    def test_finite_limit(
+        self,
+        max_workers,
+        n_ts,
+        mock_out_eager_or_chunk,
+        use_bursty,
+        cognite_client,
+        ms_bursty_ts,
+        one_mill_dps_ts,
+        retrieve_endpoints,
+    ):
+        if use_bursty:
+            ts = ms_bursty_ts  # data: 2000-01-01 12:00:00 - 2013-09-08 12:03:19.900
+            start, end, gran_unit_upper = YEAR_MS[2000], YEAR_MS[2014], 60
+        else:
+            ts, _ = one_mill_dps_ts  # data: 1950-2020 ~25k days
+            start, end, gran_unit_upper = YEAR_MS[1950], YEAR_MS[2020], 120
+        with set_max_workers(cognite_client, max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
+            for endpoint in retrieve_endpoints:
+                limits = random.sample(range(2000), k=n_ts)
+                res_lst = endpoint(
+                    start=start,
+                    end=end,
+                    id=[
+                        {
+                            "id": ts.id,
+                            "limit": lim,
+                            "aggregates": random_aggregates(1),
+                            "granularity": f"{random_gamma_dist_integer(gran_unit_upper)}{random.choice('smh')}",
+                        }
+                        for lim in limits
+                    ],
+                )
+                for res, exp_lim in zip(res_lst, limits):
+                    assert len(res) == exp_lim
 
 
 # class TestRetrieveDataFrameAPI:

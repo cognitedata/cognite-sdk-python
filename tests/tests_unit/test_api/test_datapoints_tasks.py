@@ -6,7 +6,7 @@ import pytest
 
 from cognite.client._api.datapoint_tasks import _SingleTSQueryValidator
 from cognite.client.data_classes import DatapointsQuery
-from tests.utils import random_valid_aggregates, random_valid_granularity, set_max_workers
+from tests.utils import random_aggregates, random_granularity, set_max_workers
 
 DATAPOINTS_API = "cognite.client._api.datapoints.{}"
 
@@ -40,8 +40,7 @@ class Test_SingleTSQueryValidator:
         with set_max_workers(cognite_client, max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
             ts_chunk = random.sample(num_ts + str_ts, k=n_ts)
             id_dct_lst = [
-                {"id": ts.id, "granularity": random_valid_granularity(), "aggregates": random_valid_aggregates()}
-                for ts in ts_chunk
+                {"id": ts.id, "granularity": random_granularity(), "aggregates": random_aggregates()} for ts in ts_chunk
             ]
             # Only one time series is configured wrong and will raise:
             id_dct_lst[-1]["include_outside_points"] = True

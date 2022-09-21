@@ -2,6 +2,7 @@ import cProfile
 import functools
 import gzip
 import json
+import math
 import os
 import random
 from contextlib import contextmanager
@@ -20,14 +21,14 @@ def random_cognite_external_ids(n, str_len=50):
     return [random_string(str_len) for _ in range(n)]
 
 
-def random_valid_granularity(granularities="smhd", lower_lim=1, upper_lim=100000):
+def random_granularity(granularities="smhd", lower_lim=1, upper_lim=100000):
     gran = random.choice(granularities)
     upper = {"s": 120, "m": 120, "h": 100000, "d": 100000}
     unit = random.choice(range(max(lower_lim, 1), min(upper_lim, upper[gran]) + 1))
     return f"{unit}{gran}"
 
 
-def random_valid_aggregates(n=None, exclude=None):
+def random_aggregates(n=None, exclude=None):
     """Return n random aggregates in a list - or random (at least 1) if n is None.
     Accepts a container object of aggregates to `exclude`
     """
@@ -36,6 +37,15 @@ def random_valid_aggregates(n=None, exclude=None):
         agg_lst = [a for a in agg_lst if a not in exclude]
     n = n or random.randint(1, len(agg_lst))
     return random.sample(agg_lst, k=n)
+
+
+def random_gamma_dist_integer(inclusive_max, max_tries=10):
+    # "Smaller integers are more likely"
+    for _ in range(max_tries):
+        i = 1 + math.floor(random.gammavariate(1, inclusive_max * 0.3))
+        if i <= inclusive_max:  # rejection sampling
+            return i
+    raise RuntimeError(f"Max tries exceeded while generating a random integer in range [1, {inclusive_max}]")
 
 
 @contextmanager
