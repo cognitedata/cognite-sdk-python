@@ -57,7 +57,7 @@ DPS_TYPES = [Datapoints, DatapointsArray]
 DPS_LST_TYPES = [DatapointsList, DatapointsArrayList]
 
 # To avoid the error "different tests were collected between...", we must make sure all parallel test-runners
-# generate the same tests random test data. We also want different random values over time (...thats the point),
+# generate the same tests (randomized test data). We also want different random values over time (...thats the point),
 # so we set seed based on time, but round to have some buffer:
 random.seed(round(time.time(), -3))
 
@@ -83,7 +83,7 @@ def all_test_time_series(cognite_client):
             f"{prefix} 113: every millisecond, is_step=True, 1969-12-31 23:59:58.500 - 1970-01-01 00:00:01.500, numeric",
             f"{prefix} 114: 1mill dps, random distribution, 1950-2020, numeric",
             f"{prefix} 115: 1mill dps, random distribution, 1950-2020, string",
-            f"{prefix} 116: 5mill dps, 1k ms burst per day, 2000-01-01 12:00:00 - 2013-09-08 12:03:19.900, numeric",
+            f"{prefix} 116: 5mill dps, 2k dps (.1s res) burst per day, 2000-01-01 12:00:00 - 2013-09-08 12:03:19.900, numeric",
         ]
     )
 
@@ -129,6 +129,11 @@ def retrieve_endpoints(cognite_client):
     ]
 
 
+def ts_to_ms(ts):
+    assert isinstance(ts, str)
+    return pd.Timestamp(ts).value // int(1e6)
+
+
 def convert_any_ts_to_integer(ts):
     if isinstance(ts, int):
         return ts
@@ -165,22 +170,12 @@ def validate_raw_datapoints(ts, dps, check_offset=True, check_delta=True):
     return index, values
 
 
-def validate_agg_datapoints(ts, dps, check_offset=True, check_delta=True):
-    pass
-
-
 PARAMETRIZED_VALUES_OUTSIDE_POINTS = [
     (-100, 100, False, True),
     (-99, 100, True, True),
     (-99, 101, True, False),
     (-100, 101, False, False),
 ]
-
-
-# @pytest.fixture
-# def post_spy(cognite_client):
-#     with patch.object(cognite_client.time_series.data, "_post", wraps=cognite_client.time_series.data._post):
-#         yield
 
 
 class TestRetrieveRawDatapointsAPI:
@@ -753,6 +748,74 @@ class TestRetrieveAggregateDatapointsAPI:
                 pd.testing.assert_frame_equal(dps1.to_pandas(), dps2.to_pandas())
 
     @pytest.mark.parametrize(
+        "max_workers, ts_idx, granularity, exp_len, start, end, exlude_step_interp",
+        (
+            (1, 105, "8m", 81, ts_to_ms("1969-12-31 14:14:14"), ts_to_ms("1970-01-01 01:01:01"), False),
+            (1, 106, "7s", 386, ts_to_ms("1960"), ts_to_ms("1970-01-01 00:15:00"), False),
+            (8, 106, "7s", 386, ts_to_ms("1960"), ts_to_ms("1970-01-01 00:15:00"), False),
+            (2, 107, "1s", 4, ts_to_ms("1969-12-31 23:59:58.123"), ts_to_ms("2049-01-01 00:00:01.500"), True),
+            (5, 113, "11h", 32_288, ts_to_ms("1960-01-02 03:04:05.060"), ts_to_ms("2000-07-08 09:10:11.121"), True),
+            (3, 115, "1s", 200, ts_to_ms("2000-01-01"), ts_to_ms("2000-01-01 12:03:20"), False),
+            (20, 115, "12h", 5_000, ts_to_ms("1990-01-01"), ts_to_ms("2013-09-09 00:00:00.001"), True),
+        ),
+    )
+    def test_eager_fetcher_unlimited(
+        self,
+        max_workers,
+        ts_idx,
+        granularity,
+        exp_len,
+        start,
+        end,
+        exlude_step_interp,
+        retrieve_endpoints,
+        all_test_time_series,
+        cognite_client,
+    ):
+        exclude = {"step_interpolation"} if exlude_step_interp else set()
+        with set_max_workers(cognite_client, max_workers), patch(DATAPOINTS_API.format("ChunkingDpsFetcher")):
+            for endpoint in retrieve_endpoints:
+                res = endpoint(
+                    id=all_test_time_series[ts_idx].id,
+                    start=start,
+                    end=end,
+                    granularity=granularity,
+                    aggregates=random_aggregates(exclude=exclude),
+                    limit=None,
+                )
+                assert len(res) == exp_len
+                assert len(set(np.diff(res.timestamp))) == 1
+
+    def test_eager_chunking_unlimited(self, retrieve_endpoints, all_test_time_series, cognite_client):
+        # We run all test from Eager (above) at the same time:
+        test_setup_data = (
+            (105, "8m", 81, ts_to_ms("1969-12-31 14:14:14"), ts_to_ms("1970-01-01 01:01:01"), False),
+            (106, "7s", 386, ts_to_ms("1960"), ts_to_ms("1970-01-01 00:15:00"), False),
+            (106, "7s", 386, ts_to_ms("1960"), ts_to_ms("1970-01-01 00:15:00"), False),
+            (107, "1s", 4, ts_to_ms("1969-12-31 23:59:58.123"), ts_to_ms("2049-01-01 00:00:01.500"), True),
+            (113, "11h", 32_288, ts_to_ms("1960-01-02 03:04:05.060"), ts_to_ms("2000-07-08 09:10:11.121"), True),
+            (115, "1s", 200, ts_to_ms("2000-01-01"), ts_to_ms("2000-01-01 12:03:20"), False),
+            (115, "12h", 5_000, ts_to_ms("1990-01-01"), ts_to_ms("2013-09-09 00:00:00.001"), True),
+        )
+        with set_max_workers(cognite_client, 2), patch(DATAPOINTS_API.format("EagerDpsFetcher")):
+            ids = [
+                {
+                    "id": all_test_time_series[idx].id,
+                    "start": start,
+                    "end": end,
+                    "granularity": gran,
+                    "aggregates": random_aggregates(exclude={"step_interpolation"} if exclude else set()),
+                }
+                for idx, gran, _, start, end, exclude in test_setup_data
+            ]
+            for endpoint in retrieve_endpoints:
+                res_lst = endpoint(id=ids, limit=None)
+                for row, res in zip(test_setup_data, res_lst):
+                    exp_len = row[2]
+                    assert len(res) == exp_len
+                    assert len(set(np.diff(res.timestamp))) == 1
+
+    @pytest.mark.parametrize(
         "max_workers, n_ts, mock_out_eager_or_chunk, use_bursty",
         (
             (3, 1, "ChunkingDpsFetcher", True),
@@ -800,6 +863,21 @@ class TestRetrieveAggregateDatapointsAPI:
                 )
                 for res, exp_lim in zip(res_lst, limits):
                     assert len(res) == exp_lim
+
+    def test_edge_case(self, one_mill_dps_ts, retrieve_endpoints):
+        xid = one_mill_dps_ts[0].external_id
+        for endpoint in retrieve_endpoints:
+            res = endpoint(
+                start=ts_to_ms("1970-09-05 12:00:06"),
+                end=ts_to_ms("1970-09-05 19:49:40"),
+                external_id=xid,
+                granularity="1s",
+                aggregates=["average", "interpolation"],
+            )
+            # Each dp is more than 1h apart, leading to all-nans for interp. agg only:
+            df = res.to_pandas()
+            assert df[f"{xid}|interpolation"].isna().all()  # SDK bug v<5, would be all None
+            assert df[f"{xid}|average"].notna().all()
 
 
 # class TestRetrieveDataFrameAPI:
@@ -870,7 +948,7 @@ class TestRetrieveAggregateDatapointsAPI:
 #         for dps in res:
 #             assert 1 == len(dps)
 #
-#     def test_retrieve_latest_many(self, cognite_client, test_time_series, post_spy):
+#     def test_retrieve_latest_many(self, cognite_client, test_time_series):
 #         ids = [t.id for t in cognite_client.time_series.list(limit=12) if not t.security_categories]
 #         assert len(ids) > 10  # more than one page
 #
@@ -890,19 +968,19 @@ class TestRetrieveAggregateDatapointsAPI:
 #
 #
 # class TestInsertDatapointsAPI:
-#     def test_insert(self, cognite_client, new_ts, post_spy):
+#     def test_insert(self, cognite_client, new_ts):
 #         datapoints = [(datetime(year=2018, month=1, day=1, hour=1, minute=i), i) for i in range(60)]
 #         with patch(DATAPOINTS_API.format("DPS_LIMIT"), 30), patch(DATAPOINTS_API.format("POST_DPS_OBJECTS_LIMIT"), 30):
 #             cognite_client.time_series.data.insert(datapoints, id=new_ts.id)
 #         assert 2 == cognite_client.time_series.data._post.call_count
 #
-#     def test_insert_before_epoch(self, cognite_client, new_ts, post_spy):
+#     def test_insert_before_epoch(self, cognite_client, new_ts):
 #         datapoints = [(datetime(year=1950, month=1, day=1, hour=1, minute=i), i) for i in range(60)]
 #         with patch(DATAPOINTS_API.format("DPS_LIMIT"), 30), patch(DATAPOINTS_API.format("POST_DPS_OBJECTS_LIMIT"), 30):
 #             cognite_client.time_series.data.insert(datapoints, id=new_ts.id)
 #         assert 2 == cognite_client.time_series.data._post.call_count
 #
-#     def test_insert_copy(self, cognite_client, test_time_series, new_ts, post_spy):
+#     def test_insert_copy(self, cognite_client, test_time_series, new_ts):
 #         data = cognite_client.time_series.data.retrieve(
 #             id=test_time_series[0].id, start="600d-ago", end="now", limit=100
 #         )
@@ -910,7 +988,7 @@ class TestRetrieveAggregateDatapointsAPI:
 #         cognite_client.time_series.data.insert(data, id=new_ts.id)
 #         assert 2 == cognite_client.time_series.data._post.call_count
 #
-#     def test_insert_copy_fails_at_aggregate(self, cognite_client, test_time_series, new_ts, post_spy):
+#     def test_insert_copy_fails_at_aggregate(self, cognite_client, test_time_series, new_ts):
 #         data = cognite_client.time_series.data.retrieve(
 #             id=test_time_series[0].id, start="600d-ago", end="now", granularity="1m", aggregates=["average"], limit=100
 #         )
@@ -918,7 +996,7 @@ class TestRetrieveAggregateDatapointsAPI:
 #         with pytest.raises(ValueError, match="only raw datapoints are supported"):
 #             cognite_client.time_series.data.insert(data, id=new_ts.id)
 #
-#     def test_insert_pandas_dataframe(self, cognite_client, new_ts, post_spy):
+#     def test_insert_pandas_dataframe(self, cognite_client, new_ts):
 #         df = pd.DataFrame(
 #             {new_ts.id: np.random.normal(0, 1, 30)},
 #             index=pd.date_range(start="2018", freq="1D", periods=30),

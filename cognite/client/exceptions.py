@@ -132,7 +132,9 @@ class CogniteNotFoundError(CogniteMultiException):
         super().__init__(successful, failed, unknown, unwrap_fn)
 
     def __str__(self) -> str:
-        return f"Not found: {reprlib.repr(self.not_found)}{self._get_multi_exception_summary()}"
+        if len(not_found := self.not_found) > 200:
+            not_found = reprlib.repr(self.not_found)
+        return f"Not found: {not_found}{self._get_multi_exception_summary()}"
 
 
 class CogniteDuplicatedError(CogniteMultiException):
