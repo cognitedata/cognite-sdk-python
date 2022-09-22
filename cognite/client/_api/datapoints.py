@@ -905,6 +905,63 @@ class DatapointsAPI(APIClient):
         # Pandas understand "Cognite granularities" except `m` (minutes) which we must translate:
         return df.reindex(pd.date_range(start=start, end=end, freq=granularity.replace("m", "T"), inclusive="left"))
 
+    @overload
+    def query(
+        self,
+        query: Union[Sequence[DatapointsQuery], DatapointsQuery],
+        use_numpy: Literal[False],
+    ) -> DatapointsList:
+        ...
+
+    @overload
+    def query(
+        self,
+        query: Union[Sequence[DatapointsQuery], DatapointsQuery],
+        use_numpy: Literal[True],
+    ) -> DatapointsArrayList:
+        ...
+
+    def query(
+        self,
+        query: Union[Sequence[DatapointsQuery], DatapointsQuery],
+        use_numpy: bool = False,
+    ) -> Union[DatapointsList, DatapointsArrayList]:
+        """Get datapoints for one or more time series by passing query objects directly.
+
+        **Note**: Before version 5.0.0, this method was the only way to retrieve datapoints easily with individual fetch settings.
+        This is no longer the case: `query` only differs from `retrieve` in that you can specify different values for `ignore_unknown_ids` for the multiple
+        query objects you pass, which is quite a niche feature. Since this is a boolean parameter, the only real use case is to pass exactly
+        two queries to this method; the "can be" missing and the "can't be" missing groups. If you do not need this functionality,
+        stick with the `retrieve` and `retrieve_arrays` endpoint.
+
+        Args:
+            query (Union[DatapointsQuery, Sequence[DatapointsQuery]): The queries for datapoints
+            use_numpy (bool): Override fetching method to take advantage of `numpy`. If True, returns `DatapointsArrayList` instead of `DatapointsList`. Default: False.
+
+        Returns:
+            Union[DatapointsList, DatapointsArrayList]: The requested datapoints. Note that you always get a single list of datapoints objects returned with type dictated
+            by the `use_numpy` argument. The order is the ids of the first query, then the external ids of the first query, then so on for the next queries.
+
+        Examples:
+
+            This method is useful if one group of one or more time series can be missing AND another, can't be missing::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import DatapointsQuery
+                >>> c = CogniteClient()
+                >>> query1 = DatapointsQuery(id=[111, 222], start="2d-ago", end="now", ignore_unknown_ids=False)
+                >>> query2 = DatapointsQuery(external_id="foo", start=2900, end="now", ignore_unknown_ids=True)
+                >>> res_lst = c.time_series.data.query([query1, query2])
+
+            To return datapoints stored in `numpy` arrays, pass the `use_numpy` argument:
+
+                >>> res_arrays = c.time_series.data.query([query1, query2], use_numpy=True)
+        """
+        if isinstance(query, DatapointsQuery):
+            query = [query]
+        fetcher = dps_fetch_selector(self, user_queries=query)
+        return fetcher.fetch_all_datapoints(use_numpy=use_numpy)
+
     def retrieve_latest(
         self,
         id: Union[int, List[int]] = None,
@@ -968,40 +1025,6 @@ class DatapointsAPI(APIClient):
         if id_seq.is_singleton():
             return Datapoints._load(res[0], cognite_client=self._cognite_client)
         return DatapointsList._load(res, cognite_client=self._cognite_client)
-
-    def query(
-        self,
-        query: Union[Sequence[DatapointsQuery], DatapointsQuery],
-    ) -> DatapointsList:
-        """Get datapoints for one or more time series by passing query objects directly.
-
-        **Note**: Before version 5.0.0, this method was the only way to retrieve datapoints easily with individual fetch settings.
-        This is no longer the case: `query` only differs from `retrieve` in that you can specify different values for `ignore_unknown_ids` for the multiple
-        query objects you pass, which is quite a niche feature. Since this is a boolean parameter, the only real use case is to pass exactly
-        two queries to this method; the "can be" missing and the "can't be" missing groups. If you do not need this functionality,
-        stick with the `retrieve` endpoint.
-
-        Args:
-            query (Union[DatapointsQuery, Sequence[DatapointsQuery]): The datapoint queries
-
-        Returns:
-            DatapointsList: The requested datapoints. Note that you always get a single `DatapointsList` returned. The order is the ids of the first query, then the external ids of the first query, then similarly for the next queries.
-
-        Examples:
-
-            This method is useful if one group of one or more time series can be missing AND another, can't be missing::
-
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import DatapointsQuery
-                >>> c = CogniteClient()
-                >>> query1 = DatapointsQuery(id=[111, 222], start="2d-ago", end="now", ignore_unknown_ids=False)
-                >>> query2 = DatapointsQuery(external_id="foo", start=2000, end="now", ignore_unknown_ids=True)
-                >>> res = c.time_series.data.query([query1, query2])
-        """
-        if isinstance(query, DatapointsQuery):
-            query = [query]
-        fetcher = dps_fetch_selector(self, user_queries=query)
-        return fetcher.fetch_all_datapoints(use_numpy=False)
 
     def insert(
         self,

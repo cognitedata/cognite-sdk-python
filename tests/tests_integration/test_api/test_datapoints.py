@@ -10,6 +10,7 @@ import random
 import re
 import time
 from contextlib import nullcontext as does_not_raise
+from datetime import datetime
 from random import randint
 from unittest.mock import patch
 
@@ -33,6 +34,7 @@ from cognite.client.utils._time import (
     UNIT_IN_MS,
     align_start_and_end_for_granularity,
     granularity_to_ms,
+    timestamp_to_ms,
 )
 from tests.utils import (
     random_aggregates,
@@ -1025,111 +1027,138 @@ class TestRetrieveDataFrameAPI:
             )
 
 
-# class TestQueryDatapointsAPI:
-#     def test_query(self, cognite_client, test_time_series):
-#         dps_query1 = DatapointsQuery(id=test_time_series[0].id, start="6h-ago", end="5h-ago")
-#         dps_query2 = DatapointsQuery(id=test_time_series[1].id, start="3h-ago", end="2h-ago")
-#         dps_query3 = DatapointsQuery(
-#             id=test_time_series[2].id, start="1d-ago", end="now", aggregates=["average"], granularity="1h"
-#         )
-#
-#         res = cognite_client.time_series.data.query([dps_query1, dps_query2, dps_query3])
-#         assert len(res) == 3
-#         assert len(res[2]) < len(res[1]) < len(res[0])
-#
-#     def test_query_two_unknown(self, cognite_client, test_time_series):
-#         dps_query1 = DatapointsQuery(id=test_time_series[0].id, start="6h-ago", end="5h-ago", ignore_unknown_ids=True)
-#         dps_query2 = DatapointsQuery(id=123, start="3h-ago", end="2h-ago", ignore_unknown_ids=True)
-#         dps_query3 = DatapointsQuery(
-#             external_id="missing time series",
-#             start="1d-ago",
-#             end="now",
-#             aggregates=["average"],
-#             granularity="1h",
-#             ignore_unknown_ids=True,
-#         )
-#         res = cognite_client.time_series.data.query([dps_query1, dps_query2, dps_query3])
-#         assert len(res) == 1
-#         assert len(res[0]) > 0
+class TestQueryDatapointsAPI:
+    @pytest.mark.parametrize(
+        "use_numpy, exp_res_lst_type",
+        (
+            (False, DatapointsList),
+            (True, DatapointsArrayList),
+        ),
+    )
+    def test_query_single(self, use_numpy, exp_res_lst_type, cognite_client, one_mill_dps_ts):
+        ts, _ = one_mill_dps_ts
+        query = DatapointsQuery(id=ts.id, limit=20)
+        res_lst = cognite_client.time_series.data.query(query, use_numpy=use_numpy)
+        assert isinstance(res_lst, exp_res_lst_type)
+        assert len(res_lst) == 1
+        assert res_lst.get(id=ts.id).external_id == ts.external_id
+
+    @pytest.mark.parametrize(
+        "use_numpy, exp_res_lst_type",
+        (
+            (False, DatapointsList),
+            (True, DatapointsArrayList),
+        ),
+    )
+    def test_query_multiple(self, use_numpy, exp_res_lst_type, cognite_client, ms_bursty_ts, one_mill_dps_ts):
+        ts_num, ts_str = one_mill_dps_ts
+        grans = random_granularity("sm")
+        aggs = random_aggregates(2)
+        query1 = DatapointsQuery(
+            ignore_unknown_ids=False,  # The key test ingredient
+            external_id=ts_str.external_id,
+            id={"id": ts_num.id, "include_outside_points": True},
+            limit=20,
+        )
+        query2 = DatapointsQuery(
+            ignore_unknown_ids=True,  # The key test ingredient
+            id={"id": ms_bursty_ts.id, "granularity": grans, "aggregates": aggs, "limit": 5},
+            external_id=random_cognite_external_ids(3),  # should be silently ignored
+        )
+        res_lst = cognite_client.time_series.data.query([query1, query2], use_numpy=use_numpy)
+        assert isinstance(res_lst, exp_res_lst_type)
+        assert len(res_lst) == 3
+
+    @pytest.mark.parametrize(
+        "use_numpy, exp_res_lst_type",
+        (
+            (False, DatapointsList),
+            (True, DatapointsArrayList),
+        ),
+    )
+    def test_query_no_ts_exists(self, use_numpy, exp_res_lst_type, cognite_client):
+        ts_id = random_cognite_ids(1)
+        query = DatapointsQuery(id=ts_id, ignore_unknown_ids=True)
+        res_lst = cognite_client.time_series.data.query(query, use_numpy=use_numpy)
+        assert res_lst.get(id=ts_id[0]) is None  # SDK bug v<5, id mapping would not exist
 
 
-# class TestRetrieveLatestDatapointsAPI:
-#
-#     def test_retrieve_latest(self, cognite_client, test_time_series):
-#         ids = [test_time_series[0].id, test_time_series[1].id]
-#         res = cognite_client.time_series.data.retrieve_latest(id=ids)
-#         for dps in res:
-#             assert 1 == len(dps)
-#
-#     def test_retrieve_latest_two_unknown(self, cognite_client, test_time_series):
-#         ids = [test_time_series[0].id, test_time_series[1].id, 42, 1337]
-#         res = cognite_client.time_series.data.retrieve_latest(id=ids, ignore_unknown_ids=True)
-#         assert 2 == len(res)
-#         for dps in res:
-#             assert 1 == len(dps)
-#
-#     def test_retrieve_latest_many(self, cognite_client, test_time_series):
-#         ids = [t.id for t in cognite_client.time_series.list(limit=12) if not t.security_categories]
-#         assert len(ids) > 10  # more than one page
-#
-#         with patch(DATAPOINTS_API.format("RETRIEVE_LATEST_LIMIT"), 10):
-#             res = cognite_client.time_series.data.retrieve_latest(id=ids, ignore_unknown_ids=True)
-#
-#         assert {dps.id for dps in res}.issubset(set(ids))
-#         assert 2 == cognite_client.time_series.data._post.call_count
-#         for dps in res:
-#             assert len(dps) <= 1  # could be empty
-#
-#     def test_retrieve_latest_before(self, cognite_client, test_time_series):
-#         ts = test_time_series[0]
-#         res = cognite_client.time_series.data.retrieve_latest(id=ts.id, before="1h-ago")
-#         assert 1 == len(res)
-#         assert res[0].timestamp < timestamp_to_ms("1h-ago")
-#
-#
-# class TestInsertDatapointsAPI:
-#     def test_insert(self, cognite_client, new_ts):
-#         datapoints = [(datetime(year=2018, month=1, day=1, hour=1, minute=i), i) for i in range(60)]
-#         with patch(DATAPOINTS_API.format("DPS_LIMIT"), 30), patch(DATAPOINTS_API.format("POST_DPS_OBJECTS_LIMIT"), 30):
-#             cognite_client.time_series.data.insert(datapoints, id=new_ts.id)
-#         assert 2 == cognite_client.time_series.data._post.call_count
-#
-#     def test_insert_before_epoch(self, cognite_client, new_ts):
-#         datapoints = [(datetime(year=1950, month=1, day=1, hour=1, minute=i), i) for i in range(60)]
-#         with patch(DATAPOINTS_API.format("DPS_LIMIT"), 30), patch(DATAPOINTS_API.format("POST_DPS_OBJECTS_LIMIT"), 30):
-#             cognite_client.time_series.data.insert(datapoints, id=new_ts.id)
-#         assert 2 == cognite_client.time_series.data._post.call_count
-#
-#     def test_insert_copy(self, cognite_client, test_time_series, new_ts):
-#         data = cognite_client.time_series.data.retrieve(
-#             id=test_time_series[0].id, start="600d-ago", end="now", limit=100
-#         )
-#         assert 100 == len(data)
-#         cognite_client.time_series.data.insert(data, id=new_ts.id)
-#         assert 2 == cognite_client.time_series.data._post.call_count
-#
-#     def test_insert_copy_fails_at_aggregate(self, cognite_client, test_time_series, new_ts):
-#         data = cognite_client.time_series.data.retrieve(
-#             id=test_time_series[0].id, start="600d-ago", end="now", granularity="1m", aggregates=["average"], limit=100
-#         )
-#         assert 100 == len(data)
-#         with pytest.raises(ValueError, match="only raw datapoints are supported"):
-#             cognite_client.time_series.data.insert(data, id=new_ts.id)
-#
-#     def test_insert_pandas_dataframe(self, cognite_client, new_ts):
-#         df = pd.DataFrame(
-#             {new_ts.id: np.random.normal(0, 1, 30)},
-#             index=pd.date_range(start="2018", freq="1D", periods=30),
-#         )
-#         with patch(DATAPOINTS_API.format("DPS_LIMIT"), 20), patch(DATAPOINTS_API.format("POST_DPS_OBJECTS_LIMIT"), 20):
-#             cognite_client.time_series.data.insert_dataframe(df, external_id_headers=False)
-#         assert 2 == cognite_client.time_series.data._post.call_count
-#
-#     def test_delete_range(self, cognite_client, new_ts):
-#         cognite_client.time_series.data.delete_range(start="2d-ago", end="now", id=new_ts.id)
-#
-#     def test_delete_range_before_epoch(self, cognite_client, new_ts):
-#         cognite_client.time_series.data.delete_range(start=MIN_TIMESTAMP_MS, end="now", id=new_ts.id)
-#
-#     def test_delete_ranges(self, cognite_client, new_ts):
-#         cognite_client.time_series.data.delete_ranges([{"start": "2d-ago", "end": "now", "id": new_ts.id}])
+class TestRetrieveLatestDatapointsAPI:
+    def test_retrieve_latest(self, cognite_client, test_time_series):
+        ids = [test_time_series[0].id, test_time_series[1].id]
+        res = cognite_client.time_series.data.retrieve_latest(id=ids)
+        for dps in res:
+            assert 1 == len(dps)
+
+    def test_retrieve_latest_two_unknown(self, cognite_client, test_time_series):
+        ids = [test_time_series[0].id, test_time_series[1].id, 42, 1337]
+        res = cognite_client.time_series.data.retrieve_latest(id=ids, ignore_unknown_ids=True)
+        assert 2 == len(res)
+        for dps in res:
+            assert 1 == len(dps)
+
+    def test_retrieve_latest_many(self, cognite_client, test_time_series):
+        ids = [t.id for t in cognite_client.time_series.list(limit=12) if not t.security_categories]
+        assert len(ids) > 10  # more than one page
+
+        with patch(DATAPOINTS_API.format("RETRIEVE_LATEST_LIMIT"), 10):
+            res = cognite_client.time_series.data.retrieve_latest(id=ids, ignore_unknown_ids=True)
+
+        assert {dps.id for dps in res}.issubset(set(ids))
+        assert 2 == cognite_client.time_series.data._post.call_count
+        for dps in res:
+            assert len(dps) <= 1  # could be empty
+
+    def test_retrieve_latest_before(self, cognite_client, test_time_series):
+        ts = test_time_series[0]
+        res = cognite_client.time_series.data.retrieve_latest(id=ts.id, before="1h-ago")
+        assert 1 == len(res)
+        assert res[0].timestamp < timestamp_to_ms("1h-ago")
+
+
+class TestInsertDatapointsAPI:
+    def test_insert(self, cognite_client, new_ts):
+        datapoints = [(datetime(year=2018, month=1, day=1, hour=1, minute=i), i) for i in range(60)]
+        with patch(DATAPOINTS_API.format("DPS_LIMIT"), 30), patch(DATAPOINTS_API.format("POST_DPS_OBJECTS_LIMIT"), 30):
+            cognite_client.time_series.data.insert(datapoints, id=new_ts.id)
+        assert 2 == cognite_client.time_series.data._post.call_count
+
+    def test_insert_before_epoch(self, cognite_client, new_ts):
+        datapoints = [(datetime(year=1950, month=1, day=1, hour=1, minute=i), i) for i in range(60)]
+        with patch(DATAPOINTS_API.format("DPS_LIMIT"), 30), patch(DATAPOINTS_API.format("POST_DPS_OBJECTS_LIMIT"), 30):
+            cognite_client.time_series.data.insert(datapoints, id=new_ts.id)
+        assert 2 == cognite_client.time_series.data._post.call_count
+
+    def test_insert_copy(self, cognite_client, test_time_series, new_ts):
+        data = cognite_client.time_series.data.retrieve(
+            id=test_time_series[0].id, start="600d-ago", end="now", limit=100
+        )
+        assert 100 == len(data)
+        cognite_client.time_series.data.insert(data, id=new_ts.id)
+        assert 2 == cognite_client.time_series.data._post.call_count
+
+    def test_insert_copy_fails_at_aggregate(self, cognite_client, test_time_series, new_ts):
+        data = cognite_client.time_series.data.retrieve(
+            id=test_time_series[0].id, start="600d-ago", end="now", granularity="1m", aggregates=["average"], limit=100
+        )
+        assert 100 == len(data)
+        with pytest.raises(ValueError, match="only raw datapoints are supported"):
+            cognite_client.time_series.data.insert(data, id=new_ts.id)
+
+    def test_insert_pandas_dataframe(self, cognite_client, new_ts):
+        df = pd.DataFrame(
+            {new_ts.id: np.random.normal(0, 1, 30)},
+            index=pd.date_range(start="2018", freq="1D", periods=30),
+        )
+        with patch(DATAPOINTS_API.format("DPS_LIMIT"), 20), patch(DATAPOINTS_API.format("POST_DPS_OBJECTS_LIMIT"), 20):
+            cognite_client.time_series.data.insert_dataframe(df, external_id_headers=False)
+        assert 2 == cognite_client.time_series.data._post.call_count
+
+    def test_delete_range(self, cognite_client, new_ts):
+        cognite_client.time_series.data.delete_range(start="2d-ago", end="now", id=new_ts.id)
+
+    def test_delete_range_before_epoch(self, cognite_client, new_ts):
+        cognite_client.time_series.data.delete_range(start=MIN_TIMESTAMP_MS, end="now", id=new_ts.id)
+
+    def test_delete_ranges(self, cognite_client, new_ts):
+        cognite_client.time_series.data.delete_ranges([{"start": "2d-ago", "end": "now", "id": new_ts.id}])
