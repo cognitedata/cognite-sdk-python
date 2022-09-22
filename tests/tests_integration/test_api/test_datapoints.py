@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from cognite.client._api.datapoint_constants import ALL_SORTED_DP_AGGS
 from cognite.client.data_classes import (
     Datapoints,
     DatapointsArray,
@@ -864,7 +865,7 @@ class TestRetrieveAggregateDatapointsAPI:
                 for res, exp_lim in zip(res_lst, limits):
                     assert len(res) == exp_lim
 
-    def test_edge_case(self, one_mill_dps_ts, retrieve_endpoints):
+    def test_edge_case_all_aggs_missing(self, one_mill_dps_ts, retrieve_endpoints):
         xid = one_mill_dps_ts[0].external_id
         for endpoint in retrieve_endpoints:
             res = endpoint(
@@ -875,36 +876,155 @@ class TestRetrieveAggregateDatapointsAPI:
                 aggregates=["average", "interpolation"],
             )
             # Each dp is more than 1h apart, leading to all-nans for interp. agg only:
-            df = res.to_pandas()
+            df = res.to_pandas(include_aggregate_name=True, column_names="external_id")
             assert df[f"{xid}|interpolation"].isna().all()  # SDK bug v<5, would be all None
             assert df[f"{xid}|average"].notna().all()
 
 
-# class TestRetrieveDataFrameAPI:
-#     def test_retrieve_dataframe(self, cognite_client, test_time_series):
-#         ts = test_time_series[0]
-#         df = cognite_client.time_series.data.retrieve_dataframe(
-#             id=ts.id, start="6h-ago", end="now", aggregates=["average"], granularity="1s"
-#         )
-#         assert df.shape[0] > 0
-#         assert df.shape[1] == 1
-#         assert has_expected_timestamp_spacing(df, "1s")
-#
-#     def test_retrieve_dataframe_one_missing(self, cognite_client, test_time_series):
-#         ts = test_time_series[0]
-#         df = cognite_client.time_series.data.retrieve_dataframe(
-#             id=ts.id,
-#             external_id="missing",
-#             start="6h-ago",
-#             end="now",
-#             aggregates=["average"],
-#             granularity="1s",
-#             ignore_unknown_ids=True,
-#         )
-#         assert df.shape[0] > 0
-#         assert df.shape[1] == 1
-#
-#
+class TestRetrieveDataFrameAPI:
+    """The `retrieve_dataframe` endpoint uses `retrieve_arrays` under the hood, so lots of tests
+    do not need to be repeated.
+    """
+
+    @pytest.mark.parametrize(
+        "max_workers, n_ts, mock_out_eager_or_chunk, outside, exp_len",
+        (
+            (1, 1, "ChunkingDpsFetcher", True, 524),
+            (1, 1, "ChunkingDpsFetcher", False, 524 - 2),
+            (2, 5, "EagerDpsFetcher", True, 524),
+            (2, 5, "EagerDpsFetcher", False, 524 - 2),
+        ),
+    )
+    def test_raw_dps(self, max_workers, n_ts, mock_out_eager_or_chunk, outside, exp_len, cognite_client, weekly_dps_ts):
+        ts_lst_numeric, ts_lst_string = weekly_dps_ts
+        for exp_dtype, ts_lst in zip([np.float64, object], weekly_dps_ts):
+            ts_sample = random.sample(ts_lst, k=n_ts)
+            res_df = cognite_client.time_series.data.retrieve_dataframe(
+                id=[ts.id for ts in ts_sample],
+                start=YEAR_MS[1965],
+                end=YEAR_MS[1975],
+                include_outside_points=outside,
+            )
+            assert res_df.isna().sum().sum() == 0
+            assert res_df.shape == (exp_len, n_ts)
+            assert res_df.dtypes.nunique() == 1
+            assert res_df.dtypes.iloc[0] == exp_dtype
+
+    @pytest.mark.parametrize(
+        "uniform, exp_n_ts_delta, exp_n_nans_step_interp",
+        (
+            (True, 1, 1),
+            (False, 2, 0),
+        ),
+    )
+    def test_agg_uniform_true_false(
+        self, uniform, exp_n_ts_delta, exp_n_nans_step_interp, cognite_client, one_mill_dps_ts
+    ):
+        ts, _ = one_mill_dps_ts
+        with set_max_workers(cognite_client, 1):
+            res_df = cognite_client.time_series.data.retrieve_dataframe(
+                id=ts.id,
+                start=YEAR_MS[1965],
+                end=YEAR_MS[1975],
+                granularity="3h",
+                aggregates=["step_interpolation", "average"],
+                uniform_index=uniform,
+            )
+            assert len(set(np.diff(res_df.index))) == exp_n_ts_delta
+            assert res_df[f"{ts.external_id}|step_interpolation"].isna().sum() == exp_n_nans_step_interp
+            assert (res_df.count().values == [28994, 29215]).all()
+
+    @pytest.mark.parametrize("limit", (0, 1, 2))
+    def test_low_limits(self, limit, cognite_client, one_mill_dps_ts):
+        ts_numeric, ts_string = one_mill_dps_ts
+        res_df = cognite_client.time_series.data.retrieve_dataframe(
+            # Raw dps:
+            id=[
+                ts_string.id,
+                {"id": ts_string.id, "include_outside_points": True},
+                ts_numeric.id,
+                {"id": ts_numeric.id, "include_outside_points": True},
+            ],
+            # Agg dps:
+            external_id={
+                "external_id": ts_numeric.external_id,
+                "granularity": random_granularity(upper_lim=120),
+                "aggregates": random_aggregates(exclude={"count"}),  # count is the only non-float agg
+            },
+            start=random.randint(YEAR_MS[1950], YEAR_MS[2000]),
+            end=ts_to_ms("2019-12-01"),
+            limit=limit,
+        )
+        # We have duplicates in df.columns, so to test specific columns, we reset first:
+        res_df.columns = c1, c2, c3, c4, *cx = range(len(res_df.columns))
+        assert res_df[[c1, c2]].dtypes.unique() == [object]
+        assert res_df[[c3, c4, *cx]].dtypes.unique() == [np.float64]
+        assert (res_df[[c1, c3, *cx]].count() == [limit] * (len(cx) + 2)).all()
+        assert (res_df[[c2, c4]].count() == [limit + 2] * 2).all()
+
+    @pytest.mark.parametrize(
+        "granularity_lst, aggregates_lst, limits",
+        (
+            # Fail because of raw request:
+            ([None, "1s"], [None, random_aggregates(1)], [None, None]),
+            # Fail because of multiple granularities:
+            (["1m", "60s"], [random_aggregates(1), random_aggregates(1)], [None, None]),
+            # Fail because of finite limit:
+            (["1d", "1d"], [random_aggregates(1), random_aggregates(1)], [123, None]),
+        ),
+    )
+    def test_uniform_index_fails(self, granularity_lst, aggregates_lst, limits, cognite_client, one_mill_dps_ts):
+        with pytest.raises(ValueError, match="Cannot return a uniform index"):
+            cognite_client.time_series.data.retrieve_dataframe(
+                uniform_index=True,
+                id=[
+                    {"id": one_mill_dps_ts[0].id, "granularity": gran, "aggregates": agg, "limit": lim}
+                    for gran, agg, lim in zip(granularity_lst, aggregates_lst, limits)
+                ],
+            )
+
+    @pytest.mark.parametrize(
+        "include_aggregate_name, column_names",
+        (
+            (True, "id"),
+            (True, "external_id"),
+            (False, "id"),
+            (False, "external_id"),
+        ),
+    )
+    def test_include_aggregate_name_and_column_names_true_false(
+        self, include_aggregate_name, column_names, cognite_client, one_mill_dps_ts
+    ):
+        ts = one_mill_dps_ts[0]
+        random.shuffle(aggs := ALL_SORTED_DP_AGGS[:])
+
+        res_df = cognite_client.time_series.data.retrieve_dataframe(
+            id=ts.id,
+            limit=5,
+            granularity=random_granularity(),
+            aggregates=aggs,
+            include_aggregate_name=include_aggregate_name,
+            column_names=column_names,
+        )
+        for col, agg in zip(res_df.columns, ALL_SORTED_DP_AGGS):
+            name = str(getattr(ts, column_names))
+            if include_aggregate_name:
+                name += f"|{agg}"
+            assert col == name
+
+    def test_column_names_fails(self, cognite_client, one_mill_dps_ts):
+        with pytest.raises(ValueError, match=re.escape("must be one of 'id' or 'external_id'")):
+            cognite_client.time_series.data.retrieve_dataframe(
+                id=one_mill_dps_ts[0].id, limit=5, column_names="bogus_id"
+            )
+
+    def test_include_aggregate_name_fails(self, cognite_client, one_mill_dps_ts):
+        with pytest.raises(AssertionError):
+            cognite_client.time_series.data.retrieve_dataframe(
+                id=one_mill_dps_ts[0].id, limit=5, include_aggregate_name=None
+            )
+
+
 # class TestQueryDatapointsAPI:
 #     def test_query(self, cognite_client, test_time_series):
 #         dps_query1 = DatapointsQuery(id=test_time_series[0].id, start="6h-ago", end="5h-ago")

@@ -641,15 +641,16 @@ class DatapointsAPI(APIClient):
                 >>> ts_350 = dps_lst.get(id=350)  # `Datapoints` object
 
             ...but what happens if you request duplicate `id`s or `external_id`s? Let's say you need to fetch data from multiple
-            disconnected periods, e.g. stock data only from recessions. In this case the `.get` method will return a list of `Datapoints` instead:
+            disconnected periods, e.g. stock data only from recessions. In this case the `.get` method will return a list of `Datapoints` instead,
+            (similar to how slicing works with non-unique indexes on Pandas DataFrames):
 
                 >>> from datetime import datetime, timezone
                 >>> utc = timezone.utc
                 >>> dps_lst = client.time_series.data.retrieve(
                 ...     id=[
                 ...         42, 43, 44, 45,
-                ...         {"id": 350, start=datetime(1950, 1, 1, tzinfo=utc), end=datetime(1980, 1, 1, tzinfo=utc)}
-                ...         {"id": 350, start=datetime(2010, 1, 1, tzinfo=utc), end=datetime(2020, 1, 1, tzinfo=utc)}
+                ...         {"id": 350, start=datetime(1907, 10, 14, tzinfo=utc), end=datetime(1907, 11, 6, tzinfo=utc)},
+                ...         {"id": 350, start=datetime(1929, 9, 4, tzinfo=utc), end=datetime(1929, 11, 13, tzinfo=utc)},
                 ...     ])
                 >>> ts_44 = dps_lst.get(id=44)  # Single `Datapoints` object
                 >>> ts_350_lst = dps_lst.get(id=350)  # List of two `Datapoints` objects

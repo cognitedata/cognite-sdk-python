@@ -269,6 +269,7 @@ class DatapointsArray(CogniteResource):
     def to_pandas(  # type: ignore [override]
         self, column_names: Literal["id", "external_id"] = "external_id", include_aggregate_name: bool = True
     ) -> "pandas.DataFrame":
+        assert isinstance(include_aggregate_name, bool)
         pd = cast(Any, local_import("pandas"))
         identifier_dct = {"id": self.id, "external_id": self.external_id}
         if column_names not in identifier_dct:
