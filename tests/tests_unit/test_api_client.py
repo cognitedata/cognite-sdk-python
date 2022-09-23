@@ -1147,6 +1147,14 @@ class TestHelpers:
             ("PUT", "https://localhost:8000.com/api/v1/projects/blabla/assets", True),
             ("PATCH", "https://localhost:8000.com/api/v1/projects/blabla/patchy", True),
             ("GET", "https://another-cluster.cognitedata.com/login/status", True),
+            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/mydb/tables/mytable", True),
+            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/assets/list", True),
+            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/events/byids", True),
+            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/files/search", True),
+            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/timeseries/list", True),
+            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/sequences/byids", True),
+            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/datasets/aggregate", True),
+            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/relationships/list", True),
         ],
     )
     def test_is_retryable(self, api_client_with_api_key, method, path, expected):
@@ -1160,25 +1168,12 @@ class TestHelpers:
             api_client_with_api_key._is_retryable(method, path)
 
     def test_is_retryable_add(self, api_client_with_api_key):
-        assert (
-            api_client_with_api_key._is_retryable(
-                "POST", "https://greenfield.cognitedata.com/api/v1/projects/blabla/assets/bloop"
-            )
-            is False
-        )
-        APIClient.RETRYABLE_POST_ENDPOINTS.add("/assets/bloop")
+        APIClient._RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS.add("/assets/bloop")
         assert (
             api_client_with_api_key._is_retryable(
                 "POST", "https://greenfield.cognitedata.com/api/v1/projects/blabla/assets/bloop"
             )
             is True
-        )
-        APIClient.RETRYABLE_POST_ENDPOINTS.remove("/assets/bloop")
-        assert (
-            api_client_with_api_key._is_retryable(
-                "POST", "https://greenfield.cognitedata.com/api/v1/projects/blabla/assets/bloop"
-            )
-            is False
         )
 
     @pytest.mark.parametrize(

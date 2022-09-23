@@ -41,6 +41,15 @@ Changes are grouped as follows
 - DatapointsAPI.retrieve_dataframe_dict TODO
 - `DatapointsAPI.retrieve_dataframe` no longer support the `complete` keyword argument. Rationale: Weird and unintuitive syntax (passing a string using comma to separate options). Also, `aggregates` & `granularity` are no longer required arguments, and as such, interpolating or forward-filling to a fixed frequency, does not make sense anymore.
 
+## [4.5.4] - 2022-09-19
+### Fixed
+- The raw rows insert endpoint is now subject to the same retry logic as other idempotent endpoints.
+
+## [4.5.3] - 2022-09-15
+### Fixed
+- Fixes the OS specific issue where the `requirements.txt`-validation failed
+  with `Permission Denied` on Windows.
+
 ## [4.5.2] - 2022-09-09
 ### Fixed
 - Fixes the issue when updating transformations with new nonce credentials
