@@ -153,7 +153,7 @@ class EntityMatchingAPI(APIClient):
         external_id: str = None,
     ) -> EntityMatchingModel:
         """Fit entity matching model.
-        Note: All users on this CDF subscription with assets read-all and entitymatching read-all and write-all
+        **Note**: All users on this CDF subscription with assets read-all and entitymatching read-all and write-all
         capabilities in the project, are able to access the data sent to this endpoint.
 
         Args:
@@ -206,7 +206,7 @@ class EntityMatchingAPI(APIClient):
         external_id: Optional[str] = None,
     ) -> ContextualizationJob:
         """Predict entity matching. NB. blocks and waits for the model to be ready if it has been recently created.
-        Note: All users on this CDF subscription with assets read-all and entitymatching read-all and write-all
+        **Note**: All users on this CDF subscription with assets read-all and entitymatching read-all and write-all
         capabilities in the project, are able to access the data sent to this endpoint.
 
         Args:
@@ -235,7 +235,7 @@ class EntityMatchingAPI(APIClient):
         external_id: Optional[str] = None,
     ) -> EntityMatchingModel:
         """Re-fits an entity matching model, using the combination of the old and new true matches.
-        Note: All users on this CDF subscription with assets read-all and entitymatching read-all and write-all
+        **Note**: All users on this CDF subscription with assets read-all and entitymatching read-all and write-all
         capabilities in the project, are able to access the data sent to this endpoint.
 
         Args:

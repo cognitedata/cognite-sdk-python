@@ -11,9 +11,6 @@ from cognite.client.utils._identifier import IdentifierSequence
 class AnnotationsAPI(APIClient):
     _RESOURCE_PATH = "/annotations"
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-
     @overload
     def create(self, annotations: Annotation) -> Annotation:
         ...
