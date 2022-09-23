@@ -39,7 +39,7 @@ def random_aggregates(n=None, exclude=None):
     return random.sample(agg_lst, k=n)
 
 
-def random_gamma_dist_integer(inclusive_max, max_tries=10):
+def random_gamma_dist_integer(inclusive_max, max_tries=100):
     # "Smaller integers are more likely"
     for _ in range(max_tries):
         i = 1 + math.floor(random.gammavariate(1, inclusive_max * 0.3))

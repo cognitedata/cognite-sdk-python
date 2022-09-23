@@ -6,7 +6,7 @@ try:
     import numpy.typing as npt
 
     NUMPY_IS_AVAILABLE = True
-except ImportError:
+except ImportError:  # pragma no cover
     NUMPY_IS_AVAILABLE = False
 
 if NUMPY_IS_AVAILABLE:

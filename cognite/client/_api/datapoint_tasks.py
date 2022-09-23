@@ -109,6 +109,7 @@ class _SingleTSQueryValidator:
             id_or_xid = [id_or_xid]  # type: ignore [assignment]
 
         if not isinstance(id_or_xid, Sequence):
+            # We use Sequence which requires an odering of its iterable elements
             self._raise_on_wrong_ts_identifier_type(id_or_xid, arg_name, exp_type)
 
         queries = []
@@ -122,7 +123,7 @@ class _SingleTSQueryValidator:
                 ts_validated = self._validate_ts_query_dict_keys(ts, arg_name, exp_type)
                 ts_dct = {**self.defaults, **ts_validated}
                 queries.append(self._validate_and_create_query(ts_dct))  # type: ignore [arg-type]
-            else:
+            else:  # pragma: no cover
                 self._raise_on_wrong_ts_identifier_type(ts, arg_name, exp_type)
         return queries
 
@@ -143,7 +144,7 @@ class _SingleTSQueryValidator:
     ) -> Union[DatapointsQueryId, DatapointsQueryExternalId]:
         if arg_name not in dct:
             if (arg_name_cc := to_camel_case(arg_name)) not in dct:
-                raise KeyError(f"Missing key `{arg_name}` in dict passed as, or part of argument `{arg_name}`")
+                raise KeyError(f"Missing required key `{arg_name}` in dict: {dct}.")
             # For backwards compatability we accept identifier in camel case: (Make copy to avoid side effects
             # for user's input). Also means we need to return it.
             dct[arg_name] = (dct := dct.copy()).pop(arg_name_cc)
@@ -223,7 +224,11 @@ class _SingleTSQueryValidator:
         if limit in {None, -1, math.inf}:
             return None
         elif isinstance(limit, numbers.Integral) and limit >= 0:  # limit=0 is accepted by the API
-            return int(limit)  # We don't want weird stuff like numpy dtypes etc.
+            try:
+                # We don't want weird stuff like numpy dtypes etc:
+                return int(limit)
+            except Exception:  # pragma no cover
+                raise TypeError(f"Unable to convert given {limit=} to integer")
         raise TypeError(
             "Parameter `limit` must be a non-negative integer -OR- one of [None, -1, inf] to "
             f"indicate an unlimited query. Got: {limit} with type: {type(limit)}"
