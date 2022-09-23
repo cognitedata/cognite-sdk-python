@@ -334,7 +334,7 @@ class TestGetDatapoints:
 
     def test_retrieve_datapoints_aggregates(self, cognite_client, mock_get_datapoints):
         dps_res = cognite_client.time_series.data.retrieve(
-            id=123, start=1000000, end=1100000, aggregates=["average", "stepInterpolation"], granularity="10s"
+            id=123, start=1000000, end=1100000, aggregates=["average", "step_interpolation"], granularity="10s"
         )
         assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
 
@@ -849,7 +849,7 @@ class TestPandasIntegration:
 
         d = Datapoints(id=1, timestamp=[1, 2, 3], average=[2, 3, 4], step_interpolation=[3, 4, 5])
         expected_df = pd.DataFrame(
-            {"1|average": [2, 3, 4], "1|stepInterpolation": [3, 4, 5]},
+            {"1|average": [2, 3, 4], "1|step_interpolation": [3, 4, 5]},
             index=pd.to_datetime(range(1, 4), unit="ms"),
         )
         pd.testing.assert_frame_equal(expected_df, d.to_pandas())
@@ -868,7 +868,7 @@ class TestPandasIntegration:
 
         d = Datapoints(id=0, external_id="abc", timestamp=[1, 2, 3], average=[2, 3, 4], step_interpolation=[3, 4, 5])
         expected_df = pd.DataFrame(
-            {"abc|average": [2, 3, 4], "abc|stepInterpolation": [3, 4, 5]},
+            {"abc|average": [2, 3, 4], "abc|step_interpolation": [3, 4, 5]},
             index=pd.to_datetime(range(1, 4), unit="ms"),
         )
         pd.testing.assert_frame_equal(expected_df, d.to_pandas())
@@ -887,9 +887,9 @@ class TestPandasIntegration:
         expected_df = pd.DataFrame(
             {
                 "1|average": [2, 3, 4],
-                "1|stepInterpolation": [3, 4, 5],
+                "1|step_interpolation": [3, 4, 5],
                 "2|max": [2, 3, 4],
-                "2|stepInterpolation": [3, 4, 5],
+                "2|step_interpolation": [3, 4, 5],
                 "3": [1, None, 3],
             },
             index=pd.to_datetime(range(1, 4), unit="ms"),

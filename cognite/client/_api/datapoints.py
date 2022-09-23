@@ -610,6 +610,8 @@ class DatapointsAPI(APIClient):
             You can also get aggregated values, such as the average. Here we are getting daily averages for all of 2018 for
             two different time series. Note that we are fetching them using their external ids::
 
+                >>> from datetime import datetime, timezone
+                >>> utc = timezone.utc
                 >>> dps = client.time_series.data.retrieve(
                 ...    external_id=["foo", "bar"],
                 ...    start=datetime(2018, 1, 1, tzinfo=utc),
@@ -644,13 +646,11 @@ class DatapointsAPI(APIClient):
             disconnected periods, e.g. stock data only from recessions. In this case the `.get` method will return a list of `Datapoints` instead,
             (similar to how slicing works with non-unique indexes on Pandas DataFrames):
 
-                >>> from datetime import datetime, timezone
-                >>> utc = timezone.utc
                 >>> dps_lst = client.time_series.data.retrieve(
                 ...     id=[
                 ...         42, 43, 44, 45,
-                ...         {"id": 350, start=datetime(1907, 10, 14, tzinfo=utc), end=datetime(1907, 11, 6, tzinfo=utc)},
-                ...         {"id": 350, start=datetime(1929, 9, 4, tzinfo=utc), end=datetime(1929, 11, 13, tzinfo=utc)},
+                ...         {"id": 350, "start": datetime(1907, 10, 14, tzinfo=utc), "end": datetime(1907, 11, 6, tzinfo=utc)},
+                ...         {"id": 350, "start": datetime(1929, 9, 4, tzinfo=utc), "end": datetime(1929, 11, 13, tzinfo=utc)},
                 ...     ])
                 >>> ts_44 = dps_lst.get(id=44)  # Single `Datapoints` object
                 >>> ts_350_lst = dps_lst.get(id=350)  # List of two `Datapoints` objects
