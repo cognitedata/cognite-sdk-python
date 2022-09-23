@@ -5,7 +5,6 @@ Note: If tests related to fetching datapoints are broken, all time series + thei
 >>> python scripts/create_ts_for_integration_tests.py
 """
 import itertools
-import math
 import random
 import re
 import time
@@ -700,26 +699,22 @@ class TestRetrieveAggregateDatapointsAPI:
             assert sum(res.sum) == 500_000
 
     @pytest.mark.parametrize(
-        "first_gran, second_gran",
+        "first_gran, second_gran, start",
         (
-            ("60s", "1m"),
-            ("120s", "2m"),
-            ("60m", "1h"),
-            ("120m", "2h"),
-            ("24h", "1d"),
-            ("48h", "2d"),
-            ("240h", "10d"),
-            ("4800h", "200d"),
+            ("60s", "1m", 86572008555),
+            ("120s", "2m", 27340402091),
+            ("60m", "1h", -357464206106),
+            ("120m", "2h", -150117679983),
+            ("24h", "1d", 114399466017),
+            ("48h", "2d", -170931071253),
+            ("240h", "10d", 366850985031),
+            ("4800h", "200d", -562661581583),
         ),
     )
-    def test_can_be_equivalent_granularities(self, first_gran, second_gran, one_mill_dps_ts, retrieve_endpoints):
+    def test_can_be_equivalent_granularities(self, first_gran, second_gran, start, one_mill_dps_ts, retrieve_endpoints):
         ts, _ = one_mill_dps_ts  # data: 1950-2020
         gran_ms = granularity_to_ms(first_gran)
         for endpoint in retrieve_endpoints:
-            start = random.randint(YEAR_MS[1950], YEAR_MS[2000])
-            # Make sure start is NOT aligned with granularity unit:
-            if start % gran_ms == 0:
-                start += int(math.sqrt(gran_ms))
             end = start + gran_ms * random.randint(10, 1000)
             start_aligned, end_aligned = align_start_and_end_for_granularity(start, end, second_gran)
             res_lst = endpoint(
@@ -951,7 +946,8 @@ class TestRetrieveDataFrameAPI:
             external_id={
                 "external_id": ts_numeric.external_id,
                 "granularity": random_granularity(upper_lim=120),
-                "aggregates": random_aggregates(exclude={"count"}),  # count is the only non-float agg
+                # Exclude count (only non-float agg) and (step_)interpolation which might yield nans:
+                "aggregates": random_aggregates(exclude={"count", "interpolation", "step_interpolation"}),
             },
             start=random.randint(YEAR_MS[1950], YEAR_MS[2000]),
             end=ts_to_ms("2019-12-01"),
@@ -1083,21 +1079,27 @@ class TestQueryDatapointsAPI:
         assert res_lst.get(id=ts_id[0]) is None  # SDK bug v<5, id mapping would not exist
 
 
+@pytest.fixture
+def post_spy(cognite_client):
+    with patch.object(cognite_client.time_series.data, "_post", wraps=cognite_client.time_series.data._post):
+        yield
+
+
 class TestRetrieveLatestDatapointsAPI:
-    def test_retrieve_latest(self, cognite_client, test_time_series):
-        ids = [test_time_series[0].id, test_time_series[1].id]
+    def test_retrieve_latest(self, cognite_client, all_test_time_series):
+        ids = [all_test_time_series[0].id, all_test_time_series[1].id]
         res = cognite_client.time_series.data.retrieve_latest(id=ids)
         for dps in res:
             assert 1 == len(dps)
 
-    def test_retrieve_latest_two_unknown(self, cognite_client, test_time_series):
-        ids = [test_time_series[0].id, test_time_series[1].id, 42, 1337]
+    def test_retrieve_latest_two_unknown(self, cognite_client, all_test_time_series):
+        ids = [all_test_time_series[0].id, all_test_time_series[1].id, 42, 1337]
         res = cognite_client.time_series.data.retrieve_latest(id=ids, ignore_unknown_ids=True)
         assert 2 == len(res)
         for dps in res:
             assert 1 == len(dps)
 
-    def test_retrieve_latest_many(self, cognite_client, test_time_series):
+    def test_retrieve_latest_many(self, cognite_client, post_spy):
         ids = [t.id for t in cognite_client.time_series.list(limit=12) if not t.security_categories]
         assert len(ids) > 10  # more than one page
 
@@ -1105,60 +1107,58 @@ class TestRetrieveLatestDatapointsAPI:
             res = cognite_client.time_series.data.retrieve_latest(id=ids, ignore_unknown_ids=True)
 
         assert {dps.id for dps in res}.issubset(set(ids))
-        assert 2 == cognite_client.time_series.data._post.call_count
+        assert 2 == cognite_client.time_series.data._post.call_count  # needs post_spy
         for dps in res:
             assert len(dps) <= 1  # could be empty
 
-    def test_retrieve_latest_before(self, cognite_client, test_time_series):
-        ts = test_time_series[0]
+    def test_retrieve_latest_before(self, cognite_client, all_test_time_series):
+        ts = all_test_time_series[0]
         res = cognite_client.time_series.data.retrieve_latest(id=ts.id, before="1h-ago")
         assert 1 == len(res)
         assert res[0].timestamp < timestamp_to_ms("1h-ago")
 
 
 class TestInsertDatapointsAPI:
-    def test_insert(self, cognite_client, new_ts):
+    def test_insert(self, cognite_client, new_ts, post_spy):
         datapoints = [(datetime(year=2018, month=1, day=1, hour=1, minute=i), i) for i in range(60)]
         with patch(DATAPOINTS_API.format("DPS_LIMIT"), 30), patch(DATAPOINTS_API.format("POST_DPS_OBJECTS_LIMIT"), 30):
             cognite_client.time_series.data.insert(datapoints, id=new_ts.id)
-        assert 2 == cognite_client.time_series.data._post.call_count
+        assert 2 == cognite_client.time_series.data._post.call_count  # needs post_spy
 
-    def test_insert_before_epoch(self, cognite_client, new_ts):
+    def test_insert_before_epoch(self, cognite_client, new_ts, post_spy):
         datapoints = [(datetime(year=1950, month=1, day=1, hour=1, minute=i), i) for i in range(60)]
         with patch(DATAPOINTS_API.format("DPS_LIMIT"), 30), patch(DATAPOINTS_API.format("POST_DPS_OBJECTS_LIMIT"), 30):
             cognite_client.time_series.data.insert(datapoints, id=new_ts.id)
-        assert 2 == cognite_client.time_series.data._post.call_count
+        assert 2 == cognite_client.time_series.data._post.call_count  # needs post_spy
 
-    def test_insert_copy(self, cognite_client, test_time_series, new_ts):
-        data = cognite_client.time_series.data.retrieve(
-            id=test_time_series[0].id, start="600d-ago", end="now", limit=100
-        )
+    def test_insert_copy(self, cognite_client, ms_bursty_ts, new_ts, post_spy):
+        data = cognite_client.time_series.data.retrieve(id=ms_bursty_ts.id, start=0, end="now", limit=100)
         assert 100 == len(data)
         cognite_client.time_series.data.insert(data, id=new_ts.id)
-        assert 2 == cognite_client.time_series.data._post.call_count
+        assert 2 == cognite_client.time_series.data._post.call_count  # needs post_spy
 
-    def test_insert_copy_fails_at_aggregate(self, cognite_client, test_time_series, new_ts):
+    def test_insert_copy_fails_at_aggregate(self, cognite_client, ms_bursty_ts, new_ts):
         data = cognite_client.time_series.data.retrieve(
-            id=test_time_series[0].id, start="600d-ago", end="now", granularity="1m", aggregates=["average"], limit=100
+            id=ms_bursty_ts.id, end="now", granularity="1m", aggregates=random_aggregates(1), limit=100
         )
         assert 100 == len(data)
         with pytest.raises(ValueError, match="only raw datapoints are supported"):
             cognite_client.time_series.data.insert(data, id=new_ts.id)
 
-    def test_insert_pandas_dataframe(self, cognite_client, new_ts):
+    def test_insert_pandas_dataframe(self, cognite_client, new_ts, post_spy):
         df = pd.DataFrame(
             {new_ts.id: np.random.normal(0, 1, 30)},
             index=pd.date_range(start="2018", freq="1D", periods=30),
         )
         with patch(DATAPOINTS_API.format("DPS_LIMIT"), 20), patch(DATAPOINTS_API.format("POST_DPS_OBJECTS_LIMIT"), 20):
             cognite_client.time_series.data.insert_dataframe(df, external_id_headers=False)
-        assert 2 == cognite_client.time_series.data._post.call_count
+        assert 2 == cognite_client.time_series.data._post.call_count  # needs post_spy
 
     def test_delete_range(self, cognite_client, new_ts):
         cognite_client.time_series.data.delete_range(start="2d-ago", end="now", id=new_ts.id)
 
     def test_delete_range_before_epoch(self, cognite_client, new_ts):
-        cognite_client.time_series.data.delete_range(start=MIN_TIMESTAMP_MS, end="now", id=new_ts.id)
+        cognite_client.time_series.data.delete_range(start=MIN_TIMESTAMP_MS, end=0, id=new_ts.id)
 
     def test_delete_ranges(self, cognite_client, new_ts):
         cognite_client.time_series.data.delete_ranges([{"start": "2d-ago", "end": "now", "id": new_ts.id}])
