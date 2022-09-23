@@ -270,11 +270,6 @@ class FileMetadataUpdate(CogniteUpdate):
     def labels(self) -> _LabelFileMetadataUpdate:
         return FileMetadataUpdate._LabelFileMetadataUpdate(self, "labels")
 
-    # TODO: This is left here for backwards compatibility. Should be removed on next major version change
-    @property
-    def geoLocation(self) -> _PrimitiveFileMetadataUpdate:
-        return self.geo_location
-
     @property
     def geo_location(self) -> _PrimitiveFileMetadataUpdate:
         return FileMetadataUpdate._PrimitiveFileMetadataUpdate(self, "geoLocation")
