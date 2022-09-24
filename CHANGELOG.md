@@ -10,6 +10,7 @@ Changes are grouped as follows
 - `Added` for new features.
 - `Changed` for changes in existing functionality.
 - `Deprecated` for soon-to-be removed features.
+- `Improved` for transparent changes, e.g. better performance.
 - `Removed` for now removed features.
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
@@ -30,7 +31,6 @@ Changes are grouped as follows
 ## [4.5.2] - 2022-09-09
 ### Fixed
 - Fixes the issue when updating transformations with new nonce credentials
-
 
 ## [4.5.1] - 2022-09-08
 ### Fixed
@@ -150,8 +150,8 @@ other OAuth flows.
 - added support for nonce authentication on transformations
 
 ### Changed
-- if no source or destination credentials are provided on transformation create, an attempt will be made to create a session with the CogniteClient credentials, if it succeeds the aquired nonce will be used.
-- if OIDC credentials are provided on transformation create/update, an attempt will be made to create a session with the given credentials, if it succeeds the aquired nonce credentials will replace the given client credentials before sending the request.
+- if no source or destination credentials are provided on transformation create, an attempt will be made to create a session with the CogniteClient credentials, if it succeeds the acquired nonce will be used.
+- if OIDC credentials are provided on transformation create/update, an attempt will be made to create a session with the given credentials, if it succeeds the acquired nonce credentials will replace the given client credentials before sending the request.
 
 ## [3.3.0] - 2022-07-21
 ### Added
