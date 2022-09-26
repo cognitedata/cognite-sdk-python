@@ -111,7 +111,6 @@ class TestTransformationsAPI:
         ts = cognite_client.transformations.create(transform)
         cognite_client.transformations.delete(id=ts.id)
 
-    @pytest.mark.skip
     def test_create_dmi_transformation(self, cognite_client):
         prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
         transform = Transformation(
@@ -259,7 +258,6 @@ class TestTransformationsAPI:
         # just make sure it doesnt raise exceptions
         str(query_result)
 
-    @pytest.mark.skip
     def test_update_dmi(self, cognite_client, new_transformation):
         new_transformation.destination = TransformationDestination.data_model_instances(
             "myTest", "test-space", "test-space"
