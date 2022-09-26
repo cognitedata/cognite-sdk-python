@@ -14,9 +14,18 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [4.6.0] - 2022-09-15
+## [4.6.0] - 2022-09-26
 ### Changed
 - Change geospatial.aggregate_features to support `aggregate_output`
+
+## [4.5.4] - 2022-09-19
+### Fixed
+- The raw rows insert endpoint is now subject to the same retry logic as other idempotent endpoints.
+
+## [4.5.3] - 2022-09-15
+### Fixed
+- Fixes the OS specific issue where the `requirements.txt`-validation failed 
+  with `Permission Denied` on Windows.
 
 ## [4.5.2] - 2022-09-09
 ### Fixed
