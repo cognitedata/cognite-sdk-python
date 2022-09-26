@@ -817,7 +817,7 @@ class GeospatialAPI(APIClient):
                 ...     # loop over aggregates in different groups
         """
         if property or aggregates:
-            warnings.warn("property and aggregates are deprecated, use aggregate_output instead.", DeprecationWarning)
+            warnings.warn("property and aggregates are deprecated, use output instead.", DeprecationWarning)
         resource_path = self._feature_resource_path(feature_type_external_id) + "/aggregate"
         cls = FeatureAggregateList
         order = None if order_by is None else [f"{item.property}:{item.direction}" for item in order_by]
