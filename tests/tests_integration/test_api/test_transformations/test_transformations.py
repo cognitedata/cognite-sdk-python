@@ -5,7 +5,6 @@ import pytest
 
 from cognite.client.credentials import OAuthClientCredentials
 from cognite.client.data_classes import DataSet, Transformation, TransformationDestination, TransformationUpdate
-from cognite.client.data_classes.transformations._alphatypes import AlphaDataModelInstances
 from cognite.client.data_classes.transformations.common import NonceCredentials, OidcCredentials, SequenceRows
 
 
@@ -113,12 +112,12 @@ class TestTransformationsAPI:
         cognite_client.transformations.delete(id=ts.id)
 
     @pytest.mark.skip
-    def test_create_alpha_dmi_transformation(self, cognite_client):
+    def test_create_dmi_transformation(self, cognite_client):
         prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
         transform = Transformation(
             name="any",
             external_id=f"{prefix}-transformation",
-            destination=AlphaDataModelInstances(
+            destination=TransformationDestination.data_model_instances(
                 model_external_id="testInstance",
                 space_external_id="test-space",
                 instance_space_external_id="test-space",
@@ -126,7 +125,7 @@ class TestTransformationsAPI:
         )
         ts = cognite_client.transformations.create(transform)
         assert (
-            ts.destination.type == "alpha_data_model_instances"
+            ts.destination.type == "data_model_instances"
             and ts.destination.model_external_id == "testInstance"
             and ts.destination.space_external_id == "test-space"
             and ts.destination.instance_space_external_id == "test-space"
@@ -261,15 +260,21 @@ class TestTransformationsAPI:
         str(query_result)
 
     @pytest.mark.skip
-    def test_update_dmi_alpha(self, cognite_client, new_transformation):
-        new_transformation.destination = AlphaDataModelInstances("myTest", "test-space", "test-space")
+    def test_update_dmi(self, cognite_client, new_transformation):
+        new_transformation.destination = TransformationDestination.data_model_instances(
+            "myTest", "test-space", "test-space"
+        )
         partial_update = TransformationUpdate(id=new_transformation.id).destination.set(
-            AlphaDataModelInstances("myTest2", "test-space", "test-space")
+            TransformationDestination.data_model_instances("myTest2", "test-space", "test-space")
         )
         updated_transformation = cognite_client.transformations.update(new_transformation)
-        assert updated_transformation.destination == AlphaDataModelInstances("myTest", "test-space", "test-space")
+        assert updated_transformation.destination == TransformationDestination.data_model_instances(
+            "myTest", "test-space", "test-space"
+        )
         partial_updated = cognite_client.transformations.update(partial_update)
-        assert partial_updated.destination == AlphaDataModelInstances("myTest2", "test-space", "test-space")
+        assert partial_updated.destination == TransformationDestination.data_model_instances(
+            "myTest2", "test-space", "test-space"
+        )
 
     def test_update_sequence_rows_update(self, cognite_client, new_transformation):
         new_transformation.destination = SequenceRows("myTest")
