@@ -769,7 +769,7 @@ class GeospatialAPI(APIClient):
         filter: Optional[Dict[str, Any]] = None,
         group_by: Sequence[str] = None,
         order_by: Sequence[OrderSpec] = None,
-        aggregate_output: Dict[str, Any] = None,
+        output: Dict[str, Any] = None,
     ) -> FeatureAggregateList:
         """`Aggregate filtered features`
         <https://docs.cognite.com/api/v1/#operation/aggregateFeatures>
@@ -781,7 +781,7 @@ class GeospatialAPI(APIClient):
             aggregates (Sequence[str]): list of aggregates to be calculated
             group_by (Sequence[str]): list of properties to group by with
             order_by (Sequence[OrderSpec]): the order specification
-            aggregate_output (Dict[str, Any]): the aggregate output
+            output (Dict[str, Any]): the aggregate output
 
         Returns:
             FeatureAggregateList: the filtered features
@@ -809,7 +809,7 @@ class GeospatialAPI(APIClient):
                 ...     filter={"range": {"property": "temperature", "gt": 12.0}},
                 ...     group_by=["category"],
                 ...     order_by=[OrderSpec("category", "ASC")],
-                ...     aggregate_output={"min_temperature": {"min": {"property": "temperature"}},
+                ...     output={"min_temperature": {"min": {"property": "temperature"}},
                 ...         "max_temperature": {"max": {"property": "temperature"}}
                 ...     }
                 ... )
@@ -829,7 +829,7 @@ class GeospatialAPI(APIClient):
                 "aggregates": aggregates,
                 "groupBy": group_by,
                 "sort": order,
-                "output": aggregate_output,
+                "output": output,
             },
         )
         return cls._load(res.json()["items"], cognite_client=self._cognite_client)
