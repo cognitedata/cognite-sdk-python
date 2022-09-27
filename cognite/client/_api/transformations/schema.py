@@ -7,6 +7,7 @@ from cognite.client.data_classes import (
     TransformationSchemaColumn,
     TransformationSchemaColumnList,
 )
+from cognite.client.data_classes.transformations.common import DataModelInstances
 
 
 class TransformationSchemaAPI(APIClient):
@@ -37,6 +38,10 @@ class TransformationSchemaAPI(APIClient):
         url_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}", str(destination.type))
         filter = destination.dump(True)
         filter.pop("type")
+
+        if isinstance(destination, DataModelInstances):
+            filter["externalId"] = filter.pop("modelExternalId")
+            filter.pop("instanceSpaceExternalId")
         if conflict_mode:
             filter["conflictMode"] = conflict_mode
         return self._list(
