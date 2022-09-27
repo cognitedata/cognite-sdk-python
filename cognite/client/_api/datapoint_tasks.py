@@ -434,7 +434,7 @@ class DpsUnpackFns:
     def custom_from_aggregates(
         lst: List[str],
     ) -> Callable[[List[Dict[str, DatapointsTypes]]], Tuple[DatapointsTypes, ...]]:
-        return op.itemgetter(*map(to_camel_case, lst))
+        return op.itemgetter(*lst)
 
 
 class DefaultSortedDict(SortedDict):
@@ -649,8 +649,7 @@ class SplittingFetchSubtask(SerialFetchSubtask):
         n_new_tasks = min(cast(int, n_new_lim), n_new_pct, self.max_splitting_factor + 1)  # +1 for "self next"
         if n_new_tasks <= 1:  # No point in splitting; no faster than this task just continuing
             return None
-        # Find a `delta_ms` thats a multiple of granularity in ms (trivial for raw queries).
-        # ...we use `ceil` instead of `round` to make sure we "overshoot" `end`:
+        # Find a `delta_ms` thats a multiple of granularity in ms (trivial for raw queries):
         boundaries = split_time_range(last_ts, self.end, n_new_tasks, self.parent.offset_next)
         self.end = boundaries[1]  # We shift end of 'self' backwards
         static_params = {
@@ -701,7 +700,7 @@ class BaseConcurrentTask:
             assert first_limit is not None and first_dps_batch is not None  # mypy...
             dps = first_dps_batch.pop("datapoints")  # type: ignore [misc]
             self.ts_info = first_dps_batch  # Store just the ts info
-            self.raw_dtype = np.object_ if first_dps_batch["isString"] else np.float64
+            self.raw_dtype = self._decide_dtype_from_is_string(first_dps_batch["isString"])
             if not dps:
                 self._is_done = True
                 return None
@@ -794,10 +793,13 @@ class BaseConcurrentTask:
             for i, (start, end) in enumerate(zip(boundaries[:-1], boundaries[1:]), 1)
         ]
 
+    def _decide_dtype_from_is_string(is_string: bool) -> type:
+        return np.object_ if is_string else np.float64
+
     def _store_ts_info(self, res: DatapointsFromAPI) -> None:
         self.ts_info = {k: v for k, v in res.items() if k != "datapoints"}  # type: ignore [assignment]
         if self.use_numpy:
-            self.raw_dtype = np.object_ if res["isString"] else np.float64
+            self.raw_dtype = self._decide_dtype_from_is_string(res["isString"])
 
     def _store_first_batch(self, dps: List[Dict[str, DatapointsTypes]], first_limit: int) -> None:
         # Set `start` for the first subtask:
@@ -807,18 +809,16 @@ class BaseConcurrentTask:
         # Are we done after first batch?
         if self.first_start == self.query.end:
             self._is_done = True
-        elif self.has_limit:
-            if len(dps) <= self.query.limit <= first_limit:
-                self._is_done = True
-        else:
-            if len(dps) < first_limit:
-                self._is_done = True
+        elif self.has_limit and len(dps) <= self.query.limit <= first_limit:
+            self._is_done = True
+        elif len(dps) < first_limit:
+            self._is_done = True
 
     def remaining_limit(self, subtask: BaseDpsFetchSubtask) -> Optional[int]:
         if not self.has_limit:
             return None
         # For limited queries: if the sum of fetched points of earlier tasks have already hit/surpassed
-        # `limit`, we know for sure we can cancel future tasks:
+        # `limit`, we know for sure we can cancel later/future tasks:
         remaining = cast(int, self.query.limit)
         with self.lock:  # Keep sorted list `subtasks` from being mutated
             for task in self.subtasks:
@@ -923,17 +923,16 @@ class BaseConcurrentRawTask(BaseConcurrentTask):
         return min(n_workers_per_queries, math.ceil((tot_ms / 1000) / self.query.max_query_limit))
 
     def _cap_dps_at_limit(self) -> None:
-        # assert isinstance(self.query.limit, int)  # mypy
         # Note 1: Outside points do not count towards given limit (API spec)
         # Note 2: Lock not needed; called after pool is shut down
         count = 0
         for i, (subtask_idx, sublist) in enumerate(self.ts_data.items()):
-            for j, arr in enumerate(sublist):
-                if count + len(arr) < self.query.limit:
-                    count += len(arr)
+            for j, seq in enumerate(sublist):
+                if count + len(seq) < self.query.limit:
+                    count += len(seq)
                     continue
                 end = self.query.limit - count
-                self.ts_data[subtask_idx][j] = arr[:end]
+                self.ts_data[subtask_idx][j] = seq[:end]
                 self.dps_data[subtask_idx][j] = self.dps_data[subtask_idx][j][:end]
                 # Chop off later arrays (or lists) in same sublist (if any):
                 self.ts_data[subtask_idx] = self.ts_data[subtask_idx][: j + 1]
@@ -1074,15 +1073,14 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
         if self.is_count_query:
             lst_dct["count"] = create_list_from_dps_container(self.count_data)
         if self.has_non_count_aggs:
-            if len(self.float_aggs) == 1:
-                lst_dct[self.float_aggs[0]] = create_list_from_dps_container(self.dps_data)
+            if self.single_non_count_agg:
+                lst_dct[self.first_non_count_agg] = create_list_from_dps_container(self.dps_data)
             else:
                 aggs_iter = create_aggregates_list_from_dps_container(self.dps_data)
                 lst_dct.update(dict(zip(self.float_aggs, aggs_iter)))
         return Datapoints(**convert_all_keys_to_snake_case({**cast(dict, self.ts_info), **lst_dct}))
 
     def _cap_dps_at_limit(self) -> None:
-        # assert isinstance(self.query.limit, int)  # mypy
         count, to_update = 0, ["ts_data"]
         if self.is_count_query:
             to_update.append("count_data")

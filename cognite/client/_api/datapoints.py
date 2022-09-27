@@ -76,7 +76,7 @@ def dps_fetch_selector(
     user_queries: Sequence[DatapointsQuery],
 ) -> DpsFetchStrategy:
     max_workers = dps_client._config.max_workers
-    if max_workers < 1:
+    if max_workers < 1:  # Dps fetching does not use fn `execute_tasks_concurrently`, so we must check:
         raise RuntimeError(f"Invalid option for `max_workers={max_workers}`. Must be at least 1")
     all_queries, agg_queries, raw_queries = validate_and_split_user_queries(user_queries)
 
@@ -84,7 +84,8 @@ def dps_fetch_selector(
     if len(all_queries) <= max_workers:
         # Start shooting requests from the hip immediately:
         return EagerDpsFetcher(dps_client, all_queries, agg_queries, raw_queries, max_workers)
-    # Fetch a smaller, chunked batch from all time series - then chunk away:
+    # Fetch a smaller, chunked batch of dps from all time series - which allows us to do some rudimentary
+    # guesstimation of dps density - then chunk away:
     return ChunkingDpsFetcher(dps_client, all_queries, agg_queries, raw_queries, max_workers)
 
 
@@ -595,7 +596,7 @@ class DatapointsAPI(APIClient):
 
         Returns:
             Union[None, Datapoints, DatapointsList]: A `Datapoints` object containing the requested data, or a `DatapointsList` if multiple
-                time series was asked for. If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function
+                time series were asked for. If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function
                 will return `None`. The ordering is first ids, then external_ids.
 
         Examples:
@@ -623,7 +624,7 @@ class DatapointsAPI(APIClient):
             If you also pass top-level parameters, these will be overwritten by the individual parameters (when both exist). You are
             free to mix ids and external ids.
 
-            Let's say you want different aggregates and end-times for few time series:
+            Let's say you want different aggregates and end-times for a few time series:
 
                 >>> dps = client.time_series.data.retrieve(
                 ...     id=[
@@ -655,8 +656,8 @@ class DatapointsAPI(APIClient):
                 >>> ts_44 = dps_lst.get(id=44)  # Single `Datapoints` object
                 >>> ts_350_lst = dps_lst.get(id=350)  # List of two `Datapoints` objects
 
-            Last example showcases the great flexibility of the `retrieve` endpoint, with a very custom query. If you want to
-            also specify multiple values for `ignore_unknown_ids`, you'll need to use the `.query` endpoint.
+            The last example showcases the great flexibility of the `retrieve` endpoint, with a very custom query. If you also want to
+            specify multiple values for `ignore_unknown_ids`, you'll need to use the `.query` endpoint.
 
                 >>> ts1 = 1337
                 >>> ts2 = {
@@ -725,7 +726,7 @@ class DatapointsAPI(APIClient):
 
         Returns:
             Union[None, DatapointsArray, DatapointsArrayList]: A `DatapointsArray` object containing the requested data, or a `DatapointsArrayList` if multiple
-                time series was asked for. If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function
+                time series were asked for. If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function
                 will return `None`. The ordering is first ids, then external_ids.
 
         Examples:
@@ -755,7 +756,7 @@ class DatapointsAPI(APIClient):
                 >>> smooth = np.convolve(dps.value, np.ones(5) / 5)  # doctest: +SKIP
                 >>> smoother = np.convolve(dps.value, np.ones(20) / 20)  # doctest: +SKIP
 
-            Get raw datapoints for a multiple time series, that may or may not exist, from the last 2 hours, then find the
+            Get raw datapoints for multiple time series, that may or may not exist, from the last 2 hours, then find the
             largest gap between two consecutive values for all time series, also taking the previous value into account (outside point).
 
                 >>> id_lst = [42, 43, 44]
@@ -807,7 +808,6 @@ class DatapointsAPI(APIClient):
         uniform_index: bool = False,
         include_aggregate_name: bool = True,
         column_names: Literal["id", "external_id"] = "external_id",
-        **kwargs: Any,
     ) -> pd.DataFrame:
         """Get datapoints directly in a pandas dataframe (convenience method wrapping the `retrieve_arrays` method).
 
@@ -1194,7 +1194,7 @@ class DatapointsAPI(APIClient):
     def _delete_datapoints_ranges(self, delete_range_objects: List[Union[Dict]]) -> None:
         self._post(url_path=self._RESOURCE_PATH + "/delete", json={"items": delete_range_objects})
 
-    def insert_dataframe(self, dataframe: pd.DataFrame, external_id_headers: bool = True, dropna: bool = True) -> None:
+    def insert_dataframe(self, df: pd.DataFrame, external_id_headers: bool = True, dropna: bool = True) -> None:
         """Insert a dataframe.
 
         The index of the dataframe must contain the timestamps. The names of the remaining columns specify the ids or external ids of
@@ -1203,7 +1203,7 @@ class DatapointsAPI(APIClient):
         Said time series must already exist.
 
         Args:
-            dataframe (pandas.DataFrame):  Pandas DataFrame object containing the time series.
+            df (pandas.DataFrame):  Pandas DataFrame object containing the time series.
             external_id_headers (bool): Interpret the column names as external id. Pass False if using ids. Default: True.
             dropna (bool): Set to True to ignore NaNs in the given DataFrame, applied per column. Default: True.
 
@@ -1225,16 +1225,16 @@ class DatapointsAPI(APIClient):
                 >>> c.time_series.data.insert_dataframe(df)
         """
         np = cast(Any, local_import("numpy"))
-        if np.isinf(dataframe.select_dtypes(include=[np.number])).any(axis=None):
+        if np.isinf(df.select_dtypes(include=[np.number])).any(axis=None):
             raise ValueError("Dataframe contains one or more (+/-) Infinity. Remove them in order to insert the data.")
         if not dropna:
-            if dataframe.isnull().any(axis=None):
+            if df.isnull().any(axis=None):
                 raise ValueError(
                     "Dataframe contains one or more NaNs. Remove or pass `dropna=True` in order to insert the data."
                 )
         dps = []
-        idx = dataframe.index.values.astype("datetime64[ms]").astype(np.int64)
-        for column_id, col in dataframe.iteritems():
+        idx = df.index.to_numpy("datetime64[ms]").astype(np.int64)
+        for column_id, col in df.iteritems():
             mask = col.notna()
             datapoints = list(zip(idx[mask], col[mask]))
             if not datapoints:
