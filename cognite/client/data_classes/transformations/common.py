@@ -1,3 +1,4 @@
+import warnings
 from typing import Any, Dict, Optional
 
 from cognite.client import utils
@@ -152,9 +153,22 @@ class SequenceRows(TransformationDestination):
 
 
 class DataModelInstances(TransformationDestination):
+    _warning_shown = False
+
+    @classmethod
+    def _show_warning(cls) -> bool:
+        if not cls._warning_shown:
+            warnings.warn(
+                "Feature DataModeStorage is in beta and still in development. Breaking changes can happen in between patch versions."
+            )
+            cls._warning_shown = True
+            return True
+        return False
+
     def __init__(
         self, model_external_id: str = None, space_external_id: str = None, instance_space_external_id: str = None
     ):
+        DataModelInstances._show_warning()
         super().__init__(type="data_model_instances")
         self.model_external_id = model_external_id
         self.space_external_id = space_external_id
