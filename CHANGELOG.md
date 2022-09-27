@@ -20,7 +20,7 @@ Changes are grouped as follows
 
 ## [4.5.3] - 2022-09-15
 ### Fixed
-- Fixes the OS specific issue where the `requirements.txt`-validation failed 
+- Fixes the OS specific issue where the `requirements.txt`-validation failed
   with `Permission Denied` on Windows.
 
 ## [4.5.2] - 2022-09-09
@@ -77,7 +77,7 @@ It will also cache the token between runs.
 
 ### Added
 - Added Optional dependency called functions. Usage: `pip install cognite-sdk[functions]`
- 
+
 ## [4.1.0] - 2022-08-18
 ### Added
 - ensure_parent parameter to client.raw.insert_dataframe method
@@ -88,18 +88,18 @@ It will also cache the token between runs.
 
 ## [4.0.0] - 2022-08-15
 ### Changed
-- Client configuration no longer respects any environment variables. There are other libraries better 
+- Client configuration no longer respects any environment variables. There are other libraries better
 suited for loading configuration from the environment (such as builtin `os` or `pydantic`). There have also
-been several reports of ennvar name clash issues in tools built on top the SDK. We therefore 
-consider this something that should be handled by the application consuming the SDK. All configuration of 
-`cognite.client.CogniteClient` now happens using a `cognite.client.ClientConfig` object. Global configuration such as 
-`max_connection_pool_size` and other options which apply to all client instances are now configured through 
-the `cognite.client.global_config` object which is an instance of `cognite.client.GlobalConfig`. Examples 
+been several reports of ennvar name clash issues in tools built on top the SDK. We therefore
+consider this something that should be handled by the application consuming the SDK. All configuration of
+`cognite.client.CogniteClient` now happens using a `cognite.client.ClientConfig` object. Global configuration such as
+`max_connection_pool_size` and other options which apply to all client instances are now configured through
+the `cognite.client.global_config` object which is an instance of `cognite.client.GlobalConfig`. Examples
 have been added to the docs.
-- Auth has been reworked. The client configuration no longer accepts the `api_key` and `token_...` arguments. 
-It accepts only a single `credentials` argument which must be a `CredentialProvider` object. A few 
-implementations have been provided (`APIKey`, `Token`, `OAuthClientCredentials`). Example usage has 
-been added to the docs. More credential provider implementations will be added in the future to accommodate 
+- Auth has been reworked. The client configuration no longer accepts the `api_key` and `token_...` arguments.
+It accepts only a single `credentials` argument which must be a `CredentialProvider` object. A few
+implementations have been provided (`APIKey`, `Token`, `OAuthClientCredentials`). Example usage has
+been added to the docs. More credential provider implementations will be added in the future to accommodate
 other OAuth flows.
 
 ### Fixed
