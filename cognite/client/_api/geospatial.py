@@ -810,7 +810,7 @@ class GeospatialAPI(APIClient):
                 ...     group_by=["category"],
                 ...     order_by=[OrderSpec("category", "ASC")],
                 ...     output={"min_temperature": {"min": {"property": "temperature"}},
-                ...         "max_temperature": {"max": {"property": "temperature"}}
+                ...         "max_volume": {"max": {"property": "volume"}}
                 ...     }
                 ... )
                 >>> for a in res:
