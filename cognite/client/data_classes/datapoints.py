@@ -286,7 +286,7 @@ class DatapointsArray(CogniteResource):
                 UserWarning,
             )
         if self.value is not None:
-            return pd.DataFrame({identifier: self.value}, index=self.timestamp)
+            return pd.DataFrame({identifier: self.value}, index=self.timestamp, copy=False)
 
         columns, data = [], []
         for agg in ALL_SORTED_DP_AGGS:
@@ -296,7 +296,7 @@ class DatapointsArray(CogniteResource):
 
         # Since columns might contain duplicates, we can't instantiate from dict as only the
         # last key (array/column) would be kept:
-        (df := pd.DataFrame(dict(enumerate(data)), index=self.timestamp)).columns = columns
+        (df := pd.DataFrame(dict(enumerate(data)), index=self.timestamp, copy=False)).columns = columns
         return df
 
 
