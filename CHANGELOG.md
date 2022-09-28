@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [4.6.1] - 2022-09-28
+### Changed
+- Support `tags` on `transformations`.
+
 ## [4.6.0] - 2022-09-26
 ### Changed
 - Change geospatial.aggregate_features to support `aggregate_output`
