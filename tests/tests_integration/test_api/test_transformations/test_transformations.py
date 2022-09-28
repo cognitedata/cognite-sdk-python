@@ -316,12 +316,10 @@ class TestTransformationsAPI:
         assert set(partial_updated3.tags) == set(["jaime", "tharindu"])
 
     def test_filter_transformations_by_tags(self, cognite_client, new_transformation, other_transformation):
-        new_transformation.tags = ["hello", "hi"]
+        new_transformation.tags = ["hello"]
         other_transformation.tags = ["hi", "kiki"]
         cognite_client.transformations.update([new_transformation, other_transformation])
         ts = cognite_client.transformations.list(tags=TagsFilter(contains_any=["hello"]))
-        assert ts[0].id == new_transformation.id and set(ts[0].tags) == set(["hello", "hi"])
-        ts2 = cognite_client.transformations.list(tags=TagsFilter(contains_any=["hi"]))
-        assert ts[0].id == other_transformation.id and set(ts2[0].tags) == set(["hi", "kiki"])
-        ts3 = cognite_client.transformations.list(tags=TagsFilter(contains_any=["hi", "kiki"]))
+        assert ts[0].id == new_transformation.id and ts[0].tags == ["hello"]
+        ts3 = cognite_client.transformations.list(tags=TagsFilter(contains_any=["hello", "kiki"]))
         assert len(ts3) == 2 and set([i.id for i in ts3]) == set([new_transformation.id, other_transformation.id])
