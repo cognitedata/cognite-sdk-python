@@ -112,6 +112,18 @@ class TestTransformationsAPI:
         ts = cognite_client.transformations.create(transform)
         cognite_client.transformations.delete(id=ts.id)
 
+    def test_create_transformation_with_tags(self, cognite_client):
+        prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
+        transform = Transformation(
+            name="any",
+            external_id=f"{prefix}-transformation",
+            destination=TransformationDestination.string_datapoints(),
+            tags=["vu", "hai"],
+        )
+        ts = cognite_client.transformations.create(transform)
+        assert set(["vu", "hai"]) == set(ts.tags)
+        cognite_client.transformations.delete(id=ts.id)
+
     @pytest.mark.skip
     def test_create_alpha_dmi_transformation(self, cognite_client):
         prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
@@ -279,3 +291,26 @@ class TestTransformationsAPI:
         partial_update = TransformationUpdate(id=new_transformation.id).destination.set(SequenceRows("myTest2"))
         partial_updated = cognite_client.transformations.update(partial_update)
         assert partial_updated.destination == TransformationDestination.sequence_rows("myTest2")
+
+    def test_update_transformations_with_tags(self, cognite_client, new_transformation):
+        new_transformation.tags = ["emel", "OPs"]
+        updated_transformation = cognite_client.transformations.update(new_transformation)
+        assert set(["emel", "OPs"]) == set(updated_transformation.tags)
+
+    def test_update_transformations_with_tags_partial(self, cognite_client, new_transformation):
+        partial_update = TransformationUpdate(id=new_transformation.id).tags.set(["jaime"])
+        partial_updated = cognite_client.transformations.update(partial_update)
+        assert partial_updated.tags == ["jaime"]
+        partial_update2 = TransformationUpdate(id=new_transformation.id).tags.add(["andres", "silva"])
+        partial_updated2 = cognite_client.transformations.update(partial_update2)
+        assert set(partial_updated2.tags) == set(["jaime", "andres", "silva"])
+        partial_update3 = (
+            TransformationUpdate(id=new_transformation.id).tags.add(["tharindu"]).tags.remove(["andres", "silva"])
+        )
+        partial_updated3 = cognite_client.transformations.update(partial_update3)
+        assert set(partial_updated3.tags) == set(["jaime", "tharindu"])
+
+    def test_filter_transformations_by_tags(self, cognite_client, new_transformation, other_transformation):
+        new_transformation.tags = ["hello", "hi"]
+        other_transformation.tags = ["hi", "kiki"]
+        cognite_client.transformations.update([new_transformation, other_transformation])
