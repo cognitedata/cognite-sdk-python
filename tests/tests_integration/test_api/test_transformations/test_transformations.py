@@ -5,7 +5,7 @@ import pytest
 
 from cognite.client.credentials import OAuthClientCredentials
 from cognite.client.data_classes import DataSet, Transformation, TransformationDestination, TransformationUpdate
-from cognite.client.data_classes.transformations import TagsFilter
+from cognite.client.data_classes.transformations import ContainsAny
 from cognite.client.data_classes.transformations.common import NonceCredentials, OidcCredentials, SequenceRows
 
 
@@ -319,7 +319,7 @@ class TestTransformationsAPI:
         new_transformation.tags = ["hello"]
         other_transformation.tags = ["hi", "kiki"]
         cognite_client.transformations.update([new_transformation, other_transformation])
-        ts = cognite_client.transformations.list(tags=TagsFilter(contains_any=["hello"]))
+        ts = cognite_client.transformations.list(tags=ContainsAny(["hello"]))
         assert ts[0].id == new_transformation.id and ts[0].tags == ["hello"]
-        ts3 = cognite_client.transformations.list(tags=TagsFilter(contains_any=["hello", "kiki"]))
+        ts3 = cognite_client.transformations.list(tags=ContainsAny(["hello", "kiki"]))
         assert len(ts3) == 2 and set([i.id for i in ts3]) == set([new_transformation.id, other_transformation.id])

@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Awaitable, Dict, List, Optional, Union, cast
 
 from cognite.client import utils
@@ -400,30 +401,32 @@ class TransformationList(CogniteResourceList):
     _RESOURCE = Transformation
 
 
-class TagsFilter(dict, CogniteFilter):
-    """Return only the resource matching the specified tags constraints.
+class TagsFilter:
+    @abstractmethod
+    def dump(self) -> Dict[str, Any]:
+        ...
+
+
+class ContainsAny(TagsFilter):
+    """Return transformations that has one of the tags specified.
 
     Args:
-        contains_any (List[str]): The resource item contains at least one of the listed tags. The tags are defined by a list of external ids.
-        cognite_client (CogniteClient): The client to associate with this object.
+        tags (List[str]): The resource item contains at least one of the listed tags. The tags are defined by a list of external ids.
 
     Examples:
 
             List only resources marked as a PUMP or as a VALVE::
 
-                >>> from cognite.client.data_classes import TagsFilter
-                >>> my_tag_filter = TagsFilter(contains_any=["PUMP", "VALVE"])
+                >>> from cognite.client.data_classes import ContainsAny
+                >>> my_tag_filter = ContainsAny(tags=["PUMP", "VALVE"])
     """
 
-    def __init__(self, contains_any: List[str] = None, cognite_client: "CogniteClient" = None):
-        self.contains_any = contains_any
-        self._cognite_client = cast("CogniteClient", cognite_client)
+    def __init__(self, tags: List[str] = None):
+        self.tags = tags
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        dump_key = lambda key: key if not camel_case else utils._auxiliary.to_camel_case(key)
-        return {dump_key(key): value for key, value in self.items()}
-
-    contains_any = CognitePropertyClassUtil.declare_property("containsAny")
+    def dump(self, camel_case: bool = True) -> Dict[str, Any]:
+        contains_any_key = "containsAny" if camel_case else "contains_any"
+        return {contains_any_key: self.tags}
 
 
 class TransformationFilter(CogniteFilter):
@@ -484,6 +487,9 @@ class TransformationFilter(CogniteFilter):
         if obj.get("includePublic"):
             is_public = obj.pop("includePublic")
             obj["isPublic"] = is_public
+        if obj.get("tags"):
+            tags = obj.pop("tags")
+            obj["tags"] = tags.dump(camel_case)
         return obj
 
 
