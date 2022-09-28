@@ -5,8 +5,12 @@ from typing import TYPE_CHECKING, Dict, Optional, Union, cast
 
 from cognite.client import utils
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList
-from cognite.client.data_classes.transformations._alphatypes import AlphaDataModelInstances
-from cognite.client.data_classes.transformations.common import RawTable, SequenceRows, TransformationDestination
+from cognite.client.data_classes.transformations.common import (
+    DataModelInstances,
+    RawTable,
+    SequenceRows,
+    TransformationDestination,
+)
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -250,17 +254,15 @@ class TransformationJob(CogniteResource):
         instance = super(TransformationJob, cls)._load(resource, cognite_client)
         if isinstance(instance.destination, Dict):
             snake_dict = {utils._auxiliary.to_snake_case(key): value for (key, value) in instance.destination.items()}
-            if instance.destination.get("type") == "raw":
-                snake_dict.pop("type")
+            destination_type = snake_dict.pop("type")
+            if destination_type == "raw":
                 instance.destination = RawTable(**snake_dict)
-            elif instance.destination.get("type") == "alpha_data_model_instances":
-                snake_dict.pop("type")
-                instance.destination = AlphaDataModelInstances(**snake_dict)
-            elif instance.destination.get("type") == "sequence_rows":
-                snake_dict.pop("type")
+            elif destination_type == "data_model_instances":
+                instance.destination = DataModelInstances(**snake_dict)
+            elif destination_type == "sequence_rows":
                 instance.destination = SequenceRows(**snake_dict)
             else:
-                instance.destination = TransformationDestination(**snake_dict)
+                instance.destination = TransformationDestination(destination_type)
         return instance
 
     def __hash__(self) -> int:
