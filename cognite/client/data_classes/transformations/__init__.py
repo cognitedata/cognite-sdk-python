@@ -116,7 +116,7 @@ class Transformation(CogniteResource):
         destination_nonce: Optional[NonceCredentials] = None,
         source_session: Optional[SessionDetails] = None,
         destination_session: Optional[SessionDetails] = None,
-        tags: Optional[str] = None,
+        tags: Optional[List[str]] = None,
     ):
         self.id = id
         self.external_id = external_id
@@ -421,8 +421,7 @@ class TagsFilter(dict, CogniteFilter):
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         dump_key = lambda key: key if not camel_case else utils._auxiliary.to_camel_case(key)
-        wrap = lambda values: None if values is None else [{"externalId": value} for value in values]
-        return {dump_key(key): wrap(value) for key, value in self.items()}
+        return {dump_key(key): value for key, value in self.items()}
 
     contains_any = CognitePropertyClassUtil.declare_property("containsAny")
 
