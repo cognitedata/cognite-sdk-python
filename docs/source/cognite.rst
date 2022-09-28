@@ -926,6 +926,19 @@ Create coordinate reference systems
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.geospatial.GeospatialAPI.create_coordinate_reference_systems
 
+
+Put raster data
+^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.geospatial.GeospatialAPI.put_raster
+
+Delete raster data
+^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.geospatial.GeospatialAPI.delete_raster
+
+Get raster data
+^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.geospatial.GeospatialAPI.get_raster
+
 Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.geospatial

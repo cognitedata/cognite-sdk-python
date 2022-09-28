@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [4.7.0] - 2022-09-28
+### Added
+- Add operations for geospatial rasters
+
 ## [4.6.0] - 2022-09-26
 ### Changed
 - Change geospatial.aggregate_features to support `aggregate_output`
