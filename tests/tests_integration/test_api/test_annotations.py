@@ -8,8 +8,6 @@ from cognite.client import CogniteClient
 from cognite.client.data_classes import Annotation, AnnotationFilter, AnnotationList, AnnotationUpdate, FileMetadata
 from cognite.client.exceptions import CogniteAPIError
 
-pytestmark = [pytest.mark.skip]
-
 
 def delete_with_check(
     cognite_client: CogniteClient, delete_ids: List[int], check_ids: Optional[List[int]] = None
