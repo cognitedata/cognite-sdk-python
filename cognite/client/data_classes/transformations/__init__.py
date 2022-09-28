@@ -12,8 +12,8 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.iam import ClientCredentials
 from cognite.client.data_classes.shared import TimestampRange
-from cognite.client.data_classes.transformations._alphatypes import AlphaDataModelInstances
 from cognite.client.data_classes.transformations.common import (
+    DataModelInstances,
     NonceCredentials,
     OidcCredentials,
     RawTable,
@@ -251,8 +251,8 @@ class Transformation(CogniteResource):
             destination_type = snake_dict.pop("type")
             if destination_type == "raw":
                 instance.destination = RawTable(**snake_dict)
-            elif destination_type == "alpha_data_model_instances":
-                instance.destination = AlphaDataModelInstances(**snake_dict)
+            elif destination_type == "data_model_instances":
+                instance.destination = DataModelInstances(**snake_dict)
             elif destination_type == "sequence_rows":
                 instance.destination = SequenceRows(**snake_dict)
             else:
@@ -296,7 +296,7 @@ class Transformation(CogniteResource):
         ret = super().dump(camel_case=camel_case)
 
         for (name, prop) in ret.items():
-            if isinstance(prop, (OidcCredentials, NonceCredentials, AlphaDataModelInstances, SequenceRows)):
+            if isinstance(prop, (OidcCredentials, NonceCredentials, TransformationDestination)):
                 ret[name] = prop.dump(camel_case=camel_case)
         return ret
 
@@ -391,7 +391,7 @@ class TransformationUpdate(CogniteUpdate):
 
         for update in obj.get("update", {}).values():
             item = update.get("set")
-            if isinstance(item, (AlphaDataModelInstances, SequenceRows, OidcCredentials, NonceCredentials)):
+            if isinstance(item, (TransformationDestination, OidcCredentials, NonceCredentials)):
                 update["set"] = item.dump(camel_case=camel_case)
         return obj
 
