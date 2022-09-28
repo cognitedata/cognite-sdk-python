@@ -15,7 +15,7 @@ import string
 import warnings
 from decimal import Decimal
 from types import ModuleType
-from typing import Any, Dict, Iterator, List, Sequence, Set, Tuple, TypeVar, Union
+from typing import Any, Dict, Hashable, Iterator, List, Sequence, Set, Tuple, TypeVar, Union
 from urllib.parse import quote
 
 import cognite.client
@@ -23,6 +23,7 @@ from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._version_checker import get_newest_version_in_major_release
 
 T = TypeVar("T")
+THashable = TypeVar("THashable", bound=Hashable)
 
 
 @functools.lru_cache(maxsize=128)
@@ -184,6 +185,7 @@ def convert_true_match(true_match: Union[dict, list, Tuple[Union[int, str], Unio
         raise ValueError("true_matches should be a dictionary or a two-element list: found {}".format(true_match))
 
 
-def find_duplicates(seq: Sequence[T]) -> Set[T]:
-    add = (seen := set()).add
+def find_duplicates(seq: Sequence[THashable]) -> Set[THashable]:
+    seen: Set[THashable] = set()
+    add = seen.add  # skip future attr lookups for perf
     return set(x for x in seq if x in seen or add(x))
