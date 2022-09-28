@@ -3,7 +3,9 @@ from typing import TYPE_CHECKING, Any, Awaitable, Dict, List, Optional, Union, c
 from cognite.client import utils
 from cognite.client.data_classes._base import (
     CogniteFilter,
+    CogniteListUpdate,
     CognitePrimitiveUpdate,
+    CognitePropertyClassUtil,
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
@@ -114,6 +116,7 @@ class Transformation(CogniteResource):
         destination_nonce: Optional[NonceCredentials] = None,
         source_session: Optional[SessionDetails] = None,
         destination_session: Optional[SessionDetails] = None,
+        tags: Optional[str] = None,
     ):
         self.id = id
         self.external_id = external_id
@@ -146,6 +149,7 @@ class Transformation(CogniteResource):
         self.destination_nonce = destination_nonce
         self.source_session = source_session
         self.destination_session = destination_session
+        self.tags = tags
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     def copy(self) -> "Transformation":
@@ -180,6 +184,7 @@ class Transformation(CogniteResource):
             self.destination_nonce,
             self.source_session,
             self.destination_session,
+            self.tags,
         )
 
     def _process_credentials(self, sessions_cache: Dict[str, NonceCredentials] = None, keep_none: bool = False) -> None:
@@ -311,6 +316,16 @@ class TransformationUpdate(CogniteUpdate):
         def set(self, value: Any) -> "TransformationUpdate":
             return self._set(value)
 
+    class _ListTransformationUpdate(CogniteListUpdate):
+        def set(self, value: List) -> "TransformationUpdate":
+            return self._set(value)
+
+        def add(self, value: List) -> "TransformationUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "TransformationUpdate":
+            return self._remove(value)
+
     @property
     def external_id(self) -> _PrimitiveTransformationUpdate:
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "externalId")
@@ -367,6 +382,10 @@ class TransformationUpdate(CogniteUpdate):
     def data_set_id(self) -> _PrimitiveTransformationUpdate:
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "dataSetId")
 
+    @property
+    def tags(self) -> _ListTransformationUpdate:
+        return TransformationUpdate._ListTransformationUpdate(self, "tags")
+
     def dump(self, camel_case: bool = True) -> Dict[str, Any]:
         obj = super().dump()
 
@@ -379,6 +398,33 @@ class TransformationUpdate(CogniteUpdate):
 
 class TransformationList(CogniteResourceList):
     _RESOURCE = Transformation
+
+
+class TagsFilter(dict, CogniteFilter):
+    """Return only the resource matching the specified tags constraints.
+
+    Args:
+        contains_any (List[str]): The resource item contains at least one of the listed tags. The tags are defined by a list of external ids.
+        cognite_client (CogniteClient): The client to associate with this object.
+
+    Examples:
+
+            List only resources marked as a PUMP or as a VALVE::
+
+                >>> from cognite.client.data_classes import TagsFilter
+                >>> my_tag_filter = TagsFilter(contains_any=["PUMP", "VALVE"])
+    """
+
+    def __init__(self, contains_any: List[str] = None, cognite_client: "CogniteClient" = None):
+        self.contains_any = contains_any
+        self._cognite_client = cast("CogniteClient", cognite_client)
+
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        dump_key = lambda key: key if not camel_case else utils._auxiliary.to_camel_case(key)
+        wrap = lambda values: None if values is None else [{"externalId": value} for value in values]
+        return {dump_key(key): wrap(value) for key, value in self.items()}
+
+    contains_any = CognitePropertyClassUtil.declare_property("containsAny")
 
 
 class TransformationFilter(CogniteFilter):
@@ -395,6 +441,7 @@ class TransformationFilter(CogniteFilter):
         created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
         last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
         data_set_ids (List[Dict[str, Any]]): Return only transformations in the specified data sets with these ids.
+        tags (TagsFilter): Return only the resource matching the specified tags constraints. It only supports ContainsAny as of now.
     """
 
     def __init__(
@@ -409,6 +456,7 @@ class TransformationFilter(CogniteFilter):
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
         data_set_ids: List[Dict[str, Any]] = None,
+        tags: TagsFilter = None,
     ):
         self.include_public = include_public
         self.name_regex = name_regex
@@ -420,6 +468,7 @@ class TransformationFilter(CogniteFilter):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.data_set_ids = data_set_ids
+        self.tags = tags
 
     @classmethod
     def _load(self, resource: Union[Dict, str]) -> "TransformationFilter":
