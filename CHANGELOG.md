@@ -14,6 +14,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [4.7.1] - 2022-09-29
+
+### Fixed
+- Fixed the `FunctionsAPI.create` method for Windows-users by removing 
+  validation of `requirements.txt`.
+
 ## [4.7.0] - 2022-09-28
 ### Added
 - Support `tags` on `transformations`.
