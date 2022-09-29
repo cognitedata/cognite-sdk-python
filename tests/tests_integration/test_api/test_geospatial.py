@@ -589,3 +589,11 @@ class TestGeospatialAPI:
             order_by=[OrderSpec("externalId", "ASC")],
         )
         assert external_ids == [item.external_id for item in res_asc]
+
+    def test_aggregate_output(self, cognite_client, test_feature_type, test_features):
+        res = cognite_client.geospatial.aggregate_features(
+            feature_type_external_id=test_feature_type.external_id,
+            filter={"range": {"property": "temperature", "gt": 12.0, "lt": 13.0}},
+            output={"count": {"count": {"property": "temperature"}}},
+        )
+        assert res[0].count == 1

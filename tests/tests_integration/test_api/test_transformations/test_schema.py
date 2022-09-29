@@ -1,7 +1,5 @@
 import os
 
-import pytest
-
 from cognite.client.data_classes import TransformationDestination
 
 
@@ -36,8 +34,7 @@ class TestTransformationSchemaAPI:
         assert len(asset_columns) > 0
         assert len([col for col in asset_columns if col.name == "externalId"]) > 0
 
-    @pytest.mark.skip
-    def test_alpha_data_model_schema(self, cognite_client):
+    def test_data_model_schema(self, cognite_client):
         project_name = os.environ["COGNITE_PROJECT"]
         dm_name = "python-sdk-test-dm"
         space_name = "test-space"
@@ -67,15 +64,12 @@ class TestTransformationSchemaAPI:
             params={},
             headers={"cdf-version": "alpha"},
         )
-        model_cols = cognite_client.transformations.schema._alpha_retrieve_data_model_schema(
-            dm_name, space_name, space_name
+        model_cols = cognite_client.transformations.schema.retrieve(
+            TransformationDestination.data_model_instances(dm_name, space_name, space_name)
         )
-        assert len(model_cols) == 6
+        assert len(model_cols) == 3
         assert [col for col in model_cols if col.name == "externalId"][0].type.type == "string"
         assert [col for col in model_cols if col.name == "test"][0].type.type == "string"
-        assert [col for col in model_cols if col.name == "description"][0].type.type == "string"
-        assert [col for col in model_cols if col.name == "type"][0].type.type == "string"
-        assert [col for col in model_cols if col.name == "name"][0].type.type == "string"
         assert [col for col in model_cols if col.name == "test2"][0].type.type == "long"
 
         # cognite_client.post(

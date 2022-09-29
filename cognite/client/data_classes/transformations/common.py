@@ -1,3 +1,4 @@
+import warnings
 from typing import Any, Dict, Optional
 
 from cognite.client import utils
@@ -18,6 +19,12 @@ class TransformationDestination:
 
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, TransformationDestination) and hash(other) == hash(self)
+
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        ret = self.__dict__
+        if camel_case:
+            return {utils._auxiliary.to_camel_case(key): value for key, value in ret.items()}
+        return ret
 
     @staticmethod
     def assets() -> "TransformationDestination":
@@ -99,6 +106,26 @@ class TransformationDestination:
         """
         return SequenceRows(external_id=external_id)
 
+    @staticmethod
+    def data_model_instances(
+        model_external_id: str = "", space_external_id: str = "", instance_space_external_id: str = ""
+    ) -> "DataModelInstances":
+        """To be used when the transformation is meant to produce data model instances.
+            Flexible Data Models resource type is on `beta` version currently.
+
+        Args:
+            model_external_id (str): external_id of the flexible data model.
+            space_external_id (str): space external_id of the flexible data model.
+            instance_space_external_id (str): space external_id of the flexible data model instance.
+        Returns:
+            TransformationDestination pointing to the target flexible data model.
+        """
+        return DataModelInstances(
+            model_external_id=model_external_id,
+            space_external_id=space_external_id,
+            instance_space_external_id=instance_space_external_id,
+        )
+
 
 class RawTable(TransformationDestination):
     def __init__(self, database: str = None, table: str = None):
@@ -124,11 +151,34 @@ class SequenceRows(TransformationDestination):
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, SequenceRows) and hash(other) == hash(self)
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        ret = {"external_id": self.external_id, "type": self.type}
-        if camel_case:
-            return {utils._auxiliary.to_camel_case(key): value for key, value in ret.items()}
-        return ret
+
+class DataModelInstances(TransformationDestination):
+    _warning_shown = False
+
+    @classmethod
+    def _show_warning(cls) -> bool:
+        if not cls._warning_shown:
+            warnings.warn(
+                "Feature DataModeStorage is in beta and still in development. Breaking changes can happen in between patch versions."
+            )
+            cls._warning_shown = True
+            return True
+        return False
+
+    def __init__(
+        self, model_external_id: str = None, space_external_id: str = None, instance_space_external_id: str = None
+    ):
+        DataModelInstances._show_warning()
+        super().__init__(type="data_model_instances")
+        self.model_external_id = model_external_id
+        self.space_external_id = space_external_id
+        self.instance_space_external_id = instance_space_external_id
+
+    def __hash__(self) -> int:
+        return hash((self.type, self.model_external_id, self.space_external_id, self.instance_space_external_id))
+
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, DataModelInstances) and hash(other) == hash(self)
 
 
 class OidcCredentials:
