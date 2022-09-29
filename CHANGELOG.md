@@ -15,6 +15,38 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [5.0.0] - 28-09-22
+### Improved
+- Greatly increased speed of datapoints fetching, especially when asking for...:
+  - Large number of time series (~100+)
+  - Very few time series (1-3)
+  - Any query using a finite `limit`
+  - Any query for `string` datapoints
+- Peak memory consumption is 27 % lower when using the new `retrieve_arrays` method.
+- Converting fetched datapoints to a Pandas `DataFrame` via `to_pandas()` (or time saved by using `retrieve_dataframe` directly) has changed from `O(N)` to `O(1)`, i.e. speedup depend on size (applies to `DatapointsArray` and `DatapointsArrayList` as returned by the `retrieve_arrays` method). Example: For 10 million raw datapoints, the speedup is >20000 X. Nice.
+
+### Added
+- A new datapoints fetching method, `retrieve_arrays`, that loads data directly into NumPy arrays for improved speed and lower memory usage.
+- Vastly better integration test coverage for fetching datapoints.
+
+### Changed
+- `DatapointsAPI.[retrieve/retrieve_arrays/retrieve_dataframe]` no longer requires `start` (default: `0`) and `end` (default: `now`). This is now aligned with the API.
+- All retrieve methods accepts a list of full query dictionaries for `id` and `external_id` giving full flexibility for individual settings like `start` time, `limit` and `granularity` (to name a few), previously only possible with the `DatapointsAPI.query` endpoint. This is now aligned with the API.
+- Aggregates returned now include the time period(s) (given by `granularity` unit) that `start` and `end` are part of (as opposed to only "fully in-between" points). This is now aligned with the API.
+- Fetching raw datapoints using `return_outside_points=True` now returns both outside points (if they exist), regardless of `limit` setting. Previously the total number of points was capped at `limit`; now up-to `limit+2` datapoints are returned. This is now aligned with the API.
+- When fetching directly to a pandas dataframe through `retrieve_dataframe`, the `complete` parameter has been replaced by a subset of its features: `uniform_index` (accepts a boolean). Read more below in the removed-section or check out the method's updated documentation.
+- Datapoints fetching algorithm has changed from one that relied on up-to-date and correct `count` aggregates to be fast (with fallback on serial fetching if missing), to recursively (and reactively) splitting the time-domain into smaller and smaller pieces, depending on the discovered-as-fetched density-distribution of datapoints in time. The new approach also has the ability to group more than 1 (one) time series per API request (when beneficial) and short-circuit once a user-given limit has been reached (if/when given). This method is now used for all types of queries; numeric raw-, string raw- and aggregate datapoints.
+
+### Fixed
+- **Critical**: Fetching aggregate datapoints now work properly with the `limit` parameter. In the old implementation, `count` aggregates were first fetched to split the time domain efficiently - but this has little-to-no informational value when fetching *aggregates* with a granularity, as the datapoints distribution can take on any shape or form. This often led to just a few returned batches of datapoints due to miscounting.
+- Fetching datapoints using `limit=0` now returns 0 datapoints, instead of "unlimited". This is now aligned with the API.
+- `TimeSeries.first()` and `TimeSeries.count()` now work with the expanded time domain (see `4.2.1`). Additionally, they now also consider future points (previously used `end="now"`).
+
+### Removed
+- All convenience methods related to plotting and the use of `matplotlib`.
+- DatapointsAPI.retrieve_dataframe_dict TODO
+- `DatapointsAPI.retrieve_dataframe` no longer support the `complete` keyword argument. Rationale: Weird and unintuitive syntax (passing a string using comma to separate options). Interpolating or forward-filling to a fixed frequency should be the task of the user fetching the data, not the SDK.
+
 ## [4.6.0] - 2022-09-26
 ### Changed
 - Change geospatial.aggregate_features to support `aggregate_output`
