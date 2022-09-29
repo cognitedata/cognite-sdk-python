@@ -9,9 +9,9 @@ from cognite.client import ClientConfig, CogniteClient
 from cognite.client._api.functions import (
     _extract_requirements_from_doc_string,
     _extract_requirements_from_file,
+    _get_fn_docstring_requirements,
     _using_client_credential_flow,
     _validate_and_parse_requirements,
-    _write_fn_docstring_requirements_to_file,
     validate_function_folder,
 )
 from cognite.client.credentials import APIKey, OAuthClientCredentials, Token
@@ -656,6 +656,83 @@ class TestFunctionsAPI:
         res = cognite_client.functions.status()
         assert isinstance(res, FunctionsStatus)
         assert mock_functions_status_response.calls[1].response.json() == res.dump(camel_case=True)
+
+
+class TestRequirementsParser:
+    """Test extraction of requirements.txt from docstring in handle-function"""
+
+    def test_validate_requirements(self):
+        parsed = _validate_and_parse_requirements(["asyncio==3.4.3", "numpy==1.23.0", "pandas==1.4.3"])
+        assert parsed == ["asyncio==3.4.3", "numpy==1.23.0", "pandas==1.4.3"]
+
+    def test_validate_requirements_error(self):
+        reqs = [["asyncio=3.4.3"], ["num py==1.23.0"], ["pandas==1.4.3 python_version=='3.8'"]]
+        for req in reqs:
+            with pytest.raises(Exception):
+                _validate_and_parse_requirements(req)
+
+    def test_get_requirements_handle(self):
+        def fn():
+            """
+            [requirements]
+            asyncio
+            [/requirements]
+            """
+            return None
+
+        assert _get_fn_docstring_requirements(fn) == ["asyncio"]
+
+    def test_get_requirements_handle_error(self):
+        def fn():
+            return None
+
+        assert _get_fn_docstring_requirements(fn) == []
+
+    def test_get_requirements_handle_no_docstr(self):
+        def fn():
+            """
+            [requirements]
+            asyncio=3.4.3
+            [/requirements]
+            """
+            return None
+
+        with pytest.raises(Exception):
+            _get_fn_docstring_requirements(fn)
+
+    def test_get_requirements_handle_no_reqs(self):
+        def fn():
+            """
+            [requirements]
+            [/requirements]
+            """
+            return None
+
+        assert _get_fn_docstring_requirements(fn) == []
+
+    def test_extract_requirements_from_file(self, tmpdir):
+        req = "somepackage == 3.8.1"
+        file = os.path.join(tmpdir, "requirements.txt")
+        with open(file, "w+") as f:
+            f.writelines("\n".join(["# this should not be included", "     " + req]))
+        reqs = _extract_requirements_from_file(file_name=file)
+        assert type(reqs) == list
+        assert len(reqs) == 1
+        assert req in reqs
+
+    def test_extract_requirements_from_doc_string(self):
+        req_mock = '[requirements]\nSomePackage==3.4.3, >3.4.1; python_version=="3.7"\nSomePackage==21.4.0; python_version=="3.7" and python_full_version<"3.0.0" or python_full_version>="3.5.0" and python_version>="3.7"\nSomePackage==2022.6.15; python_version>="3.8" and python_version<"4"\ncSomePackage==1.15.0; python_version>="3.6"\n[/requirements]\n'
+        doc_string_mock = "this should not be included\n" + req_mock + "neither should this\n"
+        expected = req_mock.splitlines()[1:-1]
+        assert _extract_requirements_from_doc_string(doc_string_mock) == expected
+
+    def test_extract_requirements_from_doc_string_empty(self):
+        doc_string = "[requirements]\n[/requirements]\n"
+        assert _extract_requirements_from_doc_string(doc_string) == []
+
+    def test_extract_requirements_from_doc_string_no_defined(self):
+        doc_string = "no requirements here"
+        assert _extract_requirements_from_doc_string(doc_string) is None
 
 
 @pytest.fixture
