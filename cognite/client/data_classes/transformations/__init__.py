@@ -1,9 +1,12 @@
+from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Awaitable, Dict, List, Optional, Union, cast
 
 from cognite.client import utils
 from cognite.client.data_classes._base import (
     CogniteFilter,
+    CogniteListUpdate,
     CognitePrimitiveUpdate,
+    CognitePropertyClassUtil,
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
@@ -114,6 +117,7 @@ class Transformation(CogniteResource):
         destination_nonce: Optional[NonceCredentials] = None,
         source_session: Optional[SessionDetails] = None,
         destination_session: Optional[SessionDetails] = None,
+        tags: Optional[List[str]] = None,
     ):
         self.id = id
         self.external_id = external_id
@@ -146,6 +150,7 @@ class Transformation(CogniteResource):
         self.destination_nonce = destination_nonce
         self.source_session = source_session
         self.destination_session = destination_session
+        self.tags = tags
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     def copy(self) -> "Transformation":
@@ -180,6 +185,7 @@ class Transformation(CogniteResource):
             self.destination_nonce,
             self.source_session,
             self.destination_session,
+            self.tags,
         )
 
     def _process_credentials(self, sessions_cache: Dict[str, NonceCredentials] = None, keep_none: bool = False) -> None:
@@ -311,6 +317,16 @@ class TransformationUpdate(CogniteUpdate):
         def set(self, value: Any) -> "TransformationUpdate":
             return self._set(value)
 
+    class _ListTransformationUpdate(CogniteListUpdate):
+        def set(self, value: List) -> "TransformationUpdate":
+            return self._set(value)
+
+        def add(self, value: List) -> "TransformationUpdate":
+            return self._add(value)
+
+        def remove(self, value: List) -> "TransformationUpdate":
+            return self._remove(value)
+
     @property
     def external_id(self) -> _PrimitiveTransformationUpdate:
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "externalId")
@@ -367,6 +383,10 @@ class TransformationUpdate(CogniteUpdate):
     def data_set_id(self) -> _PrimitiveTransformationUpdate:
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "dataSetId")
 
+    @property
+    def tags(self) -> _ListTransformationUpdate:
+        return TransformationUpdate._ListTransformationUpdate(self, "tags")
+
     def dump(self, camel_case: bool = True) -> Dict[str, Any]:
         obj = super().dump()
 
@@ -379,6 +399,34 @@ class TransformationUpdate(CogniteUpdate):
 
 class TransformationList(CogniteResourceList):
     _RESOURCE = Transformation
+
+
+class TagsFilter:
+    @abstractmethod
+    def dump(self) -> Dict[str, Any]:
+        ...
+
+
+class ContainsAny(TagsFilter):
+    """Return transformations that has one of the tags specified.
+
+    Args:
+        tags (List[str]): The resource item contains at least one of the listed tags. The tags are defined by a list of external ids.
+
+    Examples:
+
+            List only resources marked as a PUMP or as a VALVE::
+
+                >>> from cognite.client.data_classes import ContainsAny
+                >>> my_tag_filter = ContainsAny(tags=["PUMP", "VALVE"])
+    """
+
+    def __init__(self, tags: List[str] = None):
+        self.tags = tags
+
+    def dump(self, camel_case: bool = True) -> Dict[str, Any]:
+        contains_any_key = "containsAny" if camel_case else "contains_any"
+        return {contains_any_key: self.tags}
 
 
 class TransformationFilter(CogniteFilter):
@@ -395,6 +443,7 @@ class TransformationFilter(CogniteFilter):
         created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
         last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
         data_set_ids (List[Dict[str, Any]]): Return only transformations in the specified data sets with these ids.
+        tags (TagsFilter): Return only the resource matching the specified tags constraints. It only supports ContainsAny as of now.
     """
 
     def __init__(
@@ -409,6 +458,7 @@ class TransformationFilter(CogniteFilter):
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
         data_set_ids: List[Dict[str, Any]] = None,
+        tags: TagsFilter = None,
     ):
         self.include_public = include_public
         self.name_regex = name_regex
@@ -420,6 +470,7 @@ class TransformationFilter(CogniteFilter):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.data_set_ids = data_set_ids
+        self.tags = tags
 
     @classmethod
     def _load(self, resource: Union[Dict, str]) -> "TransformationFilter":
@@ -436,6 +487,9 @@ class TransformationFilter(CogniteFilter):
         if obj.get("includePublic"):
             is_public = obj.pop("includePublic")
             obj["isPublic"] = is_public
+        if obj.get("tags"):
+            tags = obj.pop("tags")
+            obj["tags"] = tags.dump(camel_case)
         return obj
 
 
