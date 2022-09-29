@@ -24,28 +24,50 @@ Changes are grouped as follows
   - Any query for `string` datapoints
 - Peak memory consumption is 27 % lower when using the new `retrieve_arrays` method.
 - Converting fetched datapoints to a Pandas `DataFrame` via `to_pandas()` (or time saved by using `retrieve_dataframe` directly) has changed from `O(N)` to `O(1)`, i.e. speedup depend on size (applies to `DatapointsArray` and `DatapointsArrayList` as returned by the `retrieve_arrays` method). Example: For 10 million raw datapoints, the speedup is >20000 X. Nice.
+- Individual customization of queries is now available for all retrieve endpoints. Previously only `aggregates` could be customized. Now all parameters can be passed either as top-level or as individual settings. This is now aligned with the API.
+- Documentation for the retrieve endpoints has been overhauled with lots of new usage patterns and (better!) examples, check it out!
+- Vastly better test coverage for datapoints fetching logic. You can have increased trust in the results from the SDK!
 
 ### Added
+- New optional dependency, `numpy`.
 - A new datapoints fetching method, `retrieve_arrays`, that loads data directly into NumPy arrays for improved speed and lower memory usage.
-- Vastly better integration test coverage for fetching datapoints.
+- These arrays are stored in the new resource types `DatapointsArray` and `DatapointsArrayList` which offer more efficient memory usage and zero-overhead pandas-conversion.
 
 ### Changed
+- The previous fetching logic awaited and collected all errors before raising (through the use of an "initiate-and-forget" thread pool). This is great for e.g. updates/inserts to make sure you are aware of all partial changes. However, when reading datapoints, a better option is to just fail fast (which it now does).
 - `DatapointsAPI.[retrieve/retrieve_arrays/retrieve_dataframe]` no longer requires `start` (default: `0`) and `end` (default: `now`). This is now aligned with the API.
-- All retrieve methods accepts a list of full query dictionaries for `id` and `external_id` giving full flexibility for individual settings like `start` time, `limit` and `granularity` (to name a few), previously only possible with the `DatapointsAPI.query` endpoint. This is now aligned with the API.
+- All retrieve methods accept a list of full query dictionaries for `id` and `external_id` giving full flexibility for individual settings like `start` time, `limit` and `granularity` (to name a few), previously only possible with the `DatapointsAPI.query` endpoint. This is now aligned with the API.
 - Aggregates returned now include the time period(s) (given by `granularity` unit) that `start` and `end` are part of (as opposed to only "fully in-between" points). This is now aligned with the API.
-- Fetching raw datapoints using `return_outside_points=True` now returns both outside points (if they exist), regardless of `limit` setting. Previously the total number of points was capped at `limit`; now up-to `limit+2` datapoints are returned. This is now aligned with the API.
-- When fetching directly to a pandas dataframe through `retrieve_dataframe`, the `complete` parameter has been replaced by a subset of its features: `uniform_index` (accepts a boolean). Read more below in the removed-section or check out the method's updated documentation.
-- Datapoints fetching algorithm has changed from one that relied on up-to-date and correct `count` aggregates to be fast (with fallback on serial fetching if missing), to recursively (and reactively) splitting the time-domain into smaller and smaller pieces, depending on the discovered-as-fetched density-distribution of datapoints in time. The new approach also has the ability to group more than 1 (one) time series per API request (when beneficial) and short-circuit once a user-given limit has been reached (if/when given). This method is now used for all types of queries; numeric raw-, string raw- and aggregate datapoints.
+This is also **bugfix**: Due to the SDK rounding differently than the API, you could supply `start` and `end` (with `start < end`) and still be given an error that `start is not before end`. This can no longer happen.
+- Fetching raw datapoints using `return_outside_points=True` now returns both outside points (if they exist), regardless of `limit` setting. Previously the total number of points was capped at `limit`; now up to `limit+2` datapoints are returned. This is now aligned with the API.
+- Asking for the same time series any number of times no longer raises an error which is useful e.g. when fetching disconnected time periods. This is now aligned with the API.
+- ...this change also causes the `.get` method of `DatapointsList` and `DatapointsArrayList` to now return a list of `Datapoints` or `DatapointsArray` respectively when duplicated identifiers were queried. (For data scientists and others used to `pandas`, this syntax is familiar to the slicing logic of `Series` and `DataFrame` when used with non-unique indexes).
+There is also a subtle **bugfix** here: since the previous implementation allowed the same time series to be specified by both its `id` and `external_id`, using `.get` to get it would always yield the settings that were specified by the `external_id`. This will now return a `list` as explained above.
+- Datapoints fetching algorithm has changed from one that relied on up-to-date and correct `count` aggregates to be fast (with fallback on serial fetching if missing), to recursively (and reactively) splitting the time-domain into smaller and smaller pieces, depending on the discovered-as-fetched density-distribution of datapoints in time. The new approach also has the ability to group more than 1 (one) time series per API request (when beneficial) and short-circuit once a user-given limit has been reached (if/when given). This method is now used for all types of queries; numeric raw-, string raw-, and aggregate datapoints.
+
+#### Change: `retrieve_dataframe`
+- Used to fetch time series given by `id` and `external_id` separately - this is no longer the case. This gives a significant speedup when both are supplied.
+- The `complete` parameter has been removed and partially replaced by `uniform_index` (bool) which covers a subset of the previous features (with some modifications: now gives uniform index all the way from given `start` to given `end`). Rationale: Weird and unintuitive syntax (passing a string using a comma to separate options).
+- Interpolating or forward-filling to a fixed frequency (also controlled via the `complete` parameter) is completely removed as the resampling logic *really* should be up to the user fetching the data to decide, not the SDK.
+- New parameter `column_names` to pick either `id`s or `external_id`s as the dataframe column names. Previously a mix of was used when both were supplied.
+Read more below in the removed section or check out the method's updated documentation.
 
 ### Fixed
-- **Critical**: Fetching aggregate datapoints now work properly with the `limit` parameter. In the old implementation, `count` aggregates were first fetched to split the time domain efficiently - but this has little-to-no informational value when fetching *aggregates* with a granularity, as the datapoints distribution can take on any shape or form. This often led to just a few returned batches of datapoints due to miscounting.
+- **Critical**: Fetching aggregate datapoints now works properly with the `limit` parameter. In the old implementation, `count` aggregates were first fetched to split the time domain efficiently - but this has little-to-no informational value when fetching *aggregates* with a granularity, as the datapoints distribution can take on any shape or form. This often led to just a few returned batches of datapoints due to miscounting.
 - Fetching datapoints using `limit=0` now returns 0 datapoints, instead of "unlimited". This is now aligned with the API.
-- `TimeSeries.first()` and `TimeSeries.count()` now work with the expanded time domain (see `4.2.1`). Additionally, they now also consider future points (previously used `end="now"`).
+- `TimeSeries.[first/count]()` now work with the expanded time domain (minimum age of datapoints was moved from 1970 to 1900, see [4.2.1]).
+  - `TimeSeries.first()` now considers datapoints before 1970 and after "now".
+  - `TimeSeries.count()` now considers datapoints before 1970 and after "now" and will raise an error for string time series as `count` (or any other aggregate) is not defined.
+- Removing aggregate names from columns in a Pandas `DataFrame` in the previous implementation, used `Datapoints._strip_aggregate_name`, but this removed everything after the first pipe character (`|`) it found, rendering it useless for all tags with such a character as part of their names.
+- The method `Datapoints.to_pandas` could return `dtype=object` for numeric time series when all aggregate datapoints were missing; which is not *that* unlikely, e.g. when using `interpolation` aggregate on a time series with spacing between datapoints a little above 1 hour on average. In such cases, an object array only containing `None` would be returned instead of float array dtype with `NaN`s. Correct dtype is now enforced by an explicit cast.
 
 ### Removed
 - All convenience methods related to plotting and the use of `matplotlib`.
-- DatapointsAPI.retrieve_dataframe_dict TODO
-- `DatapointsAPI.retrieve_dataframe` no longer support the `complete` keyword argument. Rationale: Weird and unintuitive syntax (passing a string using comma to separate options). Interpolating or forward-filling to a fixed frequency should be the task of the user fetching the data, not the SDK.
+- The entire method `DatapointsAPI.retrieve_dataframe_dict`. Rationale: Due to its slightly confusing syntax and return value, it basically saw no use in the wild.
+
+### Other notes
+Evaluation of `protobuf` performance: In its current state, using `protobuf` results in significant performance degradation compared to JSON. Additionally, it adds an extra dependency, which, if installed with its pure-Python distribution, results in an earthshattering performance degradation.
+
 
 ## [4.6.0] - 2022-09-26
 ### Changed
