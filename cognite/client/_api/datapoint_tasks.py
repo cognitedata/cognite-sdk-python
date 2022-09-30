@@ -145,7 +145,7 @@ class _SingleTSQueryValidator:
         if arg_name not in dct:
             if (arg_name_cc := to_camel_case(arg_name)) not in dct:
                 raise KeyError(f"Missing required key `{arg_name}` in dict: {dct}.")
-            # For backwards compatability we accept identifier in camel case: (Make copy to avoid side effects
+            # For backwards compatibility we accept identifiers in camel case: (Make copy to avoid side effects
             # for user's input). Also means we need to return it.
             dct[arg_name] = (dct := dct.copy()).pop(arg_name_cc)
 
