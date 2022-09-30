@@ -310,7 +310,7 @@ class Datapoints(CogniteResource):
         is_step (bool): Whether the time series is a step series or not.
         unit (str): The physical unit of the time series.
         timestamp (List[Union[int, float]]): The data timestamps in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
-        value (List[Union[int, str, float]]): The data values. Can be string or numeric depending on the metric
+        value (Union[List[str], List[float]]): The data values. Can be string or numeric
         average (List[float]): The integral average values in the aggregate period
         max (List[float]): The maximum values in the aggregate period
         min (List[float]): The minimum values in the aggregate period
