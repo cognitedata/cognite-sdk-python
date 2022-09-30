@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [4.8.0] - 2022-09-30
+### Added
+- Add operations for geospatial rasters
+
 ## [4.7.1] - 2022-09-29
 
 ### Fixed
