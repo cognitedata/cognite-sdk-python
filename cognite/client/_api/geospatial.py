@@ -997,7 +997,7 @@ class GeospatialAPI(APIClient):
         raster_scale_y: Optional[float] = None,
     ) -> RasterMetadata:
         """`Put raster`
-        <https://pr-1632.specs.preview.cogniteapp.com/v1.json.html#operation/putRaster>
+        <https://docs.cognite.com/api/v1/#tag/Geospatial/operation/putRaster>
 
         Args:
             feature_type_external_id : Feature type definition for the features to create.
@@ -1052,7 +1052,7 @@ class GeospatialAPI(APIClient):
         raster_property_name: str,
     ) -> None:
         """`Delete raster`
-        <https://pr-1632.specs.preview.cogniteapp.com/v1.json.html#operation/deleteRaster>
+        <https://docs.cognite.com/api/v1/#tag/Geospatial/operation/deleteRaster>
 
         Args:
             feature_type_external_id : Feature type definition for the features to create.
@@ -1095,7 +1095,7 @@ class GeospatialAPI(APIClient):
         allow_crs_transformation: bool = False,
     ) -> bytes:
         """`Get raster`
-        <https://pr-1632.specs.preview.cogniteapp.com/v1.json.html#operation/getRaster>
+        <https://docs.cognite.com/api/v1/#tag/Geospatial/operation/getRaster>
 
         Args:
             feature_type_external_id : Feature type definition for the features to create.
