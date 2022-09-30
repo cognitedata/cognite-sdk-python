@@ -1023,7 +1023,8 @@ class GeospatialAPI(APIClient):
                 >>> feature_type = ...
                 >>> feature = ...
                 >>> raster_property_name = ...
-                >>> metadata = c.geospatial.put_raster(feature_type, feature, raster_property_name, "XYZ", 3857, file)
+                >>> metadata = c.geospatial.put_raster(feature_type.external_id, feature.external_id,
+                ...         raster_property_name, "XYZ", 3857, file)
         """
         query_params = f"format={raster_format}&srid={raster_srid}"
         if allow_crs_transformation:
@@ -1071,7 +1072,7 @@ class GeospatialAPI(APIClient):
                 >>> feature_type = ...
                 >>> feature = ...
                 >>> raster_property_name = ...
-                >>> c.geospatial.delete_raster(feature_type, feature, raster_property_name)
+                >>> c.geospatial.delete_raster(feature_type.external_id, feature.external_id, raster_property_name)
         """
         url_path = (
             self._raster_resource_path(feature_type_external_id, feature_external_id, raster_property_name) + "/delete"
@@ -1121,8 +1122,8 @@ class GeospatialAPI(APIClient):
                 >>> feature_type = ...
                 >>> feature = ...
                 >>> raster_property_name = ...
-                >>> raster_data = c.geospatial.get_raster(feature_type, feature, raster_property_name,
-                >>>                                       "XYZ", {"SIGNIFICANT_DIGITS": "4"})
+                >>> raster_data = c.geospatial.get_raster(feature_type.external_id, feature.external_id,
+                ...    raster_property_name, "XYZ", {"SIGNIFICANT_DIGITS": "4"})
         """
         url_path = self._raster_resource_path(feature_type_external_id, feature_external_id, raster_property_name)
         res = self._do_request(
