@@ -33,7 +33,7 @@ class TasksSummary:
         str_format_element_fn: Optional[Callable] = None,
     ) -> None:
         if not self.exceptions:
-            return
+            return None
         task_unwrap_fn = (lambda x: x) if task_unwrap_fn is None else task_unwrap_fn
         if task_list_element_unwrap_fn is not None:
             successful = []
