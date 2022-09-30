@@ -109,7 +109,7 @@ def test_feature_with_raster(cognite_client, test_feature_type, test_feature):
         raster_property_name="raster",
         raster_format="XYZ",
         raster_srid=3857,
-        file="tests/tests_integration/test_api/geospatial_data/raster-grid-example.xyz",
+        file="tests/tests_integration/test_api/geospatial_test_resources/raster-grid-example.xyz",
     )
     yield test_feature
 
