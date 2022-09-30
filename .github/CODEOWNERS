@@ -6,3 +6,7 @@ test_transformations/ @cognitedata/starbase @cognitedata/data-integration
 CHANGELOG.md @cognitedata/starbase @cognitedata/geospatial @cognitedata/data-integration
 _version.py @cognitedata/starbase @cognitedata/geospatial @cognitedata/data-integration
 pyproject.toml @cognitedata/starbase @cognitedata/geospatial @cognitedata/data-integration
+
+cognite/client/_api/functions.py @cognitedata/mlops
+tests/tests_unit/test_api/function_test_resources/ @cognitedata/mlops
+tests/tests_unit/test_api/test_functions.py @cognitedata/mlops
