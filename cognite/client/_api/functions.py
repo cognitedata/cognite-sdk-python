@@ -6,7 +6,7 @@ import time
 from inspect import getdoc, getsource
 from numbers import Integral, Number
 from pathlib import Path
-from tempfile import NamedTemporaryFile, TemporaryDirectory
+from tempfile import TemporaryDirectory
 from typing import IO, TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Union, cast
 from zipfile import ZipFile
 
@@ -34,7 +34,6 @@ from cognite.client.utils._identifier import IdentifierSequence, SingletonIdenti
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
-
 
 HANDLER_FILE_NAME = "handler.py"
 MAX_RETRIES = 5
@@ -436,19 +435,6 @@ class FunctionsAPI(APIClient):
                     for root, dirs, files in os.walk("."):
                         zf.write(root)
 
-                        # Validate requirements.txt in root-dir only
-                        if root == "." and REQUIREMENTS_FILE_NAME in files:
-                            # Remove requirement from file list
-                            path = files.pop(files.index(REQUIREMENTS_FILE_NAME))
-                            reqs = _extract_requirements_from_file(path)
-                            # Validate and format requirements
-                            parsed_reqs = _validate_and_parse_requirements(reqs)
-                            with NamedTemporaryFile(mode="w+") as nth:
-                                _write_requirements_to_named_temp_file(nth, parsed_reqs)
-                                # NOTE: the actual file is not written.
-                                # A temporary formatted file is used instead
-                                zf.write(nth.name, arcname=REQUIREMENTS_FILE_NAME)
-
                         for filename in files:
                             zf.write(os.path.join(root, filename))
 
@@ -470,23 +456,25 @@ class FunctionsAPI(APIClient):
         # / is not allowed in file names
         name = name.replace("/", "-")
 
+        docstr_requirements = _get_fn_docstring_requirements(function_handle)
+
         with TemporaryDirectory() as tmpdir:
             handle_path = os.path.join(tmpdir, HANDLER_FILE_NAME)
             with open(handle_path, "w") as f:
                 source = getsource(function_handle)
                 f.write(source)
 
-            # Read and validate requirements
-            with NamedTemporaryFile(mode="w+") as named_temp_file:
-                requirements_written = _write_fn_docstring_requirements_to_file(function_handle, named_temp_file)
+            if docstr_requirements:
+                requirements_path = os.path.join(tmpdir, REQUIREMENTS_FILE_NAME)
+                with open(requirements_path, "w") as f:
+                    for req in docstr_requirements:
+                        f.write(f"{req}\n")
 
-                zip_path = os.path.join(tmpdir, "function.zip")
-                with ZipFile(zip_path, "w") as zf:
-                    zf.write(handle_path, arcname=HANDLER_FILE_NAME)
-
-                    # Zip requirements.txt
-                    if requirements_written:
-                        zf.write(named_temp_file.name, arcname=REQUIREMENTS_FILE_NAME)
+            zip_path = os.path.join(tmpdir, "function.zip")
+            with ZipFile(zip_path, "w") as zf:
+                zf.write(handle_path, arcname=HANDLER_FILE_NAME)
+                if docstr_requirements:
+                    zf.write(requirements_path, arcname=REQUIREMENTS_FILE_NAME)
 
             overwrite = True if external_id else False
             file = cast(
@@ -733,15 +721,15 @@ def _write_requirements_to_named_temp_file(file: IO, requirements: List[str]) ->
     file.write("\n".join(requirements))
 
 
-def _write_fn_docstring_requirements_to_file(fn: Callable, file: IO) -> bool:
-    """Read requirements from a function docstring, validate them, and write contents to the provided file path
+def _get_fn_docstring_requirements(fn: Callable) -> List[str]:
+    """Read requirements from a function docstring, validate them and return.
 
     Args:
         fn (Callable): the function to read requirements from
         file_path (str): Path of file to write requirements to
 
     Returns:
-        bool: whether or not anything was written to the file
+        List[str]: A (possibly empty) list of requirements.
     """
     docstr = getdoc(fn)
 
@@ -749,10 +737,9 @@ def _write_fn_docstring_requirements_to_file(fn: Callable, file: IO) -> bool:
         reqs = _extract_requirements_from_doc_string(docstr)
         if reqs:
             parsed_reqs = _validate_and_parse_requirements(reqs)
-            _write_requirements_to_named_temp_file(file, parsed_reqs)
-            return True
+            return parsed_reqs
 
-    return False
+    return []
 
 
 class FunctionCallsAPI(APIClient):
