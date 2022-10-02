@@ -1,7 +1,7 @@
 import numbers
 import re
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Tuple, Union
 
 UNIT_IN_MS_WITHOUT_WEEK = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000}
@@ -35,7 +35,10 @@ def ms_to_datetime(ms: Union[int, float]) -> datetime:
     if not (MIN_TIMESTAMP_MS <= ms <= MAX_TIMESTAMP_MS):
         raise ValueError(f"`ms` does not satisfy: {MIN_TIMESTAMP_MS} <= ms <= {MAX_TIMESTAMP_MS}")
 
-    return datetime.utcfromtimestamp(ms / 1000).replace(tzinfo=timezone.utc)
+    try:
+        return datetime.utcfromtimestamp(ms / 1000).replace(tzinfo=timezone.utc)
+    except OSError:  # oh, windows...come on
+        return datetime(1970, 1, 1, tzinfo=timezone.utc) + timedelta(milliseconds=ms)
 
 
 def time_string_to_ms(pattern: str, string: str, unit_in_ms: Dict[str, int]) -> Optional[int]:
