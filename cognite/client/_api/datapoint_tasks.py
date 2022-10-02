@@ -793,7 +793,7 @@ class BaseConcurrentTask:
             for i, (start, end) in enumerate(zip(boundaries[:-1], boundaries[1:]), 1)
         ]
 
-    def _decide_dtype_from_is_string(is_string: bool) -> type:
+    def _decide_dtype_from_is_string(self, is_string: bool) -> type:
         return np.object_ if is_string else np.float64
 
     def _store_ts_info(self, res: DatapointsFromAPI) -> None:
