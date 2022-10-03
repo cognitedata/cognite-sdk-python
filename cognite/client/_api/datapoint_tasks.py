@@ -1115,10 +1115,10 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
             try:
                 arr = np.fromiter(map(DpsUnpackFns.count, dps), dtype=np.int64, count=n)  # type: ignore [arg-type]
             except KeyError:
-                # An interval with no datapoints (hence count does not exist) has data from another aggregate...
-                # Since the resulting arrays share timestamp, we must cast count to float in order to store
-                # missing values as NaNs:
-                arr = np.array([dp.get("count") for dp in dps], dtype=np.float64)
+                # An interval with no datapoints (hence count does not exist) has data from another aggregate... probably
+                # (step_)interpolation. Since the resulting agg. arrays share timestamp, we would have to cast count to float in
+                # order to store the missing values as NaNs... We don't want that, so we fill with zeros to keep correct dtype:
+                arr = np.array([dp.get("count", 0) for dp in dps], dtype=np.int64)
             self.count_data[idx].append(arr)
 
         if self.has_non_count_aggs:
@@ -1133,7 +1133,7 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
         self.ts_data[idx].append(list(map(DpsUnpackFns.ts, dps)))
 
         if self.is_count_query:
-            self.count_data[idx].append([dp.get("count") for dp in dps])
+            self.count_data[idx].append([dp.get("count", 0) for dp in dps])
 
         if self.has_non_count_aggs:
             try:
