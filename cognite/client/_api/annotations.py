@@ -82,7 +82,7 @@ class AnnotationsAPI(APIClient):
 
         Args:
             limit (int): Maximum number of annotations to return. Defaults to 25.
-            filter (AnnotationFilter, optional): Return annotations with parameter values that matches what is specified. Note that annotated_resource_type and annotated_resource_ids are always required.
+            filter (AnnotationFilter): Return annotations with parameter values that matches what is specified. Note that annotated_resource_type and annotated_resource_ids are always required.
 
         Returns:
             AnnotationList: list of annotations
