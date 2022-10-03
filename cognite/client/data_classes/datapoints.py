@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import numbers
 import operator as op
-import re as regexp
 import warnings
 from collections import defaultdict
 from dataclasses import dataclass
@@ -42,7 +41,6 @@ from cognite.client._api.datapoint_constants import (
     DatapointsQueryId,
 )
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
-from cognite.client.exceptions import CogniteDuplicateColumnsError
 from cognite.client.utils._auxiliary import (
     convert_all_keys_to_camel_case,
     convert_all_keys_to_snake_case,
@@ -438,28 +436,18 @@ class Datapoints(CogniteResource):
             identifier = self.id
         else:
             raise ValueError("column_names must be 'external_id' or 'id'")
-        for attr, value in self._get_non_empty_data_fields(get_empty_lists=True, get_error=include_errors):
+        for attr, data in self._get_non_empty_data_fields(get_empty_lists=True, get_error=include_errors):
             if attr == "timestamp":
-                timestamps = value
+                timestamps = data
             else:
                 id_with_agg = str(identifier)
                 if attr != "value":
-                    id_with_agg += f"|{attr}"
-                    value = pd.to_numeric(value, errors="coerce")  # Avoids object dtype for missing aggs
-                data_fields[id_with_agg] = value
+                    if include_aggregate_name:
+                        id_with_agg += f"|{attr}"
+                    data = pd.to_numeric(data, errors="coerce")  # Avoids object dtype for missing aggs
+                data_fields[id_with_agg] = data
 
-        df = pd.DataFrame(data_fields, index=pd.to_datetime(timestamps, unit="ms"))
-        if not include_aggregate_name:
-            df = Datapoints._strip_aggregate_names(df)
-        return df
-
-    @staticmethod
-    def _strip_aggregate_names(df: "pandas.DataFrame") -> "pandas.DataFrame":
-        expr = f"\\|({'|'.join(ALL_SORTED_DP_AGGS)})$"
-        df = df.rename(columns=lambda col: regexp.sub(expr, "", col))
-        if not df.columns.is_unique:
-            raise CogniteDuplicateColumnsError([col for col, count in df.columns.value_counts().items() if count > 1])
-        return df
+        return pd.DataFrame(data_fields, index=pd.to_datetime(timestamps, unit="ms"))
 
     @classmethod
     def _load(  # type: ignore [override]
@@ -639,13 +627,15 @@ class DatapointsList(CogniteResourceList):
         """
         pd = cast(Any, local_import("pandas"))
 
-        dfs = [df.to_pandas(column_names=column_names) for df in self.data]
+        dfs = [
+            dps.to_pandas(
+                column_names=column_names,
+                include_aggregate_name=include_aggregate_name,
+            )
+            for dps in self.data
+        ]
         if dfs:
-            df = pd.concat(dfs, axis="columns")
-            if not include_aggregate_name:  # do not pass in to_pandas above, so we check for duplicate columns
-                df = Datapoints._strip_aggregate_names(df)
-            return df
-
+            return pd.concat(dfs, axis="columns")
         return pd.DataFrame()
 
     def _repr_html_(self) -> str:
