@@ -81,7 +81,7 @@ class DiagramsAPI(APIClient):
     ) -> DiagramDetectResults:
         """Detect entities in a PNID.
         The results are not written to CDF.
-        Note: All users on this CDF subscription with assets read-all and files read-all capabilities in the project,
+        **Note**: All users on this CDF subscription with assets read-all and files read-all capabilities in the project,
         are able to access the data sent to this endpoint.
 
         Args:

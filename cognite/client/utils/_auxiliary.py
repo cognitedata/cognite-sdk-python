@@ -15,12 +15,15 @@ import string
 import warnings
 from decimal import Decimal
 from types import ModuleType
-from typing import Any, Dict, List, Sequence, Tuple, Union
+from typing import Any, Dict, Hashable, Iterator, List, Sequence, Set, Tuple, TypeVar, Union
 from urllib.parse import quote
 
 import cognite.client
 from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._version_checker import get_newest_version_in_major_release
+
+T = TypeVar("T")
+THashable = TypeVar("THashable", bound=Hashable)
 
 
 @functools.lru_cache(maxsize=128)
@@ -35,11 +38,12 @@ def to_snake_case(camel_case_string: str) -> str:
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
 
 
-def convert_all_keys_to_camel_case(d: dict) -> dict:
-    new_d = {}
-    for k, v in d.items():
-        new_d[to_camel_case(k)] = v
-    return new_d
+def convert_all_keys_to_camel_case(d: Dict[str, Any]) -> Dict[str, Any]:
+    return dict(zip(map(to_camel_case, d.keys()), d.values()))
+
+
+def convert_all_keys_to_snake_case(d: Dict[str, Any]) -> Dict[str, Any]:
+    return dict(zip(map(to_snake_case, d.keys()), d.values()))
 
 
 def json_dump_default(x: Any) -> Any:
@@ -125,11 +129,12 @@ def _check_client_has_newest_major_version() -> None:
         )
 
 
-def random_string(size: int = 100) -> str:
-    return "".join(random.choice(string.ascii_uppercase + string.digits) for _ in range(size))
+def random_string(size: int = 100, sample_from: str = string.ascii_uppercase + string.digits) -> str:
+    return "".join(random.choices(sample_from, k=size))
 
 
 class PriorityQueue:
+    # TODO: Just use queue.PriorityQueue()
     def __init__(self) -> None:
         self.__heap: List[Any] = []
         self.__id = 0
@@ -144,6 +149,11 @@ class PriorityQueue:
 
     def __bool__(self) -> bool:
         return len(self.__heap) > 0
+
+
+def split_into_n_parts(seq: Sequence[T], /, n: int) -> Iterator[Sequence[T]]:
+    # NB: Chaotic sampling: jumps n for each starting position
+    yield from (seq[i::n] for i in range(n))
 
 
 def split_into_chunks(collection: Union[List, Dict], chunk_size: int) -> List[Union[List, Dict]]:
@@ -173,3 +183,9 @@ def convert_true_match(true_match: Union[dict, list, Tuple[Union[int, str], Unio
         return true_match
     else:
         raise ValueError("true_matches should be a dictionary or a two-element list: found {}".format(true_match))
+
+
+def find_duplicates(seq: Sequence[THashable]) -> Set[THashable]:
+    seen: Set[THashable] = set()
+    add = seen.add  # skip future attr lookups for perf
+    return set(x for x in seq if x in seen or add(x))

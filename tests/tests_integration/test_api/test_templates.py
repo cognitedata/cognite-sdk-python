@@ -51,7 +51,6 @@ def new_template_group_version(cognite_client, new_template_group):
     version = TemplateGroupVersion(schema)
     new_version = cognite_client.templates.versions.upsert(ext_id, version=version)
     yield new_group, ext_id, new_version
-    print(ext_id, new_version.version)
     cognite_client.templates.versions.delete(ext_id, new_version.version)
 
 
@@ -184,23 +183,23 @@ class TestTemplatescognite_client:
     def test_query(self, cognite_client, new_template_instance):
         new_group, ext_id, new_version, new_instance = new_template_instance
         query = """
-        { 
-        countryList 
-            { 
-                name, 
-                deaths { 
-                    externalId, 
-                    datapoints(limit: 2) { 
-                        timestamp, value 
-                    } 
-                }, 
-                confirmed { 
-                    externalId, 
-                    datapoints(limit: 2) { 
-                        timestamp, value 
-                    } 
-                } 
-            } 
+        {
+        countryList
+            {
+                name,
+                deaths {
+                    externalId,
+                    datapoints(limit: 2) {
+                        timestamp, value
+                    }
+                },
+                confirmed {
+                    externalId,
+                    datapoints(limit: 2) {
+                        timestamp, value
+                    }
+                }
+            }
         }
         """
         res = cognite_client.templates.graphql_query(ext_id, 1, query)

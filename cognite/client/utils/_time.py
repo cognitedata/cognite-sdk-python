@@ -1,25 +1,25 @@
 import numbers
 import re
 import time
-import warnings
-from datetime import datetime, timezone
-from typing import Dict, List, Optional, Union
+from datetime import datetime, timedelta, timezone
+from typing import Dict, List, Optional, Tuple, Union
 
-_unit_in_ms_without_week = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000}
-_unit_in_ms = {**_unit_in_ms_without_week, "w": 604800000}
+UNIT_IN_MS_WITHOUT_WEEK = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000}
+UNIT_IN_MS = {**UNIT_IN_MS_WITHOUT_WEEK, "w": 604800000}
 
 MIN_TIMESTAMP_MS = -2208988800000
+MAX_TIMESTAMP_MS = 2556143999999
 
 
 def datetime_to_ms(dt: datetime) -> int:
-    if dt.tzinfo is None:
-        warnings.warn(
-            "Interpreting given naive datetime as UTC instead of local time (against Python default behaviour). "
-            "This will change in the next major release (4.0.0). Please use (timezone) aware datetimes "
-            "or convert it yourself to integer (number of milliseconds since epoch, leap seconds excluded).",
-            FutureWarning,
-        )
-        dt = dt.replace(tzinfo=timezone.utc)
+    """Converts datetime object to milliseconds since epoch.
+
+    Args:
+        dt (datetime): Naive or aware datetime object. Naive datetimes are interpreted as local time.
+
+    Returns:
+        ms: Milliseconds since epoch (negative for time prior to 1970-01-01)
+    """
     return int(1000 * dt.timestamp())
 
 
@@ -27,22 +27,16 @@ def ms_to_datetime(ms: Union[int, float]) -> datetime:
     """Converts milliseconds since epoch to datetime object.
 
     Args:
-        ms (Union[int, float]): Milliseconds since epoch
+        ms (Union[int, float]): Milliseconds since epoch.
 
     Returns:
-        datetime: Naive datetime object in UTC.
-
+        datetime: Aware datetime object in UTC.
     """
-    if ms < 0:
-        raise ValueError("ms must be greater than or equal to zero.")
+    if not (MIN_TIMESTAMP_MS <= ms <= MAX_TIMESTAMP_MS):
+        raise ValueError(f"`ms` does not satisfy: {MIN_TIMESTAMP_MS} <= ms <= {MAX_TIMESTAMP_MS}")
 
-    warnings.warn(
-        "This function, `ms_to_datetime` returns a naive datetime object in UTC. This is against "
-        "the default interpretation of naive datetimes in Python (i.e. local time). This behaviour will "
-        "change to returning timezone-aware datetimes in UTC in the next major release (4.0.0).",
-        FutureWarning,
-    )
-    return datetime.utcfromtimestamp(ms / 1000)
+    # Note: We don't use fromtimestamp because it typically fails for negative values on Windows
+    return datetime(1970, 1, 1, tzinfo=timezone.utc) + timedelta(milliseconds=ms)
 
 
 def time_string_to_ms(pattern: str, string: str, unit_in_ms: Dict[str, int]) -> Optional[int]:
@@ -56,7 +50,7 @@ def time_string_to_ms(pattern: str, string: str, unit_in_ms: Dict[str, int]) -> 
 
 
 def granularity_to_ms(granularity: str) -> int:
-    ms = time_string_to_ms(r"(\d+)({})", granularity, _unit_in_ms_without_week)
+    ms = time_string_to_ms(r"(\d+)({})", granularity, UNIT_IN_MS_WITHOUT_WEEK)
     if ms is None:
         raise ValueError(
             "Invalid granularity format: `{}`. Must be on format <integer>(s|m|h|d). E.g. '5m', '3h' or '1d'.".format(
@@ -75,7 +69,7 @@ def time_ago_to_ms(time_ago_string: str) -> int:
     """Returns millisecond representation of time-ago string"""
     if time_ago_string == "now":
         return 0
-    ms = time_string_to_ms(r"(\d+)({})-ago", time_ago_string, _unit_in_ms)
+    ms = time_string_to_ms(r"(\d+)({})-ago", time_ago_string, UNIT_IN_MS)
     if ms is None:
         raise ValueError(
             "Invalid time-ago format: `{}`. Must be on format <integer>(s|m|h|d|w)-ago or 'now'. E.g. '3d-ago' or '1w-ago'.".format(
@@ -112,7 +106,7 @@ def timestamp_to_ms(timestamp: Union[int, float, str, datetime]) -> int:
 
 
 def _convert_time_attributes_in_dict(item: Dict) -> Dict:
-    TIME_ATTRIBUTES = [
+    TIME_ATTRIBUTES = {
         "start_time",
         "end_time",
         "last_updated_time",
@@ -121,7 +115,7 @@ def _convert_time_attributes_in_dict(item: Dict) -> Dict:
         "scheduled_execution_time",
         "source_created_time",
         "source_modified_time",
-    ]
+    }
     new_item = {}
     for k, v in item.items():
         if k in TIME_ATTRIBUTES:
@@ -142,3 +136,31 @@ def convert_time_attributes_to_datetime(item: Union[Dict, List[Dict]]) -> Union[
             new_items.append(_convert_time_attributes_in_dict(el))
         return new_items
     raise TypeError("item must be dict or list of dicts")
+
+
+def align_start_and_end_for_granularity(start: int, end: int, granularity: str) -> Tuple[int, int]:
+    # Note the API always aligns `start` with 1s, 1m, 1h or 1d (even when given e.g. 73h)
+    remainder = start % granularity_unit_to_ms(granularity)
+    if remainder:
+        # Floor `start` when not exactly at boundary
+        start -= remainder
+    gms = granularity_to_ms(granularity)
+    remainder = (end - start) % gms
+    if remainder:
+        # Ceil `end` when not exactly at boundary decided by `start + N * granularity`
+        end += gms - remainder
+    return start, end
+
+
+def split_time_range(start: int, end: int, n_splits: int, granularity_in_ms: int) -> List[int]:
+    if n_splits < 1:
+        raise ValueError(f"Cannot split into less than 1 piece, got {n_splits=}")
+    tot_ms = end - start
+    if n_splits * granularity_in_ms > tot_ms:
+        raise ValueError(
+            f"Given time interval ({tot_ms=}) could not be split as `{n_splits=}` times `{granularity_in_ms=}` "
+            "is larger than the interval itself."
+        )
+    # Find a `delta_ms` thats a multiple of granularity in ms (trivial for raw queries).
+    delta_ms = granularity_in_ms * round(tot_ms / n_splits / granularity_in_ms)
+    return [*(start + delta_ms * i for i in range(n_splits)), end]

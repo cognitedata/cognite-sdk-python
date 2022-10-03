@@ -48,22 +48,18 @@ class SyntheticDatapointsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> dps = c.datapoints.synthetic.query(expressions="TS{id:123} + TS{externalId:'abc'}", start="2w-ago", end="now")
+                >>> dps = c.time_series.data.synthetic.query(expressions="TS{id:123} + TS{externalId:'abc'}", start="2w-ago", end="now")
 
             Use variables to re-use an expression:
 
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
                 >>> vars = {"A": "my_ts_external_id", "B": client.time_series.retrieve(id=1)}
-                >>> dps = c.datapoints.synthetic.query(expressions="A+B", start="2w-ago", end="now", variables=vars)
+                >>> dps = c.time_series.data.synthetic.query(expressions="A+B", start="2w-ago", end="now", variables=vars)
 
             Use sympy to build complex expressions:
 
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
                 >>> from sympy import symbols, cos, sin
                 >>> a = symbols('a')
-                >>> dps = c.datapoints.synthetic.query([sin(a), cos(a)], start="2w-ago", end="now", variables={"a": "my_ts_external_id"}, aggregate='interpolation', granularity='1m')
+                >>> dps = c.time_series.data.synthetic.query([sin(a), cos(a)], start="2w-ago", end="now", variables={"a": "my_ts_external_id"}, aggregate='interpolation', granularity='1m')
         """
         if limit is None or limit == -1:
             limit = cast(int, float("inf"))
@@ -82,7 +78,8 @@ class SyntheticDatapointsAPI(APIClient):
                 "start": cognite.client.utils._time.timestamp_to_ms(start),
                 "end": cognite.client.utils._time.timestamp_to_ms(end),
             }
-            query_datapoints = Datapoints(value=[], error=[])
+            values: List[float] = []  # mypy
+            query_datapoints = Datapoints(value=values, error=[])
             query_datapoints.external_id = short_expression
 
             tasks.append((query, query_datapoints, limit))
