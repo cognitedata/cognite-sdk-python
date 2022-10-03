@@ -1088,7 +1088,11 @@ class DatapointsAPI(APIClient):
                 raise ValueError(
                     "When inserting data using a `Datapoints` or `DatapointsArray` object, only raw datapoints are supported"
                 )
-            datapoints = list(zip(datapoints.timestamp, datapoints.value))  # type: ignore [arg-type]
+            if isinstance(datapoints, Datapoints):
+                datapoints = list(zip(datapoints.timestamp, datapoints.value))  # type: ignore [arg-type]
+            else:
+                ts = datapoints.timestamp.astype("datetime64[ms]").astype("int64")
+                datapoints = list(zip(ts, datapoints.value))  # type: ignore [arg-type]
         post_dps_object["datapoints"] = datapoints
         dps_poster = DatapointsPoster(self)
         dps_poster.insert([post_dps_object])
