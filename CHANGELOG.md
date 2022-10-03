@@ -56,7 +56,7 @@ There is also a subtle **bugfix** here: since the previous implementation allowe
 - Used to fetch time series given by `id` and `external_id` separately - this is no longer the case. This gives a significant, additional speedup when both are supplied.
 - The `complete` parameter has been removed and partially replaced by `uniform_index` (bool) which covers a subset of the previous features (with some modifications: now gives uniform index all the way from first given `start` to last given `end`). Rationale: Weird and unintuitive syntax (passing a string using a comma to separate options).
 - Interpolating, forward-filling or in general, imputation (also controlled via the `complete` parameter) is completely removed as the resampling logic *really* should be up to the user fetching the data to decide, not the SDK.
-- New parameter `column_names` to pick either `id`s or `external_id`s as the dataframe column names. Previously a mix of was used when both were supplied.
+- New parameter `column_names` (as already used in several existing `to_pandas` methods) decides whether to pick `id`s or `external_id`s as the dataframe column names. Previously, when both were supplied, the dataframe ended up with a mix.
 Read more below in the removed section or check out the method's updated documentation.
 
 ### Fixed
