@@ -23,6 +23,9 @@ from cognite.client.data_classes.contextualization import (
 )
 from cognite.client.data_classes.extractionpipelines import (
     ExtractionPipeline,
+    ExtractionPipelineConfig,
+    ExtractionPipelineConfigRevision,
+    ExtractionPipelineConfigRevisionList,
     ExtractionPipelineContact,
     ExtractionPipelineList,
     ExtractionPipelineRun,
