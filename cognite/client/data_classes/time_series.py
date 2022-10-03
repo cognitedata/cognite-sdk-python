@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
 
-from cognite.client import utils
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteLabelUpdate,
@@ -14,10 +13,11 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._identifier import Identifier
+from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
-    from cognite.client.data_classes import Asset, Datapoint, DatapointsList
+    from cognite.client.data_classes import Asset, Datapoint
 
 
 class TimeSeries(CogniteResource):
@@ -75,32 +75,6 @@ class TimeSeries(CogniteResource):
         self.legacy_name = legacy_name
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def plot(
-        self,
-        start: str = "1d-ago",
-        end: str = "now",
-        aggregates: List[str] = None,
-        granularity: str = None,
-        id_labels: bool = False,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
-        plt = utils._auxiliary.local_import("matplotlib.pyplot")
-        identifier = Identifier.load(self.id, self.external_id).as_dict()
-        dps = self._cognite_client.datapoints.retrieve(
-            start=start, end=end, aggregates=aggregates, granularity=granularity, **identifier
-        )
-        if id_labels:
-            dps.plot(*args, **kwargs)
-        else:
-            assert self.id is not None
-            columns: Dict[Union[int, str], Any] = {self.id: self.name}
-            for agg in aggregates or []:
-                columns["{}|{}".format(self.id, agg)] = "{}|{}".format(self.name, agg)
-            df = dps.to_pandas().rename(columns=columns)
-            df.plot(*args, **kwargs)
-            plt.show()  # type: ignore
-
     def count(self) -> int:
         """Returns the number of datapoints in this time series.
 
@@ -108,35 +82,45 @@ class TimeSeries(CogniteResource):
 
         Returns:
             int: The number of datapoints in this time series.
+
+        Raises:
+            ValueError: If the time series is string as count aggregate is only supported for numeric data
+
+        Returns:
+            int: The total number of datapoints
         """
+        if self.is_string:
+            raise ValueError("String time series does not support count aggregate.")
+
         identifier = Identifier.load(self.id, self.external_id).as_dict()
-        dps = self._cognite_client.datapoints.retrieve(
-            start=0, end="now", aggregates=["count"], granularity="10d", **identifier
+        dps = self._cognite_client.time_series.data.retrieve(
+            **identifier, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS, aggregates=["count"], granularity="100d"
         )
         return sum(dps.count)
 
-    def latest(self) -> Optional["Datapoint"]:  # noqa: F821
-        """Returns the latest datapoint in this time series
+    def latest(self, before: Union[int, str, datetime] = None) -> Optional["Datapoint"]:  # noqa: F821
+        """Returns the latest datapoint in this time series. If empty, returns None.
 
         Returns:
             Datapoint: A datapoint object containing the value and timestamp of the latest datapoint.
         """
         identifier = Identifier.load(self.id, self.external_id).as_dict()
-        dps = self._cognite_client.datapoints.retrieve_latest(**identifier)
-        if len(dps) > 0:
-            return list(dps)[0]
+        if dps := self._cognite_client.time_series.data.retrieve_latest(**identifier, before=before):
+            return dps[0]
         return None
 
     def first(self) -> Optional["Datapoint"]:  # noqa: F821
-        """Returns the first datapoint in this time series.
+        """Returns the first datapoint in this time series. If empty, returns None.
 
         Returns:
             Datapoint: A datapoint object containing the value and timestamp of the first datapoint.
         """
         identifier = Identifier.load(self.id, self.external_id).as_dict()
-        dps = self._cognite_client.datapoints.retrieve(**identifier, start=0, end="now", limit=1)
-        if len(dps) > 0:
-            return list(dps)[0]
+        dps = self._cognite_client.time_series.data.retrieve(
+            **identifier, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS, limit=1
+        )
+        if dps:
+            return dps[0]
         return None
 
     def asset(self) -> "Asset":  # noqa: F821
@@ -302,32 +286,3 @@ class TimeSeriesAggregate(dict):
 
 class TimeSeriesList(CogniteResourceList):
     _RESOURCE = TimeSeries
-
-    def plot(
-        self,
-        start: str = "1d-ago",
-        end: str = "now",
-        aggregates: List[str] = None,
-        granularity: str = None,
-        id_labels: bool = False,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
-        plt = utils._auxiliary.local_import("matplotlib.pyplot")
-        dps = cast(
-            "DatapointsList",
-            self._cognite_client.datapoints.retrieve(
-                id=[ts.id for ts in self.data], start=start, end=end, aggregates=aggregates, granularity=granularity
-            ),
-        )
-        if id_labels:
-            dps.plot(*args, **kwargs)
-        else:
-            columns = {}
-            for ts in self.data:
-                columns[ts.id] = ts.name
-                for agg in aggregates or []:
-                    columns["{}|{}".format(ts.id, agg)] = "{}|{}".format(ts.name, agg)
-            df = dps.to_pandas().rename(columns=columns)
-            df.plot(*args, **kwargs)
-            plt.show()  # type: ignore

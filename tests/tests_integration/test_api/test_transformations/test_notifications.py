@@ -1,11 +1,11 @@
-import random
 import string
 
 import pytest
 
 from cognite.client.data_classes import Transformation, TransformationDestination, TransformationNotification
+from cognite.client.utils._auxiliary import random_string
 
-prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
+prefix = random_string(6, string.ascii_letters)
 
 
 @pytest.fixture

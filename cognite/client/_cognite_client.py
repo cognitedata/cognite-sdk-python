@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import warnings
-from typing import Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from requests import Response
 
@@ -7,7 +9,6 @@ from cognite.client import utils
 from cognite.client._api.annotations import AnnotationsAPI
 from cognite.client._api.assets import AssetsAPI
 from cognite.client._api.data_sets import DataSetsAPI
-from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.diagrams import DiagramsAPI
 from cognite.client._api.entity_matching import EntityMatchingAPI
 from cognite.client._api.events import EventsAPI
@@ -28,6 +29,9 @@ from cognite.client._api.transformations import TransformationsAPI
 from cognite.client._api.vision import VisionAPI
 from cognite.client._api_client import APIClient
 from cognite.client.config import ClientConfig, global_config
+
+if TYPE_CHECKING:
+    from cognite.client._api.datapoints import DatapointsAPI
 
 
 class CogniteClient:
@@ -51,7 +55,6 @@ class CogniteClient:
             self._config = client_config
         self.login = LoginAPI(self._config, cognite_client=self)
         self.assets = AssetsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
-        self.datapoints = DatapointsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.events = EventsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.files = FilesAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.iam = IAMAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
@@ -93,6 +96,19 @@ class CogniteClient:
     def delete(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None) -> Response:
         """Perform a DELETE request to an arbitrary path in the API."""
         return self._api_client._delete(url, params=params, headers=headers)
+
+    @property  # TODO (v6.0.0): Delete this whole property
+    def datapoints(self) -> DatapointsAPI:
+        if int(self.version.split(".")[0]) >= 6:
+            raise AttributeError(  # ...in case we forget to delete this property in v6...
+                "'CogniteClient' object has no attribute 'datapoints'. Use 'time_series.data' instead."
+            )
+        warnings.warn(
+            "Accessing the DatapointsAPI through `client.datapoints` is deprecated and will be removed "
+            "in major version 6.0.0. Use `client.time_series.data` instead.",
+            DeprecationWarning,
+        )
+        return self.time_series.data
 
     @property
     def version(self) -> str:

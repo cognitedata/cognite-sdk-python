@@ -203,7 +203,7 @@ class Asset(CogniteResource):
         return result
 
     def to_pandas(
-        self, expand: Sequence[str] = ("metadata", "aggregates"), ignore: List[str] = None, camel_case: bool = True
+        self, expand: Sequence[str] = ("metadata", "aggregates"), ignore: List[str] = None, camel_case: bool = False
     ) -> "pandas.DataFrame":
         """Convert the instance into a pandas DataFrame.
 

@@ -1,5 +1,4 @@
 import re
-from unittest import mock
 
 import pytest
 
@@ -198,77 +197,6 @@ class TestTimeSeries:
         )
 
 
-@pytest.mark.dsl
-class TestPlotTimeSeries:
-    @pytest.fixture
-    def mock_get_dps(self, cognite_client, rsps):
-        rsps.add(
-            rsps.POST,
-            cognite_client.time_series._get_base_url_with_base_path() + "/timeseries/data/list",
-            status=200,
-            json={
-                "items": [
-                    {
-                        "id": 0,
-                        "externalId": "string1",
-                        "isString": False,
-                        "isStep": False,
-                        "datapoints": [{"timestamp": i * 10000, "average": i} for i in range(5000)],
-                    }
-                ]
-            },
-        )
-
-    @mock.patch("matplotlib.pyplot.show")
-    @mock.patch("pandas.core.frame.DataFrame.rename")
-    def test_plot_time_series_name_labels(
-        self, pandas_rename_mock, plt_show_mock, mock_ts_response, mock_get_dps, cognite_client
-    ):
-        res = cognite_client.time_series.retrieve(id=0)
-        df_mock = mock.MagicMock()
-        pandas_rename_mock.return_value = df_mock
-        res.plot(aggregates=["average"], granularity="1d")
-
-        assert {0: "stringname", "0|average": "stringname|average"} == pandas_rename_mock.call_args[1]["columns"]
-        assert 1 == df_mock.plot.call_count
-        assert 1 == plt_show_mock.call_count
-
-    @mock.patch("matplotlib.pyplot.show")
-    @mock.patch("pandas.core.frame.DataFrame.plot")
-    def test_plot_time_series_id_labels(
-        self, pandas_plot_mock, plt_show_mock, mock_ts_response, mock_get_dps, cognite_client
-    ):
-        res = cognite_client.time_series.retrieve(id=0)
-        res.plot(id_labels=True, aggregates=["average"], granularity="1s")
-
-        assert 1 == pandas_plot_mock.call_count
-        assert 1 == plt_show_mock.call_count
-
-    @mock.patch("matplotlib.pyplot.show")
-    @mock.patch("pandas.core.frame.DataFrame.rename")
-    def test_plot_time_series_list_name_labels(
-        self, pandas_rename_mock, plt_show_mock, mock_ts_response, mock_get_dps, cognite_client
-    ):
-        res = cognite_client.time_series.retrieve_multiple(ids=[0])
-        df_mock = mock.MagicMock()
-        pandas_rename_mock.return_value = df_mock
-        res.plot(aggregates=["average"], granularity="1h")
-        assert {0: "stringname", "0|average": "stringname|average"} == pandas_rename_mock.call_args[1]["columns"]
-        assert 1 == df_mock.plot.call_count
-        assert 1 == plt_show_mock.call_count
-
-    @mock.patch("matplotlib.pyplot.show")
-    @mock.patch("pandas.core.frame.DataFrame.plot")
-    def test_plot_time_series_list_id_labels(
-        self, pandas_plot_mock, plt_show_mock, mock_ts_response, mock_get_dps, cognite_client
-    ):
-        res = cognite_client.time_series.retrieve_multiple(ids=[0])
-        res.plot(id_labels=True)
-
-        assert 1 == pandas_plot_mock.call_count
-        assert 1 == plt_show_mock.call_count
-
-
 @pytest.fixture
 def mock_time_series_empty(rsps, cognite_client):
     url_pattern = re.compile(re.escape(cognite_client.time_series._get_base_url_with_base_path()) + "/.+")
@@ -298,7 +226,7 @@ class TestPandasIntegration:
     def test_time_series_to_pandas(self, cognite_client, mock_ts_response):
         import pandas as pd
 
-        df = cognite_client.time_series.retrieve(id=1).to_pandas()
+        df = cognite_client.time_series.retrieve(id=1).to_pandas(camel_case=True)
         assert isinstance(df, pd.DataFrame)
         assert "metadata" not in df.columns
         assert [0] == df.loc["securityCategories"][0]

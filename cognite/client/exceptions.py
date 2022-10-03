@@ -1,4 +1,5 @@
 import json
+import reprlib
 from typing import Callable, Dict, List, Sequence
 
 
@@ -131,9 +132,9 @@ class CogniteNotFoundError(CogniteMultiException):
         super().__init__(successful, failed, unknown, unwrap_fn)
 
     def __str__(self) -> str:
-        msg = "Not found: {}".format(self.not_found)
-        msg += self._get_multi_exception_summary()
-        return msg
+        if len(not_found := self.not_found) > 200:
+            not_found = reprlib.repr(self.not_found)
+        return f"Not found: {not_found}{self._get_multi_exception_summary()}"
 
 
 class CogniteDuplicatedError(CogniteMultiException):

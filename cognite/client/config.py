@@ -70,13 +70,12 @@ class ClientConfig:
         file_transfer_timeout: Optional[int] = None,
         debug: bool = False,
     ) -> None:
-        super().__init__()
         self.client_name = client_name
         self.project = project
         self.credentials = credentials
         self.api_subversion = api_subversion or __api_subversion__
         self.base_url = (base_url or "https://api.cognitedata.com").rstrip("/")
-        self.max_workers = max_workers if max_workers is not None else 10
+        self.max_workers = max_workers if max_workers is not None else 20
         self.headers = headers or {}
         self.timeout = timeout or 30
         self.file_transfer_timeout = file_transfer_timeout or 600

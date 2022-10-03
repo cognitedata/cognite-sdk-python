@@ -1,5 +1,5 @@
 import numbers
-from typing import Dict, Generic, Iterable, List, Optional, Sequence, TypeVar, Union, cast, overload
+from typing import Dict, Generic, Iterable, List, Optional, Sequence, Tuple, TypeVar, Union, cast, overload
 
 T_ID = TypeVar("T_ID", int, str)
 
@@ -25,11 +25,28 @@ class Identifier(Generic[T_ID]):
     def as_primitive(self) -> T_ID:
         return self.__value
 
-    def as_dict(self) -> Dict[str, T_ID]:
+    def as_dict(self, camel_case: bool = True) -> Dict[str, T_ID]:
         if isinstance(self.__value, str):
-            return {"externalId": self.__value}
+            if camel_case:
+                return {"externalId": self.__value}
+            return {"external_id": self.__value}
         else:
             return {"id": self.__value}
+
+    def as_tuple(self, camel_case: bool = True) -> Tuple[str, T_ID]:
+        if isinstance(self.__value, str):
+            if camel_case:
+                return ("externalId", self.__value)
+            return ("external_id", self.__value)
+        else:
+            return ("id", self.__value)
+
+    def __str__(self) -> str:
+        identifier_type, identifier = self.as_tuple(camel_case=False)
+        return f"{type(self).__name__}({identifier_type}={identifier!r})"
+
+    def __repr__(self) -> str:
+        return str(self)
 
 
 class ExternalId(Identifier[str]):
