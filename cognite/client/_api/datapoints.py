@@ -77,7 +77,7 @@ def dps_fetch_selector(
 ) -> DpsFetchStrategy:
     max_workers = dps_client._config.max_workers
     if max_workers < 1:  # Dps fetching does not use fn `execute_tasks_concurrently`, so we must check:
-        raise RuntimeError(f"Invalid option for `max_workers={max_workers}`. Must be at least 1")
+        raise RuntimeError(f"Invalid option for `{max_workers=}`. Must be at least 1")
     all_queries, agg_queries, raw_queries = validate_and_split_user_queries(user_queries)
 
     # Running mode is decided based on how many time series are requested VS. number of workers:
