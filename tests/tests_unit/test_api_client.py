@@ -1,6 +1,5 @@
 import json
 import math
-import os
 from collections import namedtuple
 from typing import Any
 
@@ -9,6 +8,8 @@ from requests import Response
 
 from cognite.client import CogniteClient, utils
 from cognite.client._api_client import APIClient
+from cognite.client.config import ClientConfig
+from cognite.client.credentials import APIKey, Token
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CognitePrimitiveUpdate,
@@ -17,9 +18,8 @@ from cognite.client.data_classes._base import (
     CogniteUpdate,
 )
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
-from cognite.client.utils._client_config import ClientConfig
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
-from tests.utils import jsgz_load, set_env_var, set_request_limit
+from tests.utils import jsgz_load, set_request_limit
 
 BASE_URL = "http://localtest.com/api/1.0/projects/test-project"
 URL_PATH = "/someurl"
@@ -31,8 +31,9 @@ RESPONSE = {"any": "ok"}
 def api_client_with_api_key(cognite_client):
     return APIClient(
         ClientConfig(
+            client_name="python-sdk-unit-tester",
             project="test-project",
-            api_key="abc",
+            credentials=APIKey("abc"),
             base_url=BASE_URL,
             max_workers=1,
             headers={"x-cdp-app": "python-sdk-integration-tests"},
@@ -45,11 +46,12 @@ def api_client_with_api_key(cognite_client):
 def api_client_with_token_factory(cognite_client):
     return APIClient(
         ClientConfig(
+            client_name="any",
             project="test-project",
             base_url=BASE_URL,
             max_workers=1,
             headers={"x-cdp-app": "python-sdk-integration-tests"},
-            token=lambda: "abc",
+            credentials=Token(lambda: "abc"),
         ),
         cognite_client=cognite_client,
     )
@@ -59,11 +61,12 @@ def api_client_with_token_factory(cognite_client):
 def api_client_with_token(cognite_client):
     return APIClient(
         ClientConfig(
+            client_name="any",
             project="test-project",
             base_url=BASE_URL,
             max_workers=1,
             headers={"x-cdp-app": "python-sdk-integration-tests"},
-            token="abc",
+            credentials=Token("abc"),
         ),
         cognite_client=cognite_client,
     )
@@ -110,7 +113,7 @@ class TestBasicRequests:
         request_headers = mock_all_requests_ok.calls[0].request.headers
         assert "application/json" == request_headers["content-type"]
         assert "application/json" == request_headers["accept"]
-        assert api_client_with_api_key._config.api_key == request_headers["api-key"]
+        assert api_client_with_api_key._config.credentials.authorization_header()[1] == request_headers["api-key"]
         assert "python-sdk-integration-tests" == request_headers["x-cdp-app"]
         assert "User-Agent" in request_headers
 
@@ -175,14 +178,14 @@ class TestBasicRequests:
         headers = mock_all_requests_ok.calls[0].request.headers
 
         assert "api-key" not in headers
-        assert "Bearer {}".format(api_client_with_token_factory._config.token()) == headers["Authorization"]
+        assert api_client_with_token_factory._config.credentials.authorization_header()[1] == headers["Authorization"]
 
     def test_headers_correct_with_token(self, mock_all_requests_ok, api_client_with_token):
         api_client_with_token._post(URL_PATH, {"any": "OK"})
         headers = mock_all_requests_ok.calls[0].request.headers
 
         assert "api-key" not in headers
-        assert "Bearer {}".format(api_client_with_token._config.token) == headers["Authorization"]
+        assert api_client_with_token._config.credentials.authorization_header()[1] == headers["Authorization"]
 
     @pytest.mark.parametrize("payload", [math.nan, math.inf, -math.inf, {"foo": {"bar": {"baz": [[[math.nan]]]}}}])
     def test__do_request_raises_more_verbose_exception(self, api_client_with_token, payload):
@@ -389,7 +392,8 @@ class TestStandardRetrieveMultiple:
                     resource_path=URL_PATH,
                     identifiers=IdentifierSequence.of(1, 2),
                 )
-        assert [{"id": 1}, {"id": 2}] == e.value.not_found
+        assert {"id": 1} in e.value.not_found
+        assert {"id": 2} in e.value.not_found
 
     def test_cognite_client_is_set(self, cognite_client, api_client_with_api_key, mock_by_ids):
         assert (
@@ -1143,6 +1147,14 @@ class TestHelpers:
             ("PUT", "https://localhost:8000.com/api/v1/projects/blabla/assets", True),
             ("PATCH", "https://localhost:8000.com/api/v1/projects/blabla/patchy", True),
             ("GET", "https://another-cluster.cognitedata.com/login/status", True),
+            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/mydb/tables/mytable", True),
+            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/assets/list", True),
+            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/events/byids", True),
+            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/files/search", True),
+            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/timeseries/list", True),
+            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/sequences/byids", True),
+            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/datasets/aggregate", True),
+            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/relationships/list", True),
         ],
     )
     def test_is_retryable(self, api_client_with_api_key, method, path, expected):
@@ -1156,31 +1168,13 @@ class TestHelpers:
             api_client_with_api_key._is_retryable(method, path)
 
     def test_is_retryable_add(self, api_client_with_api_key):
-        assert (
-            api_client_with_api_key._is_retryable(
-                "POST", "https://greenfield.cognitedata.com/api/v1/projects/blabla/assets/bloop"
-            )
-            is False
-        )
-        APIClient.RETRYABLE_POST_ENDPOINTS.add("/assets/bloop")
+        APIClient._RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS.add("/assets/bloop")
         assert (
             api_client_with_api_key._is_retryable(
                 "POST", "https://greenfield.cognitedata.com/api/v1/projects/blabla/assets/bloop"
             )
             is True
         )
-        APIClient.RETRYABLE_POST_ENDPOINTS.remove("/assets/bloop")
-        assert (
-            api_client_with_api_key._is_retryable(
-                "POST", "https://greenfield.cognitedata.com/api/v1/projects/blabla/assets/bloop"
-            )
-            is False
-        )
-
-    def test_get_status_codes_to_retry(self):
-        os.environ["COGNITE_STATUS_FORCELIST"] = "1,2, 3,4"
-        assert {1, 2, 3, 4} == utils._client_config._DefaultConfig().status_forcelist
-        del os.environ["COGNITE_STATUS_FORCELIST"]
 
     @pytest.mark.parametrize(
         "before, after",
@@ -1206,9 +1200,9 @@ class TestHelpers:
 
 class TestConnectionPooling:
     def test_connection_pool_is_shared_between_clients(self):
-        with set_env_var("COGNITE_API_KEY", "bla"):
-            c1 = CogniteClient()
-            c2 = CogniteClient()
+        cnf = ClientConfig(client_name="bla", credentials=APIKey("bla"), project="bla")
+        c1 = CogniteClient(cnf)
+        c2 = CogniteClient(cnf)
         assert (
             c1._api_client._http_client.session
             == c2._api_client._http_client.session

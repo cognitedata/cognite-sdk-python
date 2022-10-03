@@ -14,6 +14,118 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [4.8.0] - 2022-09-30
+### Added
+- Add operations for geospatial rasters
+
+## [4.7.1] - 2022-09-29
+
+### Fixed
+- Fixed the `FunctionsAPI.create` method for Windows-users by removing 
+  validation of `requirements.txt`.
+
+## [4.7.0] - 2022-09-28
+### Added
+- Support `tags` on `transformations`.
+
+## [4.6.0] - 2022-09-26
+### Changed
+- Change geospatial.aggregate_features to support `aggregate_output`
+
+## [4.5.4] - 2022-09-19
+### Fixed
+- The raw rows insert endpoint is now subject to the same retry logic as other idempotent endpoints.
+
+## [4.5.3] - 2022-09-15
+### Fixed
+- Fixes the OS specific issue where the `requirements.txt`-validation failed
+  with `Permission Denied` on Windows.
+
+## [4.5.2] - 2022-09-09
+### Fixed
+- Fixes the issue when updating transformations with new nonce credentials
+
+
+## [4.5.1] - 2022-09-08
+### Fixed
+- Don't depend on typing_extensions module, since we don't have it as a dependency.
+
+## [4.5.0] - 2022-09-08
+### Added
+- Vision extract implementation, providing access to the corresponding [Vision Extract API](https://docs.cognite.com/api/v1/#tag/Vision).
+
+## [4.4.3] - 2022-09-08
+### Fixed
+- Fixed NaN/NA value check in geospatial FeatureList
+
+## [4.4.2] - 2022-09-07
+### Fixed
+- Don't import numpy in the global space in geospatial module as it's an optional dependency
+
+## [4.4.1] - 2022-09-06
+### Fixed
+- Fixed FeatureList.from_geopandas to handle NaN values
+
+## [4.4.0] - 2022-09-06
+### Changed
+- Change geospatial.aggregate_features to support order_by
+
+## [4.3.0] - 2022-09-02
+### Added
+- Add geospatial.list_features
+
+## [4.2.1] - 2022-08-23
+### Changed
+- Change timeseries datapoints' time range to start from 01.01.1900
+
+## [4.2.0] - 2022-08-23
+### Added
+- OAuthInteractive credential provider. This credential provider will redirect you to a login page
+and require that the user authenticates. It will also cache the token between runs.
+- OAuthDeviceCode credential provider. Display a device code to enter into a trusted device.
+It will also cache the token between runs.
+
+## [4.1.2] - 2022-08-22
+### Fixed
+- geospatial: support asset links for features
+
+## [4.1.1] - 2022-08-19
+### Fixed
+- Fixed the issue on SDK when Python installation didn't include pip.
+
+### Added
+- Added Optional dependency called functions. Usage: `pip install cognite-sdk[functions]`
+
+## [4.1.0] - 2022-08-18
+### Added
+- ensure_parent parameter to client.raw.insert_dataframe method
+
+## [4.0.1] - 2022-08-17
+### Added
+- OAuthClientCredentials now supports token_custom_args.
+
+## [4.0.0] - 2022-08-15
+### Changed
+- Client configuration no longer respects any environment variables. There are other libraries better
+suited for loading configuration from the environment (such as builtin `os` or `pydantic`). There have also
+been several reports of ennvar name clash issues in tools built on top the SDK. We therefore
+consider this something that should be handled by the application consuming the SDK. All configuration of
+`cognite.client.CogniteClient` now happens using a `cognite.client.ClientConfig` object. Global configuration such as
+`max_connection_pool_size` and other options which apply to all client instances are now configured through
+the `cognite.client.global_config` object which is an instance of `cognite.client.GlobalConfig`. Examples
+have been added to the docs.
+- Auth has been reworked. The client configuration no longer accepts the `api_key` and `token_...` arguments.
+It accepts only a single `credentials` argument which must be a `CredentialProvider` object. A few
+implementations have been provided (`APIKey`, `Token`, `OAuthClientCredentials`). Example usage has
+been added to the docs. More credential provider implementations will be added in the future to accommodate
+other OAuth flows.
+
+### Fixed
+- A bug in the Functions SDK where the lifecycle of temporary files was not properly managed.  
+
+## [3.9.0] - 2022-08-11
+### Added
+- Moved Cognite Functions from Experimental SDK to Main SDK.
 
 ## [3.8.0] - 2022-08-11
 ### Added

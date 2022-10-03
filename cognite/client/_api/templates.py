@@ -573,19 +573,19 @@ class TemplateViewsAPI(APIClient):
             Create new views:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.templates import View
+                >>> from cognite.client.data_classes.templates import View, Source
                 >>> c = CogniteClient()
                 >>> view = View(external_id="view",
                 >>>             source=Source(
-                >>>                 type: 'events',
-                >>>                 filter: {
-                >>>                     startTime: {
-                >>>                         min: "$startTime"
+                >>>                 type='events',
+                >>>                 filter={
+                >>>                     "startTime": {
+                >>>                         "min": "$startTime"
                 >>>                     },
-                >>>                     type: "Test",
+                >>>                     "type": "Test",
                 >>>                 }
-                >>>                 mappings: {
-                >>>                     author: "metadata/author"
+                >>>                 mappings={
+                >>>                     "author": "metadata/author"
                 >>>                 }
                 >>>             )
                 >>>        )

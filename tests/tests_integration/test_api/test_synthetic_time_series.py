@@ -34,6 +34,14 @@ class TestSyntheticDatapointsAPI:
         assert 23456 == len(dps)
         assert 3 == cognite_client.datapoints.synthetic._post.call_count
 
+    def test_query_with_start_before_epoch(self, cognite_client, test_time_series, post_spy):
+        query = "ts{id:%d} + ts{id:%d}" % (test_time_series[0].id, test_time_series[1].id)
+        dps = cognite_client.datapoints.synthetic.query(
+            expressions=query, start=datetime(1920, 1, 1), end="now", limit=23456
+        )
+        assert 23456 == len(dps)
+        assert 3 == cognite_client.datapoints.synthetic._post.call_count
+
     def test_query_with_multiple_expressions(self, cognite_client, test_time_series, post_spy):
         expressions = ["ts{id:%d}" % test_time_series[0].id, "ts{id:%d}" % test_time_series[1].id]
         dps = cognite_client.datapoints.synthetic.query(

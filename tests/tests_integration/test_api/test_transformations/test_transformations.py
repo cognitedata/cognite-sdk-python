@@ -3,9 +3,10 @@ import string
 
 import pytest
 
+from cognite.client.credentials import OAuthClientCredentials
 from cognite.client.data_classes import DataSet, Transformation, TransformationDestination, TransformationUpdate
-from cognite.client.data_classes.transformations._alphatypes import AlphaDataModelInstances
-from cognite.client.data_classes.transformations.common import SequenceRows
+from cognite.client.data_classes.transformations import ContainsAny
+from cognite.client.data_classes.transformations.common import NonceCredentials, OidcCredentials, SequenceRows
 
 
 @pytest.fixture
@@ -26,11 +27,27 @@ def new_datasets(cognite_client):
 @pytest.fixture
 def new_transformation(cognite_client, new_datasets):
     prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
+    creds = cognite_client.config.credentials
+    assert isinstance(creds, OAuthClientCredentials)
     transform = Transformation(
         name="any",
         external_id=f"{prefix}-transformation",
         destination=TransformationDestination.assets(),
         data_set_id=new_datasets[0].id,
+        source_oidc_credentials=OidcCredentials(
+            client_id="invalidClientId",
+            client_secret="InvalidClientSecret",
+            scopes=",".join(creds.scopes),
+            token_uri=creds.token_url,
+            cdf_project_name=cognite_client.config.project,
+        ),
+        destination_oidc_credentials=OidcCredentials(
+            client_id="invalidClientId",
+            client_secret="InvalidClientSecret",
+            scopes=",".join(creds.scopes),
+            token_uri=creds.token_url,
+            cdf_project_name=cognite_client.config.project,
+        ),
     )
     ts = cognite_client.transformations.create(transform)
 
@@ -95,13 +112,25 @@ class TestTransformationsAPI:
         ts = cognite_client.transformations.create(transform)
         cognite_client.transformations.delete(id=ts.id)
 
-    @pytest.mark.skip
-    def test_create_alpha_dmi_transformation(self, cognite_client):
+    def test_create_transformation_with_tags(self, cognite_client):
         prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
         transform = Transformation(
             name="any",
             external_id=f"{prefix}-transformation",
-            destination=AlphaDataModelInstances(
+            destination=TransformationDestination.string_datapoints(),
+            tags=["vu", "hai"],
+        )
+        ts = cognite_client.transformations.create(transform)
+        assert set(["vu", "hai"]) == set(ts.tags)
+        cognite_client.transformations.delete(id=ts.id)
+
+    @pytest.mark.skip
+    def test_create_dmi_transformation(self, cognite_client):
+        prefix = "".join(random.choice(string.ascii_letters) for i in range(6))
+        transform = Transformation(
+            name="any",
+            external_id=f"{prefix}-transformation",
+            destination=TransformationDestination.data_model_instances(
                 model_external_id="testInstance",
                 space_external_id="test-space",
                 instance_space_external_id="test-space",
@@ -109,7 +138,7 @@ class TestTransformationsAPI:
         )
         ts = cognite_client.transformations.create(transform)
         assert (
-            ts.destination.type == "alpha_data_model_instances"
+            ts.destination.type == "data_model_instances"
             and ts.destination.model_external_id == "testInstance"
             and ts.destination.space_external_id == "test-space"
             and ts.destination.instance_space_external_id == "test-space"
@@ -184,6 +213,34 @@ class TestTransformationsAPI:
             and updated_transformation.query == retrieved_transformation.query == "SELECT * from _cdf.assets"
         )
 
+    def test_update_nonce(self, cognite_client, new_transformation):
+        session = cognite_client.iam.sessions.create()
+        update_transformation = (
+            TransformationUpdate(id=new_transformation.id)
+            .source_nonce.set(NonceCredentials(session.id, session.nonce, cognite_client._config.project))
+            .destination_nonce.set(NonceCredentials(session.id, session.nonce, cognite_client._config.project))
+        )
+
+        updated_transformation = cognite_client.transformations.update(update_transformation)
+        retrieved_transformation = cognite_client.transformations.retrieve(new_transformation.id)
+        assert (
+            updated_transformation.source_session.session_id == session.id
+            and updated_transformation.destination_session.session_id == session.id
+            and retrieved_transformation.source_session.session_id == session.id
+            and retrieved_transformation.destination_session.session_id == session.id
+        )
+
+    def test_update_nonce_full(self, cognite_client, new_transformation):
+        session = cognite_client.iam.sessions.create()
+        new_transformation.source_nonce = NonceCredentials(session.id, session.nonce, cognite_client._config.project)
+        new_transformation.destination_nonce = NonceCredentials(
+            session.id, session.nonce, cognite_client._config.project
+        )
+
+        updated_transformation = cognite_client.transformations.update(new_transformation)
+        retrieved_transformation = cognite_client.transformations.retrieve(new_transformation.id)
+        assert updated_transformation.id == retrieved_transformation.id
+
     def test_list(self, cognite_client, new_transformation, new_datasets):
         # Filter by destination type
         retrieved_transformations = cognite_client.transformations.list(limit=None, destination_type="assets")
@@ -215,16 +272,21 @@ class TestTransformationsAPI:
         # just make sure it doesnt raise exceptions
         str(query_result)
 
-    @pytest.mark.skip
-    def test_update_dmi_alpha(self, cognite_client, new_transformation):
-        new_transformation.destination = AlphaDataModelInstances("myTest", "test-space", "test-space")
+    def test_update_dmi(self, cognite_client, new_transformation):
+        new_transformation.destination = TransformationDestination.data_model_instances(
+            "myTest", "test-space", "test-space"
+        )
         partial_update = TransformationUpdate(id=new_transformation.id).destination.set(
-            AlphaDataModelInstances("myTest2", "test-space", "test-space")
+            TransformationDestination.data_model_instances("myTest2", "test-space", "test-space")
         )
         updated_transformation = cognite_client.transformations.update(new_transformation)
-        assert updated_transformation.destination == AlphaDataModelInstances("myTest", "test-space", "test-space")
+        assert updated_transformation.destination == TransformationDestination.data_model_instances(
+            "myTest", "test-space", "test-space"
+        )
         partial_updated = cognite_client.transformations.update(partial_update)
-        assert partial_updated.destination == AlphaDataModelInstances("myTest2", "test-space", "test-space")
+        assert partial_updated.destination == TransformationDestination.data_model_instances(
+            "myTest2", "test-space", "test-space"
+        )
 
     def test_update_sequence_rows_update(self, cognite_client, new_transformation):
         new_transformation.destination = SequenceRows("myTest")
@@ -234,3 +296,30 @@ class TestTransformationsAPI:
         partial_update = TransformationUpdate(id=new_transformation.id).destination.set(SequenceRows("myTest2"))
         partial_updated = cognite_client.transformations.update(partial_update)
         assert partial_updated.destination == TransformationDestination.sequence_rows("myTest2")
+
+    def test_update_transformations_with_tags(self, cognite_client, new_transformation):
+        new_transformation.tags = ["emel", "OPs"]
+        updated_transformation = cognite_client.transformations.update(new_transformation)
+        assert set(["emel", "OPs"]) == set(updated_transformation.tags)
+
+    def test_update_transformations_with_tags_partial(self, cognite_client, new_transformation):
+        partial_update = TransformationUpdate(id=new_transformation.id).tags.set(["jaime"])
+        partial_updated = cognite_client.transformations.update(partial_update)
+        assert partial_updated.tags == ["jaime"]
+        partial_update2 = TransformationUpdate(id=new_transformation.id).tags.add(["andres", "silva"])
+        partial_updated2 = cognite_client.transformations.update(partial_update2)
+        assert set(partial_updated2.tags) == set(["jaime", "andres", "silva"])
+        partial_update3 = (
+            TransformationUpdate(id=new_transformation.id).tags.add(["tharindu"]).tags.remove(["andres", "silva"])
+        )
+        partial_updated3 = cognite_client.transformations.update(partial_update3)
+        assert set(partial_updated3.tags) == set(["jaime", "tharindu"])
+
+    def test_filter_transformations_by_tags(self, cognite_client, new_transformation, other_transformation):
+        new_transformation.tags = ["hello"]
+        other_transformation.tags = ["hi", "kiki"]
+        cognite_client.transformations.update([new_transformation, other_transformation])
+        ts = cognite_client.transformations.list(tags=ContainsAny(["hello"]))
+        assert ts[0].id == new_transformation.id and ts[0].tags == ["hello"]
+        ts3 = cognite_client.transformations.list(tags=ContainsAny(["hello", "kiki"]))
+        assert len(ts3) == 2 and set([i.id for i in ts3]) == set([new_transformation.id, other_transformation.id])

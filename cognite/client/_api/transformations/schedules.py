@@ -150,7 +150,7 @@ class TransformationSchedulesAPI(APIClient):
 
         Args:
             id (Union[int, Sequence[int]): Id or list of ids
-            external_id (Union[str, Sequence[str]]): External ID or list of exgernal ids
+            external_id (Union[str, Sequence[str]]): External ID or list of external ids
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:

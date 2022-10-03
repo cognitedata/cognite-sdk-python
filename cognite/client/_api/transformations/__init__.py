@@ -9,6 +9,7 @@ from cognite.client.data_classes import Transformation, TransformationJob, Trans
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.data_classes.transformations import (
     NonceCredentials,
+    TagsFilter,
     TransformationFilter,
     TransformationPreviewResult,
     TransformationUpdate,
@@ -115,6 +116,7 @@ class TransformationsAPI(APIClient):
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
         data_set_ids: List[int] = None,
         data_set_external_ids: List[str] = None,
+        tags: Optional[TagsFilter] = None,
         limit: Optional[int] = 25,
     ) -> TransformationList:
         """`List all transformations. <https://docs.cognite.com/api/v1/#operation/getTransformations>`_
@@ -131,7 +133,7 @@ class TransformationsAPI(APIClient):
             last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
             data_set_ids (List[int]): Return only transformations in the specified data sets with these ids.
             data_set_external_ids (List[str]): Return only transformations in the specified data sets with these external ids.
-            cursor (str): Cursor for paging through results.
+            tags (TagsFilter): Return only the resource matching the specified tags constraints. It only supports ContainsAny as of now.
             limit (int): Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
 
         Returns:
@@ -163,6 +165,7 @@ class TransformationsAPI(APIClient):
             has_blocked_error=has_blocked_error,
             created_time=created_time,
             last_updated_time=last_updated_time,
+            tags=tags,
             data_set_ids=ds_ids,
         ).dump(camel_case=True)
         return self._list(
@@ -276,8 +279,10 @@ class TransformationsAPI(APIClient):
             item = item.copy()
             item._cognite_client = self._cognite_client
             item._process_credentials(keep_none=True)
-        else:
-            raise TypeError("item must be Sequence[Transformation] or Transformation")
+        elif not isinstance(item, TransformationUpdate):
+            raise TypeError(
+                "item must be Sequence[Transformation], Transformation, Sequence[TransformationUpdate] or TransformationUpdate"
+            )
 
         return self._update_multiple(
             list_cls=TransformationList, resource_cls=Transformation, update_cls=TransformationUpdate, items=item

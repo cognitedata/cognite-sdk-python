@@ -1,11 +1,10 @@
-import os
 from unittest import mock
 
 import dotenv
 import pytest
 import responses
 
-from cognite.client import CogniteClient
+from cognite.client import CogniteClient, global_config
 from cognite.client._api.assets import AssetsAPI
 from cognite.client._api.data_sets import DataSetsAPI
 from cognite.client._api.datapoints import DatapointsAPI
@@ -25,21 +24,11 @@ from cognite.client._api.three_d import (
     ThreeDRevisionsAPI,
 )
 from cognite.client._api.time_series import TimeSeriesAPI
-from tests.utils import BASE_URL
+from cognite.client._api.vision import VisionAPI
 
 dotenv.load_dotenv()
 
-
-@pytest.fixture
-def rsps_with_login_mock():
-    with responses.RequestsMock() as rsps:
-        rsps.add(
-            rsps.GET,
-            BASE_URL + "/login/status",
-            status=200,
-            json={"data": {"project": "test", "loggedIn": True, "user": "bla", "projectId": "bla", "apiKeyId": 1}},
-        )
-        yield rsps
+global_config.disable_pypi_version_check = True
 
 
 @pytest.fixture
@@ -66,6 +55,7 @@ def mock_cognite_client():
         cog_client_mock.sequences = mock.MagicMock(spec=SequencesAPI)
         cog_client_mock.sequences.data = mock.MagicMock(spec=SequencesDataAPI)
         cog_client_mock.relationships = mock.MagicMock(spec=RelationshipsAPI)
+        cog_client_mock.vision = mock.MagicMock(spec=VisionAPI)
         raw_mock = mock.MagicMock(spec=RawAPI)
         raw_mock.databases = mock.MagicMock(spec=RawDatabasesAPI)
         raw_mock.tables = mock.MagicMock(spec=RawTablesAPI)
@@ -92,9 +82,10 @@ def rsps():
 
 @pytest.fixture
 def disable_gzip():
-    os.environ["COGNITE_DISABLE_GZIP"] = "1"
+    old = global_config.disable_gzip
+    global_config.disable_gzip = True
     yield
-    del os.environ["COGNITE_DISABLE_GZIP"]
+    global_config.disable_gzip = old
 
 
 def pytest_addoption(parser):

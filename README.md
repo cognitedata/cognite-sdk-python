@@ -5,46 +5,50 @@
 Cognite Python SDK
 ==========================
 [![build](https://github.com/cognitedata/cognite-sdk-python/workflows/release/badge.svg)](https://github.com/cognitedata/cognite-sdk-python/actions?query=workflow:release)
+[![Downloads](https://img.shields.io/pypi/dm/cognite-sdk)](https://pypistats.org/packages/cognite-sdk)
+[![GitHub](https://img.shields.io/github/license/cognitedata/cognite-sdk-python)](https://github.com/cognitedata/cognite-sdk-python/blob/master/LICENSE)
 [![codecov](https://codecov.io/gh/cognitedata/cognite-sdk-python/branch/master/graph/badge.svg)](https://codecov.io/gh/cognitedata/cognite-sdk-python)
-[![Documentation Status](https://readthedocs.com/projects/cognite-sdk-python/badge/?version=latest)](https://cognite-docs.readthedocs-hosted.com/en/latest/)
+[![Documentation Status](https://readthedocs.com/projects/cognite-sdk-python/badge/?version=latest)](https://cognite-sdk-python.readthedocs-hosted.com/en/latest/)
 [![PyPI version](https://badge.fury.io/py/cognite-sdk.svg)](https://pypi.org/project/cognite-sdk/)
+[![mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
 This is the Cognite Python SDK for developers and data scientists working with Cognite Data Fusion (CDF). 
 The package is tightly integrated with pandas, and helps you work easily and efficiently with data in Cognite Data 
 Fusion (CDF).
 
-## Documentation
-* [SDK Documentation](https://cognite-docs.readthedocs-hosted.com/en/latest/)
-* [API Documentation](https://doc.cognitedata.com/)
+## Refererence documentation
+* [SDK Documentation](https://cognite-sdk-python.readthedocs-hosted.com/en/latest/)
+* [CDF API Documentation](https://doc.cognitedata.com/)
 * [Cognite Developer Documentation](https://docs.cognite.com/dev/)
-
-## Prerequisites
-In order to start using the Python SDK, you need
-- Python3 (>= 3.8) and pip
-- An API key. Never include the API key directly in the code or upload the key to github. Instead, set the API key as an environment variable. See the usage example for how to authenticate with the API key.
-
-This is how you set the API key as an environment variable on Mac OS and Linux:
-```bash
-$ export COGNITE_API_KEY=<your API key>
-```
-
-On Windows, you can follows [these instructions](https://www.computerhope.com/issues/ch000549.htm) to set the API key as an environment variable.
 
 ## Installation
 
-### without pandas or geopandas support
+### Without any optional dependencies
 
 To install this package without pandas and geopandas support:
 ```bash
 $ pip install cognite-sdk
 ```
 
-### with pandas and geopandas support
+### With optional dependencies
+A number of optional dependencies may be specified in order to support a wider set of features.
+The available extras (along with the libraries they include) are:
+- pandas `[pandas]`
+- geo `[geopandas, shapely]`
+- sympy `[sympy]`
+- functions `[pip]`
+- all `[pandas, geopandas, shapely, sympy, pip]`
 
-To install with pandas, geopandas and shapely support.
+To include optional dependencies, specify them like this with pip:
+
 ```bash
 $ pip install cognite-sdk[pandas, geo]
+```
+
+or like this if you are using poetry:
+```bash
+$ poetry add cognite-sdk -E pandas -E geo
 ```
 
 ### Windows specific
@@ -59,10 +63,6 @@ conda activate geo_env
 conda install --channel conda-forge geopandas
 pip install cognite-sdk
 ```
-
-## Examples
-For a collection of scripts and Jupyter Notebooks that explain how to perform various tasks in Cognite Data Fusion (CDF) 
-using Python, see the GitHub repository [here](https://github.com/cognitedata/cognite-python-docs)
 
 ## Changelog
 Wondering about upcoming or previous changes to the SDK? Take a look at the [CHANGELOG](https://github.com/cognitedata/cognite-sdk-python/blob/master/CHANGELOG.md).

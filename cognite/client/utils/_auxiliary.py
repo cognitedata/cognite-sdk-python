@@ -19,8 +19,8 @@ from typing import Any, Dict, List, Sequence, Tuple, Union
 from urllib.parse import quote
 
 import cognite.client
-from cognite.client import utils
 from cognite.client.exceptions import CogniteImportError
+from cognite.client.utils._version_checker import get_newest_version_in_major_release
 
 
 @functools.lru_cache(maxsize=128)
@@ -113,13 +113,14 @@ def get_user_agent() -> str:
 
 
 def _check_client_has_newest_major_version() -> None:
-    this_version = utils._auxiliary.get_current_sdk_version()
-    newest_version = utils._version_checker.get_newest_version_in_major_release("cognite-sdk", this_version)
-    if newest_version != this_version:
+    version = get_current_sdk_version()
+    newest_version = get_newest_version_in_major_release("cognite-sdk", version)
+    if newest_version != version:
         warnings.warn(
-            "You are using version {} of the SDK, however version {} is available. "
-            "Upgrade or set the environment variable 'COGNITE_DISABLE_PYPI_VERSION_CHECK' to suppress this "
-            "warning.".format(this_version, newest_version),
+            f"You are using {version=} of the SDK, however version='{newest_version}' is available. "
+            "To suppress this warning, either upgrade or do the following:\n"
+            ">>> from cognite.client.config import global_config\n"
+            ">>> global_config.disable_pypi_version_check = True",
             stacklevel=3,
         )
 

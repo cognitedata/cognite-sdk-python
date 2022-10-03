@@ -15,13 +15,30 @@ jobs:
 
       - name: Install required dependencies
         run: |
-          python3 -m pip install --upgrade pip poetry
+          python3 -m pip install --upgrade pip "poetry<1.2.0"
           poetry config virtualenvs.create false
           poetry install
 
       - name: Linting and static code checks
         run: |
           pre-commit run --all-files
+
+  build_docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+
+      - name: Install core dependencies
+        run: |
+          python3 -m pip install --upgrade pip "poetry<1.2.0"
+          poetry config virtualenvs.create false
+          poetry install
+
+      - name: Build docs
+        run: cd docs && make html SPHINXOPTS="-W --keep-going"
 
   test_core:
     runs-on: ubuntu-latest
@@ -33,21 +50,12 @@ jobs:
 
     - name: Install core dependencies
       run: |
-        python3 -m pip install --upgrade pip poetry
+        python3 -m pip install --upgrade pip "poetry<1.2.0"
         poetry config virtualenvs.create false
         poetry install
 
     - name: Test core
       env:
-          LOGIN_FLOW: client_credentials
-          COGNITE_CLIENT_SECRET: ${{ secrets.COGNITE_CLIENT_SECRET }}
-          COGNITE_TOKEN_URL: https://login.microsoftonline.com/dff7763f-e2f5-4ffd-9b8a-4ba4bafba5ea/oauth2/v2.0/token
-          COGNITE_TOKEN_SCOPES: https://greenfield.cognitedata.com/.default
-          COGNITE_CLIENT_ID: 14fd282e-f77a-457d-add5-928ec2bcbf04
-          COGNITE_PROJECT: python-sdk-test
-          COGNITE_BASE_URL: https://greenfield.cognitedata.com
-          COGNITE_CLIENT_NAME: python-sdk-integration-tests
-          COGNITE_DISABLE_PYPI_VERSION_CHECK: 1
           CI: 1
       run: pytest tests/tests_unit -n8 --dist loadscope --maxfail 10 -m 'not dsl' --test-deps-only-core
 
@@ -61,7 +69,7 @@ jobs:
 
     - name: Install full dependencies
       run: |
-        python3 -m pip install --upgrade pip poetry
+        python3 -m pip install --upgrade pip "poetry<1.2.0"
         poetry config virtualenvs.create false
         poetry install -E all
 
@@ -75,10 +83,9 @@ jobs:
         COGNITE_PROJECT: python-sdk-test
         COGNITE_BASE_URL: https://greenfield.cognitedata.com
         COGNITE_CLIENT_NAME: python-sdk-integration-tests
-        COGNITE_DISABLE_PYPI_VERSION_CHECK: 1
         CI: 1
       run: |
-        pytest tests --cov --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2
+        pytest tests --durations=10 --cov --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2
 
     - uses: codecov/codecov-action@v3
       with:
@@ -87,6 +94,3 @@ jobs:
 
     - name: Build package
       run: poetry build
-
-    - name: Build docs
-      run: cd docs && make html SPHINXOPTS="-W --keep-going"

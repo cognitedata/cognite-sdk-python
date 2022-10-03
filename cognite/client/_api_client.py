@@ -1,7 +1,7 @@
+import functools
 import gzip
 import json as _json
 import logging
-import os
 import re
 from collections import UserList
 from json.decoder import JSONDecodeError
@@ -31,7 +31,8 @@ from requests import Response
 from requests.structures import CaseInsensitiveDict
 
 from cognite.client import utils
-from cognite.client._http_client import GLOBAL_REQUEST_SESSION, HTTPClient, HTTPClientConfig
+from cognite.client._http_client import HTTPClient, HTTPClientConfig, get_global_requests_session
+from cognite.client.config import ClientConfig, global_config
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteResource,
@@ -54,74 +55,53 @@ class APIClient:
     _RESOURCE_PATH: str
 
     # TODO: This following set should be generated from the openapi spec somehow.
-    RETRYABLE_POST_ENDPOINTS = {
-        "/assets/list",
-        "/assets/byids",
-        "/assets/search",
-        "/events/list",
-        "/events/byids",
-        "/events/search",
-        "/files/list",
-        "/files/byids",
-        "/files/search",
-        "/files/downloadlink",
-        "/timeseries/byids",
-        "/timeseries/search",
-        "/timeseries/list",
-        "/timeseries/data",
-        "/timeseries/data/list",
-        "/timeseries/data/latest",
-        "/timeseries/data/delete",
-        "/sequences/byids",
-        "/sequences/search",
-        "/sequences/data",
-        "/sequences/data/list",
-        "/sequences/data/delete",
-        "/datasets/list",
-        "/datasets/aggregate",
-        "/datasets/byids",
-        "/relationships/list",
-        "/relationships/byids",
-        "/context/entitymatching/byids",
-        "/context/entitymatching/list",
-        "/context/entitymatching/jobs",
-        "/sessions/revoke",
+    _RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS = {
+        "^" + path + "(\?.*)?$"
+        for path in (
+            "/(assets|events|files|timeseries|sequences|datasets|relationships)/(list|byids|search|aggregate)",
+            "/files/downloadlink",
+            "/timeseries/data",
+            "/timeseries/data/(list|latest|delete)",
+            "/sequences/data",
+            "/sequences/data/(list|delete)",
+            "/raw/dbs/[^/]+/tables/[^/]+",
+            "/context/entitymatching/(byids|list|jobs)",
+            "/sessions/revoke",
+        )
     }
 
     def __init__(
-        self, config: utils._client_config.ClientConfig, api_version: str = None, cognite_client: "CogniteClient" = None
+        self, config: ClientConfig, api_version: Optional[str] = None, cognite_client: "CogniteClient" = None
     ) -> None:
         self._config = config
         self._api_version = api_version
         self._api_subversion = config.api_subversion
         self._cognite_client = cognite_client
 
-        session = GLOBAL_REQUEST_SESSION
-        if self._config.proxies is not None:
-            session.proxies.update(self._config.proxies)
+        session = get_global_requests_session()
 
         self._http_client = HTTPClient(
             config=HTTPClientConfig(
                 status_codes_to_retry={429},
                 backoff_factor=0.5,
-                max_backoff_seconds=config.max_retry_backoff,
-                max_retries_total=self._config.max_retries,
+                max_backoff_seconds=global_config.max_retry_backoff,
+                max_retries_total=global_config.max_retries,
                 max_retries_read=0,
-                max_retries_connect=self._config.max_retries,
-                max_retries_status=self._config.max_retries,
+                max_retries_connect=global_config.max_retries,
+                max_retries_status=global_config.max_retries,
             ),
             session=session,
         )
 
         self._http_client_with_retry = HTTPClient(
             config=HTTPClientConfig(
-                status_codes_to_retry=self._config.status_forcelist,
+                status_codes_to_retry=global_config.status_forcelist,
                 backoff_factor=0.5,
-                max_backoff_seconds=config.max_retry_backoff,
-                max_retries_total=self._config.max_retries,
-                max_retries_read=self._config.max_retries,
-                max_retries_connect=self._config.max_retries,
-                max_retries_status=self._config.max_retries,
+                max_backoff_seconds=global_config.max_retry_backoff,
+                max_retries_total=global_config.max_retries,
+                max_retries_read=global_config.max_retries,
+                max_retries_connect=global_config.max_retries,
+                max_retries_status=global_config.max_retries,
             ),
             session=session,
         )
@@ -177,7 +157,7 @@ class APIClient:
                     ) from None
                 raise
             kwargs["data"] = data
-            if method in ["PUT", "POST"] and not os.getenv("COGNITE_DISABLE_GZIP", False):
+            if method in ["PUT", "POST"] and not global_config.disable_gzip:
                 kwargs["data"] = gzip.compress(data.encode())
                 headers["Content-Encoding"] = "gzip"
 
@@ -204,14 +184,8 @@ class APIClient:
     def _configure_headers(self, additional_headers: Dict[str, str]) -> MutableMapping[str, Any]:
         headers: MutableMapping[str, Any] = CaseInsensitiveDict()
         headers.update(requests.utils.default_headers())
-        if self._config.token is None:
-            headers["api-key"] = self._config.api_key
-        elif isinstance(self._config.token, str):
-            headers["Authorization"] = "Bearer {}".format(self._config.token)
-        elif callable(self._config.token):
-            headers["Authorization"] = "Bearer {}".format(self._config.token())
-        else:
-            raise TypeError("'token' must be str, Callable, or None.")
+        auth_header_name, auth_header_value = self._config.credentials.authorization_header()
+        headers[auth_header_name] = auth_header_value
         headers["content-type"] = "application/json"
         headers["accept"] = "application/json"
         headers["x-cdp-sdk"] = "CognitePythonSDK:{}".format(utils._auxiliary.get_current_sdk_version())
@@ -238,19 +212,29 @@ class APIClient:
 
     def _is_retryable(self, method: str, path: str) -> bool:
         valid_methods = ["GET", "POST", "PUT", "DELETE", "PATCH"]
-        match = re.match(
-            r"(?:http|https)://[a-z\d.:\-]+(?:/api/(?:v1|playground)/projects/[^/]+)?(/[^\?]+)?(\?.+)?", path
-        )
-        if not match:
-            raise ValueError("Path {} is not valid. Cannot resolve whether or not it is retryable".format(path))
+
         if method not in valid_methods:
             raise ValueError("Method {} is not valid. Must be one of {}".format(method, valid_methods))
-        path_end = match.group(1)
 
         if method in ["GET", "PUT", "PATCH"]:
             return True
-        if method == "POST" and path_end in self.RETRYABLE_POST_ENDPOINTS:
+        if method == "POST" and self._url_is_retryable(path):
             return True
+        return False
+
+    @classmethod
+    @functools.lru_cache(64)
+    def _url_is_retryable(cls, url: str) -> bool:
+        valid_url_pattern = (
+            r"^(?:http|https)://[a-z\d.:\-]+(?:/api/(?:v1|playground)/projects/[^/]+)?((/[^\?]+)?(\?.+)?)"
+        )
+        match = re.match(valid_url_pattern, url)
+        if not match:
+            raise ValueError("URL {} is not valid. Cannot resolve whether or not it is retryable".format(url))
+        path = match.group(1)
+        for pattern in cls._RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS:
+            if re.match(pattern, path):
+                return True
         return False
 
     def _retrieve(
