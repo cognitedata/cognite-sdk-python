@@ -167,7 +167,7 @@ class TestCogniteResource:
         expected_df.loc["md_key"] = ["md_value"]
 
         res = SomeResource([1, 2, 3], {"x": "y"}, {"md_key": "md_value"}, {"bla": "bla"}, "abc", 1)
-        actual_df = res.to_pandas(expand=["obExpand"], ignore=["primIgnore", "obIgnore"])
+        actual_df = res.to_pandas(expand=["obExpand"], ignore=["primIgnore", "obIgnore"], camel_case=True)
         pd.testing.assert_frame_equal(expected_df, actual_df, check_like=True)
         res.to_pandas()
 
@@ -209,7 +209,7 @@ class TestCogniteResourceList:
 
         resource_list = MyResourceList([MyResource(1), MyResource(2, 3)])
         expected_df = pd.DataFrame({"varA": [1, 2], "varB": [None, 3]})
-        pd.testing.assert_frame_equal(resource_list.to_pandas(), expected_df)
+        pd.testing.assert_frame_equal(resource_list.to_pandas(camel_case=True), expected_df)
 
     @pytest.mark.dsl
     def test_to_pandas_no_camels(self):

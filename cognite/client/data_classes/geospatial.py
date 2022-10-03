@@ -178,7 +178,7 @@ def _to_feature_property_name(property_name: str) -> str:
 class FeatureList(CogniteResourceList):
     _RESOURCE = Feature
 
-    def to_geopandas(self, geometry: str, camel_case: bool = True) -> "geopandas.GeoDataFrame":  # noqa: F821
+    def to_geopandas(self, geometry: str, camel_case: bool = False) -> "geopandas.GeoDataFrame":  # noqa: F821
         """Convert the instance into a GeoPandas GeoDataFrame.
 
         Args:
@@ -206,8 +206,7 @@ class FeatureList(CogniteResourceList):
         wkt = cast(Any, utils._auxiliary.local_import("shapely.wkt"))
         df[geometry] = df[geometry].apply(lambda g: wkt.loads(g["wkt"]))
         geopandas = cast(Any, utils._auxiliary.local_import("geopandas"))
-        gdf = geopandas.GeoDataFrame(df, geometry=geometry)
-        return gdf
+        return geopandas.GeoDataFrame(df, geometry=geometry)
 
     @staticmethod
     def from_geopandas(

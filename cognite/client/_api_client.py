@@ -894,7 +894,7 @@ class APIClient:
     @staticmethod
     def _sanitize_headers(headers: Optional[Dict]) -> None:
         if headers is None:
-            return
+            return None
         if "api-key" in headers:
             headers["api-key"] = "***"
         if "Authorization" in headers:

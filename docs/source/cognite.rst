@@ -68,46 +68,7 @@ Limits for listing resources default to 25, so the following code will return th
 
     >>> from cognite.client import CogniteClient
     >>> c = CogniteClient()
-    >>> ts_list = c.time_series.list(include_metadata=False)
-
-Plot time series
-----------------
-There are several ways of plotting a time series you have fetched from the API. The easiest is to call
-:code:`.plot()` on the returned :code:`TimeSeries` or :code:`TimeSeriesList` objects. By default, this plots the raw
-data points for the last 24 hours. If there are no data points for the last 24 hours, :code:`plot` will throw an exception.
-
-.. code:: python
-
-    >>> from cognite.client import CogniteClient
-    >>> c = CogniteClient()
-    >>> my_time_series = c.time_series.retrieve(id=<time-series-id>)
-    >>> my_time_series.plot()
-
-You can also pass arguments to the :code:`.plot()` method to change the start, end, aggregates, and granularity of the
-request.
-
-.. code:: python
-
-    >>> my_time_series.plot(start="365d-ago", end="now", aggregates=["average"], granularity="1d")
-
-The :code:`Datapoints` and :code:`DatapointsList` objects that are returned when you fetch data points, also have :code:`.plot()`
-methods you can use to plot the data.
-
-.. code:: python
-
-    >>> from cognite.client import CogniteClient
-    >>> c = CogniteClient()
-    >>> my_datapoints = c.datapoints.retrieve(
-    ...                     id=[<time-series-ids>],
-    ...                     start="10d-ago",
-    ...                     end="now",
-    ...                     aggregates=["max"],
-    ...                     granularity="1h"
-    ...                 )
-    >>> my_datapoints.plot()
-
-.. NOTE::
-    To use the :code:`.plot()` functionality you need to install :code:`matplotlib`.
+    >>> ts_list = c.time_series.list()
 
 Create an asset hierarchy
 -------------------------
@@ -237,26 +198,16 @@ You can use the :code:`.to_pandas()` method on pretty much any object and get a 
 
 This is particularly useful when you are working with time series data and with tabular data from the Raw API.
 
-Matplotlib integration
-----------------------
-You can use the :code:`.plot()` method on any time series or data points result that the SDK returns. The method takes keyword
-arguments which are passed on to the underlying matplotlib plot function, allowing you to configure for example the
-size and layout of your plots.
-
-You need to install the matplotlib package manually:
-
-.. code:: bash
-
-    $ pip install matplotlib
-
 How to install extra dependencies
 ---------------------------------
-If your application requires the functionality from e.g. the :code:`pandas`, :code:`numpy`, or :code:`geopandas` dependencies,
-you should install the sdk along with its optional dependencies. The available extras are:
+If your application requires the functionality from e.g. the :code:`pandas`, :code:`sympy`, or :code:`geopandas` dependencies,
+you should install the SDK along with its optional dependencies. The available extras are:
 
-- pandas
-- geo
-- sympy
+- numpy: numpy
+- pandas: pandas
+- geo: geopanda, shapely
+- sympy: sympy
+- functions: pip
 - all (will install dependencies for all the above)
 
 These can be installed with the following command:
@@ -655,10 +606,6 @@ Retrieve datapoints
 Retrieve pandas dataframe
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve_dataframe
-
-Retrieve pandas dataframes indexed by aggregate
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve_dataframe_dict
 
 Perform data points queries
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1115,12 +1062,12 @@ Start an asynchronous job to extract information from image files stored in CDF:
     >>> from cognite.client.data_classes.contextualization import VisionFeature
     >>> c = CogniteClient()
     >>> extract_job = c.vision.extract(
-    ...     features=[VisionFeature.ASSET_TAG_DETECTION, VisionFeature.PEOPLE_DETECTION], 
+    ...     features=[VisionFeature.ASSET_TAG_DETECTION, VisionFeature.PEOPLE_DETECTION],
     ...     file_ids=[1, 2],
     ... )
 
 
-The returned job object, :code:`extract_job`, can be used to retrieve the status of the job and the prediction results once the job is completed. 
+The returned job object, :code:`extract_job`, can be used to retrieve the status of the job and the prediction results once the job is completed.
 Wait for job completion and get the parsed results:
 
 .. code:: python
@@ -1136,8 +1083,8 @@ Save the prediction results in CDF as `Annotations <https://docs.cognite.com/api
 
     >>> extract_job.save_predictions()
 
-.. note:: 
-    Prediction results are stored in CDF as `Annotations <https://docs.cognite.com/api/v1/#tag/Annotations>`_ using the :code:`images.*` annotation types. In particular, text detections are stored as :code:`images.TextRegion`, asset tag detections are stored as :code:`images.AssetLink`, while other detections are stored as :code:`images.ObjectDetection`.    
+.. note::
+    Prediction results are stored in CDF as `Annotations <https://docs.cognite.com/api/v1/#tag/Annotations>`_ using the :code:`images.*` annotation types. In particular, text detections are stored as :code:`images.TextRegion`, asset tag detections are stored as :code:`images.AssetLink`, while other detections are stored as :code:`images.ObjectDetection`.
 
 Tweaking the parameters of a feature extractor:
 
@@ -1490,7 +1437,7 @@ Run transformations by id
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.transformations.TransformationsAPI.run
 .. automethod:: cognite.client._api.transformations.TransformationsAPI.run_async
-    
+
 Preview transformations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.transformations.TransformationsAPI.preview
