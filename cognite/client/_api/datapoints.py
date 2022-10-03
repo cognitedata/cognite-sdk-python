@@ -566,10 +566,11 @@ class DatapointsAPI(APIClient):
 
     def retrieve(
         self,
-        start: Union[int, str, datetime, None] = None,
-        end: Union[int, str, datetime, None] = None,
+        *,
         id: Optional[DatapointsIdTypes] = None,
         external_id: Optional[DatapointsExternalIdTypes] = None,
+        start: Union[int, str, datetime, None] = None,
+        end: Union[int, str, datetime, None] = None,
         aggregates: Optional[List[str]] = None,
         granularity: Optional[str] = None,
         limit: Optional[int] = None,
@@ -699,10 +700,11 @@ class DatapointsAPI(APIClient):
 
     def retrieve_arrays(
         self,
-        start: Union[int, str, datetime, None] = None,
-        end: Union[int, str, datetime, None] = None,
+        *,
         id: Optional[DatapointsIdTypes] = None,
         external_id: Optional[DatapointsExternalIdTypes] = None,
+        start: Union[int, str, datetime, None] = None,
+        end: Union[int, str, datetime, None] = None,
         aggregates: Optional[List[str]] = None,
         granularity: Optional[str] = None,
         limit: Optional[int] = None,
@@ -796,10 +798,11 @@ class DatapointsAPI(APIClient):
 
     def retrieve_dataframe(
         self,
-        start: Union[int, str, datetime, None] = None,
-        end: Union[int, str, datetime, None] = None,
+        *,
         id: Optional[DatapointsIdTypes] = None,
         external_id: Optional[DatapointsExternalIdTypes] = None,
+        start: Union[int, str, datetime, None] = None,
+        end: Union[int, str, datetime, None] = None,
         aggregates: Optional[List[str]] = None,
         granularity: Optional[str] = None,
         limit: Optional[int] = None,
