@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [4.9.0] - 2022-10-04
+### Added
+- Add support for extraction pipeline configuration files
+
 ## [4.8.0] - 2022-09-30
 ### Added
 - Add operations for geospatial rasters
