@@ -9,7 +9,6 @@ import pytest
 from cognite.client._api.datapoint_tasks import _SingleTSQueryValidator, dps_container, subtask_lst
 from cognite.client.data_classes import DatapointsQuery
 from cognite.client.utils._auxiliary import random_string
-from cognite.client.utils._time import timestamp_to_ms
 from tests.utils import random_aggregates, random_cognite_ids, random_gamma_dist_integer, random_granularity
 
 
@@ -142,10 +141,8 @@ class TestSingleTSQueryValidator:
             (123, None),
             (-123, "now"),
             (-123, -12),
-            ("now", 2 * timestamp_to_ms("now")),
             (1, datetime.now()),
             (1, datetime.now(timezone.utc)),
-            (datetime.utcnow(), 2 * timestamp_to_ms("now")),
         ),
     )
     def test_function__verify_time_range__valid_inputs(self, start, end):
@@ -165,7 +162,6 @@ class TestSingleTSQueryValidator:
             (None, 0),
             ("now", -123),
             ("now", 123),
-            (2 * timestamp_to_ms("now"), "now"),
             (datetime.now(), 123),
             (datetime.now(timezone.utc), 123),
         ),

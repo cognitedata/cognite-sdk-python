@@ -1,4 +1,5 @@
 import platform
+import re
 import time
 from datetime import datetime, timezone
 from unittest import mock
@@ -49,7 +50,12 @@ class TestDatetimeToMs:
         utc = timezone.utc
         assert ms_to_datetime(1517356800000) == datetime(2018, 1, 31, tzinfo=utc)
         assert ms_to_datetime(1517397071000) == datetime(2018, 1, 31, 11, 11, 11, tzinfo=utc)
-        with pytest.raises(ValueError, match="greater than"):
+        assert ms_to_datetime(MIN_TIMESTAMP_MS) == datetime(1900, 1, 1, 0, 0, tzinfo=utc)
+        assert ms_to_datetime(MAX_TIMESTAMP_MS) == datetime(2050, 12, 31, 23, 59, 59, 999000, tzinfo=utc)
+        with pytest.raises(
+            ValueError,
+            match=re.escape("Input ms=-59008867200000 does not satisfy: -2208988800000 <= ms <= 2556143999999"),
+        ):
             ms_to_datetime(-59008867200000)
         with pytest.raises(TypeError):
             ms_to_datetime(None)
