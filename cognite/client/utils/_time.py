@@ -33,7 +33,7 @@ def ms_to_datetime(ms: Union[int, float]) -> datetime:
         datetime: Aware datetime object in UTC.
     """
     if not (MIN_TIMESTAMP_MS <= ms <= MAX_TIMESTAMP_MS):
-        raise ValueError(f"`ms` does not satisfy: {MIN_TIMESTAMP_MS} <= ms <= {MAX_TIMESTAMP_MS}")
+        raise ValueError(f"Input {ms=} does not satisfy: {MIN_TIMESTAMP_MS} <= ms <= {MAX_TIMESTAMP_MS}")
 
     # Note: We don't use fromtimestamp because it typically fails for negative values on Windows
     return datetime(1970, 1, 1, tzinfo=timezone.utc) + timedelta(milliseconds=ms)
