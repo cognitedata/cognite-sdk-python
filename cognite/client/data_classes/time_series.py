@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
 
 from cognite.client.data_classes._base import (
