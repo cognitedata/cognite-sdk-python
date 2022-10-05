@@ -55,8 +55,8 @@ YEAR_MS = {
     2014: 1388534400000,
     2020: 1577836800000,
 }
-DPS_TYPES = [Datapoints, DatapointsArray]
-DPS_LST_TYPES = [DatapointsList, DatapointsArrayList]
+DPS_TYPES = (Datapoints, DatapointsArray)
+DPS_LST_TYPES = (DatapointsList, DatapointsArrayList)
 
 # To avoid the error "different tests were collected between...", we must make sure all parallel test-runners
 # generate the same tests (randomized test data). We also want different random values over time (...thats the point),
@@ -145,13 +145,13 @@ def convert_any_ts_to_integer(ts):
 
 
 def validate_raw_datapoints_lst(ts_lst, dps_lst, **kw):
-    assert isinstance(dps_lst, (DatapointsList, DatapointsArrayList)), "Datapoints(Array)List not given"
+    assert isinstance(dps_lst, DPS_LST_TYPES), "Datapoints(Array)List not given"
     for ts, dps in zip(ts_lst, dps_lst):
         validate_raw_datapoints(ts, dps, **kw)
 
 
 def validate_raw_datapoints(ts, dps, check_offset=True, check_delta=True):
-    assert isinstance(dps, (Datapoints, DatapointsArray)), "Datapoints(Array) not given"
+    assert isinstance(dps, DPS_TYPES), "Datapoints(Array) not given"
     # Convert both dps types to arrays for simple comparisons:
     # (also convert string datapoints - which are also integers)
     values = np.array(dps.value, dtype=np.int64)
@@ -878,6 +878,49 @@ class TestRetrieveAggregateDatapointsAPI:
             assert df[f"{xid}|average"].notna().all()
 
 
+class TestRetrieveMixedRawAndAgg:
+    def test_multiple_settings_for_ignore_unknown_ids(
+        self,
+        ms_bursty_ts,
+        one_mill_dps_ts,
+        retrieve_endpoints,
+    ):
+        ts_num, ts_str = one_mill_dps_ts
+        for endpoint, exp_res_lst_type in zip(retrieve_endpoints, DPS_LST_TYPES):
+            random_xids = random_cognite_external_ids(3)
+            res_lst = endpoint(
+                ignore_unknown_ids=False,  # The key test ingredient
+                external_id=[
+                    ts_str.external_id,
+                    *[
+                        {"external_id": xid, "ignore_unknown_ids": True}  # Override ignore_unknown_ids default
+                        for xid in random_xids
+                    ],
+                ],
+                id=[
+                    {"id": ms_bursty_ts.id, "include_outside_points": True, "limit": 20},
+                    {"id": ts_num.id, "granularity": random_granularity("sm"), "aggregates": random_aggregates(2)},
+                ],
+                limit=5,
+            )
+            assert isinstance(res_lst, exp_res_lst_type)
+            assert len(res_lst) == 3
+            assert res_lst.get(external_id=random_xids[0]) is None
+            dps_xid = res_lst.get(external_id=ts_str.external_id)
+            assert isinstance(dps_xid, exp_res_lst_type._RESOURCE)
+            dps_id = res_lst.get(id=ts_num.id)
+            assert isinstance(dps_id, exp_res_lst_type._RESOURCE)
+
+    def test_query_no_ts_exists(self, retrieve_endpoints):
+        for endpoint, exp_res_lst_type in zip(retrieve_endpoints, DPS_LST_TYPES):
+            ts_id = random_cognite_ids(1)  # list of len 1
+            res_lst = endpoint(id=ts_id, ignore_unknown_ids=True)
+            assert isinstance(res_lst, exp_res_lst_type)
+            assert (
+                res_lst.get(id=ts_id[0]) is None
+            )  # SDK bug v<5, id mapping would not exist because no `.data` on res.lst.
+
+
 class TestRetrieveDataFrameAPI:
     """The `retrieve_dataframe` endpoint uses `retrieve_arrays` under the hood, so lots of tests
     do not need to be repeated.
@@ -1023,65 +1066,10 @@ class TestRetrieveDataFrameAPI:
             )
 
 
-class TestQueryDatapointsAPI:
-    @pytest.mark.parametrize(
-        "use_numpy, exp_res_lst_type",
-        (
-            (False, DatapointsList),
-            (True, DatapointsArrayList),
-        ),
-    )
-    def test_query_single(self, use_numpy, exp_res_lst_type, cognite_client, one_mill_dps_ts):
-        ts, _ = one_mill_dps_ts
-        query = DatapointsQuery(id=ts.id, limit=20)
-        res_lst = cognite_client.time_series.data.query(query, use_numpy=use_numpy)
-        assert isinstance(res_lst, exp_res_lst_type)
-        assert len(res_lst) == 1
-        assert res_lst.get(id=ts.id).external_id == ts.external_id
-
-    @pytest.mark.parametrize(
-        "use_numpy, exp_res_lst_type",
-        (
-            (False, DatapointsList),
-            (True, DatapointsArrayList),
-        ),
-    )
-    def test_query_multiple(self, use_numpy, exp_res_lst_type, cognite_client, ms_bursty_ts, one_mill_dps_ts):
-        ts_num, ts_str = one_mill_dps_ts
-        grans = random_granularity("sm")
-        aggs = random_aggregates(2)
-        query1 = DatapointsQuery(
-            ignore_unknown_ids=False,  # The key test ingredient
-            external_id=ts_str.external_id,
-            id={"id": ts_num.id, "include_outside_points": True},
-            limit=20,
-        )
-        query2 = DatapointsQuery(
-            ignore_unknown_ids=True,  # The key test ingredient
-            id={"id": ms_bursty_ts.id, "granularity": grans, "aggregates": aggs, "limit": 5},
-            external_id=random_cognite_external_ids(3),  # should be silently ignored
-        )
-        res_lst = cognite_client.time_series.data.query([query1, query2], use_numpy=use_numpy)
-        assert isinstance(res_lst, exp_res_lst_type)
-        assert len(res_lst) == 3
-
-    @pytest.mark.parametrize(
-        "use_numpy, exp_res_lst_type",
-        (
-            (False, DatapointsList),
-            (True, DatapointsArrayList),
-        ),
-    )
-    def test_query_no_ts_exists(self, use_numpy, exp_res_lst_type, cognite_client):
-        ts_id = random_cognite_ids(1)
-        query = DatapointsQuery(id=ts_id, ignore_unknown_ids=True)
-        res_lst = cognite_client.time_series.data.query(query, use_numpy=use_numpy)
-        assert res_lst.get(id=ts_id[0]) is None  # SDK bug v<5, id mapping would not exist
-
-
 @pytest.fixture
 def post_spy(cognite_client):
-    with patch.object(cognite_client.time_series.data, "_post", wraps=cognite_client.time_series.data._post):
+    dps_api = cognite_client.time_series.data
+    with patch.object(dps_api, "_post", wraps=dps_api._post):
         yield
 
 
