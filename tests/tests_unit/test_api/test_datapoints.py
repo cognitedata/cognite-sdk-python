@@ -8,7 +8,7 @@ from unittest.mock import patch
 import pytest
 
 from cognite.client._api.datapoints import DatapointsBin
-from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, DatapointsQuery
+from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList
 from cognite.client.exceptions import CogniteAPIError, CogniteDuplicateColumnsError, CogniteNotFoundError
 from cognite.client.utils._time import granularity_to_ms
 from tests.utils import jsgz_load
@@ -411,30 +411,6 @@ class TestGetDatapoints:
             body = jsgz_load(mock_get_datapoints.calls[i].request.body)
             assert len(body["items"]) == 1
             assert limit == body["items"][0]["limit"]
-
-
-class TestQueryDatapoints:
-    def test_query_single(self, cognite_client, mock_get_datapoints):
-        dps_res = cognite_client.time_series.data.query(query=DatapointsQuery(id=1, start=0, end=10000))
-        assert isinstance(dps_res, DatapointsList)
-        assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res[0])
-
-    def test_query_multiple(self, cognite_client, mock_get_datapoints):
-        dps_res_list = cognite_client.time_series.data.query(
-            query=[
-                DatapointsQuery(id=1, start=0, end=10000),
-                DatapointsQuery(external_id="2", start=10000, end=20000, aggregates=["average"], granularity="2s"),
-            ]
-        )
-        assert isinstance(dps_res_list, DatapointsList)
-        for dps_res in dps_res_list:
-            assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
-
-    def test_query_empty(self, cognite_client, mock_get_datapoints_empty):
-        dps_res = cognite_client.time_series.data.query(query=DatapointsQuery(id=1, start=0, end=10000))
-        assert isinstance(dps_res, DatapointsList)
-        assert 1 == len(dps_res)
-        assert 0 == len(dps_res[0])
 
 
 @pytest.fixture
