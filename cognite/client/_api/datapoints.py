@@ -71,14 +71,13 @@ TSQueryList = List[_SingleTSQueryBase]
 PoolSubtaskType = Tuple[int, float, float, SplittingFetchSubtask]
 
 
-def dps_fetch_selector(
-    dps_client: DatapointsAPI,
-    user_queries: Sequence[DatapointsQuery],
-) -> DpsFetchStrategy:
+def dps_fetch_selector(dps_client: DatapointsAPI, user_query: DatapointsQuery) -> DpsFetchStrategy:
     max_workers = dps_client._config.max_workers
     if max_workers < 1:  # Dps fetching does not use fn `execute_tasks_concurrently`, so we must check:
         raise RuntimeError(f"Invalid option for `{max_workers=}`. Must be at least 1")
-    all_queries, agg_queries, raw_queries = validate_and_split_user_queries(user_queries)
+
+    all_queries = _SingleTSQueryValidator(user_query).validate_and_create_single_queries()
+    agg_queries, raw_queries = split_queries_into_raw_and_aggs(all_queries)
 
     # Running mode is decided based on how many time series are requested VS. number of workers:
     if len(all_queries) <= max_workers:
@@ -89,18 +88,11 @@ def dps_fetch_selector(
     return ChunkingDpsFetcher(dps_client, all_queries, agg_queries, raw_queries, max_workers)
 
 
-def validate_and_split_user_queries(
-    user_queries: Sequence[DatapointsQuery],
-) -> Tuple[TSQueryList, TSQueryList, TSQueryList]:
+def split_queries_into_raw_and_aggs(all_queries: TSQueryList) -> Tuple[TSQueryList, TSQueryList]:
     split_qs: Tuple[TSQueryList, TSQueryList] = [], []
-    all_queries = list(
-        chain.from_iterable(
-            query.validate_and_create_single_queries() for query in map(_SingleTSQueryValidator, user_queries)
-        )
-    )
     for query in all_queries:
         split_qs[query.is_raw_query].append(query)
-    return (all_queries, *split_qs)
+    return split_qs
 
 
 class DpsFetchStrategy(ABC):
@@ -546,8 +538,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
             query.is_missing = query.identifier.as_tuple() not in not_missing
             if query.is_missing:
                 missing.add(query)
-                # We might be handling multiple simultaneous top-level queries, each with a
-                # different settings for "ignore unknown":
+                # Only raise for those time series that can't be missing (individually customisable parameter):
                 if not query.ignore_unknown_ids:
                     to_raise.add(query)
         agg_queries = [q for q in agg_queries if not q.is_missing]
@@ -582,7 +573,7 @@ class DatapointsAPI(APIClient):
         **Note**: All arguments are optional, as long as at least one identifier is given. When passing aggregates, granularity must also be given.
         When passing dict objects with specific parameters, these will take precedence. See examples below.
 
-        **Performance hint:**: For better performance and memory usage, consider using `retrieve_arrays(...)` which uses `numpy.ndarrays` for data storage.
+        **Performance hint:**: For better performance and lower memory usage, consider using `retrieve_arrays(...)` which uses `numpy.ndarrays` for data storage.
 
         Args:
             start (Union[int, str, datetime]): Inclusive start. Default: 1970-01-01 UTC.
@@ -621,11 +612,11 @@ class DatapointsAPI(APIClient):
                 ...    aggregates=["average"],
                 ...    granularity="1d")
 
-            Note that all parameters (except `ignore_unknown_ids`) can be individually set if you pass (one or more) dictionaries.
-            If you also pass top-level parameters, these will be overwritten by the individual parameters (when both exist). You are
-            free to mix ids and external ids.
+            Note that all parameters can be individually set if you pass (one or more) dictionaries (even `ignore_unknown_ids` which
+            is not supported by the official API). If you also pass top-level parameters, these will be overwritten by the individual parameters
+            (when both exist). You are free to mix any kind of ids and external ids: single identifiers, single dictionaries and (mixed) lists of these.
 
-            Let's say you want different aggregates and end-times for a few time series:
+            Let's say you want different aggregates and end-times for a few time series::
 
                 >>> dps = client.time_series.data.retrieve(
                 ...     id=[
@@ -638,15 +629,15 @@ class DatapointsAPI(APIClient):
 
             When requesting multiple time series, an easy way to get the datapoints of a specific one is to use the `.get` method
             on the returned `DatapointsList` object, then specify if you want `id` or `external_id`. Note: If you fetch a time series
-            by using `id`, you can still access it with its `external_id` (and the opposite way around)::
+            by using `id`, you can still access it with its `external_id` (and the opposite way around), if you know it::
 
                 >>> dps_lst = client.time_series.data.retrieve(
                 ...     id=[42, 43, ..., 500], start="2w-ago")
                 >>> ts_350 = dps_lst.get(id=350)  # `Datapoints` object
 
             ...but what happens if you request duplicate `id`s or `external_id`s? Let's say you need to fetch data from multiple
-            disconnected periods, e.g. stock data only from recessions. In this case the `.get` method will return a list of `Datapoints` instead,
-            (similar to how slicing works with non-unique indexes on Pandas DataFrames):
+            disconnected periods, e.g. stock prices only from recessions. In this case the `.get` method will return a list of `Datapoints`
+            instead (similar to how slicing works with non-unique indices on Pandas DataFrames)::
 
                 >>> dps_lst = client.time_series.data.retrieve(
                 ...     id=[
@@ -657,26 +648,26 @@ class DatapointsAPI(APIClient):
                 >>> ts_44 = dps_lst.get(id=44)  # Single `Datapoints` object
                 >>> ts_350_lst = dps_lst.get(id=350)  # List of two `Datapoints` objects
 
-            The last example showcases the great flexibility of the `retrieve` endpoint, with a very custom query. If you also want to
-            specify multiple values for `ignore_unknown_ids`, you'll need to use the `.query` endpoint.
+            The last example showcases the great flexibility of the `retrieve` endpoint, with a very custom query::
 
                 >>> ts1 = 1337
                 >>> ts2 = {
                 ...     "id": 42,
-                ...     "start": -12345,  # Overrides `start` argument below
+                ...     "start": -12345,  # Overrides `start` arg. below
                 ...     "end": "1h-ago",
-                ...     "limit": 1000,  # Overrides `limit` argument below
-                ...     "include_outside_points": True
+                ...     "limit": 1000,  # Overrides `limit` arg. below
+                ...     "include_outside_points": True,
                 ... }
                 >>> ts3 = {
                 ...     "id": 11,
                 ...     "end": "1h-ago",
                 ...     "aggregates": ["max"],
                 ...     "granularity": "42h",
-                ...     "include_outside_points": False
+                ...     "include_outside_points": False,
+                ...     "ignore_unknown_ids": True,  # Overrides `ignore_unknown_ids` arg. below
                 ... }
                 >>> dps = client.time_series.data.retrieve(
-                ...    id=[ts1, ts2, ts3], start="2w-ago", limit=None
+                ...    id=[ts1, ts2, ts3], start="2w-ago", limit=None, ignore_unknown_ids=False
                 ... )
         """
         query = DatapointsQuery(
@@ -690,7 +681,7 @@ class DatapointsAPI(APIClient):
             include_outside_points=include_outside_points,
             ignore_unknown_ids=ignore_unknown_ids,
         )
-        fetcher = dps_fetch_selector(self, user_queries=[query])
+        fetcher = dps_fetch_selector(self, user_query=query)
         dps_list = fetcher.fetch_all_datapoints(use_numpy=False)
         if not query.is_single_identifier:
             return dps_list
@@ -788,7 +779,7 @@ class DatapointsAPI(APIClient):
             include_outside_points=include_outside_points,
             ignore_unknown_ids=ignore_unknown_ids,
         )
-        fetcher = dps_fetch_selector(self, user_queries=[query])
+        fetcher = dps_fetch_selector(self, user_query=query)
         dps_list = fetcher.fetch_all_datapoints(use_numpy=True)
         if not query.is_single_identifier:
             return dps_list
@@ -889,7 +880,7 @@ class DatapointsAPI(APIClient):
             include_outside_points=include_outside_points,
             ignore_unknown_ids=ignore_unknown_ids,
         )
-        fetcher = dps_fetch_selector(self, user_queries=[query])
+        fetcher = dps_fetch_selector(self, user_query=query)
         if uniform_index:
             grans_given = set(q.granularity for q in fetcher.all_queries)
             is_limited = any(q.limit is not None for q in fetcher.all_queries)
@@ -907,63 +898,6 @@ class DatapointsAPI(APIClient):
         (granularity,) = grans_given
         # Pandas understand "Cognite granularities" except `m` (minutes) which we must translate:
         return df.reindex(pd.date_range(start=start, end=end, freq=granularity.replace("m", "T"), inclusive="left"))
-
-    @overload
-    def query(
-        self,
-        query: Union[Sequence[DatapointsQuery], DatapointsQuery],
-        use_numpy: Literal[False],
-    ) -> DatapointsList:
-        ...
-
-    @overload
-    def query(
-        self,
-        query: Union[Sequence[DatapointsQuery], DatapointsQuery],
-        use_numpy: Literal[True],
-    ) -> DatapointsArrayList:
-        ...
-
-    def query(
-        self,
-        query: Union[Sequence[DatapointsQuery], DatapointsQuery],
-        use_numpy: bool = False,
-    ) -> Union[DatapointsList, DatapointsArrayList]:
-        """Get datapoints for one or more time series by passing query objects directly.
-
-        **Note**: Before version 5.0.0, this method was the only way to retrieve datapoints easily with individual fetch settings.
-        This is no longer the case: `query` only differs from `retrieve` in that you can specify different values for `ignore_unknown_ids` for the multiple
-        query objects you pass, which is quite a niche feature. Since this is a boolean parameter, the only real use case is to pass exactly
-        two queries to this method; the "can be" missing and the "can't be" missing groups. If you do not need this functionality,
-        stick with the `retrieve` and `retrieve_arrays` endpoint.
-
-        Args:
-            query (Union[DatapointsQuery, Sequence[DatapointsQuery]): The queries for datapoints
-            use_numpy (bool): Override fetching method to take advantage of `numpy`. If True, returns `DatapointsArrayList` instead of `DatapointsList`. Default: False.
-
-        Returns:
-            Union[DatapointsList, DatapointsArrayList]: The requested datapoints. Note that you always get a single list of datapoints objects returned with type dictated
-            by the `use_numpy` argument. The order is the ids of the first query, then the external ids of the first query, then so on for the next queries.
-
-        Examples:
-
-            This method is useful if one group of one or more time series can be missing AND another, can't be missing::
-
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import DatapointsQuery
-                >>> c = CogniteClient()
-                >>> query1 = DatapointsQuery(id=[111, 222], start="2d-ago", end="now", ignore_unknown_ids=False)
-                >>> query2 = DatapointsQuery(external_id="foo", start=2900, end="now", ignore_unknown_ids=True)
-                >>> res_lst = c.time_series.data.query([query1, query2])
-
-            To return datapoints stored in `numpy` arrays, pass the `use_numpy` argument:
-
-                >>> res_arrays = c.time_series.data.query([query1, query2], use_numpy=True)
-        """
-        if isinstance(query, DatapointsQuery):
-            query = [query]
-        fetcher = dps_fetch_selector(self, user_queries=query)
-        return fetcher.fetch_all_datapoints(use_numpy=use_numpy)
 
     def retrieve_latest(
         self,
