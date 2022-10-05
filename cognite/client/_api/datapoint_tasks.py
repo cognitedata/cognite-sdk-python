@@ -109,18 +109,18 @@ class _SingleTSQueryValidator:
             id_or_xid = [id_or_xid]  # type: ignore [assignment]
 
         if not isinstance(id_or_xid, Sequence):
-            # We use Sequence which requires an odering of its iterable elements
+            # We use Sequence because we require an ordering of elements
             self._raise_on_wrong_ts_identifier_type(id_or_xid, arg_name, exp_type)
 
         queries = []
         for ts in id_or_xid:
             if isinstance(ts, exp_type):
-                # We merge 'defaults' and given ts-dict, ts-dict takes precedence:
                 ts_dct = {**self.defaults, arg_name: ts}
                 queries.append(self._validate_and_create_query(ts_dct))  # type: ignore [arg-type]
 
             elif isinstance(ts, dict):
                 ts_validated = self._validate_ts_query_dict_keys(ts, arg_name, exp_type)
+                # We merge 'defaults' and given ts-dict, ts-dict takes precedence:
                 ts_dct = {**self.defaults, **ts_validated}
                 queries.append(self._validate_and_create_query(ts_dct))  # type: ignore [arg-type]
             else:  # pragma: no cover
@@ -153,7 +153,15 @@ class _SingleTSQueryValidator:
         if not isinstance(ts_identifier, exp_type):
             _SingleTSQueryValidator._raise_on_wrong_ts_identifier_type(ts_identifier, arg_name, exp_type)
 
-        opt_dct_keys = {"start", "end", "aggregates", "granularity", "include_outside_points", "limit"}
+        opt_dct_keys = {
+            "start",
+            "end",
+            "aggregates",
+            "granularity",
+            "limit",
+            "include_outside_points",
+            "ignore_unknown_ids",
+        }
         bad_keys = set(dct) - opt_dct_keys - {arg_name}
         if not bad_keys:
             return dct  # type: ignore [return-value]
@@ -447,12 +455,12 @@ class DefaultSortedDict(SortedDict):
         return self[key]
 
 
-def dps_container() -> DefaultSortedDict:
+def create_dps_container() -> DefaultSortedDict:
     """Initialises a new sorted container for datapoints storage"""
     return DefaultSortedDict(list)
 
 
-def subtask_lst() -> SortedList:
+def create_subtask_lst() -> SortedList:
     """Initialises a new sorted list for subtasks"""
     return SortedList(key=op.attrgetter("subtask_idx"))
 
@@ -685,9 +693,9 @@ class BaseConcurrentTask:
         self.eager_mode = eager_mode
         self.use_numpy = use_numpy
         self.ts_info = None
-        self.ts_data = dps_container()
-        self.dps_data = dps_container()
-        self.subtasks = subtask_lst()
+        self.ts_data = create_dps_container()
+        self.dps_data = create_dps_container()
+        self.subtasks = create_subtask_lst()
         self.subtask_outside_points: Optional[OutsideDpsFetchSubtask] = None
         self.raw_dtype: Optional[type] = None
         self._is_done = False
@@ -939,8 +947,8 @@ class BaseConcurrentRawTask(BaseConcurrentTask):
                 self.dps_data[subtask_idx] = self.dps_data[subtask_idx][: j + 1]
                 # Remove later sublists (if any). We keep using DefaultSortedDicts due to the possibility of
                 # having to insert/add 'outside points' later:
-                (new_ts := dps_container()).update(self.ts_data.items()[: i + 1])  # type: ignore [index]
-                (new_dps := dps_container()).update(self.dps_data.items()[: i + 1])  # type: ignore [index]
+                (new_ts := create_dps_container()).update(self.ts_data.items()[: i + 1])  # type: ignore [index]
+                (new_dps := create_dps_container()).update(self.dps_data.items()[: i + 1])  # type: ignore [index]
                 self.ts_data, self.dps_data = new_ts, new_dps
                 return None
 
@@ -1018,7 +1026,7 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
         self.float_aggs = aggregates_cc[:]
         self.is_count_query = "count" in self.float_aggs
         if self.is_count_query:
-            self.count_data = dps_container()
+            self.count_data = create_dps_container()
             self.float_aggs.remove("count")  # Only aggregate that is integer, handle separately
 
         self.has_non_count_aggs = bool(self.float_aggs)
