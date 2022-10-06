@@ -587,9 +587,7 @@ class DatapointsAPI(APIClient):
             ignore_unknown_ids (bool): Whether or not to ignore missing time series rather than raising an exception. Default: False
 
         Returns:
-            Union[None, Datapoints, DatapointsList]: A `Datapoints` object containing the requested data, or a `DatapointsList` if multiple
-                time series were asked for. If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function
-                will return `None`. The ordering is first ids, then external_ids.
+            Union[None, Datapoints, DatapointsList]: A `Datapoints` object containing the requested data, or a `DatapointsList` if multiple time series were asked for. If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`. The ordering is first ids, then external_ids.
 
         Examples:
 
@@ -718,9 +716,7 @@ class DatapointsAPI(APIClient):
             ignore_unknown_ids (bool): Whether or not to ignore missing time series rather than raising an exception. Default: False
 
         Returns:
-            Union[None, DatapointsArray, DatapointsArrayList]: A `DatapointsArray` object containing the requested data, or a `DatapointsArrayList` if multiple
-                time series were asked for. If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function
-                will return `None`. The ordering is first ids, then external_ids.
+            Union[None, DatapointsArray, DatapointsArrayList]: A `DatapointsArray` object containing the requested data, or a `DatapointsArrayList` if multiple time series were asked for. If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`. The ordering is first ids, then external_ids.
 
         Examples:
 
@@ -823,11 +819,7 @@ class DatapointsAPI(APIClient):
             column_names ("id" | "external_id"): Use either ids or external ids as column names. Time series missing external id will use id as backup. Default: "external_id"
 
         Returns:
-            pandas.DataFrame
-
-        Returns:
-            pandas.DataFrame: A pandas DataFrame containing the requested time series. The ordering of columns is ids first, then external_ids.
-                For time series with multiple aggregates, they will be sorted in alphabetical order ("average" before "max").
+            pandas.DataFrame: A pandas DataFrame containing the requested time series. The ordering of columns is ids first, then external_ids. For time series with multiple aggregates, they will be sorted in alphabetical order ("average" before "max").
 
         Examples:
 
