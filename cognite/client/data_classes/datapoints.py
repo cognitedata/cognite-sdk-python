@@ -30,16 +30,7 @@ from typing import (
 )
 
 from cognite.client import utils
-from cognite.client._api.datapoint_constants import (
-    ALL_SORTED_DP_AGGS,
-    DPS_LIMIT,
-    DPS_LIMIT_AGG,
-    CustomDatapointsQuery,
-    DatapointsExternalIdTypes,
-    DatapointsIdTypes,
-    DatapointsQueryExternalId,
-    DatapointsQueryId,
-)
+from cognite.client._constants import ALL_SORTED_DP_AGGS
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.utils._auxiliary import (
     convert_all_keys_to_camel_case,
@@ -56,16 +47,70 @@ from cognite.client.utils._time import (
 )
 
 if TYPE_CHECKING:
-    import numpy.typing as npt
     import pandas
 
     from cognite.client import CogniteClient
-    from cognite.client._api.datapoint_constants import (
-        NumpyDatetime64NSArray,
-        NumpyFloat64Array,
-        NumpyInt64Array,
-        NumpyObjArray,
-    )
+
+try:
+    import numpy as np
+    import numpy.typing as npt
+
+    NumpyDatetime64NSArray = npt.NDArray[np.datetime64]
+    NumpyInt64Array = npt.NDArray[np.int64]
+    NumpyFloat64Array = npt.NDArray[np.float64]
+    NumpyObjArray = npt.NDArray[np.object_]
+    NUMPY_IS_AVAILABLE = True
+
+except ImportError:  # pragma no cover
+    NUMPY_IS_AVAILABLE = False
+
+
+class CustomDatapointsQuery(TypedDict, total=False):
+    # No field required
+    start: Union[int, str, datetime, None]
+    end: Union[int, str, datetime, None]
+    aggregates: Optional[List[str]]
+    granularity: Optional[str]
+    limit: Optional[int]
+    include_outside_points: Optional[bool]
+    ignore_unknown_ids: Optional[bool]
+
+
+class DatapointsQueryId(CustomDatapointsQuery):
+    id: int  # required field
+
+
+class DatapointsQueryExternalId(CustomDatapointsQuery):
+    external_id: str  # required field
+
+
+class CustomDatapoints(TypedDict, total=False):
+    # No field required
+    start: int
+    end: int
+    aggregates: Optional[List[str]]
+    granularity: Optional[str]
+    limit: int
+    include_outside_points: bool
+
+
+class DatapointsPayload(CustomDatapoints):
+    items: List[CustomDatapoints]
+
+
+DatapointsTypes = Union[int, float, str]
+
+
+class DatapointsFromAPI(TypedDict):
+    id: int
+    externalId: Optional[str]
+    isString: bool
+    isStep: bool
+    datapoints: List[Dict[str, DatapointsTypes]]
+
+
+DatapointsId = Union[int, DatapointsQueryId, Iterable[Union[int, DatapointsQueryId]]]
+DatapointsExternalId = Union[str, DatapointsQueryExternalId, Iterable[Union[str, DatapointsQueryExternalId]]]
 
 
 class Datapoint(CogniteResource):
@@ -643,16 +688,13 @@ class DatapointsList(CogniteResourceList):
 
 
 @dataclass
-class DatapointsQuery(CogniteResource):
-    """Parameters describing a query for datapoints.
-
-    See `DatapointsAPI.retrieve` method for a description of the parameters.
-    """
+class _DatapointsQuery(CogniteResource):
+    """Internal representation of a user request for datapoints, previously public (before v5)"""
 
     start: Union[int, str, datetime, None] = None
     end: Union[int, str, datetime, None] = None
-    id: Optional[DatapointsIdTypes] = None
-    external_id: Optional[DatapointsExternalIdTypes] = None
+    id: Optional[DatapointsId] = None
+    external_id: Optional[DatapointsExternalId] = None
     aggregates: Optional[List[str]] = None
     granularity: Optional[str] = None
     limit: Optional[int] = None

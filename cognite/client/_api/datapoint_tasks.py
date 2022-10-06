@@ -31,20 +31,21 @@ from typing import (
 
 from sortedcontainers import SortedDict, SortedList  # type: ignore [import]
 
-from cognite.client._api.datapoint_constants import (
-    DPS_LIMIT,
-    DPS_LIMIT_AGG,
+from cognite.client._constants import DPS_LIMIT, DPS_LIMIT_AGG
+from cognite.client.data_classes.datapoints import (
     NUMPY_IS_AVAILABLE,
     CustomDatapoints,
     CustomDatapointsQuery,
-    DatapointsExternalIdTypes,
+    Datapoints,
+    DatapointsArray,
+    DatapointsExternalId,
     DatapointsFromAPI,
-    DatapointsIdTypes,
+    DatapointsId,
     DatapointsQueryExternalId,
     DatapointsQueryId,
     DatapointsTypes,
+    _DatapointsQuery,
 )
-from cognite.client.data_classes.datapoints import Datapoints, DatapointsArray, DatapointsQuery
 from cognite.client.utils._auxiliary import convert_all_keys_to_snake_case, to_camel_case
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._time import (
@@ -66,7 +67,7 @@ T = TypeVar("T")
 
 
 class _SingleTSQueryValidator:
-    def __init__(self, user_query: DatapointsQuery) -> None:
+    def __init__(self, user_query: _DatapointsQuery) -> None:
         self.user_query = user_query
         self.defaults: CustomDatapointsQuery = dict(
             start=user_query.start,
@@ -90,15 +91,15 @@ class _SingleTSQueryValidator:
             return queries
         raise ValueError("Pass at least one time series `id` or `external_id`!")
 
-    def _validate_multiple_id(self, id: DatapointsIdTypes) -> List[_SingleTSQueryBase]:
+    def _validate_multiple_id(self, id: DatapointsId) -> List[_SingleTSQueryBase]:
         return self._validate_id_or_xid(id, "id", numbers.Integral, is_external_id=False)
 
-    def _validate_multiple_xid(self, external_id: DatapointsExternalIdTypes) -> List[_SingleTSQueryBase]:
+    def _validate_multiple_xid(self, external_id: DatapointsExternalId) -> List[_SingleTSQueryBase]:
         return self._validate_id_or_xid(external_id, "external_id", str, is_external_id=True)
 
     def _validate_id_or_xid(
         self,
-        id_or_xid: Union[DatapointsIdTypes, DatapointsExternalIdTypes],
+        id_or_xid: Union[DatapointsId, DatapointsExternalId],
         arg_name: str,
         exp_type: type,
         is_external_id: bool,
@@ -129,7 +130,7 @@ class _SingleTSQueryValidator:
 
     @staticmethod
     def _raise_on_wrong_ts_identifier_type(
-        id_or_xid: Union[DatapointsIdTypes, DatapointsExternalIdTypes],
+        id_or_xid: Union[DatapointsId, DatapointsExternalId],
         arg_name: str,
         exp_type: type,
     ) -> NoReturn:

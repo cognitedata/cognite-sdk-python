@@ -168,7 +168,6 @@ from cognite.client.data_classes.datapoints import (  # isort: skip
     Datapoint,
     Datapoints,
     DatapointsList,
-    DatapointsQuery,
     DatapointsArray,
     DatapointsArrayList,
 )
