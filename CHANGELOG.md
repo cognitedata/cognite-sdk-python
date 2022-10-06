@@ -24,7 +24,7 @@ Changes are grouped as follows
   - Any query for `string` datapoints
 - Peak memory consumption is 25-30 % lower when using the new `retrieve_arrays` method (with the same number of `max_workers`).
 - Converting fetched datapoints to a Pandas `DataFrame` via `to_pandas()` (or time saved by using `retrieve_dataframe` directly) has changed from `O(N)` to `O(1)`, i.e., speedup no longer depends on the number of datapoints and is typically 4-5 orders of magnitude faster (!) (only applies to `DatapointsArray` and `DatapointsArrayList` as returned by the `retrieve_arrays` method).
-- Full customizability of queries is now available for *all retrieve* endpoints, thus the `query()` is no longer needed and has been removed. Previously only `aggregates` could be individually specified. Now all parameters can be passed either as top-level or as *individual settings*, even `ignore_unknown_ids`. This is now aligned with the API (except `ignore_unknown_ids`: this SDK is arguably better!).
+- Full customizability of queries is now available for *all retrieve* endpoints, thus the `query()` is no longer needed and has been removed. Previously only `aggregates` could be individually specified. Now all parameters can be passed either as top-level or as *individual settings*, even `ignore_unknown_ids`. This is now aligned with the API (except `ignore_unknown_ids` making the SDK arguably better!).
 - Documentation for the retrieve endpoints has been overhauled with lots of new usage patterns and (much better(!)) examples, check it out!
 - Vastly better test coverage for datapoints fetching logic. You can have increased trust in the results from the SDK!
 
@@ -47,8 +47,8 @@ Changes are grouped as follows
 - Aggregates returned now include the time period(s) (given by `granularity` unit) that `start` and `end` are a part of (as opposed to only "fully in-between" points). This change is the *only breaking change* to the `DatapointsAPI.retrieve` method. This is now aligned with the API.
 Note also that this is a **bugfix**: Due to the SDK rounding differently than the API, you could supply `start` and `end` (with `start < end`) and still be given an error that `start is not before end`. This can no longer happen.
 - Fetching raw datapoints using `return_outside_points=True` now returns both outside points (if they exist), regardless of `limit` setting. Previously the total number of points was capped at `limit`, thus typically only returning the first. Now up to `limit+2` datapoints are always returned. This is now aligned with the API.
-- Asking for the same time series any number of times no longer raises an error (from the SDK), which is useful for instance when fetching disconnected time periods. This is now aligned with the API.
-- ...this change also causes the `.get` method of `DatapointsList` and `DatapointsArrayList` to now return a list of `Datapoints` or `DatapointsArray` respectively when duplicated identifiers were queried. (For data scientists and others used to `pandas`, this syntax is familiar to the slicing logic of `Series` and `DataFrame` when used with non-unique indices).
+- Asking for the same time series any number of times no longer raises an error (from the SDK), which is useful for instance when fetching disconnected time periods. This is now aligned with the API. Thus, the custom exception `CogniteDuplicateColumnsError` is no longer needed and has been removed from the SDK.
+- ...this change also causes the `.get` method of `DatapointsList` and `DatapointsArrayList` to now return a list of `Datapoints` or `DatapointsArray` respectively when duplicated identifiers were queried. For data scientists and others used to `pandas`, this syntax is familiar to the slicing logic of `Series` and `DataFrame` when used with non-unique indices.
 There is also a very subtle **bugfix** here: since the previous implementation allowed the same time series to be specified by both its `id` and `external_id`, using `.get` to access it would always yield the settings that were specified by the `external_id`. This will now return a `list` as explained above.
 - Datapoints fetching algorithm has changed from one that relies on up-to-date and correct `count` aggregates to be fast (with fallback on serial fetching when missing/unavailable), to recursively (and reactively) splitting the time-domain into smaller and smaller pieces, depending on the discovered-as-fetched density-distribution of datapoints in time and available threads. The new approach also has the ability to group more than 1 (one) time series per API request (when beneficial) and short-circuit once a user-given limit has been reached (if/when given). This method is now used for *all types of queries*; numeric raw-, string raw-, and aggregate datapoints.
 
@@ -75,9 +75,10 @@ Read more below in the removed section or check out the method's updated documen
 **Note**: that support for `datetime`s before 1970 may be limited on Windows, but `ms_to_datetime` should still work.
 
 ### Removed
-- `DatapointsAPI.query`. No longer needed as all "optionality" has been moved to the three `retrieve` methods.
+- Method: `DatapointsAPI.query`. No longer needed as all "optionality" has been moved to the three `retrieve` methods.
+- Method: `DatapointsAPI.retrieve_dataframe_dict`. Rationale: Due to its slightly confusing syntax and return value, it basically saw no use "in the wild".
+- Custom exception: `CogniteDuplicateColumnsError`. No longer needed as the retrieve endpoints now support duplicated identifiers to be passed (similar to the API).
 - All convenience methods related to plotting and the use of `matplotlib`. Rationale: No usage and low utility value: the SDK should not be a data science library.
-- The entire method `DatapointsAPI.retrieve_dataframe_dict`. Rationale: Due to its slightly confusing syntax and return value, it basically saw no use "in the wild".
 
 ### Other
 Evaluation of changing the SDK from `JSON` to `protobuf` for increased performance: In its current state, using `protobuf` results in significant performance degradation. There is a small upside on smaller and slightly faster API requests, but the client side loading/unpacking is orders of magnitude worse. Additionally, it adds an extra dependency, which, if installed in its pure-Python distribution, results in an earth-shattering performance degradation.
