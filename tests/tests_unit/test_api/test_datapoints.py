@@ -9,7 +9,7 @@ import pytest
 
 from cognite.client._api.datapoints import DatapointsBin
 from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList
-from cognite.client.exceptions import CogniteAPIError, CogniteDuplicateColumnsError, CogniteNotFoundError
+from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._time import granularity_to_ms
 from tests.utils import jsgz_load
 
@@ -895,8 +895,8 @@ class TestPandasIntegration:
             columns=["2|max", "2|average"],
         )
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(), check_freq=False)
-        with pytest.raises(CogniteDuplicateColumnsError):
-            dps_list.to_pandas(include_aggregate_name=False)
+        dps_list.to_pandas(include_aggregate_name=False)
+        assert True  # Duplicated columns names were not allowed prior to v5
 
     def test_datapoints_list_non_aligned(self, cognite_client):
         import pandas as pd
