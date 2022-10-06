@@ -4,7 +4,8 @@ import string
 import pytest
 
 from cognite.client.credentials import OAuthClientCredentials
-from cognite.client.data_classes import DataSet, Transformation, TransformationDestination, TransformationUpdate
+from cognite.client.data_classes import DataSet, Transformation, TransformationDestination, TransformationUpdate, \
+    TransformationSchedule
 from cognite.client.data_classes.transformations import ContainsAny
 from cognite.client.data_classes.transformations.common import NonceCredentials, OidcCredentials, SequenceRows
 
@@ -31,6 +32,7 @@ def new_transformation(cognite_client, new_datasets):
     assert isinstance(creds, OAuthClientCredentials)
     transform = Transformation(
         name="any",
+        query="select 1",
         external_id=f"{prefix}-transformation",
         destination=TransformationDestination.assets(),
         data_set_id=new_datasets[0].id,
@@ -323,3 +325,13 @@ class TestTransformationsAPI:
         assert ts[0].id == new_transformation.id and ts[0].tags == ["hello"]
         ts3 = cognite_client.transformations.list(tags=ContainsAny(["hello", "kiki"]))
         assert len(ts3) == 2 and set([i.id for i in ts3]) == set([new_transformation.id, other_transformation.id])
+
+    def test_update_transform_decode_error(self, cognite_client, new_transformation, new_datasets):
+        cognite_client.transformations.schedules.create(TransformationSchedule(external_id=new_transformation.external_id, interval="* * * * *", is_paused=True))
+        tr : Transformation = cognite_client.transformations.retrieve(external_id=new_transformation.external_id)
+        #sc = cognite_client.transformations.schedules.retrieve(external_id=new_transformation.external_id)
+        print(tr._cognite_client)
+        print(tr)
+
+
+

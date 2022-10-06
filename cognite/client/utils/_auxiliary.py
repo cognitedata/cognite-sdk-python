@@ -49,6 +49,7 @@ def json_dump_default(x: Any) -> Any:
         return float(x)
     if hasattr(x, "__dict__"):
         return x.__dict__
+    print(x)
     raise TypeError("Object {} of type {} can't be serialized by the JSON encoder".format(x, x.__class__))
 
 

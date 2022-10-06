@@ -76,6 +76,7 @@ class CogniteResource:
 
     def __str__(self) -> str:
         item = utils._time.convert_time_attributes_to_datetime(self.dump())
+        print(item)
         return json.dumps(item, default=utils._auxiliary.json_dump_default, indent=4)
 
     def __getattribute__(self, item: Any) -> Any:
