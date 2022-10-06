@@ -310,14 +310,14 @@ class Transformation(CogniteResource):
             Dict[str, Any]: A dictionary representation of the instance.
         """
 
-        ret = super(Transformation,self).dump(camel_case=camel_case)
+        ret = super(Transformation, self).dump(camel_case=camel_case)
 
         for (name, prop) in ret.items():
-            print("###########")
-            print(name, prop)
-            if isinstance(prop, (OidcCredentials, NonceCredentials, TransformationDestination, SessionDetails)):
+            if isinstance(
+                prop,
+                (OidcCredentials, NonceCredentials, TransformationDestination, SessionDetails, TransformationSchedule),
+            ):
                 ret[name] = prop.dump(camel_case=camel_case)
-                print("@@@@@@@", ret[name])
         return ret
 
     def __hash__(self) -> int:

@@ -19,6 +19,9 @@ T_CogniteResponse = TypeVar("T_CogniteResponse", bound="CogniteResponse")
 class CogniteResponse:
     def __str__(self) -> str:
         item = utils._time.convert_time_attributes_to_datetime(self.dump())
+
+        item = {key: value for key, value in item if value not in EXCLUDE_VALUE and not key.startswith("_")}
+
         return json.dumps(item, default=utils._auxiliary.json_dump_default, indent=4)
 
     def __repr__(self) -> str:
@@ -76,7 +79,6 @@ class CogniteResource:
 
     def __str__(self) -> str:
         item = utils._time.convert_time_attributes_to_datetime(self.dump())
-        print(item)
         return json.dumps(item, default=utils._auxiliary.json_dump_default, indent=4)
 
     def __getattribute__(self, item: Any) -> Any:
