@@ -27,18 +27,6 @@ from typing import (
     overload,
 )
 
-from cognite.client._api.datapoint_constants import (
-    DPS_LIMIT,
-    DPS_LIMIT_AGG,
-    FETCH_TS_LIMIT,
-    POST_DPS_OBJECTS_LIMIT,
-    RETRIEVE_LATEST_LIMIT,
-    CustomDatapoints,
-    DatapointsExternalIdTypes,
-    DatapointsFromAPI,
-    DatapointsIdTypes,
-    DatapointsPayload,
-)
 from cognite.client._api.datapoint_tasks import (
     BaseConcurrentTask,
     SplittingFetchSubtask,
@@ -47,12 +35,24 @@ from cognite.client._api.datapoint_tasks import (
 )
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import (
+from cognite.client._constants import (
+    DPS_LIMIT,
+    DPS_LIMIT_AGG,
+    FETCH_TS_LIMIT,
+    POST_DPS_OBJECTS_LIMIT,
+    RETRIEVE_LATEST_LIMIT,
+)
+from cognite.client.data_classes.datapoints import (
+    CustomDatapoints,
     Datapoints,
     DatapointsArray,
     DatapointsArrayList,
+    DatapointsExternalId,
+    DatapointsFromAPI,
+    DatapointsId,
     DatapointsList,
-    DatapointsQuery,
+    DatapointsPayload,
+    _DatapointsQuery,
 )
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import assert_type, local_import, split_into_chunks, split_into_n_parts
@@ -71,7 +71,7 @@ TSQueryList = List[_SingleTSQueryBase]
 PoolSubtaskType = Tuple[int, float, float, SplittingFetchSubtask]
 
 
-def dps_fetch_selector(dps_client: DatapointsAPI, user_query: DatapointsQuery) -> DpsFetchStrategy:
+def dps_fetch_selector(dps_client: DatapointsAPI, user_query: _DatapointsQuery) -> DpsFetchStrategy:
     max_workers = dps_client._config.max_workers
     if max_workers < 1:  # Dps fetching does not use fn `execute_tasks_concurrently`, so we must check:
         raise RuntimeError(f"Invalid option for `{max_workers=}`. Must be at least 1")
@@ -558,8 +558,8 @@ class DatapointsAPI(APIClient):
     def retrieve(
         self,
         *,
-        id: Optional[DatapointsIdTypes] = None,
-        external_id: Optional[DatapointsExternalIdTypes] = None,
+        id: Optional[DatapointsId] = None,
+        external_id: Optional[DatapointsExternalId] = None,
         start: Union[int, str, datetime, None] = None,
         end: Union[int, str, datetime, None] = None,
         aggregates: Optional[List[str]] = None,
@@ -578,8 +578,8 @@ class DatapointsAPI(APIClient):
         Args:
             start (Union[int, str, datetime]): Inclusive start. Default: 1970-01-01 UTC.
             end (Union[int, str, datetime]): Exclusive end. Default: "now"
-            id (DatapointsIdTypes): Id, dict (with id) or (mixed) list of these. See examples below.
-            external_id (DatapointsExternalIdTypes): External id, dict (with external id) or (mixed) list of these. See examples below.
+            id (DatapointsId): Id, dict (with id) or (mixed) list of these. See examples below.
+            external_id (DatapointsExternalId): External id, dict (with external id) or (mixed) list of these. See examples below.
             aggregates (List[str]): List of aggregate functions to apply. Default: No aggregates (raw datapoints)
             granularity (str): The granularity to fetch aggregates at. e.g. '1s', '2h', '10d'. Default: None.
             limit (int): Maximum number of datapoints to return for each time series. Default: None (no limit)
@@ -670,7 +670,7 @@ class DatapointsAPI(APIClient):
                 ...    id=[ts1, ts2, ts3], start="2w-ago", limit=None, ignore_unknown_ids=False
                 ... )
         """
-        query = DatapointsQuery(
+        query = _DatapointsQuery(
             start=start,
             end=end,
             id=id,
@@ -692,8 +692,8 @@ class DatapointsAPI(APIClient):
     def retrieve_arrays(
         self,
         *,
-        id: Optional[DatapointsIdTypes] = None,
-        external_id: Optional[DatapointsExternalIdTypes] = None,
+        id: Optional[DatapointsId] = None,
+        external_id: Optional[DatapointsExternalId] = None,
         start: Union[int, str, datetime, None] = None,
         end: Union[int, str, datetime, None] = None,
         aggregates: Optional[List[str]] = None,
@@ -709,8 +709,8 @@ class DatapointsAPI(APIClient):
         Args:
             start (Union[int, str, datetime]): Inclusive start. Default: 1970-01-01 UTC.
             end (Union[int, str, datetime]): Exclusive end. Default: "now"
-            id (DatapointsIdTypes): Id, dict (with id) or (mixed) list of these. See examples below.
-            external_id (DatapointsExternalIdTypes): External id, dict (with external id) or (mixed) list of these. See examples below.
+            id (DatapointsId): Id, dict (with id) or (mixed) list of these. See examples below.
+            external_id (DatapointsExternalId): External id, dict (with external id) or (mixed) list of these. See examples below.
             aggregates (List[str]): List of aggregate functions to apply. Default: No aggregates (raw datapoints)
             granularity (str): The granularity to fetch aggregates at. e.g. '1s', '2h', '10d'. Default: None.
             limit (int): Maximum number of datapoints to return for each time series. Default: None (no limit)
@@ -768,7 +768,7 @@ class DatapointsAPI(APIClient):
                 >>> series = pd.Series(dps.value, index=dps.timestamp)
         """
         local_import("numpy")  # Verify that numpy is available or raise CogniteImportError
-        query = DatapointsQuery(
+        query = _DatapointsQuery(
             start=start,
             end=end,
             id=id,
@@ -790,8 +790,8 @@ class DatapointsAPI(APIClient):
     def retrieve_dataframe(
         self,
         *,
-        id: Optional[DatapointsIdTypes] = None,
-        external_id: Optional[DatapointsExternalIdTypes] = None,
+        id: Optional[DatapointsId] = None,
+        external_id: Optional[DatapointsExternalId] = None,
         start: Union[int, str, datetime, None] = None,
         end: Union[int, str, datetime, None] = None,
         aggregates: Optional[List[str]] = None,
@@ -810,8 +810,8 @@ class DatapointsAPI(APIClient):
         Args:
             start (Union[int, str, datetime]): Inclusive start. Default: 1970-01-01 UTC.
             end (Union[int, str, datetime]): Exclusive end. Default: "now"
-            id (DatapointsIdTypes): Id, dict (with id) or (mixed) list of these. See examples below.
-            external_id (DatapointsExternalIdTypes): External id, dict (with external id) or (mixed) list of these. See examples below.
+            id (DatapointsId): Id, dict (with id) or (mixed) list of these. See examples below.
+            external_id (DatapointsExternalId): External id, dict (with external id) or (mixed) list of these. See examples below.
             aggregates (List[str]): List of aggregate functions to apply. Default: No aggregates (raw datapoints)
             granularity (str): The granularity to fetch aggregates at. e.g. '1s', '2h', '10d'. Default: None.
             limit (int): Maximum number of datapoints to return for each time series. Default: None (no limit)
@@ -869,7 +869,7 @@ class DatapointsAPI(APIClient):
         if column_names not in {"id", "external_id"}:
             raise ValueError(f"Given parameter {column_names=} must be one of 'id' or 'external_id'")
 
-        query = DatapointsQuery(
+        query = _DatapointsQuery(
             start=start,
             end=end,
             id=id,

@@ -7,7 +7,7 @@ import os
 import random
 from contextlib import contextmanager
 
-from cognite.client._api.datapoint_constants import ALL_SORTED_DP_AGGS
+from cognite.client._constants import ALL_SORTED_DP_AGGS
 from cognite.client.utils._auxiliary import random_string
 
 

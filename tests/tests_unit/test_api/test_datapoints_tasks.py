@@ -7,7 +7,7 @@ from decimal import Decimal
 import pytest
 
 from cognite.client._api.datapoint_tasks import _SingleTSQueryValidator, dps_container, subtask_lst
-from cognite.client.data_classes import DatapointsQuery
+from cognite.client.data_classes import _DatapointsQuery
 from cognite.client.utils._auxiliary import random_string
 from tests.utils import random_aggregates, random_cognite_ids, random_gamma_dist_integer, random_granularity
 
@@ -24,7 +24,7 @@ class TestSingleTSQueryValidator:
     )
     def test_no_identifiers_raises(self, ids, xids):
         with pytest.raises(ValueError, match=re.escape("Pass at least one time series `id` or `external_id`!")):
-            _SingleTSQueryValidator(DatapointsQuery(id=ids, external_id=xids)).validate_and_create_single_queries()
+            _SingleTSQueryValidator(_DatapointsQuery(id=ids, external_id=xids)).validate_and_create_single_queries()
 
     @pytest.mark.parametrize(
         "ids, xids, exp_attr_to_fail",
@@ -38,7 +38,7 @@ class TestSingleTSQueryValidator:
         err_msg = f"Got unsupported type {type(ids or xids)}, as, or part of argument `{exp_attr_to_fail}`."
 
         with pytest.raises(TypeError, match=re.escape(err_msg)):
-            _SingleTSQueryValidator(DatapointsQuery(id=ids, external_id=xids)).validate_and_create_single_queries()
+            _SingleTSQueryValidator(_DatapointsQuery(id=ids, external_id=xids)).validate_and_create_single_queries()
 
     @pytest.mark.parametrize(
         "ids, xids, exp_attr_to_fail",
@@ -54,7 +54,7 @@ class TestSingleTSQueryValidator:
         err_msg = f"Missing required key `{exp_attr_to_fail}` in dict:"
 
         with pytest.raises(KeyError, match=re.escape(err_msg)):
-            _SingleTSQueryValidator(DatapointsQuery(id=ids, external_id=xids)).validate_and_create_single_queries()
+            _SingleTSQueryValidator(_DatapointsQuery(id=ids, external_id=xids)).validate_and_create_single_queries()
 
     @pytest.mark.parametrize(
         "ids, xids, exp_wrong_type, exp_attr_to_fail",
@@ -74,7 +74,7 @@ class TestSingleTSQueryValidator:
         err_msg = f"Got unsupported type {exp_wrong_type}, as, or part of argument `{exp_attr_to_fail}`."
 
         with pytest.raises(TypeError, match=re.escape(err_msg)):
-            _SingleTSQueryValidator(DatapointsQuery(id=ids, external_id=xids)).validate_and_create_single_queries()
+            _SingleTSQueryValidator(_DatapointsQuery(id=ids, external_id=xids)).validate_and_create_single_queries()
 
     @pytest.mark.parametrize("identifier_dct", ({"id": 123}, {"external_id": "foo"}, {"externalId": "bar"}))
     def test_identifier_dicts_has_wrong_keys(self, identifier_dct):
@@ -86,10 +86,10 @@ class TestSingleTSQueryValidator:
         identifier_dct.update(dict.fromkeys(good_keys + bad_keys))
         if "id" in identifier_dct:
             identifier = "id"
-            query = DatapointsQuery(id=identifier_dct, external_id=None)
+            query = _DatapointsQuery(id=identifier_dct, external_id=None)
         else:
             identifier = "external_id"
-            query = DatapointsQuery(id=None, external_id=identifier_dct)
+            query = _DatapointsQuery(id=None, external_id=identifier_dct)
 
         with pytest.raises(
             KeyError, match=re.escape(f"Dict provided by argument `{identifier}` included key(s) not understood")
@@ -98,14 +98,14 @@ class TestSingleTSQueryValidator:
 
     @pytest.mark.parametrize("limit, exp_limit", [(0, 0), (1, 1), (-1, None), (math.inf, None), (None, None)])
     def test_valid_limits(self, limit, exp_limit):
-        ts_query = _SingleTSQueryValidator(DatapointsQuery(id=0, limit=limit)).validate_and_create_single_queries()
+        ts_query = _SingleTSQueryValidator(_DatapointsQuery(id=0, limit=limit)).validate_and_create_single_queries()
         assert len(ts_query) == 1
         assert ts_query[0].limit == exp_limit
 
     @pytest.mark.parametrize("limit", (-2, -math.inf, math.nan, ..., "5000"))
     def test_limits_not_allowed_values(self, limit):
         with pytest.raises(TypeError, match=re.escape("Parameter `limit` must be a non-negative integer -OR-")):
-            _SingleTSQueryValidator(DatapointsQuery(id=0, limit=limit)).validate_and_create_single_queries()
+            _SingleTSQueryValidator(_DatapointsQuery(id=0, limit=limit)).validate_and_create_single_queries()
 
     @pytest.mark.parametrize(
         "granularity, aggregates, outside, exp_err, exp_err_msg_idx",
@@ -127,7 +127,7 @@ class TestSingleTSQueryValidator:
             "When passing `aggregates`, argument `granularity` is also required.",
             "'Include outside points' is not supported for aggregates.",
         ]
-        user_query = DatapointsQuery(
+        user_query = _DatapointsQuery(
             id=0, granularity=granularity, aggregates=aggregates, include_outside_points=outside
         )
         with pytest.raises(exp_err, match=re.escape(err_msgs[exp_err_msg_idx])):
@@ -148,7 +148,7 @@ class TestSingleTSQueryValidator:
     def test_function__verify_time_range__valid_inputs(self, start, end):
         gran_dct = {"granularity": random_granularity(), "aggregates": random_aggregates()}
         for kwargs in [{}, gran_dct]:
-            user_query = DatapointsQuery(id=0, start=start, end=end, **kwargs)
+            user_query = _DatapointsQuery(id=0, start=start, end=end, **kwargs)
             ts_query = _SingleTSQueryValidator(user_query).validate_and_create_single_queries()
             assert isinstance(ts_query[0].start, int)
             assert isinstance(ts_query[0].end, int)
@@ -169,7 +169,7 @@ class TestSingleTSQueryValidator:
     def test_function__verify_time_range__raises(self, start, end):
         gran_dct = {"granularity": random_granularity(), "aggregates": random_aggregates()}
         for kwargs in [{}, gran_dct]:
-            user_query = DatapointsQuery(id=0, start=start, end=end, **kwargs)
+            user_query = _DatapointsQuery(id=0, start=start, end=end, **kwargs)
             with pytest.raises(ValueError, match="Invalid time range"):
                 _SingleTSQueryValidator(user_query).validate_and_create_single_queries()
 
@@ -181,7 +181,7 @@ class TestSingleTSQueryValidator:
         # Only one time series is configured wrong and will raise:
         id_dct_lst[-1]["include_outside_points"] = True
 
-        user_query = DatapointsQuery(id=id_dct_lst, include_outside_points=False)
+        user_query = _DatapointsQuery(id=id_dct_lst, include_outside_points=False)
         with pytest.raises(ValueError, match="'Include outside points' is not supported for aggregates."):
             _SingleTSQueryValidator(user_query).validate_and_create_single_queries()
 
