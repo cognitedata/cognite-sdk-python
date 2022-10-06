@@ -43,7 +43,7 @@ from cognite.client.data_classes.datapoints import (
     DatapointsId,
     DatapointsQueryExternalId,
     DatapointsQueryId,
-    DatapointsTypes,
+    DatapointValue,
     _DatapointsQuery,
 )
 from cognite.client.utils._auxiliary import convert_all_keys_to_snake_case, to_camel_case
@@ -434,15 +434,15 @@ class _SingleTSQueryAggUnlimited(_SingleTSQueryAgg):
 
 class DpsUnpackFns:
     ts: Callable[[Dict], int] = op.itemgetter("timestamp")
-    raw_dp: Callable[[Dict], DatapointsTypes] = op.itemgetter("value")
-    ts_dp_tpl: Callable[[Dict], Tuple[int, DatapointsTypes]] = op.itemgetter("timestamp", "value")
+    raw_dp: Callable[[Dict], DatapointValue] = op.itemgetter("value")
+    ts_dp_tpl: Callable[[Dict], Tuple[int, DatapointValue]] = op.itemgetter("timestamp", "value")
     ts_count_tpl: Callable[[Dict], Tuple[int, int]] = op.itemgetter("timestamp", "count")
     count: Callable[[Dict], int] = op.itemgetter("count")
 
     @staticmethod
     def custom_from_aggregates(
         lst: List[str],
-    ) -> Callable[[List[Dict[str, DatapointsTypes]]], Tuple[DatapointsTypes, ...]]:
+    ) -> Callable[[List[Dict[str, DatapointValue]]], Tuple[DatapointValue, ...]]:
         return op.itemgetter(*lst)
 
 
@@ -747,11 +747,11 @@ class BaseConcurrentTask:
         ...
 
     @abstractmethod
-    def _unpack_and_store(self, idx: Tuple[float, ...], dps: List[Dict[str, DatapointsTypes]]) -> None:
+    def _unpack_and_store(self, idx: Tuple[float, ...], dps: List[Dict[str, DatapointValue]]) -> None:
         ...
 
     @abstractmethod
-    def _extract_outside_points(self, dps: List[Dict[str, DatapointsTypes]]) -> None:
+    def _extract_outside_points(self, dps: List[Dict[str, DatapointValue]]) -> None:
         ...
 
     @abstractmethod
@@ -810,7 +810,7 @@ class BaseConcurrentTask:
         if self.use_numpy:
             self.raw_dtype = self._decide_dtype_from_is_string(res["isString"])
 
-    def _store_first_batch(self, dps: List[Dict[str, DatapointsTypes]], first_limit: int) -> None:
+    def _store_first_batch(self, dps: List[Dict[str, DatapointValue]], first_limit: int) -> None:
         # Set `start` for the first subtask:
         self.first_start = cast(int, dps[-1]["timestamp"]) + self.offset_next
         self._unpack_and_store((0,), dps)
@@ -882,8 +882,8 @@ class ConcurrentLimitedMixin(BaseConcurrentTask):
 
 class BaseConcurrentRawTask(BaseConcurrentTask):
     def __init__(self, **kwargs: Any) -> None:
-        self.dp_outside_start: Optional[Tuple[int, DatapointsTypes]] = None
-        self.dp_outside_end: Optional[Tuple[int, DatapointsTypes]] = None
+        self.dp_outside_start: Optional[Tuple[int, DatapointValue]] = None
+        self.dp_outside_end: Optional[Tuple[int, DatapointValue]] = None
         super().__init__(**kwargs)
 
     @property
@@ -963,7 +963,7 @@ class BaseConcurrentRawTask(BaseConcurrentTask):
                 self.ts_data[(idx,)].append(ts)
                 self.dps_data[(idx,)].append(dp)
 
-    def _unpack_and_store(self, idx: Tuple[float, ...], dps: List[Dict[str, DatapointsTypes]]) -> None:
+    def _unpack_and_store(self, idx: Tuple[float, ...], dps: List[Dict[str, DatapointValue]]) -> None:
         if self.use_numpy:  # Faster than feeding listcomp to np.array:
             self.ts_data[idx].append(np.fromiter(map(DpsUnpackFns.ts, dps), dtype=np.int64, count=len(dps)))  # type: ignore [arg-type]
             self.dps_data[idx].append(np.fromiter(map(DpsUnpackFns.raw_dp, dps), dtype=self.raw_dtype, count=len(dps)))  # type: ignore [arg-type]
@@ -971,7 +971,7 @@ class BaseConcurrentRawTask(BaseConcurrentTask):
             self.ts_data[idx].append(list(map(DpsUnpackFns.ts, dps)))
             self.dps_data[idx].append(list(map(DpsUnpackFns.raw_dp, dps)))
 
-    def _store_first_batch(self, dps: List[Dict[str, DatapointsTypes]], first_limit: int) -> None:
+    def _store_first_batch(self, dps: List[Dict[str, DatapointValue]], first_limit: int) -> None:
         if self.query.is_raw_query and self.query.include_outside_points:
             self._extract_outside_points(dps)
             if not dps:  # We might have only gotten outside points
@@ -979,7 +979,7 @@ class BaseConcurrentRawTask(BaseConcurrentTask):
                 return None
         super()._store_first_batch(dps, first_limit)
 
-    def _extract_outside_points(self, dps: List[Dict[str, DatapointsTypes]]) -> None:
+    def _extract_outside_points(self, dps: List[Dict[str, DatapointValue]]) -> None:
         first_ts = cast(int, dps[0]["timestamp"])
         if first_ts < self.query.start:
             # We got a dp before `start`, this should not impact our count towards `limit`:
@@ -1110,13 +1110,13 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
                     setattr(self, attr, dict(data.items()[: i + 1]))  # regular dict (no further inserts)
                 return None
 
-    def _unpack_and_store(self, idx: Tuple[float, ...], dps: List[Dict[str, DatapointsTypes]]) -> None:
+    def _unpack_and_store(self, idx: Tuple[float, ...], dps: List[Dict[str, DatapointValue]]) -> None:
         if self.use_numpy:
             self._unpack_and_store_numpy(idx, dps)
         else:
             self._unpack_and_store_basic(idx, dps)
 
-    def _unpack_and_store_numpy(self, idx: Tuple[float, ...], dps: List[Dict[str, DatapointsTypes]]) -> None:
+    def _unpack_and_store_numpy(self, idx: Tuple[float, ...], dps: List[Dict[str, DatapointValue]]) -> None:
         n = len(dps)
         self.ts_data[idx].append(np.fromiter(map(DpsUnpackFns.ts, dps), dtype=np.int64, count=n))  # type: ignore [arg-type]
 
@@ -1138,7 +1138,7 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
                 arr = np.array([tuple(map(dp.get, self.float_aggs)) for dp in dps], dtype=np.float64)
             self.dps_data[idx].append(arr.reshape(n, len(self.float_aggs)))
 
-    def _unpack_and_store_basic(self, idx: Tuple[float, ...], dps: List[Dict[str, DatapointsTypes]]) -> None:
+    def _unpack_and_store_basic(self, idx: Tuple[float, ...], dps: List[Dict[str, DatapointValue]]) -> None:
         self.ts_data[idx].append(list(map(DpsUnpackFns.ts, dps)))
 
         if self.is_count_query:
