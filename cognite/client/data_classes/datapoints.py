@@ -98,7 +98,7 @@ class DatapointsPayload(CustomDatapoints):
     items: List[CustomDatapoints]
 
 
-DatapointsTypes = Union[int, float, str]
+DatapointValue = Union[int, float, str]
 
 
 class DatapointsFromAPI(TypedDict):
@@ -106,7 +106,7 @@ class DatapointsFromAPI(TypedDict):
     externalId: Optional[str]
     isString: bool
     isStep: bool
-    datapoints: List[Dict[str, DatapointsTypes]]
+    datapoints: List[Dict[str, DatapointValue]]
 
 
 DatapointsId = Union[int, DatapointsQueryId, Iterable[Union[int, DatapointsQueryId]]]
