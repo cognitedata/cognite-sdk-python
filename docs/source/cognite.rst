@@ -603,13 +603,13 @@ Retrieve datapoints
 ^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve
 
-Retrieve pandas dataframe
+Retrieve datapoints as numpy arrays
+^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve_arrays
+
+Retrieve datapoints in pandas dataframe
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve_dataframe
-
-Perform data points queries
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.datapoints.DatapointsAPI.query
 
 Retrieve latest datapoint
 ^^^^^^^^^^^^^^^^^^^^^^^^^
