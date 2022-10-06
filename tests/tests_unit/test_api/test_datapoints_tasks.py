@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 
 import pytest
+from sortedcontainers import SortedKeysView
 
 from cognite.client._api.datapoint_tasks import _SingleTSQueryValidator, create_dps_container, create_subtask_lst
 from cognite.client.data_classes.datapoints import _DatapointsQuery
@@ -187,10 +188,11 @@ class TestSingleTSQueryValidator:
 
 
 @pytest.fixture
-def create_random_int_tuples():
-    return [
-        tuple(random.choices(range(-50, 50), k=random.randint(1, 5))) for _ in range(random_gamma_dist_integer(100))
-    ]
+def create_random_int_tuples(n_min=5):
+    return set(
+        tuple(random.choices(range(-5, 5), k=random.randint(1, 5)))
+        for _ in range(max(n_min, random_gamma_dist_integer(100)))
+    )
 
 
 class TestSortedContainers:
@@ -198,14 +200,24 @@ class TestSortedContainers:
         container = create_dps_container()
         for k in create_random_int_tuples:
             container[k] = None
+        assert isinstance(container.keys(), SortedKeysView)
         assert list(container.keys()) == sorted(create_random_int_tuples)
 
-    def test_subtask_lst(self, create_random_int_tuples):
+    @pytest.mark.parametrize("with_duplicates", (False, True))
+    def test_subtask_lst(self, with_duplicates, create_random_int_tuples):
+        tpls = list(create_random_int_tuples)
+
         class Foo:
             def __init__(self, idx):
                 self.subtask_idx = idx
 
-        random_foos = [Foo(tpl) for tpl in create_random_int_tuples]
+        # Make sure we have duplicates - or make sure we don't
+        if with_duplicates:
+            tpls += tpls[:5]
+        else:
+            tpls = set(tpls)
+
+        random_foos = [Foo(tpl) for tpl in tpls]
         container = create_subtask_lst()
         container.update(random_foos)
         assert list(container) == sorted(random_foos, key=lambda foo: foo.subtask_idx)
