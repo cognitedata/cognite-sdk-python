@@ -117,7 +117,7 @@ class TestTimestampToMs:
     def test_time_ago_real_time(self):
         expected_time_now = datetime.now().timestamp() * 1000
         time_now = timestamp_to_ms("now")
-        assert abs(expected_time_now - time_now) < 10
+        assert abs(expected_time_now - time_now) < 15
 
         time.sleep(0.2)
 

@@ -6,8 +6,8 @@ from decimal import Decimal
 
 import pytest
 
-from cognite.client._api.datapoint_tasks import _SingleTSQueryValidator, dps_container, subtask_lst
-from cognite.client.data_classes import _DatapointsQuery
+from cognite.client._api.datapoint_tasks import _SingleTSQueryValidator, create_dps_container, create_subtask_lst
+from cognite.client.data_classes.datapoints import _DatapointsQuery
 from cognite.client.utils._auxiliary import random_string
 from tests.utils import random_aggregates, random_cognite_ids, random_gamma_dist_integer, random_granularity
 
@@ -195,7 +195,7 @@ def create_random_int_tuples():
 
 class TestSortedContainers:
     def test_dps_container(self, create_random_int_tuples):
-        container = dps_container()
+        container = create_dps_container()
         for k in create_random_int_tuples:
             container[k] = None
         assert list(container.keys()) == sorted(create_random_int_tuples)
@@ -206,6 +206,6 @@ class TestSortedContainers:
                 self.subtask_idx = idx
 
         random_foos = [Foo(tpl) for tpl in create_random_int_tuples]
-        container = subtask_lst()
+        container = create_subtask_lst()
         container.update(random_foos)
         assert list(container) == sorted(random_foos, key=lambda foo: foo.subtask_idx)

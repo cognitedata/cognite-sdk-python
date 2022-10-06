@@ -14,7 +14,6 @@ from cognite.client.utils._time import granularity_to_ms
 from tests.utils import jsgz_load
 
 DATAPOINTS_API = "cognite.client._api.datapoints.{}"
-DPS_DATA_CLASSES = "cognite.client.data_classes.datapoints.{}"
 
 
 def generate_datapoints(start: int, end: int, aggregates=None, granularity=None):
@@ -370,11 +369,10 @@ class TestGetDatapoints:
                 np.testing.assert_array_equal(dps.interpolation, [np.nan, 1, np.nan, 3, np.nan])
 
     def test_datapoints_paging_with_limit(self, cognite_client, mock_get_datapoints):
-        with patch(DPS_DATA_CLASSES.format("DPS_LIMIT_AGG"), 3):
-            with patch(DATAPOINTS_API.format("DPS_LIMIT_AGG"), 3):
-                dps_res = cognite_client.time_series.data.retrieve(
-                    id=123, start=0, end=10000, aggregates=["average"], granularity="1s", limit=4
-                )
+        with patch(DATAPOINTS_API.format("DPS_LIMIT_AGG"), 3):
+            dps_res = cognite_client.time_series.data.retrieve(
+                id=123, start=0, end=10000, aggregates=["average"], granularity="1s", limit=4
+            )
         assert 4 == len(dps_res)
 
     def test_retrieve_datapoints_multiple_time_series(self, cognite_client, mock_get_datapoints):
