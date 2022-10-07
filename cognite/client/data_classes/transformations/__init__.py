@@ -49,6 +49,21 @@ class SessionDetails:
         self.client_id = client_id
         self.project_name = project_name
 
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        """Dump the instance into a json serializable Python data type.
+
+        Args:
+            camel_case (bool): Use camelCase for attribute names. Defaults to False.
+
+        Returns:
+            Dict[str, Any]: A dictionary representation of the instance.
+        """
+        ret = self.__dict__
+
+        if camel_case:
+            return {utils._auxiliary.to_camel_case(key): value for key, value in ret.items()}
+        return ret
+
 
 class Transformation(CogniteResource):
     """The transformations resource allows transforming data in CDF.
@@ -294,10 +309,14 @@ class Transformation(CogniteResource):
         Returns:
             Dict[str, Any]: A dictionary representation of the instance.
         """
-        ret = super().dump(camel_case=camel_case)
+
+        ret = super(Transformation, self).dump(camel_case=camel_case)
 
         for (name, prop) in ret.items():
-            if isinstance(prop, (OidcCredentials, NonceCredentials, TransformationDestination)):
+            if isinstance(
+                prop,
+                (OidcCredentials, NonceCredentials, TransformationDestination, SessionDetails, TransformationSchedule),
+            ):
                 ret[name] = prop.dump(camel_case=camel_case)
         return ret
 
