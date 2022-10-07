@@ -289,6 +289,7 @@ class _SingleTSQueryBase:
         self.include_outside_points = include_outside_points
         self.ignore_unknown_ids = ignore_unknown_ids
 
+        self.granularity: Optional[str] = None
         self._is_missing: Optional[bool] = None
         self._is_string: Optional[bool] = None
 
