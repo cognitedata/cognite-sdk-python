@@ -229,7 +229,7 @@ class DatapointsArray(CogniteResource):
         cls,
         dps_dct: Dict[str, Union[int, str, bool, npt.NDArray]],
     ) -> DatapointsArray:
-        assert isinstance(dps_dct["timestamp"], npt.NDArray)  # mypy love
+        assert isinstance(dps_dct["timestamp"], np.ndarray)  # mypy love
         # Since pandas always uses nanoseconds for datetime, we stick with the same:
         dps_dct["timestamp"] = dps_dct["timestamp"].astype("datetime64[ms]").astype("datetime64[ns]")
         return cls(**convert_all_keys_to_snake_case(dps_dct))
