@@ -324,7 +324,7 @@ class ExtractionPipelineConfig(ExtractionPipelineConfigRevision):
         created_time: int = None,
         cognite_client: "CogniteClient" = None,
     ):
-        super(ExtractionPipelineConfig, self).__init__(
+        super().__init__(
             external_id=external_id,
             revision=revision,
             description=description,
@@ -336,4 +336,3 @@ class ExtractionPipelineConfig(ExtractionPipelineConfigRevision):
 
 class ExtractionPipelineConfigRevisionList(CogniteResourceList):
     _RESOURCE = ExtractionPipelineConfigRevision
-    _ASSERT_CLASSES = False
