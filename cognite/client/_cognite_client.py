@@ -10,7 +10,7 @@ from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.diagrams import DiagramsAPI
 from cognite.client._api.entity_matching import EntityMatchingAPI
 from cognite.client._api.events import EventsAPI
-from cognite.client._api.extractionpipelines import ExtractionPipelineRunsAPI, ExtractionPipelinesAPI
+from cognite.client._api.extractionpipelines import ExtractionPipelinesAPI
 from cognite.client._api.files import FilesAPI
 from cognite.client._api.functions import FunctionsAPI
 from cognite.client._api.geospatial import GeospatialAPI
@@ -65,8 +65,10 @@ class CogniteClient:
         self.entity_matching = EntityMatchingAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.templates = TemplatesAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.vision = VisionAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
-        self.extraction_pipelines = ExtractionPipelinesAPI(self._config, cognite_client=self)
-        self.extraction_pipeline_runs = ExtractionPipelineRunsAPI(self._config, cognite_client=self)
+        self.extraction_pipelines = ExtractionPipelinesAPI(
+            self._config, api_version=self._API_VERSION, cognite_client=self
+        )
+        self.extraction_pipeline_runs = self.extraction_pipelines.runs
         self.transformations = TransformationsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.diagrams = DiagramsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.annotations = AnnotationsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
