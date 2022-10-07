@@ -65,8 +65,8 @@ except ImportError:  # pragma no cover
 
 
 DatapointValue = Union[int, float, str]
-DatapointsId = Union[None, int, Dict[str, Any], Sequence[Union[int, Dict[str, Any]]]]
-DatapointsExternalId = Union[None, str, Dict[str, Any], Sequence[Union[str, Dict[str, Any]]]]
+DatapointsId = Union[None, int, Dict[str, Any], List[Union[int, Dict[str, Any]]]]
+DatapointsExternalId = Union[None, str, Dict[str, Any], List[Union[str, Dict[str, Any]]]]
 
 
 class CustomDatapointsQuery(TypedDict, total=False):
@@ -229,6 +229,7 @@ class DatapointsArray(CogniteResource):
         cls,
         dps_dct: Dict[str, Union[int, str, bool, npt.NDArray]],
     ) -> DatapointsArray:
+        assert isinstance(dps_dct["timestamp"], npt.NDArray)  # mypy love
         # Since pandas always uses nanoseconds for datetime, we stick with the same:
         dps_dct["timestamp"] = dps_dct["timestamp"].astype("datetime64[ms]").astype("datetime64[ns]")
         return cls(**convert_all_keys_to_snake_case(dps_dct))
@@ -591,9 +592,13 @@ class DatapointsArrayList(CogniteResourceList):
         self._id_to_item.update(id_dct)
         self._external_id_to_item.update(xid_dct)
 
-    def get(self, id: int = None, external_id: str = None) -> Optional[Union[DatapointsArray, List[DatapointsArray]]]:
+    def get(  # type: ignore [override]
+        self,
+        id: int = None,
+        external_id: str = None,
+    ) -> Union[None, DatapointsArray, List[DatapointsArray]]:
         # TODO: Question, can we type annotate without specifying the function?
-        return super().get(id, external_id)
+        return super().get(id, external_id)  # type: ignore [return-value]
 
     def __str__(self) -> str:
         return json.dumps(self.dump(convert_timestamps=True), indent=4)
@@ -645,9 +650,13 @@ class DatapointsList(CogniteResourceList):
         self._id_to_item.update(id_dct)
         self._external_id_to_item.update(xid_dct)
 
-    def get(self, id: int = None, external_id: str = None) -> Optional[Union[DatapointsList, List[DatapointsList]]]:
+    def get(  # type: ignore [override]
+        self,
+        id: int = None,
+        external_id: str = None,
+    ) -> Union[None, DatapointsList, List[DatapointsList]]:
         # TODO: Question, can we type annotate without specifying the function?
-        return super().get(id, external_id)
+        return super().get(id, external_id)  # type: ignore [return-value]
 
     def __str__(self) -> str:
         item = self.dump()

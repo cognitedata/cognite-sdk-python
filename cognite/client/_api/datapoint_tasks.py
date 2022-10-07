@@ -69,7 +69,7 @@ T = TypeVar("T")
 class _SingleTSQueryValidator:
     def __init__(self, user_query: _DatapointsQuery) -> None:
         self.user_query = user_query
-        self.defaults: CustomDatapointsQuery = dict(
+        self.defaults: Dict[str, Any] = dict(
             start=user_query.start,
             end=user_query.end,
             limit=user_query.limit,
@@ -122,7 +122,7 @@ class _SingleTSQueryValidator:
             elif isinstance(ts, dict):
                 ts_validated = self._validate_ts_query_dict_keys(ts, arg_name, exp_type)
                 # We merge 'defaults' and given ts-dict, ts-dict takes precedence:
-                ts_dct = {**self.defaults, **ts_validated}
+                ts_dct = {**self.defaults, **ts_validated}  # type: ignore [arg-type]
                 queries.append(self._validate_and_create_query(ts_dct))  # type: ignore [arg-type]
             else:  # pragma: no cover
                 self._raise_on_wrong_ts_identifier_type(ts, arg_name, exp_type)
@@ -130,7 +130,7 @@ class _SingleTSQueryValidator:
 
     @staticmethod
     def _raise_on_wrong_ts_identifier_type(
-        id_or_xid: Union[DatapointsId, DatapointsExternalId],
+        id_or_xid: object,  # This fn is only called when gotten the wrong type
         arg_name: str,
         exp_type: type,
     ) -> NoReturn:
@@ -443,7 +443,7 @@ class DpsUnpackFns:
     @staticmethod
     def custom_from_aggregates(
         lst: List[str],
-    ) -> Callable[[List[Dict[str, DatapointValue]]], Tuple[DatapointValue, ...]]:
+    ) -> Callable[[Dict[str, DatapointValue]], Tuple[DatapointValue, ...]]:
         return op.itemgetter(*lst)
 
 
@@ -893,7 +893,9 @@ class BaseConcurrentRawTask(BaseConcurrentTask):
 
     def _create_empty_result(self) -> Union[Datapoints, DatapointsArray]:
         if not self.use_numpy:
-            return Datapoints(**convert_all_keys_to_snake_case(self.ts_info), timestamp=[], value=[])
+            return Datapoints(
+                **convert_all_keys_to_snake_case(self.ts_info), timestamp=[], value=[]  # type: ignore [arg-type]
+            )
         return DatapointsArray._load(
             {
                 **cast(dict, self.ts_info),
@@ -921,7 +923,7 @@ class BaseConcurrentRawTask(BaseConcurrentTask):
                 }
             )
         return Datapoints(
-            **convert_all_keys_to_snake_case(self.ts_info),
+            **convert_all_keys_to_snake_case(cast(Dict[str, Any], self.ts_info)),
             timestamp=create_list_from_dps_container(self.ts_data),
             value=create_list_from_dps_container(self.dps_data),
         )
@@ -959,8 +961,8 @@ class BaseConcurrentRawTask(BaseConcurrentTask):
             if point:
                 ts, dp = [point[0]], [point[1]]
                 if self.use_numpy:
-                    ts = np.array(ts, dtype=np.int64)
-                    dp = np.array(dp, dtype=self.raw_dtype)
+                    ts = np.array(ts, dtype=np.int64)  # type: ignore [assignment]
+                    dp = np.array(dp, dtype=self.raw_dtype)  # type: ignore [assignment]
                 self.ts_data[(idx,)].append(ts)
                 self.dps_data[(idx,)].append(dp)
 
@@ -1042,7 +1044,7 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
                 if self.single_non_count_agg:
                     self.dtype_aggs = np.dtype(np.float64)  # type: ignore [assignment]
                 else:  # (.., 1) is deprecated for some reason
-                    self.dtype_aggs = np.dtype((np.float64, len(self.float_aggs)))
+                    self.dtype_aggs = np.dtype((np.float64, len(self.float_aggs)))  # type: ignore [assignment]
 
     def _find_number_of_subtasks_uniform_split(self, tot_ms: int, n_workers_per_queries: int) -> int:
         n_max_dps = tot_ms // self.offset_next  # evenly divides
@@ -1057,7 +1059,7 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
                 arr_dct.update({agg: np.array([], dtype=np.float64) for agg in self.float_aggs})
             return DatapointsArray._load({**cast(dict, self.ts_info), **arr_dct})
 
-        lst_dct = {"timestamp": []}
+        lst_dct: Dict[str, List] = {"timestamp": []}
         if self.is_count_query:
             lst_dct["count"] = []
         if self.has_non_count_aggs:
@@ -1150,9 +1152,9 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
                 lst = list(map(self.agg_unpack_fn, dps))
             except KeyError:
                 if self.single_non_count_agg:
-                    lst = [dp.get(self.first_non_count_agg) for dp in dps]
+                    lst = [dp.get(self.first_non_count_agg) for dp in dps]  # type: ignore [misc]
                 else:
-                    lst = [tuple(map(dp.get, self.float_aggs)) for dp in dps]
+                    lst = [tuple(map(dp.get, self.float_aggs)) for dp in dps]  # type: ignore [arg-type]
             self.dps_data[idx].append(lst)
 
 
