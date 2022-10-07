@@ -13,10 +13,7 @@ if TYPE_CHECKING:
 
 class SyntheticDatapointsAPI(APIClient):
     _RESOURCE_PATH = "/timeseries/synthetic"
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self._DPS_LIMIT = 10000
+    _DPS_LIMIT = 10000
 
     def query(
         self,
@@ -109,16 +106,15 @@ class SyntheticDatapointsAPI(APIClient):
             query["start"] = data["datapoints"][-1]["timestamp"] + 1
         return datapoints
 
-    @classmethod
+    @staticmethod
     def _build_expression(
-        cls,
         expression: Union[str, "sympy.Expr"],
         variables: Dict[str, Any] = None,
         aggregate: str = None,
         granularity: str = None,
     ) -> Tuple[str, str]:
         if expression.__class__.__module__.startswith("sympy."):
-            expression_str = cls._sympy_to_sts(expression)
+            expression_str = SyntheticDatapointsAPI._sympy_to_sts(expression)
             if not variables:
                 raise ValueError(
                     "sympy expressions are only supported in combination with the `variables` parameter to map symbols to time series."

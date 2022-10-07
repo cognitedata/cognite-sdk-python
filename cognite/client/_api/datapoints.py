@@ -18,6 +18,7 @@ from typing import (
     Iterator,
     List,
     Literal,
+    NoReturn,
     Optional,
     Sequence,
     Set,
@@ -47,9 +48,7 @@ from cognite.client.data_classes.datapoints import (
     Datapoints,
     DatapointsArray,
     DatapointsArrayList,
-    DatapointsExternalId,
     DatapointsFromAPI,
-    DatapointsId,
     DatapointsList,
     DatapointsPayload,
     _DatapointsQuery,
@@ -111,42 +110,30 @@ class DpsFetchStrategy(ABC):
         self.max_workers = max_workers
         self.n_queries = len(all_queries)
 
-    @overload
-    def fetch_all_datapoints(self, use_numpy: Literal[True]) -> DatapointsArrayList:
-        ...
-
-    @overload
-    def fetch_all_datapoints(self, use_numpy: Literal[False]) -> DatapointsList:
-        ...
-
-    def fetch_all_datapoints(self, use_numpy: bool) -> Union[DatapointsList, DatapointsArrayList]:
+    def fetch_all_datapoints(self) -> DatapointsList:
         with PriorityThreadPoolExecutor(max_workers=self.max_workers) as pool:
-            ordered_results = self.fetch_all(pool, use_numpy)
-        return self._finalize_tasks(ordered_results, use_numpy)
+            ordered_results = self.fetch_all(pool, use_numpy=False)
+        return self._finalize_tasks(ordered_results)
 
-    @overload
+    def fetch_all_datapoints_numpy(self) -> DatapointsArrayList:
+        with PriorityThreadPoolExecutor(max_workers=self.max_workers) as pool:
+            ordered_results = self.fetch_all(pool, use_numpy=True)
+        return self._finalize_tasks_numpy(ordered_results)
+
     def _finalize_tasks(
         self,
         ordered_results: List[BaseConcurrentTask],
-        use_numpy: Literal[True],
-    ) -> DatapointsArrayList:
-        ...
-
-    @overload
-    def _finalize_tasks(
-        self,
-        ordered_results: List[BaseConcurrentTask],
-        use_numpy: Literal[False],
     ) -> DatapointsList:
-        ...
+        return DatapointsList(
+            [ts_task.get_result() for ts_task in ordered_results],
+            cognite_client=self.dps_client._cognite_client,
+        )
 
-    def _finalize_tasks(
+    def _finalize_tasks_numpy(
         self,
         ordered_results: List[BaseConcurrentTask],
-        use_numpy: bool,
-    ) -> Union[DatapointsList, DatapointsArrayList]:
-        lst_class = DatapointsArrayList if use_numpy else DatapointsList
-        return lst_class(
+    ) -> DatapointsArrayList:
+        return DatapointsArrayList(
             [ts_task.get_result() for ts_task in ordered_results],
             cognite_client=self.dps_client._cognite_client,
         )
@@ -333,7 +320,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
             self.dps_client._RESOURCE_PATH + "/list", json=cast(Dict[str, Any], payload)
         ).json()["items"]
 
-    def _create_initial_tasks(
+    def _create_initial_tasks(  # type: ignore [override]
         self, pool: PriorityThreadPoolExecutor
     ) -> Tuple[Dict[_SingleTSQueryBase, int], Dict[Future, Tuple[TSQueryList, TSQueryList]]]:
         initial_query_limits: Dict[_SingleTSQueryBase, int] = {}
@@ -555,11 +542,142 @@ class DatapointsAPI(APIClient):
             self._config, api_version=self._api_version, cognite_client=self._cognite_client
         )
 
+    @overload
     def retrieve(
         self,
         *,
-        id: Optional[DatapointsId] = None,
-        external_id: Optional[DatapointsExternalId] = None,
+        id: None,
+        external_id: None,
+        start: Union[int, str, datetime, None],
+        end: Union[int, str, datetime, None],
+        aggregates: Optional[List[str]],
+        granularity: Optional[str],
+        limit: Optional[int],
+        include_outside_points: bool,
+        ignore_unknown_ids: bool,
+    ) -> NoReturn:
+        ...
+
+    @overload
+    def retrieve(
+        self,
+        *,
+        id: int,
+        external_id: None,
+        start: Union[int, str, datetime, None],
+        end: Union[int, str, datetime, None],
+        aggregates: Optional[List[str]],
+        granularity: Optional[str],
+        limit: Optional[int],
+        include_outside_points: bool,
+        ignore_unknown_ids: Literal[False],
+    ) -> Datapoints:
+        ...
+
+    @overload
+    def retrieve(
+        self,
+        *,
+        id: None,
+        external_id: str,
+        start: Union[int, str, datetime, None],
+        end: Union[int, str, datetime, None],
+        aggregates: Optional[List[str]],
+        granularity: Optional[str],
+        limit: Optional[int],
+        include_outside_points: bool,
+        ignore_unknown_ids: Literal[False],
+    ) -> Datapoints:
+        ...
+
+    @overload
+    def retrieve(
+        self,
+        *,
+        id: int,
+        external_id: None,
+        start: Union[int, str, datetime, None],
+        end: Union[int, str, datetime, None],
+        aggregates: Optional[List[str]],
+        granularity: Optional[str],
+        limit: Optional[int],
+        include_outside_points: bool,
+        ignore_unknown_ids: Literal[True],
+    ) -> Optional[Datapoints]:
+        ...
+
+    @overload
+    def retrieve(
+        self,
+        *,
+        id: None,
+        external_id: str,
+        start: Union[int, str, datetime, None],
+        end: Union[int, str, datetime, None],
+        aggregates: Optional[List[str]],
+        granularity: Optional[str],
+        limit: Optional[int],
+        include_outside_points: bool,
+        ignore_unknown_ids: Literal[True],
+    ) -> Optional[Datapoints]:
+        ...
+
+    @overload
+    def retrieve(
+        self,
+        *,
+        id: Dict[str, Any],
+        external_id: None,
+        start: Union[int, str, datetime, None],
+        end: Union[int, str, datetime, None],
+        aggregates: Optional[List[str]],
+        granularity: Optional[str],
+        limit: Optional[int],
+        include_outside_points: bool,
+        ignore_unknown_ids: bool,
+    ) -> Optional[Datapoints]:
+        ...
+
+    @overload
+    def retrieve(
+        self,
+        *,
+        id: None,
+        external_id: Dict[str, Any],
+        start: Union[int, str, datetime, None],
+        end: Union[int, str, datetime, None],
+        aggregates: Optional[List[str]],
+        granularity: Optional[str],
+        limit: Optional[int],
+        include_outside_points: bool,
+        ignore_unknown_ids: bool,
+    ) -> Optional[Datapoints]:
+        ...
+
+    @overload
+    def retrieve(
+        self,
+        *,
+        id: Union[None, List[Union[int, Dict[str, Any]]]],
+        external_id: Union[None, List[Union[str, Dict[str, Any]]]],
+        start: Union[int, str, datetime, None],
+        end: Union[int, str, datetime, None],
+        aggregates: Optional[List[str]],
+        granularity: Optional[str],
+        limit: Optional[int],
+        include_outside_points: bool,
+        ignore_unknown_ids: bool,
+    ) -> DatapointsList:
+        ...
+
+    # Why are we using List instead of Sequence in type hint? It's because `Sequence[str]` and `str`
+    # are indistinguishable... thus using Sequence gives mypy error "Overloaded function signatures X and Y
+    # overlap with incompatible return types". See: https://stackoverflow.com/a/49887206/3887338
+    def retrieve(
+        self,
+        *,
+        id: Union[None, int, Dict[str, Any], List[Union[int, Dict[str, Any]]]] = None,
+        external_id: Union[None, str, Dict[str, Any], List[Union[str, Dict[str, Any]]]] = None,
         start: Union[int, str, datetime, None] = None,
         end: Union[int, str, datetime, None] = None,
         aggregates: Optional[List[str]] = None,
@@ -570,16 +688,13 @@ class DatapointsAPI(APIClient):
     ) -> Union[None, Datapoints, DatapointsList]:
         """`Retrieve datapoints for one or more time series. <https://docs.cognite.com/api/v1/#operation/getMultiTimeSeriesDatapoints>`_
 
-        **Note**: All arguments are optional, as long as at least one identifier is given. When passing aggregates, granularity must also be given.
-        When passing dict objects with specific parameters, these will take precedence. See examples below.
-
         **Performance hint:**: For better performance and lower memory usage, consider using `retrieve_arrays(...)` which uses `numpy.ndarrays` for data storage.
 
         Args:
-            start (Union[int, str, datetime]): Inclusive start. Default: 1970-01-01 UTC.
-            end (Union[int, str, datetime]): Exclusive end. Default: "now"
-            id (DatapointsId): Id, dict (with id) or (mixed) list of these. See examples below.
-            external_id (DatapointsExternalId): External id, dict (with external id) or (mixed) list of these. See examples below.
+            start (Union[int, str, datetime, None]): Inclusive start. Default: 1970-01-01 UTC.
+            end (Union[int, str, datetime, None]): Exclusive end. Default: "now"
+            id (Union[None, int, Dict[str, Any], List[Union[int, Dict[str, Any]]]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
+            external_id (Union[None, str, Dict[str, Any], List[Union[str, Dict[str, Any]]]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
             aggregates (List[str]): List of aggregate functions to apply. Default: No aggregates (raw datapoints)
             granularity (str): The granularity to fetch aggregates at. e.g. '1s', '2h', '10d'. Default: None.
             limit (int): Maximum number of datapoints to return for each time series. Default: None (no limit)
@@ -680,18 +795,146 @@ class DatapointsAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
         fetcher = dps_fetch_selector(self, user_query=query)
-        dps_list = fetcher.fetch_all_datapoints(use_numpy=False)
+        dps_list = fetcher.fetch_all_datapoints()
         if not query.is_single_identifier:
             return dps_list
         elif not dps_list and ignore_unknown_ids:
             return None
         return dps_list[0]
 
+    @overload
     def retrieve_arrays(
         self,
         *,
-        id: Optional[DatapointsId] = None,
-        external_id: Optional[DatapointsExternalId] = None,
+        id: None,
+        external_id: None,
+        start: Union[int, str, datetime, None],
+        end: Union[int, str, datetime, None],
+        aggregates: Optional[List[str]],
+        granularity: Optional[str],
+        limit: Optional[int],
+        include_outside_points: bool,
+        ignore_unknown_ids: bool,
+    ) -> NoReturn:
+        ...
+
+    @overload
+    def retrieve_arrays(
+        self,
+        *,
+        id: int,
+        external_id: None,
+        start: Union[int, str, datetime, None],
+        end: Union[int, str, datetime, None],
+        aggregates: Optional[List[str]],
+        granularity: Optional[str],
+        limit: Optional[int],
+        include_outside_points: bool,
+        ignore_unknown_ids: Literal[False],
+    ) -> DatapointsArray:
+        ...
+
+    @overload
+    def retrieve_arrays(
+        self,
+        *,
+        id: None,
+        external_id: str,
+        start: Union[int, str, datetime, None],
+        end: Union[int, str, datetime, None],
+        aggregates: Optional[List[str]],
+        granularity: Optional[str],
+        limit: Optional[int],
+        include_outside_points: bool,
+        ignore_unknown_ids: Literal[False],
+    ) -> DatapointsArray:
+        ...
+
+    @overload
+    def retrieve_arrays(
+        self,
+        *,
+        id: int,
+        external_id: None,
+        start: Union[int, str, datetime, None],
+        end: Union[int, str, datetime, None],
+        aggregates: Optional[List[str]],
+        granularity: Optional[str],
+        limit: Optional[int],
+        include_outside_points: bool,
+        ignore_unknown_ids: Literal[True],
+    ) -> Optional[DatapointsArray]:
+        ...
+
+    @overload
+    def retrieve_arrays(
+        self,
+        *,
+        id: None,
+        external_id: str,
+        start: Union[int, str, datetime, None],
+        end: Union[int, str, datetime, None],
+        aggregates: Optional[List[str]],
+        granularity: Optional[str],
+        limit: Optional[int],
+        include_outside_points: bool,
+        ignore_unknown_ids: Literal[True],
+    ) -> Optional[DatapointsArray]:
+        ...
+
+    @overload
+    def retrieve_arrays(
+        self,
+        *,
+        id: Dict[str, Any],
+        external_id: None,
+        start: Union[int, str, datetime, None],
+        end: Union[int, str, datetime, None],
+        aggregates: Optional[List[str]],
+        granularity: Optional[str],
+        limit: Optional[int],
+        include_outside_points: bool,
+        ignore_unknown_ids: bool,
+    ) -> Optional[DatapointsArray]:
+        ...
+
+    @overload
+    def retrieve_arrays(
+        self,
+        *,
+        id: None,
+        external_id: Dict[str, Any],
+        start: Union[int, str, datetime, None],
+        end: Union[int, str, datetime, None],
+        aggregates: Optional[List[str]],
+        granularity: Optional[str],
+        limit: Optional[int],
+        include_outside_points: bool,
+        ignore_unknown_ids: bool,
+    ) -> Optional[DatapointsArray]:
+        ...
+
+    @overload
+    def retrieve_arrays(
+        self,
+        *,
+        id: Union[None, List[Union[int, Dict[str, Any]]]],
+        external_id: Union[None, List[Union[str, Dict[str, Any]]]],
+        start: Union[int, str, datetime, None],
+        end: Union[int, str, datetime, None],
+        aggregates: Optional[List[str]],
+        granularity: Optional[str],
+        limit: Optional[int],
+        include_outside_points: bool,
+        ignore_unknown_ids: bool,
+    ) -> DatapointsArrayList:
+        ...
+
+    def retrieve_arrays(
+        self,
+        *,
+        id: Union[None, int, Dict[str, Any], List[Union[int, Dict[str, Any]]]] = None,
+        external_id: Union[None, str, Dict[str, Any], List[Union[str, Dict[str, Any]]]] = None,
         start: Union[int, str, datetime, None] = None,
         end: Union[int, str, datetime, None] = None,
         aggregates: Optional[List[str]] = None,
@@ -705,10 +948,10 @@ class DatapointsAPI(APIClient):
         **Note**: This method requires `numpy`.
 
         Args:
-            start (Union[int, str, datetime]): Inclusive start. Default: 1970-01-01 UTC.
-            end (Union[int, str, datetime]): Exclusive end. Default: "now"
-            id (DatapointsId): Id, dict (with id) or (mixed) list of these. See examples below.
-            external_id (DatapointsExternalId): External id, dict (with external id) or (mixed) list of these. See examples below.
+            start (Union[int, str, datetime, None]): Inclusive start. Default: 1970-01-01 UTC.
+            end (Union[int, str, datetime, None]): Exclusive end. Default: "now"
+            id (Union[None, int, Dict[str, Any], List[Union[int, Dict[str, Any]]]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
+            external_id (Union[None, str, Dict[str, Any], List[Union[str, Dict[str, Any]]]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
             aggregates (List[str]): List of aggregate functions to apply. Default: No aggregates (raw datapoints)
             granularity (str): The granularity to fetch aggregates at. e.g. '1s', '2h', '10d'. Default: None.
             limit (int): Maximum number of datapoints to return for each time series. Default: None (no limit)
@@ -776,18 +1019,170 @@ class DatapointsAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
         fetcher = dps_fetch_selector(self, user_query=query)
-        dps_list = fetcher.fetch_all_datapoints(use_numpy=True)
+        dps_list = fetcher.fetch_all_datapoints_numpy()
         if not query.is_single_identifier:
             return dps_list
         elif not dps_list and ignore_unknown_ids:
             return None
         return dps_list[0]
 
+    @overload
     def retrieve_dataframe(
         self,
         *,
-        id: Optional[DatapointsId] = None,
-        external_id: Optional[DatapointsExternalId] = None,
+        id: None,
+        external_id: None,
+        start: Union[int, str, datetime, None],
+        end: Union[int, str, datetime, None],
+        aggregates: Optional[List[str]],
+        granularity: Optional[str],
+        limit: Optional[int],
+        include_outside_points: bool,
+        ignore_unknown_ids: bool,
+        uniform_index: bool,
+        include_aggregate_name: bool,
+        column_names: Literal["id", "external_id"],
+    ) -> NoReturn:
+        ...
+
+    @overload
+    def retrieve_dataframe(
+        self,
+        *,
+        id: int,
+        external_id: None,
+        start: Union[int, str, datetime, None],
+        end: Union[int, str, datetime, None],
+        aggregates: Optional[List[str]],
+        granularity: Optional[str],
+        limit: Optional[int],
+        include_outside_points: bool,
+        ignore_unknown_ids: Literal[False],
+        uniform_index: bool,
+        include_aggregate_name: bool,
+        column_names: Literal["id", "external_id"],
+    ) -> Datapoints:
+        ...
+
+    @overload
+    def retrieve_dataframe(
+        self,
+        *,
+        id: None,
+        external_id: str,
+        start: Union[int, str, datetime, None],
+        end: Union[int, str, datetime, None],
+        aggregates: Optional[List[str]],
+        granularity: Optional[str],
+        limit: Optional[int],
+        include_outside_points: bool,
+        ignore_unknown_ids: Literal[False],
+        uniform_index: bool,
+        include_aggregate_name: bool,
+        column_names: Literal["id", "external_id"],
+    ) -> Datapoints:
+        ...
+
+    @overload
+    def retrieve_dataframe(
+        self,
+        *,
+        id: int,
+        external_id: None,
+        start: Union[int, str, datetime, None],
+        end: Union[int, str, datetime, None],
+        aggregates: Optional[List[str]],
+        granularity: Optional[str],
+        limit: Optional[int],
+        include_outside_points: bool,
+        ignore_unknown_ids: Literal[True],
+        uniform_index: bool,
+        include_aggregate_name: bool,
+        column_names: Literal["id", "external_id"],
+    ) -> Optional[Datapoints]:
+        ...
+
+    @overload
+    def retrieve_dataframe(
+        self,
+        *,
+        id: None,
+        external_id: str,
+        start: Union[int, str, datetime, None],
+        end: Union[int, str, datetime, None],
+        aggregates: Optional[List[str]],
+        granularity: Optional[str],
+        limit: Optional[int],
+        include_outside_points: bool,
+        ignore_unknown_ids: Literal[True],
+        uniform_index: bool,
+        include_aggregate_name: bool,
+        column_names: Literal["id", "external_id"],
+    ) -> Optional[Datapoints]:
+        ...
+
+    @overload
+    def retrieve_dataframe(
+        self,
+        *,
+        id: Dict[str, Any],
+        external_id: None,
+        start: Union[int, str, datetime, None],
+        end: Union[int, str, datetime, None],
+        aggregates: Optional[List[str]],
+        granularity: Optional[str],
+        limit: Optional[int],
+        include_outside_points: bool,
+        ignore_unknown_ids: bool,
+        uniform_index: bool,
+        include_aggregate_name: bool,
+        column_names: Literal["id", "external_id"],
+    ) -> Optional[Datapoints]:
+        ...
+
+    @overload
+    def retrieve_dataframe(
+        self,
+        *,
+        id: None,
+        external_id: Dict[str, Any],
+        start: Union[int, str, datetime, None],
+        end: Union[int, str, datetime, None],
+        aggregates: Optional[List[str]],
+        granularity: Optional[str],
+        limit: Optional[int],
+        include_outside_points: bool,
+        ignore_unknown_ids: bool,
+        uniform_index: bool,
+        include_aggregate_name: bool,
+        column_names: Literal["id", "external_id"],
+    ) -> Optional[Datapoints]:
+        ...
+
+    @overload
+    def retrieve_dataframe(
+        self,
+        *,
+        id: Union[None, List[Union[int, Dict[str, Any]]]],
+        external_id: Union[None, List[Union[str, Dict[str, Any]]]],
+        start: Union[int, str, datetime, None],
+        end: Union[int, str, datetime, None],
+        aggregates: Optional[List[str]],
+        granularity: Optional[str],
+        limit: Optional[int],
+        include_outside_points: bool,
+        ignore_unknown_ids: bool,
+        uniform_index: bool,
+        include_aggregate_name: bool,
+        column_names: Literal["id", "external_id"],
+    ) -> DatapointsList:
+        ...
+
+    def retrieve_dataframe(
+        self,
+        *,
+        id: Union[None, int, Dict[str, Any], List[Union[int, Dict[str, Any]]]] = None,
+        external_id: Union[None, str, Dict[str, Any], List[Union[str, Dict[str, Any]]]] = None,
         start: Union[int, str, datetime, None] = None,
         end: Union[int, str, datetime, None] = None,
         aggregates: Optional[List[str]] = None,
@@ -799,15 +1194,15 @@ class DatapointsAPI(APIClient):
         include_aggregate_name: bool = True,
         column_names: Literal["id", "external_id"] = "external_id",
     ) -> pd.DataFrame:
-        """Get datapoints directly in a pandas dataframe (convenience method wrapping the `retrieve_arrays` method).
+        """Get datapoints directly in a pandas dataframe.
 
         **Note**: If you have duplicated time series in your query, the dataframe columns will also contain duplicates.
 
         Args:
-            start (Union[int, str, datetime]): Inclusive start. Default: 1970-01-01 UTC.
-            end (Union[int, str, datetime]): Exclusive end. Default: "now"
-            id (DatapointsId): Id, dict (with id) or (mixed) list of these. See examples below.
-            external_id (DatapointsExternalId): External id, dict (with external id) or (mixed) list of these. See examples below.
+            start (Union[int, str, datetime, None]): Inclusive start. Default: 1970-01-01 UTC.
+            end (Union[int, str, datetime, None]): Exclusive end. Default: "now"
+            id (Union[None, int, Dict[str, Any], List[Union[int, Dict[str, Any]]]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
+            external_id (Union[None, str, Dict[str, Any], List[Union[str, Dict[str, Any]]]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
             aggregates (List[str]): List of aggregate functions to apply. Default: No aggregates (raw datapoints)
             granularity (str): The granularity to fetch aggregates at. e.g. '1s', '2h', '10d'. Default: None.
             limit (int): Maximum number of datapoints to return for each time series. Default: None (no limit)
@@ -881,7 +1276,7 @@ class DatapointsAPI(APIClient):
                     "Cannot return a uniform index when asking for aggregates with multiple granularities "
                     f"({grans_given}) OR when (partly) querying raw datapoints OR when a finite limit is used."
                 )
-        df = fetcher.fetch_all_datapoints(use_numpy=True).to_pandas(column_names, include_aggregate_name)
+        df = fetcher.fetch_all_datapoints_numpy().to_pandas(column_names, include_aggregate_name)
         if not uniform_index:
             return df
 
@@ -889,7 +1284,8 @@ class DatapointsAPI(APIClient):
         end = pd.Timestamp(max(q.end for q in fetcher.agg_queries), unit="ms")
         (granularity,) = grans_given
         # Pandas understand "Cognite granularities" except `m` (minutes) which we must translate:
-        return df.reindex(pd.date_range(start=start, end=end, freq=granularity.replace("m", "T"), inclusive="left"))
+        freq = cast(str, granularity).replace("m", "T")
+        return df.reindex(pd.date_range(start=start, end=end, freq=freq, inclusive="left"))
 
     def retrieve_latest(
         self,
@@ -1018,10 +1414,12 @@ class DatapointsAPI(APIClient):
                     "When inserting data using a `Datapoints` or `DatapointsArray` object, only raw datapoints are supported"
                 )
             if isinstance(datapoints, Datapoints):
-                datapoints = list(zip(datapoints.timestamp, datapoints.value))  # type: ignore [arg-type]
+                datapoints = list(zip(datapoints.timestamp, datapoints.value))  # type: ignore [assignment]
             else:
-                ts = datapoints.timestamp.astype("datetime64[ms]").astype("int64")
-                datapoints = list(zip(ts, datapoints.value))  # type: ignore [arg-type]
+                # Using `tolist()` converts to the nearest compatible built-in Python type:
+                ts = datapoints.timestamp.astype("datetime64[ms]").astype("int64")  # type: ignore [union-attr]
+                datapoints = list(zip(ts.tolist(), datapoints.value.tolist()))  # type: ignore [union-attr]
+
         post_dps_object["datapoints"] = datapoints
         dps_poster = DatapointsPoster(self)
         dps_poster.insert([post_dps_object])

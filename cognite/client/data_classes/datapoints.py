@@ -15,7 +15,6 @@ from typing import (
     Collection,
     Dict,
     Generator,
-    Iterable,
     Iterator,
     List,
     Literal,
@@ -65,6 +64,11 @@ except ImportError:  # pragma no cover
     NUMPY_IS_AVAILABLE = False
 
 
+DatapointValue = Union[int, float, str]
+DatapointsId = Union[None, int, Dict[str, Any], Sequence[Union[int, Dict[str, Any]]]]
+DatapointsExternalId = Union[None, str, Dict[str, Any], Sequence[Union[str, Dict[str, Any]]]]
+
+
 class CustomDatapointsQuery(TypedDict, total=False):
     # No field required
     start: Union[int, str, datetime, None]
@@ -98,19 +102,12 @@ class DatapointsPayload(CustomDatapoints):
     items: List[CustomDatapoints]
 
 
-DatapointValue = Union[int, float, str]
-
-
 class DatapointsFromAPI(TypedDict):
     id: int
     externalId: Optional[str]
     isString: bool
     isStep: bool
     datapoints: List[Dict[str, DatapointValue]]
-
-
-DatapointsId = Union[int, DatapointsQueryId, Iterable[Union[int, DatapointsQueryId]]]
-DatapointsExternalId = Union[str, DatapointsQueryExternalId, Iterable[Union[str, DatapointsQueryExternalId]]]
 
 
 class Datapoint(CogniteResource):
