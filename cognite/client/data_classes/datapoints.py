@@ -26,6 +26,7 @@ from typing import (
     TypedDict,
     Union,
     cast,
+    overload,
 )
 
 from cognite.client import utils
@@ -250,7 +251,15 @@ class DatapointsArray(CogniteResource):
     def _repr_html_(self) -> str:
         return self.to_pandas()._repr_html_()
 
-    def __getitem__(self, item: Any) -> Union[Datapoint, DatapointsArray]:
+    @overload
+    def __getitem__(self, item: int) -> Datapoint:
+        ...
+
+    @overload
+    def __getitem__(self, item: slice) -> DatapointsArray:
+        ...
+
+    def __getitem__(self, item: Union[int, slice]) -> Union[Datapoint, DatapointsArray]:
         if isinstance(item, slice):
             return self._slice(item)
         return Datapoint(**{attr: self._dtype_fix(arr[item]) for attr, arr in zip(*self._data_fields())})
@@ -422,7 +431,15 @@ class Datapoints(CogniteResource):
             and list(self._get_non_empty_data_fields()) == list(other._get_non_empty_data_fields())
         )
 
-    def __getitem__(self, item: Any) -> Union[Datapoint, "Datapoints"]:
+    @overload
+    def __getitem__(self, item: int) -> Datapoint:
+        ...
+
+    @overload
+    def __getitem__(self, item: slice) -> Datapoints:
+        ...
+
+    def __getitem__(self, item: Union[int, slice]) -> Union[Datapoint, Datapoints]:
         if isinstance(item, slice):
             return self._slice(item)
         dp_args = {}
