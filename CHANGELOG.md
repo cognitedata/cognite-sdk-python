@@ -18,6 +18,10 @@ Changes are grouped as follows
 ### Added
 - Add support for extraction pipeline configuration files
 
+## [4.8.1] - 2022-10-06
+### Fixed
+- Fix `__str__` function of `TransformationSchedule`
+
 ## [4.8.0] - 2022-09-30
 ### Added
 - Add operations for geospatial rasters
