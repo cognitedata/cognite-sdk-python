@@ -1448,19 +1448,19 @@ Extraction pipeline configs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Get the latest or a specific config revision
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelinesAPI.get_config
+.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelineConfigsAPI.retrieve
 
 List configuration revisions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelinesAPI.list_config_revisions
+.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelineConfigsAPI.list
 
 Create a config revision
 ~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelinesAPI.new_config
+.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelineConfigsAPI.create
 
 Revert to an earlier config revision
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelinesAPI.revert_config
+.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelineConfigsAPI.revert
 
 Data classes
 ^^^^^^^^^^^^
