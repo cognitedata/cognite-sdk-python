@@ -133,7 +133,7 @@ class CogniteNotFoundError(CogniteMultiException):
 
     def __str__(self) -> str:
         if len(not_found := self.not_found) > 200:
-            not_found = reprlib.repr(self.not_found)
+            not_found = reprlib.repr(self.not_found)  # type: ignore [assignment]
         return f"Not found: {not_found}{self._get_multi_exception_summary()}"
 
 
