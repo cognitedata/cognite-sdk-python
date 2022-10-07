@@ -488,7 +488,6 @@ class Datapoints(CogniteResource):
             pandas.DataFrame: The dataframe.
         """
         pd = cast(Any, local_import("pandas"))
-        data_fields = {}
         timestamps = []
         if column_names in ["external_id", "externalId"]:  # Camel case for backwards compat
             identifier = self.external_id if self.external_id is not None else self.id
@@ -496,7 +495,11 @@ class Datapoints(CogniteResource):
             identifier = self.id
         else:
             raise ValueError("column_names must be 'external_id' or 'id'")
-        for attr, data in self._get_non_empty_data_fields(get_empty_lists=True, get_error=include_errors):
+
+        # Make sure columns (aggregates) always come in alphabetical order (e.g. "average" before "max"):
+        data_field_dct = {}
+        data_fields = self._get_non_empty_data_fields(get_empty_lists=True, get_error=include_errors)
+        for attr, data in sorted(data_fields):
             if attr == "timestamp":
                 timestamps = data
             else:
@@ -505,9 +508,9 @@ class Datapoints(CogniteResource):
                     if include_aggregate_name:
                         id_with_agg += f"|{attr}"
                     data = pd.to_numeric(data, errors="coerce")  # Avoids object dtype for missing aggs
-                data_fields[id_with_agg] = data
+                data_field_dct[id_with_agg] = data
 
-        return pd.DataFrame(data_fields, index=pd.to_datetime(timestamps, unit="ms"))
+        return pd.DataFrame(data_field_dct, index=pd.to_datetime(timestamps, unit="ms"))
 
     @classmethod
     def _load(  # type: ignore [override]

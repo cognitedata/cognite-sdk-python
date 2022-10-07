@@ -20,6 +20,7 @@ import pytest
 from cognite.client._constants import ALL_SORTED_DP_AGGS
 from cognite.client.data_classes import Datapoints, DatapointsArray, DatapointsArrayList, DatapointsList, TimeSeries
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
+from cognite.client.utils._auxiliary import to_camel_case, to_snake_case
 from cognite.client.utils._time import (
     MAX_TIMESTAMP_MS,
     MIN_TIMESTAMP_MS,
@@ -513,6 +514,37 @@ class TestRetrieveRawDatapointsAPI:
 
 class TestRetrieveAggregateDatapointsAPI:
     @pytest.mark.parametrize(
+        "aggregates",
+        (
+            ["step_interpolation"],
+            ["stepInterpolation", "min"],
+            ["continuous_variance", "discrete_variance", "step_interpolation", "total_variation"],
+            ["continuous_variance", "discrete_variance", "step_interpolation", "total_variation", "min"],
+            list(map(to_camel_case, ALL_SORTED_DP_AGGS)),
+            list(map(to_snake_case, ALL_SORTED_DP_AGGS)),
+            # Give a mix:
+            ["continuousVariance", "discrete_variance", "step_interpolation", "totalVariation"],
+            ["continuous_variance", "discreteVariance", "stepInterpolation", "total_variation", "min"],
+        ),
+    )
+    def test_aggregates_in_camel_or_and_snake_case(self, aggregates, fixed_freq_dps_ts, retrieve_endpoints):
+        dfs, ts = [], random.choice(fixed_freq_dps_ts[0])  # only pick from numeric ts
+        granularity = random_granularity()
+        for endpoint in retrieve_endpoints:
+            res = endpoint(
+                limit=5,
+                id={"id": ts.id, "granularity": granularity, "aggregates": aggregates},
+            )
+            snake_aggs = sorted(map(to_snake_case, aggregates))
+            for col_names in ["id", "external_id"]:
+                res_df = res.to_pandas(column_names=col_names, include_aggregate_name=True)
+                assert all(res_df.columns == [f"{getattr(ts, col_names)}|{agg}" for agg in snake_aggs])
+                dfs.append(res_df)
+        # Also make sure `Datapoints.to_pandas()` and `DatapointsArray.to_pandas()` give identical results:
+        pd.testing.assert_frame_equal(dfs[0], dfs[2])
+        pd.testing.assert_frame_equal(dfs[1], dfs[3])
+
+    @pytest.mark.parametrize(
         "is_step, start, end, exp_start, exp_end, max_workers, mock_out_eager_or_chunk",
         (
             (True, MIN_TIMESTAMP_MS, MAX_TIMESTAMP_MS, YEAR_MS[1965], YEAR_MS[1975], 4, "ChunkingDpsFetcher"),
@@ -626,12 +658,21 @@ class TestRetrieveAggregateDatapointsAPI:
                 external_id=[
                     {"external_id": ts.external_id, "granularity": granularities[2]},
                     {"external_id": ts.external_id, "granularity": granularities[3]},
-                    # Verify empty with `count`:
+                    # Verify empty with `count` (wont return any datapoints):
                     {"external_id": ts.external_id, "granularity": granularities[0], "aggregates": ["count"]},
+                    # Verify empty with `count` and `step_interpolation`: will always return a datapoint (if not before_first_dp),
+                    # with count agg missing, so make sure it is correctly "loaded" into the data object as a 0 (zero):
+                    {
+                        "external_id": ts.external_id,
+                        "granularity": granularities[0],
+                        "aggregates": ["count", "step_interpolation"],
+                    },
                 ],
             )
-            *interp_res_lst, count_dps = res_lst
-            assert sum(count_dps.count) == 0
+            *interp_res_lst, count_dps, count_step_interp_dps = res_lst
+            assert len(count_dps.count) == 0
+            if not before_first_dp:
+                assert len(count_step_interp_dps.count) == 1 and count_step_interp_dps.count[0] == 0
 
             for dps, gran in zip(interp_res_lst, granularities):
                 interp_dps = getattr(dps, aggregates[0])
@@ -863,12 +904,14 @@ class TestRetrieveAggregateDatapointsAPI:
                 end=ts_to_ms("1970-09-05 19:49:40"),
                 external_id=xid,
                 granularity="1s",
-                aggregates=["average", "interpolation"],
+                aggregates=["average", "count", "interpolation"],
             )
             # Each dp is more than 1h apart, leading to all-nans for interp. agg only:
             df = res.to_pandas(include_aggregate_name=True, column_names="external_id")
             assert df[f"{xid}|interpolation"].isna().all()  # SDK bug v<5, would be all None
             assert df[f"{xid}|average"].notna().all()
+            assert df[f"{xid}|count"].dtype == np.int64
+            assert df[f"{xid}|interpolation"].dtype == np.float64
 
 
 class TestRetrieveMixedRawAndAgg:

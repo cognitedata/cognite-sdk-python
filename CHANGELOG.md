@@ -39,7 +39,8 @@ Changes are grouped as follows
 - The utility function `datetime_to_ms` no longer issues a `FutureWarning` on missing timezone information. It will now interpret naive `datetime`s as local time as is Python's default interpretation.
 - The utility function `ms_to_datetime` no longer issues a `FutureWarning` on returning a naive `datetime` in UTC. It will now return an aware `datetime` object in UTC.
 - All data classes in the SDK that represent a Cognite resource type have a `to_pandas` method. Previously, these had various defaults for the `camel_case` parameter, but they have all been changed to `False`.
-- The method `DatapointsAPI.insert_dataframe` has new default values for `dropna` (now `True`, still being applied on a per-column basis) and `external_id_headers` (now `True`, disincentivizing the use of internal IDs).
+- All retrieve methods now accept identifier and aggregates in snake case (and camel case for convenience / backwards compatability). Note that all newly supported customisable parameters (e.g. `include_outside_points` or `ignore_unknown_ids` *must* be passed in snake case or a `KeyError` will be raised.)
+- The method `DatapointsAPI.insert_dataframe` has new default values for `dropna` (now `True`, still being applied on a per-column basis to not lose any data) and `external_id_headers` (now `True`, disincentivizing the use of internal IDs).
 - The previous fetching logic awaited and collected all errors before raising (through the use of an "initiate-and-forget" thread pool). This is great, e.g., updates/inserts to make sure you are aware of all partial changes. However, when reading datapoints, a better option is to just fail fast (which it does now).
 - `DatapointsAPI.[retrieve/retrieve_arrays/retrieve_dataframe]` no longer requires `start` (default: `0`) and `end` (default: `now`). This is now aligned with the API.
 - Additionally, `DatapointsAPI.retrieve_dataframe` no longer requires `granularity` and `aggregates`.
