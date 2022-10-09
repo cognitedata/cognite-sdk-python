@@ -1577,7 +1577,7 @@ class DatapointsAPI(APIClient):
                 )
         dps = []
         idx = df.index.to_numpy("datetime64[ms]").astype(np.int64)
-        for column_id, col in df.iteritems():
+        for column_id, col in df.items():
             mask = col.notna()
             datapoints = list(zip(idx[mask], col[mask]))
             if not datapoints:
