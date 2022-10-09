@@ -721,7 +721,7 @@ class _DatapointsQuery(CogniteResource):
     end: Union[int, str, datetime, None] = None
     id: Optional[DatapointsId] = None
     external_id: Optional[DatapointsExternalId] = None
-    aggregates: Optional[List[str]] = None
+    aggregates: Union[str, List[str], None] = None
     granularity: Optional[str] = None
     limit: Optional[int] = None
     include_outside_points: bool = False

@@ -120,10 +120,13 @@ class _SingleTSQueryValidator:
                 queries.append(self._validate_and_create_query(ts_dct))  # type: ignore [arg-type]
 
             elif isinstance(ts, dict):
-                ts_validated = self._validate_ts_query_dict_keys(ts, arg_name, exp_type)
+                ts_validated = self._validate_user_supplied_dct_keys(ts, arg_name)
+                if not isinstance(identifier := ts_validated[arg_name], exp_type):  # type: ignore [literal-required]
+                    self._raise_on_wrong_ts_identifier_type(identifier, arg_name, exp_type)
                 # We merge 'defaults' and given ts-dict, ts-dict takes precedence:
                 ts_dct = {**self.defaults, **ts_validated}  # type: ignore [arg-type]
                 queries.append(self._validate_and_create_query(ts_dct))  # type: ignore [arg-type]
+
             else:  # pragma: no cover
                 self._raise_on_wrong_ts_identifier_type(ts, arg_name, exp_type)
         return queries
@@ -140,8 +143,8 @@ class _SingleTSQueryValidator:
         )
 
     @staticmethod
-    def _validate_ts_query_dict_keys(
-        dct: Dict[str, Any], arg_name: str, exp_type: type
+    def _validate_user_supplied_dct_keys(
+        dct: Dict[str, Any], arg_name: str
     ) -> Union[DatapointsQueryId, DatapointsQueryExternalId]:
         if arg_name not in dct:
             if (arg_name_cc := to_camel_case(arg_name)) not in dct:
@@ -149,10 +152,6 @@ class _SingleTSQueryValidator:
             # For backwards compatibility we accept identifiers in camel case: (Make copy to avoid side effects
             # for user's input). Also means we need to return it.
             dct[arg_name] = (dct := dct.copy()).pop(arg_name_cc)
-
-        ts_identifier = dct[arg_name]
-        if not isinstance(ts_identifier, exp_type):
-            _SingleTSQueryValidator._raise_on_wrong_ts_identifier_type(ts_identifier, arg_name, exp_type)
 
         opt_dct_keys = {
             "start",
@@ -180,8 +179,8 @@ class _SingleTSQueryValidator:
         if not (granularity is None or isinstance(granularity, str)):
             raise TypeError(f"Expected `granularity` to be of type `str` or None, not {type(granularity)}")
 
-        elif not (aggregates is None or isinstance(aggregates, list)):
-            raise TypeError(f"Expected `aggregates` to be of type `list[str]` or None, not {type(aggregates)}")
+        elif not (aggregates is None or isinstance(aggregates, (str, list))):
+            raise TypeError(f"Expected `aggregates` to be of type `str`, `list[str]` or None, not {type(aggregates)}")
 
         elif aggregates is None:
             if granularity is None:
@@ -192,8 +191,7 @@ class _SingleTSQueryValidator:
                 return _SingleTSQueryRawLimited(**raw_query)
             raise ValueError("When passing `granularity`, argument `aggregates` is also required.")
 
-        # Aggregates must be a list at this point:
-        elif len(aggregates) == 0:
+        elif isinstance(aggregates, list) and len(aggregates) == 0:
             raise ValueError("Empty list of `aggregates` passed, expected at least one!")
 
         elif granularity is None:
@@ -225,7 +223,9 @@ class _SingleTSQueryValidator:
         if is_raw:
             converted["include_outside_points"] = dct["include_outside_points"]
         else:
-            converted["aggregates"] = dct["aggregates"]
+            if isinstance(aggs := dct["aggregates"], str):
+                aggs = [aggs]
+            converted["aggregates"] = aggs
             converted["granularity"] = dct["granularity"]
         return converted
 
