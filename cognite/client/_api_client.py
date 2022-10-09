@@ -56,7 +56,7 @@ class APIClient:
 
     # TODO: This following set should be generated from the openapi spec somehow.
     _RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS = {
-        "^" + path + "(\?.*)?$"
+        rf"^{path}(\?.*)?$"
         for path in (
             "/(assets|events|files|timeseries|sequences|datasets|relationships)/(list|byids|search|aggregate)",
             "/files/downloadlink",
