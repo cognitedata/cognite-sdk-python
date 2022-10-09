@@ -768,11 +768,11 @@ class DatapointsAPI(APIClient):
 
                 >>> import itertools
                 >>> month_starts = [
-                >>>     datetime(year, month, 1, tzinfo=utc)
-                >>>     for year, month in itertools.product(range(2000, 2011), range(1, 13))]
+                ...     datetime(year, month, 1, tzinfo=utc)
+                ...     for year, month in itertools.product(range(2000, 2011), range(1, 13))]
                 >>> dps_lst = client.time_series.data.retrieve(
-                >>>     external_id=[{"external_id": xid, "start": start} for start in month_starts],
-                >>>     limit=1)
+                ...     external_id=[{"external_id": "foo", "start": start} for start in month_starts],
+                ...     limit=1)
 
             The last example here is just to showcase the great flexibility of the `retrieve` endpoint, with a very custom query::
 
