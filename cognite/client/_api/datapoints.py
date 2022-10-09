@@ -730,14 +730,16 @@ class DatapointsAPI(APIClient):
             If you also pass top-level parameters, these will be overruled by the individual parameters (where both exist). You are free to
             mix any kind of ids and external ids: single identifiers, single dictionaries and (mixed) lists of these.
 
-            Let's say you want different aggregates and end-times for a few time series::
+            Let's say you want different aggregates and end-times for a few time series (when only fetching a single aggregate, you may pass
+            the string directly for convenience)::
 
                 >>> dps_lst = client.time_series.data.retrieve(
                 ...     id=[
-                ...         {"id": 42, "end": "2d-ago", "aggregates": ["average"]},
-                ...         {"id": 11, "end": "1d-ago", "aggregates": ["min", "max", "count"]},
+                ...         {"id": 42, "end": "1d-ago", "aggregates": "average"},
+                ...         {"id": 69, "end": "2d-ago", "aggregates": ["average"]},
+                ...         {"id": 96, "end": "3d-ago", "aggregates": ["min", "max", "count"]},
                 ...     ],
-                ...     external_id={"external_id": "foo", "aggregates": ["max"]},
+                ...     external_id={"external_id": "foo", "aggregates": "max"},
                 ...     start="5d-ago",
                 ...     granularity="1h")
 
