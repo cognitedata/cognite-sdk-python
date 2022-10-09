@@ -122,7 +122,7 @@ class TestSingleTSQueryValidator:
     def test_function_validate_and_create_query(self, granularity, aggregates, outside, exp_err, exp_err_msg_idx):
         err_msgs = [
             f"Expected `granularity` to be of type `str` or None, not {type(granularity)}",
-            f"Expected `aggregates` to be of type `list[str]` or None, not {type(aggregates)}",
+            f"Expected `aggregates` to be of type `str`, `list[str]` or None, not {type(aggregates)}",
             "When passing `granularity`, argument `aggregates` is also required.",
             "Empty list of `aggregates` passed, expected at least one!",
             "When passing `aggregates`, argument `granularity` is also required.",
