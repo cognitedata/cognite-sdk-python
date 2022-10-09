@@ -550,7 +550,7 @@ class DatapointsAPI(APIClient):
         external_id: None,
         start: Union[int, str, datetime, None],
         end: Union[int, str, datetime, None],
-        aggregates: Optional[List[str]],
+        aggregates: Union[str, List[str], None],
         granularity: Optional[str],
         limit: Optional[int],
         include_outside_points: bool,
@@ -566,7 +566,7 @@ class DatapointsAPI(APIClient):
         external_id: None,
         start: Union[int, str, datetime, None],
         end: Union[int, str, datetime, None],
-        aggregates: Optional[List[str]],
+        aggregates: Union[str, List[str], None],
         granularity: Optional[str],
         limit: Optional[int],
         include_outside_points: bool,
@@ -582,7 +582,7 @@ class DatapointsAPI(APIClient):
         external_id: str,
         start: Union[int, str, datetime, None],
         end: Union[int, str, datetime, None],
-        aggregates: Optional[List[str]],
+        aggregates: Union[str, List[str], None],
         granularity: Optional[str],
         limit: Optional[int],
         include_outside_points: bool,
@@ -598,7 +598,7 @@ class DatapointsAPI(APIClient):
         external_id: None,
         start: Union[int, str, datetime, None],
         end: Union[int, str, datetime, None],
-        aggregates: Optional[List[str]],
+        aggregates: Union[str, List[str], None],
         granularity: Optional[str],
         limit: Optional[int],
         include_outside_points: bool,
@@ -614,7 +614,7 @@ class DatapointsAPI(APIClient):
         external_id: str,
         start: Union[int, str, datetime, None],
         end: Union[int, str, datetime, None],
-        aggregates: Optional[List[str]],
+        aggregates: Union[str, List[str], None],
         granularity: Optional[str],
         limit: Optional[int],
         include_outside_points: bool,
@@ -630,7 +630,7 @@ class DatapointsAPI(APIClient):
         external_id: None,
         start: Union[int, str, datetime, None],
         end: Union[int, str, datetime, None],
-        aggregates: Optional[List[str]],
+        aggregates: Union[str, List[str], None],
         granularity: Optional[str],
         limit: Optional[int],
         include_outside_points: bool,
@@ -646,7 +646,7 @@ class DatapointsAPI(APIClient):
         external_id: Dict[str, Any],
         start: Union[int, str, datetime, None],
         end: Union[int, str, datetime, None],
-        aggregates: Optional[List[str]],
+        aggregates: Union[str, List[str], None],
         granularity: Optional[str],
         limit: Optional[int],
         include_outside_points: bool,
@@ -662,7 +662,7 @@ class DatapointsAPI(APIClient):
         external_id: Union[None, List[Union[str, Dict[str, Any]]]],
         start: Union[int, str, datetime, None],
         end: Union[int, str, datetime, None],
-        aggregates: Optional[List[str]],
+        aggregates: Union[str, List[str], None],
         granularity: Optional[str],
         limit: Optional[int],
         include_outside_points: bool,
@@ -680,7 +680,7 @@ class DatapointsAPI(APIClient):
         external_id: Union[None, str, Dict[str, Any], List[Union[str, Dict[str, Any]]]] = None,
         start: Union[int, str, datetime, None] = None,
         end: Union[int, str, datetime, None] = None,
-        aggregates: Optional[List[str]] = None,
+        aggregates: Union[str, List[str], None] = None,
         granularity: Optional[str] = None,
         limit: Optional[int] = None,
         include_outside_points: bool = False,
@@ -695,7 +695,7 @@ class DatapointsAPI(APIClient):
             end (Union[int, str, datetime, None]): Exclusive end. Default: "now"
             id (Union[None, int, Dict[str, Any], List[Union[int, Dict[str, Any]]]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
             external_id (Union[None, str, Dict[str, Any], List[Union[str, Dict[str, Any]]]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
-            aggregates (List[str]): List of aggregate functions to apply. Default: No aggregates (raw datapoints)
+            aggregates (Union[str, List[str], None]): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str): The granularity to fetch aggregates at. e.g. '1s', '2h', '10d'. Default: None.
             limit (int): Maximum number of datapoints to return for each time series. Default: None (no limit)
             include_outside_points (bool): Whether or not to include outside points. Not allowed when fetching aggregates. Default: False
@@ -822,7 +822,7 @@ class DatapointsAPI(APIClient):
         external_id: None,
         start: Union[int, str, datetime, None],
         end: Union[int, str, datetime, None],
-        aggregates: Optional[List[str]],
+        aggregates: Union[str, List[str], None],
         granularity: Optional[str],
         limit: Optional[int],
         include_outside_points: bool,
@@ -838,7 +838,7 @@ class DatapointsAPI(APIClient):
         external_id: None,
         start: Union[int, str, datetime, None],
         end: Union[int, str, datetime, None],
-        aggregates: Optional[List[str]],
+        aggregates: Union[str, List[str], None],
         granularity: Optional[str],
         limit: Optional[int],
         include_outside_points: bool,
@@ -854,7 +854,7 @@ class DatapointsAPI(APIClient):
         external_id: str,
         start: Union[int, str, datetime, None],
         end: Union[int, str, datetime, None],
-        aggregates: Optional[List[str]],
+        aggregates: Union[str, List[str], None],
         granularity: Optional[str],
         limit: Optional[int],
         include_outside_points: bool,
@@ -870,7 +870,7 @@ class DatapointsAPI(APIClient):
         external_id: None,
         start: Union[int, str, datetime, None],
         end: Union[int, str, datetime, None],
-        aggregates: Optional[List[str]],
+        aggregates: Union[str, List[str], None],
         granularity: Optional[str],
         limit: Optional[int],
         include_outside_points: bool,
@@ -886,7 +886,7 @@ class DatapointsAPI(APIClient):
         external_id: str,
         start: Union[int, str, datetime, None],
         end: Union[int, str, datetime, None],
-        aggregates: Optional[List[str]],
+        aggregates: Union[str, List[str], None],
         granularity: Optional[str],
         limit: Optional[int],
         include_outside_points: bool,
@@ -902,7 +902,7 @@ class DatapointsAPI(APIClient):
         external_id: None,
         start: Union[int, str, datetime, None],
         end: Union[int, str, datetime, None],
-        aggregates: Optional[List[str]],
+        aggregates: Union[str, List[str], None],
         granularity: Optional[str],
         limit: Optional[int],
         include_outside_points: bool,
@@ -918,7 +918,7 @@ class DatapointsAPI(APIClient):
         external_id: Dict[str, Any],
         start: Union[int, str, datetime, None],
         end: Union[int, str, datetime, None],
-        aggregates: Optional[List[str]],
+        aggregates: Union[str, List[str], None],
         granularity: Optional[str],
         limit: Optional[int],
         include_outside_points: bool,
@@ -934,7 +934,7 @@ class DatapointsAPI(APIClient):
         external_id: Union[None, List[Union[str, Dict[str, Any]]]],
         start: Union[int, str, datetime, None],
         end: Union[int, str, datetime, None],
-        aggregates: Optional[List[str]],
+        aggregates: Union[str, List[str], None],
         granularity: Optional[str],
         limit: Optional[int],
         include_outside_points: bool,
@@ -949,7 +949,7 @@ class DatapointsAPI(APIClient):
         external_id: Union[None, str, Dict[str, Any], List[Union[str, Dict[str, Any]]]] = None,
         start: Union[int, str, datetime, None] = None,
         end: Union[int, str, datetime, None] = None,
-        aggregates: Optional[List[str]] = None,
+        aggregates: Union[str, List[str], None] = None,
         granularity: Optional[str] = None,
         limit: Optional[int] = None,
         include_outside_points: bool = False,
@@ -964,7 +964,7 @@ class DatapointsAPI(APIClient):
             end (Union[int, str, datetime, None]): Exclusive end. Default: "now"
             id (Union[None, int, Dict[str, Any], List[Union[int, Dict[str, Any]]]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
             external_id (Union[None, str, Dict[str, Any], List[Union[str, Dict[str, Any]]]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
-            aggregates (List[str]): List of aggregate functions to apply. Default: No aggregates (raw datapoints)
+            aggregates (Union[str, List[str], None]): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str): The granularity to fetch aggregates at. e.g. '1s', '2h', '10d'. Default: None.
             limit (int): Maximum number of datapoints to return for each time series. Default: None (no limit)
             include_outside_points (bool): Whether or not to include outside points. Not allowed when fetching aggregates. Default: False
@@ -1046,7 +1046,7 @@ class DatapointsAPI(APIClient):
         external_id: None,
         start: Union[int, str, datetime, None],
         end: Union[int, str, datetime, None],
-        aggregates: Optional[List[str]],
+        aggregates: Union[str, List[str], None],
         granularity: Optional[str],
         limit: Optional[int],
         include_outside_points: bool,
@@ -1065,7 +1065,7 @@ class DatapointsAPI(APIClient):
         external_id: None,
         start: Union[int, str, datetime, None],
         end: Union[int, str, datetime, None],
-        aggregates: Optional[List[str]],
+        aggregates: Union[str, List[str], None],
         granularity: Optional[str],
         limit: Optional[int],
         include_outside_points: bool,
@@ -1084,7 +1084,7 @@ class DatapointsAPI(APIClient):
         external_id: str,
         start: Union[int, str, datetime, None],
         end: Union[int, str, datetime, None],
-        aggregates: Optional[List[str]],
+        aggregates: Union[str, List[str], None],
         granularity: Optional[str],
         limit: Optional[int],
         include_outside_points: bool,
@@ -1103,7 +1103,7 @@ class DatapointsAPI(APIClient):
         external_id: None,
         start: Union[int, str, datetime, None],
         end: Union[int, str, datetime, None],
-        aggregates: Optional[List[str]],
+        aggregates: Union[str, List[str], None],
         granularity: Optional[str],
         limit: Optional[int],
         include_outside_points: bool,
@@ -1122,7 +1122,7 @@ class DatapointsAPI(APIClient):
         external_id: str,
         start: Union[int, str, datetime, None],
         end: Union[int, str, datetime, None],
-        aggregates: Optional[List[str]],
+        aggregates: Union[str, List[str], None],
         granularity: Optional[str],
         limit: Optional[int],
         include_outside_points: bool,
@@ -1141,7 +1141,7 @@ class DatapointsAPI(APIClient):
         external_id: None,
         start: Union[int, str, datetime, None],
         end: Union[int, str, datetime, None],
-        aggregates: Optional[List[str]],
+        aggregates: Union[str, List[str], None],
         granularity: Optional[str],
         limit: Optional[int],
         include_outside_points: bool,
@@ -1160,7 +1160,7 @@ class DatapointsAPI(APIClient):
         external_id: Dict[str, Any],
         start: Union[int, str, datetime, None],
         end: Union[int, str, datetime, None],
-        aggregates: Optional[List[str]],
+        aggregates: Union[str, List[str], None],
         granularity: Optional[str],
         limit: Optional[int],
         include_outside_points: bool,
@@ -1179,7 +1179,7 @@ class DatapointsAPI(APIClient):
         external_id: Union[None, List[Union[str, Dict[str, Any]]]],
         start: Union[int, str, datetime, None],
         end: Union[int, str, datetime, None],
-        aggregates: Optional[List[str]],
+        aggregates: Union[str, List[str], None],
         granularity: Optional[str],
         limit: Optional[int],
         include_outside_points: bool,
@@ -1197,7 +1197,7 @@ class DatapointsAPI(APIClient):
         external_id: Union[None, str, Dict[str, Any], List[Union[str, Dict[str, Any]]]] = None,
         start: Union[int, str, datetime, None] = None,
         end: Union[int, str, datetime, None] = None,
-        aggregates: Optional[List[str]] = None,
+        aggregates: Union[str, List[str], None] = None,
         granularity: Optional[str] = None,
         limit: Optional[int] = None,
         include_outside_points: bool = False,
@@ -1215,7 +1215,7 @@ class DatapointsAPI(APIClient):
             end (Union[int, str, datetime, None]): Exclusive end. Default: "now"
             id (Union[None, int, Dict[str, Any], List[Union[int, Dict[str, Any]]]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
             external_id (Union[None, str, Dict[str, Any], List[Union[str, Dict[str, Any]]]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
-            aggregates (List[str]): List of aggregate functions to apply. Default: No aggregates (raw datapoints)
+            aggregates (Union[str, List[str], None]): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str): The granularity to fetch aggregates at. e.g. '1s', '2h', '10d'. Default: None.
             limit (int): Maximum number of datapoints to return for each time series. Default: None (no limit)
             include_outside_points (bool): Whether or not to include outside points. Not allowed when fetching aggregates. Default: False

@@ -516,8 +516,11 @@ class TestRetrieveAggregateDatapointsAPI:
     @pytest.mark.parametrize(
         "aggregates",
         (
+            "min",
+            "step_interpolation",
+            "stepInterpolation",
             ["step_interpolation"],
-            ["stepInterpolation", "min"],
+            ["stepInterpolation"],
             ["continuous_variance", "discrete_variance", "step_interpolation", "total_variation"],
             ["continuous_variance", "discrete_variance", "step_interpolation", "total_variation", "min"],
             list(map(to_camel_case, ALL_SORTED_DP_AGGS)),
@@ -527,7 +530,9 @@ class TestRetrieveAggregateDatapointsAPI:
             ["continuous_variance", "discreteVariance", "stepInterpolation", "total_variation", "min"],
         ),
     )
-    def test_aggregates_in_camel_or_and_snake_case(self, aggregates, fixed_freq_dps_ts, retrieve_endpoints):
+    def test_aggregates_single_and_multiple_in_snake_or_camel_case(
+        self, aggregates, fixed_freq_dps_ts, retrieve_endpoints
+    ):
         dfs, ts = [], random.choice(fixed_freq_dps_ts[0])  # only pick from numeric ts
         granularity = random_granularity()
         for endpoint in retrieve_endpoints:
@@ -535,7 +540,7 @@ class TestRetrieveAggregateDatapointsAPI:
                 limit=5,
                 id={"id": ts.id, "granularity": granularity, "aggregates": aggregates},
             )
-            snake_aggs = sorted(map(to_snake_case, aggregates))
+            snake_aggs = sorted(map(to_snake_case, [aggregates] if isinstance(aggregates, str) else aggregates))
             for col_names in ["id", "external_id"]:
                 res_df = res.to_pandas(column_names=col_names, include_aggregate_name=True)
                 assert all(res_df.columns == [f"{getattr(ts, col_names)}|{agg}" for agg in snake_aggs])
@@ -543,6 +548,15 @@ class TestRetrieveAggregateDatapointsAPI:
         # Also make sure `Datapoints.to_pandas()` and `DatapointsArray.to_pandas()` give identical results:
         pd.testing.assert_frame_equal(dfs[0], dfs[2])
         pd.testing.assert_frame_equal(dfs[1], dfs[3])
+
+    def test_aggregates_bad_string(self, fixed_freq_dps_ts, retrieve_endpoints):
+        ts = random.choice(fixed_freq_dps_ts[0])  # only pick from numeric ts
+        granularity = random_granularity()
+        for endpoint in retrieve_endpoints:
+            with pytest.raises(
+                CogniteAPIError, match=re.escape("Could not recognize aggregation value: min-max-lol | code: 400")
+            ):
+                endpoint(id=ts.id, granularity=granularity, aggregates="min-max-lol")
 
     @pytest.mark.parametrize(
         "is_step, start, end, exp_start, exp_end, max_workers, mock_out_eager_or_chunk",
