@@ -713,25 +713,26 @@ class DatapointsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> dps = client.time_series.data.retrieve(id=42, start="2w-ago")
 
-            You can also get aggregated values, such as the average. Here we are getting daily averages for all of 2018 for
-            two different time series. Note that we are fetching them using their external ids::
+            You can also get aggregated values, such as `max` or `average`. You may also fetch more than one time series simultaneously. Here we are
+            getting daily averages for all of 2018 for two different time series, specifying start and end as integers (milliseconds after epoch).
+            Note that we are fetching them using their external ids::
 
                 >>> from datetime import datetime, timezone
                 >>> utc = timezone.utc
-                >>> dps = client.time_series.data.retrieve(
+                >>> dps_lst = client.time_series.data.retrieve(
                 ...    external_id=["foo", "bar"],
-                ...    start=datetime(2018, 1, 1, tzinfo=utc),
-                ...    end=datetime(2018, 1, 1, tzinfo=utc),
+                ...    start=1514764800000,
+                ...    end=1546300800000,
                 ...    aggregates=["average"],
                 ...    granularity="1d")
 
-            Note that all parameters can be individually set if you pass (one or more) dictionaries (even `ignore_unknown_ids` which
-            is not supported by the official API). If you also pass top-level parameters, these will be overwritten by the individual parameters
-            (when both exist). You are free to mix any kind of ids and external ids: single identifiers, single dictionaries and (mixed) lists of these.
+            All parameters can be individually set if you pass (one or more) dictionaries (even `ignore_unknown_ids`, contrary to the API).
+            If you also pass top-level parameters, these will be overruled by the individual parameters (where both exist). You are free to
+            mix any kind of ids and external ids: single identifiers, single dictionaries and (mixed) lists of these.
 
             Let's say you want different aggregates and end-times for a few time series::
 
-                >>> dps = client.time_series.data.retrieve(
+                >>> dps_lst = client.time_series.data.retrieve(
                 ...     id=[
                 ...         {"id": 42, "end": "2d-ago", "aggregates": ["average"]},
                 ...         {"id": 11, "end": "1d-ago", "aggregates": ["min", "max", "count"]},
@@ -745,12 +746,12 @@ class DatapointsAPI(APIClient):
             by using `id`, you can still access it with its `external_id` (and the opposite way around), if you know it::
 
                 >>> dps_lst = client.time_series.data.retrieve(
-                ...     id=[42, 43, ..., 500], start="2w-ago")
+                ...     id=[42, 43, 44, ..., 499, 500], start="2w-ago")
                 >>> ts_350 = dps_lst.get(id=350)  # `Datapoints` object
 
             ...but what happens if you request duplicate `id`s or `external_id`s? Let's say you need to fetch data from multiple
             disconnected periods, e.g. stock prices only from recessions. In this case the `.get` method will return a list of `Datapoints`
-            instead (similar to how slicing works with non-unique indices on Pandas DataFrames)::
+            instead, in the same order (similar to how slicing works with non-unique indices on Pandas DataFrames)::
 
                 >>> dps_lst = client.time_series.data.retrieve(
                 ...     id=[
@@ -761,7 +762,19 @@ class DatapointsAPI(APIClient):
                 >>> ts_44 = dps_lst.get(id=44)  # Single `Datapoints` object
                 >>> ts_350_lst = dps_lst.get(id=350)  # List of two `Datapoints` objects
 
-            The last example showcases the great flexibility of the `retrieve` endpoint, with a very custom query::
+            The API has an endpoint to "retrieve latest (before)", but not "after". Luckily, we can emulate that behaviour easily.
+            Let's say we have a very dense time series and do not want to fetch all of the available raw data (or fetch less precise
+            aggregate data), just to get the very first datapoint of every month (from e.g. the year 2000 through 2010)::
+
+                >>> import itertools
+                >>> month_starts = [
+                >>>     datetime(year, month, 1, tzinfo=utc)
+                >>>     for year, month in itertools.product(range(2000, 2011), range(1, 13))]
+                >>> dps_lst = client.time_series.data.retrieve(
+                >>>     external_id=[{"external_id": xid, "start": start} for start in month_starts],
+                >>>     limit=1)
+
+            The last example here is just to showcase the great flexibility of the `retrieve` endpoint, with a very custom query::
 
                 >>> ts1 = 1337
                 >>> ts2 = {
@@ -779,9 +792,8 @@ class DatapointsAPI(APIClient):
                 ...     "include_outside_points": False,
                 ...     "ignore_unknown_ids": True,  # Overrides `ignore_unknown_ids` arg. below
                 ... }
-                >>> dps = client.time_series.data.retrieve(
-                ...    id=[ts1, ts2, ts3], start="2w-ago", limit=None, ignore_unknown_ids=False
-                ... )
+                >>> dps_lst = client.time_series.data.retrieve(
+                ...    id=[ts1, ts2, ts3], start="2w-ago", limit=None, ignore_unknown_ids=False)
         """
         query = _DatapointsQuery(
             start=start,
@@ -795,12 +807,12 @@ class DatapointsAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
         fetcher = dps_fetch_selector(self, user_query=query)
-        dps_list = fetcher.fetch_all_datapoints()
+        dps_lst = fetcher.fetch_all_datapoints()
         if not query.is_single_identifier:
-            return dps_list
-        elif not dps_list and ignore_unknown_ids:
+            return dps_lst
+        elif not dps_lst and ignore_unknown_ids:
             return None
-        return dps_list[0]
+        return dps_lst[0]
 
     @overload
     def retrieve_arrays(
@@ -1019,12 +1031,12 @@ class DatapointsAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
         fetcher = dps_fetch_selector(self, user_query=query)
-        dps_list = fetcher.fetch_all_datapoints_numpy()
+        dps_lst = fetcher.fetch_all_datapoints_numpy()
         if not query.is_single_identifier:
-            return dps_list
-        elif not dps_list and ignore_unknown_ids:
+            return dps_lst
+        elif not dps_lst and ignore_unknown_ids:
             return None
-        return dps_list[0]
+        return dps_lst[0]
 
     @overload
     def retrieve_dataframe(

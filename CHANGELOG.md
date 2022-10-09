@@ -62,11 +62,8 @@ There is also a very subtle **bugfix** here: since the previous implementation a
 Read more below in the removed section or check out the method's updated documentation.
 
 ### Fixed
-- **Critical**: Fetching aggregate datapoints now works properly with the `limit` parameter. In the old implementation, `count` aggregates were first fetched to split the time domain efficiently - but this has little-to-no informational value when fetching *aggregates* with a granularity, as the datapoints distribution can take on "any shape or form". This often led to just a few returned batches of datapoints due to miscounting (e.g. as little as 10% of the actual data would be returned(!)).
-- Fetching datapoints using `limit=0` now returns zero datapoints, instead of "unlimited". This is now aligned with the API.
-- Removing aggregate names from the columns in a Pandas `DataFrame` in the previous implementation used `Datapoints._strip_aggregate_name()`, but this had a bug: Whenever raw datapoints were fetched all characters after the last pipe character (`|`) in the tag name would be removed completely. In the new version, the aggregate name is only added when asked for.
-- The method `Datapoints.to_pandas` could return `dtype=object` for numeric time series when all aggregate datapoints were missing; which is not *that* unlikely, e.g., when using `interpolation` aggregate on a `is_step=False` time series with datapoints spacing above one hour on average. In such cases, an object array only containing `None` would be returned instead of float array dtype with `NaN`s. Correct dtype is now enforced by an explicit `pandas.to_numeric()` cast.
-- Fixed a bug in all `DatapointsAPI` retrieve-methods when no time series was/were found, a single identifier was *not* given (either list of length 1 or all given were missing), `ignore_unknown_ids=True`, and `.get` was used on the empty returned `DatapointsList` object. This would raise an exception (`AttributeError`) because the mappings from `id` or `external_id` to `Datapoints` were not defined on the object (only set when containing at least 1 resource).
+- `CogniteClientMock` has been updated with 21 missing APIs (including sub-composited APIs like `FunctionsAPI.schedules`) and is now used internally in testing instead of a similar, additional implementation.
+- Loads of `assert`s meant for the SDK user have been changed to raising exceptions instead as a safeguard: `assert`s are ignored when running in optimized mode `-O`.
 
 ### Fixed: Extended time domain
 - `TimeSeries.[first/count]()` now work with the expanded time domain (minimum age of datapoints was moved from 1970 to 1900, see [4.2.1]).
@@ -74,6 +71,13 @@ Read more below in the removed section or check out the method's updated documen
   - `TimeSeries.count()` now considers datapoints before 1970 and after "now" and will raise an error for string time series as `count` (or any other aggregate) is not defined.
 - The utility function `ms_to_datetime` no longer raises `ValueError` for inputs from before 1970, but will raise for input outside the allowed minimum- and maximum supported timestamps in the API.
 **Note**: that support for `datetime`s before 1970 may be limited on Windows, but `ms_to_datetime` should still work.
+
+### Fixed: Datapoints-related
+- **Critical**: Fetching aggregate datapoints now works properly with the `limit` parameter. In the old implementation, `count` aggregates were first fetched to split the time domain efficiently - but this has little-to-no informational value when fetching *aggregates* with a granularity, as the datapoints distribution can take on "any shape or form". This often led to just a few returned batches of datapoints due to miscounting (e.g. as little as 10% of the actual data would be returned(!)).
+- Fetching datapoints using `limit=0` now returns zero datapoints, instead of "unlimited". This is now aligned with the API.
+- Removing aggregate names from the columns in a Pandas `DataFrame` in the previous implementation used `Datapoints._strip_aggregate_name()`, but this had a bug: Whenever raw datapoints were fetched all characters after the last pipe character (`|`) in the tag name would be removed completely. In the new version, the aggregate name is only added when asked for.
+- The method `Datapoints.to_pandas` could return `dtype=object` for numeric time series when all aggregate datapoints were missing; which is not *that* unlikely, e.g., when using `interpolation` aggregate on a `is_step=False` time series with datapoints spacing above one hour on average. In such cases, an object array only containing `None` would be returned instead of float array dtype with `NaN`s. Correct dtype is now enforced by an explicit `pandas.to_numeric()` cast.
+- Fixed a bug in all `DatapointsAPI` retrieve-methods when no time series was/were found, a single identifier was *not* given (either list of length 1 or all given were missing), `ignore_unknown_ids=True`, and `.get` was used on the empty returned `DatapointsList` object. This would raise an exception (`AttributeError`) because the mappings from `id` or `external_id` to `Datapoints` were not defined on the object (only set when containing at least 1 resource).
 
 ### Removed
 - Method: `DatapointsAPI.query`. No longer needed as all "optionality" has been moved to the three `retrieve` methods.
