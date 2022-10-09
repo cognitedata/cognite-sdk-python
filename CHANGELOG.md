@@ -36,6 +36,7 @@ Changes are grouped as follows
 ### Changed
 - The default value for `max_workers`, controlling the max number of concurrent threads, has been increased from 10 to 20.
 - The main way to interact with the `DatapointsAPI` has been moved from `client.datapoints` to `client.time_series.data` to align and unify with the `SequenceAPI`. All example code has been updated to reflect this change. Note, however, that the `client.datapoints` will still work until the next major release, but will until then issue a `DeprecationWarning`.
+- All retrieve methods now accept a string for the `aggregates` parameter when asking for just one, e.g. `aggregates="max"`. This short-cut avoids having to wrap it inside a list. Both `snake_case` and `camelCase` is supported.
 - The utility function `datetime_to_ms` no longer issues a `FutureWarning` on missing timezone information. It will now interpret naive `datetime`s as local time as is Python's default interpretation.
 - The utility function `ms_to_datetime` no longer issues a `FutureWarning` on returning a naive `datetime` in UTC. It will now return an aware `datetime` object in UTC.
 - All data classes in the SDK that represent a Cognite resource type have a `to_pandas` method. Previously, these had various defaults for the `camel_case` parameter, but they have all been changed to `False`.
@@ -45,19 +46,19 @@ Changes are grouped as follows
 - `DatapointsAPI.[retrieve/retrieve_arrays/retrieve_dataframe]` no longer requires `start` (default: `0`) and `end` (default: `now`). This is now aligned with the API.
 - Additionally, `DatapointsAPI.retrieve_dataframe` no longer requires `granularity` and `aggregates`.
 - All retrieve methods accept a list of full query dictionaries for `id` and `external_id` giving full flexibility for all individual settings: `start`, `end`, `aggregates`, `granularity`, `limit`, `include_outside_points`, `ignore_unknown_ids`.
-- Aggregates returned now include the time period(s) (given by `granularity` unit) that `start` and `end` are a part of (as opposed to only "fully in-between" points). This change is the *only breaking change* to the `DatapointsAPI.retrieve` method. This is now aligned with the API.
+- Aggregates returned now include the time period(s) (given by the `granularity` unit) that `start` and `end` are part of (as opposed to only "fully in-between" points). This change is the *only breaking change* to the `DatapointsAPI.retrieve` method and makes it so that the SDK match manual queries sent using e.g. `curl` or Postman. In other words, this is now aligned with the API.
 Note also that this is a **bugfix**: Due to the SDK rounding differently than the API, you could supply `start` and `end` (with `start < end`) and still be given an error that `start is not before end`. This can no longer happen.
 - Fetching raw datapoints using `return_outside_points=True` now returns both outside points (if they exist), regardless of `limit` setting. Previously the total number of points was capped at `limit`, thus typically only returning the first. Now up to `limit+2` datapoints are always returned. This is now aligned with the API.
 - Asking for the same time series any number of times no longer raises an error (from the SDK), which is useful for instance when fetching disconnected time periods. This is now aligned with the API. Thus, the custom exception `CogniteDuplicateColumnsError` is no longer needed and has been removed from the SDK.
 - ...this change also causes the `.get` method of `DatapointsList` and `DatapointsArrayList` to now return a list of `Datapoints` or `DatapointsArray` respectively when duplicated identifiers were queried. For data scientists and others used to `pandas`, this syntax is familiar to the slicing logic of `Series` and `DataFrame` when used with non-unique indices.
 There is also a very subtle **bugfix** here: since the previous implementation allowed the same time series to be specified by both its `id` and `external_id`, using `.get` to access it would always yield the settings that were specified by the `external_id`. This will now return a `list` as explained above.
-- Datapoints fetching algorithm has changed from one that relies on up-to-date and correct `count` aggregates to be fast (with fallback on serial fetching when missing/unavailable), to recursively (and reactively) splitting the time-domain into smaller and smaller pieces, depending on the discovered-as-fetched density-distribution of datapoints in time and available threads. The new approach also has the ability to group more than 1 (one) time series per API request (when beneficial) and short-circuit once a user-given limit has been reached (if/when given). This method is now used for *all types of queries*; numeric raw-, string raw-, and aggregate datapoints.
+- Datapoints fetching algorithm has changed from one that relies on up-to-date and correct `count` aggregates to be fast (with fallback on serial fetching when missing/unavailable), to recursively (and reactively) splitting the time-domain into smaller and smaller pieces, depending on the discovered-as-fetched density-distribution of datapoints in time and the number of available workers/threads. The new approach also has the ability to group more than 1 (one) time series per API request (when beneficial) and short-circuit once a user-given limit has been reached (if/when given). This method is now used for *all types of queries*; numeric raw-, string raw-, and aggregate datapoints.
 
 #### Change: `retrieve_dataframe`
 - Previously, fetching was constricted to either raw- OR aggregate datapoints. This restriction has been lifted and the method now works exactly like the other retrieve-methods (with a few extra options relevant only for pandas `DataFrame`s).
 - Used to fetch time series given by `id` and `external_id` separately - this is no longer the case. This gives a significant, additional speedup when both are supplied.
-- The `complete` parameter has been removed and partially replaced by `uniform_index` (bool) which covers a subset of the previous features (with some modifications: now gives a uniform index all the way from the first given `start` to the last given `end`). Rationale: Weird and unintuitive syntax (passing a string using a comma to separate options).
-- Interpolating, forward-filling or in general, imputation (also controlled via the `complete` parameter) is completely removed as the resampling logic *really* should be up to the user fetching the data to decide, not the SDK.
+- The `complete` parameter has been removed and partially replaced by `uniform_index (bool)` which covers a subset of the previous features (with some modifications: now gives a uniform index all the way from the first given `start` to the last given `end`). Rationale: Old method had a weird and unintuitive syntax (passing a string using commas to separate options).
+- Interpolating, forward-filling or in general, imputation (also prev. controlled via the `complete` parameter) is completely removed as the resampling logic *really* should be up to the user fetching the data to decide, not the SDK.
 - New parameter `column_names` (as already used in several existing `to_pandas` methods) decides whether to pick `id`s or `external_id`s as the dataframe column names. Previously, when both were supplied, the dataframe ended up with a mix.
 Read more below in the removed section or check out the method's updated documentation.
 
@@ -70,10 +71,10 @@ Read more below in the removed section or check out the method's updated documen
   - `TimeSeries.first()` now considers datapoints before 1970 and after "now".
   - `TimeSeries.count()` now considers datapoints before 1970 and after "now" and will raise an error for string time series as `count` (or any other aggregate) is not defined.
 - The utility function `ms_to_datetime` no longer raises `ValueError` for inputs from before 1970, but will raise for input outside the allowed minimum- and maximum supported timestamps in the API.
-**Note**: that support for `datetime`s before 1970 may be limited on Windows, but `ms_to_datetime` should still work.
+**Note**: that support for `datetime`s before 1970 may be limited on Windows, but `ms_to_datetime` should still work (magic!).
 
 ### Fixed: Datapoints-related
-- **Critical**: Fetching aggregate datapoints now works properly with the `limit` parameter. In the old implementation, `count` aggregates were first fetched to split the time domain efficiently - but this has little-to-no informational value when fetching *aggregates* with a granularity, as the datapoints distribution can take on "any shape or form". This often led to just a few returned batches of datapoints due to miscounting (e.g. as little as 10% of the actual data would be returned(!)).
+- **Critical**: Fetching aggregate datapoints now works properly with the `limit` parameter. In the old implementation, `count` aggregates were first fetched to split the time domain efficiently - but this has little-to-no informational value when fetching *aggregates* with a granularity, as the datapoints distribution can take on "any shape or form". This often led to just a few returned batches of datapoints due to miscounting (e.g. as little as 10% of the actual data could be returned(!)).
 - Fetching datapoints using `limit=0` now returns zero datapoints, instead of "unlimited". This is now aligned with the API.
 - Removing aggregate names from the columns in a Pandas `DataFrame` in the previous implementation used `Datapoints._strip_aggregate_name()`, but this had a bug: Whenever raw datapoints were fetched all characters after the last pipe character (`|`) in the tag name would be removed completely. In the new version, the aggregate name is only added when asked for.
 - The method `Datapoints.to_pandas` could return `dtype=object` for numeric time series when all aggregate datapoints were missing; which is not *that* unlikely, e.g., when using `interpolation` aggregate on a `is_step=False` time series with datapoints spacing above one hour on average. In such cases, an object array only containing `None` would be returned instead of float array dtype with `NaN`s. Correct dtype is now enforced by an explicit `pandas.to_numeric()` cast.
@@ -578,7 +579,7 @@ other OAuth flows.
 - Ignore exceptions from pypi version check and reduce its timeout to 5 seconds.
 
 ### Fixed
-- Only 200/201/202 is treated as succesfull response. 301 led to json decoding errors -
+- Only 200/201/202 is treated as successful response. 301 led to json decoding errors -
 now handled gracefully.
 - datasets create limit was set to 1000 in the sdk, leading to cases of 400 from the api where the limit is 10.
 

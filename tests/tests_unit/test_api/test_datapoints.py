@@ -349,7 +349,7 @@ class TestGetDatapoints:
         for dps_res in dps_res_list:
             assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
 
-    @pytest.mark.dsl  # TODO: Revert to old code and use `retrieve`, not `retrieve_arrays`
+    @pytest.mark.dsl
     def test_retrieve_datapoints_some_aggregates_omitted(
         self, cognite_client, mock_get_datapoints_one_ts_has_missing_aggregates
     ):
@@ -1147,7 +1147,3 @@ class TestDataPoster:
         dps_object = {"id": 100, "datapoints": [{"timestamp": 1, "value": 1}]}
         bin.add(dps_object)
         assert not bin.will_fit(1)
-
-
-class TestDataFetcher:
-    pass  # TODO(haakonvt): Get to it!
