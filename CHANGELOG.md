@@ -14,7 +14,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [4.9.0] - 2022-10-04
+## [4.9.0] - 2022-10-10
 ### Added
 - Add support for extraction pipeline configuration files
 ### Deprecated
