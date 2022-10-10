@@ -241,13 +241,13 @@ class ExtractionPipelineRunsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> runsList = c.extraction_pipeline_runs.list(external_id="test ext id", limit=5)
+                >>> runsList = c.extraction_pipelines.runs.list(external_id="test ext id", limit=5)
 
             Filter extraction pipeline runs on a given status::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> runsList = c.extraction_pipeline_runs.list(external_id="test ext id", statuses=["seen"], statuslimit=5)
+                >>> runsList = c.extraction_pipelines.runs.list(external_id="test ext id", statuses=["seen"], statuslimit=5)
         """
 
         if statuses is not None or message_substring is not None or created_time is not None:
@@ -301,7 +301,7 @@ class ExtractionPipelineRunsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ExtractionPipelineRun
                 >>> c = CogniteClient()
-                >>> res = c.extraction_pipeline_runs.create(ExtractionPipelineRun(status="success", external_id="extId"))
+                >>> res = c.extraction_pipelines.runs.create(ExtractionPipelineRun(status="success", external_id="extId"))
         """
         utils._auxiliary.assert_type(run, "run", [ExtractionPipelineRun, Sequence])
         return self._create_multiple(list_cls=ExtractionPipelineRunList, resource_cls=ExtractionPipelineRun, items=run)
@@ -332,7 +332,7 @@ class ExtractionPipelineConfigsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.extraction_pipelines.get_config("extId")
+                >>> res = c.extraction_pipelines.config.retrieve("extId")
         """
         response = self._get(
             "/extpipes/config", params={"externalId": external_id, "activeAtTime": active_at_time, "revision": revision}
@@ -354,7 +354,7 @@ class ExtractionPipelineConfigsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.extraction_pipelines.list_config_revisions("extId")
+                >>> res = c.extraction_pipelines.config.list("extId")
         """
         response = self._get("/extpipes/config/revisions", params={"externalId": external_id})
         return ExtractionPipelineConfigRevisionList._load(response.json()["items"], cognite_client=self._cognite_client)
@@ -375,7 +375,7 @@ class ExtractionPipelineConfigsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.config import ExtractionPipelineConfig
                 >>> c = CogniteClient()
-                >>> res = c.extraction_pipelines.new_config(ExtractionPipelineConfig(external_id="extId", config="my config contents"))
+                >>> res = c.extraction_pipelines.config.create(ExtractionPipelineConfig(external_id="extId", config="my config contents"))
         """
         response = self._post("/extpipes/config", json=config.dump(camel_case=True))
         return ExtractionPipelineConfig._load(response.json(), cognite_client=self._cognite_client)
@@ -396,7 +396,7 @@ class ExtractionPipelineConfigsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.extraction_pipelines.revert_config("extId", 5)
+                >>> res = c.extraction_pipelines.config.revert("extId", 5)
         """
         response = self._post("/extpipes/config/revert", json={"externalId": external_id, "revision": revision})
         return ExtractionPipelineConfig._load(response.json(), cognite_client=self._cognite_client)

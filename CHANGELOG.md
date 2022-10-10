@@ -17,6 +17,8 @@ Changes are grouped as follows
 ## [4.9.0] - 2022-10-04
 ### Added
 - Add support for extraction pipeline configuration files
+### Deprecated
+- Extraction pipeline runs has been moved from `client.extraction_pipeline_runs` to `client.extraction_pipelines.runs`
 
 ## [4.8.1] - 2022-10-06
 ### Fixed

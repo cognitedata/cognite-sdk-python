@@ -1,3 +1,4 @@
+import warnings
 from typing import Any, Dict, Optional
 
 from requests import Response
@@ -10,7 +11,7 @@ from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.diagrams import DiagramsAPI
 from cognite.client._api.entity_matching import EntityMatchingAPI
 from cognite.client._api.events import EventsAPI
-from cognite.client._api.extractionpipelines import ExtractionPipelinesAPI
+from cognite.client._api.extractionpipelines import ExtractionPipelineRunsAPI, ExtractionPipelinesAPI
 from cognite.client._api.files import FilesAPI
 from cognite.client._api.functions import FunctionsAPI
 from cognite.client._api.geospatial import GeospatialAPI
@@ -68,7 +69,6 @@ class CogniteClient:
         self.extraction_pipelines = ExtractionPipelinesAPI(
             self._config, api_version=self._API_VERSION, cognite_client=self
         )
-        self.extraction_pipeline_runs = self.extraction_pipelines.runs
         self.transformations = TransformationsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.diagrams = DiagramsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.annotations = AnnotationsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
@@ -111,3 +111,16 @@ class CogniteClient:
             ClientConfig: The configuration object.
         """
         return self._config
+
+    @property  # TODO (v6.0.0): Delete this whole property
+    def extraction_pipeline_runs(self) -> ExtractionPipelineRunsAPI:
+        if int(self.version.split(".")[0]) >= 6:
+            raise AttributeError(
+                "'CogniteClient' object has no attribute 'extraction_pipeline_runs'. Use 'extraction_pipelines.runs' instead."
+            )
+        warnings.warn(
+            "Accessing the ExtractionPipelineRunsAPI through `client.extraction_pipeline_runs` is deprecated and will be removed "
+            "in major version 6.0.0. Use `client.extraction_pipelines.runs` instead.",
+            DeprecationWarning,
+        )
+        return self.extraction_pipelines.runs
