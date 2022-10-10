@@ -203,19 +203,23 @@ class TestSortedContainers:
         assert isinstance(container.keys(), SortedKeysView)
         assert list(container.keys()) == sorted(create_random_int_tuples)
 
+    def test_dps_container__with_duplicates(self, create_random_int_tuples):
+        container = create_dps_container()
+        tpls = list(create_random_int_tuples)
+        for k in tpls + tpls[:5]:
+            container[k].append(None)
+        assert isinstance(container.keys(), SortedKeysView)
+        assert list(container.keys()) == sorted(create_random_int_tuples)
+
     @pytest.mark.parametrize("with_duplicates", (False, True))
     def test_subtask_lst(self, with_duplicates, create_random_int_tuples):
-        tpls = list(create_random_int_tuples)
-
         class Foo:
             def __init__(self, idx):
                 self.subtask_idx = idx
 
-        # Make sure we have duplicates - or make sure we don't
+        tpls = create_random_int_tuples
         if with_duplicates:
-            tpls += tpls[:5]
-        else:
-            tpls = set(tpls)
+            tpls = list(tpls) + list(tpls)[:5]
 
         random_foos = [Foo(tpl) for tpl in tpls]
         container = create_subtask_lst()
