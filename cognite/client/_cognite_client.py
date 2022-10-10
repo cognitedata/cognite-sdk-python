@@ -1,3 +1,4 @@
+import warnings
 from typing import Any, Dict, Optional
 
 from requests import Response
@@ -65,9 +66,8 @@ class CogniteClient:
         self.entity_matching = EntityMatchingAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.templates = TemplatesAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.vision = VisionAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
-        self.extraction_pipelines = ExtractionPipelinesAPI(self._config, api_version="playground", cognite_client=self)
-        self.extraction_pipeline_runs = ExtractionPipelineRunsAPI(
-            self._config, api_version="playground", cognite_client=self
+        self.extraction_pipelines = ExtractionPipelinesAPI(
+            self._config, api_version=self._API_VERSION, cognite_client=self
         )
         self.transformations = TransformationsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.diagrams = DiagramsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
@@ -111,3 +111,16 @@ class CogniteClient:
             ClientConfig: The configuration object.
         """
         return self._config
+
+    @property  # TODO (v6.0.0): Delete this whole property
+    def extraction_pipeline_runs(self) -> ExtractionPipelineRunsAPI:
+        if int(self.version.split(".")[0]) >= 6:
+            raise AttributeError(
+                "'CogniteClient' object has no attribute 'extraction_pipeline_runs'. Use 'extraction_pipelines.runs' instead."
+            )
+        warnings.warn(
+            "Accessing the ExtractionPipelineRunsAPI through `client.extraction_pipeline_runs` is deprecated and will be removed "
+            "in major version 6.0.0. Use `client.extraction_pipelines.runs` instead.",
+            DeprecationWarning,
+        )
+        return self.extraction_pipelines.runs

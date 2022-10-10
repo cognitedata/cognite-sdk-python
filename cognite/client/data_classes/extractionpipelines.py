@@ -275,3 +275,64 @@ class ExtractionPipelineRunFilter(CogniteFilter):
             if instance.created_time is not None:
                 instance.created_time = TimestampRange(**instance.created_time)
         return instance
+
+
+class ExtractionPipelineConfigRevision(CogniteResource):
+    """An extraction pipeline config revision
+
+    Args:
+        external_id (str): The external ID of the associated extraction pipeline.
+        revision (int): The revision number of this config as a positive integer.
+        description (str): Short description of this configuration revision.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        cognite_client (CogniteClient): The client to associate with this object.
+    """
+
+    def __init__(
+        self,
+        external_id: str = None,
+        revision: int = None,
+        description: str = None,
+        created_time: int = None,
+        cognite_client: "CogniteClient" = None,
+    ):
+        self.external_id = external_id
+        self.revision = revision
+        self.description = description
+        self.created_time = created_time
+        self.cognite_client = cognite_client
+
+
+class ExtractionPipelineConfig(ExtractionPipelineConfigRevision):
+    """An extraction pipeline config revision
+
+    Args:
+        external_id (str): The external ID of the associated extraction pipeline.
+        config (str): Contents of this configuration revision.
+        revision (int): The revision number of this config as a positive integer.
+        description (str): Short description of this configuration revision.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        cognite_client (CogniteClient): The client to associate with this object.
+    """
+
+    def __init__(
+        self,
+        external_id: str = None,
+        config: str = None,
+        revision: int = None,
+        description: str = None,
+        created_time: int = None,
+        cognite_client: "CogniteClient" = None,
+    ):
+        super().__init__(
+            external_id=external_id,
+            revision=revision,
+            description=description,
+            created_time=created_time,
+            cognite_client=cognite_client,
+        )
+        self.config = config
+
+
+class ExtractionPipelineConfigRevisionList(CogniteResourceList):
+    _RESOURCE = ExtractionPipelineConfigRevision

@@ -14,6 +14,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [4.9.0] - 2022-10-10
+### Added
+- Add support for extraction pipeline configuration files
+### Deprecated
+- Extraction pipeline runs has been moved from `client.extraction_pipeline_runs` to `client.extraction_pipelines.runs`
+
 ## [4.8.1] - 2022-10-06
 ### Fixed
 - Fix `__str__` function of `TransformationSchedule`
