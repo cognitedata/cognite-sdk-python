@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [4.10.0] - 2022-10-11
+### Added
+- Add `retrieve_latest` method to `cognite.client.sequences`
+
 ## [4.9.0] - 2022-10-10
 ### Added
 - Add support for extraction pipeline configuration files
