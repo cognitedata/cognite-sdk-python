@@ -124,6 +124,8 @@ def create_test_file_header() -> str:
     return f"""\"\"\"
 This file is automatically generate from {THIS_FILE.name!r}. DO NOT MANUALLY CHANGE IT!
 \"\"\"
+import time
+
 from cognite.client import CogniteClient
 
 """
@@ -146,6 +148,9 @@ def {case.test_name}(
         for col in result
         if not (series := result[col].dropna()).empty
     )
+
+    # Too avoid hitting the API too hard.
+    time.sleep(15.)
 
 """
 

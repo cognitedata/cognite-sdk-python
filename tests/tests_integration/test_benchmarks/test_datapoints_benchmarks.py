@@ -1,6 +1,8 @@
 """
 This file is automatically generate from 'create_datapoints.py'. DO NOT MANUALLY CHANGE IT!
 """
+import time
+
 from cognite.client import CogniteClient
 
 
@@ -19,6 +21,9 @@ def test_single_shallow_number_dense_raw_unlimited_dataframe(
         if not (series := result[col].dropna()).empty
     )
 
+    # Too avoid hitting the API too hard.
+    time.sleep(15.0)
+
 
 def test_single_deep_number_dense_raw_unlimited_dataframe(
     cognite_client: CogniteClient,
@@ -34,6 +39,9 @@ def test_single_deep_number_dense_raw_unlimited_dataframe(
         for col in result
         if not (series := result[col].dropna()).empty
     )
+
+    # Too avoid hitting the API too hard.
+    time.sleep(15.0)
 
 
 def test_few_shallow_number_dense_raw_unlimited_dataframe(
@@ -51,6 +59,9 @@ def test_few_shallow_number_dense_raw_unlimited_dataframe(
         if not (series := result[col].dropna()).empty
     )
 
+    # Too avoid hitting the API too hard.
+    time.sleep(15.0)
+
 
 def test_few_mixed_number_dense_raw_unlimited_dataframe(
     cognite_client: CogniteClient,
@@ -66,6 +77,9 @@ def test_few_mixed_number_dense_raw_unlimited_dataframe(
         for col in result
         if not (series := result[col].dropna()).empty
     )
+
+    # Too avoid hitting the API too hard.
+    time.sleep(15.0)
 
 
 def test_some_shallow_number_dense_raw_unlimited_dataframe(
@@ -83,6 +97,9 @@ def test_some_shallow_number_dense_raw_unlimited_dataframe(
         if not (series := result[col].dropna()).empty
     )
 
+    # Too avoid hitting the API too hard.
+    time.sleep(15.0)
+
 
 def test_many_shallow_number_dense_raw_unlimited_dataframe(
     cognite_client: CogniteClient,
@@ -98,3 +115,6 @@ def test_many_shallow_number_dense_raw_unlimited_dataframe(
         for col in result
         if not (series := result[col].dropna()).empty
     )
+
+    # Too avoid hitting the API too hard.
+    time.sleep(15.0)
