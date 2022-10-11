@@ -110,7 +110,9 @@ def collect_exc_info_and_raise(
 def execute_tasks_concurrently(
     func: Callable, tasks: Union[Sequence[Tuple], List[Dict]], max_workers: int
 ) -> TasksSummary:
-    assert max_workers > 0, "Number of workers should be >= 1, was {}".format(max_workers)
+    if max_workers < 1:
+        raise RuntimeError(f"Number of workers should be >= 1, was {max_workers}")
+
     with ThreadPoolExecutor(max_workers) as p:
         futures = []
         for task in tasks:

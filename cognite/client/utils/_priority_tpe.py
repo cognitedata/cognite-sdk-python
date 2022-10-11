@@ -1,4 +1,3 @@
-# type: ignore
 """
 This code has been modified from the original created by Oleg Lupats, 2019, under an MIT license:
 project = 'PriorityThreadPoolExecutor'

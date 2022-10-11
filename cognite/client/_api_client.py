@@ -1,3 +1,4 @@
+import functools
 import gzip
 import json as _json
 import logging
@@ -54,38 +55,19 @@ class APIClient:
     _RESOURCE_PATH: str
 
     # TODO: This following set should be generated from the openapi spec somehow.
-    RETRYABLE_POST_ENDPOINTS = {
-        "/assets/list",
-        "/assets/byids",
-        "/assets/search",
-        "/events/list",
-        "/events/byids",
-        "/events/search",
-        "/files/list",
-        "/files/byids",
-        "/files/search",
-        "/files/downloadlink",
-        "/timeseries/byids",
-        "/timeseries/search",
-        "/timeseries/list",
-        "/timeseries/data",
-        "/timeseries/data/list",
-        "/timeseries/data/latest",
-        "/timeseries/data/delete",
-        "/sequences/byids",
-        "/sequences/search",
-        "/sequences/data",
-        "/sequences/data/list",
-        "/sequences/data/delete",
-        "/datasets/list",
-        "/datasets/aggregate",
-        "/datasets/byids",
-        "/relationships/list",
-        "/relationships/byids",
-        "/context/entitymatching/byids",
-        "/context/entitymatching/list",
-        "/context/entitymatching/jobs",
-        "/sessions/revoke",
+    _RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS = {
+        rf"^{path}(\?.*)?$"
+        for path in (
+            "/(assets|events|files|timeseries|sequences|datasets|relationships)/(list|byids|search|aggregate)",
+            "/files/downloadlink",
+            "/timeseries/data",
+            "/timeseries/data/(list|latest|delete)",
+            "/sequences/data",
+            "/sequences/data/(list|delete)",
+            "/raw/dbs/[^/]+/tables/[^/]+",
+            "/context/entitymatching/(byids|list|jobs)",
+            "/sessions/revoke",
+        )
     }
 
     def __init__(
@@ -230,19 +212,29 @@ class APIClient:
 
     def _is_retryable(self, method: str, path: str) -> bool:
         valid_methods = ["GET", "POST", "PUT", "DELETE", "PATCH"]
-        match = re.match(
-            r"(?:http|https)://[a-z\d.:\-]+(?:/api/(?:v1|playground)/projects/[^/]+)?(/[^\?]+)?(\?.+)?", path
-        )
-        if not match:
-            raise ValueError("Path {} is not valid. Cannot resolve whether or not it is retryable".format(path))
+
         if method not in valid_methods:
             raise ValueError("Method {} is not valid. Must be one of {}".format(method, valid_methods))
-        path_end = match.group(1)
 
         if method in ["GET", "PUT", "PATCH"]:
             return True
-        if method == "POST" and path_end in self.RETRYABLE_POST_ENDPOINTS:
+        if method == "POST" and self._url_is_retryable(path):
             return True
+        return False
+
+    @classmethod
+    @functools.lru_cache(64)
+    def _url_is_retryable(cls, url: str) -> bool:
+        valid_url_pattern = (
+            r"^(?:http|https)://[a-z\d.:\-]+(?:/api/(?:v1|playground)/projects/[^/]+)?((/[^\?]+)?(\?.+)?)"
+        )
+        match = re.match(valid_url_pattern, url)
+        if not match:
+            raise ValueError("URL {} is not valid. Cannot resolve whether or not it is retryable".format(url))
+        path = match.group(1)
+        for pattern in cls._RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS:
+            if re.match(pattern, path):
+                return True
         return False
 
     def _retrieve(

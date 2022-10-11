@@ -14,7 +14,7 @@ All examples in this documentation assume that a default configuration has been 
 
     >>> from cognite.client import CogniteClient, ClientConfig, global_config
     >>> from cognite.client.credentials import APIKey
-    >>> cnf = ClientConfig(client_name="my-special-client", project="my-project", credentials=APIKey("very-secret"))
+    >>> cnf = ClientConfig(client_name="my-special-client", base_url="https://<cluster>.cognitedata.com", project="my-project", credentials=APIKey("very-secret"))
     >>> global_config.default_client_config = cnf
     >>> c = CogniteClient()
     >>> status = c.login.status()
@@ -33,7 +33,7 @@ To enable this, use one of the credential providers such as OAuthClientCredentia
     >>> from cognite.client.credentials import OAuthClientCredentials
     >>>
     >>> creds = OAuthClientCredentials(token_url=..., client_id=..., client_secret=..., scopes=[...])
-    >>> cnf = ClientConfig(client_name="my-special-client", project="my-project", credentials=creds)
+    >>> cnf = ClientConfig(client_name="my-special-client", base_url="https://<cluster>.cognitedata.com", project="my-project", credentials=creds)
     >>> c = CogniteClient(cnf)
 
 Examples for all OAuth credential providers can be found in the `Credential Providers`_ section.
@@ -47,7 +47,7 @@ You can also make your own credential provider:
     >>> def token_provider():
     >>>     ...
     >>>
-    >>> cnf = ClientConfig(client_name="my-special-client", project="my-project", credentials=Token(token_provider))
+    >>> cnf = ClientConfig(client_name="my-special-client", base_url="https://<cluster>.cognitedata.com", project="my-project", credentials=Token(token_provider))
     >>> c = CogniteClient(cnf)
 
 If OIDC has not been enabled for your CDF project, you will want to authenticate using an API key.
@@ -56,7 +56,7 @@ If OIDC has not been enabled for your CDF project, you will want to authenticate
 
     >>> from cognite.client import CogniteClient, ClientConfig
     >>> from cognite.client.credentials import APIKey
-    >>> cnf = ClientConfig(client_name="<your-client-name>", project="my-project", credentials=APIKey("very-secret"))
+    >>> cnf = ClientConfig(client_name="<your-client-name>", base_url="https://<cluster>.cognitedata.com", project="my-project", credentials=APIKey("very-secret"))
     >>> c = CogniteClient(cnf)
 
 Discover time series
@@ -203,6 +203,7 @@ How to install extra dependencies
 If your application requires the functionality from e.g. the :code:`pandas`, :code:`sympy`, or :code:`geopandas` dependencies,
 you should install the SDK along with its optional dependencies. The available extras are:
 
+- numpy: numpy
 - pandas: pandas
 - geo: geopanda, shapely
 - sympy: sympy
@@ -602,13 +603,13 @@ Retrieve datapoints
 ^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve
 
-Retrieve pandas dataframe
-^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve_dataframe
+Retrieve datapoints as numpy arrays
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve_arrays
 
-Perform data points queries
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.datapoints.DatapointsAPI.query
+Retrieve datapoints in pandas dataframe
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve_dataframe
 
 Retrieve latest datapoint
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -872,6 +873,19 @@ Create coordinate reference systems
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.geospatial.GeospatialAPI.create_coordinate_reference_systems
 
+
+Put raster data
+^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.geospatial.GeospatialAPI.put_raster
+
+Delete raster data
+^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.geospatial.GeospatialAPI.delete_raster
+
+Get raster data
+^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.geospatial.GeospatialAPI.get_raster
+
 Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.geospatial
@@ -1044,12 +1058,12 @@ Start an asynchronous job to extract information from image files stored in CDF:
     >>> from cognite.client.data_classes.contextualization import VisionFeature
     >>> c = CogniteClient()
     >>> extract_job = c.vision.extract(
-    ...     features=[VisionFeature.ASSET_TAG_DETECTION, VisionFeature.PEOPLE_DETECTION], 
+    ...     features=[VisionFeature.ASSET_TAG_DETECTION, VisionFeature.PEOPLE_DETECTION],
     ...     file_ids=[1, 2],
     ... )
 
 
-The returned job object, :code:`extract_job`, can be used to retrieve the status of the job and the prediction results once the job is completed. 
+The returned job object, :code:`extract_job`, can be used to retrieve the status of the job and the prediction results once the job is completed.
 Wait for job completion and get the parsed results:
 
 .. code:: python
@@ -1065,8 +1079,8 @@ Save the prediction results in CDF as `Annotations <https://docs.cognite.com/api
 
     >>> extract_job.save_predictions()
 
-.. note:: 
-    Prediction results are stored in CDF as `Annotations <https://docs.cognite.com/api/v1/#tag/Annotations>`_ using the :code:`images.*` annotation types. In particular, text detections are stored as :code:`images.TextRegion`, asset tag detections are stored as :code:`images.AssetLink`, while other detections are stored as :code:`images.ObjectDetection`.    
+.. note::
+    Prediction results are stored in CDF as `Annotations <https://docs.cognite.com/api/v1/#tag/Annotations>`_ using the :code:`images.*` annotation types. In particular, text detections are stored as :code:`images.TextRegion`, asset tag detections are stored as :code:`images.AssetLink`, while other detections are stored as :code:`images.ObjectDetection`.
 
 Tweaking the parameters of a feature extractor:
 
@@ -1377,6 +1391,24 @@ Report new runs
 .. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelineRunsAPI.create
 
 
+Extraction pipeline configs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Get the latest or a specific config revision
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelineConfigsAPI.retrieve
+
+List configuration revisions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelineConfigsAPI.list
+
+Create a config revision
+~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelineConfigsAPI.create
+
+Revert to an earlier config revision
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelineConfigsAPI.revert
+
 Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.extractionpipelines
@@ -1559,10 +1591,6 @@ CogniteMissingClientError
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autoexception:: cognite.client.exceptions.CogniteMissingClientError
 
-CogniteDuplicateColumnsError
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoexception:: cognite.client.exceptions.CogniteDuplicateColumnsError
-
 
 Utils
 -----
@@ -1573,6 +1601,10 @@ Convert timestamp to milliseconds since epoch
 Convert milliseconds since epoch to datetime
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autofunction:: cognite.client.utils.ms_to_datetime
+
+Convert datetime to milliseconds since epoch
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. autofunction:: cognite.client.utils.datetime_to_ms
 
 Testing
 -------

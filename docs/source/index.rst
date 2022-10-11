@@ -6,7 +6,7 @@
 Cognite Python SDK Documentation
 ================================
 
-This is the Cognite Python SDK for developers and data scientists working with Cognite Data Fusion (CDF). The package is tightly integrated with pandas, and helps you work easily and efficiently with data in Cognite Data Fusion (CDF). 
+This is the Cognite Python SDK for developers and data scientists working with Cognite Data Fusion (CDF). The package is tightly integrated with pandas, and helps you work easily and efficiently with data in Cognite Data Fusion (CDF).
 
 .. contents::
    :local:
@@ -34,7 +34,3 @@ Contents
 ^^^^^^^^
 .. toctree::
    cognite
-
-Examples
-^^^^^^^^
-For a collection of scripts and Jupyter Notebooks that explain how to perform various tasks in Cognite Data Fusion (CDF) using Python, see the GitHub repository `here <https://github.com/  cognitedata/cognite-python-docs>`__.

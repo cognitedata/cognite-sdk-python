@@ -23,6 +23,9 @@ from cognite.client.data_classes.contextualization import (
 )
 from cognite.client.data_classes.extractionpipelines import (
     ExtractionPipeline,
+    ExtractionPipelineConfig,
+    ExtractionPipelineConfigRevision,
+    ExtractionPipelineConfigRevisionList,
     ExtractionPipelineContact,
     ExtractionPipelineList,
     ExtractionPipelineRun,
@@ -165,7 +168,6 @@ from cognite.client.data_classes.datapoints import (  # isort: skip
     Datapoint,
     Datapoints,
     DatapointsList,
-    DatapointsQuery,
     DatapointsArray,
     DatapointsArrayList,
 )

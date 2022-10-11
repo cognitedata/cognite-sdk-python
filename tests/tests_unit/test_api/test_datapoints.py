@@ -8,13 +8,12 @@ from unittest.mock import patch
 import pytest
 
 from cognite.client._api.datapoints import DatapointsBin
-from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, DatapointsQuery
-from cognite.client.exceptions import CogniteAPIError, CogniteDuplicateColumnsError, CogniteNotFoundError
+from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList
+from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._time import granularity_to_ms
 from tests.utils import jsgz_load
 
 DATAPOINTS_API = "cognite.client._api.datapoints.{}"
-DPS_DATA_CLASSES = "cognite.client.data_classes.datapoints.{}"
 
 
 def generate_datapoints(start: int, end: int, aggregates=None, granularity=None):
@@ -334,7 +333,7 @@ class TestGetDatapoints:
 
     def test_retrieve_datapoints_aggregates(self, cognite_client, mock_get_datapoints):
         dps_res = cognite_client.time_series.data.retrieve(
-            id=123, start=1000000, end=1100000, aggregates=["average", "stepInterpolation"], granularity="10s"
+            id=123, start=1000000, end=1100000, aggregates=["average", "step_interpolation"], granularity="10s"
         )
         assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
 
@@ -350,7 +349,7 @@ class TestGetDatapoints:
         for dps_res in dps_res_list:
             assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
 
-    @pytest.mark.dsl  # TODO: Revert to old code and use `retrieve`, not `retrieve_arrays`
+    @pytest.mark.dsl
     def test_retrieve_datapoints_some_aggregates_omitted(
         self, cognite_client, mock_get_datapoints_one_ts_has_missing_aggregates
     ):
@@ -370,11 +369,10 @@ class TestGetDatapoints:
                 np.testing.assert_array_equal(dps.interpolation, [np.nan, 1, np.nan, 3, np.nan])
 
     def test_datapoints_paging_with_limit(self, cognite_client, mock_get_datapoints):
-        with patch(DPS_DATA_CLASSES.format("DPS_LIMIT_AGG"), 3):
-            with patch(DATAPOINTS_API.format("DPS_LIMIT_AGG"), 3):
-                dps_res = cognite_client.time_series.data.retrieve(
-                    id=123, start=0, end=10000, aggregates=["average"], granularity="1s", limit=4
-                )
+        with patch(DATAPOINTS_API.format("DPS_LIMIT_AGG"), 3):
+            dps_res = cognite_client.time_series.data.retrieve(
+                id=123, start=0, end=10000, aggregates=["average"], granularity="1s", limit=4
+            )
         assert 4 == len(dps_res)
 
     def test_retrieve_datapoints_multiple_time_series(self, cognite_client, mock_get_datapoints):
@@ -411,30 +409,6 @@ class TestGetDatapoints:
             body = jsgz_load(mock_get_datapoints.calls[i].request.body)
             assert len(body["items"]) == 1
             assert limit == body["items"][0]["limit"]
-
-
-class TestQueryDatapoints:
-    def test_query_single(self, cognite_client, mock_get_datapoints):
-        dps_res = cognite_client.time_series.data.query(query=DatapointsQuery(id=1, start=0, end=10000))
-        assert isinstance(dps_res, DatapointsList)
-        assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res[0])
-
-    def test_query_multiple(self, cognite_client, mock_get_datapoints):
-        dps_res_list = cognite_client.time_series.data.query(
-            query=[
-                DatapointsQuery(id=1, start=0, end=10000),
-                DatapointsQuery(external_id="2", start=10000, end=20000, aggregates=["average"], granularity="2s"),
-            ]
-        )
-        assert isinstance(dps_res_list, DatapointsList)
-        for dps_res in dps_res_list:
-            assert_dps_response_is_correct(mock_get_datapoints.calls, dps_res)
-
-    def test_query_empty(self, cognite_client, mock_get_datapoints_empty):
-        dps_res = cognite_client.time_series.data.query(query=DatapointsQuery(id=1, start=0, end=10000))
-        assert isinstance(dps_res, DatapointsList)
-        assert 1 == len(dps_res)
-        assert 0 == len(dps_res[0])
 
 
 @pytest.fixture
@@ -849,7 +823,7 @@ class TestPandasIntegration:
 
         d = Datapoints(id=1, timestamp=[1, 2, 3], average=[2, 3, 4], step_interpolation=[3, 4, 5])
         expected_df = pd.DataFrame(
-            {"1|average": [2, 3, 4], "1|stepInterpolation": [3, 4, 5]},
+            {"1|average": [2, 3, 4], "1|step_interpolation": [3, 4, 5]},
             index=pd.to_datetime(range(1, 4), unit="ms"),
         )
         pd.testing.assert_frame_equal(expected_df, d.to_pandas())
@@ -868,7 +842,7 @@ class TestPandasIntegration:
 
         d = Datapoints(id=0, external_id="abc", timestamp=[1, 2, 3], average=[2, 3, 4], step_interpolation=[3, 4, 5])
         expected_df = pd.DataFrame(
-            {"abc|average": [2, 3, 4], "abc|stepInterpolation": [3, 4, 5]},
+            {"abc|average": [2, 3, 4], "abc|step_interpolation": [3, 4, 5]},
             index=pd.to_datetime(range(1, 4), unit="ms"),
         )
         pd.testing.assert_frame_equal(expected_df, d.to_pandas())
@@ -887,9 +861,9 @@ class TestPandasIntegration:
         expected_df = pd.DataFrame(
             {
                 "1|average": [2, 3, 4],
-                "1|stepInterpolation": [3, 4, 5],
+                "1|step_interpolation": [3, 4, 5],
                 "2|max": [2, 3, 4],
-                "2|stepInterpolation": [3, 4, 5],
+                "2|step_interpolation": [3, 4, 5],
                 "3": [1, None, 3],
             },
             index=pd.to_datetime(range(1, 4), unit="ms"),
@@ -921,8 +895,8 @@ class TestPandasIntegration:
             columns=["2|max", "2|average"],
         )
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(), check_freq=False)
-        with pytest.raises(CogniteDuplicateColumnsError):
-            dps_list.to_pandas(include_aggregate_name=False)
+        dps_list.to_pandas(include_aggregate_name=False)
+        assert True  # Duplicated columns names were not allowed prior to v5
 
     def test_datapoints_list_non_aligned(self, cognite_client):
         import pandas as pd
@@ -1173,7 +1147,3 @@ class TestDataPoster:
         dps_object = {"id": 100, "datapoints": [{"timestamp": 1, "value": 1}]}
         bin.add(dps_object)
         assert not bin.will_fit(1)
-
-
-class TestDataFetcher:
-    pass  # TODO(haakonvt): Get to it!

@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
 
 from cognite.client.data_classes._base import (
@@ -82,23 +83,31 @@ class TimeSeries(CogniteResource):
 
         Returns:
             int: The number of datapoints in this time series.
+
+        Raises:
+            ValueError: If the time series is string as count aggregate is only supported for numeric data
+
+        Returns:
+            int: The total number of datapoints
         """
+        if self.is_string:
+            raise ValueError("String time series does not support count aggregate.")
+
         identifier = Identifier.load(self.id, self.external_id).as_dict()
         dps = self._cognite_client.time_series.data.retrieve(
             **identifier, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS, aggregates=["count"], granularity="100d"
         )
         return sum(dps.count)
 
-    def latest(self) -> Optional["Datapoint"]:  # noqa: F821
-        """Returns the latest datapoint in this time series
+    def latest(self, before: Union[int, str, datetime] = None) -> Optional["Datapoint"]:  # noqa: F821
+        """Returns the latest datapoint in this time series. If empty, returns None.
 
         Returns:
             Datapoint: A datapoint object containing the value and timestamp of the latest datapoint.
         """
         identifier = Identifier.load(self.id, self.external_id).as_dict()
-        dps = self._cognite_client.time_series.data.retrieve_latest(**identifier)
-        if len(dps) > 0:
-            return list(dps)[0]
+        if dps := self._cognite_client.time_series.data.retrieve_latest(**identifier, before=before):
+            return dps[0]
         return None
 
     def first(self) -> Optional["Datapoint"]:  # noqa: F821
@@ -111,8 +120,8 @@ class TimeSeries(CogniteResource):
         dps = self._cognite_client.time_series.data.retrieve(
             **identifier, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS, limit=1
         )
-        if len(dps) > 0:
-            return list(dps)[0]
+        if dps:
+            return dps[0]
         return None
 
     def asset(self) -> "Asset":  # noqa: F821

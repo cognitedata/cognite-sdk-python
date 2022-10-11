@@ -104,14 +104,20 @@ def mock_get_first_dp_in_ts(mock_ts_by_ids_response, cognite_client):
 
 
 class TestTimeSeries:
-    def test_get_count(self, cognite_client, mock_count_dps_in_ts):
-        assert 15 == cognite_client.time_series.retrieve(id=1).count()
+    def test_get_count__numeric(self, cognite_client, mock_count_dps_in_ts):
+        ts = cognite_client.time_series.retrieve(id=1)
+        ts.is_string = False  # TODO: This is not elegant
+        assert 15 == ts.count()
         body = jsgz_load(mock_count_dps_in_ts.calls[1].request.body)
         assert len(body["items"]) == 1
         item = body["items"][0]
         assert ["count"] == item["aggregates"]
         assert MIN_TIMESTAMP_MS == item["start"]
         assert MAX_TIMESTAMP_MS < item["end"]  # agg dps, end ts is rounded up
+
+    def test_get_count__string_raises(self, cognite_client, mock_ts_by_ids_response):
+        with pytest.raises(ValueError, match="String time series does not support count aggregate"):
+            cognite_client.time_series.retrieve(id=1).count()
 
     def test_get_latest(self, cognite_client, mock_get_latest_dp_in_ts):
         res = cognite_client.time_series.retrieve(id=1).latest()

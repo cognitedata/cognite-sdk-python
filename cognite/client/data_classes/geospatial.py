@@ -340,3 +340,19 @@ class OrderSpec:
     def __init__(self, property: str, direction: str):
         self.property = property
         self.direction = direction
+
+
+class RasterMetadata:
+    """Raster metadata"""
+
+    def __init__(self, **properties: Any):
+        for key in properties:
+            setattr(self, key, properties[key])
+
+    @classmethod
+    def _load(cls, resource: Dict, cognite_client: "CogniteClient" = None) -> "RasterMetadata":
+        instance = cls(cognite_client=cognite_client)
+        for key, value in resource.items():
+            snake_case_key = to_snake_case(key)
+            setattr(instance, snake_case_key, value)
+        return instance

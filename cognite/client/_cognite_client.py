@@ -69,9 +69,8 @@ class CogniteClient:
         self.entity_matching = EntityMatchingAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.templates = TemplatesAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.vision = VisionAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
-        self.extraction_pipelines = ExtractionPipelinesAPI(self._config, api_version="playground", cognite_client=self)
-        self.extraction_pipeline_runs = ExtractionPipelineRunsAPI(
-            self._config, api_version="playground", cognite_client=self
+        self.extraction_pipelines = ExtractionPipelinesAPI(
+            self._config, api_version=self._API_VERSION, cognite_client=self
         )
         self.transformations = TransformationsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.diagrams = DiagramsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
@@ -97,6 +96,19 @@ class CogniteClient:
     def delete(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None) -> Response:
         """Perform a DELETE request to an arbitrary path in the API."""
         return self._api_client._delete(url, params=params, headers=headers)
+
+    @property  # TODO (v6.0.0): Delete this whole property
+    def datapoints(self) -> DatapointsAPI:
+        if int(self.version.split(".")[0]) >= 6:
+            raise AttributeError(  # ...in case we forget to delete this property in v6...
+                "'CogniteClient' object has no attribute 'datapoints'. Use 'time_series.data' instead."
+            )
+        warnings.warn(
+            "Accessing the DatapointsAPI through `client.datapoints` is deprecated and will be removed "
+            "in major version 6.0.0. Use `client.time_series.data` instead.",
+            DeprecationWarning,
+        )
+        return self.time_series.data
 
     @property
     def datapoints(self) -> DatapointsAPI:
@@ -130,3 +142,16 @@ class CogniteClient:
             ClientConfig: The configuration object.
         """
         return self._config
+
+    @property  # TODO (v6.0.0): Delete this whole property
+    def extraction_pipeline_runs(self) -> ExtractionPipelineRunsAPI:
+        if int(self.version.split(".")[0]) >= 6:
+            raise AttributeError(
+                "'CogniteClient' object has no attribute 'extraction_pipeline_runs'. Use 'extraction_pipelines.runs' instead."
+            )
+        warnings.warn(
+            "Accessing the ExtractionPipelineRunsAPI through `client.extraction_pipeline_runs` is deprecated and will be removed "
+            "in major version 6.0.0. Use `client.extraction_pipelines.runs` instead.",
+            DeprecationWarning,
+        )
+        return self.extraction_pipelines.runs

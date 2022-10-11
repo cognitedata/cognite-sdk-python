@@ -3,8 +3,14 @@ import string
 import pytest
 
 from cognite.client.credentials import OAuthClientCredentials
-from cognite.client.data_classes import DataSet, Transformation, TransformationDestination, TransformationUpdate
-from cognite.client.data_classes.transformations._alphatypes import AlphaDataModelInstances
+from cognite.client.data_classes import (
+    DataSet,
+    Transformation,
+    TransformationDestination,
+    TransformationSchedule,
+    TransformationUpdate,
+)
+from cognite.client.data_classes.transformations import ContainsAny
 from cognite.client.data_classes.transformations.common import NonceCredentials, OidcCredentials, SequenceRows
 from cognite.client.utils._auxiliary import random_string
 
@@ -31,6 +37,7 @@ def new_transformation(cognite_client, new_datasets):
     assert isinstance(creds, OAuthClientCredentials)
     transform = Transformation(
         name="any",
+        query="select 1",
         external_id=f"{prefix}-transformation",
         destination=TransformationDestination.assets(),
         data_set_id=new_datasets[0].id,
@@ -112,13 +119,25 @@ class TestTransformationsAPI:
         ts = cognite_client.transformations.create(transform)
         cognite_client.transformations.delete(id=ts.id)
 
-    @pytest.mark.skip
-    def test_create_alpha_dmi_transformation(self, cognite_client):
+    def test_create_transformation_with_tags(self, cognite_client):
         prefix = random_string(6, string.ascii_letters)
         transform = Transformation(
             name="any",
             external_id=f"{prefix}-transformation",
-            destination=AlphaDataModelInstances(
+            destination=TransformationDestination.string_datapoints(),
+            tags=["vu", "hai"],
+        )
+        ts = cognite_client.transformations.create(transform)
+        assert set(["vu", "hai"]) == set(ts.tags)
+        cognite_client.transformations.delete(id=ts.id)
+
+    @pytest.mark.skip
+    def test_create_dmi_transformation(self, cognite_client):
+        prefix = random_string(6, string.ascii_letters)
+        transform = Transformation(
+            name="any",
+            external_id=f"{prefix}-transformation",
+            destination=TransformationDestination.data_model_instances(
                 model_external_id="testInstance",
                 space_external_id="test-space",
                 instance_space_external_id="test-space",
@@ -126,7 +145,7 @@ class TestTransformationsAPI:
         )
         ts = cognite_client.transformations.create(transform)
         assert (
-            ts.destination.type == "alpha_data_model_instances"
+            ts.destination.type == "data_model_instances"
             and ts.destination.model_external_id == "testInstance"
             and ts.destination.space_external_id == "test-space"
             and ts.destination.instance_space_external_id == "test-space"
@@ -260,16 +279,21 @@ class TestTransformationsAPI:
         # just make sure it doesnt raise exceptions
         str(query_result)
 
-    @pytest.mark.skip
-    def test_update_dmi_alpha(self, cognite_client, new_transformation):
-        new_transformation.destination = AlphaDataModelInstances("myTest", "test-space", "test-space")
+    def test_update_dmi(self, cognite_client, new_transformation):
+        new_transformation.destination = TransformationDestination.data_model_instances(
+            "myTest", "test-space", "test-space"
+        )
         partial_update = TransformationUpdate(id=new_transformation.id).destination.set(
-            AlphaDataModelInstances("myTest2", "test-space", "test-space")
+            TransformationDestination.data_model_instances("myTest2", "test-space", "test-space")
         )
         updated_transformation = cognite_client.transformations.update(new_transformation)
-        assert updated_transformation.destination == AlphaDataModelInstances("myTest", "test-space", "test-space")
+        assert updated_transformation.destination == TransformationDestination.data_model_instances(
+            "myTest", "test-space", "test-space"
+        )
         partial_updated = cognite_client.transformations.update(partial_update)
-        assert partial_updated.destination == AlphaDataModelInstances("myTest2", "test-space", "test-space")
+        assert partial_updated.destination == TransformationDestination.data_model_instances(
+            "myTest2", "test-space", "test-space"
+        )
 
     def test_update_sequence_rows_update(self, cognite_client, new_transformation):
         new_transformation.destination = SequenceRows("myTest")
@@ -279,3 +303,72 @@ class TestTransformationsAPI:
         partial_update = TransformationUpdate(id=new_transformation.id).destination.set(SequenceRows("myTest2"))
         partial_updated = cognite_client.transformations.update(partial_update)
         assert partial_updated.destination == TransformationDestination.sequence_rows("myTest2")
+
+    def test_update_transformations_with_tags(self, cognite_client, new_transformation):
+        new_transformation.tags = ["emel", "OPs"]
+        updated_transformation = cognite_client.transformations.update(new_transformation)
+        assert set(["emel", "OPs"]) == set(updated_transformation.tags)
+
+    def test_update_transformations_with_tags_partial(self, cognite_client, new_transformation):
+        partial_update = TransformationUpdate(id=new_transformation.id).tags.set(["jaime"])
+        partial_updated = cognite_client.transformations.update(partial_update)
+        assert partial_updated.tags == ["jaime"]
+        partial_update2 = TransformationUpdate(id=new_transformation.id).tags.add(["andres", "silva"])
+        partial_updated2 = cognite_client.transformations.update(partial_update2)
+        assert set(partial_updated2.tags) == set(["jaime", "andres", "silva"])
+        partial_update3 = (
+            TransformationUpdate(id=new_transformation.id).tags.add(["tharindu"]).tags.remove(["andres", "silva"])
+        )
+        partial_updated3 = cognite_client.transformations.update(partial_update3)
+        assert set(partial_updated3.tags) == set(["jaime", "tharindu"])
+
+    def test_filter_transformations_by_tags(self, cognite_client, new_transformation, other_transformation):
+        new_transformation.tags = ["hello"]
+        other_transformation.tags = ["hi", "kiki"]
+        cognite_client.transformations.update([new_transformation, other_transformation])
+        ts = cognite_client.transformations.list(tags=ContainsAny(["hello"]))
+        assert ts[0].id == new_transformation.id and ts[0].tags == ["hello"]
+        ts3 = cognite_client.transformations.list(tags=ContainsAny(["hello", "kiki"]))
+        assert len(ts3) == 2 and set([i.id for i in ts3]) == set([new_transformation.id, other_transformation.id])
+
+    def test_transformation_str_function(self, cognite_client, new_transformation, new_datasets):
+        cognite_client.transformations.schedules.create(
+            TransformationSchedule(external_id=new_transformation.external_id, interval="* * * * *", is_paused=True)
+        )
+        tr: Transformation = cognite_client.transformations.retrieve(external_id=new_transformation.external_id)
+        import json
+
+        str_res = json.loads(tr.__str__())
+        str_res["created_time"] = None
+        str_res["last_updated_time"] = None
+        str_res["owner"] = None
+        str_res["schedule"]["created_time"] = None
+        str_res["schedule"]["last_updated_time"] = None
+
+        assert str_res == {
+            "id": new_transformation.id,
+            "external_id": new_transformation.external_id,
+            "name": "any",
+            "query": "select 1",
+            "destination": {"type": "assets"},
+            "conflict_mode": "upsert",
+            "is_public": True,
+            "ignore_null_fields": False,
+            "has_source_api_key": False,
+            "has_destination_api_key": False,
+            "has_source_oidc_credentials": True,
+            "has_destination_oidc_credentials": True,
+            "created_time": None,
+            "last_updated_time": None,
+            "owner": None,
+            "owner_is_current_user": True,
+            "schedule": {
+                "id": new_transformation.id,
+                "external_id": new_transformation.external_id,
+                "created_time": None,
+                "last_updated_time": None,
+                "interval": "* * * * *",
+                "is_paused": True,
+            },
+            "data_set_id": new_datasets[0].id,
+        }

@@ -7,6 +7,7 @@ from cognite.client.data_classes import (
     TransformationSchemaColumn,
     TransformationSchemaColumnList,
 )
+from cognite.client.data_classes.transformations.common import DataModelInstances
 
 
 class TransformationSchemaAPI(APIClient):
@@ -35,27 +36,18 @@ class TransformationSchemaAPI(APIClient):
         """
 
         url_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}", str(destination.type))
-        other_params = {"conflictMode": conflict_mode} if conflict_mode else None
-        return self._list(
-            list_cls=TransformationSchemaColumnList,
-            resource_cls=TransformationSchemaColumn,
-            method="GET",
-            resource_path=url_path,
-            filter=other_params,
-        )
+        filter = destination.dump(True)
+        filter.pop("type")
 
-    def _alpha_retrieve_data_model_schema(
-        self, modelExternalId: str = None, spaceExternalId: str = None, instanceExternalId: str = None
-    ) -> TransformationSchemaColumnList:
-        url_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}", "alphadatamodelinstances")
+        if isinstance(destination, DataModelInstances):
+            filter["externalId"] = filter.pop("modelExternalId")
+            filter.pop("instanceSpaceExternalId")
+        if conflict_mode:
+            filter["conflictMode"] = conflict_mode
         return self._list(
             list_cls=TransformationSchemaColumnList,
             resource_cls=TransformationSchemaColumn,
             method="GET",
             resource_path=url_path,
-            filter={
-                "externalId": modelExternalId,
-                "spaceExternalId": spaceExternalId,
-                "instanceExternalId": instanceExternalId,
-            },
+            filter=filter,
         )

@@ -6,8 +6,8 @@ import time
 from inspect import getdoc, getsource
 from numbers import Integral, Number
 from pathlib import Path
-from tempfile import NamedTemporaryFile, TemporaryDirectory
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Union, cast
+from tempfile import TemporaryDirectory
+from typing import IO, TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Union, cast
 from zipfile import ZipFile
 
 from cognite.client import utils
@@ -34,7 +34,6 @@ from cognite.client.utils._identifier import IdentifierSequence, SingletonIdenti
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
-
 
 HANDLER_FILE_NAME = "handler.py"
 MAX_RETRIES = 5
@@ -104,7 +103,7 @@ class FunctionsAPI(APIClient):
         The function named `handle` is the entrypoint of the created function. Valid arguments to `handle` are `data`, `client`, `secrets` and `function_call_info`:\n
         - If the user calls the function with input data, this is passed through the `data` argument.\n
         - If the user gives an `api_key` when creating the function, a pre instantiated CogniteClient is passed through the `client` argument.\n
-        - If the user gives one ore more secrets when creating the function, these are passed through the `secrets` argument. The API key can be access through `secrets["apikey"]`.\n
+        - If the user gives one or more secrets when creating the function, these are passed through the `secrets` argument. The API key can be access through `secrets["apikey"]`.\n
         - Data about the function call can be accessed via the argument `function_call_info`, which is a dictionary with keys `function_id` and, if the call is scheduled, `schedule_id` and `scheduled_time`.\n
 
         Args:
@@ -436,19 +435,6 @@ class FunctionsAPI(APIClient):
                     for root, dirs, files in os.walk("."):
                         zf.write(root)
 
-                        # Validate requirements.txt in root-dir only
-                        if root == "." and REQUIREMENTS_FILE_NAME in files:
-                            # Remove requirement from file list
-                            path = files.pop(files.index(REQUIREMENTS_FILE_NAME))
-                            reqs = _extract_requirements_from_file(path)
-                            # Validate and format requirements
-                            parsed_reqs = _validate_and_parse_requirements(reqs)
-                            with NamedTemporaryFile() as nth:
-                                _write_requirements_to_file(nth.name, parsed_reqs)
-                                # NOTE: the actual file is not written.
-                                # A temporary formatted file is used instead
-                                zf.write(nth.name, arcname=REQUIREMENTS_FILE_NAME)
-
                         for filename in files:
                             zf.write(os.path.join(root, filename))
 
@@ -470,23 +456,25 @@ class FunctionsAPI(APIClient):
         # / is not allowed in file names
         name = name.replace("/", "-")
 
+        docstr_requirements = _get_fn_docstring_requirements(function_handle)
+
         with TemporaryDirectory() as tmpdir:
             handle_path = os.path.join(tmpdir, HANDLER_FILE_NAME)
             with open(handle_path, "w") as f:
                 source = getsource(function_handle)
                 f.write(source)
 
-            # Read and validate requirements
-            with NamedTemporaryFile() as named_temp_file:
-                requirements_written = _write_fn_docstring_requirements_to_file(function_handle, named_temp_file.name)
+            if docstr_requirements:
+                requirements_path = os.path.join(tmpdir, REQUIREMENTS_FILE_NAME)
+                with open(requirements_path, "w") as f:
+                    for req in docstr_requirements:
+                        f.write(f"{req}\n")
 
-                zip_path = os.path.join(tmpdir, "function.zip")
-                with ZipFile(zip_path, "w") as zf:
-                    zf.write(handle_path, arcname=HANDLER_FILE_NAME)
-
-                    # Zip requirements.txt
-                    if requirements_written:
-                        zf.write(named_temp_file.name, arcname=REQUIREMENTS_FILE_NAME)
+            zip_path = os.path.join(tmpdir, "function.zip")
+            with ZipFile(zip_path, "w") as zf:
+                zf.write(handle_path, arcname=HANDLER_FILE_NAME)
+                if docstr_requirements:
+                    zf.write(requirements_path, arcname=REQUIREMENTS_FILE_NAME)
 
             overwrite = True if external_id else False
             file = cast(
@@ -729,20 +717,19 @@ def _validate_and_parse_requirements(requirements: List[str]) -> List[str]:
     return parsed_reqs
 
 
-def _write_requirements_to_file(file_path: str, requirements: List[str]) -> None:
-    with open(file_path, "w+") as f:
-        f.write("\n".join(requirements))
+def _write_requirements_to_named_temp_file(file: IO, requirements: List[str]) -> None:
+    file.write("\n".join(requirements))
 
 
-def _write_fn_docstring_requirements_to_file(fn: Callable, file_path: str) -> bool:
-    """Read requirements from a function docstring, validate them, and write contents to the provided file path
+def _get_fn_docstring_requirements(fn: Callable) -> List[str]:
+    """Read requirements from a function docstring, validate them and return.
 
     Args:
         fn (Callable): the function to read requirements from
         file_path (str): Path of file to write requirements to
 
     Returns:
-        bool: whether or not anything was written to the file
+        List[str]: A (possibly empty) list of requirements.
     """
     docstr = getdoc(fn)
 
@@ -750,10 +737,9 @@ def _write_fn_docstring_requirements_to_file(fn: Callable, file_path: str) -> bo
         reqs = _extract_requirements_from_doc_string(docstr)
         if reqs:
             parsed_reqs = _validate_and_parse_requirements(reqs)
-            _write_requirements_to_file(file_path, parsed_reqs)
-            return True
+            return parsed_reqs
 
-    return False
+    return []
 
 
 class FunctionCallsAPI(APIClient):

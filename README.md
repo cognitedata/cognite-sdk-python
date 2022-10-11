@@ -39,7 +39,7 @@ The available extras (along with the libraries they include) are:
 - geo `[geopandas, shapely]`
 - sympy `[sympy]`
 - functions `[pip]`
-- all `[pandas, geopandas, shapely, sympy, pip]`
+- all `[numpy, pandas, geopandas, shapely, sympy, pip]`
 
 To include optional dependencies, specify them like this with pip:
 
@@ -54,8 +54,8 @@ $ poetry add cognite-sdk -E pandas -E geo
 
 ### Performance notes
 If you regularly need to fetch large amounts of datapoints, consider installing with `numpy`
-(or with `pandas`, as it depends on numpy) for best performance. This avoids building large
-pure Python data structures, and instead reads data directly into `numpy.ndarrays`.
+(or with `pandas`, as it depends on numpy) for best performance, then use the `retrieve_arrays` endpoint.
+This avoids building large pure Python data structures, and instead reads data directly into `numpy.ndarrays`.
 
 ### Windows specific
 

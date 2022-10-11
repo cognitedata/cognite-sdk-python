@@ -1,6 +1,5 @@
 import os
 from datetime import datetime
-from tempfile import NamedTemporaryFile
 from unittest.mock import patch
 
 import pytest
@@ -10,9 +9,9 @@ from cognite.client import ClientConfig, CogniteClient
 from cognite.client._api.functions import (
     _extract_requirements_from_doc_string,
     _extract_requirements_from_file,
+    _get_fn_docstring_requirements,
     _using_client_credential_flow,
     _validate_and_parse_requirements,
-    _write_fn_docstring_requirements_to_file,
     validate_function_folder,
 )
 from cognite.client.credentials import APIKey, OAuthClientCredentials, Token
@@ -419,13 +418,6 @@ class TestFunctionsAPI:
         folder = os.path.join(os.path.dirname(__file__), "function_test_resources", function_folder)
         cognite_client.functions._zip_and_upload_folder(folder, function_name)
 
-    def test_zip_and_upload_folder_error(self, cognite_client):
-        function_folder = "function_code_with_invalid_requirements"
-        function_name = "function_w_bad_requirements"
-        folder = os.path.join(os.path.dirname(__file__), "function_test_resources", function_folder)
-        with pytest.raises(ValueError):
-            cognite_client.functions._zip_and_upload_folder(folder, function_name)
-
     @patch("cognite.client._api.functions.MAX_RETRIES", 1)
     def test_create_function_with_file_not_uploaded(self, mock_file_not_uploaded, cognite_client):
         with pytest.raises(IOError):
@@ -688,15 +680,13 @@ class TestRequirementsParser:
             """
             return None
 
-        with NamedTemporaryFile() as ntf:
-            assert _write_fn_docstring_requirements_to_file(fn, ntf.name) is True
+        assert _get_fn_docstring_requirements(fn) == ["asyncio"]
 
     def test_get_requirements_handle_error(self):
         def fn():
             return None
 
-        with NamedTemporaryFile() as ntf:
-            assert _write_fn_docstring_requirements_to_file(fn, ntf.name) is False
+        assert _get_fn_docstring_requirements(fn) == []
 
     def test_get_requirements_handle_no_docstr(self):
         def fn():
@@ -708,8 +698,7 @@ class TestRequirementsParser:
             return None
 
         with pytest.raises(Exception):
-            with NamedTemporaryFile() as ntf:
-                assert _write_fn_docstring_requirements_to_file(fn, ntf.name) is False
+            _get_fn_docstring_requirements(fn)
 
     def test_get_requirements_handle_no_reqs(self):
         def fn():
@@ -719,8 +708,7 @@ class TestRequirementsParser:
             """
             return None
 
-        with NamedTemporaryFile() as ntf:
-            assert _write_fn_docstring_requirements_to_file(fn, ntf.name) is False
+        assert _get_fn_docstring_requirements(fn) == []
 
     def test_extract_requirements_from_file(self, tmpdir):
         req = "somepackage == 3.8.1"

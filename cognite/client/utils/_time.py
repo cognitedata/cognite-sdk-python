@@ -1,7 +1,7 @@
 import numbers
 import re
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional, Tuple, Union
 
 UNIT_IN_MS_WITHOUT_WEEK = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000}
@@ -12,6 +12,14 @@ MAX_TIMESTAMP_MS = 2556143999999
 
 
 def datetime_to_ms(dt: datetime) -> int:
+    """Converts datetime object to milliseconds since epoch.
+
+    Args:
+        dt (datetime): Naive or aware datetime object. Naive datetimes are interpreted as local time.
+
+    Returns:
+        ms: Milliseconds since epoch (negative for time prior to 1970-01-01)
+    """
     return int(1000 * dt.timestamp())
 
 
@@ -19,16 +27,16 @@ def ms_to_datetime(ms: Union[int, float]) -> datetime:
     """Converts milliseconds since epoch to datetime object.
 
     Args:
-        ms (Union[int, float]): Milliseconds since epoch, must be non-negative.
+        ms (Union[int, float]): Milliseconds since epoch.
 
     Returns:
         datetime: Aware datetime object in UTC.
-
     """
-    if ms < 0:
-        raise ValueError("ms must be greater than or equal to zero.")
+    if not (MIN_TIMESTAMP_MS <= ms <= MAX_TIMESTAMP_MS):
+        raise ValueError(f"Input {ms=} does not satisfy: {MIN_TIMESTAMP_MS} <= ms <= {MAX_TIMESTAMP_MS}")
 
-    return datetime.utcfromtimestamp(ms / 1000).replace(tzinfo=timezone.utc)
+    # Note: We don't use fromtimestamp because it typically fails for negative values on Windows
+    return datetime(1970, 1, 1, tzinfo=timezone.utc) + timedelta(milliseconds=ms)
 
 
 def time_string_to_ms(pattern: str, string: str, unit_in_ms: Dict[str, int]) -> Optional[int]:

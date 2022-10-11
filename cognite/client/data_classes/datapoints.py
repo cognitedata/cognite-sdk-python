@@ -2,16 +2,19 @@ from __future__ import annotations
 
 import json
 import numbers
-import re as regexp
+import operator as op
 import warnings
+from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
+from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
+    Collection,
     Dict,
     Generator,
-    Iterable,
     Iterator,
     List,
     Literal,
@@ -23,23 +26,16 @@ from typing import (
     TypedDict,
     Union,
     cast,
+    overload,
 )
 
 from cognite.client import utils
-from cognite.client._api.datapoint_constants import (
-    DPS_LIMIT,
-    DPS_LIMIT_AGG,
-    CustomDatapointsQuery,
-    DatapointsExternalIdTypes,
-    DatapointsIdTypes,
-    DatapointsQueryExternalId,
-    DatapointsQueryId,
-)
+from cognite.client._constants import ALL_SORTED_DP_AGGS
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
-from cognite.client.exceptions import CogniteDuplicateColumnsError
 from cognite.client.utils._auxiliary import (
     convert_all_keys_to_camel_case,
     convert_all_keys_to_snake_case,
+    find_duplicates,
     local_import,
     to_camel_case,
 )
@@ -51,30 +47,68 @@ from cognite.client.utils._time import (
 )
 
 if TYPE_CHECKING:
-    import numpy.typing as npt
     import pandas
 
     from cognite.client import CogniteClient
-    from cognite.client._api.datapoint_constants import (
-        NumpyDatetime64NSArray,
-        NumpyFloat64Array,
-        NumpyInt64Array,
-        NumpyObjArray,
-    )
+
+try:
+    import numpy as np
+    import numpy.typing as npt
+
+    NumpyDatetime64NSArray = npt.NDArray[np.datetime64]
+    NumpyInt64Array = npt.NDArray[np.int64]
+    NumpyFloat64Array = npt.NDArray[np.float64]
+    NumpyObjArray = npt.NDArray[np.object_]
+    NUMPY_IS_AVAILABLE = True
+
+except ImportError:  # pragma no cover
+    NUMPY_IS_AVAILABLE = False
 
 
-ALL_DATAPOINT_AGGREGATES = [
-    "average",
-    "max",
-    "min",
-    "count",
-    "sum",
-    "interpolation",
-    "step_interpolation",
-    "continuous_variance",
-    "discrete_variance",
-    "total_variation",
-]
+DatapointValue = Union[int, float, str]
+DatapointsId = Union[None, int, Dict[str, Any], List[Union[int, Dict[str, Any]]]]
+DatapointsExternalId = Union[None, str, Dict[str, Any], List[Union[str, Dict[str, Any]]]]
+
+
+class CustomDatapointsQuery(TypedDict, total=False):
+    # No field required
+    start: Union[int, str, datetime, None]
+    end: Union[int, str, datetime, None]
+    aggregates: Optional[List[str]]
+    granularity: Optional[str]
+    limit: Optional[int]
+    include_outside_points: Optional[bool]
+    ignore_unknown_ids: Optional[bool]
+
+
+class DatapointsQueryId(CustomDatapointsQuery):
+    id: int  # required field
+
+
+class DatapointsQueryExternalId(CustomDatapointsQuery):
+    external_id: str  # required field
+
+
+class CustomDatapoints(TypedDict, total=False):
+    # No field required
+    start: int
+    end: int
+    aggregates: Optional[List[str]]
+    granularity: Optional[str]
+    limit: int
+    include_outside_points: bool
+
+
+class DatapointsPayload(CustomDatapoints):
+    items: List[CustomDatapoints]
+
+
+class DatapointsFromAPI(TypedDict):
+    id: int
+    externalId: Optional[str]
+    isString: bool
+    isStep: bool
+    datapoints: List[Dict[str, DatapointValue]]
 
 
 class Datapoint(CogniteResource):
@@ -82,7 +116,7 @@ class Datapoint(CogniteResource):
 
     Args:
         timestamp (Union[int, float]): The data timestamp in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
-        value (Union[str, int, float]): The data value. Can be string or numeric depending on the metric
+        value (Union[str, float]): The data value. Can be string or numeric
         average (float): The integral average value in the aggregate period
         max (float): The maximum value in the aggregate period
         min (float): The minimum value in the aggregate period
@@ -196,6 +230,7 @@ class DatapointsArray(CogniteResource):
         cls,
         dps_dct: Dict[str, Union[int, str, bool, npt.NDArray]],
     ) -> DatapointsArray:
+        assert isinstance(dps_dct["timestamp"], np.ndarray)  # mypy love
         # Since pandas always uses nanoseconds for datetime, we stick with the same:
         dps_dct["timestamp"] = dps_dct["timestamp"].astype("datetime64[ms]").astype("datetime64[ns]")
         return cls(**convert_all_keys_to_snake_case(dps_dct))
@@ -216,10 +251,18 @@ class DatapointsArray(CogniteResource):
     def _repr_html_(self) -> str:
         return self.to_pandas()._repr_html_()
 
-    def __getitem__(self, item: Any) -> Union[Datapoint, DatapointsArray]:
+    @overload
+    def __getitem__(self, item: int) -> Datapoint:
+        ...
+
+    @overload
+    def __getitem__(self, item: slice) -> DatapointsArray:
+        ...
+
+    def __getitem__(self, item: Union[int, slice]) -> Union[Datapoint, DatapointsArray]:
         if isinstance(item, slice):
             return self._slice(item)
-        return Datapoint(**{attr: arr[item].item() for attr, arr in zip(*self._data_fields())})
+        return Datapoint(**{attr: self._dtype_fix(arr[item]) for attr, arr in zip(*self._data_fields())})
 
     def _slice(self, part: slice) -> DatapointsArray:
         return DatapointsArray(
@@ -229,12 +272,20 @@ class DatapointsArray(CogniteResource):
     def __iter__(self) -> Iterator[Datapoint]:
         # Let's not create a single Datapoint more than we have too:
         attrs, arrays = self._data_fields()
-        yield from (Datapoint(**dict(zip(attrs, row))) for row in zip(*arrays))
+        yield from (Datapoint(**dict(zip(attrs, map(self._dtype_fix, row)))) for row in zip(*arrays))
+
+    @cached_property
+    def _dtype_fix(self) -> Callable:
+        if self.is_string:
+            # Return no-op as array contains just references to vanilla python objects:
+            return lambda s: s
+        # Using .item() on numpy scalars gives us vanilla python types:
+        return op.methodcaller("item")
 
     def _data_fields(self) -> Tuple[List[str], List[npt.NDArray]]:
         data_field_tuples = [
             (attr, arr)
-            for attr in ("timestamp", "value", *ALL_DATAPOINT_AGGREGATES)
+            for attr in ("timestamp", "value", *ALL_SORTED_DP_AGGS)
             if (arr := getattr(self, attr)) is not None
         ]
         attrs, arrays = map(list, zip(*data_field_tuples))
@@ -253,17 +304,14 @@ class DatapointsArray(CogniteResource):
         attrs, arrays = self._data_fields()
         if convert_timestamps:
             assert attrs[0] == "timestamp"
-            # Note: numpy does not have a strftime method to get the exact format we want (hence the datetime detour):
+            # Note: numpy does not have a strftime method to get the exact format we want (hence the datetime detour)
+            #       and for some weird reason .astype(datetime) directly from dt64 returns native integer... whatwhyy
             arrays[0] = arrays[0].astype("datetime64[ms]").astype(datetime).astype(str)
 
         if camel_case:
             attrs = list(map(to_camel_case, attrs))
 
-        dumped = {
-            **self._ts_info,
-            # Using .item() is not strictly necessary, but it gives us vanilla python types:
-            "datapoints": [dict(zip(attrs, [v.item() for v in row])) for row in zip(*arrays)],
-        }
+        dumped = {**self._ts_info, "datapoints": [dict(zip(attrs, map(self._dtype_fix, row))) for row in zip(*arrays)]}
         if camel_case:
             dumped = convert_all_keys_to_camel_case(dumped)
         return {k: v for k, v in dumped.items() if v is not None}
@@ -271,10 +319,12 @@ class DatapointsArray(CogniteResource):
     def to_pandas(  # type: ignore [override]
         self, column_names: Literal["id", "external_id"] = "external_id", include_aggregate_name: bool = True
     ) -> "pandas.DataFrame":
+        assert isinstance(include_aggregate_name, bool)
         pd = cast(Any, local_import("pandas"))
         identifier_dct = {"id": self.id, "external_id": self.external_id}
         if column_names not in identifier_dct:
             raise ValueError("Argument `column_names` must be either 'external_id' or 'id'")
+
         identifier = identifier_dct[column_names]
         if identifier is None:  # Time series are not required to have an external_id unfortunately...
             identifier = identifier_dct["id"]
@@ -285,17 +335,19 @@ class DatapointsArray(CogniteResource):
                 "to silence this warning.",
                 UserWarning,
             )
-        idx = pd.to_datetime(self.timestamp, unit="ms")
         if self.value is not None:
-            return pd.DataFrame({identifier: self.value}, index=idx)
+            return pd.DataFrame({identifier: self.value}, index=self.timestamp, copy=False)
 
-        def col_name(agg: str) -> str:
-            return f"{identifier}{include_aggregate_name * f'|{agg}'}"
+        columns, data = [], []
+        for agg in ALL_SORTED_DP_AGGS:
+            if (arr := getattr(self, agg)) is not None:
+                data.append(arr)
+                columns.append(f"{identifier}{include_aggregate_name * f'|{agg}'}")
 
-        return pd.DataFrame(
-            {col_name(agg): arr for agg in ALL_DATAPOINT_AGGREGATES if (arr := getattr(self, agg)) is not None},
-            index=idx,
-        )
+        # Since columns might contain duplicates, we can't instantiate from dict as only the
+        # last key (array/column) would be kept:
+        (df := pd.DataFrame(dict(enumerate(data)), index=self.timestamp, copy=False)).columns = columns
+        return df
 
 
 class Datapoints(CogniteResource):
@@ -308,7 +360,7 @@ class Datapoints(CogniteResource):
         is_step (bool): Whether the time series is a step series or not.
         unit (str): The physical unit of the time series.
         timestamp (List[Union[int, float]]): The data timestamps in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
-        value (List[Union[int, str, float]]): The data values. Can be string or numeric depending on the metric
+        value (Union[List[str], List[float]]): The data values. Can be string or numeric
         average (List[float]): The integral average values in the aggregate period
         max (List[float]): The maximum values in the aggregate period
         min (List[float]): The minimum values in the aggregate period
@@ -379,7 +431,15 @@ class Datapoints(CogniteResource):
             and list(self._get_non_empty_data_fields()) == list(other._get_non_empty_data_fields())
         )
 
-    def __getitem__(self, item: Any) -> Union[Datapoint, "Datapoints"]:
+    @overload
+    def __getitem__(self, item: int) -> Datapoint:
+        ...
+
+    @overload
+    def __getitem__(self, item: slice) -> Datapoints:
+        ...
+
+    def __getitem__(self, item: Union[int, slice]) -> Union[Datapoint, Datapoints]:
         if isinstance(item, slice):
             return self._slice(item)
         dp_args = {}
@@ -408,12 +468,14 @@ class Datapoints(CogniteResource):
             "datapoints": [dp.dump(camel_case=camel_case) for dp in self.__get_datapoint_objects()],
         }
         if camel_case:
-            # TODO: Keys in dicts in `datapoints`, i.e. `step_interpolation` are still snake_cased.
             dumped = {utils._auxiliary.to_camel_case(key): value for key, value in dumped.items()}
         return {key: value for key, value in dumped.items() if value is not None}
 
     def to_pandas(  # type: ignore[override]
-        self, column_names: str = "external_id", include_aggregate_name: bool = True, include_errors: bool = False
+        self,
+        column_names: str = "external_id",
+        include_aggregate_name: bool = True,
+        include_errors: bool = False,
     ) -> "pandas.DataFrame":
         """Convert the datapoints into a pandas DataFrame.
 
@@ -426,7 +488,6 @@ class Datapoints(CogniteResource):
             pandas.DataFrame: The dataframe.
         """
         pd = cast(Any, local_import("pandas"))
-        data_fields = {}
         timestamps = []
         if column_names in ["external_id", "externalId"]:  # Camel case for backwards compat
             identifier = self.external_id if self.external_id is not None else self.id
@@ -434,26 +495,22 @@ class Datapoints(CogniteResource):
             identifier = self.id
         else:
             raise ValueError("column_names must be 'external_id' or 'id'")
-        for attr, value in self._get_non_empty_data_fields(get_empty_lists=True, get_error=include_errors):
+
+        # Make sure columns (aggregates) always come in alphabetical order (e.g. "average" before "max"):
+        data_field_dct = {}
+        data_fields = self._get_non_empty_data_fields(get_empty_lists=True, get_error=include_errors)
+        for attr, data in sorted(data_fields):
             if attr == "timestamp":
-                timestamps = value
+                timestamps = data
             else:
                 id_with_agg = str(identifier)
                 if attr != "value":
-                    id_with_agg += "|{}".format(utils._auxiliary.to_camel_case(attr))
-                data_fields[id_with_agg] = value
-        df = pd.DataFrame(data_fields, index=pd.to_datetime(timestamps, unit="ms"))
-        if not include_aggregate_name:
-            df = Datapoints._strip_aggregate_names(df)
-        return df
+                    if include_aggregate_name:
+                        id_with_agg += f"|{attr}"
+                    data = pd.to_numeric(data, errors="coerce")  # Avoids object dtype for missing aggs
+                data_field_dct[id_with_agg] = data
 
-    @staticmethod
-    def _strip_aggregate_names(df: "pandas.DataFrame") -> "pandas.DataFrame":
-        expr = f"\\|({'|'.join(ALL_DATAPOINT_AGGREGATES)})$"
-        df = df.rename(columns=lambda col: regexp.sub(expr, "", col))
-        if not df.columns.is_unique:
-            raise CogniteDuplicateColumnsError([col for col, count in df.columns.value_counts().items() if count > 1])
-        return df
+        return pd.DataFrame(data_field_dct, index=pd.to_datetime(timestamps, unit="ms"))
 
     @classmethod
     def _load(  # type: ignore [override]
@@ -535,6 +592,34 @@ class Datapoints(CogniteResource):
 class DatapointsArrayList(CogniteResourceList):
     _RESOURCE = DatapointsArray
 
+    def __init__(self, resources: Collection[Any], cognite_client: "CogniteClient" = None):
+        super().__init__(resources, cognite_client)
+
+        # Fix what happens for duplicated identifiers:
+        ids = {x.id: x for x in self.data if x.id is not None}
+        xids = {x.external_id: x for x in self.data if x.external_id is not None}
+        dupe_ids, id_dct = find_duplicates(ids), defaultdict(list)
+        dupe_xids, xid_dct = find_duplicates(xids), defaultdict(list)
+
+        for id, dps_arr in ids.items():
+            if id in dupe_ids:
+                id_dct[id].append(dps_arr)
+
+        for xid, dps_arr in xids.items():
+            if xid in dupe_xids:
+                xid_dct[xid].append(dps_arr)
+
+        self._id_to_item.update(id_dct)
+        self._external_id_to_item.update(xid_dct)
+
+    def get(  # type: ignore [override]
+        self,
+        id: int = None,
+        external_id: str = None,
+    ) -> Union[None, DatapointsArray, List[DatapointsArray]]:
+        # TODO: Question, can we type annotate without specifying the function?
+        return super().get(id, external_id)  # type: ignore [return-value]
+
     def __str__(self) -> str:
         return json.dumps(self.dump(convert_timestamps=True), indent=4)
 
@@ -565,6 +650,34 @@ class DatapointsArrayList(CogniteResourceList):
 class DatapointsList(CogniteResourceList):
     _RESOURCE = Datapoints
 
+    def __init__(self, resources: Collection[Any], cognite_client: "CogniteClient" = None):
+        super().__init__(resources, cognite_client)
+
+        # Fix what happens for duplicated identifiers:
+        ids = {x.id: x for x in self.data if x.id is not None}
+        xids = {x.external_id: x for x in self.data if x.external_id is not None}
+        dupe_ids, id_dct = find_duplicates(ids), defaultdict(list)
+        dupe_xids, xid_dct = find_duplicates(xids), defaultdict(list)
+
+        for id, dps in ids.items():
+            if id in dupe_ids:
+                id_dct[id].append(dps)
+
+        for xid, dps in xids.items():
+            if xid in dupe_xids:
+                xid_dct[xid].append(dps)
+
+        self._id_to_item.update(id_dct)
+        self._external_id_to_item.update(xid_dct)
+
+    def get(  # type: ignore [override]
+        self,
+        id: int = None,
+        external_id: str = None,
+    ) -> Union[None, DatapointsList, List[DatapointsList]]:
+        # TODO: Question, can we type annotate without specifying the function?
+        return super().get(id, external_id)  # type: ignore [return-value]
+
     def __str__(self) -> str:
         item = self.dump()
         for i in item:
@@ -585,13 +698,15 @@ class DatapointsList(CogniteResourceList):
         """
         pd = cast(Any, local_import("pandas"))
 
-        dfs = [df.to_pandas(column_names=column_names) for df in self.data]
+        dfs = [
+            dps.to_pandas(
+                column_names=column_names,
+                include_aggregate_name=include_aggregate_name,
+            )
+            for dps in self.data
+        ]
         if dfs:
-            df = pd.concat(dfs, axis="columns")
-            if not include_aggregate_name:  # do not pass in to_pandas above, so we check for duplicate columns
-                df = Datapoints._strip_aggregate_names(df)
-            return df
-
+            return pd.concat(dfs, axis="columns")
         return pd.DataFrame()
 
     def _repr_html_(self) -> str:
@@ -599,17 +714,14 @@ class DatapointsList(CogniteResourceList):
 
 
 @dataclass
-class DatapointsQuery(CogniteResource):
-    """Parameters describing a query for datapoints.
-
-    See `DatapointsAPI.retrieve` method for a description of the parameters.
-    """
+class _DatapointsQuery(CogniteResource):
+    """Internal representation of a user request for datapoints, previously public (before v5)"""
 
     start: Union[int, str, datetime, None] = None
     end: Union[int, str, datetime, None] = None
-    id: Optional[DatapointsIdTypes] = None
-    external_id: Optional[DatapointsExternalIdTypes] = None
-    aggregates: Optional[List[str]] = None
+    id: Optional[DatapointsId] = None
+    external_id: Optional[DatapointsExternalId] = None
+    aggregates: Union[str, List[str], None] = None
     granularity: Optional[str] = None
     limit: Optional[int] = None
     include_outside_points: bool = False
