@@ -700,20 +700,30 @@ class FilesAPI(APIClient):
         return FileMetadata._load(returned_file_metadata)
 
     def retrieve_download_urls(
-        self, id: Union[int, Sequence[int]] = None, external_id: Union[str, Sequence[str]] = None
+        self,
+        id: Union[int, Sequence[int]] = None,
+        external_id: Union[str, Sequence[str]] = None,
+        extended_expiration: bool = False,
     ) -> Dict[Union[int, str], str]:
         """Get download links by id or external id
 
         Args:
-            id (Union[int, Sequence[int]]: Id or list of ids.
-            external_id (Union[str, Sequence[str]]: External id or list of external ids.
+            id (Union[int, Sequence[int]]): Id or list of ids.
+            external_id (Union[str, Sequence[str]]): External id or list of external ids.
+            extended_expiration (optional, bool): Extend exipration time of download url to 1 hour.
 
         Returns:
             Dict[Union[str, int], str]: Dictionary containing download urls.
         """
         batch_size = 100
         id_batches = [seq.as_dicts() for seq in IdentifierSequence.load(id, external_id).chunked(batch_size)]
-        tasks = [dict(url_path="/files/downloadlink", json={"items": id_batch}) for id_batch in id_batches]
+        query_params = {}
+        if extended_expiration:
+            query_params["extendedExpiration"] = True
+        tasks = [
+            dict(url_path="/files/downloadlink", json={"items": id_batch}, params=query_params)
+            for id_batch in id_batches
+        ]
         tasks_summary = utils._concurrency.execute_tasks_concurrently(
             self._post, tasks, max_workers=self._config.max_workers
         )
