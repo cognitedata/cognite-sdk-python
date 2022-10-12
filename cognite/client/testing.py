@@ -3,17 +3,33 @@ from typing import Any, Iterator
 from unittest.mock import MagicMock
 
 from cognite.client import CogniteClient
+from cognite.client._api.annotations import AnnotationsAPI
 from cognite.client._api.assets import AssetsAPI
 from cognite.client._api.data_sets import DataSetsAPI
 from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.events import EventsAPI
+from cognite.client._api.extractionpipelines import (
+    ExtractionPipelineConfigsAPI,
+    ExtractionPipelineRunsAPI,
+    ExtractionPipelinesAPI,
+)
 from cognite.client._api.files import FilesAPI
+from cognite.client._api.functions import FunctionCallsAPI, FunctionsAPI, FunctionSchedulesAPI
+from cognite.client._api.geospatial import GeospatialAPI
 from cognite.client._api.iam import IAMAPI, APIKeysAPI, GroupsAPI, SecurityCategoriesAPI, ServiceAccountsAPI
 from cognite.client._api.labels import LabelsAPI
 from cognite.client._api.login import LoginAPI
 from cognite.client._api.raw import RawAPI, RawDatabasesAPI, RawRowsAPI, RawTablesAPI
 from cognite.client._api.relationships import RelationshipsAPI
 from cognite.client._api.sequences import SequencesAPI, SequencesDataAPI
+from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
+from cognite.client._api.templates import (
+    TemplateGroupsAPI,
+    TemplateGroupVersionsAPI,
+    TemplateInstancesAPI,
+    TemplatesAPI,
+    TemplateViewsAPI,
+)
 from cognite.client._api.three_d import (
     ThreeDAPI,
     ThreeDAssetMappingAPI,
@@ -60,6 +76,20 @@ class CogniteClientMock(MagicMock):
         self.relationships = MagicMock(spec_set=RelationshipsAPI)
         self.sequences = MagicMock(spec=SequencesAPI)
         self.sequences.data = MagicMock(spec_set=SequencesDataAPI)
+        self.functions = MagicMock(spec=FunctionsAPI)
+        self.functions.calls = MagicMock(spec_set=FunctionCallsAPI)
+        self.functions.schedules = MagicMock(spec_set=FunctionSchedulesAPI)
+        self.geospatial = MagicMock(spec=GeospatialAPI)
+        self.synthetic = MagicMock(spec=SyntheticDatapointsAPI)
+        self.templates = MagicMock(spec=TemplatesAPI)
+        self.templates.groups = MagicMock(spec_set=TemplateGroupsAPI)
+        self.templates.versions = MagicMock(spec_set=TemplateGroupVersionsAPI)
+        self.templates.views = MagicMock(spec_set=TemplateViewsAPI)
+        self.templates.instances = MagicMock(spec_set=TemplateInstancesAPI)
+        self.annotations = MagicMock(spec=AnnotationsAPI)
+        self.extraction_pipelines = MagicMock(spec=ExtractionPipelinesAPI)
+        self.extraction_pipelines.runs = MagicMock(spec_set=ExtractionPipelineRunsAPI)
+        self.extraction_pipelines.config = MagicMock(spec_set=ExtractionPipelineConfigsAPI)
 
 
 @contextmanager
