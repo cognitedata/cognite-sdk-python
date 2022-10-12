@@ -86,8 +86,6 @@ Read more below in the removed section or check out the method's updated documen
 - Custom exception: `CogniteDuplicateColumnsError`. No longer needed as the retrieve endpoints now support duplicated identifiers to be passed (similar to the API).
 - All convenience methods related to plotting and the use of `matplotlib`. Rationale: No usage and low utility value: the SDK should not be a data science library.
 
-### Other
-Evaluation of changing the SDK from `JSON` to `protobuf` for increased performance: In its current state, using `protobuf` results in significant performance degradation. There is a small upside on smaller and slightly faster API requests, but the client side loading/unpacking is orders of magnitude worse. Additionally, it adds an extra dependency, which, if installed in its pure-Python distribution, results in an earth-shattering performance degradation.
 
 ## [4.10.0] - 2022-10-11
 ### Added
