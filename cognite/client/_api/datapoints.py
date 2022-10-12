@@ -28,6 +28,9 @@ from typing import (
     overload,
 )
 
+from google.protobuf.json_format import MessageToDict
+
+import cognite.client.proto.data_point_list_response_pb2 as ProtoDataPointList
 from cognite.client._api.datapoint_tasks import (
     BaseConcurrentTask,
     SplittingFetchSubtask,
@@ -159,9 +162,33 @@ class EagerDpsFetcher(DpsFetchStrategy):
             return [None]
 
         (payload := copy(payload) or {})["items"] = [item]  # type: ignore [typeddict-item]
-        return self.dps_client._post(
-            self.dps_client._RESOURCE_PATH + "/list", json=cast(Dict[str, Any], payload)
-        ).json()["items"]
+        # If getting JSON:
+        # return self.dps_client._post(
+        #     self.dps_client._RESOURCE_PATH + "/list", json=cast(Dict[str, Any], payload)
+        # ).json()["items"]
+
+        # If getting PROTOBUF:
+        print("- Called `request_datapoints_jit` using `protobuf` version")  # lets spam folks
+        res = self.dps_client._do_request(
+            "POST",
+            self.dps_client._RESOURCE_PATH + "/list",
+            json=payload,
+            headers={"accept": "application/protobuf"},
+            params=None,
+            timeout=self.dps_client._config.timeout,
+        )
+        (dps_lst := ProtoDataPointList.DataPointListResponse()).ParseFromString(res.content)
+        # TODO: Don't do this extra conversion nonsense
+        # (its just there to pretend we are still fetching JSON to the rest of the codebase)
+        d = MessageToDict(dps_lst, including_default_value_fields=True)["items"]
+        d[0]["datapoints"] = d[0].pop("numericDatapoints")["datapoints"]
+
+        for dp_dct in d[0]["datapoints"]:
+            # MessageToDict converts timestamp (int64) to str because...:
+            # "JSON value will be a decimal string. Either numbers or strings are accepted."
+            # https://developers.google.com/protocol-buffers/docs/proto3#json
+            dp_dct["timestamp"] = int(dp_dct["timestamp"])
+        return d
 
     def fetch_all(self, pool: PriorityThreadPoolExecutor, use_numpy: bool) -> List[BaseConcurrentTask]:
         futures_dct, ts_task_lookup = self._create_initial_tasks(pool, use_numpy)
@@ -316,9 +343,10 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
                 return None
 
     def request_datapoints(self, payload: DatapointsPayload) -> List[Optional[DatapointsFromAPI]]:
-        return self.dps_client._post(
-            self.dps_client._RESOURCE_PATH + "/list", json=cast(Dict[str, Any], payload)
-        ).json()["items"]
+        raise NotImplementedError("PROTOBUF only works for `EagerDpsFetcher` atm. Fetch at most N < max_workers ts")
+        # return self.dps_client._post(
+        #     self.dps_client._RESOURCE_PATH + "/list", json=cast(Dict[str, Any], payload)
+        # ).json()["items"]
 
     def _create_initial_tasks(  # type: ignore [override]
         self, pool: PriorityThreadPoolExecutor
