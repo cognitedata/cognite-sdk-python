@@ -710,7 +710,7 @@ class FilesAPI(APIClient):
         Args:
             id (Union[int, Sequence[int]]): Id or list of ids.
             external_id (Union[str, Sequence[str]]): External id or list of external ids.
-            extended_expiration (optional, bool): Extend exipration time of download url to 1 hour.
+            extended_expiration (bool): Extend expiration time of download url to 1 hour. Defaults to false.
 
         Returns:
             Dict[Union[str, int], str]: Dictionary containing download urls.

@@ -723,8 +723,9 @@ class SequencesDataAPI(APIClient):
         """`Retrieves the last row (i.e the row with the highest row number) in a sequence. <https://docs.cognite.com/api/v1/#operation/getLatestSequenceRow>`_
 
         Args:
-            id (Union[int, List[int]]: Id or list of ids.
-            external_id (Union[str, List[str]): External id or list of external ids.
+            id (optional, int): Id or list of ids.
+            external_id (optional, str): External id or list of external ids.
+            column_external_ids: (optional, SequenceType[str]): external ids of columns to include. Omitting wil return all columns.
             before: (optional, int): Get latest datapoint before this row number.
 
         Returns:
@@ -732,7 +733,7 @@ class SequencesDataAPI(APIClient):
 
         Examples:
 
-            Getting the latest row in a sequence before key 1000::
+            Getting the latest row in a sequence before row number 1000::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
