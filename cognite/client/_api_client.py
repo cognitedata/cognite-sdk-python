@@ -839,7 +839,7 @@ class APIClient:
         if duplicated:
             error_details["duplicated"] = duplicated
         error_details["headers"] = res.request.headers.copy()
-        APIClient._sanitize_headers(error_details["headers"])
+        cls._sanitize_headers(error_details["headers"])
         error_details["response_payload"] = cls._truncate(cls._get_response_content_safe(res))
         error_details["response_headers"] = res.headers
 
@@ -851,21 +851,20 @@ class APIClient:
         log.debug(f"HTTP Error {code} {res.request.method} {res.request.url}: {msg}", extra=error_details)
         raise CogniteAPIError(msg, code, x_request_id, missing=missing, duplicated=duplicated, extra=extra)
 
-    @classmethod
-    def _log_request(cls, res: Response, **kwargs: Any) -> None:
+    def _log_request(self, res: Response, **kwargs: Any) -> None:
         method = res.request.method
         url = res.request.url
         status_code = res.status_code
 
         extra = kwargs.copy()
         extra["headers"] = res.request.headers.copy()
-        APIClient._sanitize_headers(extra["headers"])
+        self._sanitize_headers(extra["headers"])
         if extra["payload"] is None:
             del extra["payload"]
 
         stream = kwargs.get("stream")
-        if not stream:
-            extra["response_payload"] = cls._truncate(cls._get_response_content_safe(res))
+        if not stream and self._config.debug is True:
+            extra["response_payload"] = self._truncate(self._get_response_content_safe(res))
         extra["response_headers"] = res.headers
 
         http_protocol_version = ".".join(list(str(res.raw.version)))
