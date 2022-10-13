@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [4.9.1] - 2022-10-13
+### Added
+- Mocking objects for annotations, extraction pipelines, functions, geospacial, synthetic time series and templates.
+
 ## [4.9.0] - 2022-10-10
 ### Added
 - Add support for extraction pipeline configuration files
