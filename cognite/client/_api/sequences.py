@@ -713,6 +713,38 @@ class SequencesDataAPI(APIClient):
         else:
             return SequenceDataList(results)
 
+    def retrieve_latest(
+        self,
+        id: int = None,
+        external_id: str = None,
+        column_external_ids: Optional[SequenceType[str]] = None,
+        before: int = None,
+    ) -> SequenceData:
+        """`Retrieves the last row (i.e the row with the highest row number) in a sequence. <https://docs.cognite.com/api/v1/#operation/getLatestSequenceRow>`_
+
+        Args:
+            id (optional, int): Id or list of ids.
+            external_id (optional, str): External id or list of external ids.
+            column_external_ids: (optional, SequenceType[str]): external ids of columns to include. Omitting wil return all columns.
+            before: (optional, int): Get latest datapoint before this row number.
+
+        Returns:
+            SequenceData: A Datapoints object containing the requested data, or a list of such objects.
+
+        Examples:
+
+            Getting the latest row in a sequence before row number 1000::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.sequences.data.retrieve_latest(id=1, before=1000)
+        """
+        identifier = Identifier.of_either(id, external_id).as_dict()
+        res = self._do_request(
+            "POST", self._DATA_PATH + "/latest", json={**identifier, "before": before, "columns": column_external_ids}
+        ).json()
+        return SequenceData(id=res["id"], external_id=res.get("external_id"), rows=res["rows"], columns=res["columns"])
+
     def retrieve_dataframe(
         self,
         start: int,
