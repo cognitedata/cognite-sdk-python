@@ -1176,6 +1176,6 @@ class GeospatialAPI(APIClient):
             "POST",
             url_path,
             timeout=self._config.timeout,
-            json={"output": output},
+            json={"output": {k: v.to_json_payload() for k, v in output.items()}},
         )
         return GeospatialComputedItemList._load(res.json())
