@@ -80,6 +80,7 @@ class ClientConfig:
         self.headers = headers or {}
         self.timeout = timeout or 30
         self.file_transfer_timeout = file_transfer_timeout or 600
+        self.debug = debug
 
         if debug:
             utils._logging._configure_logger_for_debug_mode()
