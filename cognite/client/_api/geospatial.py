@@ -17,7 +17,6 @@ from cognite.client.data_classes.geospatial import (
     FeatureTypeList,
     FeatureTypePatch,
     FeatureTypeUpdate,
-    GeospatialComputedItemList,
     GeospatialComputedResponse,
     GeospatialComputeFunction,
     OrderSpec,
