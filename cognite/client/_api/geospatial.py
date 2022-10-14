@@ -1179,4 +1179,4 @@ class GeospatialAPI(APIClient):
             json={"output": {k: v.to_json_payload() for k, v in output.items()}},
         )
         json = res.json()
-        return GeospatialComputedResponse._load(json)
+        return GeospatialComputedResponse._load(json, cognite_client=self._cognite_client)
