@@ -762,6 +762,7 @@ class TestGeospatialAPI:
                 "output": compute_st_transform,
             }
         )
-        assert len(res["items"]) == 1
-        assert res["items"][0]["output"]["srid"] == test_crs.srid
-        assert res["items"][0]["output"]["wkt"] == "POLYGON((0 0,10.5 0,10.5 10.5,0 10.5,0 0))"
+        items = res.items
+        assert len(items) == 1
+        assert items[0]["output"]["srid"] == test_crs.srid
+        assert items[0]["output"]["wkt"] == "POLYGON((0 0,10 0,10 10,0 10,0 0))"

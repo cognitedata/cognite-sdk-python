@@ -18,6 +18,7 @@ from cognite.client.data_classes.geospatial import (
     FeatureTypePatch,
     FeatureTypeUpdate,
     GeospatialComputedItemList,
+    GeospatialComputedResponse,
     GeospatialComputeFunction,
     OrderSpec,
     RasterMetadata,
@@ -1150,7 +1151,7 @@ class GeospatialAPI(APIClient):
     def compute(
         self,
         output: Dict[str, GeospatialComputeFunction],
-    ) -> GeospatialComputedItemList:
+    ) -> GeospatialComputedResponse:
         """`Compute`
         <https://docs.cognite.com/api/v1/#tag/Geospatial/operation/compute>
 
@@ -1178,4 +1179,5 @@ class GeospatialAPI(APIClient):
             timeout=self._config.timeout,
             json={"output": {k: v.to_json_payload() for k, v in output.items()}},
         )
-        return GeospatialComputedItemList._load(res.json())
+        json = res.json()
+        return GeospatialComputedResponse._load(json)

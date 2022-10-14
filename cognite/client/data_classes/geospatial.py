@@ -376,7 +376,9 @@ class GeospatialGeometryTransformComputeFunction(GeospatialComputeFunction):
         self.srid = srid
 
     def to_json_payload(self) -> dict:
-        return {"geometry": self.geospatial_geometry_compute_function.to_json_payload(), "srid": self.srid}
+        return {
+            "stTransform": {"geometry": self.geospatial_geometry_compute_function.to_json_payload(), "srid": self.srid}
+        }
 
 
 class GeospatialGeometryComputeFunction(GeospatialComputeFunction, ABC):
@@ -420,3 +422,26 @@ class GeospatialComputedItem(CogniteResource):
 class GeospatialComputedItemList(CogniteResourceList):
     "A list of items computed from geospatial."
     _RESOURCE = GeospatialComputedItem
+
+
+class GeospatialComputedResponse(CogniteResource):
+    "The geospatial compute response."
+
+    def __init__(self, computed_item_list: GeospatialComputedItemList, cognite_client: "CogniteClient" = None):
+        self.items = computed_item_list
+        self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @classmethod
+    def _load(
+        cls, resource: Union[str, Dict[str, Any]], cognite_client: "CogniteClient" = None
+    ) -> "GeospatialComputedResponse":
+        if isinstance(resource, str):
+            return cls._load(json.loads(resource), cognite_client=cognite_client)
+        item_list = GeospatialComputedItemList._load(
+            cast("List[Any]", resource.get("items")), cognite_client=cognite_client
+        )
+        instance = cls(item_list, cognite_client=cognite_client)
+        for key, value in resource.items():
+            snake_case_key = to_snake_case(key)
+            setattr(instance, snake_case_key, value)
+        return instance
