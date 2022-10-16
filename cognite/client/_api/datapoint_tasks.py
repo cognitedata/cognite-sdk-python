@@ -29,6 +29,8 @@ from typing import (
     overload,
 )
 
+from google.protobuf.internal.containers import RepeatedCompositeFieldContainer
+from google.protobuf.message import Message
 from sortedcontainers import SortedDict, SortedList  # type: ignore [import]
 
 from cognite.client._constants import DPS_LIMIT, DPS_LIMIT_AGG
@@ -62,15 +64,14 @@ if NUMPY_IS_AVAILABLE:
 
 if TYPE_CHECKING:
     import numpy.typing as npt
-    from google.protobuf.internal.containers import RepeatedCompositeFieldContainer
-    from google.protobuf.message import Message
 
-    DatapointsAgg = RepeatedCompositeFieldContainer[AggregateDatapoint]
-    DatapointsNum = RepeatedCompositeFieldContainer[NumericDatapoint]
-    DatapointsStr = RepeatedCompositeFieldContainer[StringDatapoint]
 
-    DatapointsAny = Union[DatapointsAgg, DatapointsNum, DatapointsStr]
-    DatapointsRaw = Union[DatapointsNum, DatapointsStr]
+DatapointsAgg = RepeatedCompositeFieldContainer[AggregateDatapoint]
+DatapointsNum = RepeatedCompositeFieldContainer[NumericDatapoint]
+DatapointsStr = RepeatedCompositeFieldContainer[StringDatapoint]
+
+DatapointsAny = Union[DatapointsAgg, DatapointsNum, DatapointsStr]
+DatapointsRaw = Union[DatapointsNum, DatapointsStr]
 
 T = TypeVar("T")
 
