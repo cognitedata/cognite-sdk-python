@@ -103,14 +103,6 @@ class DatapointsPayload(CustomDatapoints):
     items: List[CustomDatapoints]
 
 
-class DatapointsFromAPI(TypedDict):
-    id: int
-    externalId: Optional[str]
-    isString: bool
-    isStep: bool
-    datapoints: List[Dict[str, DatapointValue]]
-
-
 class Datapoint(CogniteResource):
     """An object representing a datapoint.
 

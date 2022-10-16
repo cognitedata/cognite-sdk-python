@@ -644,6 +644,7 @@ class TestRetrieveAggregateDatapointsAPI:
         before_first_dp,
         retrieve_endpoints,
         fixed_freq_dps_ts,
+        cognite_client,
     ):
         # Ts: has ms resolution data from:
         # 1969-12-31 23:59:58.500 (-1500 ms) to 1970-01-01 00:00:01.500 (1500 ms)
@@ -660,42 +661,43 @@ class TestRetrieveAggregateDatapointsAPI:
             end = randint(start, MAX_TIMESTAMP_MS)  # start -> (2051 minus 1ms)
         granularities = f"{randint(1, 15)}d", f"{randint(1, 50)}h", f"{randint(1, 120)}m", f"{randint(1, 120)}s"
 
-        for endpoint in retrieve_endpoints:
-            res_lst = endpoint(
-                start=start,
-                end=end,
-                aggregates=aggregates,
-                id=[
-                    {"id": ts.id, "granularity": granularities[0]},
-                    {"id": ts.id, "granularity": granularities[1]},
-                ],
-                external_id=[
-                    {"external_id": ts.external_id, "granularity": granularities[2]},
-                    {"external_id": ts.external_id, "granularity": granularities[3]},
-                    # Verify empty with `count` (wont return any datapoints):
-                    {"external_id": ts.external_id, "granularity": granularities[0], "aggregates": ["count"]},
-                    # Verify empty with `count` and `step_interpolation`: will always return a datapoint (if not before_first_dp),
-                    # with count agg missing, so make sure it is correctly "loaded" into the data object as a 0 (zero):
-                    {
-                        "external_id": ts.external_id,
-                        "granularity": granularities[0],
-                        "aggregates": ["count", "step_interpolation"],
-                    },
-                ],
-            )
-            *interp_res_lst, count_dps, count_step_interp_dps = res_lst
-            assert len(count_dps.count) == 0
-            if not before_first_dp:
-                assert len(count_step_interp_dps.count) == 1 and count_step_interp_dps.count[0] == 0
+        with set_max_workers(cognite_client, 8):
+            for endpoint in retrieve_endpoints[:1]:
+                res_lst = endpoint(
+                    start=start,
+                    end=end,
+                    aggregates=aggregates,
+                    id=[
+                        {"id": ts.id, "granularity": granularities[0]},
+                        {"id": ts.id, "granularity": granularities[1]},
+                    ],
+                    external_id=[
+                        {"external_id": ts.external_id, "granularity": granularities[2]},
+                        {"external_id": ts.external_id, "granularity": granularities[3]},
+                        # Verify empty with `count` (wont return any datapoints):
+                        {"external_id": ts.external_id, "granularity": granularities[0], "aggregates": ["count"]},
+                        # Verify empty with `count` and `step_interpolation`: will always return a datapoint (if not before_first_dp),
+                        # with count agg missing, so make sure it is correctly "loaded" into the data object as a 0 (zero):
+                        {
+                            "external_id": ts.external_id,
+                            "granularity": granularities[0],
+                            "aggregates": ["count", "step_interpolation"],
+                        },
+                    ],
+                )
+                *interp_res_lst, count_dps, count_step_interp_dps = res_lst
+                assert len(count_dps.count) == 0
+                if not before_first_dp:
+                    assert len(count_step_interp_dps.count) == 1 and count_step_interp_dps.count[0] == 0
 
-            for dps, gran in zip(interp_res_lst, granularities):
-                interp_dps = getattr(dps, aggregates[0])
-                assert (len(interp_dps) == 0) is empty
+                for dps, gran in zip(interp_res_lst, granularities):
+                    interp_dps = getattr(dps, aggregates[0])
+                    assert (len(interp_dps) == 0) is empty
 
-                if not empty:
-                    first_ts = convert_any_ts_to_integer(dps.timestamp[0])
-                    aligned_start, _ = align_start_and_end_for_granularity(start, end, gran)
-                    assert first_ts == aligned_start
+                    if not empty:
+                        first_ts = convert_any_ts_to_integer(dps.timestamp[0])
+                        aligned_start, _ = align_start_and_end_for_granularity(start, end, gran)
+                        assert first_ts == aligned_start
 
     @pytest.mark.parametrize(
         "max_workers, n_ts, mock_out_eager_or_chunk",
@@ -1123,6 +1125,13 @@ def post_spy(cognite_client):
         yield
 
 
+@pytest.fixture
+def do_request_spy(cognite_client):
+    dps_api = cognite_client.time_series.data
+    with patch.object(dps_api, "_do_request", wraps=dps_api._do_request):
+        yield
+
+
 class TestRetrieveLatestDatapointsAPI:
     def test_retrieve_latest(self, cognite_client, all_test_time_series):
         ids = [all_test_time_series[0].id, all_test_time_series[1].id]
@@ -1169,16 +1178,19 @@ class TestInsertDatapointsAPI:
             cognite_client.time_series.data.insert(datapoints, id=new_ts.id)
         assert 2 == cognite_client.time_series.data._post.call_count  # needs post_spy
 
-    def test_insert_copy(self, cognite_client, ms_bursty_ts, new_ts, post_spy):
-        data = cognite_client.time_series.data.retrieve(id=ms_bursty_ts.id, start=0, end="now", limit=100)
+    @pytest.mark.parametrize("endpoint_attr", ("retrieve", "retrieve_arrays"))
+    def test_insert_copy(self, cognite_client, endpoint_attr, ms_bursty_ts, new_ts, post_spy, do_request_spy):
+        endpoint = getattr(cognite_client.time_series.data, endpoint_attr)
+        data = endpoint(id=ms_bursty_ts.id, start=0, end="now", limit=100)
         assert 100 == len(data)
+        assert 1 == cognite_client.time_series.data._do_request.call_count  # needs do_request_spy
         cognite_client.time_series.data.insert(data, id=new_ts.id)
-        assert 2 == cognite_client.time_series.data._post.call_count  # needs post_spy
+        assert 1 == cognite_client.time_series.data._post.call_count  # needs post_spy
 
-    def test_insert_copy_fails_at_aggregate(self, cognite_client, ms_bursty_ts, new_ts):
-        data = cognite_client.time_series.data.retrieve(
-            id=ms_bursty_ts.id, end="now", granularity="1m", aggregates=random_aggregates(1), limit=100
-        )
+    @pytest.mark.parametrize("endpoint_attr", ("retrieve", "retrieve_arrays"))
+    def test_insert_copy_fails_at_aggregate(self, cognite_client, endpoint_attr, ms_bursty_ts, new_ts):
+        endpoint = getattr(cognite_client.time_series.data, endpoint_attr)
+        data = endpoint(id=ms_bursty_ts.id, end="now", granularity="1m", aggregates=random_aggregates(1), limit=100)
         assert 100 == len(data)
         with pytest.raises(ValueError, match="only raw datapoints are supported"):
             cognite_client.time_series.data.insert(data, id=new_ts.id)

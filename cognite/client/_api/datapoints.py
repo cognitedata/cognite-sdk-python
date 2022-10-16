@@ -43,12 +43,12 @@ from cognite.client._constants import (
     POST_DPS_OBJECTS_LIMIT,
     RETRIEVE_LATEST_LIMIT,
 )
+from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem, DataPointListResponse
 from cognite.client.data_classes.datapoints import (
     CustomDatapoints,
     Datapoints,
     DatapointsArray,
     DatapointsArrayList,
-    DatapointsFromAPI,
     DatapointsList,
     DatapointsPayload,
     _DatapointsQuery,
@@ -148,20 +148,29 @@ class DpsFetchStrategy(ABC):
 
 
 class EagerDpsFetcher(DpsFetchStrategy):
+    def __init__(self, *args: Any, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+        self._make_dps_request_using_protobuf = functools.partial(
+            self.dps_client._do_request,
+            method="POST",
+            url_path=self.dps_client._RESOURCE_PATH + "/list",
+            accept="application/protobuf",
+            timeout=self.dps_client._config.timeout,
+        )
+
     def request_datapoints_jit(
         self,
         task: SplittingFetchSubtask,
         payload: Optional[CustomDatapoints] = None,
-    ) -> List[Optional[DatapointsFromAPI]]:
+    ) -> Optional[DataPointListResponse]:
         # Note: We delay getting the next payload as much as possible; this way, when we count number of
         # points left to fetch JIT, we have the most up-to-date estimate (and may quit early):
         if (item := task.get_next_payload()) is None:
-            return [None]
+            return None
 
         (payload := copy(payload) or {})["items"] = [item]  # type: ignore [typeddict-item]
-        return self.dps_client._post(
-            self.dps_client._RESOURCE_PATH + "/list", json=cast(Dict[str, Any], payload)
-        ).json()["items"]
+        (res := DataPointListResponse()).MergeFromString(self._make_dps_request_using_protobuf(json=payload).content)
+        return res
 
     def fetch_all(self, pool: PriorityThreadPoolExecutor, use_numpy: bool) -> List[BaseConcurrentTask]:
         futures_dct, ts_task_lookup = self._create_initial_tasks(pool, use_numpy)
@@ -220,9 +229,11 @@ class EagerDpsFetcher(DpsFetchStrategy):
         ts_task: BaseConcurrentTask,
         ts_task_lookup: Dict[_SingleTSQueryBase, BaseConcurrentTask],
         futures_dct: Dict[Future, SplittingFetchSubtask],
-    ) -> Optional[DatapointsFromAPI]:
+    ) -> Optional[DataPointListItem]:
         try:
-            return future.result()[0]
+            if (res := future.result()) is not None:
+                return res.items[0]
+            return None
         except CancelledError:
             return None
         except CogniteAPIError as e:
@@ -248,6 +259,14 @@ class EagerDpsFetcher(DpsFetchStrategy):
 class ChunkingDpsFetcher(DpsFetchStrategy):
     def __init__(self, *args: Any) -> None:
         super().__init__(*args)
+        self.counter = itertools.count()
+        self._make_dps_request_using_protobuf = functools.partial(
+            self.dps_client._do_request,
+            method="POST",
+            url_path=self.dps_client._RESOURCE_PATH + "/list",
+            accept="application/protobuf",
+            timeout=self.dps_client._config.timeout,
+        )
         # To chunk efficiently, we have subtask pools (heap queues) that we use to prioritise subtasks
         # when building/combining subtasks into a full query:
         self.raw_subtask_pool: List[PoolSubtaskType] = []
@@ -257,19 +276,17 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         self.next_items: List[Dict[str, Any]] = []
         self.next_subtasks: List[SplittingFetchSubtask] = []
 
-        self.counter = itertools.count()
-
     def fetch_all(self, pool: PriorityThreadPoolExecutor, use_numpy: bool) -> List[BaseConcurrentTask]:
-        # The initial tasks are important - as they tell us which time series are missing,
-        # which are string etc. We use this info when we choose the best fetch-strategy.
+        # The initial tasks are important - as they tell us which time series are missing, which
+        # are string, which are sparse... We use this info when we choose the best fetch-strategy.
         ts_task_lookup, missing_to_raise = {}, set()
         initial_query_limits, initial_futures_dct = self._create_initial_tasks(pool)
 
         for future in as_completed(initial_futures_dct):
-            res = future.result()
+            res_lst = future.result()
             chunk_agg_qs, chunk_raw_qs = initial_futures_dct.pop(future)
             new_ts_tasks, chunk_missing = self._create_ts_tasks_and_handle_missing(
-                res, chunk_agg_qs, chunk_raw_qs, initial_query_limits, use_numpy
+                res_lst, chunk_agg_qs, chunk_raw_qs, initial_query_limits, use_numpy
             )
             missing_to_raise.update(chunk_missing)
             ts_task_lookup.update(new_ts_tasks)
@@ -315,10 +332,9 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
                 pool.shutdown(wait=False)
                 return None
 
-    def request_datapoints(self, payload: DatapointsPayload) -> List[Optional[DatapointsFromAPI]]:
-        return self.dps_client._post(
-            self.dps_client._RESOURCE_PATH + "/list", json=cast(Dict[str, Any], payload)
-        ).json()["items"]
+    def request_datapoints(self, payload: DatapointsPayload) -> Sequence[DataPointListItem]:
+        (res := DataPointListResponse()).MergeFromString(self._make_dps_request_using_protobuf(json=payload).content)
+        return res.items
 
     def _create_initial_tasks(  # type: ignore [override]
         self, pool: PriorityThreadPoolExecutor
@@ -353,19 +369,19 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
 
     def _create_ts_tasks_and_handle_missing(
         self,
-        results: List[DatapointsFromAPI],
+        res: Sequence[DataPointListItem],
         chunk_agg_qs: TSQueryList,
         chunk_raw_qs: TSQueryList,
         initial_query_limits: Dict[_SingleTSQueryBase, int],
         use_numpy: bool,
     ) -> Tuple[Dict[_SingleTSQueryBase, BaseConcurrentTask], Set[_SingleTSQueryBase]]:
-        if len(results) == len(chunk_agg_qs) + len(chunk_raw_qs):
+        if len(res) == len(chunk_agg_qs) + len(chunk_raw_qs):
             to_raise: Set[_SingleTSQueryBase] = set()
         else:
             # We have at least 1 missing time series:
-            chunk_agg_qs, chunk_raw_qs, to_raise = self._handle_missing_ts(results, chunk_agg_qs, chunk_raw_qs)
-        self._update_queries_is_string(results, chunk_raw_qs)
-        # Align initial results with corresponding queries and create tasks:
+            chunk_agg_qs, chunk_raw_qs, to_raise = self._handle_missing_ts(res, chunk_agg_qs, chunk_raw_qs)
+        self._update_queries_is_string(res, chunk_raw_qs)
+        # Align initial res with corresponding queries and create tasks:
         ts_tasks = {
             query: query.ts_task_type(
                 query=query,
@@ -374,7 +390,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
                 first_dps_batch=res,
                 first_limit=initial_query_limits[query],
             )
-            for res, query in zip(results, chain(chunk_agg_qs, chunk_raw_qs))
+            for res, query in zip(res, chain(chunk_agg_qs, chunk_raw_qs))
         }
         return ts_tasks, to_raise
 
@@ -505,21 +521,21 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         return actual_lims
 
     @staticmethod
-    def _update_queries_is_string(res: List[DatapointsFromAPI], queries: TSQueryList) -> None:
-        is_string = {("id", r["id"]) for r in res if r["isString"]}.union(
-            ("externalId", r["externalId"]) for r in res if r["isString"]
+    def _update_queries_is_string(res: Sequence[DataPointListItem], queries: TSQueryList) -> None:
+        is_string = {("id", r.id) for r in res if r.isString}.union(
+            ("externalId", r.externalId) for r in res if r.isString
         )
         for q in queries:
             q.is_string = q.identifier.as_tuple() in is_string
 
     @staticmethod
     def _handle_missing_ts(
-        res: List[DatapointsFromAPI],
+        res: Sequence[DataPointListItem],
         agg_queries: TSQueryList,
         raw_queries: TSQueryList,
     ) -> Tuple[TSQueryList, TSQueryList, Set[_SingleTSQueryBase]]:
         missing, to_raise = set(), set()
-        not_missing = {("id", r["id"]) for r in res}.union(("externalId", r["externalId"]) for r in res)
+        not_missing = {("id", r.id) for r in res}.union(("externalId", r.externalId) for r in res)
         for query in chain(agg_queries, raw_queries):
             # Update _SingleTSQueryBase objects with `is_missing` status:
             query.is_missing = query.identifier.as_tuple() not in not_missing
