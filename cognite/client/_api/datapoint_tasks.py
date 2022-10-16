@@ -44,7 +44,7 @@ from cognite.client.data_classes.datapoints import (
     DatapointsId,
     DatapointsQueryExternalId,
     DatapointsQueryId,
-    DatapointValue,
+    RawDatapointValue,
     _DatapointsQuery,
 )
 from cognite.client.utils._auxiliary import convert_all_keys_to_snake_case, to_camel_case, to_snake_case
@@ -447,8 +447,8 @@ class _SingleTSQueryAggUnlimited(_SingleTSQueryAgg):
 
 class DpsUnpackFns:
     ts: Callable[[Message], int] = op.attrgetter("timestamp")
-    raw_dp: Callable[[Message], DatapointValue] = op.attrgetter("value")
-    ts_dp_tpl: Callable[[Message], Tuple[int, DatapointValue]] = op.attrgetter("timestamp", "value")
+    raw_dp: Callable[[Message], RawDatapointValue] = op.attrgetter("value")
+    ts_dp_tpl: Callable[[Message], Tuple[int, RawDatapointValue]] = op.attrgetter("timestamp", "value")
     count: Callable[[Message], int] = op.attrgetter("count")
 
     @staticmethod
@@ -926,8 +926,8 @@ class ConcurrentLimitedMixin(BaseConcurrentTask):
 
 class BaseConcurrentRawTask(BaseConcurrentTask):
     def __init__(self, **kwargs: Any) -> None:
-        self.dp_outside_start: Optional[Tuple[int, Union[float, str]]] = None
-        self.dp_outside_end: Optional[Tuple[int, Union[float, str]]] = None
+        self.dp_outside_start: Optional[Tuple[int, RawDatapointValue]] = None
+        self.dp_outside_end: Optional[Tuple[int, RawDatapointValue]] = None
         super().__init__(**kwargs)
 
     @property
