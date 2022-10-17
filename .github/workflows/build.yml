@@ -75,8 +75,10 @@ jobs:
           poetry config virtualenvs.create false
           poetry install -E all
 
-      - name: Verify proto files
+      - name: Install protoc compiler
         uses: arduino/setup-protoc@v1
+
+      - name: Verify proto files
         env:
           TMPDIR: latest_proto
           PROTO_URL: https://raw.githubusercontent.com/cognitedata/protobuf-files/master/v1/timeseries
