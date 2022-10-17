@@ -38,24 +38,31 @@ Changes are grouped as follows
 
 ## [5.0.0] - 06-10-22
 ### Improved
-- TODO: Write about `protobuf` change
-- Greatly increased speed of datapoints fetching, especially when asking for...:
-  - A large number of time series (~80+)
+- Greatly increased speed of datapoints fetching (new adaptable implementation and change from `JSON` to `protobuf`), especially when asking for... (measured in fetched `dps/sec` using `retrieve_dataframe`, with default settings for concurrency):
+  - A large number of time series
+    - 80 ts: +330%
+    - 800 ts: +670%
+    - 8000 ts: +860%
   - Very few time series (1-3)
-  - Any query using a finite `limit`
+    - Up to +400%
+  - Very dense time series (>>10k dps/day)
+    - Up to +400%
   - Any query for `string` datapoints
-- Peak memory consumption is 25-30 % lower when using the new `retrieve_arrays` method (with the same number of `max_workers`).
+    - Faster the more dps; for 500k: +500%
+- Peak memory consumption (for numeric data) is ~40 % lower when using `retrieve` and ~75 % lower for the new `retrieve_arrays` method (assuming the same number of `max_workers`).
 - Converting fetched datapoints to a Pandas `DataFrame` via `to_pandas()` (or time saved by using `retrieve_dataframe` directly) has changed from `O(N)` to `O(1)`, i.e., speedup no longer depends on the number of datapoints and is typically 4-5 orders of magnitude faster (!) (only applies to `DatapointsArray` and `DatapointsArrayList` as returned by the `retrieve_arrays` method).
 - Full customizability of queries is now available for *all retrieve* endpoints, thus the `query()` is no longer needed and has been removed. Previously only `aggregates` could be individually specified. Now all parameters can be passed either as top-level or as *individual settings*, even `ignore_unknown_ids`. This is now aligned with the API (except `ignore_unknown_ids` making the SDK arguably better!).
-- Documentation for the retrieve endpoints has been overhauled with lots of new usage patterns and (much better(!)) examples, check it out!
+- Documentation for the retrieve endpoints has been overhauled with lots of new usage patterns and better examples. Check it out!
 - Vastly better test coverage for datapoints fetching logic. You can have increased trust in the results from the SDK!
 
 ### Added
+- New required dependency, `protobuf`. This is currently only used by the DatapointsAPI, but other endpoints may be changed without needing to release a new major version.
 - New optional dependency, `numpy`.
-- A new datapoints fetching method, `retrieve_arrays`, that loads data directly into NumPy arrays for improved speed and lower memory usage.
+- A new datapoints fetching method, `retrieve_arrays`, that loads data directly into NumPy arrays for improved speed and *even* lower memory usage.
 - These arrays are stored in the new resource types `DatapointsArray` and `DatapointsArrayList` which offer more efficient memory usage and zero-overhead pandas-conversion.
 
 ### Changed
+- Datapoints are no longer fetched using `JSON`: `protobuf` has taken over.
 - The default value for `max_workers`, controlling the max number of concurrent threads, has been increased from 10 to 20.
 - The main way to interact with the `DatapointsAPI` has been moved from `client.datapoints` to `client.time_series.data` to align and unify with the `SequenceAPI`. All example code has been updated to reflect this change. Note, however, that the `client.datapoints` will still work until the next major release, but will until then issue a `DeprecationWarning`.
 - All retrieve methods now accept a string for the `aggregates` parameter when asking for just one, e.g. `aggregates="max"`. This short-cut avoids having to wrap it inside a list. Both `snake_case` and `camelCase` are supported.
