@@ -51,10 +51,10 @@ class TestDatapointsAPI:
         dps = cognite_client.datapoints.retrieve(id=ts.id, start="1d-ago", end="now")
         assert len(dps) > 0
 
-    # def test_retrieve_before_epoch(self, cognite_client, test_time_series):
-    #     ts = test_time_series[0]
-    #     dps = cognite_client.datapoints.retrieve(id=ts.id, start=MIN_TIMESTAMP_MS, end="now")
-    #     assert len(dps) > 0
+    def test_retrieve_before_epoch(self, cognite_client, test_time_series):
+        ts = test_time_series[0]
+        dps = cognite_client.datapoints.retrieve(id=ts.id, start=MIN_TIMESTAMP_MS, end="now")
+        assert len(dps) > 0
 
     def test_retrieve_unknown(self, cognite_client, test_time_series):
         ts = test_time_series[0]
