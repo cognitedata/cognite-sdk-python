@@ -939,6 +939,10 @@ Get raster data
 ^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.geospatial.GeospatialAPI.get_raster
 
+Compute
+^^^^^^^
+.. automethod:: cognite.client._api.geospatial.GeospatialAPI.compute
+
 Data classes
 ^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.geospatial

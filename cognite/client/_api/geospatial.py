@@ -17,6 +17,8 @@ from cognite.client.data_classes.geospatial import (
     FeatureTypeList,
     FeatureTypePatch,
     FeatureTypeUpdate,
+    GeospatialComputedResponse,
+    GeospatialComputeFunction,
     OrderSpec,
     RasterMetadata,
 )
@@ -41,6 +43,10 @@ class GeospatialAPI(APIClient):
             GeospatialAPI._feature_resource_path(feature_type_external_id)
             + f"/{encoded_feature_external_id}/rasters/{encoded_raster_property_name}"
         )
+
+    @staticmethod
+    def _compute_path() -> str:
+        return f"{GeospatialAPI._RESOURCE_PATH}/compute"
 
     @overload
     def create_feature_types(self, feature_type: FeatureType) -> FeatureType:
@@ -1140,3 +1146,37 @@ class GeospatialAPI(APIClient):
             },
         )
         return res.content
+
+    def compute(
+        self,
+        output: Dict[str, GeospatialComputeFunction],
+    ) -> GeospatialComputedResponse:
+        """`Compute`
+        <https://docs.cognite.com/api/v1/#tag/Geospatial/operation/compute>
+
+        Args:
+            output : Mapping of keys to compute functions.
+
+        Returns:
+            dict: Mapping of keys to computed items.
+
+        Examples:
+
+            Compute the transformation of an ewkt geometry from one SRID to another:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.geospatial import GeospatialGeometryTransformComputeFunction, GeospatialGeometryValueComputeFunction
+                >>> c = CogniteClient()
+                >>> compute_function = GeospatialGeometryTransformComputeFunction(GeospatialGeometryValueComputeFunction("SRID=4326;POLYGON((0 0,10 0,10 10,0 10,0 0))"), srid=23031)
+                >>> compute_result = c.geospatial.compute(output = {"output": compute_function})
+        """
+        url_path = self._compute_path()
+
+        res = self._do_request(
+            "POST",
+            url_path,
+            timeout=self._config.timeout,
+            json={"output": {k: v.to_json_payload() for k, v in output.items()}},
+        )
+        json = res.json()
+        return GeospatialComputedResponse._load(json, cognite_client=self._cognite_client)

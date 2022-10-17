@@ -14,6 +14,8 @@ from cognite.client.data_classes.geospatial import (
     FeatureType,
     FeatureTypePatch,
     FeatureTypeUpdate,
+    GeospatialGeometryTransformComputeFunction,
+    GeospatialGeometryValueComputeFunction,
     OrderSpec,
     Patches,
     PropertyAndSearchSpec,
@@ -750,3 +752,17 @@ class TestGeospatialAPI:
         )
         assert res[0].external_id == test_feature_with_raster.external_id
         assert hasattr(res[0], "raster") is False
+
+    def test_compute_st_transform_geometry_value(self, cognite_client, test_crs):
+        compute_st_transform = GeospatialGeometryTransformComputeFunction(
+            GeospatialGeometryValueComputeFunction("SRID=4326;POLYGON((0 0,10 0,10 10,0 10,0 0))"), srid=test_crs.srid
+        )
+        res = cognite_client.geospatial.compute(
+            output={
+                "output": compute_st_transform,
+            }
+        )
+        items = res.items
+        assert len(items) == 1
+        assert items[0]["output"]["srid"] == test_crs.srid
+        assert items[0]["output"]["wkt"] == "POLYGON((0 0,10 0,10 10,0 10,0 0))"
