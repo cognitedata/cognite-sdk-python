@@ -65,7 +65,7 @@ except ImportError:  # pragma no cover
     NUMPY_IS_AVAILABLE = False
 
 
-DatapointValue = Union[int, float, str]
+RawDatapointValue = Union[float, str]
 DatapointsId = Union[None, int, Dict[str, Any], List[Union[int, Dict[str, Any]]]]
 DatapointsExternalId = Union[None, str, Dict[str, Any], List[Union[str, Dict[str, Any]]]]
 
@@ -101,14 +101,6 @@ class CustomDatapoints(TypedDict, total=False):
 
 class DatapointsPayload(CustomDatapoints):
     items: List[CustomDatapoints]
-
-
-class DatapointsFromAPI(TypedDict):
-    id: int
-    externalId: Optional[str]
-    isString: bool
-    isStep: bool
-    datapoints: List[Dict[str, DatapointValue]]
 
 
 class Datapoint(CogniteResource):
