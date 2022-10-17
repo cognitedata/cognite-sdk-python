@@ -17,6 +17,7 @@ Changes are grouped as follows
 
 ## [5.0.0] - 06-10-22
 ### Improved
+- TODO: Write about `protobuf` change
 - Greatly increased speed of datapoints fetching, especially when asking for...:
   - A large number of time series (~80+)
   - Very few time series (1-3)

@@ -138,11 +138,13 @@ class APIClient:
     ) -> requests.Response:
         return self._do_request("PUT", url_path, json=json, headers=headers, timeout=self._config.timeout)
 
-    def _do_request(self, method: str, url_path: str, **kwargs: Any) -> requests.Response:
+    def _do_request(
+        self, method: str, url_path: str, accept: str = "application/json", **kwargs: Any
+    ) -> requests.Response:
         is_retryable, full_url = self._resolve_url(method, url_path)
 
         json_payload = kwargs.get("json")
-        headers = self._configure_headers(self._config.headers.copy())
+        headers = self._configure_headers(accept, additional_headers=self._config.headers.copy())
         headers.update(kwargs.get("headers") or {})
 
         if json_payload:
@@ -181,13 +183,13 @@ class APIClient:
         self._log_request(res, payload=json_payload, stream=stream)
         return res
 
-    def _configure_headers(self, additional_headers: Dict[str, str]) -> MutableMapping[str, Any]:
+    def _configure_headers(self, accept: str, additional_headers: Dict[str, str]) -> MutableMapping[str, Any]:
         headers: MutableMapping[str, Any] = CaseInsensitiveDict()
         headers.update(requests.utils.default_headers())
         auth_header_name, auth_header_value = self._config.credentials.authorization_header()
         headers[auth_header_name] = auth_header_value
         headers["content-type"] = "application/json"
-        headers["accept"] = "application/json"
+        headers["accept"] = accept
         headers["x-cdp-sdk"] = "CognitePythonSDK:{}".format(utils._auxiliary.get_current_sdk_version())
         headers["x-cdp-app"] = self._config.client_name
         headers["cdf-version"] = self._api_subversion
