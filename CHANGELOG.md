@@ -62,7 +62,7 @@ Changes are grouped as follows
 - These arrays are stored in the new resource types `DatapointsArray` and `DatapointsArrayList` which offer more efficient memory usage and zero-overhead pandas-conversion.
 
 ### Changed
-- Datapoints are no longer fetched using `JSON`: `protobuf` has taken over.
+- Datapoints are no longer fetched using `JSON`: the age of `protobuf` has begun.
 - The default value for `max_workers`, controlling the max number of concurrent threads, has been increased from 10 to 20.
 - The main way to interact with the `DatapointsAPI` has been moved from `client.datapoints` to `client.time_series.data` to align and unify with the `SequenceAPI`. All example code has been updated to reflect this change. Note, however, that the `client.datapoints` will still work until the next major release, but will until then issue a `DeprecationWarning`.
 - All retrieve methods now accept a string for the `aggregates` parameter when asking for just one, e.g. `aggregates="max"`. This short-cut avoids having to wrap it inside a list. Both `snake_case` and `camelCase` are supported.
@@ -96,9 +96,11 @@ Read more below in the removed section or check out the method's updated documen
 - Loads of `assert`s meant for the SDK user have been changed to raising exceptions instead as a safeguard: `assert`s are ignored when running in optimized mode `-O`.
 
 ### Fixed: Extended time domain
-- `TimeSeries.[first/count]()` now work with the expanded time domain (minimum age of datapoints was moved from 1970 to 1900, see [4.2.1]).
+- `TimeSeries.[first/count/latest]()` now work with the expanded time domain (minimum age of datapoints was moved from 1970 to 1900, see [4.2.1]).
+  - `TimeSeries.latest()` now works with `before=0` (bug fixed in `retrieve_latest`).
   - `TimeSeries.first()` now considers datapoints before 1970 and after "now".
   - `TimeSeries.count()` now considers datapoints before 1970 and after "now" and will raise an error for string time series as `count` (or any other aggregate) is not defined.
+- `DatapointsAPI.retrieve_latest` would give latest datapoint `before="now"` when given `before=0` (1970) because of a bad boolean check. Used to not be a problem since there were no data before epoch.
 - The utility function `ms_to_datetime` no longer raises `ValueError` for inputs from before 1970, but will raise for input outside the allowed minimum- and maximum supported timestamps in the API.
 **Note**: that support for `datetime`s before 1970 may be limited on Windows, but `ms_to_datetime` should still work (magic!).
 

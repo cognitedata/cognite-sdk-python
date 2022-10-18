@@ -1,8 +1,6 @@
 import pytest
 
 from cognite.client.data_classes import Asset, Datapoint
-from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS
-from tests.utils import jsgz_load
 
 
 @pytest.fixture
@@ -104,17 +102,6 @@ def mock_get_first_dp_in_ts(mock_ts_by_ids_response, cognite_client):
 
 
 class TestTimeSeries:
-    def test_get_count__numeric(self, cognite_client, mock_count_dps_in_ts):
-        ts = cognite_client.time_series.retrieve(id=1)
-        ts.is_string = False  # TODO: This is not elegant
-        assert 15 == ts.count()
-        body = jsgz_load(mock_count_dps_in_ts.calls[1].request.body)
-        assert len(body["items"]) == 1
-        item = body["items"][0]
-        assert ["count"] == item["aggregates"]
-        assert MIN_TIMESTAMP_MS == item["start"]
-        assert MAX_TIMESTAMP_MS < item["end"]  # agg dps, end ts is rounded up
-
     def test_get_count__string_raises(self, cognite_client, mock_ts_by_ids_response):
         with pytest.raises(ValueError, match="String time series does not support count aggregate"):
             cognite_client.time_series.retrieve(id=1).count()
@@ -123,17 +110,6 @@ class TestTimeSeries:
         res = cognite_client.time_series.retrieve(id=1).latest()
         assert isinstance(res, Datapoint)
         assert Datapoint(timestamp=1, value=10) == res
-
-    def test_get_first_datapoint(self, cognite_client, mock_get_first_dp_in_ts):
-        res = cognite_client.time_series.retrieve(id=1).first()
-        assert isinstance(res, Datapoint)
-        assert Datapoint(timestamp=1, value=10) == res
-        body = jsgz_load(mock_get_first_dp_in_ts.calls[1].request.body)
-        assert len(body["items"]) == 1
-        item = body["items"][0]
-        assert MIN_TIMESTAMP_MS == item["start"]
-        assert MAX_TIMESTAMP_MS == item["end"]  # raw dps, no ts rounding
-        assert 1 == item["limit"]
 
     def test_asset(self, cognite_client, mock_ts_by_ids_response, mock_asset_by_ids_response):
         asset = cognite_client.time_series.retrieve(id=1).asset()

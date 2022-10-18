@@ -1359,12 +1359,12 @@ class DatapointsAPI(APIClient):
                 >>> latest_abc = res[0][0]
                 >>> latest_def = res[1][0]
         """
-        before = timestamp_to_ms(before) if before else None
         id_seq = IdentifierSequence.load(id, external_id)
         all_ids = id_seq.as_dicts()
-        if before:
+        if before is not None:
+            before = timestamp_to_ms(before)
             for id_ in all_ids:
-                id_["before"] = before
+                id_["before"] = timestamp_to_ms(before)
 
         tasks = [
             {
