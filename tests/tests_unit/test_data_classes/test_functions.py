@@ -1,8 +1,10 @@
+import re
 from unittest.mock import MagicMock, call
 
 import pytest
 
 from cognite.client.data_classes import Function, FunctionSchedule
+from tests.utils import jsgz_load
 
 
 @pytest.fixture
@@ -48,6 +50,24 @@ def function_schedules():
     return [schedule_1, schedule_2]
 
 
+@pytest.fixture
+def mock_function_call_resp(rsps, cognite_client):
+    response_body = {
+        "items": [
+            {
+                "endTime": 1647594536056,
+                "functionId": 2586071956285058,
+                "id": 395335920687780,
+                "startTime": 1647593036056,
+                "status": "Timeout",
+            }
+        ]
+    }
+    url_pattern = re.compile(re.escape(cognite_client.functions._get_base_url_with_base_path()) + "/.+")
+    rsps.add(rsps.POST, url_pattern, status=200, json=response_body)
+    yield rsps
+
+
 class TestFunction:
     def test_update(self, empty_function, function):
         empty_function._cognite_client.functions.retrieve.return_value = function
@@ -75,3 +95,30 @@ class TestFunction:
 
         assert 2 == len(schedules)
         function._cognite_client.functions.schedules.list.assert_has_calls(calls)
+
+
+class TestFunctionCall:
+    def test_get_function_call_no_filter(self, cognite_client, mock_function_call_resp):
+        cognite_client.functions.calls.list(function_id=2586071956285058)
+        calls = mock_function_call_resp.calls
+        assert 1 == len(calls)
+        assert {
+            "cursor": None,
+            "limit": 25,
+            "filter": {},
+        } == jsgz_load(calls[0].request.body)
+
+    def test_get_function_call_with_filter(self, cognite_client, mock_function_call_resp):
+        cognite_client.functions.calls.list(
+            function_id=2586071956285058, status="Completed", schedule_id=395335920687780
+        )
+        calls = mock_function_call_resp.calls
+        assert 1 == len(calls)
+        assert {
+            "cursor": None,
+            "limit": 25,
+            "filter": {
+                "scheduleId": 395335920687780,
+                "status": "Completed",
+            },
+        } == jsgz_load(calls[0].request.body)
