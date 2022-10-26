@@ -28,7 +28,7 @@ from cognite.client.data_classes import (
     TimestampRange,
 )
 from cognite.client.data_classes.files import FileMetadata
-from cognite.client.data_classes.functions import FunctionsStatus
+from cognite.client.data_classes.functions import FunctionsStatus, FunctionCallsFilter
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._identifier import IdentifierSequence, SingletonIdentifierSequence
 
@@ -791,7 +791,7 @@ class FunctionCallsAPI(APIClient):
         """
         identifier = _get_function_identifier(function_id, function_external_id)
         function_id = _get_function_internal_id(self._cognite_client, identifier)
-        filter = {"status": status, "scheduleId": schedule_id, "startTime": start_time, "endTime": end_time}
+        filter = FunctionCallsFilter(status, schedule_id, start_time, end_time).dump(camel_case=True)
         resource_path = f"/functions/{function_id}/calls"
 
         return self._list(
