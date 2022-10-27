@@ -1,7 +1,6 @@
 import numbers
+from math import ceil
 from typing import Any, Dict, List, Sequence, Type, Union
-
-from requests import Response
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes._base import CogniteResource
@@ -12,7 +11,9 @@ from cognite.client.data_classes.contextualization import (
     T_ContextualizationJob,
 )
 from cognite.client.utils._auxiliary import to_camel_case
+from requests import Response
 
+DETECT_MAX_BATCH_SIZE = 50
 
 class DiagramsAPI(APIClient):
     _RESOURCE_PATH = "/context/diagram"
@@ -78,7 +79,8 @@ class DiagramsAPI(APIClient):
         min_tokens: int = 2,
         file_ids: Union[int, Sequence[int]] = None,
         file_external_ids: Union[str, Sequence[str]] = None,
-    ) -> DiagramDetectResults:
+        enable_multiple_jobs: bool= False,
+    ) -> Union[DiagramDetectResults, List[DiagramDetectResults]]:
         """Detect entities in a PNID.
         The results are not written to CDF.
         Note: All users on this CDF subscription with assets read-all and files read-all capabilities in the project,
@@ -92,22 +94,51 @@ class DiagramsAPI(APIClient):
             file_ids (Sequence[int]): ID of the files, should already be uploaded in the same tenant.
             file_external_ids (Sequence[str]): File external ids.
         Returns:
-            DiagramDetectResults: Resulting queued job. Note that .result property of this job will block waiting for results."""
-
+            DiagramDetectResults: Resulting queued job. Note that .result property of this job will block waiting for results.
+        Examples:
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> retrieved_model = client.diagrams.detect(
+                    entities=[{"test"},{"test2"}],
+                    search_field=",
+                    partial_match=",
+                    min_tokens=",
+                    file_ids=",
+                    file_external_ids=",
+                )
+        """
+        items = self._process_file_ids(file_ids, file_external_ids)
         entities = [
             entity.dump(camel_case=True) if isinstance(entity, CogniteResource) else entity for entity in entities
         ]
+        
+        if enable_multiple_jobs: #TODO: change to DETECT_MAX_BATCH_SIZE
+            multiple_jobs = []
+            for i in range(ceil(len(items)/DETECT_MAX_BATCH_SIZE)):
+                batch = items[0+(DETECT_MAX_BATCH_SIZE*i):DETECT_MAX_BATCH_SIZE*(i+1)]
+                
+                multiple_jobs.append(self._run_job(
+                    job_path="/detect",
+                    status_path="/detect/",
+                    items=batch,
+                    entities=entities,
+                    partial_match=partial_match,
+                    search_field=search_field,
+                    min_tokens=min_tokens,
+                    job_cls=DiagramDetectResults,
+                ))
+            return multiple_jobs
 
         return self._run_job(
             job_path="/detect",
             status_path="/detect/",
-            items=self._process_file_ids(file_ids, file_external_ids),
+            items=items,
             entities=entities,
             partial_match=partial_match,
             search_field=search_field,
             min_tokens=min_tokens,
             job_cls=DiagramDetectResults,
-        )
+    )
 
     @staticmethod
     def _process_detect_job(detect_job: DiagramDetectResults) -> list:
@@ -132,6 +163,12 @@ class DiagramsAPI(APIClient):
 
         Returns:
             DiagramConvertResults: Resulting queued job. Note that .result property of this job will block waiting for results.
+        Examples:
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> detect_job = client.diagrams.detect(...)
+                >>> client.diagrams.convert(detect_job=detect_job)
+
         """
         return self._run_job(
             job_path="/convert",

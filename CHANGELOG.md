@@ -13,6 +13,9 @@ Changes are grouped as follows
 - `Removed` for now removed features.
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
+## [4.8.2] - 2022-10-24
+### Added
+- Examples to the context docs
 
 ## [4.8.1] - 2022-10-06
 ### Fixed

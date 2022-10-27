@@ -25,7 +25,11 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     CogniteUpdate,
 )
-from cognite.client.data_classes.annotation_types.images import AssetLink, ObjectDetection, TextRegion
+from cognite.client.data_classes.annotation_types.images import (
+    AssetLink,
+    ObjectDetection,
+    TextRegion,
+)
 from cognite.client.data_classes.annotation_types.primitives import VisionResource
 from cognite.client.data_classes.annotations import AnnotationList
 from cognite.client.exceptions import CogniteException, ModelFailedException
@@ -33,7 +37,6 @@ from cognite.client.utils._auxiliary import convert_true_match, to_snake_case
 
 if TYPE_CHECKING:
     import pandas
-
     from cognite.client import CogniteClient
 
 
@@ -537,6 +540,75 @@ class IndustrialObjectDetectionParameters(VisionResource, ThresholdParameter):
 @dataclass
 class PersonalProtectiveEquipmentDetectionParameters(VisionResource, ThresholdParameter):
     pass
+
+
+class JobBundle():
+    _RESOURCE_PATH = "/context/diagram/detect/"
+    _STATUS_PATH = "/context/diagram/detect/status"
+    _WAIT_TIME = 2
+
+    def __init__(
+            self, cognite_client: "CogniteClient" = None, job_ids=[]
+        ):
+        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._result = []
+        self.jobs = []
+        self.job_ids = job_ids
+        self._remaining_job_ids = []
+    
+    def back_off(self) -> None:
+        """
+        Linear back off, in order to limit load on our API.
+        Starts at _WAIT_TIME and goes to 10 seconds.
+        """
+        time.sleep(self._WAIT_TIME)
+        if self._WAIT_TIME < 10: self._WAIT_TIME += 2
+        
+        return
+
+    def wait_for_completion(self, timeout: int = None) -> None:
+        """Waits for all jobs to complete, generally not needed to call as it is called by result.
+        Args:
+            timeout (int): Time out after this many seconds. (None means wait indefinitely)
+            interval (int): Poll status every this many seconds.
+        """
+        start = time.time()
+        # Create smart procedure for pinging less and less. One DB call for all.
+        c = 0
+        while timeout is None or time.time() < start + timeout:
+            print(c)
+            if c==0:
+                self.jobs = self._cognite_client.diagrams._post(self._STATUS_PATH, json={"items": self.job_ids}).json()["items"]
+                print("in if",self.jobs)
+            elif len(self._remaining_job_ids) >= 1:
+                self.back_off()
+                self.jobs = self._cognite_client.diagrams._post(self._STATUS_PATH, json={"items": self._remaining_job_ids}).json()["items"]
+                print("in elif",self.jobs)
+            else: 
+                return
+
+            self._remaining_job_ids = [j["jobId"] for j in self.jobs if JobStatus(j["status"]).is_not_finished()]
+            print("remaining-->", self._remaining_job_ids)
+
+            ### Potentially not needed
+            for j in self.jobs:
+                if JobStatus(j["status"]) == JobStatus.FAILED:
+                    # do something like adding the error message
+                    print("something failed")
+            c+=1
+            ### Potentially not needed
+            
+    def fetch_results(self) -> List[ContextualizationJob]:
+        return [self._cognite_client.diagrams._get(f"{self._RESOURCE_PATH}{j}").json() for j in self.job_ids ]
+
+    @property
+    def result(self) -> List[ContextualizationJob]:
+        """Waits for the job to finish and returns the results."""
+        if not self._result:
+            self.wait_for_completion()
+        self._result = self.fetch_results()
+        assert self._result is not None
+        return self._result
 
 
 @dataclass
