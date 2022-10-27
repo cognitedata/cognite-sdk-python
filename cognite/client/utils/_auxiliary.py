@@ -15,7 +15,7 @@ import string
 import warnings
 from decimal import Decimal
 from types import ModuleType
-from typing import Any, Dict, Hashable, Iterable, Iterator, List, Sequence, Set, Tuple, TypeVar, Union
+from typing import Any, Dict, Hashable, Iterable, Iterator, List, Sequence, Set, Tuple, TypeVar, Union, overload
 from urllib.parse import quote
 
 import cognite.client
@@ -149,6 +149,16 @@ class PriorityQueue:
 
     def __bool__(self) -> bool:
         return len(self.__heap) > 0
+
+
+@overload
+def split_into_n_parts(seq: List[T], /, n: int) -> Iterator[List[T]]:
+    ...
+
+
+@overload
+def split_into_n_parts(seq: Sequence[T], /, n: int) -> Iterator[Sequence[T]]:
+    ...
 
 
 def split_into_n_parts(seq: Sequence[T], /, n: int) -> Iterator[Sequence[T]]:

@@ -265,9 +265,8 @@ class DatapointsArray(CogniteResource):
         return Datapoint(**{attr: self._dtype_fix(arr[item]) for attr, arr in zip(*self._data_fields())})
 
     def _slice(self, part: slice) -> DatapointsArray:
-        return DatapointsArray(
-            **self._ts_info, **{attr: arr[part] for attr, arr in zip(*self._data_fields())}  # type: ignore [arg-type]
-        )
+        data: Dict[str, Any] = {attr: arr[part] for attr, arr in zip(*self._data_fields())}
+        return DatapointsArray(**self._ts_info, **data)
 
     def __iter__(self) -> Iterator[Datapoint]:
         # Let's not create a single Datapoint more than we have too:
@@ -380,8 +379,8 @@ class Datapoints(CogniteResource):
         is_string: bool = None,
         is_step: bool = None,
         unit: str = None,
-        timestamp: List[int] = None,
-        value: Union[List[str], List[float]] = None,
+        timestamp: Sequence[int] = None,
+        value: Union[Sequence[str], Sequence[float]] = None,
         average: List[float] = None,
         max: List[float] = None,
         min: List[float] = None,
@@ -616,9 +615,9 @@ class DatapointsArrayList(CogniteResourceList):
         self,
         id: int = None,
         external_id: str = None,
-    ) -> Union[None, DatapointsArray, List[DatapointsArray]]:
+    ) -> Optional[DatapointsArray]:
         # TODO: Question, can we type annotate without specifying the function?
-        return super().get(id, external_id)  # type: ignore [return-value]
+        return cast(DatapointsArray, super().get(id, external_id))
 
     def __str__(self) -> str:
         return json.dumps(self.dump(convert_timestamps=True), indent=4)
@@ -674,9 +673,9 @@ class DatapointsList(CogniteResourceList):
         self,
         id: int = None,
         external_id: str = None,
-    ) -> Union[None, DatapointsList, List[DatapointsList]]:
+    ) -> Optional[DatapointsList]:
         # TODO: Question, can we type annotate without specifying the function?
-        return super().get(id, external_id)  # type: ignore [return-value]
+        return cast(DatapointsList, super().get(id, external_id))
 
     def __str__(self) -> str:
         item = self.dump()
