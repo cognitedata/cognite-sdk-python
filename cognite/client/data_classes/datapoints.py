@@ -30,7 +30,6 @@ from typing import (
 )
 
 from cognite.client import utils
-from cognite.client._constants import ALL_SORTED_DP_AGGS
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.utils._auxiliary import (
     convert_all_keys_to_camel_case,
@@ -39,11 +38,20 @@ from cognite.client.utils._auxiliary import (
     local_import,
     to_camel_case,
 )
-from cognite.client.utils._time import (
-    UNIT_IN_MS,
-    align_start_and_end_for_granularity,
-    granularity_to_ms,
-    timestamp_to_ms,
+
+ALL_SORTED_DP_AGGS = sorted(
+    [
+        "average",
+        "continuous_variance",
+        "count",
+        "discrete_variance",
+        "interpolation",
+        "max",
+        "min",
+        "step_interpolation",
+        "sum",
+        "total_variation",
+    ]
 )
 
 if TYPE_CHECKING:

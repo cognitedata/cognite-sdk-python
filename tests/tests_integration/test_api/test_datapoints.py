@@ -17,8 +17,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from cognite.client._constants import ALL_SORTED_DP_AGGS
 from cognite.client.data_classes import Datapoints, DatapointsArray, DatapointsArrayList, DatapointsList, TimeSeries
+from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import to_camel_case, to_snake_case
 from cognite.client.utils._time import (

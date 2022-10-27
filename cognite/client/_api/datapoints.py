@@ -29,6 +29,8 @@ from typing import (
 )
 
 from cognite.client._api.datapoint_tasks import (
+    DPS_LIMIT,
+    DPS_LIMIT_AGG,
     BaseConcurrentTask,
     SplittingFetchSubtask,
     _SingleTSQueryBase,
@@ -36,13 +38,6 @@ from cognite.client._api.datapoint_tasks import (
 )
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api_client import APIClient
-from cognite.client._constants import (
-    DPS_LIMIT,
-    DPS_LIMIT_AGG,
-    FETCH_TS_LIMIT,
-    POST_DPS_OBJECTS_LIMIT,
-    RETRIEVE_LATEST_LIMIT,
-)
 from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem, DataPointListResponse
 from cognite.client.data_classes.datapoints import (
     CustomDatapoints,
@@ -64,6 +59,11 @@ if TYPE_CHECKING:
     from concurrent.futures import Future
 
     import pandas as pd
+
+
+POST_DPS_OBJECTS_LIMIT = 10_000
+FETCH_TS_LIMIT = 100
+RETRIEVE_LATEST_LIMIT = 100
 
 
 TSQueryList = List[_SingleTSQueryBase]

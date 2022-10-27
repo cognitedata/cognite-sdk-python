@@ -26,20 +26,16 @@ from typing import (
     TypeVar,
     Union,
     cast,
-    overload,
 )
 
 from google.protobuf.internal.containers import RepeatedCompositeFieldContainer
 from google.protobuf.message import Message
 from sortedcontainers import SortedDict, SortedList  # type: ignore [import]
 
-from cognite.client._constants import DPS_LIMIT, DPS_LIMIT_AGG
 from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem
 from cognite.client._proto.data_points_pb2 import AggregateDatapoint, NumericDatapoint, StringDatapoint
 from cognite.client.data_classes.datapoints import (
     NUMPY_IS_AVAILABLE,
-    CustomDatapoints,
-    CustomDatapointsQuery,
     Datapoints,
     DatapointsArray,
     DatapointsExternalId,
@@ -65,6 +61,8 @@ if NUMPY_IS_AVAILABLE:
 if TYPE_CHECKING:
     import numpy.typing as npt
 
+DPS_LIMIT_AGG = 10_000
+DPS_LIMIT = 100_000
 
 DatapointsAgg = RepeatedCompositeFieldContainer[AggregateDatapoint]
 DatapointsNum = RepeatedCompositeFieldContainer[NumericDatapoint]
