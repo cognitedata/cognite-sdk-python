@@ -101,17 +101,13 @@ class _SingleTSQueryValidator:
         raise ValueError("Pass at least one time series `id` or `external_id`!")
 
     def _validate_multiple_id(self, id: DatapointsId) -> List[_SingleTSQueryBase]:
-        return self._validate_id_or_xid(id, "id", numbers.Integral, is_external_id=False)
+        return self._validate_id_or_xid(id, "id", numbers.Integral)
 
     def _validate_multiple_xid(self, external_id: DatapointsExternalId) -> List[_SingleTSQueryBase]:
-        return self._validate_id_or_xid(external_id, "external_id", str, is_external_id=True)
+        return self._validate_id_or_xid(external_id, "external_id", str)
 
     def _validate_id_or_xid(
-        self,
-        id_or_xid: Union[DatapointsId, DatapointsExternalId],
-        arg_name: str,
-        exp_type: type,
-        is_external_id: bool,
+        self, id_or_xid: Union[DatapointsId, DatapointsExternalId], arg_name: str, exp_type: type
     ) -> List[_SingleTSQueryBase]:
         id_or_xid_seq: Sequence[Union[int, str, Dict[str, Any]]]
         if isinstance(id_or_xid, (dict, exp_type)):
