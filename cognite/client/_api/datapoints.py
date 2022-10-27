@@ -70,7 +70,7 @@ TSQueryList = List[_SingleTSQueryBase]
 PoolSubtaskType = Tuple[int, float, float, SplittingFetchSubtask]
 
 
-def dps_fetch_selector(dps_client: DatapointsAPI, user_query: _DatapointsQuery) -> DpsFetchStrategy:
+def select_dps_fetch_strategy(dps_client: DatapointsAPI, user_query: _DatapointsQuery) -> DpsFetchStrategy:
     max_workers = dps_client._config.max_workers
     if max_workers < 1:  # Dps fetching does not use fn `execute_tasks_concurrently`, so we must check:
         raise RuntimeError(f"Invalid option for `{max_workers=}`. Must be at least 1")
@@ -696,7 +696,7 @@ class DatapointsAPI(APIClient):
             include_outside_points=include_outside_points,
             ignore_unknown_ids=ignore_unknown_ids,
         )
-        fetcher = dps_fetch_selector(self, user_query=query)
+        fetcher = select_dps_fetch_strategy(self, user_query=query)
         dps_lst = fetcher.fetch_all_datapoints()
         if not query.is_single_identifier:
             return dps_lst
@@ -792,7 +792,7 @@ class DatapointsAPI(APIClient):
             include_outside_points=include_outside_points,
             ignore_unknown_ids=ignore_unknown_ids,
         )
-        fetcher = dps_fetch_selector(self, user_query=query)
+        fetcher = select_dps_fetch_strategy(self, user_query=query)
         dps_lst = fetcher.fetch_all_datapoints_numpy()
         if not query.is_single_identifier:
             return dps_lst
@@ -889,7 +889,7 @@ class DatapointsAPI(APIClient):
             include_outside_points=include_outside_points,
             ignore_unknown_ids=ignore_unknown_ids,
         )
-        fetcher = dps_fetch_selector(self, user_query=query)
+        fetcher = select_dps_fetch_strategy(self, user_query=query)
         if uniform_index:
             grans_given = set(q.granularity for q in fetcher.all_queries)
             is_limited = any(q.limit is not None for q in fetcher.all_queries)
