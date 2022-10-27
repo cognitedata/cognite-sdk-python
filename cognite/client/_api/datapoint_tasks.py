@@ -14,6 +14,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Generic,
     Hashable,
     Iterable,
     Iterator,
@@ -70,8 +71,6 @@ DatapointsStr = RepeatedCompositeFieldContainer[StringDatapoint]
 
 DatapointsAny = Union[DatapointsAgg, DatapointsNum, DatapointsStr]
 DatapointsRaw = Union[DatapointsNum, DatapointsStr]
-
-T = TypeVar("T")
 
 
 class _SingleTSQueryValidator:
@@ -455,7 +454,10 @@ class DpsUnpackFns:
         return op.attrgetter(*lst)
 
 
-class DefaultSortedDict(SortedDict):
+T = TypeVar("T")
+
+
+class DefaultSortedDict(SortedDict, Generic[T]):
     def __init__(self, default_factory: Callable[[], T], /, **kw: Any):
         self.default_factory = default_factory
         super().__init__(**kw)
