@@ -978,7 +978,7 @@ class DatapointsAPI(APIClient):
         datapoints: Union[
             Datapoints,
             DatapointsArray,
-            List[Dict[Union[int, float, datetime], Union[int, float, str]]],
+            List[Dict[str, Union[int, float, str, datetime]]],
             List[Tuple[Union[int, float, datetime], Union[int, float, str]]],
         ],
         id: int = None,
