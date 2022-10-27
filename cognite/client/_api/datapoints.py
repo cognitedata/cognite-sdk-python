@@ -112,12 +112,12 @@ class DpsFetchStrategy(ABC):
 
     def fetch_all_datapoints(self) -> DatapointsList:
         with PriorityThreadPoolExecutor(max_workers=self.max_workers) as pool:
-            ordered_results = self.fetch_all(pool, use_numpy=False)
+            ordered_results = self._fetch_all(pool, use_numpy=False)
         return self._finalize_tasks(ordered_results)
 
     def fetch_all_datapoints_numpy(self) -> DatapointsArrayList:
         with PriorityThreadPoolExecutor(max_workers=self.max_workers) as pool:
-            ordered_results = self.fetch_all(pool, use_numpy=True)
+            ordered_results = self._fetch_all(pool, use_numpy=True)
         return self._finalize_tasks_numpy(ordered_results)
 
     def _finalize_tasks(
@@ -139,12 +139,12 @@ class DpsFetchStrategy(ABC):
         )
 
     @abstractmethod
-    def fetch_all(self, pool: PriorityThreadPoolExecutor, use_numpy: bool) -> List[BaseConcurrentTask]:
-        ...
+    def _fetch_all(self, pool: PriorityThreadPoolExecutor, use_numpy: bool) -> List[BaseConcurrentTask]:
+        raise NotImplementedError
 
     @abstractmethod
     def _create_initial_tasks(self, pool: PriorityThreadPoolExecutor, use_numpy: bool) -> Tuple[Dict, Dict]:
-        ...
+        raise NotImplementedError
 
 
 class EagerDpsFetcher(DpsFetchStrategy):
@@ -158,7 +158,7 @@ class EagerDpsFetcher(DpsFetchStrategy):
             timeout=self.dps_client._config.timeout,
         )
 
-    def request_datapoints_jit(
+    def __request_datapoints_jit(
         self,
         task: SplittingFetchSubtask,
         payload: Optional[CustomDatapoints] = None,
@@ -172,7 +172,7 @@ class EagerDpsFetcher(DpsFetchStrategy):
         (res := DataPointListResponse()).MergeFromString(self._make_dps_request_using_protobuf(json=payload).content)
         return res
 
-    def fetch_all(self, pool: PriorityThreadPoolExecutor, use_numpy: bool) -> List[BaseConcurrentTask]:
+    def _fetch_all(self, pool: PriorityThreadPoolExecutor, use_numpy: bool) -> List[BaseConcurrentTask]:
         futures_dct, ts_task_lookup = self._create_initial_tasks(pool, use_numpy)
 
         # Run until all top level tasks are complete:
@@ -209,7 +209,7 @@ class EagerDpsFetcher(DpsFetchStrategy):
         for query in self.all_queries:
             ts_task = ts_task_lookup[query] = query.ts_task_type(query=query, eager_mode=True, use_numpy=use_numpy)
             for subtask in ts_task.split_into_subtasks(self.max_workers, self.n_queries):
-                future = pool.submit(self.request_datapoints_jit, subtask, payload, priority=subtask.priority)
+                future = pool.submit(self.__request_datapoints_jit, subtask, payload, priority=subtask.priority)
                 futures_dct[future] = subtask
         return futures_dct, ts_task_lookup
 
@@ -220,7 +220,7 @@ class EagerDpsFetcher(DpsFetchStrategy):
         new_subtasks: List[SplittingFetchSubtask],
     ) -> None:
         for task in new_subtasks:
-            future = pool.submit(self.request_datapoints_jit, task, priority=task.priority)
+            future = pool.submit(self.__request_datapoints_jit, task, priority=task.priority)
             futures_dct[future] = task
 
     def _get_result_with_exception_handling(
@@ -276,7 +276,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         self.next_items: List[Dict[str, Any]] = []
         self.next_subtasks: List[SplittingFetchSubtask] = []
 
-    def fetch_all(self, pool: PriorityThreadPoolExecutor, use_numpy: bool) -> List[BaseConcurrentTask]:
+    def _fetch_all(self, pool: PriorityThreadPoolExecutor, use_numpy: bool) -> List[BaseConcurrentTask]:
         # The initial tasks are important - as they tell us which time series are missing, which
         # are string, which are sparse... We use this info when we choose the best fetch-strategy.
         ts_task_lookup, missing_to_raise = {}, set()
