@@ -15,7 +15,21 @@ import string
 import warnings
 from decimal import Decimal
 from types import ModuleType
-from typing import Any, Dict, Hashable, Iterable, Iterator, List, Sequence, Set, Tuple, TypeVar, Union, overload
+from typing import (
+    Any,
+    Dict,
+    Hashable,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    TypeVar,
+    Union,
+    overload,
+)
 from urllib.parse import quote
 
 import cognite.client
@@ -129,8 +143,14 @@ def _check_client_has_newest_major_version() -> None:
         )
 
 
-def random_string(size: int = 100, sample_from: str = string.ascii_uppercase + string.digits) -> str:
-    return "".join(random.choices(sample_from, k=size))
+def random_string(
+    size: int = 100,
+    sample_from: str = string.ascii_uppercase + string.digits,
+    random_generator: Optional[random.Random] = None,
+) -> str:
+    if random_generator is None:
+        random_generator = random._inst
+    return "".join(random_generator.choices(sample_from, k=size))
 
 
 class PriorityQueue:
