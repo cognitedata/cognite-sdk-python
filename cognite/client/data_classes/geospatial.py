@@ -1,5 +1,6 @@
 import dataclasses
 import json
+from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 
 from cognite.client import utils
@@ -353,6 +354,93 @@ class RasterMetadata:
     @classmethod
     def _load(cls, resource: Dict, cognite_client: "CogniteClient" = None) -> "RasterMetadata":
         instance = cls(cognite_client=cognite_client)
+        for key, value in resource.items():
+            snake_case_key = to_snake_case(key)
+            setattr(instance, snake_case_key, value)
+        return instance
+
+
+class GeospatialComputeFunction(ABC):
+    """A geospatial compute function"""
+
+    @abstractmethod
+    def to_json_payload(self) -> dict:
+        """Convert function to json for request payload"""
+
+
+class GeospatialGeometryTransformComputeFunction(GeospatialComputeFunction):
+    "A stTransform geospatial compute function"
+
+    def __init__(self, geospatial_geometry_compute_function: GeospatialComputeFunction, srid: int):
+        self.geospatial_geometry_compute_function = geospatial_geometry_compute_function
+        self.srid = srid
+
+    def to_json_payload(self) -> dict:
+        return {
+            "stTransform": {"geometry": self.geospatial_geometry_compute_function.to_json_payload(), "srid": self.srid}
+        }
+
+
+class GeospatialGeometryComputeFunction(GeospatialComputeFunction, ABC):
+    "A geospatial geometry compute function"
+
+
+class GeospatialGeometryValueComputeFunction(GeospatialGeometryComputeFunction):
+    """A geospatial geometry value compute function.
+    Accepts a well-known text of the geometry prefixed with a spatial reference identifier,
+    see https://docs.geotools.org/stable/javadocs/org/opengis/referencing/doc-files/WKT.html"""
+
+    def __init__(self, ewkt: str):
+        self.ewkt = ewkt
+
+    def to_json_payload(self) -> dict:
+        return {
+            "ewkt": self.ewkt,
+        }
+
+
+class GeospatialComputedItem(CogniteResource):
+    """A representation of an item computed from geospatial."""
+
+    def __init__(self, resource: Dict[str, Any], cognite_client: "CogniteClient" = None):
+        self.resource = resource
+        self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @classmethod
+    def _load(
+        cls, resource: Union[str, Dict[str, Any]], cognite_client: "CogniteClient" = None
+    ) -> "GeospatialComputedItem":
+        if isinstance(resource, str):
+            return cls._load(json.loads(resource), cognite_client=cognite_client)
+        instance = cls(resource=resource, cognite_client=cognite_client)
+        for key, value in resource.items():
+            snake_case_key = to_snake_case(key)
+            setattr(instance, snake_case_key, value)
+        return instance
+
+
+class GeospatialComputedItemList(CogniteResourceList):
+    "A list of items computed from geospatial."
+    _RESOURCE = GeospatialComputedItem
+
+
+class GeospatialComputedResponse(CogniteResource):
+    "The geospatial compute response."
+
+    def __init__(self, computed_item_list: GeospatialComputedItemList, cognite_client: "CogniteClient" = None):
+        self.items = computed_item_list
+        self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @classmethod
+    def _load(
+        cls, resource: Union[str, Dict[str, Any]], cognite_client: "CogniteClient" = None
+    ) -> "GeospatialComputedResponse":
+        if isinstance(resource, str):
+            return cls._load(json.loads(resource), cognite_client=cognite_client)
+        item_list = GeospatialComputedItemList._load(
+            cast("List[Any]", resource.get("items")), cognite_client=cognite_client
+        )
+        instance = cls(item_list, cognite_client=cognite_client)
         for key, value in resource.items():
             snake_case_key = to_snake_case(key)
             setattr(instance, snake_case_key, value)

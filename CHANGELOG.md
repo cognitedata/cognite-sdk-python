@@ -17,6 +17,21 @@ Changes are grouped as follows
 ### Added
 - Examples to the context docs
 
+## [4.11.0] - 2022-10-17
+### Added
+- Add `compute` method to `cognite.client.geospatial`
+
+## [4.10.0] - 2022-10-11
+### Added
+- Add `retrieve_latest` method to `cognite.client.sequences`
+- Add support for extending the expiration time of download links returned by `cognite.client.files.retrieve_download_urls()`
+
+## [4.9.0] - 2022-10-10
+### Added
+- Add support for extraction pipeline configuration files
+### Deprecated
+- Extraction pipeline runs has been moved from `client.extraction_pipeline_runs` to `client.extraction_pipelines.runs`
+
 ## [4.8.1] - 2022-10-06
 ### Fixed
 - Fix `__str__` function of `TransformationSchedule`
