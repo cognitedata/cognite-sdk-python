@@ -142,6 +142,16 @@ class DpsFetchStrategy(ABC):
 
 
 class EagerDpsFetcher(DpsFetchStrategy):
+    """A datapoints fetching strategy to make small queries as fast as possible.
+
+    Is used when the number of time series to fetch is smaller than or equal to the number of `max_workers`, so
+    that each worker only fetches datapoints for a single time series per request (this maximises throughput
+    according to the API docs). This does -not- mean that we assign a time series to each worker! All available
+    workers will fetch data for the same time series to speed up fetching. To make this work, the time domain is
+    split based on the density of datapoints returned and other heuristics like granularity (e.g. given '1h', at
+    most 168 datapoints exist per week).
+    """
+
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         self._make_dps_request_using_protobuf = functools.partial(
@@ -254,6 +264,17 @@ class EagerDpsFetcher(DpsFetchStrategy):
 
 
 class ChunkingDpsFetcher(DpsFetchStrategy):
+    """A datapoints fetching strategy to make large queries faster through the grouping of more than one
+    time series per request.
+
+    The main underlying assumption is that "the more time series are queried, the lower the average density".
+
+    Is used when the number of time series to fetch is larger than the number of `max_workers`. How many
+    time series are chunked per request is dynamic and is decided by the overall number to fetch, their
+    individual number of datapoints and wheter or not raw- or aggregate datapoints are asked for since
+    they are independent in requests - as long as the total number of time series does not exceed FETCH_TS_LIMIT.
+    """
+
     def __init__(self, *args: Any) -> None:
         super().__init__(*args)
         self.counter = itertools.count()
