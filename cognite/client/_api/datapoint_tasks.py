@@ -5,6 +5,7 @@ import numbers
 import operator as op
 import warnings
 from abc import abstractmethod
+from dataclasses import dataclass
 from datetime import datetime
 from functools import cached_property
 from itertools import chain
@@ -19,12 +20,12 @@ from typing import (
     Iterable,
     Iterator,
     List,
-    Literal,
     MutableSequence,
     NoReturn,
     Optional,
     Sequence,
     Tuple,
+    TypedDict,
     TypeVar,
     Union,
     cast,
@@ -35,19 +36,7 @@ from sortedcontainers import SortedDict, SortedList
 
 from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem
 from cognite.client._proto.data_points_pb2 import AggregateDatapoint, NumericDatapoint, StringDatapoint
-from cognite.client.data_classes.datapoints import (
-    NUMPY_IS_AVAILABLE,
-    CustomDatapoints,
-    Datapoints,
-    DatapointsArray,
-    DatapointsExternalId,
-    DatapointsId,
-    DatapointsPayload,
-    DatapointsQueryExternalId,
-    DatapointsQueryId,
-    RawDatapointValue,
-    _DatapointsQuery,
-)
+from cognite.client.data_classes.datapoints import NUMPY_IS_AVAILABLE, Datapoints, DatapointsArray
 from cognite.client.utils._auxiliary import convert_all_keys_to_snake_case, to_camel_case, to_snake_case
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._time import (
@@ -73,6 +62,68 @@ DatapointsStr = MutableSequence[StringDatapoint]
 
 DatapointsAny = Union[DatapointsAgg, DatapointsNum, DatapointsStr]
 DatapointsRaw = Union[DatapointsNum, DatapointsStr]
+
+RawDatapointValue = Union[float, str]
+DatapointsId = Union[None, int, Dict[str, Any], List[Union[int, Dict[str, Any]]]]
+DatapointsExternalId = Union[None, str, Dict[str, Any], List[Union[str, Dict[str, Any]]]]
+
+
+class CustomDatapointsQuery(TypedDict, total=False):
+    # No field required
+    start: Union[int, str, datetime, None]
+    end: Union[int, str, datetime, None]
+    aggregates: Optional[List[str]]
+    granularity: Optional[str]
+    limit: Optional[int]
+    include_outside_points: Optional[bool]
+    ignore_unknown_ids: Optional[bool]
+
+
+class DatapointsQueryId(CustomDatapointsQuery):
+    id: int  # required field
+
+
+class DatapointsQueryExternalId(CustomDatapointsQuery):
+    external_id: str  # required field
+
+
+class CustomDatapoints(TypedDict, total=False):
+    # No field required
+    start: int
+    end: int
+    aggregates: Optional[List[str]]
+    granularity: Optional[str]
+    limit: int
+    include_outside_points: bool
+
+
+class DatapointsPayload(CustomDatapoints):
+    items: List[CustomDatapoints]
+
+
+@dataclass
+class _DatapointsQuery:
+    """Internal representation of a user request for datapoints, previously public (before v5)"""
+
+    start: Union[int, str, datetime, None] = None
+    end: Union[int, str, datetime, None] = None
+    id: Optional[DatapointsId] = None
+    external_id: Optional[DatapointsExternalId] = None
+    aggregates: Union[str, List[str], None] = None
+    granularity: Optional[str] = None
+    limit: Optional[int] = None
+    include_outside_points: bool = False
+    ignore_unknown_ids: bool = False
+
+    @property
+    def is_single_identifier(self) -> bool:
+        # No lists given and exactly one of id/xid was given:
+        return (
+            isinstance(self.id, (dict, numbers.Integral))
+            and self.external_id is None
+            or isinstance(self.external_id, (dict, str))
+            and self.id is None
+        )
 
 
 class _SingleTSQueryValidator:

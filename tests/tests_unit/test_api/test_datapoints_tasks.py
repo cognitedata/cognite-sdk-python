@@ -7,8 +7,12 @@ from decimal import Decimal
 import pytest
 from sortedcontainers import SortedKeysView
 
-from cognite.client._api.datapoint_tasks import _SingleTSQueryValidator, create_dps_container, create_subtask_lst
-from cognite.client.data_classes.datapoints import _DatapointsQuery
+from cognite.client._api.datapoint_tasks import (
+    _DatapointsQuery,
+    _SingleTSQueryValidator,
+    create_dps_container,
+    create_subtask_lst,
+)
 from cognite.client.utils._auxiliary import random_string
 from tests.utils import random_aggregates, random_cognite_ids, random_gamma_dist_integer, random_granularity
 

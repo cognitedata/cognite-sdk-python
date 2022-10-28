@@ -33,22 +33,17 @@ from cognite.client._api.datapoint_tasks import (
     DPS_LIMIT_AGG,
     BaseConcurrentTask,
     BaseDpsFetchSubtask,
+    CustomDatapoints,
+    DatapointsPayload,
     SplittingFetchSubtask,
+    _DatapointsQuery,
     _SingleTSQueryBase,
     _SingleTSQueryValidator,
 )
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api_client import APIClient
 from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem, DataPointListResponse
-from cognite.client.data_classes.datapoints import (
-    CustomDatapoints,
-    Datapoints,
-    DatapointsArray,
-    DatapointsArrayList,
-    DatapointsList,
-    DatapointsPayload,
-    _DatapointsQuery,
-)
+from cognite.client.data_classes.datapoints import Datapoints, DatapointsArray, DatapointsArrayList, DatapointsList
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import assert_type, local_import, split_into_chunks, split_into_n_parts
 from cognite.client.utils._concurrency import collect_exc_info_and_raise, execute_tasks_concurrently

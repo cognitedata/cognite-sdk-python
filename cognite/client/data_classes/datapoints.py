@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 import json
-import numbers
 import operator as op
 import warnings
 from collections import defaultdict
-from dataclasses import dataclass
 from datetime import datetime
 from functools import cached_property
 from typing import (
@@ -18,12 +16,9 @@ from typing import (
     Iterator,
     List,
     Literal,
-    NoReturn,
     Optional,
     Sequence,
     Tuple,
-    Type,
-    TypedDict,
     Union,
     cast,
     overload,
@@ -71,44 +66,6 @@ try:
 
 except ImportError:  # pragma no cover
     NUMPY_IS_AVAILABLE = False
-
-
-RawDatapointValue = Union[float, str]
-DatapointsId = Union[None, int, Dict[str, Any], List[Union[int, Dict[str, Any]]]]
-DatapointsExternalId = Union[None, str, Dict[str, Any], List[Union[str, Dict[str, Any]]]]
-
-
-class CustomDatapointsQuery(TypedDict, total=False):
-    # No field required
-    start: Union[int, str, datetime, None]
-    end: Union[int, str, datetime, None]
-    aggregates: Optional[List[str]]
-    granularity: Optional[str]
-    limit: Optional[int]
-    include_outside_points: Optional[bool]
-    ignore_unknown_ids: Optional[bool]
-
-
-class DatapointsQueryId(CustomDatapointsQuery):
-    id: int  # required field
-
-
-class DatapointsQueryExternalId(CustomDatapointsQuery):
-    external_id: str  # required field
-
-
-class CustomDatapoints(TypedDict, total=False):
-    # No field required
-    start: int
-    end: int
-    aggregates: Optional[List[str]]
-    granularity: Optional[str]
-    limit: int
-    include_outside_points: bool
-
-
-class DatapointsPayload(CustomDatapoints):
-    items: List[CustomDatapoints]
 
 
 class Datapoint(CogniteResource):
@@ -710,28 +667,3 @@ class DatapointsList(CogniteResourceList):
 
     def _repr_html_(self) -> str:
         return self.to_pandas()._repr_html_()
-
-
-@dataclass
-class _DatapointsQuery(CogniteResource):
-    """Internal representation of a user request for datapoints, previously public (before v5)"""
-
-    start: Union[int, str, datetime, None] = None
-    end: Union[int, str, datetime, None] = None
-    id: Optional[DatapointsId] = None
-    external_id: Optional[DatapointsExternalId] = None
-    aggregates: Union[str, List[str], None] = None
-    granularity: Optional[str] = None
-    limit: Optional[int] = None
-    include_outside_points: bool = False
-    ignore_unknown_ids: bool = False
-
-    @property
-    def is_single_identifier(self) -> bool:
-        # No lists given and exactly one of id/xid was given:
-        return (
-            isinstance(self.id, (dict, numbers.Integral))
-            and self.external_id is None
-            or isinstance(self.external_id, (dict, str))
-            and self.id is None
-        )
