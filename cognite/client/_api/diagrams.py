@@ -2,18 +2,20 @@ import numbers
 from math import ceil
 from typing import Any, Dict, List, Sequence, Type, Union
 
+from requests import Response
+
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes._base import CogniteResource
 from cognite.client.data_classes.contextualization import (
-    ContextualizationJob,
+    DetectJobBundle,
     DiagramConvertResults,
     DiagramDetectResults,
     T_ContextualizationJob,
 )
 from cognite.client.utils._auxiliary import to_camel_case
-from requests import Response
 
 DETECT_MAX_BATCH_SIZE = 50
+
 
 class DiagramsAPI(APIClient):
     _RESOURCE_PATH = "/context/diagram"
@@ -79,15 +81,15 @@ class DiagramsAPI(APIClient):
         min_tokens: int = 2,
         file_ids: Union[int, Sequence[int]] = None,
         file_external_ids: Union[str, Sequence[str]] = None,
-        enable_multiple_jobs: bool= False,
-    ) -> Union[DiagramDetectResults, List[DiagramDetectResults]]:
+        enable_multiple_jobs: bool = False,
+    ) -> Union[DiagramDetectResults, DetectJobBundle]:
         """Detect entities in a PNID.
         The results are not written to CDF.
         Note: All users on this CDF subscription with assets read-all and files read-all capabilities in the project,
         are able to access the data sent to this endpoint.
 
         Args:
-            entities (Sequence[Union[dict,CogniteResource]]): List of entities to detect
+            entities (Sequence[Union[dict, CogniteResource]]): List of entities to detect
             search_field (str): If entities is a list of dictionaries, this is the key to the values to detect in the PnId
             partial_match (bool): Allow for a partial match (e.g. missing prefix).
             min_tokens (int): Minimal number of tokens a match must be based on
@@ -99,35 +101,39 @@ class DiagramsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> retrieved_model = client.diagrams.detect(
-                    entities=[{"test"},{"test2"}],
-                    search_field=",
-                    partial_match=",
-                    min_tokens=",
-                    file_ids=",
-                    file_external_ids=",
+                    entities=[{"userDefinedField": "21PT1017","ignoredField": "AA11"}],
+                    search_field="userDefinedField",
+                    partial_match=True,
+                    min_tokens=2,
+                    file_ids="101",
+                    file_external_ids=["Test1"],
                 )
         """
         items = self._process_file_ids(file_ids, file_external_ids)
         entities = [
             entity.dump(camel_case=True) if isinstance(entity, CogniteResource) else entity for entity in entities
         ]
-        
-        if enable_multiple_jobs: #TODO: change to DETECT_MAX_BATCH_SIZE
-            multiple_jobs = []
-            for i in range(ceil(len(items)/DETECT_MAX_BATCH_SIZE)):
-                batch = items[0+(DETECT_MAX_BATCH_SIZE*i):DETECT_MAX_BATCH_SIZE*(i+1)]
-                
-                multiple_jobs.append(self._run_job(
-                    job_path="/detect",
-                    status_path="/detect/",
-                    items=batch,
-                    entities=entities,
-                    partial_match=partial_match,
-                    search_field=search_field,
-                    min_tokens=min_tokens,
-                    job_cls=DiagramDetectResults,
-                ))
-            return multiple_jobs
+
+        if enable_multiple_jobs:
+            jobs = []
+            for i in range(ceil(len(items) / DETECT_MAX_BATCH_SIZE)):
+                batch = items[0 + (DETECT_MAX_BATCH_SIZE * i) : DETECT_MAX_BATCH_SIZE * (i + 1)]
+
+                jobs.append(
+                    self._run_job(
+                        job_path="/detect",
+                        status_path="/detect/",
+                        items=batch,
+                        entities=entities,
+                        partial_match=partial_match,
+                        search_field=search_field,
+                        min_tokens=min_tokens,
+                        job_cls=DiagramDetectResults,
+                    )
+                )
+                # TODO: Add detect job post throttling
+
+            return DetectJobBundle(cognite_client=self._cognite_client, job_ids=[j.get("job_id") for j in jobs])
 
         return self._run_job(
             job_path="/detect",
@@ -138,7 +144,7 @@ class DiagramsAPI(APIClient):
             search_field=search_field,
             min_tokens=min_tokens,
             job_cls=DiagramDetectResults,
-    )
+        )
 
     @staticmethod
     def _process_detect_job(detect_job: DiagramDetectResults) -> list:

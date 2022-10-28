@@ -13,9 +13,12 @@ Changes are grouped as follows
 - `Removed` for now removed features.
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
-## [4.8.2] - 2022-10-24
+
+## [4.11.1] - 2022-10-28
+### Changed
+- Detect endpoint update
 ### Added
-- Examples to the context docs
+- JobBundle
 
 ## [4.11.0] - 2022-10-17
 ### Added
