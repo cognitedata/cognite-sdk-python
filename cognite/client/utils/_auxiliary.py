@@ -2,7 +2,7 @@
 
 This module provides helper methods and different utilities for the Cognite API Python SDK.
 
-This module is protected and should not used by end-users.
+This module is protected and should not be used by end-users.
 """
 import functools
 import heapq

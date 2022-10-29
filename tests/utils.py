@@ -11,6 +11,20 @@ from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS
 from cognite.client.utils._auxiliary import random_string
 
 
+@contextmanager
+def rng_context(seed: int):
+    """Temporarily override internal random state for deterministic behaviour without side-effects
+
+    Idea stolen from pandas source `class RNGContext`.
+    """
+    state = random.getstate()
+    random.seed(seed)
+    try:
+        yield
+    finally:
+        random.setstate(state)
+
+
 def random_cognite_ids(n):
     # Returns list of random, valid Cognite internal IDs:
     return random.choices(range(1, 9007199254740992), k=n)

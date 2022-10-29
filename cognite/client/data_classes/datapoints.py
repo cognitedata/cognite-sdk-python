@@ -572,9 +572,9 @@ class DatapointsArrayList(CogniteResourceList):
         self,
         id: int = None,
         external_id: str = None,
-    ) -> Optional[DatapointsArray]:
+    ) -> Union[None, DatapointsArray, List[DatapointsArray]]:
         # TODO: Question, can we type annotate without specifying the function?
-        return cast(DatapointsArray, super().get(id, external_id))
+        return super().get(id, external_id)  # type: ignore [return-value]
 
     def __str__(self) -> str:
         return json.dumps(self.dump(convert_timestamps=True), indent=4)
@@ -630,9 +630,9 @@ class DatapointsList(CogniteResourceList):
         self,
         id: int = None,
         external_id: str = None,
-    ) -> Optional[DatapointsList]:
+    ) -> Union[None, DatapointsList, List[DatapointsList]]:
         # TODO: Question, can we type annotate without specifying the function?
-        return cast(DatapointsList, super().get(id, external_id))
+        return super().get(id, external_id)  # type: ignore [return-value]
 
     def __str__(self) -> str:
         item = self.dump()

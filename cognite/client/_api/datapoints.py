@@ -1039,7 +1039,7 @@ class DatapointsAPI(APIClient):
                 >>> c.time_series.data.insert(data, external_id="def")
         """
         post_dps_object = Identifier.of_either(id, external_id).as_dict()
-        datapoints_to_post: Union[
+        dps_to_post: Union[
             Sequence[Dict[str, Union[int, float, str, datetime]]],
             Sequence[Tuple[Union[int, float, datetime], Union[int, float, str]]],
         ]
@@ -1049,16 +1049,16 @@ class DatapointsAPI(APIClient):
                     "When inserting data using a `Datapoints` or `DatapointsArray` object, only raw datapoints are supported"
                 )
             if isinstance(datapoints, Datapoints):
-                datapoints_to_post = cast(List[Tuple[int, Any]], list(zip(datapoints.timestamp, datapoints.value)))
+                dps_to_post = cast(List[Tuple[int, Any]], list(zip(datapoints.timestamp, datapoints.value)))
             else:
                 # Using `tolist()` converts to the nearest compatible built-in Python type:
                 assert datapoints.timestamp is not None
                 ts = datapoints.timestamp.astype("datetime64[ms]").astype("int64")
-                datapoints_to_post = list(zip(ts.tolist(), datapoints.value.tolist()))
+                dps_to_post = list(zip(ts.tolist(), datapoints.value.tolist()))
         else:
-            datapoints_to_post = datapoints
+            dps_to_post = datapoints
 
-        post_dps_object["datapoints"] = datapoints_to_post
+        post_dps_object["datapoints"] = dps_to_post
         dps_poster = DatapointsPoster(self)
         dps_poster.insert([post_dps_object])
 

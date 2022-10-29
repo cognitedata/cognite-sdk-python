@@ -49,6 +49,7 @@ from cognite.client.utils._time import (
 if NUMPY_IS_AVAILABLE:
     import numpy as np
 
+    from cognite.client.data_classes.datapoints import NumpyFloat64Array, NumpyInt64Array, NumpyObjArray
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -1063,8 +1064,8 @@ class BaseConcurrentRawTask(BaseConcurrentTask):
     def _include_outside_points_in_result(self) -> None:
         for dp, idx in zip((self.dp_outside_start, self.dp_outside_end), (-math.inf, math.inf)):
             if dp:
-                ts: Union[List[int], np.ndarray[Any, np.dtype]] = [dp[0]]
-                value: Union[List[Union[float, str]], np.ndarray[Any, np.dtype]] = [dp[1]]
+                ts: Union[List[int], NumpyInt64Array] = [dp[0]]
+                value: Union[List[Union[float, str]], NumpyFloat64Array, NumpyObjArray] = [dp[1]]
                 if self.use_numpy:
                     ts = np.array(ts, dtype=np.int64)
                     value = np.array(value, dtype=self.raw_dtype)
