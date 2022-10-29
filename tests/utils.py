@@ -5,34 +5,26 @@ import json
 import math
 import os
 import random
-import time
 from contextlib import contextmanager
 
 from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS
 from cognite.client.utils._auxiliary import random_string
 
-# To avoid the error "different tests were collected between...", we must make sure all parallel test-runners
-# generate the same tests (randomized test data). the following random generator methods are used to generate tests,
-# so we must set a seed. We also want different random values over time (...thats the point),
-# so we set seed based on time, but round to have some buffer:
-_random_generator = random.Random()
-_random_generator.seed(round(time.time(), -3))
-
 
 def random_cognite_ids(n):
     # Returns list of random, valid Cognite internal IDs:
-    return _random_generator.choices(range(1, 9007199254740992), k=n)
+    return random.choices(range(1, 9007199254740992), k=n)
 
 
 def random_cognite_external_ids(n, str_len=50):
     # Returns list of random, valid Cognite external IDs:
-    return [random_string(str_len, random_generator=_random_generator) for _ in range(n)]
+    return [random_string(str_len) for _ in range(n)]
 
 
 def random_granularity(granularities="smhd", lower_lim=1, upper_lim=100000):
-    gran = _random_generator.choice(granularities)
+    gran = random.choice(granularities)
     upper = {"s": 120, "m": 120, "h": 100000, "d": 100000}
-    unit = _random_generator.choice(range(max(lower_lim, 1), min(upper_lim, upper[gran]) + 1))
+    unit = random.choice(range(max(lower_lim, 1), min(upper_lim, upper[gran]) + 1))
     return f"{unit}{gran}"
 
 
@@ -43,14 +35,14 @@ def random_aggregates(n=None, exclude=None):
     agg_lst = ALL_SORTED_DP_AGGS
     if exclude:
         agg_lst = [a for a in agg_lst if a not in exclude]
-    n = n or _random_generator.randint(1, len(agg_lst))
-    return _random_generator.sample(agg_lst, k=n)
+    n = n or random.randint(1, len(agg_lst))
+    return random.sample(agg_lst, k=n)
 
 
 def random_gamma_dist_integer(inclusive_max, max_tries=100):
     # "Smaller integers are more likely"
     for _ in range(max_tries):
-        i = 1 + math.floor(_random_generator.gammavariate(1, inclusive_max * 0.3))
+        i = 1 + math.floor(random.gammavariate(1, inclusive_max * 0.3))
         if i <= inclusive_max:  # rejection sampling
             return i
     raise RuntimeError(f"Max tries exceeded while generating a random integer in range [1, {inclusive_max}]")

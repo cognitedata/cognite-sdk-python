@@ -7,8 +7,10 @@ Note: If tests related to fetching datapoints are broken, all time series + thei
 import itertools
 import random
 import re
+import time
 from contextlib import nullcontext as does_not_raise
 from datetime import datetime
+from random import randint
 from unittest.mock import patch
 
 import numpy as np
@@ -49,6 +51,11 @@ YEAR_MS = {
 }
 DPS_TYPES = (Datapoints, DatapointsArray)
 DPS_LST_TYPES = (DatapointsList, DatapointsArrayList)
+
+# To avoid the error "different tests were collected between...", we must make sure all parallel test-runners
+# generate the same tests (randomized test data). We also want different random values over time (...thats the point),
+# so we set seed based on time, but round to have some buffer:
+random.seed(round(time.time(), -3))
 
 
 @pytest.fixture(scope="session")
@@ -356,8 +363,8 @@ class TestRetrieveRawDatapointsAPI:
                 with expected_raise:
                     res_lst = endpoint(
                         **identifier,
-                        start=random.randint(MIN_TIMESTAMP_MS, 100),
-                        end=random.randint(101, MAX_TIMESTAMP_MS),
+                        start=randint(MIN_TIMESTAMP_MS, 100),
+                        end=randint(101, MAX_TIMESTAMP_MS),
                         ignore_unknown_ids=ignore_unknown_ids,
                         limit=5,
                     )
@@ -647,17 +654,12 @@ class TestRetrieveAggregateDatapointsAPI:
 
         # Pick random start and end in an empty region:
         if before_first_dp:
-            start = random.randint(MIN_TIMESTAMP_MS, -315619200000)  # 1900 -> 1960
-            end = random.randint(start, -31536000000)  # start -> 1969
+            start = randint(MIN_TIMESTAMP_MS, -315619200000)  # 1900 -> 1960
+            end = randint(start, -31536000000)  # start -> 1969
         else:  # after last dp
-            start = random.randint(31536000000, 2524608000000)  # 1971 -> 2050
-            end = random.randint(start, MAX_TIMESTAMP_MS)  # start -> (2051 minus 1ms)
-        granularities = (
-            f"{random.randint(1, 15)}d",
-            f"{random.randint(1, 50)}h",
-            f"{random.randint(1, 120)}m",
-            f"{random.randint(1, 120)}s",
-        )
+            start = randint(31536000000, 2524608000000)  # 1971 -> 2050
+            end = randint(start, MAX_TIMESTAMP_MS)  # start -> (2051 minus 1ms)
+        granularities = f"{randint(1, 15)}d", f"{randint(1, 50)}h", f"{randint(1, 120)}m", f"{randint(1, 120)}s"
 
         with set_max_workers(cognite_client, 8):
             for endpoint in retrieve_endpoints[:1]:
