@@ -255,14 +255,12 @@ with rng_context(SEED + 42):
     )
 
     PARAMETRIZED_VALUES_UNIFORM_INDEX_FAILS = (
-        (
-            # Fail because of raw request:
-            ([None, "1s"], [None, random_aggregates(1)], [None, None]),
-            # Fail because of multiple granularities:
-            (["1m", "60s"], [random_aggregates(1), random_aggregates(1)], [None, None]),
-            # Fail because of finite limit:
-            (["1d", "1d"], [random_aggregates(1), random_aggregates(1)], [123, None]),
-        ),
+        # Fail because of raw request:
+        ([None, "1s"], [None, random_aggregates(1)], [None, None]),
+        # Fail because of multiple granularities:
+        (["1m", "60s"], [random_aggregates(1), random_aggregates(1)], [None, None]),
+        # Fail because of finite limit:
+        (["1d", "1d"], [random_aggregates(1), random_aggregates(1)], [123, None]),
     )
 
 
