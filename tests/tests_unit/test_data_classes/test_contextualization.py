@@ -128,7 +128,7 @@ class TestJobBundle:
                 Mock(
                     json=lambda: {
                         "createdTime": 1337,
-                        "errorMessage": "somethingWentWrong",
+                        "items": [{"errorMessage": "somethingWentWrong"}],
                         "jobId": 1,
                         "status": "Failed",
                         "statusCount": {"failed": 1},
@@ -138,4 +138,5 @@ class TestJobBundle:
             ]
             mock_client.diagrams._post.return_value = requestMock
             a = DetectJobBundle(cognite_client=mock_client, job_ids=[1, 2])
-            assert a.result[1]["errorMessage"] == "somethingWentWrong"
+            print(a.result)
+            assert a.failed[0]["errorMessage"] == "somethingWentWrong"
