@@ -14,6 +14,7 @@ from cognite.client.utils._identifier import IdentifierSequence
 
 T_ContextualizationJob = TypeVar("T_ContextualizationJob", bound=ContextualizationJob)
 
+
 class EntityMatchingAPI(APIClient):
     _RESOURCE_PATH = EntityMatchingModel._RESOURCE_PATH
 

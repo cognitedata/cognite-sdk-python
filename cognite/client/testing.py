@@ -9,13 +9,7 @@ from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.diagrams import DiagramsAPI
 from cognite.client._api.events import EventsAPI
 from cognite.client._api.files import FilesAPI
-from cognite.client._api.iam import (
-    IAMAPI,
-    APIKeysAPI,
-    GroupsAPI,
-    SecurityCategoriesAPI,
-    ServiceAccountsAPI,
-)
+from cognite.client._api.iam import IAMAPI, APIKeysAPI, GroupsAPI, SecurityCategoriesAPI, ServiceAccountsAPI
 from cognite.client._api.labels import LabelsAPI
 from cognite.client._api.login import LoginAPI
 from cognite.client._api.raw import RawAPI, RawDatabasesAPI, RawRowsAPI, RawTablesAPI
