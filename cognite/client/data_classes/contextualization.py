@@ -550,8 +550,10 @@ class DetectJobBundle:
             raise ValueError("You need to specify job_ids")
         # TODO: Can maybe improve this and/or generalize
         self.job_ids = job_ids
-        self._result: List[Dict[str, Any]] = []
         self.jobs: List[Dict[str, Any]] = []
+        self.succeeded: List[Dict[str, Any]] = []
+        self.failed: List[Dict[str, Any]] = []
+        self._result: List[Dict[str, Any]] = []
         self._remaining_job_ids: List[Dict[str, Any]] = []
 
     def __repr__(self) -> str:
@@ -562,6 +564,10 @@ class DetectJobBundle:
             + str(self.jobs)
             + ", self._result="
             + str(self._result)
+            + ", self.failed="
+            + str(self.failed)
+            + ", self.succeeded="
+            + str(self.succeeded)
             + ", self._remaining_job_ids="
             + str(self._remaining_job_ids)
             + ")"
@@ -603,7 +609,23 @@ class DetectJobBundle:
             c += 1
 
     def fetch_results(self) -> List[Dict[str, Any]]:
-        return [self._cognite_client.diagrams._get(f"{self._RESOURCE_PATH}{j}").json() for j in self.job_ids]
+        # Reset
+        self.failed = []
+        self.succeeded = []
+
+        # Check status
+        list_of_job_results = [
+            self._cognite_client.diagrams._get(f"{self._RESOURCE_PATH}{j}").json() for j in self.job_ids
+        ]
+
+        # Break out
+        for job_result in list_of_job_results:
+            for item in job_result["items"]:
+                if "errorMessage" in item:
+                    self.failed.append({**item, **{"job_id": job_result["jobId"]}})
+                else:
+                    self.succeeded.append(item)
+        return list_of_job_results
 
     @property
     def result(self) -> List[Dict[str, Any]]:

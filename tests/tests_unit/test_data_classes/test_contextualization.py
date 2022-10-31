@@ -97,11 +97,11 @@ class TestJobBundle:
             a = DetectJobBundle(cognite_client=mock_client, job_ids=[1, 2])
             assert a.result[0]["status"] == "Completed"
             assert a.result[0]["status"] == "Completed"
-            assert a._WAIT_TIME == 2  # Overwritten to 0, then added 2
+            assert a._WAIT_TIME == 2  # NOTE: Overwritten to 0, then added 2
 
             assert mock_client.diagrams._post.call_count == 2
 
-    def test_DetectJobBundle_faling(self, mock_base_job_response) -> None:
+    def test_DetectJobBundle_failing(self, mock_base_job_response) -> None:
         completed_job_mock = mock_base_job_response
         failed_job_mock = {
             **mock_base_job_response,
@@ -139,6 +139,3 @@ class TestJobBundle:
             mock_client.diagrams._post.return_value = requestMock
             a = DetectJobBundle(cognite_client=mock_client, job_ids=[1, 2])
             assert a.result[1]["errorMessage"] == "somethingWentWrong"
-            assert a.result[1]["errorMessage"]
-            # assert a.result[0]["status"] == "Completed"
-            # assert a.result[1]["status"] == "Failed"

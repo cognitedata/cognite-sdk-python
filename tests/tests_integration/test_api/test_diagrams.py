@@ -1,4 +1,9 @@
-from cognite.client.data_classes.contextualization import DiagramConvertResults, DiagramDetectItem, DiagramDetectResults
+from cognite.client.data_classes.contextualization import (
+    DetectJobBundle,
+    DiagramConvertResults,
+    DiagramDetectItem,
+    DiagramDetectResults,
+)
 
 PNID_FILE_ID = 3261066797848581
 
@@ -32,3 +37,22 @@ class TestPNIDParsingIntegration:
             assert 1 == res_page.page
             assert ".svg" in res_page.svg_url
             assert ".png" in res_page.png_url
+
+        # Enable multiple jobs
+        job = cognite_client.diagrams.detect(file_ids=[file_id], entities=entities, enable_multiple_jobs=True)
+        assert isinstance(job, DetectJobBundle)
+        assert {
+            "status",
+            "statusCount",
+            "jobId",
+            "items",
+            "createdTime",
+            "minTokens",
+            "searchField",
+            "numFiles",
+            "partialMatch",
+            "startTime",
+        }.issubset(job.result[0])
+        assert {"fileId", "annotations"}.issubset(job.result[0]["items"][0])
+        assert job.result[0]["status"] in ["Completed", "Running"]
+        assert len(job.succeeded) == 1

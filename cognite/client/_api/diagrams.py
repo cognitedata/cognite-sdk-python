@@ -115,7 +115,7 @@ class DiagramsAPI(APIClient):
         ]
 
         if enable_multiple_jobs:
-            jobs = []
+            jobs: List[DiagramDetectResults] = []
             for i in range(ceil(len(items) / DETECT_MAX_BATCH_SIZE)):
                 batch = items[0 + (DETECT_MAX_BATCH_SIZE * i) : DETECT_MAX_BATCH_SIZE * (i + 1)]
 
@@ -132,8 +132,7 @@ class DiagramsAPI(APIClient):
                     )
                 )
                 # TODO: Add detect job post throttling
-
-            return DetectJobBundle(cognite_client=self._cognite_client, job_ids=[j.get("job_id") for j in jobs])
+            return DetectJobBundle(cognite_client=self._cognite_client, job_ids=[j.job_id for j in jobs if j.job_id])
 
         return self._run_job(
             job_path="/detect",
