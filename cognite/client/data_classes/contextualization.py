@@ -548,7 +548,6 @@ class DetectJobBundle:
         self._cognite_client = cast("CogniteClient", cognite_client)
         if not job_ids:
             raise ValueError("You need to specify job_ids")
-        # TODO: Can maybe improve this and/or generalize
         self.job_ids = job_ids
         self.jobs: List[Dict[str, Any]] = []
         self.succeeded: List[Dict[str, Any]] = []
@@ -590,7 +589,6 @@ class DetectJobBundle:
             interval (int): Poll status every this many seconds.
         """
         start = time.time()
-        # Create smart procedure for pinging less and less. One DB call for all.
         c = 0
         while timeout is None or time.time() < start + timeout:
             if c == 0:
@@ -632,7 +630,6 @@ class DetectJobBundle:
         """Waits for the job to finish and returns the results."""
         if not self._result:
             self.wait_for_completion()
-            # TODO: Discuss wether fetch_results should be inside or outside this if. (need to update test to reflect that as well)
             self._result = self.fetch_results()
         assert self._result is not None
         return self._result
