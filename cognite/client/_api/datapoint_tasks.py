@@ -632,7 +632,7 @@ class OutsideDpsFetchSubtask(BaseDpsFetchSubtask):
             }
         )
 
-    def store_partial_result(self, res: DataPointListItem) -> Optional[List[SplittingFetchSubtask]]:
+    def store_partial_result(self, res: DataPointListItem) -> None:
         # `Oneof` field `datapointType` can be either `numericDatapoints` or `stringDatapoints`
         # (or `aggregateDatapoints`, but not here of course):
         if dps := get_datapoints_from_proto(res):
