@@ -567,14 +567,11 @@ class DatapointsAPI(APIClient):
             self._config, api_version=self._api_version, cognite_client=self._cognite_client
         )
 
-    # Why are we using List instead of Sequence in type hint? It's because `Sequence[str]` and `str`
-    # are indistinguishable... thus using Sequence gives mypy error "Overloaded function signatures X and Y
-    # overlap with incompatible return types". See: https://stackoverflow.com/a/49887206/3887338
     def retrieve(
         self,
         *,
-        id: Union[None, int, Dict[str, Any], List[Union[int, Dict[str, Any]]]] = None,
-        external_id: Union[None, str, Dict[str, Any], List[Union[str, Dict[str, Any]]]] = None,
+        id: Union[None, int, Dict[str, Any], Sequence[Union[int, Dict[str, Any]]]] = None,
+        external_id: Union[None, str, Dict[str, Any], Sequence[Union[str, Dict[str, Any]]]] = None,
         start: Union[int, str, datetime, None] = None,
         end: Union[int, str, datetime, None] = None,
         aggregates: Union[str, List[str], None] = None,
@@ -590,8 +587,8 @@ class DatapointsAPI(APIClient):
         Args:
             start (Union[int, str, datetime, None]): Inclusive start. Default: 1970-01-01 UTC.
             end (Union[int, str, datetime, None]): Exclusive end. Default: "now"
-            id (Union[None, int, Dict[str, Any], List[Union[int, Dict[str, Any]]]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
-            external_id (Union[None, str, Dict[str, Any], List[Union[str, Dict[str, Any]]]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
+            id (Union[None, int, Dict[str, Any], Sequence[Union[int, Dict[str, Any]]]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
+            external_id (Union[None, str, Dict[str, Any], Sequence[Union[str, Dict[str, Any]]]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
             aggregates (Union[str, List[str], None]): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str): The granularity to fetch aggregates at. e.g. '1s', '2h', '10d'. Default: None.
             limit (int): Maximum number of datapoints to return for each time series. Default: None (no limit)
@@ -599,7 +596,7 @@ class DatapointsAPI(APIClient):
             ignore_unknown_ids (bool): Whether or not to ignore missing time series rather than raising an exception. Default: False
 
         Returns:
-            Union[None, Datapoints, DatapointsList]: A `Datapoints` object containing the requested data, or a `DatapointsList` if multiple time series were asked for. If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`. The ordering is first ids, then external_ids.
+            Union[None, Datapoints, DatapointsList]: A `Datapoints` object containing the requested data, or a `DatapointsList` if multiple time series were asked for (the ordering is ids first, then external_ids). If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
 
         Examples:
 
@@ -625,7 +622,7 @@ class DatapointsAPI(APIClient):
 
             All parameters can be individually set if you pass (one or more) dictionaries (even `ignore_unknown_ids`, contrary to the API).
             If you also pass top-level parameters, these will be overruled by the individual parameters (where both exist). You are free to
-            mix any kind of ids and external ids: single identifiers, single dictionaries and (mixed) lists of these.
+            mix any kind of ids and external ids: Single identifiers, single dictionaries and (mixed) lists of these.
 
             Let's say you want different aggregates and end-times for a few time series (when only fetching a single aggregate, you may pass
             the string directly for convenience)::
@@ -648,18 +645,24 @@ class DatapointsAPI(APIClient):
                 ...     id=[42, 43, 44, ..., 499, 500], start="2w-ago")
                 >>> ts_350 = dps_lst.get(id=350)  # `Datapoints` object
 
-            ...but what happens if you request duplicate `id`s or `external_id`s? Let's say you need to fetch data from multiple
-            disconnected periods, e.g. stock prices only from recessions. In this case the `.get` method will return a list of `Datapoints`
-            instead, in the same order (similar to how slicing works with non-unique indices on Pandas DataFrames)::
+            ...but what happens if you request some duplicate `id`s or `external_id`s? In this example we will show how to get data from
+            multiple disconnected periods. Let's say you're tasked to train a machine learning model to recognize a specific failure mode
+            of a system, and you want the training data to only be from certain periods (when an alarm was on/high). Assuming these alarms
+            are stored as events in CDF, with both start- and end times, we can use these directly in the query.
 
+            After fetching, the `.get` method will return a list of `Datapoints` instead, (assuming we have more than one event) in the
+            same order, similar to how slicing works with non-unique indices on Pandas DataFrames::
+
+                >>> periods = client.events.list(type="alarm", subtype="pressure")
+                >>> sensor_xid = "foo-pressure-bar"
                 >>> dps_lst = client.time_series.data.retrieve(
-                ...     id=[
-                ...         42, 43, 44, 45,
-                ...         {"id": 350, "start": datetime(1907, 10, 14, tzinfo=utc), "end": datetime(1907, 11, 6, tzinfo=utc)},
-                ...         {"id": 350, "start": datetime(1929, 9, 4, tzinfo=utc), "end": datetime(1929, 11, 13, tzinfo=utc)},
+                ...     id=[42, 43, 44],
+                ...     external_id=[
+                ...         {"external_id": sensor_xid, "start": ev.start_time, "end": ev.end_time}
+                ...         for ev in periods
                 ...     ])
                 >>> ts_44 = dps_lst.get(id=44)  # Single `Datapoints` object
-                >>> ts_350_lst = dps_lst.get(id=350)  # List of two `Datapoints` objects
+                >>> ts_lst = dps_lst.get(external_id=sensor_xid)  # List of `len(periods)` `Datapoints` objects
 
             The API has an endpoint to "retrieve latest (before)", but not "after". Luckily, we can emulate that behaviour easily.
             Let's say we have a very dense time series and do not want to fetch all of the available raw data (or fetch less precise
@@ -716,8 +719,8 @@ class DatapointsAPI(APIClient):
     def retrieve_arrays(
         self,
         *,
-        id: Union[None, int, Dict[str, Any], List[Union[int, Dict[str, Any]]]] = None,
-        external_id: Union[None, str, Dict[str, Any], List[Union[str, Dict[str, Any]]]] = None,
+        id: Union[None, int, Dict[str, Any], Sequence[Union[int, Dict[str, Any]]]] = None,
+        external_id: Union[None, str, Dict[str, Any], Sequence[Union[str, Dict[str, Any]]]] = None,
         start: Union[int, str, datetime, None] = None,
         end: Union[int, str, datetime, None] = None,
         aggregates: Union[str, List[str], None] = None,
@@ -733,8 +736,8 @@ class DatapointsAPI(APIClient):
         Args:
             start (Union[int, str, datetime, None]): Inclusive start. Default: 1970-01-01 UTC.
             end (Union[int, str, datetime, None]): Exclusive end. Default: "now"
-            id (Union[None, int, Dict[str, Any], List[Union[int, Dict[str, Any]]]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
-            external_id (Union[None, str, Dict[str, Any], List[Union[str, Dict[str, Any]]]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
+            id (Union[None, int, Dict[str, Any], Sequence[Union[int, Dict[str, Any]]]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
+            external_id (Union[None, str, Dict[str, Any], Sequence[Union[str, Dict[str, Any]]]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
             aggregates (Union[str, List[str], None]): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str): The granularity to fetch aggregates at. e.g. '1s', '2h', '10d'. Default: None.
             limit (int): Maximum number of datapoints to return for each time series. Default: None (no limit)
@@ -742,7 +745,7 @@ class DatapointsAPI(APIClient):
             ignore_unknown_ids (bool): Whether or not to ignore missing time series rather than raising an exception. Default: False
 
         Returns:
-            Union[None, DatapointsArray, DatapointsArrayList]: A `DatapointsArray` object containing the requested data, or a `DatapointsArrayList` if multiple time series were asked for. If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`. The ordering is first ids, then external_ids.
+            Union[None, DatapointsArray, DatapointsArrayList]: A `DatapointsArray` object containing the requested data, or a `DatapointsArrayList` if multiple time series were asked for (the ordering is ids first, then external_ids). If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
 
         Examples:
 
@@ -812,8 +815,8 @@ class DatapointsAPI(APIClient):
     def retrieve_dataframe(
         self,
         *,
-        id: Union[None, int, Dict[str, Any], List[Union[int, Dict[str, Any]]]] = None,
-        external_id: Union[None, str, Dict[str, Any], List[Union[str, Dict[str, Any]]]] = None,
+        id: Union[None, int, Dict[str, Any], Sequence[Union[int, Dict[str, Any]]]] = None,
+        external_id: Union[None, str, Dict[str, Any], Sequence[Union[str, Dict[str, Any]]]] = None,
         start: Union[int, str, datetime, None] = None,
         end: Union[int, str, datetime, None] = None,
         aggregates: Union[str, List[str], None] = None,
@@ -832,8 +835,8 @@ class DatapointsAPI(APIClient):
         Args:
             start (Union[int, str, datetime, None]): Inclusive start. Default: 1970-01-01 UTC.
             end (Union[int, str, datetime, None]): Exclusive end. Default: "now"
-            id (Union[None, int, Dict[str, Any], List[Union[int, Dict[str, Any]]]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
-            external_id (Union[None, str, Dict[str, Any], List[Union[str, Dict[str, Any]]]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
+            id (Union[None, int, Dict[str, Any], Sequence[Union[int, Dict[str, Any]]]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
+            external_id (Union[None, str, Dict[str, Any], Sequence[Union[str, Dict[str, Any]]]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
             aggregates (Union[str, List[str], None]): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str): The granularity to fetch aggregates at. e.g. '1s', '2h', '10d'. Default: None.
             limit (int): Maximum number of datapoints to return for each time series. Default: None (no limit)

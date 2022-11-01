@@ -65,8 +65,8 @@ DatapointsAny = Union[DatapointsAgg, DatapointsNum, DatapointsStr]
 DatapointsRaw = Union[DatapointsNum, DatapointsStr]
 
 RawDatapointValue = Union[float, str]
-DatapointsId = Union[None, int, Dict[str, Any], List[Union[int, Dict[str, Any]]]]
-DatapointsExternalId = Union[None, str, Dict[str, Any], List[Union[str, Dict[str, Any]]]]
+DatapointsId = Union[None, int, Dict[str, Any], Sequence[Union[int, Dict[str, Any]]]]
+DatapointsExternalId = Union[None, str, Dict[str, Any], Sequence[Union[str, Dict[str, Any]]]]
 
 
 class CustomDatapointsQuery(TypedDict, total=False):
@@ -166,9 +166,9 @@ class _SingleTSQueryValidator:
             # Lazy - we postpone evaluation:
             id_or_xid_seq = [cast(Union[int, str, Dict[str, Any]], id_or_xid)]
         elif isinstance(id_or_xid, Sequence):
+            # We use Sequence because we require an ordering of elements
             id_or_xid_seq = id_or_xid
         else:
-            # We use Sequence because we require an ordering of elements
             self._raise_on_wrong_ts_identifier_type(id_or_xid, arg_name, exp_type)
 
         queries = []
