@@ -549,11 +549,13 @@ class DetectJobBundle:
         if not job_ids:
             raise ValueError("You need to specify job_ids")
         self.job_ids = job_ids
+        self._remaining_job_ids: List[int] = []
+
         self.jobs: List[Dict[str, Any]] = []
         self.succeeded: List[Dict[str, Any]] = []
         self.failed: List[Dict[str, Any]] = []
+
         self._result: List[Dict[str, Any]] = []
-        self._remaining_job_ids: List[Dict[str, Any]] = []
 
     def __repr__(self) -> str:
         return (
@@ -589,22 +591,16 @@ class DetectJobBundle:
             interval (int): Poll status every this many seconds.
         """
         start = time.time()
-        c = 0
+        self._remaining_job_ids = self.job_ids
         while timeout is None or time.time() < start + timeout:
-            if c == 0:
-                self.jobs = self._cognite_client.diagrams._post(self._STATUS_PATH, json={"items": self.job_ids}).json()[
-                    "items"
-                ]
-            elif len(self._remaining_job_ids) >= 1:
-                self.back_off()
-                self.jobs = self._cognite_client.diagrams._post(
-                    self._STATUS_PATH, json={"items": self._remaining_job_ids}
-                ).json()["items"]
-            else:
-                return
+            self.jobs = self._cognite_client.diagrams._post(
+                self._STATUS_PATH, json={"items": self._remaining_job_ids}
+            ).json()["items"]
+
             # Assign the jobs that aren't finished
             self._remaining_job_ids = [j["jobId"] for j in self.jobs if JobStatus(j["status"]).is_not_finished()]
-            c += 1
+            if self._remaining_job_ids:
+                self.back_off()
 
     def fetch_results(self) -> List[Dict[str, Any]]:
         # Reset
