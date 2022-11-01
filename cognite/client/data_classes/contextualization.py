@@ -612,7 +612,7 @@ class DetectJobBundle:
             self._cognite_client.diagrams._get(f"{self._RESOURCE_PATH}{j}").json() for j in self.job_ids
         ]
 
-        # Break out
+        # Sort into succeeded and failed
         for job_result in list_of_job_results:
             for item in job_result["items"]:
                 if "errorMessage" in item:
