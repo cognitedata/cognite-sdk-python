@@ -14,7 +14,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [4.11.1] - 2022-10-28
+## [4.11.1] - 2022-11-01
 ### Changed
 - Detect endpoint update
 ### Added
