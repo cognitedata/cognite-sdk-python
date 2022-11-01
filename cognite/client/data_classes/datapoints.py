@@ -630,7 +630,7 @@ class DatapointsList(CogniteResourceList):
         self,
         id: int = None,
         external_id: str = None,
-    ) -> Union[None, DatapointsList, List[DatapointsList]]:
+    ) -> Union[None, Datapoints, List[Datapoints]]:
         # TODO: Question, can we type annotate without specifying the function?
         return super().get(id, external_id)  # type: ignore [return-value]
 
