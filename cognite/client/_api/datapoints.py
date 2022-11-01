@@ -645,7 +645,7 @@ class DatapointsAPI(APIClient):
                 ...     id=[42, 43, 44, ..., 499, 500], start="2w-ago")
                 >>> ts_350 = dps_lst.get(id=350)  # `Datapoints` object
 
-            ...but what happens if you request some duplicate `id`s or `external_id`s? In this example we will show how to get data from
+            ...but what happens if you request some duplicate ids or external_ids? In this example we will show how to get data from
             multiple disconnected periods. Let's say you're tasked to train a machine learning model to recognize a specific failure mode
             of a system, and you want the training data to only be from certain periods (when an alarm was on/high). Assuming these alarms
             are stored as events in CDF, with both start- and end times, we can use these directly in the query.
