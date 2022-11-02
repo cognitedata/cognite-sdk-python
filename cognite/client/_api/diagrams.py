@@ -1,6 +1,6 @@
 import numbers
 from math import ceil
-from typing import Any, Dict, List, Sequence, Type, Union
+from typing import Any, Dict, List, Optional, Sequence, Type, Union
 
 from requests import Response
 
@@ -85,7 +85,7 @@ class DiagramsAPI(APIClient):
         min_tokens: int = 2,
         file_ids: Union[int, Sequence[int]] = None,
         file_external_ids: Union[str, Sequence[str]] = None,
-        multiple_jobs: bool = False,
+        multiple_jobs: Optional[bool] = False,
     ) -> Union[DiagramDetectResults, DetectJobBundle]:
 
         """Detect entities in a PNID.
@@ -100,6 +100,7 @@ class DiagramsAPI(APIClient):
             min_tokens (int): Minimal number of tokens a match must be based on
             file_ids (Sequence[int]): ID of the files, should already be uploaded in the same tenant.
             file_external_ids (Sequence[str]): File external ids.
+            multiple_jobs (Optional[bool]): Enables you to publish multiple jobs. The method return will be a JobBundle
         Returns:
             DiagramDetectResults: Resulting queued job. Note that .result property of this job will block waiting for results.
         Examples:
@@ -110,7 +111,7 @@ class DiagramsAPI(APIClient):
                     search_field="userDefinedField",
                     partial_match=True,
                     min_tokens=2,
-                    file_ids="101",
+                    file_ids=[101],
                     file_external_ids=["Test1"],
                 )
         """

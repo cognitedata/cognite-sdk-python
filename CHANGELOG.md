@@ -16,9 +16,9 @@ Changes are grouped as follows
 
 ## [4.11.1] - 2022-11-01
 ### Changed
-- Detect endpoint update
+- `Detect endpoint` (for Engineering Diagram detect jobs) is updated to spawn and handle multiple jobs.
 ### Added
-- JobBundle
+- DetectJobBundle dataclass: A way to manage multiple files and jobs.
 
 ## [4.11.0] - 2022-10-17
 ### Added
