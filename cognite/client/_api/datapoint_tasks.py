@@ -43,6 +43,7 @@ from cognite.client.utils._time import (
     align_start_and_end_for_granularity,
     granularity_to_ms,
     split_time_range,
+    time_ago_to_ms,
     timestamp_to_ms,
 )
 
@@ -139,6 +140,20 @@ class _SingleTSQueryValidator:
             include_outside_points=user_query.include_outside_points,
             ignore_unknown_ids=user_query.ignore_unknown_ids,
         )
+        # We want all start/end = "now" (and those using the same relative time specifiers, like "4d-ago")
+        # queries to get the same time domain to fetch. This also -guarantees- that we correctly raise
+        # exception 'end not after start' if both are set to the same value.
+        self.__time_now = timestamp_to_ms("now")
+
+    def _ts_to_ms_frozen_now(self, ts: Union[int, str, datetime, None], default: int) -> int:
+        # Time 'now' is frozen for all queries in a single call from the user, leading to identical
+        # results e.g. "4d-ago" and "now"
+        if ts is None:
+            return default
+        elif isinstance(ts, str):
+            return self.__time_now - time_ago_to_ms(ts)
+        else:
+            return timestamp_to_ms(ts)
 
     def validate_and_create_single_queries(self) -> List[_SingleTSQueryBase]:
         queries = []
@@ -316,13 +331,8 @@ class _SingleTSQueryValidator:
         is_raw: bool,
         identifier: Identifier,
     ) -> Tuple[int, int]:
-        if start is None:
-            start = 0  # 1970-01-01
-        else:
-            start = timestamp_to_ms(start)
-        if end is None:
-            end = "now"
-        end = timestamp_to_ms(end)
+        start = self._ts_to_ms_frozen_now(start, default=0)  # 1970-01-01
+        end = self._ts_to_ms_frozen_now(end, default=self.__time_now)
 
         if end <= start:
             raise ValueError(
