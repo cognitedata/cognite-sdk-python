@@ -43,19 +43,7 @@ class TestPNIDParsingIntegration:
         # Enable multiple jobs
         job_bundle = cognite_client.diagrams.detect(file_ids=[file_id], entities=entities, multiple_jobs=True)
         assert isinstance(job_bundle, DetectJobBundle)
-        succeeded, _failed = job_bundle.result
-        assert {
-            "status",
-            "statusCount",
-            "jobId",
-            "items",
-            "createdTime",
-            "minTokens",
-            "searchField",
-            "numFiles",
-            "partialMatch",
-            "startTime",
-        }.issubset(succeeded[0])
-        assert {"fileId", "annotations"}.issubset(succeeded[0]["items"][0])
+        succeeded, failed = job_bundle.result
         assert succeeded[0]["status"] in ["Completed", "Running"]
         assert len(succeeded) == 1
+        assert len(failed) == 0
