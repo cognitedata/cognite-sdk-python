@@ -70,9 +70,13 @@ class TestJobBundle:
             )
             mock_client.diagrams._post.return_value = requestMock
 
-            a = DetectJobBundle(cognite_client=mock_client, job_ids=_job_ids)
-            assert a.job_ids == _job_ids
-            assert a.result[0]["status"] == "Completed"
+            job_bundle = DetectJobBundle(cognite_client=mock_client, job_ids=_job_ids)
+            assert job_bundle.job_ids == _job_ids
+            s, f = job_bundle.result
+            assert len(s) == 2
+            assert len(f) == 0
+            assert s[0]["status"] == "Completed"
+            assert s[1]["status"] == "Completed"
 
     @patch("cognite.client.data_classes.contextualization.DetectJobBundle._WAIT_TIME", 0)
     def test_DetectJobBundle_one_running(self, mock_base_job_response) -> None:
@@ -94,11 +98,13 @@ class TestJobBundle:
                 }
             )
             mock_client.diagrams._post.side_effect = [requestMock, requestMock_second_round]
-            a = DetectJobBundle(cognite_client=mock_client, job_ids=[1, 2])
-            assert a.result[0]["status"] == "Completed"
-            assert a.result[0]["status"] == "Completed"
-            assert a._WAIT_TIME == 2  # NOTE: Overwritten to 0, then added 2
-
+            job_bundle = DetectJobBundle(cognite_client=mock_client, job_ids=[1, 2])
+            s, f = job_bundle.result
+            assert len(f) == 0
+            assert len(s) == 2
+            assert s[0]["status"] == "Completed"
+            assert s[1]["status"] == "Completed"
+            assert job_bundle._WAIT_TIME == 2  # NOTE: Overwritten to 0, then added 2
             assert mock_client.diagrams._post.call_count == 2
 
     def test_DetectJobBundle_failing(self, mock_base_job_response) -> None:
@@ -138,4 +144,8 @@ class TestJobBundle:
             ]
             mock_client.diagrams._post.return_value = requestMock
             a = DetectJobBundle(cognite_client=mock_client, job_ids=[1, 2])
-            assert a.failed[0]["errorMessage"] == "somethingWentWrong"
+            s, f = a.result
+            assert len(s) == 1
+            assert len(f) == 1
+            assert s[0]["status"] == "Completed"
+            assert f[0]["errorMessage"] == "somethingWentWrong"

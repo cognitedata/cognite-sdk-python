@@ -650,9 +650,9 @@ class DetectJobBundle:
         for job_result in self._result:
             for item in job_result["items"]:
                 if "errorMessage" in item:
-                    failed.append({**item, **{"job_id": job_result["jobId"]}})
+                    failed.append({**item, **{"job_id": job_result["jobId"], "status": job_result["status"]}})
                 else:
-                    succeeded.append({**item, **{"job_id": job_result["jobId"]}})
+                    succeeded.append({**item, **{"job_id": job_result["jobId"], "status": job_result["status"]}})
         return succeeded, failed
 
 
