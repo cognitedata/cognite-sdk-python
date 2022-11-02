@@ -12,22 +12,22 @@ class TestPNIDParsingIntegration:
     def test_run_diagram_detect(self, cognite_client):
         entities = [{"name": "YT-96122"}, {"name": "XE-96125", "ee": 123}, {"name": "XWDW-9615"}]
         file_id = PNID_FILE_ID
-        job_bundle = cognite_client.diagrams.detect(file_ids=[file_id], entities=entities)
-        assert isinstance(job_bundle, DiagramDetectResults)
+        detect_job = cognite_client.diagrams.detect(file_ids=[file_id], entities=entities)
+        assert isinstance(detect_job, DiagramDetectResults)
         assert {"statusCount", "numFiles", "items", "partialMatch", "minTokens", "searchField"}.issubset(
-            job_bundle.result
+            detect_job.result
         )
-        assert {"fileId", "annotations"}.issubset(job_bundle.result["items"][0])
-        assert "Completed" == job_bundle.status
-        assert [] == job_bundle.errors
-        assert isinstance(job_bundle.items[0], DiagramDetectItem)
-        assert isinstance(job_bundle[PNID_FILE_ID], DiagramDetectItem)
+        assert {"fileId", "annotations"}.issubset(detect_job.result["items"][0])
+        assert "Completed" == detect_job.status
+        assert [] == detect_job.errors
+        assert isinstance(detect_job.items[0], DiagramDetectItem)
+        assert isinstance(detect_job[PNID_FILE_ID], DiagramDetectItem)
 
-        assert 2 == len(job_bundle[PNID_FILE_ID].annotations)
-        for annotation in job_bundle[PNID_FILE_ID].annotations:
+        assert 3 == len(detect_job[PNID_FILE_ID].annotations)
+        for annotation in detect_job[PNID_FILE_ID].annotations:
             assert 1 == annotation["region"]["page"]
 
-        convert_job = job_bundle.convert()
+        convert_job = detect_job.convert()
 
         assert isinstance(convert_job, DiagramConvertResults)
         assert {"items", "grayscale", "statusCount", "numFiles"}.issubset(convert_job.result)
