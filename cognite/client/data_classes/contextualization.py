@@ -540,25 +540,44 @@ class PersonalProtectiveEquipmentDetectionParameters(VisionResource, ThresholdPa
     pass
 
 
+class DetectJobManager(object):
+    _instance: Optional["DetectJobManager"] = None
+
+    @staticmethod
+    def instance() -> "DetectJobManager":
+        if DetectJobManager._instance is None:
+            DetectJobManager._instance = DetectJobManager()
+        return DetectJobManager._instance
+
+    def __init__(self) -> None:
+        self._warning_shown = False
+        self._has_active_job = False
+
+    def set_active_job(self) -> None:
+        self._has_active_job = True
+
+    def free_active_job(self) -> None:
+        self._has_active_job = False
+
+    def has_active_job(self) -> bool:
+        return self._has_active_job
+
+    def show_warning(self) -> None:
+        if not self._warning_shown:
+            warnings.warn(
+                "DetectJobBundle.result is calling a beta endpoint which is still in development. Breaking changes can happen in between patch versions."
+            )
+            self._warning_shown = True
+
+
 class DetectJobBundle:
     _RESOURCE_PATH = "/context/diagram/detect/"
     _STATUS_PATH = "/context/diagram/detect/status"
     _WAIT_TIME = 2
-    _warning_shown = False
-
-    @classmethod
-    def _show_warning(cls) -> bool:
-        if not cls._warning_shown:
-            warnings.warn(
-                f"DetectJobBundle.result is calling {cls._STATUS_PATH} - which is in beta and still in development. Breaking changes can happen in between patch versions."
-            )
-            cls._warning_shown = True
-            return True
-        return False
 
     def __init__(self, job_ids: List[int], cognite_client: "CogniteClient" = None):
         # Show warning
-        DetectJobBundle._show_warning()
+        DetectJobManager.instance().show_warning()
 
         self._cognite_client = cast("CogniteClient", cognite_client)
         if not job_ids:
@@ -614,8 +633,11 @@ class DetectJobBundle:
 
             # Assign the jobs that aren't finished
             self._remaining_job_ids = [j["jobId"] for j in self.jobs if JobStatus(j["status"]).is_not_finished()]
+
             if self._remaining_job_ids:
                 self.back_off()
+            else:
+                break
 
     def fetch_results(self) -> List[Dict[str, Any]]:
         # Reset
@@ -633,14 +655,16 @@ class DetectJobBundle:
                 if "errorMessage" in item:
                     self.failed.append({**item, **{"job_id": job_result["jobId"]}})
                 else:
-                    self.succeeded.append(item)
+                    self.succeeded.append({**item, **{"job_id": job_result["jobId"]}})
         return list_of_job_results
 
     @property
     def result(self) -> List[Dict[str, Any]]:
         """Waits for the job to finish and returns the results."""
+        print("resultYOhooo")
         if not self._result:
             self.wait_for_completion()
+            DetectJobManager.instance().free_active_job()
             self._result = self.fetch_results()
         assert self._result is not None
         return self._result

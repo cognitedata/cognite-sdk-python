@@ -138,5 +138,4 @@ class TestJobBundle:
             ]
             mock_client.diagrams._post.return_value = requestMock
             a = DetectJobBundle(cognite_client=mock_client, job_ids=[1, 2])
-            print(a.result)
             assert a.failed[0]["errorMessage"] == "somethingWentWrong"

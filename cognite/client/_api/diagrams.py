@@ -8,13 +8,17 @@ from cognite.client._api_client import APIClient
 from cognite.client.data_classes._base import CogniteResource
 from cognite.client.data_classes.contextualization import (
     DetectJobBundle,
+    DetectJobManager,
     DiagramConvertResults,
     DiagramDetectResults,
     T_ContextualizationJob,
 )
 from cognite.client.utils._auxiliary import to_camel_case
 
-DETECT_MAX_BATCH_SIZE = 50
+DETECT_API_FILE_LIMIT = 50  # Actually 50 on the API side, but we cannot feasibly handle that now.
+# https://docs.cognite.com/api/playground/#tag/Engineering-diagrams/operation/diagramDetect
+DETECT_API_STATUS_JOB_LIMIT = 1000
+# https://docs.cognite.com/api/playground/#tag/Engineering-diagrams/operation/diagramDetectMultipleResults
 
 
 class DiagramsAPI(APIClient):
@@ -81,8 +85,9 @@ class DiagramsAPI(APIClient):
         min_tokens: int = 2,
         file_ids: Union[int, Sequence[int]] = None,
         file_external_ids: Union[str, Sequence[str]] = None,
-        enable_multiple_jobs: bool = False,
+        multiple_jobs: bool = False,
     ) -> Union[DiagramDetectResults, DetectJobBundle]:
+
         """Detect entities in a PNID.
         The results are not written to CDF.
         Note: All users on this CDF subscription with assets read-all and files read-all capabilities in the project,
@@ -114,10 +119,23 @@ class DiagramsAPI(APIClient):
             entity.dump(camel_case=True) if isinstance(entity, CogniteResource) else entity for entity in entities
         ]
 
-        if enable_multiple_jobs:
+        if multiple_jobs:
+            # Limit
+            num_new_jobs = ceil(len(items) / DETECT_API_FILE_LIMIT)
+            if num_new_jobs > DETECT_API_STATUS_JOB_LIMIT:
+                raise ValueError(
+                    f"Number of jobs exceed limit of: '{DETECT_API_STATUS_JOB_LIMIT}'. Number of jobs: '{num_new_jobs}'"
+                )
+
+            detect_job_manager = DetectJobManager.instance()
+            if detect_job_manager.has_active_job():
+                raise ValueError(
+                    "There is already an active DetectJobBundle from a previous call of this method. Please call DetectJobBundle.result and wait for it to finish before starting a new DetectJobBundle."
+                )
+
             jobs: List[DiagramDetectResults] = []
-            for i in range(ceil(len(items) / DETECT_MAX_BATCH_SIZE)):
-                batch = items[0 + (DETECT_MAX_BATCH_SIZE * i) : DETECT_MAX_BATCH_SIZE * (i + 1)]
+            for i in range(num_new_jobs):
+                batch = items[(DETECT_API_FILE_LIMIT * i) : DETECT_API_FILE_LIMIT * (i + 1)]
 
                 jobs.append(
                     self._run_job(
@@ -131,6 +149,7 @@ class DiagramsAPI(APIClient):
                         job_cls=DiagramDetectResults,
                     )
                 )
+                detect_job_manager.set_active_job()
                 # TODO: Add detect job post throttling
             return DetectJobBundle(cognite_client=self._cognite_client, job_ids=[j.job_id for j in jobs if j.job_id])
 
