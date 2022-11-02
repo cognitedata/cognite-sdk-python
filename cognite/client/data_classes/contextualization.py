@@ -608,7 +608,7 @@ class DetectJobBundle:
             + ")"
         )
 
-    def back_off(self) -> None:
+    def _back_off(self) -> None:
         """
         Linear back off, in order to limit load on our API.
         Starts at _WAIT_TIME and goes to 10 seconds.
@@ -634,7 +634,7 @@ class DetectJobBundle:
             self._remaining_job_ids = [j["jobId"] for j in self.jobs if JobStatus(j["status"]).is_not_finished()]
 
             if self._remaining_job_ids:
-                self.back_off()
+                self._back_off()
             else:
                 break
 
