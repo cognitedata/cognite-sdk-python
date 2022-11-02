@@ -59,14 +59,18 @@ class TestPNIDParsingUnit:
         assert isinstance(job, ContextualizationJob)
 
         # Enable multiple jobs
-        job = cognite_client.diagrams.detect(file_ids=file_ids, entities=entities, multiple_jobs=True)
-        assert isinstance(job, DetectJobBundle)
-        assert job.result == [diagram_get_result.json()]
+        job_bundle = cognite_client.diagrams.detect(file_ids=file_ids, entities=entities, multiple_jobs=True)
+        assert isinstance(job_bundle, DetectJobBundle)
+        successes, _failures = job_bundle.result
+        successes == [diagram_get_result.json()]
 
         # Provoking failing because num_posts > limit
         with patch("cognite.client._api.diagrams.DETECT_API_FILE_LIMIT", 1):
-            job = cognite_client.diagrams.detect(file_ids=file_ids, entities=entities, multiple_jobs=True)
-            assert len(job.result) == 3
+            job_bundle = cognite_client.diagrams.detect(file_ids=file_ids, entities=entities, multiple_jobs=True)
+            successes, _failures = job_bundle.result
+            assert len(successes) == 3
             with patch("cognite.client._api.diagrams.DETECT_API_STATUS_JOB_LIMIT", 1):
                 with pytest.raises(ValueError):
-                    job = cognite_client.diagrams.detect(file_ids=file_ids, entities=entities, multiple_jobs=True)
+                    job_bundle = cognite_client.diagrams.detect(
+                        file_ids=file_ids, entities=entities, multiple_jobs=True
+                    )

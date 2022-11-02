@@ -586,8 +586,6 @@ class DetectJobBundle:
         self._remaining_job_ids: List[int] = []
 
         self.jobs: List[Dict[str, Any]] = []
-        self.succeeded: List[Dict[str, Any]] = []
-        self.failed: List[Dict[str, Any]] = []
 
         self._result: List[Dict[str, Any]] = []
 
@@ -599,10 +597,6 @@ class DetectJobBundle:
             + str(self.jobs)
             + ", self._result="
             + str(self._result)
-            + ", self.failed="
-            + str(self.failed)
-            + ", self.succeeded="
-            + str(self.succeeded)
             + ", self._remaining_job_ids="
             + str(self._remaining_job_ids)
             + ")"
@@ -639,33 +633,27 @@ class DetectJobBundle:
                 break
 
     def fetch_results(self) -> List[Dict[str, Any]]:
-        # Reset
-        self.failed = []
-        self.succeeded = []
-
         # Check status
-        list_of_job_results = [
-            self._cognite_client.diagrams._get(f"{self._RESOURCE_PATH}{j}").json() for j in self.job_ids
-        ]
-
-        # Sort into succeeded and failed
-        for job_result in list_of_job_results:
-            for item in job_result["items"]:
-                if "errorMessage" in item:
-                    self.failed.append({**item, **{"job_id": job_result["jobId"]}})
-                else:
-                    self.succeeded.append({**item, **{"job_id": job_result["jobId"]}})
-        return list_of_job_results
+        return [self._cognite_client.diagrams._get(f"{self._RESOURCE_PATH}{j}").json() for j in self.job_ids]
 
     @property
-    def result(self) -> List[Dict[str, Any]]:
+    def result(self) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
         """Waits for the job to finish and returns the results."""
         if not self._result:
             self.wait_for_completion()
             DetectJobManager.instance().free_active_job()
             self._result = self.fetch_results()
         assert self._result is not None
-        return self._result
+        # Sort into succeeded and failed
+        failed: List[Dict[str, Any]] = []
+        succeeded: List[Dict[str, Any]] = []
+        for job_result in self._result:
+            for item in job_result["items"]:
+                if "errorMessage" in item:
+                    failed.append({**item, **{"job_id": job_result["jobId"]}})
+                else:
+                    succeeded.append({**item, **{"job_id": job_result["jobId"]}})
+        return succeeded, failed
 
 
 @dataclass
