@@ -616,7 +616,6 @@ class DetectJobBundle:
         time.sleep(self._WAIT_TIME)
         if self._WAIT_TIME < 10:
             self._WAIT_TIME += 2
-        return
 
     def wait_for_completion(self, timeout: int = None) -> None:
         """Waits for all jobs to complete, generally not needed to call as it is called by result.
