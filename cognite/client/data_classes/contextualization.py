@@ -1,4 +1,5 @@
 import time
+import warnings
 from dataclasses import dataclass
 from enum import Enum
 from typing import (
@@ -543,8 +544,22 @@ class DetectJobBundle:
     _RESOURCE_PATH = "/context/diagram/detect/"
     _STATUS_PATH = "/context/diagram/detect/status"
     _WAIT_TIME = 2
+    _warning_shown = False
+
+    @classmethod
+    def _show_warning(cls) -> bool:
+        if not cls._warning_shown:
+            warnings.warn(
+                f"DetectJobBundle.result is calling {cls._STATUS_PATH} - which is in beta and still in development. Breaking changes can happen in between patch versions."
+            )
+            cls._warning_shown = True
+            return True
+        return False
 
     def __init__(self, job_ids: List[int], cognite_client: "CogniteClient" = None):
+        # Show warning
+        DetectJobBundle._show_warning()
+
         self._cognite_client = cast("CogniteClient", cognite_client)
         if not job_ids:
             raise ValueError("You need to specify job_ids")
