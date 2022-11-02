@@ -660,7 +660,6 @@ class DetectJobBundle:
     @property
     def result(self) -> List[Dict[str, Any]]:
         """Waits for the job to finish and returns the results."""
-        print("resultYOhooo")
         if not self._result:
             self.wait_for_completion()
             DetectJobManager.instance().free_active_job()
