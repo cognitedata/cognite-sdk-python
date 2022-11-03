@@ -100,9 +100,11 @@ class DiagramsAPI(APIClient):
             min_tokens (int): Minimal number of tokens a match must be based on
             file_ids (Sequence[int]): ID of the files, should already be uploaded in the same tenant.
             file_external_ids (Sequence[str]): File external ids.
-            multiple_jobs (Optional[bool]): Enables you to publish multiple jobs. The method return will be a JobBundle
+            multiple_jobs (Optional[bool]): Enables you to publish multiple jobs. The method will return a DetectJobBundle
         Returns:
-            DiagramDetectResults: Resulting queued job. Note that .result property of this job will block waiting for results.
+            DiagramDetectResults: Resulting queued job. Note that the .result property of this job will block waiting for results.
+            or
+            DetectJobBundle: This object will be able to handle multiple jobs. Note that the .result will block waiting for results.
         Examples:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
