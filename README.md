@@ -54,8 +54,7 @@ $ poetry add cognite-sdk -E pandas -E geo
 
 ### Performance notes
 If you regularly need to fetch large amounts of datapoints, consider installing with `numpy`
-(or with `pandas`, as it depends on numpy) for best performance, then use the `retrieve_arrays` endpoint.
-This avoids building large pure Python data structures, and instead reads data directly into `numpy.ndarrays`.
+(or with `pandas`, as it depends on `numpy`) for best performance, then use the `retrieve_arrays` (or `retrieve_dataframe`) endpoint(s). This avoids building large pure Python data structures, and instead reads data directly into memory-efficient `numpy.ndarrays`.
 
 ### Windows specific
 
@@ -72,6 +71,9 @@ pip install cognite-sdk
 
 ## Changelog
 Wondering about upcoming or previous changes to the SDK? Take a look at the [CHANGELOG](https://github.com/cognitedata/cognite-sdk-python/blob/master/CHANGELOG.md).
+
+## Migration Guide
+To help you upgrade your code(base) quickly and safely to a newer major version of the SDK, check out our migration guide. It is a more focused guide based on the detailed change log. [MIGRATION GUIDE](https://github.com/cognitedata/cognite-sdk-python/blob/master/MIGRATION_GUIDE.md).
 
 ## Contributing
 Want to contribute? Check out [CONTRIBUTING](https://github.com/cognitedata/cognite-sdk-python/blob/master/CONTRIBUTING.md).
