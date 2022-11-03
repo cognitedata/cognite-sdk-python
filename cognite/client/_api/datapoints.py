@@ -23,6 +23,7 @@ from typing import (
     Sequence,
     Set,
     Tuple,
+    Type,
     TypeVar,
     Union,
     cast,
@@ -66,6 +67,7 @@ TSQueryList = List[_SingleTSQueryBase]
 PoolSubtaskType = Tuple[int, float, float, BaseDpsFetchSubtask]
 
 T = TypeVar("T")
+TResLst = TypeVar("TResLst", DatapointsList, DatapointsArrayList)
 
 
 def select_dps_fetch_strategy(dps_client: DatapointsAPI, user_query: _DatapointsQuery) -> DpsFetchStrategy:
@@ -111,27 +113,15 @@ class DpsFetchStrategy(ABC):
     def fetch_all_datapoints(self) -> DatapointsList:
         with PriorityThreadPoolExecutor(max_workers=self.max_workers) as pool:
             ordered_results = self._fetch_all(pool, use_numpy=False)
-        return self._finalize_tasks(ordered_results)
+        return self._finalize_tasks(ordered_results, resource_lst=DatapointsList)
 
     def fetch_all_datapoints_numpy(self) -> DatapointsArrayList:
         with PriorityThreadPoolExecutor(max_workers=self.max_workers) as pool:
             ordered_results = self._fetch_all(pool, use_numpy=True)
-        return self._finalize_tasks_numpy(ordered_results)
+        return self._finalize_tasks(ordered_results, resource_lst=DatapointsArrayList)
 
-    def _finalize_tasks(
-        self,
-        ordered_results: List[BaseConcurrentTask],
-    ) -> DatapointsList:
-        return DatapointsList(
-            [ts_task.get_result() for ts_task in ordered_results],
-            cognite_client=self.dps_client._cognite_client,
-        )
-
-    def _finalize_tasks_numpy(
-        self,
-        ordered_results: List[BaseConcurrentTask],
-    ) -> DatapointsArrayList:
-        return DatapointsArrayList(
+    def _finalize_tasks(self, ordered_results: List[BaseConcurrentTask], resource_lst: Type[TResLst]) -> TResLst:
+        return resource_lst(
             [ts_task.get_result() for ts_task in ordered_results],
             cognite_client=self.dps_client._cognite_client,
         )
