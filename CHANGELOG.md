@@ -17,6 +17,7 @@ Changes are grouped as follows
 ## [4.11.1] - 2022-11-08
 ### Changed
 - Update doc for Vision extract method
+- Improve error message in `VisionExtractJob.save_annotations`
 
 ## [4.11.0] - 2022-10-17
 ### Added
