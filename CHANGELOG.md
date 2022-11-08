@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [4.11.1] - 2022-11-08
+### Changed
+- Update doc for Vision extract method
+
 ## [4.11.0] - 2022-10-17
 ### Added
 - Add `compute` method to `cognite.client.geospatial`
