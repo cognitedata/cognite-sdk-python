@@ -219,7 +219,11 @@ class DatapointsArray(CogniteResource):
     def __getitem__(self, item: Union[int, slice]) -> Union[Datapoint, DatapointsArray]:
         if isinstance(item, slice):
             return self._slice(item)
-        return Datapoint(**{attr: self._dtype_fix(arr[item]) for attr, arr in zip(*self._data_fields())})
+        attrs, arrays = self._data_fields()
+        return Datapoint(
+            timestamp=self._dtype_fix(arrays[0][item]) // 1_000_000,
+            **{attr: self._dtype_fix(arr[item]) for attr, arr in zip(attrs[1:], arrays[1:])},
+        )
 
     def _slice(self, part: slice) -> DatapointsArray:
         data: Dict[str, Any] = {attr: arr[part] for attr, arr in zip(*self._data_fields())}
@@ -228,7 +232,12 @@ class DatapointsArray(CogniteResource):
     def __iter__(self) -> Iterator[Datapoint]:
         # Let's not create a single Datapoint more than we have too:
         attrs, arrays = self._data_fields()
-        yield from (Datapoint(**dict(zip(attrs, map(self._dtype_fix, row)))) for row in zip(*arrays))
+        yield from (
+            Datapoint(
+                timestamp=self._dtype_fix(row[0]) // 1_000_000, **dict(zip(attrs[1:], map(self._dtype_fix, row[1:])))
+            )
+            for row in zip(*arrays)
+        )
 
     @cached_property
     def _dtype_fix(self) -> Callable:
