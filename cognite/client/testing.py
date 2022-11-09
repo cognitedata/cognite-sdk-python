@@ -10,11 +10,23 @@ from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.diagrams import DiagramsAPI
 from cognite.client._api.entity_matching import EntityMatchingAPI
 from cognite.client._api.events import EventsAPI
-from cognite.client._api.extractionpipelines import ExtractionPipelineRunsAPI, ExtractionPipelinesAPI
+from cognite.client._api.extractionpipelines import (
+    ExtractionPipelineConfigsAPI,
+    ExtractionPipelineRunsAPI,
+    ExtractionPipelinesAPI,
+)
 from cognite.client._api.files import FilesAPI
 from cognite.client._api.functions import FunctionCallsAPI, FunctionsAPI, FunctionSchedulesAPI
 from cognite.client._api.geospatial import GeospatialAPI
-from cognite.client._api.iam import IAMAPI, APIKeysAPI, GroupsAPI, SecurityCategoriesAPI, ServiceAccountsAPI
+from cognite.client._api.iam import (
+    IAMAPI,
+    APIKeysAPI,
+    GroupsAPI,
+    SecurityCategoriesAPI,
+    ServiceAccountsAPI,
+    SessionsAPI,
+    TokenAPI,
+)
 from cognite.client._api.labels import LabelsAPI
 from cognite.client._api.login import LoginAPI
 from cognite.client._api.raw import RawAPI, RawDatabasesAPI, RawRowsAPI, RawTablesAPI
@@ -82,6 +94,8 @@ class CogniteClientMock(MagicMock):
         self.iam.api_keys = MagicMock(spec_set=APIKeysAPI)
         self.iam.groups = MagicMock(spec_set=GroupsAPI)
         self.iam.security_categories = MagicMock(spec_set=SecurityCategoriesAPI)
+        self.iam.sessions = MagicMock(spec_set=SessionsAPI)
+        self.iam.token = MagicMock(spec_set=TokenAPI)
 
         self.raw = MagicMock(spec=RawAPI)
         self.raw.databases = MagicMock(spec_set=RawDatabasesAPI)
@@ -95,8 +109,11 @@ class CogniteClientMock(MagicMock):
         self.diagrams = MagicMock(spec_set=DiagramsAPI)
 
         self.entity_matching = MagicMock(spec_set=EntityMatchingAPI)
-        self.extraction_pipelines = MagicMock(spec_set=ExtractionPipelinesAPI)
-        self.extraction_pipeline_runs = MagicMock(spec_set=ExtractionPipelineRunsAPI)
+
+        self.extraction_pipelines = MagicMock(spec=ExtractionPipelinesAPI)
+        self.extraction_pipelines.runs = MagicMock(spec_set=ExtractionPipelineRunsAPI)
+        self.extraction_pipelines.config = MagicMock(spec_set=ExtractionPipelineConfigsAPI)
+
         self.geospatial = MagicMock(spec_set=GeospatialAPI)
 
         self.templates = MagicMock(spec=TemplatesAPI)
