@@ -97,7 +97,7 @@ Read more below in the removed section or check out the method's updated documen
 
 ### Fixed: Extended time domain
 - `TimeSeries.[first/count/latest]()` now work with the expanded time domain (minimum age of datapoints was moved from 1970 to 1900, see [4.2.1]).
-  - `TimeSeries.latest()` now works with `before=0` (bug fixed in `retrieve_latest`).
+  - `TimeSeries.latest()` now supports the `before` argument similar to `DatapointsAPI.retrieve_latest`.
   - `TimeSeries.first()` now considers datapoints before 1970 and after "now".
   - `TimeSeries.count()` now considers datapoints before 1970 and after "now" and will raise an error for string time series as `count` (or any other aggregate) is not defined.
 - `DatapointsAPI.retrieve_latest` would give latest datapoint `before="now"` when given `before=0` (1970) because of a bad boolean check. Used to not be a problem since there were no data before epoch.

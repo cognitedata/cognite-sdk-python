@@ -1,4 +1,5 @@
 import pprint
+from contextlib import suppress
 from typing import Dict, Optional, Set
 
 from cognite.client import utils
@@ -46,7 +47,7 @@ class ClientConfig:
     Args:
         client_name (str): A user-defined name for the client. Used to identify number of unique applications/scripts
             running on top of CDF.
-        project (str): Project. Defaults to project of given API key.
+        project (str): CDF Project name.
         credentials (CredentialProvider): Credentials. e.g. APIKey, Token, ClientCredentials.
         api_subversion (str): API subversion
         base_url (str): Base url to send requests to. Defaults to "https://api.cognitedata.com"
@@ -85,11 +86,8 @@ class ClientConfig:
             utils._logging._configure_logger_for_debug_mode()
 
         if not global_config.disable_pypi_version_check:
-            try:
+            with suppress(Exception):  # PyPI might be unreachable, if so, skip version check
                 utils._auxiliary._check_client_has_newest_major_version()
-            except Exception:
-                # PyPI is for some reason not reachable, skip version check
-                pass
 
     def __str__(self) -> str:
         return pprint.pformat(self.__dict__, indent=4)
