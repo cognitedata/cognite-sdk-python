@@ -110,6 +110,14 @@ class DpsFetchStrategy(ABC):
         self.max_workers = max_workers
         self.n_queries = len(all_queries)
 
+        self._make_dps_request_using_protobuf = functools.partial(
+            self.dps_client._do_request,
+            method="POST",
+            url_path=self.dps_client._RESOURCE_PATH + "/list",
+            accept="application/protobuf",
+            timeout=self.dps_client._config.timeout,
+        )
+
     def fetch_all_datapoints(self) -> DatapointsList:
         with PriorityThreadPoolExecutor(max_workers=self.max_workers) as pool:
             ordered_results = self._fetch_all(pool, use_numpy=False)
@@ -141,16 +149,6 @@ class EagerDpsFetcher(DpsFetchStrategy):
     split based on the density of datapoints returned and other heuristics like granularity (e.g. given '1h', at
     most 168 datapoints exist per week).
     """
-
-    def __init__(self, *args: Any, **kwargs: Any):
-        super().__init__(*args, **kwargs)
-        self._make_dps_request_using_protobuf = functools.partial(
-            self.dps_client._do_request,
-            method="POST",
-            url_path=self.dps_client._RESOURCE_PATH + "/list",
-            accept="application/protobuf",
-            timeout=self.dps_client._config.timeout,
-        )
 
     def __request_datapoints_jit(
         self,
@@ -268,13 +266,6 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
     def __init__(self, *args: Any) -> None:
         super().__init__(*args)
         self.counter = itertools.count()
-        self._make_dps_request_using_protobuf = functools.partial(
-            self.dps_client._do_request,
-            method="POST",
-            url_path=self.dps_client._RESOURCE_PATH + "/list",
-            accept="application/protobuf",
-            timeout=self.dps_client._config.timeout,
-        )
         # To chunk efficiently, we have subtask pools (heap queues) that we use to prioritise subtasks
         # when building/combining subtasks into a full query:
         self.raw_subtask_pool: List[PoolSubtaskType] = []
@@ -598,17 +589,34 @@ class DatapointsAPI(APIClient):
                 >>> dps = client.time_series.data.retrieve(id=42, start="2w-ago")
 
             You can also get aggregated values, such as `max` or `average`. You may also fetch more than one time series simultaneously. Here we are
-            getting daily averages for all of 2018 for two different time series, specifying start and end as integers (milliseconds after epoch).
-            Note that we are fetching them using their external ids::
+            getting daily averages and maximum values for all of 2018, for two different time series, where we're specifying `start` and `end` as integers
+            (milliseconds after epoch). Note that we are fetching them using their external ids::
 
-                >>> from datetime import datetime, timezone
-                >>> utc = timezone.utc
                 >>> dps_lst = client.time_series.data.retrieve(
                 ...    external_id=["foo", "bar"],
                 ...    start=1514764800000,
                 ...    end=1546300800000,
-                ...    aggregates=["average"],
+                ...    aggregates=["max", "average"],
                 ...    granularity="1d")
+
+            In the two code examples above, we have a `dps` object (an instance of `Datapoints`), and a `dps_lst` object (an instance of `DatapointsList`).
+            On `dps`, which in this case contains raw datapoints, you may access the underlying data directly by using the `.value` attribute. This works for
+            both numeric and string (raw) datapoints, but not aggregates - they must be accessed by their respective names, because you're allowed to fetch up
+            to 10 aggregates simultaneously, and they are stored on the same object::
+
+                >>> raw_data = dps.value
+                >>> first_dps = dps_lst[0]  # optionally: `dps_lst.get(external_id="foo")`
+                >>> avg_data = first_dps.average
+                >>> max_data = first_dps.max
+
+            You may also slice a `Datapoints` object (you get `Datapoints` back), or ask for "a row of data" at a single index in same way you would do with a
+            built-in `list` (you get a `Datapoint` object back, note the singular name). You'll also get `Datapoint` objects when iterating through a `Datapoints`
+            object, but this should generally be avoided (consider this a performance warning)::
+
+                >>> dps_slice = dps[-10:]  # Last ten values
+                >>> dp = dps[3]  # The third value
+                >>> for dp in dps_slice:
+                ...     pass  # do something!
 
             All parameters can be individually set if you pass (one or more) dictionaries (even `ignore_unknown_ids`, contrary to the API).
             If you also pass top-level parameters, these will be overruled by the individual parameters (where both exist). You are free to
@@ -631,8 +639,13 @@ class DatapointsAPI(APIClient):
             on the returned `DatapointsList` object, then specify if you want `id` or `external_id`. Note: If you fetch a time series
             by using `id`, you can still access it with its `external_id` (and the opposite way around), if you know it::
 
+                >>> from datetime import datetime, timezone
+                >>> utc = timezone.utc
                 >>> dps_lst = client.time_series.data.retrieve(
-                ...     id=[42, 43, 44, ..., 499, 500], start="2w-ago")
+                ...     start=datetime(1907, 10, 14, tzinfo=utc),
+                ...     end=datetime(1907, 11, 6, tzinfo=utc),
+                ...     id=[42, 43, 44, ..., 499, 500],
+                ... )
                 >>> ts_350 = dps_lst.get(id=350)  # `Datapoints` object
 
             ...but what happens if you request some duplicate ids or external_ids? In this example we will show how to get data from
