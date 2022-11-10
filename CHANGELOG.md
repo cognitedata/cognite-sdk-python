@@ -92,7 +92,7 @@ There is also a very subtle **bugfix** here: since the previous implementation a
 Read more below in the removed section or check out the method's updated documentation.
 
 ### Fixed
-- `CogniteClientMock` has been updated with 21 missing APIs (including sub-composited APIs like `FunctionsAPI.schedules`) and is now used internally in testing instead of a similar, additional implementation.
+- `CogniteClientMock` has been updated with 24 missing APIs (including sub-composited APIs like `FunctionsAPI.schedules`) and is now used internally in testing instead of a similar, additional implementation.
 - Loads of `assert`s meant for the SDK user have been changed to raising exceptions instead as a safeguard: `assert`s are ignored when running in optimized mode `-O` (or `-OO`).
 
 ### Fixed: Extended time domain
