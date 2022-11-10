@@ -1,5 +1,5 @@
 import numbers
-from typing import Any, Dict, List, Sequence, Type, Union
+from typing import Any, Dict, List, Optional, Sequence, Type, Union
 
 from requests import Response
 
@@ -9,6 +9,7 @@ from cognite.client.data_classes.contextualization import (
     ContextualizationJob,
     DiagramConvertResults,
     DiagramDetectResults,
+    FileReference,
     T_ContextualizationJob,
 )
 from cognite.client.utils._auxiliary import to_camel_case
@@ -48,8 +49,12 @@ class DiagramsAPI(APIClient):
         )
 
     @staticmethod
-    def _process_file_ids(ids: Union[Sequence[int], int, None], external_ids: Union[Sequence[str], str, None]) -> List:
-        if external_ids is None and ids is None:
+    def _process_file_ids(
+        ids: Union[Sequence[int], int, None],
+        external_ids: Union[Sequence[str], str, None],
+        file_references: Union[Sequence[FileReference], FileReference, None],
+    ) -> List:
+        if not external_ids or ids or file_references:
             raise ValueError("No ids specified")
 
         if isinstance(ids, numbers.Integral):
@@ -66,9 +71,21 @@ class DiagramsAPI(APIClient):
         else:
             raise TypeError("external_ids must be str or list of str")
 
+        if isinstance(file_references, FileReference):
+            file_references = [file_references]
+        elif (
+            isinstance(file_references, list)
+            and all(isinstance(fr, FileReference) for fr in file_references)
+            or file_references is None
+        ):
+            file_references = file_references or []
+        else:
+            raise TypeError("file_references must be FileReference or list of FileReference")
+
         id_objs = [{"fileId": id} for id in ids]
         external_id_objs = [{"fileExternalId": external_id} for external_id in external_ids]
-        return [*id_objs, *external_id_objs]
+        file_reference_objects = [file_reference.to_api_item() for file_reference in file_references]
+        return [*id_objs, *external_id_objs, *file_reference_objects]
 
     def detect(
         self,
@@ -76,8 +93,9 @@ class DiagramsAPI(APIClient):
         search_field: str = "name",
         partial_match: bool = False,
         min_tokens: int = 2,
-        file_ids: Union[int, Sequence[int]] = None,
-        file_external_ids: Union[str, Sequence[str]] = None,
+        file_ids: Optional[Union[int, Sequence[int]]] = None,
+        file_external_ids: Optional[Union[str, Sequence[str]]] = None,
+        file_references: Union[List[FileReference], FileReference, None] = None,
     ) -> DiagramDetectResults:
         """Detect entities in a PNID.
         The results are not written to CDF.
@@ -91,6 +109,7 @@ class DiagramsAPI(APIClient):
             min_tokens (int): Minimal number of tokens a match must be based on
             file_ids (Sequence[int]): ID of the files, should already be uploaded in the same tenant.
             file_external_ids (Sequence[str]): File external ids.
+            file_references (Sequence[FileReference]): File references (id or external id) with page ranges.
         Returns:
             DiagramDetectResults: Resulting queued job. Note that .result property of this job will block waiting for results."""
 
@@ -101,7 +120,7 @@ class DiagramsAPI(APIClient):
         return self._run_job(
             job_path="/detect",
             status_path="/detect/",
-            items=self._process_file_ids(file_ids, file_external_ids),
+            items=self._process_file_ids(file_ids, file_external_ids, file_references),
             entities=entities,
             partial_match=partial_match,
             search_field=search_field,
@@ -119,6 +138,8 @@ class DiagramsAPI(APIClient):
         Returns:
             items: the format complies with diagram convert schema
         """
+        if any(item.page_range is not None for item in detect_job.result["items"]):
+            raise NotImplementedError("Can not run convert on a detect job that used the page range feature")
         items = [
             {k: v for k, v in item.items() if k in {"annotations", "fileId"}} for item in detect_job.result["items"]
         ]  # diagram detect always return file id.
