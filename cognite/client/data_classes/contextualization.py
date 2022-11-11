@@ -29,7 +29,7 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.annotation_types.images import AssetLink, ObjectDetection, TextRegion
 from cognite.client.data_classes.annotation_types.primitives import VisionResource
 from cognite.client.data_classes.annotations import AnnotationList
-from cognite.client.exceptions import CogniteException, ModelFailedException
+from cognite.client.exceptions import CogniteAPIError, CogniteException, ModelFailedException
 from cognite.client.utils._auxiliary import convert_true_match, to_snake_case
 
 if TYPE_CHECKING:
@@ -551,16 +551,16 @@ class DetectJobManager(object):
 
     def __init__(self) -> None:
         self._warning_shown = False
-        self._has_active_job = False
+        self.active_projects: Dict[str, bool] = {}
 
-    def set_active_job(self) -> None:
-        self._has_active_job = True
+    def set_active_project(self, project: str) -> None:
+        self.active_projects[project] = True
 
-    def free_active_job(self) -> None:
-        self._has_active_job = False
+    def free_active_project(self, project: str) -> None:
+        self.active_projects[project] = False
 
-    def has_active_job(self) -> bool:
-        return self._has_active_job
+    def is_project_active(self, project: str) -> bool:
+        return self.active_projects.get(project, False)
 
     def show_warning(self) -> None:
         if not self._warning_shown:
@@ -620,9 +620,15 @@ class DetectJobBundle:
         start = time.time()
         self._remaining_job_ids = self.job_ids
         while timeout is None or time.time() < start + timeout:
-            self.jobs = self._cognite_client.diagrams._post(
-                self._STATUS_PATH, json={"items": self._remaining_job_ids}
-            ).json()["items"]
+            try:
+                res = self._cognite_client.diagrams._post(self._STATUS_PATH, json={"items": self._remaining_job_ids})
+            except CogniteAPIError:
+                self._back_off()
+                self._WAIT_TIME += 2
+                continue
+            if res.json().get("error"):
+                break
+            self.jobs = res.json()["items"]
 
             # Assign the jobs that aren't finished
             self._remaining_job_ids = [j["jobId"] for j in self.jobs if JobStatus(j["status"]).is_not_finished()]
@@ -641,7 +647,14 @@ class DetectJobBundle:
         """Waits for the job to finish and returns the results."""
         if not self._result:
             self.wait_for_completion()
-            DetectJobManager.instance().free_active_job()
+
+            # Mypy: _cognite_client could be None
+            try:
+                _project = self._cognite_client.config.project  # type: ignore
+            except AttributeError:
+                raise ValueError("The client is not configured with a project")
+            DetectJobManager.instance().free_active_project(project=_project)
+
             self._result = self.fetch_results()
         assert self._result is not None
         # Sort into succeeded and failed

@@ -1,6 +1,6 @@
 import numbers
 from math import ceil
-from typing import Any, Dict, List, Optional, Sequence, Type, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 from requests import Response
 
@@ -13,6 +13,7 @@ from cognite.client.data_classes.contextualization import (
     DiagramDetectResults,
     T_ContextualizationJob,
 )
+from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._auxiliary import to_camel_case
 
 DETECT_API_FILE_LIMIT = 50  # Actually 50 on the API side, but we cannot feasibly handle that now.
@@ -56,7 +57,11 @@ class DiagramsAPI(APIClient):
 
     @staticmethod
     def _process_file_ids(ids: Union[Sequence[int], int, None], external_ids: Union[Sequence[str], str, None]) -> List:
+        # Missing arguments that defaults to None
         if external_ids is None and ids is None:
+            raise ValueError("No ids specified")
+        # Handle empty lists
+        if not external_ids and not ids:
             raise ValueError("No ids specified")
 
         if isinstance(ids, numbers.Integral):
@@ -85,8 +90,8 @@ class DiagramsAPI(APIClient):
         min_tokens: int = 2,
         file_ids: Union[int, Sequence[int]] = None,
         file_external_ids: Union[str, Sequence[str]] = None,
-        multiple_jobs: Optional[bool] = False,
-    ) -> Union[DiagramDetectResults, DetectJobBundle]:
+        multiple_jobs: bool = False,
+    ) -> Union[DiagramDetectResults, Tuple[Optional[DetectJobBundle], List[Dict[str, Any]]]]:
 
         """Detect entities in a PNID.
         The results are not written to CDF.
@@ -100,11 +105,12 @@ class DiagramsAPI(APIClient):
             min_tokens (int): Minimal number of tokens a match must be based on
             file_ids (Sequence[int]): ID of the files, should already be uploaded in the same tenant.
             file_external_ids (Sequence[str]): File external ids.
-            multiple_jobs (Optional[bool]): Enables you to publish multiple jobs. The method will return a DetectJobBundle
+            multiple_jobs (bool): Enables you to publish multiple jobs. The method will return a tuple of DetectJobBundle and list
+                of potentially unposted jobs.
         Returns:
             DiagramDetectResults: Resulting queued job. Note that the .result property of this job will block waiting for results.
             or
-            DetectJobBundle: This object will be able to handle multiple jobs. Note that the .result will block waiting for results.
+            Tuple[DetectJobBundle, List[Dict[str, Any]]: This object will be able to handle multiple jobs. Note that the .result will block waiting for results.
         Examples:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -121,9 +127,7 @@ class DiagramsAPI(APIClient):
         entities = [
             entity.dump(camel_case=True) if isinstance(entity, CogniteResource) else entity for entity in entities
         ]
-
         if multiple_jobs:
-            # Limit
             num_new_jobs = ceil(len(items) / DETECT_API_FILE_LIMIT)
             if num_new_jobs > DETECT_API_STATUS_JOB_LIMIT:
                 raise ValueError(
@@ -131,17 +135,24 @@ class DiagramsAPI(APIClient):
                 )
 
             detect_job_manager = DetectJobManager.instance()
-            if detect_job_manager.has_active_job():
+
+            # Mypy: _cognite_client could be None
+            try:
+                _project = self._cognite_client.config.project  # type: ignore
+            except AttributeError:
+                raise ValueError("The client is not configured with a project")
+            if detect_job_manager.is_project_active(project=_project):
                 raise ValueError(
                     "There is already an active DetectJobBundle from a previous call of this method. Please call DetectJobBundle.result and wait for it to finish before starting a new DetectJobBundle."
                 )
 
             jobs: List[DiagramDetectResults] = []
+            unposted_files: List[Dict[str, Any]] = []
             for i in range(num_new_jobs):
                 batch = items[(DETECT_API_FILE_LIMIT * i) : DETECT_API_FILE_LIMIT * (i + 1)]
 
-                jobs.append(
-                    self._run_job(
+                try:
+                    posted_job = self._run_job(
                         job_path="/detect",
                         status_path="/detect/",
                         items=batch,
@@ -151,10 +162,17 @@ class DiagramsAPI(APIClient):
                         min_tokens=min_tokens,
                         job_cls=DiagramDetectResults,
                     )
+                    jobs.append(posted_job)
+                except CogniteAPIError as exc:
+                    unposted_files.append({"error": str(exc), "files": batch})
+
+                detect_job_manager.set_active_project(project=_project)
+                res = (
+                    DetectJobBundle(cognite_client=self._cognite_client, job_ids=[j.job_id for j in jobs if j.job_id])
+                    if jobs
+                    else None
                 )
-                detect_job_manager.set_active_job()
-                # TODO: Add detect job post throttling
-            return DetectJobBundle(cognite_client=self._cognite_client, job_ids=[j.job_id for j in jobs if j.job_id])
+            return res, unposted_files
 
         return self._run_job(
             job_path="/detect",

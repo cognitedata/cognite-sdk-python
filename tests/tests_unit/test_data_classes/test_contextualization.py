@@ -149,3 +149,12 @@ class TestJobBundle:
             assert len(f) == 1
             assert s[0]["status"] == "Completed"
             assert f[0]["errorMessage"] == "somethingWentWrong"
+
+    def test_DetectJobBundle_div(self) -> None:
+        with monkeypatch_cognite_client() as mock_client:
+            res = DetectJobBundle(cognite_client=mock_client, job_ids=[1, 2])
+            assert isinstance(res, DetectJobBundle)
+
+            # With no job_ids
+            with pytest.raises(ValueError):
+                res = DetectJobBundle(cognite_client=mock_client, job_ids=[])

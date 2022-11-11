@@ -41,7 +41,9 @@ class TestPNIDParsingIntegration:
             assert ".png" in res_page.png_url
 
         # Enable multiple jobs
-        job_bundle = cognite_client.diagrams.detect(file_ids=[file_id], entities=entities, multiple_jobs=True)
+        job_bundle, _unposted_jobs = cognite_client.diagrams.detect(
+            file_ids=[file_id], entities=entities, multiple_jobs=True
+        )
         assert isinstance(job_bundle, DetectJobBundle)
         succeeded, failed = job_bundle.result
         assert succeeded[0]["status"] in ["Completed", "Running"]

@@ -59,18 +59,41 @@ class TestPNIDParsingUnit:
         assert isinstance(job, ContextualizationJob)
 
         # Enable multiple jobs
-        job_bundle = cognite_client.diagrams.detect(file_ids=file_ids, entities=entities, multiple_jobs=True)
+        job_bundle, unposted_jobs = cognite_client.diagrams.detect(
+            file_ids=file_ids, entities=entities, multiple_jobs=True
+        )
         assert isinstance(job_bundle, DetectJobBundle)
         successes, _failures = job_bundle.result
         successes == [diagram_get_result.json()]
 
+        # Test empty file_ids
+        with pytest.raises(ValueError):
+            job, _unposted_jobs = cognite_client.diagrams.detect(file_ids=[], entities=entities, multiple_jobs=True)
+        with pytest.raises(ValueError):
+            job, _unposted_jobs = cognite_client.diagrams.detect(file_ids=None, entities=entities, multiple_jobs=True)
+
         # Provoking failing because num_posts > limit
         with patch("cognite.client._api.diagrams.DETECT_API_FILE_LIMIT", 1):
-            job_bundle = cognite_client.diagrams.detect(file_ids=file_ids, entities=entities, multiple_jobs=True)
+            job_bundle, _unposted_jobs = cognite_client.diagrams.detect(
+                file_ids=file_ids, entities=entities, multiple_jobs=True
+            )
             successes, _failures = job_bundle.result
             assert len(successes) == 3
             with patch("cognite.client._api.diagrams.DETECT_API_STATUS_JOB_LIMIT", 1):
                 with pytest.raises(ValueError):
-                    job_bundle = cognite_client.diagrams.detect(
+                    job_bundle, _unposted_jobs = cognite_client.diagrams.detect(
                         file_ids=file_ids, entities=entities, multiple_jobs=True
                     )
+
+        # Creating posting multiple will raise ValueError
+        job_bundle, _unposted_jobs = cognite_client.diagrams.detect(
+            file_ids=file_ids, entities=entities, multiple_jobs=True
+        )
+        with pytest.raises(ValueError) as em:
+            job_bundle, _unposted_jobs = cognite_client.diagrams.detect(
+                file_ids=file_ids, entities=entities, multiple_jobs=True
+            )
+            assert (
+                em
+                == "There is already an active DetectJobBundle from a previous call of this method. Please call DetectJobBundle.result and wait for it to finish before starting a new DetectJobBundle."
+            )
