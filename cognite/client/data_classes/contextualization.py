@@ -624,7 +624,8 @@ class DetectJobBundle:
                 res = self._cognite_client.diagrams._post(self._STATUS_PATH, json={"items": self._remaining_job_ids})
             except CogniteAPIError:
                 self._back_off()
-                self._WAIT_TIME += 2
+                if self._WAIT_TIME < 10:
+                    self._WAIT_TIME += 2
                 continue
             if res.json().get("error"):
                 break
@@ -636,6 +637,7 @@ class DetectJobBundle:
             if self._remaining_job_ids:
                 self._back_off()
             else:
+                self._WAIT_TIME = 2
                 break
 
     def fetch_results(self) -> List[Dict[str, Any]]:
