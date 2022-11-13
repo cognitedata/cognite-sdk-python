@@ -550,7 +550,6 @@ class DetectJobManager(object):
         return DetectJobManager._instance
 
     def __init__(self) -> None:
-        self._warning_shown = False
         self.active_projects: Dict[str, bool] = {}
 
     def set_active_project(self, project: str) -> None:
@@ -563,11 +562,9 @@ class DetectJobManager(object):
         return self.active_projects.get(project, False)
 
     def show_warning(self) -> None:
-        if not self._warning_shown:
-            warnings.warn(
-                "DetectJobBundle.result is calling a beta endpoint which is still in development. Breaking changes can happen in between patch versions."
-            )
-            self._warning_shown = True
+        warnings.warn(
+            "DetectJobBundle.result is calling a beta endpoint which is still in development. Breaking changes can happen in between patch versions."
+        )
 
 
 class DetectJobBundle:
