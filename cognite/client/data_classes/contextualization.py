@@ -540,33 +540,6 @@ class PersonalProtectiveEquipmentDetectionParameters(VisionResource, ThresholdPa
     pass
 
 
-class DetectJobManager(object):
-    _instance: Optional["DetectJobManager"] = None
-
-    @staticmethod
-    def instance() -> "DetectJobManager":
-        if DetectJobManager._instance is None:
-            DetectJobManager._instance = DetectJobManager()
-        return DetectJobManager._instance
-
-    def __init__(self) -> None:
-        self.active_projects: Dict[str, bool] = {}
-
-    def set_active_project(self, project: str) -> None:
-        self.active_projects[project] = True
-
-    def free_active_project(self, project: str) -> None:
-        self.active_projects[project] = False
-
-    def is_project_active(self, project: str) -> bool:
-        return self.active_projects.get(project, False)
-
-    def show_warning(self) -> None:
-        warnings.warn(
-            "DetectJobBundle.result is calling a beta endpoint which is still in development. Breaking changes can happen in between patch versions."
-        )
-
-
 class DetectJobBundle:
     _RESOURCE_PATH = "/context/diagram/detect/"
     _STATUS_PATH = "/context/diagram/detect/status"
@@ -574,7 +547,9 @@ class DetectJobBundle:
 
     def __init__(self, job_ids: List[int], cognite_client: "CogniteClient" = None):
         # Show warning
-        DetectJobManager.instance().show_warning()
+        warnings.warn(
+            "DetectJobBundle.result is calling a beta endpoint which is still in development. Breaking changes can happen in between patch versions."
+        )
 
         self._cognite_client = cast("CogniteClient", cognite_client)
         if not job_ids:
@@ -646,13 +621,6 @@ class DetectJobBundle:
         """Waits for the job to finish and returns the results."""
         if not self._result:
             self.wait_for_completion()
-
-            # Mypy: _cognite_client could be None
-            try:
-                _project = self._cognite_client.config.project  # type: ignore
-            except AttributeError:
-                raise ValueError("The client is not configured with a project")
-            DetectJobManager.instance().free_active_project(project=_project)
 
             self._result = self.fetch_results()
         assert self._result is not None

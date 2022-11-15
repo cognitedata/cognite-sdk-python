@@ -8,7 +8,6 @@ from cognite.client._api_client import APIClient
 from cognite.client.data_classes._base import CogniteResource
 from cognite.client.data_classes.contextualization import (
     DetectJobBundle,
-    DetectJobManager,
     DiagramConvertResults,
     DiagramDetectResults,
     T_ContextualizationJob,
@@ -172,18 +171,6 @@ class DiagramsAPI(APIClient):
                     f"Number of jobs exceed limit of: '{DETECT_API_STATUS_JOB_LIMIT}'. Number of jobs: '{num_new_jobs}'"
                 )
 
-            detect_job_manager = DetectJobManager.instance()
-
-            # Mypy: _cognite_client could be None
-            try:
-                _project = self._cognite_client.config.project  # type: ignore
-            except AttributeError:
-                raise ValueError("The client is not configured with a project")
-            if detect_job_manager.is_project_active(project=_project):
-                raise ValueError(
-                    "There is already an active DetectJobBundle from a previous call of this method. Please call DetectJobBundle.result and wait for it to finish before starting a new DetectJobBundle."
-                )
-
             jobs: List[DiagramDetectResults] = []
             unposted_files: List[Dict[str, Any]] = []
             for i in range(num_new_jobs):
@@ -204,7 +191,6 @@ class DiagramsAPI(APIClient):
                 except CogniteAPIError as exc:
                     unposted_files.append({"error": str(exc), "files": batch})
 
-                detect_job_manager.set_active_project(project=_project)
                 res = (
                     DetectJobBundle(cognite_client=self._cognite_client, job_ids=[j.job_id for j in jobs if j.job_id])
                     if jobs
