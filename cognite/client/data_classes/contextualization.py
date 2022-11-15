@@ -561,7 +561,7 @@ class DetectJobBundle:
 
         self._result: List[Dict[str, Any]] = []
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return (
             "DetectJobBundle( job_ids="
             + str(self.job_ids)
