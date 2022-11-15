@@ -703,6 +703,25 @@ def mock_delete_datapoints(rsps, cognite_client):
 
 
 class TestDeleteDatapoints:
+    def test_delete_point(self, cognite_client, mock_delete_datapoints):
+        res = cognite_client.datapoints.delete_point({"id": 1, "timestamp": 1})
+        assert res is None
+        assert {"items": [{"id": 1, "inclusiveBegin": 1, "exclusiveEnd": 2}]} == jsgz_load(
+            mock_delete_datapoints.calls[0].request.body
+        )
+
+    def test_delete_points(self, cognite_client, mock_delete_datapoints):
+        res = cognite_client.datapoints.delete_point(
+            [{"id": 1, "timestamp": 1}, {"externalId": "abc", "timestamp": 10}]
+        )
+        assert res is None
+        assert {
+            "items": [
+                {"id": 1, "inclusiveBegin": 1, "exclusiveEnd": 2},
+                {"externalId": "abc", "inclusiveBegin": 10, "exclusiveEnd": 11},
+            ]
+        } == jsgz_load(mock_delete_datapoints.calls[0].request.body)
+
     def test_delete_range(self, cognite_client, mock_delete_datapoints):
         res = cognite_client.datapoints.delete_range(start=datetime(2018, 1, 1), end=datetime(2018, 1, 2), id=1)
         assert res is None
