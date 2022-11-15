@@ -1,6 +1,6 @@
 import numbers
 from math import ceil
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, Union
+from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, Type, Union, overload
 
 from requests import Response
 
@@ -79,6 +79,7 @@ class DiagramsAPI(APIClient):
         external_id_objs = [{"fileExternalId": external_id} for external_id in external_ids]
         return [*id_objs, *external_id_objs]
 
+    @overload
     def detect(
         self,
         entities: Sequence[Union[dict, CogniteResource]],
@@ -87,6 +88,46 @@ class DiagramsAPI(APIClient):
         min_tokens: int = 2,
         file_ids: Union[int, Sequence[int]] = None,
         file_external_ids: Union[str, Sequence[str]] = None,
+        *,
+        multiple_jobs: Literal[False],
+    ) -> DiagramDetectResults:
+        ...
+
+    @overload
+    def detect(
+        self,
+        entities: Sequence[Union[dict, CogniteResource]],
+        search_field: str = "name",
+        partial_match: bool = False,
+        min_tokens: int = 2,
+        file_ids: Union[int, Sequence[int]] = None,
+        file_external_ids: Union[str, Sequence[str]] = None,
+        *,
+        multiple_jobs: Literal[True],
+    ) -> Tuple[Optional[DetectJobBundle], List[Dict[str, Any]]]:
+        ...
+
+    @overload
+    def detect(
+        self,
+        entities: Sequence[Union[dict, CogniteResource]],
+        search_field: str = "name",
+        partial_match: bool = False,
+        min_tokens: int = 2,
+        file_ids: Union[int, Sequence[int]] = None,
+        file_external_ids: Union[str, Sequence[str]] = None,
+    ) -> DiagramDetectResults:
+        ...
+
+    def detect(
+        self,
+        entities: Sequence[Union[dict, CogniteResource]],
+        search_field: str = "name",
+        partial_match: bool = False,
+        min_tokens: int = 2,
+        file_ids: Union[int, Sequence[int]] = None,
+        file_external_ids: Union[str, Sequence[str]] = None,
+        *,
         multiple_jobs: bool = False,
     ) -> Union[DiagramDetectResults, Tuple[Optional[DetectJobBundle], List[Dict[str, Any]]]]:
 
