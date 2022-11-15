@@ -1,5 +1,6 @@
 import re
 from contextlib import nullcontext as does_not_raise
+from copy import deepcopy
 from typing import Any, Dict, List, Optional, Union
 
 import pytest
@@ -14,6 +15,7 @@ from cognite.client.data_classes.contextualization import (
     VisionExtractJob,
     VisionFeature,
 )
+from cognite.client.exceptions import CogniteException
 from tests.utils import jsgz_load
 
 
@@ -46,12 +48,24 @@ def mock_get_response_body_ok() -> Dict[str, Any]:
         "items": [
             {
                 "fileId": 1,
-                "predictions": [{"text": "testing", "assetIds": [1, 2, 3], "confidence": 0.9}],
-            },
+                "predictions": {
+                    "assetTagPredictions": [
+                        {
+                            "assetRef": {"id": 1},
+                            "confidence": 0.9,
+                            "text": "testing",
+                            "textRegion": {
+                                "xMin": 0.1,
+                                "yMin": 0.2,
+                                "xMax": 0.3,
+                                "yMax": 0.4,
+                            },
+                        }
+                    ]
+                },
+            }
         ],
-        "useCache": True,
-        "partialMatch": True,
-        "assetSubtreeIds": [39468345],
+        "parameters": {"assetTagDetectionParameters": {"assetSubtreeIds": [], "partialMatch": False, "threshold": 0.4}},
     }
 
 
@@ -73,6 +87,19 @@ def mock_get_extract(rsps: RequestsMock, mock_get_response_body_ok: Dict[str, An
         re.compile(".*?/context/vision/extract/\\d+"),
         status=200,
         json=mock_get_response_body_ok,
+    )
+    yield rsps
+
+
+@pytest.fixture
+def mock_get_extract_empty_predictions(rsps: RequestsMock, mock_get_response_body_ok: Dict[str, Any]) -> RequestsMock:
+    response_copy = deepcopy(mock_get_response_body_ok)
+    response_copy["items"][0]["predictions"]["assetTagPredictions"] = []
+    rsps.add(
+        rsps.GET,
+        re.compile(".*?/context/vision/extract/\\d+"),
+        status=200,
+        json=response_copy,
     )
     yield rsps
 
@@ -142,6 +169,14 @@ class TestVisionExtract:
                 )
             assert isinstance(job, VisionExtractJob)
             assert "Queued" == job.status
+
+            # Cannot save prediction of an incomplete job
+            with pytest.raises(
+                CogniteException,
+                match="Extract job is not completed. If the job is queued or running, wait for completion and try again",
+            ):
+                job.save_predictions()
+
             # Wait for job to complete and check its content
             expected_job_id = 1
             job.wait_for_completion(interval=0)
@@ -195,3 +230,26 @@ class TestVisionExtract:
                 num_get_requests += 1
                 assert f"/{job.job_id}" in call.request.url
         assert 1 == num_get_requests
+
+    def test_save_empty_predictions(
+        self,
+        mock_post_extract: RequestsMock,
+        mock_get_extract_empty_predictions: RequestsMock,
+        cognite_client: CogniteClient,
+    ) -> None:
+        VAPI = cognite_client.vision
+        file_ids = [1]
+        file_external_ids = []
+
+        job = VAPI.extract(
+            features=VisionFeature.ASSET_TAG_DETECTION, file_ids=file_ids, file_external_ids=file_external_ids
+        )
+
+        # retrieved job should correspond to the started job:
+        retrieved_job = VAPI.get_extract_job(job_id=job.job_id)
+
+        assert isinstance(retrieved_job, VisionExtractJob)
+        assert retrieved_job.job_id == job.job_id
+
+        with pytest.raises(CogniteException, match="Extract job does not contain any predictions."):
+            retrieved_job.save_predictions()

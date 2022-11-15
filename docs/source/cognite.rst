@@ -1147,7 +1147,7 @@ Tweaking the parameters of a feature extractor:
     >>> extract_job = c.vision.extract(
     ...     features=VisionFeature.TEXT_DETECTION,
     ...     file_ids=[1, 2],
-    ...     parameters=FeatureParameters(TextDetectionParameters(threshold=0.9))
+    ...     parameters=FeatureParameters(text_detection_parameters=TextDetectionParameters(threshold=0.9))
     ... )
 
 Extract
