@@ -16,7 +16,7 @@ from cognite.client.data_classes.contextualization import (
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._auxiliary import to_camel_case
 
-DETECT_API_FILE_LIMIT = 50  # Actually 50 on the API side, but we cannot feasibly handle that now.
+DETECT_API_FILE_LIMIT = 50
 # https://docs.cognite.com/api/playground/#tag/Engineering-diagrams/operation/diagramDetect
 DETECT_API_STATUS_JOB_LIMIT = 1000
 # https://docs.cognite.com/api/playground/#tag/Engineering-diagrams/operation/diagramDetectMultipleResults
