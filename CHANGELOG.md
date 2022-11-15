@@ -14,7 +14,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [4.11.1] - 2022-11-01
+## [4.11.1] - 2022-11-15
 ### Changed
 - Detect endpoint (for Engineering Diagram detect jobs) is updated to spawn and handle multiple jobs.
 ### Added
