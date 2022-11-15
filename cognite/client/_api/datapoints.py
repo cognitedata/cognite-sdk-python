@@ -2,7 +2,7 @@ import copy
 import math
 import re as regexp
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, Tuple, Union, cast, overload
 
 import cognite.client.utils._time
 from cognite.client import utils
@@ -322,6 +322,55 @@ class DatapointsAPI(APIClient):
         dps_poster = DatapointsPoster(self)
         dps_poster.insert(datapoints)
 
+    @overload
+    def delete_point(self, point: Dict[str, Union[int, str, datetime]]) -> None:
+        ...
+
+    @overload
+    def delete_point(self, point: Sequence[Dict[str, Union[int, str, datetime]]]) -> None:
+        ...
+
+    def delete_point(
+        self, point: Union[Dict[str, Union[int, str, datetime]], Sequence[Dict[str, Union[int, str, datetime]]]]
+    ) -> None:
+        """Delete a single datapoint from one or more time series.
+
+        Args:
+            point (Union[Dict[str, Union[int, str, datetime]], Sequence[Dict[str, Union[int, str, datetime]]]]): The point or points to delete
+
+        Returns:
+            None
+
+        Examples:
+
+            Deleting a single datapoint from a single time series::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> c.datapoints.delete_point(point={"id": 1, "timestamp": 12345})
+
+            Deleting a single datapoint from multiple time series::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> c.datapoints.delete_point(point=[{"id": 1, "timestamp": 123}, {"externalId": "abc", "timestamp": datetime(year=1992)}])
+        """
+        point_list = point if isinstance(point, Sequence) else [point]
+        valid_ranges = []
+        for point in point_list:
+            for key in point:
+                if key not in ("id", "externalId", "timestamp"):
+                    raise AssertionError(
+                        f"Invalid key '{key}' in point. Must contain 'timestamp', and 'id' or 'externalId"
+                    )
+            id = cast(Optional[int], point.get("id"))
+            external_id = cast(Optional[str], point.get("externalId"))
+            valid_range = Identifier.of_either(id, external_id).as_dict()
+            start = utils._time.timestamp_to_ms(point["timestamp"])
+            valid_range.update({"start": start, "end": start + 1})
+            valid_ranges.append(valid_range)
+        self.delete_ranges(ranges=valid_ranges)
+
     def delete_range(
         self, start: Union[int, str, datetime], end: Union[int, str, datetime], id: int = None, external_id: str = None
     ) -> None:
@@ -346,17 +395,17 @@ class DatapointsAPI(APIClient):
         """
         start = utils._time.timestamp_to_ms(start)
         end = utils._time.timestamp_to_ms(end)
-        assert end > start, "end must be larger than start"
+        assert end >= start, "end must be larger than start"
 
         delete_dps_object = Identifier.of_either(id, external_id).as_dict()
         delete_dps_object.update({"inclusiveBegin": start, "exclusiveEnd": end})
         self._delete_datapoints_ranges([delete_dps_object])
 
-    def delete_ranges(self, ranges: List[Dict[str, Any]]) -> None:
+    def delete_ranges(self, ranges: List[Dict[str, Union[int, str, datetime]]]) -> None:
         """`Delete a range of datapoints from multiple time series. <https://docs.cognite.com/api/v1/#operation/deleteDatapoints>`_
 
         Args:
-            ranges (List[Dict[str, Any]]): The list of datapoint ids along with time range to delete. See examples below.
+            ranges (List[Dict[str, Union[int, str, datetime]): The list of datapoint ids along with time range to delete. See examples below.
 
         Returns:
             None
@@ -378,8 +427,8 @@ class DatapointsAPI(APIClient):
                     raise AssertionError(
                         "Invalid key '{}' in range. Must contain 'start', 'end', and 'id' or 'externalId".format(key)
                     )
-            id = range.get("id")
-            external_id = range.get("externalId")
+            id = cast(Optional[int], range.get("id"))
+            external_id = cast(Optional[str], range.get("externalId"))
             valid_range = Identifier.of_either(id, external_id).as_dict()
             start = utils._time.timestamp_to_ms(range["start"])
             end = utils._time.timestamp_to_ms(range["end"])

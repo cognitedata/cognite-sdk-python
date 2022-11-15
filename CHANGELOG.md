@@ -14,6 +14,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [4.11.2] - 2022-11-08
+### Fixed
+- Add support for deleting single datapoint with datapoints.delete_point.
+
 ## [4.11.1] - 2022-11-08
 ### Changed
 - Update doc for Vision extract method
