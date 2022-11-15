@@ -57,9 +57,6 @@ class DiagramsAPI(APIClient):
 
     @staticmethod
     def _process_file_ids(ids: Union[Sequence[int], int, None], external_ids: Union[Sequence[str], str, None]) -> List:
-        # Missing arguments that defaults to None
-        if external_ids is None and ids is None:
-            raise ValueError("No ids specified")
         # Handle empty lists
         if not external_ids and not ids:
             raise ValueError("No ids specified")
