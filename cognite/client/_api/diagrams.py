@@ -142,8 +142,9 @@ class DiagramsAPI(APIClient):
             min_tokens (int): Minimal number of tokens a match must be based on
             file_ids (Sequence[int]): ID of the files, should already be uploaded in the same tenant.
             file_external_ids (Sequence[str]): File external ids.
-            multiple_jobs (bool): Enables you to publish multiple jobs. The method will return a tuple of DetectJobBundle and list
-                of potentially unposted jobs.
+        Keyword Args:
+            multiple_jobs (bool): Enables you to publish multiple jobs. If True the method will return a tuple of DetectJobBundle and list
+                of potentially unposted jobs. If False it will return a single DiagramDetectResults. Defaults to False.
         Returns:
             DiagramDetectResults: Resulting queued job. Note that the .result property of this job will block waiting for results.
             or
