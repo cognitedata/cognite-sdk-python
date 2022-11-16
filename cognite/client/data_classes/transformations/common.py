@@ -1,7 +1,7 @@
 import warnings
 from typing import Any, Dict, Optional
 
-from cognite.client import utils
+from cognite.client.utils._auxiliary import convert_all_keys_to_camel_case
 
 
 class TransformationDestination:
@@ -18,12 +18,12 @@ class TransformationDestination:
         return hash(self.type)
 
     def __eq__(self, other: Any) -> bool:
-        return isinstance(other, TransformationDestination) and hash(other) == hash(self)
+        return isinstance(other, type(self)) and hash(other) == hash(self)
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        ret = self.__dict__
+        ret = vars(self)
         if camel_case:
-            return {utils._auxiliary.to_camel_case(key): value for key, value in ret.items()}
+            return convert_all_keys_to_camel_case(ret)
         return ret
 
     @staticmethod
@@ -136,9 +136,6 @@ class RawTable(TransformationDestination):
     def __hash__(self) -> int:
         return hash((self.type, self.database, self.table))
 
-    def __eq__(self, other: Any) -> bool:
-        return isinstance(other, RawTable) and hash(other) == hash(self)
-
 
 class SequenceRows(TransformationDestination):
     def __init__(self, external_id: str = None):
@@ -148,27 +145,16 @@ class SequenceRows(TransformationDestination):
     def __hash__(self) -> int:
         return hash((self.type, self.external_id))
 
-    def __eq__(self, other: Any) -> bool:
-        return isinstance(other, SequenceRows) and hash(other) == hash(self)
-
 
 class DataModelInstances(TransformationDestination):
-    _warning_shown = False
-
-    @classmethod
-    def _show_warning(cls) -> bool:
-        if not cls._warning_shown:
-            warnings.warn(
-                "Feature DataModeStorage is in beta and still in development. Breaking changes can happen in between patch versions."
-            )
-            cls._warning_shown = True
-            return True
-        return False
-
     def __init__(
         self, model_external_id: str = None, space_external_id: str = None, instance_space_external_id: str = None
     ):
-        DataModelInstances._show_warning()
+        warnings.warn(
+            "Feature DataModeStorage is in beta and still in development. "
+            "Breaking changes can happen in between patch versions.",
+            stacklevel=2,
+        )
         super().__init__(type="data_model_instances")
         self.model_external_id = model_external_id
         self.space_external_id = space_external_id
@@ -176,9 +162,6 @@ class DataModelInstances(TransformationDestination):
 
     def __hash__(self) -> int:
         return hash((self.type, self.model_external_id, self.space_external_id, self.instance_space_external_id))
-
-    def __eq__(self, other: Any) -> bool:
-        return isinstance(other, DataModelInstances) and hash(other) == hash(self)
 
 
 class OidcCredentials:
@@ -217,7 +200,7 @@ class OidcCredentials:
             "cdf_project_name": self.cdf_project_name,
         }
         if camel_case:
-            return {utils._auxiliary.to_camel_case(key): value for key, value in ret.items()}
+            return convert_all_keys_to_camel_case(ret)
         return ret
 
 
@@ -241,10 +224,9 @@ class NonceCredentials:
         Returns:
             Dict[str, Any]: A dictionary representation of the instance.
         """
-        ret = self.__dict__
-
+        ret = vars(self)
         if camel_case:
-            return {utils._auxiliary.to_camel_case(key): value for key, value in ret.items()}
+            return convert_all_keys_to_camel_case(ret)
         return ret
 
 
