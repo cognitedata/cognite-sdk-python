@@ -84,16 +84,3 @@ class TestPNIDParsingUnit:
                     job_bundle, _unposted_jobs = cognite_client.diagrams.detect(
                         file_ids=file_ids, entities=entities, multiple_jobs=True
                     )
-
-        # Creating posting multiple will raise ValueError
-        job_bundle, _unposted_jobs = cognite_client.diagrams.detect(
-            file_ids=file_ids, entities=entities, multiple_jobs=True
-        )
-        with pytest.raises(ValueError) as em:
-            job_bundle, _unposted_jobs = cognite_client.diagrams.detect(
-                file_ids=file_ids, entities=entities, multiple_jobs=True
-            )
-            assert (
-                em
-                == "There is already an active DetectJobBundle from a previous call of this method. Please call DetectJobBundle.result and wait for it to finish before starting a new DetectJobBundle."
-            )
