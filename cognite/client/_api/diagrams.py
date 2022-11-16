@@ -144,11 +144,10 @@ class DiagramsAPI(APIClient):
             file_external_ids (Sequence[str]): File external ids.
         Keyword Args:
             multiple_jobs (bool): Enables you to publish multiple jobs. If True the method will return a tuple of DetectJobBundle and list
-                of potentially unposted jobs. If False it will return a single DiagramDetectResults. Defaults to False.
+                of potentially unposted files. If False it will return a single DiagramDetectResults. Defaults to False.
         Returns:
-            DiagramDetectResults: Resulting queued job. Note that the .result property of this job will block waiting for results.
-            or
-            Tuple[DetectJobBundle, List[Dict[str, Any]]: This object will be able to handle multiple jobs. Note that the .result will block waiting for results.
+            Union[DiagramDetectResults, Tuple[DetectJobBundle, List[Dict[str, Any]]]: Resulting queued job or a bundle of jobs and a list of unposted files.
+            Note that the .result property of the job or job bundle will block waiting for results.
         Examples:
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
