@@ -14,9 +14,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [4.11.1] - 2022-11-02
+## [4.11.2] - 2022-11-02
 ### Fixed
 - Fix FunctionCallsAPI filtering 
+
+## [4.11.1] - 2022-11-08
+- Update doc for Vision extract method
+- Improve error message in `VisionExtractJob.save_annotations`
 
 ## [4.11.0] - 2022-10-17
 ### Added
