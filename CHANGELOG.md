@@ -24,6 +24,12 @@ Changes are grouped as follows
 ### Added
 - `DetectJobBundle` dataclass: A way to manage multiple files and jobs.
 
+## [4.11.2] - 2022-11-16
+### Changed
+- Detect endpoint (for Engineering Diagram detect jobs) is updated to spawn and handle multiple jobs.
+### Added
+- `DetectJobBundle` dataclass: A way to manage multiple files and jobs.
+
 ## [4.11.1] - 2022-11-08
 ### Changed
 - Update doc for Vision extract method

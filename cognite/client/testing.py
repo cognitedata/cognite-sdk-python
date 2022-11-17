@@ -6,6 +6,7 @@ from cognite.client import CogniteClient
 from cognite.client._api.assets import AssetsAPI
 from cognite.client._api.data_sets import DataSetsAPI
 from cognite.client._api.datapoints import DatapointsAPI
+from cognite.client._api.diagrams import DiagramsAPI
 from cognite.client._api.events import EventsAPI
 from cognite.client._api.files import FilesAPI
 from cognite.client._api.iam import IAMAPI, APIKeysAPI, GroupsAPI, SecurityCategoriesAPI, ServiceAccountsAPI
@@ -60,6 +61,7 @@ class CogniteClientMock(MagicMock):
         self.relationships = MagicMock(spec_set=RelationshipsAPI)
         self.sequences = MagicMock(spec=SequencesAPI)
         self.sequences.data = MagicMock(spec_set=SequencesDataAPI)
+        self.diagrams = MagicMock(spec_set=DiagramsAPI)
 
 
 @contextmanager
