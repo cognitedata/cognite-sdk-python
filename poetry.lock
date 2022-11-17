@@ -403,21 +403,21 @@ i18n = ["Babel (>=2.7)"]
 
 [[package]]
 name = "keyring"
-version = "23.9.3"
+version = "23.11.0"
 description = "Store and access your passwords safely."
 category = "dev"
 optional = false
 python-versions = ">=3.7"
 
 [package.dependencies]
-importlib-metadata = {version = ">=3.6", markers = "python_version < \"3.10\""}
+importlib-metadata = {version = ">=4.11.4", markers = "python_version < \"3.12\""}
 "jaraco.classes" = "*"
 jeepney = {version = ">=0.4.2", markers = "sys_platform == \"linux\""}
 pywin32-ctypes = {version = "<0.1.0 || >0.1.0,<0.1.1 || >0.1.1", markers = "sys_platform == \"win32\""}
 SecretStorage = {version = ">=3.2", markers = "sys_platform == \"linux\""}
 
 [package.extras]
-docs = ["sphinx", "jaraco.packaging (>=9)", "rst.linker (>=1.9)", "jaraco.tidelift (>=1.4)"]
+docs = ["sphinx (>=3.5)", "jaraco.packaging (>=9)", "rst.linker (>=1.9)", "furo", "jaraco.tidelift (>=1.4)"]
 testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "flake8 (<5)", "pytest-cov", "pytest-enabler (>=1.3)", "pytest-black (>=0.3.7)", "pytest-mypy (>=0.9.1)"]
 
 [[package]]
@@ -438,7 +438,7 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "matplotlib"
-version = "3.6.1"
+version = "3.6.2"
 description = "Python plotting package"
 category = "dev"
 optional = false
@@ -617,15 +617,15 @@ testing = ["nose", "coverage"]
 
 [[package]]
 name = "platformdirs"
-version = "2.5.2"
-description = "A small Python module for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
+version = "2.5.4"
+description = "A small Python package for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
 category = "dev"
 optional = false
 python-versions = ">=3.7"
 
 [package.extras]
-docs = ["furo (>=2021.7.5b38)", "proselint (>=0.10.2)", "sphinx-autodoc-typehints (>=1.12)", "sphinx (>=4)"]
-test = ["appdirs (==1.4.4)", "pytest-cov (>=2.7)", "pytest-mock (>=3.6)", "pytest (>=6)"]
+docs = ["furo (>=2022.9.29)", "proselint (>=0.13)", "sphinx-autodoc-typehints (>=1.19.4)", "sphinx (>=5.3)"]
+test = ["appdirs (==1.4.4)", "pytest-cov (>=4)", "pytest-mock (>=3.10)", "pytest (>=7.2)"]
 
 [[package]]
 name = "pluggy"
@@ -1052,7 +1052,7 @@ test = ["pytest (>=4.6)", "html5lib", "typed-ast", "cython"]
 
 [[package]]
 name = "sphinx-rtd-theme"
-version = "1.1.0"
+version = "1.1.1"
 description = "Read the Docs theme for Sphinx"
 category = "dev"
 optional = false
@@ -1184,7 +1184,7 @@ urllib3 = ">=1.26.0"
 
 [[package]]
 name = "types-requests"
-version = "2.28.11.2"
+version = "2.28.11.5"
 description = "Typing stubs for requests"
 category = "dev"
 optional = false
@@ -1195,7 +1195,7 @@ types-urllib3 = "<1.27"
 
 [[package]]
 name = "types-urllib3"
-version = "1.26.25.1"
+version = "1.26.25.4"
 description = "Typing stubs for urllib3"
 category = "dev"
 optional = false
@@ -1224,7 +1224,7 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 
 [[package]]
 name = "virtualenv"
-version = "20.16.6"
+version = "20.16.7"
 description = "Virtual Python Environment builder"
 category = "dev"
 optional = false
@@ -1488,10 +1488,7 @@ packaging = [
 pandas = []
 pillow = []
 pkginfo = []
-platformdirs = [
-    {file = "platformdirs-2.5.2-py3-none-any.whl", hash = "sha256:027d8e83a2d7de06bbac4e5ef7e023c02b863d7ea5d079477e722bb41ab25788"},
-    {file = "platformdirs-2.5.2.tar.gz", hash = "sha256:58c8abb07dcb441e6ee4b11d8df0ac856038f944ab98b7be6b27b2a3c7feef19"},
-]
+platformdirs = []
 pluggy = [
     {file = "pluggy-1.0.0-py2.py3-none-any.whl", hash = "sha256:74134bbf457f031a36d68416e1509f34bd5ccc019f0bcc952c7b909d06b37bd3"},
     {file = "pluggy-1.0.0.tar.gz", hash = "sha256:4224373bacce55f955a878bf9cfa763c1e360858e330072059e10bad68531159"},
