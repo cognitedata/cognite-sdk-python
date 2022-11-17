@@ -1,4 +1,5 @@
 import time
+import warnings
 from dataclasses import dataclass
 from enum import Enum
 from typing import (
@@ -28,7 +29,7 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.annotation_types.images import AssetLink, ObjectDetection, TextRegion
 from cognite.client.data_classes.annotation_types.primitives import VisionResource
 from cognite.client.data_classes.annotations import AnnotationList
-from cognite.client.exceptions import CogniteException, ModelFailedException
+from cognite.client.exceptions import CogniteAPIError, CogniteException, ModelFailedException
 from cognite.client.utils._auxiliary import convert_true_match, to_snake_case
 
 if TYPE_CHECKING:
@@ -537,6 +538,102 @@ class IndustrialObjectDetectionParameters(VisionResource, ThresholdParameter):
 @dataclass
 class PersonalProtectiveEquipmentDetectionParameters(VisionResource, ThresholdParameter):
     pass
+
+
+class DetectJobBundle:
+    _RESOURCE_PATH = "/context/diagram/detect/"
+    _STATUS_PATH = "/context/diagram/detect/status"
+    _WAIT_TIME = 2
+
+    def __init__(self, job_ids: List[int], cognite_client: "CogniteClient" = None):
+        # Show warning
+        warnings.warn(
+            "DetectJobBundle.result is calling a beta endpoint which is still in development. Breaking changes can happen in between patch versions."
+        )
+
+        self._cognite_client = cast("CogniteClient", cognite_client)
+        if not job_ids:
+            raise ValueError("You need to specify job_ids")
+        self.job_ids = job_ids
+        self._remaining_job_ids: List[int] = []
+
+        self.jobs: List[Dict[str, Any]] = []
+
+        self._result: List[Dict[str, Any]] = []
+
+    def __str__(self) -> str:
+        return (
+            "DetectJobBundle( job_ids="
+            + str(self.job_ids)
+            + ", self.jobs="
+            + str(self.jobs)
+            + ", self._result="
+            + str(self._result)
+            + ", self._remaining_job_ids="
+            + str(self._remaining_job_ids)
+            + ")"
+        )
+
+    def _back_off(self) -> None:
+        """
+        Linear back off, in order to limit load on our API.
+        Starts at _WAIT_TIME and goes to 10 seconds.
+        """
+        time.sleep(self._WAIT_TIME)
+        if self._WAIT_TIME < 10:
+            self._WAIT_TIME += 2
+
+    def wait_for_completion(self, timeout: int = None) -> None:
+        """Waits for all jobs to complete, generally not needed to call as it is called by result.
+        Args:
+            timeout (int): Time out after this many seconds. (None means wait indefinitely)
+            interval (int): Poll status every this many seconds.
+        """
+        start = time.time()
+        self._remaining_job_ids = self.job_ids
+        while timeout is None or time.time() < start + timeout:
+            try:
+                res = self._cognite_client.diagrams._post(self._STATUS_PATH, json={"items": self._remaining_job_ids})
+            except CogniteAPIError:
+                self._back_off()
+                if self._WAIT_TIME < 10:
+                    self._WAIT_TIME += 2
+                continue
+            if res.json().get("error"):
+                break
+            self.jobs = res.json()["items"]
+
+            # Assign the jobs that aren't finished
+            self._remaining_job_ids = [j["jobId"] for j in self.jobs if JobStatus(j["status"]).is_not_finished()]
+
+            if self._remaining_job_ids:
+                self._back_off()
+            else:
+                self._WAIT_TIME = 2
+                break
+
+    def fetch_results(self) -> List[Dict[str, Any]]:
+        # Check status
+        return [self._cognite_client.diagrams._get(f"{self._RESOURCE_PATH}{j}").json() for j in self.job_ids]
+
+    @property
+    def result(self) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+        """Waits for the job to finish and returns the results."""
+        if not self._result:
+            self.wait_for_completion()
+
+            self._result = self.fetch_results()
+        assert self._result is not None
+        # Sort into succeeded and failed
+        failed: List[Dict[str, Any]] = []
+        succeeded: List[Dict[str, Any]] = []
+        for job_result in self._result:
+            for item in job_result["items"]:
+                if "errorMessage" in item:
+                    failed.append({**item, **{"job_id": job_result["jobId"], "status": job_result["status"]}})
+                else:
+                    succeeded.append({**item, **{"job_id": job_result["jobId"], "status": job_result["status"]}})
+        return succeeded, failed
 
 
 @dataclass
