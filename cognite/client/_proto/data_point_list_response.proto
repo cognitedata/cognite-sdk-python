@@ -12,6 +12,7 @@ message DataPointListItem {
     bool isString = 6;
     bool isStep = 7;
     string unit = 8;
+    string nextCursor = 9;
 
     oneof datapointType {
         NumericDatapoints numericDatapoints = 3;
