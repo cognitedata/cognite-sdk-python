@@ -436,7 +436,7 @@ class Datapoints(CogniteResource):
             dumped = {utils._auxiliary.to_camel_case(key): value for key, value in dumped.items()}
         return {key: value for key, value in dumped.items() if value is not None}
 
-    def to_pandas(  # type: ignore[override]
+    def to_pandas(  # type: ignore [override]
         self,
         column_names: str = "external_id",
         include_aggregate_name: bool = True,
@@ -596,7 +596,9 @@ class DatapointsArrayList(CogniteResourceList):
     ) -> "pandas.DataFrame":
         pd = cast(Any, local_import("pandas"))
         if dfs := [arr.to_pandas(column_names, include_aggregate_name) for arr in self.data]:
-            return pd.concat(dfs, axis="columns")
+            # TODO: Performance optimization possible as concatenating the dfs is exceedingly likely to cause a
+            # full copy (indexes not exactly overlapping). Manual creation seems faster
+            return pd.concat(dfs, axis="columns", sort=True)
         return pd.DataFrame(index=pd.to_datetime([]))
 
     def dump(self, camel_case: bool = False, convert_timestamps: bool = False) -> List[Dict[str, Any]]:
@@ -649,7 +651,7 @@ class DatapointsList(CogniteResourceList):
             i["datapoints"] = utils._time.convert_time_attributes_to_datetime(i["datapoints"])
         return json.dumps(item, default=lambda x: x.__dict__, indent=4)
 
-    def to_pandas(  # type: ignore[override]
+    def to_pandas(  # type: ignore [override]
         self, column_names: str = "external_id", include_aggregate_name: bool = True
     ) -> "pandas.DataFrame":
         """Convert the datapoints list into a pandas DataFrame.
@@ -671,7 +673,7 @@ class DatapointsList(CogniteResourceList):
             for dps in self.data
         ]
         if dfs:
-            return pd.concat(dfs, axis="columns")
+            return pd.concat(dfs, axis="columns", sort=True)
         return pd.DataFrame()
 
     def _repr_html_(self) -> str:

@@ -50,7 +50,8 @@ Changes are grouped as follows
   - Any query for `string` datapoints
     - Faster the more dps, e.g. single ts, 500k: +600%
 - Peak memory consumption (for numeric data) is 40-55 % lower when using `retrieve` and 65-75 % lower for the new `retrieve_arrays` method.
-- Converting fetched datapoints to a Pandas `DataFrame` via `to_pandas()` (or time saved by using `retrieve_dataframe` directly) has changed from `O(N)` to `O(1)`, i.e., speedup no longer depends on the number of datapoints and is typically 4-5 orders of magnitude faster (!) (only applies to `DatapointsArray` and `DatapointsArrayList` as returned by the `retrieve_arrays` method).
+- Fetching newly inserted datapoints no longer suffers from (potentially) very long wait times (or timeout risk).
+- Converting fetched datapoints to a Pandas `DataFrame` via `to_pandas()` has changed from `O(N)` to `O(1)`, i.e., speedup no longer depends on the number of datapoints and is typically 4-5 orders of magnitude faster (!). NB: Only applies to `DatapointsArray` as returned by the `retrieve_arrays` method.
 - Full customizability of queries is now available for *all retrieve* endpoints, thus the `query()` is no longer needed and has been removed. Previously only `aggregates` could be individually specified. Now all parameters can be passed either as top-level or as *individual settings*, even `ignore_unknown_ids`. This is now aligned with the API (except `ignore_unknown_ids` making the SDK arguably better!).
 - Documentation for the retrieve endpoints has been overhauled with lots of new usage patterns and better examples. Check it out!
 - Vastly better test coverage for datapoints fetching logic. You can have increased trust in the results from the SDK!
@@ -59,7 +60,7 @@ Changes are grouped as follows
 - New required dependency, `protobuf`. This is currently only used by the DatapointsAPI, but other endpoints may be changed without needing to release a new major version.
 - New optional dependency, `numpy`.
 - A new datapoints fetching method, `retrieve_arrays`, that loads data directly into NumPy arrays for improved speed and *even* lower memory usage.
-- These arrays are stored in the new resource types `DatapointsArray` and `DatapointsArrayList` which offer more efficient memory usage and zero-overhead pandas-conversion.
+- These arrays are stored in the new resource types `DatapointsArray` and `DatapointsArrayList` which offer much more efficient memory usage. `DatapointsArray` also offer zero-overhead pandas-conversion.
 
 ### Changed
 - Datapoints are no longer fetched using `JSON`: the age of `protobuf` has begun.
@@ -78,6 +79,7 @@ Changes are grouped as follows
 - Aggregates returned now include the time period(s) (given by the `granularity` unit) that `start` and `end` are part of (as opposed to only "fully in-between" points). This change is the *only breaking change* to the `DatapointsAPI.retrieve` method for aggregates and makes it so that the SDK match manual queries sent using e.g. `curl` or Postman. In other words, this is now aligned with the API.
 Note also that this is a **bugfix**: Due to the SDK rounding differently than the API, you could supply `start` and `end` (with `start < end`) and still be given an error that `start is not before end`. This can no longer happen.
 - Fetching raw datapoints using `include_outside_points=True` now returns both outside points (if they exist), regardless of `limit` setting (this is the *only breaking change* for limited raw datapoint queries; unlimited queries are fully backwards compatible). Previously the total number of points was capped at `limit`, thus typically only returning the first. Now up to `limit+2` datapoints are always returned. This is now aligned with the API.
+- Fetching newly inserted datapoints no longer suffers from very long wait times (or timeout risk) as the code dependency on `count` aggregates has been removed entirely (implementation detail) which could delay fetching by anything between a few seconds to several minutes/timeout while the aggregate was computed on-the-fly. This was mostly a problem for datapoints insertions into low-priority time periods (far away from current time).
 - Asking for the same time series any number of times no longer raises an error (from the SDK), which is useful for instance when fetching disconnected time periods. This is now aligned with the API. Thus, the custom exception `CogniteDuplicateColumnsError` is no longer needed and has been removed from the SDK.
 - ...this change also causes the `.get` method of `DatapointsList` and `DatapointsArrayList` to now return a list of `Datapoints` or `DatapointsArray` respectively when duplicated identifiers are queried. For data scientists and others used to `pandas`, this syntax is familiar to the slicing logic of `Series` and `DataFrame` when used with non-unique indices.
 There is also a very subtle **bugfix** here: since the previous implementation allowed the same time series to be specified by both its `id` and `external_id`, using `.get` to access it would always yield the settings that were specified by the `external_id`. This will now return a `list` as explained above.
@@ -90,6 +92,7 @@ There is also a very subtle **bugfix** here: since the previous implementation a
 - Interpolating, forward-filling or in general, imputation (also prev. controlled via the `complete` parameter) is completely removed as the resampling logic *really* should be up to the user fetching the data to decide, not the SDK.
 - New parameter `column_names` (as already used in several existing `to_pandas` methods) decides whether to pick `id`s or `external_id`s as the dataframe column names. Previously, when both were supplied, the dataframe ended up with a mix.
 Read more below in the removed section or check out the method's updated documentation.
+- The ordering of columns for aggregates is now always chronological instead of the somewhat arbitrary choice made in `Datapoints.__init__`, (since `dict`s keep insertion order in newer python versions and instance variables lives in `__dict__`)).
 
 ### Fixed
 - `CogniteClientMock` has been updated with 24 missing APIs (including sub-composited APIs like `FunctionsAPI.schedules`) and is now used internally in testing instead of a similar, additional implementation.

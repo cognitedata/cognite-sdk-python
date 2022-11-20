@@ -71,7 +71,10 @@ class CogniteClientMock(MagicMock):
         super().__init__(spec=CogniteClient, *args, **kwargs)
         # Developer note:
         # - Please add your mocked APIs in chronological order
-        # - Add spacing around nested APIs
+        # - For nested APIs:
+        #   - Add spacing above and below
+        #   - Use `spec=MyAPI` only for "top level"
+        #   - Use `spec_set=MyNestedAPI` for all nested APIs
         self.annotations = MagicMock(spec_set=AnnotationsAPI)
         self.assets = MagicMock(spec_set=AssetsAPI)
         self.data_sets = MagicMock(spec_set=DataSetsAPI)

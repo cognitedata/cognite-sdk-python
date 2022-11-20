@@ -114,12 +114,12 @@ class APIClient:
 
     def _delete(
         self, url_path: str, params: Optional[Dict[str, Any]] = None, headers: Optional[Dict[str, Any]] = None
-    ) -> requests.Response:
+    ) -> Response:
         return self._do_request("DELETE", url_path, params=params, headers=headers, timeout=self._config.timeout)
 
     def _get(
         self, url_path: str, params: Optional[Dict[str, Any]] = None, headers: Optional[Dict[str, Any]] = None
-    ) -> requests.Response:
+    ) -> Response:
         return self._do_request("GET", url_path, params=params, headers=headers, timeout=self._config.timeout)
 
     def _post(
@@ -128,19 +128,17 @@ class APIClient:
         json: Optional[Dict[str, Any]] = None,
         params: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, Any]] = None,
-    ) -> requests.Response:
+    ) -> Response:
         return self._do_request(
             "POST", url_path, json=json, headers=headers, params=params, timeout=self._config.timeout
         )
 
     def _put(
         self, url_path: str, json: Optional[Dict[str, Any]] = None, headers: Optional[Dict[str, Any]] = None
-    ) -> requests.Response:
+    ) -> Response:
         return self._do_request("PUT", url_path, json=json, headers=headers, timeout=self._config.timeout)
 
-    def _do_request(
-        self, method: str, url_path: str, accept: str = "application/json", **kwargs: Any
-    ) -> requests.Response:
+    def _do_request(self, method: str, url_path: str, accept: str = "application/json", **kwargs: Any) -> Response:
         is_retryable, full_url = self._resolve_url(method, url_path)
 
         json_payload = kwargs.get("json")

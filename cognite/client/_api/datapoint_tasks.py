@@ -366,7 +366,6 @@ class _SingleTSQueryBase:
 
         self.granularity: Optional[str] = None
         self._is_missing: Optional[bool] = None
-        self._is_string: Optional[bool] = None
 
         if self.include_outside_points and self.limit is not None:
             warnings.warn(
@@ -411,20 +410,6 @@ class _SingleTSQueryBase:
     def is_missing(self, value: bool) -> None:
         assert isinstance(value, bool)
         self._is_missing = value
-
-    @property
-    def is_string(self) -> bool:
-        if self._is_string is None:
-            raise RuntimeError(
-                "For queries asking for raw datapoints, the `is_string` status is unknown before "
-                "any API-calls have been made"
-            )
-        return self._is_string
-
-    @is_string.setter
-    def is_string(self, value: bool) -> None:
-        assert isinstance(value, bool)
-        self._is_string = value
 
 
 class _SingleTSQueryRaw(_SingleTSQueryBase):
@@ -524,6 +509,7 @@ class DpsUnpackFns:
 
 
 T = TypeVar("T")
+FIRST_IDX = (0,)
 
 
 class DefaultSortedDict(SortedDict, Generic[T]):
@@ -559,7 +545,7 @@ def get_datapoints_from_proto(res: DataPointListItem) -> DatapointsAny:
     return cast(MutableSequence[Any], [])
 
 
-def get_ts_info_from_proto(res: DataPointListItem) -> Dict[str, Union[int, str, bool]]:
+def get_ts_info_from_proto(res: DataPointListItem) -> Dict[str, Union[int, str, bool, None]]:
     return {
         "id": res.id,
         "external_id": res.externalId,
@@ -832,10 +818,20 @@ class BaseConcurrentTask:
         return self.ts_info
 
     @property
+    def start_ts_first_batch(self) -> int:
+        ts = self.ts_data[FIRST_IDX][0][0]
+        return ts.item() if self.use_numpy else ts
+
+    @property
+    def end_ts_first_batch(self) -> int:
+        ts = self.ts_data[FIRST_IDX][0][-1]
+        return ts.item() if self.use_numpy else ts
+
+    @property
     def n_dps_first_batch(self) -> int:
         if self.eager_mode:
             return 0
-        return len(self.ts_data[(0,)][0])
+        return len(self.ts_data[FIRST_IDX][0])
 
     @property
     def is_done(self) -> bool:
@@ -929,7 +925,7 @@ class BaseConcurrentTask:
     def _store_first_batch(self, dps: DatapointsAny, first_limit: int) -> None:
         # Set `start` for the first subtask:
         self.first_start = dps[-1].timestamp + self.offset_next
-        self._unpack_and_store((0,), dps)
+        self._unpack_and_store(FIRST_IDX, dps)
 
         # Are we done after first batch?
         if self.first_start == self.query.end:
