@@ -114,7 +114,7 @@ class EventsAPI(APIClient):
         Yields:
             Event: yields Events one by one.
         """
-        return cast(Iterator[Event], self.__call__())
+        return cast(Iterator[Event], self())
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Event]:
         """`Retrieve a single event by id. <https://docs.cognite.com/api/v1/#operation/getEventByInternalId>`_

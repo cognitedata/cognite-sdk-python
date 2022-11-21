@@ -110,7 +110,7 @@ class TestEvents:
         assert res[0].value == "WORKORDER"
 
     def test_call_root(self, cognite_client, mock_events_response):
-        list(cognite_client.events.__call__(asset_subtree_external_ids=["a"], limit=10))
+        list(cognite_client.events(asset_subtree_external_ids=["a"], limit=10))
         calls = mock_events_response.calls
         assert 1 == len(calls)
         assert {

@@ -93,4 +93,4 @@ class ClientConfig:
         return pprint.pformat(self.__dict__, indent=4)
 
     def _repr_html_(self) -> str:
-        return self.__str__()
+        return str(self)

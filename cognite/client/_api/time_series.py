@@ -106,7 +106,7 @@ class TimeSeriesAPI(APIClient):
         Yields:
             TimeSeries: yields TimeSeries one by one.
         """
-        return cast(Iterator[TimeSeries], self.__call__())
+        return cast(Iterator[TimeSeries], self())
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[TimeSeries]:
         """`Retrieve a single time series by id. <https://docs.cognite.com/api/v1/#operation/getTimeSeriesByIds>`_

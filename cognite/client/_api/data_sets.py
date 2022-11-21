@@ -64,7 +64,7 @@ class DataSetsAPI(APIClient):
         Yields:
             Event: yields DataSet one by one.
         """
-        return cast(Iterator[DataSet], self.__call__())
+        return cast(Iterator[DataSet], self())
 
     def create(self, data_set: Union[DataSet, Sequence[DataSet]]) -> Union[DataSet, DataSetList]:
         """`Create one or more data sets. <https://docs.cognite.com/api/v1/#operation/createDataSets>`_

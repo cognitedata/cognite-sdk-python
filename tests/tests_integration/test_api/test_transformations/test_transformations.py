@@ -338,7 +338,7 @@ class TestTransformationsAPI:
         tr: Transformation = cognite_client.transformations.retrieve(external_id=new_transformation.external_id)
         import json
 
-        str_res = json.loads(tr.__str__())
+        str_res = json.loads(str(tr))
         str_res["created_time"] = None
         str_res["last_updated_time"] = None
         str_res["owner"] = None

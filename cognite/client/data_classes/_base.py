@@ -4,7 +4,9 @@ from typing import TYPE_CHECKING, Any, Collection, Dict, Generic, List, Optional
 
 from cognite.client import utils
 from cognite.client.exceptions import CogniteMissingClientError
+from cognite.client.utils._auxiliary import convert_all_keys_to_camel_case, to_camel_case, to_snake_case
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._time import convert_time_attributes_to_datetime
 
 if TYPE_CHECKING:
     import pandas
@@ -16,13 +18,21 @@ EXCLUDE_VALUE = [None]
 T_CogniteResponse = TypeVar("T_CogniteResponse", bound="CogniteResponse")
 
 
+def basic_instance_dump(obj: Any, camel_case: bool) -> Dict[str, Any]:
+    # TODO: Consider using inheritance?
+    dumped = {k: v for k, v in vars(obj).items() if v not in EXCLUDE_VALUE and not k.startswith("_")}
+    if camel_case:
+        return convert_all_keys_to_camel_case(dumped)
+    return dumped
+
+
 class CogniteResponse:
     def __str__(self) -> str:
-        item = utils._time.convert_time_attributes_to_datetime(self.dump())
+        item = convert_time_attributes_to_datetime(self.dump())
         return json.dumps(item, default=utils._auxiliary.json_dump_default, indent=4)
 
     def __repr__(self) -> str:
-        return self.__str__()
+        return str(self)
 
     def __eq__(self, other: Any) -> bool:
         return type(other) == type(self) and other.dump() == self.dump()
@@ -35,7 +45,7 @@ class CogniteResponse:
         return attr
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        """Dump the instance into a json serializable python data type.
+        """Dump the instance into a json serializable Python data type.
 
         Args:
             camel_case (bool): Use camelCase for attribute names. Defaults to False.
@@ -43,12 +53,7 @@ class CogniteResponse:
         Returns:
             Dict[str, Any]: A dictionary representation of the instance.
         """
-        dumped = {
-            key: value for key, value in self.__dict__.items() if value not in EXCLUDE_VALUE and not key.startswith("_")
-        }
-        if camel_case:
-            dumped = {utils._auxiliary.to_camel_case(key): value for key, value in dumped.items()}
-        return dumped
+        return basic_instance_dump(self, camel_case=camel_case)
 
     @classmethod
     def _load(cls, api_response: Dict[str, Any]) -> "CogniteResponse":
@@ -75,7 +80,7 @@ class CogniteResource:
         return type(self) == type(other) and self.dump() == other.dump()
 
     def __str__(self) -> str:
-        item = utils._time.convert_time_attributes_to_datetime(self.dump())
+        item = convert_time_attributes_to_datetime(self.dump())
         return json.dumps(item, default=utils._auxiliary.json_dump_default, indent=4)
 
     def __getattribute__(self, item: Any) -> Any:
@@ -94,15 +99,7 @@ class CogniteResource:
         Returns:
             Dict[str, Any]: A dictionary representation of the instance.
         """
-        if camel_case:
-            return {
-                utils._auxiliary.to_camel_case(key): value
-                for key, value in self.__dict__.items()
-                if value not in EXCLUDE_VALUE and not key.startswith("_")
-            }
-        return {
-            key: value for key, value in self.__dict__.items() if value not in EXCLUDE_VALUE and not key.startswith("_")
-        }
+        return basic_instance_dump(self, camel_case=camel_case)
 
     @classmethod
     def _load(
@@ -113,7 +110,7 @@ class CogniteResource:
         elif isinstance(resource, Dict):
             instance = cls(cognite_client=cognite_client)
             for key, value in resource.items():
-                snake_case_key = utils._auxiliary.to_snake_case(key)
+                snake_case_key = to_snake_case(key)
                 if hasattr(instance, snake_case_key):
                     setattr(instance, snake_case_key, value)
             return instance
@@ -213,7 +210,7 @@ class CogniteResourceList(UserList):
         return value
 
     def __str__(self) -> str:
-        item = utils._time.convert_time_attributes_to_datetime(self.dump())
+        item = convert_time_attributes_to_datetime(self.dump())
         return json.dumps(item, default=utils._auxiliary.json_dump_default, indent=4)
 
     def dump(self, camel_case: bool = False) -> List[Dict[str, Any]]:
@@ -250,12 +247,12 @@ class CogniteResourceList(UserList):
         """
         pd = cast(Any, utils._auxiliary.local_import("pandas"))
         df = pd.DataFrame(self.dump(camel_case=camel_case))
-        nullable_int_fields = ["startTime", "endTime", "assetId", "parentId", "dataSetId"]
-        if not camel_case:
-            nullable_int_fields = [utils._auxiliary.to_snake_case(f) for f in nullable_int_fields]
-        for field in nullable_int_fields:
-            if field in df:
-                df[field] = df[field].astype("Int64")
+        nullable_int_cols = ["start_time", "end_time", "asset_id", "parent_id", "data_set_id"]
+        if camel_case:
+            nullable_int_cols = list(map(to_camel_case, nullable_int_cols))
+
+        to_convert = df.columns.intersection(nullable_int_cols)
+        df[to_convert] = df[to_convert].astype("Int64")
         return df
 
     def _repr_html_(self) -> str:
@@ -288,7 +285,7 @@ class CogniteUpdate:
         return json.dumps(self.dump(), default=utils._auxiliary.json_dump_default, indent=4)
 
     def __repr__(self) -> str:
-        return self.__str__()
+        return str(self)
 
     def _set(self, name: str, value: Any) -> None:
         update_obj = self._update_object.get(name, {})
@@ -430,11 +427,11 @@ class CogniteFilter:
         return type(self) == type(other) and self.dump() == other.dump()
 
     def __str__(self) -> str:
-        item = utils._time.convert_time_attributes_to_datetime(self.dump())
+        item = convert_time_attributes_to_datetime(self.dump())
         return json.dumps(item, default=utils._auxiliary.json_dump_default, indent=4)
 
     def __repr__(self) -> str:
-        return self.__str__()
+        return str(self)
 
     def __getattribute__(self, item: Any) -> Any:
         attr = super().__getattribute__(item)
@@ -450,7 +447,7 @@ class CogniteFilter:
         elif isinstance(resource, Dict):
             instance = cls()
             for key, value in resource.items():
-                snake_case_key = utils._auxiliary.to_snake_case(key)
+                snake_case_key = to_snake_case(key)
                 if hasattr(instance, snake_case_key):
                     setattr(instance, snake_case_key, value)
             return instance
@@ -459,13 +456,10 @@ class CogniteFilter:
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
+        Args:
+            camel_case (bool): Use camelCase for attribute names. Defaults to False.
+
         Returns:
             Dict[str, Any]: A dictionary representation of the instance.
         """
-
-        dump_key = lambda key: key if not camel_case else utils._auxiliary.to_camel_case(key)
-        return {
-            dump_key(key): value
-            for key, value in self.__dict__.items()
-            if value not in EXCLUDE_VALUE and not key.startswith("_")
-        }
+        return basic_instance_dump(self, camel_case=camel_case)

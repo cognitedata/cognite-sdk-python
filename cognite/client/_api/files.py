@@ -127,7 +127,7 @@ class FilesAPI(APIClient):
         Yields:
             FileMetadata: yields Files one by one.
         """
-        return cast(Iterator[FileMetadata], self.__call__())
+        return cast(Iterator[FileMetadata], self())
 
     def create(self, file_metadata: FileMetadata, overwrite: bool = False) -> Tuple[FileMetadata, str]:
         """Create file without uploading content.

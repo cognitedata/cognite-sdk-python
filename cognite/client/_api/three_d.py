@@ -61,7 +61,7 @@ class ThreeDModelsAPI(APIClient):
         Yields:
             ThreeDModel: yields models one by one.
         """
-        return cast(Iterator[ThreeDModel], self.__call__())
+        return cast(Iterator[ThreeDModel], self())
 
     def retrieve(self, id: int) -> Optional[ThreeDModel]:
         """`Retrieve a 3d model by id <https://docs.cognite.com/api/v1/#operation/get3DModel>`_

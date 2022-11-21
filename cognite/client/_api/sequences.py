@@ -102,7 +102,7 @@ class SequencesAPI(APIClient):
         Yields:
             Sequence: yields Sequence one by one.
         """
-        return cast(Iterator[Sequence], self.__call__())
+        return cast(Iterator[Sequence], self())
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Sequence]:
         """`Retrieve a single sequence by id. <https://docs.cognite.com/api/v1/#operation/getSequenceById>`_
