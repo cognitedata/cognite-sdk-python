@@ -545,7 +545,7 @@ def get_datapoints_from_proto(res: DataPointListItem) -> DatapointsAny:
     return cast(MutableSequence[Any], [])
 
 
-def get_ts_info_from_proto(res: DataPointListItem) -> Dict[str, Union[int, str, bool, None]]:
+def get_ts_info_from_proto(res: DataPointListItem) -> Dict[str, Union[int, str, bool]]:
     return {
         "id": res.id,
         "external_id": res.externalId,
@@ -582,7 +582,6 @@ class BaseDpsFetchSubtask:
         parent: BaseConcurrentTask,
         priority: int,
         max_query_limit: int,
-        n_dps_left: float,
         is_raw_query: bool,
     ) -> None:
         self.start = start
@@ -592,9 +591,11 @@ class BaseDpsFetchSubtask:
         self.priority = priority
         self.is_raw_query = is_raw_query
         self.max_query_limit = max_query_limit
-        self.n_dps_left = n_dps_left
 
         self.is_done = False
+
+    def get_remaining_limit(self) -> Optional[int]:
+        return self.parent.get_remaining_limit(self)
 
     @abstractmethod
     def get_next_payload(self) -> Optional[CustomDatapoints]:
@@ -609,7 +610,7 @@ class OutsideDpsFetchSubtask(BaseDpsFetchSubtask):
     """Fetches outside points and stores in parent"""
 
     def __init__(self, **kwargs: Any) -> None:
-        outside_dps_settings: Dict[str, Any] = dict(priority=0, is_raw_query=True, max_query_limit=0, n_dps_left=0)
+        outside_dps_settings: Dict[str, Any] = dict(priority=0, is_raw_query=True, max_query_limit=0)
         super().__init__(**kwargs, **outside_dps_settings)
 
     def get_next_payload(self) -> Optional[CustomDatapoints]:
@@ -649,8 +650,7 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
         subtask_idx: Tuple[float, ...],
         **kwargs: Any,
     ) -> None:
-        n_dps_left = math.inf if limit is None else limit
-        super().__init__(**kwargs, n_dps_left=n_dps_left)
+        super().__init__(**kwargs)
         self.limit = limit
         self.aggregates = aggregates
         self.granularity = granularity
@@ -665,7 +665,7 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
     def get_next_payload(self) -> Optional[CustomDatapoints]:
         if self.is_done:
             return None
-        remaining = self.parent.remaining_limit(self)
+        remaining = self.get_remaining_limit()
         if self.parent.ts_info is not None and remaining == 0:
             # Since last time this task fetched points, earlier tasks have already fetched >= limit dps.
             # (If ts_info isn't known, it means we still have to send out a request, happens when given limit=0)
@@ -685,7 +685,7 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
                 **self.identifier.as_dict(),  # type: ignore [misc]
                 "start": self.next_start,
                 "end": self.end,
-                "limit": min(remaining_limit, self.n_dps_left, self.max_query_limit),
+                "limit": min(remaining_limit, self.max_query_limit),
                 **self.agg_kwargs,
             }
         )
@@ -702,17 +702,16 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
         n, last_ts = len(dps), dps[-1].timestamp
         self.parent._unpack_and_store(self.subtask_idx, dps)
         self._update_state_for_next_payload(last_ts, n)
-        if self._is_task_done(n):
+        if self._is_task_done(n, res.nextCursor):
             self.is_done = True
         return None
 
     def _update_state_for_next_payload(self, last_ts: int, n: int) -> None:
         self.next_start = last_ts + self.parent.offset_next  # Move `start` to prepare for next query
-        self.n_dps_left -= n
         self.n_dps_fetched += n  # Used to quit limited queries asap
 
-    def _is_task_done(self, n: int) -> bool:
-        return self.n_dps_left == 0 or n < self.max_query_limit or self.next_start == self.end
+    def _is_task_done(self, n: int, next_cursor: str) -> bool:
+        return not next_cursor or n < self.max_query_limit or self.next_start == self.end
 
 
 class SplittingFetchSubtask(SerialFetchSubtask):
@@ -749,7 +748,7 @@ class SplittingFetchSubtask(SerialFetchSubtask):
         n_new_pct = math.floor(1 / ratio_retrieved)
         # How many new tasks because of limit left (if limit)?
         n_new_lim = math.inf
-        if (remaining_limit := self.parent.remaining_limit(self)) is not None:
+        if (remaining_limit := self.get_remaining_limit()) is not None:
             n_new_lim = math.ceil(remaining_limit / self.max_query_limit)
         # We pick strictest criterion:
         n_new_tasks = min(cast(int, n_new_lim), n_new_pct, self.max_splitting_factor + 1)  # +1 for "self next"
@@ -935,7 +934,7 @@ class BaseConcurrentTask:
         elif len(dps) < first_limit:
             self._is_done = True
 
-    def remaining_limit(self, subtask: BaseDpsFetchSubtask) -> Optional[int]:
+    def get_remaining_limit(self, subtask: BaseDpsFetchSubtask) -> Optional[int]:
         if not self.has_limit:
             return None
         # For limited queries: if the sum of fetched points of earlier tasks have already hit/surpassed

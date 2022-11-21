@@ -386,7 +386,8 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         for task in new_subtasks:
             # We leverage how tuples are compared to prioritise items. First `priority`, then `payload limit`
             # (to easily group smaller queries), then counter to always break ties, but keep order (never use tasks themselves):
-            limit = min(task.n_dps_left, task.max_query_limit)
+            n_dps_left = math.inf if (n_dps_left := task.get_remaining_limit()) is None else n_dps_left
+            limit = min(n_dps_left, task.max_query_limit)
             new_subtask: PoolSubtaskType = (task.priority, limit, next(self.counter), task)
             heapq.heappush(self.subtask_pools[task.is_raw_query], new_subtask)
 
