@@ -183,6 +183,20 @@ class FunctionFilter(CogniteFilter):
         self.created_time = created_time
 
 
+class FunctionCallsFilter(CogniteFilter):
+    def __init__(
+        self,
+        status: str = None,
+        schedule_id: int = None,
+        start_time: Union[Dict[str, int], TimestampRange] = None,
+        end_time: Union[Dict[str, int], TimestampRange] = None,
+    ) -> None:
+        self.status = status
+        self.schedule_id = schedule_id
+        self.start_time = start_time
+        self.end_time = end_time
+
+
 class FunctionSchedule(CogniteResource):
     """A representation of a Cognite Function Schedule.
 
