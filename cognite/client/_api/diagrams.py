@@ -231,6 +231,17 @@ class DiagramsAPI(APIClient):
             job_cls=DiagramDetectResults,
         )
 
+    def get_detect_jobs(self, job_ids: List[int]) -> List[DiagramDetectResults]:
+        assert self._cognite_client is not None
+        res = self._cognite_client.diagrams._post("/context/diagram/detect/status", json={"items": job_ids})
+        jobs = res.json()["items"]
+        return [
+            DiagramDetectResults._load_with_status(
+                data=job, cognite_client=self._cognite_client, status_path="/context/diagram/detect/"
+            )
+            for job in jobs
+        ]
+
     @staticmethod
     def _process_detect_job(detect_job: DiagramDetectResults) -> list:
         """process the result from detect job so it complies with diagram convert schema

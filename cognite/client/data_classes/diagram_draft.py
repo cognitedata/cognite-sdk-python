@@ -88,8 +88,8 @@ class DiagramProcessor:
         ]
 
     def update_job_statuses(self) -> None:
-        statuses: List[str] = []  # Todo: Implement
         running_job_ids = [job_id for job_id in self.running_jobs.keys()]
+        statuses: List[Optional[str]] = [job.status for job in self.client.diagrams.get_detect_jobs(running_job_ids)]
         for running, status in zip(running_job_ids, statuses):
             if status == "Completed":
                 for (file_index, range_index) in self.running_jobs[running]:
