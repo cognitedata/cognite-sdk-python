@@ -46,7 +46,7 @@ Changes are grouped as follows:
 
 ### Optional
 - Resource types `DatapointsArray` and `DatapointsArrayList` which offer way more efficient memory storage for datapoints (uses `numpy.ndarrays`)
-- Datapoints fetching method, `DatapointsAPI.retrieve_arrays`, returning `DatapointsArray` and `DatapointsArrayList`.
+- New datapoints fetching method, `DatapointsAPI.retrieve_arrays`, returning `DatapointsArray` and `DatapointsArrayList`.
 - A single aggregate, e.g. `average`, can be specified by a string directly, `aggregates="average"` (as opposed to packing it inside a list, `aggregates=["average"]`)
 
 

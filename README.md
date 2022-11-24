@@ -14,8 +14,7 @@ Cognite Python SDK
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
 This is the Cognite Python SDK for developers and data scientists working with Cognite Data Fusion (CDF).
-The package is tightly integrated with pandas, and helps you work easily and efficiently with data in Cognite Data
-Fusion (CDF).
+The package is tightly integrated with pandas, and helps you work easily and efficiently with data in Cognite Data Fusion (CDF).
 
 ## Refererence documentation
 * [SDK Documentation](https://cognite-sdk-python.readthedocs-hosted.com/en/latest/)
@@ -70,10 +69,10 @@ pip install cognite-sdk
 ```
 
 ## Changelog
-Wondering about upcoming or previous changes to the SDK? Take a look at the [CHANGELOG](https://github.com/cognitedata/cognite-sdk-python/blob/master/CHANGELOG.md).
+Wondering about upcoming or previous changes to the SDK? Take a look at the [CHANGELOG](CHANGELOG.md).
 
 ## Migration Guide
-To help you upgrade your code(base) quickly and safely to a newer major version of the SDK, check out our migration guide. It is a more focused guide based on the detailed change log. [MIGRATION GUIDE](https://github.com/cognitedata/cognite-sdk-python/blob/master/MIGRATION_GUIDE.md).
+To help you upgrade your code(base) quickly and safely to a newer major version of the SDK, check out our migration guide. It is a more focused guide based on the detailed change log. [MIGRATION GUIDE](MIGRATION_GUIDE.md).
 
 ## Contributing
-Want to contribute? Check out [CONTRIBUTING](https://github.com/cognitedata/cognite-sdk-python/blob/master/CONTRIBUTING.md).
+Want to contribute? Check out [CONTRIBUTING](CONTRIBUTING.md).
