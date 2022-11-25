@@ -946,6 +946,44 @@ class TestRetrieveAggregateDatapointsAPI:
             assert df[f"{xid}|count"].dtype == np.int64
             assert df[f"{xid}|interpolation"].dtype == np.float64
 
+    def test_query_no_ts_exists(self, retrieve_endpoints):
+        for endpoint, exp_res_lst_type in zip(retrieve_endpoints, DPS_LST_TYPES):
+            ts_id = random_cognite_ids(1)  # list of len 1
+            res_lst = endpoint(id=ts_id, ignore_unknown_ids=True)
+            assert isinstance(res_lst, exp_res_lst_type)
+            # SDK bug v<5, id mapping would not exist because empty `.data` on res_lst:
+            assert res_lst.get(id=ts_id[0]) is None
+
+    def test_query_with_duplicates(self, retrieve_endpoints, one_mill_dps_ts, ms_bursty_ts):
+        ts_numeric, ts_string = one_mill_dps_ts
+        for endpoint, exp_res_lst_type in zip(retrieve_endpoints, DPS_LST_TYPES):
+            res_lst = endpoint(
+                id=[
+                    ms_bursty_ts.id,  # This is the only non-duplicated
+                    ts_string.id,
+                    {"id": ts_numeric.id, "granularity": "1d", "aggregates": "average"},
+                ],
+                external_id=[
+                    ts_string.external_id,
+                    ts_numeric.external_id,
+                    {"external_id": ts_numeric.external_id, "granularity": "1d", "aggregates": "average"},
+                ],
+                limit=5,
+            )
+            assert isinstance(res_lst, exp_res_lst_type)
+            # Check non-duplicated in result:
+            assert isinstance(res_lst.get(id=ms_bursty_ts.id), exp_res_lst_type._RESOURCE)
+            assert isinstance(res_lst.get(external_id=ms_bursty_ts.external_id), exp_res_lst_type._RESOURCE)
+            # Check duplicated in result:
+            assert isinstance(res_lst.get(id=ts_numeric.id), list)
+            assert isinstance(res_lst.get(id=ts_string.id), list)
+            assert isinstance(res_lst.get(external_id=ts_numeric.external_id), list)
+            assert isinstance(res_lst.get(external_id=ts_string.external_id), list)
+            assert len(res_lst.get(id=ts_numeric.id)) == 3
+            assert len(res_lst.get(id=ts_string.id)) == 2
+            assert len(res_lst.get(external_id=ts_numeric.external_id)) == 3
+            assert len(res_lst.get(external_id=ts_string.external_id)) == 2
+
 
 class TestRetrieveMixedRawAndAgg:
     def test_multiple_settings_for_ignore_unknown_ids(
@@ -979,15 +1017,6 @@ class TestRetrieveMixedRawAndAgg:
             assert isinstance(dps_xid, exp_res_lst_type._RESOURCE)
             dps_id = res_lst.get(id=ts_num.id)
             assert isinstance(dps_id, exp_res_lst_type._RESOURCE)
-
-    def test_query_no_ts_exists(self, retrieve_endpoints):
-        for endpoint, exp_res_lst_type in zip(retrieve_endpoints, DPS_LST_TYPES):
-            ts_id = random_cognite_ids(1)  # list of len 1
-            res_lst = endpoint(id=ts_id, ignore_unknown_ids=True)
-            assert isinstance(res_lst, exp_res_lst_type)
-            assert (
-                res_lst.get(id=ts_id[0]) is None
-            )  # SDK bug v<5, id mapping would not exist because no `.data` on res.lst.
 
 
 class TestRetrieveDataFrameAPI:

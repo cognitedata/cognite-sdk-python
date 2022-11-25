@@ -121,13 +121,13 @@ class IdentifierSequence:
             if isinstance(ids, (int, numbers.Integral)):
                 value_passed_as_primitive = True
                 all_identifiers.append(ids)
-            elif isinstance(ids, Sequence):
+            elif isinstance(ids, Sequence) and not isinstance(ids, str):
                 all_identifiers.extend([int(id_) for id_ in ids])
             else:
                 raise TypeError(f"ids must be of type int or Sequence[int]. Found {type(ids)}")
 
         if external_ids is not None:
-            if isinstance(external_ids, (str,)):
+            if isinstance(external_ids, str):
                 value_passed_as_primitive = True
                 all_identifiers.append(external_ids)
             elif isinstance(external_ids, Sequence):

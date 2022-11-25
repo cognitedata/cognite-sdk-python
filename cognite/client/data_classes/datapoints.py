@@ -188,7 +188,8 @@ class DatapointsArray(CogniteResource):
         dps_dct: Dict[str, Union[int, str, bool, npt.NDArray]],
     ) -> DatapointsArray:
         assert isinstance(dps_dct["timestamp"], np.ndarray)  # mypy love
-        # Since pandas always uses nanoseconds for datetime, we stick with the same:
+        # Since pandas always uses nanoseconds for datetime, we stick with the same
+        # (also future-proofs the SDK; ns is coming!):
         dps_dct["timestamp"] = dps_dct["timestamp"].astype("datetime64[ms]").astype("datetime64[ns]")
         return cls(**convert_all_keys_to_snake_case(dps_dct))
 
@@ -293,7 +294,8 @@ class DatapointsArray(CogniteResource):
         identifier = identifier_dct[column_names]
         if identifier is None:  # Time series are not required to have an external_id unfortunately...
             identifier = identifier_dct["id"]
-            assert identifier is not None  # Only happens if a user has created DatapointsArray themselves
+            # Assert we have "a" column name (only fails if a user has created DatapointsArray themselves):
+            assert identifier is not None, "Neither `id` or `external_id` set on object"
             warnings.warn(
                 f"Time series does not have an external ID, so its ID ({self.id}) was used instead as "
                 'the column name in the DataFrame. If this is expected, consider passing `column_names="id"` '
@@ -303,15 +305,15 @@ class DatapointsArray(CogniteResource):
         if self.value is not None:
             return pd.DataFrame({identifier: self.value}, index=self.timestamp, copy=False)
 
-        columns, data = [], []
-        for agg in ALL_SORTED_DP_AGGS:
-            if (arr := getattr(self, agg)) is not None:
-                data.append(arr)
-                columns.append(f"{identifier}{include_aggregate_name * f'|{agg}'}")
+        (_, *agg_names), (_, *arrays) = self._data_fields()
+        if include_aggregate_name:
+            columns = [f"{identifier}|{agg}" for agg in agg_names]
+        else:
+            columns = [str(identifier)] * len(agg_names)
 
         # Since columns might contain duplicates, we can't instantiate from dict as only the
         # last key (array/column) would be kept:
-        (df := pd.DataFrame(dict(enumerate(data)), index=self.timestamp, copy=False)).columns = columns
+        (df := pd.DataFrame(dict(enumerate(arrays)), index=self.timestamp, copy=False)).columns = columns
         return df
 
 
@@ -561,18 +563,16 @@ class DatapointsArrayList(CogniteResourceList):
         super().__init__(resources, cognite_client)
 
         # Fix what happens for duplicated identifiers:
-        ids = {x.id: x for x in self.data if x.id is not None}
-        xids = {x.external_id: x for x in self.data if x.external_id is not None}
+        ids = [dps.id for dps in self.data if dps.id is not None]
+        xids = [dps.external_id for dps in self.data if dps.external_id is not None]
         dupe_ids, id_dct = find_duplicates(ids), defaultdict(list)
         dupe_xids, xid_dct = find_duplicates(xids), defaultdict(list)
 
-        for id, dps_arr in ids.items():
-            if id in dupe_ids:
-                id_dct[id].append(dps_arr)
-
-        for xid, dps_arr in xids.items():
-            if xid in dupe_xids:
-                xid_dct[xid].append(dps_arr)
+        for dps in self.data:
+            if (id_ := dps.id) is not None and id_ in dupe_ids:
+                id_dct[id_].append(dps)
+            if (xid := dps.external_id) is not None and xid in dupe_xids:
+                xid_dct[xid].append(dps)
 
         self._id_to_item.update(id_dct)
         self._external_id_to_item.update(xid_dct)
@@ -598,7 +598,7 @@ class DatapointsArrayList(CogniteResourceList):
         if dfs := [arr.to_pandas(column_names, include_aggregate_name) for arr in self.data]:
             # TODO: Performance optimization possible as concatenating the dfs is exceedingly likely to cause a
             # full copy (indexes not exactly overlapping). Manual creation seems faster
-            return pd.concat(dfs, axis="columns", sort=True)
+            return pd.concat(dfs, axis="columns", sort=True, copy=False)
         return pd.DataFrame(index=pd.to_datetime([]))
 
     def dump(self, camel_case: bool = False, convert_timestamps: bool = False) -> List[Dict[str, Any]]:
@@ -621,17 +621,15 @@ class DatapointsList(CogniteResourceList):
         super().__init__(resources, cognite_client)
 
         # Fix what happens for duplicated identifiers:
-        ids = {x.id: x for x in self.data if x.id is not None}
-        xids = {x.external_id: x for x in self.data if x.external_id is not None}
+        ids = [dps.id for dps in self.data if dps.id is not None]
+        xids = [dps.external_id for dps in self.data if dps.external_id is not None]
         dupe_ids, id_dct = find_duplicates(ids), defaultdict(list)
         dupe_xids, xid_dct = find_duplicates(xids), defaultdict(list)
 
-        for id, dps in ids.items():
-            if id in dupe_ids:
-                id_dct[id].append(dps)
-
-        for xid, dps in xids.items():
-            if xid in dupe_xids:
+        for dps in self.data:
+            if (id_ := dps.id) is not None and id_ in dupe_ids:
+                id_dct[id_].append(dps)
+            if (xid := dps.external_id) is not None and xid in dupe_xids:
                 xid_dct[xid].append(dps)
 
         self._id_to_item.update(id_dct)
