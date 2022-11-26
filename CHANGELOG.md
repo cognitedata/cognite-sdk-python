@@ -840,7 +840,7 @@ allowing the method to take arbitrarily long lists for `source_external_ids` and
 ### Added
 - Files labelling support
 
-## [2.1.1] - 2020-08-13
+## [2.1.2] - 2020-08-13
 
 ### Fixed
 - Fixed a bug where only v1 endpoints (not playground) could be added as retryable
