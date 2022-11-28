@@ -991,7 +991,7 @@ class DatapointsAPI(APIClient):
         Timestamps can be represented as milliseconds since epoch or datetime objects.
 
         Args:
-            datapoints(Union[List[Dict], List[Tuple],Datapoints]): The datapoints you wish to insert. Can either be a list of tuples,
+            datapoints(Union[Datapoints, DatapointsArray, List[Dict], List[Tuple]]): The datapoints you wish to insert. Can either be a list of tuples,
                 a list of dictionaries, a Datapoints object or a DatapointsArray object. See examples below.
             id (int): Id of time series to insert datapoints into.
             external_id (str): External id of time series to insert datapoint into.
@@ -1001,8 +1001,7 @@ class DatapointsAPI(APIClient):
 
         Examples:
 
-            Your datapoints can be a list of tuples where the first element is the timestamp and the second element is
-            the value::
+            Your datapoints can be a list of tuples where the first element is the timestamp and the second element is the value::
 
 
                 >>> from cognite.client import CogniteClient
@@ -1037,17 +1036,7 @@ class DatapointsAPI(APIClient):
             Sequence[Tuple[Union[int, float, datetime], Union[int, float, str]]],
         ]
         if isinstance(datapoints, (Datapoints, DatapointsArray)):
-            if datapoints.value is None:
-                raise ValueError(
-                    "When inserting data using a `Datapoints` or `DatapointsArray` object, only raw datapoints are supported"
-                )
-            if isinstance(datapoints, Datapoints):
-                dps_to_post = cast(List[Tuple[int, Any]], list(zip(datapoints.timestamp, datapoints.value)))
-            else:
-                # Using `tolist()` converts to the nearest compatible built-in Python type:
-                assert datapoints.timestamp is not None
-                ts = datapoints.timestamp.astype("datetime64[ms]").astype("int64")
-                dps_to_post = list(zip(ts.tolist(), datapoints.value.tolist()))
+            dps_to_post = DatapointsPoster._extract_raw_data_from_dps_container(datapoints)
         else:
             dps_to_post = datapoints
 
@@ -1055,7 +1044,7 @@ class DatapointsAPI(APIClient):
         dps_poster = DatapointsPoster(self)
         dps_poster.insert([post_dps_object])
 
-    def insert_multiple(self, datapoints: List[Dict[str, Union[str, int, List]]]) -> None:
+    def insert_multiple(self, datapoints: List[Dict[str, Union[str, int, List, Datapoints, DatapointsArray]]]) -> None:
         """`Insert datapoints into multiple time series <https://docs.cognite.com/api/v1/#operation/postMultiTimeSeriesDatapoints>`_
 
         Args:
@@ -1067,24 +1056,34 @@ class DatapointsAPI(APIClient):
 
         Examples:
 
-            Your datapoints can be a list of tuples where the first element is the timestamp and the second element is
-            the value::
+            Your datapoints can be a list of dictionaries, each containing datapoints for a different (presumably) time series. These dictionaries
+            must have the key "datapoints" (containing the data) specified as a `Datapoints` object, a `DatapointsArray` object, or list of either
+            tuples `(timestamp, value)` or dictionaries, `{"timestamp": ts, "value": value}`::
 
                 >>> from cognite.client import CogniteClient
                 >>> from datetime import datetime, timezone
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
 
                 >>> datapoints = []
                 >>> # With datetime objects and id
                 >>> datapoints.append(
                 ...     {"id": 1, "datapoints": [
                 ...         (datetime(2018,1,1,tzinfo=timezone.utc), 1000),
-                ...         (datetime(2018,1,2,tzinfo=timezone.utc), 2000)
+                ...         (datetime(2018,1,2,tzinfo=timezone.utc), 2000),
                 ... ]})
-                >>> # with ms since epoch and externalId
-                >>> datapoints.append({"externalId": 1, "datapoints": [(150000000000, 1000), (160000000000, 2000)]})
-                >>> c.time_series.data.insert_multiple(datapoints)
+
+                >>> # With ms since epoch and externalId
+                >>> datapoints.append({"externalId": "foo", "datapoints": [(150000000000, 1000), (160000000000, 2000)]})
+
+                >>> # With raw data in a Datapoints object (or DatapointsArray)
+                >>> data_to_clone = client.time_series.data.retrieve(external_id="bar")
+                >>> datapoints.append({"externalId": "bar-clone", "datapoints": data_to_clone})
+                >>> client.time_series.data.insert_multiple(datapoints)
         """
+        for dps_dct in datapoints:
+            # Extract data inplace for any Datapoints and/or DatapointsArray:
+            if isinstance(dps_dct, dict) and isinstance(dps_dct["datapoints"], (Datapoints, DatapointsArray)):
+                dps_dct["datapoints"] = DatapointsPoster._extract_raw_data_from_dps_container(dps_dct["datapoints"])
         dps_poster = DatapointsPoster(self)
         dps_poster.insert(datapoints)
 
@@ -1234,6 +1233,21 @@ class DatapointsPoster:
         valid_dps_object_list = self._validate_dps_objects(dps_object_list)
         binned_dps_object_lists = self._bin_datapoints(valid_dps_object_list)
         self._insert_datapoints_concurrently(binned_dps_object_lists)
+
+    @staticmethod
+    def _extract_raw_data_from_dps_container(
+        dps: Union[Datapoints, DatapointsArray]
+    ) -> Union[List[Tuple[int, str]], List[Tuple[int, float]]]:
+        if dps.value is None:
+            raise ValueError(
+                "When inserting data using a `Datapoints` or `DatapointsArray` object, only raw dps are supported"
+            )
+        if isinstance(dps, Datapoints):
+            return cast(List[Tuple[int, Any]], list(zip(dps.timestamp, dps.value)))
+        assert dps.timestamp is not None
+        ts = dps.timestamp.astype("datetime64[ms]").astype("int64")
+        # Using `tolist()` converts to the nearest compatible built-in Python type (in C code):
+        return list(zip(ts.tolist(), dps.value.tolist()))
 
     @staticmethod
     def _validate_dps_objects(dps_object_list: List[Dict[str, Any]]) -> List[dict]:
