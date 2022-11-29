@@ -33,6 +33,7 @@ from cognite.client.utils._auxiliary import (
     local_import,
     to_camel_case,
 )
+from cognite.client.utils._pandas_helpers import concat_dataframes_with_nullable_int_cols
 
 ALL_SORTED_DP_AGGS = sorted(
     [
@@ -475,6 +476,8 @@ class Datapoints(CogniteResource):
                     if include_aggregate_name:
                         id_with_agg += f"|{attr}"
                     data = pd.to_numeric(data, errors="coerce")  # Avoids object dtype for missing aggs
+                    if attr == "count":
+                        data = data.astype(np.int64)
                 data_field_dct[id_with_agg] = data
 
         return pd.DataFrame(data_field_dct, index=pd.to_datetime(timestamps, unit="ms"))
@@ -595,11 +598,11 @@ class DatapointsArrayList(CogniteResourceList):
         self, column_names: Literal["id", "external_id"] = "external_id", include_aggregate_name: bool = True
     ) -> "pandas.DataFrame":
         pd = cast(Any, local_import("pandas"))
-        if dfs := [arr.to_pandas(column_names, include_aggregate_name) for arr in self.data]:
-            # TODO: Performance optimization possible as concatenating the dfs is exceedingly likely to cause a
-            # full copy (indexes not exactly overlapping). Manual creation seems faster
-            return pd.concat(dfs, axis="columns", sort=True, copy=False)
-        return pd.DataFrame(index=pd.to_datetime([]))
+        dfs = [dps.to_pandas(column_names=column_names, include_aggregate_name=include_aggregate_name) for dps in self]
+        if not dfs:
+            return pd.DataFrame(index=pd.to_datetime([]))
+
+        return concat_dataframes_with_nullable_int_cols(dfs)
 
     def dump(self, camel_case: bool = False, convert_timestamps: bool = False) -> List[Dict[str, Any]]:
         """Dump the instance into a json serializable Python data type.
@@ -650,7 +653,7 @@ class DatapointsList(CogniteResourceList):
         return json.dumps(item, default=lambda x: x.__dict__, indent=4)
 
     def to_pandas(  # type: ignore [override]
-        self, column_names: str = "external_id", include_aggregate_name: bool = True
+        self, column_names: Literal["id", "external_id"] = "external_id", include_aggregate_name: bool = True
     ) -> "pandas.DataFrame":
         """Convert the datapoints list into a pandas DataFrame.
 
@@ -662,17 +665,11 @@ class DatapointsList(CogniteResourceList):
             pandas.DataFrame: The datapoints list as a pandas DataFrame.
         """
         pd = cast(Any, local_import("pandas"))
+        dfs = [dps.to_pandas(column_names=column_names, include_aggregate_name=include_aggregate_name) for dps in self]
+        if not dfs:
+            return pd.DataFrame(index=pd.to_datetime([]))
 
-        dfs = [
-            dps.to_pandas(
-                column_names=column_names,
-                include_aggregate_name=include_aggregate_name,
-            )
-            for dps in self.data
-        ]
-        if dfs:
-            return pd.concat(dfs, axis="columns", sort=True)
-        return pd.DataFrame()
+        return concat_dataframes_with_nullable_int_cols(dfs)
 
     def _repr_html_(self) -> str:
         return self.to_pandas()._repr_html_()
