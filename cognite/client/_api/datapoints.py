@@ -47,7 +47,13 @@ from cognite.client._api_client import APIClient
 from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem, DataPointListResponse
 from cognite.client.data_classes.datapoints import Datapoints, DatapointsArray, DatapointsArrayList, DatapointsList
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
-from cognite.client.utils._auxiliary import assert_type, local_import, split_into_chunks, split_into_n_parts
+from cognite.client.utils._auxiliary import (
+    assert_type,
+    find_duplicates,
+    local_import,
+    split_into_chunks,
+    split_into_n_parts,
+)
 from cognite.client.utils._concurrency import collect_exc_info_and_raise, execute_tasks_concurrently
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._priority_tpe import PriorityThreadPoolExecutor
@@ -1156,10 +1162,10 @@ class DatapointsAPI(APIClient):
         self._post(url_path=self._RESOURCE_PATH + "/delete", json={"items": delete_range_objects})
 
     def insert_dataframe(self, df: pd.DataFrame, external_id_headers: bool = True, dropna: bool = True) -> None:
-        """Insert a dataframe.
+        """Insert a dataframe (columns must be unique).
 
-        The index of the dataframe must contain the timestamps. The names of the remaining columns specify the ids or external ids of
-        the time series to which column contents will be written.
+        The index of the dataframe must contain the timestamps (pd.DatetimeIndex). The names of the columns specify
+        the ids or external ids of the time series to which the datapoints will be written.
 
         Said time series must already exist.
 
@@ -1178,21 +1184,23 @@ class DatapointsAPI(APIClient):
                 >>> import pandas as pd
                 >>> from cognite.client import CogniteClient
                 >>>
-                >>> c = CogniteClient()
+                >>> client = CogniteClient()
                 >>> ts_xid = "my-foo-ts"
                 >>> idx = pd.date_range(start="2018-01-01", periods=100, freq="1d")
                 >>> noise = np.random.normal(0, 1, 100)
                 >>> df = pd.DataFrame({ts_xid: noise}, index=idx)
-                >>> c.time_series.data.insert_dataframe(df)
+                >>> client.time_series.data.insert_dataframe(df)
         """
-        np = cast(Any, local_import("numpy"))
-        if np.isinf(df.select_dtypes(include=[np.number])).any(axis=None):
-            raise ValueError("Dataframe contains one or more (+/-) Infinity. Remove them in order to insert the data.")
-        if not dropna:
-            if df.isnull().any(axis=None):
-                raise ValueError(
-                    "Dataframe contains one or more NaNs. Remove or pass `dropna=True` in order to insert the data."
-                )
+        np, pd = cast(Any, local_import("numpy", "pandas"))
+        if not isinstance(df.index, pd.DatetimeIndex):
+            raise ValueError(f"DataFrame index must be `pd.DatetimeIndex`, got: {type(df.index)}")
+        if df.columns.has_duplicates:
+            raise ValueError(f"DataFrame columns must be unique. Duplicated cols: {find_duplicates(df.columns)}.")
+        if np.isinf(df.select_dtypes(include="number")).any(axis=None):
+            raise ValueError("DataFrame contains one or more (+/-) Infinity. Remove them in order to insert the data.")
+        if not dropna and df.isna().any(axis=None):
+            raise ValueError("DataFrame contains one or more NaNs. Remove them or pass `dropna=True` to insert.")
+
         dps = []
         idx = df.index.to_numpy("datetime64[ms]").astype(np.int64)
         for column_id, col in df.items():
