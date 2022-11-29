@@ -57,8 +57,7 @@ If you regularly need to fetch large amounts of datapoints, consider installing 
 
 ### Windows specific
 
-On Windows, it is recommended to install `geopandas` and its dependencies using `conda` package manager,
-see [geopandas installation page](https://geopandas.org/en/stable/getting_started/install.html#installation).
+On Windows, it is recommended to install `geopandas` and its dependencies using `conda` package manager, see [geopandas installation page](https://geopandas.org/en/stable/getting_started/install.html#installation).
 The following commands create a new environment, install `geopandas` and `cognite-sdk`.
 
 ```bash
@@ -69,10 +68,10 @@ pip install cognite-sdk
 ```
 
 ## Changelog
-Wondering about upcoming or previous changes to the SDK? Take a look at the [CHANGELOG](CHANGELOG.md).
+Wondering about upcoming or previous changes to the SDK? Take a look at the [CHANGELOG](https://github.com/cognitedata/cognite-sdk-python/blob/master/CHANGELOG.md).
 
 ## Migration Guide
-To help you upgrade your code(base) quickly and safely to a newer major version of the SDK, check out our migration guide. It is a more focused guide based on the detailed change log. [MIGRATION GUIDE](MIGRATION_GUIDE.md).
+To help you upgrade your code(base) quickly and safely to a newer major version of the SDK, check out our migration guide. It is a more focused guide based on the detailed change log. [MIGRATION GUIDE](https://github.com/cognitedata/cognite-sdk-python/blob/master/MIGRATION_GUIDE.md).
 
 ## Contributing
-Want to contribute? Check out [CONTRIBUTING](CONTRIBUTING.md).
+Want to contribute? Check out [CONTRIBUTING](https://github.com/cognitedata/cognite-sdk-python/blob/master/CONTRIBUTING.md).
