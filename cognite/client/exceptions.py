@@ -178,7 +178,7 @@ class CogniteImportError(CogniteException):
 
     def __init__(self, module: str, message: str = None):
         self.module = module
-        self.message = message or "The functionality your are trying to use requires '{}' to be installed.".format(
+        self.message = message or "The functionality you are trying to use requires '{}' to be installed.".format(
             self.module
         )
 
