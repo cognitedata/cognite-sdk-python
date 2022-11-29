@@ -478,6 +478,8 @@ class Datapoints(CogniteResource):
                     data = pd.to_numeric(data, errors="coerce")  # Avoids object dtype for missing aggs
                     if attr == "count":
                         data = data.astype(np.int64)
+                    else:
+                        data = data.astype(np.float64)
                 data_field_dct[id_with_agg] = data
 
         return pd.DataFrame(data_field_dct, index=pd.to_datetime(timestamps, unit="ms"))

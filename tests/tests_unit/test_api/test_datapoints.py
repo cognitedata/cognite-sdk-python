@@ -446,7 +446,7 @@ class TestPandasIntegration:
 
         d = Datapoints(id=1, timestamp=[1, 2, 3], average=[2, 3, 4], step_interpolation=[3, 4, 5])
         expected_df = pd.DataFrame(
-            {"1|average": [2, 3, 4], "1|step_interpolation": [3, 4, 5]},
+            {"1|average": [2, 3, 4.0], "1|step_interpolation": [3, 4, 5.0]},
             index=pd.to_datetime(range(1, 4), unit="ms"),
         )
         pd.testing.assert_frame_equal(expected_df, d.to_pandas())
@@ -455,9 +455,9 @@ class TestPandasIntegration:
         import pandas as pd
 
         d = Datapoints(id=1, timestamp=[1, 2, 3], average=[2, 3, 4])
-        expected_df = pd.DataFrame({"1": [2, 3, 4]}, index=pd.to_datetime(range(1, 4), unit="ms"))
+        expected_df = pd.DataFrame({"1": [2, 3, 4.0]}, index=pd.to_datetime(range(1, 4), unit="ms"))
         pd.testing.assert_frame_equal(expected_df, d.to_pandas(include_aggregate_name=False))
-        expected_df = pd.DataFrame({"1|average": [2, 3, 4]}, index=pd.to_datetime(range(1, 4), unit="ms"))
+        expected_df = pd.DataFrame({"1|average": [2, 3, 4.0]}, index=pd.to_datetime(range(1, 4), unit="ms"))
         pd.testing.assert_frame_equal(expected_df, d.to_pandas(include_aggregate_name=True))
 
     def test_id_and_external_id_set_gives_external_id_columns(self, cognite_client):
@@ -465,7 +465,7 @@ class TestPandasIntegration:
 
         d = Datapoints(id=0, external_id="abc", timestamp=[1, 2, 3], average=[2, 3, 4], step_interpolation=[3, 4, 5])
         expected_df = pd.DataFrame(
-            {"abc|average": [2, 3, 4], "abc|step_interpolation": [3, 4, 5]},
+            {"abc|average": [2, 3, 4.0], "abc|step_interpolation": [3, 4, 5.0]},
             index=pd.to_datetime(range(1, 4), unit="ms"),
         )
         pd.testing.assert_frame_equal(expected_df, d.to_pandas())
@@ -478,18 +478,18 @@ class TestPandasIntegration:
         import pandas as pd
 
         d1 = Datapoints(id=1, timestamp=[1, 2, 3], average=[2, 3, 4], step_interpolation=[3, 4, 5])
-        d2 = Datapoints(id=2, timestamp=[1, 2, 3], max=[2, 3, 4], step_interpolation=[3, 4, 5])
-        d3 = Datapoints(id=3, timestamp=[1, 3], value=[1, 3])
+        d2 = Datapoints(id=2, timestamp=[1, 2, 3], count=[2, 3, 4], step_interpolation=[3, 4, 5])
+        d3 = Datapoints(id=3, timestamp=[1, 3, 4], value=[1, 3, 4.0])
         dps_list = DatapointsList([d1, d2, d3])
         expected_df = pd.DataFrame(
             {
-                "1|average": [2, 3, 4],
-                "1|step_interpolation": [3, 4, 5],
-                "2|max": [2, 3, 4],
-                "2|step_interpolation": [3, 4, 5],
-                "3": [1, None, 3],
+                "1|average": [2, 3, 4, None],
+                "1|step_interpolation": [3, 4, 5, None],
+                "2|count": pd.array([2, 3, 4, None], dtype="Int64"),
+                "2|step_interpolation": [3, 4, 5, None],
+                "3": [1, None, 3, 4.0],
             },
-            index=pd.to_datetime(range(1, 4), unit="ms"),
+            index=pd.to_datetime(range(1, 5), unit="ms"),
         )
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(), check_freq=False)
 
@@ -500,7 +500,7 @@ class TestPandasIntegration:
         d2 = Datapoints(id=3, timestamp=[1, 3], average=[1, 3])
         dps_list = DatapointsList([d1, d2])
         expected_df = pd.DataFrame(
-            {"2|max": [2, 3, 4], "3|average": [1, None, 3]}, index=pd.to_datetime(range(1, 4), unit="ms")
+            {"2|max": [2, 3, 4.0], "3|average": [1, None, 3]}, index=pd.to_datetime(range(1, 4), unit="ms")
         )
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(), check_freq=False)
         expected_df.columns = [c[:1] for c in expected_df.columns]
@@ -513,7 +513,7 @@ class TestPandasIntegration:
         d2 = Datapoints(id=2, timestamp=[1, 3], average=[1, 3])
         dps_list = DatapointsList([d1, d2])
         expected_df = pd.DataFrame(
-            {"2|max": [2, 3, 4], "2|average": [1, None, 3]},
+            {"2|max": [2, 3, 4.0], "2|average": [1, None, 3]},
             index=pd.to_datetime(range(1, 4), unit="ms"),
             columns=["2|max", "2|average"],
         )
@@ -524,8 +524,8 @@ class TestPandasIntegration:
     def test_datapoints_list_non_aligned(self, cognite_client):
         import pandas as pd
 
-        d1 = Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3])
-        d2 = Datapoints(id=2, timestamp=[3, 4, 5], value=[3, 4, 5])
+        d1 = Datapoints(id=1, timestamp=[1, 2, 3], value=[1, 2, 3.0])
+        d2 = Datapoints(id=2, timestamp=[3, 4, 5], value=[3, 4, 5.0])
 
         dps_list = DatapointsList([d1, d2])
 

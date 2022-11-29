@@ -1226,7 +1226,7 @@ class TestInsertDatapointsAPI:
         endpoint = getattr(cognite_client.time_series.data, endpoint_attr)
         data = endpoint(id=ms_bursty_ts.id, end="now", granularity="1m", aggregates=random_aggregates(1), limit=100)
         assert 100 == len(data)
-        with pytest.raises(ValueError, match="only raw datapoints are supported"):
+        with pytest.raises(ValueError, match="Only raw datapoints are supported when inserting data from"):
             cognite_client.time_series.data.insert(data, id=new_ts.id)
 
     @pytest.mark.usefixtures("post_spy")

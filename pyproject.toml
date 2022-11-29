@@ -52,9 +52,9 @@ mypy = "^0.961"
 types-urllib3 = "^1.26.16"
 types-requests = "^2.28.1"
 
-# [[tool.poetry.source]]
-# name = "snakepit"
-# url = "https://cognite.jfrog.io/cognite/api/pypi/snakepit/simple"
+[[tool.poetry.source]]
+name = "snakepit"
+url = "https://cognite.jfrog.io/cognite/api/pypi/snakepit/simple"
 
 [build-system]
 requires = ["poetry>=1.0"]

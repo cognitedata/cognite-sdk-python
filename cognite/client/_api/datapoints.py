@@ -1248,7 +1248,7 @@ class DatapointsPoster:
     ) -> Union[List[Tuple[int, str]], List[Tuple[int, float]]]:
         if dps.value is None:
             raise ValueError(
-                "When inserting data using a `Datapoints` or `DatapointsArray` object, only raw dps are supported"
+                "Only raw datapoints are supported when inserting data from `Datapoints` or `DatapointsArray`"
             )
         if isinstance(dps, Datapoints):
             return cast(List[Tuple[int, Any]], list(zip(dps.timestamp, dps.value)))
