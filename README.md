@@ -2,7 +2,7 @@
     <img src="https://github.com/cognitedata/cognite-python-docs/blob/master/img/cognite_logo.png" alt="Cognite logo" title="Cognite" align="right" height="80" />
 </a>
 
-Cognite Python SDK
+Cognite Python SDK BLA
 ==========================
 [![build](https://github.com/cognitedata/cognite-sdk-python/workflows/release/badge.svg)](https://github.com/cognitedata/cognite-sdk-python/actions?query=workflow:release)
 [![Downloads](https://img.shields.io/pypi/dm/cognite-sdk)](https://pypistats.org/packages/cognite-sdk)
