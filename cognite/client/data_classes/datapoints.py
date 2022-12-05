@@ -584,12 +584,12 @@ class DatapointsArrayList(CogniteResourceList):
         super().__init__(resources, cognite_client)
 
         # Fix what happens for duplicated identifiers:
-        ids = [dps.id for dps in self.data if dps.id is not None]
-        xids = [dps.external_id for dps in self.data if dps.external_id is not None]
+        ids = [dps.id for dps in self if dps.id is not None]
+        xids = [dps.external_id for dps in self if dps.external_id is not None]
         dupe_ids, id_dct = find_duplicates(ids), defaultdict(list)
         dupe_xids, xid_dct = find_duplicates(xids), defaultdict(list)
 
-        for dps in self.data:
+        for dps in self:
             if (id_ := dps.id) is not None and id_ in dupe_ids:
                 id_dct[id_].append(dps)
             if (xid := dps.external_id) is not None and xid in dupe_xids:
@@ -635,7 +635,7 @@ class DatapointsArrayList(CogniteResourceList):
         Returns:
             List[Dict[str, Any]]: A list of dicts representing the instance.
         """
-        return [dps.dump(camel_case, convert_timestamps) for dps in self.data]
+        return [dps.dump(camel_case, convert_timestamps) for dps in self]
 
 
 class DatapointsList(CogniteResourceList):
@@ -645,12 +645,12 @@ class DatapointsList(CogniteResourceList):
         super().__init__(resources, cognite_client)
 
         # Fix what happens for duplicated identifiers:
-        ids = [dps.id for dps in self.data if dps.id is not None]
-        xids = [dps.external_id for dps in self.data if dps.external_id is not None]
+        ids = [dps.id for dps in self if dps.id is not None]
+        xids = [dps.external_id for dps in self if dps.external_id is not None]
         dupe_ids, id_dct = find_duplicates(ids), defaultdict(list)
         dupe_xids, xid_dct = find_duplicates(xids), defaultdict(list)
 
-        for dps in self.data:
+        for dps in self:
             if (id_ := dps.id) is not None and id_ in dupe_ids:
                 id_dct[id_].append(dps)
             if (xid := dps.external_id) is not None and xid in dupe_xids:

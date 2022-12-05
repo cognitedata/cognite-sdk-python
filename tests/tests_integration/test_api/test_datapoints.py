@@ -1142,9 +1142,15 @@ class TestRetrieveDataFrameAPI:
             )
 
     def test_include_aggregate_name_fails(self, cognite_client, one_mill_dps_ts):
-        with pytest.raises(AssertionError):
+        with pytest.raises(TypeError, match="can't multiply sequence by non-int of type 'NoneType"):
             cognite_client.time_series.data.retrieve_dataframe(
-                id=one_mill_dps_ts[0].id, limit=5, include_aggregate_name=None
+                id=one_mill_dps_ts[0].id, limit=5, granularity="1d", aggregates="min", include_aggregate_name=None
+            )
+
+    def test_include_granularity_name_fails(self, cognite_client, one_mill_dps_ts):
+        with pytest.raises(TypeError, match="can't multiply sequence by non-int of type 'NoneType"):
+            cognite_client.time_series.data.retrieve_dataframe(
+                id=one_mill_dps_ts[0].id, limit=5, granularity="1d", aggregates="min", include_granularity_name=None
             )
 
 
