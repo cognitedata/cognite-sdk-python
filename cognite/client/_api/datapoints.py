@@ -822,6 +822,7 @@ class DatapointsAPI(APIClient):
         ignore_unknown_ids: bool = False,
         uniform_index: bool = False,
         include_aggregate_name: bool = True,
+        include_granularity_name: bool = False,
         column_names: Literal["id", "external_id"] = "external_id",
     ) -> pd.DataFrame:
         """Get datapoints directly in a pandas dataframe.
@@ -841,6 +842,7 @@ class DatapointsAPI(APIClient):
             uniform_index (bool): If only querying aggregates AND a single granularity is used AND no limit is used, specifying `uniform_index=True` will return a dataframe with an
                 equidistant datetime index from the earliest `start` to the latest `end` (missing values will be NaNs). If these requirements are not met, a ValueError is raised. Default: False
             include_aggregate_name (bool): Include 'aggregate' in the column name, e.g. `my-ts|average`. Ignored for raw time series. Default: True
+            include_granularity_name (bool): Include 'granularity' in the column name, e.g. `my-ts|12h`. Added after 'aggregate' when present. Ignored for raw time series. Default: False
             column_names ("id" | "external_id"): Use either ids or external ids as column names. Time series missing external id will use id as backup. Default: "external_id"
 
         Returns:
@@ -906,7 +908,9 @@ class DatapointsAPI(APIClient):
                     "Cannot return a uniform index when asking for aggregates with multiple granularities "
                     f"({grans_given}) OR when (partly) querying raw datapoints OR when a finite limit is used."
                 )
-        df = fetcher.fetch_all_datapoints_numpy().to_pandas(column_names, include_aggregate_name)
+        df = fetcher.fetch_all_datapoints_numpy().to_pandas(
+            column_names, include_aggregate_name, include_granularity_name
+        )
         if not uniform_index:
             return df
 
@@ -1031,7 +1035,9 @@ class DatapointsAPI(APIClient):
                 ... ]
                 >>> c.time_series.data.insert(datapoints, external_id="def")
 
-            Or they can be a Datapoints or DatapointsArray object (raw datapoints only)::
+            Or they can be a Datapoints or DatapointsArray object (with raw datapoints only). Note that the id or external_id
+            set on these objects are not inspected/used, and so you must explicitly pass the identifier of the time series
+            you want to insert into, which in this example is external_id="def"::
 
                 >>> data = c.time_series.data.retrieve(external_id="abc", start="1w-ago", end="now")
                 >>> c.time_series.data.insert(data, external_id="def")
@@ -1250,9 +1256,11 @@ class DatapointsPoster:
             raise ValueError(
                 "Only raw datapoints are supported when inserting data from `Datapoints` or `DatapointsArray`"
             )
+        if (n_ts := len(dps.timestamp)) != (n_dps := len(dps.value)):
+            raise ValueError(f"Number of timestamps ({n_ts}) does not match number of datapoints ({n_dps}) to insert")
+
         if isinstance(dps, Datapoints):
             return cast(List[Tuple[int, Any]], list(zip(dps.timestamp, dps.value)))
-        assert dps.timestamp is not None
         ts = dps.timestamp.astype("datetime64[ms]").astype("int64")
         # Using `tolist()` converts to the nearest compatible built-in Python type (in C code):
         return list(zip(ts.tolist(), dps.value.tolist()))

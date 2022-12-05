@@ -65,6 +65,7 @@ Note also that this is a **bugfix**: Due to the SDK rounding differently than th
 - Asking for the same time series any number of times no longer raises an error (from the SDK), which is useful for instance when fetching disconnected time periods. This is now aligned with the API. Thus, the custom exception `CogniteDuplicateColumnsError` is no longer needed and has been removed from the SDK.
 - ...this change also causes the `.get` method of `DatapointsList` and `DatapointsArrayList` to now return a list of `Datapoints` or `DatapointsArray` respectively *when duplicated identifiers are queried*. For data scientists and others used to `pandas`, this syntax is familiar to the slicing logic of `Series` and `DataFrame` when used with non-unique indices.
 There is also a very subtle **bugfix** here: since the previous implementation allowed the same time series to be specified by both its `id` and `external_id`, using `.get` to access it would always yield the settings that were specified by the `external_id`. This will now return a `list` as explained above.
+- `Datapoints` and `DatapointsArray` now store the `granularity` string given by the user (when querying aggregates) which allows both `to_pandas` methods (on `DatapointsList` and `DatapointsArrayList` as well) to accept `include_granularity_name` that appends this to the end of the column name(s).
 - Datapoints fetching algorithm has changed from one that relies on up-to-date and correct `count` aggregates to be fast (with fallback on serial fetching when missing/unavailable), to recursively (and reactively) splitting the time-domain into smaller and smaller pieces, depending on the discovered-as-fetched density-distribution of datapoints in time and the number of available workers/threads. The new approach also has the ability to group more than 1 (one) time series per API request (when beneficial) and short-circuit once a user-given limit has been reached (if/when given). This method is now used for *all types of queries*; numeric raw-, string raw-, and aggregate datapoints.
 
 #### Change: `retrieve_dataframe`
@@ -75,6 +76,7 @@ There is also a very subtle **bugfix** here: since the previous implementation a
 - New parameter `column_names` (as already used in several existing `to_pandas` methods) decides whether to pick `id`s or `external_id`s as the dataframe column names. Previously, when both were supplied, the dataframe ended up with a mix.
 Read more below in the removed section or check out the method's updated documentation.
 - The ordering of columns for aggregates is now always chronological instead of the somewhat arbitrary choice made in `Datapoints.__init__`, (since `dict`s keep insertion order in newer python versions and instance variables lives in `__dict__`)).
+- New parameter `include_granularity_name` that appends the specified granularity to the column names if passed as `True`. Mimics the behaviour of the older, well-known argument `include_aggregate_name`, but adds after: `my-ts|average|13m`.
 
 ### Fixed
 - `CogniteClientMock` has been updated with 24 missing APIs (including sub-composited APIs like `FunctionsAPI.schedules`) and is now used internally in testing instead of a similar, additional implementation.
@@ -1179,7 +1181,7 @@ allowing the method to take arbitrarily long lists for `source_external_ids` and
 ## [1.1.1] - 2019-08-23
 ### Added
 - `complete` parameter on `datapoints.retrieve_dataframe`, used for forward-filling/interpolating intervals with missing data.
-- `include_aggregate_names` option on `datapoints.retrieve_dataframe` and `DatapointsList.to_pandas`, used for removing the `|<aggregate-name>` postfix on dataframe column headers.
+- `include_aggregate_name` option on `datapoints.retrieve_dataframe` and `DatapointsList.to_pandas`, used for removing the `|<aggregate-name>` postfix on dataframe column headers.
 - datapoints.retrieve_dataframe_dict function, which returns {aggregate:dataframe} without adding aggregate names to columns
 - source_created_time and source_modified_time support for files
 

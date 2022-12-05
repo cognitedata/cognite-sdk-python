@@ -142,6 +142,7 @@ class DatapointsArray(CogniteResource):
         is_string: bool = None,
         is_step: bool = None,
         unit: str = None,
+        granularity: str = None,
         timestamp: NumpyDatetime64NSArray = None,
         value: Union[NumpyFloat64Array, NumpyObjArray] = None,
         average: NumpyFloat64Array = None,
@@ -160,7 +161,8 @@ class DatapointsArray(CogniteResource):
         self.is_string = is_string
         self.is_step = is_step
         self.unit = unit
-        self.timestamp = timestamp
+        self.granularity = granularity
+        self.timestamp = timestamp if timestamp is not None else np.array([], dtype="datetime64[ns]")
         self.value = value
         self.average = average
         self.max = max
@@ -181,6 +183,7 @@ class DatapointsArray(CogniteResource):
             "is_string": self.is_string,
             "is_step": self.is_step,
             "unit": self.unit,
+            "granularity": self.granularity,
         }
 
     @classmethod
@@ -195,8 +198,6 @@ class DatapointsArray(CogniteResource):
         return cls(**convert_all_keys_to_snake_case(dps_dct))
 
     def __len__(self) -> int:
-        if self.timestamp is None:
-            return 0
         return len(self.timestamp)
 
     def __eq__(self, other: Any) -> bool:
@@ -284,34 +285,42 @@ class DatapointsArray(CogniteResource):
         return {k: v for k, v in dumped.items() if v is not None}
 
     def to_pandas(  # type: ignore [override]
-        self, column_names: Literal["id", "external_id"] = "external_id", include_aggregate_name: bool = True
+        self,
+        column_names: Literal["id", "external_id"] = "external_id",
+        include_aggregate_name: bool = True,
+        include_granularity_name: bool = False,
     ) -> "pandas.DataFrame":
-        assert isinstance(include_aggregate_name, bool)
         pd = cast(Any, local_import("pandas"))
-        identifier_dct = {"id": self.id, "external_id": self.external_id}
-        if column_names not in identifier_dct:
+        if column_names == "id":
+            if self.id is None:
+                raise ValueError("Unable to use `id` as column name(s), not set on object")
+            identifier = str(self.id)
+
+        elif column_names == "external_id":
+            if self.external_id is not None:
+                identifier = self.external_id
+            elif self.id is not None:
+                # Time series are not required to have an external_id unfortunately...
+                identifier = str(self.id)
+                warnings.warn(
+                    f"Time series does not have an external ID, so its ID ({self.id}) was used instead as "
+                    'the column name in the DataFrame. If this is expected, consider passing `column_names="id"` '
+                    "to silence this warning.",
+                    UserWarning,
+                )
+            else:
+                raise ValueError("Object missing both `id` and `external_id` attributes")
+        else:
             raise ValueError("Argument `column_names` must be either 'external_id' or 'id'")
 
-        identifier = identifier_dct[column_names]
-        if identifier is None:  # Time series are not required to have an external_id unfortunately...
-            identifier = identifier_dct["id"]
-            # Assert we have "a" column name (only fails if a user has created DatapointsArray themselves):
-            assert identifier is not None, "Neither `id` or `external_id` set on object"
-            warnings.warn(
-                f"Time series does not have an external ID, so its ID ({self.id}) was used instead as "
-                'the column name in the DataFrame. If this is expected, consider passing `column_names="id"` '
-                "to silence this warning.",
-                UserWarning,
-            )
         if self.value is not None:
             return pd.DataFrame({identifier: self.value}, index=self.timestamp, copy=False)
 
         (_, *agg_names), (_, *arrays) = self._data_fields()
-        if include_aggregate_name:
-            columns = [f"{identifier}|{agg}" for agg in agg_names]
-        else:
-            columns = [str(identifier)] * len(agg_names)
-
+        columns = [
+            str(identifier) + include_aggregate_name * f"|{agg}" + include_granularity_name * f"|{self.granularity}"
+            for agg in agg_names
+        ]
         # Since columns might contain duplicates, we can't instantiate from dict as only the
         # last key (array/column) would be kept:
         (df := pd.DataFrame(dict(enumerate(arrays)), index=self.timestamp, copy=False)).columns = columns
@@ -327,7 +336,8 @@ class Datapoints(CogniteResource):
         is_string (bool): Whether the time series is string valued or not.
         is_step (bool): Whether the time series is a step series or not.
         unit (str): The physical unit of the time series.
-        timestamp (List[Union[int, float]]): The data timestamps in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
+        granularity (str): The granularity of the aggregate datapoints (does not apply to raw data)
+        timestamp (List[int]): The data timestamps in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
         value (Union[List[str], List[float]]): The data values. Can be string or numeric
         average (List[float]): The integral average values in the aggregate period
         max (List[float]): The maximum values in the aggregate period
@@ -348,6 +358,7 @@ class Datapoints(CogniteResource):
         is_string: bool = None,
         is_step: bool = None,
         unit: str = None,
+        granularity: str = None,
         timestamp: Sequence[int] = None,
         value: Union[Sequence[str], Sequence[float]] = None,
         average: List[float] = None,
@@ -367,6 +378,7 @@ class Datapoints(CogniteResource):
         self.is_string = is_string
         self.is_step = is_step
         self.unit = unit
+        self.granularity = granularity
         self.timestamp = timestamp or []  # Needed in __len__
         self.value = value
         self.average = average
@@ -443,20 +455,21 @@ class Datapoints(CogniteResource):
         self,
         column_names: str = "external_id",
         include_aggregate_name: bool = True,
+        include_granularity_name: bool = False,
         include_errors: bool = False,
     ) -> "pandas.DataFrame":
         """Convert the datapoints into a pandas DataFrame.
 
         Args:
-            column_names (str):  Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
+            column_names (str): Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
             include_aggregate_name (bool): Include aggregate in the column name
+            include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
             include_errors (bool): For synthetic datapoint queries, include a column with errors.
 
         Returns:
             pandas.DataFrame: The dataframe.
         """
         pd = cast(Any, local_import("pandas"))
-        timestamps = []
         if column_names in ["external_id", "externalId"]:  # Camel case for backwards compat
             identifier = self.external_id if self.external_id is not None else self.id
         elif column_names == "id":
@@ -465,24 +478,30 @@ class Datapoints(CogniteResource):
             raise ValueError("column_names must be 'external_id' or 'id'")
 
         # Make sure columns (aggregates) always come in alphabetical order (e.g. "average" before "max"):
-        data_field_dct = {}
+        field_names, data_lists = [], []
         data_fields = self._get_non_empty_data_fields(get_empty_lists=True, get_error=include_errors)
         for attr, data in sorted(data_fields):
             if attr == "timestamp":
-                timestamps = data
+                continue
+            id_col_name = str(identifier)
+            if attr == "value":
+                field_names.append(id_col_name)
+                data_lists.append(data)
+                continue
+            if include_aggregate_name:
+                id_col_name += f"|{attr}"
+            if include_granularity_name and self.granularity is not None:
+                id_col_name += f"|{self.granularity}"
+            field_names.append(id_col_name)
+            data = pd.to_numeric(data, errors="coerce")  # Avoids object dtype for missing aggs
+            if attr == "count":
+                data_lists.append(data.astype("int64"))
             else:
-                id_with_agg = str(identifier)
-                if attr != "value":
-                    if include_aggregate_name:
-                        id_with_agg += f"|{attr}"
-                    data = pd.to_numeric(data, errors="coerce")  # Avoids object dtype for missing aggs
-                    if attr == "count":
-                        data = data.astype(np.int64)
-                    else:
-                        data = data.astype(np.float64)
-                data_field_dct[id_with_agg] = data
+                data_lists.append(data.astype("float64"))
 
-        return pd.DataFrame(data_field_dct, index=pd.to_datetime(timestamps, unit="ms"))
+        idx = pd.to_datetime(self.timestamp, unit="ms")
+        (df := pd.DataFrame(dict(enumerate(data_lists)), index=idx)).columns = field_names
+        return df
 
     @classmethod
     def _load(  # type: ignore [override]
@@ -527,12 +546,9 @@ class Datapoints(CogniteResource):
         self, get_empty_lists: bool = False, get_error: bool = True
     ) -> List[Tuple[str, Any]]:
         non_empty_data_fields = []
+        skip_attrs = {"id", "external_id", "is_string", "is_step", "unit", "granularity"}
         for attr, value in self.__dict__.copy().items():
-            if (
-                attr not in ["id", "external_id", "is_string", "is_step", "unit"]
-                and attr[0] != "_"
-                and (attr != "error" or get_error)
-            ):
+            if attr not in skip_attrs and attr[0] != "_" and (attr != "error" or get_error):
                 if value is not None or attr == "timestamp":
                     if len(value) > 0 or get_empty_lists or attr == "timestamp":
                         non_empty_data_fields.append((attr, value))
@@ -597,10 +613,13 @@ class DatapointsArrayList(CogniteResourceList):
         return self.to_pandas()._repr_html_()
 
     def to_pandas(  # type: ignore [override]
-        self, column_names: Literal["id", "external_id"] = "external_id", include_aggregate_name: bool = True
+        self,
+        column_names: Literal["id", "external_id"] = "external_id",
+        include_aggregate_name: bool = True,
+        include_granularity_name: bool = False,
     ) -> "pandas.DataFrame":
         pd = cast(Any, local_import("pandas"))
-        dfs = [dps.to_pandas(column_names=column_names, include_aggregate_name=include_aggregate_name) for dps in self]
+        dfs = [dps.to_pandas(column_names, include_aggregate_name, include_granularity_name) for dps in self]
         if not dfs:
             return pd.DataFrame(index=pd.to_datetime([]))
 
@@ -655,19 +674,23 @@ class DatapointsList(CogniteResourceList):
         return json.dumps(item, default=lambda x: x.__dict__, indent=4)
 
     def to_pandas(  # type: ignore [override]
-        self, column_names: Literal["id", "external_id"] = "external_id", include_aggregate_name: bool = True
+        self,
+        column_names: Literal["id", "external_id"] = "external_id",
+        include_aggregate_name: bool = True,
+        include_granularity_name: bool = False,
     ) -> "pandas.DataFrame":
         """Convert the datapoints list into a pandas DataFrame.
 
         Args:
             column_names (str): Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
             include_aggregate_name (bool): Include aggregate in the column name
+            include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
 
         Returns:
             pandas.DataFrame: The datapoints list as a pandas DataFrame.
         """
         pd = cast(Any, local_import("pandas"))
-        dfs = [dps.to_pandas(column_names=column_names, include_aggregate_name=include_aggregate_name) for dps in self]
+        dfs = [dps.to_pandas(column_names, include_aggregate_name, include_granularity_name) for dps in self]
         if not dfs:
             return pd.DataFrame(index=pd.to_datetime([]))
 

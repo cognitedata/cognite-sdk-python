@@ -787,7 +787,7 @@ class BaseConcurrentTask:
         self.query = query
         self.eager_mode = eager_mode
         self.use_numpy = use_numpy
-        self.ts_info = None
+        self.ts_info: Optional[Dict] = None
         self.ts_data = create_dps_container()
         self.dps_data = create_dps_container()
         self.subtasks = create_subtask_lst()
@@ -802,8 +802,7 @@ class BaseConcurrentTask:
         if not self.eager_mode:
             assert first_limit is not None and first_dps_batch is not None  # mypy...
             dps = get_datapoints_from_proto(first_dps_batch)
-            self.ts_info = get_ts_info_from_proto(first_dps_batch)
-            self.raw_dtype = self._decide_dtype_from_is_string(first_dps_batch.isString)
+            self._store_ts_info(first_dps_batch)
             if not dps:
                 self._is_done = True
                 return None
@@ -918,6 +917,7 @@ class BaseConcurrentTask:
 
     def _store_ts_info(self, res: DataPointListItem) -> None:
         self.ts_info = get_ts_info_from_proto(res)
+        self.ts_info["granularity"] = self.query.granularity
         if self.use_numpy:
             self.raw_dtype = self._decide_dtype_from_is_string(res.isString)
 
