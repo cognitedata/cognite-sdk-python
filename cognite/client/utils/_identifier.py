@@ -10,8 +10,10 @@ class Identifier(Generic[T_ID]):
 
     @classmethod
     def of_either(cls, id: Optional[int], external_id: Optional[str]) -> "Identifier":
-        if (id is None) == (external_id is None):
-            raise ValueError("Exactly one of id or external id must be specified")
+        if id is external_id is None:
+            raise ValueError("Exactly one of id or external id must be specified, got neither")
+        elif id is not None and external_id is not None:
+            raise ValueError("Exactly one of id or external id must be specified, got both")
         return Identifier(id or external_id)
 
     @classmethod
@@ -42,11 +44,10 @@ class Identifier(Generic[T_ID]):
             return ("id", self.__value)
 
     def __str__(self) -> str:
-        identifier_type, identifier = self.as_tuple(camel_case=False)
-        return f"{type(self).__name__}({identifier_type}={identifier!r})"
+        return repr(self)
 
     def __repr__(self) -> str:
-        return str(self)
+        return f"{type(self).__name__}({self.__value!r})"
 
 
 class ExternalId(Identifier[str]):
