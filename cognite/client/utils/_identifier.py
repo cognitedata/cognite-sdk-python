@@ -1,5 +1,5 @@
 import numbers
-from typing import Dict, Generic, Iterable, List, Optional, Sequence, TypeVar, Union, cast, overload
+from typing import Dict, Generic, Iterable, List, Optional, Sequence, Tuple, TypeVar, Union, cast, overload
 
 T_ID = TypeVar("T_ID", int, str)
 
@@ -10,8 +10,10 @@ class Identifier(Generic[T_ID]):
 
     @classmethod
     def of_either(cls, id: Optional[int], external_id: Optional[str]) -> "Identifier":
-        if (id is None) == (external_id is None):
-            raise ValueError("Exactly one of id or external id must be specified")
+        if id is external_id is None:
+            raise ValueError("Exactly one of id or external id must be specified, got neither")
+        elif id is not None and external_id is not None:
+            raise ValueError("Exactly one of id or external id must be specified, got both")
         return Identifier(id or external_id)
 
     @classmethod
@@ -25,11 +27,27 @@ class Identifier(Generic[T_ID]):
     def as_primitive(self) -> T_ID:
         return self.__value
 
-    def as_dict(self) -> Dict[str, T_ID]:
+    def as_dict(self, camel_case: bool = True) -> Dict[str, T_ID]:
         if isinstance(self.__value, str):
-            return {"externalId": self.__value}
+            if camel_case:
+                return {"externalId": self.__value}
+            return {"external_id": self.__value}
         else:
             return {"id": self.__value}
+
+    def as_tuple(self, camel_case: bool = True) -> Tuple[str, T_ID]:
+        if isinstance(self.__value, str):
+            if camel_case:
+                return ("externalId", self.__value)
+            return ("external_id", self.__value)
+        else:
+            return ("id", self.__value)
+
+    def __str__(self) -> str:
+        return repr(self)
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({self.__value!r})"
 
 
 class ExternalId(Identifier[str]):
@@ -104,13 +122,13 @@ class IdentifierSequence:
             if isinstance(ids, (int, numbers.Integral)):
                 value_passed_as_primitive = True
                 all_identifiers.append(ids)
-            elif isinstance(ids, Sequence):
+            elif isinstance(ids, Sequence) and not isinstance(ids, str):
                 all_identifiers.extend([int(id_) for id_ in ids])
             else:
                 raise TypeError(f"ids must be of type int or Sequence[int]. Found {type(ids)}")
 
         if external_ids is not None:
-            if isinstance(external_ids, (str,)):
+            if isinstance(external_ids, str):
                 value_passed_as_primitive = True
                 all_identifiers.append(external_ids)
             elif isinstance(external_ids, Sequence):

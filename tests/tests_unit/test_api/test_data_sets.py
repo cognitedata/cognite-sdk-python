@@ -60,7 +60,7 @@ class TestDataset:
         assert "min" not in jsgz_load(mock_ds_response.calls[0].request.body)["filter"]["lastUpdatedTime"]
 
     def test_call_root(self, cognite_client, mock_ds_response):
-        list(cognite_client.data_sets.__call__(write_protected=True, limit=10))
+        list(cognite_client.data_sets(write_protected=True, limit=10))
         calls = mock_ds_response.calls
         assert 1 == len(calls)
         assert {"cursor": None, "limit": 10, "filter": {"writeProtected": True}} == jsgz_load(calls[0].request.body)
@@ -151,7 +151,7 @@ class TestPandasIntegration:
     def test_datasets_to_pandas(self, cognite_client, mock_ds_response):
         import pandas as pd
 
-        df = cognite_client.data_sets.retrieve(id=1).to_pandas()
+        df = cognite_client.data_sets.retrieve(id=1).to_pandas(camel_case=True)
         assert isinstance(df, pd.DataFrame)
         assert "metadata" not in df.columns
         assert df.loc["writeProtected"].bool() is False

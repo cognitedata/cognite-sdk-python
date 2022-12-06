@@ -1,6 +1,6 @@
+import math
 import uuid
 
-import numpy as np
 import pytest
 
 from cognite.client import utils
@@ -69,19 +69,19 @@ def test_features(test_feature_type):
 class TestGeospatialAPI:
     @pytest.mark.dsl
     def test_to_pandas(self, test_feature_type, test_features):
-        df = test_features.to_pandas()
+        df = test_features.to_pandas(camel_case=True)
         assert set(list(df)) == {"externalId", "dataSetId", "position", "volume", "temperature", "pressure", "assetIds"}
 
     @pytest.mark.dsl
     def test_to_geopandas(self, test_feature_type, test_features):
-        gdf = test_features.to_geopandas(geometry="position")
+        gdf = test_features.to_geopandas(geometry="position", camel_case=True)
         assert set(gdf) == {"externalId", "dataSetId", "position", "volume", "temperature", "pressure", "assetIds"}
         geopandas = utils._auxiliary.local_import("geopandas")
         assert type(gdf.dtypes["position"]) == geopandas.array.GeometryDtype
 
     @pytest.mark.dsl
     def test_from_geopandas(self, test_feature_type, test_features):
-        gdf = test_features.to_geopandas(geometry="position")
+        gdf = test_features.to_geopandas(geometry="position", camel_case=True)
         fl = FeatureList.from_geopandas(test_feature_type, gdf)
         assert type(fl) == FeatureList
         assert len(fl) == 4
@@ -118,7 +118,7 @@ class TestGeospatialAPI:
                     "temperature": 0.0,
                     "pressure": 1.0,
                     "volume": 11.0,
-                    "weight": np.nan,
+                    "weight": math.nan,
                     "description": "string",
                     "assetIds": [1, 2],
                 },

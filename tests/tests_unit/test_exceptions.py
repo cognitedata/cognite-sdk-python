@@ -17,7 +17,7 @@ class TestAPIError:
         assert [{"id": 123}] == e.missing
         assert [{"externalId": "abc"}] == e.duplicated
 
-        assert "bla" in e.__str__()
+        assert "bla" in str(e)
 
     def test_unknown_fields_in_api_error(self, rsps, cognite_client):
         rsps.add(

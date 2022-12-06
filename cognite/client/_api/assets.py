@@ -120,7 +120,7 @@ class AssetsAPI(APIClient):
         Yields:
             Asset: yields Assets one by one.
         """
-        return cast(Iterator[Asset], self.__call__())
+        return cast(Iterator[Asset], self())
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Asset]:
         """`Retrieve a single asset by id. <https://docs.cognite.com/api/v1/#operation/getAsset>`_

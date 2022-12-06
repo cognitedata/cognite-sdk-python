@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package com.cognite.v1.timeseries.proto;
+
+option java_multiple_files = true;
+
+message NumericDatapoint {
+    int64 timestamp = 1;
+    double value = 2;
+}
+
+message NumericDatapoints {
+    repeated NumericDatapoint datapoints = 1;
+}
+
+message StringDatapoint {
+    int64 timestamp = 1;
+    string value = 2;
+}
+
+message StringDatapoints {
+    repeated StringDatapoint datapoints = 1;
+}
+
+message AggregateDatapoint {
+    int64 timestamp = 1;
+    double average = 2;
+    double max = 3;
+    double min = 4;
+    double count = 5;
+    double sum = 6;
+    double interpolation = 7;
+    double stepInterpolation = 8;
+    double continuousVariance = 9;
+    double discreteVariance = 10;
+    double totalVariation = 11;
+}
+
+message AggregateDatapoints {
+    repeated AggregateDatapoint datapoints = 1;
+}

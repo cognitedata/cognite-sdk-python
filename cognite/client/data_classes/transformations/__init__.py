@@ -215,7 +215,7 @@ class Transformation(CogniteResource):
             assert sessions_cache is not None
 
             key = (
-                f"{oidc_credentials.client_id}:{oidc_credentials.client_secret.__hash__()}"
+                f"{oidc_credentials.client_id}:{hash(oidc_credentials.client_secret)}"
                 if oidc_credentials
                 else "DEFAULT"
             )

@@ -6,23 +6,107 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 The changelog for SDK version 0.x.x can be found [here](https://github.com/cognitedata/cognite-sdk-python/blob/0.13/CHANGELOG.md).
 
+For users wanting to upgrade major version, a migration guide can be found [here](MIGRATION_GUIDE.md).
+
 Changes are grouped as follows
 - `Added` for new features.
 - `Changed` for changes in existing functionality.
 - `Deprecated` for soon-to-be removed features.
+- `Improved` for transparent changes, e.g. better performance.
 - `Removed` for now removed features.
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
-- 
+
+## [5.0.0] - 06-12-22
+### Improved
+- Greatly increased speed of datapoints fetching (new adaptable implementation and change from `JSON` to `protobuf`), especially when asking for... (measured in fetched `dps/sec` using the new `retrieve_arrays` method, with default settings for concurrency):
+  - A large number of time series
+    - 200 ts: ~1-4x speedup
+    - 8000 ts: ~4-7x speedup
+    - 20k-100k ts: Up to 20x faster
+  - Very few time series (1-3)
+    - Up to 4x faster
+  - Very dense time series (>>10k dps/day)
+    - Up to 5x faster
+  - Any query for `string` datapoints
+    - Faster the more dps, e.g. single ts, 500k: 6x speedup
+- Peak memory consumption (for numeric data) is 0-55 % lower when using `retrieve` and 65-75 % lower for the new `retrieve_arrays` method.
+- Fetching newly inserted datapoints no longer suffers from (potentially) very long wait times (or timeout risk).
+- Converting fetched datapoints to a Pandas `DataFrame` via `to_pandas()` has changed from `O(N)` to `O(1)`, i.e., speedup no longer depends on the number of datapoints and is typically 4-5 orders of magnitude faster (!). NB: Only applies to `DatapointsArray` as returned by the `retrieve_arrays` method.
+- Full customizability of queries is now available for *all retrieve* endpoints, thus the `query()` is no longer needed and has been removed. Previously only `aggregates` could be individually specified. Now all parameters can be passed either as top-level or as *individual settings*, even `ignore_unknown_ids`. This is now aligned with the API (except `ignore_unknown_ids` making the SDK arguably better!).
+- Documentation for the retrieve endpoints has been overhauled with lots of new usage patterns and better examples. **Check it out**!
+- Vastly better test coverage for datapoints fetching logic. You may have increased trust in the results from the SDK!
+
+### Added
+- New required dependency, `protobuf`. This is currently only used by the DatapointsAPI, but other endpoints may be changed without needing to release a new major version.
+- New optional dependency, `numpy`.
+- A new datapoints fetching method, `retrieve_arrays`, that loads data directly into NumPy arrays for improved speed and *much* lower memory usage.
+- These arrays are stored in the new resource types `DatapointsArray` with corresponding container (list) type, `DatapointsArrayList` which offer much more efficient memory usage. `DatapointsArray` also offer zero-overhead pandas-conversion.
+
+### Changed
+- Datapoints are no longer fetched using `JSON`: the age of `protobuf` has begun.
+- The main way to interact with the `DatapointsAPI` has been moved from `client.datapoints` to `client.time_series.data` to align and unify with the `SequenceAPI`. All example code has been updated to reflect this change. Note, however, that the `client.datapoints` will still work until the next major release, but will until then issue a `DeprecationWarning`.
+- All parameters to all retrieve methods are now keyword-only (meaning no positional arguments are supported).
+- All retrieve methods now accept a string for the `aggregates` parameter when asking for just one, e.g. `aggregates="max"`. This short-cut avoids having to wrap it inside a list. Both `snake_case` and `camelCase` are supported.
+- The utility function `datetime_to_ms` no longer issues a `FutureWarning` on missing timezone information. It will now interpret naive `datetime`s as local time as is Python's default interpretation.
+- The utility function `ms_to_datetime` no longer issues a `FutureWarning` on returning a naive `datetime` in UTC. It will now return an aware `datetime` object in UTC.
+- All data classes in the SDK that represent a Cognite resource type have a `to_pandas` (or `to_geopandas`) method. Previously, these had various defaults for the `camel_case` parameter, but they have all been changed to `False`.
+- All retrieve methods (when passing dict(s) with query settings) now accept identifier and aggregates in snake case (and camel case for convenience / backwards compatibility). Note that all newly added/supported customisable parameters (e.g. `include_outside_points` or `ignore_unknown_ids` *must* be passed in snake case or a `KeyError` will be raised.)
+- The method `DatapointsAPI.insert_dataframe` has new default values for `dropna` (now `True`, still being applied on a per-column basis to not lose any data) and `external_id_headers` (now `True`, disincentivizing the use of internal IDs).
+- The previous fetching logic awaited and collected all errors before raising (through the use of an "initiate-and-forget" thread pool). This is great, e.g., updates/inserts to make sure you are aware of all partial changes. However, when reading datapoints, a better option is to just fail fast (which it does now).
+- `DatapointsAPI.[retrieve/retrieve_arrays/retrieve_dataframe]` no longer requires `start` (default: `0`, i.e. 1970-01-01) and `end` (default: `now`). This is now aligned with the API.
+- Additionally, `DatapointsAPI.retrieve_dataframe` no longer requires `granularity` and `aggregates`.
+- All retrieve methods accept a list of full query dictionaries for `id` and `external_id` giving full flexibility for all individual settings: `start`, `end`, `aggregates`, `granularity`, `limit`, `include_outside_points`, `ignore_unknown_ids`.
+- Aggregates returned now include the time period(s) (given by the `granularity` unit) that `start` and `end` are part of (as opposed to only "fully in-between" points). This change is the *only breaking change* to the `DatapointsAPI.retrieve` method for aggregates and makes it so that the SDK match manual queries sent using e.g. `curl` or Postman. In other words, this is now aligned with the API.
+Note also that this is a **bugfix**: Due to the SDK rounding differently than the API, you could supply `start` and `end` (with `start < end`) and still be given an error that `start is not before end`. This can no longer happen.
+- Fetching raw datapoints using `include_outside_points=True` now returns both outside points (if they exist), regardless of `limit` setting (this is the *only breaking change* for limited raw datapoint queries; unlimited queries are fully backwards compatible). Previously the total number of points was capped at `limit`, thus typically only returning the first. Now up to `limit+2` datapoints are always returned. This is now aligned with the API.
+- When passing a relative or absolute time specifier string like `"2w-ago"` or `"now"`, all time series in the same query will use the exact same value for 'now' to avoid any inconsistencies in the results.
+- Fetching newly inserted datapoints no longer suffers from very long wait times (or timeout risk) as the code's dependency on `count` aggregates has been removed entirely (implementation detail) which could delay fetching by anything between a few seconds to several minutes/go to timeout while the aggregate was computed on-the-fly. This was mostly a problem for datapoints inserted into low-priority time periods (far away from current time).
+- Asking for the same time series any number of times no longer raises an error (from the SDK), which is useful for instance when fetching disconnected time periods. This is now aligned with the API. Thus, the custom exception `CogniteDuplicateColumnsError` is no longer needed and has been removed from the SDK.
+- ...this change also causes the `.get` method of `DatapointsList` and `DatapointsArrayList` to now return a list of `Datapoints` or `DatapointsArray` respectively *when duplicated identifiers are queried*. For data scientists and others used to `pandas`, this syntax is familiar to the slicing logic of `Series` and `DataFrame` when used with non-unique indices.
+There is also a very subtle **bugfix** here: since the previous implementation allowed the same time series to be specified by both its `id` and `external_id`, using `.get` to access it would always yield the settings that were specified by the `external_id`. This will now return a `list` as explained above.
+- `Datapoints` and `DatapointsArray` now store the `granularity` string given by the user (when querying aggregates) which allows both `to_pandas` methods (on `DatapointsList` and `DatapointsArrayList` as well) to accept `include_granularity_name` that appends this to the end of the column name(s).
+- Datapoints fetching algorithm has changed from one that relies on up-to-date and correct `count` aggregates to be fast (with fallback on serial fetching when missing/unavailable), to recursively (and reactively) splitting the time-domain into smaller and smaller pieces, depending on the discovered-as-fetched density-distribution of datapoints in time and the number of available workers/threads. The new approach also has the ability to group more than 1 (one) time series per API request (when beneficial) and short-circuit once a user-given limit has been reached (if/when given). This method is now used for *all types of queries*; numeric raw-, string raw-, and aggregate datapoints.
+
+#### Change: `retrieve_dataframe`
+- Previously, fetching was constricted (🐍) to either raw- OR aggregate datapoints. This restriction has been lifted and the method now works exactly like the other retrieve-methods (with a few extra options relevant only for pandas `DataFrame`s).
+- Used to fetch time series given by `id` and `external_id` separately - this is no longer the case. This gives a significant, additional speedup when both are supplied.
+- The `complete` parameter has been removed and partially replaced by `uniform_index (bool)` which covers a subset of the previous features (with some modifications: now gives a uniform index all the way from the first given `start` to the last given `end`). Rationale: Old method had a weird and had unintuitive syntax (passing a string using commas to separate options).
+- Interpolating, forward-filling or in general, imputation (also prev. controlled via the `complete` parameter) is completely removed as the resampling logic *really* should be up to the user fetching the data to decide, not the SDK.
+- New parameter `column_names` (as already used in several existing `to_pandas` methods) decides whether to pick `id`s or `external_id`s as the dataframe column names. Previously, when both were supplied, the dataframe ended up with a mix.
+Read more below in the removed section or check out the method's updated documentation.
+- The ordering of columns for aggregates is now always chronological instead of the somewhat arbitrary choice made in `Datapoints.__init__`, (since `dict`s keep insertion order in newer python versions and instance variables lives in `__dict__`)).
+- New parameter `include_granularity_name` that appends the specified granularity to the column names if passed as `True`. Mimics the behaviour of the older, well-known argument `include_aggregate_name`, but adds after: `my-ts|average|13m`.
+
+### Fixed
+- `CogniteClientMock` has been updated with 24 missing APIs (including sub-composited APIs like `FunctionsAPI.schedules`) and is now used internally in testing instead of a similar, additional implementation.
+- Loads of `assert`s meant for the SDK user have been changed to raising exceptions instead as a safeguard since `assert`s are ignored when running in optimized mode `-O` (or `-OO`).
+
+### Fixed: Extended time domain
+- `TimeSeries.[first/count/latest]()` now work with the expanded time domain (minimum age of datapoints was moved from 1970 to 1900, see [4.2.1]).
+  - `TimeSeries.latest()` now supports the `before` argument similar to `DatapointsAPI.retrieve_latest`.
+  - `TimeSeries.first()` now considers datapoints before 1970 and after "now".
+  - `TimeSeries.count()` now considers datapoints before 1970 and after "now" and will raise an error for string time series as `count` (or any other aggregate) is not defined.
+- `DatapointsAPI.retrieve_latest` would give latest datapoint `before="now"` when given `before=0` (1970) because of a bad boolean check. Used to not be a problem since there were no data before epoch.
+- The utility function `ms_to_datetime` no longer raises `ValueError` for inputs from before 1970, but will raise for input outside the allowed minimum- and maximum supported timestamps in the API.
+**Note**: that support for `datetime`s before 1970 may be limited on Windows, but `ms_to_datetime` should still work (magic!).
+
+### Fixed: Datapoints-related
+- **Critical**: Fetching aggregate datapoints now works properly with the `limit` parameter. In the old implementation, `count` aggregates were first fetched to split the time domain efficiently - but this has little-to-no informational value when fetching *aggregates* with a granularity, as the datapoints distribution can take on "any shape or form". This often led to just a few returned batches of datapoints due to miscounting (e.g. as little as 10% of the actual data could be returned(!)).
+- Fetching datapoints using `limit=0` now returns zero datapoints, instead of "unlimited". This is now aligned with the API.
+- Removing aggregate names from the columns in a Pandas `DataFrame` in the previous implementation used `Datapoints._strip_aggregate_name()`, but this had a bug: Whenever raw datapoints were fetched all characters after the last pipe character (`|`) in the tag name would be removed completely. In the new version, the aggregate name is only added when asked for.
+- The method `Datapoints.to_pandas` could return `dtype=object` for numeric time series when all aggregate datapoints were missing; which is not *that* unlikely, e.g., when using `interpolation` aggregate on a `is_step=False` time series with datapoints spacing above one hour on average. In such cases, an object array only containing `None` would be returned instead of float array dtype with `NaN`s. Correct dtype is now enforced by an explicit `pandas.to_numeric()` cast.
+- Fixed a bug in all `DatapointsAPI` retrieve-methods when no time series was/were found, a single identifier was *not* given (either list of length 1 or all given were missing), `ignore_unknown_ids=True`, and `.get` was used on the empty returned `DatapointsList` object. This would raise an exception (`AttributeError`) because the mappings from `id` or `external_id` to `Datapoints` were not defined on the object (only set when containing at least 1 resource).
+
+### Removed
+- Method: `DatapointsAPI.query`. No longer needed as all "optionality" has been moved to the three `retrieve` methods.
+- Method: `DatapointsAPI.retrieve_dataframe_dict`. Rationale: Due to its slightly confusing syntax and return value, it basically saw no use "in the wild".
+- Custom exception: `CogniteDuplicateColumnsError`. No longer needed as the retrieve endpoints now support duplicated identifiers to be passed (similar to the API).
+- All convenience methods related to plotting and the use of `matplotlib`. Rationale: No usage and low utility value: the SDK should not be a data science library.
+
 ## [4.11.3] - 2022-11-02
 ### Fixed
-- Fix FunctionCallsAPI filtering 
-
-## [4.11.2] - 2022-11-16
-### Changed
-- Detect endpoint (for Engineering Diagram detect jobs) is updated to spawn and handle multiple jobs.
-### Added
-- `DetectJobBundle` dataclass: A way to manage multiple files and jobs.
+- Fix FunctionCallsAPI filtering
 
 ## [4.11.2] - 2022-11-16
 ### Changed
@@ -52,16 +136,15 @@ Changes are grouped as follows
 
 ## [4.8.1] - 2022-10-06
 ### Fixed
-- Fix `__str__` function of `TransformationSchedule`
+- Fix `__str__` method of `TransformationSchedule`
 
 ## [4.8.0] - 2022-09-30
 ### Added
 - Add operations for geospatial rasters
 
 ## [4.7.1] - 2022-09-29
-
 ### Fixed
-- Fixed the `FunctionsAPI.create` method for Windows-users by removing 
+- Fixed the `FunctionsAPI.create` method for Windows-users by removing
   validation of `requirements.txt`.
 
 ## [4.7.0] - 2022-09-28
@@ -84,7 +167,6 @@ Changes are grouped as follows
 ## [4.5.2] - 2022-09-09
 ### Fixed
 - Fixes the issue when updating transformations with new nonce credentials
-
 
 ## [4.5.1] - 2022-09-08
 ### Fixed
@@ -204,8 +286,8 @@ other OAuth flows.
 - added support for nonce authentication on transformations
 
 ### Changed
-- if no source or destination credentials are provided on transformation create, an attempt will be made to create a session with the CogniteClient credentials, if it succeeds the aquired nonce will be used.
-- if OIDC credentials are provided on transformation create/update, an attempt will be made to create a session with the given credentials, if it succeeds the aquired nonce credentials will replace the given client credentials before sending the request.
+- if no source or destination credentials are provided on transformation create, an attempt will be made to create a session with the CogniteClient credentials, if it succeeds, the acquired nonce will be used.
+- if OIDC credentials are provided on transformation create/update, an attempt will be made to create a session with the given credentials. If it succeeds, the acquired nonce credentials will replace the given client credentials before sending the request.
 
 ## [3.3.0] - 2022-07-21
 ### Added
@@ -531,7 +613,7 @@ other OAuth flows.
 - Ignore exceptions from pypi version check and reduce its timeout to 5 seconds.
 
 ### Fixed
-- Only 200/201/202 is treated as succesfull response. 301 led to json decoding errors -
+- Only 200/201/202 is treated as successful response. 301 led to json decoding errors -
 now handled gracefully.
 - datasets create limit was set to 1000 in the sdk, leading to cases of 400 from the api where the limit is 10.
 
@@ -1099,7 +1181,7 @@ allowing the method to take arbitrarily long lists for `source_external_ids` and
 ## [1.1.1] - 2019-08-23
 ### Added
 - `complete` parameter on `datapoints.retrieve_dataframe`, used for forward-filling/interpolating intervals with missing data.
-- `include_aggregate_names` option on `datapoints.retrieve_dataframe` and `DatapointsList.to_pandas`, used for removing the `|<aggregate-name>` postfix on dataframe column headers.
+- `include_aggregate_name` option on `datapoints.retrieve_dataframe` and `DatapointsList.to_pandas`, used for removing the `|<aggregate-name>` postfix on dataframe column headers.
 - datapoints.retrieve_dataframe_dict function, which returns {aggregate:dataframe} without adding aggregate names to columns
 - source_created_time and source_modified_time support for files
 

@@ -38,7 +38,7 @@ class RawDatabasesAPI(APIClient):
         )
 
     def __iter__(self) -> Iterator[Database]:
-        return cast(Iterator[Database], self.__call__())
+        return cast(Iterator[Database], self())
 
     @overload
     def create(self, name: str) -> Database:

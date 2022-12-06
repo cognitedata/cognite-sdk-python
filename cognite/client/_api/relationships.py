@@ -137,7 +137,7 @@ class RelationshipsAPI(APIClient):
         Yields:
             Relationship: yields Relationships one by one.
         """
-        return cast(Iterator[Relationship], self.__call__())
+        return cast(Iterator[Relationship], self())
 
     def retrieve(self, external_id: str, fetch_resources: bool = False) -> Optional[Relationship]:
         """Retrieve a single relationship by external id.

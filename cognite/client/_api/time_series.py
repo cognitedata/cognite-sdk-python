@@ -1,5 +1,6 @@
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Union, cast, overload
 
+from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import (
     TimeSeries,
@@ -13,6 +14,10 @@ from cognite.client.utils._identifier import IdentifierSequence
 
 class TimeSeriesAPI(APIClient):
     _RESOURCE_PATH = "/timeseries"
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.data = DatapointsAPI(*args, **kwargs)
 
     def __call__(
         self,
@@ -101,7 +106,7 @@ class TimeSeriesAPI(APIClient):
         Yields:
             TimeSeries: yields TimeSeries one by one.
         """
-        return cast(Iterator[TimeSeries], self.__call__())
+        return cast(Iterator[TimeSeries], self())
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[TimeSeries]:
         """`Retrieve a single time series by id. <https://docs.cognite.com/api/v1/#operation/getTimeSeriesByIds>`_
