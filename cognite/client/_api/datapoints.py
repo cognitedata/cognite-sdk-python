@@ -553,10 +553,11 @@ class DatapointsAPI(APIClient):
     ) -> Union[None, Datapoints, DatapointsList]:
         """`Retrieve datapoints for one or more time series. <https://docs.cognite.com/api/v1/#operation/getMultiTimeSeriesDatapoints>`_
 
-        **Performance guide:**:
-            1. In order to retrieve millions of datapoints as efficiently as possible, with the least memory overhead, consider using `retrieve_arrays(...)` which instead uses `numpy.ndarrays` for data storage.
-            2. Try to avoid specifying a large finite `limit` (e.g. 1 million is bad) as the retrieve performance will (likely) take a hit.
-            3. Try to avoid specifying `start` and `end` to be very far from the actual data, e.g. if you have data from 2000 to 2015, don't set start=0 (1970).
+        **Performance guide**:
+            In order to retrieve millions of datapoints as efficiently as possible, here are a few guidelines:
+            1. For best speed, and significantly lower memory usage, consider using `retrieve_arrays(...)` which uses `numpy.ndarrays` for data storage.
+            2. Unlimited queries are fastest as they are trivial to parallelize. Thus, specifying a very large finite `limit`, e.g. 1 million, comes with a performance penalty.
+            3. Try to avoid specifying `start` and `end` to be very far from the actual data: If you have data from 2000 to 2015, don't set start=0 (1970).
 
         Args:
             start (Union[int, str, datetime, None]): Inclusive start. Default: 1970-01-01 UTC.
@@ -1033,14 +1034,15 @@ class DatapointsAPI(APIClient):
                 ...     {"timestamp": 150000000000, "value": 1000},
                 ...     {"timestamp": 160000000000, "value": 2000},
                 ... ]
-                >>> c.time_series.data.insert(datapoints, external_id="def")
+                >>> c.time_series.data.insert(datapoints, external_id="abcd")
 
             Or they can be a Datapoints or DatapointsArray object (with raw datapoints only). Note that the id or external_id
-            set on these objects are not inspected/used, and so you must explicitly pass the identifier of the time series
-            you want to insert into, which in this example is external_id="def"::
+            set on these objects are not inspected/used (as they belong to the "from-time-series", and not the "to-time-series"),
+            and so you must explicitly pass the identifier of the time series you want to insert into, which in this example is
+            `external_id="efgh"`::
 
                 >>> data = c.time_series.data.retrieve(external_id="abc", start="1w-ago", end="now")
-                >>> c.time_series.data.insert(data, external_id="def")
+                >>> c.time_series.data.insert(data, external_id="efgh")
         """
         post_dps_object = Identifier.of_either(id, external_id).as_dict()
         dps_to_post: Union[
@@ -1060,8 +1062,7 @@ class DatapointsAPI(APIClient):
         """`Insert datapoints into multiple time series <https://docs.cognite.com/api/v1/#operation/postMultiTimeSeriesDatapoints>`_
 
         Args:
-            datapoints (List[Dict]): The datapoints you wish to insert along with the ids of the time series.
-                See examples below.
+            datapoints (List[Dict]): The datapoints you wish to insert along with the ids of the time series. See examples below.
 
         Returns:
             None

@@ -343,7 +343,7 @@ class TemplateInstancesAPI(APIClient):
             Union[TemplateInstance, TemplateInstanceList]: Created template instance(s).
 
         Examples:
-            create new template instances for Covid-19 spread:
+            Create new template instances for Covid-19 spread:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TemplateInstance
@@ -378,15 +378,15 @@ class TemplateInstancesAPI(APIClient):
         Will overwrite existing instances.
 
         Args:
-         external_id (str): The external id of the template group.
-         version (int): The version of the template group to create instances for.
-         instances (Union[TemplateInstance, Sequence[TemplateInstance]]): The instances to create.
+            external_id (str): The external id of the template group.
+            version (int): The version of the template group to create instances for.
+            instances (Union[TemplateInstance, Sequence[TemplateInstance]]): The instances to create.
 
         Returns:
-         Union[TemplateInstance, TemplateInstanceList]: Created template instance(s).
+            Union[TemplateInstance, TemplateInstanceList]: Created template instance(s).
 
         Examples:
-         create new template instances for Covid-19 spread:
+            Create new template instances for Covid-19 spread:
 
              >>> from cognite.client import CogniteClient
              >>> from cognite.client.data_classes import TemplateInstance

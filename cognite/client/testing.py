@@ -118,7 +118,6 @@ class CogniteClientMock(MagicMock):
 
         self.sequences = MagicMock(spec=SequencesAPI)
         self.sequences.data = MagicMock(spec_set=SequencesDataAPI)
-        self.diagrams = MagicMock(spec_set=DiagramsAPI)
 
         self.templates = MagicMock(spec=TemplatesAPI)
         self.templates.groups = MagicMock(spec_set=TemplateGroupsAPI)
