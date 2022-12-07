@@ -563,6 +563,7 @@ class FilesAPI(APIClient):
                 >>> res = c.files.upload("/path/to/file", name="my_file", labels=[Label(external_id="WELL LOG")])
 
             Upload a file with a geo_location::
+
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import GeoLocation, Geometry
                 >>> c = CogniteClient()

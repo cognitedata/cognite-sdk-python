@@ -17,6 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [5.0.1] - 07-12-22
+### Fixed
+- `DatapointsArray.dump` would return timestamps in nanoseconds instead of milliseconds when `convert_timestamps=False`.
+- Converting a `Datapoints` object coming from a synthetic datapoints query to a `pandas.DataFrame` would, when passed `include_errors=True`, starting in version `5.0.0`, erroneously cast the `error` column to a numeric data type and sort it *before* the returned values. Both of these behaviours have been reverted.
+- Several documentation issues: Missing methods, wrong descriptions through inheritance and some pure visual/aesthetic.
+
 ## [5.0.0] - 06-12-22
 ### Improved
 - Greatly increased speed of datapoints fetching (new adaptable implementation and change from `JSON` to `protobuf`), especially when asking for... (measured in fetched `dps/sec` using the new `retrieve_arrays` method, with default settings for concurrency):
@@ -42,6 +48,8 @@ Changes are grouped as follows
 - New optional dependency, `numpy`.
 - A new datapoints fetching method, `retrieve_arrays`, that loads data directly into NumPy arrays for improved speed and *much* lower memory usage.
 - These arrays are stored in the new resource types `DatapointsArray` with corresponding container (list) type, `DatapointsArrayList` which offer much more efficient memory usage. `DatapointsArray` also offer zero-overhead pandas-conversion.
+- `DatapointsAPI.insert` now also accepts `DatapointsArray`. It also does basic error checking like making sure the number of datapoints match the number of timestamps, and that it contains raw datapoints (as opposed to aggregate data which raises an error). This also applies to `Datapoints` input.
+- `DatapointsAPI.insert_multiple` now accepts `Datapoints` and `DatapointsArray` as part of the (possibly) multiple inputs. Applies the same error checking as `insert`.
 
 ### Changed
 - Datapoints are no longer fetched using `JSON`: the age of `protobuf` has begun.

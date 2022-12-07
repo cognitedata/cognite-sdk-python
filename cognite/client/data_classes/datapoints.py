@@ -253,25 +253,26 @@ class DatapointsArray(CogniteResource):
     def _data_fields(self) -> Tuple[List[str], List[npt.NDArray]]:
         data_field_tuples = [
             (attr, arr)
-            for attr in ("timestamp", "value", *ALL_SORTED_DP_AGGS)
+            for attr in ("timestamp", "value", *ALL_SORTED_DP_AGGS)  # ts must be first!
             if (arr := getattr(self, attr)) is not None
         ]
         attrs, arrays = map(list, zip(*data_field_tuples))
         return attrs, arrays  # type: ignore [return-value]
 
     def dump(self, camel_case: bool = False, convert_timestamps: bool = False) -> Dict[str, Any]:
-        """Dump the datapoints into a json serializable Python data type.
+        """Dump the DatapointsArray into a json serializable Python data type.
 
         Args:
             camel_case (bool): Use camelCase for attribute names. Default: False.
-            convert_timestamps (bool): Convert integer timestamps to ISO 8601 formatted strings. Default: False.
+            convert_timestamps (bool): Convert timestamps to ISO 8601 formatted strings. Default: False (returns as integer, milliseconds since epoch)
 
         Returns:
-            List[Dict[str, Any]]: A list of dicts representing the instance.
+            Dict[str, Any]: A dictionary representing the instance.
         """
         attrs, arrays = self._data_fields()
-        if convert_timestamps:
-            assert attrs[0] == "timestamp"
+        if not convert_timestamps:  # Eh.. so.. we still have to convert...
+            arrays[0] = arrays[0].astype("datetime64[ms]").astype(np.int64)
+        else:
             # Note: numpy does not have a strftime method to get the exact format we want (hence the datetime detour)
             #       and for some weird reason .astype(datetime) directly from dt64 returns native integer... whatwhyy
             arrays[0] = arrays[0].astype("datetime64[ms]").astype(datetime).astype(str)
@@ -290,6 +291,16 @@ class DatapointsArray(CogniteResource):
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
     ) -> "pandas.DataFrame":
+        """Convert the DatapointsArray into a pandas DataFrame.
+
+        Args:
+            column_names (str): Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
+            include_aggregate_name (bool): Include aggregate in the column name
+            include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
+
+        Returns:
+            pandas.DataFrame: The datapoints as a pandas DataFrame.
+        """
         pd = cast(Any, local_import("pandas"))
         if column_names == "id":
             if self.id is None:
@@ -437,7 +448,7 @@ class Datapoints(CogniteResource):
             camel_case (bool): Use camelCase for attribute names. Defaults to False.
 
         Returns:
-            List[Dict[str, Any]]: A list of dicts representing the instance.
+            Dict[str, Any]: A dictionary representing the instance.
         """
         dumped = {
             "id": self.id,
@@ -477,10 +488,15 @@ class Datapoints(CogniteResource):
         else:
             raise ValueError("column_names must be 'external_id' or 'id'")
 
+        if include_errors and self.error is None:
+            raise ValueError("Unable to 'include_errors', only available for data from synthetic datapoint queries")
+
         # Make sure columns (aggregates) always come in alphabetical order (e.g. "average" before "max"):
         field_names, data_lists = [], []
         data_fields = self._get_non_empty_data_fields(get_empty_lists=True, get_error=include_errors)
-        for attr, data in sorted(data_fields):
+        if not include_errors:  # We do not touch column ordering for synthetic datapoints
+            data_fields = sorted(data_fields)
+        for attr, data in data_fields:
             if attr == "timestamp":
                 continue
             id_col_name = str(identifier)
@@ -493,6 +509,9 @@ class Datapoints(CogniteResource):
             if include_granularity_name and self.granularity is not None:
                 id_col_name += f"|{self.granularity}"
             field_names.append(id_col_name)
+            if attr == "error":
+                data_lists.append(data)
+                continue  # Keep string (object) column non-numeric
             data = pd.to_numeric(data, errors="coerce")  # Avoids object dtype for missing aggs
             if attr == "count":
                 data_lists.append(data.astype("int64"))
@@ -603,6 +622,17 @@ class DatapointsArrayList(CogniteResourceList):
         id: int = None,
         external_id: str = None,
     ) -> Union[None, DatapointsArray, List[DatapointsArray]]:
+        """Get a specific DatapointsArray from this list by id or exernal_id.
+
+        Note: For duplicated time series, returns a list of DatapointsArray.
+
+        Args:
+            id (int): The id of the item(s) to get.
+            external_id (str): The external_id of the item(s) to get.
+
+        Returns:
+            Union[None, DatapointsArray, List[DatapointsArray]]: The requested item(s)
+        """
         # TODO: Question, can we type annotate without specifying the function?
         return super().get(id, external_id)  # type: ignore [return-value]
 
@@ -618,6 +648,16 @@ class DatapointsArrayList(CogniteResourceList):
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
     ) -> "pandas.DataFrame":
+        """Convert the DatapointsArrayList into a pandas DataFrame.
+
+        Args:
+            column_names (str): Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
+            include_aggregate_name (bool): Include aggregate in the column name
+            include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
+
+        Returns:
+            pandas.DataFrame: The datapoints as a pandas DataFrame.
+        """
         pd = cast(Any, local_import("pandas"))
         dfs = [dps.to_pandas(column_names, include_aggregate_name, include_granularity_name) for dps in self]
         if not dfs:
@@ -630,7 +670,7 @@ class DatapointsArrayList(CogniteResourceList):
 
         Args:
             camel_case (bool): Use camelCase for attribute names. Default: False.
-            convert_timestamps (bool): Convert integer timestamps to ISO 8601 formatted strings. Default: False.
+            convert_timestamps (bool): Convert timestamps to ISO 8601 formatted strings. Default: False (returns as integer, milliseconds since epoch)
 
         Returns:
             List[Dict[str, Any]]: A list of dicts representing the instance.
@@ -664,6 +704,17 @@ class DatapointsList(CogniteResourceList):
         id: int = None,
         external_id: str = None,
     ) -> Union[None, Datapoints, List[Datapoints]]:
+        """Get a specific Datapoints from this list by id or exernal_id.
+
+        Note: For duplicated time series, returns a list of Datapoints.
+
+        Args:
+            id (int): The id of the item(s) to get.
+            external_id (str): The external_id of the item(s) to get.
+
+        Returns:
+            Union[None, Datapoints, List[Datapoints]]: The requested item(s)
+        """
         # TODO: Question, can we type annotate without specifying the function?
         return super().get(id, external_id)  # type: ignore [return-value]
 
