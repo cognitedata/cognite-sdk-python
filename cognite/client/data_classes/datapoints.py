@@ -593,7 +593,8 @@ class Datapoints(CogniteResource):
         return truncated_datapoints
 
     def _repr_html_(self) -> str:
-        return self.to_pandas(include_errors=True)._repr_html_()
+        is_synthetic_dps = self.error is not None
+        return self.to_pandas(include_errors=is_synthetic_dps)._repr_html_()
 
 
 class DatapointsArrayList(CogniteResourceList):
