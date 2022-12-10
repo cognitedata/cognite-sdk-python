@@ -325,12 +325,13 @@ class RelationshipsAPI(APIClient):
 
         Args:
             relationship (Union[Relationship, Sequence[Relationship]]): Relationship or list of relationships to create.
-                Note:
-                    - the source_type and target_type field in the Relationship(s) can be any string among "Asset", "TimeSeries", "File", "Event", "Sequence";
-                    - do not provide the value for the source and target arguments of the Relationship class, only source_external_id / source_type and target_external_id / target_type. These (source and target) are used as part of fetching actual resources specified in other fields.
 
         Returns:
             Union[Relationship, RelationshipList]: Created relationship(s)
+
+        Note:
+            - the source_type and target_type field in the Relationship(s) can be any string among "Asset", "TimeSeries", "File", "Event", "Sequence";
+            - do not provide the value for the source and target arguments of the Relationship class, only source_external_id / source_type and target_external_id / target_type. These (source and target) are used as part of fetching actual resources specified in other fields.
 
         Examples:
 
@@ -339,8 +340,24 @@ class RelationshipsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import Relationship
                 >>> c = CogniteClient()
-                >>> flowrel1 = Relationship(external_id="flow_1", source_external_id="source_ext_id", source_type="asset", target_external_id="target_ext_id", target_type="event", confidence=0.1, data_set_id=1234)
-                >>> flowrel2 = Relationship(external_id="flow_2", source_external_id="source_ext_id", source_type="asset", target_external_id="target_ext_id", target_type="event", confidence=0.1, data_set_id=1234)
+                >>> flowrel1 = Relationship(
+                ...     external_id="flow_1",
+                ...     source_external_id="source_ext_id",
+                ...     source_type="asset",
+                ...     target_external_id="target_ext_id",
+                ...     target_type="event",
+                ...     confidence=0.1,
+                ...     data_set_id=1234
+                ... )
+                >>> flowrel2 = Relationship(
+                ...     external_id="flow_2",
+                ...     source_external_id="source_ext_id",
+                ...     source_type="asset",
+                ...     target_external_id="target_ext_id",
+                ...     target_type="event",
+                ...     confidence=0.1,
+                ...     data_set_id=1234
+                ... )
                 >>> res = c.relationships.create([flowrel1,flowrel2])
         """
         utils._auxiliary.assert_type(relationship, "relationship", [Relationship, Sequence])
