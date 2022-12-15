@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [5.0.2] - 15-12-22
+### Changed
+- The valid time range for datapoints has been increased to support timestamps up to end of the year 2099 in the TimeSeriesAPI. The utility function `ms_to_datetime` has been updated accordingly.
+
 ## [5.0.1] - 07-12-22
 ### Fixed
 - `DatapointsArray.dump` would return timestamps in nanoseconds instead of milliseconds when `convert_timestamps=False`.

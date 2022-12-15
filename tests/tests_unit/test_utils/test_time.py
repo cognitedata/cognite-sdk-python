@@ -46,19 +46,22 @@ class TestDatetimeToMs:
         assert datetime_to_ms(datetime(2018, 1, 31, 11, 11, 11, tzinfo=utc)) == 1517397071000
         assert datetime_to_ms(datetime(100, 1, 31, tzinfo=utc)) == -59008867200000
 
-    def test_ms_to_datetime(self):
+    def test_ms_to_datetime__valid_input(self):  # TODO: Many tests here could benefit from parametrize
         utc = timezone.utc
         assert ms_to_datetime(1517356800000) == datetime(2018, 1, 31, tzinfo=utc)
         assert ms_to_datetime(1517397071000) == datetime(2018, 1, 31, 11, 11, 11, tzinfo=utc)
         assert ms_to_datetime(MIN_TIMESTAMP_MS) == datetime(1900, 1, 1, 0, 0, tzinfo=utc)
-        assert ms_to_datetime(MAX_TIMESTAMP_MS) == datetime(2050, 12, 31, 23, 59, 59, 999000, tzinfo=utc)
-        with pytest.raises(
-            ValueError,
-            match=re.escape("Input ms=-59008867200000 does not satisfy: -2208988800000 <= ms <= 2556143999999"),
-        ):
-            ms_to_datetime(-59008867200000)
+        assert ms_to_datetime(MAX_TIMESTAMP_MS) == datetime(2099, 12, 31, 23, 59, 59, 999000, tzinfo=utc)
+
+    def test_ms_to_datetime__bad_input(self):
         with pytest.raises(TypeError):
             ms_to_datetime(None)
+        err_msg = "Input ms={} does not satisfy: -2208988800000 <= ms <= 4102444799999"
+        too_low, too_high = MIN_TIMESTAMP_MS - 1, MAX_TIMESTAMP_MS + 1
+        with pytest.raises(ValueError, match=re.escape(err_msg.format(too_low))):
+            ms_to_datetime(too_low)
+        with pytest.raises(ValueError, match=re.escape(err_msg.format(too_high))):
+            ms_to_datetime(too_high)
 
 
 class TestTimestampToMs:
@@ -80,7 +83,7 @@ class TestTimestampToMs:
             assert 1514764800000 == timestamp_to_ms(datetime(2018, 1, 1))
             assert 1546300800000 == timestamp_to_ms(datetime(2019, 1, 1))
             assert MIN_TIMESTAMP_MS == timestamp_to_ms(datetime(1900, 1, 1))
-            assert MAX_TIMESTAMP_MS == timestamp_to_ms(datetime(2051, 1, 1)) - 1
+            assert MAX_TIMESTAMP_MS == timestamp_to_ms(datetime(2100, 1, 1)) - 1
 
     def test_float(self):
         assert 1514760000000 == timestamp_to_ms(1514760000000.0)
