@@ -708,6 +708,15 @@ class DatapointsAPI(APIClient):
                 ...     external_id=[{"external_id": "foo", "start": start} for start in month_starts],
                 ...     limit=1)
 
+            To get *all* historic and future datapoints for a time series, e.g. to do a backup, you may want to import the two integer
+            constants: `MIN_TIMESTAMP_MS` and `MAX_TIMESTAMP_MS`, to make sure you do not miss any::
+
+                >>> from cognite.client.utils import MIN_TIMESTAMP_MS, MAX_TIMESTAMP_MS
+                >>> dps = client.time_series.data.retrieve(
+                ...     id=123,
+                ...     start=MIN_TIMESTAMP_MS,
+                ...     end=MAX_TIMESTAMP_MS + 1)  # end is exclusive
+
             The last example here is just to showcase the great flexibility of the `retrieve` endpoint, with a very custom query::
 
                 >>> ts1 = 1337
