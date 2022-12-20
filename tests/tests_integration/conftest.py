@@ -24,9 +24,9 @@ def cognite_client() -> CogniteClient:
             scopes=os.environ.get("COGNITE_TOKEN_SCOPES", "").split(","),
             redirect_port=random.randint(53000, 60000),  # random port so we can run the test suite in parallel
         )
-
     else:
         raise ValueError("Environment variable LOGIN_FLOW must be set to either 'client_credentials' or 'interactive'")
+
     return CogniteClient(
         ClientConfig(
             client_name=os.environ["COGNITE_CLIENT_NAME"],

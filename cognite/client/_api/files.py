@@ -127,7 +127,7 @@ class FilesAPI(APIClient):
         Yields:
             FileMetadata: yields Files one by one.
         """
-        return cast(Iterator[FileMetadata], self.__call__())
+        return cast(Iterator[FileMetadata], self())
 
     def create(self, file_metadata: FileMetadata, overwrite: bool = False) -> Tuple[FileMetadata, str]:
         """Create file without uploading content.
@@ -563,6 +563,7 @@ class FilesAPI(APIClient):
                 >>> res = c.files.upload("/path/to/file", name="my_file", labels=[Label(external_id="WELL LOG")])
 
             Upload a file with a geo_location::
+
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import GeoLocation, Geometry
                 >>> c = CogniteClient()

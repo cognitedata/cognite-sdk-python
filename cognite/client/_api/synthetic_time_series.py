@@ -13,10 +13,7 @@ if TYPE_CHECKING:
 
 class SyntheticDatapointsAPI(APIClient):
     _RESOURCE_PATH = "/timeseries/synthetic"
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self._DPS_LIMIT = 10000
+    _DPS_LIMIT = 10000
 
     def query(
         self,
@@ -48,22 +45,18 @@ class SyntheticDatapointsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> dps = c.datapoints.synthetic.query(expressions="TS{id:123} + TS{externalId:'abc'}", start="2w-ago", end="now")
+                >>> dps = c.time_series.data.synthetic.query(expressions="TS{id:123} + TS{externalId:'abc'}", start="2w-ago", end="now")
 
             Use variables to re-use an expression:
 
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
                 >>> vars = {"A": "my_ts_external_id", "B": client.time_series.retrieve(id=1)}
-                >>> dps = c.datapoints.synthetic.query(expressions="A+B", start="2w-ago", end="now", variables=vars)
+                >>> dps = c.time_series.data.synthetic.query(expressions="A+B", start="2w-ago", end="now", variables=vars)
 
             Use sympy to build complex expressions:
 
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
                 >>> from sympy import symbols, cos, sin
                 >>> a = symbols('a')
-                >>> dps = c.datapoints.synthetic.query([sin(a), cos(a)], start="2w-ago", end="now", variables={"a": "my_ts_external_id"}, aggregate='interpolation', granularity='1m')
+                >>> dps = c.time_series.data.synthetic.query([sin(a), cos(a)], start="2w-ago", end="now", variables={"a": "my_ts_external_id"}, aggregate='interpolation', granularity='1m')
         """
         if limit is None or limit == -1:
             limit = cast(int, float("inf"))
@@ -82,7 +75,8 @@ class SyntheticDatapointsAPI(APIClient):
                 "start": cognite.client.utils._time.timestamp_to_ms(start),
                 "end": cognite.client.utils._time.timestamp_to_ms(end),
             }
-            query_datapoints = Datapoints(value=[], error=[])
+            values: List[float] = []  # mypy
+            query_datapoints = Datapoints(value=values, error=[])
             query_datapoints.external_id = short_expression
 
             tasks.append((query, query_datapoints, limit))
@@ -112,16 +106,15 @@ class SyntheticDatapointsAPI(APIClient):
             query["start"] = data["datapoints"][-1]["timestamp"] + 1
         return datapoints
 
-    @classmethod
+    @staticmethod
     def _build_expression(
-        cls,
         expression: Union[str, "sympy.Expr"],
         variables: Dict[str, Any] = None,
         aggregate: str = None,
         granularity: str = None,
     ) -> Tuple[str, str]:
         if expression.__class__.__module__.startswith("sympy."):
-            expression_str = cls._sympy_to_sts(expression)
+            expression_str = SyntheticDatapointsAPI._sympy_to_sts(expression)
             if not variables:
                 raise ValueError(
                     "sympy expressions are only supported in combination with the `variables` parameter to map symbols to time series."

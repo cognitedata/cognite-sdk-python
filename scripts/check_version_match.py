@@ -15,4 +15,4 @@ if __version__ != version_in_pyproject_toml:
         f"Version in pyproject.toml ({version_in_pyproject_toml}) does not match version in "
         f"cognite/client/_version ({__version__})"
     )
-    exit(1)
+    raise SystemExit(1)

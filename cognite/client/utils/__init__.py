@@ -6,4 +6,4 @@ from cognite.client.utils import (  # isort: skip
     _version_checker,
 )
 
-from cognite.client.utils._time import ms_to_datetime, timestamp_to_ms  # isort: skip
+from cognite.client.utils._time import datetime_to_ms, ms_to_datetime, timestamp_to_ms  # isort: skip

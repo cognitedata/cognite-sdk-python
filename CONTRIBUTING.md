@@ -9,17 +9,16 @@ git clone https://github.com/cognitedata/cognite-sdk-python.git
 cd cognite-sdk-python
 ```
 
-We use [poetry](https://pypi.org/project/poetry/) for dependency- and virtual environment 
-management.
+We use [poetry](https://pypi.org/project/poetry/) for dependency- and virtual environment management.
 
 Install dependencies and initialize a shell within the virtual environment, with these commands:
 
 ```bash
-poetry shell
 poetry install
+poetry shell
 ```
 
-Install pre-commit hooks to run static code checks on every commit.
+Install pre-commit hooks to run static code checks on every commit:
 
 ```bash
 pre-commit install
@@ -53,7 +52,7 @@ COGNITE_TOKEN_SCOPES=https://greenfield.cognitedata.com/.default
 COGNITE_AUTHORITY_URL=https://login.microsoftonline.com/dff7763f-e2f5-4ffd-9b8a-4ba4bafba5ea
 COGNITE_CLIENT_ID=6b0b4266-ffa4-4b9b-8e13-ddbbc8a19ea6
 
-# 2) Client credentials flow. To run tests which require client credentials to be set 
+# 2) Client credentials flow. To run tests which require client credentials to be set
 # (such as transformations).
 #LOGIN_FLOW=client_credentials
 #COGNITE_TOKEN_SCOPES=https://greenfield.cognitedata.com/.default

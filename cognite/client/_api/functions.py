@@ -621,7 +621,7 @@ def validate_function_folder(root_path: str, function_path: str) -> None:
     module_path = convert_file_path_to_module_path(function_path)
     handler = importlib.import_module(module_path)
 
-    if "handle" not in handler.__dir__():
+    if "handle" not in dir(handler):
         raise TypeError(f"{function_path} must contain a function named 'handle'.")
 
     _validate_function_handle(handler.handle)

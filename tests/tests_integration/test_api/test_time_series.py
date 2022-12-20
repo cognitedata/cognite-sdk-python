@@ -21,6 +21,26 @@ def post_spy(cognite_client):
         yield
 
 
+@pytest.fixture(scope="session")
+def test_tss(cognite_client):
+    return cognite_client.time_series.retrieve_multiple(
+        external_ids=[
+            "PYSDK integration test 003: weekly values, 1950-2000, numeric",
+            "PYSDK integration test 073: weekly values, 1950-2000, string",
+        ],
+    )
+
+
+@pytest.fixture
+def test_ts_numeric(test_tss):
+    return test_tss[0]
+
+
+@pytest.fixture
+def test_ts_string(test_tss):
+    return test_tss[1]
+
+
 class TestTimeSeriesAPI:
     def test_retrieve(self, cognite_client):
         listed_asset = cognite_client.time_series.list(limit=1)[0]
@@ -95,3 +115,39 @@ class TestTimeSeriesAPI:
         a = cognite_client.time_series.create(TimeSeries(name="any"))
         cognite_client.assets.delete(id=a.id, external_id="this ts does not exist", ignore_unknown_ids=True)
         assert cognite_client.assets.retrieve(id=a.id) is None
+
+
+class TestTimeSeriesHelperMethods:
+    def test_get_count__numeric(self, test_ts_numeric):
+        assert test_ts_numeric.is_string is False
+        count = test_ts_numeric.count()
+        assert count == 2609
+
+    def test_get_count__string_fails(self, test_ts_string):
+        assert test_ts_string.is_string is True
+        with pytest.raises(ValueError, match="String time series does not support count aggregate."):
+            test_ts_string.count()
+
+    def test_get_latest(self, test_ts_numeric, test_ts_string):
+        res1 = test_ts_numeric.latest()
+        res2 = test_ts_string.latest()
+        assert res1.timestamp == 946166400000
+        assert res1.value == 946166400003.0
+        assert res2.timestamp == 946166400000
+        assert res2.value == "946166400073"  # this value should probably be more string-like ;P
+
+    def test_get_latest_before(self, test_ts_numeric, test_ts_string):
+        res1 = test_ts_numeric.latest(before=0)
+        res2 = test_ts_string.latest(before=0)
+        assert res1.timestamp == -345600000
+        assert res1.value == -345599997.0
+        assert res2.timestamp == -345600000
+        assert res2.value == "-345599927"
+
+    def test_get_first_datapoint(self, test_ts_numeric, test_ts_string):
+        res1 = test_ts_numeric.first()
+        res2 = test_ts_string.first()
+        assert res1.timestamp == -631152000000
+        assert res1.value == -631151999997.0
+        assert res2.timestamp == -631152000000
+        assert res2.value == "-631151999927"
