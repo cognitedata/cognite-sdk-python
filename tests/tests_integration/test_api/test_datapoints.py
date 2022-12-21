@@ -676,7 +676,7 @@ class TestRetrieveAggregateDatapointsAPI:
             end = random.randint(start, -31536000000)  # start -> 1969
         else:  # after last dp
             start = random.randint(31536000000, 2524608000000)  # 1971 -> 2050
-            end = random.randint(start, MAX_TIMESTAMP_MS)  # start -> (2051 minus 1ms)
+            end = random.randint(start, MAX_TIMESTAMP_MS)  # start -> (2100 minus 1ms)
         granularities = (
             f"{random.randint(1, 15)}d",
             f"{random.randint(1, 50)}h",
