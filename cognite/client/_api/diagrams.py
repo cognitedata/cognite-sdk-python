@@ -252,7 +252,7 @@ class DiagramsAPI(APIClient):
         Returns:
             items: the format complies with diagram convert schema
         """
-        if any(item.page_range is not None for item in detect_job.result["items"]):
+        if any(item.get("page_range") is not None for item in detect_job.result["items"]):
             raise NotImplementedError("Can not run convert on a detect job that used the page range feature")
         items = [
             {k: v for k, v in item.items() if k in {"annotations", "fileId"}} for item in detect_job.result["items"]
