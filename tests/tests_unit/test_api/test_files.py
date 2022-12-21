@@ -591,7 +591,7 @@ class TestPandasIntegration:
     def test_file_to_pandas(self, cognite_client, mock_files_response):
         import pandas as pd
 
-        df = cognite_client.files.retrieve(id=1).to_pandas()
+        df = cognite_client.files.retrieve(id=1).to_pandas(camel_case=True)
         assert isinstance(df, pd.DataFrame)
         assert "metadata" not in df.columns
         assert [1] == df.loc["assetIds"][0]

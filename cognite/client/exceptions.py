@@ -1,4 +1,5 @@
 import json
+import reprlib
 from typing import Callable, Dict, List, Sequence
 
 
@@ -131,9 +132,9 @@ class CogniteNotFoundError(CogniteMultiException):
         super().__init__(successful, failed, unknown, unwrap_fn)
 
     def __str__(self) -> str:
-        msg = "Not found: {}".format(self.not_found)
-        msg += self._get_multi_exception_summary()
-        return msg
+        if len(not_found := self.not_found) > 200:
+            not_found = reprlib.repr(self.not_found)  # type: ignore [assignment]
+        return f"Not found: {not_found}{self._get_multi_exception_summary()}"
 
 
 class CogniteDuplicatedError(CogniteMultiException):
@@ -177,7 +178,7 @@ class CogniteImportError(CogniteException):
 
     def __init__(self, module: str, message: str = None):
         self.module = module
-        self.message = message or "The functionality your are trying to use requires '{}' to be installed.".format(
+        self.message = message or "The functionality you are trying to use requires '{}' to be installed.".format(
             self.module
         )
 
@@ -204,21 +205,6 @@ class CogniteAPIKeyError(CogniteAuthError):
 
     Raised if the API key is missing or invalid.
     """
-
-
-class CogniteDuplicateColumnsError(CogniteException):
-    """Cognite Duplicate Columns Error
-
-    Raised if the user attempts to create a dataframe through include_aggregate_names=False which results in duplicate column names.
-    """
-
-    def __init__(self, dups: list) -> None:
-        self.message = "Can not remove aggregate names from this dataframe as it would result in duplicate column name(s) '{}'".format(
-            "', '".join(dups)
-        )
-
-    def __str__(self) -> str:
-        return self.message
 
 
 class ModelFailedException(Exception):

@@ -16,7 +16,7 @@ class LabelsAPI(APIClient):
         Yields:
             Type: yields Labels one by one.
         """
-        return cast(Iterator[LabelDefinition], self.__call__())
+        return cast(Iterator[LabelDefinition], self())
 
     def __call__(
         self,

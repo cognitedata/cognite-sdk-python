@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package com.cognite.v1.timeseries.proto;
+
+import "data_points.proto";
+
+option java_multiple_files = true;
+
+message DataPointListItem {
+    int64 id = 1;
+    string externalId = 2;
+    bool isString = 6;
+    bool isStep = 7;
+    string unit = 8;
+    string nextCursor = 9;
+
+    oneof datapointType {
+        NumericDatapoints numericDatapoints = 3;
+        StringDatapoints stringDatapoints = 4;
+        AggregateDatapoints aggregateDatapoints = 5;
+    }
+}
+
+message DataPointListResponse {
+    repeated DataPointListItem items = 1;
+}

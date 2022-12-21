@@ -1,5 +1,6 @@
 import doctest
 from unittest import TextTestRunner
+from unittest.mock import patch
 
 import pytest
 
@@ -18,6 +19,7 @@ from cognite.client._api import (
     three_d,
     time_series,
 )
+from cognite.client.testing import CogniteClientMock
 
 # this fixes the issue with 'got MagicMock but expected Nothing in docstrings'
 doctest.OutputChecker.__check_output = doctest.OutputChecker.check_output
@@ -32,7 +34,7 @@ def run_docstring_tests(module):
     assert 0 == len(s.failures)
 
 
-@pytest.mark.usefixtures("mock_cognite_client")
+@patch("cognite.client.CogniteClient", CogniteClientMock)
 class TestDocstringExamples:
     def test_time_series(self):
         run_docstring_tests(time_series)
@@ -72,8 +74,5 @@ class TestDocstringExamples:
     def test_relationships(self):
         run_docstring_tests(relationships)
 
-
-@pytest.mark.usefixtures("mock_cognite_beta_client")
-class TestDocstringExamplesBeta:
     def test_entity_matching(self):
         run_docstring_tests(entity_matching)

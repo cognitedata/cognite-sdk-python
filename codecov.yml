@@ -1,7 +1,8 @@
+---
 coverage:
   precision: 2
   round: down
-  range: "95...100"
+  range: 95...100
 
   status:
     project:
@@ -9,11 +10,11 @@ coverage:
         target: auto
         threshold: .25%
         base: auto
-    patch: off
-    changes: off
+    patch: false
+    changes: false
 
 comment:
-  layout: "header, diff, files"
+  layout: header, diff, files
   behavior: default
 
 codecov:

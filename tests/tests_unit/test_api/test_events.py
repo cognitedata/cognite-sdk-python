@@ -110,7 +110,7 @@ class TestEvents:
         assert res[0].value == "WORKORDER"
 
     def test_call_root(self, cognite_client, mock_events_response):
-        list(cognite_client.events.__call__(asset_subtree_external_ids=["a"], limit=10))
+        list(cognite_client.events(asset_subtree_external_ids=["a"], limit=10))
         calls = mock_events_response.calls
         assert 1 == len(calls)
         assert {
@@ -241,7 +241,7 @@ class TestPandasIntegration:
     def test_event_to_pandas(self, cognite_client, mock_events_response):
         import pandas as pd
 
-        df = cognite_client.events.retrieve(id=1).to_pandas()
+        df = cognite_client.events.retrieve(id=1).to_pandas(camel_case=True)
         assert isinstance(df, pd.DataFrame)
         assert "metadata" not in df.columns
         assert [1] == df.loc["assetIds"][0]
