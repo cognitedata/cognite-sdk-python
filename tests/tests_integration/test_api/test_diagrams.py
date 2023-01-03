@@ -75,5 +75,5 @@ class TestPNIDParsingIntegration:
 
         # Expecting 6 on each of these pages, but does not have to test every possible regression of the API in the sdk
         assert set(pages_with_annotations_per_subjob[0]) == {6, 11}
-        assert set(pages_with_annotations_per_subjob[1]) == {50, 55}
-        assert set(pages_with_annotations_per_subjob[2]) == {6, 11}
+        assert set(pages_with_annotations_per_subjob[1]) == {6, 11}
+        assert set(pages_with_annotations_per_subjob[2]) == {50, 55}
