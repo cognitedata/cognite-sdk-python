@@ -20,7 +20,7 @@ Changes are grouped as follows
 
 ## [5.1.0] - 03-01-23
 ### Added
-- The diagrams detect can take file reference objects that contain file (external) id as well as a page range. This is an alternative to the lists of file ids or file external ids that are still possible to use. Page ranges were not possible to specify before. 
+- The diagram detect function can take file reference objects that contain file (external) id as well as a page range. This is an alternative to the lists of file ids or file external ids that are still possible to use. Page ranges were not possible to specify before. 
 
 ## [5.0.2] - 15-12-22
 ### Changed
