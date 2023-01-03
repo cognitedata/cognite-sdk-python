@@ -7,8 +7,8 @@ from typing import Dict, List, Optional, Tuple, Union
 UNIT_IN_MS_WITHOUT_WEEK = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000}
 UNIT_IN_MS = {**UNIT_IN_MS_WITHOUT_WEEK, "w": 604800000}
 
-MIN_TIMESTAMP_MS = -2208988800000
-MAX_TIMESTAMP_MS = 2556143999999
+MIN_TIMESTAMP_MS = -2208988800000  # 1900-01-01 00:00:00.000
+MAX_TIMESTAMP_MS = 4102444799999  # 2099-12-31 23:59:59.999
 
 
 def datetime_to_ms(dt: datetime) -> int:
@@ -24,10 +24,13 @@ def datetime_to_ms(dt: datetime) -> int:
 
 
 def ms_to_datetime(ms: Union[int, float]) -> datetime:
-    """Converts milliseconds since epoch to datetime object.
+    """Converts valid Cognite timestamps, i.e. milliseconds since epoch, to datetime object.
 
     Args:
         ms (Union[int, float]): Milliseconds since epoch.
+
+    Raises:
+        ValueError: On invalid Cognite timestamps.
 
     Returns:
         datetime: Aware datetime object in UTC.
