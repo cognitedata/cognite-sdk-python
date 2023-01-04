@@ -1,6 +1,6 @@
 import numbers
 from math import ceil
-from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, Type, Union, overload
+from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, Type, TypeVar, Union, overload
 
 from requests import Response
 
@@ -13,13 +13,15 @@ from cognite.client.data_classes.contextualization import (
     FileReference,
     T_ContextualizationJob,
 )
-from cognite.client.exceptions import CogniteAPIError
+from cognite.client.exceptions import CogniteAPIError, CogniteMissingClientError
 from cognite.client.utils._auxiliary import to_camel_case
 
 DETECT_API_FILE_LIMIT = 50
 # https://docs.cognite.com/api/playground/#tag/Engineering-diagrams/operation/diagramDetect
 DETECT_API_STATUS_JOB_LIMIT = 1000
 # https://docs.cognite.com/api/playground/#tag/Engineering-diagrams/operation/diagramDetectMultipleResults
+
+_T = TypeVar("_T")
 
 
 class DiagramsAPI(APIClient):
@@ -56,39 +58,34 @@ class DiagramsAPI(APIClient):
         )
 
     @staticmethod
+    def _list_from_instance_or_list(
+        instance_or_list: Union[Sequence[_T], _T, None], instance_type: Type[_T], error_message: str
+    ) -> Sequence[_T]:
+        if instance_or_list is None:
+            return []
+        if isinstance(instance_or_list, instance_type):
+            return [instance_or_list]
+        if isinstance(instance_or_list, list) and all(isinstance(x, instance_type) for x in instance_or_list):
+            return instance_or_list
+        raise TypeError(error_message)
+
+    @staticmethod
     def _process_file_ids(
         ids: Union[Sequence[int], int, None],
         external_ids: Union[Sequence[str], str, None],
         file_references: Union[Sequence[FileReference], FileReference, None],
-    ) -> List:
+    ) -> List[Union[int, str, FileReference]]:
+
+        ids = DiagramsAPI._list_from_instance_or_list(ids, numbers.Integral, "ids must be int or list of int")
+        external_ids = DiagramsAPI._list_from_instance_or_list(
+            external_ids, str, "external_ids must be str or list of str"
+        )
+        file_references = DiagramsAPI._list_from_instance_or_list(
+            file_references, FileReference, "file_references must be FileReference or list of FileReference"
+        )
         # Handle empty lists
         if not (external_ids or ids or file_references):
-            raise ValueError("No ids specified")
-
-        if isinstance(ids, numbers.Integral):
-            ids = [ids]
-        elif isinstance(ids, list) or ids is None:
-            ids = ids or []
-        else:
-            raise TypeError("ids must be int or list of int")
-
-        if isinstance(external_ids, str):
-            external_ids = [external_ids]
-        elif isinstance(external_ids, list) or external_ids is None:
-            external_ids = external_ids or []
-        else:
-            raise TypeError("external_ids must be str or list of str")
-
-        if isinstance(file_references, FileReference):
-            file_references = [file_references]
-        elif (
-            isinstance(file_references, list)
-            and all(isinstance(fr, FileReference) for fr in file_references)
-            or file_references is None
-        ):
-            file_references = file_references or []
-        else:
-            raise TypeError("file_references must be FileReference or list of FileReference")
+            raise ValueError("No ids, external ids or file references specified")
 
         id_objs = [{"fileId": id} for id in ids]
         external_id_objs = [{"fileExternalId": external_id} for external_id in external_ids]
@@ -232,7 +229,8 @@ class DiagramsAPI(APIClient):
         )
 
     def get_detect_jobs(self, job_ids: List[int]) -> List[DiagramDetectResults]:
-        assert self._cognite_client is not None
+        if self._cognite_client is None:
+            raise CogniteMissingClientError
         res = self._cognite_client.diagrams._post("/context/diagram/detect/status", json={"items": job_ids})
         jobs = res.json()["items"]
         return [
