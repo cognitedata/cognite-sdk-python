@@ -73,7 +73,7 @@ class DiagramsAPI(APIClient):
         ids: Union[Sequence[int], int, None],
         external_ids: Union[Sequence[str], str, None],
         file_references: Union[Sequence[FileReference], FileReference, None],
-    ) -> List[Union[Dict[str, Dict[str, int]], Dict[str, str], Dict[str, int]]]:
+    ) -> List[Union[Dict[str, Union[int, str, Dict[str, int]]], Dict[str, str], Dict[str, int]]]:
 
         ids = DiagramsAPI._list_from_instance_or_list(ids, int, "ids must be int or list of int")
         external_ids = DiagramsAPI._list_from_instance_or_list(
