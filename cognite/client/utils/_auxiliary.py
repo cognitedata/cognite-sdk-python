@@ -201,5 +201,5 @@ def find_duplicates(seq: Iterable[THashable]) -> Set[THashable]:
     return set(x for x in seq if x in seen or add(x))
 
 
-def exactly_one_is_not_none(*args) -> bool:
+def exactly_one_is_not_none(*args: Any) -> bool:
     return sum(1 if a is not None else 0 for a in args) == 1
