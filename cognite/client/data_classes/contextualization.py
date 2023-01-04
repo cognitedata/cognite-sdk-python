@@ -330,7 +330,7 @@ class FileReference:
         if not ((file_id is None) ^ (file_external_id is None)):
             raise Exception("Exactly one of file_id and file_external_id must be set for a file reference")
         if (first_page is None) ^ (last_page is None):
-            raise Exception("If the page range feature is used, both first page and last page bust be set")
+            raise Exception("If the page range feature is used, both first page and last page must be set")
 
     def to_api_item(self) -> Dict[str, Union[str, int, Dict[str, int]]]:
         if self.file_id is None and self.file_external_id is not None:
