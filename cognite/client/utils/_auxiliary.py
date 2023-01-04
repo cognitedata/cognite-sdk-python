@@ -199,3 +199,7 @@ def find_duplicates(seq: Iterable[THashable]) -> Set[THashable]:
     seen: Set[THashable] = set()
     add = seen.add  # skip future attr lookups for perf
     return set(x for x in seq if x in seen or add(x))
+
+
+def exactly_one_is_not_none(*args):
+    return sum(1 if a is not None else 0 for a in args) == 1

@@ -30,7 +30,7 @@ from cognite.client.data_classes.annotation_types.images import AssetLink, Objec
 from cognite.client.data_classes.annotation_types.primitives import VisionResource
 from cognite.client.data_classes.annotations import AnnotationList
 from cognite.client.exceptions import CogniteAPIError, CogniteException, ModelFailedException
-from cognite.client.utils._auxiliary import convert_true_match, to_snake_case
+from cognite.client.utils._auxiliary import convert_true_match, exactly_one_is_not_none, to_snake_case
 
 if TYPE_CHECKING:
     import pandas
@@ -327,9 +327,10 @@ class FileReference:
         self.file_external_id = file_external_id
         self.first_page = first_page
         self.last_page = last_page
-        if not ((file_id is None) ^ (file_external_id is None)):
+
+        if not exactly_one_is_not_none(file_id, file_external_id):
             raise Exception("Exactly one of file_id and file_external_id must be set for a file reference")
-        if (first_page is None) ^ (last_page is None):
+        if exactly_one_is_not_none(first_page, last_page):
             raise Exception("If the page range feature is used, both first page and last page must be set")
 
     def to_api_item(self) -> Dict[str, Union[str, int, Dict[str, int]]]:

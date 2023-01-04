@@ -1,4 +1,3 @@
-import numbers
 from math import ceil
 from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, Type, TypeVar, Union, overload
 
@@ -76,7 +75,7 @@ class DiagramsAPI(APIClient):
         file_references: Union[Sequence[FileReference], FileReference, None],
     ) -> List[Union[int, str, FileReference]]:
 
-        ids = DiagramsAPI._list_from_instance_or_list(ids, numbers.Integral, "ids must be int or list of int")
+        ids = DiagramsAPI._list_from_instance_or_list(ids, int, "ids must be int or list of int")
         external_ids = DiagramsAPI._list_from_instance_or_list(
             external_ids, str, "external_ids must be str or list of str"
         )
