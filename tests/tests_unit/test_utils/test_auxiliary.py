@@ -8,6 +8,7 @@ import pytest
 from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._auxiliary import (
     assert_type,
+    exactly_one_is_not_none,
     find_duplicates,
     interpolate_and_url_encode,
     json_dump_default,
@@ -217,3 +218,21 @@ class TestSplitIntoNParts:
         res = split_into_n_parts(inp, n=2)
         with pytest.raises(TypeError, match="object is not subscriptable"):
             next(res)
+
+
+class TestExactlyOneIsNotNone:
+    @pytest.mark.parametrize(
+        "inp, expected",
+        (
+            ((None, None), False),
+            ((1, "123"), False),
+            ((None, 1), True),
+            (("123", None), True),
+            ((None, None, 123), True),
+            ((1, 2, None), False),
+            ((1,), True),
+            ((None,), False),
+        ),
+    )
+    def test_exactly_one_is_not_none(self, inp, expected):
+        assert exactly_one_is_not_none(*inp) == expected

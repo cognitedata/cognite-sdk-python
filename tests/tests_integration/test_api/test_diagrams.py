@@ -3,9 +3,13 @@ from cognite.client.data_classes.contextualization import (
     DiagramConvertResults,
     DiagramDetectItem,
     DiagramDetectResults,
+    FileReference,
 )
 
 PNID_FILE_ID = 3261066797848581
+
+ELEVEN_PAGE_PNID_EXTERNAL_ID = "functional_tests.pdf"
+FIFTY_FIVE_PAGE_PNID_EXTERNAL_ID = "5functional_tests.pdf"
 
 
 class TestPNIDParsingIntegration:
@@ -49,3 +53,27 @@ class TestPNIDParsingIntegration:
         assert succeeded[0]["status"] in ["Completed", "Running"]
         assert len(succeeded) == 1
         assert len(failed) == 0
+
+    def test_run_diagram_detect_with_page_range(self, cognite_client):
+
+        entities = [{"name": "PH-ME-P-0156-001", "id": 1}, {"name": "PH-ME-P-0156-002", "id": 2}]
+        # References to the above are expected on page 6 and page 11, and repeating every 11 pages.
+
+        detected = cognite_client.diagrams.detect(
+            file_references=[
+                FileReference(file_external_id=ELEVEN_PAGE_PNID_EXTERNAL_ID),
+                FileReference(file_external_id=FIFTY_FIVE_PAGE_PNID_EXTERNAL_ID, first_page=1, last_page=11),
+                FileReference(file_external_id=FIFTY_FIVE_PAGE_PNID_EXTERNAL_ID, first_page=45, last_page=55),
+            ],
+            entities=entities,
+        )
+
+        result = detected.result
+        pages_with_annotations_per_subjob = [
+            [annotation["region"]["page"] for annotation in result["items"][i]["annotations"]] for i in range(3)
+        ]
+
+        # Expecting 6 on each of these pages, but does not have to test every possible regression of the API in the sdk
+        assert set(pages_with_annotations_per_subjob[0]) == {6, 11}
+        assert set(pages_with_annotations_per_subjob[1]) == {6, 11}
+        assert set(pages_with_annotations_per_subjob[2]) == {50, 55}

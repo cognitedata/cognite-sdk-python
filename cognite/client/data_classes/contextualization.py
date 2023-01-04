@@ -30,7 +30,7 @@ from cognite.client.data_classes.annotation_types.images import AssetLink, Objec
 from cognite.client.data_classes.annotation_types.primitives import VisionResource
 from cognite.client.data_classes.annotations import AnnotationList
 from cognite.client.exceptions import CogniteAPIError, CogniteException, ModelFailedException
-from cognite.client.utils._auxiliary import convert_true_match, to_snake_case
+from cognite.client.utils._auxiliary import convert_true_match, exactly_one_is_not_none, to_snake_case
 
 if TYPE_CHECKING:
     import pandas
@@ -315,6 +315,34 @@ class EntityMatchingModelList(CogniteResourceList):
     _RESOURCE = EntityMatchingModel
 
 
+class FileReference:
+    def __init__(
+        self,
+        file_id: Optional[int] = None,
+        file_external_id: Optional[str] = None,
+        first_page: Optional[int] = None,
+        last_page: Optional[int] = None,
+    ):
+        self.file_id = file_id
+        self.file_external_id = file_external_id
+        self.first_page = first_page
+        self.last_page = last_page
+
+        if not exactly_one_is_not_none(file_id, file_external_id):
+            raise Exception("Exactly one of file_id and file_external_id must be set for a file reference")
+        if exactly_one_is_not_none(first_page, last_page):
+            raise Exception("If the page range feature is used, both first page and last page must be set")
+
+    def to_api_item(self) -> Dict[str, Union[str, int, Dict[str, int]]]:
+        if self.file_id is None and self.file_external_id is not None:
+            item: Dict[str, Union[str, int, Dict[str, int]]] = {"fileExternalId": self.file_external_id}
+        if self.file_id is not None and self.file_external_id is None:
+            item = {"fileId": self.file_id}
+        if self.first_page is not None and self.last_page is not None:
+            item["pageRange"] = {"begin": self.first_page, "end": self.last_page}
+        return item
+
+
 class DiagramConvertPage(CogniteResource):
     def __init__(
         self, page: int = None, png_url: str = None, svg_url: str = None, cognite_client: "CogniteClient" = None
@@ -399,12 +427,14 @@ class DiagramDetectItem(CogniteResource):
         annotations: list = None,
         error_message: str = None,
         cognite_client: "CogniteClient" = None,
+        page_range: Optional[Dict[str, int]] = None,
     ):
         self.file_id = file_id
         self.file_external_id = file_external_id
         self.annotations = annotations
         self.error_message = error_message
         self._cognite_client = cast("CogniteClient", cognite_client)
+        self.page_range = page_range
 
     def to_pandas(self, camel_case: bool = False) -> "pandas.DataFrame":  # type: ignore[override]
         df = super().to_pandas(camel_case=camel_case)
