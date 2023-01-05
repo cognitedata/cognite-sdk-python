@@ -10,3 +10,5 @@ ignore =
     E501,
     # Line break before binary operator
     W503,
+    # Error suffix in exception names (exceptions)
+    N818,
