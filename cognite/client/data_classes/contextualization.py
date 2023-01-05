@@ -380,6 +380,14 @@ class DiagramConvertItem(CogniteResource):
         return DiagramConvertPageList._load(self.results, cognite_client=self._cognite_client)
 
     def to_pandas(self, camel_case: bool = False) -> "pandas.DataFrame":  # type: ignore[override]
+        """Convert the instance into a pandas DataFrame.
+
+        Args:
+            camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`)
+
+        Returns:
+            pandas.DataFrame: The dataframe.
+        """
         df = super().to_pandas(camel_case=camel_case)
         df.loc["results"] = f"{len(df['results'])} pages"
         return df
@@ -393,7 +401,7 @@ class DiagramConvertResults(ContextualizationJob):
         self._items: Optional[list] = None
 
     def __getitem__(self, find_id: Any) -> DiagramConvertItem:
-        """retrieves the results for the file with (external) id"""
+        """Retrieves the results for the file with (external) id"""
         found = [
             item
             for item in self.result["items"]
@@ -437,6 +445,14 @@ class DiagramDetectItem(CogniteResource):
         self.page_range = page_range
 
     def to_pandas(self, camel_case: bool = False) -> "pandas.DataFrame":  # type: ignore[override]
+        """Convert the instance into a pandas DataFrame.
+
+        Args:
+            camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`)
+
+        Returns:
+            pandas.DataFrame: The dataframe.
+        """
         df = super().to_pandas(camel_case=camel_case)
         df.loc["annotations"] = f"{len(df['annotations'])} annotations"
         return df

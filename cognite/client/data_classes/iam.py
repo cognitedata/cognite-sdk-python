@@ -129,7 +129,8 @@ class SecurityCategoryList(CogniteResourceList):
 
 
 class ProjectSpec(CogniteResponse):
-    """A cdf project spec
+    """A CDF project spec
+
     Args:
         url_name (str): The url name for the project
         groups (List[int]): Group ids in the project
@@ -178,7 +179,7 @@ class TokenInspection(CogniteResponse):
 
 
 class CreatedSession(CogniteResource):
-    """session creation related information
+    """Session creation related information
 
     Args:
         id (int): ID of the created session.
