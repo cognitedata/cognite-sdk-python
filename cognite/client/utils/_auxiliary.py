@@ -54,6 +54,25 @@ def basic_obj_dump(obj: Any, camel_case: bool) -> Dict[str, Any]:
     return convert_all_keys_to_snake_case(vars(obj))
 
 
+def handle_deprecated_camel_case_argument(new_arg: T, old_arg_name: str, kw_dct: Dict[str, Any]) -> T:
+    old_arg = kw_dct.pop(old_arg_name, None)
+    if kw_dct:
+        raise TypeError(f"Got unexpected keyword argument(s): {list(kw_dct)}")
+    if old_arg is None:
+        return new_arg
+
+    new_arg_name = to_snake_case(old_arg_name)
+    warnings.warn(
+        f"Argument '{old_arg_name}' have been changed to '{new_arg_name}', but the old is still supported until "
+        "the next major version. Consider updating your code.",
+        UserWarning,
+        stacklevel=2,
+    )
+    if new_arg is not None:
+        raise TypeError(f"Pass either '{new_arg_name}' or '{old_arg_name}' (deprecated), not both")
+    return old_arg
+
+
 def json_dump_default(x: Any) -> Any:
     if isinstance(x, numbers.Integral):
         return int(x)
@@ -65,6 +84,7 @@ def json_dump_default(x: Any) -> Any:
 
 
 def unwrap_identifer(identifier: Union[str, int, Dict]) -> Union[str, int]:
+    # TODO: Move to Identifier class?
     if isinstance(identifier, (str, int)):
         return identifier
     if "externalId" in identifier:
