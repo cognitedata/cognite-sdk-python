@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Union
 
-from cognite.client import utils
 from cognite.client.data_classes._base import CognitePropertyClassUtil
+from cognite.client.utils._auxiliary import convert_all_keys_to_camel_case
 
 
 class TimestampRange(dict):
@@ -119,8 +119,7 @@ class Geometry(dict):
         return Geometry(type=raw_geometry["type"], coordinates=raw_geometry["coordinates"])
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        dump_key = lambda key: key if not camel_case else utils._auxiliary.to_camel_case(key)
-        return {dump_key(key): value for key, value in self.items()}
+        return convert_all_keys_to_camel_case(self) if camel_case else dict(self)
 
 
 class GeometryFilter(dict):
@@ -169,8 +168,7 @@ class GeoLocation(dict):
         )
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        dump_key = lambda key: key if not camel_case else utils._auxiliary.to_camel_case(key)
-        return {dump_key(key): value for key, value in self.items()}
+        return convert_all_keys_to_camel_case(self) if camel_case else dict(self)
 
 
 class GeoLocationFilter(dict):
@@ -192,5 +190,4 @@ class GeoLocationFilter(dict):
         return GeoLocationFilter(relation=raw_geoLocation_filter["relation"], shape=raw_geoLocation_filter["shape"])
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        dump_key = lambda key: key if not camel_case else utils._auxiliary.to_camel_case(key)
-        return {dump_key(key): value for key, value in self.items()}
+        return convert_all_keys_to_camel_case(self) if camel_case else dict(self)
