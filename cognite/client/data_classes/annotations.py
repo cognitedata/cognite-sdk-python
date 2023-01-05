@@ -135,8 +135,8 @@ class AnnotationFilter(CogniteFilter):
         self.data = data
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        result = super(AnnotationFilter, self).dump(camel_case=camel_case)
-        # Special handling for creating_user, which hasa valid None value
+        result = super().dump(camel_case=camel_case)
+        # Special handling for creating_user, which has a valid None value
         key = "creatingUser" if camel_case else "creating_user"
         # Remove creating_user if it is an empty string
         if self.creating_user == "":

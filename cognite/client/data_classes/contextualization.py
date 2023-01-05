@@ -731,7 +731,7 @@ class VisionExtractItem(CogniteResource):
     @classmethod
     def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> VisionExtractItem:
         """Override CogniteResource._load so that we can convert the dicts returned by the API to data classes"""
-        extracted_item = super(VisionExtractItem, cls)._load(resource, cognite_client=cognite_client)
+        extracted_item = super()._load(resource, cognite_client=cognite_client)
         if isinstance(extracted_item.predictions, dict):
             extracted_item._predictions_dict = extracted_item.predictions
             extracted_item.predictions = cls._process_predictions_dict(extracted_item._predictions_dict)

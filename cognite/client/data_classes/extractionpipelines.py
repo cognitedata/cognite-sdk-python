@@ -113,7 +113,7 @@ class ExtractionPipeline(CogniteResource):
 
     @classmethod
     def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> ExtractionPipeline:
-        instance = super(ExtractionPipeline, cls)._load(resource, cognite_client)
+        instance = super()._load(resource, cognite_client)
         return instance
 
     def __hash__(self) -> int:
@@ -271,7 +271,7 @@ class ExtractionPipelineRunFilter(CogniteFilter):
 
     @classmethod
     def _load(cls, resource: Union[Dict, str]) -> ExtractionPipelineRunFilter:
-        instance = super(ExtractionPipelineRunFilter, cls)._load(resource)
+        instance = super()._load(resource)
         if isinstance(resource, Dict):
             if instance.created_time is not None:
                 instance.created_time = TimestampRange(**instance.created_time)

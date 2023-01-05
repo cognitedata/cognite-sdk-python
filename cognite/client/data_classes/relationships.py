@@ -93,7 +93,7 @@ class Relationship(CogniteResource):
 
     @classmethod
     def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> Relationship:
-        instance = super(Relationship, cls)._load(resource, cognite_client)
+        instance = super()._load(resource, cognite_client)
         if instance.source is not None:
             instance.source = instance._convert_resource(instance.source, instance.source_type)  # type: ignore
         if instance.target is not None:
@@ -166,7 +166,7 @@ class RelationshipFilter(CogniteFilter):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        result = super(RelationshipFilter, self).dump(camel_case)
+        result = super().dump(camel_case)
         if isinstance(self.labels, LabelFilter):
             result["labels"] = self.labels.dump(camel_case)
         return result

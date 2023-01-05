@@ -265,7 +265,7 @@ class Transformation(CogniteResource):
 
     @classmethod
     def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> Transformation:
-        instance = super(Transformation, cls)._load(resource, cognite_client)
+        instance = super()._load(resource, cognite_client)
         if isinstance(instance.destination, Dict):
             instance.destination = _load_destination_dct(instance.destination)
 
@@ -305,7 +305,7 @@ class Transformation(CogniteResource):
             Dict[str, Any]: A dictionary representation of the instance.
         """
 
-        ret = super(Transformation, self).dump(camel_case=camel_case)
+        ret = super().dump(camel_case=camel_case)
 
         for name, prop in ret.items():
             if isinstance(
@@ -488,7 +488,7 @@ class TransformationFilter(CogniteFilter):
 
     @classmethod
     def _load(self, resource: Union[Dict, str]) -> TransformationFilter:
-        instance = super(TransformationFilter, self)._load(resource)
+        instance = super()._load(resource)
         if isinstance(resource, Dict):
             if instance.created_time is not None:
                 instance.created_time = TimestampRange(**instance.created_time)
@@ -527,7 +527,7 @@ class TransformationPreviewResult(CogniteResource):
 
     @classmethod
     def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> TransformationPreviewResult:
-        instance = super(TransformationPreviewResult, cls)._load(resource, cognite_client)
+        instance = super()._load(resource, cognite_client)
         if isinstance(instance.schema, Dict):
             items = instance.schema.get("items")
             if items is not None:
