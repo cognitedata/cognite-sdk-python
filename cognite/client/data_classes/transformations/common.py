@@ -1,7 +1,13 @@
 import warnings
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
-from cognite.client.utils._auxiliary import convert_all_keys_to_camel_case
+from cognite.client.utils._auxiliary import convert_all_keys_to_camel_case, convert_all_keys_to_snake_case
+
+
+def _simple_vars_dump(obj: Any, camel_case: bool) -> Dict[str, Any]:
+    if camel_case:
+        return convert_all_keys_to_camel_case(vars(obj))
+    return vars(obj)
 
 
 class TransformationDestination:
@@ -21,10 +27,7 @@ class TransformationDestination:
         return isinstance(other, type(self)) and hash(other) == hash(self)
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        ret = vars(self)
-        if camel_case:
-            return convert_all_keys_to_camel_case(ret)
-        return ret
+        return _simple_vars_dump(self, camel_case)
 
     @staticmethod
     def assets() -> "TransformationDestination":
@@ -191,17 +194,7 @@ class OidcCredentials:
         Returns:
             Dict[str, Any]: A dictionary representation of the instance.
         """
-        ret = {
-            "client_id": self.client_id,
-            "client_secret": self.client_secret,
-            "scopes": self.scopes,
-            "token_uri": self.token_uri,
-            "audience": self.audience,
-            "cdf_project_name": self.cdf_project_name,
-        }
-        if camel_case:
-            return convert_all_keys_to_camel_case(ret)
-        return ret
+        return _simple_vars_dump(self, camel_case)
 
 
 class NonceCredentials:
@@ -224,13 +217,23 @@ class NonceCredentials:
         Returns:
             Dict[str, Any]: A dictionary representation of the instance.
         """
-        ret = vars(self)
-        if camel_case:
-            return convert_all_keys_to_camel_case(ret)
-        return ret
+        return _simple_vars_dump(self, camel_case)
 
 
 class TransformationBlockedInfo:
     def __init__(self, reason: str = None, created_time: Optional[int] = None):
         self.reason = reason
         self.created_time = created_time
+
+
+def _load_destination_dct(
+    dct: Dict[str, Any]
+) -> Union[RawTable, DataModelInstances, SequenceRows, TransformationDestination]:
+    """Helper function to load destination from dictionary"""
+    snake_dict = convert_all_keys_to_snake_case(dct)
+    destination_type = snake_dict.pop("type")
+    try:
+        dest_dct = {"raw": RawTable, "data_model_instances": DataModelInstances, "sequence_rows": SequenceRows}
+        return dest_dct[destination_type](**snake_dict)
+    except KeyError:
+        return TransformationDestination(destination_type)

@@ -21,10 +21,12 @@ from cognite.client.data_classes.transformations.common import (
     SequenceRows,
     TransformationBlockedInfo,
     TransformationDestination,
+    _load_destination_dct,
 )
 from cognite.client.data_classes.transformations.jobs import TransformationJob, TransformationJobList
 from cognite.client.data_classes.transformations.schedules import TransformationSchedule
 from cognite.client.data_classes.transformations.schema import TransformationSchemaColumnList
+from cognite.client.utils._auxiliary import convert_all_keys_to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -263,40 +265,31 @@ class Transformation(CogniteResource):
     def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "Transformation":
         instance = super(Transformation, cls)._load(resource, cognite_client)
         if isinstance(instance.destination, Dict):
-            snake_dict = {utils._auxiliary.to_snake_case(key): value for (key, value) in instance.destination.items()}
-            destination_type = snake_dict.pop("type")
-            if destination_type == "raw":
-                instance.destination = RawTable(**snake_dict)
-            elif destination_type == "data_model_instances":
-                instance.destination = DataModelInstances(**snake_dict)
-            elif destination_type == "sequence_rows":
-                instance.destination = SequenceRows(**snake_dict)
-            else:
-                instance.destination = TransformationDestination(destination_type)
+            instance.destination = _load_destination_dct(instance.destination)
+
         if isinstance(instance.running_job, Dict):
-            snake_dict = {utils._auxiliary.to_snake_case(key): value for (key, value) in instance.running_job.items()}
+            snake_dict = convert_all_keys_to_snake_case(instance.running_job)
             instance.running_job = TransformationJob._load(snake_dict, cognite_client=cognite_client)
+
         if isinstance(instance.last_finished_job, Dict):
-            snake_dict = {
-                utils._auxiliary.to_snake_case(key): value for (key, value) in instance.last_finished_job.items()
-            }
+            snake_dict = convert_all_keys_to_snake_case(instance.last_finished_job)
             instance.last_finished_job = TransformationJob._load(snake_dict, cognite_client=cognite_client)
+
         if isinstance(instance.blocked, Dict):
-            snake_dict = {utils._auxiliary.to_snake_case(key): value for (key, value) in instance.blocked.items()}
+            snake_dict = convert_all_keys_to_snake_case(instance.blocked)
             snake_dict.pop("time")
             instance.blocked = TransformationBlockedInfo(**snake_dict)
+
         if isinstance(instance.schedule, Dict):
-            snake_dict = {utils._auxiliary.to_snake_case(key): value for (key, value) in instance.schedule.items()}
+            snake_dict = convert_all_keys_to_snake_case(instance.schedule)
             instance.schedule = TransformationSchedule._load(snake_dict, cognite_client=cognite_client)
+
         if isinstance(instance.source_session, Dict):
-            snake_dict = {
-                utils._auxiliary.to_snake_case(key): value for (key, value) in instance.source_session.items()
-            }
+            snake_dict = convert_all_keys_to_snake_case(instance.source_session)
             instance.source_session = SessionDetails(**snake_dict)
+
         if isinstance(instance.destination_session, Dict):
-            snake_dict = {
-                utils._auxiliary.to_snake_case(key): value for (key, value) in instance.destination_session.items()
-            }
+            snake_dict = convert_all_keys_to_snake_case(instance.destination_session)
             instance.destination_session = SessionDetails(**snake_dict)
         return instance
 
@@ -312,7 +305,7 @@ class Transformation(CogniteResource):
 
         ret = super(Transformation, self).dump(camel_case=camel_case)
 
-        for (name, prop) in ret.items():
+        for name, prop in ret.items():
             if isinstance(
                 prop,
                 (OidcCredentials, NonceCredentials, TransformationDestination, SessionDetails, TransformationSchedule),
@@ -503,7 +496,7 @@ class TransformationFilter(CogniteFilter):
 
     def dump(self, camel_case: bool = True) -> Dict[str, Any]:
         obj = super().dump(camel_case=camel_case)
-        if obj.get("includePublic"):
+        if obj.get("includePublic") is not None:
             is_public = obj.pop("includePublic")
             obj["isPublic"] = is_public
         if obj.get("tags"):
