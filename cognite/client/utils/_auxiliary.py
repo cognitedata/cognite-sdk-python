@@ -54,14 +54,17 @@ def basic_obj_dump(obj: Any, camel_case: bool) -> Dict[str, Any]:
     return convert_all_keys_to_snake_case(vars(obj))
 
 
-def handle_deprecated_camel_case_argument(new_arg: T, old_arg_name: str, kw_dct: Dict[str, Any]) -> T:
+def handle_deprecated_camel_case_argument(new_arg: T, old_arg_name: str, fn_name: str, kw_dct: Dict[str, Any]) -> T:
     old_arg = kw_dct.pop(old_arg_name, None)
     if kw_dct:
         raise TypeError(f"Got unexpected keyword argument(s): {list(kw_dct)}")
-    if old_arg is None:
-        return new_arg
 
     new_arg_name = to_snake_case(old_arg_name)
+    if old_arg is None:
+        if new_arg is None:
+            raise TypeError(f"{fn_name}() missing 1 required positional argument: '{new_arg_name}'")
+        return new_arg
+
     warnings.warn(
         f"Argument '{old_arg_name}' have been changed to '{new_arg_name}', but the old is still supported until "
         "the next major version. Consider updating your code.",

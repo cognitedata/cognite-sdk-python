@@ -443,8 +443,8 @@ class CogniteFilter:
     @classmethod
     def _load(cls: Type[T_CogniteFilter], resource: Union[Dict, str]) -> T_CogniteFilter:
         if isinstance(resource, str):
-            return cls._load(json.loads(resource))
-        elif isinstance(resource, Dict):
+            resource = json.loads(resource)
+        if isinstance(resource, Dict):
             instance = cls()
             for key, value in resource.items():
                 snake_case_key = to_snake_case(key)
