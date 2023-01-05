@@ -1,7 +1,8 @@
 [flake8]
 max-line-length = 121
-# Ignore F401 "Module imported but unused" only for __init__ files:
-per-file-ignores = __init__.py:F401
+per-file-ignores =
+    # Ignore F401 "Module imported but unused" only for __init__ files
+    __init__.py:F401
 ignore =
     E203,  # Whitespace before ':'
     E501,  # Line too long
