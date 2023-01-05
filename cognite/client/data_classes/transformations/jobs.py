@@ -177,8 +177,8 @@ class TransformationJob(CogniteResource):
             TransformationJobStatus.FAILED,
             TransformationJobStatus.COMPLETED,
         ]:
-            toWait = min(timeout - waited, polling_interval)
-            time.sleep(toWait)
+            to_wait = min(timeout - waited, polling_interval)
+            time.sleep(to_wait)
             self.update()
             waited += polling_interval
 
@@ -238,8 +238,8 @@ class TransformationJob(CogniteResource):
             TransformationJobStatus.FAILED,
             TransformationJobStatus.COMPLETED,
         ]:
-            toWait = min(timeout - waited, polling_interval)
-            await asyncio.sleep(toWait)
+            to_wait = min(timeout - waited, polling_interval)
+            await asyncio.sleep(to_wait)
             self.update()
             waited += polling_interval
 

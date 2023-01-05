@@ -178,7 +178,7 @@ class APIClient:
             res = self._http_client.request(method=method, url=full_url, **kwargs)
 
         if not self._status_ok(res.status_code):
-            self._raise_API_error(res, payload=json_payload)
+            self._raise_api_error(res, payload=json_payload)
         stream = kwargs.get("stream")
         self._log_request(res, payload=json_payload, stream=stream)
         return res
@@ -813,7 +813,7 @@ class APIClient:
         return status_code in {200, 201, 202, 204}
 
     @classmethod
-    def _raise_API_error(cls, res: Response, payload: Dict) -> NoReturn:
+    def _raise_api_error(cls, res: Response, payload: Dict) -> NoReturn:
         x_request_id = res.headers.get("X-Request-Id")
         code = res.status_code
         missing = None

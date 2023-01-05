@@ -487,7 +487,7 @@ class TransformationFilter(CogniteFilter):
         self.tags = tags
 
     @classmethod
-    def _load(self, resource: Union[Dict, str]) -> TransformationFilter:
+    def _load(cls, resource: Union[Dict, str]) -> TransformationFilter:
         instance = super()._load(resource)
         if isinstance(resource, Dict):
             if instance.created_time is not None:
