@@ -1419,6 +1419,7 @@ class RetrieveLatestDpsFetcher:
             self.before_settings[(identifier_type, 0)] = user_input.before
             return as_primitive
         elif isinstance(user_input, MutableSequence):
+            user_input = user_input[:]  # Modify a shallow copy to avoid side effects
             for i, inp in enumerate(user_input):
                 if isinstance(inp, LatestDatapointQuery):
                     as_primitive = self._get_and_check_identifier(inp, identifier_type)
