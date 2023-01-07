@@ -1429,8 +1429,11 @@ class RetrieveLatestDpsFetcher:
     def _prepare_requests(
         self, parsed_ids: Union[None, int, Sequence[int]], parsed_xids: Union[None, str, Sequence[str]]
     ) -> List[Dict]:
-        id_seq, xid_seq = IdentifierSequence.load(parsed_ids, None), IdentifierSequence.load(None, parsed_xids)
-        all_ids, all_xids = id_seq.as_dicts(), xid_seq.as_dicts()
+        all_ids, all_xids = [], []
+        if parsed_ids is not None:
+            all_ids = IdentifierSequence.load(parsed_ids, None).as_dicts()
+        if parsed_xids is not None:
+            all_xids = IdentifierSequence.load(None, parsed_xids).as_dicts()
 
         # In the API, missing 'before' defaults to 'now'. As we want to get the most up-to-date datapoint, we don't
         # specify a particular timestamp for 'now' in order to possibly get a datapoint a few hundred ms fresher:
