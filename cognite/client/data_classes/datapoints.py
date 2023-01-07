@@ -4,6 +4,7 @@ import json
 import operator as op
 import warnings
 from collections import defaultdict
+from dataclasses import dataclass
 from datetime import datetime
 from functools import cached_property
 from typing import (
@@ -33,6 +34,7 @@ from cognite.client.utils._auxiliary import (
     local_import,
     to_camel_case,
 )
+from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._pandas_helpers import concat_dataframes_with_nullable_int_cols
 
 ALL_SORTED_DP_AGGS = sorted(
@@ -67,6 +69,17 @@ try:
 
 except ImportError:  # pragma no cover
     NUMPY_IS_AVAILABLE = False
+
+
+@dataclass(frozen=True)
+class LatestDatapointQuery:
+    id: int = None
+    external_id: str = None
+    before: Union[int, str, datetime] = None
+
+    def __post_init__(self) -> None:
+        # Ensure user have just specified one of id/xid:
+        Identifier.of_either(self.id, self.external_id)
 
 
 class Datapoint(CogniteResource):
