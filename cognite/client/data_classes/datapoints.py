@@ -73,9 +73,9 @@ except ImportError:  # pragma no cover
 
 @dataclass(frozen=True)
 class LatestDatapointQuery:
-    id: int = None
-    external_id: str = None
-    before: Union[int, str, datetime] = None
+    id: Optional[int] = None
+    external_id: Optional[str] = None
+    before: Union[None, int, str, datetime] = None
 
     def __post_init__(self) -> None:
         # Ensure user have just specified one of id/xid:

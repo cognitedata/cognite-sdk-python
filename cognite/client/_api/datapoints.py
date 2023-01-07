@@ -22,6 +22,7 @@ from typing import (
     Iterator,
     List,
     Literal,
+    MutableSequence,
     Optional,
     Sequence,
     Set,
@@ -960,7 +961,7 @@ class DatapointsAPI(APIClient):
         self,
         id: Union[int, LatestDatapointQuery, List[Union[int, LatestDatapointQuery]]] = None,
         external_id: Union[str, LatestDatapointQuery, List[Union[str, LatestDatapointQuery]]] = None,
-        before: Union[int, str, datetime] = None,
+        before: Union[None, int, str, datetime] = None,
         ignore_unknown_ids: bool = False,
     ) -> Union[Datapoints, DatapointsList]:
         """`Get the latest datapoint for one or more time series <https://docs.cognite.com/api/v1/#operation/getLatest>`_
@@ -1373,14 +1374,21 @@ class DatapointsPoster:
 
 
 class RetrieveLatestDpsFetcher:
-    def __init__(self, id, external_id, before, ignore_unknown_ids, client: DatapointsAPI) -> None:
-        self.before_settings = {}
+    def __init__(
+        self,
+        id: Union[None, int, LatestDatapointQuery, List[Union[int, LatestDatapointQuery]]],
+        external_id: Union[None, str, LatestDatapointQuery, List[Union[str, LatestDatapointQuery]]],
+        before: Union[None, int, str, datetime],
+        ignore_unknown_ids: bool,
+        dps_client: DatapointsAPI,
+    ) -> None:
+        self.before_settings: Dict[Tuple[str, int], Union[None, int, str, datetime]] = {}
         self.default_before = before
         self.ignore_unknown_ids = ignore_unknown_ids
-        self.client = client
+        self.dps_client = dps_client
 
-        parsed_ids = self._parse_user_input(id, "id")
-        parsed_xids = self._parse_user_input(external_id, "external_id")
+        parsed_ids = cast(Union[None, int, Sequence[int]], self._parse_user_input(id, "id"))
+        parsed_xids = cast(Union[None, str, Sequence[str]], self._parse_user_input(external_id, "external_id"))
         self._is_singleton = IdentifierSequence.load(parsed_ids, parsed_xids).is_singleton()
         self._all_identifiers = self._prepare_requests(parsed_ids, parsed_xids)
 
@@ -1389,27 +1397,38 @@ class RetrieveLatestDpsFetcher:
         return self._is_singleton
 
     @staticmethod
-    def _get_identifier(query: LatestDatapointQuery, identifier_type: str) -> Union[int, str]:
+    def _get_and_check_identifier(
+        query: LatestDatapointQuery,
+        identifier_type: Literal["id", "external_id"],
+    ) -> Union[int, str]:
         if (as_primitive := getattr(query, identifier_type)) is None:
             raise ValueError(f"Missing '{identifier_type}' from: '{query}'")
         return as_primitive
 
-    def _parse_user_input(self, user_input, identifier_type: str) -> List[Union[str, int]]:
+    def _parse_user_input(
+        self,
+        user_input: Any,
+        identifier_type: Literal["id", "external_id"],
+    ) -> Union[None, int, str, List[int], List[str]]:
         if user_input is None:
-            return []
-        if isinstance(user_input, LatestDatapointQuery):
-            as_primitive = self._get_identifier(user_input, identifier_type)
+            return None
+        # We depend on 'IdentifierSequence.load' to parse given ids/xids later, so we need to
+        # memorize the individual 'before'-settings when/where given:
+        elif isinstance(user_input, LatestDatapointQuery):
+            as_primitive = self._get_and_check_identifier(user_input, identifier_type)
             self.before_settings[(identifier_type, 0)] = user_input.before
             return as_primitive
-        if isinstance(user_input, list):
+        elif isinstance(user_input, MutableSequence):
             for i, inp in enumerate(user_input):
                 if isinstance(inp, LatestDatapointQuery):
-                    as_primitive = self._get_identifier(inp, identifier_type)
+                    as_primitive = self._get_and_check_identifier(inp, identifier_type)
                     self.before_settings[(identifier_type, i)] = inp.before
                     user_input[i] = as_primitive  # mutating while iterating like a boss
         return user_input
 
-    def _prepare_requests(self, parsed_ids, parsed_xids) -> List[Dict]:
+    def _prepare_requests(
+        self, parsed_ids: Union[None, int, Sequence[int]], parsed_xids: Union[None, str, Sequence[str]]
+    ) -> List[Dict]:
         id_seq, xid_seq = IdentifierSequence.load(parsed_ids, None), IdentifierSequence.load(None, parsed_xids)
         all_ids, all_xids = id_seq.as_dicts(), xid_seq.as_dicts()
 
@@ -1418,21 +1437,21 @@ class RetrieveLatestDpsFetcher:
         for identifiers, identifier_type in zip([all_ids, all_xids], ["id", "external_id"]):
             for i, dct in enumerate(identifiers):
                 i_before = self.before_settings.get((identifier_type, i), self.default_before)
-                if i_before not in {"now", None}:
+                if "now" != i_before is not None:  # mypy doesnt understand 'i_before not in {"now", None}'
                     dct["before"] = timestamp_to_ms(i_before)
         all_ids.extend(all_xids)
         return all_ids
 
-    def fetch_datapoints(self):
+    def fetch_datapoints(self) -> List[Dict[str, Any]]:
         tasks = [
             {
-                "url_path": self.client._RESOURCE_PATH + "/latest",
+                "url_path": self.dps_client._RESOURCE_PATH + "/latest",
                 "json": {"items": chunk, "ignoreUnknownIds": self.ignore_unknown_ids},
             }
             for chunk in split_into_chunks(self._all_identifiers, RETRIEVE_LATEST_LIMIT)
         ]
         tasks_summary = execute_tasks_concurrently(
-            self.client._post, tasks, max_workers=self.client._config.max_workers
+            self.dps_client._post, tasks, max_workers=self.dps_client._config.max_workers
         )
         if tasks_summary.exceptions:
             raise tasks_summary.exceptions[0]

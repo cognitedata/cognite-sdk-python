@@ -121,7 +121,7 @@ class IdentifierSequence:
         if ids is not None:
             if isinstance(ids, numbers.Integral):
                 value_passed_as_primitive = True
-                all_identifiers.append(ids)
+                all_identifiers.append(int(ids))
             elif isinstance(ids, Sequence) and not isinstance(ids, str):
                 all_identifiers.extend([int(id_) for id_ in ids])
             else:
