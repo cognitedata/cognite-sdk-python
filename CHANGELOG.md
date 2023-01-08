@@ -25,7 +25,7 @@ Changes are grouped as follows
 ### Changed
 - Change RAW rows insert chunk size to make individual requests faster.
 
-## [5.1.0] - 08-01-23
+## [5.2.0] - 08-01-23
 ### Added
 - `DatapointsAPI.retrieve_latest` now support customising the `before` argument, by passing one or more objects of the newly added `LatestDatapointQuery` class.
 
