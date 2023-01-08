@@ -81,7 +81,7 @@ class LatestDatapointQuery:
     Args:
         id (Optional[int]): The internal ID of the time series to query.
         external_id (Optional[str]): The external ID of the time series to query.
-        before (Union[None, int, str, datetime]): before: (Union[int, str, datetime]): Get latest datapoint before this time. None means 'now'.
+        before (Union[None, int, str, datetime]): Get latest datapoint before this time. None means 'now'.
     """
 
     id: Optional[int] = None
