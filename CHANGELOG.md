@@ -25,6 +25,10 @@ Changes are grouped as follows
 ### Changed
 - Change RAW rows insert chunk size to make individual requests faster.
 
+## [5.1.0] - 08-01-23
+### Added
+- `DatapointsAPI.retrieve_latest` now support customising the `before` argument, by passing one or more objects of the newly added `LatestDatapointQuery` class.
+
 ## [5.1.0] - 03-01-23
 ### Added
 - The diagram detect function can take file reference objects that contain file (external) id as well as a page range. This is an alternative to the lists of file ids or file external ids that are still possible to use. Page ranges were not possible to specify before.

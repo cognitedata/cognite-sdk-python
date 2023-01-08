@@ -73,6 +73,17 @@ except ImportError:  # pragma no cover
 
 @dataclass(frozen=True)
 class LatestDatapointQuery:
+    """Parameters describing a query for the latest datapoint from a time series.
+
+    Note:
+        Pass either ID or external ID.
+
+    Args:
+        id (Optional[int]): The internal ID of the time series to query.
+        external_id (Optional[str]): The external ID of the time series to query.
+        before (Union[None, int, str, datetime]): before: (Union[int, str, datetime]): Get latest datapoint before this time. None means 'now'.
+    """
+
     id: Optional[int] = None
     external_id: Optional[str] = None
     before: Union[None, int, str, datetime] = None
