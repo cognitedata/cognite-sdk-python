@@ -158,12 +158,17 @@ class TestGetLatest:
             (123, "foo", "external_id", "Exactly one of id or external id must be specified, got both"),
         ),
     )
-    def test_using_latest_datapoint_query__fails_wrong_ident_type(
-        self, cognite_client, id, external_id, pass_as, err_msg
-    ):
+    def test_using_latest_datapoint_query__fails_wrong_ident(self, cognite_client, id, external_id, pass_as, err_msg):
+        # Pass directly
         with pytest.raises(ValueError, match=err_msg):
-            query = {pass_as: LatestDatapointQuery(id=id, external_id=external_id)}
-            cognite_client.time_series.data.retrieve_latest(**query)
+            ldq = LatestDatapointQuery(id, external_id)
+            cognite_client.time_series.data.retrieve_latest(**{pass_as: ldq})
+
+        # Pass as a part of a list
+        with pytest.raises(ValueError, match=err_msg):
+            ldq = LatestDatapointQuery(id, external_id)
+            valid = 123 if pass_as == "id" else "foo"
+            cognite_client.time_series.data.retrieve_latest(**{pass_as: [valid, ldq, ldq, valid]})
 
 
 @pytest.fixture

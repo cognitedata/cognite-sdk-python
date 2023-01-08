@@ -16,7 +16,14 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from cognite.client.data_classes import Datapoints, DatapointsArray, DatapointsArrayList, DatapointsList, TimeSeries
+from cognite.client.data_classes import (
+    Datapoints,
+    DatapointsArray,
+    DatapointsArrayList,
+    DatapointsList,
+    LatestDatapointQuery,
+    TimeSeries,
+)
 from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import to_camel_case, to_snake_case
@@ -1200,6 +1207,29 @@ class TestRetrieveLatestDatapointsAPI:
         res = cognite_client.time_series.data.retrieve_latest(id=ts.id, before="1h-ago")
         assert 1 == len(res)
         assert res[0].timestamp < timestamp_to_ms("1h-ago")
+
+    @pytest.mark.parametrize(
+        "attr, multiple",
+        (
+            ("id", False),
+            ("id", True),
+            ("external_id", False),
+            ("external_id", True),
+        ),
+    )
+    def test_using_latest_datapoint_query(self, cognite_client, all_test_time_series, attr, multiple):
+        identifier = getattr(all_test_time_series[0], attr)
+        ldq = LatestDatapointQuery(**{attr: identifier}, before="1d-ago")
+        if multiple:
+            # Package inside list with other "primitive" identifiers:
+            ldq = [identifier, ldq, ldq]
+        res = cognite_client.time_series.data.retrieve_latest(**{attr: ldq})
+        if multiple:
+            assert isinstance(res, DatapointsList)
+            assert len(ldq) == len(res)
+        else:
+            assert isinstance(res, Datapoints)
+            assert 1 == len(res)
 
 
 class TestInsertDatapointsAPI:
