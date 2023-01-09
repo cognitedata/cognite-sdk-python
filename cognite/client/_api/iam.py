@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import numbers
 from typing import TYPE_CHECKING, Optional, Sequence, Union
 
@@ -28,7 +30,7 @@ if TYPE_CHECKING:
 
 
 class IAMAPI(APIClient):
-    def __init__(self, config: ClientConfig, api_version: str = None, cognite_client: "CogniteClient" = None) -> None:
+    def __init__(self, config: ClientConfig, api_version: str = None, cognite_client: CogniteClient = None) -> None:
         super().__init__(config, api_version=api_version, cognite_client=cognite_client)
         self.service_accounts = ServiceAccountsAPI(config, api_version=api_version, cognite_client=cognite_client)
         self.api_keys = APIKeysAPI(config, api_version=api_version, cognite_client=cognite_client)
@@ -386,7 +388,7 @@ class SessionsAPI(APIClient):
     _LIST_CLASS = SessionList
     _RESOURCE_PATH = "/sessions"
 
-    def __init__(self, config: ClientConfig, api_version: str = None, cognite_client: "CogniteClient" = None) -> None:
+    def __init__(self, config: ClientConfig, api_version: str = None, cognite_client: CogniteClient = None) -> None:
         super().__init__(config, api_version=api_version, cognite_client=cognite_client)
         self._LIST_LIMIT = 100
 

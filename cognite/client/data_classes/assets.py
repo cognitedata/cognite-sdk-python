@@ -101,7 +101,7 @@ class Asset(CogniteResource):
         last_updated_time: int = None,
         root_id: int = None,
         aggregates: Union[Dict[str, Any], AggregateResultItem] = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         if geo_location is not None and not isinstance(geo_location, GeoLocation):
             raise TypeError("Asset.geo_location should be of type GeoLocation")
@@ -123,7 +123,7 @@ class Asset(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> Asset:
+    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> Asset:
         instance = super(Asset, cls)._load(resource, cognite_client)
         if isinstance(resource, Dict):
             if instance.aggregates is not None:
@@ -306,7 +306,7 @@ class AssetUpdate(CogniteUpdate):
 class AssetList(CogniteResourceList):
     _RESOURCE = Asset
 
-    def __init__(self, resources: Collection[Any], cognite_client: "CogniteClient" = None):
+    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient = None):
         super().__init__(resources, cognite_client)
         self._retrieve_chunk_size = 100
 
@@ -414,7 +414,7 @@ class AssetFilter(CogniteFilter):
         external_id_prefix: str = None,
         labels: LabelFilter = None,
         geo_location: GeoLocationFilter = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.name = name
         self.parent_ids = parent_ids

@@ -34,7 +34,7 @@ class TransformationSchedule(CogniteResource):
         last_updated_time: int = None,
         interval: str = None,
         is_paused: bool = False,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.id = id
         self.external_id = external_id

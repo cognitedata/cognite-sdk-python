@@ -29,7 +29,7 @@ class TransformationNotification(CogniteResource):
         destination: str = None,
         created_time: int = None,
         last_updated_time: int = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.id = id
         self.transformation_id = transformation_id

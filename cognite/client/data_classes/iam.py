@@ -28,7 +28,7 @@ class ServiceAccount(CogniteResource):
         id: int = None,
         is_deleted: bool = None,
         deleted_time: int = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.name = name
         self.groups = groups
@@ -61,7 +61,7 @@ class APIKey(CogniteResource):
         created_time: int = None,
         status: str = None,
         value: str = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.id = id
         self.service_account_id = service_account_id
@@ -96,7 +96,7 @@ class Group(CogniteResource):
         id: int = None,
         is_deleted: bool = None,
         deleted_time: int = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.name = name
         self.source_id = source_id
@@ -120,7 +120,7 @@ class SecurityCategory(CogniteResource):
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
-    def __init__(self, name: str = None, id: int = None, cognite_client: "CogniteClient" = None):
+    def __init__(self, name: str = None, id: int = None, cognite_client: CogniteClient = None):
         self.name = name
         self.id = id
         self._cognite_client = cast("CogniteClient", cognite_client)
@@ -198,7 +198,7 @@ class CreatedSession(CogniteResource):
         status: str = None,
         nonce: str = None,
         client_id: str = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.id = id
         self.type = type
@@ -232,7 +232,7 @@ class Session(CogniteResource):
         creation_time: int = None,
         expiration_time: int = None,
         client_id: str = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.id = id
         self.type = type

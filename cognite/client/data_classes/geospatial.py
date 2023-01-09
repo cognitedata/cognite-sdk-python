@@ -28,7 +28,7 @@ class FeatureType(CogniteResource):
         last_updated_time: int = None,
         properties: Dict[str, Any] = None,
         search_spec: Dict[str, Any] = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.external_id = external_id
         self.data_set_id = data_set_id
@@ -39,7 +39,7 @@ class FeatureType(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[str, Dict[str, Any]], cognite_client: "CogniteClient" = None) -> FeatureType:
+    def _load(cls, resource: Union[str, Dict[str, Any]], cognite_client: CogniteClient = None) -> FeatureType:
         if isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
         instance = cls(cognite_client=cognite_client)
@@ -71,7 +71,7 @@ class FeatureTypeUpdate:
         external_id: str = None,
         add: PropertyAndSearchSpec = None,
         remove: PropertyAndSearchSpec = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.external_id = external_id
         self.add = add if add is not None else PropertyAndSearchSpec()
@@ -101,14 +101,14 @@ class Feature(CogniteResource):
 
     PRE_DEFINED_SNAKE_CASE_NAMES = {to_snake_case(key) for key in RESERVED_PROPERTIES}
 
-    def __init__(self, external_id: str = None, cognite_client: "CogniteClient" = None, **properties: Any):
+    def __init__(self, external_id: str = None, cognite_client: CogniteClient = None, **properties: Any):
         self.external_id = external_id
         for key in properties:
             setattr(self, key, properties[key])
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[str, Dict[str, Any]], cognite_client: "CogniteClient" = None) -> Feature:
+    def _load(cls, resource: Union[str, Dict[str, Any]], cognite_client: CogniteClient = None) -> Feature:
         if isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
         instance = cls(cognite_client=cognite_client)
@@ -291,11 +291,11 @@ def nan_to_none(column_value: Any) -> Any:
 class FeatureAggregate(CogniteResource):
     """A result of aggregating features in geospatial api."""
 
-    def __init__(self, cognite_client: "CogniteClient" = None):
+    def __init__(self, cognite_client: CogniteClient = None):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[str, Dict[str, Any]], cognite_client: "CogniteClient" = None) -> FeatureAggregate:
+    def _load(cls, resource: Union[str, Dict[str, Any]], cognite_client: CogniteClient = None) -> FeatureAggregate:
         if isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
         instance = cls(cognite_client=cognite_client)
@@ -313,7 +313,7 @@ class CoordinateReferenceSystem(CogniteResource):
     """A representation of a feature in the geospatial api."""
 
     def __init__(
-        self, srid: int = None, wkt: str = None, proj_string: str = None, cognite_client: "CogniteClient" = None
+        self, srid: int = None, wkt: str = None, proj_string: str = None, cognite_client: CogniteClient = None
     ):
         self.srid = srid
         self.wkt = wkt
@@ -322,7 +322,7 @@ class CoordinateReferenceSystem(CogniteResource):
 
     @classmethod
     def _load(
-        cls, resource: Union[str, Dict[str, Any]], cognite_client: "CogniteClient" = None
+        cls, resource: Union[str, Dict[str, Any]], cognite_client: CogniteClient = None
     ) -> CoordinateReferenceSystem:
         if isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
@@ -353,7 +353,7 @@ class RasterMetadata:
             setattr(self, key, properties[key])
 
     @classmethod
-    def _load(cls, resource: Dict, cognite_client: "CogniteClient" = None) -> RasterMetadata:
+    def _load(cls, resource: Dict, cognite_client: CogniteClient = None) -> RasterMetadata:
         instance = cls(cognite_client=cognite_client)
         for key, value in resource.items():
             snake_case_key = to_snake_case(key)
@@ -403,13 +403,13 @@ class GeospatialGeometryValueComputeFunction(GeospatialGeometryComputeFunction):
 class GeospatialComputedItem(CogniteResource):
     """A representation of an item computed from geospatial."""
 
-    def __init__(self, resource: Dict[str, Any], cognite_client: "CogniteClient" = None):
+    def __init__(self, resource: Dict[str, Any], cognite_client: CogniteClient = None):
         self.resource = resource
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
     def _load(
-        cls, resource: Union[str, Dict[str, Any]], cognite_client: "CogniteClient" = None
+        cls, resource: Union[str, Dict[str, Any]], cognite_client: CogniteClient = None
     ) -> GeospatialComputedItem:
         if isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
@@ -428,13 +428,13 @@ class GeospatialComputedItemList(CogniteResourceList):
 class GeospatialComputedResponse(CogniteResource):
     "The geospatial compute response."
 
-    def __init__(self, computed_item_list: GeospatialComputedItemList, cognite_client: "CogniteClient" = None):
+    def __init__(self, computed_item_list: GeospatialComputedItemList, cognite_client: CogniteClient = None):
         self.items = computed_item_list
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
     def _load(
-        cls, resource: Union[str, Dict[str, Any]], cognite_client: "CogniteClient" = None
+        cls, resource: Union[str, Dict[str, Any]], cognite_client: CogniteClient = None
     ) -> GeospatialComputedResponse:
         if isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)

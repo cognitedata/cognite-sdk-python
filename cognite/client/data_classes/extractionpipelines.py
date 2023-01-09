@@ -89,7 +89,7 @@ class ExtractionPipeline(CogniteResource):
         created_time: int = None,
         last_updated_time: int = None,
         created_by: str = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.id = id
         self.external_id = external_id
@@ -112,7 +112,7 @@ class ExtractionPipeline(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> ExtractionPipeline:
+    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> ExtractionPipeline:
         instance = super(ExtractionPipeline, cls)._load(resource, cognite_client)
         return instance
 
@@ -214,7 +214,7 @@ class ExtractionPipelineRun(CogniteResource):
         status: str = None,
         message: str = None,
         created_time: int = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.external_id = external_id
         self.status = status
@@ -261,7 +261,7 @@ class ExtractionPipelineRunFilter(CogniteFilter):
         statuses: Sequence[str] = None,
         message: StringFilter = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.external_id = external_id
         self.statuses = statuses
@@ -295,7 +295,7 @@ class ExtractionPipelineConfigRevision(CogniteResource):
         revision: int = None,
         description: str = None,
         created_time: int = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.external_id = external_id
         self.revision = revision
@@ -323,7 +323,7 @@ class ExtractionPipelineConfig(ExtractionPipelineConfigRevision):
         revision: int = None,
         description: str = None,
         created_time: int = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         super().__init__(
             external_id=external_id,

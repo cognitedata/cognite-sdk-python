@@ -27,7 +27,7 @@ class Row(CogniteResource):
         key: str = None,
         columns: Dict[str, Any] = None,
         last_updated_time: int = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.key = key
         self.columns = columns
@@ -72,7 +72,7 @@ class Table(CogniteResource):
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
-    def __init__(self, name: str = None, created_time: int = None, cognite_client: "CogniteClient" = None):
+    def __init__(self, name: str = None, created_time: int = None, cognite_client: CogniteClient = None):
         self.name = name
         self.created_time = created_time
         self._cognite_client = cast("CogniteClient", cognite_client)
@@ -107,7 +107,7 @@ class Database(CogniteResource):
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
-    def __init__(self, name: str = None, created_time: int = None, cognite_client: "CogniteClient" = None):
+    def __init__(self, name: str = None, created_time: int = None, cognite_client: CogniteClient = None):
         self.name = name
         self.created_time = created_time
         self._cognite_client = cast("CogniteClient", cognite_client)

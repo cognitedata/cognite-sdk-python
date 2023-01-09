@@ -60,7 +60,7 @@ class TimeSeries(CogniteResource):
         created_time: int = None,
         last_updated_time: int = None,
         legacy_name: str = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.id = id
         self.external_id = external_id
@@ -101,7 +101,7 @@ class TimeSeries(CogniteResource):
         )
         return sum(dps.count)
 
-    def latest(self, before: Union[int, str, datetime] = None) -> Optional["Datapoint"]:
+    def latest(self, before: Union[int, str, datetime] = None) -> Optional[Datapoint]:
         """Returns the latest datapoint in this time series. If empty, returns None.
 
         Returns:
@@ -112,7 +112,7 @@ class TimeSeries(CogniteResource):
             return dps[0]
         return None
 
-    def first(self) -> Optional["Datapoint"]:
+    def first(self) -> Optional[Datapoint]:
         """Returns the first datapoint in this time series. If empty, returns None.
 
         Returns:
@@ -170,7 +170,7 @@ class TimeSeriesFilter(CogniteFilter):
         external_id_prefix: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.name = name
         self.unit = unit

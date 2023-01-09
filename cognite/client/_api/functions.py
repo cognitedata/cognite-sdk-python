@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import importlib.util
 import os
 import re
@@ -42,7 +44,7 @@ REQUIREMENTS_REG = re.compile(r"(\[\/?requirements\]){1}$", flags=re.M)  # Match
 UNCOMMENTED_LINE_REG = re.compile(r"^[^\#]]*.*")
 
 
-def _get_function_internal_id(_cognite_client: "CogniteClient", identifier: SingletonIdentifierSequence) -> int:
+def _get_function_internal_id(_cognite_client: CogniteClient, identifier: SingletonIdentifierSequence) -> int:
     id_object = identifier[0]
     id_dict = id_object.as_dict()
 
@@ -72,7 +74,7 @@ class FunctionsAPI(APIClient):
         super().__init__(*args, **kwargs)
         self.calls = FunctionCallsAPI(*args, **kwargs)
         self.schedules = FunctionSchedulesAPI(*args, **kwargs)
-        self._cognite_client: "CogniteClient" = cast("CogniteClient", self._cognite_client)
+        self._cognite_client: CogniteClient = cast("CogniteClient", self._cognite_client)
 
     def create(
         self,
@@ -539,7 +541,7 @@ class FunctionsAPI(APIClient):
 
 
 def _use_client_credentials(
-    cognite_client: "CogniteClient",
+    cognite_client: CogniteClient,
     client_credentials: Optional[Dict] = None,
 ) -> str:
     """
@@ -574,7 +576,7 @@ def _use_client_credentials(
 
 
 def _use_token_exchange(
-    cognite_client: "CogniteClient",
+    cognite_client: CogniteClient,
 ) -> str:
     session_url = f"/api/v1/projects/{cognite_client.config.project}/sessions"
     payload = {"items": [{"tokenExchange": True}]}
@@ -586,12 +588,12 @@ def _use_token_exchange(
         raise CogniteAPIError("Failed to create session using token exchange flow.", 403) from e
 
 
-def _using_token_exchange_flow(cognite_client: "CogniteClient") -> bool:
+def _using_token_exchange_flow(cognite_client: CogniteClient) -> bool:
     """Determine whether the Cognite client is configured with a token or token factory."""
     return isinstance(cognite_client.config.credentials, Token)
 
 
-def _using_client_credential_flow(cognite_client: "CogniteClient") -> bool:
+def _using_client_credential_flow(cognite_client: CogniteClient) -> bool:
     """Determine whether the Cognite client is configured for client-credential flow."""
     return isinstance(cognite_client.config.credentials, OAuthClientCredentials)
 
@@ -747,7 +749,7 @@ class FunctionCallsAPI(APIClient):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self._cognite_client: "CogniteClient" = cast("CogniteClient", self._cognite_client)
+        self._cognite_client: CogniteClient = cast("CogniteClient", self._cognite_client)
 
     def list(
         self,
@@ -924,7 +926,7 @@ class FunctionSchedulesAPI(APIClient):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self._cognite_client: "CogniteClient" = cast("CogniteClient", self._cognite_client)
+        self._cognite_client: CogniteClient = cast("CogniteClient", self._cognite_client)
 
     def retrieve(self, id: int) -> Union[FunctionSchedule, FunctionSchedulesList, None]:
         """`Retrieve a single function schedule by id. <https://docs.cognite.com/api/v1/#operation/byIdsFunctionSchedules>`_
