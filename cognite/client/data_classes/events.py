@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Union, cast
 
 from cognite.client.data_classes._base import (
