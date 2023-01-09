@@ -35,7 +35,7 @@ class TransformationSchedule(CogniteResource):
         last_updated_time: int = None,
         interval: str = None,
         is_paused: bool = False,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.id = id
         self.external_id = external_id
@@ -46,7 +46,7 @@ class TransformationSchedule(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> TransformationSchedule:
+    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> TransformationSchedule:
         instance = super(TransformationSchedule, cls)._load(resource, cognite_client)
         return instance
 

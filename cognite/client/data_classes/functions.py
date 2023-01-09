@@ -57,7 +57,7 @@ class Function(CogniteResource):
         runtime_version: str = None,
         metadata: Dict = None,
         error: Dict = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ) -> None:
         self.id = cast(int, id)
         self.name = cast(str, name)
@@ -224,7 +224,7 @@ class FunctionSchedule(CogniteResource):
         created_time: int = None,
         cron_expression: str = None,
         session_id: int = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ) -> None:
         self.id = id
         self.name = name
@@ -295,7 +295,7 @@ class FunctionCall(CogniteResource):
         schedule_id: int = None,
         error: dict = None,
         function_id: int = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ) -> None:
         self.id = id
         self.start_time = start_time
@@ -356,7 +356,7 @@ class FunctionCallLogEntry(CogniteResource):
         self,
         timestamp: int = None,
         message: str = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.timestamp = timestamp
         self.message = message

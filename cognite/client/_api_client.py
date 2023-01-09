@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import functools
 import gzip
 import json as _json
@@ -71,7 +73,7 @@ class APIClient:
     }
 
     def __init__(
-        self, config: ClientConfig, api_version: Optional[str] = None, cognite_client: "CogniteClient" = None
+        self, config: ClientConfig, api_version: Optional[str] = None, cognite_client: CogniteClient = None
     ) -> None:
         self._config = config
         self._api_version = api_version

@@ -68,7 +68,7 @@ class ThreeDModel(CogniteResource):
         id: int = None,
         created_time: int = None,
         metadata: Dict[str, str] = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.name = name
         self.id = id
@@ -159,7 +159,7 @@ class ThreeDModelRevision(CogniteResource):
         thumbnail_url: str = None,
         asset_mapping_count: int = None,
         created_time: int = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.id = id
         self.file_id = file_id
@@ -175,7 +175,7 @@ class ThreeDModelRevision(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> ThreeDModelRevision:
+    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> ThreeDModelRevision:
         instance = super(ThreeDModelRevision, cls)._load(resource, cognite_client)
         if isinstance(resource, Dict):
             if instance.camera is not None:
@@ -267,7 +267,7 @@ class ThreeDNode(CogniteResource):
         subtree_size: int = None,
         properties: Dict[str, Dict[str, str]] = None,
         bounding_box: Union[Dict[str, Any], BoundingBox3D] = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.id = id
         self.tree_index = tree_index
@@ -280,7 +280,7 @@ class ThreeDNode(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> ThreeDNode:
+    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> ThreeDNode:
         instance = super(ThreeDNode, cls)._load(resource, cognite_client)
         if isinstance(resource, Dict):
             if instance.bounding_box is not None:
@@ -309,7 +309,7 @@ class ThreeDAssetMapping(CogniteResource):
         asset_id: int = None,
         tree_index: int = None,
         subtree_size: int = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.node_id = node_id
         self.asset_id = asset_id

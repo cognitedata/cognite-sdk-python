@@ -84,7 +84,7 @@ class IdentifierSequence:
         self.assert_singleton()
         return cast(SingletonIdentifierSequence, self)
 
-    def chunked(self, chunk_size: int) -> Iterable["IdentifierSequence"]:
+    def chunked(self, chunk_size: int) -> Iterable[IdentifierSequence]:
         return [
             IdentifierSequence(self._identifiers[i : i + chunk_size], is_singleton=self.is_singleton())
             for i in range(0, len(self), chunk_size)

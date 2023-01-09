@@ -124,12 +124,12 @@ class Transformation(CogniteResource):
         has_destination_api_key: Optional[bool] = None,
         has_source_oidc_credentials: Optional[bool] = None,
         has_destination_oidc_credentials: Optional[bool] = None,
-        running_job: "TransformationJob" = None,
-        last_finished_job: "TransformationJob" = None,
+        running_job: TransformationJob = None,
+        last_finished_job: TransformationJob = None,
         blocked: TransformationBlockedInfo = None,
-        schedule: "TransformationSchedule" = None,
+        schedule: TransformationSchedule = None,
         data_set_id: int = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
         source_nonce: Optional[NonceCredentials] = None,
         destination_nonce: Optional[NonceCredentials] = None,
         source_session: Optional[SessionDetails] = None,
@@ -255,14 +255,14 @@ class Transformation(CogniteResource):
         else:
             self._cognite_client.transformations.cancel(transformation_id=self.id)
 
-    def run_async(self, timeout: Optional[float] = None) -> Awaitable["TransformationJob"]:
+    def run_async(self, timeout: Optional[float] = None) -> Awaitable[TransformationJob]:
         return self._cognite_client.transformations.run_async(transformation_id=self.id, timeout=timeout)
 
     def jobs(self) -> TransformationJobList:
         return self._cognite_client.transformations.jobs.list(transformation_id=self.id)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> Transformation:
+    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> Transformation:
         instance = super(Transformation, cls)._load(resource, cognite_client)
         if isinstance(instance.destination, Dict):
             snake_dict = {utils._auxiliary.to_snake_case(key): value for (key, value) in instance.destination.items()}
@@ -524,16 +524,16 @@ class TransformationPreviewResult(CogniteResource):
 
     def __init__(
         self,
-        schema: "TransformationSchemaColumnList" = None,
+        schema: TransformationSchemaColumnList = None,
         results: List[Dict] = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ) -> None:
         self.schema = schema
         self.results = results
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> TransformationPreviewResult:
+    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> TransformationPreviewResult:
         instance = super(TransformationPreviewResult, cls)._load(resource, cognite_client)
         if isinstance(instance.schema, Dict):
             items = instance.schema.get("items")
