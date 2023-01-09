@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [5.3.1] - 20-01-23
+### Fixed
+- Last possible valid timestamp would not be returned as first (if first by some miracle...) by the `TimeSeries.first` method due to `end` being exclusive.
+
 ## [5.3.0] - 20-01-23
 ### Added
 - `DatapointsAPI.retrieve_latest` now support customising the `before` argument, by passing one or more objects of the newly added `LatestDatapointQuery` class.
