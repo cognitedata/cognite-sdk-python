@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 from typing import Sequence as SequenceType
