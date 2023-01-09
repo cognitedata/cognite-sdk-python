@@ -79,7 +79,7 @@ class Function(CogniteResource):
         self.error = error
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def call(self, data: Optional[Dict] = None, wait: bool = True) -> "FunctionCall":
+    def call(self, data: Optional[Dict] = None, wait: bool = True) -> FunctionCall:
         """`Call this particular function. <https://docs.cognite.com/api/v1/#operation/postFunctionsCall>`_
 
         Args:
@@ -98,7 +98,7 @@ class Function(CogniteResource):
         start_time: Optional[Dict[str, int]] = None,
         end_time: Optional[Dict[str, int]] = None,
         limit: Optional[int] = LIST_LIMIT_DEFAULT,
-    ) -> "FunctionCallList":
+    ) -> FunctionCallList:
         """List all calls to this function.
 
         Args:
@@ -120,7 +120,7 @@ class Function(CogniteResource):
             limit=limit,
         )
 
-    def list_schedules(self, limit: Optional[int] = LIST_LIMIT_DEFAULT) -> "FunctionSchedulesList":
+    def list_schedules(self, limit: Optional[int] = LIST_LIMIT_DEFAULT) -> FunctionSchedulesList:
         """`List all schedules associated with this function. <https://docs.cognite.com/api/v1/#operation/getFunctionSchedules>`_
 
         Args:
@@ -139,7 +139,7 @@ class Function(CogniteResource):
 
         return (schedules_by_external_id + schedules_by_id)[:limit]
 
-    def retrieve_call(self, id: int) -> "FunctionCall":
+    def retrieve_call(self, id: int) -> FunctionCall:
         """`Retrieve call by id. <https://docs.cognite.com/api/v1/#operation/getFunctionCall>`_
 
         Args:
@@ -315,7 +315,7 @@ class FunctionCall(CogniteResource):
         """
         return self._cognite_client.functions.calls.get_response(call_id=self.id, function_id=self.function_id)
 
-    def get_logs(self) -> "FunctionCallLog":
+    def get_logs(self) -> FunctionCallLog:
         """`Retrieve logs for this function call. <https://docs.cognite.com/api/v1/#operation/getFunctionCallLogs>`_
 
         Returns:
@@ -393,7 +393,7 @@ class FunctionsLimits(CogniteResponse):
         self.response_size_mb = response_size_mb
 
     @classmethod
-    def _load(cls, api_response: Dict) -> "FunctionsLimits":
+    def _load(cls, api_response: Dict) -> FunctionsLimits:
         return cls(
             timeout_minutes=api_response["timeoutMinutes"],
             cpu_cores=api_response["cpuCores"],
@@ -417,7 +417,7 @@ class FunctionsStatus(CogniteResponse):
         self.status = status
 
     @classmethod
-    def _load(cls, api_response: Dict) -> "FunctionsStatus":
+    def _load(cls, api_response: Dict) -> FunctionsStatus:
         return cls(
             status=api_response["status"],
         )

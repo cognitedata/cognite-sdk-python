@@ -24,7 +24,7 @@ class LoginStatus(CogniteResponse):
         self.api_key_id = api_key_id
 
     @classmethod
-    def _load(cls, api_response: Dict[str, Any]) -> "LoginStatus":
+    def _load(cls, api_response: Dict[str, Any]) -> LoginStatus:
         data = api_response["data"]
         return cls(
             user=data["user"],

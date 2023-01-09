@@ -587,7 +587,7 @@ class RawRowsAPI(APIClient):
         max_last_updated_time: int = None,
         columns: List[str] = None,
         limit: int = 25,
-    ) -> "pandas.DataFrame":
+    ) -> pandas.DataFrame:
         """`Retrieve rows in a table as a pandas dataframe. <https://docs.cognite.com/api/v1/#operation/getRows>`_
 
         Rowkeys are used as the index.

@@ -34,7 +34,7 @@ class Row(CogniteResource):
         self.last_updated_time = last_updated_time
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def to_pandas(self) -> "pandas.DataFrame":  # type: ignore[override]
+    def to_pandas(self) -> pandas.DataFrame:  # type: ignore[override]
         """Convert the instance into a pandas DataFrame.
 
         Returns:
@@ -50,7 +50,7 @@ class Row(CogniteResource):
 class RowList(CogniteResourceList):
     _RESOURCE = Row
 
-    def to_pandas(self) -> "pandas.DataFrame":  # type: ignore[override]
+    def to_pandas(self) -> pandas.DataFrame:  # type: ignore[override]
         """Convert the instance into a pandas DataFrame.
 
         Returns:

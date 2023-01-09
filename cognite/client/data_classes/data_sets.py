@@ -86,7 +86,7 @@ class DataSetFilter(CogniteFilter):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str]) -> "DataSetFilter":
+    def _load(cls, resource: Union[Dict, str]) -> DataSetFilter:
         instance = super(DataSetFilter, cls)._load(resource)
         if isinstance(resource, Dict):
             if instance.created_time is not None:
@@ -105,54 +105,54 @@ class DataSetUpdate(CogniteUpdate):
     """
 
     class _PrimitiveDataSetUpdate(CognitePrimitiveUpdate):
-        def set(self, value: Any) -> "DataSetUpdate":
+        def set(self, value: Any) -> DataSetUpdate:
             return self._set(value)
 
     class _ObjectDataSetUpdate(CogniteObjectUpdate):
-        def set(self, value: Dict) -> "DataSetUpdate":
+        def set(self, value: Dict) -> DataSetUpdate:
             return self._set(value)
 
-        def add(self, value: Dict) -> "DataSetUpdate":
+        def add(self, value: Dict) -> DataSetUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> "DataSetUpdate":
+        def remove(self, value: List) -> DataSetUpdate:
             return self._remove(value)
 
     class _ListDataSetUpdate(CogniteListUpdate):
-        def set(self, value: List) -> "DataSetUpdate":
+        def set(self, value: List) -> DataSetUpdate:
             return self._set(value)
 
-        def add(self, value: List) -> "DataSetUpdate":
+        def add(self, value: List) -> DataSetUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> "DataSetUpdate":
+        def remove(self, value: List) -> DataSetUpdate:
             return self._remove(value)
 
     class _LabelDataSetUpdate(CogniteLabelUpdate):
-        def add(self, value: List) -> "DataSetUpdate":
+        def add(self, value: List) -> DataSetUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> "DataSetUpdate":
+        def remove(self, value: List) -> DataSetUpdate:
             return self._remove(value)
 
     @property
-    def external_id(self) -> "_PrimitiveDataSetUpdate":
+    def external_id(self) -> _PrimitiveDataSetUpdate:
         return DataSetUpdate._PrimitiveDataSetUpdate(self, "externalId")
 
     @property
-    def name(self) -> "_PrimitiveDataSetUpdate":
+    def name(self) -> _PrimitiveDataSetUpdate:
         return DataSetUpdate._PrimitiveDataSetUpdate(self, "name")
 
     @property
-    def description(self) -> "_PrimitiveDataSetUpdate":
+    def description(self) -> _PrimitiveDataSetUpdate:
         return DataSetUpdate._PrimitiveDataSetUpdate(self, "description")
 
     @property
-    def metadata(self) -> "_ObjectDataSetUpdate":
+    def metadata(self) -> _ObjectDataSetUpdate:
         return DataSetUpdate._ObjectDataSetUpdate(self, "metadata")
 
     @property
-    def write_protected(self) -> "_PrimitiveDataSetUpdate":
+    def write_protected(self) -> _PrimitiveDataSetUpdate:
         return DataSetUpdate._PrimitiveDataSetUpdate(self, "writeProtected")
 
 

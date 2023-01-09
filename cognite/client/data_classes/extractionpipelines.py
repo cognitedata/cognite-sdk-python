@@ -112,7 +112,7 @@ class ExtractionPipeline(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "ExtractionPipeline":
+    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> ExtractionPipeline:
         instance = super(ExtractionPipeline, cls)._load(resource, cognite_client)
         return instance
 
@@ -129,27 +129,27 @@ class ExtractionPipelineUpdate(CogniteUpdate):
     """
 
     class _PrimitiveExtractionPipelineUpdate(CognitePrimitiveUpdate):
-        def set(self, value: Any) -> "ExtractionPipelineUpdate":
+        def set(self, value: Any) -> ExtractionPipelineUpdate:
             return self._set(value)
 
     class _ObjectExtractionPipelineUpdate(CogniteObjectUpdate):
-        def set(self, value: Dict) -> "ExtractionPipelineUpdate":
+        def set(self, value: Dict) -> ExtractionPipelineUpdate:
             return self._set(value)
 
-        def add(self, value: Dict) -> "ExtractionPipelineUpdate":
+        def add(self, value: Dict) -> ExtractionPipelineUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> "ExtractionPipelineUpdate":
+        def remove(self, value: List) -> ExtractionPipelineUpdate:
             return self._remove(value)
 
     class _ListExtractionPipelineUpdate(CogniteListUpdate):
-        def set(self, value: List) -> "ExtractionPipelineUpdate":
+        def set(self, value: List) -> ExtractionPipelineUpdate:
             return self._set(value)
 
-        def add(self, value: List) -> "ExtractionPipelineUpdate":
+        def add(self, value: List) -> ExtractionPipelineUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> "ExtractionPipelineUpdate":
+        def remove(self, value: List) -> ExtractionPipelineUpdate:
             return self._remove(value)
 
     @property
@@ -225,7 +225,7 @@ class ExtractionPipelineRun(CogniteResource):
 
 class ExtractionPipelineRunUpdate(CogniteUpdate):
     class _PrimitiveExtractionPipelineRunUpdate(CognitePrimitiveUpdate):
-        def set(self, value: Any) -> "ExtractionPipelineRunUpdate":
+        def set(self, value: Any) -> ExtractionPipelineRunUpdate:
             return self._set(value)
 
 
@@ -270,7 +270,7 @@ class ExtractionPipelineRunFilter(CogniteFilter):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str]) -> "ExtractionPipelineRunFilter":
+    def _load(cls, resource: Union[Dict, str]) -> ExtractionPipelineRunFilter:
         instance = super(ExtractionPipelineRunFilter, cls)._load(resource)
         if isinstance(resource, Dict):
             if instance.created_time is not None:

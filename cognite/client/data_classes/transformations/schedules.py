@@ -57,7 +57,7 @@ class TransformationScheduleUpdate(CogniteUpdate):
     """
 
     class _PrimitiveTransformationScheduleUpdate(CognitePrimitiveUpdate):
-        def set(self, value: Any) -> "TransformationScheduleUpdate":
+        def set(self, value: Any) -> TransformationScheduleUpdate:
             return self._set(value)
 
     @property

@@ -261,7 +261,7 @@ class EntityMatchingModel(CogniteResource):
 
     def refit(
         self, true_matches: Sequence[Union[Dict, Tuple[Union[int, str], Union[int, str]]]]
-    ) -> "EntityMatchingModel":
+    ) -> EntityMatchingModel:
         """Re-fits an entity matching model, using the combination of the old and new true matches.
 
         Args:
@@ -301,7 +301,7 @@ class EntityMatchingModelUpdate(CogniteUpdate):
     """
 
     class _PrimitiveUpdate(CognitePrimitiveUpdate):
-        def set(self, value: Any) -> "EntityMatchingModelUpdate":
+        def set(self, value: Any) -> EntityMatchingModelUpdate:
             return self._set(value)
 
     @property
@@ -381,7 +381,7 @@ class DiagramConvertItem(CogniteResource):
         assert self.results is not None
         return DiagramConvertPageList._load(self.results, cognite_client=self._cognite_client)
 
-    def to_pandas(self, camel_case: bool = False) -> "pandas.DataFrame":  # type: ignore[override]
+    def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:  # type: ignore[override]
         """Convert the instance into a pandas DataFrame.
 
         Args:
@@ -446,7 +446,7 @@ class DiagramDetectItem(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
         self.page_range = page_range
 
-    def to_pandas(self, camel_case: bool = False) -> "pandas.DataFrame":  # type: ignore[override]
+    def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:  # type: ignore[override]
         """Convert the instance into a pandas DataFrame.
 
         Args:
@@ -729,7 +729,7 @@ class VisionExtractItem(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "VisionExtractItem":
+    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> VisionExtractItem:
         """Override CogniteResource._load so that we can convert the dicts returned by the API to data classes"""
         extracted_item = super(VisionExtractItem, cls)._load(resource, cognite_client=cognite_client)
         if isinstance(extracted_item.predictions, dict):

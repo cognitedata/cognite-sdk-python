@@ -90,7 +90,7 @@ class FileMetadata(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "FileMetadata":
+    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> FileMetadata:
         instance = super(FileMetadata, cls)._load(resource, cognite_client)
         instance.labels = Label._load_list(instance.labels)
         if instance.geo_location is not None:
@@ -171,7 +171,7 @@ class FileMetadataFilter(CogniteFilter):
             raise TypeError("FileMetadata.geo_location should be of type GeoLocationFilter")
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str]) -> "FileMetadataFilter":
+    def _load(cls, resource: Union[Dict, str]) -> FileMetadataFilter:
         instance = super()._load(resource)
         if isinstance(resource, Dict):
             if instance.created_time is not None:
@@ -202,34 +202,34 @@ class FileMetadataUpdate(CogniteUpdate):
     """
 
     class _PrimitiveFileMetadataUpdate(CognitePrimitiveUpdate):
-        def set(self, value: Any) -> "FileMetadataUpdate":
+        def set(self, value: Any) -> FileMetadataUpdate:
             return self._set(value)
 
     class _ObjectFileMetadataUpdate(CogniteObjectUpdate):
-        def set(self, value: Dict) -> "FileMetadataUpdate":
+        def set(self, value: Dict) -> FileMetadataUpdate:
             return self._set(value)
 
-        def add(self, value: Dict) -> "FileMetadataUpdate":
+        def add(self, value: Dict) -> FileMetadataUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> "FileMetadataUpdate":
+        def remove(self, value: List) -> FileMetadataUpdate:
             return self._remove(value)
 
     class _ListFileMetadataUpdate(CogniteListUpdate):
-        def set(self, value: List) -> "FileMetadataUpdate":
+        def set(self, value: List) -> FileMetadataUpdate:
             return self._set(value)
 
-        def add(self, value: List) -> "FileMetadataUpdate":
+        def add(self, value: List) -> FileMetadataUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> "FileMetadataUpdate":
+        def remove(self, value: List) -> FileMetadataUpdate:
             return self._remove(value)
 
     class _LabelFileMetadataUpdate(CogniteLabelUpdate):
-        def add(self, value: Union[str, List[str]]) -> "FileMetadataUpdate":
+        def add(self, value: Union[str, List[str]]) -> FileMetadataUpdate:
             return self._add(value)
 
-        def remove(self, value: Union[str, List[str]]) -> "FileMetadataUpdate":
+        def remove(self, value: Union[str, List[str]]) -> FileMetadataUpdate:
             return self._remove(value)
 
     @property
