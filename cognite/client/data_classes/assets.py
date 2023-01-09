@@ -123,7 +123,7 @@ class Asset(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "Asset":
+    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> Asset:
         instance = super(Asset, cls)._load(resource, cognite_client)
         if isinstance(resource, Dict):
             if instance.aggregates is not None:
@@ -136,7 +136,7 @@ class Asset(CogniteResource):
     def __hash__(self) -> int:
         return hash(self.external_id)
 
-    def parent(self) -> "Asset":
+    def parent(self) -> Asset:
         """Returns this assets parent.
 
         Returns:
@@ -146,7 +146,7 @@ class Asset(CogniteResource):
             raise ValueError("parent_id is None")
         return self._cognite_client.assets.retrieve(id=self.parent_id)
 
-    def children(self) -> "AssetList":
+    def children(self) -> AssetList:
         """Returns the children of this asset.
 
         Returns:
@@ -154,7 +154,7 @@ class Asset(CogniteResource):
         """
         return self._cognite_client.assets.list(parent_ids=[self.id], limit=None)
 
-    def subtree(self, depth: int = None) -> "AssetList":
+    def subtree(self, depth: int = None) -> AssetList:
         """Returns the subtree of this asset up to a specified depth.
 
         Args:
@@ -165,7 +165,7 @@ class Asset(CogniteResource):
         """
         return self._cognite_client.assets.retrieve_subtree(id=self.id, depth=depth)
 
-    def time_series(self, **kwargs: Any) -> "TimeSeriesList":  # noqa: F821
+    def time_series(self, **kwargs: Any) -> TimeSeriesList:  # noqa: F821
         """Retrieve all time series related to this asset.
 
         Returns:
@@ -173,7 +173,7 @@ class Asset(CogniteResource):
         """
         return self._cognite_client.time_series.list(asset_ids=[self.id], **kwargs)
 
-    def sequences(self, **kwargs: Any) -> "SequenceList":  # noqa: F821
+    def sequences(self, **kwargs: Any) -> SequenceList:  # noqa: F821
         """Retrieve all sequences related to this asset.
 
         Returns:
@@ -181,7 +181,7 @@ class Asset(CogniteResource):
         """
         return self._cognite_client.sequences.list(asset_ids=[self.id], **kwargs)
 
-    def events(self, **kwargs: Any) -> "EventList":  # noqa: F821
+    def events(self, **kwargs: Any) -> EventList:  # noqa: F821
         """Retrieve all events related to this asset.
 
         Returns:
@@ -190,7 +190,7 @@ class Asset(CogniteResource):
 
         return self._cognite_client.events.list(asset_ids=[self.id], **kwargs)
 
-    def files(self, **kwargs: Any) -> "FileMetadataList":  # noqa: F821
+    def files(self, **kwargs: Any) -> FileMetadataList:  # noqa: F821
         """Retrieve all files metadata related to this asset.
 
         Returns:
@@ -206,7 +206,7 @@ class Asset(CogniteResource):
 
     def to_pandas(
         self, expand: Sequence[str] = ("metadata", "aggregates"), ignore: List[str] = None, camel_case: bool = False
-    ) -> "pandas.DataFrame":
+    ) -> pandas.DataFrame:
         """Convert the instance into a pandas DataFrame.
 
         Args:
@@ -229,77 +229,77 @@ class AssetUpdate(CogniteUpdate):
     """
 
     class _PrimitiveAssetUpdate(CognitePrimitiveUpdate):
-        def set(self, value: Any) -> "AssetUpdate":
+        def set(self, value: Any) -> AssetUpdate:
             return self._set(value)
 
     class _ObjectAssetUpdate(CogniteObjectUpdate):
-        def set(self, value: Dict) -> "AssetUpdate":
+        def set(self, value: Dict) -> AssetUpdate:
             return self._set(value)
 
-        def add(self, value: Dict) -> "AssetUpdate":
+        def add(self, value: Dict) -> AssetUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> "AssetUpdate":
+        def remove(self, value: List) -> AssetUpdate:
             return self._remove(value)
 
     class _ListAssetUpdate(CogniteListUpdate):
-        def set(self, value: List) -> "AssetUpdate":
+        def set(self, value: List) -> AssetUpdate:
             return self._set(value)
 
-        def add(self, value: List) -> "AssetUpdate":
+        def add(self, value: List) -> AssetUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> "AssetUpdate":
+        def remove(self, value: List) -> AssetUpdate:
             return self._remove(value)
 
     class _LabelAssetUpdate(CogniteLabelUpdate):
-        def set(self, value: Union[str, List[str]]) -> "AssetUpdate":
+        def set(self, value: Union[str, List[str]]) -> AssetUpdate:
             return self._set(value)
 
-        def add(self, value: Union[str, List[str]]) -> "AssetUpdate":
+        def add(self, value: Union[str, List[str]]) -> AssetUpdate:
             return self._add(value)
 
-        def remove(self, value: Union[str, List[str]]) -> "AssetUpdate":
+        def remove(self, value: Union[str, List[str]]) -> AssetUpdate:
             return self._remove(value)
 
     @property
-    def external_id(self) -> "AssetUpdate._PrimitiveAssetUpdate":
+    def external_id(self) -> AssetUpdate._PrimitiveAssetUpdate:
         return AssetUpdate._PrimitiveAssetUpdate(self, "externalId")
 
     @property
-    def name(self) -> "_PrimitiveAssetUpdate":
+    def name(self) -> _PrimitiveAssetUpdate:
         return AssetUpdate._PrimitiveAssetUpdate(self, "name")
 
     @property
-    def description(self) -> "_PrimitiveAssetUpdate":
+    def description(self) -> _PrimitiveAssetUpdate:
         return AssetUpdate._PrimitiveAssetUpdate(self, "description")
 
     @property
-    def data_set_id(self) -> "_PrimitiveAssetUpdate":
+    def data_set_id(self) -> _PrimitiveAssetUpdate:
         return AssetUpdate._PrimitiveAssetUpdate(self, "dataSetId")
 
     @property
-    def metadata(self) -> "_ObjectAssetUpdate":
+    def metadata(self) -> _ObjectAssetUpdate:
         return AssetUpdate._ObjectAssetUpdate(self, "metadata")
 
     @property
-    def source(self) -> "_PrimitiveAssetUpdate":
+    def source(self) -> _PrimitiveAssetUpdate:
         return AssetUpdate._PrimitiveAssetUpdate(self, "source")
 
     @property
-    def parent_id(self) -> "_PrimitiveAssetUpdate":
+    def parent_id(self) -> _PrimitiveAssetUpdate:
         return AssetUpdate._PrimitiveAssetUpdate(self, "parentId")
 
     @property
-    def parent_external_id(self) -> "_PrimitiveAssetUpdate":
+    def parent_external_id(self) -> _PrimitiveAssetUpdate:
         return AssetUpdate._PrimitiveAssetUpdate(self, "parentExternalId")
 
     @property
-    def labels(self) -> "_LabelAssetUpdate":
+    def labels(self) -> _LabelAssetUpdate:
         return AssetUpdate._LabelAssetUpdate(self, "labels")
 
     @property
-    def geo_location(self) -> "_PrimitiveAssetUpdate":
+    def geo_location(self) -> _PrimitiveAssetUpdate:
         return AssetUpdate._PrimitiveAssetUpdate(self, "geoLocation")
 
 
@@ -310,7 +310,7 @@ class AssetList(CogniteResourceList):
         super().__init__(resources, cognite_client)
         self._retrieve_chunk_size = 100
 
-    def time_series(self) -> "TimeSeriesList":  # noqa: F821
+    def time_series(self) -> TimeSeriesList:  # noqa: F821
         """Retrieve all time series related to these assets.
 
         Returns:
@@ -320,7 +320,7 @@ class AssetList(CogniteResourceList):
 
         return self._retrieve_related_resources(TimeSeriesList, self._cognite_client.time_series)
 
-    def sequences(self) -> "SequenceList":  # noqa: F821
+    def sequences(self) -> SequenceList:  # noqa: F821
         """Retrieve all sequences related to these assets.
 
         Returns:
@@ -330,7 +330,7 @@ class AssetList(CogniteResourceList):
 
         return self._retrieve_related_resources(SequenceList, self._cognite_client.sequences)
 
-    def events(self) -> "EventList":  # noqa: F821
+    def events(self) -> EventList:  # noqa: F821
         """Retrieve all events related to these assets.
 
         Returns:
@@ -340,7 +340,7 @@ class AssetList(CogniteResourceList):
 
         return self._retrieve_related_resources(EventList, self._cognite_client.events)
 
-    def files(self) -> "FileMetadataList":  # noqa: F821
+    def files(self) -> FileMetadataList:  # noqa: F821
         """Retrieve all files metadata related to these assets.
 
         Returns:
@@ -435,7 +435,7 @@ class AssetFilter(CogniteFilter):
             raise TypeError("AssetFilter.labels must be of type LabelFilter")
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str]) -> "AssetFilter":
+    def _load(cls, resource: Union[Dict, str]) -> AssetFilter:
         instance = super(AssetFilter, cls)._load(resource)
         if isinstance(resource, Dict):
             if instance.created_time is not None:

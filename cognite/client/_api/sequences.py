@@ -756,7 +756,7 @@ class SequencesDataAPI(APIClient):
         column_names: str = None,
         id: int = None,
         limit: int = None,
-    ) -> "pandas.DataFrame":
+    ) -> pandas.DataFrame:
         """`Retrieve data from a sequence as a pandas dataframe <https://docs.cognite.com/api/v1/#operation/getSequenceData>`_
 
         Args:

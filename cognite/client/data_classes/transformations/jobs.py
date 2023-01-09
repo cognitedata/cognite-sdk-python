@@ -49,7 +49,7 @@ class TransformationJobMetric(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "TransformationJobMetric":
+    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> TransformationJobMetric:
         instance = super(TransformationJobMetric, cls)._load(resource, cognite_client)
         return instance
 
@@ -138,7 +138,7 @@ class TransformationJob(CogniteResource):
         assert self.id is not None
         return self._cognite_client.transformations.jobs.list_metrics(self.id)
 
-    def wait(self, polling_interval: float = 1, timeout: Optional[float] = None) -> "TransformationJob":
+    def wait(self, polling_interval: float = 1, timeout: Optional[float] = None) -> TransformationJob:
         """`Waits for the job to finish.`
 
         Args:
@@ -190,7 +190,7 @@ class TransformationJob(CogniteResource):
 
         return self
 
-    async def wait_async(self, polling_interval: float = 1, timeout: Optional[float] = None) -> "TransformationJob":
+    async def wait_async(self, polling_interval: float = 1, timeout: Optional[float] = None) -> TransformationJob:
         """Asyncio coroutine, waits for the job to finish asynchronously.
 
         Args:
@@ -252,7 +252,7 @@ class TransformationJob(CogniteResource):
         return self
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "TransformationJob":
+    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> TransformationJob:
         instance = super(TransformationJob, cls)._load(resource, cognite_client)
         if isinstance(instance.destination, Dict):
             snake_dict = {utils._auxiliary.to_snake_case(key): value for (key, value) in instance.destination.items()}

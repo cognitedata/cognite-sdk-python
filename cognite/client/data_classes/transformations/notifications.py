@@ -40,7 +40,7 @@ class TransformationNotification(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "TransformationNotification":
+    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> TransformationNotification:
         instance = super(TransformationNotification, cls)._load(resource, cognite_client)
         return instance
 

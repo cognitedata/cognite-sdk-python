@@ -142,7 +142,7 @@ class ProjectSpec(CogniteResponse):
         self.groups = groups
 
     @classmethod
-    def _load(cls, api_response: Dict[str, Any]) -> "ProjectSpec":
+    def _load(cls, api_response: Dict[str, Any]) -> ProjectSpec:
         return cls(url_name=api_response["projectUrlName"], groups=api_response["groups"])
 
 
@@ -161,7 +161,7 @@ class TokenInspection(CogniteResponse):
         self.capabilities = capabilities
 
     @classmethod
-    def _load(cls, api_response: Dict[str, Any]) -> "TokenInspection":
+    def _load(cls, api_response: Dict[str, Any]) -> TokenInspection:
         return cls(
             subject=api_response["subject"],
             projects=[ProjectSpec._load(p) for p in api_response["projects"]],

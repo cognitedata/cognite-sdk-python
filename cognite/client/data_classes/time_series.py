@@ -126,7 +126,7 @@ class TimeSeries(CogniteResource):
             return dps[0]
         return None
 
-    def asset(self) -> "Asset":  # noqa: F821
+    def asset(self) -> Asset:  # noqa: F821
         """Returns the asset this time series belongs to.
 
         Returns:
@@ -187,7 +187,7 @@ class TimeSeriesFilter(CogniteFilter):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str]) -> "TimeSeriesFilter":
+    def _load(cls, resource: Union[Dict, str]) -> TimeSeriesFilter:
         instance = super(TimeSeriesFilter, cls)._load(resource)
         if isinstance(resource, Dict):
             if instance.created_time is not None:
@@ -206,34 +206,34 @@ class TimeSeriesUpdate(CogniteUpdate):
     """
 
     class _PrimitiveTimeSeriesUpdate(CognitePrimitiveUpdate):
-        def set(self, value: Any) -> "TimeSeriesUpdate":
+        def set(self, value: Any) -> TimeSeriesUpdate:
             return self._set(value)
 
     class _ObjectTimeSeriesUpdate(CogniteObjectUpdate):
-        def set(self, value: Dict) -> "TimeSeriesUpdate":
+        def set(self, value: Dict) -> TimeSeriesUpdate:
             return self._set(value)
 
-        def add(self, value: Dict) -> "TimeSeriesUpdate":
+        def add(self, value: Dict) -> TimeSeriesUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> "TimeSeriesUpdate":
+        def remove(self, value: List) -> TimeSeriesUpdate:
             return self._remove(value)
 
     class _ListTimeSeriesUpdate(CogniteListUpdate):
-        def set(self, value: List) -> "TimeSeriesUpdate":
+        def set(self, value: List) -> TimeSeriesUpdate:
             return self._set(value)
 
-        def add(self, value: List) -> "TimeSeriesUpdate":
+        def add(self, value: List) -> TimeSeriesUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> "TimeSeriesUpdate":
+        def remove(self, value: List) -> TimeSeriesUpdate:
             return self._remove(value)
 
     class _LabelTimeSeriesUpdate(CogniteLabelUpdate):
-        def add(self, value: List) -> "TimeSeriesUpdate":
+        def add(self, value: List) -> TimeSeriesUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> "TimeSeriesUpdate":
+        def remove(self, value: List) -> TimeSeriesUpdate:
             return self._remove(value)
 
     @property

@@ -79,7 +79,7 @@ class Relationship(CogniteResource):
         self.labels = Label._load_list(labels)
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def _validate_resource_types(self) -> "Relationship":
+    def _validate_resource_types(self) -> Relationship:
         rel = copy.copy(self)
         self._validate_resource_type(rel.source_type)
         self._validate_resource_type(rel.target_type)
@@ -92,7 +92,7 @@ class Relationship(CogniteResource):
             raise TypeError("Invalid source or target '{}' in relationship".format(resource_type))
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "Relationship":
+    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> Relationship:
         instance = super(Relationship, cls)._load(resource, cognite_client)
         if instance.source is not None:
             instance.source = instance._convert_resource(instance.source, instance.source_type)  # type: ignore
@@ -187,14 +187,14 @@ class RelationshipUpdate(CogniteUpdate):
         self._update_object = {}
 
     class _PrimitiveRelationshipUpdate(CognitePrimitiveUpdate):
-        def set(self, value: Any) -> "RelationshipUpdate":
+        def set(self, value: Any) -> RelationshipUpdate:
             return self._set(value)
 
     class _LabelRelationshipUpdate(CogniteLabelUpdate):
-        def add(self, value: Union[str, List[str]]) -> "RelationshipUpdate":
+        def add(self, value: Union[str, List[str]]) -> RelationshipUpdate:
             return self._add(value)
 
-        def remove(self, value: Union[str, List[str]]) -> "RelationshipUpdate":
+        def remove(self, value: Union[str, List[str]]) -> RelationshipUpdate:
             return self._remove(value)
 
     @property

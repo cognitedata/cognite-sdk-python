@@ -115,7 +115,7 @@ class Datapoint(CogniteResource):
         self.discrete_variance = discrete_variance
         self.total_variation = total_variation
 
-    def to_pandas(self, camel_case: bool = False) -> "pandas.DataFrame":  # type: ignore[override]
+    def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:  # type: ignore[override]
         """Convert the datapoint into a pandas DataFrame.
 
         Args:
@@ -290,7 +290,7 @@ class DatapointsArray(CogniteResource):
         column_names: Literal["id", "external_id"] = "external_id",
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
-    ) -> "pandas.DataFrame":
+    ) -> pandas.DataFrame:
         """Convert the DatapointsArray into a pandas DataFrame.
 
         Args:
@@ -468,7 +468,7 @@ class Datapoints(CogniteResource):
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
         include_errors: bool = False,
-    ) -> "pandas.DataFrame":
+    ) -> pandas.DataFrame:
         """Convert the datapoints into a pandas DataFrame.
 
         Args:
@@ -525,7 +525,7 @@ class Datapoints(CogniteResource):
     @classmethod
     def _load(  # type: ignore [override]
         cls, dps_object: Dict[str, Any], expected_fields: List[str] = None, cognite_client: "CogniteClient" = None
-    ) -> "Datapoints":
+    ) -> Datapoints:
         del cognite_client  # just needed for signature
         instance = cls(
             id=dps_object.get("id"),
@@ -586,7 +586,7 @@ class Datapoints(CogniteResource):
         self.__datapoint_objects = new_dps_objects
         return self.__datapoint_objects
 
-    def _slice(self, slice: slice) -> "Datapoints":
+    def _slice(self, slice: slice) -> Datapoints:
         truncated_datapoints = Datapoints(id=self.id, external_id=self.external_id)
         for attr, value in self._get_non_empty_data_fields():
             setattr(truncated_datapoints, attr, value[slice])
@@ -648,7 +648,7 @@ class DatapointsArrayList(CogniteResourceList):
         column_names: Literal["id", "external_id"] = "external_id",
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
-    ) -> "pandas.DataFrame":
+    ) -> pandas.DataFrame:
         """Convert the DatapointsArrayList into a pandas DataFrame.
 
         Args:
@@ -730,7 +730,7 @@ class DatapointsList(CogniteResourceList):
         column_names: Literal["id", "external_id"] = "external_id",
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
-    ) -> "pandas.DataFrame":
+    ) -> pandas.DataFrame:
         """Convert the datapoints list into a pandas DataFrame.
 
         Args:

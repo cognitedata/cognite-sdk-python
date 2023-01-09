@@ -39,7 +39,7 @@ class FeatureType(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[str, Dict[str, Any]], cognite_client: "CogniteClient" = None) -> "FeatureType":
+    def _load(cls, resource: Union[str, Dict[str, Any]], cognite_client: "CogniteClient" = None) -> FeatureType:
         if isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
         instance = cls(cognite_client=cognite_client)
@@ -108,7 +108,7 @@ class Feature(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[str, Dict[str, Any]], cognite_client: "CogniteClient" = None) -> "Feature":
+    def _load(cls, resource: Union[str, Dict[str, Any]], cognite_client: "CogniteClient" = None) -> Feature:
         if isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
         instance = cls(cognite_client=cognite_client)
@@ -180,7 +180,7 @@ def _to_feature_property_name(property_name: str) -> str:
 class FeatureList(CogniteResourceList):
     _RESOURCE = Feature
 
-    def to_geopandas(self, geometry: str, camel_case: bool = False) -> "geopandas.GeoDataFrame":  # noqa: F821
+    def to_geopandas(self, geometry: str, camel_case: bool = False) -> geopandas.GeoDataFrame:  # noqa: F821
         """Convert the instance into a GeoPandas GeoDataFrame.
 
         Args:
@@ -217,7 +217,7 @@ class FeatureList(CogniteResourceList):
         external_id_column: str = "externalId",
         property_column_mapping: Dict[str, str] = None,
         data_set_id_column: str = "dataSetId",
-    ) -> "FeatureList":
+    ) -> FeatureList:
         """Convert a GeoDataFrame instance into a FeatureList.
 
         Args:
@@ -295,7 +295,7 @@ class FeatureAggregate(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[str, Dict[str, Any]], cognite_client: "CogniteClient" = None) -> "FeatureAggregate":
+    def _load(cls, resource: Union[str, Dict[str, Any]], cognite_client: "CogniteClient" = None) -> FeatureAggregate:
         if isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
         instance = cls(cognite_client=cognite_client)
@@ -323,7 +323,7 @@ class CoordinateReferenceSystem(CogniteResource):
     @classmethod
     def _load(
         cls, resource: Union[str, Dict[str, Any]], cognite_client: "CogniteClient" = None
-    ) -> "CoordinateReferenceSystem":
+    ) -> CoordinateReferenceSystem:
         if isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
         instance = cls(cognite_client=cognite_client)
@@ -353,7 +353,7 @@ class RasterMetadata:
             setattr(self, key, properties[key])
 
     @classmethod
-    def _load(cls, resource: Dict, cognite_client: "CogniteClient" = None) -> "RasterMetadata":
+    def _load(cls, resource: Dict, cognite_client: "CogniteClient" = None) -> RasterMetadata:
         instance = cls(cognite_client=cognite_client)
         for key, value in resource.items():
             snake_case_key = to_snake_case(key)
@@ -410,7 +410,7 @@ class GeospatialComputedItem(CogniteResource):
     @classmethod
     def _load(
         cls, resource: Union[str, Dict[str, Any]], cognite_client: "CogniteClient" = None
-    ) -> "GeospatialComputedItem":
+    ) -> GeospatialComputedItem:
         if isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
         instance = cls(resource=resource, cognite_client=cognite_client)
@@ -435,7 +435,7 @@ class GeospatialComputedResponse(CogniteResource):
     @classmethod
     def _load(
         cls, resource: Union[str, Dict[str, Any]], cognite_client: "CogniteClient" = None
-    ) -> "GeospatialComputedResponse":
+    ) -> GeospatialComputedResponse:
         if isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
         item_list = GeospatialComputedItemList._load(

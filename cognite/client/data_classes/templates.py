@@ -255,7 +255,7 @@ class TemplateInstance(CogniteResource):
         }
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "TemplateInstance":
+    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> TemplateInstance:
         if isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
         elif isinstance(resource, Dict):
@@ -290,17 +290,17 @@ class TemplateInstanceUpdate(CogniteUpdate):
     """
 
     class _ObjectAssetUpdate(CogniteObjectUpdate):
-        def set(self, value: Dict) -> "TemplateInstanceUpdate":
+        def set(self, value: Dict) -> TemplateInstanceUpdate:
             return self._set(value)
 
-        def add(self, value: Dict) -> "TemplateInstanceUpdate":
+        def add(self, value: Dict) -> TemplateInstanceUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> "TemplateInstanceUpdate":
+        def remove(self, value: List) -> TemplateInstanceUpdate:
             return self._remove(value)
 
     @property
-    def field_resolvers(self) -> "_ObjectAssetUpdate":
+    def field_resolvers(self) -> _ObjectAssetUpdate:
         return TemplateInstanceUpdate._ObjectAssetUpdate(self, "fieldResolvers")
 
 
@@ -382,7 +382,7 @@ class View(CogniteResource):
             return value
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "View":
+    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> View:
         if isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
         elif isinstance(resource, Dict):
@@ -405,7 +405,7 @@ class ViewResolveItem(UserDict, CogniteResource):
         return self.data
 
     @classmethod
-    def _load(cls, data: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "ViewResolveItem":
+    def _load(cls, data: Union[Dict, str], cognite_client: "CogniteClient" = None) -> ViewResolveItem:
         if isinstance(data, str):
             return cls._load(json.loads(data), cognite_client=cognite_client)
         elif isinstance(data, Dict):

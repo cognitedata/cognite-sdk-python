@@ -46,7 +46,7 @@ class TransformationSchedule(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "TransformationSchedule":
+    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> TransformationSchedule:
         instance = super(TransformationSchedule, cls)._load(resource, cognite_client)
         return instance
 
@@ -78,7 +78,7 @@ class TransformationScheduleUpdate(CogniteUpdate):
     """
 
     class _PrimitiveTransformationScheduleUpdate(CognitePrimitiveUpdate):
-        def set(self, value: Any) -> "TransformationScheduleUpdate":
+        def set(self, value: Any) -> TransformationScheduleUpdate:
             return self._set(value)
 
     @property

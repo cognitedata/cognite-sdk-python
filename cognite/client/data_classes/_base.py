@@ -58,10 +58,10 @@ class CogniteResponse:
         return basic_instance_dump(self, camel_case=camel_case)
 
     @classmethod
-    def _load(cls, api_response: Dict[str, Any]) -> "CogniteResponse":
+    def _load(cls, api_response: Dict[str, Any]) -> CogniteResponse:
         raise NotImplementedError
 
-    def to_pandas(self) -> "pandas.DataFrame":
+    def to_pandas(self) -> pandas.DataFrame:
         raise NotImplementedError
 
 
@@ -71,7 +71,7 @@ T_CogniteResource = TypeVar("T_CogniteResource", bound="CogniteResource")
 class CogniteResource:
     _cognite_client: Any
 
-    def __new__(cls, *args: Any, **kwargs: Any) -> "CogniteResource":
+    def __new__(cls, *args: Any, **kwargs: Any) -> CogniteResource:
         obj = super().__new__(cls)
         obj._cognite_client = None
         if "cognite_client" in kwargs:
@@ -120,7 +120,7 @@ class CogniteResource:
 
     def to_pandas(
         self, expand: Sequence[str] = ("metadata",), ignore: List[str] = None, camel_case: bool = False
-    ) -> "pandas.DataFrame":
+    ) -> pandas.DataFrame:
         """Convert the instance into a pandas DataFrame.
 
         Args:
@@ -241,7 +241,7 @@ class CogniteResourceList(UserList):
             return self._id_to_item.get(id)
         return self._external_id_to_item.get(external_id)
 
-    def to_pandas(self, camel_case: bool = False) -> "pandas.DataFrame":
+    def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:
         """Convert the instance into a pandas DataFrame.
 
         Returns:

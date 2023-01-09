@@ -30,7 +30,7 @@ class VisionResource(CogniteResource):
             if value not in EXCLUDE_VALUE and not key.startswith("_")
         }
 
-    def to_pandas(self, camel_case: bool = False) -> "pandas.DataFrame":  # type: ignore[override]
+    def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:  # type: ignore[override]
         pd = cast(Any, utils._auxiliary.local_import("pandas"))
         df = pd.DataFrame(columns=["value"])
 
