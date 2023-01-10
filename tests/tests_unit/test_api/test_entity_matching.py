@@ -87,7 +87,7 @@ class TestEntityMatching:
             sources=entities_from, targets=entities_to, true_matches=[(1, 2)], feature_type="bigram"
         )
         assert isinstance(model, EntityMatchingModel)
-        assert "EntityMatchingModel(id: 123,status: Queued,error: None)" == str(model)
+        assert "EntityMatchingModel(id=123, status=Queued, error=None)" == str(model)
         assert 42 == model.created_time
         model.wait_for_completion()
         assert "Completed" == model.status
@@ -127,7 +127,7 @@ class TestEntityMatching:
             sources=entities_from, targets=entities_to, true_matches=[(1, 2)], feature_type="bigram"
         )
         assert isinstance(model, EntityMatchingModel)
-        assert "EntityMatchingModel(id: 123,status: Queued,error: None)" == str(model)
+        assert "EntityMatchingModel(id=123, status=Queued, error=None)" == str(model)
         assert 42 == model.created_time
         model.wait_for_completion()
         assert "Completed" == model.status

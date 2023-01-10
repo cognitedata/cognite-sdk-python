@@ -66,16 +66,18 @@ class ContextualizationJobType(Enum):
 
 
 class ContextualizationJob(CogniteResource):
-    _COMMON_FIELDS = {
-        "status",
-        "jobId",
-        "modelId",
-        "pipelineId",
-        "errorMessage",
-        "createdTime",
-        "startTime",
-        "statusTime",
-    }
+    _COMMON_FIELDS = frozenset(
+        {
+            "status",
+            "jobId",
+            "modelId",
+            "pipelineId",
+            "errorMessage",
+            "createdTime",
+            "startTime",
+            "statusTime",
+        }
+    )
     _JOB_TYPE = ContextualizationJobType.ENTITY_MATCHING
 
     def __init__(
@@ -139,7 +141,7 @@ class ContextualizationJob(CogniteResource):
         return self._result
 
     def __str__(self) -> str:
-        return f"{self.__class__.__name__}(id: {self.job_id},status: {self.status},error: {self.error_message})"
+        return f"{self.__class__.__name__}(id={self.job_id}, status={self.status}, error={self.error_message})"
 
     @classmethod
     def _load_with_status(
@@ -195,7 +197,7 @@ class EntityMatchingModel(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     def __str__(self) -> str:
-        return f"{self.__class__.__name__}(id: {self.id},status: {self.status},error: {self.error_message})"
+        return f"{self.__class__.__name__}(id={self.id}, status={self.status}, error={self.error_message})"
 
     def update_status(self) -> str:
         """Updates the model status and returns it"""
@@ -516,7 +518,8 @@ class VisionFeature(str, Enum):
 
     @classmethod
     def beta_features(cls) -> Set[VisionFeature]:
-        return {VisionFeature.INDUSTRIAL_OBJECT_DETECTION, VisionFeature.PERSONAL_PROTECTIVE_EQUIPMENT_DETECTION}
+        """Returns a set of VisionFeature's that are currently in beta"""
+        return {cls.INDUSTRIAL_OBJECT_DETECTION, cls.PERSONAL_PROTECTIVE_EQUIPMENT_DETECTION}
 
 
 @dataclass
@@ -591,9 +594,9 @@ class DetectJobBundle:
     _WAIT_TIME = 2
 
     def __init__(self, job_ids: List[int], cognite_client: CogniteClient = None):
-        # Show warning
         warnings.warn(
-            "DetectJobBundle.result is calling a beta endpoint which is still in development. Breaking changes can happen in between patch versions."
+            "DetectJobBundle.result is calling a beta endpoint which is still in development. "
+            "Breaking changes can happen in between patch versions."
         )
 
         self._cognite_client = cast("CogniteClient", cognite_client)
@@ -607,17 +610,7 @@ class DetectJobBundle:
         self._result: List[Dict[str, Any]] = []
 
     def __str__(self) -> str:
-        return (
-            "DetectJobBundle( job_ids="
-            + str(self.job_ids)
-            + ", self.jobs="
-            + str(self.jobs)
-            + ", self._result="
-            + str(self._result)
-            + ", self._remaining_job_ids="
-            + str(self._remaining_job_ids)
-            + ")"
-        )
+        return f"DetectJobBundle({self.job_ids=}, {self.jobs=}, {self._result=}, {self._remaining_job_ids=})"
 
     def _back_off(self) -> None:
         """
@@ -642,8 +635,6 @@ class DetectJobBundle:
                 res = self._cognite_client.diagrams._post(self._STATUS_PATH, json={"items": self._remaining_job_ids})
             except CogniteAPIError:
                 self._back_off()
-                if self._WAIT_TIME < 10:
-                    self._WAIT_TIME += 2
                 continue
             if res.json().get("error"):
                 break
@@ -659,7 +650,6 @@ class DetectJobBundle:
                 break
 
     def fetch_results(self) -> List[Dict[str, Any]]:
-        # Check status
         return [self._cognite_client.diagrams._get(f"{self._RESOURCE_PATH}{j}").json() for j in self.job_ids]
 
     @property
