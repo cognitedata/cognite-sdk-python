@@ -39,9 +39,8 @@ class CogniteResponse:
 
     def __getattribute__(self, item: Any) -> Any:
         attr = super().__getattribute__(item)
-        if item == "_cognite_client":
-            if attr is None:
-                raise CogniteMissingClientError
+        if item == "_cognite_client" and attr is None:
+            raise CogniteMissingClientError
         return attr
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
@@ -71,9 +70,7 @@ class CogniteResource:
 
     def __new__(cls, *args: Any, **kwargs: Any) -> "CogniteResource":
         obj = super().__new__(cls)
-        obj._cognite_client = None
-        if "cognite_client" in kwargs:
-            obj._cognite_client = kwargs["cognite_client"]
+        obj._cognite_client = kwargs.get("cognite_client")
         return obj
 
     def __eq__(self, other: Any) -> bool:
@@ -85,9 +82,8 @@ class CogniteResource:
 
     def __getattribute__(self, item: Any) -> Any:
         attr = super().__getattribute__(item)
-        if item == "_cognite_client":
-            if attr is None:
-                raise CogniteMissingClientError
+        if item == "_cognite_client" and attr is None:
+            raise CogniteMissingClientError
         return attr
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
@@ -435,9 +431,8 @@ class CogniteFilter:
 
     def __getattribute__(self, item: Any) -> Any:
         attr = super().__getattribute__(item)
-        if item == "_cognite_client":
-            if attr is None:
-                raise CogniteMissingClientError
+        if item == "_cognite_client" and attr is None:
+            raise CogniteMissingClientError
         return attr
 
     @classmethod
