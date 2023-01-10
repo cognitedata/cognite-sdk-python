@@ -505,8 +505,6 @@ class DiagramDetectResults(ContextualizationJob):
 
 # Vision dataclasses
 FeatureClass = Union[Type[TextRegion], Type[AssetLink], Type[ObjectDetection]]
-ExternalId = str
-InternalId = int
 
 
 class VisionFeature(str, Enum):
@@ -775,7 +773,7 @@ class VisionExtractJob(VisionJob):
         super().__init__(*args, **kwargs)
         self._items: Optional[List[VisionExtractItem]] = None
 
-    def __getitem__(self, file_id: InternalId) -> VisionExtractItem:
+    def __getitem__(self, file_id: int) -> VisionExtractItem:
         """Retrieves the results for a file by id"""
         found = [item for item in self.result["items"] if item.get("fileId") == file_id]
         if not found:
