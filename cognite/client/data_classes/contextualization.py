@@ -104,9 +104,7 @@ class ContextualizationJob(CogniteResource):
 
     def update_status(self) -> str:
         """Updates the model status and returns it"""
-        data = (
-            self._cognite_client.__getattribute__(self._JOB_TYPE.value)._get(f"{self._status_path}{self.job_id}").json()
-        )
+        data = getattr(self._cognite_client, self._JOB_TYPE.value)._get(f"{self._status_path}{self.job_id}").json()
         self.status = data["status"]
         self.status_time = data.get("statusTime")
         self.start_time = data.get("startTime")
@@ -697,9 +695,7 @@ class VisionJob(ContextualizationJob):
     def update_status(self) -> str:
         # Override update_status since we need to handle the vision-specific
         # edge case where we also record failed items per batch
-        data = (
-            self._cognite_client.__getattribute__(self._JOB_TYPE.value)._get(f"{self._status_path}{self.job_id}").json()
-        )
+        data = getattr(self._cognite_client, self._JOB_TYPE.value)._get(f"{self._status_path}{self.job_id}").json()
         self.status = data["status"]
         self.status_time = data.get("statusTime")
         self.start_time = data.get("startTime")
