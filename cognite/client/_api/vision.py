@@ -109,6 +109,7 @@ class VisionAPI(APIClient):
 
         Args:
             job_id (int): ID of an existing feature extraction job.
+
         Returns:
             VisionExtractJob: Vision extract job, which can be used to retrieve the status of the job or the prediction results if the job is finished. Note that .result property of this job will wait for the job to finish and returns the results.
 

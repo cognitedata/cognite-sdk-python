@@ -118,6 +118,7 @@ class ContextualizationJob(CogniteResource):
 
     def wait_for_completion(self, timeout: int = None, interval: int = 1) -> None:
         """Waits for job completion, raising ModelFailedException if fit failed - generally not needed to call as it is called by result.
+
         Args:
             timeout (int): Time out after this many seconds. (None means wait indefinitely)
             interval (int): Poll status every this many seconds.
@@ -128,7 +129,7 @@ class ContextualizationJob(CogniteResource):
             if not JobStatus(self.status).is_not_finished():
                 break
             time.sleep(interval)
-        if JobStatus(self.status) == JobStatus.FAILED:
+        if JobStatus(self.status) is JobStatus.FAILED:
             raise ModelFailedException(self.__class__.__name__, cast(int, self.job_id), cast(str, self.error_message))
 
     @property
@@ -222,7 +223,7 @@ class EntityMatchingModel(CogniteResource):
             if JobStatus(self.status) not in [JobStatus.QUEUED, JobStatus.RUNNING]:
                 break
             time.sleep(interval)
-        if JobStatus(self.status) == JobStatus.FAILED:
+        if JobStatus(self.status) is JobStatus.FAILED:
             assert self.id is not None
             assert self.error_message is not None
             raise ModelFailedException(self.__class__.__name__, self.id, self.error_message)
@@ -418,7 +419,7 @@ class DiagramConvertResults(ContextualizationJob):
     @property
     def items(self) -> Optional[List[DiagramConvertItem]]:
         """returns a list of all results by file"""
-        if self.status == "Completed":
+        if JobStatus(self.status) is JobStatus.COMPLETED:
             self._items = [
                 DiagramConvertItem._load(item, cognite_client=self._cognite_client) for item in self.result["items"]
             ]
@@ -482,8 +483,8 @@ class DiagramDetectResults(ContextualizationJob):
 
     @property
     def items(self) -> Optional[List[DiagramDetectItem]]:
-        """returns a list of all results by file"""
-        if self.status == "Completed":
+        """Returns a list of all results by file"""
+        if JobStatus(self.status) is JobStatus.COMPLETED:
             self._items = [
                 DiagramDetectItem._load(item, cognite_client=self._cognite_client) for item in self.result["items"]
             ]
@@ -495,7 +496,7 @@ class DiagramDetectResults(ContextualizationJob):
 
     @property
     def errors(self) -> List[str]:
-        """returns a list of all error messages across files"""
+        """Returns a list of all error messages across files"""
         return [item["errorMessage"] for item in self.result["items"] if "errorMessage" in item]
 
     def convert(self) -> DiagramConvertResults:
@@ -631,6 +632,7 @@ class DetectJobBundle:
 
     def wait_for_completion(self, timeout: int = None) -> None:
         """Waits for all jobs to complete, generally not needed to call as it is called by result.
+
         Args:
             timeout (int): Time out after this many seconds. (None means wait indefinitely)
             interval (int): Poll status every this many seconds.
@@ -783,7 +785,7 @@ class VisionExtractJob(VisionJob):
     @property
     def items(self) -> Optional[List[VisionExtractItem]]:
         """Returns a list of all predictions by file"""
-        if self.status == JobStatus.COMPLETED.value:
+        if JobStatus(self.status) is JobStatus.COMPLETED:
             self._items = [
                 VisionExtractItem._load(item, cognite_client=self._cognite_client) for item in self.result["items"]
             ]
@@ -840,7 +842,7 @@ class VisionExtractJob(VisionJob):
             Union[Annotation, AnnotationList]: (suggested) annotation(s) stored in CDF.
 
         """
-        if self.status == JobStatus.COMPLETED.value:
+        if JobStatus(self.status) is JobStatus.COMPLETED:
             annotations = self._predictions_to_annotations(
                 creating_user=creating_user, creating_app=creating_app, creating_app_version=creating_app_version
             )
