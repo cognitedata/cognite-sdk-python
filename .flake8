@@ -4,6 +4,9 @@ per-file-ignores =
     # Ignore F401 "Module imported but unused" only for __init__ files
     __init__.py:F401
 ignore =
-    E203,  # Whitespace before ':'
-    E501,  # Line too long
-    W503,  # Line break before binary operator
+    # Whitespace before ':'
+    E203,
+    # Line too long
+    E501,
+    # Line break before binary operator
+    W503,
