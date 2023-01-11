@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from cognite.client import CogniteClient
@@ -11,15 +12,19 @@ class DiagramFile:
         self.page_count: Optional[int] = None
         self.file_jobs: List[DiagramRangeJob] = []
 
-    def make_range_jobs(self, batch_size: int) -> None:
+    def make_range_jobs(self, pages_per_request: int) -> None:
         if self.page_count is None and self.file_jobs == []:
-            self.file_jobs.append(DiagramRangeJob(first_page=1, last_page=batch_size, diagram_file=self))
+            self.file_jobs.append(DiagramRangeJob(first_page=1, last_page=pages_per_request, diagram_file=self))
             return
         if self.page_count is not None and len(self.file_jobs) == 1:
             self.file_jobs.extend(
                 [
-                    DiagramRangeJob(first_page=first_page, last_page=first_page + batch_size - 1, diagram_file=self)
-                    for first_page in range(batch_size + 1, self.page_count + 1, batch_size)
+                    DiagramRangeJob(
+                        first_page=first_page,
+                        last_page=min(first_page + pages_per_request - 1, self.page_count),
+                        diagram_file=self,
+                    )
+                    for first_page in range(pages_per_request + 1, self.page_count + 1, pages_per_request)
                 ]
             )
             return
@@ -77,7 +82,7 @@ class DiagramProcessor:
     def create_first_jobs(self) -> None:
         for diagram_file in self.diagram_files:
             if len(diagram_file.file_jobs) == 0:
-                diagram_file.make_range_jobs(self.batch_size)
+                diagram_file.make_range_jobs(self.pages_per_request)
 
     def jobs_by_status(self, status: int) -> List[DiagramRangeJob]:
         return [
@@ -96,16 +101,16 @@ class DiagramProcessor:
                     diagram_file = self.diagram_files[file_index]
                     range_job = diagram_file.file_jobs[range_index]
                     range_job.stage = 2
-            self.unprocessed_results[running] = self.running_jobs[running]
-            self.running_jobs.pop(running)
+                self.unprocessed_results[running] = self.running_jobs[running]
+                self.running_jobs.pop(running)
 
-    def get_results(self) -> Optional[Dict[str, Any]]:
+    def get_results_and_update_page_counts(self) -> Optional[Dict[str, Any]]:
         if len(self.unprocessed_results) == 0:
             return None
         job_id, range_job_indices = self.unprocessed_results.popitem()
         self.processed_jobs[job_id] = range_job_indices
 
-        job = DiagramDetectResults(job_id=job_id, client=self.client)
+        job = DiagramDetectResults(job_id=job_id, cognite_client=self.client, status_path="/context/diagram/detect/")
         result = job.result
         for (file_index, range_index) in range_job_indices:
             diagram_file = self.diagram_files[file_index]
@@ -114,29 +119,32 @@ class DiagramProcessor:
 
             relevant_results = [
                 r
-                for r in result["items"]
-                if r["file_id"] == diagram_file.file_id and r["page_range"] == range_job.page_range
+                for r in result.get("items", [])
+                if r["fileId"] == diagram_file.file_id and r["pageRange"] == range_job.page_range
             ]
             if len(relevant_results) == 0:  # For now the timeout case
                 continue
 
             relevant_result = relevant_results[0]  # Can only be one
             if range_job.diagram_file.page_count is None:
-                diagram_file.page_count = relevant_result["page_count"]
-                diagram_file.make_range_jobs(self.batch_size)
+                diagram_file.page_count = relevant_result["pageCount"]
+                diagram_file.make_range_jobs(self.pages_per_request)
         return result
+
+    def get_todo_list(self) -> List[Tuple[int, int]]:
+        return [
+            (i, j)
+            for i, diagram_file in enumerate(self.diagram_files)
+            for j, range_job in enumerate(diagram_file.file_jobs)
+            if range_job.stage == 0
+        ]
 
     def post_more_jobs(self) -> None:
         number_of_running_file_jobs = sum(1 for job_list in self.running_jobs.values() for item in job_list)
         capacity = self.max_concurrent_jobs - number_of_running_file_jobs
         if capacity == 0:
             return
-        todo_list = [
-            (i, j)
-            for i, diagram_file in enumerate(self.diagram_files)
-            for j, range_job in enumerate(diagram_file.file_jobs)
-            if range_job.stage == 0
-        ]
+        todo_list = self.get_todo_list()
 
         for i in range(0, min(capacity, len(todo_list)), self.batch_size):
             batch = todo_list[i : min(i + self.batch_size, capacity, len(todo_list))]
@@ -158,3 +166,43 @@ class DiagramProcessor:
             self.running_jobs[job.job_id] = batch
             for (file_index, range_index) in batch:
                 self.diagram_files[file_index].file_jobs[range_index].stage = 1
+
+
+def parse_diagrams(
+    client: CogniteClient,
+    file_ids: List[int],
+    entities: List[Union[Dict, CogniteResource]],
+    search_field: str = "name",
+    partial_match: bool = False,
+    min_tokens: int = 2,
+    max_concurrent_jobs: int = 1000,
+    batch_size: int = 50,
+) -> Dict[Tuple[Optional[str], int], List[Dict]]:
+    diagram_files = [DiagramFile(file_id) for file_id in file_ids]
+    processor = DiagramProcessor(
+        client=client,
+        diagram_files=diagram_files,
+        entities=entities,
+        search_field=search_field,
+        partial_match=partial_match,
+        min_tokens=min_tokens,
+        max_concurrent_jobs=max_concurrent_jobs,
+        batch_size=batch_size,
+        pages_per_request=5,  # Todo: constant for this
+    )
+
+    combined_results = defaultdict(list)
+
+    while True:
+        processor.post_more_jobs()
+        processor.update_job_statuses()
+        while True:
+            result = processor.get_results_and_update_page_counts()
+            if result is None:
+                break
+            for item in result["items"]:
+                combined_results[(item.get("fileExternalId"), item.get("fileId"))].extend(item["annotations"])
+
+        if len(processor.get_todo_list()) + len(processor.running_jobs) + len(processor.unprocessed_results) == 0:
+            break
+    return combined_results
