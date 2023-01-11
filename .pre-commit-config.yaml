@@ -68,6 +68,11 @@ repos:
     repo: https://github.com/pycqa/flake8
     rev: 6.0.0
 
+  - repo: https://github.com/ikamensh/flynt/
+    rev: '0.77'
+    hooks:
+      - id: flynt
+
   - hooks:
       - id: version-match-check
         name: version-match-check
