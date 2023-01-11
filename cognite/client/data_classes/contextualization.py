@@ -41,6 +41,7 @@ if TYPE_CHECKING:
 
 
 class JobStatus(Enum):
+    _NOT_STARTED = None
     QUEUED = "Queued"
     RUNNING = "Running"
     COMPLETED = "Completed"
@@ -49,14 +50,18 @@ class JobStatus(Enum):
     DISTRIBUTED = "Distributed"
     COLLECTING = "Collecting"
 
+    def is_finished(self) -> bool:
+        return self in {JobStatus.COMPLETED, JobStatus.FAILED}
+
     def is_not_finished(self) -> bool:
-        return self in [
+        return self in {
+            JobStatus._NOT_STARTED,
             JobStatus.QUEUED,
             JobStatus.RUNNING,
             JobStatus.DISTRIBUTED,
             JobStatus.DISTRIBUTING,
             JobStatus.COLLECTING,
-        ]
+        }
 
 
 class ContextualizationJobType(Enum):
@@ -126,7 +131,7 @@ class ContextualizationJob(CogniteResource):
         start = time.time()
         while timeout is None or time.time() < start + timeout:
             self.update_status()
-            if not JobStatus(self.status).is_not_finished():
+            if JobStatus(self.status).is_finished():
                 break
             time.sleep(interval)
         if JobStatus(self.status) is JobStatus.FAILED:
