@@ -122,11 +122,14 @@ class ContextualizationJob(CogniteResource):
         return self.status
 
     def wait_for_completion(self, timeout: int = None, interval: int = 1) -> None:
-        """Waits for job completion, raising ModelFailedException if fit failed - generally not needed to call as it is called by result.
+        """Waits for job completion. This is generally not needed to call directly, as `.result` will do so automatically.
 
         Args:
             timeout (int): Time out after this many seconds. (None means wait indefinitely)
             interval (int): Poll status every this many seconds.
+
+        Raises:
+            ModelFailedException: The model fit failed.
         """
         start = time.time()
         while timeout is None or time.time() < start + timeout:
@@ -216,11 +219,14 @@ class EntityMatchingModel(CogniteResource):
         return self.status
 
     def wait_for_completion(self, timeout: int = None, interval: int = 1) -> None:
-        """Waits for model completion, raising ModelFailedException if fit failed - generally not needed to call as it is called by predict
+        """Waits for model completion. This is generally not needed to call directly, as `.result` will do so automatically.
 
         Args:
             timeout: Time out after this many seconds. (None means wait indefinitely)
             interval: Poll status every this many seconds.
+
+        Raises:
+            ModelFailedException: The model fit failed.
         """
         start = time.time()
         while timeout is None or time.time() < start + timeout:
