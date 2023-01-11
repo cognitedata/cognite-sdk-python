@@ -169,7 +169,7 @@ class TestBasicRequests:
 
         assert "gzip, deflate" == headers["accept-encoding"]
         assert "gzip" == headers["content-encoding"]
-        assert "CognitePythonSDK:{}".format(utils._auxiliary.get_current_sdk_version()) == headers["x-cdp-sdk"]
+        assert f"CognitePythonSDK:{utils._auxiliary.get_current_sdk_version()}" == headers["x-cdp-sdk"]
         assert "abc" == headers["api-key"]
         assert "stuff" == headers["additional"]
 

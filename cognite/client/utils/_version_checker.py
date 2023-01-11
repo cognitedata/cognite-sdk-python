@@ -48,8 +48,8 @@ def _is_newer_pre_release(
     pr_cycle_a: Optional[str], pr_v_a: Optional[int], pr_cycle_b: Optional[str], pr_v_b: Optional[int]
 ) -> bool:
     cycles = ["a", "b", "rc", None]
-    assert pr_cycle_a in cycles, "pr_cycle_a must be one of '{}', not '{}'.".format(pr_cycle_a, cycles)
-    assert pr_cycle_b in cycles, "pr_cycle_a must be one of '{}', not '{}'.".format(pr_cycle_b, cycles)
+    assert pr_cycle_a in cycles, f"pr_cycle_a must be one of '{pr_cycle_a}', not '{cycles}'."
+    assert pr_cycle_b in cycles, f"pr_cycle_a must be one of '{pr_cycle_b}', not '{cycles}'."
     is_newer = False
     if cycles.index(pr_cycle_a) > cycles.index(pr_cycle_b):
         is_newer = True
@@ -63,13 +63,13 @@ def _parse_version(version: str) -> Tuple[int, int, int, str, Optional[int]]:
     pattern = r"(\d+)\.(\d+)\.(\d+)(?:([abrc]+)(\d+))?"
     match = re.match(pattern, version)
     if not match:
-        raise ValueError("Could not parse version {}".format(version))
+        raise ValueError(f"Could not parse version {version}")
     major, minor, micro, pr_cycle, pr_version = match.groups()
     return int(major), int(minor), int(micro), pr_cycle, int(pr_version) if pr_version else None
 
 
 def _format_version(major: int, minor: int, micro: int, pr_cycle: Optional[str], pr_version: Optional[int]) -> str:
-    return "{}.{}.{}{}{}".format(major, minor, micro, pr_cycle or "", pr_version or "")
+    return f"{major}.{minor}.{micro}{pr_cycle or ''}{pr_version or ''}"
 
 
 if __name__ == "__main__":

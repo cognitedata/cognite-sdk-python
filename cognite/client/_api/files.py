@@ -612,7 +612,7 @@ class FilesAPI(APIClient):
             )
             tasks_summary.raise_compound_exception_if_failed_tasks(task_unwrap_fn=lambda x: x[0].name)
             return FileMetadataList(tasks_summary.results)
-        raise ValueError("path '{}' does not exist".format(path))
+        raise ValueError(f"The path '{path}' does not exist")
 
     def _upload_file_from_path(self, file: FileMetadata, file_path: str, overwrite: bool) -> FileMetadata:
         with open(file_path, "rb") as fh:
@@ -764,7 +764,7 @@ class FilesAPI(APIClient):
             directory = Path(directory)
         all_ids = IdentifierSequence.load(id, external_id).as_dicts()
         id_to_metadata = self._get_id_to_metadata_map(all_ids)
-        assert directory.is_dir(), "{} is not a directory".format(directory)
+        assert directory.is_dir(), f"{directory} is not a directory"
         self._download_files_to_directory(directory, all_ids, id_to_metadata)
 
     def _get_id_to_metadata_map(self, all_ids: Sequence[Dict]) -> Dict[Union[str, int], FileMetadata]:
@@ -844,7 +844,7 @@ class FilesAPI(APIClient):
         """
         if isinstance(path, str):
             path = Path(path)
-        assert path.parent.is_dir(), "{} is not a directory".format(path.parent)
+        assert path.parent.is_dir(), f"{path.parent} is not a directory"
         identifier = Identifier.of_either(id, external_id).as_dict()
         download_link = self._get_download_link(identifier)
         self._download_file_to_path(download_link, path)

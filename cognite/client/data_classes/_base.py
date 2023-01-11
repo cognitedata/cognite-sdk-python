@@ -114,7 +114,7 @@ class CogniteResource:
                 if hasattr(instance, snake_case_key):
                     setattr(instance, snake_case_key, value)
             return instance
-        raise TypeError("Resource must be json str or dict, not {}".format(type(resource)))
+        raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
 
     def to_pandas(
         self, expand: Sequence[str] = ("metadata",), ignore: List[str] = None, camel_case: bool = False
@@ -141,7 +141,7 @@ class CogniteResource:
                 if isinstance(dumped[key], dict):
                     dumped.update(dumped.pop(key))
                 else:
-                    raise AssertionError("Could not expand attribute '{}'".format(key))
+                    raise AssertionError(f"Could not expand attribute '{key}'")
 
         df = pd.DataFrame(columns=["value"])
         for name, value in dumped.items():
@@ -179,9 +179,8 @@ class CogniteResourceList(UserList):
         for resource in resources:
             if not isinstance(resource, self._RESOURCE):
                 raise TypeError(
-                    "All resources for class '{}' must be of type '{}', not '{}'.".format(
-                        self.__class__.__name__, self._RESOURCE.__name__, type(resource)
-                    )
+                    f"All resources for class '{self.__class__.__name__}' must be of type "
+                    f"'{self._RESOURCE.__name__}', not '{type(resource)}'."
                 )
         self._cognite_client = cast("CogniteClient", cognite_client)
         super().__init__(resources)
@@ -451,7 +450,7 @@ class CogniteFilter:
                 if hasattr(instance, snake_case_key):
                     setattr(instance, snake_case_key, value)
             return instance
-        raise TypeError("Resource must be json str or Dict, not {}".format(type(resource)))
+        raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         """Dump the instance into a json serializable Python data type.

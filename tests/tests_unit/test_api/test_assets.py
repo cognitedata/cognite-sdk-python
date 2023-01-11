@@ -335,7 +335,7 @@ def generate_asset_tree(root_external_id: str, depth: int, children_per_node: in
         assets = [Asset(external_id=root_external_id)]
     if depth > current_depth:
         for i in range(children_per_node):
-            asset = Asset(parent_external_id=root_external_id, external_id="{}{}".format(root_external_id, i))
+            asset = Asset(parent_external_id=root_external_id, external_id=f"{root_external_id}{i}")
             assets.append(asset)
             if depth > current_depth + 1:
                 assets.extend(

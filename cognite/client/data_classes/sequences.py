@@ -359,7 +359,7 @@ class SequenceData(CogniteResource):
             ix = self.column_external_ids.index(external_id)
         except ValueError:
             raise ValueError(
-                "Column {} not found, Sequence column external ids are {}".format(external_id, self.column_external_ids)
+                f"Column {external_id} not found, Sequence column external ids are {self.column_external_ids}"
             )
         return [r[ix] for r in self.values]
 

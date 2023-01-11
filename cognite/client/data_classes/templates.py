@@ -273,7 +273,7 @@ class TemplateInstance(CogniteResource):
                     else:
                         setattr(instance, snake_case_key, value)
             return instance
-        raise TypeError("Resource must be json str or Dict, not {}".format(type(resource)))
+        raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
 
     @staticmethod
     def _field_resolver_load(resource: Dict, cognite_client: "CogniteClient" = None) -> CogniteResource:
@@ -391,7 +391,7 @@ class View(CogniteResource):
                     value = value if key != "source" else Source._load(value, cognite_client)
                     setattr(instance, snake_case_key, value)
             return instance
-        raise TypeError("Resource must be json str or Dict, not {}".format(type(resource)))
+        raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
 
 
 class ViewResolveItem(UserDict, CogniteResource):

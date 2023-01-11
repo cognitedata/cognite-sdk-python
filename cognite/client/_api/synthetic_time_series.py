@@ -122,7 +122,7 @@ class SyntheticDatapointsAPI(APIClient):
         else:
             expression_str = cast(str, expression)
         if aggregate and granularity:
-            aggregate_str = ",aggregate:'{}',granularity:'{}'".format(aggregate, granularity)
+            aggregate_str = f",aggregate:'{aggregate}',granularity:'{granularity}'"
         else:
             aggregate_str = ""
         expression_with_ts: str = expression_str
@@ -161,11 +161,11 @@ class SyntheticDatapointsAPI(APIClient):
                 return "(" + infixop.join(process_symbol(s) for s in sym.args) + ")"
             if isinstance(sym, sympy_module.Pow):
                 if sym.args[1] == -1:
-                    return "(1/{})".format(process_symbol(sym.args[0]))
+                    return f"(1/{process_symbol(sym.args[0])})"
                 return "pow({},{})".format(*[process_symbol(x) for x in sym.args])
             funop = functions.get(sym.__class__)
             if funop:
-                return "{}({})".format(funop, ",".join(process_symbol(x) for x in sym.args))
-            raise ValueError("Unsupported sympy class {} encountered in expression".format(sym.__class__))
+                return f"{funop}({','.join(map(process_symbol, sym.args))})"
+            raise ValueError(f"Unsupported sympy class {sym.__class__} encountered in expression")
 
         return process_symbol(expression)

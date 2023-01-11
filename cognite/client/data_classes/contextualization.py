@@ -280,7 +280,7 @@ class EntityMatchingModel(CogniteResource):
             entity = entity.dump(camel_case=True)
         if "metadata" in entity and isinstance(entity["metadata"], dict):
             for k, v in entity["metadata"].items():
-                entity["metadata.{}".format(k)] = v
+                entity[f"metadata.{k}"] = v
         return {k: v for k, v in entity.items() if k == "id" or isinstance(v, str)}
 
     @staticmethod

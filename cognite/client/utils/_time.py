@@ -56,9 +56,8 @@ def granularity_to_ms(granularity: str) -> int:
     ms = time_string_to_ms(r"(\d+)({})", granularity, UNIT_IN_MS_WITHOUT_WEEK)
     if ms is None:
         raise ValueError(
-            "Invalid granularity format: `{}`. Must be on format <integer>(s|m|h|d). E.g. '5m', '3h' or '1d'.".format(
-                granularity
-            )
+            f"Invalid granularity format: `{granularity}`. Must be on format <integer>(s|m|h|d). "
+            "E.g. '5m', '3h' or '1d'."
         )
     return ms
 
@@ -75,9 +74,8 @@ def time_ago_to_ms(time_ago_string: str) -> int:
     ms = time_string_to_ms(r"(\d+)({})-ago", time_ago_string, UNIT_IN_MS)
     if ms is None:
         raise ValueError(
-            "Invalid time-ago format: `{}`. Must be on format <integer>(s|m|h|d|w)-ago or 'now'. E.g. '3d-ago' or '1w-ago'.".format(
-                time_ago_string
-            )
+            f"Invalid time-ago format: `{time_ago_string}`. Must be on format <integer>(s|m|h|d|w)-ago or 'now'. "
+            "E.g. '3d-ago' or '1w-ago'."
         )
     return ms
 
@@ -99,11 +97,11 @@ def timestamp_to_ms(timestamp: Union[int, float, str, datetime]) -> int:
         ms = datetime_to_ms(timestamp)
     else:
         raise TypeError(
-            "Timestamp `{}` was of type {}, but must be int, float, str or datetime,".format(timestamp, type(timestamp))
+            f"Timestamp `{timestamp}` was of type {type(timestamp)}, but must be int, float, str or datetime,"
         )
 
     if ms < MIN_TIMESTAMP_MS:
-        raise ValueError("Timestamps must represent a time after 1.1.1900, but {} was provided".format(ms))
+        raise ValueError(f"Timestamps must represent a time after 1.1.1900, but {ms} was provided")
 
     return ms
 

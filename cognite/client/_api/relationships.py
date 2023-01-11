@@ -113,9 +113,8 @@ class RelationshipsAPI(APIClient):
             or len(filter.get("sourceExternalIds", [])) > self._LIST_SUBQUERY_LIMIT
         ):
             raise ValueError(
-                "For queries with more than {} source_external_ids or target_external_ids, only list is supported".format(
-                    self._LIST_SUBQUERY_LIMIT
-                )
+                f"For queries with more than {self._LIST_SUBQUERY_LIMIT} source_external_ids or "
+                "target_external_ids, only list is supported"
             )
 
         return self._list_generator(
@@ -278,9 +277,8 @@ class RelationshipsAPI(APIClient):
         ):
             if limit not in [-1, None, float("inf")]:
                 raise ValueError(
-                    "Querying more than {} source_external_ids/target_external_ids only supported for queries without limit (pass -1 / None / inf instead of {}".format(
-                        self._LIST_SUBQUERY_LIMIT, limit
-                    )
+                    f"Querying more than {self._LIST_SUBQUERY_LIMIT} source_external_ids/target_external_ids only "
+                    f"supported for queries without limit (pass -1 / None / inf instead of {limit})"
                 )
             tasks = []
 

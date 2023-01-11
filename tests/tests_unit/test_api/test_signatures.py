@@ -67,9 +67,8 @@ class TestListAndIterSignatures:
 def signature_error_msg(expected, actual):
     pretty_expected_params = json.dumps(list(expected), indent=4, sort_keys=True)
     pretty_actual_params = json.dumps(list(actual), indent=4, sort_keys=True)
-    return "Signatures don't match. \nexpected: {}\ngot: {}\n diff: {}".format(
-        pretty_expected_params, pretty_actual_params, list(expected - actual) + list(actual - expected)
-    )
+    diff = actual.symmetric_difference(expected)
+    return f"Signatures don't match. \nExpected: {pretty_expected_params}\nGot: {pretty_actual_params}\nDiff: {diff}"
 
 
 class TestFileMetadataUploadSignatures:
