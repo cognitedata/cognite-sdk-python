@@ -15,9 +15,10 @@ import random
 import re
 import string
 import warnings
+from collections.abc import Hashable, Iterable, Iterator, Sequence
 from decimal import Decimal
 from types import ModuleType
-from typing import Any, Dict, Hashable, Iterable, Iterator, List, Sequence, Set, Tuple, TypeVar, Union, overload
+from typing import Any, TypeVar, overload
 from urllib.parse import quote
 
 import cognite.client
@@ -40,11 +41,11 @@ def to_snake_case(camel_case_string: str) -> str:
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
 
 
-def convert_all_keys_to_camel_case(d: Dict[str, Any]) -> Dict[str, Any]:
+def convert_all_keys_to_camel_case(d: dict[str, Any]) -> dict[str, Any]:
     return dict(zip(map(to_camel_case, d.keys()), d.values()))
 
 
-def convert_all_keys_to_snake_case(d: Dict[str, Any]) -> Dict[str, Any]:
+def convert_all_keys_to_snake_case(d: dict[str, Any]) -> dict[str, Any]:
     return dict(zip(map(to_snake_case, d.keys()), d.values()))
 
 
@@ -55,32 +56,32 @@ def json_dump_default(x: Any) -> Any:
         return float(x)
     if hasattr(x, "__dict__"):
         return x.__dict__
-    raise TypeError("Object {} of type {} can't be serialized by the JSON encoder".format(x, x.__class__))
+    raise TypeError(f"Object {x} of type {x.__class__} can't be serialized by the JSON encoder")
 
 
-def unwrap_identifer(identifier: Union[str, int, Dict]) -> Union[str, int]:
+def unwrap_identifer(identifier: str | int | dict) -> str | int:
     if isinstance(identifier, (str, int)):
         return identifier
     if "externalId" in identifier:
         return identifier["externalId"]
     if "id" in identifier:
         return identifier["id"]
-    raise ValueError("{} does not contain 'id' or 'externalId'".format(identifier))
+    raise ValueError(f"{identifier} does not contain 'id' or 'externalId'")
 
 
-def assert_type(var: Any, var_name: str, types: List[type], allow_none: bool = False) -> None:
+def assert_type(var: Any, var_name: str, types: list[type], allow_none: bool = False) -> None:
     if var is None:
         if not allow_none:
-            raise TypeError("{} cannot be None".format(var_name))
+            raise TypeError(f"{var_name} cannot be None")
     elif not isinstance(var, tuple(types)):
-        raise TypeError("{} must be one of types {}".format(var_name, types))
+        raise TypeError(f"{var_name} must be one of types {types}")
 
 
 def interpolate_and_url_encode(path: str, *args: Any) -> str:
     return path.format(*[quote(str(arg), safe="") for arg in args])
 
 
-def local_import(*module: str) -> Union[ModuleType, Tuple[ModuleType, ...]]:
+def local_import(*module: str) -> ModuleType | tuple[ModuleType, ...]:
     assert_type(module, "module", [tuple])
     if len(module) == 1:
         name = module[0]
@@ -104,7 +105,7 @@ def get_current_sdk_version() -> str:
 
 @functools.lru_cache(maxsize=1)
 def get_user_agent() -> str:
-    sdk_version = "CognitePythonSDK/{}".format(get_current_sdk_version())
+    sdk_version = f"CognitePythonSDK/{get_current_sdk_version()}"
 
     python_version = "{}/{} ({};{})".format(
         platform.python_implementation(), platform.python_version(), platform.python_build(), platform.python_compiler()
@@ -113,9 +114,9 @@ def get_user_agent() -> str:
     os_version_info = [platform.release(), platform.machine(), platform.architecture()[0]]
     os_version_info = [s for s in os_version_info if s]  # Ignore empty strings
     os_version_info_str = "-".join(os_version_info)
-    operating_system = "{}/{}".format(platform.system(), os_version_info_str)
+    operating_system = f"{platform.system()}/{os_version_info_str}"
 
-    return "{} {} {}".format(sdk_version, python_version, operating_system)
+    return f"{sdk_version} {python_version} {operating_system}"
 
 
 def _check_client_has_newest_major_version() -> None:
@@ -138,7 +139,7 @@ def random_string(size: int = 100, sample_from: str = string.ascii_uppercase + s
 class PriorityQueue:
     # TODO: Just use queue.PriorityQueue()
     def __init__(self) -> None:
-        self.__heap: List[Any] = []
+        self.__heap: list[Any] = []
         self.__id = 0
 
     def add(self, elem: Any, priority: int) -> None:
@@ -154,7 +155,7 @@ class PriorityQueue:
 
 
 @overload
-def split_into_n_parts(seq: List[T], /, n: int) -> Iterator[List[T]]:
+def split_into_n_parts(seq: list[T], /, n: int) -> Iterator[list[T]]:
     ...
 
 
@@ -168,8 +169,8 @@ def split_into_n_parts(seq: Sequence[T], /, n: int) -> Iterator[Sequence[T]]:
     yield from (seq[i::n] for i in range(n))
 
 
-def split_into_chunks(collection: Union[List, Dict], chunk_size: int) -> List[Union[List, Dict]]:
-    chunks: List[Union[List, Dict]] = []
+def split_into_chunks(collection: list | dict, chunk_size: int) -> list[list | dict]:
+    chunks: list[list | dict] = []
     if isinstance(collection, list):
         for i in range(0, len(collection), chunk_size):
             chunks.append(collection[i : i + chunk_size])
@@ -182,7 +183,7 @@ def split_into_chunks(collection: Union[List, Dict], chunk_size: int) -> List[Un
     raise ValueError("Can only split list or dict")
 
 
-def convert_true_match(true_match: Union[dict, list, Tuple[Union[int, str], Union[int, str]]]) -> dict:
+def convert_true_match(true_match: dict | list | tuple[int | str, int | str]) -> dict:
     if isinstance(true_match, Sequence) and len(true_match) == 2:
         converted_true_match = {}
         for i, fromto in enumerate(["source", "target"]):
@@ -194,13 +195,13 @@ def convert_true_match(true_match: Union[dict, list, Tuple[Union[int, str], Unio
     elif isinstance(true_match, dict):
         return true_match
     else:
-        raise ValueError("true_matches should be a dictionary or a two-element list: found {}".format(true_match))
+        raise ValueError(f"true_matches should be a dictionary or a two-element list: found {true_match}")
 
 
-def find_duplicates(seq: Iterable[THashable]) -> Set[THashable]:
-    seen: Set[THashable] = set()
+def find_duplicates(seq: Iterable[THashable]) -> set[THashable]:
+    seen: set[THashable] = set()
     add = seen.add  # skip future attr lookups for perf
-    return set(x for x in seq if x in seen or add(x))
+    return {x for x in seq if x in seen or add(x)}
 
 
 def exactly_one_is_not_none(*args: Any) -> bool:

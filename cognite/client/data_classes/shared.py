@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Union
+from typing import Any
 
 from cognite.client import utils
 from cognite.client.data_classes._base import CognitePropertyClassUtil
@@ -14,7 +14,7 @@ class TimestampRange(dict):
         min (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
     """
 
-    def __init__(self, max: int = None, min: int = None, **kwargs: Any):
+    def __init__(self, max: int | None = None, min: int | None = None, **kwargs: Any):
         self.max = max
         self.min = min
         self.update(kwargs)
@@ -30,7 +30,7 @@ class AggregateResult(dict):
         count (int): Size of the aggregation group
     """
 
-    def __init__(self, count: int = None, **kwargs: Any):
+    def __init__(self, count: int | None = None, **kwargs: Any):
         self.count = count
         self.update(kwargs)
 
@@ -45,7 +45,7 @@ class AggregateUniqueValuesResult(AggregateResult):
         value (Union(int, str)): A unique value from the requested field
     """
 
-    def __init__(self, count: int = None, value: Union[int, str] = None, **kwargs: Any):
+    def __init__(self, count: int | None = None, value: int | str | None = None, **kwargs: Any):
         super().__init__(count, **kwargs)
         self.value = value
 
@@ -106,7 +106,7 @@ class Geometry(dict):
 
     """
 
-    def __init__(self, type: str, coordinates: List):
+    def __init__(self, type: str, coordinates: list):
         valid_types = ["Point", "MultiPoint", "LineString", "MultiLineString", "Polygon", "MultiPolygon"]
         if type not in valid_types:
             raise ValueError("type must be one of " + str(valid_types))
@@ -117,10 +117,10 @@ class Geometry(dict):
     coordinates = CognitePropertyClassUtil.declare_property("coordinates")
 
     @classmethod
-    def _load(self, raw_geometry: Dict[str, Any]) -> Geometry:
+    def _load(self, raw_geometry: dict[str, Any]) -> Geometry:
         return Geometry(type=raw_geometry["type"], coordinates=raw_geometry["coordinates"])
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
         dump_key = lambda key: key if not camel_case else utils._auxiliary.to_camel_case(key)
         return {dump_key(key): value for key, value in self.items()}
 
@@ -132,7 +132,7 @@ class GeometryFilter(dict):
           coordinates (List): An array of the coordinates of the geometry. The structure of the elements in this array is determined by the type of geometry.
     """
 
-    def __init__(self, type: str, coordinates: List):
+    def __init__(self, type: str, coordinates: list):
         valid_types = ["Point", "LineString", "MultiLineString", "Polygon", "MultiPolygon"]
         if type not in valid_types:
             raise ValueError("type must be one of " + str(valid_types))
@@ -151,7 +151,7 @@ class GeoLocation(dict):
           properties (object): Optional additional properties in a String key -> Object value format.
     """
 
-    def __init__(self, type: str, geometry: Geometry, properties: dict = None):
+    def __init__(self, type: str, geometry: Geometry, properties: dict | None = None):
         if type != "Feature":
             raise ValueError("Only the 'Feature' type is supported.")
         self.type = type
@@ -163,14 +163,14 @@ class GeoLocation(dict):
     properties = CognitePropertyClassUtil.declare_property("properties")
 
     @classmethod
-    def _load(self, raw_geoLocation: Dict[str, Any]) -> GeoLocation:
+    def _load(self, raw_geoLocation: dict[str, Any]) -> GeoLocation:
         return GeoLocation(
             type=raw_geoLocation.get("type", "Feature"),
             geometry=raw_geoLocation["geometry"],
             properties=raw_geoLocation.get("properties"),
         )
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
         dump_key = lambda key: key if not camel_case else utils._auxiliary.to_camel_case(key)
         return {dump_key(key): value for key, value in self.items()}
 
@@ -190,9 +190,9 @@ class GeoLocationFilter(dict):
     shape = CognitePropertyClassUtil.declare_property("shape")
 
     @classmethod
-    def _load(self, raw_geoLocation_filter: Dict[str, Any]) -> GeoLocationFilter:
+    def _load(self, raw_geoLocation_filter: dict[str, Any]) -> GeoLocationFilter:
         return GeoLocationFilter(relation=raw_geoLocation_filter["relation"], shape=raw_geoLocation_filter["shape"])
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
         dump_key = lambda key: key if not camel_case else utils._auxiliary.to_camel_case(key)
         return {dump_key(key): value for key, value in self.items()}

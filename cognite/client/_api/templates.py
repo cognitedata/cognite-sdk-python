@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Sequence, Union, cast
+from collections.abc import Sequence
+from typing import Any, cast
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -78,9 +79,7 @@ class TemplateGroupsAPI(APIClient):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
-    def create(
-        self, template_groups: Union[TemplateGroup, Sequence[TemplateGroup]]
-    ) -> Union[TemplateGroup, TemplateGroupList]:
+    def create(self, template_groups: TemplateGroup | Sequence[TemplateGroup]) -> TemplateGroup | TemplateGroupList:
         """`Create one or more template groups.`
 
         Args:
@@ -101,9 +100,7 @@ class TemplateGroupsAPI(APIClient):
         """
         return self._create_multiple(list_cls=TemplateGroupList, resource_cls=TemplateGroup, items=template_groups)
 
-    def upsert(
-        self, template_groups: Union[TemplateGroup, Sequence[TemplateGroup]]
-    ) -> Union[TemplateGroup, TemplateGroupList]:
+    def upsert(self, template_groups: TemplateGroup | Sequence[TemplateGroup]) -> TemplateGroup | TemplateGroupList:
         """`Upsert one or more template groups.`
         Will overwrite existing template group(s) with the same external id(s).
 
@@ -126,9 +123,9 @@ class TemplateGroupsAPI(APIClient):
         path = self._RESOURCE_PATH + "/upsert"
         is_single = not isinstance(template_groups, list)
         if is_single:
-            template_groups_processed: List[TemplateGroup] = cast(List[TemplateGroup], [template_groups])
+            template_groups_processed: list[TemplateGroup] = cast(list[TemplateGroup], [template_groups])
         else:
-            template_groups_processed = cast(List[TemplateGroup], template_groups)
+            template_groups_processed = cast(list[TemplateGroup], template_groups)
         updated = self._post(
             path, {"items": [item.dump(camel_case=True) for item in template_groups_processed]}
         ).json()["items"]
@@ -162,7 +159,7 @@ class TemplateGroupsAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def list(self, limit: int = 25, owners: Sequence[str] = None) -> TemplateGroupList:
+    def list(self, limit: int = 25, owners: Sequence[str] | None = None) -> TemplateGroupList:
         """`Lists template groups stored in the project based on a query filter given in the payload of this request.`
         Up to 1000 template groups can be retrieved in one operation.
 
@@ -194,7 +191,7 @@ class TemplateGroupsAPI(APIClient):
             sort=None,
         )
 
-    def delete(self, external_ids: Union[str, Sequence[str]], ignore_unknown_ids: bool = False) -> None:
+    def delete(self, external_ids: str | Sequence[str], ignore_unknown_ids: bool = False) -> None:
         """`Delete one or more template groups.`
 
         Args:
@@ -269,7 +266,7 @@ class TemplateGroupVersionsAPI(APIClient):
         return TemplateGroupVersion._load(version_res)
 
     def list(
-        self, external_id: str, limit: int = 25, min_version: Optional[int] = None, max_version: Optional[int] = None
+        self, external_id: str, limit: int = 25, min_version: int | None = None, max_version: int | None = None
     ) -> TemplateGroupVersionList:
         """`Lists versions of a specified template group.`
         Up to 1000 template group version can be retrieved in one operation.
@@ -332,8 +329,8 @@ class TemplateInstancesAPI(APIClient):
     _LIST_CLASS = TemplateInstanceList
 
     def create(
-        self, external_id: str, version: int, instances: Union[TemplateInstance, Sequence[TemplateInstance]]
-    ) -> Union[TemplateInstance, TemplateInstanceList]:
+        self, external_id: str, version: int, instances: TemplateInstance | Sequence[TemplateInstance]
+    ) -> TemplateInstance | TemplateInstanceList:
         """`Create one or more template instances.`
 
         Args:
@@ -374,8 +371,8 @@ class TemplateInstancesAPI(APIClient):
         )
 
     def upsert(
-        self, external_id: str, version: int, instances: Union[TemplateInstance, Sequence[TemplateInstance]]
-    ) -> Union[TemplateInstance, TemplateInstanceList]:
+        self, external_id: str, version: int, instances: TemplateInstance | Sequence[TemplateInstance]
+    ) -> TemplateInstance | TemplateInstanceList:
         """`Upsert one or more template instances.`
         Will overwrite existing instances.
 
@@ -425,8 +422,8 @@ class TemplateInstancesAPI(APIClient):
         return res
 
     def update(
-        self, external_id: str, version: int, item: Union[TemplateInstanceUpdate, Sequence[TemplateInstanceUpdate]]
-    ) -> Union[TemplateInstance, TemplateInstanceList]:
+        self, external_id: str, version: int, item: TemplateInstanceUpdate | Sequence[TemplateInstanceUpdate]
+    ) -> TemplateInstance | TemplateInstanceList:
         """`Update one or more template instances`
         Args:
             item (Union[TemplateInstanceUpdate, Sequence[TemplateInstanceUpdate]]): Templates instance(s) to update
@@ -488,8 +485,8 @@ class TemplateInstancesAPI(APIClient):
         external_id: str,
         version: int,
         limit: int = 25,
-        data_set_ids: Optional[Sequence[int]] = None,
-        template_names: Optional[Sequence[str]] = None,
+        data_set_ids: Sequence[int] | None = None,
+        template_names: Sequence[str] | None = None,
     ) -> TemplateInstanceList:
         """`Lists instances in a template group.`
         Up to 1000 template instances can be retrieved in one operation.
@@ -513,7 +510,7 @@ class TemplateInstancesAPI(APIClient):
                 >>> template_instances_list = c.templates.instances.list("template-group-ext-id", 1, limit=5)
         """
         resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
-        filter: Dict[str, Any] = {}
+        filter: dict[str, Any] = {}
         if data_set_ids is not None:
             filter["dataSetIds"] = data_set_ids
         if template_names is not None:
@@ -560,7 +557,7 @@ class TemplateInstancesAPI(APIClient):
 class TemplateViewsAPI(APIClient):
     _RESOURCE_PATH = "/templategroups/{}/versions/{}/views"
 
-    def create(self, external_id: str, version: int, views: Union[View, Sequence[View]]) -> Union[View, ViewList]:
+    def create(self, external_id: str, version: int, views: View | Sequence[View]) -> View | ViewList:
         """`Create one or more template views.`
 
         Args:
@@ -596,7 +593,7 @@ class TemplateViewsAPI(APIClient):
         resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
         return self._create_multiple(list_cls=ViewList, resource_cls=View, resource_path=resource_path, items=views)
 
-    def upsert(self, external_id: str, version: int, views: Union[View, Sequence[View]]) -> Union[View, ViewList]:
+    def upsert(self, external_id: str, version: int, views: View | Sequence[View]) -> View | ViewList:
         """`Upsert one or more template views.`
 
         Args:
@@ -641,7 +638,7 @@ class TemplateViewsAPI(APIClient):
         return res
 
     def resolve(
-        self, external_id: str, version: int, view_external_id: str, input: Optional[Dict[str, Any]], limit: int = 25
+        self, external_id: str, version: int, view_external_id: str, input: dict[str, Any] | None, limit: int = 25
     ) -> ViewResolveList:
         """`Resolves a View.`
         It resolves the source specified in a View with the provided input and applies the mapping rules to the response.
@@ -700,7 +697,7 @@ class TemplateViewsAPI(APIClient):
         self,
         external_id: str,
         version: int,
-        view_external_id: Union[Sequence[str], str],
+        view_external_id: Sequence[str] | str,
         ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete one or more views.`

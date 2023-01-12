@@ -169,7 +169,7 @@ class TestBasicRequests:
 
         assert "gzip, deflate" == headers["accept-encoding"]
         assert "gzip" == headers["content-encoding"]
-        assert "CognitePythonSDK:{}".format(utils._auxiliary.get_current_sdk_version()) == headers["x-cdp-sdk"]
+        assert f"CognitePythonSDK:{utils._auxiliary.get_current_sdk_version()}" == headers["x-cdp-sdk"]
         assert "abc" == headers["api-key"]
         assert "stuff" == headers["additional"]
 
@@ -1190,7 +1190,7 @@ class TestHelpers:
 
     @pytest.mark.parametrize(
         "content, expected",
-        [('{"foo": 42}'.encode(), '{"foo": 42}'), ("foobar".encode(), "foobar"), (b"\xed\xbc\xad", "<binary>")],
+        [(b'{"foo": 42}', '{"foo": 42}'), (b"foobar", "foobar"), (b"\xed\xbc\xad", "<binary>")],
     )
     def test_get_response_content_safe(self, content, expected):
         res = Response()

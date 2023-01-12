@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import copy
-from typing import Any, Dict, Iterator, List, Optional, Sequence, Union, cast
+from collections.abc import Iterator, Sequence
+from typing import Any, cast
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -20,19 +21,19 @@ class RelationshipsAPI(APIClient):
 
     def _create_filter(
         self,
-        source_external_ids: Sequence[str] = None,
-        source_types: Sequence[str] = None,
-        target_external_ids: Sequence[str] = None,
-        target_types: Sequence[str] = None,
-        data_set_ids: Sequence[Dict[str, Any]] = None,
-        start_time: Dict[str, int] = None,
-        end_time: Dict[str, int] = None,
-        confidence: Dict[str, int] = None,
-        last_updated_time: Dict[str, int] = None,
-        created_time: Dict[str, int] = None,
-        active_at_time: Dict[str, int] = None,
-        labels: LabelFilter = None,
-    ) -> Dict[str, Any]:
+        source_external_ids: Sequence[str] | None = None,
+        source_types: Sequence[str] | None = None,
+        target_external_ids: Sequence[str] | None = None,
+        target_types: Sequence[str] | None = None,
+        data_set_ids: Sequence[dict[str, Any]] | None = None,
+        start_time: dict[str, int] | None = None,
+        end_time: dict[str, int] | None = None,
+        confidence: dict[str, int] | None = None,
+        last_updated_time: dict[str, int] | None = None,
+        created_time: dict[str, int] | None = None,
+        active_at_time: dict[str, int] | None = None,
+        labels: LabelFilter | None = None,
+    ) -> dict[str, Any]:
         return RelationshipFilter(
             source_external_ids=source_external_ids,
             source_types=source_types,
@@ -50,24 +51,24 @@ class RelationshipsAPI(APIClient):
 
     def __call__(
         self,
-        source_external_ids: Sequence[str] = None,
-        source_types: Sequence[str] = None,
-        target_external_ids: Sequence[str] = None,
-        target_types: Sequence[str] = None,
-        data_set_ids: Sequence[int] = None,
-        data_set_external_ids: Sequence[str] = None,
-        start_time: Dict[str, int] = None,
-        end_time: Dict[str, int] = None,
-        confidence: Dict[str, int] = None,
-        last_updated_time: Dict[str, int] = None,
-        created_time: Dict[str, int] = None,
-        active_at_time: Dict[str, int] = None,
-        labels: LabelFilter = None,
-        limit: int = None,
+        source_external_ids: Sequence[str] | None = None,
+        source_types: Sequence[str] | None = None,
+        target_external_ids: Sequence[str] | None = None,
+        target_types: Sequence[str] | None = None,
+        data_set_ids: Sequence[int] | None = None,
+        data_set_external_ids: Sequence[str] | None = None,
+        start_time: dict[str, int] | None = None,
+        end_time: dict[str, int] | None = None,
+        confidence: dict[str, int] | None = None,
+        last_updated_time: dict[str, int] | None = None,
+        created_time: dict[str, int] | None = None,
+        active_at_time: dict[str, int] | None = None,
+        labels: LabelFilter | None = None,
+        limit: int | None = None,
         fetch_resources: bool = False,
-        chunk_size: int = None,
-        partitions: int = None,
-    ) -> Union[Iterator[Relationship], Iterator[RelationshipList]]:
+        chunk_size: int | None = None,
+        partitions: int | None = None,
+    ) -> Iterator[Relationship] | Iterator[RelationshipList]:
         """Iterate over relationships
 
         Fetches relationships as they are iterated over, so you keep a limited number of relationships in memory.
@@ -141,7 +142,7 @@ class RelationshipsAPI(APIClient):
         """
         return cast(Iterator[Relationship], self())
 
-    def retrieve(self, external_id: str, fetch_resources: bool = False) -> Optional[Relationship]:
+    def retrieve(self, external_id: str, fetch_resources: bool = False) -> Relationship | None:
         """Retrieve a single relationship by external id.
 
         Args:
@@ -197,21 +198,21 @@ class RelationshipsAPI(APIClient):
 
     def list(
         self,
-        source_external_ids: Sequence[str] = None,
-        source_types: Sequence[str] = None,
-        target_external_ids: Sequence[str] = None,
-        target_types: Sequence[str] = None,
-        data_set_ids: Sequence[int] = None,
-        data_set_external_ids: Sequence[str] = None,
-        start_time: Dict[str, int] = None,
-        end_time: Dict[str, int] = None,
-        confidence: Dict[str, int] = None,
-        last_updated_time: Dict[str, int] = None,
-        created_time: Dict[str, int] = None,
-        active_at_time: Dict[str, int] = None,
-        labels: LabelFilter = None,
+        source_external_ids: Sequence[str] | None = None,
+        source_types: Sequence[str] | None = None,
+        target_external_ids: Sequence[str] | None = None,
+        target_types: Sequence[str] | None = None,
+        data_set_ids: Sequence[int] | None = None,
+        data_set_external_ids: Sequence[str] | None = None,
+        start_time: dict[str, int] | None = None,
+        end_time: dict[str, int] | None = None,
+        confidence: dict[str, int] | None = None,
+        last_updated_time: dict[str, int] | None = None,
+        created_time: dict[str, int] | None = None,
+        active_at_time: dict[str, int] | None = None,
+        labels: LabelFilter | None = None,
         limit: int = 100,
-        partitions: int = None,
+        partitions: int | None = None,
         fetch_resources: bool = False,
     ) -> RelationshipList:
         """`Lists relationships stored in the project based on a query filter given in the payload of this request. Up to 1000 relationships can be retrieved in one operation.  <https://docs.cognite.com/api/v1/#operation/listRelationships>`_
@@ -272,8 +273,8 @@ class RelationshipsAPI(APIClient):
             active_at_time=active_at_time,
             labels=labels,
         )
-        target_external_id_list: List[str] = filter.get("targetExternalIds", [])
-        source_external_id_list: List[str] = filter.get("sourceExternalIds", [])
+        target_external_id_list: list[str] = filter.get("targetExternalIds", [])
+        source_external_id_list: list[str] = filter.get("sourceExternalIds", [])
         if (
             len(target_external_id_list) > self._LIST_SUBQUERY_LIMIT
             or len(source_external_id_list) > self._LIST_SUBQUERY_LIMIT
@@ -320,9 +321,7 @@ class RelationshipsAPI(APIClient):
             other_params={"fetchResources": fetch_resources},
         )
 
-    def create(
-        self, relationship: Union[Relationship, Sequence[Relationship]]
-    ) -> Union[Relationship, RelationshipList]:
+    def create(self, relationship: Relationship | Sequence[Relationship]) -> Relationship | RelationshipList:
         """`Create one or more relationships. <https://docs.cognite.com/api/v1/#operation/createRelationships>`_
 
         Args:
@@ -371,8 +370,8 @@ class RelationshipsAPI(APIClient):
         return self._create_multiple(list_cls=RelationshipList, resource_cls=Relationship, items=relationship)
 
     def update(
-        self, item: Union[Relationship, RelationshipUpdate, Sequence[Union[Relationship, RelationshipUpdate]]]
-    ) -> Union[Relationship, RelationshipList]:
+        self, item: Relationship | RelationshipUpdate | Sequence[Relationship | RelationshipUpdate]
+    ) -> Relationship | RelationshipList:
         """`Update one or more relationships <https://docs.cognite.com/api/v1/#operation/updateRelationships>`_
         Currently, a full replacement of labels on a relationship is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.
 
@@ -422,7 +421,7 @@ class RelationshipsAPI(APIClient):
             list_cls=RelationshipList, resource_cls=Relationship, update_cls=RelationshipUpdate, items=item
         )
 
-    def delete(self, external_id: Union[str, Sequence[str]], ignore_unknown_ids: bool = False) -> None:
+    def delete(self, external_id: str | Sequence[str], ignore_unknown_ids: bool = False) -> None:
         """`Delete one or more relationships. <https://docs.cognite.com/api/v1/#operation/deleteRelationships>`_
 
         Args:

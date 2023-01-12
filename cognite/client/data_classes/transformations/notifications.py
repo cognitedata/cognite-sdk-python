@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, Optional, Union, cast
+from typing import TYPE_CHECKING, cast
 
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList
 
@@ -23,13 +23,13 @@ class TransformationNotification(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        transformation_id: int = None,
-        transformation_external_id: str = None,
-        destination: str = None,
-        created_time: int = None,
-        last_updated_time: int = None,
-        cognite_client: CogniteClient = None,
+        id: int | None = None,
+        transformation_id: int | None = None,
+        transformation_external_id: str | None = None,
+        destination: str | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+        cognite_client: CogniteClient | None = None,
     ):
         self.id = id
         self.transformation_id = transformation_id
@@ -40,8 +40,8 @@ class TransformationNotification(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> TransformationNotification:
-        instance = super(TransformationNotification, cls)._load(resource, cognite_client)
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TransformationNotification:
+        instance = super()._load(resource, cognite_client)
         return instance
 
     def __hash__(self) -> int:
@@ -62,7 +62,10 @@ class TransformationNotificationFilter(CogniteFilter):
     """
 
     def __init__(
-        self, transformation_id: Optional[int] = None, transformation_external_id: str = None, destination: str = None
+        self,
+        transformation_id: int | None = None,
+        transformation_external_id: str | None = None,
+        destination: str | None = None,
     ):
         self.transformation_id = transformation_id
         self.transformation_external_id = transformation_external_id

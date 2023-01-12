@@ -3,7 +3,8 @@ from __future__ import annotations
 import queue
 import threading
 from collections import OrderedDict
-from typing import Any, Dict, Iterator, List, Optional, Sequence, Set, Union, cast, overload
+from collections.abc import Iterator, Sequence
+from typing import TYPE_CHECKING, Any, cast, overload
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -20,32 +21,35 @@ from cognite.client.data_classes import (
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._identifier import IdentifierSequence
 
+if TYPE_CHECKING:
+    list_ = list
+
 
 class AssetsAPI(APIClient):
     _RESOURCE_PATH = "/assets"
 
     def __call__(
         self,
-        chunk_size: int = None,
-        name: str = None,
-        parent_ids: Sequence[int] = None,
-        parent_external_ids: Sequence[str] = None,
-        asset_subtree_ids: Sequence[int] = None,
-        asset_subtree_external_ids: Sequence[str] = None,
-        metadata: Dict[str, str] = None,
-        data_set_ids: Sequence[int] = None,
-        data_set_external_ids: Sequence[str] = None,
-        labels: LabelFilter = None,
-        geo_location: GeoLocationFilter = None,
-        source: str = None,
-        created_time: Union[Dict[str, Any], TimestampRange] = None,
-        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        root: bool = None,
-        external_id_prefix: str = None,
-        aggregated_properties: Sequence[str] = None,
-        limit: int = None,
-        partitions: int = None,
-    ) -> Union[Iterator[Asset], Iterator[AssetList]]:
+        chunk_size: int | None = None,
+        name: str | None = None,
+        parent_ids: Sequence[int] | None = None,
+        parent_external_ids: Sequence[str] | None = None,
+        asset_subtree_ids: Sequence[int] | None = None,
+        asset_subtree_external_ids: Sequence[str] | None = None,
+        metadata: dict[str, str] | None = None,
+        data_set_ids: Sequence[int] | None = None,
+        data_set_external_ids: Sequence[str] | None = None,
+        labels: LabelFilter | None = None,
+        geo_location: GeoLocationFilter | None = None,
+        source: str | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        root: bool | None = None,
+        external_id_prefix: str | None = None,
+        aggregated_properties: Sequence[str] | None = None,
+        limit: int | None = None,
+        partitions: int | None = None,
+    ) -> Iterator[Asset] | Iterator[AssetList]:
         """Iterate over assets
 
         Fetches assets as they are iterated over, so you keep a limited number of assets in memory.
@@ -124,7 +128,7 @@ class AssetsAPI(APIClient):
         """
         return cast(Iterator[Asset], self())
 
-    def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Asset]:
+    def retrieve(self, id: int | None = None, external_id: str | None = None) -> Asset | None:
         """`Retrieve a single asset by id. <https://docs.cognite.com/api/v1/#operation/getAsset>`_
 
         Args:
@@ -153,8 +157,8 @@ class AssetsAPI(APIClient):
 
     def retrieve_multiple(
         self,
-        ids: Optional[Sequence[int]] = None,
-        external_ids: Optional[Sequence[str]] = None,
+        ids: Sequence[int] | None = None,
+        external_ids: Sequence[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> AssetList:
         """`Retrieve multiple assets by id. <https://docs.cognite.com/api/v1/#operation/byIdsAssets>`_
@@ -188,23 +192,23 @@ class AssetsAPI(APIClient):
 
     def list(
         self,
-        name: str = None,
-        parent_ids: Sequence[int] = None,
-        parent_external_ids: Sequence[str] = None,
-        asset_subtree_ids: Sequence[int] = None,
-        asset_subtree_external_ids: Sequence[str] = None,
-        data_set_ids: Sequence[int] = None,
-        data_set_external_ids: Sequence[str] = None,
-        labels: LabelFilter = None,
-        geo_location: GeoLocationFilter = None,
-        metadata: Dict[str, str] = None,
-        source: str = None,
-        created_time: Union[Dict[str, Any], TimestampRange] = None,
-        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        root: bool = None,
-        external_id_prefix: str = None,
-        aggregated_properties: Sequence[str] = None,
-        partitions: int = None,
+        name: str | None = None,
+        parent_ids: Sequence[int] | None = None,
+        parent_external_ids: Sequence[str] | None = None,
+        asset_subtree_ids: Sequence[int] | None = None,
+        asset_subtree_external_ids: Sequence[str] | None = None,
+        data_set_ids: Sequence[int] | None = None,
+        data_set_external_ids: Sequence[str] | None = None,
+        labels: LabelFilter | None = None,
+        geo_location: GeoLocationFilter | None = None,
+        metadata: dict[str, str] | None = None,
+        source: str | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        root: bool | None = None,
+        external_id_prefix: str | None = None,
+        aggregated_properties: Sequence[str] | None = None,
+        partitions: int | None = None,
         limit: int = 25,
     ) -> AssetList:
         """`List assets <https://docs.cognite.com/api/v1/#operation/listAssets>`_
@@ -301,7 +305,7 @@ class AssetsAPI(APIClient):
             partitions=partitions,
         )
 
-    def aggregate(self, filter: Union[AssetFilter, Dict] = None) -> List[AssetAggregate]:
+    def aggregate(self, filter: AssetFilter | dict | None = None) -> list_[AssetAggregate]:
         """`Aggregate assets <https://docs.cognite.com/api/v1/#operation/aggregateAssets>`_
 
         Args:
@@ -328,7 +332,7 @@ class AssetsAPI(APIClient):
     def create(self, asset: Asset) -> Asset:
         ...
 
-    def create(self, asset: Union[Asset, Sequence[Asset]]) -> Union[Asset, AssetList]:
+    def create(self, asset: Asset | Sequence[Asset]) -> Asset | AssetList:
         """`Create one or more assets. <https://docs.cognite.com/api/v1/#operation/createAssets>`_
 
         You can create an arbitrary number of assets, and the SDK will split the request into multiple requests.
@@ -388,8 +392,8 @@ class AssetsAPI(APIClient):
 
     def delete(
         self,
-        id: Union[int, Sequence[int]] = None,
-        external_id: Union[str, Sequence[str]] = None,
+        id: int | Sequence[int] | None = None,
+        external_id: str | Sequence[str] | None = None,
         recursive: bool = False,
         ignore_unknown_ids: bool = False,
     ) -> None:
@@ -419,14 +423,14 @@ class AssetsAPI(APIClient):
         )
 
     @overload
-    def update(self, item: Sequence[Union[Asset, AssetUpdate]]) -> AssetList:
+    def update(self, item: Sequence[Asset | AssetUpdate]) -> AssetList:
         ...
 
     @overload
-    def update(self, item: Union[Asset, AssetUpdate]) -> Asset:
+    def update(self, item: Asset | AssetUpdate) -> Asset:
         ...
 
-    def update(self, item: Union[Asset, AssetUpdate, Sequence[Union[Asset, AssetUpdate]]]) -> Union[Asset, AssetList]:
+    def update(self, item: Asset | AssetUpdate | Sequence[Asset | AssetUpdate]) -> Asset | AssetList:
         """`Update one or more assets <https://docs.cognite.com/api/v1/#operation/updateAssets>`_
         Labels can be added, removed or replaced (set). Note that set operation deletes all the existing labels and adds the new specified labels.
 
@@ -488,10 +492,10 @@ class AssetsAPI(APIClient):
 
     def search(
         self,
-        name: str = None,
-        description: str = None,
-        query: str = None,
-        filter: Union[AssetFilter, Dict] = None,
+        name: str | None = None,
+        description: str | None = None,
+        query: str | None = None,
+        filter: AssetFilter | dict | None = None,
         limit: int = 100,
     ) -> AssetList:
         """`Search for assets <https://docs.cognite.com/api/v1/#operation/searchAssets>`_
@@ -547,7 +551,9 @@ class AssetsAPI(APIClient):
             limit=limit,
         )
 
-    def retrieve_subtree(self, id: int = None, external_id: str = None, depth: int = None) -> AssetList:
+    def retrieve_subtree(
+        self, id: int | None = None, external_id: str | None = None, depth: int | None = None
+    ) -> AssetList:
         """Retrieve the subtree for this asset up to a specified depth.
 
         Args:
@@ -565,7 +571,7 @@ class AssetsAPI(APIClient):
         subtree = self._get_asset_subtree([asset], current_depth=0, depth=depth)
         return AssetList(subtree, self._cognite_client)
 
-    def _get_asset_subtree(self, assets: List, current_depth: int, depth: Optional[int]) -> List:
+    def _get_asset_subtree(self, assets: list_[Asset], current_depth: int, depth: int | None) -> list_[Asset]:
         subtree = assets
         if depth is None or current_depth < depth:
             children = self._get_children(assets)
@@ -573,7 +579,7 @@ class AssetsAPI(APIClient):
                 subtree.extend(self._get_asset_subtree(children, current_depth + 1, depth))
         return subtree
 
-    def _get_children(self, assets: List) -> List:
+    def _get_children(self, assets: list_[Asset]) -> list_[Asset]:
         ids = [a.id for a in assets]
         tasks = []
         chunk_size = 100
@@ -626,7 +632,7 @@ class _AssetPosterWorker(threading.Thread):
 class _AssetPoster:
     def __init__(self, assets: Sequence[Asset], client: AssetsAPI):
         self._validate_asset_hierarchy(assets)
-        self.remaining_external_ids: OrderedDict[str, Optional[str]] = OrderedDict()
+        self.remaining_external_ids: OrderedDict[str, str | None] = OrderedDict()
         self.remaining_external_ids_set = set()
         self.external_id_to_asset = {}
 
@@ -638,16 +644,16 @@ class _AssetPoster:
         self.client = client
 
         self.num_of_assets = len(self.remaining_external_ids)
-        self.external_ids_without_circular_deps: Set[str] = set()
-        self.external_id_to_children: Dict[str, Set[Asset]] = {
+        self.external_ids_without_circular_deps: set[str] = set()
+        self.external_id_to_children: dict[str, set[Asset]] = {
             external_id: set() for external_id in self.remaining_external_ids
         }
         self.external_id_to_descendent_count = {external_id: 0 for external_id in self.remaining_external_ids}
-        self.successfully_posted_external_ids: Set[str] = set()
-        self.posted_assets: Set[Asset] = set()
-        self.may_have_been_posted_assets: Set[Asset] = set()
-        self.not_posted_assets: Set[Asset] = set()
-        self.exception: Optional[Exception] = None
+        self.successfully_posted_external_ids: set[str] = set()
+        self.posted_assets: set[Asset] = set()
+        self.may_have_been_posted_assets: set[Asset] = set()
+        self.not_posted_assets: set[Asset] = set()
+        self.exception: Exception | None = None
 
         self.assets_remaining = (
             lambda: len(self.posted_assets) + len(self.may_have_been_posted_assets) + len(self.not_posted_assets)
@@ -655,7 +661,7 @@ class _AssetPoster:
         )
 
         self.request_queue: queue.Queue[Sequence[Asset]] = queue.Queue()
-        self.response_queue: queue.Queue[Union[AssetList, _AssetsFailedToPost]] = queue.Queue()
+        self.response_queue: queue.Queue[AssetList | _AssetsFailedToPost] = queue.Queue()
 
         self._initialize()
 
@@ -666,7 +672,7 @@ class _AssetPoster:
             if asset.external_id is None:
                 raise AssertionError("An asset does not have external_id.")
             if asset.external_id in external_ids_seen:
-                raise AssertionError("Duplicate external_id '{}' found".format(asset.external_id))
+                raise AssertionError(f"Duplicate external_id '{asset.external_id}' found")
             external_ids_seen.add(asset.external_id)
 
             parent_ref = asset.parent_external_id
@@ -708,7 +714,7 @@ class _AssetPoster:
         return descendants
 
     def _verify_asset_is_not_part_of_tree_with_circular_deps(self, asset: Asset) -> None:
-        next_asset: Optional[Asset] = asset
+        next_asset: Asset | None = asset
         seen = {cast(str, asset.external_id)}
         while next_asset is not None and next_asset.parent_external_id is not None:
             next_asset = self.external_id_to_asset.get(next_asset.parent_external_id)
@@ -726,10 +732,10 @@ class _AssetPoster:
         sorted_external_ids = sorted(external_ids, key=lambda x: self.external_id_to_descendent_count[x], reverse=True)
         return OrderedDict({external_id: None for external_id in sorted_external_ids})
 
-    def _get_assets_unblocked_locally(self, asset: Asset, limit: int) -> Set[Asset]:
+    def _get_assets_unblocked_locally(self, asset: Asset, limit: int) -> set[Asset]:
         pq = utils._auxiliary.PriorityQueue()
         pq.add(asset, self.external_id_to_descendent_count[cast(str, asset.external_id)])
-        unblocked_descendents: Set[Asset] = set()
+        unblocked_descendents: set[Asset] = set()
         while pq:
             if len(unblocked_descendents) == limit:
                 break
@@ -740,10 +746,10 @@ class _AssetPoster:
                 pq.add(child, self.external_id_to_descendent_count[cast(str, child.external_id)])
         return unblocked_descendents
 
-    def _get_unblocked_assets(self) -> Sequence[Set[Asset]]:
+    def _get_unblocked_assets(self) -> Sequence[set[Asset]]:
         limit = self.client._CREATE_LIMIT
         unblocked_assets_lists = []
-        unblocked_assets_chunk: Set[Asset] = set()
+        unblocked_assets_chunk: set[Asset] = set()
         for external_id in self.remaining_external_ids:
             asset = self.external_id_to_asset[external_id]
             parent_external_id = asset.parent_external_id

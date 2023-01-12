@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Iterator, Sequence, Union, cast
+from collections.abc import Iterator, Sequence
+from typing import cast
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import LabelDefinition, LabelDefinitionFilter, LabelDefinitionList
@@ -22,13 +23,13 @@ class LabelsAPI(APIClient):
 
     def __call__(
         self,
-        name: str = None,
-        external_id_prefix: str = None,
-        limit: int = None,
-        chunk_size: int = None,
-        data_set_ids: Sequence[int] = None,
-        data_set_external_ids: Sequence[str] = None,
-    ) -> Union[Iterator[LabelDefinition], Iterator[LabelDefinitionList]]:
+        name: str | None = None,
+        external_id_prefix: str | None = None,
+        limit: int | None = None,
+        chunk_size: int | None = None,
+        data_set_ids: Sequence[int] | None = None,
+        data_set_external_ids: Sequence[str] | None = None,
+    ) -> Iterator[LabelDefinition] | Iterator[LabelDefinitionList]:
         data_set_ids_processed = None
         if data_set_ids or data_set_external_ids:
             data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
@@ -46,10 +47,10 @@ class LabelsAPI(APIClient):
 
     def list(
         self,
-        name: str = None,
-        external_id_prefix: str = None,
-        data_set_ids: Sequence[int] = None,
-        data_set_external_ids: Sequence[str] = None,
+        name: str | None = None,
+        external_id_prefix: str | None = None,
+        data_set_ids: Sequence[int] | None = None,
+        data_set_external_ids: Sequence[str] | None = None,
         limit: int = 25,
     ) -> LabelDefinitionList:
         """`List Labels <https://docs.cognite.com/api/v1/#operation/listLabels>`_
@@ -96,9 +97,7 @@ class LabelsAPI(APIClient):
             list_cls=LabelDefinitionList, resource_cls=LabelDefinition, method="POST", limit=limit, filter=filter
         )
 
-    def create(
-        self, label: Union[LabelDefinition, Sequence[LabelDefinition]]
-    ) -> Union[LabelDefinition, LabelDefinitionList]:
+    def create(self, label: LabelDefinition | Sequence[LabelDefinition]) -> LabelDefinition | LabelDefinitionList:
         """`Create one or more label definitions. <https://docs.cognite.com/api/v1/#operation/createLabelDefinitions>`_
 
         Args:
@@ -124,7 +123,7 @@ class LabelsAPI(APIClient):
             raise TypeError("'label' must be of type LabelDefinition or Sequence[LabelDefinition]")
         return self._create_multiple(list_cls=LabelDefinitionList, resource_cls=LabelDefinition, items=label)
 
-    def delete(self, external_id: Union[str, Sequence[str]] = None) -> None:
+    def delete(self, external_id: str | Sequence[str] | None = None) -> None:
         """`Delete one or more label definitions <https://docs.cognite.com/api/v1/#operation/deleteLabels>`_
 
         Args:

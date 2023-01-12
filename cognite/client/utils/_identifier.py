@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import numbers
-from typing import Dict, Generic, Iterable, List, Optional, Sequence, Tuple, TypeVar, Union, cast, overload
+from collections.abc import Iterable, Sequence
+from typing import Generic, TypeVar, cast, overload
 
 T_ID = TypeVar("T_ID", int, str)
 
@@ -11,7 +12,7 @@ class Identifier(Generic[T_ID]):
         self.__value: T_ID = value
 
     @classmethod
-    def of_either(cls, id: Optional[int], external_id: Optional[str]) -> Identifier:
+    def of_either(cls, id: int | None, external_id: str | None) -> Identifier:
         if id is external_id is None:
             raise ValueError("Exactly one of id or external id must be specified, got neither")
         elif id is not None and external_id is not None:
@@ -19,7 +20,7 @@ class Identifier(Generic[T_ID]):
         return Identifier(id or external_id)
 
     @classmethod
-    def load(cls, id: Optional[int] = None, external_id: Optional[str] = None) -> Identifier:
+    def load(cls, id: int | None = None, external_id: str | None = None) -> Identifier:
         if id is not None:
             return Identifier(id)
         if external_id is not None:
@@ -29,7 +30,7 @@ class Identifier(Generic[T_ID]):
     def as_primitive(self) -> T_ID:
         return self.__value
 
-    def as_dict(self, camel_case: bool = True) -> Dict[str, T_ID]:
+    def as_dict(self, camel_case: bool = True) -> dict[str, T_ID]:
         if isinstance(self.__value, str):
             if camel_case:
                 return {"externalId": self.__value}
@@ -37,7 +38,7 @@ class Identifier(Generic[T_ID]):
         else:
             return {"id": self.__value}
 
-    def as_tuple(self, camel_case: bool = True) -> Tuple[str, T_ID]:
+    def as_tuple(self, camel_case: bool = True) -> tuple[str, T_ID]:
         if isinstance(self.__value, str):
             if camel_case:
                 return ("externalId", self.__value)
@@ -61,7 +62,7 @@ class InternalId(Identifier[int]):
 
 
 class IdentifierSequence:
-    def __init__(self, identifiers: List[Identifier], is_singleton: bool) -> None:
+    def __init__(self, identifiers: list[Identifier], is_singleton: bool) -> None:
         if len(identifiers) == 0:
             raise ValueError("No ids or external_ids specified")
         self._identifiers = identifiers
@@ -90,24 +91,24 @@ class IdentifierSequence:
             for i in range(0, len(self), chunk_size)
         ]
 
-    def as_dicts(self) -> List[Dict[str, Union[int, str]]]:
+    def as_dicts(self) -> list[dict[str, int | str]]:
         return [identifier.as_dict() for identifier in self._identifiers]
 
-    def as_primitives(self) -> List[Union[int, str]]:
+    def as_primitives(self) -> list[int | str]:
         return [identifier.as_primitive() for identifier in self._identifiers]
 
     @overload
     @classmethod
-    def of(cls, *ids: List[Union[int, str]]) -> IdentifierSequence:
+    def of(cls, *ids: list[int | str]) -> IdentifierSequence:
         ...
 
     @overload
     @classmethod
-    def of(cls, *ids: Union[int, str]) -> IdentifierSequence:
+    def of(cls, *ids: int | str) -> IdentifierSequence:
         ...
 
     @classmethod
-    def of(cls, *ids: Union[int, str, Sequence[Union[int, str]]]) -> IdentifierSequence:
+    def of(cls, *ids: int | str | Sequence[int | str]) -> IdentifierSequence:
         if len(ids) == 1 and isinstance(ids[0], Sequence) and not isinstance(ids[0], str):
             return cls([Identifier(val) for val in ids[0]], is_singleton=False)
         else:
@@ -115,10 +116,10 @@ class IdentifierSequence:
 
     @classmethod
     def load(
-        cls, ids: Optional[Union[int, Sequence[int]]] = None, external_ids: Optional[Union[str, Sequence[str]]] = None
+        cls, ids: int | Sequence[int] | None = None, external_ids: str | Sequence[str] | None = None
     ) -> IdentifierSequence:
         value_passed_as_primitive = False
-        all_identifiers: List[Union[int, str]] = []
+        all_identifiers: list[int | str] = []
 
         if ids is not None:
             if isinstance(ids, (int, numbers.Integral)):

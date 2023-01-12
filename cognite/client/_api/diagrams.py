@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from math import ceil
-from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, Type, TypeVar, Union, overload
+from typing import Any, Literal, TypeVar, overload
 
 from requests import Response
 
@@ -31,9 +32,9 @@ class DiagramsAPI(APIClient):
     def _camel_post(
         self,
         context_path: str,
-        json: Dict[str, Any] = None,
-        params: Dict[str, Any] = None,
-        headers: Dict[str, Any] = None,
+        json: dict[str, Any] | None = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
     ) -> Response:
         return self._post(
             self._RESOURCE_PATH + context_path,
@@ -44,10 +45,10 @@ class DiagramsAPI(APIClient):
 
     def _run_job(
         self,
-        job_cls: Type[T_ContextualizationJob],
+        job_cls: type[T_ContextualizationJob],
         job_path: str,
-        status_path: str = None,
-        headers: Dict[str, Any] = None,
+        status_path: str | None = None,
+        headers: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> T_ContextualizationJob:
         if status_path is None:
@@ -60,7 +61,7 @@ class DiagramsAPI(APIClient):
 
     @staticmethod
     def _list_from_instance_or_list(
-        instance_or_list: Union[Sequence[_T], _T, None], instance_type: Type[_T], error_message: str
+        instance_or_list: Sequence[_T] | _T | None, instance_type: type[_T], error_message: str
     ) -> Sequence[_T]:
         if instance_or_list is None:
             return []
@@ -72,10 +73,10 @@ class DiagramsAPI(APIClient):
 
     @staticmethod
     def _process_file_ids(
-        ids: Union[Sequence[int], int, None],
-        external_ids: Union[Sequence[str], str, None],
-        file_references: Union[Sequence[FileReference], FileReference, None],
-    ) -> List[Union[Dict[str, Union[int, str, Dict[str, int]]], Dict[str, str], Dict[str, int]]]:
+        ids: Sequence[int] | int | None,
+        external_ids: Sequence[str] | str | None,
+        file_references: Sequence[FileReference] | FileReference | None,
+    ) -> list[dict[str, int | str | dict[str, int]] | dict[str, str] | dict[str, int]]:
 
         ids = DiagramsAPI._list_from_instance_or_list(ids, int, "ids must be int or list of int")
         external_ids = DiagramsAPI._list_from_instance_or_list(
@@ -96,13 +97,13 @@ class DiagramsAPI(APIClient):
     @overload
     def detect(
         self,
-        entities: Sequence[Union[dict, CogniteResource]],
+        entities: Sequence[dict | CogniteResource],
         search_field: str = "name",
         partial_match: bool = False,
         min_tokens: int = 2,
-        file_ids: Optional[Union[int, Sequence[int]]] = None,
-        file_external_ids: Optional[Union[str, Sequence[str]]] = None,
-        file_references: Union[List[FileReference], FileReference, None] = None,
+        file_ids: int | Sequence[int] | None = None,
+        file_external_ids: str | Sequence[str] | None = None,
+        file_references: list[FileReference] | FileReference | None = None,
         *,
         multiple_jobs: Literal[False],
     ) -> DiagramDetectResults:
@@ -111,43 +112,43 @@ class DiagramsAPI(APIClient):
     @overload
     def detect(
         self,
-        entities: Sequence[Union[dict, CogniteResource]],
+        entities: Sequence[dict | CogniteResource],
         search_field: str = "name",
         partial_match: bool = False,
         min_tokens: int = 2,
-        file_ids: Optional[Union[int, Sequence[int]]] = None,
-        file_external_ids: Optional[Union[str, Sequence[str]]] = None,
-        file_references: Union[List[FileReference], FileReference, None] = None,
+        file_ids: int | Sequence[int] | None = None,
+        file_external_ids: str | Sequence[str] | None = None,
+        file_references: list[FileReference] | FileReference | None = None,
         *,
         multiple_jobs: Literal[True],
-    ) -> Tuple[Optional[DetectJobBundle], List[Dict[str, Any]]]:
+    ) -> tuple[DetectJobBundle | None, list[dict[str, Any]]]:
         ...
 
     @overload
     def detect(
         self,
-        entities: Sequence[Union[dict, CogniteResource]],
+        entities: Sequence[dict | CogniteResource],
         search_field: str = "name",
         partial_match: bool = False,
         min_tokens: int = 2,
-        file_ids: Optional[Union[int, Sequence[int]]] = None,
-        file_external_ids: Optional[Union[str, Sequence[str]]] = None,
-        file_references: Union[List[FileReference], FileReference, None] = None,
+        file_ids: int | Sequence[int] | None = None,
+        file_external_ids: str | Sequence[str] | None = None,
+        file_references: list[FileReference] | FileReference | None = None,
     ) -> DiagramDetectResults:
         ...
 
     def detect(
         self,
-        entities: Sequence[Union[dict, CogniteResource]],
+        entities: Sequence[dict | CogniteResource],
         search_field: str = "name",
         partial_match: bool = False,
         min_tokens: int = 2,
-        file_ids: Optional[Union[int, Sequence[int]]] = None,
-        file_external_ids: Optional[Union[str, Sequence[str]]] = None,
-        file_references: Union[List[FileReference], FileReference, None] = None,
+        file_ids: int | Sequence[int] | None = None,
+        file_external_ids: str | Sequence[str] | None = None,
+        file_references: list[FileReference] | FileReference | None = None,
         *,
         multiple_jobs: bool = False,
-    ) -> Union[DiagramDetectResults, Tuple[Optional[DetectJobBundle], List[Dict[str, Any]]]]:
+    ) -> DiagramDetectResults | tuple[DetectJobBundle | None, list[dict[str, Any]]]:
 
         """Detect entities in a PNID.
         The results are not written to CDF.
@@ -191,8 +192,8 @@ class DiagramsAPI(APIClient):
                     f"Number of jobs exceed limit of: '{DETECT_API_STATUS_JOB_LIMIT}'. Number of jobs: '{num_new_jobs}'"
                 )
 
-            jobs: List[DiagramDetectResults] = []
-            unposted_files: List[Dict[str, Any]] = []
+            jobs: list[DiagramDetectResults] = []
+            unposted_files: list[dict[str, Any]] = []
             for i in range(num_new_jobs):
                 batch = items[(DETECT_API_FILE_LIMIT * i) : DETECT_API_FILE_LIMIT * (i + 1)]
 
@@ -229,7 +230,7 @@ class DiagramsAPI(APIClient):
             job_cls=DiagramDetectResults,
         )
 
-    def get_detect_jobs(self, job_ids: List[int]) -> List[DiagramDetectResults]:
+    def get_detect_jobs(self, job_ids: list[int]) -> list[DiagramDetectResults]:
         if self._cognite_client is None:
             raise CogniteMissingClientError
         res = self._cognite_client.diagrams._post("/context/diagram/detect/status", json={"items": job_ids})

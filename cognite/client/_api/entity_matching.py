@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Sequence, Tuple, Type, TypeVar, Union
+from collections.abc import Sequence
+from typing import Any, TypeVar
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes._base import CogniteResource
@@ -23,10 +24,10 @@ class EntityMatchingAPI(APIClient):
     def _run_job(
         self,
         job_path: str,
-        job_cls: Type[T_ContextualizationJob],
-        json: Dict[str, Any],
-        status_path: Optional[str] = None,
-        headers: Dict = None,
+        job_cls: type[T_ContextualizationJob],
+        json: dict[str, Any],
+        status_path: str | None = None,
+        headers: dict | None = None,
     ) -> T_ContextualizationJob:
         if status_path is None:
             status_path = job_path + "/"
@@ -36,7 +37,7 @@ class EntityMatchingAPI(APIClient):
             cognite_client=self._cognite_client,
         )
 
-    def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[EntityMatchingModel]:
+    def retrieve(self, id: int | None = None, external_id: str | None = None) -> EntityMatchingModel | None:
         """Retrieve model
 
         Args:
@@ -51,7 +52,7 @@ class EntityMatchingAPI(APIClient):
         )
 
     def retrieve_multiple(
-        self, ids: Optional[Sequence[int]] = None, external_ids: Optional[Sequence[str]] = None
+        self, ids: Sequence[int] | None = None, external_ids: Sequence[str] | None = None
     ) -> EntityMatchingModelList:
         """Retrieve models
 
@@ -68,12 +69,10 @@ class EntityMatchingAPI(APIClient):
 
     def update(
         self,
-        item: Union[
-            EntityMatchingModel,
-            EntityMatchingModelUpdate,
-            Sequence[Union[EntityMatchingModel, EntityMatchingModelUpdate]],
-        ],
-    ) -> Union[EntityMatchingModelList, EntityMatchingModel]:
+        item: (
+            EntityMatchingModel | EntityMatchingModelUpdate | Sequence[EntityMatchingModel | EntityMatchingModelUpdate]
+        ),
+    ) -> EntityMatchingModelList | EntityMatchingModel:
         """Update model
 
         Args:
@@ -88,11 +87,11 @@ class EntityMatchingAPI(APIClient):
 
     def list(
         self,
-        name: str = None,
-        description: str = None,
-        original_id: int = None,
-        feature_type: str = None,
-        classifier: str = None,
+        name: str | None = None,
+        description: str | None = None,
+        original_id: int | None = None,
+        feature_type: str | None = None,
+        classifier: str | None = None,
         limit: int = 100,
     ) -> EntityMatchingModelList:
         """List models
@@ -132,7 +131,7 @@ class EntityMatchingAPI(APIClient):
             self._get(self._RESOURCE_PATH + "/jobs").json()["items"], cognite_client=self._cognite_client
         )
 
-    def delete(self, id: Union[int, Sequence[int]] = None, external_id: Union[str, Sequence[str]] = None) -> None:
+    def delete(self, id: int | Sequence[int] | None = None, external_id: str | Sequence[str] | None = None) -> None:
         """Delete models
 
         Args:
@@ -143,16 +142,16 @@ class EntityMatchingAPI(APIClient):
 
     def fit(
         self,
-        sources: Sequence[Union[Dict, CogniteResource]],
-        targets: Sequence[Union[Dict, CogniteResource]],
-        true_matches: Sequence[Union[Dict, Tuple[Union[int, str], Union[int, str]]]] = None,
-        match_fields: Union[Dict, Sequence[Tuple[str, str]]] = None,
-        feature_type: str = None,
-        classifier: str = None,
+        sources: Sequence[dict | CogniteResource],
+        targets: Sequence[dict | CogniteResource],
+        true_matches: Sequence[dict | tuple[int | str, int | str]] | None = None,
+        match_fields: dict | Sequence[tuple[str, str]] | None = None,
+        feature_type: str | None = None,
+        classifier: str | None = None,
         ignore_missing_fields: bool = False,
-        name: str = None,
-        description: str = None,
-        external_id: str = None,
+        name: str | None = None,
+        description: str | None = None,
+        external_id: str | None = None,
     ) -> EntityMatchingModel:
         """Fit entity matching model.
         **Note**: All users on this CDF subscription with assets read-all and entitymatching read-all and write-all
@@ -200,12 +199,12 @@ class EntityMatchingAPI(APIClient):
 
     def predict(
         self,
-        sources: Optional[Sequence[Dict]] = None,
-        targets: Optional[Sequence[Dict]] = None,
+        sources: Sequence[dict] | None = None,
+        targets: Sequence[dict] | None = None,
         num_matches: int = 1,
-        score_threshold: float = None,
-        id: Optional[int] = None,
-        external_id: Optional[str] = None,
+        score_threshold: float | None = None,
+        id: int | None = None,
+        external_id: str | None = None,
     ) -> ContextualizationJob:
         """Predict entity matching. NB. blocks and waits for the model to be ready if it has been recently created.
         **Note**: All users on this CDF subscription with assets read-all and entitymatching read-all and write-all
@@ -232,9 +231,9 @@ class EntityMatchingAPI(APIClient):
 
     def refit(
         self,
-        true_matches: Sequence[Union[Dict, Tuple[Union[int, str], Union[int, str]]]],
-        id: Optional[int] = None,
-        external_id: Optional[str] = None,
+        true_matches: Sequence[dict | tuple[int | str, int | str]],
+        id: int | None = None,
+        external_id: str | None = None,
     ) -> EntityMatchingModel:
         """Re-fits an entity matching model, using the combination of the old and new true matches.
         **Note**: All users on this CDF subscription with assets read-all and entitymatching read-all and write-all

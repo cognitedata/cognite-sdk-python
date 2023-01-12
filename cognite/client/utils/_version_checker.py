@@ -3,7 +3,6 @@ from __future__ import annotations
 import argparse
 import functools
 import re
-from typing import List, Optional, Tuple
 
 import requests
 
@@ -25,7 +24,7 @@ def get_newest_version_in_major_release(package_name: str, version: str) -> str:
     return _format_version(major, minor, micro, pr_cycle, pr_version)
 
 
-def get_all_versions(package_name: str) -> List[str]:
+def get_all_versions(package_name: str) -> list[str]:
     verify_ssl = not global_config.disable_ssl
     res = requests.get(f"https://pypi.python.org/simple/{package_name}/#history", verify=verify_ssl, timeout=5)
     return re.findall(r"cognite-sdk-(\d+\.\d+.[\dabrc]+)", res.content.decode())
@@ -47,11 +46,11 @@ def _is_newer_major(version_a: str, version_b: str) -> bool:
 
 
 def _is_newer_pre_release(
-    pr_cycle_a: Optional[str], pr_v_a: Optional[int], pr_cycle_b: Optional[str], pr_v_b: Optional[int]
+    pr_cycle_a: str | None, pr_v_a: int | None, pr_cycle_b: str | None, pr_v_b: int | None
 ) -> bool:
     cycles = ["a", "b", "rc", None]
-    assert pr_cycle_a in cycles, "pr_cycle_a must be one of '{}', not '{}'.".format(pr_cycle_a, cycles)
-    assert pr_cycle_b in cycles, "pr_cycle_a must be one of '{}', not '{}'.".format(pr_cycle_b, cycles)
+    assert pr_cycle_a in cycles, f"pr_cycle_a must be one of '{pr_cycle_a}', not '{cycles}'."
+    assert pr_cycle_b in cycles, f"pr_cycle_a must be one of '{pr_cycle_b}', not '{cycles}'."
     is_newer = False
     if cycles.index(pr_cycle_a) > cycles.index(pr_cycle_b):
         is_newer = True
@@ -61,16 +60,16 @@ def _is_newer_pre_release(
     return is_newer
 
 
-def _parse_version(version: str) -> Tuple[int, int, int, str, Optional[int]]:
+def _parse_version(version: str) -> tuple[int, int, int, str, int | None]:
     pattern = r"(\d+)\.(\d+)\.(\d+)(?:([abrc]+)(\d+))?"
     match = re.match(pattern, version)
     if not match:
-        raise ValueError("Could not parse version {}".format(version))
+        raise ValueError(f"Could not parse version {version}")
     major, minor, micro, pr_cycle, pr_version = match.groups()
     return int(major), int(minor), int(micro), pr_cycle, int(pr_version) if pr_version else None
 
 
-def _format_version(major: int, minor: int, micro: int, pr_cycle: Optional[str], pr_version: Optional[int]) -> str:
+def _format_version(major: int, minor: int, micro: int, pr_cycle: str | None, pr_version: int | None) -> str:
     return "{}.{}.{}{}{}".format(major, minor, micro, pr_cycle or "", pr_version or "")
 
 

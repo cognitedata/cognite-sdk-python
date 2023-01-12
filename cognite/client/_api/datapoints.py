@@ -6,29 +6,14 @@ import itertools
 import math
 import statistics
 import time
+import typing
 from abc import ABC, abstractmethod
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from concurrent.futures import CancelledError, as_completed
 from copy import copy
 from datetime import datetime
 from itertools import chain
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    Iterator,
-    List,
-    Literal,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
 
 from cognite.client._api.datapoint_tasks import (
     DPS_LIMIT,
@@ -70,8 +55,8 @@ FETCH_TS_LIMIT = 100
 RETRIEVE_LATEST_LIMIT = 100
 
 
-TSQueryList = List[_SingleTSQueryBase]
-PoolSubtaskType = Tuple[int, float, float, BaseDpsFetchSubtask]
+TSQueryList = typing.List[_SingleTSQueryBase]
+PoolSubtaskType = typing.Tuple[int, float, float, BaseDpsFetchSubtask]
 
 T = TypeVar("T")
 TResLst = TypeVar("TResLst", DatapointsList, DatapointsArrayList)
@@ -94,8 +79,8 @@ def select_dps_fetch_strategy(dps_client: DatapointsAPI, user_query: _Datapoints
     return ChunkingDpsFetcher(dps_client, all_queries, agg_queries, raw_queries, max_workers)
 
 
-def split_queries_into_raw_and_aggs(all_queries: TSQueryList) -> Tuple[TSQueryList, TSQueryList]:
-    split_qs: Tuple[TSQueryList, TSQueryList] = [], []
+def split_queries_into_raw_and_aggs(all_queries: TSQueryList) -> tuple[TSQueryList, TSQueryList]:
+    split_qs: tuple[TSQueryList, TSQueryList] = [], []
     for query in all_queries:
         split_qs[query.is_raw_query].append(query)
     return split_qs
@@ -127,7 +112,7 @@ class DpsFetchStrategy(ABC):
             ordered_results = self._fetch_all(pool, use_numpy=True)
         return self._finalize_tasks(ordered_results, resource_lst=DatapointsArrayList)
 
-    def _finalize_tasks(self, ordered_results: List[BaseConcurrentTask], resource_lst: Type[TResLst]) -> TResLst:
+    def _finalize_tasks(self, ordered_results: list[BaseConcurrentTask], resource_lst: type[TResLst]) -> TResLst:
         return resource_lst(
             [ts_task.get_result() for ts_task in ordered_results],
             cognite_client=self.dps_client._cognite_client,
@@ -147,7 +132,7 @@ class DpsFetchStrategy(ABC):
         return res.items
 
     @abstractmethod
-    def _fetch_all(self, pool: PriorityThreadPoolExecutor, use_numpy: bool) -> List[BaseConcurrentTask]:
+    def _fetch_all(self, pool: PriorityThreadPoolExecutor, use_numpy: bool) -> list[BaseConcurrentTask]:
         raise NotImplementedError
 
 
@@ -165,8 +150,8 @@ class EagerDpsFetcher(DpsFetchStrategy):
     def __request_datapoints_jit(
         self,
         task: SplittingFetchSubtask,
-        payload: Optional[CustomDatapoints] = None,
-    ) -> Optional[Sequence[DataPointListItem]]:
+        payload: CustomDatapoints | None = None,
+    ) -> Sequence[DataPointListItem] | None:
         # Note: We delay getting the next payload as much as possible; this way, when we count number of
         # points left to fetch JIT, we have the most up-to-date estimate (and may quit early):
         if (item := task.get_next_payload()) is None:
@@ -176,7 +161,7 @@ class EagerDpsFetcher(DpsFetchStrategy):
         dps_payload["items"] = [item]
         return self._request_datapoints(dps_payload)
 
-    def _fetch_all(self, pool: PriorityThreadPoolExecutor, use_numpy: bool) -> List[BaseConcurrentTask]:
+    def _fetch_all(self, pool: PriorityThreadPoolExecutor, use_numpy: bool) -> list[BaseConcurrentTask]:
         futures_dct, ts_task_lookup = self._create_initial_tasks(pool, use_numpy)
 
         # Run until all top level tasks are complete:
@@ -207,8 +192,8 @@ class EagerDpsFetcher(DpsFetchStrategy):
         self,
         pool: PriorityThreadPoolExecutor,
         use_numpy: bool,
-    ) -> Tuple[Dict[Future, BaseDpsFetchSubtask], Dict[_SingleTSQueryBase, BaseConcurrentTask]]:
-        futures_dct: Dict[Future, BaseDpsFetchSubtask] = {}
+    ) -> tuple[dict[Future, BaseDpsFetchSubtask], dict[_SingleTSQueryBase, BaseConcurrentTask]]:
+        futures_dct: dict[Future, BaseDpsFetchSubtask] = {}
         ts_task_lookup, payload = {}, {"ignoreUnknownIds": False}
         for query in self.all_queries:
             ts_task = ts_task_lookup[query] = query.ts_task_type(query=query, eager_mode=True, use_numpy=use_numpy)
@@ -220,7 +205,7 @@ class EagerDpsFetcher(DpsFetchStrategy):
     def _queue_new_subtasks(
         self,
         pool: PriorityThreadPoolExecutor,
-        futures_dct: Dict[Future, BaseDpsFetchSubtask],
+        futures_dct: dict[Future, BaseDpsFetchSubtask],
         new_subtasks: Sequence[BaseDpsFetchSubtask],
     ) -> None:
         for task in new_subtasks:
@@ -231,9 +216,9 @@ class EagerDpsFetcher(DpsFetchStrategy):
         self,
         future: Future,
         ts_task: BaseConcurrentTask,
-        ts_task_lookup: Dict[_SingleTSQueryBase, BaseConcurrentTask],
-        futures_dct: Dict[Future, BaseDpsFetchSubtask],
-    ) -> Optional[DataPointListItem]:
+        ts_task_lookup: dict[_SingleTSQueryBase, BaseConcurrentTask],
+        futures_dct: dict[Future, BaseDpsFetchSubtask],
+    ) -> DataPointListItem | None:
         try:
             if (res := future.result()) is not None:
                 return res[0]
@@ -253,7 +238,7 @@ class EagerDpsFetcher(DpsFetchStrategy):
             return None
 
     def _cancel_futures_for_finished_ts_task(
-        self, ts_task: BaseConcurrentTask, futures_dct: Dict[Future, BaseDpsFetchSubtask]
+        self, ts_task: BaseConcurrentTask, futures_dct: dict[Future, BaseDpsFetchSubtask]
     ) -> None:
         for future, subtask in futures_dct.copy().items():
             # TODO: Change to loop over parent.subtasks?
@@ -279,11 +264,11 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         self.counter = itertools.count()
         # To chunk efficiently, we have subtask pools (heap queues) that we use to prioritise subtasks
         # when building/combining subtasks into a full query:
-        self.raw_subtask_pool: List[PoolSubtaskType] = []
-        self.agg_subtask_pool: List[PoolSubtaskType] = []
+        self.raw_subtask_pool: list[PoolSubtaskType] = []
+        self.agg_subtask_pool: list[PoolSubtaskType] = []
         self.subtask_pools = (self.agg_subtask_pool, self.raw_subtask_pool)
 
-    def _fetch_all(self, pool: PriorityThreadPoolExecutor, use_numpy: bool) -> List[BaseConcurrentTask]:
+    def _fetch_all(self, pool: PriorityThreadPoolExecutor, use_numpy: bool) -> list[BaseConcurrentTask]:
         # The initial tasks are important - as they tell us which time series are missing, which
         # are string, which are sparse... We use this info when we choose the best fetch-strategy.
         ts_task_lookup, missing_to_raise = {}, set()
@@ -308,7 +293,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
                     for task in ts_tasks_left
                 )
             )
-            futures_dct: Dict[Future, List[BaseDpsFetchSubtask]] = {}
+            futures_dct: dict[Future, list[BaseDpsFetchSubtask]] = {}
             self._queue_new_subtasks(pool, futures_dct)
             self._fetch_until_complete(pool, futures_dct, ts_task_lookup)
         # Return only non-missing time series tasks in correct order given by `all_queries`:
@@ -317,8 +302,8 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
     def _fetch_until_complete(
         self,
         pool: PriorityThreadPoolExecutor,
-        futures_dct: Dict[Future, List[BaseDpsFetchSubtask]],
-        ts_task_lookup: Dict[_SingleTSQueryBase, BaseConcurrentTask],
+        futures_dct: dict[Future, list[BaseDpsFetchSubtask]],
+        ts_task_lookup: dict[_SingleTSQueryBase, BaseConcurrentTask],
     ) -> None:
         while futures_dct:
             future = next(as_completed(futures_dct))
@@ -341,13 +326,13 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
 
     def _create_initial_tasks(
         self, pool: PriorityThreadPoolExecutor
-    ) -> Tuple[Dict[_SingleTSQueryBase, int], Dict[Future, Tuple[TSQueryList, TSQueryList]]]:
-        initial_query_limits: Dict[_SingleTSQueryBase, int] = {}
-        initial_futures_dct: Dict[Future, Tuple[TSQueryList, TSQueryList]] = {}
+    ) -> tuple[dict[_SingleTSQueryBase, int], dict[Future, tuple[TSQueryList, TSQueryList]]]:
+        initial_query_limits: dict[_SingleTSQueryBase, int] = {}
+        initial_futures_dct: dict[Future, tuple[TSQueryList, TSQueryList]] = {}
         # Optimal queries uses the entire worker pool. We may be forced to use more (queue) when we
         # can't fit all individual time series (maxes out at `FETCH_TS_LIMIT * max_workers`):
         n_queries = max(self.max_workers, math.ceil(self.n_queries / FETCH_TS_LIMIT))
-        splitter: Callable[[List[T]], Iterator[List[T]]] = functools.partial(split_into_n_parts, n=n_queries)
+        splitter: Callable[[list[T]], Iterator[list[T]]] = functools.partial(split_into_n_parts, n=n_queries)
         for query_chunks in zip(splitter(self.agg_queries), splitter(self.raw_queries)):
             # Agg and raw limits are independent in the query, so we max out on both:
             items = []
@@ -366,11 +351,11 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         res: Sequence[DataPointListItem],
         chunk_agg_qs: TSQueryList,
         chunk_raw_qs: TSQueryList,
-        initial_query_limits: Dict[_SingleTSQueryBase, int],
+        initial_query_limits: dict[_SingleTSQueryBase, int],
         use_numpy: bool,
-    ) -> Tuple[Dict[_SingleTSQueryBase, BaseConcurrentTask], Set[_SingleTSQueryBase]]:
+    ) -> tuple[dict[_SingleTSQueryBase, BaseConcurrentTask], set[_SingleTSQueryBase]]:
         if len(res) == len(chunk_agg_qs) + len(chunk_raw_qs):
-            to_raise: Set[_SingleTSQueryBase] = set()
+            to_raise: set[_SingleTSQueryBase] = set()
         else:
             # We have at least 1 missing time series:
             chunk_agg_qs, chunk_raw_qs, to_raise = self._handle_missing_ts(res, chunk_agg_qs, chunk_raw_qs)
@@ -398,7 +383,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
             heapq.heappush(self.subtask_pools[task.is_raw_query], new_subtask)
 
     def _queue_new_subtasks(
-        self, pool: PriorityThreadPoolExecutor, futures_dct: Dict[Future, List[BaseDpsFetchSubtask]]
+        self, pool: PriorityThreadPoolExecutor, futures_dct: dict[Future, list[BaseDpsFetchSubtask]]
     ) -> None:
         while pool._work_queue.qsize() == 0 and any(self.subtask_pools):
             # While the number of unstarted tasks is 0 and we have unqueued subtasks in one of the pools,
@@ -413,9 +398,9 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
 
     def _combine_subtasks_into_new_request(
         self,
-    ) -> Optional[Tuple[DatapointsPayload, List[BaseDpsFetchSubtask], float]]:
-        next_items: List[CustomDatapoints] = []
-        next_subtasks: List[BaseDpsFetchSubtask] = []
+    ) -> tuple[DatapointsPayload, list[BaseDpsFetchSubtask], float] | None:
+        next_items: list[CustomDatapoints] = []
+        next_subtasks: list[BaseDpsFetchSubtask] = []
         agg_pool, raw_pool = self.subtask_pools
         for task_pool, request_max_limit, is_raw in zip(self.subtask_pools, (DPS_LIMIT_AGG, DPS_LIMIT), [False, True]):
             if not task_pool:
@@ -467,8 +452,8 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         return max_limit // FETCH_TS_LIMIT
 
     def _update_queries_with_new_chunking_limit(
-        self, ts_task_lookup: Dict[_SingleTSQueryBase, BaseConcurrentTask]
-    ) -> List[BaseConcurrentTask]:
+        self, ts_task_lookup: dict[_SingleTSQueryBase, BaseConcurrentTask]
+    ) -> list[BaseConcurrentTask]:
         remaining_tasks = {q: t for q, t in ts_task_lookup.items() if not t.is_done}
         tot_raw = sum(q.is_raw_query for q in remaining_tasks)
         if tot_raw <= self.max_workers >= len(remaining_tasks) - tot_raw:
@@ -484,14 +469,14 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
 
         return list(remaining_tasks.values())
 
-    def _cancel_subtasks(self, done_ts_tasks: Set[BaseConcurrentTask]) -> None:
+    def _cancel_subtasks(self, done_ts_tasks: set[BaseConcurrentTask]) -> None:
         for ts_task in done_ts_tasks:
             # We do -not- want to iterate/mutate the heapqs, so we mark subtasks as done instead:
             for subtask in ts_task.subtasks:
                 subtask.is_done = True
 
     @staticmethod
-    def _find_initial_query_limits(limits: List[int], max_limit: int) -> List[int]:
+    def _find_initial_query_limits(limits: list[int], max_limit: int) -> list[int]:
         actual_lims = [0] * len(limits)
         not_done = set(range(len(limits)))
         while not_done:
@@ -516,7 +501,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         res: Sequence[DataPointListItem],
         agg_queries: TSQueryList,
         raw_queries: TSQueryList,
-    ) -> Tuple[TSQueryList, TSQueryList, Set[_SingleTSQueryBase]]:
+    ) -> tuple[TSQueryList, TSQueryList, set[_SingleTSQueryBase]]:
         to_raise = set()
         not_missing = {("id", r.id) for r in res}.union(("externalId", r.externalId) for r in res)
         for query in chain(agg_queries, raw_queries):
@@ -541,16 +526,16 @@ class DatapointsAPI(APIClient):
     def retrieve(
         self,
         *,
-        id: Union[None, int, Dict[str, Any], Sequence[Union[int, Dict[str, Any]]]] = None,
-        external_id: Union[None, str, Dict[str, Any], Sequence[Union[str, Dict[str, Any]]]] = None,
-        start: Union[int, str, datetime, None] = None,
-        end: Union[int, str, datetime, None] = None,
-        aggregates: Union[str, List[str], None] = None,
-        granularity: Optional[str] = None,
-        limit: Optional[int] = None,
+        id: None | int | dict[str, Any] | Sequence[int | dict[str, Any]] = None,
+        external_id: None | str | dict[str, Any] | Sequence[str | dict[str, Any]] = None,
+        start: int | str | datetime | None = None,
+        end: int | str | datetime | None = None,
+        aggregates: str | list[str] | None = None,
+        granularity: str | None = None,
+        limit: int | None = None,
         include_outside_points: bool = False,
         ignore_unknown_ids: bool = False,
-    ) -> Union[None, Datapoints, DatapointsList]:
+    ) -> None | Datapoints | DatapointsList:
         """`Retrieve datapoints for one or more time series. <https://docs.cognite.com/api/v1/#operation/getMultiTimeSeriesDatapoints>`_
 
         **Performance guide**:
@@ -716,16 +701,16 @@ class DatapointsAPI(APIClient):
     def retrieve_arrays(
         self,
         *,
-        id: Union[None, int, Dict[str, Any], Sequence[Union[int, Dict[str, Any]]]] = None,
-        external_id: Union[None, str, Dict[str, Any], Sequence[Union[str, Dict[str, Any]]]] = None,
-        start: Union[int, str, datetime, None] = None,
-        end: Union[int, str, datetime, None] = None,
-        aggregates: Union[str, List[str], None] = None,
-        granularity: Optional[str] = None,
-        limit: Optional[int] = None,
+        id: None | int | dict[str, Any] | Sequence[int | dict[str, Any]] = None,
+        external_id: None | str | dict[str, Any] | Sequence[str | dict[str, Any]] = None,
+        start: int | str | datetime | None = None,
+        end: int | str | datetime | None = None,
+        aggregates: str | list[str] | None = None,
+        granularity: str | None = None,
+        limit: int | None = None,
         include_outside_points: bool = False,
         ignore_unknown_ids: bool = False,
-    ) -> Union[None, DatapointsArray, DatapointsArrayList]:
+    ) -> None | DatapointsArray | DatapointsArrayList:
         """`Retrieve datapoints for one or more time series. <https://docs.cognite.com/api/v1/#operation/getMultiTimeSeriesDatapoints>`_
 
         **Note**: This method requires `numpy` to be installed.
@@ -812,13 +797,13 @@ class DatapointsAPI(APIClient):
     def retrieve_dataframe(
         self,
         *,
-        id: Union[None, int, Dict[str, Any], Sequence[Union[int, Dict[str, Any]]]] = None,
-        external_id: Union[None, str, Dict[str, Any], Sequence[Union[str, Dict[str, Any]]]] = None,
-        start: Union[int, str, datetime, None] = None,
-        end: Union[int, str, datetime, None] = None,
-        aggregates: Union[str, List[str], None] = None,
-        granularity: Optional[str] = None,
-        limit: Optional[int] = None,
+        id: None | int | dict[str, Any] | Sequence[int | dict[str, Any]] = None,
+        external_id: None | str | dict[str, Any] | Sequence[str | dict[str, Any]] = None,
+        start: int | str | datetime | None = None,
+        end: int | str | datetime | None = None,
+        aggregates: str | list[str] | None = None,
+        granularity: str | None = None,
+        limit: int | None = None,
         include_outside_points: bool = False,
         ignore_unknown_ids: bool = False,
         uniform_index: bool = False,
@@ -902,7 +887,7 @@ class DatapointsAPI(APIClient):
         )
         fetcher = select_dps_fetch_strategy(self, user_query=query)
         if uniform_index:
-            grans_given = set(q.granularity for q in fetcher.all_queries)
+            grans_given = {q.granularity for q in fetcher.all_queries}
             is_limited = any(q.limit is not None for q in fetcher.all_queries)
             if fetcher.raw_queries or len(grans_given) > 1 or is_limited:
                 raise ValueError(
@@ -924,11 +909,11 @@ class DatapointsAPI(APIClient):
 
     def retrieve_latest(
         self,
-        id: Union[int, List[int]] = None,
-        external_id: Union[str, List[str]] = None,
-        before: Union[int, str, datetime] = None,
+        id: int | list[int] | None = None,
+        external_id: str | list[str] | None = None,
+        before: int | str | datetime | None = None,
         ignore_unknown_ids: bool = False,
-    ) -> Union[Datapoints, DatapointsList]:
+    ) -> Datapoints | DatapointsList:
         """`Get the latest datapoint for one or more time series <https://docs.cognite.com/api/v1/#operation/getLatest>`_
 
         Args:
@@ -988,14 +973,14 @@ class DatapointsAPI(APIClient):
 
     def insert(
         self,
-        datapoints: Union[
-            Datapoints,
-            DatapointsArray,
-            Sequence[Dict[str, Union[int, float, str, datetime]]],
-            Sequence[Tuple[Union[int, float, datetime], Union[int, float, str]]],
-        ],
-        id: int = None,
-        external_id: str = None,
+        datapoints: (
+            Datapoints
+            | DatapointsArray
+            | Sequence[dict[str, int | float | str | datetime]]
+            | Sequence[tuple[int | float | datetime, int | float | str]]
+        ),
+        id: int | None = None,
+        external_id: str | None = None,
     ) -> None:
         """Insert datapoints into a time series
 
@@ -1045,10 +1030,10 @@ class DatapointsAPI(APIClient):
                 >>> c.time_series.data.insert(data, external_id="efgh")
         """
         post_dps_object = Identifier.of_either(id, external_id).as_dict()
-        dps_to_post: Union[
-            Sequence[Dict[str, Union[int, float, str, datetime]]],
-            Sequence[Tuple[Union[int, float, datetime], Union[int, float, str]]],
-        ]
+        dps_to_post: (
+            Sequence[dict[str, int | float | str | datetime]]
+            | Sequence[tuple[int | float | datetime, int | float | str]]
+        )
         if isinstance(datapoints, (Datapoints, DatapointsArray)):
             dps_to_post = DatapointsPoster._extract_raw_data_from_dps_container(datapoints)
         else:
@@ -1058,7 +1043,7 @@ class DatapointsAPI(APIClient):
         dps_poster = DatapointsPoster(self)
         dps_poster.insert([post_dps_object])
 
-    def insert_multiple(self, datapoints: List[Dict[str, Union[str, int, List, Datapoints, DatapointsArray]]]) -> None:
+    def insert_multiple(self, datapoints: list[dict[str, str | int | list | Datapoints | DatapointsArray]]) -> None:
         """`Insert datapoints into multiple time series <https://docs.cognite.com/api/v1/#operation/postMultiTimeSeriesDatapoints>`_
 
         Args:
@@ -1101,7 +1086,11 @@ class DatapointsAPI(APIClient):
         dps_poster.insert(datapoints)
 
     def delete_range(
-        self, start: Union[int, str, datetime], end: Union[int, str, datetime], id: int = None, external_id: str = None
+        self,
+        start: int | str | datetime,
+        end: int | str | datetime,
+        id: int | None = None,
+        external_id: str | None = None,
     ) -> None:
         """Delete a range of datapoints from a time series.
 
@@ -1130,7 +1119,7 @@ class DatapointsAPI(APIClient):
         delete_dps_object = {**identifier, "inclusiveBegin": start, "exclusiveEnd": end}
         self._delete_datapoints_ranges([delete_dps_object])
 
-    def delete_ranges(self, ranges: List[Dict[str, Any]]) -> None:
+    def delete_ranges(self, ranges: list[dict[str, Any]]) -> None:
         """`Delete a range of datapoints from multiple time series. <https://docs.cognite.com/api/v1/#operation/deleteDatapoints>`_
 
         Args:
@@ -1154,7 +1143,7 @@ class DatapointsAPI(APIClient):
             for key in range:
                 if key not in ("id", "externalId", "start", "end"):
                     raise AssertionError(
-                        "Invalid key '{}' in range. Must contain 'start', 'end', and 'id' or 'externalId".format(key)
+                        f"Invalid key '{key}' in range. Must contain 'start', 'end', and 'id' or 'externalId"
                     )
             id = range.get("id")
             external_id = range.get("externalId")
@@ -1165,7 +1154,7 @@ class DatapointsAPI(APIClient):
             valid_ranges.append(valid_range)
         self._delete_datapoints_ranges(valid_ranges)
 
-    def _delete_datapoints_ranges(self, delete_range_objects: List[Union[Dict]]) -> None:
+    def _delete_datapoints_ranges(self, delete_range_objects: list[dict]) -> None:
         self._post(url_path=self._RESOURCE_PATH + "/delete", json={"items": delete_range_objects})
 
     def insert_dataframe(self, df: pd.DataFrame, external_id_headers: bool = True, dropna: bool = True) -> None:
@@ -1227,9 +1216,9 @@ class DatapointsBin:
         self.dps_objects_limit = dps_objects_limit
         self.dps_limit = dps_limit
         self.current_num_datapoints = 0
-        self.dps_object_list: List[dict] = []
+        self.dps_object_list: list[dict] = []
 
-    def add(self, dps_object: Dict[str, Any]) -> None:
+    def add(self, dps_object: dict[str, Any]) -> None:
         self.current_num_datapoints += len(dps_object["datapoints"])
         self.dps_object_list.append(dps_object)
 
@@ -1242,17 +1231,17 @@ class DatapointsBin:
 class DatapointsPoster:
     def __init__(self, client: DatapointsAPI) -> None:
         self.client = client
-        self.bins: List[DatapointsBin] = []
+        self.bins: list[DatapointsBin] = []
 
-    def insert(self, dps_object_list: List[Dict[str, Any]]) -> None:
+    def insert(self, dps_object_list: list[dict[str, Any]]) -> None:
         valid_dps_object_list = self._validate_dps_objects(dps_object_list)
         binned_dps_object_lists = self._bin_datapoints(valid_dps_object_list)
         self._insert_datapoints_concurrently(binned_dps_object_lists)
 
     @staticmethod
     def _extract_raw_data_from_dps_container(
-        dps: Union[Datapoints, DatapointsArray]
-    ) -> Union[List[Tuple[int, str]], List[Tuple[int, float]]]:
+        dps: Datapoints | DatapointsArray,
+    ) -> list[tuple[int, str]] | list[tuple[int, float]]:
         if dps.value is None:
             raise ValueError(
                 "Only raw datapoints are supported when inserting data from `Datapoints` or `DatapointsArray`"
@@ -1261,19 +1250,19 @@ class DatapointsPoster:
             raise ValueError(f"Number of timestamps ({n_ts}) does not match number of datapoints ({n_dps}) to insert")
 
         if isinstance(dps, Datapoints):
-            return cast(List[Tuple[int, Any]], list(zip(dps.timestamp, dps.value)))
+            return cast(list[tuple[int, Any]], list(zip(dps.timestamp, dps.value)))
         ts = dps.timestamp.astype("datetime64[ms]").astype("int64")
         # Using `tolist()` converts to the nearest compatible built-in Python type (in C code):
         return list(zip(ts.tolist(), dps.value.tolist()))
 
     @staticmethod
-    def _validate_dps_objects(dps_object_list: List[Dict[str, Any]]) -> List[dict]:
+    def _validate_dps_objects(dps_object_list: list[dict[str, Any]]) -> list[dict]:
         valid_dps_objects = []
         for dps_object in dps_object_list:
             for key in dps_object:
                 if key not in ("id", "externalId", "datapoints"):
                     raise ValueError(
-                        "Invalid key '{}' in datapoints. Must contain 'datapoints', and 'id' or 'externalId".format(key)
+                        f"Invalid key '{key}' in datapoints. Must contain 'datapoints', and 'id' or 'externalId"
                     )
             valid_dps_object = {k: dps_object[k] for k in ["id", "externalId"] if k in dps_object}
             valid_dps_object["datapoints"] = DatapointsPoster._validate_and_format_datapoints(dps_object["datapoints"])
@@ -1282,11 +1271,8 @@ class DatapointsPoster:
 
     @staticmethod
     def _validate_and_format_datapoints(
-        datapoints: Union[
-            List[Dict[str, Any]],
-            List[Tuple[Union[int, float, datetime], Union[int, float, str]]],
-        ],
-    ) -> List[Tuple[int, Any]]:
+        datapoints: (list[dict[str, Any]] | list[tuple[int | float | datetime, int | float | str]]),
+    ) -> list[tuple[int, Any]]:
         assert_type(datapoints, "datapoints", [list])
         assert len(datapoints) > 0, "No datapoints provided"
         assert_type(datapoints[0], "datapoints element", [tuple, dict])
@@ -1296,13 +1282,13 @@ class DatapointsPoster:
             valid_datapoints = [(timestamp_to_ms(t), v) for t, v in datapoints]
         elif isinstance(datapoints[0], dict):
             for dp in datapoints:
-                dp = cast(Dict[str, Any], dp)
+                dp = cast(dict[str, Any], dp)
                 assert "timestamp" in dp, "A datapoint is missing the 'timestamp' key"
                 assert "value" in dp, "A datapoint is missing the 'value' key"
                 valid_datapoints.append((timestamp_to_ms(dp["timestamp"]), dp["value"]))
         return valid_datapoints
 
-    def _bin_datapoints(self, dps_object_list: List[Dict[str, Any]]) -> List[List[Dict[str, Any]]]:
+    def _bin_datapoints(self, dps_object_list: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
         for dps_object in dps_object_list:
             for i in range(0, len(dps_object["datapoints"]), DPS_LIMIT):
                 dps_object_chunk = {k: dps_object[k] for k in ["id", "externalId"] if k in dps_object}
@@ -1320,7 +1306,7 @@ class DatapointsPoster:
             binned_dps_object_list.append(bin.dps_object_list)
         return binned_dps_object_list
 
-    def _insert_datapoints_concurrently(self, dps_object_lists: List[List[Dict[str, Any]]]) -> None:
+    def _insert_datapoints_concurrently(self, dps_object_lists: list[list[dict[str, Any]]]) -> None:
         tasks = []
         for dps_object_list in dps_object_lists:
             tasks.append((dps_object_list,))
@@ -1332,7 +1318,7 @@ class DatapointsPoster:
             task_list_element_unwrap_fn=lambda x: {k: x[k] for k in ["id", "externalId"] if k in x},
         )
 
-    def _insert_datapoints(self, post_dps_objects: List[Dict[str, Any]]) -> None:
+    def _insert_datapoints(self, post_dps_objects: list[dict[str, Any]]) -> None:
         # convert to memory intensive format as late as possible and clean up after
         for it in post_dps_objects:
             it["datapoints"] = [{"timestamp": t, "value": v} for t, v in it["datapoints"]]

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, cast
 
 from cognite.client import utils
 from cognite.client.data_classes._base import EXCLUDE_VALUE, CogniteResource
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 class VisionResource(CogniteResource):
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
@@ -60,12 +60,12 @@ class Point(VisionResource):
 PointDict = Dict[str, float]
 
 
-def _process_vertices(vertices: Union[List[PointDict], List[Point]]) -> List[Point]:
-    processed_vertices: List[Point] = []
+def _process_vertices(vertices: list[PointDict] | list[Point]) -> list[Point]:
+    processed_vertices: list[Point] = []
     for v in vertices:
         if isinstance(v, Point):
             processed_vertices.append(v)
-        elif isinstance(v, Dict) and v.keys() == ["x", "y"]:
+        elif isinstance(v, dict) and v.keys() == ["x", "y"]:
             processed_vertices.append(Point(**v))
         else:
             raise ValueError(f"{v} is an invalid point.")
@@ -83,14 +83,14 @@ class BoundingBox(VisionResource):
 @dataclass
 class CdfResourceRef(VisionResource):
     # A valid reference instance contains exactly one of these
-    id: Optional[int] = None
-    external_id: Optional[str] = None
+    id: int | None = None
+    external_id: str | None = None
 
 
 @dataclass
 class Polygon(VisionResource):
     # A valid polygon contains *at least* three vertices
-    vertices: List[Point]
+    vertices: list[Point]
 
     def __post_init__(self) -> None:
         self.vertices = _process_vertices(self.vertices)
@@ -99,7 +99,7 @@ class Polygon(VisionResource):
 @dataclass
 class PolyLine(VisionResource):
     # A valid polyline contains *at least* two vertices
-    vertices: List[Point]
+    vertices: list[Point]
 
     def __post_init__(self) -> None:
         self.vertices = _process_vertices(self.vertices)

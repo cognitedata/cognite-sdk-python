@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
@@ -9,7 +9,7 @@ from cognite.client.testing import monkeypatch_cognite_client
 
 
 @pytest.fixture
-def mock_base_job_response() -> Dict[str, Any]:
+def mock_base_job_response() -> dict[str, Any]:
     return {
         "status": "Completed",
         "createdTime": 1666601590000,

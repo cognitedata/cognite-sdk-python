@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, CogniteResponse
@@ -23,12 +23,12 @@ class ServiceAccount(CogniteResource):
 
     def __init__(
         self,
-        name: str = None,
-        groups: List[int] = None,
-        id: int = None,
-        is_deleted: bool = None,
-        deleted_time: int = None,
-        cognite_client: CogniteClient = None,
+        name: str | None = None,
+        groups: list[int] | None = None,
+        id: int | None = None,
+        is_deleted: bool | None = None,
+        deleted_time: int | None = None,
+        cognite_client: CogniteClient | None = None,
     ):
         self.name = name
         self.groups = groups
@@ -56,12 +56,12 @@ class APIKey(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        service_account_id: int = None,
-        created_time: int = None,
-        status: str = None,
-        value: str = None,
-        cognite_client: CogniteClient = None,
+        id: int | None = None,
+        service_account_id: int | None = None,
+        created_time: int | None = None,
+        status: str | None = None,
+        value: str | None = None,
+        cognite_client: CogniteClient | None = None,
     ):
         self.id = id
         self.service_account_id = service_account_id
@@ -90,13 +90,13 @@ class Group(CogniteResource):
 
     def __init__(
         self,
-        name: str = None,
-        source_id: str = None,
-        capabilities: List[Dict[str, Any]] = None,
-        id: int = None,
-        is_deleted: bool = None,
-        deleted_time: int = None,
-        cognite_client: CogniteClient = None,
+        name: str | None = None,
+        source_id: str | None = None,
+        capabilities: list[dict[str, Any]] | None = None,
+        id: int | None = None,
+        is_deleted: bool | None = None,
+        deleted_time: int | None = None,
+        cognite_client: CogniteClient | None = None,
     ):
         self.name = name
         self.source_id = source_id
@@ -120,7 +120,7 @@ class SecurityCategory(CogniteResource):
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
-    def __init__(self, name: str = None, id: int = None, cognite_client: CogniteClient = None):
+    def __init__(self, name: str | None = None, id: int | None = None, cognite_client: CogniteClient | None = None):
         self.name = name
         self.id = id
         self._cognite_client = cast("CogniteClient", cognite_client)
@@ -137,12 +137,12 @@ class ProjectSpec(CogniteResponse):
         groups (List[int]): Group ids in the project
     """
 
-    def __init__(self, url_name: str, groups: List[int]) -> None:
+    def __init__(self, url_name: str, groups: list[int]) -> None:
         self.url_name = url_name
         self.groups = groups
 
     @classmethod
-    def _load(cls, api_response: Dict[str, Any]) -> ProjectSpec:
+    def _load(cls, api_response: dict[str, Any]) -> ProjectSpec:
         return cls(url_name=api_response["projectUrlName"], groups=api_response["groups"])
 
 
@@ -155,20 +155,20 @@ class TokenInspection(CogniteResponse):
         capabilities (List[Dict]): Capabilities associated with this token.
     """
 
-    def __init__(self, subject: str, projects: List[ProjectSpec], capabilities: List[Dict]):
+    def __init__(self, subject: str, projects: list[ProjectSpec], capabilities: list[dict]):
         self.subject = subject
         self.projects = projects
         self.capabilities = capabilities
 
     @classmethod
-    def _load(cls, api_response: Dict[str, Any]) -> TokenInspection:
+    def _load(cls, api_response: dict[str, Any]) -> TokenInspection:
         return cls(
             subject=api_response["subject"],
             projects=[ProjectSpec._load(p) for p in api_response["projects"]],
             capabilities=api_response["capabilities"],
         )
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
         dumped = {
             "subject": self.subject,
             "projects": [p.dump(camel_case=camel_case) for p in self.projects],
@@ -192,12 +192,12 @@ class CreatedSession(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        type: str = None,
-        status: str = None,
-        nonce: str = None,
-        client_id: str = None,
-        cognite_client: CogniteClient = None,
+        id: int | None = None,
+        type: str | None = None,
+        status: str | None = None,
+        nonce: str | None = None,
+        client_id: str | None = None,
+        cognite_client: CogniteClient | None = None,
     ):
         self.id = id
         self.type = type
@@ -225,13 +225,13 @@ class Session(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        type: str = None,
-        status: str = None,
-        creation_time: int = None,
-        expiration_time: int = None,
-        client_id: str = None,
-        cognite_client: CogniteClient = None,
+        id: int | None = None,
+        type: str | None = None,
+        status: str | None = None,
+        creation_time: int | None = None,
+        expiration_time: int | None = None,
+        client_id: str | None = None,
+        cognite_client: CogniteClient | None = None,
     ):
         self.id = id
         self.type = type

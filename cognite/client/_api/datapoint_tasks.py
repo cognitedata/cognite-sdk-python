@@ -3,8 +3,10 @@ from __future__ import annotations
 import math
 import numbers
 import operator as op
+import typing
 import warnings
 from abc import abstractmethod
+from collections.abc import Callable, Hashable, Iterable, Iterator, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from functools import cached_property
@@ -13,18 +15,11 @@ from threading import Lock
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Dict,
     Generic,
-    Hashable,
-    Iterable,
-    Iterator,
-    List,
     MutableSequence,
     NoReturn,
     Optional,
-    Sequence,
-    Tuple,
     TypedDict,
     TypeVar,
     Union,
@@ -66,19 +61,19 @@ DatapointsAny = Union[DatapointsAgg, DatapointsNum, DatapointsStr]
 DatapointsRaw = Union[DatapointsNum, DatapointsStr]
 
 RawDatapointValue = Union[float, str]
-DatapointsId = Union[None, int, Dict[str, Any], Sequence[Union[int, Dict[str, Any]]]]
-DatapointsExternalId = Union[None, str, Dict[str, Any], Sequence[Union[str, Dict[str, Any]]]]
+DatapointsId = Union[None, int, Dict[str, Any], typing.Sequence[Union[int, Dict[str, Any]]]]
+DatapointsExternalId = Union[None, str, Dict[str, Any], typing.Sequence[Union[str, Dict[str, Any]]]]
 
 
 class CustomDatapointsQuery(TypedDict, total=False):
     # No field required
-    start: Union[int, str, datetime, None]
-    end: Union[int, str, datetime, None]
-    aggregates: Optional[List[str]]
-    granularity: Optional[str]
-    limit: Optional[int]
-    include_outside_points: Optional[bool]
-    ignore_unknown_ids: Optional[bool]
+    start: int | str | datetime | None
+    end: int | str | datetime | None
+    aggregates: list[str] | None
+    granularity: str | None
+    limit: int | None
+    include_outside_points: bool | None
+    ignore_unknown_ids: bool | None
 
 
 class DatapointsQueryId(CustomDatapointsQuery):
@@ -93,27 +88,27 @@ class CustomDatapoints(TypedDict, total=False):
     # No field required
     start: int
     end: int
-    aggregates: Optional[List[str]]
-    granularity: Optional[str]
+    aggregates: list[str] | None
+    granularity: str | None
     limit: int
     include_outside_points: bool
 
 
 class DatapointsPayload(CustomDatapoints):
-    items: List[CustomDatapoints]
+    items: list[CustomDatapoints]
 
 
 @dataclass
 class _DatapointsQuery:
     """Internal representation of a user request for datapoints, previously public (before v5)"""
 
-    start: Union[int, str, datetime, None] = None
-    end: Union[int, str, datetime, None] = None
-    id: Optional[DatapointsId] = None
-    external_id: Optional[DatapointsExternalId] = None
-    aggregates: Union[str, List[str], None] = None
-    granularity: Optional[str] = None
-    limit: Optional[int] = None
+    start: int | str | datetime | None = None
+    end: int | str | datetime | None = None
+    id: DatapointsId | None = None
+    external_id: DatapointsExternalId | None = None
+    aggregates: str | list[str] | None = None
+    granularity: str | None = None
+    limit: int | None = None
     include_outside_points: bool = False
     ignore_unknown_ids: bool = False
 
@@ -131,7 +126,7 @@ class _DatapointsQuery:
 class _SingleTSQueryValidator:
     def __init__(self, user_query: _DatapointsQuery) -> None:
         self.user_query = user_query
-        self.defaults: Dict[str, Any] = dict(
+        self.defaults: dict[str, Any] = dict(
             start=user_query.start,
             end=user_query.end,
             limit=user_query.limit,
@@ -145,7 +140,7 @@ class _SingleTSQueryValidator:
         # exception 'end not after start' if both are set to the same value.
         self.__time_now = timestamp_to_ms("now")
 
-    def _ts_to_ms_frozen_now(self, ts: Union[int, str, datetime, None], default: int) -> int:
+    def _ts_to_ms_frozen_now(self, ts: int | str | datetime | None, default: int) -> int:
         # Time 'now' is frozen for all queries in a single call from the user, leading to identical
         # results e.g. "4d-ago" and "now"
         if ts is None:
@@ -155,7 +150,7 @@ class _SingleTSQueryValidator:
         else:
             return timestamp_to_ms(ts)
 
-    def validate_and_create_single_queries(self) -> List[_SingleTSQueryBase]:
+    def validate_and_create_single_queries(self) -> list[_SingleTSQueryBase]:
         queries = []
         if self.user_query.id is not None:
             id_queries = self._validate_multiple_id(self.user_query.id)
@@ -167,19 +162,19 @@ class _SingleTSQueryValidator:
             return queries
         raise ValueError("Pass at least one time series `id` or `external_id`!")
 
-    def _validate_multiple_id(self, id: DatapointsId) -> List[_SingleTSQueryBase]:
+    def _validate_multiple_id(self, id: DatapointsId) -> list[_SingleTSQueryBase]:
         return self._validate_id_or_xid(id, "id", numbers.Integral)
 
-    def _validate_multiple_xid(self, external_id: DatapointsExternalId) -> List[_SingleTSQueryBase]:
+    def _validate_multiple_xid(self, external_id: DatapointsExternalId) -> list[_SingleTSQueryBase]:
         return self._validate_id_or_xid(external_id, "external_id", str)
 
     def _validate_id_or_xid(
-        self, id_or_xid: Union[DatapointsId, DatapointsExternalId], arg_name: str, exp_type: type
-    ) -> List[_SingleTSQueryBase]:
-        id_or_xid_seq: Sequence[Union[int, str, Dict[str, Any]]]
+        self, id_or_xid: DatapointsId | DatapointsExternalId, arg_name: str, exp_type: type
+    ) -> list[_SingleTSQueryBase]:
+        id_or_xid_seq: Sequence[int | str | dict[str, Any]]
         if isinstance(id_or_xid, (dict, exp_type)):
             # Lazy - we postpone evaluation:
-            id_or_xid_seq = [cast(Union[int, str, Dict[str, Any]], id_or_xid)]
+            id_or_xid_seq = [cast(Union[int, str, dict[str, Any]], id_or_xid)]
         elif isinstance(id_or_xid, Sequence):
             # We use Sequence because we require an ordering of elements
             id_or_xid_seq = id_or_xid
@@ -220,7 +215,7 @@ class _SingleTSQueryValidator:
         )
 
     @staticmethod
-    def _validate_user_supplied_dict_keys(dct: Dict[str, Any], arg_name: str) -> Dict[str, Any]:
+    def _validate_user_supplied_dict_keys(dct: dict[str, Any], arg_name: str) -> dict[str, Any]:
         if arg_name not in dct:
             if (arg_name_cc := to_camel_case(arg_name)) not in dct:
                 raise KeyError(f"Missing required key `{arg_name}` in dict: {dct}.")
@@ -245,9 +240,7 @@ class _SingleTSQueryValidator:
             f"Required key: `{arg_name}`. Optional: {list(opt_dct_keys)}."
         )
 
-    def _validate_and_create_query(
-        self, dct: Union[DatapointsQueryId, DatapointsQueryExternalId]
-    ) -> _SingleTSQueryBase:
+    def _validate_and_create_query(self, dct: DatapointsQueryId | DatapointsQueryExternalId) -> _SingleTSQueryBase:
         limit = self._verify_limit(dct["limit"])
         granularity, aggregates = dct["granularity"], dct["aggregates"]
 
@@ -285,10 +278,10 @@ class _SingleTSQueryValidator:
 
     def _convert_parameters(
         self,
-        dct: Union[DatapointsQueryId, DatapointsQueryExternalId],
-        limit: Optional[int],
+        dct: DatapointsQueryId | DatapointsQueryExternalId,
+        limit: int | None,
         is_raw: bool,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         identifier = Identifier.of_either(
             cast(Optional[int], dct.get("id")), cast(Optional[str], dct.get("external_id"))
         )
@@ -309,7 +302,7 @@ class _SingleTSQueryValidator:
             converted["granularity"] = dct["granularity"]
         return converted
 
-    def _verify_limit(self, limit: Optional[int]) -> Optional[int]:
+    def _verify_limit(self, limit: int | None) -> int | None:
         if limit in {None, -1, math.inf}:
             return None
         elif isinstance(limit, numbers.Integral) and limit >= 0:  # limit=0 is accepted by the API
@@ -325,12 +318,12 @@ class _SingleTSQueryValidator:
 
     def _verify_time_range(
         self,
-        start: Union[int, str, datetime, None],
-        end: Union[int, str, datetime, None],
-        granularity: Optional[str],
+        start: int | str | datetime | None,
+        end: int | str | datetime | None,
+        granularity: str | None,
         is_raw: bool,
         identifier: Identifier,
-    ) -> Tuple[int, int]:
+    ) -> tuple[int, int]:
         start = self._ts_to_ms_frozen_now(start, default=0)  # 1970-01-01
         end = self._ts_to_ms_frozen_now(end, default=self.__time_now)
 
@@ -352,7 +345,7 @@ class _SingleTSQueryBase:
         start: int,
         end: int,
         max_query_limit: int,
-        limit: Optional[int],
+        limit: int | None,
         include_outside_points: bool,
         ignore_unknown_ids: bool,
     ) -> None:
@@ -364,8 +357,8 @@ class _SingleTSQueryBase:
         self.include_outside_points = include_outside_points
         self.ignore_unknown_ids = ignore_unknown_ids
 
-        self.granularity: Optional[str] = None
-        self._is_missing: Optional[bool] = None
+        self.granularity: str | None = None
+        self._is_missing: bool | None = None
 
         if self.include_outside_points and self.limit is not None:
             warnings.warn(
@@ -397,7 +390,7 @@ class _SingleTSQueryBase:
         ...
 
     @abstractmethod
-    def to_payload(self) -> Dict[str, Any]:
+    def to_payload(self) -> dict[str, Any]:
         raise NotImplementedError
 
     @property
@@ -422,7 +415,7 @@ class _SingleTSQueryRaw(_SingleTSQueryBase):
     def is_raw_query(self) -> bool:
         return True
 
-    def to_payload(self) -> Dict[str, Any]:
+    def to_payload(self) -> dict[str, Any]:
         return {
             **self.identifier.as_dict(),
             "start": self.start,
@@ -452,8 +445,8 @@ class _SingleTSQueryRawUnlimited(_SingleTSQueryRaw):
 
 
 class _SingleTSQueryAgg(_SingleTSQueryBase):
-    def __init__(self, *, aggregates: List[str], granularity: str, **kwargs: Any) -> None:
-        agg_query_settings: Dict[str, Any] = dict(include_outside_points=False, max_query_limit=DPS_LIMIT_AGG)
+    def __init__(self, *, aggregates: list[str], granularity: str, **kwargs: Any) -> None:
+        agg_query_settings: dict[str, Any] = dict(include_outside_points=False, max_query_limit=DPS_LIMIT_AGG)
         super().__init__(**kwargs, **agg_query_settings)
         self.aggregates = aggregates
         self.granularity = granularity
@@ -463,10 +456,10 @@ class _SingleTSQueryAgg(_SingleTSQueryBase):
         return False
 
     @cached_property
-    def aggregates_cc(self) -> List[str]:
+    def aggregates_cc(self) -> list[str]:
         return list(map(to_camel_case, self.aggregates))
 
-    def to_payload(self) -> Dict[str, Any]:
+    def to_payload(self) -> dict[str, Any]:
         return {
             **self.identifier.as_dict(),
             "start": self.start,
@@ -500,11 +493,11 @@ class _SingleTSQueryAggUnlimited(_SingleTSQueryAgg):
 class DpsUnpackFns:
     ts: Callable[[Message], int] = op.attrgetter("timestamp")
     raw_dp: Callable[[Message], RawDatapointValue] = op.attrgetter("value")
-    ts_dp_tpl: Callable[[Message], Tuple[int, RawDatapointValue]] = op.attrgetter("timestamp", "value")
+    ts_dp_tpl: Callable[[Message], tuple[int, RawDatapointValue]] = op.attrgetter("timestamp", "value")
     count: Callable[[Message], int] = op.attrgetter("count")
 
     @staticmethod
-    def custom_from_aggregates(lst: List[str]) -> Callable[[DatapointsAgg], Tuple[float, ...]]:
+    def custom_from_aggregates(lst: list[str]) -> Callable[[DatapointsAgg], tuple[float, ...]]:
         return op.attrgetter(*lst)
 
 
@@ -545,7 +538,7 @@ def get_datapoints_from_proto(res: DataPointListItem) -> DatapointsAny:
     return cast(MutableSequence[Any], [])
 
 
-def get_ts_info_from_proto(res: DataPointListItem) -> Dict[str, Union[int, str, bool]]:
+def get_ts_info_from_proto(res: DataPointListItem) -> dict[str, int | str | bool]:
     return {
         "id": res.id,
         "external_id": res.externalId,
@@ -559,16 +552,16 @@ def create_array_from_dps_container(container: DefaultSortedDict) -> npt.NDArray
     return np.hstack(list(chain.from_iterable(container.values())))
 
 
-def create_aggregates_arrays_from_dps_container(container: DefaultSortedDict, n_aggs: int) -> List[npt.NDArray]:
+def create_aggregates_arrays_from_dps_container(container: DefaultSortedDict, n_aggs: int) -> list[npt.NDArray]:
     all_aggs_arr = np.vstack(list(chain.from_iterable(container.values())))
     return list(map(np.ravel, np.hsplit(all_aggs_arr, n_aggs)))
 
 
-def create_list_from_dps_container(container: DefaultSortedDict) -> List:
+def create_list_from_dps_container(container: DefaultSortedDict) -> list:
     return list(chain.from_iterable(chain.from_iterable(container.values())))
 
 
-def create_aggregates_list_from_dps_container(container: DefaultSortedDict) -> Iterator[List[List]]:
+def create_aggregates_list_from_dps_container(container: DefaultSortedDict) -> Iterator[list[list]]:
     concatenated = chain.from_iterable(chain.from_iterable(container.values()))
     return map(list, zip(*concatenated))  # rows to columns
 
@@ -594,15 +587,15 @@ class BaseDpsFetchSubtask:
 
         self.is_done = False
 
-    def get_remaining_limit(self) -> Optional[int]:
+    def get_remaining_limit(self) -> int | None:
         return self.parent.get_remaining_limit(self)
 
     @abstractmethod
-    def get_next_payload(self) -> Optional[CustomDatapoints]:
+    def get_next_payload(self) -> CustomDatapoints | None:
         ...
 
     @abstractmethod
-    def store_partial_result(self, res: DataPointListItem) -> Optional[List[SplittingFetchSubtask]]:
+    def store_partial_result(self, res: DataPointListItem) -> list[SplittingFetchSubtask] | None:
         ...
 
 
@@ -610,10 +603,10 @@ class OutsideDpsFetchSubtask(BaseDpsFetchSubtask):
     """Fetches outside points and stores in parent"""
 
     def __init__(self, **kwargs: Any) -> None:
-        outside_dps_settings: Dict[str, Any] = dict(priority=0, is_raw_query=True, max_query_limit=0)
+        outside_dps_settings: dict[str, Any] = dict(priority=0, is_raw_query=True, max_query_limit=0)
         super().__init__(**kwargs, **outside_dps_settings)
 
-    def get_next_payload(self) -> Optional[CustomDatapoints]:
+    def get_next_payload(self) -> CustomDatapoints | None:
         if self.is_done:
             return None
         return self._create_payload_item()
@@ -644,10 +637,10 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
     def __init__(
         self,
         *,
-        limit: Optional[int],
-        aggregates: Optional[List[str]],
-        granularity: Optional[str],
-        subtask_idx: Tuple[float, ...],
+        limit: int | None,
+        aggregates: list[str] | None,
+        granularity: str | None,
+        subtask_idx: tuple[float, ...],
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
@@ -662,7 +655,7 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
         if not self.is_raw_query:
             self.agg_kwargs = {"aggregates": self.aggregates, "granularity": self.granularity}
 
-    def get_next_payload(self) -> Optional[CustomDatapoints]:
+    def get_next_payload(self) -> CustomDatapoints | None:
         if self.is_done:
             return None
         remaining = self.get_remaining_limit()
@@ -690,7 +683,7 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
             }
         )
 
-    def store_partial_result(self, res: DataPointListItem) -> Optional[List[SplittingFetchSubtask]]:
+    def store_partial_result(self, res: DataPointListItem) -> list[SplittingFetchSubtask] | None:
         if self.parent.ts_info is None:
             # In eager mode, first task to complete gets the honor to store ts info:
             self.parent._store_ts_info(res)
@@ -723,7 +716,7 @@ class SplittingFetchSubtask(SerialFetchSubtask):
         self.max_splitting_factor = max_splitting_factor
         self.split_subidx: int = 0  # Actual value doesnt matter (any int will do)
 
-    def store_partial_result(self, res: DataPointListItem) -> Optional[List[SplittingFetchSubtask]]:
+    def store_partial_result(self, res: DataPointListItem) -> list[SplittingFetchSubtask] | None:
         self.prev_start = self.next_start
         super().store_partial_result(res)
         if not self.is_done:
@@ -731,7 +724,7 @@ class SplittingFetchSubtask(SerialFetchSubtask):
             return self._split_self_into_new_subtasks_if_needed(last_ts)
         return None
 
-    def _create_subtasks_idxs(self, n_new_tasks: int) -> Iterable[Tuple[float, ...]]:
+    def _create_subtasks_idxs(self, n_new_tasks: int) -> Iterable[tuple[float, ...]]:
         """Since this task may decide to split itself multiple times, we count backwards to keep order
         (we rely on tuple sorting logic). Example using `self.subtask_idx=(4,)`:
         - First split into e.g. 3 parts: (4,-3), (4,-2), (4,-1)
@@ -740,7 +733,7 @@ class SplittingFetchSubtask(SerialFetchSubtask):
         self.split_subidx -= n_new_tasks
         yield from ((*self.subtask_idx, i) for i in range(self.split_subidx, end))
 
-    def _split_self_into_new_subtasks_if_needed(self, last_ts: int) -> Optional[List[SplittingFetchSubtask]]:
+    def _split_self_into_new_subtasks_if_needed(self, last_ts: int) -> list[SplittingFetchSubtask] | None:
         # How many new tasks because of % of time range was fetched?
         tot_ms = self.end - (start := self.prev_start)
         part_ms = last_ts - start
@@ -757,7 +750,7 @@ class SplittingFetchSubtask(SerialFetchSubtask):
         # Find a `delta_ms` thats a multiple of granularity in ms (trivial for raw queries):
         boundaries = split_time_range(last_ts, self.end, n_new_tasks, self.parent.offset_next)
         self.end = boundaries[1]  # We shift end of 'self' backwards
-        static_params: Dict[str, Any] = {
+        static_params: dict[str, Any] = {
             "parent": self.parent,
             "priority": self.priority,
             "identifier": self.identifier,
@@ -781,18 +774,18 @@ class BaseConcurrentTask:
         query: Any,  # subclasses assert correct type
         eager_mode: bool,
         use_numpy: bool,
-        first_dps_batch: Optional[DataPointListItem] = None,
-        first_limit: Optional[int] = None,
+        first_dps_batch: DataPointListItem | None = None,
+        first_limit: int | None = None,
     ) -> None:
         self.query = query
         self.eager_mode = eager_mode
         self.use_numpy = use_numpy
-        self.ts_info: Optional[Dict] = None
+        self.ts_info: dict | None = None
         self.ts_data = create_dps_container()
         self.dps_data = create_dps_container()
         self.subtasks = create_subtask_lst()
-        self.subtask_outside_points: Optional[OutsideDpsFetchSubtask] = None
-        self.raw_dtype: Optional[type] = None
+        self.subtask_outside_points: OutsideDpsFetchSubtask | None = None
+        self.raw_dtype: type | None = None
         self._is_done = False
         self.lock = Lock()
 
@@ -809,7 +802,7 @@ class BaseConcurrentTask:
             self._store_first_batch(dps, first_limit)
 
     @property
-    def ts_info_dct(self) -> Dict[str, Any]:
+    def ts_info_dct(self) -> dict[str, Any]:
         # This is mostly for mypy to avoid 'cast' x 10000, but also a nice check to make sure
         # we have the required ts info before returning a result dps object.
         assert self.ts_info is not None
@@ -853,11 +846,11 @@ class BaseConcurrentTask:
         ...
 
     @abstractmethod
-    def get_result(self) -> Union[Datapoints, DatapointsArray]:
+    def get_result(self) -> Datapoints | DatapointsArray:
         ...
 
     @abstractmethod
-    def _unpack_and_store(self, idx: Tuple[float, ...], dps: DatapointsAny) -> None:
+    def _unpack_and_store(self, idx: tuple[float, ...], dps: DatapointsAny) -> None:
         ...
 
     @abstractmethod
@@ -868,14 +861,14 @@ class BaseConcurrentTask:
     def _find_number_of_subtasks_uniform_split(self, tot_ms: int, n_workers_per_queries: int) -> int:
         ...
 
-    def split_into_subtasks(self, max_workers: int, n_tot_queries: int) -> List[BaseDpsFetchSubtask]:
+    def split_into_subtasks(self, max_workers: int, n_tot_queries: int) -> list[BaseDpsFetchSubtask]:
         # Given e.g. a single time series, we want to put all our workers to work by splitting into lots of pieces!
         # As the number grows - or we start combining multiple into the same query - we want to split less:
         # we hold back to not create too many subtasks:
         if self.is_done:
             return []
         n_workers_per_queries = max(1, round(max_workers / n_tot_queries))
-        subtasks: List[BaseDpsFetchSubtask] = self._create_uniformly_split_subtasks(n_workers_per_queries)
+        subtasks: list[BaseDpsFetchSubtask] = self._create_uniformly_split_subtasks(n_workers_per_queries)
         self.subtasks.update(subtasks)
         if self.eager_mode and self.query.include_outside_points:
             # In eager mode we do not get the "first dps batch" to extract outside points from:
@@ -889,7 +882,7 @@ class BaseConcurrentTask:
             subtasks.append(self.subtask_outside_points)
         return subtasks
 
-    def _create_uniformly_split_subtasks(self, n_workers_per_queries: int) -> List[BaseDpsFetchSubtask]:
+    def _create_uniformly_split_subtasks(self, n_workers_per_queries: int) -> list[BaseDpsFetchSubtask]:
         start = self.query.start if self.eager_mode else self.first_start
         tot_ms = (end := self.query.end) - start
         n_periods = self._find_number_of_subtasks_uniform_split(tot_ms, n_workers_per_queries)
@@ -934,7 +927,7 @@ class BaseConcurrentTask:
         elif len(dps) < first_limit:
             self._is_done = True
 
-    def get_remaining_limit(self, subtask: BaseDpsFetchSubtask) -> Optional[int]:
+    def get_remaining_limit(self, subtask: BaseDpsFetchSubtask) -> int | None:
         if not self.has_limit:
             return None
         # For limited queries: if the sum of fetched points of earlier tasks have already hit/surpassed
@@ -995,15 +988,15 @@ class ConcurrentLimitedMixin(BaseConcurrentTask):
 
 class BaseConcurrentRawTask(BaseConcurrentTask):
     def __init__(self, **kwargs: Any) -> None:
-        self.dp_outside_start: Optional[Tuple[int, RawDatapointValue]] = None
-        self.dp_outside_end: Optional[Tuple[int, RawDatapointValue]] = None
+        self.dp_outside_start: tuple[int, RawDatapointValue] | None = None
+        self.dp_outside_end: tuple[int, RawDatapointValue] | None = None
         super().__init__(**kwargs)
 
     @property
     def offset_next(self) -> int:
         return 1  # 1 ms
 
-    def _create_empty_result(self) -> Union[Datapoints, DatapointsArray]:
+    def _create_empty_result(self) -> Datapoints | DatapointsArray:
         if not self.use_numpy:
             return Datapoints(**self.ts_info_dct, timestamp=[], value=[])
         return DatapointsArray._load(
@@ -1017,7 +1010,7 @@ class BaseConcurrentRawTask(BaseConcurrentTask):
     def _was_any_data_fetched(self) -> bool:
         return any((self.ts_data, self.dp_outside_start, self.dp_outside_end))
 
-    def get_result(self) -> Union[Datapoints, DatapointsArray]:
+    def get_result(self) -> Datapoints | DatapointsArray:
         if not self._was_any_data_fetched():
             return self._create_empty_result()
         if self.has_limit:
@@ -1069,15 +1062,15 @@ class BaseConcurrentRawTask(BaseConcurrentTask):
     def _include_outside_points_in_result(self) -> None:
         for dp, idx in zip((self.dp_outside_start, self.dp_outside_end), (-math.inf, math.inf)):
             if dp:
-                ts: Union[List[int], NumpyInt64Array] = [dp[0]]
-                value: Union[List[Union[float, str]], NumpyFloat64Array, NumpyObjArray] = [dp[1]]
+                ts: list[int] | NumpyInt64Array = [dp[0]]
+                value: list[float | str] | NumpyFloat64Array | NumpyObjArray = [dp[1]]
                 if self.use_numpy:
                     ts = np.array(ts, dtype=np.int64)
                     value = np.array(value, dtype=self.raw_dtype)
                 self.ts_data[(idx,)].append(ts)
                 self.dps_data[(idx,)].append(value)
 
-    def _unpack_and_store(self, idx: Tuple[float, ...], dps: DatapointsRaw) -> None:  # type: ignore [override]
+    def _unpack_and_store(self, idx: tuple[float, ...], dps: DatapointsRaw) -> None:  # type: ignore [override]
         if self.use_numpy:  # Faster than feeding listcomp to np.array:
             self.ts_data[idx].append(np.fromiter(map(DpsUnpackFns.ts, dps), dtype=np.int64, count=len(dps)))
             self.dps_data[idx].append(np.fromiter(map(DpsUnpackFns.raw_dp, dps), dtype=self.raw_dtype, count=len(dps)))
@@ -1136,7 +1129,7 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
     def offset_next(self) -> int:
         return granularity_to_ms(self.query.granularity)
 
-    def _set_aggregate_vars(self, aggregates_cc: List[str], use_numpy: bool) -> None:
+    def _set_aggregate_vars(self, aggregates_cc: list[str], use_numpy: bool) -> None:
         # Developer note here: If you ask for datapoints to be returned in JSON, you get `count` as an integer.
         # Nice. However, when using protobuf, you get `double` xD ...so when this code was pivoted from
         # JSON -> protobuf, the special handling of `count` was kept in the hopes that one day protobuf
@@ -1164,7 +1157,7 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
         n_max_dps = tot_ms // self.offset_next  # evenly divides
         return min(n_workers_per_queries, math.ceil(n_max_dps / self.query.max_query_limit))
 
-    def _create_empty_result(self) -> Union[Datapoints, DatapointsArray]:
+    def _create_empty_result(self) -> Datapoints | DatapointsArray:
         if self.use_numpy:
             arr_dct = {"timestamp": np.array([], dtype=np.int64)}
             if self.is_count_query:
@@ -1173,14 +1166,14 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
                 arr_dct.update({agg: np.array([], dtype=np.float64) for agg in self.float_aggs})
             return DatapointsArray._load({**self.ts_info_dct, **arr_dct})
 
-        lst_dct: Dict[str, List] = {"timestamp": []}
+        lst_dct: dict[str, list] = {"timestamp": []}
         if self.is_count_query:
             lst_dct["count"] = []
         if self.has_non_count_aggs:
             lst_dct.update({agg: [] for agg in self.float_aggs})
         return Datapoints(**self.ts_info_dct, **convert_all_keys_to_snake_case(lst_dct))
 
-    def get_result(self) -> Union[Datapoints, DatapointsArray]:
+    def get_result(self) -> Datapoints | DatapointsArray:
         if not self.ts_data or self.query.limit == 0:
             return self._create_empty_result()
         if self.has_limit:
@@ -1227,13 +1220,13 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
                     setattr(self, attr, dict(data.items()[: i + 1]))  # regular dict (no further inserts)
                 return None
 
-    def _unpack_and_store(self, idx: Tuple[float, ...], dps: DatapointsAgg) -> None:  # type: ignore [override]
+    def _unpack_and_store(self, idx: tuple[float, ...], dps: DatapointsAgg) -> None:  # type: ignore [override]
         if self.use_numpy:
             self._unpack_and_store_numpy(idx, dps)
         else:
             self._unpack_and_store_basic(idx, dps)
 
-    def _unpack_and_store_numpy(self, idx: Tuple[float, ...], dps: DatapointsAgg) -> None:
+    def _unpack_and_store_numpy(self, idx: tuple[float, ...], dps: DatapointsAgg) -> None:
         n = len(dps)
         self.ts_data[idx].append(np.fromiter(map(DpsUnpackFns.ts, dps), dtype=np.int64, count=n))
 
@@ -1255,7 +1248,7 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
                 )
             self.dps_data[idx].append(arr.reshape(n, len(self.float_aggs)))
 
-    def _unpack_and_store_basic(self, idx: Tuple[float, ...], dps: DatapointsAgg) -> None:
+    def _unpack_and_store_basic(self, idx: tuple[float, ...], dps: DatapointsAgg) -> None:
         self.ts_data[idx].append(list(map(DpsUnpackFns.ts, dps)))
 
         if self.is_count_query:
@@ -1264,7 +1257,7 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
 
         if self.has_non_count_aggs:
             try:
-                lst: List[Any] = list(map(self.agg_unpack_fn, dps))  # type: ignore [arg-type]
+                lst: list[Any] = list(map(self.agg_unpack_fn, dps))  # type: ignore [arg-type]
             except AttributeError:
                 if self.single_non_count_agg:
                     lst = [getattr(dp, self.first_non_count_agg, None) for dp in dps]

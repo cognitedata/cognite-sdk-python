@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Awaitable, Dict, List, Optional, Union, cast
+from collections.abc import Awaitable
+from typing import TYPE_CHECKING, Any, cast
 
 from cognite.client import utils
 from cognite.client.data_classes._base import (
@@ -43,15 +44,15 @@ class SessionDetails:
 
     def __init__(
         self,
-        session_id: int = None,
-        client_id: str = None,
-        project_name: str = None,
+        session_id: int | None = None,
+        client_id: str | None = None,
+        project_name: str | None = None,
     ):
         self.session_id = session_id
         self.client_id = client_id
         self.project_name = project_name
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
@@ -104,37 +105,37 @@ class Transformation(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        external_id: str = None,
-        name: str = None,
-        query: str = None,
-        destination: TransformationDestination = None,
-        conflict_mode: str = None,
+        id: int | None = None,
+        external_id: str | None = None,
+        name: str | None = None,
+        query: str | None = None,
+        destination: TransformationDestination | None = None,
+        conflict_mode: str | None = None,
         is_public: bool = True,
         ignore_null_fields: bool = False,
-        source_api_key: str = None,
-        destination_api_key: str = None,
-        source_oidc_credentials: Optional[OidcCredentials] = None,
-        destination_oidc_credentials: Optional[OidcCredentials] = None,
-        created_time: Optional[int] = None,
-        last_updated_time: Optional[int] = None,
-        owner: str = None,
+        source_api_key: str | None = None,
+        destination_api_key: str | None = None,
+        source_oidc_credentials: OidcCredentials | None = None,
+        destination_oidc_credentials: OidcCredentials | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+        owner: str | None = None,
         owner_is_current_user: bool = True,
-        has_source_api_key: Optional[bool] = None,
-        has_destination_api_key: Optional[bool] = None,
-        has_source_oidc_credentials: Optional[bool] = None,
-        has_destination_oidc_credentials: Optional[bool] = None,
-        running_job: TransformationJob = None,
-        last_finished_job: TransformationJob = None,
-        blocked: TransformationBlockedInfo = None,
-        schedule: TransformationSchedule = None,
-        data_set_id: int = None,
-        cognite_client: CogniteClient = None,
-        source_nonce: Optional[NonceCredentials] = None,
-        destination_nonce: Optional[NonceCredentials] = None,
-        source_session: Optional[SessionDetails] = None,
-        destination_session: Optional[SessionDetails] = None,
-        tags: Optional[List[str]] = None,
+        has_source_api_key: bool | None = None,
+        has_destination_api_key: bool | None = None,
+        has_source_oidc_credentials: bool | None = None,
+        has_destination_oidc_credentials: bool | None = None,
+        running_job: TransformationJob | None = None,
+        last_finished_job: TransformationJob | None = None,
+        blocked: TransformationBlockedInfo | None = None,
+        schedule: TransformationSchedule | None = None,
+        data_set_id: int | None = None,
+        cognite_client: CogniteClient | None = None,
+        source_nonce: NonceCredentials | None = None,
+        destination_nonce: NonceCredentials | None = None,
+        source_session: SessionDetails | None = None,
+        destination_session: SessionDetails | None = None,
+        tags: list[str] | None = None,
     ):
         self.id = id
         self.external_id = external_id
@@ -205,11 +206,13 @@ class Transformation(CogniteResource):
             self.tags,
         )
 
-    def _process_credentials(self, sessions_cache: Dict[str, NonceCredentials] = None, keep_none: bool = False) -> None:
+    def _process_credentials(
+        self, sessions_cache: dict[str, NonceCredentials] | None = None, keep_none: bool = False
+    ) -> None:
         if sessions_cache is None:
             sessions_cache = {}
 
-        def try_get_or_create_nonce(oidc_credentials: Optional[OidcCredentials]) -> Optional[NonceCredentials]:
+        def try_get_or_create_nonce(oidc_credentials: OidcCredentials | None) -> NonceCredentials | None:
             if keep_none and oidc_credentials is None:
                 return None
 
@@ -246,7 +249,7 @@ class Transformation(CogniteResource):
             if self.destination_nonce:
                 self.destination_oidc_credentials = None
 
-    def run(self, wait: bool = True, timeout: Optional[float] = None) -> TransformationJob:
+    def run(self, wait: bool = True, timeout: float | None = None) -> TransformationJob:
         return self._cognite_client.transformations.run(transformation_id=self.id, wait=wait, timeout=timeout)
 
     def cancel(self) -> None:
@@ -255,16 +258,16 @@ class Transformation(CogniteResource):
         else:
             self._cognite_client.transformations.cancel(transformation_id=self.id)
 
-    def run_async(self, timeout: Optional[float] = None) -> Awaitable[TransformationJob]:
+    def run_async(self, timeout: float | None = None) -> Awaitable[TransformationJob]:
         return self._cognite_client.transformations.run_async(transformation_id=self.id, timeout=timeout)
 
     def jobs(self) -> TransformationJobList:
         return self._cognite_client.transformations.jobs.list(transformation_id=self.id)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> Transformation:
-        instance = super(Transformation, cls)._load(resource, cognite_client)
-        if isinstance(instance.destination, Dict):
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Transformation:
+        instance = super()._load(resource, cognite_client)
+        if isinstance(instance.destination, dict):
             snake_dict = {utils._auxiliary.to_snake_case(key): value for (key, value) in instance.destination.items()}
             destination_type = snake_dict.pop("type")
             if destination_type == "raw":
@@ -275,34 +278,34 @@ class Transformation(CogniteResource):
                 instance.destination = SequenceRows(**snake_dict)
             else:
                 instance.destination = TransformationDestination(destination_type)
-        if isinstance(instance.running_job, Dict):
+        if isinstance(instance.running_job, dict):
             snake_dict = {utils._auxiliary.to_snake_case(key): value for (key, value) in instance.running_job.items()}
             instance.running_job = TransformationJob._load(snake_dict, cognite_client=cognite_client)
-        if isinstance(instance.last_finished_job, Dict):
+        if isinstance(instance.last_finished_job, dict):
             snake_dict = {
                 utils._auxiliary.to_snake_case(key): value for (key, value) in instance.last_finished_job.items()
             }
             instance.last_finished_job = TransformationJob._load(snake_dict, cognite_client=cognite_client)
-        if isinstance(instance.blocked, Dict):
+        if isinstance(instance.blocked, dict):
             snake_dict = {utils._auxiliary.to_snake_case(key): value for (key, value) in instance.blocked.items()}
             snake_dict.pop("time")
             instance.blocked = TransformationBlockedInfo(**snake_dict)
-        if isinstance(instance.schedule, Dict):
+        if isinstance(instance.schedule, dict):
             snake_dict = {utils._auxiliary.to_snake_case(key): value for (key, value) in instance.schedule.items()}
             instance.schedule = TransformationSchedule._load(snake_dict, cognite_client=cognite_client)
-        if isinstance(instance.source_session, Dict):
+        if isinstance(instance.source_session, dict):
             snake_dict = {
                 utils._auxiliary.to_snake_case(key): value for (key, value) in instance.source_session.items()
             }
             instance.source_session = SessionDetails(**snake_dict)
-        if isinstance(instance.destination_session, Dict):
+        if isinstance(instance.destination_session, dict):
             snake_dict = {
                 utils._auxiliary.to_snake_case(key): value for (key, value) in instance.destination_session.items()
             }
             instance.destination_session = SessionDetails(**snake_dict)
         return instance
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
@@ -312,7 +315,7 @@ class Transformation(CogniteResource):
             Dict[str, Any]: A dictionary representation of the instance.
         """
 
-        ret = super(Transformation, self).dump(camel_case=camel_case)
+        ret = super().dump(camel_case=camel_case)
 
         for (name, prop) in ret.items():
             if isinstance(
@@ -339,13 +342,13 @@ class TransformationUpdate(CogniteUpdate):
             return self._set(value)
 
     class _ListTransformationUpdate(CogniteListUpdate):
-        def set(self, value: List) -> TransformationUpdate:
+        def set(self, value: list) -> TransformationUpdate:
             return self._set(value)
 
-        def add(self, value: List) -> TransformationUpdate:
+        def add(self, value: list) -> TransformationUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> TransformationUpdate:
+        def remove(self, value: list) -> TransformationUpdate:
             return self._remove(value)
 
     @property
@@ -408,7 +411,7 @@ class TransformationUpdate(CogniteUpdate):
     def tags(self) -> _ListTransformationUpdate:
         return TransformationUpdate._ListTransformationUpdate(self, "tags")
 
-    def dump(self, camel_case: bool = True) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         obj = super().dump()
 
         for update in obj.get("update", {}).values():
@@ -424,7 +427,7 @@ class TransformationList(CogniteResourceList):
 
 class TagsFilter:
     @abstractmethod
-    def dump(self) -> Dict[str, Any]:
+    def dump(self) -> dict[str, Any]:
         ...
 
 
@@ -442,10 +445,10 @@ class ContainsAny(TagsFilter):
                 >>> my_tag_filter = ContainsAny(tags=["PUMP", "VALVE"])
     """
 
-    def __init__(self, tags: List[str] = None):
+    def __init__(self, tags: list[str] | None = None):
         self.tags = tags
 
-    def dump(self, camel_case: bool = True) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         contains_any_key = "containsAny" if camel_case else "contains_any"
         return {contains_any_key: self.tags}
 
@@ -470,16 +473,16 @@ class TransformationFilter(CogniteFilter):
     def __init__(
         self,
         include_public: bool = True,
-        name_regex: str = None,
-        query_regex: str = None,
-        destination_type: str = None,
-        conflict_mode: str = None,
-        cdf_project_name: str = None,
-        has_blocked_error: bool = None,
-        created_time: Union[Dict[str, Any], TimestampRange] = None,
-        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        data_set_ids: List[Dict[str, Any]] = None,
-        tags: TagsFilter = None,
+        name_regex: str | None = None,
+        query_regex: str | None = None,
+        destination_type: str | None = None,
+        conflict_mode: str | None = None,
+        cdf_project_name: str | None = None,
+        has_blocked_error: bool | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        data_set_ids: list[dict[str, Any]] | None = None,
+        tags: TagsFilter | None = None,
     ):
         self.include_public = include_public
         self.name_regex = name_regex
@@ -494,16 +497,16 @@ class TransformationFilter(CogniteFilter):
         self.tags = tags
 
     @classmethod
-    def _load(self, resource: Union[Dict, str]) -> TransformationFilter:
-        instance = super(TransformationFilter, self)._load(resource)
-        if isinstance(resource, Dict):
+    def _load(self, resource: dict | str) -> TransformationFilter:
+        instance = super()._load(resource)
+        if isinstance(resource, dict):
             if instance.created_time is not None:
                 instance.created_time = TimestampRange(**instance.created_time)
             if instance.last_updated_time is not None:
                 instance.last_updated_time = TimestampRange(**instance.last_updated_time)
         return instance
 
-    def dump(self, camel_case: bool = True) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         obj = super().dump(camel_case=camel_case)
         if obj.get("includePublic"):
             is_public = obj.pop("includePublic")
@@ -524,28 +527,28 @@ class TransformationPreviewResult(CogniteResource):
 
     def __init__(
         self,
-        schema: TransformationSchemaColumnList = None,
-        results: List[Dict] = None,
-        cognite_client: CogniteClient = None,
+        schema: TransformationSchemaColumnList | None = None,
+        results: list[dict] | None = None,
+        cognite_client: CogniteClient | None = None,
     ) -> None:
         self.schema = schema
         self.results = results
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> TransformationPreviewResult:
-        instance = super(TransformationPreviewResult, cls)._load(resource, cognite_client)
-        if isinstance(instance.schema, Dict):
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TransformationPreviewResult:
+        instance = super()._load(resource, cognite_client)
+        if isinstance(instance.schema, dict):
             items = instance.schema.get("items")
             if items is not None:
                 instance.schema = TransformationSchemaColumnList._load(items, cognite_client=cognite_client)
-        if isinstance(instance.results, Dict):
+        if isinstance(instance.results, dict):
             items = instance.results.get("items")
             if items is not None:
                 instance.results = items
         return instance
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Args:

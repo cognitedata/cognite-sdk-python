@@ -4,7 +4,6 @@ import numbers
 import re
 import time
 from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional, Tuple, Union
 
 UNIT_IN_MS_WITHOUT_WEEK = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000}
 UNIT_IN_MS = {**UNIT_IN_MS_WITHOUT_WEEK, "w": 604800000}
@@ -25,7 +24,7 @@ def datetime_to_ms(dt: datetime) -> int:
     return int(1000 * dt.timestamp())
 
 
-def ms_to_datetime(ms: Union[int, float]) -> datetime:
+def ms_to_datetime(ms: int | float) -> datetime:
     """Converts valid Cognite timestamps, i.e. milliseconds since epoch, to datetime object.
 
     Args:
@@ -44,7 +43,7 @@ def ms_to_datetime(ms: Union[int, float]) -> datetime:
     return datetime(1970, 1, 1, tzinfo=timezone.utc) + timedelta(milliseconds=ms)
 
 
-def time_string_to_ms(pattern: str, string: str, unit_in_ms: Dict[str, int]) -> Optional[int]:
+def time_string_to_ms(pattern: str, string: str, unit_in_ms: dict[str, int]) -> int | None:
     pattern = pattern.format("|".join(unit_in_ms))
     res = re.fullmatch(pattern, string)
     if res:
@@ -84,7 +83,7 @@ def time_ago_to_ms(time_ago_string: str) -> int:
     return ms
 
 
-def timestamp_to_ms(timestamp: Union[int, float, str, datetime]) -> int:
+def timestamp_to_ms(timestamp: int | float | str | datetime) -> int:
     """Returns the ms representation of some timestamp given by milliseconds, time-ago format or datetime object
 
     Args:
@@ -101,16 +100,16 @@ def timestamp_to_ms(timestamp: Union[int, float, str, datetime]) -> int:
         ms = datetime_to_ms(timestamp)
     else:
         raise TypeError(
-            "Timestamp `{}` was of type {}, but must be int, float, str or datetime,".format(timestamp, type(timestamp))
+            f"Timestamp `{timestamp}` was of type {type(timestamp)}, but must be int, float, str or datetime,"
         )
 
     if ms < MIN_TIMESTAMP_MS:
-        raise ValueError("Timestamps must represent a time after 1.1.1900, but {} was provided".format(ms))
+        raise ValueError(f"Timestamps must represent a time after 1.1.1900, but {ms} was provided")
 
     return ms
 
 
-def _convert_time_attributes_in_dict(item: Dict) -> Dict:
+def _convert_time_attributes_in_dict(item: dict) -> dict:
     TIME_ATTRIBUTES = {
         "start_time",
         "end_time",
@@ -132,7 +131,7 @@ def _convert_time_attributes_in_dict(item: Dict) -> Dict:
     return new_item
 
 
-def convert_time_attributes_to_datetime(item: Union[Dict, List[Dict]]) -> Union[Dict, List[Dict]]:
+def convert_time_attributes_to_datetime(item: dict | list[dict]) -> dict | list[dict]:
     if isinstance(item, dict):
         return _convert_time_attributes_in_dict(item)
     if isinstance(item, list):
@@ -143,7 +142,7 @@ def convert_time_attributes_to_datetime(item: Union[Dict, List[Dict]]) -> Union[
     raise TypeError("item must be dict or list of dicts")
 
 
-def align_start_and_end_for_granularity(start: int, end: int, granularity: str) -> Tuple[int, int]:
+def align_start_and_end_for_granularity(start: int, end: int, granularity: str) -> tuple[int, int]:
     # Note the API always aligns `start` with 1s, 1m, 1h or 1d (even when given e.g. 73h)
     remainder = start % granularity_unit_to_ms(granularity)
     if remainder:
@@ -157,7 +156,7 @@ def align_start_and_end_for_granularity(start: int, end: int, granularity: str) 
     return start, end
 
 
-def split_time_range(start: int, end: int, n_splits: int, granularity_in_ms: int) -> List[int]:
+def split_time_range(start: int, end: int, n_splits: int, granularity_in_ms: int) -> list[int]:
     if n_splits < 1:
         raise ValueError(f"Cannot split into less than 1 piece, got {n_splits=}")
     tot_ms = end - start

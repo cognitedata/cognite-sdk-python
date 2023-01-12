@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, Union, cast
+from typing import TYPE_CHECKING, cast
 
 from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
@@ -10,19 +10,21 @@ if TYPE_CHECKING:
 
 
 class TransformationSchemaType:
-    def __init__(self, type: str = None):
+    def __init__(self, type: str | None = None):
         self.type = type
 
 
 class TransformationSchemaArrayType(TransformationSchemaType):
-    def __init__(self, type: str = None, element_type: str = None, contains_null: bool = False):
+    def __init__(self, type: str | None = None, element_type: str | None = None, contains_null: bool = False):
         super().__init__(type=type)
         self.element_type = element_type
         self.contains_null = contains_null
 
 
 class TransformationSchemaMapType(TransformationSchemaType):
-    def __init__(self, type: str, key_type: str = None, value_type: str = None, value_contains_null: bool = False):
+    def __init__(
+        self, type: str, key_type: str | None = None, value_type: str | None = None, value_contains_null: bool = False
+    ):
         super().__init__(type=type)
         self.key_type = key_type
         self.value_type = value_type
@@ -42,11 +44,11 @@ class TransformationSchemaColumn(CogniteResource):
 
     def __init__(
         self,
-        name: str = None,
-        sql_type: str = None,
-        type: TransformationSchemaType = None,
+        name: str | None = None,
+        sql_type: str | None = None,
+        type: TransformationSchemaType | None = None,
         nullable: bool = False,
-        cognite_client: CogniteClient = None,
+        cognite_client: CogniteClient | None = None,
     ):
         self.name = name
         self.sql_type = sql_type
@@ -55,9 +57,9 @@ class TransformationSchemaColumn(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> TransformationSchemaColumn:
-        instance = super(TransformationSchemaColumn, cls)._load(resource, cognite_client)
-        if isinstance(instance.type, Dict):
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TransformationSchemaColumn:
+        instance = super()._load(resource, cognite_client)
+        if isinstance(instance.type, dict):
             snake_dict = {utils._auxiliary.to_snake_case(key): value for (key, value) in instance.type.items()}
             instance_type = instance.type.get("type")
             if instance_type == "array":

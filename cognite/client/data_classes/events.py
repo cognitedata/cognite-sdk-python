@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Union, cast
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -28,7 +29,9 @@ class EndTimeFilter(dict):
         is_null (bool): Set to true if you want to search for data with field value not set, false to search for cases where some value is present.
     """
 
-    def __init__(self, max: int = None, min: int = None, is_null: bool = None, **kwargs: Any) -> None:
+    def __init__(
+        self, max: int | None = None, min: int | None = None, is_null: bool | None = None, **kwargs: Any
+    ) -> None:
         self.max = max
         self.min = min
         self.is_null = is_null
@@ -61,20 +64,20 @@ class Event(CogniteResource):
 
     def __init__(
         self,
-        external_id: str = None,
-        data_set_id: int = None,
-        start_time: int = None,
-        end_time: int = None,
-        type: str = None,
-        subtype: str = None,
-        description: str = None,
-        metadata: Dict[str, str] = None,
-        asset_ids: Sequence[int] = None,
-        source: str = None,
-        id: int = None,
-        last_updated_time: int = None,
-        created_time: int = None,
-        cognite_client: CogniteClient = None,
+        external_id: str | None = None,
+        data_set_id: int | None = None,
+        start_time: int | None = None,
+        end_time: int | None = None,
+        type: str | None = None,
+        subtype: str | None = None,
+        description: str | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: Sequence[int] | None = None,
+        source: str | None = None,
+        id: int | None = None,
+        last_updated_time: int | None = None,
+        created_time: int | None = None,
+        cognite_client: CogniteClient | None = None,
     ):
         self.external_id = external_id
         self.data_set_id = data_set_id
@@ -115,21 +118,21 @@ class EventFilter(CogniteFilter):
 
     def __init__(
         self,
-        start_time: Union[Dict[str, Any], TimestampRange] = None,
-        end_time: Union[Dict[str, Any], EndTimeFilter] = None,
-        active_at_time: Union[Dict[str, Any], TimestampRange] = None,
-        metadata: Dict[str, str] = None,
-        asset_ids: Sequence[int] = None,
-        asset_external_ids: Sequence[str] = None,
-        asset_subtree_ids: Sequence[Dict[str, Any]] = None,
-        data_set_ids: Sequence[Dict[str, Any]] = None,
-        source: str = None,
-        type: str = None,
-        subtype: str = None,
-        created_time: Union[Dict[str, Any], TimestampRange] = None,
-        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        external_id_prefix: str = None,
-        cognite_client: CogniteClient = None,
+        start_time: dict[str, Any] | TimestampRange | None = None,
+        end_time: dict[str, Any] | EndTimeFilter | None = None,
+        active_at_time: dict[str, Any] | TimestampRange | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: Sequence[str] | None = None,
+        asset_subtree_ids: Sequence[dict[str, Any]] | None = None,
+        data_set_ids: Sequence[dict[str, Any]] | None = None,
+        source: str | None = None,
+        type: str | None = None,
+        subtype: str | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        external_id_prefix: str | None = None,
+        cognite_client: CogniteClient | None = None,
     ):
         self.start_time = start_time
         self.end_time = end_time
@@ -148,9 +151,9 @@ class EventFilter(CogniteFilter):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str]) -> EventFilter:
-        instance = super(EventFilter, cls)._load(resource)
-        if isinstance(resource, Dict):
+    def _load(cls, resource: dict | str) -> EventFilter:
+        instance = super()._load(resource)
+        if isinstance(resource, dict):
             if instance.start_time is not None:
                 instance.start_time = TimestampRange(**instance.start_time)
             if instance.end_time is not None:
@@ -177,30 +180,30 @@ class EventUpdate(CogniteUpdate):
             return self._set(value)
 
     class _ObjectEventUpdate(CogniteObjectUpdate):
-        def set(self, value: Dict) -> EventUpdate:
+        def set(self, value: dict) -> EventUpdate:
             return self._set(value)
 
-        def add(self, value: Dict) -> EventUpdate:
+        def add(self, value: dict) -> EventUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> EventUpdate:
+        def remove(self, value: list) -> EventUpdate:
             return self._remove(value)
 
     class _ListEventUpdate(CogniteListUpdate):
-        def set(self, value: List) -> EventUpdate:
+        def set(self, value: list) -> EventUpdate:
             return self._set(value)
 
-        def add(self, value: List) -> EventUpdate:
+        def add(self, value: list) -> EventUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> EventUpdate:
+        def remove(self, value: list) -> EventUpdate:
             return self._remove(value)
 
     class _LabelEventUpdate(CogniteLabelUpdate):
-        def add(self, value: List) -> EventUpdate:
+        def add(self, value: list) -> EventUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> EventUpdate:
+        def remove(self, value: list) -> EventUpdate:
             return self._remove(value)
 
     @property

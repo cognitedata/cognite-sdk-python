@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterator, Optional, Sequence, Union, cast
+from collections.abc import Iterator, Sequence
+from typing import Any, cast
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -32,8 +33,8 @@ class ThreeDModelsAPI(APIClient):
     _RESOURCE_PATH = "/3d/models"
 
     def __call__(
-        self, chunk_size: int = None, published: bool = None, limit: int = None
-    ) -> Union[Iterator[ThreeDModel], Iterator[ThreeDModelList]]:
+        self, chunk_size: int | None = None, published: bool | None = None, limit: int | None = None
+    ) -> Iterator[ThreeDModel] | Iterator[ThreeDModelList]:
         """Iterate over 3d models
 
         Fetches 3d models as they are iterated over, so you keep a limited number of 3d models in memory.
@@ -65,7 +66,7 @@ class ThreeDModelsAPI(APIClient):
         """
         return cast(Iterator[ThreeDModel], self())
 
-    def retrieve(self, id: int) -> Optional[ThreeDModel]:
+    def retrieve(self, id: int) -> ThreeDModel | None:
         """`Retrieve a 3d model by id <https://docs.cognite.com/api/v1/#operation/get3DModel>`_
 
         Args:
@@ -84,7 +85,7 @@ class ThreeDModelsAPI(APIClient):
         """
         return self._retrieve(cls=ThreeDModel, identifier=InternalId(id))
 
-    def list(self, published: bool = None, limit: int = 25) -> ThreeDModelList:
+    def list(self, published: bool | None = None, limit: int = 25) -> ThreeDModelList:
         """`List 3d models. <https://docs.cognite.com/api/v1/#operation/get3DModels>`_
 
         Args:
@@ -125,7 +126,7 @@ class ThreeDModelsAPI(APIClient):
             limit=limit,
         )
 
-    def create(self, name: Union[str, Sequence[str]]) -> Union[ThreeDModel, ThreeDModelList]:
+    def create(self, name: str | Sequence[str]) -> ThreeDModel | ThreeDModelList:
         """`Create new 3d models. <https://docs.cognite.com/api/v1/#operation/create3DModels>`_
 
         Args:
@@ -144,14 +145,14 @@ class ThreeDModelsAPI(APIClient):
         """
         utils._auxiliary.assert_type(name, "name", [str, Sequence])
         if isinstance(name, str):
-            name_processed: Union[Dict[str, Any], Sequence[Dict[str, Any]]] = {"name": name}
+            name_processed: dict[str, Any] | Sequence[dict[str, Any]] = {"name": name}
         else:
             name_processed = [{"name": n} for n in name]
         return self._create_multiple(list_cls=ThreeDModelList, resource_cls=ThreeDModel, items=name_processed)
 
     def update(
-        self, item: Union[ThreeDModel, ThreeDModelUpdate, Sequence[Union[ThreeDModel, ThreeDModelUpdate]]]
-    ) -> Union[ThreeDModel, ThreeDModelList]:
+        self, item: ThreeDModel | ThreeDModelUpdate | Sequence[ThreeDModel | ThreeDModelUpdate]
+    ) -> ThreeDModel | ThreeDModelList:
         """`Update 3d models. <https://docs.cognite.com/api/v1/#operation/update3DModels>`_
 
         Args:
@@ -183,7 +184,7 @@ class ThreeDModelsAPI(APIClient):
             list_cls=ThreeDModelList, resource_cls=ThreeDModel, update_cls=ThreeDModelUpdate, items=item
         )
 
-    def delete(self, id: Union[int, Sequence[int]]) -> None:
+    def delete(self, id: int | Sequence[int]) -> None:
         """`Delete 3d models. <https://docs.cognite.com/api/v1/#operation/delete3DModels>`_
 
         Args:
@@ -207,8 +208,8 @@ class ThreeDRevisionsAPI(APIClient):
     _RESOURCE_PATH = "/3d/models/{}/revisions"
 
     def __call__(
-        self, model_id: int, chunk_size: int = None, published: bool = False, limit: int = None
-    ) -> Union[Iterator[ThreeDModelRevision], Iterator[ThreeDModelRevisionList]]:
+        self, model_id: int, chunk_size: int | None = None, published: bool = False, limit: int | None = None
+    ) -> Iterator[ThreeDModelRevision] | Iterator[ThreeDModelRevisionList]:
         """Iterate over 3d model revisions
 
         Fetches 3d model revisions as they are iterated over, so you keep a limited number of 3d model revisions in memory.
@@ -233,7 +234,7 @@ class ThreeDRevisionsAPI(APIClient):
             limit=limit,
         )
 
-    def retrieve(self, model_id: int, id: int) -> Optional[ThreeDModelRevision]:
+    def retrieve(self, model_id: int, id: int) -> ThreeDModelRevision | None:
         """`Retrieve a 3d model revision by id <https://docs.cognite.com/api/v1/#operation/get3DRevision>`_
 
         Args:
@@ -258,8 +259,8 @@ class ThreeDRevisionsAPI(APIClient):
         )
 
     def create(
-        self, model_id: int, revision: Union[ThreeDModelRevision, Sequence[ThreeDModelRevision]]
-    ) -> Union[ThreeDModelRevision, ThreeDModelRevisionList]:
+        self, model_id: int, revision: ThreeDModelRevision | Sequence[ThreeDModelRevision]
+    ) -> ThreeDModelRevision | ThreeDModelRevisionList:
         """`Create a revisions for a specified 3d model. <https://docs.cognite.com/api/v1/#operation/create3DRevisions>`_
 
         Args:
@@ -318,12 +319,10 @@ class ThreeDRevisionsAPI(APIClient):
     def update(
         self,
         model_id: int,
-        item: Union[
-            ThreeDModelRevision,
-            ThreeDModelRevisionUpdate,
-            Sequence[Union[ThreeDModelRevision, ThreeDModelRevisionUpdate]],
-        ],
-    ) -> Union[ThreeDModelRevision, ThreeDModelRevisionList]:
+        item: (
+            ThreeDModelRevision | ThreeDModelRevisionUpdate | Sequence[ThreeDModelRevision | ThreeDModelRevisionUpdate]
+        ),
+    ) -> ThreeDModelRevision | ThreeDModelRevisionList:
         """`Update 3d model revisions. <https://docs.cognite.com/api/v1/#operation/update3DRevisions>`_
 
         Args:
@@ -360,7 +359,7 @@ class ThreeDRevisionsAPI(APIClient):
             items=item,
         )
 
-    def delete(self, model_id: int, id: Union[int, Sequence[int]]) -> None:
+    def delete(self, model_id: int, id: int | Sequence[int]) -> None:
         """`Delete 3d model revisions. <https://docs.cognite.com/api/v1/#operation/delete3DRevisions>`_
 
         Args:
@@ -413,10 +412,10 @@ class ThreeDRevisionsAPI(APIClient):
         self,
         model_id: int,
         revision_id: int,
-        node_id: int = None,
-        depth: int = None,
+        node_id: int | None = None,
+        depth: int | None = None,
         sort_by_node_id: bool = False,
-        partitions: int = None,
+        partitions: int | None = None,
         limit: int = 25,
     ) -> ThreeDNodeList:
         """`Retrieves a list of nodes from the hierarchy in the 3D Model. <https://docs.cognite.com/api/v1/#operation/get3DNodes>`_
@@ -463,9 +462,9 @@ class ThreeDRevisionsAPI(APIClient):
         self,
         model_id: int,
         revision_id: int,
-        properties: Dict[str, Dict[str, Sequence[str]]] = None,
+        properties: dict[str, dict[str, Sequence[str]]] | None = None,
         limit: int = 25,
-        partitions: int = None,
+        partitions: int | None = None,
     ) -> ThreeDNodeList:
         """`List nodes in a revision, filtered by node property values. <https://docs.cognite.com/api/v1/#operation/filter3DNodes>`_
 
@@ -502,7 +501,7 @@ class ThreeDRevisionsAPI(APIClient):
         )
 
     def list_ancestor_nodes(
-        self, model_id: int, revision_id: int, node_id: int = None, limit: int = 25
+        self, model_id: int, revision_id: int, node_id: int | None = None, limit: int = 25
     ) -> ThreeDNodeList:
         """`Retrieves a list of ancestor nodes of a given node, including itself, in the hierarchy of the 3D model <https://docs.cognite.com/api/v1/#operation/get3DNodeAncestors>`_
 
@@ -566,7 +565,7 @@ class ThreeDAssetMappingAPI(APIClient):
     _LIST_CLASS = ThreeDAssetMappingList
 
     def list(
-        self, model_id: int, revision_id: int, node_id: int = None, asset_id: int = None, limit: int = 25
+        self, model_id: int, revision_id: int, node_id: int | None = None, asset_id: int | None = None, limit: int = 25
     ) -> ThreeDAssetMappingList:
         """`List 3D node asset mappings. <https://docs.cognite.com/api/v1/#operation/get3DMappings>`_
 
@@ -600,8 +599,8 @@ class ThreeDAssetMappingAPI(APIClient):
         )
 
     def create(
-        self, model_id: int, revision_id: int, asset_mapping: Union[ThreeDAssetMapping, Sequence[ThreeDAssetMapping]]
-    ) -> Union[ThreeDAssetMapping, ThreeDAssetMappingList]:
+        self, model_id: int, revision_id: int, asset_mapping: ThreeDAssetMapping | Sequence[ThreeDAssetMapping]
+    ) -> ThreeDAssetMapping | ThreeDAssetMappingList:
         """`Create 3d node asset mappings. <https://docs.cognite.com/api/v1/#operation/create3DMappings>`_
 
         Args:
@@ -628,7 +627,7 @@ class ThreeDAssetMappingAPI(APIClient):
         )
 
     def delete(
-        self, model_id: int, revision_id: int, asset_mapping: Union[ThreeDAssetMapping, Sequence[ThreeDAssetMapping]]
+        self, model_id: int, revision_id: int, asset_mapping: ThreeDAssetMapping | Sequence[ThreeDAssetMapping]
     ) -> None:
         """`Delete 3d node asset mappings. <https://docs.cognite.com/api/v1/#operation/delete3DMappings>`_
 

@@ -27,7 +27,7 @@ class TestAPIError:
             json={"error": {"message": "bla", "extra": {"haha": "blabla"}, "other": "yup"}},
         )
         try:
-            cognite_client.get(url="/api/v1/projects/{}/any".format(cognite_client.config.project))
+            cognite_client.get(url=f"/api/v1/projects/{cognite_client.config.project}/any")
             assert False, "Call did not raise exception"
         except CogniteAPIError as e:
             assert {"extra": {"haha": "blabla"}, "other": "yup"} == e.extra

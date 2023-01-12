@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import time
 from enum import Enum
-from typing import TYPE_CHECKING, Dict, Optional, Union, cast
+from typing import TYPE_CHECKING, cast
 
 from cognite.client import utils
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList
@@ -37,11 +37,11 @@ class TransformationJobMetric(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        timestamp: int = None,
-        name: str = None,
-        count: int = None,
-        cognite_client: CogniteClient = None,
+        id: int | None = None,
+        timestamp: int | None = None,
+        name: str | None = None,
+        count: int | None = None,
+        cognite_client: CogniteClient | None = None,
     ):
         self.timestamp = timestamp
         self.name = name
@@ -49,8 +49,8 @@ class TransformationJobMetric(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> TransformationJobMetric:
-        instance = super(TransformationJobMetric, cls)._load(resource, cognite_client)
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TransformationJobMetric:
+        instance = super()._load(resource, cognite_client)
         return instance
 
 
@@ -84,22 +84,22 @@ class TransformationJob(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        status: TransformationJobStatus = None,
-        transformation_id: int = None,
-        transformation_external_id: str = None,
-        source_project: str = None,
-        destination_project: str = None,
-        destination: TransformationDestination = None,
-        conflict_mode: str = None,
-        query: str = None,
-        error: str = None,
+        id: int | None = None,
+        status: TransformationJobStatus | None = None,
+        transformation_id: int | None = None,
+        transformation_external_id: str | None = None,
+        source_project: str | None = None,
+        destination_project: str | None = None,
+        destination: TransformationDestination | None = None,
+        conflict_mode: str | None = None,
+        query: str | None = None,
+        error: str | None = None,
         ignore_null_fields: bool = False,
-        created_time: int = None,
-        started_time: int = None,
-        finished_time: int = None,
-        last_seen_time: int = None,
-        cognite_client: CogniteClient = None,
+        created_time: int | None = None,
+        started_time: int | None = None,
+        finished_time: int | None = None,
+        last_seen_time: int | None = None,
+        cognite_client: CogniteClient | None = None,
     ):
         self.id = id
         self.status = status
@@ -138,7 +138,7 @@ class TransformationJob(CogniteResource):
         assert self.id is not None
         return self._cognite_client.transformations.jobs.list_metrics(self.id)
 
-    def wait(self, polling_interval: float = 1, timeout: Optional[float] = None) -> TransformationJob:
+    def wait(self, polling_interval: float = 1, timeout: float | None = None) -> TransformationJob:
         """`Waits for the job to finish.`
 
         Args:
@@ -190,7 +190,7 @@ class TransformationJob(CogniteResource):
 
         return self
 
-    async def wait_async(self, polling_interval: float = 1, timeout: Optional[float] = None) -> TransformationJob:
+    async def wait_async(self, polling_interval: float = 1, timeout: float | None = None) -> TransformationJob:
         """Asyncio coroutine, waits for the job to finish asynchronously.
 
         Args:
@@ -252,9 +252,9 @@ class TransformationJob(CogniteResource):
         return self
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> TransformationJob:
-        instance = super(TransformationJob, cls)._load(resource, cognite_client)
-        if isinstance(instance.destination, Dict):
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TransformationJob:
+        instance = super()._load(resource, cognite_client)
+        if isinstance(instance.destination, dict):
             snake_dict = {utils._auxiliary.to_snake_case(key): value for (key, value) in instance.destination.items()}
             destination_type = snake_dict.pop("type")
             if destination_type == "raw":
@@ -283,6 +283,6 @@ class TransformationJobFilter(CogniteFilter):
         transformation_external_id (str): Filter jobs by transformation external ID.
     """
 
-    def __init__(self, transformation_id: Optional[int] = None, transformation_external_id: str = None):
+    def __init__(self, transformation_id: int | None = None, transformation_external_id: str | None = None):
         self.transformation_id = transformation_id
         self.transformation_external_id = transformation_external_id

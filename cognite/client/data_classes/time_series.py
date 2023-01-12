@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -46,21 +47,21 @@ class TimeSeries(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        external_id: str = None,
-        name: str = None,
-        is_string: bool = None,
-        metadata: Dict[str, str] = None,
-        unit: str = None,
-        asset_id: int = None,
-        is_step: bool = None,
-        description: str = None,
-        security_categories: Sequence[int] = None,
-        data_set_id: int = None,
-        created_time: int = None,
-        last_updated_time: int = None,
-        legacy_name: str = None,
-        cognite_client: CogniteClient = None,
+        id: int | None = None,
+        external_id: str | None = None,
+        name: str | None = None,
+        is_string: bool | None = None,
+        metadata: dict[str, str] | None = None,
+        unit: str | None = None,
+        asset_id: int | None = None,
+        is_step: bool | None = None,
+        description: str | None = None,
+        security_categories: Sequence[int] | None = None,
+        data_set_id: int | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+        legacy_name: str | None = None,
+        cognite_client: CogniteClient | None = None,
     ):
         self.id = id
         self.external_id = external_id
@@ -101,7 +102,7 @@ class TimeSeries(CogniteResource):
         )
         return sum(dps.count)
 
-    def latest(self, before: Union[int, str, datetime] = None) -> Optional[Datapoint]:  # noqa: F821
+    def latest(self, before: int | str | datetime | None = None) -> Datapoint | None:  # noqa: F821
         """Returns the latest datapoint in this time series. If empty, returns None.
 
         Returns:
@@ -112,7 +113,7 @@ class TimeSeries(CogniteResource):
             return dps[0]
         return None
 
-    def first(self) -> Optional[Datapoint]:  # noqa: F821
+    def first(self) -> Datapoint | None:  # noqa: F821
         """Returns the first datapoint in this time series. If empty, returns None.
 
         Returns:
@@ -158,19 +159,19 @@ class TimeSeriesFilter(CogniteFilter):
 
     def __init__(
         self,
-        name: str = None,
-        unit: str = None,
-        is_string: bool = None,
-        is_step: bool = None,
-        metadata: Dict[str, str] = None,
-        asset_ids: Sequence[int] = None,
-        asset_external_ids: Sequence[str] = None,
-        asset_subtree_ids: Sequence[Dict[str, Any]] = None,
-        data_set_ids: Sequence[Dict[str, Any]] = None,
-        external_id_prefix: str = None,
-        created_time: Union[Dict[str, Any], TimestampRange] = None,
-        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        cognite_client: CogniteClient = None,
+        name: str | None = None,
+        unit: str | None = None,
+        is_string: bool | None = None,
+        is_step: bool | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: Sequence[str] | None = None,
+        asset_subtree_ids: Sequence[dict[str, Any]] | None = None,
+        data_set_ids: Sequence[dict[str, Any]] | None = None,
+        external_id_prefix: str | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        cognite_client: CogniteClient | None = None,
     ):
         self.name = name
         self.unit = unit
@@ -187,9 +188,9 @@ class TimeSeriesFilter(CogniteFilter):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str]) -> TimeSeriesFilter:
-        instance = super(TimeSeriesFilter, cls)._load(resource)
-        if isinstance(resource, Dict):
+    def _load(cls, resource: dict | str) -> TimeSeriesFilter:
+        instance = super()._load(resource)
+        if isinstance(resource, dict):
             if instance.created_time is not None:
                 instance.created_time = TimestampRange(**instance.created_time)
             if instance.last_updated_time is not None:
@@ -210,30 +211,30 @@ class TimeSeriesUpdate(CogniteUpdate):
             return self._set(value)
 
     class _ObjectTimeSeriesUpdate(CogniteObjectUpdate):
-        def set(self, value: Dict) -> TimeSeriesUpdate:
+        def set(self, value: dict) -> TimeSeriesUpdate:
             return self._set(value)
 
-        def add(self, value: Dict) -> TimeSeriesUpdate:
+        def add(self, value: dict) -> TimeSeriesUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> TimeSeriesUpdate:
+        def remove(self, value: list) -> TimeSeriesUpdate:
             return self._remove(value)
 
     class _ListTimeSeriesUpdate(CogniteListUpdate):
-        def set(self, value: List) -> TimeSeriesUpdate:
+        def set(self, value: list) -> TimeSeriesUpdate:
             return self._set(value)
 
-        def add(self, value: List) -> TimeSeriesUpdate:
+        def add(self, value: list) -> TimeSeriesUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> TimeSeriesUpdate:
+        def remove(self, value: list) -> TimeSeriesUpdate:
             return self._remove(value)
 
     class _LabelTimeSeriesUpdate(CogniteLabelUpdate):
-        def add(self, value: List) -> TimeSeriesUpdate:
+        def add(self, value: list) -> TimeSeriesUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> TimeSeriesUpdate:
+        def remove(self, value: list) -> TimeSeriesUpdate:
             return self._remove(value)
 
     @property
@@ -280,7 +281,7 @@ class TimeSeriesAggregate(dict):
         count (int): No description.
     """
 
-    def __init__(self, count: int = None, **kwargs: Any) -> None:
+    def __init__(self, count: int | None = None, **kwargs: Any) -> None:
         self.count = count
         self.update(kwargs)
 

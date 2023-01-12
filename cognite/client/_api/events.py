@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterator, List, Optional, Sequence, Union, cast, overload
+from collections.abc import Iterator, Sequence
+from typing import TYPE_CHECKING, Any, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import (
@@ -15,33 +16,36 @@ from cognite.client.data_classes import (
 )
 from cognite.client.utils._identifier import IdentifierSequence
 
+if TYPE_CHECKING:
+    list_ = list
+
 
 class EventsAPI(APIClient):
     _RESOURCE_PATH = "/events"
 
     def __call__(
         self,
-        chunk_size: int = None,
-        start_time: Union[Dict[str, Any], TimestampRange] = None,
-        end_time: Union[Dict[str, Any], EndTimeFilter] = None,
-        active_at_time: Union[Dict[str, Any], TimestampRange] = None,
-        type: str = None,
-        subtype: str = None,
-        metadata: Dict[str, str] = None,
-        asset_ids: Sequence[int] = None,
-        asset_external_ids: Sequence[str] = None,
-        asset_subtree_ids: Sequence[int] = None,
-        asset_subtree_external_ids: Sequence[str] = None,
-        data_set_ids: Sequence[int] = None,
-        data_set_external_ids: Sequence[str] = None,
-        source: str = None,
-        created_time: Union[Dict[str, Any], TimestampRange] = None,
-        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        external_id_prefix: str = None,
-        sort: Sequence[str] = None,
-        limit: int = None,
-        partitions: int = None,
-    ) -> Union[Iterator[Event], Iterator[EventList]]:
+        chunk_size: int | None = None,
+        start_time: dict[str, Any] | TimestampRange | None = None,
+        end_time: dict[str, Any] | EndTimeFilter | None = None,
+        active_at_time: dict[str, Any] | TimestampRange | None = None,
+        type: str | None = None,
+        subtype: str | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: Sequence[str] | None = None,
+        asset_subtree_ids: Sequence[int] | None = None,
+        asset_subtree_external_ids: Sequence[str] | None = None,
+        data_set_ids: Sequence[int] | None = None,
+        data_set_external_ids: Sequence[str] | None = None,
+        source: str | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        external_id_prefix: str | None = None,
+        sort: Sequence[str] | None = None,
+        limit: int | None = None,
+        partitions: int | None = None,
+    ) -> Iterator[Event] | Iterator[EventList]:
         """Iterate over events
 
         Fetches events as they are iterated over, so you keep a limited number of events in memory.
@@ -118,7 +122,7 @@ class EventsAPI(APIClient):
         """
         return cast(Iterator[Event], self())
 
-    def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Event]:
+    def retrieve(self, id: int | None = None, external_id: str | None = None) -> Event | None:
         """`Retrieve a single event by id. <https://docs.cognite.com/api/v1/#operation/getEventByInternalId>`_
 
         Args:
@@ -147,8 +151,8 @@ class EventsAPI(APIClient):
 
     def retrieve_multiple(
         self,
-        ids: Optional[Sequence[int]] = None,
-        external_ids: Optional[Sequence[str]] = None,
+        ids: Sequence[int] | None = None,
+        external_ids: Sequence[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> EventList:
         """`Retrieve multiple events by id. <https://docs.cognite.com/api/v1/#operation/byIdsEvents>`_
@@ -182,24 +186,24 @@ class EventsAPI(APIClient):
 
     def list(
         self,
-        start_time: Union[Dict[str, Any], TimestampRange] = None,
-        end_time: Union[Dict[str, Any], EndTimeFilter] = None,
-        active_at_time: Union[Dict[str, Any], TimestampRange] = None,
-        type: str = None,
-        subtype: str = None,
-        metadata: Dict[str, str] = None,
-        asset_ids: Sequence[int] = None,
-        asset_external_ids: Sequence[str] = None,
-        asset_subtree_ids: Sequence[int] = None,
-        asset_subtree_external_ids: Sequence[str] = None,
-        data_set_ids: Sequence[int] = None,
-        data_set_external_ids: Sequence[str] = None,
-        source: str = None,
-        created_time: Union[Dict[str, Any], TimestampRange] = None,
-        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        external_id_prefix: str = None,
-        sort: Sequence[str] = None,
-        partitions: int = None,
+        start_time: dict[str, Any] | TimestampRange | None = None,
+        end_time: dict[str, Any] | EndTimeFilter | None = None,
+        active_at_time: dict[str, Any] | TimestampRange | None = None,
+        type: str | None = None,
+        subtype: str | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: Sequence[str] | None = None,
+        asset_subtree_ids: Sequence[int] | None = None,
+        asset_subtree_external_ids: Sequence[str] | None = None,
+        data_set_ids: Sequence[int] | None = None,
+        data_set_external_ids: Sequence[str] | None = None,
+        source: str | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        external_id_prefix: str | None = None,
+        sort: Sequence[str] | None = None,
+        partitions: int | None = None,
         limit: int = 25,
     ) -> EventList:
         """`List events <https://docs.cognite.com/api/v1/#operation/advancedListEvents>`_
@@ -290,7 +294,7 @@ class EventsAPI(APIClient):
             sort=sort,
         )
 
-    def aggregate(self, filter: Union[EventFilter, Dict] = None) -> List[AggregateResult]:
+    def aggregate(self, filter: EventFilter | dict | None = None) -> list_[AggregateResult]:
         """`Aggregate events <https://docs.cognite.com/api/v1/#operation/aggregateEvents>`_
 
         Args:
@@ -311,8 +315,8 @@ class EventsAPI(APIClient):
         return self._aggregate(filter=filter, cls=AggregateResult)
 
     def aggregate_unique_values(
-        self, filter: Union[EventFilter, Dict] = None, fields: Sequence[str] = None
-    ) -> List[AggregateUniqueValuesResult]:
+        self, filter: EventFilter | dict | None = None, fields: Sequence[str] | None = None
+    ) -> list_[AggregateUniqueValuesResult]:
         """`Aggregate unique values for events <https://docs.cognite.com/api/v1/#operation/aggregateEvents>`_
 
         Args:
@@ -341,7 +345,7 @@ class EventsAPI(APIClient):
     def create(self, event: Event) -> Event:
         ...
 
-    def create(self, event: Union[Event, Sequence[Event]]) -> Union[Event, EventList]:
+    def create(self, event: Event | Sequence[Event]) -> Event | EventList:
         """`Create one or more events. <https://docs.cognite.com/api/v1/#operation/createEvents>`_
 
         Args:
@@ -364,8 +368,8 @@ class EventsAPI(APIClient):
 
     def delete(
         self,
-        id: Union[int, Sequence[int]] = None,
-        external_id: Union[str, Sequence[str]] = None,
+        id: int | Sequence[int] | None = None,
+        external_id: str | Sequence[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete one or more events <https://docs.cognite.com/api/v1/#operation/deleteEvents>`_
@@ -392,14 +396,14 @@ class EventsAPI(APIClient):
         )
 
     @overload
-    def update(self, item: Sequence[Union[Event, EventUpdate]]) -> EventList:
+    def update(self, item: Sequence[Event | EventUpdate]) -> EventList:
         ...
 
     @overload
-    def update(self, item: Union[Event, EventUpdate]) -> Event:
+    def update(self, item: Event | EventUpdate) -> Event:
         ...
 
-    def update(self, item: Union[Event, EventUpdate, Sequence[Union[Event, EventUpdate]]]) -> Union[Event, EventList]:
+    def update(self, item: Event | EventUpdate | Sequence[Event | EventUpdate]) -> Event | EventList:
         """`Update one or more events <https://docs.cognite.com/api/v1/#operation/updateEvents>`_
 
         Args:
@@ -428,7 +432,9 @@ class EventsAPI(APIClient):
         """
         return self._update_multiple(list_cls=EventList, resource_cls=Event, update_cls=EventUpdate, items=item)
 
-    def search(self, description: str = None, filter: Union[EventFilter, Dict] = None, limit: int = 100) -> EventList:
+    def search(
+        self, description: str | None = None, filter: EventFilter | dict | None = None, limit: int = 100
+    ) -> EventList:
         """`Search for events <https://docs.cognite.com/api/v1/#operation/searchEvents>`_
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 

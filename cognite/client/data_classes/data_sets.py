@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Union, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -36,15 +36,15 @@ class DataSet(CogniteResource):
 
     def __init__(
         self,
-        external_id: str = None,
-        name: str = None,
-        description: str = None,
-        metadata: Dict[str, str] = None,
-        write_protected: bool = None,
-        id: int = None,
-        created_time: int = None,
-        last_updated_time: int = None,
-        cognite_client: CogniteClient = None,
+        external_id: str | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        metadata: dict[str, str] | None = None,
+        write_protected: bool | None = None,
+        id: int | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+        cognite_client: CogniteClient | None = None,
     ):
         self.external_id = external_id
         self.name = name
@@ -71,12 +71,12 @@ class DataSetFilter(CogniteFilter):
 
     def __init__(
         self,
-        metadata: Dict[str, str] = None,
-        created_time: Union[Dict[str, Any], TimestampRange] = None,
-        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        external_id_prefix: str = None,
-        write_protected: bool = None,
-        cognite_client: CogniteClient = None,
+        metadata: dict[str, str] | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        external_id_prefix: str | None = None,
+        write_protected: bool | None = None,
+        cognite_client: CogniteClient | None = None,
     ):
         self.metadata = metadata
         self.created_time = created_time
@@ -86,9 +86,9 @@ class DataSetFilter(CogniteFilter):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str]) -> DataSetFilter:
-        instance = super(DataSetFilter, cls)._load(resource)
-        if isinstance(resource, Dict):
+    def _load(cls, resource: dict | str) -> DataSetFilter:
+        instance = super()._load(resource)
+        if isinstance(resource, dict):
             if instance.created_time is not None:
                 instance.created_time = TimestampRange(**instance.created_time)
             if instance.last_updated_time is not None:
@@ -109,30 +109,30 @@ class DataSetUpdate(CogniteUpdate):
             return self._set(value)
 
     class _ObjectDataSetUpdate(CogniteObjectUpdate):
-        def set(self, value: Dict) -> DataSetUpdate:
+        def set(self, value: dict) -> DataSetUpdate:
             return self._set(value)
 
-        def add(self, value: Dict) -> DataSetUpdate:
+        def add(self, value: dict) -> DataSetUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> DataSetUpdate:
+        def remove(self, value: list) -> DataSetUpdate:
             return self._remove(value)
 
     class _ListDataSetUpdate(CogniteListUpdate):
-        def set(self, value: List) -> DataSetUpdate:
+        def set(self, value: list) -> DataSetUpdate:
             return self._set(value)
 
-        def add(self, value: List) -> DataSetUpdate:
+        def add(self, value: list) -> DataSetUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> DataSetUpdate:
+        def remove(self, value: list) -> DataSetUpdate:
             return self._remove(value)
 
     class _LabelDataSetUpdate(CogniteLabelUpdate):
-        def add(self, value: List) -> DataSetUpdate:
+        def add(self, value: list) -> DataSetUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> DataSetUpdate:
+        def remove(self, value: list) -> DataSetUpdate:
             return self._remove(value)
 
     @property
@@ -163,7 +163,7 @@ class DataSetAggregate(dict):
         count (int): Size of the aggregation group
     """
 
-    def __init__(self, count: int = None, **kwargs: Any) -> None:
+    def __init__(self, count: int | None = None, **kwargs: Any) -> None:
         self.count = count
         self.update(kwargs)
 

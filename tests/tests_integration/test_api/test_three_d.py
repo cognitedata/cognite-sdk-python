@@ -91,7 +91,7 @@ class TestThreeDFilesAPI:
     def test_retrieve(self, cognite_client, test_revision):
         revision, model_id = test_revision
         project = cognite_client._config.project
-        url = "/api/v1/projects/{}/3d/reveal/models/{}/revisions/{}".format(project, model_id, revision.id)
+        url = f"/api/v1/projects/{project}/3d/reveal/models/{model_id}/revisions/{revision.id}"
         response = cognite_client.get(url=url)
         threedFileId = response.json()["sceneThreedFiles"][0]["fileId"]
 

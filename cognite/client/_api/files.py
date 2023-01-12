@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import copy
 import os
+from collections.abc import Iterator, Sequence
 from pathlib import Path
-from typing import Any, BinaryIO, Dict, Iterator, List, Optional, Sequence, TextIO, Tuple, Union, cast, overload
+from typing import TYPE_CHECKING, Any, BinaryIO, TextIO, cast, overload
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -21,35 +22,38 @@ from cognite.client.data_classes import (
 )
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 
+if TYPE_CHECKING:
+    list_ = list
+
 
 class FilesAPI(APIClient):
     _RESOURCE_PATH = "/files"
 
     def __call__(
         self,
-        chunk_size: int = None,
-        name: str = None,
-        mime_type: str = None,
-        metadata: Dict[str, str] = None,
-        asset_ids: Sequence[int] = None,
-        asset_external_ids: Sequence[str] = None,
-        asset_subtree_ids: Sequence[int] = None,
-        asset_subtree_external_ids: Sequence[str] = None,
-        data_set_ids: Sequence[int] = None,
-        data_set_external_ids: Sequence[str] = None,
-        labels: LabelFilter = None,
-        geo_location: GeoLocationFilter = None,
-        source: str = None,
-        created_time: Union[Dict[str, Any], TimestampRange] = None,
-        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        source_created_time: Union[Dict[str, Any], TimestampRange] = None,
-        source_modified_time: Union[Dict[str, Any], TimestampRange] = None,
-        uploaded_time: Union[Dict[str, Any], TimestampRange] = None,
-        external_id_prefix: str = None,
-        directory_prefix: str = None,
-        uploaded: bool = None,
-        limit: int = None,
-    ) -> Union[Iterator[FileMetadata], Iterator[FileMetadataList]]:
+        chunk_size: int | None = None,
+        name: str | None = None,
+        mime_type: str | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: Sequence[str] | None = None,
+        asset_subtree_ids: Sequence[int] | None = None,
+        asset_subtree_external_ids: Sequence[str] | None = None,
+        data_set_ids: Sequence[int] | None = None,
+        data_set_external_ids: Sequence[str] | None = None,
+        labels: LabelFilter | None = None,
+        geo_location: GeoLocationFilter | None = None,
+        source: str | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        source_created_time: dict[str, Any] | TimestampRange | None = None,
+        source_modified_time: dict[str, Any] | TimestampRange | None = None,
+        uploaded_time: dict[str, Any] | TimestampRange | None = None,
+        external_id_prefix: str | None = None,
+        directory_prefix: str | None = None,
+        uploaded: bool | None = None,
+        limit: int | None = None,
+    ) -> Iterator[FileMetadata] | Iterator[FileMetadataList]:
         """Iterate over files
 
         Fetches file metadata objects as they are iterated over, so you keep a limited number of metadata objects in memory.
@@ -131,7 +135,7 @@ class FilesAPI(APIClient):
         """
         return cast(Iterator[FileMetadata], self())
 
-    def create(self, file_metadata: FileMetadata, overwrite: bool = False) -> Tuple[FileMetadata, str]:
+    def create(self, file_metadata: FileMetadata, overwrite: bool = False) -> tuple[FileMetadata, str]:
         """Create file without uploading content.
 
         Args:
@@ -165,7 +169,7 @@ class FilesAPI(APIClient):
         file_metadata = FileMetadata._load(returned_file_metadata)
         return (file_metadata, upload_url)
 
-    def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[FileMetadata]:
+    def retrieve(self, id: int | None = None, external_id: str | None = None) -> FileMetadata | None:
         """`Retrieve a single file metadata by id. <https://docs.cognite.com/api/v1/#operation/getFileByInternalId>`_
 
         Args:
@@ -194,8 +198,8 @@ class FilesAPI(APIClient):
 
     def retrieve_multiple(
         self,
-        ids: Optional[Sequence[int]] = None,
-        external_ids: Optional[Sequence[str]] = None,
+        ids: Sequence[int] | None = None,
+        external_ids: Sequence[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> FileMetadataList:
         """`Retrieve multiple file metadatas by id. <https://docs.cognite.com/api/v1/#operation/byIdsFiles>`_
@@ -232,26 +236,26 @@ class FilesAPI(APIClient):
 
     def list(
         self,
-        name: str = None,
-        mime_type: str = None,
-        metadata: Dict[str, str] = None,
-        asset_ids: Sequence[int] = None,
-        asset_external_ids: Sequence[str] = None,
-        asset_subtree_ids: Sequence[int] = None,
-        asset_subtree_external_ids: Sequence[str] = None,
-        data_set_ids: Sequence[int] = None,
-        data_set_external_ids: Sequence[str] = None,
-        labels: LabelFilter = None,
-        geo_location: GeoLocationFilter = None,
-        source: str = None,
-        created_time: Union[Dict[str, Any], TimestampRange] = None,
-        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        source_created_time: Union[Dict[str, Any], TimestampRange] = None,
-        source_modified_time: Union[Dict[str, Any], TimestampRange] = None,
-        uploaded_time: Union[Dict[str, Any], TimestampRange] = None,
-        external_id_prefix: str = None,
-        directory_prefix: str = None,
-        uploaded: bool = None,
+        name: str | None = None,
+        mime_type: str | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: Sequence[str] | None = None,
+        asset_subtree_ids: Sequence[int] | None = None,
+        asset_subtree_external_ids: Sequence[str] | None = None,
+        data_set_ids: Sequence[int] | None = None,
+        data_set_external_ids: Sequence[str] | None = None,
+        labels: LabelFilter | None = None,
+        geo_location: GeoLocationFilter | None = None,
+        source: str | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        source_created_time: dict[str, Any] | TimestampRange | None = None,
+        source_modified_time: dict[str, Any] | TimestampRange | None = None,
+        uploaded_time: dict[str, Any] | TimestampRange | None = None,
+        external_id_prefix: str | None = None,
+        directory_prefix: str | None = None,
+        uploaded: bool | None = None,
         limit: int = 25,
     ) -> FileMetadataList:
         """`List files <https://docs.cognite.com/api/v1/#operation/advancedListFiles>`_
@@ -356,7 +360,7 @@ class FilesAPI(APIClient):
             list_cls=FileMetadataList, resource_cls=FileMetadata, method="POST", limit=limit, filter=filter
         )
 
-    def aggregate(self, filter: Union[FileMetadataFilter, Dict] = None) -> List[FileAggregate]:
+    def aggregate(self, filter: FileMetadataFilter | dict | None = None) -> list_[FileAggregate]:
         """`Aggregate files <https://docs.cognite.com/api/v1/#operation/aggregateFiles>`_
 
         Args:
@@ -376,7 +380,7 @@ class FilesAPI(APIClient):
 
         return self._aggregate(filter=filter, cls=FileAggregate)
 
-    def delete(self, id: Union[int, Sequence[int]] = None, external_id: Union[str, Sequence[str]] = None) -> None:
+    def delete(self, id: int | Sequence[int] | None = None, external_id: str | Sequence[str] | None = None) -> None:
         """`Delete files <https://docs.cognite.com/api/v1/#operation/deleteFiles>`_
 
         Args:
@@ -397,16 +401,16 @@ class FilesAPI(APIClient):
         self._delete_multiple(identifiers=IdentifierSequence.load(ids=id, external_ids=external_id), wrap_ids=True)
 
     @overload
-    def update(self, item: Union[FileMetadata, FileMetadataUpdate]) -> FileMetadata:
+    def update(self, item: FileMetadata | FileMetadataUpdate) -> FileMetadata:
         ...
 
     @overload
-    def update(self, item: Sequence[Union[FileMetadata, FileMetadataUpdate]]) -> FileMetadataList:
+    def update(self, item: Sequence[FileMetadata | FileMetadataUpdate]) -> FileMetadataList:
         ...
 
     def update(
-        self, item: Union[FileMetadata, FileMetadataUpdate, Sequence[Union[FileMetadata, FileMetadataUpdate]]]
-    ) -> Union[FileMetadata, FileMetadataList]:
+        self, item: FileMetadata | FileMetadataUpdate | Sequence[FileMetadata | FileMetadataUpdate]
+    ) -> FileMetadata | FileMetadataList:
         """`Update files <https://docs.cognite.com/api/v1/#operation/updateFiles>`_
         Currently, a full replacement of labels on a file is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.
 
@@ -459,7 +463,7 @@ class FilesAPI(APIClient):
         )
 
     def search(
-        self, name: str = None, filter: Optional[Union[FileMetadataFilter, dict]] = None, limit: int = 100
+        self, name: str | None = None, filter: FileMetadataFilter | dict | None = None, limit: int = 100
     ) -> FileMetadataList:
         """`Search for files. <https://docs.cognite.com/api/v1/#operation/searchFiles>`_
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
@@ -492,22 +496,22 @@ class FilesAPI(APIClient):
     def upload(
         self,
         path: str,
-        external_id: str = None,
-        name: str = None,
-        source: str = None,
-        mime_type: str = None,
-        metadata: Dict[str, str] = None,
-        directory: str = None,
-        asset_ids: Sequence[int] = None,
-        source_created_time: int = None,
-        source_modified_time: int = None,
-        data_set_id: int = None,
-        labels: Sequence[Label] = None,
-        geo_location: GeoLocation = None,
-        security_categories: Sequence[int] = None,
+        external_id: str | None = None,
+        name: str | None = None,
+        source: str | None = None,
+        mime_type: str | None = None,
+        metadata: dict[str, str] | None = None,
+        directory: str | None = None,
+        asset_ids: Sequence[int] | None = None,
+        source_created_time: int | None = None,
+        source_modified_time: int | None = None,
+        data_set_id: int | None = None,
+        labels: Sequence[Label] | None = None,
+        geo_location: GeoLocation | None = None,
+        security_categories: Sequence[int] | None = None,
         recursive: bool = False,
         overwrite: bool = False,
-    ) -> Union[FileMetadata, FileMetadataList]:
+    ) -> FileMetadata | FileMetadataList:
         """`Upload a file <https://docs.cognite.com/api/v1/#operation/initFileUpload>`_
 
         Args:
@@ -614,7 +618,7 @@ class FilesAPI(APIClient):
             )
             tasks_summary.raise_compound_exception_if_failed_tasks(task_unwrap_fn=lambda x: x[0].name)
             return FileMetadataList(tasks_summary.results)
-        raise ValueError("path '{}' does not exist".format(path))
+        raise ValueError(f"path '{path}' does not exist")
 
     def _upload_file_from_path(self, file: FileMetadata, file_path: str, overwrite: bool) -> FileMetadata:
         with open(file_path, "rb") as fh:
@@ -623,20 +627,20 @@ class FilesAPI(APIClient):
 
     def upload_bytes(
         self,
-        content: Union[str, bytes, TextIO, BinaryIO],
+        content: str | bytes | TextIO | BinaryIO,
         name: str,
-        external_id: str = None,
-        source: str = None,
-        mime_type: str = None,
-        metadata: Dict[str, str] = None,
-        directory: str = None,
-        asset_ids: Sequence[int] = None,
-        data_set_id: int = None,
-        labels: Sequence[Label] = None,
-        geo_location: GeoLocation = None,
-        source_created_time: int = None,
-        source_modified_time: int = None,
-        security_categories: Sequence[int] = None,
+        external_id: str | None = None,
+        source: str | None = None,
+        mime_type: str | None = None,
+        metadata: dict[str, str] | None = None,
+        directory: str | None = None,
+        asset_ids: Sequence[int] | None = None,
+        data_set_id: int | None = None,
+        labels: Sequence[Label] | None = None,
+        geo_location: GeoLocation | None = None,
+        source_created_time: int | None = None,
+        source_modified_time: int | None = None,
+        security_categories: Sequence[int] | None = None,
         overwrite: bool = False,
     ) -> FileMetadata:
         """Upload bytes or string.
@@ -704,10 +708,10 @@ class FilesAPI(APIClient):
 
     def retrieve_download_urls(
         self,
-        id: Union[int, Sequence[int]] = None,
-        external_id: Union[str, Sequence[str]] = None,
+        id: int | Sequence[int] | None = None,
+        external_id: str | Sequence[str] | None = None,
         extended_expiration: bool = False,
-    ) -> Dict[Union[int, str], str]:
+    ) -> dict[int | str, str]:
         """Get download links by id or external id
 
         Args:
@@ -736,9 +740,9 @@ class FilesAPI(APIClient):
 
     def download(
         self,
-        directory: Union[str, Path],
-        id: Union[int, Sequence[int]] = None,
-        external_id: Union[str, Sequence[str]] = None,
+        directory: str | Path,
+        id: int | Sequence[int] | None = None,
+        external_id: str | Sequence[str] | None = None,
     ) -> None:
         """`Download files by id or external id. <https://docs.cognite.com/api/v1/#operation/downloadLinks>`_
 
@@ -766,10 +770,10 @@ class FilesAPI(APIClient):
             directory = Path(directory)
         all_ids = IdentifierSequence.load(id, external_id).as_dicts()
         id_to_metadata = self._get_id_to_metadata_map(all_ids)
-        assert directory.is_dir(), "{} is not a directory".format(directory)
+        assert directory.is_dir(), f"{directory} is not a directory"
         self._download_files_to_directory(directory, all_ids, id_to_metadata)
 
-    def _get_id_to_metadata_map(self, all_ids: Sequence[Dict]) -> Dict[Union[str, int], FileMetadata]:
+    def _get_id_to_metadata_map(self, all_ids: Sequence[dict]) -> dict[str | int, FileMetadata]:
         ids = [id["id"] for id in all_ids if "id" in id]
         external_ids = [id["externalId"] for id in all_ids if "externalId" in id]
 
@@ -785,8 +789,8 @@ class FilesAPI(APIClient):
     def _download_files_to_directory(
         self,
         directory: Path,
-        all_ids: Sequence[Dict[str, Union[int, str]]],
-        id_to_metadata: Dict[Union[str, int], FileMetadata],
+        all_ids: Sequence[dict[str, int | str]],
+        id_to_metadata: dict[str | int, FileMetadata],
     ) -> None:
         tasks = [(directory, id, id_to_metadata) for id in all_ids]
         tasks_summary = utils._concurrency.execute_tasks_concurrently(
@@ -797,7 +801,7 @@ class FilesAPI(APIClient):
             str_format_element_fn=lambda metadata: metadata.id,
         )
 
-    def _get_download_link(self, identifier: Dict[str, Union[int, str]]) -> str:
+    def _get_download_link(self, identifier: dict[str, int | str]) -> str:
         return self._post(url_path="/files/downloadlink", json={"items": [identifier]}).json()["items"][0][
             "downloadUrl"
         ]
@@ -805,8 +809,8 @@ class FilesAPI(APIClient):
     def _process_file_download(
         self,
         directory: Path,
-        identifier: Dict[str, Union[int, str]],
-        id_to_metadata: Dict[Union[str, int], FileMetadata],
+        identifier: dict[str, int | str],
+        id_to_metadata: dict[str | int, FileMetadata],
     ) -> None:
         id = utils._auxiliary.unwrap_identifer(identifier)
         file_metadata = id_to_metadata[id]
@@ -826,7 +830,7 @@ class FilesAPI(APIClient):
                     if chunk:  # filter out keep-alive new chunks
                         f.write(chunk)
 
-    def download_to_path(self, path: Union[Path, str], id: int = None, external_id: str = None) -> None:
+    def download_to_path(self, path: Path | str, id: int | None = None, external_id: str | None = None) -> None:
         """Download a file to a specific target.
 
         Args:
@@ -846,12 +850,12 @@ class FilesAPI(APIClient):
         """
         if isinstance(path, str):
             path = Path(path)
-        assert path.parent.is_dir(), "{} is not a directory".format(path.parent)
+        assert path.parent.is_dir(), f"{path.parent} is not a directory"
         identifier = Identifier.of_either(id, external_id).as_dict()
         download_link = self._get_download_link(identifier)
         self._download_file_to_path(download_link, path)
 
-    def download_bytes(self, id: int = None, external_id: str = None) -> bytes:
+    def download_bytes(self, id: int | None = None, external_id: str | None = None) -> bytes:
         """Download a file as bytes.
 
         Args:

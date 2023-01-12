@@ -9,7 +9,7 @@ from cognite.client.data_classes import Datapoints, DatapointsList
 
 @pytest.fixture(scope="session")
 def test_time_series(cognite_client):
-    time_series_names = ["test__constant_{}_with_noise".format(i) for i in range(0, 10)]
+    time_series_names = [f"test__constant_{i}_with_noise" for i in range(0, 10)]
     time_series = {}
     for ts in cognite_client.time_series.retrieve_multiple(external_ids=time_series_names):
         value = int(re.match(r"test__constant_(\d+)_with_noise", ts.name).group(1))

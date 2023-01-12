@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import OrderedDict
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
@@ -24,10 +24,10 @@ class Row(CogniteResource):
 
     def __init__(
         self,
-        key: str = None,
-        columns: Dict[str, Any] = None,
-        last_updated_time: int = None,
-        cognite_client: CogniteClient = None,
+        key: str | None = None,
+        columns: dict[str, Any] | None = None,
+        last_updated_time: int | None = None,
+        cognite_client: CogniteClient | None = None,
     ):
         self.key = key
         self.columns = columns
@@ -57,7 +57,7 @@ class RowList(CogniteResourceList):
             pandas.DataFrame: The pandas DataFrame representing this instance.
         """
         pd = cast(Any, utils._auxiliary.local_import("pandas"))
-        return pd.DataFrame.from_dict(OrderedDict(((d.key, d.columns) for d in self.data)), orient="index")
+        return pd.DataFrame.from_dict(OrderedDict((d.key, d.columns) for d in self.data), orient="index")
 
     def _repr_html_(self) -> str:
         return self.to_pandas()._repr_html_()
@@ -72,14 +72,16 @@ class Table(CogniteResource):
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
-    def __init__(self, name: str = None, created_time: int = None, cognite_client: CogniteClient = None):
+    def __init__(
+        self, name: str | None = None, created_time: int | None = None, cognite_client: CogniteClient | None = None
+    ):
         self.name = name
         self.created_time = created_time
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-        self._db_name: Optional[str] = None
+        self._db_name: str | None = None
 
-    def rows(self, key: str = None, limit: int = None) -> Union[Row, RowList]:
+    def rows(self, key: str | None = None, limit: int | None = None) -> Row | RowList:
         """Get the rows in this table.
 
         Args:
@@ -107,12 +109,14 @@ class Database(CogniteResource):
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
-    def __init__(self, name: str = None, created_time: int = None, cognite_client: CogniteClient = None):
+    def __init__(
+        self, name: str | None = None, created_time: int | None = None, cognite_client: CogniteClient | None = None
+    ):
         self.name = name
         self.created_time = created_time
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def tables(self, limit: int = None) -> TableList:
+    def tables(self, limit: int | None = None) -> TableList:
         """Get the tables in this database.
 
         Args:

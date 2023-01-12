@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import reprlib
-from typing import Callable, Dict, List, Sequence
+from collections.abc import Callable, Sequence
 
 
 class CogniteException(Exception):
@@ -23,7 +23,11 @@ class CogniteReadTimeout(CogniteException):
 
 class CogniteMultiException(CogniteException):
     def __init__(
-        self, successful: Sequence = None, failed: Sequence = None, unknown: Sequence = None, unwrap_fn: Callable = None
+        self,
+        successful: Sequence | None = None,
+        failed: Sequence | None = None,
+        unknown: Sequence | None = None,
+        unwrap_fn: Callable | None = None,
     ):
         self.successful = successful or []
         self.failed = failed or []
@@ -80,14 +84,14 @@ class CogniteAPIError(CogniteMultiException):
         self,
         message: str,
         code: int,
-        x_request_id: str = None,
-        missing: Sequence = None,
-        duplicated: Sequence = None,
-        successful: Sequence = None,
-        failed: Sequence = None,
-        unknown: Sequence = None,
-        unwrap_fn: Callable = None,
-        extra: Dict = None,
+        x_request_id: str | None = None,
+        missing: Sequence | None = None,
+        duplicated: Sequence | None = None,
+        successful: Sequence | None = None,
+        failed: Sequence | None = None,
+        unknown: Sequence | None = None,
+        unwrap_fn: Callable | None = None,
+        extra: dict | None = None,
     ) -> None:
         self.message = message
         self.code = code
@@ -98,15 +102,15 @@ class CogniteAPIError(CogniteMultiException):
         super().__init__(successful, failed, unknown, unwrap_fn)
 
     def __str__(self) -> str:
-        msg = "{} | code: {} | X-Request-ID: {}".format(self.message, self.code, self.x_request_id)
+        msg = f"{self.message} | code: {self.code} | X-Request-ID: {self.x_request_id}"
         if self.missing:
-            msg += "\nMissing: {}".format(self.missing)
+            msg += f"\nMissing: {self.missing}"
         if self.duplicated:
-            msg += "\nDuplicated: {}".format(self.duplicated)
+            msg += f"\nDuplicated: {self.duplicated}"
         msg += self._get_multi_exception_summary()
         if self.extra:
             pretty_extra = json.dumps(self.extra, indent=4, sort_keys=True)
-            msg += "\nAdditional error info: {}".format(pretty_extra)
+            msg += f"\nAdditional error info: {pretty_extra}"
         return msg
 
 
@@ -124,11 +128,11 @@ class CogniteNotFoundError(CogniteMultiException):
 
     def __init__(
         self,
-        not_found: List,
-        successful: List = None,
-        failed: List = None,
-        unknown: List = None,
-        unwrap_fn: Callable = None,
+        not_found: list,
+        successful: list | None = None,
+        failed: list | None = None,
+        unknown: list | None = None,
+        unwrap_fn: Callable | None = None,
     ):
         self.not_found = not_found
         super().__init__(successful, failed, unknown, unwrap_fn)
@@ -153,17 +157,17 @@ class CogniteDuplicatedError(CogniteMultiException):
 
     def __init__(
         self,
-        duplicated: List,
-        successful: List = None,
-        failed: List = None,
-        unknown: List = None,
-        unwrap_fn: Callable = None,
+        duplicated: list,
+        successful: list | None = None,
+        failed: list | None = None,
+        unknown: list | None = None,
+        unwrap_fn: Callable | None = None,
     ):
         self.duplicated = duplicated
         super().__init__(successful, failed, unknown, unwrap_fn)
 
     def __str__(self) -> str:
-        msg = "Duplicated: {}".format(self.duplicated)
+        msg = f"Duplicated: {self.duplicated}"
         msg += self._get_multi_exception_summary()
         return msg
 
@@ -178,7 +182,7 @@ class CogniteImportError(CogniteException):
         message (str): The error message to output.
     """
 
-    def __init__(self, module: str, message: str = None):
+    def __init__(self, module: str, message: str | None = None):
         self.module = module
         self.message = message or "The functionality you are trying to use requires '{}' to be installed.".format(
             self.module

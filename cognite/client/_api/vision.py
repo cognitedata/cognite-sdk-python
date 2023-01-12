@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.contextualization import (
@@ -19,7 +19,7 @@ class VisionAPI(APIClient):
     _RESOURCE_PATH = "/context/vision"
 
     @staticmethod
-    def _process_file_ids(ids: Union[List[int], int, None], external_ids: Union[List[str], str, None]) -> List:
+    def _process_file_ids(ids: list[int] | int | None, external_ids: list[str] | str | None) -> list:
         """
         Utility for sanitizing a given lists of ids and external ids.
         Returns the concatenation of the ids an external ids in the format
@@ -35,9 +35,9 @@ class VisionAPI(APIClient):
     def _run_job(
         self,
         job_path: str,
-        job_cls: Type[T_ContextualizationJob],
-        status_path: Optional[str] = None,
-        headers: Dict[str, Any] = None,
+        job_cls: type[T_ContextualizationJob],
+        status_path: str | None = None,
+        headers: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> T_ContextualizationJob:
         if status_path is None:
@@ -55,10 +55,10 @@ class VisionAPI(APIClient):
 
     def extract(
         self,
-        features: Union[VisionFeature, List[VisionFeature]],
-        file_ids: Optional[List[int]] = None,
-        file_external_ids: Optional[List[str]] = None,
-        parameters: Optional[FeatureParameters] = None,
+        features: VisionFeature | list[VisionFeature],
+        file_ids: list[int] | None = None,
+        file_external_ids: list[str] | None = None,
+        parameters: FeatureParameters | None = None,
     ) -> VisionExtractJob:
         """Start an asynchronous job to extract features from image files.
 

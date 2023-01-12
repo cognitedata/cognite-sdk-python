@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import Any
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -17,8 +18,8 @@ class TransformationNotificationsAPI(APIClient):
         super().__init__(*args, **kwargs)
 
     def create(
-        self, notification: Union[TransformationNotification, Sequence[TransformationNotification]]
-    ) -> Union[TransformationNotification, TransformationNotificationList]:
+        self, notification: TransformationNotification | Sequence[TransformationNotification]
+    ) -> TransformationNotification | TransformationNotificationList:
         """`Subscribe for notifications on the transformation errors. <https://docs.cognite.com/api/v1/#operation/createTransformationNotifications>`_
 
         Args:
@@ -44,10 +45,10 @@ class TransformationNotificationsAPI(APIClient):
 
     def list(
         self,
-        transformation_id: Optional[int] = None,
-        transformation_external_id: str = None,
-        destination: str = None,
-        limit: Optional[int] = 25,
+        transformation_id: int | None = None,
+        transformation_external_id: str | None = None,
+        destination: str | None = None,
+        limit: int | None = 25,
     ) -> TransformationNotificationList:
         """`List notification subscriptions. <https://docs.cognite.com/api/v1/#operation/getTransformationNotifications>`_
 
@@ -88,7 +89,7 @@ class TransformationNotificationsAPI(APIClient):
             filter=filter,
         )
 
-    def delete(self, id: Union[int, Sequence[int]] = None) -> None:
+    def delete(self, id: int | Sequence[int] | None = None) -> None:
         """`Deletes the specified notification subscriptions on the transformation. Does nothing when the subscriptions already don't exist <https://docs.cognite.com/api/v1/#operation/deleteTransformationNotifications>`_
 
         Args:

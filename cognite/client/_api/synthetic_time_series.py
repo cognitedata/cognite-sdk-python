@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Sequence
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import cognite.client.utils._time
 from cognite.client import utils
@@ -19,14 +20,14 @@ class SyntheticDatapointsAPI(APIClient):
 
     def query(
         self,
-        expressions: Union[str, "sympy.Expr", Sequence[Union[str, "sympy.Expr"]]],
-        start: Union[int, str, datetime],
-        end: Union[int, str, datetime],
-        limit: int = None,
-        variables: Dict[str, Union[str, TimeSeries]] = None,
-        aggregate: str = None,
-        granularity: str = None,
-    ) -> Union[Datapoints, DatapointsList]:
+        expressions: str | sympy.Expr | Sequence[str | sympy.Expr],
+        start: int | str | datetime,
+        end: int | str | datetime,
+        limit: int | None = None,
+        variables: dict[str, str | TimeSeries] | None = None,
+        aggregate: str | None = None,
+        granularity: str | None = None,
+    ) -> Datapoints | DatapointsList:
         """`Calculate the result of a function on time series. <https://docs.cognite.com/api/v1/#operation/querySyntheticTimeseries>`_
 
         Args:
@@ -77,7 +78,7 @@ class SyntheticDatapointsAPI(APIClient):
                 "start": cognite.client.utils._time.timestamp_to_ms(start),
                 "end": cognite.client.utils._time.timestamp_to_ms(end),
             }
-            values: List[float] = []  # mypy
+            values: list[float] = []  # mypy
             query_datapoints = Datapoints(value=values, error=[])
             query_datapoints.external_id = short_expression
 
@@ -92,11 +93,11 @@ class SyntheticDatapointsAPI(APIClient):
 
         return (
             DatapointsList(datapoints_summary.results, cognite_client=self._cognite_client)
-            if isinstance(expressions, List)
+            if isinstance(expressions, list)
             else datapoints_summary.results[0]
         )
 
-    def _fetch_datapoints(self, query: Dict[str, Any], datapoints: Datapoints, limit: int) -> Datapoints:
+    def _fetch_datapoints(self, query: dict[str, Any], datapoints: Datapoints, limit: int) -> Datapoints:
         while True:
             query["limit"] = min(limit, self._DPS_LIMIT)
             resp = self._post(url_path=self._RESOURCE_PATH + "/query", json={"items": [query]})
@@ -110,11 +111,11 @@ class SyntheticDatapointsAPI(APIClient):
 
     @staticmethod
     def _build_expression(
-        expression: Union[str, "sympy.Expr"],
-        variables: Dict[str, Any] = None,
-        aggregate: str = None,
-        granularity: str = None,
-    ) -> Tuple[str, str]:
+        expression: str | sympy.Expr,
+        variables: dict[str, Any] | None = None,
+        aggregate: str | None = None,
+        granularity: str | None = None,
+    ) -> tuple[str, str]:
         if expression.__class__.__module__.startswith("sympy."):
             expression_str = SyntheticDatapointsAPI._sympy_to_sts(expression)
             if not variables:
@@ -124,7 +125,7 @@ class SyntheticDatapointsAPI(APIClient):
         else:
             expression_str = cast(str, expression)
         if aggregate and granularity:
-            aggregate_str = ",aggregate:'{}',granularity:'{}'".format(aggregate, granularity)
+            aggregate_str = f",aggregate:'{aggregate}',granularity:'{granularity}'"
         else:
             aggregate_str = ""
         expression_with_ts: str = expression_str
@@ -133,12 +134,12 @@ class SyntheticDatapointsAPI(APIClient):
                 if isinstance(v, TimeSeries):
                     v = v.external_id
                 expression_with_ts = re.sub(  # type: ignore
-                    re.compile(r"\b%s\b" % k), "ts{externalId:'%s'%s}" % (v, aggregate_str), expression_with_ts
+                    re.compile(r"\b%s\b" % k), f"ts{{externalId:'{v}'{aggregate_str}}}", expression_with_ts
                 )
         return expression_with_ts, expression_str
 
     @staticmethod
-    def _sympy_to_sts(expression: Union[str, "sympy.Expr"]) -> str:
+    def _sympy_to_sts(expression: str | sympy.Expr) -> str:
         sympy_module = cast(Any, utils._auxiliary.local_import("sympy"))
 
         infix_ops = {sympy_module.Add: "+", sympy_module.Mul: "*"}
@@ -163,11 +164,11 @@ class SyntheticDatapointsAPI(APIClient):
                 return "(" + infixop.join(process_symbol(s) for s in sym.args) + ")"
             if isinstance(sym, sympy_module.Pow):
                 if sym.args[1] == -1:
-                    return "(1/{})".format(process_symbol(sym.args[0]))
+                    return f"(1/{process_symbol(sym.args[0])})"
                 return "pow({},{})".format(*[process_symbol(x) for x in sym.args])
             funop = functions.get(sym.__class__)
             if funop:
                 return "{}({})".format(funop, ",".join(process_symbol(x) for x in sym.args))
-            raise ValueError("Unsupported sympy class {} encountered in expression".format(sym.__class__))
+            raise ValueError(f"Unsupported sympy class {sym.__class__} encountered in expression")
 
         return process_symbol(expression)

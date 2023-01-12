@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import copy
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
-from typing import Sequence as SequenceType
-from typing import Type, Union, cast
+from collections.abc import Sequence as SequenceType
+from typing import TYPE_CHECKING, Any, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -47,21 +46,21 @@ class Relationship(CogniteResource):
 
     def __init__(
         self,
-        external_id: str = None,
-        source_external_id: str = None,
-        source_type: str = None,
-        source: Union[Asset, TimeSeries, FileMetadata, Sequence, Event, Dict] = None,
-        target_external_id: str = None,
-        target_type: str = None,
-        target: Union[Asset, TimeSeries, FileMetadata, Sequence, Event, Dict] = None,
-        start_time: int = None,
-        end_time: int = None,
-        confidence: float = None,
-        data_set_id: int = None,
-        labels: SequenceType[Union[Label, str, LabelDefinition, dict]] = None,
-        created_time: int = None,
-        last_updated_time: int = None,
-        cognite_client: CogniteClient = None,
+        external_id: str | None = None,
+        source_external_id: str | None = None,
+        source_type: str | None = None,
+        source: Asset | TimeSeries | FileMetadata | Sequence | Event | dict | None = None,
+        target_external_id: str | None = None,
+        target_type: str | None = None,
+        target: Asset | TimeSeries | FileMetadata | Sequence | Event | dict | None = None,
+        start_time: int | None = None,
+        end_time: int | None = None,
+        confidence: float | None = None,
+        data_set_id: int | None = None,
+        labels: SequenceType[Label | str | LabelDefinition | dict] | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+        cognite_client: CogniteClient | None = None,
     ):
         self.external_id = external_id
         self.source_external_id = source_external_id
@@ -86,14 +85,14 @@ class Relationship(CogniteResource):
         return rel
 
     @staticmethod
-    def _validate_resource_type(resource_type: Optional[str]) -> None:
+    def _validate_resource_type(resource_type: str | None) -> None:
         _RESOURCE_TYPES = {"asset", "timeseries", "file", "event", "sequence"}
         if resource_type is None or resource_type.lower() not in _RESOURCE_TYPES:
-            raise TypeError("Invalid source or target '{}' in relationship".format(resource_type))
+            raise TypeError(f"Invalid source or target '{resource_type}' in relationship")
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> Relationship:
-        instance = super(Relationship, cls)._load(resource, cognite_client)
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Relationship:
+        instance = super()._load(resource, cognite_client)
         if instance.source is not None:
             instance.source = instance._convert_resource(instance.source, instance.source_type)  # type: ignore
         if instance.target is not None:
@@ -102,9 +101,9 @@ class Relationship(CogniteResource):
         return instance
 
     def _convert_resource(
-        self, resource: Dict[str, Any], resource_type: Optional[str]
-    ) -> Union[Dict[str, Any], CogniteResource]:
-        resource_map: Dict[str, Type[CogniteResource]] = {
+        self, resource: dict[str, Any], resource_type: str | None
+    ) -> dict[str, Any] | CogniteResource:
+        resource_map: dict[str, type[CogniteResource]] = {
             "timeSeries": TimeSeries,
             "asset": Asset,
             "sequence": Sequence,
@@ -137,19 +136,19 @@ class RelationshipFilter(CogniteFilter):
 
     def __init__(
         self,
-        source_external_ids: SequenceType[str] = None,
-        source_types: SequenceType[str] = None,
-        target_external_ids: SequenceType[str] = None,
-        target_types: SequenceType[str] = None,
-        data_set_ids: SequenceType[Dict[str, Any]] = None,
-        start_time: Dict[str, int] = None,
-        end_time: Dict[str, int] = None,
-        confidence: Dict[str, int] = None,
-        last_updated_time: Dict[str, int] = None,
-        created_time: Dict[str, int] = None,
-        active_at_time: Dict[str, int] = None,
-        labels: LabelFilter = None,
-        cognite_client: CogniteClient = None,
+        source_external_ids: SequenceType[str] | None = None,
+        source_types: SequenceType[str] | None = None,
+        target_external_ids: SequenceType[str] | None = None,
+        target_types: SequenceType[str] | None = None,
+        data_set_ids: SequenceType[dict[str, Any]] | None = None,
+        start_time: dict[str, int] | None = None,
+        end_time: dict[str, int] | None = None,
+        confidence: dict[str, int] | None = None,
+        last_updated_time: dict[str, int] | None = None,
+        created_time: dict[str, int] | None = None,
+        active_at_time: dict[str, int] | None = None,
+        labels: LabelFilter | None = None,
+        cognite_client: CogniteClient | None = None,
     ):
         self.source_external_ids = source_external_ids
         self.source_types = source_types
@@ -165,8 +164,8 @@ class RelationshipFilter(CogniteFilter):
         self.labels = labels
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        result = super(RelationshipFilter, self).dump(camel_case)
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        result = super().dump(camel_case)
         if isinstance(self.labels, LabelFilter):
             result["labels"] = self.labels.dump(camel_case)
         return result
@@ -191,10 +190,10 @@ class RelationshipUpdate(CogniteUpdate):
             return self._set(value)
 
     class _LabelRelationshipUpdate(CogniteLabelUpdate):
-        def add(self, value: Union[str, List[str]]) -> RelationshipUpdate:
+        def add(self, value: str | list[str]) -> RelationshipUpdate:
             return self._add(value)
 
-        def remove(self, value: Union[str, List[str]]) -> RelationshipUpdate:
+        def remove(self, value: str | list[str]) -> RelationshipUpdate:
             return self._remove(value)
 
     @property

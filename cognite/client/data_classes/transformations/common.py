@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Dict, Optional
+from typing import Any
 
 from cognite.client import utils
 
@@ -13,7 +13,7 @@ class TransformationDestination:
         type (str): Used as data type identifier on transformation creation/retrieval.
     """
 
-    def __init__(self, type: str = None):
+    def __init__(self, type: str | None = None):
         self.type = type
 
     def __hash__(self) -> int:
@@ -22,7 +22,7 @@ class TransformationDestination:
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, TransformationDestination) and hash(other) == hash(self)
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
         ret = self.__dict__
         if camel_case:
             return {utils._auxiliary.to_camel_case(key): value for key, value in ret.items()}
@@ -130,7 +130,7 @@ class TransformationDestination:
 
 
 class RawTable(TransformationDestination):
-    def __init__(self, database: str = None, table: str = None):
+    def __init__(self, database: str | None = None, table: str | None = None):
         super().__init__(type="raw")
         self.database = database
         self.table = table
@@ -143,7 +143,7 @@ class RawTable(TransformationDestination):
 
 
 class SequenceRows(TransformationDestination):
-    def __init__(self, external_id: str = None):
+    def __init__(self, external_id: str | None = None):
         super().__init__(type="sequence_rows")
         self.external_id = external_id
 
@@ -168,7 +168,10 @@ class DataModelInstances(TransformationDestination):
         return False
 
     def __init__(
-        self, model_external_id: str = None, space_external_id: str = None, instance_space_external_id: str = None
+        self,
+        model_external_id: str | None = None,
+        space_external_id: str | None = None,
+        instance_space_external_id: str | None = None,
     ):
         DataModelInstances._show_warning()
         super().__init__(type="data_model_instances")
@@ -186,12 +189,12 @@ class DataModelInstances(TransformationDestination):
 class OidcCredentials:
     def __init__(
         self,
-        client_id: str = None,
-        client_secret: str = None,
-        scopes: str = None,
-        token_uri: str = None,
-        audience: str = None,
-        cdf_project_name: str = None,
+        client_id: str | None = None,
+        client_secret: str | None = None,
+        scopes: str | None = None,
+        token_uri: str | None = None,
+        audience: str | None = None,
+        cdf_project_name: str | None = None,
     ):
 
         self.client_id = client_id
@@ -201,7 +204,7 @@ class OidcCredentials:
         self.audience = audience
         self.cdf_project_name = cdf_project_name
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
@@ -234,7 +237,7 @@ class NonceCredentials:
         self.nonce = nonce
         self.cdf_project_name = cdf_project_name
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
@@ -251,6 +254,6 @@ class NonceCredentials:
 
 
 class TransformationBlockedInfo:
-    def __init__(self, reason: str = None, created_time: Optional[int] = None):
+    def __init__(self, reason: str | None = None, created_time: int | None = None):
         self.reason = reason
         self.created_time = created_time

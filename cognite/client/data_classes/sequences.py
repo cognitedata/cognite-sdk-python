@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import json
 import math
-from typing import TYPE_CHECKING, Any, Dict, Generator, List
-from typing import Sequence as SequenceType
-from typing import Tuple, Union, cast
+from collections.abc import Generator
+from collections.abc import Sequence as SequenceType
+from typing import TYPE_CHECKING, Any, cast
 
 from cognite.client import utils
 from cognite.client.data_classes._base import (
@@ -46,17 +46,17 @@ class Sequence(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        name: str = None,
-        description: str = None,
-        asset_id: int = None,
-        external_id: str = None,
-        metadata: Dict[str, Any] = None,
-        columns: SequenceType[Dict[str, Any]] = None,
-        created_time: int = None,
-        last_updated_time: int = None,
-        data_set_id: int = None,
-        cognite_client: CogniteClient = None,
+        id: int | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        asset_id: int | None = None,
+        external_id: str | None = None,
+        metadata: dict[str, Any] | None = None,
+        columns: SequenceType[dict[str, Any]] | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+        data_set_id: int | None = None,
+        cognite_client: CogniteClient | None = None,
     ):
         self.id = id
         self.name = name
@@ -70,7 +70,7 @@ class Sequence(CogniteResource):
         self.data_set_id = data_set_id
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def rows(self, start: int, end: int) -> List[dict]:
+    def rows(self, start: int, end: int) -> list[dict]:
         """Retrieves rows from this sequence.
 
         Returns:
@@ -80,7 +80,7 @@ class Sequence(CogniteResource):
         return self._cognite_client.sequences.data.retrieve(**identifier, start=start, end=end)
 
     @property
-    def column_external_ids(self) -> List[str]:
+    def column_external_ids(self) -> list[str]:
         """Retrieves list of column external ids for the sequence, for use in e.g. data retrieve or insert methods
 
         Returns:
@@ -90,7 +90,7 @@ class Sequence(CogniteResource):
         return [cast(str, c.get("externalId")) for c in self.columns]
 
     @property
-    def column_value_types(self) -> List[str]:
+    def column_value_types(self) -> list[str]:
         """Retrieves list of column value types
 
         Returns:
@@ -117,15 +117,15 @@ class SequenceFilter(CogniteFilter):
 
     def __init__(
         self,
-        name: str = None,
-        external_id_prefix: str = None,
-        metadata: Dict[str, Any] = None,
-        asset_ids: SequenceType[int] = None,
-        asset_subtree_ids: SequenceType[Dict[str, Any]] = None,
-        created_time: Union[Dict[str, Any], TimestampRange] = None,
-        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        data_set_ids: SequenceType[Dict[str, Any]] = None,
-        cognite_client: CogniteClient = None,
+        name: str | None = None,
+        external_id_prefix: str | None = None,
+        metadata: dict[str, Any] | None = None,
+        asset_ids: SequenceType[int] | None = None,
+        asset_subtree_ids: SequenceType[dict[str, Any]] | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        data_set_ids: SequenceType[dict[str, Any]] | None = None,
+        cognite_client: CogniteClient | None = None,
     ):
         self.name = name
         self.external_id_prefix = external_id_prefix
@@ -138,9 +138,9 @@ class SequenceFilter(CogniteFilter):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str]) -> SequenceFilter:
-        instance = super(SequenceFilter, cls)._load(resource)
-        if isinstance(resource, Dict):
+    def _load(cls, resource: dict | str) -> SequenceFilter:
+        instance = super()._load(resource)
+        if isinstance(resource, dict):
             if instance.created_time is not None:
                 instance.created_time = TimestampRange(**instance.created_time)
             if instance.last_updated_time is not None:
@@ -160,13 +160,13 @@ class SequenceColumnUpdate(CogniteUpdate):
             return self._set(value)
 
     class _ObjectSequenceColumnUpdate(CogniteObjectUpdate):
-        def set(self, value: Dict) -> SequenceColumnUpdate:
+        def set(self, value: dict) -> SequenceColumnUpdate:
             return self._set(value)
 
-        def add(self, value: Dict) -> SequenceColumnUpdate:
+        def add(self, value: dict) -> SequenceColumnUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> SequenceColumnUpdate:
+        def remove(self, value: list) -> SequenceColumnUpdate:
             return self._remove(value)
 
     @property
@@ -199,52 +199,52 @@ class SequenceUpdate(CogniteUpdate):
             return self._set(value)
 
     class _ObjectSequenceUpdate(CogniteObjectUpdate):
-        def set(self, value: Dict) -> SequenceUpdate:
+        def set(self, value: dict) -> SequenceUpdate:
             return self._set(value)
 
-        def add(self, value: Dict) -> SequenceUpdate:
+        def add(self, value: dict) -> SequenceUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> SequenceUpdate:
+        def remove(self, value: list) -> SequenceUpdate:
             return self._remove(value)
 
     class _ListSequenceUpdate(CogniteListUpdate):
-        def set(self, value: List) -> SequenceUpdate:
+        def set(self, value: list) -> SequenceUpdate:
             return self._set(value)
 
-        def add(self, value: List) -> SequenceUpdate:
+        def add(self, value: list) -> SequenceUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> SequenceUpdate:
+        def remove(self, value: list) -> SequenceUpdate:
             return self._remove(value)
 
     class _LabelSequenceUpdate(CogniteLabelUpdate):
-        def add(self, value: List) -> SequenceUpdate:
+        def add(self, value: list) -> SequenceUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> SequenceUpdate:
+        def remove(self, value: list) -> SequenceUpdate:
             return self._remove(value)
 
     class _ColumnsSequenceUpdate(CogniteListUpdate):
-        def add(self, value: Union[Dict, List[Dict]]) -> SequenceUpdate:
+        def add(self, value: dict | list[dict]) -> SequenceUpdate:
             single_item = not isinstance(value, list)
             if single_item:
-                value_list = cast(List[str], [value])
+                value_list = cast(list[str], [value])
             else:
-                value_list = cast(List[str], value)
+                value_list = cast(list[str], value)
 
             return self._add(value_list)
 
-        def remove(self, value: Union[str, List[str]]) -> SequenceUpdate:
+        def remove(self, value: str | list[str]) -> SequenceUpdate:
             single_item = not isinstance(value, list)
             if single_item:
-                value_list = cast(List[str], [value])
+                value_list = cast(list[str], [value])
             else:
-                value_list = cast(List[str], value)
+                value_list = cast(list[str], value)
 
             return self._remove([{"externalId": id} for id in value_list])
 
-        def modify(self, value: List[SequenceColumnUpdate]) -> SequenceUpdate:
+        def modify(self, value: list[SequenceColumnUpdate]) -> SequenceUpdate:
             return self._modify([col.dump() for col in value])
 
     @property
@@ -283,7 +283,7 @@ class SequenceAggregate(dict):
         count (int): No description.
     """
 
-    def __init__(self, count: int = None, **kwargs: Any):
+    def __init__(self, count: int | None = None, **kwargs: Any):
         self.count = count
         self.update(kwargs)
 
@@ -308,12 +308,12 @@ class SequenceData(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        external_id: str = None,
-        rows: SequenceType[dict] = None,
-        row_numbers: SequenceType[int] = None,
-        values: SequenceType[SequenceType[Union[int, str, float]]] = None,
-        columns: SequenceType[Dict[str, Any]] = None,
+        id: int | None = None,
+        external_id: str | None = None,
+        rows: SequenceType[dict] | None = None,
+        row_numbers: SequenceType[int] | None = None,
+        values: SequenceType[SequenceType[int | str | float]] | None = None,
+        columns: SequenceType[dict[str, Any]] | None = None,
     ):
         if rows:
             row_numbers = [r["rowNumber"] for r in rows]
@@ -342,13 +342,13 @@ class SequenceData(CogniteResource):
             and self.values == other.values
         )
 
-    def __getitem__(self, item: int) -> SequenceType[Union[int, str, float]]:
+    def __getitem__(self, item: int) -> SequenceType[int | str | float]:
         # slow, should be replaced by dict cache if it sees more than incidental use
         if isinstance(item, slice):
             raise TypeError("Slicing SequenceData not supported")
         return self.values[self.row_numbers.index(item)]
 
-    def get_column(self, external_id: str) -> List[Union[int, str, float]]:
+    def get_column(self, external_id: str) -> list[int | str | float]:
         """Get a column by external_id.
 
         Args:
@@ -361,16 +361,16 @@ class SequenceData(CogniteResource):
             ix = self.column_external_ids.index(external_id)
         except ValueError:
             raise ValueError(
-                "Column {} not found, Sequence column external ids are {}".format(external_id, self.column_external_ids)
+                f"Column {external_id} not found, Sequence column external ids are {self.column_external_ids}"
             )
         return [r[ix] for r in self.values]
 
-    def items(self) -> Generator[Tuple[int, List[Union[int, str, float]]], None, None]:
+    def items(self) -> Generator[tuple[int, list[int | str | float]], None, None]:
         """Returns an iterator over tuples of (row number, values)."""
         for row, values in zip(self.row_numbers, self.values):
             yield row, list(values)
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
         """Dump the sequence data into a json serializable Python data type.
 
         Args:
@@ -421,7 +421,7 @@ class SequenceData(CogniteResource):
         )
 
     @property
-    def column_external_ids(self) -> List[str]:
+    def column_external_ids(self) -> list[str]:
         """Retrieves list of column external ids for the sequence, for use in e.g. data retrieve or insert methods.
 
         Returns:
@@ -431,7 +431,7 @@ class SequenceData(CogniteResource):
         return [cast(str, c.get("externalId")) for c in self.columns]
 
     @property
-    def column_value_types(self) -> List[str]:
+    def column_value_types(self) -> list[str]:
         """Retrieves list of column value types.
 
         Returns:

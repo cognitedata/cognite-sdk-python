@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 from collections import UserList
+from collections.abc import Callable, Sequence
 from concurrent.futures.thread import ThreadPoolExecutor
-from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, CogniteNotFoundError
 
 
 class TasksSummary:
     def __init__(
-        self, successful_tasks: List, unknown_tasks: List, failed_tasks: List, results: List, exceptions: List
+        self, successful_tasks: list, unknown_tasks: list, failed_tasks: list, results: list, exceptions: list
     ):
         self.successful_tasks = successful_tasks
         self.unknown_tasks = unknown_tasks
@@ -17,7 +17,7 @@ class TasksSummary:
         self.results = results
         self.exceptions = exceptions
 
-    def joined_results(self, unwrap_fn: Optional[Callable] = None) -> list:
+    def joined_results(self, unwrap_fn: Callable | None = None) -> list:
         unwrap_fn = unwrap_fn or (lambda x: x)
         joined_results: list = []
         for result in self.results:
@@ -30,9 +30,9 @@ class TasksSummary:
 
     def raise_compound_exception_if_failed_tasks(
         self,
-        task_unwrap_fn: Optional[Callable] = None,
-        task_list_element_unwrap_fn: Optional[Callable] = None,
-        str_format_element_fn: Optional[Callable] = None,
+        task_unwrap_fn: Callable | None = None,
+        task_list_element_unwrap_fn: Callable | None = None,
+        str_format_element_fn: Callable | None = None,
     ) -> None:
         if not self.exceptions:
             return None
@@ -58,17 +58,17 @@ class TasksSummary:
 
 
 def collect_exc_info_and_raise(
-    exceptions: List[Exception],
-    successful: Optional[List] = None,
-    failed: Optional[List] = None,
-    unknown: Optional[List] = None,
-    unwrap_fn: Optional[Callable] = None,
+    exceptions: list[Exception],
+    successful: list | None = None,
+    failed: list | None = None,
+    unknown: list | None = None,
+    unwrap_fn: Callable | None = None,
 ) -> None:
-    missing: List = []
-    duplicated: List = []
+    missing: list = []
+    duplicated: list = []
     missing_exc = None
     dup_exc = None
-    unknown_exc: Optional[Exception] = None
+    unknown_exc: Exception | None = None
     for exc in exceptions:
         if isinstance(exc, CogniteAPIError):
             if exc.code in [400, 422] and exc.missing is not None:
@@ -109,9 +109,7 @@ def collect_exc_info_and_raise(
         ) from dup_exc
 
 
-def execute_tasks_concurrently(
-    func: Callable, tasks: Union[Sequence[Tuple], List[Dict]], max_workers: int
-) -> TasksSummary:
+def execute_tasks_concurrently(func: Callable, tasks: Sequence[tuple] | list[dict], max_workers: int) -> TasksSummary:
     if max_workers < 1:
         raise RuntimeError(f"Number of workers should be >= 1, was {max_workers}")
 

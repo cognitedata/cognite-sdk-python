@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import pprint
 from contextlib import suppress
-from typing import Dict, Optional, Set
 
 from cognite.client import utils
 from cognite.client._version import __api_subversion__
@@ -29,15 +28,15 @@ class GlobalConfig:
     """
 
     def __init__(self) -> None:
-        self.default_client_config: Optional[ClientConfig] = None
+        self.default_client_config: ClientConfig | None = None
         self.disable_gzip: bool = False
         self.disable_pypi_version_check: bool = False
-        self.status_forcelist: Set[int] = {429, 502, 503, 504}
+        self.status_forcelist: set[int] = {429, 502, 503, 504}
         self.max_retries: int = 10
         self.max_retry_backoff: int = 30
         self.max_connection_pool_size: int = 50
         self.disable_ssl: bool = False
-        self.proxies: Optional[Dict[str, str]] = {}
+        self.proxies: dict[str, str] | None = {}
 
 
 global_config = GlobalConfig()
@@ -65,12 +64,12 @@ class ClientConfig:
         client_name: str,
         project: str,
         credentials: CredentialProvider,
-        api_subversion: Optional[str] = None,
-        base_url: Optional[str] = None,
-        max_workers: Optional[int] = None,
-        headers: Optional[Dict[str, str]] = None,
-        timeout: Optional[int] = None,
-        file_transfer_timeout: Optional[int] = None,
+        api_subversion: str | None = None,
+        base_url: str | None = None,
+        max_workers: int | None = None,
+        headers: dict[str, str] | None = None,
+        timeout: int | None = None,
+        file_transfer_timeout: int | None = None,
         debug: bool = False,
     ) -> None:
         self.client_name = client_name

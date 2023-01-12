@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
@@ -17,7 +17,7 @@ from cognite.client.data_classes.contextualization import (
     VisionExtractPredictions,
 )
 
-mock_vision_predictions_dict: Dict[str, List[Dict[str, Any]]] = {
+mock_vision_predictions_dict: dict[str, list[dict[str, Any]]] = {
     "textPredictions": [
         {"text": "a", "textRegion": {"xMin": 0.1, "xMax": 0.2, "yMin": 0.3, "yMax": 0.4}, "confidence": 0.1}
     ]
@@ -35,16 +35,16 @@ mock_vision_extract_predictions = VisionExtractPredictions(
 
 class TestVisionExtractPredictions:
     def test_get_feature_class(self) -> None:
-        assert VisionExtractPredictions._get_feature_class(Optional[List[str]]) == str
-        assert VisionExtractPredictions._get_feature_class(Optional[List[List[str]]]) == List[str]
-        assert VisionExtractPredictions._get_feature_class(Optional[List[float]]) == float
-        assert VisionExtractPredictions._get_feature_class(Optional[List[Union[int, str]]]) == Union[int, str]
+        assert VisionExtractPredictions._get_feature_class(Optional[list[str]]) == str
+        assert VisionExtractPredictions._get_feature_class(Optional[list[list[str]]]) == list[str]
+        assert VisionExtractPredictions._get_feature_class(Optional[list[float]]) == float
+        assert VisionExtractPredictions._get_feature_class(Optional[list[Union[int, str]]]) == Union[int, str]
         assert (
-            VisionExtractPredictions._get_feature_class(Optional[List[VisionExtractPredictions]])
+            VisionExtractPredictions._get_feature_class(Optional[list[VisionExtractPredictions]])
             == VisionExtractPredictions
         )
         assert (
-            VisionExtractPredictions._get_feature_class(Optional[List[Dict[str, TextRegion]]]) == Dict[str, TextRegion]
+            VisionExtractPredictions._get_feature_class(Optional[list[dict[str, TextRegion]]]) == dict[str, TextRegion]
         )
 
 
@@ -72,7 +72,7 @@ class TestVisionResource:
         ],
         ids=["valid_dump", "valid_dump_camel_case", "valid_dump_mix"],
     )
-    def test_dump(self, item: VisionResource, expected_dump: Dict[str, Any], camel_case: bool) -> None:
+    def test_dump(self, item: VisionResource, expected_dump: dict[str, Any], camel_case: bool) -> None:
         assert item.dump(camel_case) == expected_dump
 
     @pytest.mark.parametrize(
@@ -116,7 +116,7 @@ class TestVisionResource:
         ids=["valid_dump", "valid_dump_camel_case", "valid_dump_mix", "valid_dump_list"],
     )
     @pytest.mark.dsl
-    def test_to_pandas(self, item: VisionResource, expected_dump: Dict[str, Any], camel_case: bool) -> None:
+    def test_to_pandas(self, item: VisionResource, expected_dump: dict[str, Any], camel_case: bool) -> None:
         pd = utils._auxiliary.local_import("pandas")
 
         assert all(
@@ -147,7 +147,7 @@ class TestVisionExtractItem:
         ],
         ids=["valid_vision_extract_item_no_predictions", "valid_vision_extract_item"],
     )
-    def test_load(self, resource: Dict[str, Any], expected_item: VisionExtractItem) -> None:
+    def test_load(self, resource: dict[str, Any], expected_item: VisionExtractItem) -> None:
         vision_extract_item = VisionExtractItem._load(resource)
         assert vision_extract_item == expected_item
 
@@ -171,7 +171,7 @@ class TestVisionExtractItem:
         ],
         ids=["valid_dump_no_predictions", "valid_dump_with_predictions_camel_case"],
     )
-    def test_dump(self, item: VisionExtractItem, expected_dump: Dict[str, Any], camel_case: bool) -> None:
+    def test_dump(self, item: VisionExtractItem, expected_dump: dict[str, Any], camel_case: bool) -> None:
         assert item.dump(camel_case) == expected_dump
 
 
@@ -190,7 +190,7 @@ class TestVisionExtractJob:
         ids=["non_completed_job", "completed_job"],
     )
     def test_items_property(
-        self, mock_result: MagicMock, status: JobStatus, result: Optional[Dict], expected_items: Optional[List]
+        self, mock_result: MagicMock, status: JobStatus, result: dict | None, expected_items: list | None
     ) -> None:
         cognite_client = MagicMock(spec=CogniteClient)
         mock_result.return_value = result
@@ -210,8 +210,8 @@ class TestVisionExtractJob:
         self,
         mock_result: MagicMock,
         file_id: int,
-        expected_item: Optional[VisionExtractItem],
-        error_message: Optional[str],
+        expected_item: VisionExtractItem | None,
+        error_message: str | None,
     ) -> None:
         cognite_client = MagicMock(spec=CogniteClient)
         mock_result.return_value = {
@@ -302,9 +302,9 @@ class TestVisionExtractJob:
     def test_predictions_to_annotations(
         self,
         mock_result: MagicMock,
-        result: Optional[Dict],
-        params: Optional[Dict],
-        expected_items: Optional[List],
+        result: dict | None,
+        params: dict | None,
+        expected_items: list | None,
     ) -> None:
         cognite_client = MagicMock(spec=CogniteClient)
         cognite_client.version = (params or {}).get("creating_app_version") or 1
@@ -337,5 +337,5 @@ class TestFeatureParameters:
         ],
         ids=["dump", "dump w/camelcase", "only non-null values are dumped"],
     )
-    def test_dump(self, item: VisionResource, expected_dump: Dict[str, Any], camel_case: bool) -> None:
+    def test_dump(self, item: VisionResource, expected_dump: dict[str, Any], camel_case: bool) -> None:
         assert item.dump(camel_case) == expected_dump

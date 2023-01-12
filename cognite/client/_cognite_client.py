@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any
 
 from requests import Response
 
@@ -45,7 +45,7 @@ class CogniteClient:
 
     _API_VERSION = "v1"
 
-    def __init__(self, config: Optional[ClientConfig] = None) -> None:
+    def __init__(self, config: ClientConfig | None = None) -> None:
         if (client_config := config or global_config.default_client_config) is None:
             raise ValueError(
                 "No ClientConfig has been provided, either pass it directly to CogniteClient "
@@ -79,21 +79,25 @@ class CogniteClient:
 
         self._api_client = APIClient(self._config, cognite_client=self)
 
-    def get(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None) -> Response:
+    def get(self, url: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None) -> Response:
         """Perform a GET request to an arbitrary path in the API."""
         return self._api_client._get(url, params=params, headers=headers)
 
     def post(
-        self, url: str, json: Dict[str, Any], params: Dict[str, Any] = None, headers: Dict[str, Any] = None
+        self,
+        url: str,
+        json: dict[str, Any],
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
     ) -> Response:
         """Perform a POST request to an arbitrary path in the API."""
         return self._api_client._post(url, json=json, params=params, headers=headers)
 
-    def put(self, url: str, json: Dict[str, Any] = None, headers: Dict[str, Any] = None) -> Response:
+    def put(self, url: str, json: dict[str, Any] | None = None, headers: dict[str, Any] | None = None) -> Response:
         """Perform a PUT request to an arbitrary path in the API."""
         return self._api_client._put(url, json=json, headers=headers)
 
-    def delete(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None) -> Response:
+    def delete(self, url: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None) -> Response:
         """Perform a DELETE request to an arbitrary path in the API."""
         return self._api_client._delete(url, params=params, headers=headers)
 

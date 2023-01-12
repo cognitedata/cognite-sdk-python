@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterator, List, Optional, Sequence, Union, cast, overload
+from collections.abc import Iterator, Sequence
+from typing import TYPE_CHECKING, Any, cast, overload
 
 from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api_client import APIClient
@@ -13,6 +14,9 @@ from cognite.client.data_classes import (
 )
 from cognite.client.utils._identifier import IdentifierSequence
 
+if TYPE_CHECKING:
+    list_ = list
+
 
 class TimeSeriesAPI(APIClient):
     _RESOURCE_PATH = "/timeseries"
@@ -23,24 +27,24 @@ class TimeSeriesAPI(APIClient):
 
     def __call__(
         self,
-        chunk_size: int = None,
-        name: str = None,
-        unit: str = None,
-        is_string: bool = None,
-        is_step: bool = None,
-        asset_ids: Sequence[int] = None,
-        asset_external_ids: Sequence[str] = None,
-        asset_subtree_ids: Sequence[int] = None,
-        asset_subtree_external_ids: Sequence[str] = None,
-        data_set_ids: Sequence[int] = None,
-        data_set_external_ids: Sequence[str] = None,
-        metadata: Dict[str, Any] = None,
-        external_id_prefix: str = None,
-        created_time: Dict[str, Any] = None,
-        last_updated_time: Dict[str, Any] = None,
-        limit: int = None,
-        partitions: int = None,
-    ) -> Union[Iterator[TimeSeries], Iterator[TimeSeriesList]]:
+        chunk_size: int | None = None,
+        name: str | None = None,
+        unit: str | None = None,
+        is_string: bool | None = None,
+        is_step: bool | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: Sequence[str] | None = None,
+        asset_subtree_ids: Sequence[int] | None = None,
+        asset_subtree_external_ids: Sequence[str] | None = None,
+        data_set_ids: Sequence[int] | None = None,
+        data_set_external_ids: Sequence[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+        external_id_prefix: str | None = None,
+        created_time: dict[str, Any] | None = None,
+        last_updated_time: dict[str, Any] | None = None,
+        limit: int | None = None,
+        partitions: int | None = None,
+    ) -> Iterator[TimeSeries] | Iterator[TimeSeriesList]:
         """Iterate over time series
 
         Fetches time series as they are iterated over, so you keep a limited number of objects in memory.
@@ -110,7 +114,7 @@ class TimeSeriesAPI(APIClient):
         """
         return cast(Iterator[TimeSeries], self())
 
-    def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[TimeSeries]:
+    def retrieve(self, id: int | None = None, external_id: str | None = None) -> TimeSeries | None:
         """`Retrieve a single time series by id. <https://docs.cognite.com/api/v1/#operation/getTimeSeriesByIds>`_
 
         Args:
@@ -139,8 +143,8 @@ class TimeSeriesAPI(APIClient):
 
     def retrieve_multiple(
         self,
-        ids: Optional[Sequence[int]] = None,
-        external_ids: Optional[Sequence[str]] = None,
+        ids: Sequence[int] | None = None,
+        external_ids: Sequence[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> TimeSeriesList:
         """`Retrieve multiple time series by id. <https://docs.cognite.com/api/v1/#operation/getTimeSeriesByIds>`_
@@ -177,21 +181,21 @@ class TimeSeriesAPI(APIClient):
 
     def list(
         self,
-        name: str = None,
-        unit: str = None,
-        is_string: bool = None,
-        is_step: bool = None,
-        asset_ids: Sequence[int] = None,
-        asset_external_ids: Sequence[str] = None,
-        asset_subtree_ids: Sequence[int] = None,
-        asset_subtree_external_ids: Sequence[str] = None,
-        data_set_ids: Sequence[int] = None,
-        data_set_external_ids: Sequence[str] = None,
-        metadata: Dict[str, Any] = None,
-        external_id_prefix: str = None,
-        created_time: Dict[str, Any] = None,
-        last_updated_time: Dict[str, Any] = None,
-        partitions: int = None,
+        name: str | None = None,
+        unit: str | None = None,
+        is_string: bool | None = None,
+        is_step: bool | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: Sequence[str] | None = None,
+        asset_subtree_ids: Sequence[int] | None = None,
+        asset_subtree_external_ids: Sequence[str] | None = None,
+        data_set_ids: Sequence[int] | None = None,
+        data_set_external_ids: Sequence[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+        external_id_prefix: str | None = None,
+        created_time: dict[str, Any] | None = None,
+        last_updated_time: dict[str, Any] | None = None,
+        partitions: int | None = None,
         limit: int = 25,
     ) -> TimeSeriesList:
         """`List over time series <https://docs.cognite.com/api/v1/#operation/listTimeSeries>`_
@@ -274,7 +278,7 @@ class TimeSeriesAPI(APIClient):
             partitions=partitions,
         )
 
-    def aggregate(self, filter: Union[TimeSeriesFilter, Dict] = None) -> List[TimeSeriesAggregate]:
+    def aggregate(self, filter: TimeSeriesFilter | dict | None = None) -> list_[TimeSeriesAggregate]:
         """`Aggregate time series <https://docs.cognite.com/api/v1/#operation/aggregateTimeSeries>`_
 
         Args:
@@ -302,7 +306,7 @@ class TimeSeriesAPI(APIClient):
     def create(self, time_series: TimeSeries) -> TimeSeries:
         ...
 
-    def create(self, time_series: Union[TimeSeries, Sequence[TimeSeries]]) -> Union[TimeSeries, TimeSeriesList]:
+    def create(self, time_series: TimeSeries | Sequence[TimeSeries]) -> TimeSeries | TimeSeriesList:
         """`Create one or more time series. <https://docs.cognite.com/api/v1/#operation/postTimeSeries>`_
 
         Args:
@@ -324,8 +328,8 @@ class TimeSeriesAPI(APIClient):
 
     def delete(
         self,
-        id: Union[int, Sequence[int]] = None,
-        external_id: Union[str, Sequence[str]] = None,
+        id: int | Sequence[int] | None = None,
+        external_id: str | Sequence[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete one or more time series. <https://docs.cognite.com/api/v1/#operation/deleteTimeSeries>`_
@@ -353,16 +357,16 @@ class TimeSeriesAPI(APIClient):
         )
 
     @overload
-    def update(self, item: Sequence[Union[TimeSeries, TimeSeriesUpdate]]) -> TimeSeriesList:
+    def update(self, item: Sequence[TimeSeries | TimeSeriesUpdate]) -> TimeSeriesList:
         ...
 
     @overload
-    def update(self, item: Union[TimeSeries, TimeSeriesUpdate]) -> TimeSeries:
+    def update(self, item: TimeSeries | TimeSeriesUpdate) -> TimeSeries:
         ...
 
     def update(
-        self, item: Union[TimeSeries, TimeSeriesUpdate, Sequence[Union[TimeSeries, TimeSeriesUpdate]]]
-    ) -> Union[TimeSeries, TimeSeriesList]:
+        self, item: TimeSeries | TimeSeriesUpdate | Sequence[TimeSeries | TimeSeriesUpdate]
+    ) -> TimeSeries | TimeSeriesList:
         """`Update one or more time series. <https://docs.cognite.com/api/v1/#operation/alterTimeSeries>`_
 
         Args:
@@ -395,10 +399,10 @@ class TimeSeriesAPI(APIClient):
 
     def search(
         self,
-        name: str = None,
-        description: str = None,
-        query: str = None,
-        filter: Union[TimeSeriesFilter, Dict] = None,
+        name: str | None = None,
+        description: str | None = None,
+        query: str | None = None,
+        filter: TimeSeriesFilter | dict | None = None,
         limit: int = 100,
     ) -> TimeSeriesList:
         """`Search for time series. <https://docs.cognite.com/api/v1/#operation/searchTimeSeries>`_

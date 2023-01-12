@@ -1,6 +1,6 @@
 import json
 from decimal import Decimal
-from typing import Any, Dict, List
+from typing import Any
 from unittest import mock
 
 import pytest
@@ -57,32 +57,32 @@ class PrimitiveUpdate(CognitePrimitiveUpdate):
 
 
 class ObjectUpdate(CogniteObjectUpdate):
-    def set(self, value: Dict) -> MyUpdate:
+    def set(self, value: dict) -> MyUpdate:
         return self._set(value)
 
-    def add(self, value: Dict) -> MyUpdate:
+    def add(self, value: dict) -> MyUpdate:
         return self._add(value)
 
-    def remove(self, value: List) -> MyUpdate:
+    def remove(self, value: list) -> MyUpdate:
         return self._remove(value)
 
 
 class ListUpdate(CogniteListUpdate):
-    def set(self, value: List) -> MyUpdate:
+    def set(self, value: list) -> MyUpdate:
         return self._set(value)
 
-    def add(self, value: List) -> MyUpdate:
+    def add(self, value: list) -> MyUpdate:
         return self._add(value)
 
-    def remove(self, value: List) -> MyUpdate:
+    def remove(self, value: list) -> MyUpdate:
         return self._remove(value)
 
 
 class LabelUpdate(CogniteLabelUpdate):
-    def add(self, value: List) -> MyUpdate:
+    def add(self, value: list) -> MyUpdate:
         return self._add(value)
 
-    def remove(self, value: List) -> MyUpdate:
+    def remove(self, value: list) -> MyUpdate:
         return self._remove(value)
 
 

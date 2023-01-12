@@ -1,4 +1,7 @@
-from typing import Any, Awaitable, Dict, List, Optional, Sequence, Union
+from __future__ import annotations
+
+from collections.abc import Awaitable, Sequence
+from typing import Any
 
 from cognite.client._api.transformations.jobs import TransformationJobsAPI
 from cognite.client._api.transformations.notifications import TransformationNotificationsAPI
@@ -28,9 +31,7 @@ class TransformationsAPI(APIClient):
         self.schema = TransformationSchemaAPI(*args, **kwargs)
         self.notifications = TransformationNotificationsAPI(*args, **kwargs)
 
-    def create(
-        self, transformation: Union[Transformation, Sequence[Transformation]]
-    ) -> Union[Transformation, TransformationList]:
+    def create(self, transformation: Transformation | Sequence[Transformation]) -> Transformation | TransformationList:
         """`Create one or more transformations. <https://docs.cognite.com/api/v1/#operation/createTransformations>`_
 
         Args:
@@ -59,7 +60,7 @@ class TransformationsAPI(APIClient):
                 >>> res = c.transformations.create(transformations)
         """
         if isinstance(transformation, Sequence):
-            sessions: Dict[str, NonceCredentials] = {}
+            sessions: dict[str, NonceCredentials] = {}
             transformation = [t.copy() for t in transformation]
             for t in transformation:
                 t._cognite_client = self._cognite_client
@@ -75,8 +76,8 @@ class TransformationsAPI(APIClient):
 
     def delete(
         self,
-        id: Union[int, Sequence[int]] = None,
-        external_id: Union[str, Sequence[str]] = None,
+        id: int | Sequence[int] | None = None,
+        external_id: str | Sequence[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete one or more transformations. <https://docs.cognite.com/api/v1/#operation/deleteTransformations>`_
@@ -106,18 +107,18 @@ class TransformationsAPI(APIClient):
     def list(
         self,
         include_public: bool = True,
-        name_regex: str = None,
-        query_regex: str = None,
-        destination_type: str = None,
-        conflict_mode: str = None,
-        cdf_project_name: str = None,
-        has_blocked_error: bool = None,
-        created_time: Union[Dict[str, Any], TimestampRange] = None,
-        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        data_set_ids: List[int] = None,
-        data_set_external_ids: List[str] = None,
-        tags: Optional[TagsFilter] = None,
-        limit: Optional[int] = 25,
+        name_regex: str | None = None,
+        query_regex: str | None = None,
+        destination_type: str | None = None,
+        conflict_mode: str | None = None,
+        cdf_project_name: str | None = None,
+        has_blocked_error: bool | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        data_set_ids: list[int] | None = None,
+        data_set_external_ids: list[str] | None = None,
+        tags: TagsFilter | None = None,
+        limit: int | None = 25,
     ) -> TransformationList:
         """`List all transformations. <https://docs.cognite.com/api/v1/#operation/getTransformations>`_
 
@@ -147,7 +148,7 @@ class TransformationsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> transformations_list = c.transformations.list()
         """
-        ds_ids: Optional[List[Dict[str, Any]]] = None
+        ds_ids: list[dict[str, Any]] | None = None
         if data_set_ids and data_set_external_ids:
             ds_ids = [*[{"id": i} for i in data_set_ids], *[{"externalId": i} for i in data_set_external_ids]]
         elif data_set_ids:
@@ -177,7 +178,7 @@ class TransformationsAPI(APIClient):
             filter=filter,
         )
 
-    def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Transformation]:
+    def retrieve(self, id: int | None = None, external_id: str | None = None) -> Transformation | None:
         """`Retrieve a single transformation by id. <https://docs.cognite.com/api/v1/#operation/getTransformationsByIds>`_
 
         Args:
@@ -208,7 +209,10 @@ class TransformationsAPI(APIClient):
         )
 
     def retrieve_multiple(
-        self, ids: Sequence[int] = None, external_ids: Sequence[str] = None, ignore_unknown_ids: bool = False
+        self,
+        ids: Sequence[int] | None = None,
+        external_ids: Sequence[str] | None = None,
+        ignore_unknown_ids: bool = False,
     ) -> TransformationList:
         """`Retrieve multiple transformations. <https://docs.cognite.com/api/v1/#operation/getTransformationsByIds>`_
 
@@ -237,8 +241,8 @@ class TransformationsAPI(APIClient):
         )
 
     def update(
-        self, item: Union[Transformation, TransformationUpdate, Sequence[Union[Transformation, TransformationUpdate]]]
-    ) -> Union[Transformation, TransformationList]:
+        self, item: Transformation | TransformationUpdate | Sequence[Transformation | TransformationUpdate]
+    ) -> Transformation | TransformationList:
         """`Update one or more transformations <https://docs.cognite.com/api/v1/#operation/updateTransformations>`_
 
         Args:
@@ -268,7 +272,7 @@ class TransformationsAPI(APIClient):
 
         if isinstance(item, Sequence):
             item = list(item).copy()
-            sessions: Dict[str, NonceCredentials] = {}
+            sessions: dict[str, NonceCredentials] = {}
             for (i, t) in enumerate(item):
                 if isinstance(t, Transformation):
                     t = t.copy()
@@ -290,10 +294,10 @@ class TransformationsAPI(APIClient):
 
     def run(
         self,
-        transformation_id: int = None,
-        transformation_external_id: str = None,
+        transformation_id: int | None = None,
+        transformation_external_id: str | None = None,
         wait: bool = True,
-        timeout: Optional[float] = None,
+        timeout: float | None = None,
     ) -> TransformationJob:
         """`Run a transformation. <https://docs.cognite.com/api/v1/#operation/runTransformation>`_
 
@@ -335,7 +339,10 @@ class TransformationsAPI(APIClient):
         return job
 
     def run_async(
-        self, transformation_id: int = None, transformation_external_id: str = None, timeout: Optional[float] = None
+        self,
+        transformation_id: int | None = None,
+        transformation_external_id: str | None = None,
+        timeout: float | None = None,
     ) -> Awaitable[TransformationJob]:
         """`Run a transformation to completion asynchronously. <https://docs.cognite.com/api/v1/#operation/runTransformation>`_
 
@@ -369,7 +376,7 @@ class TransformationsAPI(APIClient):
         )
         return job.wait_async(timeout=timeout)
 
-    def cancel(self, transformation_id: int = None, transformation_external_id: str = None) -> None:
+    def cancel(self, transformation_id: int | None = None, transformation_external_id: str | None = None) -> None:
         """`Cancel a running transformation. <https://docs.cognite.com/api/v1/#operation/cancelTransformation>`_
 
         Args:
@@ -396,11 +403,11 @@ class TransformationsAPI(APIClient):
 
     def preview(
         self,
-        query: str = None,
+        query: str | None = None,
         convert_to_string: bool = False,
         limit: int = 100,
-        source_limit: Optional[int] = 100,
-        infer_schema_limit: Optional[int] = 1000,
+        source_limit: int | None = 100,
+        infer_schema_limit: int | None = 1000,
     ) -> TransformationPreviewResult:
         """`Preview the result of a query. <https://docs.cognite.com/api/v1/#operation/runPreview>`_
 

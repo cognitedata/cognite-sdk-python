@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import numbers
-from typing import TYPE_CHECKING, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -30,7 +31,9 @@ if TYPE_CHECKING:
 
 
 class IAMAPI(APIClient):
-    def __init__(self, config: ClientConfig, api_version: str = None, cognite_client: CogniteClient = None) -> None:
+    def __init__(
+        self, config: ClientConfig, api_version: str | None = None, cognite_client: CogniteClient | None = None
+    ) -> None:
         super().__init__(config, api_version=api_version, cognite_client=cognite_client)
         self.service_accounts = ServiceAccountsAPI(config, api_version=api_version, cognite_client=cognite_client)
         self.api_keys = APIKeysAPI(config, api_version=api_version, cognite_client=cognite_client)
@@ -59,9 +62,7 @@ class ServiceAccountsAPI(APIClient):
         """
         return ServiceAccountList._load(self._get(url_path=self._RESOURCE_PATH).json()["items"])
 
-    def create(
-        self, service_account: Union[ServiceAccount, Sequence[ServiceAccount]]
-    ) -> Union[ServiceAccount, ServiceAccountList]:
+    def create(self, service_account: ServiceAccount | Sequence[ServiceAccount]) -> ServiceAccount | ServiceAccountList:
         """`Create one or more new service accounts. <https://docs.cognite.com/api/v1/#operation/createServiceAccounts>`_
 
         Args:
@@ -82,7 +83,7 @@ class ServiceAccountsAPI(APIClient):
         """
         return self._create_multiple(list_cls=ServiceAccountList, resource_cls=ServiceAccount, items=service_account)
 
-    def delete(self, id: Union[int, Sequence[int]]) -> None:
+    def delete(self, id: int | Sequence[int]) -> None:
         """`Delete one or more service accounts. <https://docs.cognite.com/api/v1/#operation/deleteServiceAccounts>`_
 
         Args:
@@ -105,7 +106,9 @@ class ServiceAccountsAPI(APIClient):
 class APIKeysAPI(APIClient):
     _RESOURCE_PATH = "/apikeys"
 
-    def list(self, include_deleted: bool = False, all: bool = False, service_account_id: bool = None) -> APIKeyList:
+    def list(
+        self, include_deleted: bool = False, all: bool = False, service_account_id: bool | None = None
+    ) -> APIKeyList:
         """`List api keys. <https://docs.cognite.com/api/v1/#operation/getApiKeys>`_
 
         Args:
@@ -130,7 +133,7 @@ class APIKeysAPI(APIClient):
         )
         return APIKeyList._load(res.json()["items"])
 
-    def create(self, service_account_id: Union[int, Sequence[int]]) -> Union[APIKey, APIKeyList]:
+    def create(self, service_account_id: int | Sequence[int]) -> APIKey | APIKeyList:
         """`Create a new api key for one or more service accounts. <https://docs.cognite.com/api/v1/#operation/createApiKeys>`_
 
         Args:
@@ -148,14 +151,14 @@ class APIKeysAPI(APIClient):
                 >>> res = c.iam.api_keys.create(1)
         """
         if isinstance(service_account_id, numbers.Integral):
-            items: Union[list, dict] = {"serviceAccountId": service_account_id}
+            items: list | dict = {"serviceAccountId": service_account_id}
         elif isinstance(service_account_id, Sequence):
             items = [{"serviceAccountId": sa_id} for sa_id in service_account_id]
         else:
             raise TypeError("service_account_id must be of type int or Sequence[int]")
         return self._create_multiple(list_cls=APIKeyList, resource_cls=APIKey, items=items)
 
-    def delete(self, id: Union[int, Sequence[int]]) -> None:
+    def delete(self, id: int | Sequence[int]) -> None:
         """`Delete one or more api keys. <https://docs.cognite.com/api/v1/#operation/deleteApiKeys>`_
 
         Args:
@@ -198,7 +201,7 @@ class GroupsAPI(APIClient):
         res = self._get(self._RESOURCE_PATH, params={"all": all})
         return GroupList._load(res.json()["items"])
 
-    def create(self, group: Union[Group, Sequence[Group]]) -> Union[Group, GroupList]:
+    def create(self, group: Group | Sequence[Group]) -> Group | GroupList:
         """`Create one or more groups. <https://docs.cognite.com/api/v1/#operation/createGroups>`_
 
         Args:
@@ -219,7 +222,7 @@ class GroupsAPI(APIClient):
         """
         return self._create_multiple(list_cls=GroupList, resource_cls=Group, items=group)
 
-    def delete(self, id: Union[int, Sequence[int]]) -> None:
+    def delete(self, id: int | Sequence[int]) -> None:
         """`Delete one or more groups. <https://docs.cognite.com/api/v1/#operation/deleteGroups>`_
 
         Args:
@@ -258,7 +261,7 @@ class GroupsAPI(APIClient):
         resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}/serviceaccounts", id)
         return ServiceAccountList._load(self._get(resource_path).json()["items"])
 
-    def add_service_account(self, id: int, service_account_id: Union[int, Sequence[int]]) -> None:
+    def add_service_account(self, id: int, service_account_id: int | Sequence[int]) -> None:
         """`Add one or more service accounts to a group. <https://docs.cognite.com/api/v1/#operation/addServiceAccountsToGroup>`_
 
         Args:
@@ -281,7 +284,7 @@ class GroupsAPI(APIClient):
         all_ids = IdentifierSequence.load(ids=service_account_id, external_ids=None).as_primitives()
         self._post(resource_path, json={"items": all_ids})
 
-    def remove_service_account(self, id: int, service_account_id: Union[int, Sequence[int]]) -> None:
+    def remove_service_account(self, id: int, service_account_id: int | Sequence[int]) -> None:
         """`Remove one or more service accounts from a group. <https://docs.cognite.com/api/v1/#operation/removeServiceAccountsFromGroup>`_
 
         Args:
@@ -328,8 +331,8 @@ class SecurityCategoriesAPI(APIClient):
         return self._list(list_cls=SecurityCategoryList, resource_cls=SecurityCategory, method="GET", limit=limit)
 
     def create(
-        self, security_category: Union[SecurityCategory, Sequence[SecurityCategory]]
-    ) -> Union[SecurityCategory, SecurityCategoryList]:
+        self, security_category: SecurityCategory | Sequence[SecurityCategory]
+    ) -> SecurityCategory | SecurityCategoryList:
         """`Create one or more security categories. <https://docs.cognite.com/api/v1/#operation/createSecurityCategories>`_
 
         Args:
@@ -352,7 +355,7 @@ class SecurityCategoriesAPI(APIClient):
             list_cls=SecurityCategoryList, resource_cls=SecurityCategory, items=security_category
         )
 
-    def delete(self, id: Union[int, Sequence[int]]) -> None:
+    def delete(self, id: int | Sequence[int]) -> None:
         """`Delete one or more security categories. <https://docs.cognite.com/api/v1/#operation/deleteSecurityCategories>`_
 
         Args:
@@ -388,11 +391,13 @@ class SessionsAPI(APIClient):
     _LIST_CLASS = SessionList
     _RESOURCE_PATH = "/sessions"
 
-    def __init__(self, config: ClientConfig, api_version: str = None, cognite_client: CogniteClient = None) -> None:
+    def __init__(
+        self, config: ClientConfig, api_version: str | None = None, cognite_client: CogniteClient | None = None
+    ) -> None:
         super().__init__(config, api_version=api_version, cognite_client=cognite_client)
         self._LIST_LIMIT = 100
 
-    def create(self, client_credentials: Optional[ClientCredentials] = None) -> CreatedSession:
+    def create(self, client_credentials: ClientCredentials | None = None) -> CreatedSession:
         """`Create a session. <https://docs.cognite.com/api/v1/#operation/createSessions>`_
 
         Args:
@@ -410,7 +415,7 @@ class SessionsAPI(APIClient):
 
         return CreatedSessionList._load(self._post(self._RESOURCE_PATH, json).json()["items"])[0]
 
-    def revoke(self, id: Union[int, Sequence[int]]) -> SessionList:
+    def revoke(self, id: int | Sequence[int]) -> SessionList:
         """`Revoke access to a session. Revocation of a session may in some cases take up to 1 hour to take effect. <https://docs.cognite.com/api/v1/#operation/revokeSessions>`_
 
         Args:
@@ -425,7 +430,7 @@ class SessionsAPI(APIClient):
 
         return SessionList._load(self._post(self._RESOURCE_PATH + "/revoke", items).json()["items"])
 
-    def list(self, status: Optional[str] = None) -> SessionList:
+    def list(self, status: str | None = None) -> SessionList:
         """`List all sessions in the current project. <https://docs.cognite.com/api/v1/#operation/listSessions>`_
 
         Args:

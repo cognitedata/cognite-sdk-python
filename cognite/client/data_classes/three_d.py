@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Union, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from cognite.client.data_classes._base import (
     CogniteLabelUpdate,
@@ -25,7 +25,7 @@ class RevisionCameraProperties(dict):
         position (List[float]): Initial camera position.
     """
 
-    def __init__(self, target: List[float] = None, position: List[float] = None, **kwargs: Any):
+    def __init__(self, target: list[float] | None = None, position: list[float] | None = None, **kwargs: Any):
         self.target = target
         self.position = position
         self.update(kwargs)
@@ -42,7 +42,7 @@ class BoundingBox3D(dict):
         min (List[float]): No description.
     """
 
-    def __init__(self, max: List[float] = None, min: List[float] = None, **kwargs: Any):
+    def __init__(self, max: list[float] | None = None, min: list[float] | None = None, **kwargs: Any):
         self.max = max
         self.min = min
         self.update(kwargs)
@@ -64,11 +64,11 @@ class ThreeDModel(CogniteResource):
 
     def __init__(
         self,
-        name: str = None,
-        id: int = None,
-        created_time: int = None,
-        metadata: Dict[str, str] = None,
-        cognite_client: CogniteClient = None,
+        name: str | None = None,
+        id: int | None = None,
+        created_time: int | None = None,
+        metadata: dict[str, str] | None = None,
+        cognite_client: CogniteClient | None = None,
     ):
         self.name = name
         self.id = id
@@ -89,30 +89,30 @@ class ThreeDModelUpdate(CogniteUpdate):
             return self._set(value)
 
     class _ObjectThreeDModelUpdate(CogniteObjectUpdate):
-        def set(self, value: Dict) -> ThreeDModelUpdate:
+        def set(self, value: dict) -> ThreeDModelUpdate:
             return self._set(value)
 
-        def add(self, value: Dict) -> ThreeDModelUpdate:
+        def add(self, value: dict) -> ThreeDModelUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> ThreeDModelUpdate:
+        def remove(self, value: list) -> ThreeDModelUpdate:
             return self._remove(value)
 
     class _ListThreeDModelUpdate(CogniteListUpdate):
-        def set(self, value: List) -> ThreeDModelUpdate:
+        def set(self, value: list) -> ThreeDModelUpdate:
             return self._set(value)
 
-        def add(self, value: List) -> ThreeDModelUpdate:
+        def add(self, value: list) -> ThreeDModelUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> ThreeDModelUpdate:
+        def remove(self, value: list) -> ThreeDModelUpdate:
             return self._remove(value)
 
     class _LabelThreeDModelUpdate(CogniteLabelUpdate):
-        def add(self, value: List) -> ThreeDModelUpdate:
+        def add(self, value: list) -> ThreeDModelUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> ThreeDModelUpdate:
+        def remove(self, value: list) -> ThreeDModelUpdate:
             return self._remove(value)
 
     @property
@@ -148,18 +148,18 @@ class ThreeDModelRevision(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        file_id: int = None,
-        published: bool = None,
-        rotation: List[float] = None,
-        camera: Union[Dict[str, Any], RevisionCameraProperties] = None,
-        status: str = None,
-        metadata: Dict[str, str] = None,
-        thumbnail_threed_file_id: int = None,
-        thumbnail_url: str = None,
-        asset_mapping_count: int = None,
-        created_time: int = None,
-        cognite_client: CogniteClient = None,
+        id: int | None = None,
+        file_id: int | None = None,
+        published: bool | None = None,
+        rotation: list[float] | None = None,
+        camera: dict[str, Any] | RevisionCameraProperties | None = None,
+        status: str | None = None,
+        metadata: dict[str, str] | None = None,
+        thumbnail_threed_file_id: int | None = None,
+        thumbnail_url: str | None = None,
+        asset_mapping_count: int | None = None,
+        created_time: int | None = None,
+        cognite_client: CogniteClient | None = None,
     ):
         self.id = id
         self.file_id = file_id
@@ -175,9 +175,9 @@ class ThreeDModelRevision(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> ThreeDModelRevision:
-        instance = super(ThreeDModelRevision, cls)._load(resource, cognite_client)
-        if isinstance(resource, Dict):
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> ThreeDModelRevision:
+        instance = super()._load(resource, cognite_client)
+        if isinstance(resource, dict):
             if instance.camera is not None:
                 instance.camera = RevisionCameraProperties(**instance.camera)
         return instance
@@ -195,30 +195,30 @@ class ThreeDModelRevisionUpdate(CogniteUpdate):
             return self._set(value)
 
     class _ObjectThreeDModelRevisionUpdate(CogniteObjectUpdate):
-        def set(self, value: Dict) -> ThreeDModelRevisionUpdate:
+        def set(self, value: dict) -> ThreeDModelRevisionUpdate:
             return self._set(value)
 
-        def add(self, value: Dict) -> ThreeDModelRevisionUpdate:
+        def add(self, value: dict) -> ThreeDModelRevisionUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> ThreeDModelRevisionUpdate:
+        def remove(self, value: list) -> ThreeDModelRevisionUpdate:
             return self._remove(value)
 
     class _ListThreeDModelRevisionUpdate(CogniteListUpdate):
-        def set(self, value: List) -> ThreeDModelRevisionUpdate:
+        def set(self, value: list) -> ThreeDModelRevisionUpdate:
             return self._set(value)
 
-        def add(self, value: List) -> ThreeDModelRevisionUpdate:
+        def add(self, value: list) -> ThreeDModelRevisionUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> ThreeDModelRevisionUpdate:
+        def remove(self, value: list) -> ThreeDModelRevisionUpdate:
             return self._remove(value)
 
     class _LabelThreeDModelRevisionUpdate(CogniteLabelUpdate):
-        def add(self, value: List) -> ThreeDModelRevisionUpdate:
+        def add(self, value: list) -> ThreeDModelRevisionUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> ThreeDModelRevisionUpdate:
+        def remove(self, value: list) -> ThreeDModelRevisionUpdate:
             return self._remove(value)
 
     @property
@@ -259,15 +259,15 @@ class ThreeDNode(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        tree_index: int = None,
-        parent_id: int = None,
-        depth: int = None,
-        name: str = None,
-        subtree_size: int = None,
-        properties: Dict[str, Dict[str, str]] = None,
-        bounding_box: Union[Dict[str, Any], BoundingBox3D] = None,
-        cognite_client: CogniteClient = None,
+        id: int | None = None,
+        tree_index: int | None = None,
+        parent_id: int | None = None,
+        depth: int | None = None,
+        name: str | None = None,
+        subtree_size: int | None = None,
+        properties: dict[str, dict[str, str]] | None = None,
+        bounding_box: dict[str, Any] | BoundingBox3D | None = None,
+        cognite_client: CogniteClient | None = None,
     ):
         self.id = id
         self.tree_index = tree_index
@@ -280,9 +280,9 @@ class ThreeDNode(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> ThreeDNode:
-        instance = super(ThreeDNode, cls)._load(resource, cognite_client)
-        if isinstance(resource, Dict):
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> ThreeDNode:
+        instance = super()._load(resource, cognite_client)
+        if isinstance(resource, dict):
             if instance.bounding_box is not None:
                 instance.bounding_box = BoundingBox3D(**instance.bounding_box)
         return instance
@@ -305,11 +305,11 @@ class ThreeDAssetMapping(CogniteResource):
 
     def __init__(
         self,
-        node_id: int = None,
-        asset_id: int = None,
-        tree_index: int = None,
-        subtree_size: int = None,
-        cognite_client: CogniteClient = None,
+        node_id: int | None = None,
+        asset_id: int | None = None,
+        tree_index: int | None = None,
+        subtree_size: int | None = None,
+        cognite_client: CogniteClient | None = None,
     ):
         self.node_id = node_id
         self.asset_id = asset_id

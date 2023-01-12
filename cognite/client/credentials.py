@@ -3,9 +3,10 @@ from __future__ import annotations
 import atexit
 import threading
 from abc import abstractmethod
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple, Union
+from typing import Any, Protocol
 
 from msal import PublicClientApplication, SerializableTokenCache
 from oauthlib.oauth2 import BackendApplicationClient, OAuth2Error
@@ -16,7 +17,7 @@ from cognite.client.exceptions import CogniteAuthError
 
 class CredentialProvider(Protocol):
     @abstractmethod
-    def authorization_header(self) -> Tuple[str, str]:
+    def authorization_header(self) -> tuple[str, str]:
         raise NotImplementedError
 
 
@@ -37,7 +38,7 @@ class APIKey(CredentialProvider):
     def __init__(self, api_key: str) -> None:
         self.__api_key = api_key
 
-    def authorization_header(self) -> Tuple[str, str]:
+    def authorization_header(self) -> tuple[str, str]:
         return "api-key", self.__api_key
 
 
@@ -54,13 +55,13 @@ class Token(CredentialProvider):
             >>> token_factory_provider = Token(lambda: "my secret token")
     """
 
-    def __init__(self, token: Union[str, Callable[[], str]]) -> None:
+    def __init__(self, token: str | Callable[[], str]) -> None:
         if isinstance(token, str):
             self.__token_factory = lambda: token
         else:
             self.__token_factory = token
 
-    def authorization_header(self) -> Tuple[str, str]:
+    def authorization_header(self) -> tuple[str, str]:
         return "Authorization", f"Bearer {self.__token_factory()}"
 
 
@@ -70,23 +71,23 @@ class _OAuthCredentialProviderWithTokenRefresh(CredentialProvider):
 
     def __init__(self) -> None:
         self.__token_refresh_lock = threading.Lock()
-        self.__access_token: Optional[str] = None
-        self.__access_token_expires_at: Optional[float] = None
+        self.__access_token: str | None = None
+        self.__access_token_expires_at: float | None = None
 
     @abstractmethod
-    def _refresh_access_token(self) -> Tuple[str, float]:
+    def _refresh_access_token(self) -> tuple[str, float]:
         """This method should return the access_token and expiry time"""
         raise NotImplementedError
 
     @classmethod
-    def __should_refresh_token(cls, token: Optional[str], expires_at: Optional[float]) -> bool:
+    def __should_refresh_token(cls, token: str | None, expires_at: float | None) -> bool:
         no_token = token is None
         token_is_expired = (
             expires_at is None or datetime.now().timestamp() > expires_at - cls.__TOKEN_EXPIRY_LEEWAY_SECONDS
         )
         return no_token or token_is_expired
 
-    def authorization_header(self) -> Tuple[str, str]:
+    def authorization_header(self) -> tuple[str, str]:
         # We lock here to ensure we don't issue a herd of refresh requests in concurrent scenarios.
         # This means we will block all requests for the duration of the token refresh.
         # TODO: Consider instead having a background thread periodically refresh the token to avoid this blocking.
@@ -132,7 +133,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
             ... )
     """
 
-    def __init__(self, authority_url: str, client_id: str, scopes: List[str]) -> None:
+    def __init__(self, authority_url: str, client_id: str, scopes: list[str]) -> None:
         super().__init__()
         self.__authority_url = authority_url
         self.__client_id = client_id
@@ -154,10 +155,10 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         return self.__client_id
 
     @property
-    def scopes(self) -> List[str]:
+    def scopes(self) -> list[str]:
         return self.__scopes
 
-    def _refresh_access_token(self) -> Tuple[str, float]:
+    def _refresh_access_token(self) -> tuple[str, float]:
         # First check if there is a serialized token cached on disk.
         accounts = self.__app.get_accounts()
         credentials = self.__app.acquire_token_silent(scopes=self.__scopes, account=accounts[0]) if accounts else None
@@ -193,7 +194,7 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
             ... )
     """
 
-    def __init__(self, authority_url: str, client_id: str, scopes: List[str], redirect_port: int = 53000) -> None:
+    def __init__(self, authority_url: str, client_id: str, scopes: list[str], redirect_port: int = 53000) -> None:
         super().__init__()
         self.__authority_url = authority_url
         self.__client_id = client_id
@@ -216,10 +217,10 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         return self.__client_id
 
     @property
-    def scopes(self) -> List[str]:
+    def scopes(self) -> list[str]:
         return self.__scopes
 
-    def _refresh_access_token(self) -> Tuple[str, float]:
+    def _refresh_access_token(self) -> tuple[str, float]:
         # First check if there is a serialized token cached on disk.
         accounts = self.__app.get_accounts()
         credentials = self.__app.acquire_token_silent(scopes=self.__scopes, account=accounts[0]) if accounts else None
@@ -260,7 +261,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         token_url: str,
         client_id: str,
         client_secret: str,
-        scopes: List[str],
+        scopes: list[str],
         **token_custom_args: Any,
     ):
         super().__init__()
@@ -268,7 +269,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         self.__client_id = client_id
         self.__client_secret = client_secret
         self.__scopes = scopes
-        self.__token_custom_args: Dict[str, Any] = token_custom_args
+        self.__token_custom_args: dict[str, Any] = token_custom_args
         self.__oauth = OAuth2Session(client=BackendApplicationClient(client_id=self.__client_id))
 
     @property
@@ -284,14 +285,14 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         return self.__client_secret
 
     @property
-    def scopes(self) -> List[str]:
+    def scopes(self) -> list[str]:
         return self.__scopes
 
     @property
-    def token_custom_args(self) -> Dict[str, Any]:
+    def token_custom_args(self) -> dict[str, Any]:
         return self.__token_custom_args
 
-    def _refresh_access_token(self) -> Tuple[str, float]:
+    def _refresh_access_token(self) -> tuple[str, float]:
         from cognite.client.config import global_config
 
         try:
@@ -321,7 +322,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
             return token_result["access_token"], token_result["expires_at"]
         except OAuth2Error as oauth_error:
             raise CogniteAuthError(
-                "Error generating access token: {0}, {1}, {2}".format(
+                "Error generating access token: {}, {}, {}".format(
                     oauth_error.error, oauth_error.status_code, oauth_error.description
                 )
             ) from oauth_error

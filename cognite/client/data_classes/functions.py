@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 from numbers import Number
-from typing import TYPE_CHECKING, Dict, List, Optional, Union, cast
+from typing import TYPE_CHECKING, cast
 
 from cognite.client._constants import LIST_LIMIT_CEILING, LIST_LIMIT_DEFAULT
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList, CogniteResponse
@@ -39,25 +39,25 @@ class Function(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        name: str = None,
-        external_id: str = None,
-        description: str = None,
-        owner: str = None,
-        status: str = None,
-        file_id: int = None,
-        function_path: str = None,
-        created_time: int = None,
-        api_key: str = None,
-        secrets: Dict = None,
-        env_vars: Dict = None,
-        cpu: Number = None,
-        memory: Number = None,
-        runtime: str = None,
-        runtime_version: str = None,
-        metadata: Dict = None,
-        error: Dict = None,
-        cognite_client: CogniteClient = None,
+        id: int | None = None,
+        name: str | None = None,
+        external_id: str | None = None,
+        description: str | None = None,
+        owner: str | None = None,
+        status: str | None = None,
+        file_id: int | None = None,
+        function_path: str | None = None,
+        created_time: int | None = None,
+        api_key: str | None = None,
+        secrets: dict | None = None,
+        env_vars: dict | None = None,
+        cpu: Number | None = None,
+        memory: Number | None = None,
+        runtime: str | None = None,
+        runtime_version: str | None = None,
+        metadata: dict | None = None,
+        error: dict | None = None,
+        cognite_client: CogniteClient | None = None,
     ) -> None:
         self.id = cast(int, id)
         self.name = cast(str, name)
@@ -79,7 +79,7 @@ class Function(CogniteResource):
         self.error = error
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def call(self, data: Optional[Dict] = None, wait: bool = True) -> FunctionCall:
+    def call(self, data: dict | None = None, wait: bool = True) -> FunctionCall:
         """`Call this particular function. <https://docs.cognite.com/api/v1/#operation/postFunctionsCall>`_
 
         Args:
@@ -93,11 +93,11 @@ class Function(CogniteResource):
 
     def list_calls(
         self,
-        status: Optional[str] = None,
-        schedule_id: Optional[int] = None,
-        start_time: Optional[Dict[str, int]] = None,
-        end_time: Optional[Dict[str, int]] = None,
-        limit: Optional[int] = LIST_LIMIT_DEFAULT,
+        status: str | None = None,
+        schedule_id: int | None = None,
+        start_time: dict[str, int] | None = None,
+        end_time: dict[str, int] | None = None,
+        limit: int | None = LIST_LIMIT_DEFAULT,
     ) -> FunctionCallList:
         """List all calls to this function.
 
@@ -120,7 +120,7 @@ class Function(CogniteResource):
             limit=limit,
         )
 
-    def list_schedules(self, limit: Optional[int] = LIST_LIMIT_DEFAULT) -> FunctionSchedulesList:
+    def list_schedules(self, limit: int | None = LIST_LIMIT_DEFAULT) -> FunctionSchedulesList:
         """`List all schedules associated with this function. <https://docs.cognite.com/api/v1/#operation/getFunctionSchedules>`_
 
         Args:
@@ -170,12 +170,12 @@ class Function(CogniteResource):
 class FunctionFilter(CogniteFilter):
     def __init__(
         self,
-        name: str = None,
-        owner: str = None,
-        file_id: int = None,
-        status: str = None,
-        external_id_prefix: str = None,
-        created_time: Union[Dict[str, int], TimestampRange] = None,
+        name: str | None = None,
+        owner: str | None = None,
+        file_id: int | None = None,
+        status: str | None = None,
+        external_id_prefix: str | None = None,
+        created_time: dict[str, int] | TimestampRange | None = None,
     ) -> None:
         self.name = name
         self.owner = owner
@@ -188,10 +188,10 @@ class FunctionFilter(CogniteFilter):
 class FunctionCallsFilter(CogniteFilter):
     def __init__(
         self,
-        status: str = None,
-        schedule_id: int = None,
-        start_time: Union[Dict[str, int], TimestampRange] = None,
-        end_time: Union[Dict[str, int], TimestampRange] = None,
+        status: str | None = None,
+        schedule_id: int | None = None,
+        start_time: dict[str, int] | TimestampRange | None = None,
+        end_time: dict[str, int] | TimestampRange | None = None,
     ) -> None:
         self.status = status
         self.schedule_id = schedule_id
@@ -216,15 +216,15 @@ class FunctionSchedule(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        name: str = None,
-        function_id: str = None,
-        function_external_id: str = None,
-        description: str = None,
-        created_time: int = None,
-        cron_expression: str = None,
-        session_id: int = None,
-        cognite_client: CogniteClient = None,
+        id: int | None = None,
+        name: str | None = None,
+        function_id: str | None = None,
+        function_external_id: str | None = None,
+        description: str | None = None,
+        created_time: int | None = None,
+        cron_expression: str | None = None,
+        session_id: int | None = None,
+        cognite_client: CogniteClient | None = None,
     ) -> None:
         self.id = id
         self.name = name
@@ -250,11 +250,11 @@ class FunctionSchedule(CogniteResource):
 class FunctionSchedulesFilter(CogniteFilter):
     def __init__(
         self,
-        name: str = None,
-        function_id: int = None,
-        function_external_id: str = None,
-        created_time: Union[Dict[str, int], TimestampRange] = None,
-        cron_expression: str = None,
+        name: str | None = None,
+        function_id: int | None = None,
+        function_external_id: str | None = None,
+        created_time: dict[str, int] | TimestampRange | None = None,
+        cron_expression: str | None = None,
     ) -> None:
         self.name = name
         self.function_id = function_id
@@ -287,15 +287,15 @@ class FunctionCall(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        start_time: int = None,
-        end_time: int = None,
-        scheduled_time: int = None,
-        status: str = None,
-        schedule_id: int = None,
-        error: dict = None,
-        function_id: int = None,
-        cognite_client: CogniteClient = None,
+        id: int | None = None,
+        start_time: int | None = None,
+        end_time: int | None = None,
+        scheduled_time: int | None = None,
+        status: str | None = None,
+        schedule_id: int | None = None,
+        error: dict | None = None,
+        function_id: int | None = None,
+        cognite_client: CogniteClient | None = None,
     ) -> None:
         self.id = id
         self.start_time = start_time
@@ -307,7 +307,7 @@ class FunctionCall(CogniteResource):
         self.function_id = function_id
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def get_response(self) -> Dict:
+    def get_response(self) -> dict:
         """Retrieve the response from this function call.
 
         Returns:
@@ -354,9 +354,9 @@ class FunctionCallLogEntry(CogniteResource):
 
     def __init__(
         self,
-        timestamp: int = None,
-        message: str = None,
-        cognite_client: CogniteClient = None,
+        timestamp: int | None = None,
+        message: str | None = None,
+        cognite_client: CogniteClient | None = None,
     ):
         self.timestamp = timestamp
         self.message = message
@@ -381,10 +381,10 @@ class FunctionsLimits(CogniteResponse):
     def __init__(
         self,
         timeout_minutes: int,
-        cpu_cores: Dict[str, float],
-        memory_gb: Dict[str, float],
-        runtimes: List[str],
-        response_size_mb: Optional[int] = None,
+        cpu_cores: dict[str, float],
+        memory_gb: dict[str, float],
+        runtimes: list[str],
+        response_size_mb: int | None = None,
     ) -> None:
         self.timeout_minutes = timeout_minutes
         self.cpu_cores = cpu_cores
@@ -393,7 +393,7 @@ class FunctionsLimits(CogniteResponse):
         self.response_size_mb = response_size_mb
 
     @classmethod
-    def _load(cls, api_response: Dict) -> FunctionsLimits:
+    def _load(cls, api_response: dict) -> FunctionsLimits:
         return cls(
             timeout_minutes=api_response["timeoutMinutes"],
             cpu_cores=api_response["cpuCores"],
@@ -417,7 +417,7 @@ class FunctionsStatus(CogniteResponse):
         self.status = status
 
     @classmethod
-    def _load(cls, api_response: Dict) -> FunctionsStatus:
+    def _load(cls, api_response: dict) -> FunctionsStatus:
         return cls(
             status=api_response["status"],
         )

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import threading
-from typing import TYPE_CHECKING, Any, Collection, Dict, List, Sequence, Type, Union, cast
+from collections.abc import Collection, Sequence
+from typing import TYPE_CHECKING, Any, cast
 
 from cognite.client import utils
 from cognite.client.data_classes._base import (
@@ -33,7 +34,7 @@ class AssetAggregate(dict):
         count (int): Size of the aggregation group
     """
 
-    def __init__(self, count: int = None, **kwargs: Any) -> None:
+    def __init__(self, count: int | None = None, **kwargs: Any) -> None:
         self.count = count
         self.update(kwargs)
 
@@ -50,7 +51,11 @@ class AggregateResultItem(dict):
     """
 
     def __init__(
-        self, child_count: int = None, depth: int = None, path: List[Dict[str, Any]] = None, **kwargs: Any
+        self,
+        child_count: int | None = None,
+        depth: int | None = None,
+        path: list[dict[str, Any]] | None = None,
+        **kwargs: Any,
     ) -> None:
         self.child_count = child_count
         self.depth = depth
@@ -86,22 +91,22 @@ class Asset(CogniteResource):
 
     def __init__(
         self,
-        external_id: str = None,
-        name: str = None,
-        parent_id: int = None,
-        parent_external_id: str = None,
-        description: str = None,
-        data_set_id: int = None,
-        metadata: Dict[str, str] = None,
-        source: str = None,
-        labels: List[Union[Label, str, LabelDefinition, dict]] = None,
-        geo_location: GeoLocation = None,
-        id: int = None,
-        created_time: int = None,
-        last_updated_time: int = None,
-        root_id: int = None,
-        aggregates: Union[Dict[str, Any], AggregateResultItem] = None,
-        cognite_client: CogniteClient = None,
+        external_id: str | None = None,
+        name: str | None = None,
+        parent_id: int | None = None,
+        parent_external_id: str | None = None,
+        description: str | None = None,
+        data_set_id: int | None = None,
+        metadata: dict[str, str] | None = None,
+        source: str | None = None,
+        labels: list[Label | str | LabelDefinition | dict] | None = None,
+        geo_location: GeoLocation | None = None,
+        id: int | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+        root_id: int | None = None,
+        aggregates: dict[str, Any] | AggregateResultItem | None = None,
+        cognite_client: CogniteClient | None = None,
     ):
         if geo_location is not None and not isinstance(geo_location, GeoLocation):
             raise TypeError("Asset.geo_location should be of type GeoLocation")
@@ -123,9 +128,9 @@ class Asset(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> Asset:
-        instance = super(Asset, cls)._load(resource, cognite_client)
-        if isinstance(resource, Dict):
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Asset:
+        instance = super()._load(resource, cognite_client)
+        if isinstance(resource, dict):
             if instance.aggregates is not None:
                 instance.aggregates = AggregateResultItem(**instance.aggregates)
         instance.labels = Label._load_list(instance.labels)
@@ -154,7 +159,7 @@ class Asset(CogniteResource):
         """
         return self._cognite_client.assets.list(parent_ids=[self.id], limit=None)
 
-    def subtree(self, depth: int = None) -> AssetList:
+    def subtree(self, depth: int | None = None) -> AssetList:
         """Returns the subtree of this asset up to a specified depth.
 
         Args:
@@ -198,14 +203,17 @@ class Asset(CogniteResource):
         """
         return self._cognite_client.files.list(asset_ids=[self.id], **kwargs)
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        result = super(Asset, self).dump(camel_case)
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        result = super().dump(camel_case)
         if self.labels is not None:
             result["labels"] = [label.dump(camel_case) for label in self.labels]
         return result
 
     def to_pandas(
-        self, expand: Sequence[str] = ("metadata", "aggregates"), ignore: List[str] = None, camel_case: bool = False
+        self,
+        expand: Sequence[str] = ("metadata", "aggregates"),
+        ignore: list[str] | None = None,
+        camel_case: bool = False,
     ) -> pandas.DataFrame:
         """Convert the instance into a pandas DataFrame.
 
@@ -233,33 +241,33 @@ class AssetUpdate(CogniteUpdate):
             return self._set(value)
 
     class _ObjectAssetUpdate(CogniteObjectUpdate):
-        def set(self, value: Dict) -> AssetUpdate:
+        def set(self, value: dict) -> AssetUpdate:
             return self._set(value)
 
-        def add(self, value: Dict) -> AssetUpdate:
+        def add(self, value: dict) -> AssetUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> AssetUpdate:
+        def remove(self, value: list) -> AssetUpdate:
             return self._remove(value)
 
     class _ListAssetUpdate(CogniteListUpdate):
-        def set(self, value: List) -> AssetUpdate:
+        def set(self, value: list) -> AssetUpdate:
             return self._set(value)
 
-        def add(self, value: List) -> AssetUpdate:
+        def add(self, value: list) -> AssetUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> AssetUpdate:
+        def remove(self, value: list) -> AssetUpdate:
             return self._remove(value)
 
     class _LabelAssetUpdate(CogniteLabelUpdate):
-        def set(self, value: Union[str, List[str]]) -> AssetUpdate:
+        def set(self, value: str | list[str]) -> AssetUpdate:
             return self._set(value)
 
-        def add(self, value: Union[str, List[str]]) -> AssetUpdate:
+        def add(self, value: str | list[str]) -> AssetUpdate:
             return self._add(value)
 
-        def remove(self, value: Union[str, List[str]]) -> AssetUpdate:
+        def remove(self, value: str | list[str]) -> AssetUpdate:
             return self._remove(value)
 
     @property
@@ -306,7 +314,7 @@ class AssetUpdate(CogniteUpdate):
 class AssetList(CogniteResourceList):
     _RESOURCE = Asset
 
-    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient = None):
+    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient | None = None):
         super().__init__(resources, cognite_client)
         self._retrieve_chunk_size = 100
 
@@ -351,12 +359,12 @@ class AssetList(CogniteResourceList):
         return self._retrieve_related_resources(FileMetadataList, self._cognite_client.files)
 
     def _retrieve_related_resources(
-        self, resource_list_class: Type[T_CogniteResourceList], resource_api: Any
+        self, resource_list_class: type[T_CogniteResourceList], resource_api: Any
     ) -> T_CogniteResourceList:
         seen = set()
         lock = threading.Lock()
 
-        def retrieve_and_deduplicate(asset_ids: List[int]) -> CogniteResourceList:
+        def retrieve_and_deduplicate(asset_ids: list[int]) -> CogniteResourceList:
             res = resource_api.list(asset_ids=asset_ids, limit=-1)
             resources = resource_list_class([])
             with lock:
@@ -401,20 +409,20 @@ class AssetFilter(CogniteFilter):
 
     def __init__(
         self,
-        name: str = None,
-        parent_ids: Sequence[int] = None,
-        parent_external_ids: Sequence[str] = None,
-        asset_subtree_ids: Sequence[Dict[str, Any]] = None,
-        data_set_ids: Sequence[Dict[str, Any]] = None,
-        metadata: Dict[str, str] = None,
-        source: str = None,
-        created_time: Union[Dict[str, Any], TimestampRange] = None,
-        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        root: bool = None,
-        external_id_prefix: str = None,
-        labels: LabelFilter = None,
-        geo_location: GeoLocationFilter = None,
-        cognite_client: CogniteClient = None,
+        name: str | None = None,
+        parent_ids: Sequence[int] | None = None,
+        parent_external_ids: Sequence[str] | None = None,
+        asset_subtree_ids: Sequence[dict[str, Any]] | None = None,
+        data_set_ids: Sequence[dict[str, Any]] | None = None,
+        metadata: dict[str, str] | None = None,
+        source: str | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        root: bool | None = None,
+        external_id_prefix: str | None = None,
+        labels: LabelFilter | None = None,
+        geo_location: GeoLocationFilter | None = None,
+        cognite_client: CogniteClient | None = None,
     ):
         self.name = name
         self.parent_ids = parent_ids
@@ -435,17 +443,17 @@ class AssetFilter(CogniteFilter):
             raise TypeError("AssetFilter.labels must be of type LabelFilter")
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str]) -> AssetFilter:
-        instance = super(AssetFilter, cls)._load(resource)
-        if isinstance(resource, Dict):
+    def _load(cls, resource: dict | str) -> AssetFilter:
+        instance = super()._load(resource)
+        if isinstance(resource, dict):
             if instance.created_time is not None:
                 instance.created_time = TimestampRange(**instance.created_time)
             if instance.last_updated_time is not None:
                 instance.last_updated_time = TimestampRange(**instance.last_updated_time)
         return instance
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        result = super(AssetFilter, self).dump(camel_case)
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        result = super().dump(camel_case)
         if isinstance(self.labels, LabelFilter):
             result["labels"] = self.labels.dump(camel_case)
         return result

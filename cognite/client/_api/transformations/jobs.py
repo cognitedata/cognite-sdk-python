@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, Sequence
+from collections.abc import Sequence
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -19,9 +19,9 @@ class TransformationJobsAPI(APIClient):
 
     def list(
         self,
-        limit: Optional[int] = 25,
-        transformation_id: Optional[int] = None,
-        transformation_external_id: Optional[str] = None,
+        limit: int | None = 25,
+        transformation_id: int | None = None,
+        transformation_external_id: str | None = None,
     ) -> TransformationJobList:
         """`List all running transformation jobs. <https://docs.cognite.com/api/v1/#operation/getTransformationJobs>`_
 
@@ -56,7 +56,7 @@ class TransformationJobsAPI(APIClient):
             list_cls=TransformationJobList, resource_cls=TransformationJob, method="GET", limit=limit, filter=filter
         )
 
-    def retrieve(self, id: int) -> Optional[TransformationJob]:
+    def retrieve(self, id: int) -> TransformationJob | None:
         """`Retrieve a single transformation job by id. <https://docs.cognite.com/api/v1/#operation/getTransformationJobsByIds>`_
 
         Args:

@@ -4,25 +4,10 @@ import json
 import operator as op
 import warnings
 from collections import defaultdict
+from collections.abc import Callable, Collection, Generator, Iterator, Sequence
 from datetime import datetime
 from functools import cached_property
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Collection,
-    Dict,
-    Generator,
-    Iterator,
-    List,
-    Literal,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
@@ -89,18 +74,18 @@ class Datapoint(CogniteResource):
 
     def __init__(
         self,
-        timestamp: int = None,
-        value: Union[str, float] = None,
-        average: float = None,
-        max: float = None,
-        min: float = None,
-        count: int = None,
-        sum: float = None,
-        interpolation: float = None,
-        step_interpolation: float = None,
-        continuous_variance: float = None,
-        discrete_variance: float = None,
-        total_variation: float = None,
+        timestamp: int | None = None,
+        value: str | float | None = None,
+        average: float | None = None,
+        max: float | None = None,
+        min: float | None = None,
+        count: int | None = None,
+        sum: float | None = None,
+        interpolation: float | None = None,
+        step_interpolation: float | None = None,
+        continuous_variance: float | None = None,
+        discrete_variance: float | None = None,
+        total_variation: float | None = None,
     ):
         self.timestamp = timestamp
         self.value = value
@@ -137,24 +122,24 @@ class DatapointsArray(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        external_id: str = None,
-        is_string: bool = None,
-        is_step: bool = None,
-        unit: str = None,
-        granularity: str = None,
-        timestamp: NumpyDatetime64NSArray = None,
-        value: Union[NumpyFloat64Array, NumpyObjArray] = None,
-        average: NumpyFloat64Array = None,
-        max: NumpyFloat64Array = None,
-        min: NumpyFloat64Array = None,
-        count: NumpyInt64Array = None,
-        sum: NumpyFloat64Array = None,
-        interpolation: NumpyFloat64Array = None,
-        step_interpolation: NumpyFloat64Array = None,
-        continuous_variance: NumpyFloat64Array = None,
-        discrete_variance: NumpyFloat64Array = None,
-        total_variation: NumpyFloat64Array = None,
+        id: int | None = None,
+        external_id: str | None = None,
+        is_string: bool | None = None,
+        is_step: bool | None = None,
+        unit: str | None = None,
+        granularity: str | None = None,
+        timestamp: NumpyDatetime64NSArray | None = None,
+        value: NumpyFloat64Array | NumpyObjArray | None = None,
+        average: NumpyFloat64Array | None = None,
+        max: NumpyFloat64Array | None = None,
+        min: NumpyFloat64Array | None = None,
+        count: NumpyInt64Array | None = None,
+        sum: NumpyFloat64Array | None = None,
+        interpolation: NumpyFloat64Array | None = None,
+        step_interpolation: NumpyFloat64Array | None = None,
+        continuous_variance: NumpyFloat64Array | None = None,
+        discrete_variance: NumpyFloat64Array | None = None,
+        total_variation: NumpyFloat64Array | None = None,
     ):
         self.id = id
         self.external_id = external_id
@@ -176,7 +161,7 @@ class DatapointsArray(CogniteResource):
         self.total_variation = total_variation
 
     @property
-    def _ts_info(self) -> Dict[str, Any]:
+    def _ts_info(self) -> dict[str, Any]:
         return {
             "id": self.id,
             "external_id": self.external_id,
@@ -189,7 +174,7 @@ class DatapointsArray(CogniteResource):
     @classmethod
     def _load(  # type: ignore [override]
         cls,
-        dps_dct: Dict[str, Union[int, str, bool, npt.NDArray]],
+        dps_dct: dict[str, int | str | bool | npt.NDArray],
     ) -> DatapointsArray:
         assert isinstance(dps_dct["timestamp"], np.ndarray)  # mypy love
         # Since pandas always uses nanoseconds for datetime, we stick with the same
@@ -219,7 +204,7 @@ class DatapointsArray(CogniteResource):
     def __getitem__(self, item: slice) -> DatapointsArray:
         ...
 
-    def __getitem__(self, item: Union[int, slice]) -> Union[Datapoint, DatapointsArray]:
+    def __getitem__(self, item: int | slice) -> Datapoint | DatapointsArray:
         if isinstance(item, slice):
             return self._slice(item)
         attrs, arrays = self._data_fields()
@@ -229,7 +214,7 @@ class DatapointsArray(CogniteResource):
         )
 
     def _slice(self, part: slice) -> DatapointsArray:
-        data: Dict[str, Any] = {attr: arr[part] for attr, arr in zip(*self._data_fields())}
+        data: dict[str, Any] = {attr: arr[part] for attr, arr in zip(*self._data_fields())}
         return DatapointsArray(**self._ts_info, **data)
 
     def __iter__(self) -> Iterator[Datapoint]:
@@ -250,7 +235,7 @@ class DatapointsArray(CogniteResource):
         # Using .item() on numpy scalars gives us vanilla python types:
         return op.methodcaller("item")
 
-    def _data_fields(self) -> Tuple[List[str], List[npt.NDArray]]:
+    def _data_fields(self) -> tuple[list[str], list[npt.NDArray]]:
         data_field_tuples = [
             (attr, arr)
             for attr in ("timestamp", "value", *ALL_SORTED_DP_AGGS)  # ts must be first!
@@ -259,7 +244,7 @@ class DatapointsArray(CogniteResource):
         attrs, arrays = map(list, zip(*data_field_tuples))
         return attrs, arrays  # type: ignore [return-value]
 
-    def dump(self, camel_case: bool = False, convert_timestamps: bool = False) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = False, convert_timestamps: bool = False) -> dict[str, Any]:
         """Dump the DatapointsArray into a json serializable Python data type.
 
         Args:
@@ -364,25 +349,25 @@ class Datapoints(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        external_id: str = None,
-        is_string: bool = None,
-        is_step: bool = None,
-        unit: str = None,
-        granularity: str = None,
-        timestamp: Sequence[int] = None,
-        value: Union[Sequence[str], Sequence[float]] = None,
-        average: List[float] = None,
-        max: List[float] = None,
-        min: List[float] = None,
-        count: List[int] = None,
-        sum: List[float] = None,
-        interpolation: List[float] = None,
-        step_interpolation: List[float] = None,
-        continuous_variance: List[float] = None,
-        discrete_variance: List[float] = None,
-        total_variation: List[float] = None,
-        error: List[Union[None, str]] = None,
+        id: int | None = None,
+        external_id: str | None = None,
+        is_string: bool | None = None,
+        is_step: bool | None = None,
+        unit: str | None = None,
+        granularity: str | None = None,
+        timestamp: Sequence[int] | None = None,
+        value: Sequence[str] | Sequence[float] | None = None,
+        average: list[float] | None = None,
+        max: list[float] | None = None,
+        min: list[float] | None = None,
+        count: list[int] | None = None,
+        sum: list[float] | None = None,
+        interpolation: list[float] | None = None,
+        step_interpolation: list[float] | None = None,
+        continuous_variance: list[float] | None = None,
+        discrete_variance: list[float] | None = None,
+        total_variation: list[float] | None = None,
+        error: list[None | str] | None = None,
     ):
         self.id = id
         self.external_id = external_id
@@ -404,7 +389,7 @@ class Datapoints(CogniteResource):
         self.total_variation = total_variation
         self.error = error
 
-        self.__datapoint_objects: Optional[List[Datapoint]] = None
+        self.__datapoint_objects: list[Datapoint] | None = None
 
     def __str__(self) -> str:
         item = self.dump()
@@ -430,7 +415,7 @@ class Datapoints(CogniteResource):
     def __getitem__(self, item: slice) -> Datapoints:
         ...
 
-    def __getitem__(self, item: Union[int, slice]) -> Union[Datapoint, Datapoints]:
+    def __getitem__(self, item: int | slice) -> Datapoint | Datapoints:
         if isinstance(item, slice):
             return self._slice(item)
         dp_args = {}
@@ -441,7 +426,7 @@ class Datapoints(CogniteResource):
     def __iter__(self) -> Generator[Datapoint, None, None]:
         yield from self.__get_datapoint_objects()
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
         """Dump the datapoints into a json serializable Python data type.
 
         Args:
@@ -524,7 +509,10 @@ class Datapoints(CogniteResource):
 
     @classmethod
     def _load(  # type: ignore [override]
-        cls, dps_object: Dict[str, Any], expected_fields: List[str] = None, cognite_client: CogniteClient = None
+        cls,
+        dps_object: dict[str, Any],
+        expected_fields: list[str] | None = None,
+        cognite_client: CogniteClient | None = None,
     ) -> Datapoints:
         del cognite_client  # just needed for signature
         instance = cls(
@@ -563,7 +551,7 @@ class Datapoints(CogniteResource):
 
     def _get_non_empty_data_fields(
         self, get_empty_lists: bool = False, get_error: bool = True
-    ) -> List[Tuple[str, Any]]:
+    ) -> list[tuple[str, Any]]:
         non_empty_data_fields = []
         skip_attrs = {"id", "external_id", "is_string", "is_step", "unit", "granularity"}
         for attr, value in self.__dict__.copy().items():
@@ -573,7 +561,7 @@ class Datapoints(CogniteResource):
                         non_empty_data_fields.append((attr, value))
         return non_empty_data_fields
 
-    def __get_datapoint_objects(self) -> List[Datapoint]:
+    def __get_datapoint_objects(self) -> list[Datapoint]:
         if self.__datapoint_objects is not None:
             return self.__datapoint_objects
         fields = self._get_non_empty_data_fields(get_error=False)
@@ -600,7 +588,7 @@ class Datapoints(CogniteResource):
 class DatapointsArrayList(CogniteResourceList):
     _RESOURCE = DatapointsArray
 
-    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient = None):
+    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient | None = None):
         super().__init__(resources, cognite_client)
 
         # Fix what happens for duplicated identifiers:
@@ -620,9 +608,9 @@ class DatapointsArrayList(CogniteResourceList):
 
     def get(  # type: ignore [override]
         self,
-        id: int = None,
-        external_id: str = None,
-    ) -> Union[None, DatapointsArray, List[DatapointsArray]]:
+        id: int | None = None,
+        external_id: str | None = None,
+    ) -> None | DatapointsArray | list[DatapointsArray]:
         """Get a specific DatapointsArray from this list by id or exernal_id.
 
         Note: For duplicated time series, returns a list of DatapointsArray.
@@ -666,7 +654,7 @@ class DatapointsArrayList(CogniteResourceList):
 
         return concat_dataframes_with_nullable_int_cols(dfs)
 
-    def dump(self, camel_case: bool = False, convert_timestamps: bool = False) -> List[Dict[str, Any]]:
+    def dump(self, camel_case: bool = False, convert_timestamps: bool = False) -> list[dict[str, Any]]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
@@ -682,7 +670,7 @@ class DatapointsArrayList(CogniteResourceList):
 class DatapointsList(CogniteResourceList):
     _RESOURCE = Datapoints
 
-    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient = None):
+    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient | None = None):
         super().__init__(resources, cognite_client)
 
         # Fix what happens for duplicated identifiers:
@@ -702,9 +690,9 @@ class DatapointsList(CogniteResourceList):
 
     def get(  # type: ignore [override]
         self,
-        id: int = None,
-        external_id: str = None,
-    ) -> Union[None, Datapoints, List[Datapoints]]:
+        id: int | None = None,
+        external_id: str | None = None,
+    ) -> None | Datapoints | list[Datapoints]:
         """Get a specific Datapoints from this list by id or exernal_id.
 
         Note: For duplicated time series, returns a list of Datapoints.

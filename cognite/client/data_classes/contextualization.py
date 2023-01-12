@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 import warnings
+from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import Enum
 from typing import (
@@ -10,7 +11,6 @@ from typing import (
     Dict,
     List,
     Optional,
-    Sequence,
     Set,
     Tuple,
     Type,
@@ -80,15 +80,15 @@ class ContextualizationJob(CogniteResource):
 
     def __init__(
         self,
-        job_id: int = None,
-        model_id: int = None,
-        status: str = None,
-        error_message: str = None,
-        created_time: int = None,
-        start_time: int = None,
-        status_time: int = None,
-        status_path: str = None,
-        cognite_client: CogniteClient = None,
+        job_id: int | None = None,
+        model_id: int | None = None,
+        status: str | None = None,
+        error_message: str | None = None,
+        created_time: int | None = None,
+        start_time: int | None = None,
+        status_time: int | None = None,
+        status_path: str | None = None,
+        cognite_client: CogniteClient | None = None,
     ):
         """Data class for the result of a contextualization job."""
         self.job_id = job_id
@@ -99,7 +99,7 @@ class ContextualizationJob(CogniteResource):
         self.status_time = status_time
         self.error_message = error_message
         self._cognite_client = cast("CogniteClient", cognite_client)
-        self._result: Optional[Dict[str, Any]] = None
+        self._result: dict[str, Any] | None = None
         self._status_path = status_path
 
     def update_status(self) -> str:
@@ -116,7 +116,7 @@ class ContextualizationJob(CogniteResource):
         assert self.status is not None
         return self.status
 
-    def wait_for_completion(self, timeout: int = None, interval: int = 1) -> None:
+    def wait_for_completion(self, timeout: int | None = None, interval: int = 1) -> None:
         """Waits for job completion, raising ModelFailedException if fit failed - generally not needed to call as it is called by result.
         Args:
             timeout (int): Time out after this many seconds. (None means wait indefinitely)
@@ -132,7 +132,7 @@ class ContextualizationJob(CogniteResource):
             raise ModelFailedException(self.__class__.__name__, cast(int, self.job_id), cast(str, self.error_message))
 
     @property
-    def result(self) -> Dict[str, Any]:
+    def result(self) -> dict[str, Any]:
         """Waits for the job to finish and returns the results."""
         if not self._result:
             self.wait_for_completion()
@@ -144,7 +144,7 @@ class ContextualizationJob(CogniteResource):
 
     @classmethod
     def _load_with_status(
-        cls: Type[T_ContextualizationJob], data: Dict[str, Any], status_path: str, cognite_client: Any
+        cls: type[T_ContextualizationJob], data: dict[str, Any], status_path: str, cognite_client: Any
     ) -> T_ContextualizationJob:
         obj = cls._load(data, cognite_client=cognite_client)
         obj._status_path = status_path
@@ -164,20 +164,20 @@ class EntityMatchingModel(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        status: str = None,
-        error_message: str = None,
-        created_time: int = None,
-        start_time: int = None,
-        status_time: int = None,
-        classifier: str = None,
-        feature_type: str = None,
-        match_fields: List[str] = None,
-        model_type: str = None,
-        name: str = None,
-        description: str = None,
-        external_id: str = None,
-        cognite_client: CogniteClient = None,
+        id: int | None = None,
+        status: str | None = None,
+        error_message: str | None = None,
+        created_time: int | None = None,
+        start_time: int | None = None,
+        status_time: int | None = None,
+        classifier: str | None = None,
+        feature_type: str | None = None,
+        match_fields: list[str] | None = None,
+        model_type: str | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        external_id: str | None = None,
+        cognite_client: CogniteClient | None = None,
     ):
         """Entity matching model. See the `fit` method for the meaning of these fields."""
         self.id = id
@@ -209,7 +209,7 @@ class EntityMatchingModel(CogniteResource):
         assert self.status is not None
         return self.status
 
-    def wait_for_completion(self, timeout: int = None, interval: int = 1) -> None:
+    def wait_for_completion(self, timeout: int | None = None, interval: int = 1) -> None:
         """Waits for model completion, raising ModelFailedException if fit failed - generally not needed to call as it is called by predict
 
         Args:
@@ -229,10 +229,10 @@ class EntityMatchingModel(CogniteResource):
 
     def predict(
         self,
-        sources: Optional[List[Dict]] = None,
-        targets: Optional[List[Dict]] = None,
+        sources: list[dict] | None = None,
+        targets: list[dict] | None = None,
         num_matches: int = 1,
-        score_threshold: float = None,
+        score_threshold: float | None = None,
     ) -> ContextualizationJob:
         """Predict entity matching. NB. blocks and waits for the model to be ready if it has been recently created.
 
@@ -259,9 +259,7 @@ class EntityMatchingModel(CogniteResource):
             },
         )
 
-    def refit(
-        self, true_matches: Sequence[Union[Dict, Tuple[Union[int, str], Union[int, str]]]]
-    ) -> EntityMatchingModel:
+    def refit(self, true_matches: Sequence[dict | tuple[int | str, int | str]]) -> EntityMatchingModel:
         """Re-fits an entity matching model, using the combination of the old and new true matches.
 
         Args:
@@ -277,16 +275,16 @@ class EntityMatchingModel(CogniteResource):
         return self._load(response.json(), cognite_client=self._cognite_client)
 
     @staticmethod
-    def _flatten_entity(entity: Union[dict, CogniteResource]) -> Dict:
+    def _flatten_entity(entity: dict | CogniteResource) -> dict:
         if isinstance(entity, CogniteResource):
             entity = entity.dump(camel_case=True)
         if "metadata" in entity and isinstance(entity["metadata"], dict):
             for k, v in entity["metadata"].items():
-                entity["metadata.{}".format(k)] = v
+                entity[f"metadata.{k}"] = v
         return {k: v for k, v in entity.items() if k == "id" or isinstance(v, str)}
 
     @staticmethod
-    def _dump_entities(entities: Optional[Sequence[Union[Dict, CogniteResource]]]) -> Optional[List[Dict]]:
+    def _dump_entities(entities: Sequence[dict | CogniteResource] | None) -> list[dict] | None:
         if entities:
             return [EntityMatchingModel._flatten_entity(e) for e in entities]
         return None
@@ -320,10 +318,10 @@ class EntityMatchingModelList(CogniteResourceList):
 class FileReference:
     def __init__(
         self,
-        file_id: Optional[int] = None,
-        file_external_id: Optional[str] = None,
-        first_page: Optional[int] = None,
-        last_page: Optional[int] = None,
+        file_id: int | None = None,
+        file_external_id: str | None = None,
+        first_page: int | None = None,
+        last_page: int | None = None,
     ):
         self.file_id = file_id
         self.file_external_id = file_external_id
@@ -335,9 +333,9 @@ class FileReference:
         if exactly_one_is_not_none(first_page, last_page):
             raise Exception("If the page range feature is used, both first page and last page must be set")
 
-    def to_api_item(self) -> Dict[str, Union[str, int, Dict[str, int]]]:
+    def to_api_item(self) -> dict[str, str | int | dict[str, int]]:
         if self.file_id is None and self.file_external_id is not None:
-            item: Dict[str, Union[str, int, Dict[str, int]]] = {"fileExternalId": self.file_external_id}
+            item: dict[str, str | int | dict[str, int]] = {"fileExternalId": self.file_external_id}
         if self.file_id is not None and self.file_external_id is None:
             item = {"fileId": self.file_id}
         if self.first_page is not None and self.last_page is not None:
@@ -347,7 +345,11 @@ class FileReference:
 
 class DiagramConvertPage(CogniteResource):
     def __init__(
-        self, page: int = None, png_url: str = None, svg_url: str = None, cognite_client: CogniteClient = None
+        self,
+        page: int | None = None,
+        png_url: str | None = None,
+        svg_url: str | None = None,
+        cognite_client: CogniteClient | None = None,
     ):
         self.page = page
         self.png_url = png_url
@@ -362,10 +364,10 @@ class DiagramConvertPageList(CogniteResourceList):
 class DiagramConvertItem(CogniteResource):
     def __init__(
         self,
-        file_id: int = None,
-        file_external_id: str = None,
-        results: list = None,
-        cognite_client: CogniteClient = None,
+        file_id: int | None = None,
+        file_external_id: str | None = None,
+        results: list | None = None,
+        cognite_client: CogniteClient | None = None,
     ):
         self.file_id = file_id
         self.file_external_id = file_external_id
@@ -392,7 +394,7 @@ class DiagramConvertResults(ContextualizationJob):
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
-        self._items: Optional[list] = None
+        self._items: list | None = None
 
     def __getitem__(self, find_id: Any) -> DiagramConvertItem:
         """retrieves the results for the file with (external) id"""
@@ -408,7 +410,7 @@ class DiagramConvertResults(ContextualizationJob):
         return DiagramConvertItem._load(found[0], cognite_client=self._cognite_client)
 
     @property
-    def items(self) -> Optional[List[DiagramConvertItem]]:
+    def items(self) -> list[DiagramConvertItem] | None:
         """returns a list of all results by file"""
         if self.status == "Completed":
             self._items = [
@@ -424,12 +426,12 @@ class DiagramConvertResults(ContextualizationJob):
 class DiagramDetectItem(CogniteResource):
     def __init__(
         self,
-        file_id: int = None,
-        file_external_id: str = None,
-        annotations: list = None,
-        error_message: str = None,
-        cognite_client: CogniteClient = None,
-        page_range: Optional[Dict[str, int]] = None,
+        file_id: int | None = None,
+        file_external_id: str | None = None,
+        annotations: list | None = None,
+        error_message: str | None = None,
+        cognite_client: CogniteClient | None = None,
+        page_range: dict[str, int] | None = None,
     ):
         self.file_id = file_id
         self.file_external_id = file_external_id
@@ -449,7 +451,7 @@ class DiagramDetectResults(ContextualizationJob):
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
-        self._items: Optional[List[DiagramDetectItem]] = None
+        self._items: list[DiagramDetectItem] | None = None
 
     def __getitem__(self, find_id: Any) -> DiagramDetectItem:
         """retrieves the results for the file with (external) id"""
@@ -465,7 +467,7 @@ class DiagramDetectResults(ContextualizationJob):
         return DiagramDetectItem._load(found[0], cognite_client=self._cognite_client)
 
     @property
-    def items(self) -> Optional[List[DiagramDetectItem]]:
+    def items(self) -> list[DiagramDetectItem] | None:
         """returns a list of all results by file"""
         if self.status == "Completed":
             self._items = [
@@ -474,11 +476,11 @@ class DiagramDetectResults(ContextualizationJob):
         return self._items
 
     @items.setter
-    def items(self, items: List[DiagramDetectItem]) -> None:
+    def items(self, items: list[DiagramDetectItem]) -> None:
         self._items = items
 
     @property
-    def errors(self) -> List[str]:
+    def errors(self) -> list[str]:
         """returns a list of all error messages across files"""
         return [item["errorMessage"] for item in self.result["items"] if "errorMessage" in item]
 
@@ -502,37 +504,29 @@ class VisionFeature(str, Enum):
     PERSONAL_PROTECTIVE_EQUIPMENT_DETECTION = "PersonalProtectiveEquipmentDetection"
 
     @classmethod
-    def beta_features(cls) -> Set[VisionFeature]:
+    def beta_features(cls) -> set[VisionFeature]:
         return {VisionFeature.INDUSTRIAL_OBJECT_DETECTION, VisionFeature.PERSONAL_PROTECTIVE_EQUIPMENT_DETECTION}
 
 
 @dataclass
 class VisionExtractPredictions(VisionResource):
-    text_predictions: Optional[List[TextRegion]] = None
-    asset_tag_predictions: Optional[List[AssetLink]] = None
-    industrial_object_predictions: Optional[List[ObjectDetection]] = None
-    people_predictions: Optional[List[ObjectDetection]] = None
-    personal_protective_equipment_predictions: Optional[List[ObjectDetection]] = None
-
-    @staticmethod
-    def _get_feature_class(type_hint: Type[Optional[List[FeatureClass]]]) -> FeatureClass:
-        # Unwrap the first level of type hints (i.e., the Optional[...])
-        # NOTE: outer type hint MUST be an Optional, since Optional[X] == Union[X, None]
-        list_type_hint, _ = get_args(type_hint)
-        # Unwrap the second level of type hint (i.e., the List[...])
-        (class_type,) = get_args(list_type_hint)
-        return class_type
+    text_predictions: list[TextRegion] | None = None
+    asset_tag_predictions: list[AssetLink] | None = None
+    industrial_object_predictions: list[ObjectDetection] | None = None
+    people_predictions: list[ObjectDetection] | None = None
+    personal_protective_equipment_predictions: list[ObjectDetection] | None = None
 
 
-# Auto-generate the annotation-to-dataclass mapping based on the type hints of VisionExtractPredictions
-VISION_FEATURE_MAP: Dict[str, FeatureClass] = {
-    key: VisionExtractPredictions._get_feature_class(value)
-    for key, value in get_type_hints(VisionExtractPredictions).items()
-    if not key == "_cognite_client"
+VISION_FEATURE_MAP: dict[str, FeatureClass] = {
+    "text_predictions": TextRegion,
+    "asset_tag_predictions": AssetLink,
+    "industrial_object_predictions": ObjectDetection,
+    "people_predictions": ObjectDetection,
+    "personal_protective_equipment_predictions": ObjectDetection,
 }
 
 
-VISION_ANNOTATION_TYPE_MAP: Dict[str, str] = {
+VISION_ANNOTATION_TYPE_MAP: dict[str, str] = {
     "text_predictions": "images.TextRegion",
     "asset_tag_predictions": "images.AssetLink",
     "industrial_object_predictions": "images.ObjectDetection",
@@ -543,13 +537,13 @@ VISION_ANNOTATION_TYPE_MAP: Dict[str, str] = {
 
 @dataclass
 class ThresholdParameter:
-    threshold: Optional[float] = None
+    threshold: float | None = None
 
 
 @dataclass
 class AssetTagDetectionParameters(VisionResource, ThresholdParameter):
-    partial_match: Optional[bool] = None
-    asset_subtree_ids: Optional[List[int]] = None
+    partial_match: bool | None = None
+    asset_subtree_ids: list[int] | None = None
 
 
 @dataclass
@@ -577,7 +571,7 @@ class DetectJobBundle:
     _STATUS_PATH = "/context/diagram/detect/status"
     _WAIT_TIME = 2
 
-    def __init__(self, job_ids: List[int], cognite_client: CogniteClient = None):
+    def __init__(self, job_ids: list[int], cognite_client: CogniteClient | None = None):
         # Show warning
         warnings.warn(
             "DetectJobBundle.result is calling a beta endpoint which is still in development. Breaking changes can happen in between patch versions."
@@ -587,11 +581,11 @@ class DetectJobBundle:
         if not job_ids:
             raise ValueError("You need to specify job_ids")
         self.job_ids = job_ids
-        self._remaining_job_ids: List[int] = []
+        self._remaining_job_ids: list[int] = []
 
-        self.jobs: List[Dict[str, Any]] = []
+        self.jobs: list[dict[str, Any]] = []
 
-        self._result: List[Dict[str, Any]] = []
+        self._result: list[dict[str, Any]] = []
 
     def __str__(self) -> str:
         return (
@@ -615,7 +609,7 @@ class DetectJobBundle:
         if self._WAIT_TIME < 10:
             self._WAIT_TIME += 2
 
-    def wait_for_completion(self, timeout: int = None) -> None:
+    def wait_for_completion(self, timeout: int | None = None) -> None:
         """Waits for all jobs to complete, generally not needed to call as it is called by result.
         Args:
             timeout (int): Time out after this many seconds. (None means wait indefinitely)
@@ -644,12 +638,12 @@ class DetectJobBundle:
                 self._WAIT_TIME = 2
                 break
 
-    def fetch_results(self) -> List[Dict[str, Any]]:
+    def fetch_results(self) -> list[dict[str, Any]]:
         # Check status
         return [self._cognite_client.diagrams._get(f"{self._RESOURCE_PATH}{j}").json() for j in self.job_ids]
 
     @property
-    def result(self) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    def result(self) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         """Waits for the job to finish and returns the results."""
         if not self._result:
             self.wait_for_completion()
@@ -657,8 +651,8 @@ class DetectJobBundle:
             self._result = self.fetch_results()
         assert self._result is not None
         # Sort into succeeded and failed
-        failed: List[Dict[str, Any]] = []
-        succeeded: List[Dict[str, Any]] = []
+        failed: list[dict[str, Any]] = []
+        succeeded: list[dict[str, Any]] = []
         for job_result in self._result:
             for item in job_result["items"]:
                 if "errorMessage" in item:
@@ -670,11 +664,11 @@ class DetectJobBundle:
 
 @dataclass
 class FeatureParameters(VisionResource):
-    text_detection_parameters: Optional[TextDetectionParameters] = None
-    asset_tag_detection_parameters: Optional[AssetTagDetectionParameters] = None
-    people_detection_parameters: Optional[PeopleDetectionParameters] = None
-    industrial_object_detection_parameters: Optional[IndustrialObjectDetectionParameters] = None
-    personal_protective_equipment_detection_parameters: Optional[PersonalProtectiveEquipmentDetectionParameters] = None
+    text_detection_parameters: TextDetectionParameters | None = None
+    asset_tag_detection_parameters: AssetTagDetectionParameters | None = None
+    people_detection_parameters: PeopleDetectionParameters | None = None
+    industrial_object_detection_parameters: IndustrialObjectDetectionParameters | None = None
+    personal_protective_equipment_detection_parameters: PersonalProtectiveEquipmentDetectionParameters | None = None
 
 
 class VisionJob(ContextualizationJob):
@@ -697,41 +691,43 @@ class VisionJob(ContextualizationJob):
 class VisionExtractItem(CogniteResource):
     def __init__(
         self,
-        file_id: int = None,
-        predictions: Dict[str, Any] = None,
-        file_external_id: str = None,
-        error_message: str = None,
-        cognite_client: CogniteClient = None,  # noqa: F821
+        file_id: int | None = None,
+        predictions: dict[str, Any] | None = None,
+        file_external_id: str | None = None,
+        error_message: str | None = None,
+        cognite_client: CogniteClient | None = None,  # noqa: F821
     ) -> None:
         """Data class for storing predictions for a single image file"""
         self.file_id = file_id
         self.file_external_id = file_external_id
         self.error_message = error_message
-        self.predictions = self._process_predictions_dict(predictions) if isinstance(predictions, Dict) else predictions
+        self.predictions = self._process_predictions_dict(predictions) if isinstance(predictions, dict) else predictions
 
         self._predictions_dict = predictions  # The "raw" predictions dict returned by the endpoint
         self._cognite_client = cast("CogniteClient", cognite_client)  # noqa: F821
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> VisionExtractItem:  # noqa: F821
+    def _load(
+        cls, resource: dict | str, cognite_client: CogniteClient | None = None
+    ) -> VisionExtractItem:  # noqa: F821
         """Override CogniteResource._load so that we can convert the dicts returned by the API to data classes"""
-        extracted_item = super(VisionExtractItem, cls)._load(resource, cognite_client=cognite_client)
+        extracted_item = super()._load(resource, cognite_client=cognite_client)
         if isinstance(extracted_item.predictions, dict):
             extracted_item._predictions_dict = extracted_item.predictions
             extracted_item.predictions = cls._process_predictions_dict(extracted_item._predictions_dict)
         return extracted_item
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
         item_dump = super().dump(camel_case=camel_case)
         # Replace the loaded VisionExtractPredictions with its corresponding dict representation
-        if "predictions" in item_dump and isinstance(self._predictions_dict, Dict):
+        if "predictions" in item_dump and isinstance(self._predictions_dict, dict):
             item_dump["predictions"] = (
                 self._predictions_dict if camel_case else self._resource_to_snake_case(self._predictions_dict)
             )
         return item_dump
 
     @classmethod
-    def _process_predictions_dict(cls, predictions_dict: Dict[str, Any]) -> VisionExtractPredictions:
+    def _process_predictions_dict(cls, predictions_dict: dict[str, Any]) -> VisionExtractPredictions:
         """Converts a (validated) predictions dict to a corresponding VisionExtractPredictions"""
         prediction_object = VisionExtractPredictions()
         snake_case_predictions_dict = cls._resource_to_snake_case(predictions_dict)
@@ -757,7 +753,7 @@ class VisionExtractJob(VisionJob):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self._items: Optional[List[VisionExtractItem]] = None
+        self._items: list[VisionExtractItem] | None = None
 
     def __getitem__(self, file_id: InternalId) -> VisionExtractItem:
         """Retrieves the results for a file by id"""
@@ -767,7 +763,7 @@ class VisionExtractJob(VisionJob):
         return VisionExtractItem._load(found[0], cognite_client=self._cognite_client)
 
     @property
-    def items(self) -> Optional[List[VisionExtractItem]]:
+    def items(self) -> list[VisionExtractItem] | None:
         """Returns a list of all predictions by file"""
         if self.status == JobStatus.COMPLETED.value:
             self._items = [
@@ -776,20 +772,20 @@ class VisionExtractJob(VisionJob):
         return self._items
 
     @items.setter
-    def items(self, items: List[VisionExtractItem]) -> None:
+    def items(self, items: list[VisionExtractItem]) -> None:
         self._items = items
 
     @property
-    def errors(self) -> List[str]:
+    def errors(self) -> list[str]:
         """Returns a list of all error messages across files"""
         return [item["errorMessage"] for item in self.result["items"] if "errorMessage" in item]
 
     def _predictions_to_annotations(
         self,
-        creating_user: Optional[str] = None,
-        creating_app: Optional[str] = None,
-        creating_app_version: Optional[str] = None,
-    ) -> List[Annotation]:
+        creating_user: str | None = None,
+        creating_app: str | None = None,
+        creating_app_version: str | None = None,
+    ) -> list[Annotation]:
 
         return [
             Annotation(
@@ -810,10 +806,10 @@ class VisionExtractJob(VisionJob):
 
     def save_predictions(
         self,
-        creating_user: Optional[str] = None,
-        creating_app: Optional[str] = None,
-        creating_app_version: Optional[str] = None,
-    ) -> Union[Annotation, AnnotationList]:
+        creating_user: str | None = None,
+        creating_app: str | None = None,
+        creating_app_version: str | None = None,
+    ) -> Annotation | AnnotationList:
         """
         Saves all predictions made by the feature extractors in CDF using the Annotations API.
         See https://docs.cognite.com/api/v1/#tag/Annotations/operation/annotationsSuggest

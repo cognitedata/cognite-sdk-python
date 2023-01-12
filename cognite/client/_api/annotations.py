@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Collection, Sequence
 from copy import deepcopy
-from typing import Any, Collection, Dict, List, Optional, Sequence, Union, overload
+from typing import Any, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Annotation, AnnotationFilter, AnnotationList, AnnotationUpdate
@@ -21,7 +22,7 @@ class AnnotationsAPI(APIClient):
     def create(self, annotations: Sequence[Annotation]) -> AnnotationList:
         ...
 
-    def create(self, annotations: Union[Annotation, Sequence[Annotation]]) -> Union[Annotation, AnnotationList]:
+    def create(self, annotations: Annotation | Sequence[Annotation]) -> Annotation | AnnotationList:
         """Create annotations
 
         Args:
@@ -43,7 +44,7 @@ class AnnotationsAPI(APIClient):
     def suggest(self, annotations: Sequence[Annotation]) -> AnnotationList:
         ...
 
-    def suggest(self, annotations: Union[Annotation, Sequence[Annotation]]) -> Union[Annotation, AnnotationList]:
+    def suggest(self, annotations: Annotation | Sequence[Annotation]) -> Annotation | AnnotationList:
         """Suggest annotations
 
         Args:
@@ -54,7 +55,7 @@ class AnnotationsAPI(APIClient):
         """
         assert_type(annotations, "annotations", [Annotation, Sequence])
         # Deal with status fields in both cases: Single item and list of items
-        items: Union[List[Dict[str, Any]], Dict[str, Any]] = (
+        items: list[dict[str, Any]] | dict[str, Any] = (
             [self._sanitize_suggest_item(ann) for ann in annotations]
             if isinstance(annotations, Sequence)
             else self._sanitize_suggest_item(annotations)
@@ -67,7 +68,7 @@ class AnnotationsAPI(APIClient):
         )
 
     @staticmethod
-    def _sanitize_suggest_item(annotation: Union[Annotation, Dict[str, Any]]) -> Dict[str, Any]:
+    def _sanitize_suggest_item(annotation: Annotation | dict[str, Any]) -> dict[str, Any]:
         # Check that status is set to suggested if it is set and afterwards remove it
         item = annotation.dump(camel_case=True) if isinstance(annotation, Annotation) else deepcopy(annotation)
         if "status" in item:
@@ -76,7 +77,7 @@ class AnnotationsAPI(APIClient):
             del item["status"]
         return item
 
-    def list(self, filter: Union[AnnotationFilter, Dict], limit: int = 25) -> AnnotationList:
+    def list(self, filter: AnnotationFilter | dict, limit: int = 25) -> AnnotationList:
         """List annotations.
 
         Args:
@@ -105,7 +106,7 @@ class AnnotationsAPI(APIClient):
     @staticmethod
     def _convert_resource_to_patch_object(
         resource: CogniteResource, update_attributes: Collection[str]
-    ) -> Dict[str, Dict[str, Dict]]:
+    ) -> dict[str, dict[str, dict]]:
         if not isinstance(resource, Annotation):
             return APIClient._convert_resource_to_patch_object(resource, update_attributes)
         annotation: Annotation = resource
@@ -117,16 +118,16 @@ class AnnotationsAPI(APIClient):
         return annotation_update.dump()
 
     @overload
-    def update(self, item: Union[Annotation, AnnotationUpdate]) -> Annotation:
+    def update(self, item: Annotation | AnnotationUpdate) -> Annotation:
         ...
 
     @overload
-    def update(self, item: Sequence[Union[Annotation, AnnotationUpdate]]) -> AnnotationList:
+    def update(self, item: Sequence[Annotation | AnnotationUpdate]) -> AnnotationList:
         ...
 
     def update(
-        self, item: Union[Annotation, AnnotationUpdate, Sequence[Union[Annotation, AnnotationUpdate]]]
-    ) -> Union[Annotation, AnnotationList]:
+        self, item: Annotation | AnnotationUpdate | Sequence[Annotation | AnnotationUpdate]
+    ) -> Annotation | AnnotationList:
         """Update annotations
 
         Args:
@@ -136,7 +137,7 @@ class AnnotationsAPI(APIClient):
             list_cls=AnnotationList, resource_cls=Annotation, update_cls=AnnotationUpdate, items=item
         )
 
-    def delete(self, id: Union[int, Sequence[int]]) -> None:
+    def delete(self, id: int | Sequence[int]) -> None:
         """Delete annotations
 
         Args:
@@ -156,7 +157,7 @@ class AnnotationsAPI(APIClient):
         identifiers = IdentifierSequence.load(ids=ids, external_ids=None)
         return self._retrieve_multiple(list_cls=AnnotationList, resource_cls=Annotation, identifiers=identifiers)
 
-    def retrieve(self, id: int) -> Optional[Annotation]:
+    def retrieve(self, id: int) -> Annotation | None:
         """Retrieve an annotation by id
 
         Args:

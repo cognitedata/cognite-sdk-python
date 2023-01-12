@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, Union, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from cognite.client import utils
 from cognite.client.data_classes._base import (
@@ -29,13 +29,13 @@ class TransformationSchedule(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        external_id: str = None,
-        created_time: int = None,
-        last_updated_time: int = None,
-        interval: str = None,
+        id: int | None = None,
+        external_id: str | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+        interval: str | None = None,
         is_paused: bool = False,
-        cognite_client: CogniteClient = None,
+        cognite_client: CogniteClient | None = None,
     ):
         self.id = id
         self.external_id = external_id
@@ -46,14 +46,14 @@ class TransformationSchedule(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> TransformationSchedule:
-        instance = super(TransformationSchedule, cls)._load(resource, cognite_client)
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TransformationSchedule:
+        instance = super()._load(resource, cognite_client)
         return instance
 
     def __hash__(self) -> int:
         return hash(self.id)
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Args:

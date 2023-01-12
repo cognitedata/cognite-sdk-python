@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Union, cast
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -47,25 +48,25 @@ class FileMetadata(CogniteResource):
 
     def __init__(
         self,
-        external_id: str = None,
-        name: str = None,
-        source: str = None,
-        mime_type: str = None,
-        metadata: Dict[str, str] = None,
-        directory: str = None,
-        asset_ids: Sequence[int] = None,
-        data_set_id: int = None,
-        labels: Sequence[Label] = None,
-        geo_location: GeoLocation = None,
-        source_created_time: int = None,
-        source_modified_time: int = None,
-        security_categories: Sequence[int] = None,
-        id: int = None,
-        uploaded: bool = None,
-        uploaded_time: int = None,
-        created_time: int = None,
-        last_updated_time: int = None,
-        cognite_client: CogniteClient = None,
+        external_id: str | None = None,
+        name: str | None = None,
+        source: str | None = None,
+        mime_type: str | None = None,
+        metadata: dict[str, str] | None = None,
+        directory: str | None = None,
+        asset_ids: Sequence[int] | None = None,
+        data_set_id: int | None = None,
+        labels: Sequence[Label] | None = None,
+        geo_location: GeoLocation | None = None,
+        source_created_time: int | None = None,
+        source_modified_time: int | None = None,
+        security_categories: Sequence[int] | None = None,
+        id: int | None = None,
+        uploaded: bool | None = None,
+        uploaded_time: int | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+        cognite_client: CogniteClient | None = None,
     ):
         if geo_location is not None and not isinstance(geo_location, GeoLocation):
             raise TypeError("FileMetadata.geo_location should be of type GeoLocation")
@@ -90,8 +91,8 @@ class FileMetadata(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> FileMetadata:
-        instance = super(FileMetadata, cls)._load(resource, cognite_client)
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> FileMetadata:
+        instance = super()._load(resource, cognite_client)
         instance.labels = Label._load_list(instance.labels)
         if instance.geo_location is not None:
             instance.geo_location = GeoLocation._load(instance.geo_location)
@@ -125,25 +126,25 @@ class FileMetadataFilter(CogniteFilter):
 
     def __init__(
         self,
-        name: str = None,
-        mime_type: str = None,
-        metadata: Dict[str, str] = None,
-        asset_ids: Sequence[int] = None,
-        asset_external_ids: Sequence[str] = None,
-        data_set_ids: Sequence[Dict[str, Any]] = None,
-        labels: LabelFilter = None,
-        geo_location: GeoLocationFilter = None,
-        asset_subtree_ids: Sequence[Dict[str, Any]] = None,
-        source: str = None,
-        created_time: Union[Dict[str, Any], TimestampRange] = None,
-        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        uploaded_time: Union[Dict[str, Any], TimestampRange] = None,
-        source_created_time: Dict[str, Any] = None,
-        source_modified_time: Dict[str, Any] = None,
-        external_id_prefix: str = None,
-        directory_prefix: str = None,
-        uploaded: bool = None,
-        cognite_client: CogniteClient = None,
+        name: str | None = None,
+        mime_type: str | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: Sequence[str] | None = None,
+        data_set_ids: Sequence[dict[str, Any]] | None = None,
+        labels: LabelFilter | None = None,
+        geo_location: GeoLocationFilter | None = None,
+        asset_subtree_ids: Sequence[dict[str, Any]] | None = None,
+        source: str | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        uploaded_time: dict[str, Any] | TimestampRange | None = None,
+        source_created_time: dict[str, Any] | None = None,
+        source_modified_time: dict[str, Any] | None = None,
+        external_id_prefix: str | None = None,
+        directory_prefix: str | None = None,
+        uploaded: bool | None = None,
+        cognite_client: CogniteClient | None = None,
     ):
         self.name = name
         self.mime_type = mime_type
@@ -171,9 +172,9 @@ class FileMetadataFilter(CogniteFilter):
             raise TypeError("FileMetadata.geo_location should be of type GeoLocationFilter")
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str]) -> FileMetadataFilter:
+    def _load(cls, resource: dict | str) -> FileMetadataFilter:
         instance = super()._load(resource)
-        if isinstance(resource, Dict):
+        if isinstance(resource, dict):
             if instance.created_time is not None:
                 instance.created_time = TimestampRange(**instance.created_time)
             if instance.last_updated_time is not None:
@@ -186,8 +187,8 @@ class FileMetadataFilter(CogniteFilter):
                 instance.geo_location = GeoLocationFilter._load(**instance.geo_location)
         return instance
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        result = super(FileMetadataFilter, self).dump(camel_case)
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        result = super().dump(camel_case)
         if isinstance(self.labels, LabelFilter):
             result["labels"] = self.labels.dump(camel_case)
         if isinstance(self.geo_location, GeoLocationFilter):
@@ -206,30 +207,30 @@ class FileMetadataUpdate(CogniteUpdate):
             return self._set(value)
 
     class _ObjectFileMetadataUpdate(CogniteObjectUpdate):
-        def set(self, value: Dict) -> FileMetadataUpdate:
+        def set(self, value: dict) -> FileMetadataUpdate:
             return self._set(value)
 
-        def add(self, value: Dict) -> FileMetadataUpdate:
+        def add(self, value: dict) -> FileMetadataUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> FileMetadataUpdate:
+        def remove(self, value: list) -> FileMetadataUpdate:
             return self._remove(value)
 
     class _ListFileMetadataUpdate(CogniteListUpdate):
-        def set(self, value: List) -> FileMetadataUpdate:
+        def set(self, value: list) -> FileMetadataUpdate:
             return self._set(value)
 
-        def add(self, value: List) -> FileMetadataUpdate:
+        def add(self, value: list) -> FileMetadataUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> FileMetadataUpdate:
+        def remove(self, value: list) -> FileMetadataUpdate:
             return self._remove(value)
 
     class _LabelFileMetadataUpdate(CogniteLabelUpdate):
-        def add(self, value: Union[str, List[str]]) -> FileMetadataUpdate:
+        def add(self, value: str | list[str]) -> FileMetadataUpdate:
             return self._add(value)
 
-        def remove(self, value: Union[str, List[str]]) -> FileMetadataUpdate:
+        def remove(self, value: str | list[str]) -> FileMetadataUpdate:
             return self._remove(value)
 
     @property
@@ -288,7 +289,7 @@ class FileAggregate(dict):
         count (int): Number of filtered items included in aggregation
     """
 
-    def __init__(self, count: int = None, **kwargs: Any) -> None:
+    def __init__(self, count: int | None = None, **kwargs: Any) -> None:
         self.count = count
         self.update(kwargs)
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence, Union, cast, overload
+from collections.abc import Iterator, Sequence
+from typing import TYPE_CHECKING, Any, cast, overload
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -14,6 +15,8 @@ if TYPE_CHECKING:
 
     from cognite.client import CogniteClient
 
+    list_ = list
+
 
 class RawAPI(APIClient):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
@@ -26,7 +29,9 @@ class RawAPI(APIClient):
 class RawDatabasesAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs"
 
-    def __call__(self, chunk_size: int = None, limit: int = None) -> Union[Iterator[Database], Iterator[DatabaseList]]:
+    def __call__(
+        self, chunk_size: int | None = None, limit: int | None = None
+    ) -> Iterator[Database] | Iterator[DatabaseList]:
         """Iterate over databases
 
         Fetches dbs as they are iterated over, so you keep a limited number of dbs in memory.
@@ -47,10 +52,10 @@ class RawDatabasesAPI(APIClient):
         ...
 
     @overload
-    def create(self, name: List[str]) -> DatabaseList:
+    def create(self, name: list[str]) -> DatabaseList:
         ...
 
-    def create(self, name: Union[str, List[str]]) -> Union[Database, DatabaseList]:
+    def create(self, name: str | list[str]) -> Database | DatabaseList:
         """`Create one or more databases. <https://docs.cognite.com/api/v1/#operation/createDBs>`_
 
         Args:
@@ -69,12 +74,12 @@ class RawDatabasesAPI(APIClient):
         """
         utils._auxiliary.assert_type(name, "name", [str, Sequence])
         if isinstance(name, str):
-            items: Union[Dict[str, Any], List[Dict[str, Any]]] = {"name": name}
+            items: dict[str, Any] | list[dict[str, Any]] = {"name": name}
         else:
             items = [{"name": n} for n in name]
         return self._create_multiple(list_cls=DatabaseList, resource_cls=Database, items=items)
 
-    def delete(self, name: Union[str, Sequence[str]], recursive: bool = False) -> None:
+    def delete(self, name: str | Sequence[str], recursive: bool = False) -> None:
         """`Delete one or more databases. <https://docs.cognite.com/api/v1/#operation/deleteDBs>`_
 
         Args:
@@ -145,8 +150,8 @@ class RawTablesAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs/{}/tables"
 
     def __call__(
-        self, db_name: str, chunk_size: int = None, limit: int = None
-    ) -> Union[Iterator[Table], Iterator[TableList]]:
+        self, db_name: str, chunk_size: int | None = None, limit: int | None = None
+    ) -> Iterator[Table] | Iterator[TableList]:
         """Iterate over tables
 
         Fetches tables as they are iterated over, so you keep a limited number of tables in memory.
@@ -171,10 +176,10 @@ class RawTablesAPI(APIClient):
         ...
 
     @overload
-    def create(self, db_name: str, name: List[str]) -> TableList:
+    def create(self, db_name: str, name: list[str]) -> TableList:
         ...
 
-    def create(self, db_name: str, name: Union[str, List[str]]) -> Union[Table, TableList]:
+    def create(self, db_name: str, name: str | list[str]) -> Table | TableList:
         """`Create one or more tables. <https://docs.cognite.com/api/v1/#operation/createTables>`_
 
         Args:
@@ -194,7 +199,7 @@ class RawTablesAPI(APIClient):
         """
         utils._auxiliary.assert_type(name, "name", [str, Sequence])
         if isinstance(name, str):
-            items: Union[Dict[str, Any], List[Dict[str, Any]]] = {"name": name}
+            items: dict[str, Any] | list[dict[str, Any]] = {"name": name}
         else:
             items = [{"name": n} for n in name]
         tb = self._create_multiple(
@@ -205,7 +210,7 @@ class RawTablesAPI(APIClient):
         )
         return self._set_db_name_on_tables(tb, db_name)
 
-    def delete(self, db_name: str, name: Union[str, Sequence[str]]) -> None:
+    def delete(self, db_name: str, name: str | Sequence[str]) -> None:
         """`Delete one or more tables. <https://docs.cognite.com/api/v1/#operation/deleteTables>`_
 
         Args:
@@ -282,7 +287,7 @@ class RawTablesAPI(APIClient):
         )
         return cast(TableList, self._set_db_name_on_tables(tb, db_name))
 
-    def _set_db_name_on_tables(self, tb: Union[Table, TableList], db_name: str) -> Union[Table, TableList]:
+    def _set_db_name_on_tables(self, tb: Table | TableList, db_name: str) -> Table | TableList:
         if isinstance(tb, Table):
             tb._db_name = db_name
             return tb
@@ -299,8 +304,8 @@ class RawRowsAPI(APIClient):
     def __init__(
         self,
         config: ClientConfig,
-        api_version: Optional[str] = None,
-        cognite_client: CogniteClient = None,
+        api_version: str | None = None,
+        cognite_client: CogniteClient | None = None,
     ) -> None:
         super().__init__(config, api_version, cognite_client)
         self._CREATE_LIMIT = 10000
@@ -310,12 +315,12 @@ class RawRowsAPI(APIClient):
         self,
         db_name: str,
         table_name: str,
-        chunk_size: int = None,
-        limit: int = None,
-        min_last_updated_time: int = None,
-        max_last_updated_time: int = None,
-        columns: List[str] = None,
-    ) -> Union[Iterator[Row], Iterator[RowList]]:
+        chunk_size: int | None = None,
+        limit: int | None = None,
+        min_last_updated_time: int | None = None,
+        max_last_updated_time: int | None = None,
+        columns: list[str] | None = None,
+    ) -> Iterator[Row] | Iterator[RowList]:
         """Iterate over rows.
 
         Fetches rows as they are iterated over, so you keep a limited number of rows in memory.
@@ -344,7 +349,7 @@ class RawRowsAPI(APIClient):
         )
 
     def insert(
-        self, db_name: str, table_name: str, row: Union[Sequence[Row], Row, Dict], ensure_parent: bool = False
+        self, db_name: str, table_name: str, row: Sequence[Row] | Row | dict, ensure_parent: bool = False
     ) -> None:
         """`Insert one or more rows into a table. <https://docs.cognite.com/api/v1/#operation/postRows>`_
 
@@ -410,7 +415,7 @@ class RawRowsAPI(APIClient):
         rows = [Row(key=key, columns=cols) for key, cols in df_dict.items()]
         self.insert(db_name=db_name, table_name=table_name, row=rows, ensure_parent=ensure_parent)
 
-    def _process_row_input(self, row: Union[Sequence[Row], Row, Dict]) -> List[Union[List, Dict]]:
+    def _process_row_input(self, row: Sequence[Row] | Row | dict) -> list[list | dict]:
         utils._auxiliary.assert_type(row, "row", [Sequence, dict, Row])
         rows = []
         if isinstance(row, dict):
@@ -426,7 +431,7 @@ class RawRowsAPI(APIClient):
             rows.append(row.dump(camel_case=True))
         return utils._auxiliary.split_into_chunks(rows, self._CREATE_LIMIT)
 
-    def delete(self, db_name: str, table_name: str, key: Union[str, Sequence[str]]) -> None:
+    def delete(self, db_name: str, table_name: str, key: str | Sequence[str]) -> None:
         """`Delete rows from a table. <https://docs.cognite.com/api/v1/#operation/deleteRows>`_
 
         Args:
@@ -466,7 +471,7 @@ class RawRowsAPI(APIClient):
             task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda el: el["key"]
         )
 
-    def retrieve(self, db_name: str, table_name: str, key: str) -> Optional[Row]:
+    def retrieve(self, db_name: str, table_name: str, key: str) -> Row | None:
         """`Retrieve a single row by key. <https://docs.cognite.com/api/v1/#operation/getRow>`_
 
         Args:
@@ -495,9 +500,9 @@ class RawRowsAPI(APIClient):
         self,
         db_name: str,
         table_name: str,
-        min_last_updated_time: int = None,
-        max_last_updated_time: int = None,
-        columns: List[str] = None,
+        min_last_updated_time: int | None = None,
+        max_last_updated_time: int | None = None,
+        columns: list[str] | None = None,
         limit: int = 25,
     ) -> RowList:
         """`List rows in a table. <https://docs.cognite.com/api/v1/#operation/getRows>`_
@@ -569,10 +574,10 @@ class RawRowsAPI(APIClient):
             raise summary.exceptions[0]
         return RowList(summary.joined_results())
 
-    def _make_columns_param(self, columns: Optional[List[str]]) -> Optional[str]:
+    def _make_columns_param(self, columns: list_[str] | None) -> str | None:
         if columns is None:
             return None
-        if not isinstance(columns, List):
+        if not isinstance(columns, list):
             raise ValueError("Expected a list for argument columns")
         if len(columns) == 0:
             return ","
@@ -583,9 +588,9 @@ class RawRowsAPI(APIClient):
         self,
         db_name: str,
         table_name: str,
-        min_last_updated_time: int = None,
-        max_last_updated_time: int = None,
-        columns: List[str] = None,
+        min_last_updated_time: int | None = None,
+        max_last_updated_time: int | None = None,
+        columns: list_[str] | None = None,
         limit: int = 25,
     ) -> pandas.DataFrame:
         """`Retrieve rows in a table as a pandas dataframe. <https://docs.cognite.com/api/v1/#operation/getRows>`_
