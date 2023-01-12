@@ -533,30 +533,21 @@ class VisionFeature(str, Enum):
         return {cls.INDUSTRIAL_OBJECT_DETECTION, cls.PERSONAL_PROTECTIVE_EQUIPMENT_DETECTION}
 
 
+VISION_FEATURE_MAP: Dict[str, Any] = {
+    "text_predictions": TextRegion,
+    "asset_tag_predictions": AssetLink,
+    "industrial_object_predictions": ObjectDetection,
+    "people_predictions": ObjectDetection,
+    "personal_protective_equipment_predictions": ObjectDetection,
+}
+
+
+# Auto-generate the dataclass from the mapping VISION_FEATURE_MAP:
 @dataclass
 class VisionExtractPredictions(VisionResource):
-    text_predictions: Optional[List[TextRegion]] = None
-    asset_tag_predictions: Optional[List[AssetLink]] = None
-    industrial_object_predictions: Optional[List[ObjectDetection]] = None
-    people_predictions: Optional[List[ObjectDetection]] = None
-    personal_protective_equipment_predictions: Optional[List[ObjectDetection]] = None
-
-    @staticmethod
-    def _get_feature_class(type_hint: Type[Optional[List[FeatureClass]]]) -> FeatureClass:
-        # Unwrap the first level of type hints (i.e., the Optional[...])
-        # NOTE: outer type hint MUST be an Optional, since Optional[X] == Union[X, None]
-        list_type_hint, _ = get_args(type_hint)
-        # Unwrap the second level of type hint (i.e., the List[...])
-        (class_type,) = get_args(list_type_hint)
-        return class_type
-
-
-# Auto-generate the annotation-to-dataclass mapping based on the type hints of VisionExtractPredictions
-VISION_FEATURE_MAP: Dict[str, FeatureClass] = {
-    key: VisionExtractPredictions._get_feature_class(value)
-    for key, value in get_type_hints(VisionExtractPredictions).items()
-    if not key == "_cognite_client"
-}
+    __annotations__ = {param: f"Optional[List[{cls.__name__}]]" for param, cls in VISION_FEATURE_MAP.items()}
+    for attr in VISION_FEATURE_MAP:
+        locals()[attr] = None
 
 
 VISION_ANNOTATION_TYPE_MAP: Dict[str, str] = {
