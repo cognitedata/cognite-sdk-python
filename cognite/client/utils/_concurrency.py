@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections import UserList
 from concurrent.futures.thread import ThreadPoolExecutor
 from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union

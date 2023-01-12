@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any, Dict, Iterator, Optional, Sequence, Union, cast
 
 from cognite.client import utils

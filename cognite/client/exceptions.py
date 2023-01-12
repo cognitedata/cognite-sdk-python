@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import reprlib
 from typing import Callable, Dict, List, Sequence
