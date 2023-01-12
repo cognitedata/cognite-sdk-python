@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Tuple, Union, cast

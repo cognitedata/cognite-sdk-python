@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pprint
 from contextlib import suppress
 from typing import Dict, Optional, Set

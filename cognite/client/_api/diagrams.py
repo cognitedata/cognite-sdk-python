@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from math import ceil
 from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, Type, TypeVar, Union, overload
 
