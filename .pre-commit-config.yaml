@@ -2,7 +2,7 @@
 repos:
   - hooks:
       - id: autoflake
-        exclude: ^cognite/client/(_proto/|data_classes/__init__.py)
+        exclude: ^cognite/client/(_proto/|.*__init__.py)
         args:
           - --remove-all-unused-imports
           - --in-place
@@ -10,7 +10,7 @@ repos:
     rev: v1.1
   - hooks:
       - id: isort
-        exclude: ^cognite/client/(_proto/|data_classes/__init__.py)
+        exclude: ^cognite/client/(_proto/|.*__init__.py)
         args:
           - --profile
           - black
