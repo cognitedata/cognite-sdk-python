@@ -1,6 +1,4 @@
-from __future__ import annotations
-
-from cognite.client.utils import (
+from cognite.client.utils import (  # isort: skip
     _auxiliary,
     _concurrency,
     _logging,
