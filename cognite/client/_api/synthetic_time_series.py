@@ -78,7 +78,7 @@ class SyntheticDatapointsAPI(APIClient):
                 "start": cognite.client.utils._time.timestamp_to_ms(start),
                 "end": cognite.client.utils._time.timestamp_to_ms(end),
             }
-            values: list[float] = []  # mypy
+            values: list[float] = []
             query_datapoints = Datapoints(value=values, error=[])
             query_datapoints.external_id = short_expression
 
