@@ -36,14 +36,18 @@ repos:
           - \.py$
     repo: https://github.com/psf/black
     rev: 22.3.0
-  - hooks:
+  # - hooks:
+  #     - id: mypy
+  #       name: mypy
+  #       entry: poetry run mypy --non-interactive --install-types cognite
+  #       language: system
+  #       files: ^.*.(py|pyi)$
+  #       pass_filenames: false
+  #   repo: local
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v0.991
+    hooks:
       - id: mypy
-        name: mypy
-        entry: poetry run mypy cognite --non-interactive --install-types
-        language: system
-        files: ^.*.(py|pyi)$
-        pass_filenames: false
-    repo: local
   - hooks:
       - id: flake8
         exclude: cognite/client/_proto/
