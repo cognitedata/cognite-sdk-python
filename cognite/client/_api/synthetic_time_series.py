@@ -131,7 +131,7 @@ class SyntheticDatapointsAPI(APIClient):
                 if isinstance(v, TimeSeries):
                     v = v.external_id
                 expression_with_ts = re.sub(  # type: ignore
-                    re.compile(r"\b%s\b" % k), "ts{externalId:'%s'%s}" % (v, aggregate_str), expression_with_ts
+                    re.compile(rf"\b{k}\b"), f"ts{{externalId:'{v}'{aggregate_str}}}", expression_with_ts
                 )
         return expression_with_ts, expression_str
 

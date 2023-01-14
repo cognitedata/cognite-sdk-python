@@ -27,7 +27,7 @@ def post_spy(cognite_client):
 
 class TestSyntheticDatapointsAPI:
     def test_query(self, cognite_client, test_time_series, post_spy):
-        query = "ts{id:%d} + ts{id:%d}" % (test_time_series[0].id, test_time_series[1].id)
+        query = f"ts{{id:{test_time_series[0].id}}} + ts{{id:{test_time_series[1].id}}}"
         dps = cognite_client.time_series.data.synthetic.query(
             expressions=query, start=datetime(2017, 1, 1), end="now", limit=23456
         )
@@ -35,7 +35,7 @@ class TestSyntheticDatapointsAPI:
         assert 3 == cognite_client.time_series.data.synthetic._post.call_count
 
     def test_query_with_start_before_epoch(self, cognite_client, test_time_series, post_spy):
-        query = "ts{id:%d} + ts{id:%d}" % (test_time_series[0].id, test_time_series[1].id)
+        query = f"ts{{id:{test_time_series[0].id}}} + ts{{id:{test_time_series[1].id}}}"
         dps = cognite_client.time_series.data.synthetic.query(
             expressions=query, start=datetime(1920, 1, 1), end="now", limit=23456
         )
@@ -43,7 +43,7 @@ class TestSyntheticDatapointsAPI:
         assert 3 == cognite_client.time_series.data.synthetic._post.call_count
 
     def test_query_with_multiple_expressions(self, cognite_client, test_time_series, post_spy):
-        expressions = ["ts{id:%d}" % test_time_series[0].id, "ts{id:%d}" % test_time_series[1].id]
+        expressions = [f"ts{{id:{test_time_series[0].id}}}", f"ts{{id:{test_time_series[1].id}}}"]
         dps = cognite_client.time_series.data.synthetic.query(
             expressions=expressions, start=datetime(2017, 1, 1), end="now", limit=23456
         )
