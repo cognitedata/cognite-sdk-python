@@ -213,7 +213,7 @@ class FeatureList(CogniteResourceList):
     @staticmethod
     def from_geopandas(
         feature_type: FeatureType,
-        geodataframe: "geopandas.GeoDataFrame",
+        geodataframe: geopandas.GeoDataFrame,
         external_id_column: str = "externalId",
         property_column_mapping: Dict[str, str] = None,
         data_set_id_column: str = "dataSetId",

@@ -577,7 +577,7 @@ class SequencesDataAPI(APIClient):
         )
         summary.raise_compound_exception_if_failed_tasks()
 
-    def insert_dataframe(self, dataframe: "pandas.DataFrame", id: int = None, external_id: str = None) -> None:
+    def insert_dataframe(self, dataframe: pandas.DataFrame, id: int = None, external_id: str = None) -> None:
         """`Insert a Pandas dataframe. <https://docs.cognite.com/api/v1/#operation/postSequenceData>`_
 
         The index of the dataframe must contain the row numbers. The names of the remaining columns specify the column external ids.
