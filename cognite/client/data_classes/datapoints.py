@@ -35,7 +35,10 @@ from cognite.client.utils._auxiliary import (
     to_camel_case,
 )
 from cognite.client.utils._identifier import Identifier
-from cognite.client.utils._pandas_helpers import concat_dataframes_with_nullable_int_cols
+from cognite.client.utils._pandas_helpers import (
+    concat_dataframes_with_nullable_int_cols,
+    notebook_display_with_fallback,
+)
 
 ALL_SORTED_DP_AGGS = sorted(
     [
@@ -231,9 +234,6 @@ class DatapointsArray(CogniteResource):
 
     def __str__(self) -> str:
         return json.dumps(self.dump(convert_timestamps=True), indent=4)
-
-    def _repr_html_(self) -> str:
-        return self.to_pandas()._repr_html_()
 
     @overload
     def __getitem__(self, item: int) -> Datapoint:
@@ -618,7 +618,7 @@ class Datapoints(CogniteResource):
 
     def _repr_html_(self) -> str:
         is_synthetic_dps = self.error is not None
-        return self.to_pandas(include_errors=is_synthetic_dps)._repr_html_()
+        return notebook_display_with_fallback(self, include_errors=is_synthetic_dps)
 
 
 class DatapointsArrayList(CogniteResourceList):
@@ -663,9 +663,6 @@ class DatapointsArrayList(CogniteResourceList):
 
     def __str__(self) -> str:
         return json.dumps(self.dump(convert_timestamps=True), indent=4)
-
-    def _repr_html_(self) -> str:
-        return self.to_pandas()._repr_html_()
 
     def to_pandas(  # type: ignore [override]
         self,
@@ -771,6 +768,3 @@ class DatapointsList(CogniteResourceList):
             return pd.DataFrame(index=pd.to_datetime([]))
 
         return concat_dataframes_with_nullable_int_cols(dfs)
-
-    def _repr_html_(self) -> str:
-        return self.to_pandas()._repr_html_()

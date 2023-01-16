@@ -55,9 +55,6 @@ class VisionResource(CogniteResource):
 
         return df
 
-    def _repr_html_(self) -> str:
-        return self.to_pandas(camel_case=False)._repr_html_()
-
 
 @dataclass
 class Point(VisionResource):

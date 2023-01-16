@@ -8,6 +8,7 @@ from cognite.client import utils
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.utils._auxiliary import convert_all_keys_to_camel_case, to_camel_case, to_snake_case
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._pandas_helpers import notebook_display_with_fallback
 from cognite.client.utils._time import convert_time_attributes_to_datetime
 
 if TYPE_CHECKING:
@@ -149,7 +150,7 @@ class CogniteResource:
         return df
 
     def _repr_html_(self) -> str:
-        return self.to_pandas(camel_case=False)._repr_html_()
+        return notebook_display_with_fallback(self)
 
 
 T_CogniteResource = TypeVar("T_CogniteResource", bound=CogniteResource)
@@ -255,7 +256,7 @@ class CogniteResourceList(UserList):
         return df
 
     def _repr_html_(self) -> str:
-        return self.to_pandas(camel_case=False)._repr_html_()
+        return notebook_display_with_fallback(self)
 
     @classmethod
     def _load(
