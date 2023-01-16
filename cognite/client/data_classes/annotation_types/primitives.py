@@ -70,7 +70,7 @@ def _process_vertices(vertices: Union[List[PointDict], List[Point]]) -> List[Poi
     for v in vertices:
         if isinstance(v, Point):
             processed_vertices.append(v)
-        elif isinstance(v, Dict) and v.keys() == ["x", "y"]:
+        elif isinstance(v, dict) and set(v) == set("xy"):
             processed_vertices.append(Point(**v))
         else:
             raise ValueError(f"{v} is an invalid point.")
