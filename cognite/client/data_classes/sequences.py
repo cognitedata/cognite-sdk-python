@@ -400,7 +400,7 @@ class SequenceData(CogniteResource):
 
         options = ["externalId", "id", "columnExternalId", "id|columnExternalId", "externalId|columnExternalId"]
         if column_names not in options:
-            raise ValueError('Invalid column_names value, should be one of "%s"' % '", "'.join(options))
+            raise ValueError(f"Invalid column_names value '{column_names}', should be one of {options}")
 
         column_names = (
             column_names.replace("columnExternalId", "{columnExternalId}")
