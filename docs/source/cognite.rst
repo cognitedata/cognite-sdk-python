@@ -778,12 +778,12 @@ Data classes
 
 Relationships
 -------------
-Retrieve a relationship by ext. id
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Retrieve a relationship by external id
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.relationships.RelationshipsAPI.retrieve
 
-Retrieve multiple relationships by ext. id
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Retrieve multiple relationships by external id
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.relationships.RelationshipsAPI.retrieve_multiple
 
 List relationships
