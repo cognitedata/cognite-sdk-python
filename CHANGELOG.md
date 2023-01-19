@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [5.1.1] - 19-01-23
 ### Changed
-- Change in Raw rows insert chunk size to make individual requests faster.
+- Change in RAW rows insert chunk size to make individual requests faster.
 
 ## [5.1.0] - 03-01-23
 ### Added
