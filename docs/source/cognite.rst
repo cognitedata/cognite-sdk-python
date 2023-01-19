@@ -216,7 +216,7 @@ pip
 
 .. code:: bash
 
-    $ pip install cognite-sdk[pandas, geo]
+    $ pip install "cognite-sdk[pandas, geo]"
 
 poetry
 
