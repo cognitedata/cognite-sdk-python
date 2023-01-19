@@ -21,6 +21,10 @@ Changes are grouped as follows
 ### Changed
 - Change RAW rows insert chunk size to make individual requests faster.
 
+## [5.2.0] - 19-01-23
+### Changed
+- The SDK has been refactored to support `protobuf>=3.16.0` (no longer requires v4 or higher). This was done to fix dependency conflicts with several popular Python packages like `tensorflow` and `streamlit` - and also Azure Functions - that required major version 3.x of `protobuf`.
+
 ## [5.1.0] - 03-01-23
 ### Added
 - The diagram detect function can take file reference objects that contain file (external) id as well as a page range. This is an alternative to the lists of file ids or file external ids that are still possible to use. Page ranges were not possible to specify before. 

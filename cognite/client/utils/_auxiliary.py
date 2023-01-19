@@ -96,6 +96,12 @@ def local_import(*module: str) -> Union[ModuleType, Tuple[ModuleType, ...]]:
     return tuple(modules)
 
 
+def import_legacy_protobuf() -> bool:
+    from google.protobuf import __version__ as pb_version
+
+    return 4 > int(pb_version.split(".")[0])
+
+
 def get_current_sdk_version() -> str:
     return cognite.client.__version__
 
