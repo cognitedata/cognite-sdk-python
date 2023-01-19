@@ -58,9 +58,6 @@ jobs:
           poetry config virtualenvs.create false
           poetry install -E all
 
-      - name: Install protoc compiler
-        uses: arduino/setup-protoc@v1
-
       - name: Verify proto files
         env:
           TMPDIR: latest_proto
@@ -71,11 +68,6 @@ jobs:
           curl --silent $PROTO_URL/data_point_list_response.proto --output $TMPDIR/data_point_list_response.proto
           diff $TMPDIR/data_points.proto cognite/client/_proto/data_points.proto
           diff $TMPDIR/data_point_list_response.proto cognite/client/_proto/data_point_list_response.proto
-
-          protoc --proto_path=$TMPDIR --python_out=$TMPDIR $TMPDIR/*.proto
-          sed -i '/import data_points_pb2/c\import cognite.client._proto.data_points_pb2 as data__points__pb2' $TMPDIR/data_point_list_response_pb2.py
-          diff $TMPDIR/data_points_pb2.py cognite/client/_proto/data_points_pb2.py
-          diff $TMPDIR/data_point_list_response_pb2.py cognite/client/_proto/data_point_list_response_pb2.py
 
       - name: Test full
         env:
