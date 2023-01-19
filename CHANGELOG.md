@@ -17,6 +17,9 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [5.1.1] - 19-01-23
+### Changed
+- Change in Raw rows insert chunk size to make individual requests faster.
 
 ## [5.1.0] - 03-01-23
 ### Added

@@ -301,7 +301,7 @@ class RawRowsAPI(APIClient):
         cognite_client: "CogniteClient" = None,
     ) -> None:
         super().__init__(config, api_version, cognite_client)
-        self._CREATE_LIMIT = 10000
+        self._CREATE_LIMIT = 5000
         self._LIST_LIMIT = 10000
 
     def __call__(
