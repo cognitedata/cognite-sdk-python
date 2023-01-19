@@ -151,7 +151,7 @@ class DataModelInstances(TransformationDestination):
         self, model_external_id: str = None, space_external_id: str = None, instance_space_external_id: str = None
     ):
         warnings.warn(
-            "Feature DataModeStorage is in beta and still in development. "
+            "Feature DataModelStorage is in beta and still in development. "
             "Breaking changes can happen in between patch versions.",
             stacklevel=2,
         )
