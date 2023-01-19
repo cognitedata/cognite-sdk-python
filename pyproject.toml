@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "cognite-sdk"
 
-version = "5.1.1"
+version = "5.2.0"
 
 description = "Cognite Python SDK"
 readme = "README.md"
@@ -17,7 +17,7 @@ requests = "^2"
 requests_oauthlib = "^1"
 msal = "^1"
 sortedcontainers = "^2.2"
-protobuf = "^4.21"
+protobuf = ">=3.16.0"
 numpy = { version = "^1.20", optional = true }
 sympy = { version = "*", optional = true }
 pandas = { version = "^1.4", optional = true }
