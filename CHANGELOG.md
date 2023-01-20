@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [5.3.0] - 20-01-23
+### Added
+- `DatapointsAPI.retrieve_latest` now support customising the `before` argument, by passing one or more objects of the newly added `LatestDatapointQuery` class.
+
 ## [5.2.0] - 19-01-23
 ### Changed
 - The SDK has been refactored to support `protobuf>=3.16.0` (no longer requires v4 or higher). This was done to fix dependency conflicts with several popular Python packages like `tensorflow` and `streamlit` - and also Azure Functions - that required major version 3.x of `protobuf`.
@@ -24,10 +28,6 @@ Changes are grouped as follows
 ## [5.1.1] - 19-01-23
 ### Changed
 - Change RAW rows insert chunk size to make individual requests faster.
-
-## [5.2.0] - 08-01-23
-### Added
-- `DatapointsAPI.retrieve_latest` now support customising the `before` argument, by passing one or more objects of the newly added `LatestDatapointQuery` class.
 
 ## [5.1.0] - 03-01-23
 ### Added
