@@ -275,7 +275,7 @@ been added to the docs. More credential provider implementations will be added i
 other OAuth flows.
 
 ### Fixed
-- A bug in the Functions SDK where the lifecycle of temporary files was not properly managed.  
+- A bug in the Functions SDK where the lifecycle of temporary files was not properly managed.
 
 ## [3.9.0] - 2022-08-11
 ### Added

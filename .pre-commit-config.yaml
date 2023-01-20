@@ -10,6 +10,7 @@ repos:
           - --ignore-init-module-imports
           - --remove-unused-variables
           - --in-place
+
   - hooks:
       - id: isort
         exclude: ^cognite/client/(_proto.*|.*__init__.py)
@@ -26,6 +27,7 @@ repos:
           - --float-to-top
     repo: https://github.com/timothycrosley/isort
     rev: 5.11.4
+
   - hooks:
       - id: black
         exclude: ^cognite/client/_proto.*$
@@ -38,6 +40,16 @@ repos:
           - \.py$
     repo: https://github.com/psf/black
     rev: 22.12.0
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: debug-statements
+      - id: trailing-whitespace
+      - id: check-builtin-literals
+      - id: end-of-file-fixer
+      - id: check-docstring-first
+
   - hooks:
       - id: mypy
         name: mypy
@@ -46,6 +58,7 @@ repos:
         files: ^.*.(py|pyi)$
         pass_filenames: false
     repo: local
+
   - hooks:
       - id: flake8
         exclude: ^cognite/client/_proto.*$
@@ -54,6 +67,7 @@ repos:
 #              - flake8-builtins
     repo: https://github.com/pycqa/flake8
     rev: 6.0.0
+
   - hooks:
       - id: version-match-check
         name: version-match-check
