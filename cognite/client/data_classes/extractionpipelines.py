@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Union, cast
 
-from cognite.client import utils
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteListUpdate,
@@ -12,6 +11,7 @@ from cognite.client.data_classes._base import (
     CogniteUpdate,
 )
 from cognite.client.data_classes.shared import TimestampRange
+from cognite.client.utils._auxiliary import convert_all_keys_to_camel_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -39,8 +39,7 @@ class ExtractionPipelineContact(dict):
     send_notification = CognitePropertyClassUtil.declare_property("sendNotification")
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        dump_key = lambda key: key if not camel_case else utils._auxiliary.to_camel_case(key)
-        return {dump_key(key): value for key, value in self.items()}
+        return convert_all_keys_to_camel_case(self) if camel_case else dict(self)
 
 
 class ExtractionPipeline(CogniteResource):

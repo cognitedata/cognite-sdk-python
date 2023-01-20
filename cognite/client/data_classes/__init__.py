@@ -1,4 +1,4 @@
-from cognite.client.data_classes.annotations import (  # isort: skip
+from cognite.client.data_classes.annotations import (
     Annotation,
     AnnotationFilter,
     AnnotationList,
@@ -141,12 +141,12 @@ from cognite.client.data_classes.transformations.schedules import (
     TransformationScheduleUpdate,
 )
 
-from cognite.client.data_classes.transformations.schema import (  # isort: skip
+from cognite.client.data_classes.transformations.schema import (
     TransformationSchemaColumn,
     TransformationSchemaColumnList,
 )
 
-from cognite.client.data_classes.data_sets import (  # isort: skip
+from cognite.client.data_classes.data_sets import (
     DataSet,
     DataSetAggregate,
     DataSetFilter,
@@ -154,7 +154,7 @@ from cognite.client.data_classes.data_sets import (  # isort: skip
     DataSetUpdate,
 )
 
-from cognite.client.data_classes.shared import (  # isort: skip
+from cognite.client.data_classes.shared import (
     AggregateResult,
     AggregateUniqueValuesResult,
     GeoLocation,
@@ -164,7 +164,7 @@ from cognite.client.data_classes.shared import (  # isort: skip
     TimestampRange,
 )
 
-from cognite.client.data_classes.datapoints import (  # isort: skip
+from cognite.client.data_classes.datapoints import (
     Datapoint,
     Datapoints,
     DatapointsList,
@@ -172,10 +172,10 @@ from cognite.client.data_classes.datapoints import (  # isort: skip
     DatapointsArrayList,
     LatestDatapointQuery,
 )
-from cognite.client.data_classes.events import EndTimeFilter, Event, EventFilter, EventList, EventUpdate  # isort: skip
-from cognite.client.data_classes.login import LoginStatus  # isort: skip
-from cognite.client.data_classes.raw import Database, DatabaseList, Row, RowList, Table, TableList  # isort: skip
-from cognite.client.data_classes.functions import (  # isort: skip
+from cognite.client.data_classes.events import EndTimeFilter, Event, EventFilter, EventList, EventUpdate
+from cognite.client.data_classes.login import LoginStatus
+from cognite.client.data_classes.raw import Database, DatabaseList, Row, RowList, Table, TableList
+from cognite.client.data_classes.functions import (
     Function,
     FunctionFilter,
     FunctionSchedule,
@@ -188,7 +188,7 @@ from cognite.client.data_classes.functions import (  # isort: skip
     FunctionCallLog,
     FunctionsLimits,
 )
-from cognite.client.data_classes.geospatial import (  # isort: skip
+from cognite.client.data_classes.geospatial import (
     Feature,
     FeatureList,
     FeatureType,

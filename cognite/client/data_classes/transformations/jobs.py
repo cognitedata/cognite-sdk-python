@@ -4,13 +4,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Dict, Optional, Union, cast
 
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList
-from cognite.client.data_classes.transformations.common import (
-    DataModelInstances,
-    RawTable,
-    SequenceRows,
-    TransformationDestination,
-    _load_destination_dct,
-)
+from cognite.client.data_classes.transformations.common import TransformationDestination, _load_destination_dct
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
