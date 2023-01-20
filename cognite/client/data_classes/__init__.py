@@ -170,6 +170,7 @@ from cognite.client.data_classes.datapoints import (  # isort: skip
     DatapointsList,
     DatapointsArray,
     DatapointsArrayList,
+    LatestDatapointQuery,
 )
 from cognite.client.data_classes.events import EndTimeFilter, Event, EventFilter, EventList, EventUpdate  # isort: skip
 from cognite.client.data_classes.login import LoginStatus  # isort: skip
