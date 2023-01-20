@@ -153,8 +153,10 @@ class EntityMatchingAPI(APIClient):
         external_id: str = None,
     ) -> EntityMatchingModel:
         """Fit entity matching model.
-        **Note**: All users on this CDF subscription with assets read-all and entitymatching read-all and write-all
-        capabilities in the project, are able to access the data sent to this endpoint.
+
+        Note:
+            All users on this CDF subscription with assets read-all and entitymatching read-all and write-all
+            capabilities in the project, are able to access the data sent to this endpoint.
 
         Args:
             sources: entities to match from, should have an 'id' field. Tolerant to passing more than is needed or used (e.g. json dump of time series list). Metadata fields are automatically flattened to "metadata.key" entries, such that they can be used in match_fields.
@@ -205,9 +207,14 @@ class EntityMatchingAPI(APIClient):
         id: Optional[int] = None,
         external_id: Optional[str] = None,
     ) -> ContextualizationJob:
-        """Predict entity matching. NB. blocks and waits for the model to be ready if it has been recently created.
-        **Note**: All users on this CDF subscription with assets read-all and entitymatching read-all and write-all
-        capabilities in the project, are able to access the data sent to this endpoint.
+        """Predict entity matching.
+
+        Warning:
+            Blocks and waits for the model to be ready if it has been recently created.
+
+        Note:
+            All users on this CDF subscription with assets read-all and entitymatching read-all and write-all
+            capabilities in the project, are able to access the data sent to this endpoint.
 
         Args:
             sources (Optional[Sequence[Dict]]): entities to match from, does not need an 'id' field. Tolerant to passing more than is needed or used (e.g. json dump of time series list). If omitted, will use data from fit.
@@ -217,8 +224,10 @@ class EntityMatchingAPI(APIClient):
             ignore_missing_fields (bool): whether missing data in match_fields should be filled in with an empty string.
             id: ids of the model to use.
             external_id: external ids of the model to use.
+
         Returns:
-            ContextualizationJob: object which can be used to wait for and retrieve results."""
+            ContextualizationJob: Object which can be used to wait for and retrieve results.
+        """
         model = self.retrieve(id=id, external_id=external_id)
         assert model
         return model.predict(  # could call predict directly but this is friendlier
@@ -235,8 +244,10 @@ class EntityMatchingAPI(APIClient):
         external_id: Optional[str] = None,
     ) -> EntityMatchingModel:
         """Re-fits an entity matching model, using the combination of the old and new true matches.
-        **Note**: All users on this CDF subscription with assets read-all and entitymatching read-all and write-all
-        capabilities in the project, are able to access the data sent to this endpoint.
+
+        Note:
+            All users on this CDF subscription with assets read-all and entitymatching read-all and write-all
+            capabilities in the project, are able to access the data sent to this endpoint.
 
         Args:
             true_matches(Sequence[Union[Dict, Tuple[Union[int, str], Union[int, str]]]]): Updated known valid matches

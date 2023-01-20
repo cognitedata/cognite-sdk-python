@@ -43,7 +43,7 @@ The available extras (along with the libraries they include) are:
 To include optional dependencies, specify them like this with pip:
 
 ```bash
-$ pip install cognite-sdk[pandas, geo]
+$ pip install "cognite-sdk[pandas, geo]"
 ```
 
 or like this if you are using poetry:
