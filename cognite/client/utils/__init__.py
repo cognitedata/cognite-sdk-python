@@ -5,5 +5,10 @@ from cognite.client.utils import (  # isort: skip
     _time,
     _version_checker,
 )
-
-from cognite.client.utils._time import datetime_to_ms, ms_to_datetime, timestamp_to_ms  # isort: skip
+from cognite.client.utils._time import (  # isort: skip
+    MAX_TIMESTAMP_MS,
+    MIN_TIMESTAMP_MS,
+    datetime_to_ms,
+    ms_to_datetime,
+    timestamp_to_ms,
+)
