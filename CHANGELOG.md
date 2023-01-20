@@ -27,7 +27,7 @@ Changes are grouped as follows
 
 ## [5.1.0] - 03-01-23
 ### Added
-- The diagram detect function can take file reference objects that contain file (external) id as well as a page range. This is an alternative to the lists of file ids or file external ids that are still possible to use. Page ranges were not possible to specify before. 
+- The diagram detect function can take file reference objects that contain file (external) id as well as a page range. This is an alternative to the lists of file ids or file external ids that are still possible to use. Page ranges were not possible to specify before.
 
 ## [5.0.2] - 15-12-22
 ### Changed
@@ -240,7 +240,7 @@ It will also cache the token between runs.
 - Fixed the issue on SDK when Python installation didn't include pip.
 
 ### Added
-- Added Optional dependency called functions. Usage: `pip install cognite-sdk[functions]`
+- Added Optional dependency called functions. Usage: `pip install "cognite-sdk[functions]"`
 
 ## [4.1.0] - 2022-08-18
 ### Added

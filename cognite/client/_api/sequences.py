@@ -385,7 +385,7 @@ class SequencesAPI(APIClient):
                 >>> my_update = SequenceUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = c.sequences.update(my_update)
 
-        Updating column definitions:
+            **Updating column definitions**
 
             Currently, updating the column definitions of a sequence is only supported through partial update, using `add`, `remove` and `modify` methods on the `columns` property.
 
@@ -432,10 +432,10 @@ class SequencesAPI(APIClient):
                 >>> from cognite.client.data_classes import SequenceUpdate, SequenceColumnUpdate
                 >>> c = CogniteClient()
                 >>>
-                >>> column_updates = [\
-                      SequenceColumnUpdate(external_id="col_external_id_1").external_id.set("new_col_external_id"),\
-                      SequenceColumnUpdate(external_id="col_external_id_2").description.set("my new description"),\
-                    ]
+                >>> column_updates = [
+                ...     SequenceColumnUpdate(external_id="col_external_id_1").external_id.set("new_col_external_id"),
+                ...     SequenceColumnUpdate(external_id="col_external_id_2").description.set("my new description"),
+                ... ]
                 >>> my_update = SequenceUpdate(id=1).columns.modify(column_updates)
                 >>> res = c.sequences.update(my_update)
         """

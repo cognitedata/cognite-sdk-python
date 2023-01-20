@@ -29,6 +29,14 @@ class VisionResource(CogniteResource):
         }
 
     def to_pandas(self, camel_case: bool = False) -> "pandas.DataFrame":  # type: ignore[override]
+        """Convert the instance into a pandas DataFrame.
+
+        Args:
+            camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`)
+
+        Returns:
+            pandas.DataFrame: The dataframe.
+        """
         pd = cast(Any, utils._auxiliary.local_import("pandas"))
         df = pd.DataFrame(columns=["value"])
 

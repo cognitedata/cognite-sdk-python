@@ -535,7 +535,7 @@ class GeospatialAPI(APIClient):
                 type will result in CogniteAPIError exception.
 
         Returns:
-            FeatureList: the filtered features
+            FeatureList: The filtered features
 
         Examples:
 
