@@ -1196,7 +1196,7 @@ class DatapointsAPI(APIClient):
             for key in range:
                 if key not in ("id", "externalId", "start", "end"):
                     raise AssertionError(
-                        "Invalid key '{}' in range. Must contain 'start', 'end', and 'id' or 'externalId".format(key)
+                        f"Invalid key '{key}' in range. Must contain 'start', 'end', and 'id' or 'externalId"
                     )
             id = range.get("id")
             external_id = range.get("externalId")
@@ -1315,7 +1315,7 @@ class DatapointsPoster:
             for key in dps_object:
                 if key not in ("id", "externalId", "datapoints"):
                     raise ValueError(
-                        "Invalid key '{}' in datapoints. Must contain 'datapoints', and 'id' or 'externalId".format(key)
+                        f"Invalid key '{key}' in datapoints. Must contain 'datapoints', and 'id' or 'externalId"
                     )
             valid_dps_object = {k: dps_object[k] for k in ["id", "externalId"] if k in dps_object}
             valid_dps_object["datapoints"] = DatapointsPoster._validate_and_format_datapoints(dps_object["datapoints"])

@@ -664,16 +664,15 @@ class _AssetPoster:
             if asset.external_id is None:
                 raise AssertionError("An asset does not have external_id.")
             if asset.external_id in external_ids_seen:
-                raise AssertionError("Duplicate external_id '{}' found".format(asset.external_id))
+                raise AssertionError(f"Duplicate external_id '{asset.external_id}' found")
             external_ids_seen.add(asset.external_id)
 
             parent_ref = asset.parent_external_id
             if parent_ref:
                 if asset.parent_id is not None:
                     raise AssertionError(
-                        "An asset has both parent_id '{}' and parent_external_id '{}' set.".format(
-                            asset.parent_id, asset.parent_external_id
-                        )
+                        f"An asset has both parent_id '{asset.parent_id}' and parent_external_id "
+                        f"'{asset.parent_external_id}' set."
                     )
 
     def _initialize(self) -> None:

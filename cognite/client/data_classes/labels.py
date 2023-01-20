@@ -95,7 +95,7 @@ class Label(dict):
             elif isinstance(label, dict):
                 if "externalId" in label:
                     return Label(label["externalId"])
-            raise ValueError("Could not parse label: {}".format(label))
+            raise ValueError(f"Could not parse label: {label}")
 
         if labels is None:
             return None

@@ -188,7 +188,7 @@ class APIClient:
         headers[auth_header_name] = auth_header_value
         headers["content-type"] = "application/json"
         headers["accept"] = accept
-        headers["x-cdp-sdk"] = "CognitePythonSDK:{}".format(utils._auxiliary.get_current_sdk_version())
+        headers["x-cdp-sdk"] = f"CognitePythonSDK:{utils._auxiliary.get_current_sdk_version()}"
         headers["x-cdp-app"] = self._config.client_name
         headers["cdf-version"] = self._api_subversion
         if "User-Agent" in headers:
@@ -207,14 +207,16 @@ class APIClient:
         return is_retryable, full_url
 
     def _get_base_url_with_base_path(self) -> str:
-        base_path = "/api/{}/projects/{}".format(self._api_version, self._config.project) if self._api_version else ""
+        base_path = ""
+        if self._api_version:
+            base_path = f"/api/{self._api_version}/projects/{self._config.project}"
         return urljoin(self._config.base_url, base_path)
 
     def _is_retryable(self, method: str, path: str) -> bool:
         valid_methods = ["GET", "POST", "PUT", "DELETE", "PATCH"]
 
         if method not in valid_methods:
-            raise ValueError("Method {} is not valid. Must be one of {}".format(method, valid_methods))
+            raise ValueError(f"Method {method} is not valid. Must be one of {valid_methods}")
 
         if method in ["GET", "PUT", "PATCH"]:
             return True
@@ -230,7 +232,7 @@ class APIClient:
         )
         match = re.match(valid_url_pattern, url)
         if not match:
-            raise ValueError("URL {} is not valid. Cannot resolve whether or not it is retryable".format(url))
+            raise ValueError(f"URL {url} is not valid. Cannot resolve whether or not it is retryable")
         path = match.group(1)
         for pattern in cls._RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS:
             if re.match(pattern, path):
@@ -391,7 +393,7 @@ class APIClient:
                         body["sort"] = sort
                     res = self._post(url_path=url_path or resource_path + "/list", json=body, headers=headers)
                 else:
-                    raise ValueError("_list_generator parameter `method` must be GET or POST, not {}".format(method))
+                    raise ValueError(f"_list_generator parameter `method` must be GET or POST, not {method}")
                 last_received_items = res.json()["items"]
                 total_items_retrieved += len(last_received_items)
 
@@ -429,7 +431,7 @@ class APIClient:
                 "filter": filter or {},
                 "limit": self._LIST_LIMIT,
                 "cursor": next_cursor,
-                "partition": "{}/{}".format(partition_num, partitions),
+                "partition": f"{partition_num}/{partitions}",
                 **(other_params or {}),
             }
             res = self._post(url_path=resource_path + "/list", json=body, headers=headers)
@@ -542,7 +544,7 @@ class APIClient:
                     break
             return retrieved_items
 
-        tasks = [("{}/{}".format(i + 1, partitions),) for i in range(partitions)]
+        tasks = [(f"{i + 1}/{partitions}",) for i in range(partitions)]
         tasks_summary = utils._concurrency.execute_tasks_concurrently(get_partition, tasks, max_workers=partitions)
         if tasks_summary.exceptions:
             raise tasks_summary.exceptions[0]
@@ -869,7 +871,7 @@ class APIClient:
 
         http_protocol_version = ".".join(list(str(res.raw.version)))
 
-        log.debug("HTTP/{} {} {} {}".format(http_protocol_version, method, url, status_code), extra=extra)
+        log.debug(f"HTTP/{http_protocol_version} {method} {url} {status_code}", extra=extra)
 
     @staticmethod
     def _truncate(s: str, limit: int = 500) -> str:

@@ -67,7 +67,7 @@ class Annotation(CogniteResource):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
         elif isinstance(resource, dict):
             return cls.from_dict(resource, cognite_client=cognite_client)
-        raise TypeError("Resource must be json str or Dict, not {}".format(type(resource)))
+        raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
 
     @classmethod
     def from_dict(cls, resource: Dict[str, Any], cognite_client: "CogniteClient" = None) -> "Annotation":

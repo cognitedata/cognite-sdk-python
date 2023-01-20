@@ -59,7 +59,7 @@ def json_dump_default(x: Any) -> Any:
         return float(x)
     if hasattr(x, "__dict__"):
         return x.__dict__
-    raise TypeError("Object {} of type {} can't be serialized by the JSON encoder".format(x, x.__class__))
+    raise TypeError(f"Object {x} of type {x.__class__} can't be serialized by the JSON encoder")
 
 
 def unwrap_identifer(identifier: Union[str, int, Dict]) -> Union[str, int]:
@@ -69,15 +69,15 @@ def unwrap_identifer(identifier: Union[str, int, Dict]) -> Union[str, int]:
         return identifier["externalId"]
     if "id" in identifier:
         return identifier["id"]
-    raise ValueError("{} does not contain 'id' or 'externalId'".format(identifier))
+    raise ValueError(f"{identifier} does not contain 'id' or 'externalId'")
 
 
 def assert_type(var: Any, var_name: str, types: List[type], allow_none: bool = False) -> None:
     if var is None:
         if not allow_none:
-            raise TypeError("{} cannot be None".format(var_name))
+            raise TypeError(f"{var_name} cannot be None")
     elif not isinstance(var, tuple(types)):
-        raise TypeError("{} must be one of types {}".format(var_name, types))
+        raise TypeError(f"{var_name} must be one of types {types}")
 
 
 def interpolate_and_url_encode(path: str, *args: Any) -> str:
@@ -114,18 +114,17 @@ def get_current_sdk_version() -> str:
 
 @functools.lru_cache(maxsize=1)
 def get_user_agent() -> str:
-    sdk_version = "CognitePythonSDK/{}".format(get_current_sdk_version())
-
-    python_version = "{}/{} ({};{})".format(
-        platform.python_implementation(), platform.python_version(), platform.python_build(), platform.python_compiler()
+    sdk_version = f"CognitePythonSDK/{get_current_sdk_version()}"
+    python_version = (
+        f"{platform.python_implementation()}/{platform.python_version()} "
+        f"({platform.python_build()};{platform.python_compiler()})"
     )
-
     os_version_info = [platform.release(), platform.machine(), platform.architecture()[0]]
     os_version_info = [s for s in os_version_info if s]  # Ignore empty strings
     os_version_info_str = "-".join(os_version_info)
-    operating_system = "{}/{}".format(platform.system(), os_version_info_str)
+    operating_system = f"{platform.system()}/{os_version_info_str}"
 
-    return "{} {} {}".format(sdk_version, python_version, operating_system)
+    return f"{sdk_version} {python_version} {operating_system}"
 
 
 def _check_client_has_newest_major_version() -> None:
@@ -204,7 +203,7 @@ def convert_true_match(true_match: Union[dict, list, Tuple[Union[int, str], Unio
     elif isinstance(true_match, dict):
         return true_match
     else:
-        raise ValueError("true_matches should be a dictionary or a two-element list: found {}".format(true_match))
+        raise ValueError(f"true_matches should be a dictionary or a two-element list: found {true_match}")
 
 
 def find_duplicates(seq: Iterable[THashable]) -> Set[THashable]:

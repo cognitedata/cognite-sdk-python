@@ -317,9 +317,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
                 **self.__token_custom_args,
             )
             return token_result["access_token"], token_result["expires_at"]
-        except OAuth2Error as oauth_error:
+        except OAuth2Error as oauth_err:
             raise CogniteAuthError(
-                "Error generating access token: {0}, {1}, {2}".format(
-                    oauth_error.error, oauth_error.status_code, oauth_error.description
-                )
-            ) from oauth_error
+                f"Error generating access token: {oauth_err.error}, {oauth_err.status_code}, {oauth_err.description}"
+            ) from oauth_err

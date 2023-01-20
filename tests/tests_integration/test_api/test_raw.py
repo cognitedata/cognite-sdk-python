@@ -75,7 +75,7 @@ class TestRawRowsAPI:
 
     def test_retrieve_row(self, cognite_client):
         row = cognite_client.raw.rows.retrieve(db_name="test__database1", table_name="test__table_1", key="1")
-        assert {"c{}".format(i): "1_{}".format(i) for i in range(10)} == row.columns
+        assert {f"c{i}": f"1_{i}" for i in range(10)} == row.columns
 
     def test_insert_and_delete_rows(self, cognite_client, new_database_with_table):
         db, table = new_database_with_table
