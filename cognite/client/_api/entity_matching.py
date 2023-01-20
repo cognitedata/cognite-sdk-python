@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any, Dict, Optional, Sequence, Tuple, Type, TypeVar, Union
 
 from cognite.client._api_client import APIClient

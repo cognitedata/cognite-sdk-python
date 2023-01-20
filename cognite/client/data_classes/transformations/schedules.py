@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any, cast
 
 from cognite.client.data_classes._base import (
@@ -32,7 +34,7 @@ class TransformationSchedule(CogniteResource):
         last_updated_time: int = None,
         interval: str = None,
         is_paused: bool = False,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.id = id
         self.external_id = external_id
@@ -55,7 +57,7 @@ class TransformationScheduleUpdate(CogniteUpdate):
     """
 
     class _PrimitiveTransformationScheduleUpdate(CognitePrimitiveUpdate):
-        def set(self, value: Any) -> "TransformationScheduleUpdate":
+        def set(self, value: Any) -> TransformationScheduleUpdate:
             return self._set(value)
 
     @property

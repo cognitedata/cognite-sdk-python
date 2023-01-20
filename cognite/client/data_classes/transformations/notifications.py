@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Optional, cast
 
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList
@@ -27,7 +29,7 @@ class TransformationNotification(CogniteResource):
         destination: str = None,
         created_time: int = None,
         last_updated_time: int = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.id = id
         self.transformation_id = transformation_id

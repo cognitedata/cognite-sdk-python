@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections import OrderedDict
 from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
 
@@ -25,14 +27,14 @@ class Row(CogniteResource):
         key: str = None,
         columns: Dict[str, Any] = None,
         last_updated_time: int = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.key = key
         self.columns = columns
         self.last_updated_time = last_updated_time
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def to_pandas(self) -> "pandas.DataFrame":  # type: ignore[override]
+    def to_pandas(self) -> pandas.DataFrame:  # type: ignore[override]
         """Convert the instance into a pandas DataFrame.
 
         Returns:
@@ -48,7 +50,7 @@ class Row(CogniteResource):
 class RowList(CogniteResourceList):
     _RESOURCE = Row
 
-    def to_pandas(self) -> "pandas.DataFrame":  # type: ignore[override]
+    def to_pandas(self) -> pandas.DataFrame:  # type: ignore[override]
         """Convert the instance into a pandas DataFrame.
 
         Returns:
@@ -70,7 +72,7 @@ class Table(CogniteResource):
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
-    def __init__(self, name: str = None, created_time: int = None, cognite_client: "CogniteClient" = None):
+    def __init__(self, name: str = None, created_time: int = None, cognite_client: CogniteClient = None):
         self.name = name
         self.created_time = created_time
         self._cognite_client = cast("CogniteClient", cognite_client)
@@ -105,7 +107,7 @@ class Database(CogniteResource):
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
-    def __init__(self, name: str = None, created_time: int = None, cognite_client: "CogniteClient" = None):
+    def __init__(self, name: str = None, created_time: int = None, cognite_client: CogniteClient = None):
         self.name = name
         self.created_time = created_time
         self._cognite_client = cast("CogniteClient", cognite_client)

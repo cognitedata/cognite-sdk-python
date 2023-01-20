@@ -139,7 +139,7 @@ class Datapoint(CogniteResource):
         self.discrete_variance = discrete_variance
         self.total_variation = total_variation
 
-    def to_pandas(self, camel_case: bool = False) -> "pandas.DataFrame":  # type: ignore[override]
+    def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:  # type: ignore[override]
         """Convert the datapoint into a pandas DataFrame.
 
         Args:
@@ -314,7 +314,7 @@ class DatapointsArray(CogniteResource):
         column_names: Literal["id", "external_id"] = "external_id",
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
-    ) -> "pandas.DataFrame":
+    ) -> pandas.DataFrame:
         """Convert the DatapointsArray into a pandas DataFrame.
 
         Args:
@@ -492,7 +492,7 @@ class Datapoints(CogniteResource):
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
         include_errors: bool = False,
-    ) -> "pandas.DataFrame":
+    ) -> pandas.DataFrame:
         """Convert the datapoints into a pandas DataFrame.
 
         Args:
@@ -548,8 +548,8 @@ class Datapoints(CogniteResource):
 
     @classmethod
     def _load(  # type: ignore [override]
-        cls, dps_object: Dict[str, Any], expected_fields: List[str] = None, cognite_client: "CogniteClient" = None
-    ) -> "Datapoints":
+        cls, dps_object: Dict[str, Any], expected_fields: List[str] = None, cognite_client: CogniteClient = None
+    ) -> Datapoints:
         del cognite_client  # just needed for signature
         instance = cls(
             id=dps_object.get("id"),
@@ -570,7 +570,7 @@ class Datapoints(CogniteResource):
                 setattr(instance, snake_key, data)
         return instance
 
-    def _extend(self, other_dps: "Datapoints") -> None:
+    def _extend(self, other_dps: Datapoints) -> None:
         if self.id is None and self.external_id is None:
             self.id = other_dps.id
             self.external_id = other_dps.external_id
@@ -610,7 +610,7 @@ class Datapoints(CogniteResource):
         self.__datapoint_objects = new_dps_objects
         return self.__datapoint_objects
 
-    def _slice(self, slice: slice) -> "Datapoints":
+    def _slice(self, slice: slice) -> Datapoints:
         truncated_datapoints = Datapoints(id=self.id, external_id=self.external_id)
         for attr, value in self._get_non_empty_data_fields():
             setattr(truncated_datapoints, attr, value[slice])
@@ -624,7 +624,7 @@ class Datapoints(CogniteResource):
 class DatapointsArrayList(CogniteResourceList):
     _RESOURCE = DatapointsArray
 
-    def __init__(self, resources: Collection[Any], cognite_client: "CogniteClient" = None):
+    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient = None):
         super().__init__(resources, cognite_client)
 
         # Fix what happens for duplicated identifiers:
@@ -672,7 +672,7 @@ class DatapointsArrayList(CogniteResourceList):
         column_names: Literal["id", "external_id"] = "external_id",
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
-    ) -> "pandas.DataFrame":
+    ) -> pandas.DataFrame:
         """Convert the DatapointsArrayList into a pandas DataFrame.
 
         Args:
@@ -706,7 +706,7 @@ class DatapointsArrayList(CogniteResourceList):
 class DatapointsList(CogniteResourceList):
     _RESOURCE = Datapoints
 
-    def __init__(self, resources: Collection[Any], cognite_client: "CogniteClient" = None):
+    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient = None):
         super().__init__(resources, cognite_client)
 
         # Fix what happens for duplicated identifiers:
@@ -754,7 +754,7 @@ class DatapointsList(CogniteResourceList):
         column_names: Literal["id", "external_id"] = "external_id",
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
-    ) -> "pandas.DataFrame":
+    ) -> pandas.DataFrame:
         """Convert the datapoints list into a pandas DataFrame.
 
         Args:

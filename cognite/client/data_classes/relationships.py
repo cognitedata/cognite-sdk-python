@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 from typing import Sequence as SequenceType
@@ -59,7 +61,7 @@ class Relationship(CogniteResource):
         labels: SequenceType[Union[Label, str, LabelDefinition, dict]] = None,
         created_time: int = None,
         last_updated_time: int = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.external_id = external_id
         self.source_external_id = source_external_id
@@ -77,7 +79,7 @@ class Relationship(CogniteResource):
         self.labels = Label._load_list(labels)
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def _validate_resource_types(self) -> "Relationship":
+    def _validate_resource_types(self) -> Relationship:
         rel = copy.copy(self)
         self._validate_resource_type(rel.source_type)
         self._validate_resource_type(rel.target_type)
@@ -90,7 +92,7 @@ class Relationship(CogniteResource):
             raise TypeError(f"Invalid source or target '{resource_type}' in relationship")
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "Relationship":
+    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> Relationship:
         instance = super(Relationship, cls)._load(resource, cognite_client)
         if instance.source is not None:
             instance.source = instance._convert_resource(instance.source, instance.source_type)  # type: ignore
@@ -147,7 +149,7 @@ class RelationshipFilter(CogniteFilter):
         created_time: Dict[str, int] = None,
         active_at_time: Dict[str, int] = None,
         labels: LabelFilter = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.source_external_ids = source_external_ids
         self.source_types = source_types
@@ -185,14 +187,14 @@ class RelationshipUpdate(CogniteUpdate):
         self._update_object = {}
 
     class _PrimitiveRelationshipUpdate(CognitePrimitiveUpdate):
-        def set(self, value: Any) -> "RelationshipUpdate":
+        def set(self, value: Any) -> RelationshipUpdate:
             return self._set(value)
 
     class _LabelRelationshipUpdate(CogniteLabelUpdate):
-        def add(self, value: Union[str, List[str]]) -> "RelationshipUpdate":
+        def add(self, value: Union[str, List[str]]) -> RelationshipUpdate:
             return self._add(value)
 
-        def remove(self, value: Union[str, List[str]]) -> "RelationshipUpdate":
+        def remove(self, value: Union[str, List[str]]) -> RelationshipUpdate:
             return self._remove(value)
 
     @property

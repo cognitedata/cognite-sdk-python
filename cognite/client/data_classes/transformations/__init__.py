@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Awaitable, Dict, List, Optional, Union, cast
 
@@ -124,12 +126,12 @@ class Transformation(CogniteResource):
         has_destination_api_key: Optional[bool] = None,
         has_source_oidc_credentials: Optional[bool] = None,
         has_destination_oidc_credentials: Optional[bool] = None,
-        running_job: "TransformationJob" = None,
-        last_finished_job: "TransformationJob" = None,
+        running_job: TransformationJob = None,
+        last_finished_job: TransformationJob = None,
         blocked: TransformationBlockedInfo = None,
-        schedule: "TransformationSchedule" = None,
+        schedule: TransformationSchedule = None,
         data_set_id: int = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
         source_nonce: Optional[NonceCredentials] = None,
         destination_nonce: Optional[NonceCredentials] = None,
         source_session: Optional[SessionDetails] = None,
@@ -170,7 +172,7 @@ class Transformation(CogniteResource):
         self.tags = tags
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def copy(self) -> "Transformation":
+    def copy(self) -> Transformation:
         return Transformation(
             self.id,
             self.external_id,
@@ -246,7 +248,7 @@ class Transformation(CogniteResource):
             if self.destination_nonce:
                 self.destination_oidc_credentials = None
 
-    def run(self, wait: bool = True, timeout: Optional[float] = None) -> "TransformationJob":
+    def run(self, wait: bool = True, timeout: Optional[float] = None) -> TransformationJob:
         return self._cognite_client.transformations.run(transformation_id=self.id, wait=wait, timeout=timeout)
 
     def cancel(self) -> None:
@@ -255,14 +257,14 @@ class Transformation(CogniteResource):
         else:
             self._cognite_client.transformations.cancel(transformation_id=self.id)
 
-    def run_async(self, timeout: Optional[float] = None) -> Awaitable["TransformationJob"]:
+    def run_async(self, timeout: Optional[float] = None) -> Awaitable[TransformationJob]:
         return self._cognite_client.transformations.run_async(transformation_id=self.id, timeout=timeout)
 
-    def jobs(self) -> "TransformationJobList":
+    def jobs(self) -> TransformationJobList:
         return self._cognite_client.transformations.jobs.list(transformation_id=self.id)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "Transformation":
+    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> Transformation:
         instance = super(Transformation, cls)._load(resource, cognite_client)
         if isinstance(instance.destination, Dict):
             instance.destination = _load_destination_dct(instance.destination)
@@ -326,17 +328,17 @@ class TransformationUpdate(CogniteUpdate):
     """
 
     class _PrimitiveTransformationUpdate(CognitePrimitiveUpdate):
-        def set(self, value: Any) -> "TransformationUpdate":
+        def set(self, value: Any) -> TransformationUpdate:
             return self._set(value)
 
     class _ListTransformationUpdate(CogniteListUpdate):
-        def set(self, value: List) -> "TransformationUpdate":
+        def set(self, value: List) -> TransformationUpdate:
             return self._set(value)
 
-        def add(self, value: List) -> "TransformationUpdate":
+        def add(self, value: List) -> TransformationUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> "TransformationUpdate":
+        def remove(self, value: List) -> TransformationUpdate:
             return self._remove(value)
 
     @property
@@ -485,7 +487,7 @@ class TransformationFilter(CogniteFilter):
         self.tags = tags
 
     @classmethod
-    def _load(self, resource: Union[Dict, str]) -> "TransformationFilter":
+    def _load(self, resource: Union[Dict, str]) -> TransformationFilter:
         instance = super(TransformationFilter, self)._load(resource)
         if isinstance(resource, Dict):
             if instance.created_time is not None:
@@ -515,16 +517,16 @@ class TransformationPreviewResult(CogniteResource):
 
     def __init__(
         self,
-        schema: "TransformationSchemaColumnList" = None,
+        schema: TransformationSchemaColumnList = None,
         results: List[Dict] = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ) -> None:
         self.schema = schema
         self.results = results
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "TransformationPreviewResult":
+    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> TransformationPreviewResult:
         instance = super(TransformationPreviewResult, cls)._load(resource, cognite_client)
         if isinstance(instance.schema, Dict):
             items = instance.schema.get("items")

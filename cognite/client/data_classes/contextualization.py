@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import time
 import warnings
 from dataclasses import dataclass
@@ -63,9 +65,6 @@ class ContextualizationJobType(Enum):
     VISION = "vision"
 
 
-T_ContextualizationJob = TypeVar("T_ContextualizationJob", bound="ContextualizationJob")
-
-
 class ContextualizationJob(CogniteResource):
     _COMMON_FIELDS = {
         "status",
@@ -89,7 +88,7 @@ class ContextualizationJob(CogniteResource):
         start_time: int = None,
         status_time: int = None,
         status_path: str = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         """Data class for the result of a contextualization job."""
         self.job_id = job_id
@@ -152,6 +151,9 @@ class ContextualizationJob(CogniteResource):
         return obj
 
 
+T_ContextualizationJob = TypeVar("T_ContextualizationJob", bound=ContextualizationJob)
+
+
 class ContextualizationJobList(CogniteResourceList):
     _RESOURCE = ContextualizationJob
 
@@ -175,7 +177,7 @@ class EntityMatchingModel(CogniteResource):
         name: str = None,
         description: str = None,
         external_id: str = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         """Entity matching model. See the `fit` method for the meaning of these fields."""
         self.id = id
@@ -259,7 +261,7 @@ class EntityMatchingModel(CogniteResource):
 
     def refit(
         self, true_matches: Sequence[Union[Dict, Tuple[Union[int, str], Union[int, str]]]]
-    ) -> "EntityMatchingModel":
+    ) -> EntityMatchingModel:
         """Re-fits an entity matching model, using the combination of the old and new true matches.
 
         Args:
@@ -299,7 +301,7 @@ class EntityMatchingModelUpdate(CogniteUpdate):
     """
 
     class _PrimitiveUpdate(CognitePrimitiveUpdate):
-        def set(self, value: Any) -> "EntityMatchingModelUpdate":
+        def set(self, value: Any) -> EntityMatchingModelUpdate:
             return self._set(value)
 
     @property
@@ -345,7 +347,7 @@ class FileReference:
 
 class DiagramConvertPage(CogniteResource):
     def __init__(
-        self, page: int = None, png_url: str = None, svg_url: str = None, cognite_client: "CogniteClient" = None
+        self, page: int = None, png_url: str = None, svg_url: str = None, cognite_client: CogniteClient = None
     ):
         self.page = page
         self.png_url = png_url
@@ -363,7 +365,7 @@ class DiagramConvertItem(CogniteResource):
         file_id: int = None,
         file_external_id: str = None,
         results: list = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.file_id = file_id
         self.file_external_id = file_external_id
@@ -379,7 +381,7 @@ class DiagramConvertItem(CogniteResource):
         assert self.results is not None
         return DiagramConvertPageList._load(self.results, cognite_client=self._cognite_client)
 
-    def to_pandas(self, camel_case: bool = False) -> "pandas.DataFrame":  # type: ignore[override]
+    def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:  # type: ignore[override]
         """Convert the instance into a pandas DataFrame.
 
         Args:
@@ -434,7 +436,7 @@ class DiagramDetectItem(CogniteResource):
         file_external_id: str = None,
         annotations: list = None,
         error_message: str = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
         page_range: Optional[Dict[str, int]] = None,
     ):
         self.file_id = file_id
@@ -444,7 +446,7 @@ class DiagramDetectItem(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
         self.page_range = page_range
 
-    def to_pandas(self, camel_case: bool = False) -> "pandas.DataFrame":  # type: ignore[override]
+    def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:  # type: ignore[override]
         """Convert the instance into a pandas DataFrame.
 
         Args:
@@ -516,7 +518,7 @@ class VisionFeature(str, Enum):
     PERSONAL_PROTECTIVE_EQUIPMENT_DETECTION = "PersonalProtectiveEquipmentDetection"
 
     @classmethod
-    def beta_features(cls) -> Set["VisionFeature"]:
+    def beta_features(cls) -> Set[VisionFeature]:
         return {VisionFeature.INDUSTRIAL_OBJECT_DETECTION, VisionFeature.PERSONAL_PROTECTIVE_EQUIPMENT_DETECTION}
 
 
@@ -591,7 +593,7 @@ class DetectJobBundle:
     _STATUS_PATH = "/context/diagram/detect/status"
     _WAIT_TIME = 2
 
-    def __init__(self, job_ids: List[int], cognite_client: "CogniteClient" = None):
+    def __init__(self, job_ids: List[int], cognite_client: CogniteClient = None):
         # Show warning
         warnings.warn(
             "DetectJobBundle.result is calling a beta endpoint which is still in development. Breaking changes can happen in between patch versions."
@@ -715,7 +717,7 @@ class VisionExtractItem(CogniteResource):
         predictions: Dict[str, Any] = None,
         file_external_id: str = None,
         error_message: str = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ) -> None:
         """Data class for storing predictions for a single image file"""
         self.file_id = file_id
@@ -727,7 +729,7 @@ class VisionExtractItem(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "VisionExtractItem":
+    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> VisionExtractItem:
         """Override CogniteResource._load so that we can convert the dicts returned by the API to data classes"""
         extracted_item = super(VisionExtractItem, cls)._load(resource, cognite_client=cognite_client)
         if isinstance(extracted_item.predictions, dict):

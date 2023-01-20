@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence, Union, cast, overload
 
 from cognite.client import utils
@@ -298,7 +300,7 @@ class RawRowsAPI(APIClient):
         self,
         config: ClientConfig,
         api_version: Optional[str] = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ) -> None:
         super().__init__(config, api_version, cognite_client)
         self._CREATE_LIMIT = 5000
@@ -585,7 +587,7 @@ class RawRowsAPI(APIClient):
         max_last_updated_time: int = None,
         columns: List[str] = None,
         limit: int = 25,
-    ) -> "pandas.DataFrame":
+    ) -> pandas.DataFrame:
         """`Retrieve rows in a table as a pandas dataframe. <https://docs.cognite.com/api/v1/#operation/getRows>`_
 
         Rowkeys are used as the index.

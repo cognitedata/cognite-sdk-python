@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import time
 from enum import Enum
@@ -33,7 +35,7 @@ class TransformationJobMetric(CogniteResource):
         timestamp: int = None,
         name: str = None,
         count: int = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.timestamp = timestamp
         self.name = name
@@ -41,7 +43,7 @@ class TransformationJobMetric(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "TransformationJobMetric":
+    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> TransformationJobMetric:
         instance = super(TransformationJobMetric, cls)._load(resource, cognite_client)
         return instance
 
@@ -82,7 +84,7 @@ class TransformationJob(CogniteResource):
         transformation_external_id: str = None,
         source_project: str = None,
         destination_project: str = None,
-        destination: "TransformationDestination" = None,
+        destination: TransformationDestination = None,
         conflict_mode: str = None,
         query: str = None,
         error: str = None,
@@ -91,7 +93,7 @@ class TransformationJob(CogniteResource):
         started_time: int = None,
         finished_time: int = None,
         last_seen_time: int = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.id = id
         self.status = status
@@ -130,7 +132,7 @@ class TransformationJob(CogniteResource):
         assert self.id is not None
         return self._cognite_client.transformations.jobs.list_metrics(self.id)
 
-    def wait(self, polling_interval: float = 1, timeout: Optional[float] = None) -> "TransformationJob":
+    def wait(self, polling_interval: float = 1, timeout: Optional[float] = None) -> TransformationJob:
         """`Waits for the job to finish.`
 
         Args:
@@ -182,7 +184,7 @@ class TransformationJob(CogniteResource):
 
         return self
 
-    async def wait_async(self, polling_interval: float = 1, timeout: Optional[float] = None) -> "TransformationJob":
+    async def wait_async(self, polling_interval: float = 1, timeout: Optional[float] = None) -> TransformationJob:
         """Asyncio coroutine, waits for the job to finish asynchronously.
 
         Args:
@@ -244,7 +246,7 @@ class TransformationJob(CogniteResource):
         return self
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "TransformationJob":
+    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> TransformationJob:
         instance = super(TransformationJob, cls)._load(resource, cognite_client)
         if isinstance(instance.destination, Dict):
             instance.destination = _load_destination_dct(instance.destination)

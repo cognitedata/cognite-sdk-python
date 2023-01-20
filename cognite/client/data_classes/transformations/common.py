@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import warnings
 from typing import Any, Dict, Optional, Union
 
@@ -24,62 +26,62 @@ class TransformationDestination:
         return basic_obj_dump(self, camel_case)
 
     @staticmethod
-    def assets() -> "TransformationDestination":
+    def assets() -> TransformationDestination:
         """To be used when the transformation is meant to produce assets."""
         return TransformationDestination(type="assets")
 
     @staticmethod
-    def timeseries() -> "TransformationDestination":
+    def timeseries() -> TransformationDestination:
         """To be used when the transformation is meant to produce time series."""
         return TransformationDestination(type="timeseries")
 
     @staticmethod
-    def asset_hierarchy() -> "TransformationDestination":
+    def asset_hierarchy() -> TransformationDestination:
         """To be used when the transformation is meant to produce asset hierarchies."""
         return TransformationDestination(type="asset_hierarchy")
 
     @staticmethod
-    def events() -> "TransformationDestination":
+    def events() -> TransformationDestination:
         """To be used when the transformation is meant to produce events."""
         return TransformationDestination(type="events")
 
     @staticmethod
-    def datapoints() -> "TransformationDestination":
+    def datapoints() -> TransformationDestination:
         """To be used when the transformation is meant to produce numeric data points."""
         return TransformationDestination(type="datapoints")
 
     @staticmethod
-    def string_datapoints() -> "TransformationDestination":
+    def string_datapoints() -> TransformationDestination:
         """To be used when the transformation is meant to produce string data points."""
         return TransformationDestination(type="string_datapoints")
 
     @staticmethod
-    def sequences() -> "TransformationDestination":
+    def sequences() -> TransformationDestination:
         """To be used when the transformation is meant to produce sequences."""
         return TransformationDestination(type="sequences")
 
     @staticmethod
-    def files() -> "TransformationDestination":
+    def files() -> TransformationDestination:
         """To be used when the transformation is meant to produce files."""
         return TransformationDestination(type="files")
 
     @staticmethod
-    def labels() -> "TransformationDestination":
+    def labels() -> TransformationDestination:
         """To be used when the transformation is meant to produce labels."""
         return TransformationDestination(type="labels")
 
     @staticmethod
-    def relationships() -> "TransformationDestination":
+    def relationships() -> TransformationDestination:
         """To be used when the transformation is meant to produce relationships."""
         return TransformationDestination(type="relationships")
 
     @staticmethod
-    def data_sets() -> "TransformationDestination":
+    def data_sets() -> TransformationDestination:
         """To be used when the transformation is meant to produce data sets."""
         return TransformationDestination(type="data_sets")
 
     @staticmethod
-    def raw(database: str = "", table: str = "") -> "RawTable":
+    def raw(database: str = "", table: str = "") -> RawTable:
         """To be used when the transformation is meant to produce raw table rows.
 
         Args:
@@ -92,7 +94,7 @@ class TransformationDestination:
         return RawTable(database=database, table=table)
 
     @staticmethod
-    def sequence_rows(external_id: str = "") -> "SequenceRows":
+    def sequence_rows(external_id: str = "") -> SequenceRows:
         """To be used when the transformation is meant to produce sequence rows.
 
         Args:
@@ -106,7 +108,7 @@ class TransformationDestination:
     @staticmethod
     def data_model_instances(
         model_external_id: str = "", space_external_id: str = "", instance_space_external_id: str = ""
-    ) -> "DataModelInstances":
+    ) -> DataModelInstances:
         """To be used when the transformation is meant to produce data model instances.
             Flexible Data Models resource type is on `beta` version currently.
 

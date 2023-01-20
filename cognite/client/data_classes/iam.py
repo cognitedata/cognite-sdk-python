@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any, Dict, List, cast
 
 from cognite.client import utils
@@ -26,7 +28,7 @@ class ServiceAccount(CogniteResource):
         id: int = None,
         is_deleted: bool = None,
         deleted_time: int = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.name = name
         self.groups = groups
@@ -59,7 +61,7 @@ class APIKey(CogniteResource):
         created_time: int = None,
         status: str = None,
         value: str = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.id = id
         self.service_account_id = service_account_id
@@ -94,7 +96,7 @@ class Group(CogniteResource):
         id: int = None,
         is_deleted: bool = None,
         deleted_time: int = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.name = name
         self.source_id = source_id
@@ -118,7 +120,7 @@ class SecurityCategory(CogniteResource):
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
-    def __init__(self, name: str = None, id: int = None, cognite_client: "CogniteClient" = None):
+    def __init__(self, name: str = None, id: int = None, cognite_client: CogniteClient = None):
         self.name = name
         self.id = id
         self._cognite_client = cast("CogniteClient", cognite_client)
@@ -141,7 +143,7 @@ class ProjectSpec(CogniteResponse):
         self.groups = groups
 
     @classmethod
-    def _load(cls, api_response: Dict[str, Any]) -> "ProjectSpec":
+    def _load(cls, api_response: Dict[str, Any]) -> ProjectSpec:
         return cls(url_name=api_response["projectUrlName"], groups=api_response["groups"])
 
 
@@ -160,7 +162,7 @@ class TokenInspection(CogniteResponse):
         self.capabilities = capabilities
 
     @classmethod
-    def _load(cls, api_response: Dict[str, Any]) -> "TokenInspection":
+    def _load(cls, api_response: Dict[str, Any]) -> TokenInspection:
         return cls(
             subject=api_response["subject"],
             projects=[ProjectSpec._load(p) for p in api_response["projects"]],
@@ -196,7 +198,7 @@ class CreatedSession(CogniteResource):
         status: str = None,
         nonce: str = None,
         client_id: str = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.id = id
         self.type = type
@@ -230,7 +232,7 @@ class Session(CogniteResource):
         creation_time: int = None,
         expiration_time: int = None,
         client_id: str = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.id = id
         self.type = type

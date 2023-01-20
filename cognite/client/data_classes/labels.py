@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
 
 from cognite.client.data_classes._base import (
@@ -31,7 +33,7 @@ class LabelDefinition(CogniteResource):
         description: str = None,
         created_time: int = None,
         data_set_id: int = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.external_id = external_id
         self.name = name
@@ -56,7 +58,7 @@ class LabelDefinitionFilter(CogniteFilter):
         name: str = None,
         external_id_prefix: str = None,
         data_set_ids: List[Dict[str, Any]] = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.name = name
         self.external_id_prefix = external_id_prefix
@@ -82,9 +84,7 @@ class Label(dict):
     external_id = CognitePropertyClassUtil.declare_property("externalId")
 
     @classmethod
-    def _load_list(
-        cls, labels: Optional[Sequence[Union[str, dict, LabelDefinition, "Label"]]]
-    ) -> Optional[List["Label"]]:
+    def _load_list(cls, labels: Optional[Sequence[Union[str, dict, LabelDefinition, Label]]]) -> Optional[List[Label]]:
         def convert_label(label: Union[Label, str, LabelDefinition, dict]) -> Label:
             if isinstance(label, Label):
                 return label
@@ -102,7 +102,7 @@ class Label(dict):
         return [convert_label(label) for label in labels]
 
     @classmethod
-    def _load(self, raw_label: Dict[str, Any]) -> "Label":
+    def _load(self, raw_label: Dict[str, Any]) -> Label:
         return Label(external_id=raw_label["externalId"])
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
@@ -131,7 +131,7 @@ class LabelFilter(dict, CogniteFilter):
     """
 
     def __init__(
-        self, contains_any: List[str] = None, contains_all: List[str] = None, cognite_client: "CogniteClient" = None
+        self, contains_any: List[str] = None, contains_all: List[str] = None, cognite_client: CogniteClient = None
     ):
         self.contains_any = contains_any
         self.contains_all = contains_all

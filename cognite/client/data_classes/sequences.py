@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import math
 from typing import TYPE_CHECKING, Any, Dict, Generator, List
@@ -54,7 +56,7 @@ class Sequence(CogniteResource):
         created_time: int = None,
         last_updated_time: int = None,
         data_set_id: int = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.id = id
         self.name = name
@@ -123,7 +125,7 @@ class SequenceFilter(CogniteFilter):
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
         data_set_ids: SequenceType[Dict[str, Any]] = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.name = name
         self.external_id_prefix = external_id_prefix
@@ -136,7 +138,7 @@ class SequenceFilter(CogniteFilter):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str]) -> "SequenceFilter":
+    def _load(cls, resource: Union[Dict, str]) -> SequenceFilter:
         instance = super(SequenceFilter, cls)._load(resource)
         if isinstance(resource, Dict):
             if instance.created_time is not None:
@@ -154,17 +156,17 @@ class SequenceColumnUpdate(CogniteUpdate):
     """
 
     class _PrimitiveSequenceColumnUpdate(CognitePrimitiveUpdate):
-        def set(self, value: Any) -> "SequenceColumnUpdate":
+        def set(self, value: Any) -> SequenceColumnUpdate:
             return self._set(value)
 
     class _ObjectSequenceColumnUpdate(CogniteObjectUpdate):
-        def set(self, value: Dict) -> "SequenceColumnUpdate":
+        def set(self, value: Dict) -> SequenceColumnUpdate:
             return self._set(value)
 
-        def add(self, value: Dict) -> "SequenceColumnUpdate":
+        def add(self, value: Dict) -> SequenceColumnUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> "SequenceColumnUpdate":
+        def remove(self, value: List) -> SequenceColumnUpdate:
             return self._remove(value)
 
     @property
@@ -193,38 +195,38 @@ class SequenceUpdate(CogniteUpdate):
     """
 
     class _PrimitiveSequenceUpdate(CognitePrimitiveUpdate):
-        def set(self, value: Any) -> "SequenceUpdate":
+        def set(self, value: Any) -> SequenceUpdate:
             return self._set(value)
 
     class _ObjectSequenceUpdate(CogniteObjectUpdate):
-        def set(self, value: Dict) -> "SequenceUpdate":
+        def set(self, value: Dict) -> SequenceUpdate:
             return self._set(value)
 
-        def add(self, value: Dict) -> "SequenceUpdate":
+        def add(self, value: Dict) -> SequenceUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> "SequenceUpdate":
+        def remove(self, value: List) -> SequenceUpdate:
             return self._remove(value)
 
     class _ListSequenceUpdate(CogniteListUpdate):
-        def set(self, value: List) -> "SequenceUpdate":
+        def set(self, value: List) -> SequenceUpdate:
             return self._set(value)
 
-        def add(self, value: List) -> "SequenceUpdate":
+        def add(self, value: List) -> SequenceUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> "SequenceUpdate":
+        def remove(self, value: List) -> SequenceUpdate:
             return self._remove(value)
 
     class _LabelSequenceUpdate(CogniteLabelUpdate):
-        def add(self, value: List) -> "SequenceUpdate":
+        def add(self, value: List) -> SequenceUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> "SequenceUpdate":
+        def remove(self, value: List) -> SequenceUpdate:
             return self._remove(value)
 
     class _ColumnsSequenceUpdate(CogniteListUpdate):
-        def add(self, value: Union[Dict, List[Dict]]) -> "SequenceUpdate":
+        def add(self, value: Union[Dict, List[Dict]]) -> SequenceUpdate:
             single_item = not isinstance(value, list)
             if single_item:
                 value_list = cast(List[str], [value])
@@ -233,7 +235,7 @@ class SequenceUpdate(CogniteUpdate):
 
             return self._add(value_list)
 
-        def remove(self, value: Union[str, List[str]]) -> "SequenceUpdate":
+        def remove(self, value: Union[str, List[str]]) -> SequenceUpdate:
             single_item = not isinstance(value, list)
             if single_item:
                 value_list = cast(List[str], [value])
@@ -242,7 +244,7 @@ class SequenceUpdate(CogniteUpdate):
 
             return self._remove([{"externalId": id} for id in value_list])
 
-        def modify(self, value: List[SequenceColumnUpdate]) -> "SequenceUpdate":
+        def modify(self, value: List[SequenceColumnUpdate]) -> SequenceUpdate:
             return self._modify([col.dump() for col in value])
 
     @property
@@ -387,7 +389,7 @@ class SequenceData(CogniteResource):
             dumped = {utils._auxiliary.to_camel_case(key): value for key, value in dumped.items()}
         return {key: value for key, value in dumped.items() if value is not None}
 
-    def to_pandas(self, column_names: str = "columnExternalId") -> "pandas.DataFrame":  # type: ignore[override]
+    def to_pandas(self, column_names: str = "columnExternalId") -> pandas.DataFrame:  # type: ignore[override]
         """Convert the sequence data into a pandas DataFrame.
 
         Args:
@@ -445,7 +447,7 @@ class SequenceDataList(CogniteResourceList):
     def __str__(self) -> str:
         return json.dumps(self.dump(), indent=4)
 
-    def to_pandas(self, column_names: str = "externalId|columnExternalId") -> "pandas.DataFrame":  # type: ignore[override]
+    def to_pandas(self, column_names: str = "externalId|columnExternalId") -> pandas.DataFrame:  # type: ignore[override]
         """Convert the sequence data list into a pandas DataFrame. Each column will be a sequence.
 
         Args:
