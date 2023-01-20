@@ -95,7 +95,7 @@ class TimeSeries(CogniteResource):
 
         identifier = Identifier.load(self.id, self.external_id).as_dict()
         dps = self._cognite_client.time_series.data.retrieve(
-            **identifier, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS, aggregates="count", granularity="100d"
+            **identifier, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS + 1, aggregates="count", granularity="100d"
         )
         return sum(dps.count)
 
@@ -118,7 +118,7 @@ class TimeSeries(CogniteResource):
         """
         identifier = Identifier.load(self.id, self.external_id).as_dict()
         dps = self._cognite_client.time_series.data.retrieve(
-            **identifier, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS, limit=1
+            **identifier, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS + 1, limit=1
         )
         if dps:
             return dps[0]

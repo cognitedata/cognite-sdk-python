@@ -5,7 +5,7 @@ import pandas as pd
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import TimeSeries
-from cognite.client.utils._time import UNIT_IN_MS
+from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS, UNIT_IN_MS
 
 NAMES = [
     f"PYSDK integration test {s}"
@@ -28,6 +28,10 @@ NAMES = [
         "115: 1mill dps, random distribution, 1950-2020, string",
         "116: 5mill dps, 2k dps (.1s res) burst per day, 2000-01-01 12:00:00 - 2013-09-08 12:03:19.900, numeric",
     ]
+]
+SPARSE_NAMES = [
+    "PYSDK integration test 117: single dp at 1900-01-01 00:00:00, numeric",
+    "PYSDK integration test 118: single dp at 2099-12-31 23:59:59.999, numeric",
 ]
 
 
@@ -64,7 +68,23 @@ def delete_all_time_series(ts_api):
     time.sleep(10)
 
 
-def create_all_time_series(ts_api):
+def create_edge_case_time_series(ts_api):
+    ts_lst = [
+        TimeSeries(name=SPARSE_NAMES[0], external_id=SPARSE_NAMES[0], is_string=False),
+        TimeSeries(name=SPARSE_NAMES[1], external_id=SPARSE_NAMES[1], is_string=False),
+    ]
+    ts_api.create(ts_lst)
+    time.sleep(1)
+    ts_api.data.insert_multiple(
+        [
+            {"externalId": SPARSE_NAMES[0], "datapoints": [(MIN_TIMESTAMP_MS, MIN_TIMESTAMP_MS)]},
+            {"externalId": SPARSE_NAMES[1], "datapoints": [(MAX_TIMESTAMP_MS, MAX_TIMESTAMP_MS)]},
+        ]
+    )
+    print(f"Created {len(ts_lst)} sparse ts with data")
+
+
+def create_dense_time_series(ts_api):
     ts_add = (ts_lst := []).append
     df_add = (df_lst := []).append
     ts_add(TimeSeries(name=NAMES[0], external_id=NAMES[0], is_string=False, metadata={"offset": 1, "delta": 10}))
@@ -204,4 +224,5 @@ if __name__ == "__main__":
     # To avoid accidental runs, please provide a valid config to CogniteClient:
     client = CogniteClient(...)
     delete_all_time_series(client.time_series)
-    create_all_time_series(client.time_series)
+    create_dense_time_series(client.time_series)
+    create_edge_case_time_series(client.time_series)

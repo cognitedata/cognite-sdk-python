@@ -4,6 +4,7 @@ from unittest import mock
 import pytest
 
 from cognite.client.data_classes import TimeSeries, TimeSeriesFilter, TimeSeriesUpdate
+from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS
 from tests.utils import set_request_limit
 
 
@@ -27,6 +28,8 @@ def test_tss(cognite_client):
         external_ids=[
             "PYSDK integration test 003: weekly values, 1950-2000, numeric",
             "PYSDK integration test 073: weekly values, 1950-2000, string",
+            "PYSDK integration test 117: single dp at 1900-01-01 00:00:00, numeric",
+            "PYSDK integration test 118: single dp at 2099-12-31 23:59:59.999, numeric",
         ],
     )
 
@@ -118,10 +121,14 @@ class TestTimeSeriesAPI:
 
 
 class TestTimeSeriesHelperMethods:
-    def test_get_count__numeric(self, test_ts_numeric):
-        assert test_ts_numeric.is_string is False
-        count = test_ts_numeric.count()
-        assert count == 2609
+    @pytest.mark.parametrize(
+        "ts_idx, exp_count",
+        [(0, 2609), (2, 1), (3, 1)],
+    )
+    def test_get_count__numeric(self, test_tss, ts_idx, exp_count):
+        assert test_tss[ts_idx].is_string is False
+        count = test_tss[ts_idx].count()
+        assert count == exp_count
 
     def test_get_count__string_fails(self, test_ts_string):
         assert test_ts_string.is_string is True
@@ -144,10 +151,16 @@ class TestTimeSeriesHelperMethods:
         assert res2.timestamp == -345600000
         assert res2.value == "-345599927"
 
-    def test_get_first_datapoint(self, test_ts_numeric, test_ts_string):
-        res1 = test_ts_numeric.first()
-        res2 = test_ts_string.first()
-        assert res1.timestamp == -631152000000
-        assert res1.value == -631151999997.0
-        assert res2.timestamp == -631152000000
-        assert res2.value == "-631151999927"
+    @pytest.mark.parametrize(
+        "ts_idx, exp_ts, exp_val",
+        [
+            (0, -631152000000, -631151999997.0),
+            (1, -631152000000, "-631151999927"),
+            (2, MIN_TIMESTAMP_MS, MIN_TIMESTAMP_MS),
+            (3, MAX_TIMESTAMP_MS, MAX_TIMESTAMP_MS),
+        ],
+    )
+    def test_get_first_datapoint(self, test_tss, ts_idx, exp_ts, exp_val):
+        res = test_tss[ts_idx].first()
+        assert res.timestamp == exp_ts
+        assert res.value == exp_val
