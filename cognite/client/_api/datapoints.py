@@ -709,10 +709,11 @@ class DatapointsAPI(APIClient):
                 ...     limit=1)
 
             To get *all* historic and future datapoints for a time series, e.g. to do a backup, you may want to import the two integer
-            constants: `MIN_TIMESTAMP_MS` and `MAX_TIMESTAMP_MS`, to make sure you do not miss any::
+            constants: `MIN_TIMESTAMP_MS` and `MAX_TIMESTAMP_MS`, to make sure you do not miss any. Performance warning: This pattern of
+            fetching datapoints from the entire valid time domain is slower and shouldn't be used for regular "day-to-day" queries::
 
                 >>> from cognite.client.utils import MIN_TIMESTAMP_MS, MAX_TIMESTAMP_MS
-                >>> dps = client.time_series.data.retrieve(
+                >>> dps_backup = client.time_series.data.retrieve(
                 ...     id=123,
                 ...     start=MIN_TIMESTAMP_MS,
                 ...     end=MAX_TIMESTAMP_MS + 1)  # end is exclusive
