@@ -380,6 +380,14 @@ class DiagramConvertItem(CogniteResource):
         return DiagramConvertPageList._load(self.results, cognite_client=self._cognite_client)
 
     def to_pandas(self, camel_case: bool = False) -> "pandas.DataFrame":  # type: ignore[override]
+        """Convert the instance into a pandas DataFrame.
+
+        Args:
+            camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`)
+
+        Returns:
+            pandas.DataFrame: The dataframe.
+        """
         df = super().to_pandas(camel_case=camel_case)
         df.loc["results"] = f"{len(df['results'])} pages"
         return df
@@ -393,7 +401,7 @@ class DiagramConvertResults(ContextualizationJob):
         self._items: Optional[list] = None
 
     def __getitem__(self, find_id: Any) -> DiagramConvertItem:
-        """retrieves the results for the file with (external) id"""
+        """Retrieves the results for the file with (external) id"""
         found = [
             item
             for item in self.result["items"]
@@ -437,6 +445,14 @@ class DiagramDetectItem(CogniteResource):
         self.page_range = page_range
 
     def to_pandas(self, camel_case: bool = False) -> "pandas.DataFrame":  # type: ignore[override]
+        """Convert the instance into a pandas DataFrame.
+
+        Args:
+            camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`)
+
+        Returns:
+            pandas.DataFrame: The dataframe.
+        """
         df = super().to_pandas(camel_case=camel_case)
         df.loc["annotations"] = f"{len(df['annotations'])} annotations"
         return df
@@ -699,7 +715,7 @@ class VisionExtractItem(CogniteResource):
         predictions: Dict[str, Any] = None,
         file_external_id: str = None,
         error_message: str = None,
-        cognite_client: "CogniteClient" = None,  # noqa: F821
+        cognite_client: "CogniteClient" = None,
     ) -> None:
         """Data class for storing predictions for a single image file"""
         self.file_id = file_id
@@ -708,12 +724,10 @@ class VisionExtractItem(CogniteResource):
         self.predictions = self._process_predictions_dict(predictions) if isinstance(predictions, Dict) else predictions
 
         self._predictions_dict = predictions  # The "raw" predictions dict returned by the endpoint
-        self._cognite_client = cast("CogniteClient", cognite_client)  # noqa: F821
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(
-        cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None  # noqa: F821
-    ) -> "VisionExtractItem":
+    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "VisionExtractItem":
         """Override CogniteResource._load so that we can convert the dicts returned by the API to data classes"""
         extracted_item = super(VisionExtractItem, cls)._load(resource, cognite_client=cognite_client)
         if isinstance(extracted_item.predictions, dict):

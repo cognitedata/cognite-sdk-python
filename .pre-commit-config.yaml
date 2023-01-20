@@ -59,3 +59,8 @@ repos:
         language: system
         pass_filenames: false
     repo: local
+
+  - repo: https://github.com/asottile/yesqa
+    rev: v1.4.0
+    hooks:
+    -   id: yesqa

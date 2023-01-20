@@ -27,7 +27,7 @@ To upgrade the version of this package:
 
 .. code-block:: bash
 
-   pip install cognite-sdk[pandas, geo]
+   pip install "cognite-sdk[pandas, geo]"
 
 
 Contents

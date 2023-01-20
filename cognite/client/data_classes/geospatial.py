@@ -178,7 +178,7 @@ def _to_feature_property_name(property_name: str) -> str:
 class FeatureList(CogniteResourceList):
     _RESOURCE = Feature
 
-    def to_geopandas(self, geometry: str, camel_case: bool = False) -> "geopandas.GeoDataFrame":  # noqa: F821
+    def to_geopandas(self, geometry: str, camel_case: bool = False) -> "geopandas.GeoDataFrame":
         """Convert the instance into a GeoPandas GeoDataFrame.
 
         Args:
@@ -211,7 +211,7 @@ class FeatureList(CogniteResourceList):
     @staticmethod
     def from_geopandas(
         feature_type: FeatureType,
-        geodataframe: "geopandas.GeoDataFrame",  # noqa: F821
+        geodataframe: "geopandas.GeoDataFrame",
         external_id_column: str = "externalId",
         property_column_mapping: Dict[str, str] = None,
         data_set_id_column: str = "dataSetId",

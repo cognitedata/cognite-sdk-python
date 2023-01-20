@@ -147,10 +147,11 @@ class DiagramsAPI(APIClient):
         multiple_jobs: bool = False,
     ) -> Union[DiagramDetectResults, Tuple[Optional[DetectJobBundle], List[Dict[str, Any]]]]:
 
-        """Detect entities in a PNID.
-        The results are not written to CDF.
-        **Note**: All users on this CDF subscription with assets read-all and files read-all capabilities in the project,
-        are able to access the data sent to this endpoint.
+        """Detect entities in a PNID. The results are not written to CDF.
+
+        Note:
+            All users on this CDF subscription with assets read-all and files read-all capabilities in the project,
+            are able to access the data sent to this endpoint.
 
         Args:
             entities (Sequence[Union[dict, CogniteResource]]): List of entities to detect
