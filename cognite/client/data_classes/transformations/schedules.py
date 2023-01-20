@@ -1,6 +1,5 @@
-from typing import TYPE_CHECKING, Any, Dict, Union, cast
+from typing import TYPE_CHECKING, Any, cast
 
-from cognite.client import utils
 from cognite.client.data_classes._base import (
     CognitePrimitiveUpdate,
     CogniteResource,
@@ -43,28 +42,8 @@ class TransformationSchedule(CogniteResource):
         self.is_paused = is_paused
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "TransformationSchedule":
-        instance = super(TransformationSchedule, cls)._load(resource, cognite_client)
-        return instance
-
     def __hash__(self) -> int:
         return hash(self.id)
-
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        """Dump the instance into a json serializable Python data type.
-
-        Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to False.
-
-        Returns:
-            Dict[str, Any]: A dictionary representation of the instance.
-        """
-        ret = super().dump(camel_case=camel_case)
-
-        if camel_case:
-            return {utils._auxiliary.to_camel_case(key): value for key, value in ret.items()}
-        return ret
 
 
 class TransformationScheduleUpdate(CogniteUpdate):
