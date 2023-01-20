@@ -1,13 +1,7 @@
 import warnings
 from typing import Any, Dict, Optional, Union
 
-from cognite.client.utils._auxiliary import convert_all_keys_to_camel_case, convert_all_keys_to_snake_case
-
-
-def _simple_vars_dump(obj: Any, camel_case: bool) -> Dict[str, Any]:
-    if camel_case:
-        return convert_all_keys_to_camel_case(vars(obj))
-    return vars(obj)
+from cognite.client.utils._auxiliary import basic_obj_dump, convert_all_keys_to_snake_case
 
 
 class TransformationDestination:
@@ -27,7 +21,7 @@ class TransformationDestination:
         return isinstance(other, type(self)) and hash(other) == hash(self)
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        return _simple_vars_dump(self, camel_case)
+        return basic_obj_dump(self, camel_case)
 
     @staticmethod
     def assets() -> "TransformationDestination":
@@ -194,7 +188,7 @@ class OidcCredentials:
         Returns:
             Dict[str, Any]: A dictionary representation of the instance.
         """
-        return _simple_vars_dump(self, camel_case)
+        return basic_obj_dump(self, camel_case)
 
 
 class NonceCredentials:
@@ -217,7 +211,7 @@ class NonceCredentials:
         Returns:
             Dict[str, Any]: A dictionary representation of the instance.
         """
-        return _simple_vars_dump(self, camel_case)
+        return basic_obj_dump(self, camel_case)
 
 
 class TransformationBlockedInfo:
