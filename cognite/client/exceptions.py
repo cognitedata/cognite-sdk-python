@@ -74,8 +74,8 @@ class CogniteAPIError(CogniteMultiException):
                 elif e.code == 400:
                     print("Something is wrong with your request")
                 elif e.code == 500:
-                    print("Something went terribly wrong. Here is the request-id: {}".format(e.x_request_id)
-                print("The message returned from the API: {}".format(e.message))
+                    print(f"Something went terribly wrong. Here is the request-id: {e.x_request_id}"
+                print(f"The message returned from the API: {e.message}")
     """
 
     def __init__(

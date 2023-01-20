@@ -159,12 +159,13 @@ class SyntheticDatapointsAPI(APIClient):
             infixop = infix_ops.get(sym.__class__)
             if infixop:
                 return "(" + infixop.join(process_symbol(s) for s in sym.args) + ")"
+
             if isinstance(sym, sympy_module.Pow):
                 if sym.args[1] == -1:
                     return f"(1/{process_symbol(sym.args[0])})"
-                return "pow({},{})".format(*[process_symbol(x) for x in sym.args])
-            funop = functions.get(sym.__class__)
-            if funop:
+                return f"pow({','.join(map(process_symbol, sym.args))})"
+
+            if funop := functions.get(sym.__class__):
                 return f"{funop}({','.join(map(process_symbol, sym.args))})"
             raise ValueError(f"Unsupported sympy class {sym.__class__} encountered in expression")
 
