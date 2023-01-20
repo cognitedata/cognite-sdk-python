@@ -99,7 +99,7 @@ class TimeSeries(CogniteResource):
         )
         return sum(dps.count)
 
-    def latest(self, before: Union[int, str, datetime] = None) -> Optional["Datapoint"]:  # noqa: F821
+    def latest(self, before: Union[int, str, datetime] = None) -> Optional["Datapoint"]:
         """Returns the latest datapoint in this time series. If empty, returns None.
 
         Returns:
@@ -110,7 +110,7 @@ class TimeSeries(CogniteResource):
             return dps[0]
         return None
 
-    def first(self) -> Optional["Datapoint"]:  # noqa: F821
+    def first(self) -> Optional["Datapoint"]:
         """Returns the first datapoint in this time series. If empty, returns None.
 
         Returns:
@@ -124,7 +124,7 @@ class TimeSeries(CogniteResource):
             return dps[0]
         return None
 
-    def asset(self) -> "Asset":  # noqa: F821
+    def asset(self) -> "Asset":
         """Returns the asset this time series belongs to.
 
         Returns:
