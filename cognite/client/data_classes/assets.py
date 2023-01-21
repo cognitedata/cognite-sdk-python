@@ -124,7 +124,7 @@ class Asset(CogniteResource):
 
     @classmethod
     def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> Asset:
-        instance = super(Asset, cls)._load(resource, cognite_client)
+        instance = super()._load(resource, cognite_client)
         if isinstance(resource, Dict):
             if instance.aggregates is not None:
                 instance.aggregates = AggregateResultItem(**instance.aggregates)
@@ -199,7 +199,7 @@ class Asset(CogniteResource):
         return self._cognite_client.files.list(asset_ids=[self.id], **kwargs)
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        result = super(Asset, self).dump(camel_case)
+        result = super().dump(camel_case)
         if self.labels is not None:
             result["labels"] = [label.dump(camel_case) for label in self.labels]
         return result
@@ -436,7 +436,7 @@ class AssetFilter(CogniteFilter):
 
     @classmethod
     def _load(cls, resource: Union[Dict, str]) -> AssetFilter:
-        instance = super(AssetFilter, cls)._load(resource)
+        instance = super()._load(resource)
         if isinstance(resource, Dict):
             if instance.created_time is not None:
                 instance.created_time = TimestampRange(**instance.created_time)
@@ -445,7 +445,7 @@ class AssetFilter(CogniteFilter):
         return instance
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        result = super(AssetFilter, self).dump(camel_case)
+        result = super().dump(camel_case)
         if isinstance(self.labels, LabelFilter):
             result["labels"] = self.labels.dump(camel_case)
         return result

@@ -44,7 +44,7 @@ class TransformationJobMetric(CogniteResource):
 
     @classmethod
     def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> TransformationJobMetric:
-        instance = super(TransformationJobMetric, cls)._load(resource, cognite_client)
+        instance = super()._load(resource, cognite_client)
         return instance
 
 
@@ -247,7 +247,7 @@ class TransformationJob(CogniteResource):
 
     @classmethod
     def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> TransformationJob:
-        instance = super(TransformationJob, cls)._load(resource, cognite_client)
+        instance = super()._load(resource, cognite_client)
         if isinstance(instance.destination, Dict):
             instance.destination = _load_destination_dct(instance.destination)
         return instance

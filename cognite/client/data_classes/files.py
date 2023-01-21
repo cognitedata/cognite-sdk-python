@@ -91,7 +91,7 @@ class FileMetadata(CogniteResource):
 
     @classmethod
     def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> FileMetadata:
-        instance = super(FileMetadata, cls)._load(resource, cognite_client)
+        instance = super()._load(resource, cognite_client)
         instance.labels = Label._load_list(instance.labels)
         if instance.geo_location is not None:
             instance.geo_location = GeoLocation._load(instance.geo_location)
@@ -187,7 +187,7 @@ class FileMetadataFilter(CogniteFilter):
         return instance
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        result = super(FileMetadataFilter, self).dump(camel_case)
+        result = super().dump(camel_case)
         if isinstance(self.labels, LabelFilter):
             result["labels"] = self.labels.dump(camel_case)
         if isinstance(self.geo_location, GeoLocationFilter):

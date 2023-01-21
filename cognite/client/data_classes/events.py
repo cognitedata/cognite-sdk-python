@@ -149,7 +149,7 @@ class EventFilter(CogniteFilter):
 
     @classmethod
     def _load(cls, resource: Union[Dict, str]) -> EventFilter:
-        instance = super(EventFilter, cls)._load(resource)
+        instance = super()._load(resource)
         if isinstance(resource, Dict):
             if instance.start_time is not None:
                 instance.start_time = TimestampRange(**instance.start_time)

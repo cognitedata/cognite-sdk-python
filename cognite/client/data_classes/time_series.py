@@ -188,7 +188,7 @@ class TimeSeriesFilter(CogniteFilter):
 
     @classmethod
     def _load(cls, resource: Union[Dict, str]) -> TimeSeriesFilter:
-        instance = super(TimeSeriesFilter, cls)._load(resource)
+        instance = super()._load(resource)
         if isinstance(resource, Dict):
             if instance.created_time is not None:
                 instance.created_time = TimestampRange(**instance.created_time)
