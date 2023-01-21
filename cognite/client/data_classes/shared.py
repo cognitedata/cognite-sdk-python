@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Union
+from typing import Any, Dict, List, Literal, Union, cast
 
 from cognite.client.data_classes._base import CognitePropertyClassUtil
 from cognite.client.utils._auxiliary import convert_all_keys_to_camel_case, handle_deprecated_camel_case_argument
@@ -103,10 +103,15 @@ class Geometry(dict):
                 Example: `[[[[30, 20], [45, 40], [10, 40], [30, 20]]], [[[15, 5], [40, 10], [10, 20], [5, 10], [15, 5]]]]`
     """
 
-    def __init__(self, type: str, coordinates: List):
-        valid_types = ["Point", "MultiPoint", "LineString", "MultiLineString", "Polygon", "MultiPolygon"]
-        if type not in valid_types:
-            raise ValueError("type must be one of " + str(valid_types))
+    _VALID_TYPES = frozenset({"Point", "MultiPoint", "LineString", "MultiLineString", "Polygon", "MultiPolygon"})
+
+    def __init__(
+        self,
+        type: Literal["Point", "MultiPoint", "LineString", "MultiLineString", "Polygon", "MultiPolygon"],
+        coordinates: List,
+    ):
+        if type not in self._VALID_TYPES:
+            raise ValueError(f"type must be one of {self._VALID_TYPES}")
         self.type = type
         self.coordinates = coordinates
 
@@ -128,14 +133,15 @@ class GeometryFilter(dict):
           coordinates (List): An array of the coordinates of the geometry. The structure of the elements in this array is determined by the type of geometry.
     """
 
+    _VALID_TYPES = frozenset({"Point", "LineString", "MultiLineString", "Polygon", "MultiPolygon"})
+
     def __init__(
         self,
         type: Literal["Point", "LineString", "MultiLineString", "Polygon", "MultiPolygon"],
         coordinates: List,
     ):
-        valid_types = {"Point", "LineString", "MultiLineString", "Polygon", "MultiPolygon"}
-        if type not in valid_types:
-            raise ValueError("type must be one of " + str(valid_types))
+        if type not in self._VALID_TYPES:
+            raise ValueError(f"type must be one of {self._VALID_TYPES}")
         self.type = type
         self.coordinates = coordinates
 
@@ -151,8 +157,10 @@ class GeoLocation(dict):
           properties (object): Optional additional properties in a String key -> Object value format.
     """
 
+    _VALID_TYPES = frozenset({"Feature"})
+
     def __init__(self, type: Literal["Feature"], geometry: Geometry, properties: dict = None):
-        if type != "Feature":
+        if type not in self._VALID_TYPES:
             raise ValueError("Only the 'Feature' type is supported.")
         self.type = type
         self.geometry = geometry
@@ -165,7 +173,10 @@ class GeoLocation(dict):
     @classmethod
     def _load(cls, raw_geo_location: Dict[str, Any] = None, **kwargs: Dict[str, Any]) -> GeoLocation:
         # TODO: Remove support for old argument name in major version 6
-        raw_geo_location = handle_deprecated_camel_case_argument(raw_geo_location, "raw_geoLocation", "_load", kwargs)
+        raw_geo_location = cast(
+            Dict[str, Any],
+            handle_deprecated_camel_case_argument(raw_geo_location, "raw_geoLocation", "_load", kwargs),
+        )
         return cls(
             type=raw_geo_location.get("type", "Feature"),
             geometry=raw_geo_location["geometry"],
@@ -193,8 +204,9 @@ class GeoLocationFilter(dict):
     @classmethod
     def _load(cls, raw_geo_location_filter: Dict[str, Any] = None, **kwargs: Dict[str, Any]) -> GeoLocationFilter:
         # TODO: Remove support for old argument name in major version 6
-        raw_geo_location_filter = handle_deprecated_camel_case_argument(
-            raw_geo_location_filter, "raw_geoLocation_filter", "_load", kwargs
+        raw_geo_location_filter = cast(
+            Dict[str, Any],
+            handle_deprecated_camel_case_argument(raw_geo_location_filter, "raw_geoLocation_filter", "_load", kwargs),
         )
         return cls(relation=raw_geo_location_filter["relation"], shape=raw_geo_location_filter["shape"])
 

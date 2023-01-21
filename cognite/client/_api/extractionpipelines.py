@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Sequence, Union, overload
+from typing import Any, Dict, Optional, Sequence, Union, cast, overload
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -153,7 +153,10 @@ class ExtractionPipelinesAPI(APIClient):
                 >>> res = c.extraction_pipelines.create(extpipes)
         """
         # TODO: Remove support for old argument name in major version 6
-        extraction_pipeline = handle_deprecated_camel_case_argument(extraction_pipeline, "extractionPipeline", "create", kwargs)
+        extraction_pipeline = cast(
+            Union[ExtractionPipeline, Sequence[ExtractionPipeline]],
+            handle_deprecated_camel_case_argument(extraction_pipeline, "extractionPipeline", "create", kwargs),
+        )
         utils._auxiliary.assert_type(extraction_pipeline, "extraction_pipeline", [ExtractionPipeline, Sequence])
         return self._create_multiple(
             list_cls=ExtractionPipelineList, resource_cls=ExtractionPipeline, items=extraction_pipeline
