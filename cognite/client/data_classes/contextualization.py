@@ -4,22 +4,7 @@ import time
 import warnings
 from dataclasses import dataclass
 from enum import Enum
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    List,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-    get_args,
-    get_type_hints,
-)
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast
 
 from cognite.client.data_classes import Annotation
 from cognite.client.data_classes._base import (
