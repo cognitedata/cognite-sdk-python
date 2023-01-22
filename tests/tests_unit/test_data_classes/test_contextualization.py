@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, get_args
+from typing import Any, Dict, get_args, get_type_hints
 from unittest.mock import Mock, patch
 
 import pytest
@@ -39,13 +39,12 @@ def mock_update_status_completed(self):
 class TestVisionExtractPredictions:
     def test_visionextractpredictions_in_sync_with_vision_feature_map(self) -> None:
         """This test ensures that the mapping and VisionExtractPredictions class is 'in sync'"""
-        map_as_set = set(VISION_FEATURE_MAP.items())
+        mapping_as_set = set(VISION_FEATURE_MAP.items())
+        (annot_dct := get_type_hints(VisionExtractPredictions)).pop("_cognite_client")
         # Unwrap the first level of type hints, (MUST be an Optional), since Optional[X] == Union[X, None].
         # Unwrap the second level of type hint (i.e., the List[...]):
-        annots_as_set = set(
-            [(key, get_args(get_args(annot)[0])[0]) for key, annot in VisionExtractPredictions.__annotations__.items()]
-        )
-        assert map_as_set == annots_as_set
+        annots_as_set = set([(k, get_args(get_args(a)[0])[0]) for k, a in annot_dct.items()])
+        assert mapping_as_set == annots_as_set
 
 
 class TestContextualizationJob:
