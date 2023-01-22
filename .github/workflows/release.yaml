@@ -16,7 +16,7 @@ jobs:
 
       - name: Install required dependencies
         run: |
-          python3 -m pip install --upgrade pip "poetry<1.2.0"
+          python3 -m pip install --upgrade pip poetry
           poetry config virtualenvs.create false
           poetry install -E numpy
 
@@ -34,7 +34,7 @@ jobs:
 
       - name: Install required dependencies
         run: |
-          python3 -m pip install --upgrade pip "poetry<1.2.0"
+          python3 -m pip install --upgrade pip poetry
           poetry config virtualenvs.create false
           poetry install
 
@@ -54,7 +54,7 @@ jobs:
 
       - name: Install full dependencies
         run: |
-          python3 -m pip install --upgrade pip "poetry<1.2.0"
+          python3 -m pip install --upgrade pip poetry
           poetry config virtualenvs.create false
           poetry install -E all
 
