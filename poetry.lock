@@ -1097,7 +1097,7 @@ name = "pip"
 version = "22.3.1"
 description = "The PyPA recommended tool for installing Python packages."
 category = "main"
-optional = true
+optional = false
 python-versions = ">=3.7"
 files = [
     {file = "pip-22.3.1-py3-none-any.whl", hash = "sha256:908c78e6bc29b676ede1c4d57981d490cb892eb45cd8c214ab6298125119e077"},
@@ -2075,4 +2075,4 @@ sympy = ["sympy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "12773ac938bdcaea23d98a9ef4c88e7afb2f841d8f98ebaaeb7991c75b84464d"
+content-hash = "24cec6787a45d3db6fd853e18d742c85f1bc3ae159418f796243a566d6d339b7"
