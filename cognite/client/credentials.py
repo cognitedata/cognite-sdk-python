@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import atexit
+import tempfile
 import threading
 from abc import abstractmethod
 from datetime import datetime
@@ -107,7 +108,7 @@ class _WithMsalSerializableTokenCache:
 
         def __at_exit() -> None:
             if token_cache.has_state_changed:
-                with open(cache_path, "w") as fh:
+                with open(cache_path, "w+") as fh:
                     fh.write(token_cache.serialize())
 
         atexit.register(__at_exit)
@@ -121,6 +122,8 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         authority_url (str): OAuth authority url
         client_id (str): Your application's client id.
         scopes (List[str]): A list of scopes.
+        token_cache_path (Path): Location to store token cache, defaults to
+                                 os temp directory/cognitetokencache.{client_id}.bin.
 
     Examples:
 
@@ -132,14 +135,20 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
             ... )
     """
 
-    def __init__(self, authority_url: str, client_id: str, scopes: List[str]) -> None:
+    def __init__(
+        self,
+        authority_url: str,
+        client_id: str,
+        scopes: List[str],
+        token_cache_path: Path = None,
+    ) -> None:
         super().__init__()
         self.__authority_url = authority_url
         self.__client_id = client_id
         self.__scopes = scopes
 
         # In addition to caching in memory, we also cache the token on disk so it can be reused across processes.
-        token_cache_path = Path(f"/tmp/cognitetokencache.{self.__client_id}.bin")
+        token_cache_path = token_cache_path or Path(tempfile.gettempdir()) / f"cognitetokencache.{self.__client_id}.bin"
         serializable_token_cache = self._create_serializable_token_cache(token_cache_path)
         self.__app = PublicClientApplication(
             client_id=self.__client_id, authority=self.__authority_url, token_cache=serializable_token_cache
@@ -182,6 +191,8 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         client_id (str): Your application's client id.
         scopes (List[str]): A list of scopes.
         redirect_port (List[str]): Redirect port defaults to 53000.
+        token_cache_path (Path): Location to store token cache, defaults to
+                                 os temp directory/cognitetokencache.{client_id}.bin.
 
     Examples:
 
@@ -193,7 +204,14 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
             ... )
     """
 
-    def __init__(self, authority_url: str, client_id: str, scopes: List[str], redirect_port: int = 53000) -> None:
+    def __init__(
+        self,
+        authority_url: str,
+        client_id: str,
+        scopes: List[str],
+        redirect_port: int = 53000,
+        token_cache_path: Path = None,
+    ) -> None:
         super().__init__()
         self.__authority_url = authority_url
         self.__client_id = client_id
@@ -201,7 +219,7 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         self.__redirect_port = redirect_port
 
         # In addition to caching in memory, we also cache the token on disk so it can be reused across processes.
-        token_cache_path = Path(f"/tmp/cognitetokencache.{self.__client_id}.bin")
+        token_cache_path = token_cache_path or Path(tempfile.gettempdir()) / f"cognitetokencache.{self.__client_id}.bin"
         serializable_token_cache = self._create_serializable_token_cache(token_cache_path)
         self.__app = PublicClientApplication(
             client_id=self.__client_id, authority=self.__authority_url, token_cache=serializable_token_cache
