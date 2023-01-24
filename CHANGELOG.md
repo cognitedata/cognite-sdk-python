@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [5.3.3] - 20-01-24
+### Changed
+- Allowed to pass in `token_cache_path` in `OAuthInteractive`.
+
 ## [5.3.2] - 20-01-24
 ### Changed
 - Update pytest and other dependencies
