@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [5.3.3] - 20-01-24
 ### Changed
-- Allowed to pass in `token_cache_path` in `OAuthInteractive`.
+- Allowed to pass in `token_cache_path` in `OAuthInteractive` and `OAuthDeviceCode`.
 
 ## [5.3.2] - 20-01-24
 ### Changed
