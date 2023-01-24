@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [5.3.2] - 20-01-24
+### Changed
+- Update pytest and other dependencies
+
 ## [5.3.1] - 20-01-23
 ### Fixed
 - Last possible valid timestamp would not be returned as first (if first by some miracle...) by the `TimeSeries.first` method due to `end` being exclusive.
