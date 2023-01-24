@@ -49,3 +49,8 @@ test-report.xml
 # tox
 .tox/
 .python-version
+
+.benchmarks
+cache.bin
+local_cog_client.py
+tests/tests_integration/test_benchmarks/
