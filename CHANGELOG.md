@@ -21,6 +21,9 @@ Changes are grouped as follows
 ### Changed
 - Allowed to pass in `token_cache_path` in `OAuthInteractive` and `OAuthDeviceCode`.
 
+### Fixed
+- Platform independent temp directory.
+
 ## [5.3.2] - 20-01-24
 ### Changed
 - Update pytest and other dependencies
