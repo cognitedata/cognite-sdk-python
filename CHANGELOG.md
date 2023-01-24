@@ -22,7 +22,7 @@ Changes are grouped as follows
 - Allowed to pass in `token_cache_path` in `OAuthInteractive` and `OAuthDeviceCode`.
 
 ### Fixed
-- Platform independent temp directory.
+- Platform independent temp directory for the caching of the token in `OAuthInteractive` and `OAuthDeviceCode`.
 
 ## [5.3.2] - 20-01-24
 ### Changed
