@@ -4,22 +4,7 @@ import time
 import warnings
 from dataclasses import dataclass
 from enum import Enum
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    List,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-    get_args,
-    get_type_hints,
-)
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast
 
 from cognite.client.data_classes import Annotation
 from cognite.client.data_classes._base import (
@@ -41,6 +26,7 @@ if TYPE_CHECKING:
 
 
 class JobStatus(Enum):
+    _NOT_STARTED = None
     QUEUED = "Queued"
     RUNNING = "Running"
     COMPLETED = "Completed"
@@ -49,14 +35,18 @@ class JobStatus(Enum):
     DISTRIBUTED = "Distributed"
     COLLECTING = "Collecting"
 
+    def is_finished(self) -> bool:
+        return self in {JobStatus.COMPLETED, JobStatus.FAILED}
+
     def is_not_finished(self) -> bool:
-        return self in [
+        return self in {
+            JobStatus._NOT_STARTED,
             JobStatus.QUEUED,
             JobStatus.RUNNING,
             JobStatus.DISTRIBUTED,
             JobStatus.DISTRIBUTING,
             JobStatus.COLLECTING,
-        ]
+        }
 
 
 class ContextualizationJobType(Enum):
@@ -66,16 +56,18 @@ class ContextualizationJobType(Enum):
 
 
 class ContextualizationJob(CogniteResource):
-    _COMMON_FIELDS = {
-        "status",
-        "jobId",
-        "modelId",
-        "pipelineId",
-        "errorMessage",
-        "createdTime",
-        "startTime",
-        "statusTime",
-    }
+    _COMMON_FIELDS = frozenset(
+        {
+            "status",
+            "jobId",
+            "modelId",
+            "pipelineId",
+            "errorMessage",
+            "createdTime",
+            "startTime",
+            "statusTime",
+        }
+    )
     _JOB_TYPE = ContextualizationJobType.ENTITY_MATCHING
 
     def __init__(
@@ -104,9 +96,7 @@ class ContextualizationJob(CogniteResource):
 
     def update_status(self) -> str:
         """Updates the model status and returns it"""
-        data = (
-            self._cognite_client.__getattribute__(self._JOB_TYPE.value)._get(f"{self._status_path}{self.job_id}").json()
-        )
+        data = getattr(self._cognite_client, self._JOB_TYPE.value)._get(f"{self._status_path}{self.job_id}").json()
         self.status = data["status"]
         self.status_time = data.get("statusTime")
         self.start_time = data.get("startTime")
@@ -117,18 +107,22 @@ class ContextualizationJob(CogniteResource):
         return self.status
 
     def wait_for_completion(self, timeout: int = None, interval: int = 1) -> None:
-        """Waits for job completion, raising ModelFailedException if fit failed - generally not needed to call as it is called by result.
+        """Waits for job completion. This is generally not needed to call directly, as `.result` will do so automatically.
+
         Args:
             timeout (int): Time out after this many seconds. (None means wait indefinitely)
             interval (int): Poll status every this many seconds.
+
+        Raises:
+            ModelFailedException: The model fit failed.
         """
         start = time.time()
         while timeout is None or time.time() < start + timeout:
             self.update_status()
-            if not JobStatus(self.status).is_not_finished():
+            if JobStatus(self.status).is_finished():
                 break
             time.sleep(interval)
-        if JobStatus(self.status) == JobStatus.FAILED:
+        if JobStatus(self.status) is JobStatus.FAILED:
             raise ModelFailedException(self.__class__.__name__, cast(int, self.job_id), cast(str, self.error_message))
 
     @property
@@ -140,7 +134,7 @@ class ContextualizationJob(CogniteResource):
         return self._result
 
     def __str__(self) -> str:
-        return f"{self.__class__.__name__}(id: {self.job_id},status: {self.status},error: {self.error_message})"
+        return f"{self.__class__.__name__}(id={self.job_id}, status={self.status}, error={self.error_message})"
 
     @classmethod
     def _load_with_status(
@@ -196,7 +190,7 @@ class EntityMatchingModel(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     def __str__(self) -> str:
-        return f"{self.__class__.__name__}(id: {self.id},status: {self.status},error: {self.error_message})"
+        return f"{self.__class__.__name__}(id={self.id}, status={self.status}, error={self.error_message})"
 
     def update_status(self) -> str:
         """Updates the model status and returns it"""
@@ -210,11 +204,14 @@ class EntityMatchingModel(CogniteResource):
         return self.status
 
     def wait_for_completion(self, timeout: int = None, interval: int = 1) -> None:
-        """Waits for model completion, raising ModelFailedException if fit failed - generally not needed to call as it is called by predict
+        """Waits for model completion. This is generally not needed to call directly, as `.result` will do so automatically.
 
         Args:
             timeout: Time out after this many seconds. (None means wait indefinitely)
             interval: Poll status every this many seconds.
+
+        Raises:
+            ModelFailedException: The model fit failed.
         """
         start = time.time()
         while timeout is None or time.time() < start + timeout:
@@ -222,7 +219,7 @@ class EntityMatchingModel(CogniteResource):
             if JobStatus(self.status) not in [JobStatus.QUEUED, JobStatus.RUNNING]:
                 break
             time.sleep(interval)
-        if JobStatus(self.status) == JobStatus.FAILED:
+        if JobStatus(self.status) is JobStatus.FAILED:
             assert self.id is not None
             assert self.error_message is not None
             raise ModelFailedException(self.__class__.__name__, self.id, self.error_message)
@@ -331,9 +328,9 @@ class FileReference:
         self.last_page = last_page
 
         if not exactly_one_is_not_none(file_id, file_external_id):
-            raise Exception("Exactly one of file_id and file_external_id must be set for a file reference")
+            raise ValueError("Exactly one of file_id and file_external_id must be set for a file reference")
         if exactly_one_is_not_none(first_page, last_page):
-            raise Exception("If the page range feature is used, both first page and last page must be set")
+            raise ValueError("If the page range feature is used, both first page and last page must be set")
 
     def to_api_item(self) -> Dict[str, Union[str, int, Dict[str, int]]]:
         if self.file_id is None and self.file_external_id is not None:
@@ -418,7 +415,7 @@ class DiagramConvertResults(ContextualizationJob):
     @property
     def items(self) -> Optional[List[DiagramConvertItem]]:
         """returns a list of all results by file"""
-        if self.status == "Completed":
+        if JobStatus(self.status) is JobStatus.COMPLETED:
             self._items = [
                 DiagramConvertItem._load(item, cognite_client=self._cognite_client) for item in self.result["items"]
             ]
@@ -482,8 +479,8 @@ class DiagramDetectResults(ContextualizationJob):
 
     @property
     def items(self) -> Optional[List[DiagramDetectItem]]:
-        """returns a list of all results by file"""
-        if self.status == "Completed":
+        """Returns a list of all results by file"""
+        if JobStatus(self.status) is JobStatus.COMPLETED:
             self._items = [
                 DiagramDetectItem._load(item, cognite_client=self._cognite_client) for item in self.result["items"]
             ]
@@ -495,7 +492,7 @@ class DiagramDetectResults(ContextualizationJob):
 
     @property
     def errors(self) -> List[str]:
-        """returns a list of all error messages across files"""
+        """Returns a list of all error messages across files"""
         return [item["errorMessage"] for item in self.result["items"] if "errorMessage" in item]
 
     def convert(self) -> DiagramConvertResults:
@@ -505,8 +502,6 @@ class DiagramDetectResults(ContextualizationJob):
 
 # Vision dataclasses
 FeatureClass = Union[Type[TextRegion], Type[AssetLink], Type[ObjectDetection]]
-ExternalId = str
-InternalId = int
 
 
 class VisionFeature(str, Enum):
@@ -519,7 +514,8 @@ class VisionFeature(str, Enum):
 
     @classmethod
     def beta_features(cls) -> Set[VisionFeature]:
-        return {VisionFeature.INDUSTRIAL_OBJECT_DETECTION, VisionFeature.PERSONAL_PROTECTIVE_EQUIPMENT_DETECTION}
+        """Returns a set of VisionFeature's that are currently in beta"""
+        return {cls.INDUSTRIAL_OBJECT_DETECTION, cls.PERSONAL_PROTECTIVE_EQUIPMENT_DETECTION}
 
 
 @dataclass
@@ -530,21 +526,13 @@ class VisionExtractPredictions(VisionResource):
     people_predictions: Optional[List[ObjectDetection]] = None
     personal_protective_equipment_predictions: Optional[List[ObjectDetection]] = None
 
-    @staticmethod
-    def _get_feature_class(type_hint: Type[Optional[List[FeatureClass]]]) -> FeatureClass:
-        # Unwrap the first level of type hints (i.e., the Optional[...])
-        # NOTE: outer type hint MUST be an Optional, since Optional[X] == Union[X, None]
-        list_type_hint, _ = get_args(type_hint)
-        # Unwrap the second level of type hint (i.e., the List[...])
-        (class_type,) = get_args(list_type_hint)
-        return class_type
 
-
-# Auto-generate the annotation-to-dataclass mapping based on the type hints of VisionExtractPredictions
-VISION_FEATURE_MAP: Dict[str, FeatureClass] = {
-    key: VisionExtractPredictions._get_feature_class(value)
-    for key, value in get_type_hints(VisionExtractPredictions).items()
-    if not key == "_cognite_client"
+VISION_FEATURE_MAP: Dict[str, Any] = {
+    "text_predictions": TextRegion,
+    "asset_tag_predictions": AssetLink,
+    "industrial_object_predictions": ObjectDetection,
+    "people_predictions": ObjectDetection,
+    "personal_protective_equipment_predictions": ObjectDetection,
 }
 
 
@@ -594,9 +582,9 @@ class DetectJobBundle:
     _WAIT_TIME = 2
 
     def __init__(self, job_ids: List[int], cognite_client: CogniteClient = None):
-        # Show warning
         warnings.warn(
-            "DetectJobBundle.result is calling a beta endpoint which is still in development. Breaking changes can happen in between patch versions."
+            "DetectJobBundle.result is calling a beta endpoint which is still in development. "
+            "Breaking changes can happen in between patch versions."
         )
 
         self._cognite_client = cast("CogniteClient", cognite_client)
@@ -610,17 +598,7 @@ class DetectJobBundle:
         self._result: List[Dict[str, Any]] = []
 
     def __str__(self) -> str:
-        return (
-            "DetectJobBundle( job_ids="
-            + str(self.job_ids)
-            + ", self.jobs="
-            + str(self.jobs)
-            + ", self._result="
-            + str(self._result)
-            + ", self._remaining_job_ids="
-            + str(self._remaining_job_ids)
-            + ")"
-        )
+        return f"DetectJobBundle({self.job_ids=}, {self.jobs=}, {self._result=}, {self._remaining_job_ids=})"
 
     def _back_off(self) -> None:
         """
@@ -633,6 +611,7 @@ class DetectJobBundle:
 
     def wait_for_completion(self, timeout: int = None) -> None:
         """Waits for all jobs to complete, generally not needed to call as it is called by result.
+
         Args:
             timeout (int): Time out after this many seconds. (None means wait indefinitely)
             interval (int): Poll status every this many seconds.
@@ -644,8 +623,6 @@ class DetectJobBundle:
                 res = self._cognite_client.diagrams._post(self._STATUS_PATH, json={"items": self._remaining_job_ids})
             except CogniteAPIError:
                 self._back_off()
-                if self._WAIT_TIME < 10:
-                    self._WAIT_TIME += 2
                 continue
             if res.json().get("error"):
                 break
@@ -661,7 +638,6 @@ class DetectJobBundle:
                 break
 
     def fetch_results(self) -> List[Dict[str, Any]]:
-        # Check status
         return [self._cognite_client.diagrams._get(f"{self._RESOURCE_PATH}{j}").json() for j in self.job_ids]
 
     @property
@@ -697,9 +673,7 @@ class VisionJob(ContextualizationJob):
     def update_status(self) -> str:
         # Override update_status since we need to handle the vision-specific
         # edge case where we also record failed items per batch
-        data = (
-            self._cognite_client.__getattribute__(self._JOB_TYPE.value)._get(f"{self._status_path}{self.job_id}").json()
-        )
+        data = getattr(self._cognite_client, self._JOB_TYPE.value)._get(f"{self._status_path}{self.job_id}").json()
         self.status = data["status"]
         self.status_time = data.get("statusTime")
         self.start_time = data.get("startTime")
@@ -775,7 +749,7 @@ class VisionExtractJob(VisionJob):
         super().__init__(*args, **kwargs)
         self._items: Optional[List[VisionExtractItem]] = None
 
-    def __getitem__(self, file_id: InternalId) -> VisionExtractItem:
+    def __getitem__(self, file_id: int) -> VisionExtractItem:
         """Retrieves the results for a file by id"""
         found = [item for item in self.result["items"] if item.get("fileId") == file_id]
         if not found:
@@ -785,7 +759,7 @@ class VisionExtractJob(VisionJob):
     @property
     def items(self) -> Optional[List[VisionExtractItem]]:
         """Returns a list of all predictions by file"""
-        if self.status == JobStatus.COMPLETED.value:
+        if JobStatus(self.status) is JobStatus.COMPLETED:
             self._items = [
                 VisionExtractItem._load(item, cognite_client=self._cognite_client) for item in self.result["items"]
             ]
@@ -842,7 +816,7 @@ class VisionExtractJob(VisionJob):
             Union[Annotation, AnnotationList]: (suggested) annotation(s) stored in CDF.
 
         """
-        if self.status == JobStatus.COMPLETED.value:
+        if JobStatus(self.status) is JobStatus.COMPLETED:
             annotations = self._predictions_to_annotations(
                 creating_user=creating_user, creating_app=creating_app, creating_app_version=creating_app_version
             )
