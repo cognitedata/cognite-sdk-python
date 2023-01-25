@@ -17,18 +17,22 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [5.3.4] - 21-01-24
+## [5.3.5] - 25-01-23
 ### Fixed
 - Displaying Cognite resources like an `Asset` or a `TimeSeriesList` in a Jupyter notebook or similar environments depending on `._repr_html_`, no longer raises `CogniteImportError` stating that `pandas` is required. Instead, a warning is issued and `.dump()` is used as fallback.
 
-## [5.3.3] - 20-01-24
+## [5.3.4] - 25-01-23
+### Fixed
+- Displaying Cognite resources like an `Asset` or a `TimeSeriesList` in a Jupyter notebook or similar environments depending on `._repr_html_`, no longer raises `CogniteImportError` stating that `pandas` is required. Instead, a warning is issued and `.dump()` is used as fallback.
+
+## [5.3.3] - 24-01-23
 ### Added
 - New parameter `token_cache_path` now accepted by `OAuthInteractive` and `OAuthDeviceCode` to allow overriding location of token cache.
 
 ### Fixed
 - Platform dependent temp directory for the caching of the token in `OAuthInteractive` and `OAuthDeviceCode` (no longer crashes at exit on Windows).
 
-## [5.3.2] - 20-01-24
+## [5.3.2] - 24-01-23
 ### Changed
 - Update pytest and other dependencies to get rid of dependency on the `py` package.
 

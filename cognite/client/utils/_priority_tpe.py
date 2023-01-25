@@ -30,7 +30,6 @@ SOFTWARE.
 """
 from __future__ import annotations
 
-import atexit
 import inspect
 import itertools
 import sys
@@ -54,8 +53,24 @@ def python_exit():
         thread.join()
 
 
-atexit.unregister(_python_exit)
-atexit.register(python_exit)
+if sys.version_info[:2] < (3, 9):
+    import atexit
+
+    atexit.unregister(_python_exit)
+    atexit.register(python_exit)
+else:
+    from threading import _register_atexit, _threading_atexits
+
+    # Starting in 3.9, ThreadPoolExecutor no longer uses daemon threads, but instead, an internal
+    # function hook very similar to atexit.register(), which gets called at 'threading' shutdown
+    # instead of interpreter shutdown. Check out https://github.com/python/cpython/issues/83993
+    for i, exit_fn in enumerate(_threading_atexits):
+        print(i, exit_fn, exit_fn.func, _python_exit)
+        if exit_fn.func is _python_exit:
+            # TODO: Does this have unwanted side effects? If not, why no threading._unregister_atexit?
+            _threading_atexits.pop(i)  # Note: Remove inplace
+            break
+    _register_atexit(python_exit)
 
 
 def _worker(executor_reference, work_queue):
