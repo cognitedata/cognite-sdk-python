@@ -65,7 +65,6 @@ else:
     # function hook very similar to atexit.register(), which gets called at 'threading' shutdown
     # instead of interpreter shutdown. Check out https://github.com/python/cpython/issues/83993
     for i, exit_fn in enumerate(_threading_atexits):
-        print(i, exit_fn, exit_fn.func, _python_exit)
         if exit_fn.func is _python_exit:
             # TODO: Does this have unwanted side effects? If not, why no threading._unregister_atexit?
             _threading_atexits.pop(i)  # Note: Remove inplace
