@@ -43,9 +43,6 @@ class Row(CogniteResource):
         pd = cast(Any, utils._auxiliary.local_import("pandas"))
         return pd.DataFrame([self.columns], [self.key])
 
-    def _repr_html_(self) -> str:
-        return self.to_pandas()._repr_html_()
-
 
 class RowList(CogniteResourceList):
     _RESOURCE = Row
@@ -58,9 +55,6 @@ class RowList(CogniteResourceList):
         """
         pd = cast(Any, utils._auxiliary.local_import("pandas"))
         return pd.DataFrame.from_dict(OrderedDict(((d.key, d.columns) for d in self.data)), orient="index")
-
-    def _repr_html_(self) -> str:
-        return self.to_pandas()._repr_html_()
 
 
 class Table(CogniteResource):

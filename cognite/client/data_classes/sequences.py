@@ -327,9 +327,6 @@ class SequenceData(CogniteResource):
     def __str__(self) -> str:
         return json.dumps(self.dump(), indent=4)
 
-    def _repr_html_(self) -> str:
-        return self.to_pandas()._repr_html_()
-
     def __len__(self) -> int:
         return len(self.row_numbers)
 
@@ -459,6 +456,3 @@ class SequenceDataList(CogniteResourceList):
         """
         pd = utils._auxiliary.local_import("pandas")
         return pd.concat([seq_data.to_pandas(column_names=column_names) for seq_data in self.data], axis=1)  # type: ignore
-
-    def _repr_html_(self) -> str:
-        return self.to_pandas()._repr_html_()
