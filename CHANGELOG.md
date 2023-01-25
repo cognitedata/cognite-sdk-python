@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [5.3.5] - 25-01-23
 ### Fixed
-- Displaying Cognite resources like an `Asset` or a `TimeSeriesList` in a Jupyter notebook or similar environments depending on `._repr_html_`, no longer raises `CogniteImportError` stating that `pandas` is required. Instead, a warning is issued and `.dump()` is used as fallback.
+- Fixed an atexit-exception (`TypeError: '<' not supported between instances of 'tuple' and 'NoneType'`) that could be raised on PY39+ after fetching datapoints (which uses a custom thread pool implementation).
 
 ## [5.3.4] - 25-01-23
 ### Fixed
