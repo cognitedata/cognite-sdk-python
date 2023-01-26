@@ -35,13 +35,11 @@ import itertools
 import sys
 import threading
 import weakref
+from concurrent.futures import Future
 from concurrent.futures.thread import ThreadPoolExecutor, _base, _WorkItem
 from queue import PriorityQueue
 
-NULL_ENTRY = (sys.maxsize, None, _WorkItem(None, None, (), {}))
-# Keep a separate weakref. dict (thread queue) from 'concurrent.futures.thread._thread_queue' in order
-# for vanilla ThreadPoolExecutor to work in tandem with PriorityThreadPoolExecutor - or more correctly,
-# get its threads cleaned up correctly.
+NULL_ENTRY = (-1, None, _WorkItem(None, None, (), {}))
 _THREADS_QUEUES = weakref.WeakKeyDictionary()
 _SHUTDOWN = False
 # Lock that ensures that new workers are not created while the interpreter is
@@ -60,10 +58,6 @@ def python_exit():
         thread.join()
 
 
-# We should register an at-exit-handler to clean up our threads gracefully at interpreter shutdown.
-# Reason being; before PY39, threads in TPE were daemon threads and this had some issues that can be
-# read about in the source code: github.com/python/cpython/blob/3.8/Lib/concurrent/futures/thread.py
-
 # Starting with 3.9, ThreadPoolExecutor no longer uses daemon threads, and so instead, an internal
 # function hook very similar to atexit.register() gets called at 'threading' shutdown instead of
 # interpreter shutdown. Check out https://github.com/python/cpython/issues/83993
@@ -79,7 +73,7 @@ def _worker(executor_reference, work_queue):
     try:
         while True:
             priority, _, work_item = work_queue.get(block=True)
-            if priority != sys.maxsize:
+            if priority != -1:
                 work_item.run()
                 del work_item
                 continue
@@ -93,7 +87,13 @@ def _worker(executor_reference, work_queue):
 
 
 class PriorityThreadPoolExecutor(ThreadPoolExecutor):
-    """Thread pool executor with queue.PriorityQueue()"""
+    """Thread pool executor with queue.PriorityQueue() as its work queue. Accepts a 'priority' parameter
+    thats controls the prioritisation of tasks: lower numbers being run before higher numbers, and
+    0 (zero) being the highest possible priority.
+
+    All tasks not given a priority will be given `priority=0` to work seamlessly as a stand-in for the
+    regular ThreadPoolExecutor.
+    """
 
     def __init__(self, max_workers=None):
         super().__init__(max_workers)
@@ -111,10 +111,10 @@ class PriorityThreadPoolExecutor(ThreadPoolExecutor):
             if _SHUTDOWN:
                 raise RuntimeError("Cannot schedule new futures after interpreter shutdown")
 
-            priority = kwargs.pop("priority", None)
-            assert isinstance(priority, int), "`priority` has to be an integer"
+            if (priority := kwargs.pop("priority", 0)) < 0:
+                raise ValueError("'priority' has to be a nonnegative number, 0 being the highest possible priority")
 
-            future = _base.Future()
+            future = Future()
             work_item = _WorkItem(future, fn, args, kwargs)
 
             # We use a counter to break ties, but keep order:
