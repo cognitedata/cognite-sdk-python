@@ -35,41 +35,44 @@ import itertools
 import sys
 import threading
 import weakref
-from concurrent.futures.thread import ThreadPoolExecutor, _base, _python_exit, _threads_queues, _WorkItem
+from concurrent.futures.thread import ThreadPoolExecutor, _base, _WorkItem
 from queue import PriorityQueue
-from threading import Lock
 
 NULL_ENTRY = (sys.maxsize, None, _WorkItem(None, None, (), {}))
+# Keep a separate weakref. dict (thread queue) from 'concurrent.futures.thread._thread_queue' in order
+# for vanilla ThreadPoolExecutor to work in tandem with PriorityThreadPoolExecutor - or more correctly,
+# get its threads cleaned up correctly.
+_THREADS_QUEUES = weakref.WeakKeyDictionary()
 _SHUTDOWN = False
+# Lock that ensures that new workers are not created while the interpreter is
+# shutting down. Must be held while mutating _THREADS_QUEUES and _SHUTDOWN.
+_GLOBAL_SHUTDOWN_LOCK = threading.Lock()
 
 
 def python_exit():
     global _SHUTDOWN
-    _SHUTDOWN = True
-    items = list(_threads_queues.items())
+    with _GLOBAL_SHUTDOWN_LOCK:
+        _SHUTDOWN = True
+    items = list(_THREADS_QUEUES.items())
     for thread, queue in items:
         queue.put(NULL_ENTRY)
     for thread, queue in items:
         thread.join()
 
 
+# We should register an at-exit-handler to clean up our threads gracefully at interpreter shutdown.
+# Reason being; before PY39, threads in TPE were daemon threads and this had some issues that can be
+# read about in the source code: github.com/python/cpython/blob/3.8/Lib/concurrent/futures/thread.py
+
+# Starting with 3.9, ThreadPoolExecutor no longer uses daemon threads, and so instead, an internal
+# function hook very similar to atexit.register() gets called at 'threading' shutdown instead of
+# interpreter shutdown. Check out https://github.com/python/cpython/issues/83993
 if sys.version_info[:2] < (3, 9):
-    import atexit
-
-    atexit.unregister(_python_exit)
-    atexit.register(python_exit)
+    from atexit import register as _register_atexit
 else:
-    from threading import _register_atexit, _threading_atexits
+    from threading import _register_atexit
 
-    # Starting in 3.9, ThreadPoolExecutor no longer uses daemon threads, but instead, an internal
-    # function hook very similar to atexit.register(), which gets called at 'threading' shutdown
-    # instead of interpreter shutdown. Check out https://github.com/python/cpython/issues/83993
-    for i, exit_fn in enumerate(_threading_atexits):
-        if exit_fn.func is _python_exit:
-            # TODO: Does this have unwanted side effects? If not, why no threading._unregister_atexit?
-            _threading_atexits.pop(i)  # Note: Remove inplace
-            break
-    _register_atexit(python_exit)
+_register_atexit(python_exit)
 
 
 def _worker(executor_reference, work_queue):
@@ -95,20 +98,18 @@ class PriorityThreadPoolExecutor(ThreadPoolExecutor):
     def __init__(self, max_workers=None):
         super().__init__(max_workers)
         self._work_queue = PriorityQueue()
-        self._lock = Lock()
-        self._counter = itertools.count()
-
-    def counter(self):
-        with self._lock:
-            return next(self._counter)
+        self._task_counter = itertools.count().__next__
 
     def submit(self, fn, *args, **kwargs):
         if "priority" in inspect.signature(fn).parameters:
             raise TypeError(f"Given function {fn} cannot accept reserved parameter name `priority`")
 
-        with self._shutdown_lock:
+        with self._shutdown_lock, _GLOBAL_SHUTDOWN_LOCK:
             if self._shutdown:
                 raise RuntimeError("Cannot schedule new futures after shutdown")
+
+            if _SHUTDOWN:
+                raise RuntimeError("Cannot schedule new futures after interpreter shutdown")
 
             priority = kwargs.pop("priority", None)
             assert isinstance(priority, int), "`priority` has to be an integer"
@@ -116,8 +117,8 @@ class PriorityThreadPoolExecutor(ThreadPoolExecutor):
             future = _base.Future()
             work_item = _WorkItem(future, fn, args, kwargs)
 
-            # `counter` to break ties, but keep order:
-            self._work_queue.put((priority, self.counter(), work_item))
+            # We use a counter to break ties, but keep order:
+            self._work_queue.put((priority, self._task_counter(), work_item))
             self._adjust_thread_count()
             return future
 
@@ -130,7 +131,7 @@ class PriorityThreadPoolExecutor(ThreadPoolExecutor):
             thread.daemon = True
             thread.start()
             self._threads.add(thread)
-            _threads_queues[thread] = self._work_queue
+            _THREADS_QUEUES[thread] = self._work_queue
 
     def shutdown(self, wait=True):
         with self._shutdown_lock:
@@ -142,4 +143,4 @@ class PriorityThreadPoolExecutor(ThreadPoolExecutor):
         else:
             # See: https://gist.github.com/clchiou/f2608cbe54403edb0b13
             self._threads.clear()
-            _threads_queues.clear()
+            _THREADS_QUEUES.clear()
