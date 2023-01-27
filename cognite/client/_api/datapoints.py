@@ -275,6 +275,8 @@ class EagerDpsFetcher(DpsFetchStrategy):
         except CancelledError:
             return None
         except CogniteAPIError as e:
+            # Break ref cycle with the exception:
+            future._exception = None  # type: ignore [attr-defined]
             if not (e.code == 400 and e.missing and ts_task.query.ignore_unknown_ids):
                 # TODO: We only notify the user one the first occurrence of a missing time series, and we
                 #       should probably change that (add note to exception or await all ts have been checked)
