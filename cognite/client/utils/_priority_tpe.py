@@ -1,5 +1,5 @@
 """
-This code has been modified from the original created by Oleg Lupats, 2019, under an MIT license:
+This code has been heavily modified from the original created by Oleg Lupats, 2019, under an MIT license:
 project = 'PriorityThreadPoolExecutor'
 url = 'https://github.com/oleglpts/PriorityThreadPoolExecutor'
 copyright = '2019, Oleg Lupats'
@@ -33,18 +33,18 @@ from __future__ import annotations
 import inspect
 import itertools
 import sys
-import threading
 import weakref
 from concurrent.futures import Future
 from concurrent.futures.thread import ThreadPoolExecutor, _base, _WorkItem
-from queue import PriorityQueue
+from queue import Empty, PriorityQueue
+from threading import Lock, Thread
 
-NULL_ENTRY = (-1, None, _WorkItem(None, None, (), {}))
+NULL_ENTRY = (-1, None, None)
 _THREADS_QUEUES = weakref.WeakKeyDictionary()
 _SHUTDOWN = False
 # Lock that ensures that new workers are not created while the interpreter is
 # shutting down. Must be held while mutating _THREADS_QUEUES and _SHUTDOWN.
-_GLOBAL_SHUTDOWN_LOCK = threading.Lock()
+_GLOBAL_SHUTDOWN_LOCK = Lock()
 
 
 def python_exit():
@@ -72,8 +72,8 @@ _register_atexit(python_exit)
 def _worker(executor_reference, work_queue):
     try:
         while True:
-            priority, _, work_item = work_queue.get(block=True)
-            if priority != -1:
+            work_item = work_queue.get(block=True)[-1]
+            if work_item is not None:
                 work_item.run()
                 del work_item
                 continue
@@ -127,7 +127,7 @@ class PriorityThreadPoolExecutor(ThreadPoolExecutor):
             queue.put(NULL_ENTRY)
 
         if len(self._threads) < self._max_workers:
-            thread = threading.Thread(target=_worker, args=(weakref.ref(self, weak_ref_cb), self._work_queue))
+            thread = Thread(target=_worker, args=(weakref.ref(self, weak_ref_cb), self._work_queue))
             thread.daemon = True
             thread.start()
             self._threads.add(thread)
@@ -136,11 +136,19 @@ class PriorityThreadPoolExecutor(ThreadPoolExecutor):
     def shutdown(self, wait=True):
         with self._shutdown_lock:
             self._shutdown = True
+
+            # Empty the entire work queue: (mod. from py39's added option 'cancel_futures')
+            while True:
+                try:
+                    work_item = self._work_queue.get_nowait()[-1]
+                except Empty:
+                    break
+                if work_item is not None:
+                    work_item.future.cancel()
+
+            # Send a wake-up to prevent threads calling _work_queue.get(block=True) from permanently blocking
             self._work_queue.put(NULL_ENTRY)
+
         if wait:
             for thread in self._threads:
                 thread.join()
-        else:
-            # See: https://gist.github.com/clchiou/f2608cbe54403edb0b13
-            self._threads.clear()
-            _THREADS_QUEUES.clear()
