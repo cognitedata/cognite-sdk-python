@@ -351,4 +351,4 @@ class TestRelationships:
             json = jsgz_load(call.request.body)
             assert "targetExternalIds" not in json["filter"]
             requested_sources.extend([s for s in json["filter"]["sourceExternalIds"]])
-        assert set([s for s in source_external_ids]) == set(requested_sources)
+        assert {s for s in source_external_ids} == set(requested_sources)

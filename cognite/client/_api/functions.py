@@ -187,7 +187,7 @@ class FunctionsAPI(APIClient):
             else:
                 break
         else:
-            raise IOError("Could not retrieve file from files API")
+            raise OSError("Could not retrieve file from files API")
 
         url = "/functions"
         function: Dict[str, Any] = {
@@ -634,7 +634,7 @@ def _validate_function_handle(function_handle: Callable[..., Any]) -> None:
     if not function_handle.__code__.co_name == "handle":
         raise TypeError("Function referenced by function_handle must be named handle.")
     if not set(function_handle.__code__.co_varnames[: function_handle.__code__.co_argcount]).issubset(
-        set(["data", "client", "secrets", "function_call_info"])
+        {"data", "client", "secrets", "function_call_info"}
     ):
         raise TypeError(
             "Arguments to function referenced by function_handle must be a subset of (data, client, secrets, function_call_info)"

@@ -211,7 +211,7 @@ def convert_true_match(true_match: Union[dict, list, Tuple[Union[int, str], Unio
 def find_duplicates(seq: Iterable[THashable]) -> Set[THashable]:
     seen: Set[THashable] = set()
     add = seen.add  # skip future attr lookups for perf
-    return set(x for x in seq if x in seen or add(x))
+    return {x for x in seq if x in seen or add(x)}
 
 
 def exactly_one_is_not_none(*args: Any) -> bool:
