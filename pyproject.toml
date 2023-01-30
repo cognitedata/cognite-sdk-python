@@ -33,7 +33,7 @@ sympy = ["sympy"]
 functions = ["pip"]
 all = ["pandas", "geopandas", "shapely", "sympy", "pip"]
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 docutils = "==0.15.2"
 sphinx = "^5.0.1"
 sphinx-rtd-theme = ">=1.0.0"
