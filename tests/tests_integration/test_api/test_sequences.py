@@ -54,7 +54,7 @@ class TestSequencesAPI:
                 [s.id for s in res] + [invalid_id], ignore_unknown_ids=ignore_unknown_ids
             )
             failed = False
-            assert set(s.id for s in retrieved_assets) == set(s.id for s in res)
+            assert {s.id for s in retrieved_assets} == {s.id for s in res}
         except CogniteNotFoundError:
             failed = True
 

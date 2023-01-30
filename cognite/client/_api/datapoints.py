@@ -949,7 +949,7 @@ class DatapointsAPI(APIClient):
         )
         fetcher = select_dps_fetch_strategy(self, user_query=query)
         if uniform_index:
-            grans_given = set(q.granularity for q in fetcher.all_queries)
+            grans_given = {q.granularity for q in fetcher.all_queries}
             is_limited = any(q.limit is not None for q in fetcher.all_queries)
             if fetcher.raw_queries or len(grans_given) > 1 or is_limited:
                 raise ValueError(

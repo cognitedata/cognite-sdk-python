@@ -128,7 +128,7 @@ class TestTransformationsAPI:
             tags=["vu", "hai"],
         )
         ts = cognite_client.transformations.create(transform)
-        assert set(["vu", "hai"]) == set(ts.tags)
+        assert {"vu", "hai"} == set(ts.tags)
         cognite_client.transformations.delete(id=ts.id)
 
     @pytest.mark.skip
@@ -307,7 +307,7 @@ class TestTransformationsAPI:
     def test_update_transformations_with_tags(self, cognite_client, new_transformation):
         new_transformation.tags = ["emel", "OPs"]
         updated_transformation = cognite_client.transformations.update(new_transformation)
-        assert set(["emel", "OPs"]) == set(updated_transformation.tags)
+        assert {"emel", "OPs"} == set(updated_transformation.tags)
 
     def test_update_transformations_with_tags_partial(self, cognite_client, new_transformation):
         partial_update = TransformationUpdate(id=new_transformation.id).tags.set(["jaime"])
@@ -315,12 +315,12 @@ class TestTransformationsAPI:
         assert partial_updated.tags == ["jaime"]
         partial_update2 = TransformationUpdate(id=new_transformation.id).tags.add(["andres", "silva"])
         partial_updated2 = cognite_client.transformations.update(partial_update2)
-        assert set(partial_updated2.tags) == set(["jaime", "andres", "silva"])
+        assert set(partial_updated2.tags) == {"jaime", "andres", "silva"}
         partial_update3 = (
             TransformationUpdate(id=new_transformation.id).tags.add(["tharindu"]).tags.remove(["andres", "silva"])
         )
         partial_updated3 = cognite_client.transformations.update(partial_update3)
-        assert set(partial_updated3.tags) == set(["jaime", "tharindu"])
+        assert set(partial_updated3.tags) == {"jaime", "tharindu"}
 
     def test_filter_transformations_by_tags(self, cognite_client, new_transformation, other_transformation):
         new_transformation.tags = ["hello"]
@@ -329,7 +329,7 @@ class TestTransformationsAPI:
         ts = cognite_client.transformations.list(tags=ContainsAny(["hello"]))
         assert ts[0].id == new_transformation.id and ts[0].tags == ["hello"]
         ts3 = cognite_client.transformations.list(tags=ContainsAny(["hello", "kiki"]))
-        assert len(ts3) == 2 and set([i.id for i in ts3]) == set([new_transformation.id, other_transformation.id])
+        assert len(ts3) == 2 and {i.id for i in ts3} == {new_transformation.id, other_transformation.id}
 
     def test_transformation_str_function(self, cognite_client, new_transformation, new_datasets):
         cognite_client.transformations.schedules.create(
