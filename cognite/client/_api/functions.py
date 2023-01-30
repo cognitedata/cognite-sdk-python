@@ -611,7 +611,7 @@ def validate_function_folder(root_path: str, function_path: str) -> None:
         function_path
     )  # This converts function_path to a Windows path if running on Windows
     if not function_path_full.is_file():
-        raise TypeError(f"No file found at location '{function_path}' in '{root_path}'.")
+        raise FileNotFoundError(f"No file found at location '{function_path}' in '{root_path}'.")
 
     sys.path.insert(0, root_path)
 
