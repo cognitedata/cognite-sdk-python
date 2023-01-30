@@ -169,10 +169,6 @@ def _is_geometry_type(property_type: str) -> bool:
     }
 
 
-def _is_reserved_property(property_name: str) -> bool:
-    return property_name.startswith("_") or property_name in RESERVED_PROPERTIES
-
-
 def _to_feature_property_name(property_name: str) -> str:
     return to_snake_case(property_name) if property_name in RESERVED_PROPERTIES else property_name
 

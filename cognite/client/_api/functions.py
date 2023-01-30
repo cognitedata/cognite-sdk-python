@@ -6,10 +6,10 @@ import re
 import sys
 import time
 from inspect import getdoc, getsource
-from numbers import Integral, Number
+from numbers import Number
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import IO, TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Union, cast
 from zipfile import ZipFile
 
 from cognite.client import utils
@@ -641,18 +641,6 @@ def _validate_function_handle(function_handle: Callable[..., Any]) -> None:
         )
 
 
-def _assert_at_most_one_of_function_id_and_function_external_id(
-    function_id: Optional[int], function_external_id: Optional[str]
-) -> None:
-    utils._auxiliary.assert_type(function_id, "function_id", [Integral], allow_none=True)
-    utils._auxiliary.assert_type(function_external_id, "function_external_id", [str], allow_none=True)
-    has_function_id = function_id is not None
-    has_function_external_id = function_external_id is not None
-    assert not (
-        has_function_id and has_function_external_id
-    ), "Only function_id or function_external_id allowed when listing schedules."
-
-
 def _extract_requirements_from_file(file_name: str) -> List[str]:
     """Extracts a list of library requirements from a file. Comments, lines starting with '#', are ignored.
 
@@ -717,10 +705,6 @@ def _validate_and_parse_requirements(requirements: List[str]) -> List[str]:
 
         parsed_reqs.append(str(parsed).strip())
     return parsed_reqs
-
-
-def _write_requirements_to_named_temp_file(file: IO, requirements: List[str]) -> None:
-    file.write("\n".join(requirements))
 
 
 def _get_fn_docstring_requirements(fn: Callable) -> List[str]:
