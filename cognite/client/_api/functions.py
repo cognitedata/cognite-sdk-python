@@ -6,10 +6,10 @@ import re
 import sys
 import time
 from inspect import getdoc, getsource
-from numbers import Integral, Number
+from numbers import Number
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import IO, TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Union, cast
 from zipfile import ZipFile
 
 from cognite.client import utils
