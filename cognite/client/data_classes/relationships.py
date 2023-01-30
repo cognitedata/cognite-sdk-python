@@ -45,6 +45,8 @@ class Relationship(CogniteResource):
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
+    _RESOURCE_TYPES = frozenset({"asset", "timeseries", "file", "event", "sequence"})
+
     def __init__(
         self,
         external_id: str = None,
@@ -85,10 +87,8 @@ class Relationship(CogniteResource):
         self._validate_resource_type(rel.target_type)
         return rel
 
-    @staticmethod
-    def _validate_resource_type(resource_type: Optional[str]) -> None:
-        _RESOURCE_TYPES = {"asset", "timeseries", "file", "event", "sequence"}
-        if resource_type is None or resource_type.lower() not in _RESOURCE_TYPES:
+    def _validate_resource_type(self, resource_type: Optional[str]) -> None:
+        if resource_type is None or resource_type.lower() not in self._RESOURCE_TYPES:
             raise TypeError(f"Invalid source or target '{resource_type}' in relationship")
 
     @classmethod

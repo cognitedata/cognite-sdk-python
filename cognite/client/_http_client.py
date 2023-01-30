@@ -155,13 +155,13 @@ class HTTPClient:
 
     @classmethod
     def _any_exception_in_context_isinstance(
-        cls, exc: BaseException, T: Union[Tuple[Type[BaseException], ...], Type[BaseException]]
+        cls, exc: BaseException, exc_types: Union[Tuple[Type[BaseException], ...], Type[BaseException]]
     ) -> bool:
         """requests does not use the "raise ... from ..." syntax, so we need to access the underlying exceptions using
         the __context__ attribute.
         """
-        if isinstance(exc, T):
+        if isinstance(exc, exc_types):
             return True
         if exc.__context__ is None:
             return False
-        return cls._any_exception_in_context_isinstance(exc.__context__, T)
+        return cls._any_exception_in_context_isinstance(exc.__context__, exc_types)

@@ -108,17 +108,19 @@ def timestamp_to_ms(timestamp: Union[int, float, str, datetime]) -> int:
     return ms
 
 
+TIME_ATTRIBUTES = {
+    "start_time",
+    "end_time",
+    "last_updated_time",
+    "created_time",
+    "timestamp",
+    "scheduled_execution_time",
+    "source_created_time",
+    "source_modified_time",
+}
+
+
 def _convert_time_attributes_in_dict(item: Dict) -> Dict:
-    TIME_ATTRIBUTES = {
-        "start_time",
-        "end_time",
-        "last_updated_time",
-        "created_time",
-        "timestamp",
-        "scheduled_execution_time",
-        "source_created_time",
-        "source_modified_time",
-    }
     new_item = {}
     for k, v in item.items():
         if k in TIME_ATTRIBUTES:
