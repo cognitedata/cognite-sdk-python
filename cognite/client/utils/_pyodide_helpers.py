@@ -1,3 +1,16 @@
+"""
+TODO: Remove
+
+How do we want the default / example notebook to be for a brand new user?
+
+>>> # Current thinking to allow passing e.g. client_name, headers or timeout
+>>> from cognite.client import CogniteClient, FusionNotebookConfig
+>>>
+>>> client = CogniteClient(FusionNotebookConfig())
+>>> client.assets.list(limit=10)
+"""
+
+
 import os
 import sys
 from typing import Dict, Optional, Tuple
@@ -44,10 +57,10 @@ class FusionNotebookConfig(ClientConfig):
         debug: bool = False,
     ) -> None:
         # Magic 🪄:
-        client_name = (client_name or "DSHubLite",)
-        project = (os.environ["COGNITE_PROJECT"],)
+        client_name = client_name or "DSHubLite"
+        project = os.environ["COGNITE_PROJECT"]
         credentials = EnvVarToken()  # Even more magic 🧙
-        base_url = (os.environ["COGNITE_BASE_URL"],)
+        base_url = os.environ["COGNITE_BASE_URL"]
         max_workers = 1
         super().__init__(
             client_name,
@@ -61,14 +74,3 @@ class FusionNotebookConfig(ClientConfig):
             file_transfer_timeout,
             debug,
         )
-
-
-"""
-TODO: Remove
-
-Example Notebook:
->>> from cognite.client import CogniteClient, FusionNotebookConfig
->>>
->>> client = CogniteClient(FusionNotebookConfig())
->>> client.assets.list(limit=10)
-"""
