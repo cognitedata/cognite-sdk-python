@@ -291,7 +291,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         self.__oauth = OAuth2Session(client=BackendApplicationClient(client_id=self.__client_id))
         self._validate_token_custom_args()
 
-    def _validate_token_custom_args(self):
+    def _validate_token_custom_args(self) -> None:
         # We make sure that whatever is passed as part of 'token_custom_args' can't set or override any of the
         # named parameters that 'fetch_token' accepts:
         reserved = set(inspect.signature(self.__oauth.fetch_token).parameters) - {"kwargs"}
