@@ -46,7 +46,6 @@ from cognite.client.data_classes.iam import (
     APIKeyList,
     ClientCredentials,
     CreatedSession,
-    CreatedSessionList,
     Group,
     GroupList,
     SecurityCategory,

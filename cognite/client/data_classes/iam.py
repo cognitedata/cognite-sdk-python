@@ -207,11 +207,6 @@ class CreatedSession(CogniteResource):
         self.client_id = client_id
 
 
-class CreatedSessionList(CogniteResourceList):
-    _RESOURCE = CreatedSession
-    _ASSERT_CLASSES = False
-
-
 class Session(CogniteResource):
     """Session status
 
@@ -244,7 +239,6 @@ class Session(CogniteResource):
 
 class SessionList(CogniteResourceList):
     _RESOURCE = Session
-    _ASSERT_CLASSES = False
 
 
 class ClientCredentials(CogniteResource):
