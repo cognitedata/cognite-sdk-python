@@ -7,6 +7,7 @@ from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Relationship, RelationshipFilter, RelationshipList, RelationshipUpdate
 from cognite.client.data_classes.labels import LabelFilter
+from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._identifier import IdentifierSequence
 
 
@@ -277,7 +278,7 @@ class RelationshipsAPI(APIClient):
             len(target_external_id_list) > self._LIST_SUBQUERY_LIMIT
             or len(source_external_id_list) > self._LIST_SUBQUERY_LIMIT
         ):
-            if limit not in [-1, None, float("inf")]:
+            if not is_unlimited(limit):
                 raise ValueError(
                     f"Querying more than {self._LIST_SUBQUERY_LIMIT} source_external_ids/target_external_ids only "
                     f"supported for queries without limit (pass -1 / None / inf instead of {limit})"

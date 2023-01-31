@@ -32,6 +32,7 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.functions import FunctionCallsFilter, FunctionsStatus
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._identifier import IdentifierSequence, SingletonIdentifierSequence
 
 if TYPE_CHECKING:
@@ -272,7 +273,7 @@ class FunctionsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> functions_list = c.functions.list()
         """
-        if limit in [float("inf"), -1, None]:
+        if is_unlimited(limit):
             limit = LIST_LIMIT_CEILING
 
         filter = FunctionFilter(
@@ -979,7 +980,7 @@ class FunctionSchedulesAPI(APIClient):
             except ValueError:
                 raise AssertionError("Only function_id or function_external_id allowed when listing schedules.")
 
-        if limit in [float("inf"), -1, None]:
+        if is_unlimited(limit):
             limit = LIST_LIMIT_CEILING
 
         filter = FunctionSchedulesFilter(

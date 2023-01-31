@@ -38,6 +38,7 @@ from cognite.client.data_classes.datapoints import NUMPY_IS_AVAILABLE, Datapoint
 from cognite.client.utils._auxiliary import (
     convert_all_keys_to_snake_case,
     import_legacy_protobuf,
+    is_unlimited,
     to_camel_case,
     to_snake_case,
 )
@@ -324,7 +325,7 @@ class _SingleTSQueryValidator:
         return converted
 
     def _verify_limit(self, limit: Optional[int]) -> Optional[int]:
-        if limit in {None, -1, math.inf}:
+        if is_unlimited(limit):
             return None
         elif isinstance(limit, numbers.Integral) and limit >= 0:  # limit=0 is accepted by the API
             try:

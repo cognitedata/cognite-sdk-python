@@ -9,6 +9,7 @@ from __future__ import annotations
 import functools
 import heapq
 import importlib
+import math
 import numbers
 import platform
 import random
@@ -26,6 +27,10 @@ from cognite.client.utils._version_checker import get_newest_version_in_major_re
 
 T = TypeVar("T")
 THashable = TypeVar("THashable", bound=Hashable)
+
+
+def is_unlimited(limit: Any) -> bool:
+    return limit in {None, -1, math.inf}
 
 
 @functools.lru_cache(maxsize=128)
