@@ -29,7 +29,7 @@ T = TypeVar("T")
 THashable = TypeVar("THashable", bound=Hashable)
 
 
-def is_unlimited(limit: Any) -> bool:
+def is_unlimited(limit: Optional[Union[float, int]]) -> bool:
     return limit in {None, -1, math.inf}
 
 
