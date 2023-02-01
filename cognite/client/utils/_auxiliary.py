@@ -18,7 +18,21 @@ import string
 import warnings
 from decimal import Decimal
 from types import ModuleType
-from typing import Any, Dict, Hashable, Iterable, Iterator, List, Sequence, Set, Tuple, TypeVar, Union, overload
+from typing import (
+    Any,
+    Dict,
+    Hashable,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    TypeVar,
+    Union,
+    overload,
+)
 from urllib.parse import quote
 
 import cognite.client
