@@ -12,7 +12,6 @@ from cognite.client.data_classes import (
     APIKeyList,
     ClientCredentials,
     CreatedSession,
-    CreatedSessionList,
     Group,
     GroupList,
     SecurityCategory,
@@ -396,19 +395,19 @@ class SessionsAPI(APIClient):
         """`Create a session. <https://docs.cognite.com/api/v1/#operation/createSessions>`_
 
         Args:
-            client_credentials (Optional[ClientCredentials]): client credentials to create the session, set to None to create session with token exchange.
+            client_credentials (Optional[ClientCredentials]): The client credentials to create the session. If set to None,
+                a session will be created using the credentials used to instantiate -this- CogniteClient object. If that
+                was done using a token, a session will be created using token exchange. Similarly, if the credentials were
+                client credentials, a session will be created using client credentials.
 
         Returns:
             CreatedSession: The object with token inspection details.
         """
-        if client_credentials is None and isinstance(self._config.credentials, OAuthClientCredentials):
-            client_credentials = ClientCredentials(
-                self._config.credentials.client_id, self._config.credentials.client_secret
-            )
+        if client_credentials is None and isinstance((creds := self._config.credentials), OAuthClientCredentials):
+            client_credentials = ClientCredentials(creds.client_id, creds.client_secret)
 
-        json = {"items": [client_credentials.dump(True) if client_credentials else {"tokenExchange": True}]}
-
-        return CreatedSessionList._load(self._post(self._RESOURCE_PATH, json).json()["items"])[0]
+        items = {"tokenExchange": True} if client_credentials is None else client_credentials.dump(camel_case=True)
+        return CreatedSession._load(self._post(self._RESOURCE_PATH, {"items": [items]}).json()["items"][0])
 
     def revoke(self, id: Union[int, Sequence[int]]) -> SessionList:
         """`Revoke access to a session. Revocation of a session may in some cases take up to 1 hour to take effect. <https://docs.cognite.com/api/v1/#operation/revokeSessions>`_
@@ -417,13 +416,12 @@ class SessionsAPI(APIClient):
             id (Union[int, Sequence[int]): Id or list of session ids
 
         Returns:
-            List of revoked sessions. If the user does not have the sessionsAcl:LIST  capability,
-            then only the session IDs will be present in the response.
+            List of revoked sessions. If the user does not have the sessionsAcl:LIST capability, then only the session IDs will be present in the response.
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=None)
         items = {"items": identifiers.as_dicts()}
 
-        return SessionList._load(self._post(self._RESOURCE_PATH + "/revoke", items).json()["items"])
+        return self._LIST_CLASS._load(self._post(self._RESOURCE_PATH + "/revoke", items).json()["items"])
 
     def list(self, status: Optional[str] = None) -> SessionList:
         """`List all sessions in the current project. <https://docs.cognite.com/api/v1/#operation/listSessions>`_
@@ -435,4 +433,4 @@ class SessionsAPI(APIClient):
             SessionList: a list of sessions in the current project.
         """
         filter = {"status": status} if status else None
-        return self._list(list_cls=SessionList, resource_cls=Session, method="GET", filter=filter)
+        return self._list(list_cls=self._LIST_CLASS, resource_cls=Session, method="GET", filter=filter)

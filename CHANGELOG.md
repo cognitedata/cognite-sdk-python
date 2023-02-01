@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [5.3.7] - 31-01-23
+### Improved
+- Issues with the SessionsAPI documentation have been addressed, and the `.create()` have been further clarified.
+
 ## [5.3.6] - 30-01-23
 ### Changed
 - A file-not-found error has been changed from `TypeError` to `FileNotFoundError` as part of the validation in FunctionsAPI.
