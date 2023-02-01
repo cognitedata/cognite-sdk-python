@@ -538,6 +538,14 @@ class TestAssetPoster:
         assert {a.external_id for a in e.value.failed} == {"02", "021", "0211", "031"}
         assert {a.external_id for a in e.value.successful} == {"0", "01"}
 
+    def test_post_with_all_failures_and_more_requests_than_workers(self, cognite_client, mock_post_assets_failures):
+        num_assets = cognite_client.config.max_workers * 10
+        assets = [Asset(name="400", external_id=str(i)) for i in range(num_assets)]
+        with pytest.raises(CogniteAPIError) as e:
+            cognite_client.assets.create_hierarchy(assets)
+
+        assert {a.external_id for a in e.value.failed} == {str(i) for i in range(num_assets)}
+
 
 @pytest.fixture
 def mock_assets_empty(rsps, cognite_client):
