@@ -17,7 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [5.3.7] - 31-01-23
+## [5.4.0] - 02-02-23
+### Added
+- Support for aggregating metadata keys/values for assets
+
+## [5.3.7] - 01-02-23
 ### Improved
 - Issues with the SessionsAPI documentation have been addressed, and the `.create()` have been further clarified.
 

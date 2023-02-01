@@ -17,6 +17,7 @@ from cognite.client.data_classes import (
     LabelFilter,
     TimestampRange,
 )
+from cognite.client.data_classes.shared import AggregateBucketResult
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._identifier import IdentifierSequence
 
@@ -319,6 +320,47 @@ class AssetsAPI(APIClient):
                 >>> aggregate_by_prefix = c.assets.aggregate(filter={"external_id_prefix": "prefix"})
         """
         return self._aggregate(filter=filter, cls=AssetAggregate)
+
+    def aggregate_metadata_keys(self, filter: Union[AssetFilter, Dict] = None) -> Sequence[AggregateBucketResult]:
+        """`Aggregate assets <https://docs.cognite.com/api/v1/#operation/aggregateAssets>`_
+
+        Args:
+            filter (Union[AssetFilter, Dict]): Filter on assets filter with exact match
+
+        Returns:
+            Sequence[AggregateBucketResult]: List of asset aggregates
+
+        Examples:
+
+            Aggregate assets:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> aggregate_by_prefix = c.assets.aggregate_metadata_keys(filter={"external_id_prefix": "prefix"})
+        """
+        return self._aggregate(filter=filter, aggregate="metadataKeys", cls=AggregateBucketResult)
+
+    def aggregate_metadata_values(
+        self, keys: Sequence[str], filter: Union[AssetFilter, Dict] = None
+    ) -> Sequence[AggregateBucketResult]:
+        """`Aggregate assets <https://docs.cognite.com/api/v1/#operation/aggregateAssets>`_
+
+        Args:
+            filter (Union[AssetFilter, Dict]): Filter on assets filter with exact match
+            keys (Sequence[str]): Metadata key(s) to apply the aggregation on. Currently supports exactly one key per request.
+
+        Returns:
+            Sequence[AggregateBucketResult]: List of asset aggregates
+
+        Examples:
+
+            Aggregate assets:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> aggregate_by_prefix = c.assets.aggregate_metadata_values(keys=["someKey"], filter={"external_id_prefix": "prefix"})
+        """
+        return self._aggregate(filter=filter, aggregate="metadataValues", keys=keys, cls=AggregateBucketResult)
 
     @overload
     def create(self, asset: Sequence[Asset]) -> AssetList:

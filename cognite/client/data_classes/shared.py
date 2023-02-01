@@ -34,8 +34,6 @@ class AggregateResult(dict):
         self.count = count
         self.update(kwargs)
 
-    count = CognitePropertyClassUtil.declare_property("count")
-
 
 class AggregateUniqueValuesResult(AggregateResult):
     """Aggregation group
@@ -46,10 +44,21 @@ class AggregateUniqueValuesResult(AggregateResult):
     """
 
     def __init__(self, count: int = None, value: Union[int, str] = None, **kwargs: Any):
-        super().__init__(count, **kwargs)
+        super().__init__(count, value=value, **kwargs)
         self.value = value
 
-    value = CognitePropertyClassUtil.declare_property("value")
+
+class AggregateBucketResult(AggregateResult):
+    """Aggregation group
+
+    Args:
+        count (int): Size of the aggregation group
+        value (Union(int, str)): A unique value for the bucket
+    """
+
+    def __init__(self, count: int = None, value: Union[int, str] = None, **kwargs: Any):
+        super().__init__(count, value=value, **kwargs)
+        self.value = value
 
 
 class Geometry(dict):
