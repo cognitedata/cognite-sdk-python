@@ -288,7 +288,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         self.__client_secret = client_secret
         self.__scopes = scopes
         self.__token_custom_args: Dict[str, Any] = token_custom_args
-        self.__oauth = OAuth2Session(client=BackendApplicationClient(client_id=self.__client_id))
+        self.__oauth = OAuth2Session(client=BackendApplicationClient(client_id=self.__client_id, scope=self.__scopes))
         self._validate_token_custom_args()
 
     def _validate_token_custom_args(self) -> None:
@@ -329,8 +329,6 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
                 token_url=self.__token_url,
                 verify=not global_config.disable_ssl,
                 client_secret=self.__client_secret,
-                client_id=self.__client_id,
-                scope=self.__scopes,
                 **self.__token_custom_args,
             )
             return token_result["access_token"], token_result["expires_at"]
