@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import atexit
+import inspect
 import tempfile
 import threading
 from abc import abstractmethod
@@ -287,7 +288,18 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         self.__client_secret = client_secret
         self.__scopes = scopes
         self.__token_custom_args: Dict[str, Any] = token_custom_args
-        self.__oauth = OAuth2Session(client=BackendApplicationClient(client_id=self.__client_id))
+        self.__oauth = OAuth2Session(client=BackendApplicationClient(client_id=self.__client_id, scope=self.__scopes))
+        self._validate_token_custom_args()
+
+    def _validate_token_custom_args(self) -> None:
+        # We make sure that whatever is passed as part of 'token_custom_args' can't set or override any of the
+        # named parameters that 'fetch_token' accepts:
+        reserved = set(inspect.signature(self.__oauth.fetch_token).parameters) - {"kwargs"}
+        if bad_args := reserved.intersection(self.__token_custom_args):
+            raise TypeError(
+                f"The following reserved token custom arg(s) were passed: {sorted(bad_args)}. The full list of "
+                f"reserved custom args is: {sorted(reserved)}."
+            )
 
     @property
     def token_url(self) -> str:
@@ -313,27 +325,10 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         from cognite.client.config import global_config
 
         try:
-            # We need to explicitly pass all the arguments to fetch_token (even if they are the same as the defaults).
-            # This will ensure that whatever is passed in token_custom_args can't set/override those args.
             token_result = self.__oauth.fetch_token(
                 token_url=self.__token_url,
-                code=None,
-                authorization_response=None,
-                body="",
-                auth=None,
-                username=None,
-                password=None,
-                method="POST",
-                force_querystring=False,
-                timeout=None,
-                headers=None,
                 verify=not global_config.disable_ssl,
-                proxies=None,
-                include_client_id=None,
                 client_secret=self.__client_secret,
-                cert=None,
-                client_id=self.__client_id,
-                scope=self.__scopes,
                 **self.__token_custom_args,
             )
             return token_result["access_token"], token_result["expires_at"]
