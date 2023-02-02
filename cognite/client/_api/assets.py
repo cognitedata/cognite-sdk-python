@@ -662,16 +662,16 @@ class _AssetPosterWorker(threading.Thread):
 
     def run(self) -> None:
         request: Sequence[Asset] = []
-        try:
-            while not self.stop:
+        while not self.stop:
+            try:
                 try:
                     request = cast(Sequence[Asset], self.request_queue.get(timeout=0.1))
                 except queue.Empty:
                     continue
                 assets = cast(AssetList, self.client.create(request))
                 self.response_queue.put(assets)
-        except Exception as e:
-            self.response_queue.put(_AssetsFailedToPost(e, request))
+            except Exception as e:
+                self.response_queue.put(_AssetsFailedToPost(e, request))
 
 
 class _AssetPoster:
@@ -700,15 +700,16 @@ class _AssetPoster:
         self.not_posted_assets: Set[Asset] = set()
         self.exception: Optional[Exception] = None
 
-        self.assets_remaining = (
-            lambda: len(self.posted_assets) + len(self.may_have_been_posted_assets) + len(self.not_posted_assets)
-            < self.num_of_assets
-        )
-
         self.request_queue: queue.Queue[Sequence[Asset]] = queue.Queue()
         self.response_queue: queue.Queue[Union[AssetList, _AssetsFailedToPost]] = queue.Queue()
 
         self._initialize()
+
+    def assets_remaining(self) -> bool:
+        return (
+            len(self.posted_assets) + len(self.may_have_been_posted_assets) + len(self.not_posted_assets)
+            < self.num_of_assets
+        )
 
     @staticmethod
     def _validate_asset_hierarchy(assets: Sequence[Asset]) -> None:
