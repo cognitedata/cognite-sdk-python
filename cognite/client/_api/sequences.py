@@ -572,9 +572,7 @@ class SequencesDataAPI(APIClient):
 
         row_objs = [{"rows": all_rows[i : i + rows_per_request]} for i in range(0, len(all_rows), rows_per_request)]
         tasks = [({**base_obj, **rows},) for rows in row_objs]  # type: ignore
-        summary = utils._concurrency.execute_tasks_concurrently(
-            self._insert_data, tasks, max_workers=self._config.max_workers
-        )
+        summary = utils._concurrency.execute_tasks(self._insert_data, tasks, max_workers=self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks()
 
     def insert_dataframe(self, dataframe: pandas.DataFrame, id: int = None, external_id: str = None) -> None:
@@ -704,7 +702,7 @@ class SequencesDataAPI(APIClient):
                 id=post_obj.get("id"), external_id=post_obj.get("externalId"), rows=seqdata, columns=columns
             )
 
-        tasks_summary = utils._concurrency.execute_tasks_concurrently(
+        tasks_summary = utils._concurrency.execute_tasks(
             _fetch_sequence, [(x,) for x in post_objs], max_workers=self._config.max_workers
         )
         if tasks_summary.exceptions:

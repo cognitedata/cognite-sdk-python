@@ -609,7 +609,7 @@ class FilesAPI(APIClient):
                         file_metadata = copy.copy(file_metadata)
                         file_metadata.name = file_name
                         tasks.append((file_metadata, file_path, overwrite))
-            tasks_summary = utils._concurrency.execute_tasks_concurrently(
+            tasks_summary = utils._concurrency.execute_tasks(
                 self._upload_file_from_path, tasks, self._config.max_workers
             )
             tasks_summary.raise_compound_exception_if_failed_tasks(task_unwrap_fn=lambda x: x[0].name)
@@ -727,9 +727,7 @@ class FilesAPI(APIClient):
             dict(url_path="/files/downloadlink", json={"items": id_batch}, params=query_params)
             for id_batch in id_batches
         ]
-        tasks_summary = utils._concurrency.execute_tasks_concurrently(
-            self._post, tasks, max_workers=self._config.max_workers
-        )
+        tasks_summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
         tasks_summary.raise_compound_exception_if_failed_tasks()
         results = tasks_summary.joined_results(unwrap_fn=lambda res: res.json()["items"])
         return {result.get("id") or result["externalId"]: result["downloadUrl"] for result in results}
@@ -789,7 +787,7 @@ class FilesAPI(APIClient):
         id_to_metadata: Dict[Union[str, int], FileMetadata],
     ) -> None:
         tasks = [(directory, id, id_to_metadata) for id in all_ids]
-        tasks_summary = utils._concurrency.execute_tasks_concurrently(
+        tasks_summary = utils._concurrency.execute_tasks(
             self._process_file_download, tasks, max_workers=self._config.max_workers
         )
         tasks_summary.raise_compound_exception_if_failed_tasks(

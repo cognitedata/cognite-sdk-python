@@ -1,11 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
 
-from cognite.client.utils._concurrency import (
-    ConcurrencySettings,
-    MainThreadExecutor,
-    execute_tasks_concurrently,
-    get_executor,
-)
+from cognite.client.utils._concurrency import ConcurrencySettings, MainThreadExecutor, execute_tasks, get_executor
 
 
 class TestExecutor:
@@ -25,5 +20,5 @@ class TestExecutor:
         def foo(i: int) -> int:
             return i
 
-        task_summary = execute_tasks_concurrently(foo, [(i,) for i in range(10)], 10, executor=MainThreadExecutor())
+        task_summary = execute_tasks(foo, [(i,) for i in range(10)], 10, executor=MainThreadExecutor())
         assert task_summary.results == [i for i in range(10)]

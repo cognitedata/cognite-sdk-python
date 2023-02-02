@@ -170,7 +170,7 @@ def get_executor(max_workers: int) -> TaskExecutor:
     return executor
 
 
-def execute_tasks_concurrently(
+def execute_tasks(
     func: Callable[..., T_Result],
     tasks: Union[Sequence[Tuple], List[Dict]],
     max_workers: int,

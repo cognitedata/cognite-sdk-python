@@ -294,7 +294,7 @@ class RelationshipsAPI(APIClient):
                         task_filter["sourceExternalIds"] = source_external_id_list[si : si + self._LIST_SUBQUERY_LIMIT]
                     tasks.append((task_filter,))
 
-            tasks_summary = utils._concurrency.execute_tasks_concurrently(
+            tasks_summary = utils._concurrency.execute_tasks(
                 lambda filter: self._list(
                     list_cls=RelationshipList,
                     resource_cls=Relationship,
