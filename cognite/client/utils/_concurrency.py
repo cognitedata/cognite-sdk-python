@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import atexit
 from collections import UserList
 from concurrent.futures.thread import ThreadPoolExecutor
 from typing import Any, Callable, Dict, List, Literal, Optional, Protocol, Sequence, Tuple, TypeVar, Union
@@ -146,18 +145,6 @@ class MainThreadExecutor(_Executor):
 
 _THREAD_POOL_EXECUTOR_SINGLETON: ThreadPoolExecutor
 _MAIN_THREAD_EXECUTOR_SINGLETON = MainThreadExecutor()
-
-
-def _shutdown_thread_pool_executor() -> None:
-    try:
-        tpe = _THREAD_POOL_EXECUTOR_SINGLETON
-        tpe.shutdown(wait=False)
-    except NameError:
-        # TPE has not been initialized
-        pass
-
-
-atexit.register(_shutdown_thread_pool_executor)
 
 
 class ConcurrencySettings:
