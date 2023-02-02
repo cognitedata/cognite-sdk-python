@@ -31,8 +31,8 @@ class AggregateResult(dict):
     """
 
     def __init__(self, count: int = None, **kwargs: Any):
+        super().__init__(count=count, **kwargs)
         self.count = count
-        self.update(kwargs)
 
 
 class AggregateUniqueValuesResult(AggregateResult):
@@ -44,7 +44,7 @@ class AggregateUniqueValuesResult(AggregateResult):
     """
 
     def __init__(self, count: int = None, value: Union[int, str] = None, **kwargs: Any):
-        super().__init__(count, value=value, **kwargs)
+        super().__init__(count=count, value=value, **kwargs)
         self.value = value
 
 
@@ -52,12 +52,12 @@ class AggregateBucketResult(AggregateResult):
     """Aggregation group
 
     Args:
-        count (int): Size of the aggregation group
+        count (int): Size of the bucket
         value (Union(int, str)): A unique value for the bucket
     """
 
     def __init__(self, count: int = None, value: Union[int, str] = None, **kwargs: Any):
-        super().__init__(count, value=value, **kwargs)
+        super().__init__(count=count, value=value, **kwargs)
         self.value = value
 
 
