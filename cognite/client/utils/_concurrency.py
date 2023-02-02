@@ -160,27 +160,26 @@ def _shutdown_thread_pool_executor() -> None:
 atexit.register(_shutdown_thread_pool_executor)
 
 
-class Settings:
+class ConcurrencySettings:
     executor_type: Literal["threadpool", "mainthread"] = "threadpool"
 
 
 def get_executor(max_workers: int) -> Executor:
     global _THREAD_POOL_EXECUTOR_SINGLETON
-    global _MAIN_THREAD_EXECUTOR_SINGLETON
 
     if max_workers < 1:
         raise RuntimeError(f"Number of workers should be >= 1, was {max_workers}")
 
-    if Settings.executor_type == "threadpool":
+    if ConcurrencySettings.executor_type == "threadpool":
         try:
             executor: Executor = _THREAD_POOL_EXECUTOR_SINGLETON
         except NameError:
             # TPE has not been initialized
             executor = _THREAD_POOL_EXECUTOR_SINGLETON = ThreadPoolExecutor(max_workers)
-    elif Settings.executor_type == "mainthread":
+    elif ConcurrencySettings.executor_type == "mainthread":
         executor = _MAIN_THREAD_EXECUTOR_SINGLETON
     else:
-        raise RuntimeError(f"Invalid executor type '{Settings.executor_type}'")
+        raise RuntimeError(f"Invalid executor type '{ConcurrencySettings.executor_type}'")
     return executor
 
 

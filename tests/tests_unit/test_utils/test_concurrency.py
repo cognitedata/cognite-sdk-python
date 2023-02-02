@@ -1,6 +1,11 @@
 from concurrent.futures import ThreadPoolExecutor
 
-from cognite.client.utils._concurrency import MainThreadExecutor, Settings, execute_tasks_concurrently, get_executor
+from cognite.client.utils._concurrency import (
+    ConcurrencySettings,
+    MainThreadExecutor,
+    execute_tasks_concurrently,
+    get_executor,
+)
 
 
 class TestExecutor:
@@ -8,11 +13,11 @@ class TestExecutor:
         executor = get_executor(1)
         assert isinstance(executor, ThreadPoolExecutor)
 
-        Settings.executor_type = "mainthread"
+        ConcurrencySettings.executor_type = "mainthread"
         executor = get_executor(1)
         assert isinstance(executor, MainThreadExecutor)
 
-        Settings.executor_type = "threadpool"
+        ConcurrencySettings.executor_type = "threadpool"
         executor = get_executor(1)
         assert isinstance(executor, ThreadPoolExecutor)
 
@@ -20,7 +25,7 @@ class TestExecutor:
         def foo(i: int) -> int:
             return i
 
-        Settings.executor_type = "mainthread"
+        ConcurrencySettings.executor_type = "mainthread"
         task_summary = execute_tasks_concurrently(foo, [(i,) for i in range(10)], 10)
 
         assert task_summary.results == [i for i in range(10)]
