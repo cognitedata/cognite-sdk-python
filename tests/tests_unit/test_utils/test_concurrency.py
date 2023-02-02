@@ -25,7 +25,5 @@ class TestExecutor:
         def foo(i: int) -> int:
             return i
 
-        ConcurrencySettings.executor_type = "mainthread"
-        task_summary = execute_tasks_concurrently(foo, [(i,) for i in range(10)], 10)
-
+        task_summary = execute_tasks_concurrently(foo, [(i,) for i in range(10)], 10, executor=MainThreadExecutor())
         assert task_summary.results == [i for i in range(10)]

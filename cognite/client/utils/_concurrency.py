@@ -171,9 +171,16 @@ def get_executor(max_workers: int) -> TaskExecutor:
 
 
 def execute_tasks_concurrently(
-    func: Callable[..., T_Result], tasks: Union[Sequence[Tuple], List[Dict]], max_workers: int
+    func: Callable[..., T_Result],
+    tasks: Union[Sequence[Tuple], List[Dict]],
+    max_workers: int,
+    executor: Optional[TaskExecutor] = None,
 ) -> TasksSummary:
-    executor = get_executor(max_workers)
+    """
+    Will use a default executor if one is not passed explicitly. The default executor type uses a thread pool but can
+    be changed using ExecutorSettings.executor_type.
+    """
+    executor = executor or get_executor(max_workers)
     futures = []
     for task in tasks:
         if isinstance(task, dict):
