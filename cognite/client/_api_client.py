@@ -43,6 +43,7 @@ from cognite.client.data_classes._base import (
     T_CogniteResourceList,
 )
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
+from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._identifier import Identifier, IdentifierSequence, SingletonIdentifierSequence
 
 if TYPE_CHECKING:
@@ -349,7 +350,7 @@ class APIClient:
         headers: Optional[Dict[str, Any]] = None,
         initial_cursor: Optional[str] = None,
     ) -> Union[Iterator[T_CogniteResourceList], Iterator[T_CogniteResource]]:
-        if limit == -1 or limit == float("inf"):
+        if is_unlimited(limit):
             limit = None
         resource_path = resource_path or self._RESOURCE_PATH
 
@@ -471,7 +472,7 @@ class APIClient:
         initial_cursor: Optional[str] = None,
     ) -> T_CogniteResourceList:
         if partitions:
-            if limit not in [None, -1, float("inf")]:
+            if not is_unlimited(limit):
                 raise ValueError("When using partitions, limit should be `None`, `-1` or `inf`.")
             if sort is not None:
                 raise ValueError("When using sort, partitions is not supported.")

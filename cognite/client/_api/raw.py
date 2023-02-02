@@ -6,7 +6,7 @@ from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.config import ClientConfig
 from cognite.client.data_classes import Database, DatabaseList, Row, RowList, Table, TableList
-from cognite.client.utils._auxiliary import local_import
+from cognite.client.utils._auxiliary import is_unlimited, local_import
 from cognite.client.utils._identifier import Identifier
 
 if TYPE_CHECKING:
@@ -535,7 +535,7 @@ class RawRowsAPI(APIClient):
                 >>> for row_list in c.raw.rows(db_name="db1", table_name="t1", chunk_size=2500):
                 ...     row_list # do something with the rows
         """
-        if limit in {None, -1, float("inf")}:
+        if is_unlimited(limit):
             cursors = self._get(
                 url_path=utils._auxiliary.interpolate_and_url_encode(
                     "/raw/dbs/{}/tables/{}/cursors", db_name, table_name

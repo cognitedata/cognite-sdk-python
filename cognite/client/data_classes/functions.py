@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Union, cast
 from cognite.client._constants import LIST_LIMIT_CEILING, LIST_LIMIT_DEFAULT
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList, CogniteResponse
 from cognite.client.data_classes.shared import TimestampRange
+from cognite.client.utils._auxiliary import is_unlimited
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -134,7 +135,7 @@ class Function(CogniteResource):
         )
         schedules_by_id = self._cognite_client.functions.schedules.list(function_id=self.id, limit=limit)
 
-        if limit in [float("inf"), -1, None]:
+        if is_unlimited(limit):
             limit = LIST_LIMIT_CEILING
 
         return (schedules_by_external_id + schedules_by_id)[:limit]
