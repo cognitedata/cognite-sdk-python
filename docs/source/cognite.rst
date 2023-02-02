@@ -293,6 +293,14 @@ Aggregate assets
 ^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.aggregate
 
+Aggregate asset metadata keys
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.assets.AssetsAPI.aggregate_metadata_keys
+
+Aggregate asset metadata values
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.assets.AssetsAPI.aggregate_metadata_values
+
 Search for assets
 ^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.search

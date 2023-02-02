@@ -560,6 +560,7 @@ class APIClient:
         filter: Optional[Union[CogniteFilter, Dict]] = None,
         aggregate: Optional[str] = None,
         fields: Optional[Sequence[str]] = None,
+        keys: Optional[Sequence[str]] = None,
         headers: Optional[Dict] = None,
     ) -> List[T]:
         utils._auxiliary.assert_type(filter, "filter", [dict, CogniteFilter], allow_none=True)
@@ -576,6 +577,8 @@ class APIClient:
             body["aggregate"] = aggregate
         if fields is not None:
             body["fields"] = fields
+        if keys is not None:
+            body["keys"] = keys
         res = self._post(url_path=resource_path + "/aggregate", json=body, headers=headers)
         return [cls(**agg) for agg in res.json()["items"]]
 
