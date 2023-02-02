@@ -322,7 +322,7 @@ class TestAssetPosterWorker:
         w = _AssetPosterWorker(request_queue=q_req, response_queue=q_res, client=cognite_client.assets)
         w.start()
         q_req.put([Asset()])
-        time.sleep(0.1)
+        time.sleep(1)
         w.stop = True
         assert [Asset._load(mock_assets_response.calls[0].response.json()["items"][0])] == q_res.get()
         assert 1 == len(mock_assets_response.calls)
