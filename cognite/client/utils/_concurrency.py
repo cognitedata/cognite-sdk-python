@@ -135,9 +135,9 @@ class SyncFuture(Future):
 
 class MainThreadExecutor(Executor):
     """
-    In order to support executing sdk methods in in the browser using pyodide (a port of CPython to webassembly),
+    In order to support executing sdk methods in the browser using pyodide (a port of CPython to webassembly),
     we need to be able to turn off the usage of threading. So we have this executor which implements the Executor
-    protocol which uses can use both but just executes everything serially in the main thread.
+    protocol but just executes everything serially in the main thread.
     """
 
     def submit(self, fn: Callable, *args: Any, **kwargs: Any) -> SyncFuture:
