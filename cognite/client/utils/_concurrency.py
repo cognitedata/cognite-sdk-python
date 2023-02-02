@@ -112,17 +112,17 @@ def collect_exc_info_and_raise(
 T_Result = TypeVar("T_Result", covariant=True)
 
 
-class _Executor(Protocol):
-    def submit(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any) -> _Future[T_Result]:
+class TaskExecutor(Protocol):
+    def submit(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any) -> TaskFuture[T_Result]:
         ...
 
 
-class _Future(Protocol[T_Result]):
+class TaskFuture(Protocol[T_Result]):
     def result(self) -> T_Result:
         ...
 
 
-class SyncFuture(_Future):
+class SyncFuture(TaskFuture):
     def __init__(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any):
         self.__fn = fn
         self.__args = args
@@ -132,7 +132,7 @@ class SyncFuture(_Future):
         return self.__fn(*self.__args, **self.__kwargs)
 
 
-class MainThreadExecutor(_Executor):
+class MainThreadExecutor(TaskExecutor):
     """
     In order to support executing sdk methods in the browser using pyodide (a port of CPython to webassembly),
     we need to be able to turn off the usage of threading. So we have this executor which implements the Executor
@@ -151,7 +151,7 @@ class ConcurrencySettings:
     executor_type: Literal["threadpool", "mainthread"] = "threadpool"
 
 
-def get_executor(max_workers: int) -> _Executor:
+def get_executor(max_workers: int) -> TaskExecutor:
     global _THREAD_POOL_EXECUTOR_SINGLETON
 
     if max_workers < 1:
@@ -159,7 +159,7 @@ def get_executor(max_workers: int) -> _Executor:
 
     if ConcurrencySettings.executor_type == "threadpool":
         try:
-            executor: _Executor = _THREAD_POOL_EXECUTOR_SINGLETON
+            executor: TaskExecutor = _THREAD_POOL_EXECUTOR_SINGLETON
         except NameError:
             # TPE has not been initialized
             executor = _THREAD_POOL_EXECUTOR_SINGLETON = ThreadPoolExecutor(max_workers)
