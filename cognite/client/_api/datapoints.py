@@ -63,7 +63,7 @@ from cognite.client.utils._auxiliary import (
     split_into_chunks,
     split_into_n_parts,
 )
-from cognite.client.utils._concurrency import collect_exc_info_and_raise, execute_tasks_concurrently
+from cognite.client.utils._concurrency import collect_exc_info_and_raise, execute_tasks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._priority_tpe import PriorityThreadPoolExecutor
 from cognite.client.utils._time import timestamp_to_ms
@@ -1368,9 +1368,7 @@ class DatapointsPoster:
         tasks = []
         for dps_object_list in dps_object_lists:
             tasks.append((dps_object_list,))
-        summary = execute_tasks_concurrently(
-            self._insert_datapoints, tasks, max_workers=self.client._config.max_workers
-        )
+        summary = execute_tasks(self._insert_datapoints, tasks, max_workers=self.client._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda x: x[0],
             task_list_element_unwrap_fn=lambda x: {k: x[k] for k in ["id", "externalId"] if k in x},
@@ -1466,9 +1464,7 @@ class RetrieveLatestDpsFetcher:
             }
             for chunk in split_into_chunks(self._all_identifiers, RETRIEVE_LATEST_LIMIT)
         ]
-        tasks_summary = execute_tasks_concurrently(
-            self.dps_client._post, tasks, max_workers=self.dps_client._config.max_workers
-        )
+        tasks_summary = execute_tasks(self.dps_client._post, tasks, max_workers=self.dps_client._config.max_workers)
         if tasks_summary.exceptions:
             raise tasks_summary.exceptions[0]
         return tasks_summary.joined_results(lambda res: res.json()["items"])

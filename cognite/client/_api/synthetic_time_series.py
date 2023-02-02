@@ -83,7 +83,7 @@ class SyntheticDatapointsAPI(APIClient):
 
             tasks.append((query, query_datapoints, limit))
 
-        datapoints_summary = utils._concurrency.execute_tasks_concurrently(
+        datapoints_summary = utils._concurrency.execute_tasks(
             self._fetch_datapoints, tasks, max_workers=self._config.max_workers
         )
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import UserList
 from concurrent.futures.thread import ThreadPoolExecutor
-from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Protocol, Sequence, Tuple, TypeVar, Union
 
 from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, CogniteNotFoundError
 
@@ -109,38 +109,103 @@ def collect_exc_info_and_raise(
         ) from dup_exc
 
 
-def execute_tasks_concurrently(
-    func: Callable, tasks: Union[Sequence[Tuple], List[Dict]], max_workers: int
-) -> TasksSummary:
+T_Result = TypeVar("T_Result", covariant=True)
+
+
+class TaskExecutor(Protocol):
+    def submit(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any) -> TaskFuture[T_Result]:
+        ...
+
+
+class TaskFuture(Protocol[T_Result]):
+    def result(self) -> T_Result:
+        ...
+
+
+class SyncFuture(TaskFuture):
+    def __init__(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any):
+        self.__fn = fn
+        self.__args = args
+        self.__kwargs = kwargs
+
+    def result(self) -> T_Result:
+        return self.__fn(*self.__args, **self.__kwargs)
+
+
+class MainThreadExecutor(TaskExecutor):
+    """
+    In order to support executing sdk methods in the browser using pyodide (a port of CPython to webassembly),
+    we need to be able to turn off the usage of threading. So we have this executor which implements the Executor
+    protocol but just executes everything serially in the main thread.
+    """
+
+    def submit(self, fn: Callable, *args: Any, **kwargs: Any) -> SyncFuture:
+        return SyncFuture(fn, *args, **kwargs)
+
+
+_THREAD_POOL_EXECUTOR_SINGLETON: ThreadPoolExecutor
+_MAIN_THREAD_EXECUTOR_SINGLETON = MainThreadExecutor()
+
+
+class ConcurrencySettings:
+    executor_type: Literal["threadpool", "mainthread"] = "threadpool"
+
+
+def get_executor(max_workers: int) -> TaskExecutor:
+    global _THREAD_POOL_EXECUTOR_SINGLETON
+
     if max_workers < 1:
         raise RuntimeError(f"Number of workers should be >= 1, was {max_workers}")
 
-    with ThreadPoolExecutor(max_workers) as p:
-        futures = []
-        for task in tasks:
-            if isinstance(task, dict):
-                futures.append(p.submit(func, **task))
-            elif isinstance(task, tuple):
-                futures.append(p.submit(func, *task))
+    if ConcurrencySettings.executor_type == "threadpool":
+        try:
+            executor: TaskExecutor = _THREAD_POOL_EXECUTOR_SINGLETON
+        except NameError:
+            # TPE has not been initialized
+            executor = _THREAD_POOL_EXECUTOR_SINGLETON = ThreadPoolExecutor(max_workers)
+    elif ConcurrencySettings.executor_type == "mainthread":
+        executor = _MAIN_THREAD_EXECUTOR_SINGLETON
+    else:
+        raise RuntimeError(f"Invalid executor type '{ConcurrencySettings.executor_type}'")
+    return executor
 
-        successful_tasks = []
-        failed_tasks = []
-        unknown_result_tasks = []
-        results = []
-        exceptions = []
-        for i, f in enumerate(futures):
-            try:
-                res = f.result()
-                successful_tasks.append(tasks[i])
-                results.append(res)
-            except Exception as e:
-                exceptions.append(e)
-                if isinstance(e, CogniteAPIError):
-                    if e.code < 500:
-                        failed_tasks.append(tasks[i])
-                    else:
-                        unknown_result_tasks.append(tasks[i])
-                else:
+
+def execute_tasks(
+    func: Callable[..., T_Result],
+    tasks: Union[Sequence[Tuple], List[Dict]],
+    max_workers: int,
+    executor: Optional[TaskExecutor] = None,
+) -> TasksSummary:
+    """
+    Will use a default executor if one is not passed explicitly. The default executor type uses a thread pool but can
+    be changed using ExecutorSettings.executor_type.
+    """
+    executor = executor or get_executor(max_workers)
+    futures = []
+    for task in tasks:
+        if isinstance(task, dict):
+            futures.append(executor.submit(func, **task))
+        elif isinstance(task, tuple):
+            futures.append(executor.submit(func, *task))
+
+    successful_tasks = []
+    failed_tasks = []
+    unknown_result_tasks = []
+    results = []
+    exceptions = []
+    for i, f in enumerate(futures):
+        try:
+            res = f.result()
+            successful_tasks.append(tasks[i])
+            results.append(res)
+        except Exception as e:
+            exceptions.append(e)
+            if isinstance(e, CogniteAPIError):
+                if e.code < 500:
                     failed_tasks.append(tasks[i])
+                else:
+                    unknown_result_tasks.append(tasks[i])
+            else:
+                failed_tasks.append(tasks[i])
 
-        return TasksSummary(successful_tasks, unknown_result_tasks, failed_tasks, results, exceptions)
+    return TasksSummary(successful_tasks, unknown_result_tasks, failed_tasks, results, exceptions)

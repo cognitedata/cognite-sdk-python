@@ -316,9 +316,7 @@ class APIClient:
             }
             for id_chunk in identifiers.chunked(self._RETRIEVE_LIMIT)
         ]
-        tasks_summary = utils._concurrency.execute_tasks_concurrently(
-            self._post, tasks, max_workers=self._config.max_workers
-        )
+        tasks_summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
 
         if tasks_summary.exceptions:
             try:
@@ -444,7 +442,7 @@ class APIClient:
             return res.json()["items"]
 
         while len(next_cursors) > 0:
-            tasks_summary = utils._concurrency.execute_tasks_concurrently(
+            tasks_summary = utils._concurrency.execute_tasks(
                 get_partition, [(partition,) for partition in next_cursors], max_workers=partitions
             )
             if tasks_summary.exceptions:
@@ -548,7 +546,7 @@ class APIClient:
             return retrieved_items
 
         tasks = [(f"{i + 1}/{partitions}",) for i in range(partitions)]
-        tasks_summary = utils._concurrency.execute_tasks_concurrently(get_partition, tasks, max_workers=partitions)
+        tasks_summary = utils._concurrency.execute_tasks(get_partition, tasks, max_workers=partitions)
         if tasks_summary.exceptions:
             raise tasks_summary.exceptions[0]
         return list_cls._load(tasks_summary.joined_results(), cognite_client=self._cognite_client)
@@ -640,7 +638,7 @@ class APIClient:
             items_split.append({"items": items_chunk, **(extra_body_fields or {})})
 
         tasks = [(resource_path, task_items, params, headers) for task_items in items_split]
-        summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._config.max_workers)
+        summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
 
         def unwrap_element(el: T) -> Union[CogniteResource, T]:
             if isinstance(el, dict):
@@ -689,7 +687,7 @@ class APIClient:
             }
             for chunk in identifiers.chunked(self._DELETE_LIMIT)
         ]
-        summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._config.max_workers)
+        summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"],
             task_list_element_unwrap_fn=utils._auxiliary.unwrap_identifer,
@@ -756,9 +754,7 @@ class APIClient:
             for chunk in patch_object_chunks
         ]
 
-        tasks_summary = utils._concurrency.execute_tasks_concurrently(
-            self._post, tasks, max_workers=self._config.max_workers
-        )
+        tasks_summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
         tasks_summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"],
             task_list_element_unwrap_fn=lambda el: utils._auxiliary.unwrap_identifer(el),
