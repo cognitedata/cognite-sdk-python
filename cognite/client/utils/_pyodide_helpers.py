@@ -10,7 +10,6 @@ How do we want the default / example notebook to be for a brand new user?
 >>> client.assets.list(limit=10)
 """
 
-
 import os
 import sys
 from typing import Dict, Optional, Tuple
@@ -18,10 +17,12 @@ from typing import Dict, Optional, Tuple
 from cognite.client.config import ClientConfig, global_config
 from cognite.client.credentials import CredentialProvider
 
-global_config.disable_gzip = True
+
+def patch_sdk_for_pyodide() -> None:
+    global_config.disable_gzip = True
 
 
-def running_in_browser():
+def running_in_browser() -> bool:
     return sys.platform == "emscripten" and "pyodide" in sys.modules
 
 

@@ -674,6 +674,13 @@ class _AssetPosterWorker(threading.Thread):
 
 class _AssetPoster:
     def __init__(self, assets: Sequence[Asset], client: AssetsAPI):
+        from cognite.client.utils._pyodide_helpers import running_in_browser
+
+        if running_in_browser():
+            raise NotImplementedError(
+                "AssetsAPI.create_hierarchy is not pyodide/web-browser compatible yet! Stay tuned!"
+            )
+
         self._validate_asset_hierarchy(assets)
         self.remaining_external_ids: OrderedDict[str, Optional[str]] = OrderedDict()
         self.remaining_external_ids_set = set()
