@@ -4,8 +4,8 @@ import atexit
 import inspect
 import tempfile
 import threading
+import time
 from abc import abstractmethod
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple, Union
 
@@ -83,10 +83,20 @@ class _OAuthCredentialProviderWithTokenRefresh(CredentialProvider):
     @classmethod
     def __should_refresh_token(cls, token: Optional[str], expires_at: Optional[float]) -> bool:
         no_token = token is None
-        token_is_expired = (
-            expires_at is None or datetime.now().timestamp() > expires_at - cls.__TOKEN_EXPIRY_LEEWAY_SECONDS
-        )
+        token_is_expired = expires_at is None or time.time() > expires_at - cls.__TOKEN_EXPIRY_LEEWAY_SECONDS
         return no_token or token_is_expired
+
+    @staticmethod
+    def _verify_credentials(credentials: Dict[str, Any]) -> None:
+        """The msal library doesnt raise anything when auth fails, but returns a dictionary with varying keys"""
+        if "access_token" in credentials and "expires_in" in credentials:
+            return
+
+        # 'error_description' includes Windows-style newlines \r\n meant to print nicely. Prettify for exception:
+        err_descr = " ".join(credentials.get("error_description", "").splitlines())
+        raise CogniteAuthError(
+            f"Error generating access token! Error: {credentials['error']}, error description: {err_descr}"
+        )
 
     def authorization_header(self) -> Tuple[str, str]:
         # We lock here to ensure we don't issue a herd of refresh requests in concurrent scenarios.
@@ -128,7 +138,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
 
     Examples:
 
-            >>> from cognite.client.credentials import OAuthInteractive
+            >>> from cognite.client.credentials import OAuthDeviceCode
             >>> oauth_provider = OAuthDeviceCode(
             ...     authority_url="https://login.microsoftonline.com/xyz",
             ...     client_id="abcd",
@@ -175,11 +185,12 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         # If not, we acquire a new token interactively
         if credentials is None:
             device_flow = self.__app.initiate_device_flow(scopes=self.__scopes)
-            # print device code to screen
+            # print device code user instructions to screen
             print(f"Device code: {device_flow['message']}")
             credentials = self.__app.acquire_token_by_device_flow(flow=device_flow)
 
-        return credentials["access_token"], datetime.now().timestamp() + credentials["expires_in"]
+        self._verify_credentials(credentials)
+        return credentials["access_token"], time.time() + credentials["expires_in"]
 
 
 class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerializableTokenCache):
@@ -247,7 +258,8 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         if credentials is None:
             credentials = self.__app.acquire_token_interactive(scopes=self.__scopes, port=self.__redirect_port)
 
-        return credentials["access_token"], datetime.now().timestamp() + credentials["expires_in"]
+        self._verify_credentials(credentials)
+        return credentials["access_token"], time.time() + credentials["expires_in"]
 
 
 class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
