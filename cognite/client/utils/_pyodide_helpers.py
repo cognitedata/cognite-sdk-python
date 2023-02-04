@@ -1,21 +1,15 @@
-"""
-TODO: Remove
-
-How do we want the default / example notebook to be for a brand new user?
-
->>> # Current thinking to allow passing e.g. client_name, headers or timeout
->>> from cognite.client import CogniteClient, FusionNotebookConfig
->>>
->>> client = CogniteClient(FusionNotebookConfig())
->>> client.assets.list(limit=10)
-"""
-
+import contextlib
+import json
 import os
 import sys
-from typing import Dict, Optional, Tuple
+from base64 import urlsafe_b64decode
+from pathlib import Path
+from typing import Any, Dict, Optional
+
+from msal import PublicClientApplication
 
 from cognite.client.config import ClientConfig, global_config
-from cognite.client.credentials import CredentialProvider
+from cognite.client.credentials import CredentialProvider, OAuthInteractive
 
 
 def patch_sdk_for_pyodide() -> None:
@@ -26,31 +20,42 @@ def running_in_browser() -> bool:
     return sys.platform == "emscripten" and "pyodide" in sys.modules
 
 
-class EnvVarToken(CredentialProvider):
-    """Credential provider that always reads token from an environment variable just-in-time,
-    allowing refreshing the value by another entity.
+def _load_payload_from_jwt(token: str) -> Dict[str, Any]:
+    """A JWT has the structure: `<header>.<payload>.<signature>`. This method returns payload as a dict"""
+    _, payload, _ = token.split(".")
+    if remainder := len(input_bytes := payload.encode()) % 4:
+        input_bytes += b"=" * (4 - remainder)
+    return json.loads(urlsafe_b64decode(input_bytes))
 
-    Args:
-        key (str | None): The name of the env.var. to read from. Default: 'COGNITE_TOKEN'
 
-    Raises:
-        KeyError: If the env.var. is not set.
-    """
+class OAuthInteractiveFusionNotebook(OAuthInteractive):
+    def __init__(self, redirect_port: int = 53000) -> None:
+        token = os.environ["COGNITE_TOKEN"]
+        payload = _load_payload_from_jwt(token)
+        client_id = payload["appid"]
+        authority_url = f"https://login.microsoftonline.com/{payload['tid']}"
 
-    def __init__(self, key: str = None) -> None:
-        self.key = "COGNITE_TOKEN" if key is None else key
+        # Note: Death to name mangling:
+        self._OAuthCredentialProviderWithTokenRefresh__access_token = token
+        self._OAuthCredentialProviderWithTokenRefresh__token_refresh_lock = contextlib.nullcontext()
+        self._OAuthCredentialProviderWithTokenRefresh__access_token_expires_at = payload["exp"]
 
-    def __token_factory(self) -> str:
-        return os.environ[self.key]
+        self._OAuthInteractive__authority_url = authority_url
+        self._OAuthInteractive__client_id = client_id
+        self._OAuthInteractive__scopes = [f"{payload['aud']}/.default"]
+        self._OAuthInteractive__redirect_port = redirect_port
+        self._OAuthInteractive__app = PublicClientApplication(client_id=client_id, authority=authority_url)
 
-    def authorization_header(self) -> Tuple[str, str]:
-        return "Authorization", f"Bearer {self.__token_factory()}"
+    @staticmethod
+    def _create_serializable_token_cache(cache_path: Path) -> None:
+        return None
 
 
 class FusionNotebookConfig(ClientConfig):
     def __init__(
         self,
-        client_name: str,
+        client_name: str = "DSHubLite",
+        credentials: CredentialProvider = None,
         api_subversion: Optional[str] = None,
         headers: Optional[Dict[str, str]] = None,
         timeout: Optional[int] = None,
@@ -58,10 +63,9 @@ class FusionNotebookConfig(ClientConfig):
         debug: bool = False,
     ) -> None:
         # Magic 🪄:
-        client_name = client_name or "DSHubLite"
         project = os.environ["COGNITE_PROJECT"]
-        credentials = EnvVarToken()  # Even more magic 🧙
-        base_url = os.environ["COGNITE_BASE_URL"]
+        credentials = credentials or OAuthInteractiveFusionNotebook()  # Even more magic 🧙
+        base_url = _load_payload_from_jwt(os.environ["COGNITE_TOKEN"])["aud"]
         max_workers = 1
         super().__init__(
             client_name,
