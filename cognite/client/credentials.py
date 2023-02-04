@@ -153,6 +153,8 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         scopes: List[str],
         token_cache_path: Path = None,
     ) -> None:
+        from cognite.client.config import global_config
+
         super().__init__()
         self.__authority_url = authority_url
         self.__client_id = client_id
@@ -162,7 +164,10 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         token_cache_path = token_cache_path or Path(tempfile.gettempdir()) / f"cognitetokencache.{self.__client_id}.bin"
         serializable_token_cache = self._create_serializable_token_cache(token_cache_path)
         self.__app = PublicClientApplication(
-            client_id=self.__client_id, authority=self.__authority_url, token_cache=serializable_token_cache
+            client_id=self.__client_id,
+            authority=self.__authority_url,
+            token_cache=serializable_token_cache,
+            verify=not global_config.disable_ssl,
         )
 
     @property
@@ -224,6 +229,8 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         redirect_port: int = 53000,
         token_cache_path: Path = None,
     ) -> None:
+        from cognite.client.config import global_config
+
         super().__init__()
         self.__authority_url = authority_url
         self.__client_id = client_id
@@ -234,7 +241,10 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         token_cache_path = token_cache_path or Path(tempfile.gettempdir()) / f"cognitetokencache.{self.__client_id}.bin"
         serializable_token_cache = self._create_serializable_token_cache(token_cache_path)
         self.__app = PublicClientApplication(
-            client_id=self.__client_id, authority=self.__authority_url, token_cache=serializable_token_cache
+            client_id=self.__client_id,
+            authority=self.__authority_url,
+            token_cache=serializable_token_cache,
+            verify=not global_config.disable_ssl,
         )
 
     @property
