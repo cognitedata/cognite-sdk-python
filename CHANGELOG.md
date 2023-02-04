@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [5.4.3] - 05-02-23
+### Fixed
+- `OAuthDeviceCode` and `OAuthInteractive` now respect `global_config.disable_ssl` setting.
+
 ## [5.4.2] - 03-02-23
 ### Changed
 - Improved error handling (propagate IDP error message) for `OAuthDeviceCode` and `OAuthInteractive` upon authentication failure.
@@ -53,8 +57,8 @@ Changes are grouped as follows
 - Platform dependent temp directory for the caching of the token in `OAuthInteractive` and `OAuthDeviceCode` (no longer crashes at exit on Windows).
 
 ## [5.3.2] - 24-01-23
-### Changed
-- Update pytest and other dependencies to get rid of dependency on the `py` package.
+### Security
+- Update `pytest` and other dependencies to get rid of dependency on the `py` package (CVE-2022-42969).
 
 ## [5.3.1] - 20-01-23
 ### Fixed
