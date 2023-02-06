@@ -45,6 +45,15 @@ def patch_sdk_for_pyodide() -> None:
     # - Disable gzip, not supported:
     cc.config.global_config.disable_gzip = True
 
+    # - Set default config to FusionNotebookConfig(). This allows the user to:
+    #   >>> from cognite.client import CogniteClient
+    #   >>> client = CogniteClient()
+    cc.config.global_config.default_client_config = FusionNotebookConfig()
+
+    # - Inject these magic classes into the correct modules so that the user may import them normally:
+    cc.config.FusionNotebookConfig = FusionNotebookConfig  # type: ignore [attr-defined]
+    cc.credentials.OAuthInteractiveFusionNotebook = OAuthInteractiveFusionNotebook  # type: ignore [attr-defined]
+
     # - Set all usage of ThreadPoolExecutor to use a dummy, serial-implementation:
     cc.utils._concurrency.ConcurrencySettings.executor_type = "mainthread"
 
@@ -64,10 +73,6 @@ def patch_sdk_for_pyodide() -> None:
     # - DatapointsAPI.retrieve/retrieve_arrays/retrieve_dataframe:
     cc._api.datapoints.PriorityThreadPoolExecutor = SerialPriorityThreadPoolExecutor  # type: ignore [assignment, misc]
     cc._api.datapoints.as_completed = serial_as_completed  # type: ignore [assignment]
-
-    # - Inject some classes that will only be available when running with pyodide:
-    cc.config.FusionNotebookConfig = FusionNotebookConfig  # type: ignore [attr-defined]
-    cc.credentials.OAuthInteractiveFusionNotebook = OAuthInteractiveFusionNotebook  # type: ignore [attr-defined]
 
 
 def pyodide_http_adapter_send(self: Any, request: PreparedRequest, **kwargs: Any) -> Response:
