@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numbers
+import warnings
 from typing import TYPE_CHECKING, Optional, Sequence, Union
 
 from cognite.client import utils
@@ -380,6 +381,13 @@ class TokenAPI(APIClient):
         Returns:
             TokenInspection: The object with token inspection details.
         """
+        if isinstance(self._config.credentials, APIKey):
+            warnings.warn(
+                "It seems you are trying to reach API endpoint `/token/inspect` which is not valid when "
+                "authenticating using an API key. Try `client.login.status` instead",
+                UserWarning,
+                stacklevel=2,
+            )
         return TokenInspection._load(self._get("/api/v1/token/inspect").json())
 
 

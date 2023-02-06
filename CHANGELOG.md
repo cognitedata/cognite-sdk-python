@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [5.4.4] - 06-02-23
+### Added
+- Added user warnings when wrongly calling `/login/status` (i.e. without an API key) and `/token/inspect` (without OIDC credentials).
+
 ## [5.4.3] - 05-02-23
 ### Fixed
 - `OAuthDeviceCode` and `OAuthInteractive` now respect `global_config.disable_ssl` setting.
