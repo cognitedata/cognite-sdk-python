@@ -45,10 +45,12 @@ def patch_sdk_for_pyodide() -> None:
     # - Disable gzip, not supported:
     cc.config.global_config.disable_gzip = True
 
-    # - Set default config to FusionNotebookConfig(). This allows the user to:
+    # - If we are running inside of a JupyterLite Notebook spawned from Cognite Data Fusion, we set
+    #   the default config to FusionNotebookConfig(). This allows the user to:
     #   >>> from cognite.client import CogniteClient
     #   >>> client = CogniteClient()
-    cc.config.global_config.default_client_config = FusionNotebookConfig()
+    if os.getenv("COGNITE_FUSION_NOTEBOOK") is not None:
+        cc.config.global_config.default_client_config = FusionNotebookConfig()
 
     # - Inject these magic classes into the correct modules so that the user may import them normally:
     cc.config.FusionNotebookConfig = FusionNotebookConfig  # type: ignore [attr-defined]
