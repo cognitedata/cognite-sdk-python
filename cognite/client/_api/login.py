@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import warnings
+
 from cognite.client._api_client import APIClient
+from cognite.client.credentials import APIKey
 from cognite.client.data_classes.login import LoginStatus
 
 
@@ -26,4 +29,11 @@ class LoginAPI(APIClient):
                 >>> project = login_status.project
 
         """
+        if not isinstance(self._config.credentials, APIKey):
+            warnings.warn(
+                "It seems you are trying to reach API endpoint `/login/status` which is only valid when "
+                "authenticating using an API key - without an API key. Try `client.iam.token.inspect` instead",
+                UserWarning,
+                stacklevel=2,
+            )
         return LoginStatus._load(self._get(self._RESOURCE_PATH + "/status").json())
