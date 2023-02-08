@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [5.5.3] - 16-02-23
+### Added
+- The SDK has been made `pyodide` compatible (to allow running natively in browsers). Missing features are `CredentialProvider`s with token refresh and `AssetsAPI.create_hierarchy`.
+
 ## [5.5.2] - 15-02-23
 ### Fixed
 - Fixed JSON dumps serialization error of instances of `ExtractionPipelineConfigRevision` and all subclasses (`ExtractionPipelineConfig`) as they stored a reference to the CogniteClient as a non-private attribute.
