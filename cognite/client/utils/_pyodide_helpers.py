@@ -9,14 +9,14 @@ import warnings
 from base64 import urlsafe_b64decode
 from concurrent.futures import CancelledError
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Dict, Iterator, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterator, Optional, Tuple
 
 from msal import PublicClientApplication
 
 import cognite.client as cc
 from cognite.client._http_client import _RetryTracker
 from cognite.client.config import ClientConfig
-from cognite.client.credentials import OAuthInteractive
+from cognite.client.credentials import CredentialProvider, OAuthInteractive
 from cognite.client.utils._concurrency import T_Result, TaskExecutor, TaskFuture
 
 if TYPE_CHECKING:
@@ -42,8 +42,15 @@ def patch_sdk_for_pyodide() -> None:
 
     # -----------------
     # Patch Cognite SDK
+    # - For good measure ;)
+    os.environ["COGNITE_DISABLE_PYPI_VERSION_CHECK"] = "1"
+
     # - Disable gzip, not supported:
     cc.config.global_config.disable_gzip = True
+
+    # - Use another HTTP adapter:
+    cc._http_client.HTTPClient._old__init__ = cc._http_client.HTTPClient.__init__  # type: ignore [attr-defined]
+    cc._http_client.HTTPClient.__init__ = http_client__init__  # type: ignore [assignment]
 
     # - If we are running inside of a JupyterLite Notebook spawned from Cognite Data Fusion, we set
     #   the default config to FusionNotebookConfig(). This allows the user to:
@@ -54,14 +61,11 @@ def patch_sdk_for_pyodide() -> None:
 
     # - Inject these magic classes into the correct modules so that the user may import them normally:
     cc.config.FusionNotebookConfig = FusionNotebookConfig  # type: ignore [attr-defined]
-    cc.credentials.OAuthInteractiveFusionNotebook = OAuthInteractiveFusionNotebook  # type: ignore [attr-defined]
+    # TODO: Add once token refresh is working:
+    # cc.credentials.OAuthInteractiveFusionNotebook = OAuthInteractiveFusionNotebook  # type: ignore [attr-defined]
 
     # - Set all usage of ThreadPoolExecutor to use a dummy, serial-implementation:
     cc.utils._concurrency.ConcurrencySettings.executor_type = "mainthread"
-
-    # - Use another HTTP adapter:
-    cc._http_client.HTTPClient._old__init__ = cc._http_client.HTTPClient.__init__  # type: ignore [attr-defined]
-    cc._http_client.HTTPClient.__init__ = http_client__init__  # type: ignore [assignment]
 
     # - Auto-ignore protobuf warning for the user (as they can't fix this):
     warnings.filterwarnings(
@@ -149,7 +153,27 @@ class SerialPriorityThreadPoolExecutor(TaskExecutor):
         self.shutdown()
 
 
+class EnvVarToken(CredentialProvider):
+    """Credential provider that always reads token from an environment variable just-in-time,
+    allowing refreshing the value by another entity.
+    Args:
+        key (str | None): The name of the env.var. to read from. Default: 'COGNITE_TOKEN'
+    Raises:
+        KeyError: If the env.var. is not set.
+    """
+
+    def __init__(self, key: str = None) -> None:
+        self.key = "COGNITE_TOKEN" if key is None else key
+
+    def __token_factory(self) -> str:
+        return os.environ[self.key]
+
+    def authorization_header(self) -> Tuple[str, str]:
+        return "Authorization", f"Bearer {self.__token_factory()}"
+
+
 class OAuthInteractiveFusionNotebook(OAuthInteractive):
+    # TODO: PublicClientApplication is broken in pyodide because of requests?
     def __init__(self, redirect_port: int = 53000) -> None:
         token, base_url = os.environ["COGNITE_TOKEN"], os.environ["COGNITE_BASE_URL"]
         payload = self._load_payload_from_jwt(token)
@@ -198,7 +222,9 @@ class FusionNotebookConfig(ClientConfig):
             file_transfer_timeout=file_transfer_timeout,
             debug=debug,
             project=os.environ["COGNITE_PROJECT"],
-            credentials=OAuthInteractiveFusionNotebook(),  # Magic! 🪄
+            # TODO: Fix 'PublicClientApplication' for token refresh:
+            # credentials=OAuthInteractiveFusionNotebook(),  # Magic! 🪄
+            credentials=EnvVarToken(),  # Less magical, but still!
             base_url=os.environ["COGNITE_BASE_URL"],
             max_workers=1,
         )
