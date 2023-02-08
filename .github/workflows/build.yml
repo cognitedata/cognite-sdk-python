@@ -3,7 +3,7 @@ name: build
 
 on:
   pull_request:
-    branches: [super-duper-master]  # TODO: remove
+    branches: [master]
 
 jobs:
   lint:
