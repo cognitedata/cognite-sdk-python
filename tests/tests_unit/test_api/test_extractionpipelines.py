@@ -82,13 +82,11 @@ def mock_revert_config_response(rsps, cognite_client):
 class TestExtractionPipelines:
     def test_retrieve_config(self, cognite_client, mock_config_response):
         res = cognite_client.extraction_pipelines.config.retrieve(external_id="int-123")
-        res.cognite_client = None
         assert isinstance(res, ExtractionPipelineConfig)
         assert mock_config_response.calls[0].response.json() == res.dump(camel_case=True)
 
     def test_retrieve_config_revision(self, cognite_client, mock_config_response_with_revision):
         res = cognite_client.extraction_pipelines.config.retrieve(external_id="int-123", revision=4)
-        res.cognite_client = None
         assert isinstance(res, ExtractionPipelineConfig)
         assert mock_config_response_with_revision.calls[0].response.json() == res.dump(camel_case=True)
 
@@ -96,20 +94,15 @@ class TestExtractionPipelines:
         res = cognite_client.extraction_pipelines.config.create(
             ExtractionPipelineConfig(external_id="int-123", config="config abc 123", description="description")
         )
-        res.cognite_client = None
         assert isinstance(res, ExtractionPipelineConfig)
         assert mock_config_response.calls[0].response.json() == res.dump(camel_case=True)
 
     def test_revert_config(self, cognite_client, mock_revert_config_response):
         res = cognite_client.extraction_pipelines.config.revert(external_id="int-123", revision=3)
-        res.cognite_client = None
         assert isinstance(res, ExtractionPipelineConfig)
         assert mock_revert_config_response.calls[0].response.json() == res.dump(camel_case=True)
 
     def test_list_revisions(self, cognite_client, mock_config_list_response):
         res = cognite_client.extraction_pipelines.config.list(external_id="int-123")
-        res.cognite_client = None
-        for r in res:
-            r.cognite_client = None
         assert isinstance(res, ExtractionPipelineConfigRevisionList)
         assert mock_config_list_response.calls[0].response.json() == {"items": res.dump(camel_case=True)}
