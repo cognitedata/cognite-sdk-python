@@ -65,11 +65,11 @@ class Token(CredentialProvider):
             self.__token_factory = lambda: token
 
         elif callable(token):  # mypy flat out refuses variations of: isinstance(token, collections.abc.Callable)
-            self.__token_refresh_lock = threading.Lock()
+            token_refresh_lock = threading.Lock()
 
             def thread_safe_get_token() -> str:
                 assert not isinstance(token, str)  # unbelivable
-                with self.__token_refresh_lock:
+                with token_refresh_lock:
                     return token()
 
             self.__token_factory = thread_safe_get_token
