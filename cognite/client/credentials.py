@@ -54,13 +54,25 @@ class Token(CredentialProvider):
             >>> from cognite.client.credentials import Token
             >>> token_provider = Token("my secret token")
             >>> token_factory_provider = Token(lambda: "my secret token")
+
+    Note:
+        If you pass in a callable, we will expect that you supplied a function that may do a token refresh
+        under the hood, so it will be called while holding a thread lock (threading.Lock()).
     """
 
     def __init__(self, token: Union[str, Callable[[], str]]) -> None:
         if isinstance(token, str):
             self.__token_factory = lambda: token
-        else:
-            self.__token_factory = token
+
+        if callable(token):  # mypy flat out refuses: isinstance(token, collections.abc.Callable)
+            self.__token_refresh_lock = threading.Lock()
+
+            def thread_safe_get_token() -> str:
+                with self.__token_refresh_lock:
+                    assert callable(token)
+                    return token()
+
+            self.__token_factory = thread_safe_get_token
 
     def authorization_header(self) -> Tuple[str, str]:
         return "Authorization", f"Bearer {self.__token_factory()}"
