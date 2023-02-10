@@ -1310,6 +1310,18 @@ docs = ["sphinx (>=4.5.0,<5.0.0)", "sphinx-rtd-theme", "zope.interface"]
 tests = ["coverage[toml] (==5.0.4)", "pytest (>=6.0.0,<7.0.0)"]
 
 [[package]]
+name = "pyodide-http"
+version = "0.2.0"
+description = "Patch requests, urllib and urllib3 to make them work in Pyodide"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "pyodide_http-0.2.0-py3-none-any.whl", hash = "sha256:0ab778a95fc09ce59f15e4890202d17ca48dfdbe8ee2e6139e9a8589fc54d61f"},
+    {file = "pyodide_http-0.2.0.tar.gz", hash = "sha256:4c99b320841338c2b63ffb2171e40251e7d72665c80188540ceb6420bcabe608"},
+]
+
+[[package]]
 name = "pyproj"
 version = "3.4.1"
 description = "Python interface to PROJ (cartographic projections and coordinate transformations library)"
@@ -2137,9 +2149,10 @@ functions = ["pip"]
 geo = ["geopandas", "shapely"]
 numpy = ["numpy"]
 pandas = ["pandas"]
+pyodide = []
 sympy = ["sympy"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "9aa9845378d187d033c7e5abd14feccccee5de13178ef7b88ed9088b6f165df4"
+content-hash = "b68cf4a49f099247a683f7396dcc18a326035a8c7eee6bda986d72a09467a3d8"
