@@ -152,6 +152,28 @@ class TestTransformationsAPI:
         )
         cognite_client.transformations.delete(id=ts.id)
 
+    def test_create_instances_transformation(self, cognite_client):
+        prefix = random_string(6, string.ascii_letters)
+        transform = Transformation(
+            name="any",
+            external_id=f"{prefix}-transformation",
+            destination=TransformationDestination.instances(
+                view_external_id="testInstanceViewExternalId",
+                view_version="testInstanceViewVersion",
+                view_space_external_id="test-space",
+                instance_space_external_id="test-space",
+            ),
+        )
+        ts = cognite_client.transformations.create(transform)
+        assert (
+            ts.destination.type == "instances"
+            and ts.destination.view_external_id == "testInstanceViewExternalId"
+            and ts.destination.view_version == "testInstanceViewVersion"
+            and ts.destination.view_space_external_id == "test-space"
+            and ts.destination.instance_space_external_id == "test-space"
+        )
+        cognite_client.transformations.delete(id=ts.id)
+
     def test_create_sequence_rows_transformation(self, cognite_client):
         prefix = random_string(6, string.ascii_letters)
         transform = Transformation(
@@ -293,6 +315,22 @@ class TestTransformationsAPI:
         partial_updated = cognite_client.transformations.update(partial_update)
         assert partial_updated.destination == TransformationDestination.data_model_instances(
             "myTest2", "test-space", "test-space"
+        )
+
+    def test_update_instances(self, cognite_client, new_transformation):
+        new_transformation.destination = TransformationDestination.instances(
+            "myViewExternalId", "myViewVersion", "test-space", "test-space"
+        )
+        partial_update = TransformationUpdate(id=new_transformation.id).destination.set(
+            TransformationDestination.instances("myViewExternalId", "myViewVersion2", "test-space", "test-space")
+        )
+        updated_transformation = cognite_client.transformations.update(new_transformation)
+        assert updated_transformation.destination == TransformationDestination.instances(
+            "myViewExternalId", "myViewVersion", "test-space", "test-space"
+        )
+        partial_updated = cognite_client.transformations.update(partial_update)
+        assert partial_updated.destination == TransformationDestination.instances(
+            "myViewExternalId", "myViewVersion2", "test-space", "test-space"
         )
 
     def test_update_sequence_rows_update(self, cognite_client, new_transformation):
