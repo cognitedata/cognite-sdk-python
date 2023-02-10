@@ -64,15 +64,17 @@ class Token(CredentialProvider):
         if isinstance(token, str):
             self.__token_factory = lambda: token
 
-        if callable(token):  # mypy flat out refuses: isinstance(token, collections.abc.Callable)
+        elif callable(token):  # mypy flat out refuses variations of: isinstance(token, collections.abc.Callable)
             self.__token_refresh_lock = threading.Lock()
 
             def thread_safe_get_token() -> str:
+                assert not isinstance(token, str)  # unbelivable
                 with self.__token_refresh_lock:
-                    assert callable(token)
                     return token()
 
             self.__token_factory = thread_safe_get_token
+        else:
+            raise TypeError(f"'token' must be a string or a no-argument-callable returning a string, not {type(token)}")
 
     def authorization_header(self) -> Tuple[str, str]:
         return "Authorization", f"Bearer {self.__token_factory()}"
