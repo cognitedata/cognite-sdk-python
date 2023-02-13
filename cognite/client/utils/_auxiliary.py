@@ -138,7 +138,7 @@ def validate_user_input_dict_with_identifier(dct: Mapping, required_keys: Set[st
     invalid_keys = set(dct) - required_keys - {"id", "externalId", "external_id"}
     if missing_keys or invalid_keys:
         raise ValueError(
-            f"Given dictionary at failed validation. Invalid key(s): {sorted(invalid_keys)}, "
+            f"Given dictionary failed validation. Invalid key(s): {sorted(invalid_keys)}, "
             f"required key(s) missing: {sorted(missing_keys)}."
         )
     return id_dct
