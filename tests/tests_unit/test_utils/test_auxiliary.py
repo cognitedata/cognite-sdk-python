@@ -301,7 +301,7 @@ class TestValidateUserInputDictWithIdentifier:
     @pytest.mark.parametrize(
         "dct, keys, err, err_msg",
         (
-            (["id", 123], set(), TypeError, "Expected list of dict-like objects, got <class 'list'>"),
+            (["id", 123], set(), TypeError, "Expected dict-like object, got <class 'list'>"),
             ({}, set(), ValueError, "must be specified, got neither"),
             ({"id": 123, "external_id": "foo"}, set(), ValueError, "must be specified, got both"),
             ({"id": 123, "externalId": "foo"}, set(), ValueError, "must be specified, got both"),

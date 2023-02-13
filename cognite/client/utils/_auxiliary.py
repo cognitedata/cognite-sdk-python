@@ -128,7 +128,7 @@ def assert_type(var: Any, var_name: str, types: List[type], allow_none: bool = F
 
 def validate_user_input_dict_with_identifier(dct: Mapping, required_keys: Set[str]) -> Dict[str, T_ID]:
     if not isinstance(dct, Mapping):
-        raise TypeError(f"Expected list of dict-like objects, got {type(dct)}")
+        raise TypeError(f"Expected dict-like object, got {type(dct)}")
 
     # Verify that we have gotten exactly one identifier:
     xid = dct.get("externalId") or dct.get("external_id")
