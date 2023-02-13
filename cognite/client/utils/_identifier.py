@@ -3,6 +3,8 @@ from __future__ import annotations
 import numbers
 from typing import Dict, Generic, Iterable, List, Optional, Sequence, Tuple, TypeVar, Union, cast, overload
 
+from cognite.client._constants import MAX_VALID_INTERNAL_ID
+
 T_ID = TypeVar("T_ID", int, str)
 
 
@@ -14,8 +16,11 @@ class Identifier(Generic[T_ID]):
     def of_either(cls, id: Optional[int], external_id: Optional[str]) -> Identifier:
         if id is external_id is None:
             raise ValueError("Exactly one of id or external id must be specified, got neither")
-        elif id is not None and external_id is not None:
-            raise ValueError("Exactly one of id or external id must be specified, got both")
+        elif id is not None:
+            if external_id is not None:
+                raise ValueError("Exactly one of id or external id must be specified, got both")
+            elif not 1 <= id <= MAX_VALID_INTERNAL_ID:
+                raise ValueError(f"Invalid id, must satisfy: 1 <= id <= {MAX_VALID_INTERNAL_ID}")
         return Identifier(id or external_id)
 
     @classmethod
