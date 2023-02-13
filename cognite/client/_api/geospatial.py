@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json as complexjson
 import numbers
 import urllib.parse
@@ -535,7 +537,7 @@ class GeospatialAPI(APIClient):
                 type will result in CogniteAPIError exception.
 
         Returns:
-            FeatureList: the filtered features
+            FeatureList: The filtered features
 
         Examples:
 

@@ -216,7 +216,7 @@ pip
 
 .. code:: bash
 
-    $ pip install cognite-sdk[pandas, geo]
+    $ pip install "cognite-sdk[pandas, geo]"
 
 poetry
 
@@ -292,6 +292,14 @@ List assets
 Aggregate assets
 ^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.aggregate
+
+Aggregate asset metadata keys
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.assets.AssetsAPI.aggregate_metadata_keys
+
+Aggregate asset metadata values
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.assets.AssetsAPI.aggregate_metadata_values
 
 Search for assets
 ^^^^^^^^^^^^^^^^^
@@ -706,6 +714,10 @@ Data classes
 .. automodule:: cognite.client.data_classes.sequences
     :members:
     :show-inheritance:
+    :exclude-members: Sequence
+
+    .. autoclass:: Sequence
+        :noindex:
 
 Raw
 ---
@@ -774,12 +786,12 @@ Data classes
 
 Relationships
 -------------
-Retrieve a relationship by id
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Retrieve a relationship by external id
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.relationships.RelationshipsAPI.retrieve
 
-Retrieve multiple relationships by id
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Retrieve multiple relationships by external id
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.relationships.RelationshipsAPI.retrieve_multiple
 
 List relationships

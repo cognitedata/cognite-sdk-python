@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Union, cast
 
@@ -5,6 +7,7 @@ from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Relationship, RelationshipFilter, RelationshipList, RelationshipUpdate
 from cognite.client.data_classes.labels import LabelFilter
+from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._identifier import IdentifierSequence
 
 
@@ -79,9 +82,9 @@ class RelationshipsAPI(APIClient):
             data_set_external_ids (Sequence[str]): Return only relationships in the specified data sets with these external ids.
             start_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
             end_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
-            confidence (Dict[str, int]): Range to filter the field for. (inclusive)
-            last_updated_time (Dict[str, Any]): Range to filter the field for. (inclusive)
-            created_time (Dict[str, int]): Range to filter the field for. (inclusive)
+            confidence (Dict[str, int]): Range to filter the field for (inclusive).
+            last_updated_time (Dict[str, Any]): Range to filter the field for (inclusive).
+            created_time (Dict[str, int]): Range to filter the field for (inclusive).
             active_at_time (Dict[str, int]): Limits results to those active at any point within the given time range, i.e. if there is any overlap in the intervals [activeAtTime.min, activeAtTime.max] and [startTime, endTime], where both intervals are inclusive. If a relationship does not have a startTime, it is regarded as active from the begining of time by this filter. If it does not have an endTime is will be regarded as active until the end of time. Similarly, if a min is not supplied to the filter, the min will be implicitly set to the beginning of time, and if a max is not supplied, the max will be implicitly set to the end of time.
             labels (LabelFilter): Return only the resource matching the specified label constraints.
             chunk_size (int, optional): Number of Relationships to return in each chunk. Defaults to yielding one relationship at a time.
@@ -113,9 +116,8 @@ class RelationshipsAPI(APIClient):
             or len(filter.get("sourceExternalIds", [])) > self._LIST_SUBQUERY_LIMIT
         ):
             raise ValueError(
-                "For queries with more than {} source_external_ids or target_external_ids, only list is supported".format(
-                    self._LIST_SUBQUERY_LIMIT
-                )
+                f"For queries with more than {self._LIST_SUBQUERY_LIMIT} source_external_ids or "
+                "target_external_ids, only list is supported"
             )
 
         return self._list_generator(
@@ -223,9 +225,9 @@ class RelationshipsAPI(APIClient):
             data_set_external_ids (Sequence[str]): Return only relationships in the specified data sets with these external ids.
             start_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
             end_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
-            confidence (Dict[str, int]): Range to filter the field for. (inclusive)
-            last_updated_time (Dict[str, Any]): Range to filter the field for. (inclusive)
-            created_time (Dict[str, int]): Range to filter the field for. (inclusive)
+            confidence (Dict[str, int]): Range to filter the field for (inclusive).
+            last_updated_time (Dict[str, Any]): Range to filter the field for (inclusive).
+            created_time (Dict[str, int]): Range to filter the field for (inclusive).
             active_at_time (Dict[str, int]): Limits results to those active at any point within the given time range, i.e. if there is any overlap in the intervals [activeAtTime.min, activeAtTime.max] and [startTime, endTime], where both intervals are inclusive. If a relationship does not have a startTime, it is regarded as active from the begining of time by this filter. If it does not have an endTime is will be regarded as active until the end of time. Similarly, if a min is not supplied to the filter, the min will be implicitly set to the beginning of time, and if a max is not supplied, the max will be implicitly set to the end of time.
             labels (LabelFilter): Return only the resource matching the specified label constraints.
             limit (int): Maximum number of relationships to return. Defaults to 100. Set to -1, float("inf") or None
@@ -276,11 +278,10 @@ class RelationshipsAPI(APIClient):
             len(target_external_id_list) > self._LIST_SUBQUERY_LIMIT
             or len(source_external_id_list) > self._LIST_SUBQUERY_LIMIT
         ):
-            if limit not in [-1, None, float("inf")]:
+            if not is_unlimited(limit):
                 raise ValueError(
-                    "Querying more than {} source_external_ids/target_external_ids only supported for queries without limit (pass -1 / None / inf instead of {}".format(
-                        self._LIST_SUBQUERY_LIMIT, limit
-                    )
+                    f"Querying more than {self._LIST_SUBQUERY_LIMIT} source_external_ids/target_external_ids only "
+                    f"supported for queries without limit (pass -1 / None / inf instead of {limit})"
                 )
             tasks = []
 
@@ -293,7 +294,7 @@ class RelationshipsAPI(APIClient):
                         task_filter["sourceExternalIds"] = source_external_id_list[si : si + self._LIST_SUBQUERY_LIMIT]
                     tasks.append((task_filter,))
 
-            tasks_summary = utils._concurrency.execute_tasks_concurrently(
+            tasks_summary = utils._concurrency.execute_tasks(
                 lambda filter: self._list(
                     list_cls=RelationshipList,
                     resource_cls=Relationship,
@@ -330,8 +331,8 @@ class RelationshipsAPI(APIClient):
             Union[Relationship, RelationshipList]: Created relationship(s)
 
         Note:
-            - the source_type and target_type field in the Relationship(s) can be any string among "Asset", "TimeSeries", "File", "Event", "Sequence";
-            - do not provide the value for the source and target arguments of the Relationship class, only source_external_id / source_type and target_external_id / target_type. These (source and target) are used as part of fetching actual resources specified in other fields.
+            - The source_type and target_type field in the Relationship(s) can be any string among "Asset", "TimeSeries", "File", "Event", "Sequence";
+            - Do not provide the value for the source and target arguments of the Relationship class, only source_external_id / source_type and target_external_id / target_type. These (source and target) are used as part of fetching actual resources specified in other fields.
 
         Examples:
 
@@ -375,10 +376,10 @@ class RelationshipsAPI(APIClient):
         Currently, a full replacement of labels on a relationship is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.
 
         Args:
-            item (Union[Relationship, RelationshipUpdate, Sequence[Union[Relationship, RelationshipUpdate]]]): Relationships(s) to update
+            item (Union[Relationship, RelationshipUpdate, Sequence[Union[Relationship, RelationshipUpdate]]]): Relationship(s) to update
 
         Returns:
-            Union[Relationship, RelationshipsList]: Updated relationship(s)
+            Union[Relationship, RelationshipList]: Updated relationship(s)
 
         Examples:
             Update a data set that you have fetched. This will perform a full update of the data set::

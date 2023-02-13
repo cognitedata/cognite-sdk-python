@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 from contextlib import nullcontext as does_not_raise
 from copy import deepcopy
@@ -104,6 +106,14 @@ def mock_get_extract_empty_predictions(rsps: RequestsMock, mock_get_response_bod
     yield rsps
 
 
+class TestJobStatusEnum:
+    @pytest.mark.parametrize("job_status", list(JobStatus))
+    def test_job_status_methods(self, job_status):
+        v1 = job_status.is_finished()
+        v2 = job_status.is_not_finished()
+        assert sorted([v1, v2]) == [False, True]
+
+
 class TestVisionExtract:
     @pytest.mark.parametrize(
         "features, parameters, error_message",
@@ -181,7 +191,7 @@ class TestVisionExtract:
             expected_job_id = 1
             job.wait_for_completion(interval=0)
             assert "items" in job.result
-            assert JobStatus.COMPLETED == JobStatus(job.status)
+            assert JobStatus.COMPLETED is JobStatus(job.status)
             assert expected_job_id == job.job_id
 
             num_post_requests, num_get_requests = 0, 0

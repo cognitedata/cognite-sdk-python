@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from contextlib import contextmanager
 from typing import Any, Iterator
 from unittest.mock import MagicMock
@@ -197,4 +199,4 @@ def monkeypatch_cognite_client() -> Iterator[CogniteClientMock]:
     cognite_client_mock = CogniteClientMock()
     CogniteClient.__new__ = lambda *args, **kwargs: cognite_client_mock  # type: ignore[assignment]
     yield cognite_client_mock
-    CogniteClient.__new__ = lambda cls, *args, **kwargs: super(CogniteClient, cls).__new__(cls)  # type: ignore[assignment]
+    CogniteClient.__new__ = lambda cls, *args, **kwargs: object.__new__(cls)  # type: ignore[assignment]

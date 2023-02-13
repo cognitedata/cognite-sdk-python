@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
 
@@ -58,7 +60,7 @@ class TimeSeries(CogniteResource):
         created_time: int = None,
         last_updated_time: int = None,
         legacy_name: str = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.id = id
         self.external_id = external_id
@@ -95,11 +97,11 @@ class TimeSeries(CogniteResource):
 
         identifier = Identifier.load(self.id, self.external_id).as_dict()
         dps = self._cognite_client.time_series.data.retrieve(
-            **identifier, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS, aggregates="count", granularity="100d"
+            **identifier, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS + 1, aggregates="count", granularity="100d"
         )
         return sum(dps.count)
 
-    def latest(self, before: Union[int, str, datetime] = None) -> Optional["Datapoint"]:  # noqa: F821
+    def latest(self, before: Union[int, str, datetime] = None) -> Optional[Datapoint]:
         """Returns the latest datapoint in this time series. If empty, returns None.
 
         Returns:
@@ -110,7 +112,7 @@ class TimeSeries(CogniteResource):
             return dps[0]
         return None
 
-    def first(self) -> Optional["Datapoint"]:  # noqa: F821
+    def first(self) -> Optional[Datapoint]:
         """Returns the first datapoint in this time series. If empty, returns None.
 
         Returns:
@@ -118,13 +120,13 @@ class TimeSeries(CogniteResource):
         """
         identifier = Identifier.load(self.id, self.external_id).as_dict()
         dps = self._cognite_client.time_series.data.retrieve(
-            **identifier, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS, limit=1
+            **identifier, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS + 1, limit=1
         )
         if dps:
             return dps[0]
         return None
 
-    def asset(self) -> "Asset":  # noqa: F821
+    def asset(self) -> Asset:
         """Returns the asset this time series belongs to.
 
         Returns:
@@ -168,7 +170,7 @@ class TimeSeriesFilter(CogniteFilter):
         external_id_prefix: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.name = name
         self.unit = unit
@@ -185,8 +187,8 @@ class TimeSeriesFilter(CogniteFilter):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str]) -> "TimeSeriesFilter":
-        instance = super(TimeSeriesFilter, cls)._load(resource)
+    def _load(cls, resource: Union[Dict, str]) -> TimeSeriesFilter:
+        instance = super()._load(resource)
         if isinstance(resource, Dict):
             if instance.created_time is not None:
                 instance.created_time = TimestampRange(**instance.created_time)
@@ -204,34 +206,34 @@ class TimeSeriesUpdate(CogniteUpdate):
     """
 
     class _PrimitiveTimeSeriesUpdate(CognitePrimitiveUpdate):
-        def set(self, value: Any) -> "TimeSeriesUpdate":
+        def set(self, value: Any) -> TimeSeriesUpdate:
             return self._set(value)
 
     class _ObjectTimeSeriesUpdate(CogniteObjectUpdate):
-        def set(self, value: Dict) -> "TimeSeriesUpdate":
+        def set(self, value: Dict) -> TimeSeriesUpdate:
             return self._set(value)
 
-        def add(self, value: Dict) -> "TimeSeriesUpdate":
+        def add(self, value: Dict) -> TimeSeriesUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> "TimeSeriesUpdate":
+        def remove(self, value: List) -> TimeSeriesUpdate:
             return self._remove(value)
 
     class _ListTimeSeriesUpdate(CogniteListUpdate):
-        def set(self, value: List) -> "TimeSeriesUpdate":
+        def set(self, value: List) -> TimeSeriesUpdate:
             return self._set(value)
 
-        def add(self, value: List) -> "TimeSeriesUpdate":
+        def add(self, value: List) -> TimeSeriesUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> "TimeSeriesUpdate":
+        def remove(self, value: List) -> TimeSeriesUpdate:
             return self._remove(value)
 
     class _LabelTimeSeriesUpdate(CogniteLabelUpdate):
-        def add(self, value: List) -> "TimeSeriesUpdate":
+        def add(self, value: List) -> TimeSeriesUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> "TimeSeriesUpdate":
+        def remove(self, value: List) -> TimeSeriesUpdate:
             return self._remove(value)
 
     @property

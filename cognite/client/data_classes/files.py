@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Union, cast
 
 from cognite.client.data_classes._base import (
@@ -63,7 +65,7 @@ class FileMetadata(CogniteResource):
         uploaded_time: int = None,
         created_time: int = None,
         last_updated_time: int = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         if geo_location is not None and not isinstance(geo_location, GeoLocation):
             raise TypeError("FileMetadata.geo_location should be of type GeoLocation")
@@ -88,8 +90,8 @@ class FileMetadata(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "FileMetadata":
-        instance = super(FileMetadata, cls)._load(resource, cognite_client)
+    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> FileMetadata:
+        instance = super()._load(resource, cognite_client)
         instance.labels = Label._load_list(instance.labels)
         if instance.geo_location is not None:
             instance.geo_location = GeoLocation._load(instance.geo_location)
@@ -141,7 +143,7 @@ class FileMetadataFilter(CogniteFilter):
         external_id_prefix: str = None,
         directory_prefix: str = None,
         uploaded: bool = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.name = name
         self.mime_type = mime_type
@@ -169,7 +171,7 @@ class FileMetadataFilter(CogniteFilter):
             raise TypeError("FileMetadata.geo_location should be of type GeoLocationFilter")
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str]) -> "FileMetadataFilter":
+    def _load(cls, resource: Union[Dict, str]) -> FileMetadataFilter:
         instance = super()._load(resource)
         if isinstance(resource, Dict):
             if instance.created_time is not None:
@@ -185,7 +187,7 @@ class FileMetadataFilter(CogniteFilter):
         return instance
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        result = super(FileMetadataFilter, self).dump(camel_case)
+        result = super().dump(camel_case)
         if isinstance(self.labels, LabelFilter):
             result["labels"] = self.labels.dump(camel_case)
         if isinstance(self.geo_location, GeoLocationFilter):
@@ -200,34 +202,34 @@ class FileMetadataUpdate(CogniteUpdate):
     """
 
     class _PrimitiveFileMetadataUpdate(CognitePrimitiveUpdate):
-        def set(self, value: Any) -> "FileMetadataUpdate":
+        def set(self, value: Any) -> FileMetadataUpdate:
             return self._set(value)
 
     class _ObjectFileMetadataUpdate(CogniteObjectUpdate):
-        def set(self, value: Dict) -> "FileMetadataUpdate":
+        def set(self, value: Dict) -> FileMetadataUpdate:
             return self._set(value)
 
-        def add(self, value: Dict) -> "FileMetadataUpdate":
+        def add(self, value: Dict) -> FileMetadataUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> "FileMetadataUpdate":
+        def remove(self, value: List) -> FileMetadataUpdate:
             return self._remove(value)
 
     class _ListFileMetadataUpdate(CogniteListUpdate):
-        def set(self, value: List) -> "FileMetadataUpdate":
+        def set(self, value: List) -> FileMetadataUpdate:
             return self._set(value)
 
-        def add(self, value: List) -> "FileMetadataUpdate":
+        def add(self, value: List) -> FileMetadataUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> "FileMetadataUpdate":
+        def remove(self, value: List) -> FileMetadataUpdate:
             return self._remove(value)
 
     class _LabelFileMetadataUpdate(CogniteLabelUpdate):
-        def add(self, value: Union[str, List[str]]) -> "FileMetadataUpdate":
+        def add(self, value: Union[str, List[str]]) -> FileMetadataUpdate:
             return self._add(value)
 
-        def remove(self, value: Union[str, List[str]]) -> "FileMetadataUpdate":
+        def remove(self, value: Union[str, List[str]]) -> FileMetadataUpdate:
             return self._remove(value)
 
     @property

@@ -18,9 +18,76 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 
+## [5.5.0] - 10-02-23
+### Added
+- support `instances` destination type on Transformations.
+
+## [5.4.4] - 06-02-23
+### Added
+- Added user warnings when wrongly calling `/login/status` (i.e. without an API key) and `/token/inspect` (without OIDC credentials).
+
+## [5.4.3] - 05-02-23
+### Fixed
+- `OAuthDeviceCode` and `OAuthInteractive` now respect `global_config.disable_ssl` setting.
+
+## [5.4.2] - 03-02-23
+### Changed
+- Improved error handling (propagate IDP error message) for `OAuthDeviceCode` and `OAuthInteractive` upon authentication failure.
+
+## [5.4.1] - 02-02-23
+### Fixed
+- Bug where create_hierarchy would stop progressing after encountering more than `config.max_workers` failures.
+
+## [5.4.0] - 02-02-23
+### Added
+- Support for aggregating metadata keys/values for assets
+
+## [5.3.7] - 01-02-23
+### Improved
+- Issues with the SessionsAPI documentation have been addressed, and the `.create()` have been further clarified.
+
+## [5.3.6] - 30-01-23
+### Changed
+- A file-not-found error has been changed from `TypeError` to `FileNotFoundError` as part of the validation in FunctionsAPI.
+
+## [5.3.5] - 25-01-23
+### Fixed
+- Fixed an atexit-exception (`TypeError: '<' not supported between instances of 'tuple' and 'NoneType'`) that could be raised on PY39+ after fetching datapoints (which uses a custom thread pool implementation).
+
+## [5.3.4] - 25-01-23
+### Fixed
+- Displaying Cognite resources like an `Asset` or a `TimeSeriesList` in a Jupyter notebook or similar environments depending on `._repr_html_`, no longer raises `CogniteImportError` stating that `pandas` is required. Instead, a warning is issued and `.dump()` is used as fallback.
+
+## [5.3.3] - 24-01-23
+### Added
+- New parameter `token_cache_path` now accepted by `OAuthInteractive` and `OAuthDeviceCode` to allow overriding location of token cache.
+
+### Fixed
+- Platform dependent temp directory for the caching of the token in `OAuthInteractive` and `OAuthDeviceCode` (no longer crashes at exit on Windows).
+
+## [5.3.2] - 24-01-23
+### Security
+- Update `pytest` and other dependencies to get rid of dependency on the `py` package (CVE-2022-42969).
+
+## [5.3.1] - 20-01-23
+### Fixed
+- Last possible valid timestamp would not be returned as first (if first by some miracle...) by the `TimeSeries.first` method due to `end` being exclusive.
+
+## [5.3.0] - 20-01-23
+### Added
+- `DatapointsAPI.retrieve_latest` now support customising the `before` argument, by passing one or more objects of the newly added `LatestDatapointQuery` class.
+
+## [5.2.0] - 19-01-23
+### Changed
+- The SDK has been refactored to support `protobuf>=3.16.0` (no longer requires v4 or higher). This was done to fix dependency conflicts with several popular Python packages like `tensorflow` and `streamlit` - and also Azure Functions - that required major version 3.x of `protobuf`.
+
+## [5.1.1] - 19-01-23
+### Changed
+- Change RAW rows insert chunk size to make individual requests faster.
+
 ## [5.1.0] - 03-01-23
 ### Added
-- The diagram detect function can take file reference objects that contain file (external) id as well as a page range. This is an alternative to the lists of file ids or file external ids that are still possible to use. Page ranges were not possible to specify before. 
+- The diagram detect function can take file reference objects that contain file (external) id as well as a page range. This is an alternative to the lists of file ids or file external ids that are still possible to use. Page ranges were not possible to specify before.
 
 ## [5.0.2] - 15-12-22
 ### Changed
@@ -233,7 +300,7 @@ It will also cache the token between runs.
 - Fixed the issue on SDK when Python installation didn't include pip.
 
 ### Added
-- Added Optional dependency called functions. Usage: `pip install cognite-sdk[functions]`
+- Added Optional dependency called functions. Usage: `pip install "cognite-sdk[functions]"`
 
 ## [4.1.0] - 2022-08-18
 ### Added
@@ -260,7 +327,7 @@ been added to the docs. More credential provider implementations will be added i
 other OAuth flows.
 
 ### Fixed
-- A bug in the Functions SDK where the lifecycle of temporary files was not properly managed.  
+- A bug in the Functions SDK where the lifecycle of temporary files was not properly managed.
 
 ## [3.9.0] - 2022-08-11
 ### Added

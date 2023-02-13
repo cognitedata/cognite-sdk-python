@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 
@@ -59,18 +61,18 @@ class Annotation(CogniteResource):
         self.id: Optional[int] = None  # Read only
         self.created_time: Optional[int] = None  # Read only
         self.last_updated_time: Optional[int] = None  # Read only
-        self._cognite_client: "CogniteClient" = cast("CogniteClient", None)  # Read only
+        self._cognite_client: CogniteClient = cast("CogniteClient", None)  # Read only
 
     @classmethod
-    def _load(cls, resource: Union[Dict[str, Any], str], cognite_client: "CogniteClient" = None) -> "Annotation":
+    def _load(cls, resource: Union[Dict[str, Any], str], cognite_client: CogniteClient = None) -> Annotation:
         if isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
         elif isinstance(resource, dict):
             return cls.from_dict(resource, cognite_client=cognite_client)
-        raise TypeError("Resource must be json str or Dict, not {}".format(type(resource)))
+        raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
 
     @classmethod
-    def from_dict(cls, resource: Dict[str, Any], cognite_client: "CogniteClient" = None) -> "Annotation":
+    def from_dict(cls, resource: Dict[str, Any], cognite_client: CogniteClient = None) -> Annotation:
         # Create base annotation
         data = {to_snake_case(key): val for key, val in resource.items()}
         annotation = Annotation(
@@ -133,8 +135,8 @@ class AnnotationFilter(CogniteFilter):
         self.data = data
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        result = super(AnnotationFilter, self).dump(camel_case=camel_case)
-        # Special handling for creating_user, which hasa valid None value
+        result = super().dump(camel_case=camel_case)
+        # Special handling for creating_user, which has a valid None value
         key = "creatingUser" if camel_case else "creating_user"
         # Remove creating_user if it is an empty string
         if self.creating_user == "":
@@ -158,37 +160,37 @@ class AnnotationUpdate(CogniteUpdate):
     class _StrUpdate(CognitePrimitiveUpdate):
         """Only set, no set_null"""
 
-        def set(self, value: str) -> "AnnotationUpdate":
+        def set(self, value: str) -> AnnotationUpdate:
             return self._set(value)
 
     class _OptionalStrUpdate(CognitePrimitiveUpdate):
         """Set and set_null"""
 
-        def set(self, value: Optional[str]) -> "AnnotationUpdate":
+        def set(self, value: Optional[str]) -> AnnotationUpdate:
             return self._set(value)
 
     class _DictUpdate(CogniteObjectUpdate):
         """Only set, no set_null"""
 
-        def set(self, value: Dict[str, Any]) -> "AnnotationUpdate":
+        def set(self, value: Dict[str, Any]) -> AnnotationUpdate:
             return self._set(value)
 
     class _OptionalIntUpdate(CognitePrimitiveUpdate):
         """Set and set_null"""
 
-        def set(self, value: Optional[int]) -> "AnnotationUpdate":
+        def set(self, value: Optional[int]) -> AnnotationUpdate:
             return self._set(value)
 
     @property
-    def data(self) -> "AnnotationUpdate._DictUpdate":
+    def data(self) -> AnnotationUpdate._DictUpdate:
         return AnnotationUpdate._DictUpdate(self, "data")
 
     @property
-    def status(self) -> "AnnotationUpdate._StrUpdate":
+    def status(self) -> AnnotationUpdate._StrUpdate:
         return AnnotationUpdate._StrUpdate(self, "status")
 
     @property
-    def annotation_type(self) -> "AnnotationUpdate._StrUpdate":
+    def annotation_type(self) -> AnnotationUpdate._StrUpdate:
         return AnnotationUpdate._StrUpdate(self, "annotationType")
 
 

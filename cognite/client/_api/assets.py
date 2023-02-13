@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import queue
 import threading
 from collections import OrderedDict
@@ -15,6 +17,7 @@ from cognite.client.data_classes import (
     LabelFilter,
     TimestampRange,
 )
+from cognite.client.data_classes.shared import AggregateBucketResult
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._identifier import IdentifierSequence
 
@@ -299,7 +302,7 @@ class AssetsAPI(APIClient):
             partitions=partitions,
         )
 
-    def aggregate(self, filter: Union[AssetFilter, Dict] = None) -> List[AssetAggregate]:
+    def aggregate(self, filter: Union[AssetFilter, dict] = None) -> List[AssetAggregate]:
         """`Aggregate assets <https://docs.cognite.com/api/v1/#operation/aggregateAssets>`_
 
         Args:
@@ -317,6 +320,56 @@ class AssetsAPI(APIClient):
                 >>> aggregate_by_prefix = c.assets.aggregate(filter={"external_id_prefix": "prefix"})
         """
         return self._aggregate(filter=filter, cls=AssetAggregate)
+
+    def aggregate_metadata_keys(self, filter: Union[AssetFilter, dict] = None) -> Sequence[AggregateBucketResult]:
+        """`Aggregate assets <https://docs.cognite.com/api/v1/#operation/aggregateAssets>`_
+
+        Note:
+            In the case of text fields, the values are aggregated in a case-insensitive manner
+
+        Args:
+            filter (Union[AssetFilter, Dict]): Filter on assets filter with exact match
+
+        Returns:
+            Sequence[AggregateBucketResult]: List of asset aggregates
+
+        Examples:
+
+            Aggregate assets:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> aggregate_by_prefix = c.assets.aggregate_metadata_keys(filter={"external_id_prefix": "prefix"})
+        """
+        return self._aggregate(filter=filter, aggregate="metadataKeys", cls=AggregateBucketResult)
+
+    def aggregate_metadata_values(
+        self, keys: Sequence[str], filter: Union[AssetFilter, dict] = None
+    ) -> Sequence[AggregateBucketResult]:
+        """`Aggregate assets <https://docs.cognite.com/api/v1/#operation/aggregateAssets>`_
+
+        Note:
+            In the case of text fields, the values are aggregated in a case-insensitive manner
+
+        Args:
+            filter (Union[AssetFilter, Dict]): Filter on assets filter with exact match
+            keys (Sequence[str]): Metadata key(s) to apply the aggregation on. Currently supports exactly one key per request.
+
+        Returns:
+            Sequence[AggregateBucketResult]: List of asset aggregates
+
+        Examples:
+
+            Aggregate assets:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> aggregate_by_prefix = c.assets.aggregate_metadata_values(
+                ...     keys=["someKey"],
+                ...     filter={"external_id_prefix": "prefix"}
+                ... )
+        """
+        return self._aggregate(filter=filter, aggregate="metadataValues", keys=keys, cls=AggregateBucketResult)
 
     @overload
     def create(self, asset: Sequence[Asset]) -> AssetList:
@@ -577,9 +630,7 @@ class AssetsAPI(APIClient):
         chunk_size = 100
         for i in range(0, len(ids), chunk_size):
             tasks.append({"parent_ids": ids[i : i + chunk_size], "limit": -1})
-        tasks_summary = utils._concurrency.execute_tasks_concurrently(
-            self.list, tasks=tasks, max_workers=self._config.max_workers
-        )
+        tasks_summary = utils._concurrency.execute_tasks(self.list, tasks=tasks, max_workers=self._config.max_workers)
         tasks_summary.raise_compound_exception_if_failed_tasks()
         res_list = tasks_summary.results
         children = []
@@ -609,16 +660,16 @@ class _AssetPosterWorker(threading.Thread):
 
     def run(self) -> None:
         request: Sequence[Asset] = []
-        try:
-            while not self.stop:
+        while not self.stop:
+            try:
                 try:
                     request = cast(Sequence[Asset], self.request_queue.get(timeout=0.1))
                 except queue.Empty:
                     continue
                 assets = cast(AssetList, self.client.create(request))
                 self.response_queue.put(assets)
-        except Exception as e:
-            self.response_queue.put(_AssetsFailedToPost(e, request))
+            except Exception as e:
+                self.response_queue.put(_AssetsFailedToPost(e, request))
 
 
 class _AssetPoster:
@@ -647,15 +698,16 @@ class _AssetPoster:
         self.not_posted_assets: Set[Asset] = set()
         self.exception: Optional[Exception] = None
 
-        self.assets_remaining = (
-            lambda: len(self.posted_assets) + len(self.may_have_been_posted_assets) + len(self.not_posted_assets)
-            < self.num_of_assets
-        )
-
         self.request_queue: queue.Queue[Sequence[Asset]] = queue.Queue()
         self.response_queue: queue.Queue[Union[AssetList, _AssetsFailedToPost]] = queue.Queue()
 
         self._initialize()
+
+    def assets_remaining(self) -> bool:
+        return (
+            len(self.posted_assets) + len(self.may_have_been_posted_assets) + len(self.not_posted_assets)
+            < self.num_of_assets
+        )
 
     @staticmethod
     def _validate_asset_hierarchy(assets: Sequence[Asset]) -> None:
@@ -664,16 +716,15 @@ class _AssetPoster:
             if asset.external_id is None:
                 raise AssertionError("An asset does not have external_id.")
             if asset.external_id in external_ids_seen:
-                raise AssertionError("Duplicate external_id '{}' found".format(asset.external_id))
+                raise AssertionError(f"Duplicate external_id '{asset.external_id}' found")
             external_ids_seen.add(asset.external_id)
 
             parent_ref = asset.parent_external_id
             if parent_ref:
                 if asset.parent_id is not None:
                     raise AssertionError(
-                        "An asset has both parent_id '{}' and parent_external_id '{}' set.".format(
-                            asset.parent_id, asset.parent_external_id
-                        )
+                        f"An asset has both parent_id '{asset.parent_id}' and parent_external_id "
+                        f"'{asset.parent_external_id}' set."
                     )
 
     def _initialize(self) -> None:

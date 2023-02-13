@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import contextlib
 import functools
 import heapq
 import itertools
 import math
 import statistics
 import time
+import warnings
 from abc import ABC, abstractmethod
 from concurrent.futures import CancelledError, as_completed
 from copy import copy
@@ -20,6 +22,7 @@ from typing import (
     Iterator,
     List,
     Literal,
+    MutableSequence,
     Optional,
     Sequence,
     Set,
@@ -44,20 +47,34 @@ from cognite.client._api.datapoint_tasks import (
 )
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api_client import APIClient
-from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem, DataPointListResponse
-from cognite.client.data_classes.datapoints import Datapoints, DatapointsArray, DatapointsArrayList, DatapointsList
+from cognite.client.data_classes.datapoints import (
+    Datapoints,
+    DatapointsArray,
+    DatapointsArrayList,
+    DatapointsList,
+    LatestDatapointQuery,
+)
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import (
     assert_type,
     find_duplicates,
+    import_legacy_protobuf,
     local_import,
     split_into_chunks,
     split_into_n_parts,
 )
-from cognite.client.utils._concurrency import collect_exc_info_and_raise, execute_tasks_concurrently
+from cognite.client.utils._concurrency import collect_exc_info_and_raise, execute_tasks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._priority_tpe import PriorityThreadPoolExecutor
 from cognite.client.utils._time import timestamp_to_ms
+
+if not import_legacy_protobuf():
+    from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem, DataPointListResponse
+else:
+    from cognite.client._proto_legacy.data_point_list_response_pb2 import (  # type: ignore [misc]
+        DataPointListItem,
+        DataPointListResponse,
+    )
 
 if TYPE_CHECKING:
     from concurrent.futures import Future
@@ -116,6 +133,23 @@ class DpsFetchStrategy(ABC):
         self.raw_queries = raw_queries
         self.max_workers = max_workers
         self.n_queries = len(all_queries)
+
+        # Fetching datapoints relies on protobuf, which, depending on OS and major version used
+        # might be running in pure python or compiled C code. We issue a warning if we can determine
+        # that the user is running in pure python mode (quite a bit slower...)
+        with contextlib.suppress(ImportError):
+            from google.protobuf.descriptor import _USE_C_DESCRIPTORS  # type: ignore [attr-defined]
+
+            if _USE_C_DESCRIPTORS is False:
+                warnings.warn(
+                    "Your installation of 'protobuf' is missing compiled C binaries, and will run in pure-python mode, "
+                    "which causes datapoints fetching to be ~5x slower. To verify, set the environment variable "
+                    "`PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=cpp` before running (this will cause the code to fail). "
+                    "The easiest fix is probably to pin your 'protobuf' dependency to major version 4 (or higher), "
+                    "see: https://developers.google.com/protocol-buffers/docs/news/2022-05-06#python-updates",
+                    UserWarning,
+                    stacklevel=3,
+                )
 
     def fetch_all_datapoints(self) -> DatapointsList:
         with PriorityThreadPoolExecutor(max_workers=self.max_workers) as pool:
@@ -241,6 +275,8 @@ class EagerDpsFetcher(DpsFetchStrategy):
         except CancelledError:
             return None
         except CogniteAPIError as e:
+            # Break ref cycle with the exception:
+            future._exception = None  # type: ignore [attr-defined]
             if not (e.code == 400 and e.missing and ts_task.query.ignore_unknown_ids):
                 # TODO: We only notify the user one the first occurrence of a missing time series, and we
                 #       should probably change that (add note to exception or await all ts have been checked)
@@ -555,6 +591,7 @@ class DatapointsAPI(APIClient):
 
         **Performance guide**:
             In order to retrieve millions of datapoints as efficiently as possible, here are a few guidelines:
+
             1. For best speed, and significantly lower memory usage, consider using `retrieve_arrays(...)` which uses `numpy.ndarrays` for data storage.
             2. Unlimited queries are fastest as they are trivial to parallelize. Thus, specifying a very large finite `limit`, e.g. 1 million, comes with a performance penalty.
             3. Try to avoid specifying `start` and `end` to be very far from the actual data: If you have data from 2000 to 2015, don't set start=0 (1970).
@@ -672,6 +709,16 @@ class DatapointsAPI(APIClient):
                 >>> dps_lst = client.time_series.data.retrieve(
                 ...     external_id=[{"external_id": "foo", "start": start} for start in month_starts],
                 ...     limit=1)
+
+            To get *all* historic and future datapoints for a time series, e.g. to do a backup, you may want to import the two integer
+            constants: `MIN_TIMESTAMP_MS` and `MAX_TIMESTAMP_MS`, to make sure you do not miss any. Performance warning: This pattern of
+            fetching datapoints from the entire valid time domain is slower and shouldn't be used for regular "day-to-day" queries::
+
+                >>> from cognite.client.utils import MIN_TIMESTAMP_MS, MAX_TIMESTAMP_MS
+                >>> dps_backup = client.time_series.data.retrieve(
+                ...     id=123,
+                ...     start=MIN_TIMESTAMP_MS,
+                ...     end=MAX_TIMESTAMP_MS + 1)  # end is exclusive
 
             The last example here is just to showcase the great flexibility of the `retrieve` endpoint, with a very custom query::
 
@@ -902,7 +949,7 @@ class DatapointsAPI(APIClient):
         )
         fetcher = select_dps_fetch_strategy(self, user_query=query)
         if uniform_index:
-            grans_given = set(q.granularity for q in fetcher.all_queries)
+            grans_given = {q.granularity for q in fetcher.all_queries}
             is_limited = any(q.limit is not None for q in fetcher.all_queries)
             if fetcher.raw_queries or len(grans_given) > 1 or is_limited:
                 raise ValueError(
@@ -924,21 +971,21 @@ class DatapointsAPI(APIClient):
 
     def retrieve_latest(
         self,
-        id: Union[int, List[int]] = None,
-        external_id: Union[str, List[str]] = None,
-        before: Union[int, str, datetime] = None,
+        id: Union[int, LatestDatapointQuery, List[Union[int, LatestDatapointQuery]]] = None,
+        external_id: Union[str, LatestDatapointQuery, List[Union[str, LatestDatapointQuery]]] = None,
+        before: Union[None, int, str, datetime] = None,
         ignore_unknown_ids: bool = False,
     ) -> Union[Datapoints, DatapointsList]:
         """`Get the latest datapoint for one or more time series <https://docs.cognite.com/api/v1/#operation/getLatest>`_
 
         Args:
-            id (Union[int, List[int]]): Id or list of ids.
-            external_id (Union[str, List[str]): External id or list of external ids.
-            before: (Union[int, str, datetime]): Get latest datapoint before this time.
+            id (Union[int, LatestDatapointQuery, List[Union[int, LatestDatapointQuery]]]): Id or list of ids.
+            external_id (Union[str, LatestDatapointQuery, List[Union[str, LatestDatapointQuery]]]): External id or list of external ids.
+            before: (Union[int, str, datetime]): Get latest datapoint before this time. Not used when passing 'LatestDatapointQuery'.
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
-            Union[Datapoints, DatapointsList]: A Datapoints object containing the requested data, or a list of such objects.
+            Union[Datapoints, DatapointsList]: A Datapoints object containing the requested data, or a DatapointsList if multiple were requested.
 
         Examples:
 
@@ -951,38 +998,35 @@ class DatapointsAPI(APIClient):
 
             You can also get the first datapoint before a specific time::
 
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
                 >>> res = c.time_series.data.retrieve_latest(id=1, before="2d-ago")[0]
 
-            If you need the latest datapoint for multiple time series simply give a list of ids. Note that we are
+            You may also pass an instance of LatestDatapointQuery:
+
+                >>> from cognite.client.data_classes import LatestDatapointQuery
+                >>> res = c.time_series.data.retrieve_latest(id=LatestDatapointQuery(id=1, before=60_000))[0]
+
+            If you need the latest datapoint for multiple time series, simply give a list of ids. Note that we are
             using external ids here, but either will work::
 
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
                 >>> res = c.time_series.data.retrieve_latest(external_id=["abc", "def"])
                 >>> latest_abc = res[0][0]
                 >>> latest_def = res[1][0]
-        """
-        id_seq = IdentifierSequence.load(id, external_id)
-        all_ids = id_seq.as_dicts()
-        if before is not None:
-            before = timestamp_to_ms(before)
-            for id_ in all_ids:
-                id_["before"] = timestamp_to_ms(before)
 
-        tasks = [
-            {
-                "url_path": self._RESOURCE_PATH + "/latest",
-                "json": {"items": chunk, "ignoreUnknownIds": ignore_unknown_ids},
-            }
-            for chunk in split_into_chunks(all_ids, RETRIEVE_LATEST_LIMIT)
-        ]
-        tasks_summary = execute_tasks_concurrently(self._post, tasks, max_workers=self._config.max_workers)
-        if tasks_summary.exceptions:
-            raise tasks_summary.exceptions[0]
-        res = tasks_summary.joined_results(lambda res: res.json()["items"])
-        if id_seq.is_singleton():
+            If you need to specify a different value of 'before' for each time series, you may pass several
+            LatestDatapointQuery objects::
+
+                >>> from datetime import datetime, timezone
+                >>> id_queries = [
+                ...     123,
+                ...     LatestDatapointQuery(id=456, before="1w-ago"),
+                ...     LatestDatapointQuery(id=789, before=datetime(2018,1,1, tzinfo=timezone.utc))]
+                >>> res = c.time_series.data.retrieve_latest(
+                ...     id=id_queries,
+                ...     external_id=LatestDatapointQuery(external_id="abc", before="3h-ago"))
+        """
+        fetcher = RetrieveLatestDpsFetcher(id, external_id, before, ignore_unknown_ids, self)
+        res = fetcher.fetch_datapoints()
+        if fetcher.input_is_singleton:
             return Datapoints._load(res[0], cognite_client=self._cognite_client)
         return DatapointsList._load(res, cognite_client=self._cognite_client)
 
@@ -1154,7 +1198,7 @@ class DatapointsAPI(APIClient):
             for key in range:
                 if key not in ("id", "externalId", "start", "end"):
                     raise AssertionError(
-                        "Invalid key '{}' in range. Must contain 'start', 'end', and 'id' or 'externalId".format(key)
+                        f"Invalid key '{key}' in range. Must contain 'start', 'end', and 'id' or 'externalId"
                     )
             id = range.get("id")
             external_id = range.get("externalId")
@@ -1273,7 +1317,7 @@ class DatapointsPoster:
             for key in dps_object:
                 if key not in ("id", "externalId", "datapoints"):
                     raise ValueError(
-                        "Invalid key '{}' in datapoints. Must contain 'datapoints', and 'id' or 'externalId".format(key)
+                        f"Invalid key '{key}' in datapoints. Must contain 'datapoints', and 'id' or 'externalId"
                     )
             valid_dps_object = {k: dps_object[k] for k in ["id", "externalId"] if k in dps_object}
             valid_dps_object["datapoints"] = DatapointsPoster._validate_and_format_datapoints(dps_object["datapoints"])
@@ -1324,9 +1368,7 @@ class DatapointsPoster:
         tasks = []
         for dps_object_list in dps_object_lists:
             tasks.append((dps_object_list,))
-        summary = execute_tasks_concurrently(
-            self._insert_datapoints, tasks, max_workers=self.client._config.max_workers
-        )
+        summary = execute_tasks(self._insert_datapoints, tasks, max_workers=self.client._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda x: x[0],
             task_list_element_unwrap_fn=lambda x: {k: x[k] for k in ["id", "externalId"] if k in x},
@@ -1339,3 +1381,90 @@ class DatapointsPoster:
         self.client._post(url_path=self.client._RESOURCE_PATH, json={"items": post_dps_objects})
         for it in post_dps_objects:
             del it["datapoints"]
+
+
+class RetrieveLatestDpsFetcher:
+    def __init__(
+        self,
+        id: Union[None, int, LatestDatapointQuery, List[Union[int, LatestDatapointQuery]]],
+        external_id: Union[None, str, LatestDatapointQuery, List[Union[str, LatestDatapointQuery]]],
+        before: Union[None, int, str, datetime],
+        ignore_unknown_ids: bool,
+        dps_client: DatapointsAPI,
+    ) -> None:
+        self.before_settings: Dict[Tuple[str, int], Union[None, int, str, datetime]] = {}
+        self.default_before = before
+        self.ignore_unknown_ids = ignore_unknown_ids
+        self.dps_client = dps_client
+
+        parsed_ids = cast(Union[None, int, Sequence[int]], self._parse_user_input(id, "id"))
+        parsed_xids = cast(Union[None, str, Sequence[str]], self._parse_user_input(external_id, "external_id"))
+        self._is_singleton = IdentifierSequence.load(parsed_ids, parsed_xids).is_singleton()
+        self._all_identifiers = self._prepare_requests(parsed_ids, parsed_xids)
+
+    @property
+    def input_is_singleton(self) -> bool:
+        return self._is_singleton
+
+    @staticmethod
+    def _get_and_check_identifier(
+        query: LatestDatapointQuery,
+        identifier_type: Literal["id", "external_id"],
+    ) -> Union[int, str]:
+        if (as_primitive := getattr(query, identifier_type)) is None:
+            raise ValueError(f"Missing '{identifier_type}' from: '{query}'")
+        return as_primitive
+
+    def _parse_user_input(
+        self,
+        user_input: Any,
+        identifier_type: Literal["id", "external_id"],
+    ) -> Union[None, int, str, List[int], List[str]]:
+        if user_input is None:
+            return None
+        # We depend on 'IdentifierSequence.load' to parse given ids/xids later, so we need to
+        # memorize the individual 'before'-settings when/where given:
+        elif isinstance(user_input, LatestDatapointQuery):
+            as_primitive = self._get_and_check_identifier(user_input, identifier_type)
+            self.before_settings[(identifier_type, 0)] = user_input.before
+            return as_primitive
+        elif isinstance(user_input, MutableSequence):
+            user_input = user_input[:]  # Modify a shallow copy to avoid side effects
+            for i, inp in enumerate(user_input):
+                if isinstance(inp, LatestDatapointQuery):
+                    as_primitive = self._get_and_check_identifier(inp, identifier_type)
+                    self.before_settings[(identifier_type, i)] = inp.before
+                    user_input[i] = as_primitive  # mutating while iterating like a boss
+        return user_input
+
+    def _prepare_requests(
+        self, parsed_ids: Union[None, int, Sequence[int]], parsed_xids: Union[None, str, Sequence[str]]
+    ) -> List[Dict]:
+        all_ids, all_xids = [], []
+        if parsed_ids is not None:
+            all_ids = IdentifierSequence.load(parsed_ids, None).as_dicts()
+        if parsed_xids is not None:
+            all_xids = IdentifierSequence.load(None, parsed_xids).as_dicts()
+
+        # In the API, missing 'before' defaults to 'now'. As we want to get the most up-to-date datapoint, we don't
+        # specify a particular timestamp for 'now' in order to possibly get a datapoint a few hundred ms fresher:
+        for identifiers, identifier_type in zip([all_ids, all_xids], ["id", "external_id"]):
+            for i, dct in enumerate(identifiers):
+                i_before = self.before_settings.get((identifier_type, i), self.default_before)
+                if "now" != i_before is not None:  # mypy doesnt understand 'i_before not in {"now", None}'
+                    dct["before"] = timestamp_to_ms(i_before)
+        all_ids.extend(all_xids)
+        return all_ids
+
+    def fetch_datapoints(self) -> List[Dict[str, Any]]:
+        tasks = [
+            {
+                "url_path": self.dps_client._RESOURCE_PATH + "/latest",
+                "json": {"items": chunk, "ignoreUnknownIds": self.ignore_unknown_ids},
+            }
+            for chunk in split_into_chunks(self._all_identifiers, RETRIEVE_LATEST_LIMIT)
+        ]
+        tasks_summary = execute_tasks(self.dps_client._post, tasks, max_workers=self.dps_client._config.max_workers)
+        if tasks_summary.exceptions:
+            raise tasks_summary.exceptions[0]
+        return tasks_summary.joined_results(lambda res: res.json()["items"])

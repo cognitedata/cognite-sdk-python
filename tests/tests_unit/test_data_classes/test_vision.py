@@ -1,4 +1,6 @@
-from typing import Any, Dict, List, Optional, Union
+from __future__ import annotations
+
+from typing import Any, Dict, List, Optional
 from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
@@ -31,21 +33,6 @@ mock_vision_extract_predictions = VisionExtractPredictions(
         )
     ]
 )
-
-
-class TestVisionExtractPredictions:
-    def test_get_feature_class(self) -> None:
-        assert VisionExtractPredictions._get_feature_class(Optional[List[str]]) == str
-        assert VisionExtractPredictions._get_feature_class(Optional[List[List[str]]]) == List[str]
-        assert VisionExtractPredictions._get_feature_class(Optional[List[float]]) == float
-        assert VisionExtractPredictions._get_feature_class(Optional[List[Union[int, str]]]) == Union[int, str]
-        assert (
-            VisionExtractPredictions._get_feature_class(Optional[List[VisionExtractPredictions]])
-            == VisionExtractPredictions
-        )
-        assert (
-            VisionExtractPredictions._get_feature_class(Optional[List[Dict[str, TextRegion]]]) == Dict[str, TextRegion]
-        )
 
 
 class TestVisionResource:

@@ -1,16 +1,19 @@
 ---
 repos:
-  - hooks:
+  - repo: https://github.com/PyCQA/autoflake
+    rev: v2.0.0
+    hooks:
       - id: autoflake
-        exclude: cognite/client/_proto/
+        exclude: ^cognite/client/_proto.*$
         args:
           - --remove-all-unused-imports
+          - --ignore-init-module-imports
+          - --remove-unused-variables
           - --in-place
-    repo: https://github.com/humitos/mirrors-autoflake
-    rev: v1.1
+
   - hooks:
       - id: isort
-        exclude: cognite/client/_proto/
+        exclude: ^cognite/client/(_proto.*|.*__init__.py)
         args:
           - --profile
           - black
@@ -23,10 +26,11 @@ repos:
           - ^((?!py$).)*$
           - --float-to-top
     repo: https://github.com/timothycrosley/isort
-    rev: 5.10.1
+    rev: 5.12.0
+
   - hooks:
       - id: black
-        exclude: cognite/client/_proto/
+        exclude: ^cognite/client/_proto.*$
         args:
           - --line-length
           - '120'
@@ -35,7 +39,26 @@ repos:
           - --include
           - \.py$
     repo: https://github.com/psf/black
-    rev: 22.3.0
+    rev: 22.12.0
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: debug-statements
+      - id: trailing-whitespace
+      - id: check-builtin-literals
+      - id: end-of-file-fixer
+      - id: check-docstring-first
+
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.3.1
+    hooks:
+    - id: pyupgrade
+      exclude: ^cognite/client/_proto.*$
+      args:
+          - --py38-plus
+          - --keep-runtime-typing  # remove when >=3.10
+
   - hooks:
       - id: mypy
         name: mypy
@@ -44,14 +67,21 @@ repos:
         files: ^.*.(py|pyi)$
         pass_filenames: false
     repo: local
+
   - hooks:
       - id: flake8
-        exclude: cognite/client/_proto/
+        exclude: ^cognite/client/_proto.*$
 # TODO: add this too
 #            additional_dependencies:
 #              - flake8-builtins
     repo: https://github.com/pycqa/flake8
-    rev: 3.9.2
+    rev: 6.0.0
+
+  - repo: https://github.com/ikamensh/flynt/
+    rev: '0.77'
+    hooks:
+      - id: flynt
+
   - hooks:
       - id: version-match-check
         name: version-match-check
@@ -59,3 +89,8 @@ repos:
         language: system
         pass_filenames: false
     repo: local
+
+  - repo: https://github.com/asottile/yesqa
+    rev: v1.4.0
+    hooks:
+    -   id: yesqa

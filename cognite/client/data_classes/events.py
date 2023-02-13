@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Union, cast
 
 from cognite.client.data_classes._base import (
@@ -72,7 +74,7 @@ class Event(CogniteResource):
         id: int = None,
         last_updated_time: int = None,
         created_time: int = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.external_id = external_id
         self.data_set_id = data_set_id
@@ -127,7 +129,7 @@ class EventFilter(CogniteFilter):
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
         external_id_prefix: str = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.start_time = start_time
         self.end_time = end_time
@@ -146,8 +148,8 @@ class EventFilter(CogniteFilter):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str]) -> "EventFilter":
-        instance = super(EventFilter, cls)._load(resource)
+    def _load(cls, resource: Union[Dict, str]) -> EventFilter:
+        instance = super()._load(resource)
         if isinstance(resource, Dict):
             if instance.start_time is not None:
                 instance.start_time = TimestampRange(**instance.start_time)
@@ -171,74 +173,74 @@ class EventUpdate(CogniteUpdate):
     """
 
     class _PrimitiveEventUpdate(CognitePrimitiveUpdate):
-        def set(self, value: Any) -> "EventUpdate":
+        def set(self, value: Any) -> EventUpdate:
             return self._set(value)
 
     class _ObjectEventUpdate(CogniteObjectUpdate):
-        def set(self, value: Dict) -> "EventUpdate":
+        def set(self, value: Dict) -> EventUpdate:
             return self._set(value)
 
-        def add(self, value: Dict) -> "EventUpdate":
+        def add(self, value: Dict) -> EventUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> "EventUpdate":
+        def remove(self, value: List) -> EventUpdate:
             return self._remove(value)
 
     class _ListEventUpdate(CogniteListUpdate):
-        def set(self, value: List) -> "EventUpdate":
+        def set(self, value: List) -> EventUpdate:
             return self._set(value)
 
-        def add(self, value: List) -> "EventUpdate":
+        def add(self, value: List) -> EventUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> "EventUpdate":
+        def remove(self, value: List) -> EventUpdate:
             return self._remove(value)
 
     class _LabelEventUpdate(CogniteLabelUpdate):
-        def add(self, value: List) -> "EventUpdate":
+        def add(self, value: List) -> EventUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> "EventUpdate":
+        def remove(self, value: List) -> EventUpdate:
             return self._remove(value)
 
     @property
-    def external_id(self) -> "_PrimitiveEventUpdate":
+    def external_id(self) -> _PrimitiveEventUpdate:
         return EventUpdate._PrimitiveEventUpdate(self, "externalId")
 
     @property
-    def data_set_id(self) -> "_PrimitiveEventUpdate":
+    def data_set_id(self) -> _PrimitiveEventUpdate:
         return EventUpdate._PrimitiveEventUpdate(self, "dataSetId")
 
     @property
-    def start_time(self) -> "_PrimitiveEventUpdate":
+    def start_time(self) -> _PrimitiveEventUpdate:
         return EventUpdate._PrimitiveEventUpdate(self, "startTime")
 
     @property
-    def end_time(self) -> "_PrimitiveEventUpdate":
+    def end_time(self) -> _PrimitiveEventUpdate:
         return EventUpdate._PrimitiveEventUpdate(self, "endTime")
 
     @property
-    def description(self) -> "_PrimitiveEventUpdate":
+    def description(self) -> _PrimitiveEventUpdate:
         return EventUpdate._PrimitiveEventUpdate(self, "description")
 
     @property
-    def metadata(self) -> "_ObjectEventUpdate":
+    def metadata(self) -> _ObjectEventUpdate:
         return EventUpdate._ObjectEventUpdate(self, "metadata")
 
     @property
-    def asset_ids(self) -> "_ListEventUpdate":
+    def asset_ids(self) -> _ListEventUpdate:
         return EventUpdate._ListEventUpdate(self, "assetIds")
 
     @property
-    def source(self) -> "_PrimitiveEventUpdate":
+    def source(self) -> _PrimitiveEventUpdate:
         return EventUpdate._PrimitiveEventUpdate(self, "source")
 
     @property
-    def type(self) -> "_PrimitiveEventUpdate":
+    def type(self) -> _PrimitiveEventUpdate:
         return EventUpdate._PrimitiveEventUpdate(self, "type")
 
     @property
-    def subtype(self) -> "_PrimitiveEventUpdate":
+    def subtype(self) -> _PrimitiveEventUpdate:
         return EventUpdate._PrimitiveEventUpdate(self, "subtype")
 
 

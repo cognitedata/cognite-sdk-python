@@ -322,7 +322,7 @@ class TestAssetPosterWorker:
         w = _AssetPosterWorker(request_queue=q_req, response_queue=q_res, client=cognite_client.assets)
         w.start()
         q_req.put([Asset()])
-        time.sleep(0.1)
+        time.sleep(1)
         w.stop = True
         assert [Asset._load(mock_assets_response.calls[0].response.json()["items"][0])] == q_res.get()
         assert 1 == len(mock_assets_response.calls)
@@ -335,7 +335,7 @@ def generate_asset_tree(root_external_id: str, depth: int, children_per_node: in
         assets = [Asset(external_id=root_external_id)]
     if depth > current_depth:
         for i in range(children_per_node):
-            asset = Asset(parent_external_id=root_external_id, external_id="{}{}".format(root_external_id, i))
+            asset = Asset(parent_external_id=root_external_id, external_id=f"{root_external_id}{i}")
             assets.append(asset)
             if depth > current_depth + 1:
                 assets.extend(
@@ -537,6 +537,14 @@ class TestAssetPoster:
         assert {a.external_id for a in e.value.unknown} == {"03"}
         assert {a.external_id for a in e.value.failed} == {"02", "021", "0211", "031"}
         assert {a.external_id for a in e.value.successful} == {"0", "01"}
+
+    def test_post_with_all_failures_and_more_requests_than_workers(self, cognite_client, mock_post_assets_failures):
+        num_assets = cognite_client.config.max_workers * 10
+        assets = [Asset(name="400", external_id=str(i)) for i in range(num_assets)]
+        with pytest.raises(CogniteAPIError) as e:
+            cognite_client.assets.create_hierarchy(assets)
+
+        assert {a.external_id for a in e.value.failed} == {str(i) for i in range(num_assets)}
 
 
 @pytest.fixture

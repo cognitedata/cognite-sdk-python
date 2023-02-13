@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import numbers
+import warnings
 from typing import TYPE_CHECKING, Optional, Sequence, Union
 
 from cognite.client import utils
@@ -10,7 +13,6 @@ from cognite.client.data_classes import (
     APIKeyList,
     ClientCredentials,
     CreatedSession,
-    CreatedSessionList,
     Group,
     GroupList,
     SecurityCategory,
@@ -28,7 +30,7 @@ if TYPE_CHECKING:
 
 
 class IAMAPI(APIClient):
-    def __init__(self, config: ClientConfig, api_version: str = None, cognite_client: "CogniteClient" = None) -> None:
+    def __init__(self, config: ClientConfig, api_version: str = None, cognite_client: CogniteClient = None) -> None:
         super().__init__(config, api_version=api_version, cognite_client=cognite_client)
         self.service_accounts = ServiceAccountsAPI(config, api_version=api_version, cognite_client=cognite_client)
         self.api_keys = APIKeysAPI(config, api_version=api_version, cognite_client=cognite_client)
@@ -379,6 +381,13 @@ class TokenAPI(APIClient):
         Returns:
             TokenInspection: The object with token inspection details.
         """
+        if isinstance(self._config.credentials, APIKey):
+            warnings.warn(
+                "It seems you are trying to reach API endpoint `/token/inspect` which is not valid when "
+                "authenticating using an API key. Try `client.login.status` instead",
+                UserWarning,
+                stacklevel=2,
+            )
         return TokenInspection._load(self._get("/api/v1/token/inspect").json())
 
 
@@ -386,7 +395,7 @@ class SessionsAPI(APIClient):
     _LIST_CLASS = SessionList
     _RESOURCE_PATH = "/sessions"
 
-    def __init__(self, config: ClientConfig, api_version: str = None, cognite_client: "CogniteClient" = None) -> None:
+    def __init__(self, config: ClientConfig, api_version: str = None, cognite_client: CogniteClient = None) -> None:
         super().__init__(config, api_version=api_version, cognite_client=cognite_client)
         self._LIST_LIMIT = 100
 
@@ -394,19 +403,19 @@ class SessionsAPI(APIClient):
         """`Create a session. <https://docs.cognite.com/api/v1/#operation/createSessions>`_
 
         Args:
-            client_credentials (Optional[ClientCredentials]): client credentials to create the session, set to None to create session with token exchange.
+            client_credentials (Optional[ClientCredentials]): The client credentials to create the session. If set to None,
+                a session will be created using the credentials used to instantiate -this- CogniteClient object. If that
+                was done using a token, a session will be created using token exchange. Similarly, if the credentials were
+                client credentials, a session will be created using client credentials.
 
         Returns:
             CreatedSession: The object with token inspection details.
         """
-        if client_credentials is None and isinstance(self._config.credentials, OAuthClientCredentials):
-            client_credentials = ClientCredentials(
-                self._config.credentials.client_id, self._config.credentials.client_secret
-            )
+        if client_credentials is None and isinstance((creds := self._config.credentials), OAuthClientCredentials):
+            client_credentials = ClientCredentials(creds.client_id, creds.client_secret)
 
-        json = {"items": [client_credentials.dump(True) if client_credentials else {"tokenExchange": True}]}
-
-        return CreatedSessionList._load(self._post(self._RESOURCE_PATH, json).json()["items"])[0]
+        items = {"tokenExchange": True} if client_credentials is None else client_credentials.dump(camel_case=True)
+        return CreatedSession._load(self._post(self._RESOURCE_PATH, {"items": [items]}).json()["items"][0])
 
     def revoke(self, id: Union[int, Sequence[int]]) -> SessionList:
         """`Revoke access to a session. Revocation of a session may in some cases take up to 1 hour to take effect. <https://docs.cognite.com/api/v1/#operation/revokeSessions>`_
@@ -415,13 +424,12 @@ class SessionsAPI(APIClient):
             id (Union[int, Sequence[int]): Id or list of session ids
 
         Returns:
-            List of revoked sessions. If the user does not have the sessionsAcl:LIST  capability,
-            then only the session IDs will be present in the response.
+            List of revoked sessions. If the user does not have the sessionsAcl:LIST capability, then only the session IDs will be present in the response.
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=None)
         items = {"items": identifiers.as_dicts()}
 
-        return SessionList._load(self._post(self._RESOURCE_PATH + "/revoke", items).json()["items"])
+        return self._LIST_CLASS._load(self._post(self._RESOURCE_PATH + "/revoke", items).json()["items"])
 
     def list(self, status: Optional[str] = None) -> SessionList:
         """`List all sessions in the current project. <https://docs.cognite.com/api/v1/#operation/listSessions>`_
@@ -433,4 +441,4 @@ class SessionsAPI(APIClient):
             SessionList: a list of sessions in the current project.
         """
         filter = {"status": status} if status else None
-        return self._list(list_cls=SessionList, resource_cls=Session, method="GET", filter=filter)
+        return self._list(list_cls=self._LIST_CLASS, resource_cls=Session, method="GET", filter=filter)

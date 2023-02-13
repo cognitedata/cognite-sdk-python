@@ -128,7 +128,7 @@ class TestTransformationsAPI:
             tags=["vu", "hai"],
         )
         ts = cognite_client.transformations.create(transform)
-        assert set(["vu", "hai"]) == set(ts.tags)
+        assert {"vu", "hai"} == set(ts.tags)
         cognite_client.transformations.delete(id=ts.id)
 
     @pytest.mark.skip
@@ -148,6 +148,28 @@ class TestTransformationsAPI:
             ts.destination.type == "data_model_instances"
             and ts.destination.model_external_id == "testInstance"
             and ts.destination.space_external_id == "test-space"
+            and ts.destination.instance_space_external_id == "test-space"
+        )
+        cognite_client.transformations.delete(id=ts.id)
+
+    def test_create_instances_transformation(self, cognite_client):
+        prefix = random_string(6, string.ascii_letters)
+        transform = Transformation(
+            name="any",
+            external_id=f"{prefix}-transformation",
+            destination=TransformationDestination.instances(
+                view_external_id="testInstanceViewExternalId",
+                view_version="testInstanceViewVersion",
+                view_space_external_id="test-space",
+                instance_space_external_id="test-space",
+            ),
+        )
+        ts = cognite_client.transformations.create(transform)
+        assert (
+            ts.destination.type == "instances"
+            and ts.destination.view_external_id == "testInstanceViewExternalId"
+            and ts.destination.view_version == "testInstanceViewVersion"
+            and ts.destination.view_space_external_id == "test-space"
             and ts.destination.instance_space_external_id == "test-space"
         )
         cognite_client.transformations.delete(id=ts.id)
@@ -295,6 +317,22 @@ class TestTransformationsAPI:
             "myTest2", "test-space", "test-space"
         )
 
+    def test_update_instances(self, cognite_client, new_transformation):
+        new_transformation.destination = TransformationDestination.instances(
+            "myViewExternalId", "myViewVersion", "test-space", "test-space"
+        )
+        partial_update = TransformationUpdate(id=new_transformation.id).destination.set(
+            TransformationDestination.instances("myViewExternalId", "myViewVersion2", "test-space", "test-space")
+        )
+        updated_transformation = cognite_client.transformations.update(new_transformation)
+        assert updated_transformation.destination == TransformationDestination.instances(
+            "myViewExternalId", "myViewVersion", "test-space", "test-space"
+        )
+        partial_updated = cognite_client.transformations.update(partial_update)
+        assert partial_updated.destination == TransformationDestination.instances(
+            "myViewExternalId", "myViewVersion2", "test-space", "test-space"
+        )
+
     def test_update_sequence_rows_update(self, cognite_client, new_transformation):
         new_transformation.destination = SequenceRows("myTest")
         updated_transformation = cognite_client.transformations.update(new_transformation)
@@ -307,7 +345,7 @@ class TestTransformationsAPI:
     def test_update_transformations_with_tags(self, cognite_client, new_transformation):
         new_transformation.tags = ["emel", "OPs"]
         updated_transformation = cognite_client.transformations.update(new_transformation)
-        assert set(["emel", "OPs"]) == set(updated_transformation.tags)
+        assert {"emel", "OPs"} == set(updated_transformation.tags)
 
     def test_update_transformations_with_tags_partial(self, cognite_client, new_transformation):
         partial_update = TransformationUpdate(id=new_transformation.id).tags.set(["jaime"])
@@ -315,12 +353,12 @@ class TestTransformationsAPI:
         assert partial_updated.tags == ["jaime"]
         partial_update2 = TransformationUpdate(id=new_transformation.id).tags.add(["andres", "silva"])
         partial_updated2 = cognite_client.transformations.update(partial_update2)
-        assert set(partial_updated2.tags) == set(["jaime", "andres", "silva"])
+        assert set(partial_updated2.tags) == {"jaime", "andres", "silva"}
         partial_update3 = (
             TransformationUpdate(id=new_transformation.id).tags.add(["tharindu"]).tags.remove(["andres", "silva"])
         )
         partial_updated3 = cognite_client.transformations.update(partial_update3)
-        assert set(partial_updated3.tags) == set(["jaime", "tharindu"])
+        assert set(partial_updated3.tags) == {"jaime", "tharindu"}
 
     def test_filter_transformations_by_tags(self, cognite_client, new_transformation, other_transformation):
         new_transformation.tags = ["hello"]
@@ -329,7 +367,7 @@ class TestTransformationsAPI:
         ts = cognite_client.transformations.list(tags=ContainsAny(["hello"]))
         assert ts[0].id == new_transformation.id and ts[0].tags == ["hello"]
         ts3 = cognite_client.transformations.list(tags=ContainsAny(["hello", "kiki"]))
-        assert len(ts3) == 2 and set([i.id for i in ts3]) == set([new_transformation.id, other_transformation.id])
+        assert len(ts3) == 2 and {i.id for i in ts3} == {new_transformation.id, other_transformation.id}
 
     def test_transformation_str_function(self, cognite_client, new_transformation, new_datasets):
         cognite_client.transformations.schedules.create(

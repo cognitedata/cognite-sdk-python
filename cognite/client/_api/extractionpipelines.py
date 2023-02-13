@@ -1,4 +1,6 @@
-from typing import Any, Dict, Optional, Sequence, Union, overload
+from __future__ import annotations
+
+from typing import Any, Dict, Optional, Sequence, Union, cast, overload
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -14,6 +16,7 @@ from cognite.client.data_classes import (
     TimestampRange,
 )
 from cognite.client.data_classes.extractionpipelines import StringFilter
+from cognite.client.utils._auxiliary import handle_deprecated_camel_case_argument
 from cognite.client.utils._identifier import IdentifierSequence
 
 
@@ -115,22 +118,26 @@ class ExtractionPipelinesAPI(APIClient):
         return self._list(list_cls=ExtractionPipelineList, resource_cls=ExtractionPipeline, method="GET", limit=limit)
 
     @overload
-    def create(self, extractionPipeline: ExtractionPipeline) -> ExtractionPipeline:
+    def create(self, extraction_pipeline: ExtractionPipeline, **kwargs: Dict[str, Any]) -> ExtractionPipeline:
         ...
 
     @overload
-    def create(self, extractionPipeline: Sequence[ExtractionPipeline]) -> ExtractionPipelineList:
+    def create(
+        self, extraction_pipeline: Sequence[ExtractionPipeline], **kwargs: Dict[str, Any]
+    ) -> ExtractionPipelineList:
         ...
 
     def create(
-        self, extractionPipeline: Union[ExtractionPipeline, Sequence[ExtractionPipeline]]
+        self,
+        extraction_pipeline: Union[ExtractionPipeline, Sequence[ExtractionPipeline]] = None,
+        **kwargs: Dict[str, Any],
     ) -> Union[ExtractionPipeline, ExtractionPipelineList]:
         """`Create one or more extraction pipelines. <https://docs.cognite.com/api/v1/#operation/createExtPipes>`_
 
-        You can create an arbitrary number of extraction pipeline, and the SDK will split the request into multiple requests if necessary.
+        You can create an arbitrary number of extraction pipelines, and the SDK will split the request into multiple requests if necessary.
 
         Args:
-            extractionPipeline (Union[ExtractionPipeline, List[ExtractionPipeline]]): Extraction pipeline or list of extraction pipelines to create.
+            extraction_pipeline (Union[ExtractionPipeline, List[ExtractionPipeline]]): Extraction pipeline or list of extraction pipelines to create.
 
         Returns:
             Union[ExtractionPipeline, ExtractionPipelineList]: Created extraction pipeline(s)
@@ -145,9 +152,14 @@ class ExtractionPipelinesAPI(APIClient):
                 >>> extpipes = [ExtractionPipeline(name="extPipe1",...), ExtractionPipeline(name="extPipe2",...)]
                 >>> res = c.extraction_pipelines.create(extpipes)
         """
-        utils._auxiliary.assert_type(extractionPipeline, "extraction_pipeline", [ExtractionPipeline, Sequence])
+        # TODO: Remove support for old argument name in major version 6
+        extraction_pipeline = cast(
+            Union[ExtractionPipeline, Sequence[ExtractionPipeline]],
+            handle_deprecated_camel_case_argument(extraction_pipeline, "extractionPipeline", "create", kwargs),
+        )
+        utils._auxiliary.assert_type(extraction_pipeline, "extraction_pipeline", [ExtractionPipeline, Sequence])
         return self._create_multiple(
-            list_cls=ExtractionPipelineList, resource_cls=ExtractionPipeline, items=extractionPipeline
+            list_cls=ExtractionPipelineList, resource_cls=ExtractionPipeline, items=extraction_pipeline
         )
 
     def delete(self, id: Union[int, Sequence[int]] = None, external_id: Union[str, Sequence[str]] = None) -> None:

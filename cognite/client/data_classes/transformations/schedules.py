@@ -1,6 +1,7 @@
-from typing import TYPE_CHECKING, Any, Dict, Union, cast
+from __future__ import annotations
 
-from cognite.client import utils
+from typing import TYPE_CHECKING, Any, cast
+
 from cognite.client.data_classes._base import (
     CognitePrimitiveUpdate,
     CogniteResource,
@@ -33,7 +34,7 @@ class TransformationSchedule(CogniteResource):
         last_updated_time: int = None,
         interval: str = None,
         is_paused: bool = False,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.id = id
         self.external_id = external_id
@@ -43,28 +44,8 @@ class TransformationSchedule(CogniteResource):
         self.is_paused = is_paused
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "TransformationSchedule":
-        instance = super(TransformationSchedule, cls)._load(resource, cognite_client)
-        return instance
-
     def __hash__(self) -> int:
         return hash(self.id)
-
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        """Dump the instance into a json serializable Python data type.
-
-        Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to False.
-
-        Returns:
-            Dict[str, Any]: A dictionary representation of the instance.
-        """
-        ret = super().dump(camel_case=camel_case)
-
-        if camel_case:
-            return {utils._auxiliary.to_camel_case(key): value for key, value in ret.items()}
-        return ret
 
 
 class TransformationScheduleUpdate(CogniteUpdate):
@@ -76,7 +57,7 @@ class TransformationScheduleUpdate(CogniteUpdate):
     """
 
     class _PrimitiveTransformationScheduleUpdate(CognitePrimitiveUpdate):
-        def set(self, value: Any) -> "TransformationScheduleUpdate":
+        def set(self, value: Any) -> TransformationScheduleUpdate:
             return self._set(value)
 
     @property

@@ -34,7 +34,7 @@ def generate_asset_tree(root_external_id: str, depth: int, children_per_node: in
         assets = [Asset(external_id=root_external_id, name=root_external_id)]
     if depth > current_depth:
         for i in range(children_per_node):
-            external_id = "{}{}".format(root_external_id, i)
+            external_id = f"{root_external_id}{i}"
             asset = Asset(parent_external_id=root_external_id, external_id=external_id, name=external_id)
             assets.append(asset)
             if depth > current_depth + 1:
@@ -52,7 +52,7 @@ def post_spy(cognite_client):
 
 @pytest.fixture
 def new_asset_hierarchy(cognite_client, post_spy):
-    random_prefix = "test_{}_".format(utils._auxiliary.random_string(10))
+    random_prefix = f"test_{utils._auxiliary.random_string(10)}_"
     assets = generate_asset_tree(random_prefix + "0", depth=5, children_per_node=5)
 
     with set_request_limit(cognite_client.assets, 50):
@@ -78,7 +78,7 @@ def root_test_asset(cognite_client):
 
 @pytest.fixture
 def new_root_asset(cognite_client):
-    external_id = "my_root_{}".format(utils._auxiliary.random_string(10))
+    external_id = f"my_root_{utils._auxiliary.random_string(10)}"
     root = Asset(external_id=external_id, name="my_root")
     root = cognite_client.assets.create(root)
     yield root
@@ -131,6 +131,20 @@ class TestAssetsAPI:
 
     def test_aggregate(self, cognite_client, new_asset):
         res = cognite_client.assets.aggregate(filter=AssetFilter(name="test__asset_0"))
+        assert res[0].count > 0
+
+    def test_aggregate_metadata_keys(self, cognite_client, new_asset):
+        res = cognite_client.assets.aggregate_metadata_keys()
+        assert len(res) > 1
+        assert set(res[0]) == {"count", "value", "values"}
+        assert isinstance(res[0].value, str)
+        assert res[0].count > 1
+
+    def test_aggregate_metadata_values(self, cognite_client, new_asset):
+        res = cognite_client.assets.aggregate_metadata_values(keys=["a"])
+        assert len(res) > 0
+        assert set(res[0]) == {"count", "value", "values"}
+        assert isinstance(res[0].value, str)
         assert res[0].count > 0
 
     def test_search(self, cognite_client):

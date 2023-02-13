@@ -8,7 +8,7 @@ from unittest.mock import patch
 import pytest
 
 from cognite.client._api.datapoints import DatapointsBin
-from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList
+from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, LatestDatapointQuery
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._time import granularity_to_ms
 from tests.utils import jsgz_load
@@ -146,6 +146,29 @@ class TestGetLatest:
             with pytest.raises(CogniteAPIError) as e:
                 cognite_client.time_series.data.retrieve_latest(id=[1, 2, 3])
             assert e.value.code == 500
+
+    @pytest.mark.parametrize(
+        "id, external_id, pass_as, err_msg",
+        (
+            (None, None, "id", "Exactly one of id or external id must be specified, got neither"),
+            (None, None, "external_id", "Exactly one of id or external id must be specified, got neither"),
+            (None, "foo", "id", "Missing 'id' from: 'LatestDatapointQuery"),
+            (123, None, "external_id", "Missing 'external_id' from: 'LatestDatapointQuery"),
+            (123, "foo", "id", "Exactly one of id or external id must be specified, got both"),
+            (123, "foo", "external_id", "Exactly one of id or external id must be specified, got both"),
+        ),
+    )
+    def test_using_latest_datapoint_query__fails_wrong_ident(self, cognite_client, id, external_id, pass_as, err_msg):
+        # Pass directly
+        with pytest.raises(ValueError, match=err_msg):
+            ldq = LatestDatapointQuery(id, external_id)
+            cognite_client.time_series.data.retrieve_latest(**{pass_as: ldq})
+
+        # Pass as a part of a list
+        with pytest.raises(ValueError, match=err_msg):
+            ldq = LatestDatapointQuery(id, external_id)
+            valid = 123 if pass_as == "id" else "foo"
+            cognite_client.time_series.data.retrieve_latest(**{pass_as: [valid, ldq, ldq, valid]})
 
 
 @pytest.fixture

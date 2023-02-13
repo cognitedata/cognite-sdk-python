@@ -1,13 +1,15 @@
+from __future__ import annotations
+
 import importlib.util
 import os
 import re
 import sys
 import time
 from inspect import getdoc, getsource
-from numbers import Integral, Number
+from numbers import Number
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import IO, TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Union, cast
 from zipfile import ZipFile
 
 from cognite.client import utils
@@ -30,6 +32,7 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.functions import FunctionCallsFilter, FunctionsStatus
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._identifier import IdentifierSequence, SingletonIdentifierSequence
 
 if TYPE_CHECKING:
@@ -42,7 +45,7 @@ REQUIREMENTS_REG = re.compile(r"(\[\/?requirements\]){1}$", flags=re.M)  # Match
 UNCOMMENTED_LINE_REG = re.compile(r"^[^\#]]*.*")
 
 
-def _get_function_internal_id(_cognite_client: "CogniteClient", identifier: SingletonIdentifierSequence) -> int:
+def _get_function_internal_id(_cognite_client: CogniteClient, identifier: SingletonIdentifierSequence) -> int:
     id_object = identifier[0]
     id_dict = id_object.as_dict()
 
@@ -72,7 +75,7 @@ class FunctionsAPI(APIClient):
         super().__init__(*args, **kwargs)
         self.calls = FunctionCallsAPI(*args, **kwargs)
         self.schedules = FunctionSchedulesAPI(*args, **kwargs)
-        self._cognite_client: "CogniteClient" = cast("CogniteClient", self._cognite_client)
+        self._cognite_client: CogniteClient = cast("CogniteClient", self._cognite_client)
 
     def create(
         self,
@@ -185,7 +188,7 @@ class FunctionsAPI(APIClient):
             else:
                 break
         else:
-            raise IOError("Could not retrieve file from files API")
+            raise OSError("Could not retrieve file from files API")
 
         url = "/functions"
         function: Dict[str, Any] = {
@@ -270,7 +273,7 @@ class FunctionsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> functions_list = c.functions.list()
         """
-        if limit in [float("inf"), -1, None]:
+        if is_unlimited(limit):
             limit = LIST_LIMIT_CEILING
 
         filter = FunctionFilter(
@@ -539,7 +542,7 @@ class FunctionsAPI(APIClient):
 
 
 def _use_client_credentials(
-    cognite_client: "CogniteClient",
+    cognite_client: CogniteClient,
     client_credentials: Optional[Dict] = None,
 ) -> str:
     """
@@ -574,7 +577,7 @@ def _use_client_credentials(
 
 
 def _use_token_exchange(
-    cognite_client: "CogniteClient",
+    cognite_client: CogniteClient,
 ) -> str:
     session_url = f"/api/v1/projects/{cognite_client.config.project}/sessions"
     payload = {"items": [{"tokenExchange": True}]}
@@ -586,12 +589,12 @@ def _use_token_exchange(
         raise CogniteAPIError("Failed to create session using token exchange flow.", 403) from e
 
 
-def _using_token_exchange_flow(cognite_client: "CogniteClient") -> bool:
+def _using_token_exchange_flow(cognite_client: CogniteClient) -> bool:
     """Determine whether the Cognite client is configured with a token or token factory."""
     return isinstance(cognite_client.config.credentials, Token)
 
 
-def _using_client_credential_flow(cognite_client: "CogniteClient") -> bool:
+def _using_client_credential_flow(cognite_client: CogniteClient) -> bool:
     """Determine whether the Cognite client is configured for client-credential flow."""
     return isinstance(cognite_client.config.credentials, OAuthClientCredentials)
 
@@ -609,7 +612,7 @@ def validate_function_folder(root_path: str, function_path: str) -> None:
         function_path
     )  # This converts function_path to a Windows path if running on Windows
     if not function_path_full.is_file():
-        raise TypeError(f"No file found at location '{function_path}' in '{root_path}'.")
+        raise FileNotFoundError(f"No file found at location '{function_path}' in '{root_path}'.")
 
     sys.path.insert(0, root_path)
 
@@ -632,23 +635,11 @@ def _validate_function_handle(function_handle: Callable[..., Any]) -> None:
     if not function_handle.__code__.co_name == "handle":
         raise TypeError("Function referenced by function_handle must be named handle.")
     if not set(function_handle.__code__.co_varnames[: function_handle.__code__.co_argcount]).issubset(
-        set(["data", "client", "secrets", "function_call_info"])
+        {"data", "client", "secrets", "function_call_info"}
     ):
         raise TypeError(
             "Arguments to function referenced by function_handle must be a subset of (data, client, secrets, function_call_info)"
         )
-
-
-def _assert_at_most_one_of_function_id_and_function_external_id(
-    function_id: Optional[int], function_external_id: Optional[str]
-) -> None:
-    utils._auxiliary.assert_type(function_id, "function_id", [Integral], allow_none=True)
-    utils._auxiliary.assert_type(function_external_id, "function_external_id", [str], allow_none=True)
-    has_function_id = function_id is not None
-    has_function_external_id = function_external_id is not None
-    assert not (
-        has_function_id and has_function_external_id
-    ), "Only function_id or function_external_id allowed when listing schedules."
 
 
 def _extract_requirements_from_file(file_name: str) -> List[str]:
@@ -717,10 +708,6 @@ def _validate_and_parse_requirements(requirements: List[str]) -> List[str]:
     return parsed_reqs
 
 
-def _write_requirements_to_named_temp_file(file: IO, requirements: List[str]) -> None:
-    file.write("\n".join(requirements))
-
-
 def _get_fn_docstring_requirements(fn: Callable) -> List[str]:
     """Read requirements from a function docstring, validate them and return.
 
@@ -747,7 +734,7 @@ class FunctionCallsAPI(APIClient):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self._cognite_client: "CogniteClient" = cast("CogniteClient", self._cognite_client)
+        self._cognite_client: CogniteClient = cast("CogniteClient", self._cognite_client)
 
     def list(
         self,
@@ -924,7 +911,7 @@ class FunctionSchedulesAPI(APIClient):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self._cognite_client: "CogniteClient" = cast("CogniteClient", self._cognite_client)
+        self._cognite_client: CogniteClient = cast("CogniteClient", self._cognite_client)
 
     def retrieve(self, id: int) -> Union[FunctionSchedule, FunctionSchedulesList, None]:
         """`Retrieve a single function schedule by id. <https://docs.cognite.com/api/v1/#operation/byIdsFunctionSchedules>`_
@@ -993,7 +980,7 @@ class FunctionSchedulesAPI(APIClient):
             except ValueError:
                 raise AssertionError("Only function_id or function_external_id allowed when listing schedules.")
 
-        if limit in [float("inf"), -1, None]:
+        if is_unlimited(limit):
             limit = LIST_LIMIT_CEILING
 
         filter = FunctionSchedulesFilter(

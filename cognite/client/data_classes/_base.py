@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 from collections import UserList
 from typing import TYPE_CHECKING, Any, Collection, Dict, Generic, List, Optional, Sequence, Type, TypeVar, Union, cast
@@ -6,6 +8,7 @@ from cognite.client import utils
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.utils._auxiliary import convert_all_keys_to_camel_case, to_camel_case, to_snake_case
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._pandas_helpers import notebook_display_with_fallback
 from cognite.client.utils._time import convert_time_attributes_to_datetime
 
 if TYPE_CHECKING:
@@ -14,8 +17,6 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 EXCLUDE_VALUE = [None]
-
-T_CogniteResponse = TypeVar("T_CogniteResponse", bound="CogniteResponse")
 
 
 def basic_instance_dump(obj: Any, camel_case: bool) -> Dict[str, Any]:
@@ -56,20 +57,20 @@ class CogniteResponse:
         return basic_instance_dump(self, camel_case=camel_case)
 
     @classmethod
-    def _load(cls, api_response: Dict[str, Any]) -> "CogniteResponse":
+    def _load(cls, api_response: Dict[str, Any]) -> CogniteResponse:
         raise NotImplementedError
 
-    def to_pandas(self) -> "pandas.DataFrame":
+    def to_pandas(self) -> pandas.DataFrame:
         raise NotImplementedError
 
 
-T_CogniteResource = TypeVar("T_CogniteResource", bound="CogniteResource")
+T_CogniteResponse = TypeVar("T_CogniteResponse", bound=CogniteResponse)
 
 
 class CogniteResource:
     _cognite_client: Any
 
-    def __new__(cls, *args: Any, **kwargs: Any) -> "CogniteResource":
+    def __new__(cls, *args: Any, **kwargs: Any) -> CogniteResource:
         obj = super().__new__(cls)
         obj._cognite_client = None
         if "cognite_client" in kwargs:
@@ -103,7 +104,7 @@ class CogniteResource:
 
     @classmethod
     def _load(
-        cls: Type[T_CogniteResource], resource: Union[Dict, str], cognite_client: "CogniteClient" = None
+        cls: Type[T_CogniteResource], resource: Union[Dict, str], cognite_client: CogniteClient = None
     ) -> T_CogniteResource:
         if isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
@@ -114,11 +115,11 @@ class CogniteResource:
                 if hasattr(instance, snake_case_key):
                     setattr(instance, snake_case_key, value)
             return instance
-        raise TypeError("Resource must be json str or dict, not {}".format(type(resource)))
+        raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
 
     def to_pandas(
         self, expand: Sequence[str] = ("metadata",), ignore: List[str] = None, camel_case: bool = False
-    ) -> "pandas.DataFrame":
+    ) -> pandas.DataFrame:
         """Convert the instance into a pandas DataFrame.
 
         Args:
@@ -141,7 +142,7 @@ class CogniteResource:
                 if isinstance(dumped[key], dict):
                     dumped.update(dumped.pop(key))
                 else:
-                    raise AssertionError("Could not expand attribute '{}'".format(key))
+                    raise AssertionError(f"Could not expand attribute '{key}'")
 
         df = pd.DataFrame(columns=["value"])
         for name, value in dumped.items():
@@ -149,7 +150,10 @@ class CogniteResource:
         return df
 
     def _repr_html_(self) -> str:
-        return self.to_pandas(camel_case=False)._repr_html_()
+        return notebook_display_with_fallback(self)
+
+
+T_CogniteResource = TypeVar("T_CogniteResource", bound=CogniteResource)
 
 
 class CognitePropertyClassUtil:
@@ -169,19 +173,15 @@ class CognitePropertyClassUtil:
             self[schema_name] = value
 
 
-T_CogniteResourceList = TypeVar("T_CogniteResourceList", bound="CogniteResourceList")
-
-
 class CogniteResourceList(UserList):
     _RESOURCE: Type[CogniteResource]
 
-    def __init__(self, resources: Collection[Any], cognite_client: "CogniteClient" = None):
+    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient = None):
         for resource in resources:
             if not isinstance(resource, self._RESOURCE):
                 raise TypeError(
-                    "All resources for class '{}' must be of type '{}', not '{}'.".format(
-                        self.__class__.__name__, self._RESOURCE.__name__, type(resource)
-                    )
+                    f"All resources for class '{self.__class__.__name__}' must be of type "
+                    f"'{self._RESOURCE.__name__}', not '{type(resource)}'."
                 )
         self._cognite_client = cast("CogniteClient", cognite_client)
         super().__init__(resources)
@@ -239,7 +239,7 @@ class CogniteResourceList(UserList):
             return self._id_to_item.get(id)
         return self._external_id_to_item.get(external_id)
 
-    def to_pandas(self, camel_case: bool = False) -> "pandas.DataFrame":
+    def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:
         """Convert the instance into a pandas DataFrame.
 
         Returns:
@@ -256,11 +256,11 @@ class CogniteResourceList(UserList):
         return df
 
     def _repr_html_(self) -> str:
-        return self.to_pandas(camel_case=False)._repr_html_()
+        return notebook_display_with_fallback(self)
 
     @classmethod
     def _load(
-        cls: Type[T_CogniteResourceList], resource_list: Union[List, str], cognite_client: "CogniteClient" = None
+        cls: Type[T_CogniteResourceList], resource_list: Union[List, str], cognite_client: CogniteClient = None
     ) -> T_CogniteResourceList:
         if isinstance(resource_list, str):
             return cls._load(json.loads(resource_list), cognite_client=cognite_client)
@@ -269,7 +269,7 @@ class CogniteResourceList(UserList):
             return cls(resources, cognite_client=cognite_client)
 
 
-T_CogniteUpdate = TypeVar("T_CogniteUpdate", bound="CogniteUpdate")
+T_CogniteResourceList = TypeVar("T_CogniteResourceList", bound=CogniteResourceList)
 
 
 class CogniteUpdate:
@@ -340,6 +340,9 @@ class CogniteUpdate:
     @classmethod
     def _get_update_properties(cls) -> List[str]:
         return [key for key in cls.__dict__.keys() if (not key.startswith("_")) and (key not in ["labels", "columns"])]
+
+
+T_CogniteUpdate = TypeVar("T_CogniteUpdate", bound=CogniteUpdate)
 
 
 class CognitePrimitiveUpdate(Generic[T_CogniteUpdate]):
@@ -419,9 +422,6 @@ class CogniteLabelUpdate(Generic[T_CogniteUpdate]):
         return external_ids if isinstance(external_ids, list) else [external_ids]
 
 
-T_CogniteFilter = TypeVar("T_CogniteFilter", bound="CogniteFilter")
-
-
 class CogniteFilter:
     def __eq__(self, other: Any) -> bool:
         return type(self) == type(other) and self.dump() == other.dump()
@@ -451,7 +451,7 @@ class CogniteFilter:
                 if hasattr(instance, snake_case_key):
                     setattr(instance, snake_case_key, value)
             return instance
-        raise TypeError("Resource must be json str or Dict, not {}".format(type(resource)))
+        raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
@@ -463,3 +463,6 @@ class CogniteFilter:
             Dict[str, Any]: A dictionary representation of the instance.
         """
         return basic_instance_dump(self, camel_case=camel_case)
+
+
+T_CogniteFilter = TypeVar("T_CogniteFilter", bound=CogniteFilter)

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import functools
 import gzip
 import json as _json
@@ -41,6 +43,7 @@ from cognite.client.data_classes._base import (
     T_CogniteResourceList,
 )
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
+from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._identifier import Identifier, IdentifierSequence, SingletonIdentifierSequence
 
 if TYPE_CHECKING:
@@ -71,7 +74,7 @@ class APIClient:
     }
 
     def __init__(
-        self, config: ClientConfig, api_version: Optional[str] = None, cognite_client: "CogniteClient" = None
+        self, config: ClientConfig, api_version: Optional[str] = None, cognite_client: CogniteClient = None
     ) -> None:
         self._config = config
         self._api_version = api_version
@@ -176,7 +179,7 @@ class APIClient:
             res = self._http_client.request(method=method, url=full_url, **kwargs)
 
         if not self._status_ok(res.status_code):
-            self._raise_API_error(res, payload=json_payload)
+            self._raise_api_error(res, payload=json_payload)
         stream = kwargs.get("stream")
         self._log_request(res, payload=json_payload, stream=stream)
         return res
@@ -188,7 +191,7 @@ class APIClient:
         headers[auth_header_name] = auth_header_value
         headers["content-type"] = "application/json"
         headers["accept"] = accept
-        headers["x-cdp-sdk"] = "CognitePythonSDK:{}".format(utils._auxiliary.get_current_sdk_version())
+        headers["x-cdp-sdk"] = f"CognitePythonSDK:{utils._auxiliary.get_current_sdk_version()}"
         headers["x-cdp-app"] = self._config.client_name
         headers["cdf-version"] = self._api_subversion
         if "User-Agent" in headers:
@@ -207,14 +210,16 @@ class APIClient:
         return is_retryable, full_url
 
     def _get_base_url_with_base_path(self) -> str:
-        base_path = "/api/{}/projects/{}".format(self._api_version, self._config.project) if self._api_version else ""
+        base_path = ""
+        if self._api_version:
+            base_path = f"/api/{self._api_version}/projects/{self._config.project}"
         return urljoin(self._config.base_url, base_path)
 
     def _is_retryable(self, method: str, path: str) -> bool:
         valid_methods = ["GET", "POST", "PUT", "DELETE", "PATCH"]
 
         if method not in valid_methods:
-            raise ValueError("Method {} is not valid. Must be one of {}".format(method, valid_methods))
+            raise ValueError(f"Method {method} is not valid. Must be one of {valid_methods}")
 
         if method in ["GET", "PUT", "PATCH"]:
             return True
@@ -230,7 +235,7 @@ class APIClient:
         )
         match = re.match(valid_url_pattern, url)
         if not match:
-            raise ValueError("URL {} is not valid. Cannot resolve whether or not it is retryable".format(url))
+            raise ValueError(f"URL {url} is not valid. Cannot resolve whether or not it is retryable")
         path = match.group(1)
         for pattern in cls._RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS:
             if re.match(pattern, path):
@@ -311,9 +316,7 @@ class APIClient:
             }
             for id_chunk in identifiers.chunked(self._RETRIEVE_LIMIT)
         ]
-        tasks_summary = utils._concurrency.execute_tasks_concurrently(
-            self._post, tasks, max_workers=self._config.max_workers
-        )
+        tasks_summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
 
         if tasks_summary.exceptions:
             try:
@@ -345,7 +348,7 @@ class APIClient:
         headers: Optional[Dict[str, Any]] = None,
         initial_cursor: Optional[str] = None,
     ) -> Union[Iterator[T_CogniteResourceList], Iterator[T_CogniteResource]]:
-        if limit == -1 or limit == float("inf"):
+        if is_unlimited(limit):
             limit = None
         resource_path = resource_path or self._RESOURCE_PATH
 
@@ -391,7 +394,7 @@ class APIClient:
                         body["sort"] = sort
                     res = self._post(url_path=url_path or resource_path + "/list", json=body, headers=headers)
                 else:
-                    raise ValueError("_list_generator parameter `method` must be GET or POST, not {}".format(method))
+                    raise ValueError(f"_list_generator parameter `method` must be GET or POST, not {method}")
                 last_received_items = res.json()["items"]
                 total_items_retrieved += len(last_received_items)
 
@@ -429,7 +432,7 @@ class APIClient:
                 "filter": filter or {},
                 "limit": self._LIST_LIMIT,
                 "cursor": next_cursor,
-                "partition": "{}/{}".format(partition_num, partitions),
+                "partition": f"{partition_num}/{partitions}",
                 **(other_params or {}),
             }
             res = self._post(url_path=resource_path + "/list", json=body, headers=headers)
@@ -439,7 +442,7 @@ class APIClient:
             return res.json()["items"]
 
         while len(next_cursors) > 0:
-            tasks_summary = utils._concurrency.execute_tasks_concurrently(
+            tasks_summary = utils._concurrency.execute_tasks(
                 get_partition, [(partition,) for partition in next_cursors], max_workers=partitions
             )
             if tasks_summary.exceptions:
@@ -467,7 +470,7 @@ class APIClient:
         initial_cursor: Optional[str] = None,
     ) -> T_CogniteResourceList:
         if partitions:
-            if limit not in [None, -1, float("inf")]:
+            if not is_unlimited(limit):
                 raise ValueError("When using partitions, limit should be `None`, `-1` or `inf`.")
             if sort is not None:
                 raise ValueError("When using sort, partitions is not supported.")
@@ -542,8 +545,8 @@ class APIClient:
                     break
             return retrieved_items
 
-        tasks = [("{}/{}".format(i + 1, partitions),) for i in range(partitions)]
-        tasks_summary = utils._concurrency.execute_tasks_concurrently(get_partition, tasks, max_workers=partitions)
+        tasks = [(f"{i + 1}/{partitions}",) for i in range(partitions)]
+        tasks_summary = utils._concurrency.execute_tasks(get_partition, tasks, max_workers=partitions)
         if tasks_summary.exceptions:
             raise tasks_summary.exceptions[0]
         return list_cls._load(tasks_summary.joined_results(), cognite_client=self._cognite_client)
@@ -555,6 +558,7 @@ class APIClient:
         filter: Optional[Union[CogniteFilter, Dict]] = None,
         aggregate: Optional[str] = None,
         fields: Optional[Sequence[str]] = None,
+        keys: Optional[Sequence[str]] = None,
         headers: Optional[Dict] = None,
     ) -> List[T]:
         utils._auxiliary.assert_type(filter, "filter", [dict, CogniteFilter], allow_none=True)
@@ -571,6 +575,8 @@ class APIClient:
             body["aggregate"] = aggregate
         if fields is not None:
             body["fields"] = fields
+        if keys is not None:
+            body["keys"] = keys
         res = self._post(url_path=resource_path + "/aggregate", json=body, headers=headers)
         return [cls(**agg) for agg in res.json()["items"]]
 
@@ -632,7 +638,7 @@ class APIClient:
             items_split.append({"items": items_chunk, **(extra_body_fields or {})})
 
         tasks = [(resource_path, task_items, params, headers) for task_items in items_split]
-        summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._config.max_workers)
+        summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
 
         def unwrap_element(el: T) -> Union[CogniteResource, T]:
             if isinstance(el, dict):
@@ -681,7 +687,7 @@ class APIClient:
             }
             for chunk in identifiers.chunked(self._DELETE_LIMIT)
         ]
-        summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._config.max_workers)
+        summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"],
             task_list_element_unwrap_fn=utils._auxiliary.unwrap_identifer,
@@ -748,9 +754,7 @@ class APIClient:
             for chunk in patch_object_chunks
         ]
 
-        tasks_summary = utils._concurrency.execute_tasks_concurrently(
-            self._post, tasks, max_workers=self._config.max_workers
-        )
+        tasks_summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
         tasks_summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"],
             task_list_element_unwrap_fn=lambda el: utils._auxiliary.unwrap_identifer(el),
@@ -809,7 +813,7 @@ class APIClient:
         return status_code in {200, 201, 202, 204}
 
     @classmethod
-    def _raise_API_error(cls, res: Response, payload: Dict) -> NoReturn:
+    def _raise_api_error(cls, res: Response, payload: Dict) -> NoReturn:
         x_request_id = res.headers.get("X-Request-Id")
         code = res.status_code
         missing = None
@@ -869,7 +873,7 @@ class APIClient:
 
         http_protocol_version = ".".join(list(str(res.raw.version)))
 
-        log.debug("HTTP/{} {} {} {}".format(http_protocol_version, method, url, status_code), extra=extra)
+        log.debug(f"HTTP/{http_protocol_version} {method} {url} {status_code}", extra=extra)
 
     @staticmethod
     def _truncate(s: str, limit: int = 500) -> str:

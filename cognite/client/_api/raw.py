@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence, Union, cast, overload
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.config import ClientConfig
 from cognite.client.data_classes import Database, DatabaseList, Row, RowList, Table, TableList
-from cognite.client.utils._auxiliary import local_import
+from cognite.client.utils._auxiliary import is_unlimited, local_import
 from cognite.client.utils._identifier import Identifier
 
 if TYPE_CHECKING:
@@ -99,7 +101,7 @@ class RawDatabasesAPI(APIClient):
             {"url_path": self._RESOURCE_PATH + "/delete", "json": {"items": chunk, "recursive": recursive}}
             for chunk in chunks
         ]
-        summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._config.max_workers)
+        summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda el: el["name"]
         )
@@ -233,7 +235,7 @@ class RawTablesAPI(APIClient):
             }
             for chunk in chunks
         ]
-        summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._config.max_workers)
+        summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda el: el["name"]
         )
@@ -298,10 +300,10 @@ class RawRowsAPI(APIClient):
         self,
         config: ClientConfig,
         api_version: Optional[str] = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ) -> None:
         super().__init__(config, api_version, cognite_client)
-        self._CREATE_LIMIT = 10000
+        self._CREATE_LIMIT = 5000
         self._LIST_LIMIT = 10000
 
     def __call__(
@@ -374,7 +376,7 @@ class RawRowsAPI(APIClient):
             }
             for chunk in chunks
         ]
-        summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._config.max_workers)
+        summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda row: row.get("key")
         )
@@ -459,7 +461,7 @@ class RawRowsAPI(APIClient):
             )
             for chunk in chunks
         ]
-        summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._config.max_workers)
+        summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda el: el["key"]
         )
@@ -533,7 +535,7 @@ class RawRowsAPI(APIClient):
                 >>> for row_list in c.raw.rows(db_name="db1", table_name="t1", chunk_size=2500):
                 ...     row_list # do something with the rows
         """
-        if limit in {None, -1, float("inf")}:
+        if is_unlimited(limit):
             cursors = self._get(
                 url_path=utils._auxiliary.interpolate_and_url_encode(
                     "/raw/dbs/{}/tables/{}/cursors", db_name, table_name
@@ -562,7 +564,7 @@ class RawRowsAPI(APIClient):
             )
             for cursor in cursors
         ]
-        summary = utils._concurrency.execute_tasks_concurrently(self._list, tasks, max_workers=self._config.max_workers)
+        summary = utils._concurrency.execute_tasks(self._list, tasks, max_workers=self._config.max_workers)
         if summary.exceptions:
             raise summary.exceptions[0]
         return RowList(summary.joined_results())
@@ -585,7 +587,7 @@ class RawRowsAPI(APIClient):
         max_last_updated_time: int = None,
         columns: List[str] = None,
         limit: int = 25,
-    ) -> "pandas.DataFrame":
+    ) -> pandas.DataFrame:
         """`Retrieve rows in a table as a pandas dataframe. <https://docs.cognite.com/api/v1/#operation/getRows>`_
 
         Rowkeys are used as the index.

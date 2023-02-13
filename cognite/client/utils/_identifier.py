@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import numbers
 from typing import Dict, Generic, Iterable, List, Optional, Sequence, Tuple, TypeVar, Union, cast, overload
 
@@ -9,7 +11,7 @@ class Identifier(Generic[T_ID]):
         self.__value: T_ID = value
 
     @classmethod
-    def of_either(cls, id: Optional[int], external_id: Optional[str]) -> "Identifier":
+    def of_either(cls, id: Optional[int], external_id: Optional[str]) -> Identifier:
         if id is external_id is None:
             raise ValueError("Exactly one of id or external id must be specified, got neither")
         elif id is not None and external_id is not None:
@@ -17,7 +19,7 @@ class Identifier(Generic[T_ID]):
         return Identifier(id or external_id)
 
     @classmethod
-    def load(cls, id: Optional[int] = None, external_id: Optional[str] = None) -> "Identifier":
+    def load(cls, id: Optional[int] = None, external_id: Optional[str] = None) -> Identifier:
         if id is not None:
             return Identifier(id)
         if external_id is not None:
@@ -78,11 +80,11 @@ class IdentifierSequence:
         if not self.is_singleton():
             raise ValueError("Exactly one of id or external id must be specified")
 
-    def as_singleton(self) -> "SingletonIdentifierSequence":
+    def as_singleton(self) -> SingletonIdentifierSequence:
         self.assert_singleton()
         return cast(SingletonIdentifierSequence, self)
 
-    def chunked(self, chunk_size: int) -> Iterable["IdentifierSequence"]:
+    def chunked(self, chunk_size: int) -> Iterable[IdentifierSequence]:
         return [
             IdentifierSequence(self._identifiers[i : i + chunk_size], is_singleton=self.is_singleton())
             for i in range(0, len(self), chunk_size)
@@ -96,16 +98,16 @@ class IdentifierSequence:
 
     @overload
     @classmethod
-    def of(cls, *ids: List[Union[int, str]]) -> "IdentifierSequence":
+    def of(cls, *ids: List[Union[int, str]]) -> IdentifierSequence:
         ...
 
     @overload
     @classmethod
-    def of(cls, *ids: Union[int, str]) -> "IdentifierSequence":
+    def of(cls, *ids: Union[int, str]) -> IdentifierSequence:
         ...
 
     @classmethod
-    def of(cls, *ids: Union[int, str, Sequence[Union[int, str]]]) -> "IdentifierSequence":
+    def of(cls, *ids: Union[int, str, Sequence[Union[int, str]]]) -> IdentifierSequence:
         if len(ids) == 1 and isinstance(ids[0], Sequence) and not isinstance(ids[0], str):
             return cls([Identifier(val) for val in ids[0]], is_singleton=False)
         else:
@@ -114,14 +116,14 @@ class IdentifierSequence:
     @classmethod
     def load(
         cls, ids: Optional[Union[int, Sequence[int]]] = None, external_ids: Optional[Union[str, Sequence[str]]] = None
-    ) -> "IdentifierSequence":
+    ) -> IdentifierSequence:
         value_passed_as_primitive = False
         all_identifiers: List[Union[int, str]] = []
 
         if ids is not None:
-            if isinstance(ids, (int, numbers.Integral)):
+            if isinstance(ids, numbers.Integral):
                 value_passed_as_primitive = True
-                all_identifiers.append(ids)
+                all_identifiers.append(int(ids))
             elif isinstance(ids, Sequence) and not isinstance(ids, str):
                 all_identifiers.extend([int(id_) for id_ in ids])
             else:
@@ -134,7 +136,7 @@ class IdentifierSequence:
             elif isinstance(external_ids, Sequence):
                 all_identifiers.extend([str(extid) for extid in external_ids])
             else:
-                raise TypeError(f"ids must be of type str or Sequence[str]. Found {type(external_ids)}")
+                raise TypeError(f"external_ids must be of type str or Sequence[str]. Found {type(external_ids)}")
 
         is_singleton = value_passed_as_primitive and len(all_identifiers) == 1
         return cls(identifiers=[Identifier(val) for val in all_identifiers], is_singleton=is_singleton)

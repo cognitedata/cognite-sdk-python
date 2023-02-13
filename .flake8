@@ -1,3 +1,14 @@
 [flake8]
-ignore = E731, W503, W504, E203, E501, W291, W605, E401, F401
 max-line-length = 121
+per-file-ignores =
+    # Ignore F401 "Module imported but unused" only for __init__ files
+    __init__.py:F401
+ignore =
+    # Whitespace before ':'
+    E203,
+    # Line too long
+    E501,
+    # Line break before binary operator
+    W503,
+    # Error suffix in exception names (exceptions)
+    N818,

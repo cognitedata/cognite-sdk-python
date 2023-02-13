@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import reprlib
 from typing import Callable, Dict, List, Sequence
@@ -29,13 +31,17 @@ class CogniteMultiException(CogniteException):
         self._unwrap_fn = unwrap_fn or (lambda x: x)
 
     def _get_multi_exception_summary(self) -> str:
-        if len(self.successful) > 0 or len(self.unknown) > 0 or len(self.failed) > 0:
-            return "\nThe API Failed to process some items.\nSuccessful (2xx): {}\nUnknown (5xx): {}\nFailed (4xx): {}".format(
-                [self._unwrap_fn(f) for f in self.successful],
-                [self._unwrap_fn(f) for f in self.unknown],
-                [self._unwrap_fn(f) for f in self.failed],
+        if len(self.successful) == 0 and len(self.unknown) == 0 and len(self.failed) == 0:
+            return ""
+        return "\n".join(
+            (
+                "",  # start string with newline
+                "The API Failed to process some items.",
+                f"Successful (2xx): {list(map(self._unwrap_fn, self.successful))}",
+                f"Unknown (5xx): {list(map(self._unwrap_fn, self.unknown))}",
+                f"Failed (4xx): {list(map(self._unwrap_fn, self.failed))}",
             )
-        return ""
+        )
 
 
 class CogniteAPIError(CogniteMultiException):
@@ -70,8 +76,8 @@ class CogniteAPIError(CogniteMultiException):
                 elif e.code == 400:
                     print("Something is wrong with your request")
                 elif e.code == 500:
-                    print("Something went terribly wrong. Here is the request-id: {}".format(e.x_request_id)
-                print("The message returned from the API: {}".format(e.message))
+                    print(f"Something went terribly wrong. Here is the request-id: {e.x_request_id}"
+                print(f"The message returned from the API: {e.message}")
     """
 
     def __init__(
@@ -96,15 +102,15 @@ class CogniteAPIError(CogniteMultiException):
         super().__init__(successful, failed, unknown, unwrap_fn)
 
     def __str__(self) -> str:
-        msg = "{} | code: {} | X-Request-ID: {}".format(self.message, self.code, self.x_request_id)
+        msg = f"{self.message} | code: {self.code} | X-Request-ID: {self.x_request_id}"
         if self.missing:
-            msg += "\nMissing: {}".format(self.missing)
+            msg += f"\nMissing: {self.missing}"
         if self.duplicated:
-            msg += "\nDuplicated: {}".format(self.duplicated)
+            msg += f"\nDuplicated: {self.duplicated}"
         msg += self._get_multi_exception_summary()
         if self.extra:
             pretty_extra = json.dumps(self.extra, indent=4, sort_keys=True)
-            msg += "\nAdditional error info: {}".format(pretty_extra)
+            msg += f"\nAdditional error info: {pretty_extra}"
         return msg
 
 
@@ -161,7 +167,7 @@ class CogniteDuplicatedError(CogniteMultiException):
         super().__init__(successful, failed, unknown, unwrap_fn)
 
     def __str__(self) -> str:
-        msg = "Duplicated: {}".format(self.duplicated)
+        msg = f"Duplicated: {self.duplicated}"
         msg += self._get_multi_exception_summary()
         return msg
 
@@ -178,9 +184,7 @@ class CogniteImportError(CogniteException):
 
     def __init__(self, module: str, message: str = None):
         self.module = module
-        self.message = message or "The functionality you are trying to use requires '{}' to be installed.".format(
-            self.module
-        )
+        self.message = message or f"The functionality you are trying to use requires '{self.module}' to be installed."
 
     def __str__(self) -> str:
         return self.message

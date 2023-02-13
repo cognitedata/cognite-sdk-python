@@ -127,7 +127,7 @@ class TestEntityMatchingIntegration:
         assert all([type(x) == EntityMatchingModel for x in models_list])
         # Add filter
         models_list = cognite_client.entity_matching.list(feature_type="bigram")
-        assert set([model.feature_type for model in models_list]) == {"bigram"}
+        assert {model.feature_type for model in models_list} == {"bigram"}
 
     def test_list_jobs(self, cognite_client):
         jobs_list = cognite_client.entity_matching.list_jobs()

@@ -16,7 +16,7 @@ jobs:
 
       - name: Install required dependencies
         run: |
-          python3 -m pip install --upgrade pip "poetry<1.2.0"
+          python3 -m pip install --upgrade pip poetry
           poetry config virtualenvs.create false
           poetry install -E numpy
 
@@ -34,7 +34,7 @@ jobs:
 
       - name: Install core dependencies
         run: |
-          python3 -m pip install --upgrade pip "poetry<1.2.0"
+          python3 -m pip install --upgrade pip poetry
           poetry config virtualenvs.create false
           poetry install
 
@@ -51,7 +51,7 @@ jobs:
 
       - name: Install core dependencies
         run: |
-          python3 -m pip install --upgrade pip "poetry<1.2.0"
+          python3 -m pip install --upgrade pip poetry
           poetry config virtualenvs.create false
           poetry install
 
@@ -71,12 +71,9 @@ jobs:
 
       - name: Install full dependencies
         run: |
-          python3 -m pip install --upgrade pip "poetry<1.2.0"
+          python3 -m pip install --upgrade pip poetry
           poetry config virtualenvs.create false
           poetry install -E all
-
-      - name: Install protoc compiler
-        uses: arduino/setup-protoc@v1
 
       - name: Verify proto files
         env:
@@ -88,11 +85,6 @@ jobs:
           curl --silent $PROTO_URL/data_point_list_response.proto --output $TMPDIR/data_point_list_response.proto
           diff $TMPDIR/data_points.proto cognite/client/_proto/data_points.proto
           diff $TMPDIR/data_point_list_response.proto cognite/client/_proto/data_point_list_response.proto
-
-          protoc --proto_path=$TMPDIR --python_out=$TMPDIR $TMPDIR/*.proto
-          sed -i '/import data_points_pb2/c\import cognite.client._proto.data_points_pb2 as data__points__pb2' $TMPDIR/data_point_list_response_pb2.py
-          diff $TMPDIR/data_points_pb2.py cognite/client/_proto/data_points_pb2.py
-          diff $TMPDIR/data_point_list_response_pb2.py cognite/client/_proto/data_point_list_response_pb2.py
 
       - name: Test full
         env:

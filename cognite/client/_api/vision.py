@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import warnings
 from typing import Any, Dict, List, Optional, Type, Union
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.contextualization import (
     FeatureParameters,
-    InternalId,
     T_ContextualizationJob,
     VisionExtractJob,
     VisionFeature,
@@ -103,11 +104,12 @@ class VisionAPI(APIClient):
             headers={"cdf-version": "beta"} if len(beta_features) > 0 else None,
         )
 
-    def get_extract_job(self, job_id: InternalId) -> VisionExtractJob:
+    def get_extract_job(self, job_id: int) -> VisionExtractJob:
         """Retrieve an existing extract job by ID.
 
         Args:
-            job_id (InternalId): ID of an existing feature extraction job.
+            job_id (int): ID of an existing feature extraction job.
+
         Returns:
             VisionExtractJob: Vision extract job, which can be used to retrieve the status of the job or the prediction results if the job is finished. Note that .result property of this job will wait for the job to finish and returns the results.
 

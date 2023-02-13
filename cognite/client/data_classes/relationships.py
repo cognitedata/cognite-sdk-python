@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 from typing import Sequence as SequenceType
@@ -43,6 +45,8 @@ class Relationship(CogniteResource):
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
+    _RESOURCE_TYPES = frozenset({"asset", "timeseries", "file", "event", "sequence"})
+
     def __init__(
         self,
         external_id: str = None,
@@ -59,7 +63,7 @@ class Relationship(CogniteResource):
         labels: SequenceType[Union[Label, str, LabelDefinition, dict]] = None,
         created_time: int = None,
         last_updated_time: int = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.external_id = external_id
         self.source_external_id = source_external_id
@@ -77,21 +81,19 @@ class Relationship(CogniteResource):
         self.labels = Label._load_list(labels)
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def _validate_resource_types(self) -> "Relationship":
+    def _validate_resource_types(self) -> Relationship:
         rel = copy.copy(self)
         self._validate_resource_type(rel.source_type)
         self._validate_resource_type(rel.target_type)
         return rel
 
-    @staticmethod
-    def _validate_resource_type(resource_type: Optional[str]) -> None:
-        _RESOURCE_TYPES = {"asset", "timeseries", "file", "event", "sequence"}
-        if resource_type is None or resource_type.lower() not in _RESOURCE_TYPES:
-            raise TypeError("Invalid source or target '{}' in relationship".format(resource_type))
+    def _validate_resource_type(self, resource_type: Optional[str]) -> None:
+        if resource_type is None or resource_type.lower() not in self._RESOURCE_TYPES:
+            raise TypeError(f"Invalid source or target '{resource_type}' in relationship")
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: "CogniteClient" = None) -> "Relationship":
-        instance = super(Relationship, cls)._load(resource, cognite_client)
+    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> Relationship:
+        instance = super()._load(resource, cognite_client)
         if instance.source is not None:
             instance.source = instance._convert_resource(instance.source, instance.source_type)  # type: ignore
         if instance.target is not None:
@@ -125,9 +127,9 @@ class RelationshipFilter(CogniteFilter):
         data_set_ids (Sequence[Dict[str, Any]]): Either one of `internalId` (int) or `externalId` (str)
         start_time (Dict[str, int]): Range between two timestamps, minimum and maximum milliseconds (inclusive)
         end_time (Dict[str, int]): Range between two timestamps, minimum and maximum milliseconds (inclusive)
-        confidence (Dict[str, int]): Range to filter the field for. (inclusive)
-        last_updated_time (Dict[str, Any]): Range to filter the field for. (inclusive)
-        created_time (Dict[str, int]): Range to filter the field for. (inclusive)
+        confidence (Dict[str, int]): Range to filter the field for (inclusive).
+        last_updated_time (Dict[str, Any]): Range to filter the field for (inclusive).
+        created_time (Dict[str, int]): Range to filter the field for (inclusive).
         active_at_time (Dict[str, int]): Limits results to those active at any point within the given time range, i.e. if there is any overlap in the intervals [activeAtTime.min, activeAtTime.max] and [startTime, endTime], where both intervals are inclusive. If a relationship does not have a startTime, it is regarded as active from the begining of time by this filter. If it does not have an endTime is will be regarded as active until the end of time. Similarly, if a min is not supplied to the filter, the min will be implicitly set to the beginning of time, and if a max is not supplied, the max will be implicitly set to the end of time.
         labels (LabelFilter): Return only the resource matching the specified label constraints.
         cognite_client (CogniteClient): The client to associate with this object.
@@ -147,7 +149,7 @@ class RelationshipFilter(CogniteFilter):
         created_time: Dict[str, int] = None,
         active_at_time: Dict[str, int] = None,
         labels: LabelFilter = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.source_external_ids = source_external_ids
         self.source_types = source_types
@@ -164,7 +166,7 @@ class RelationshipFilter(CogniteFilter):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        result = super(RelationshipFilter, self).dump(camel_case)
+        result = super().dump(camel_case)
         if isinstance(self.labels, LabelFilter):
             result["labels"] = self.labels.dump(camel_case)
         return result
@@ -185,14 +187,14 @@ class RelationshipUpdate(CogniteUpdate):
         self._update_object = {}
 
     class _PrimitiveRelationshipUpdate(CognitePrimitiveUpdate):
-        def set(self, value: Any) -> "RelationshipUpdate":
+        def set(self, value: Any) -> RelationshipUpdate:
             return self._set(value)
 
     class _LabelRelationshipUpdate(CogniteLabelUpdate):
-        def add(self, value: Union[str, List[str]]) -> "RelationshipUpdate":
+        def add(self, value: Union[str, List[str]]) -> RelationshipUpdate:
             return self._add(value)
 
-        def remove(self, value: Union[str, List[str]]) -> "RelationshipUpdate":
+        def remove(self, value: Union[str, List[str]]) -> RelationshipUpdate:
             return self._remove(value)
 
     @property

@@ -4,6 +4,7 @@ import json
 import operator as op
 import warnings
 from collections import defaultdict
+from dataclasses import dataclass
 from datetime import datetime
 from functools import cached_property
 from typing import (
@@ -33,7 +34,11 @@ from cognite.client.utils._auxiliary import (
     local_import,
     to_camel_case,
 )
-from cognite.client.utils._pandas_helpers import concat_dataframes_with_nullable_int_cols
+from cognite.client.utils._identifier import Identifier
+from cognite.client.utils._pandas_helpers import (
+    concat_dataframes_with_nullable_int_cols,
+    notebook_display_with_fallback,
+)
 
 ALL_SORTED_DP_AGGS = sorted(
     [
@@ -67,6 +72,28 @@ try:
 
 except ImportError:  # pragma no cover
     NUMPY_IS_AVAILABLE = False
+
+
+@dataclass(frozen=True)
+class LatestDatapointQuery:
+    """Parameters describing a query for the latest datapoint from a time series.
+
+    Note:
+        Pass either ID or external ID.
+
+    Args:
+        id (Optional[int]): The internal ID of the time series to query.
+        external_id (Optional[str]): The external ID of the time series to query.
+        before (Union[None, int, str, datetime]): Get latest datapoint before this time. None means 'now'.
+    """
+
+    id: Optional[int] = None
+    external_id: Optional[str] = None
+    before: Union[None, int, str, datetime] = None
+
+    def __post_init__(self) -> None:
+        # Ensure user have just specified one of id/xid:
+        Identifier.of_either(self.id, self.external_id)
 
 
 class Datapoint(CogniteResource):
@@ -115,7 +142,7 @@ class Datapoint(CogniteResource):
         self.discrete_variance = discrete_variance
         self.total_variation = total_variation
 
-    def to_pandas(self, camel_case: bool = False) -> "pandas.DataFrame":  # type: ignore[override]
+    def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:  # type: ignore[override]
         """Convert the datapoint into a pandas DataFrame.
 
         Args:
@@ -208,9 +235,6 @@ class DatapointsArray(CogniteResource):
     def __str__(self) -> str:
         return json.dumps(self.dump(convert_timestamps=True), indent=4)
 
-    def _repr_html_(self) -> str:
-        return self.to_pandas()._repr_html_()
-
     @overload
     def __getitem__(self, item: int) -> Datapoint:
         ...
@@ -290,7 +314,7 @@ class DatapointsArray(CogniteResource):
         column_names: Literal["id", "external_id"] = "external_id",
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
-    ) -> "pandas.DataFrame":
+    ) -> pandas.DataFrame:
         """Convert the DatapointsArray into a pandas DataFrame.
 
         Args:
@@ -468,7 +492,7 @@ class Datapoints(CogniteResource):
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
         include_errors: bool = False,
-    ) -> "pandas.DataFrame":
+    ) -> pandas.DataFrame:
         """Convert the datapoints into a pandas DataFrame.
 
         Args:
@@ -524,8 +548,8 @@ class Datapoints(CogniteResource):
 
     @classmethod
     def _load(  # type: ignore [override]
-        cls, dps_object: Dict[str, Any], expected_fields: List[str] = None, cognite_client: "CogniteClient" = None
-    ) -> "Datapoints":
+        cls, dps_object: Dict[str, Any], expected_fields: List[str] = None, cognite_client: CogniteClient = None
+    ) -> Datapoints:
         del cognite_client  # just needed for signature
         instance = cls(
             id=dps_object.get("id"),
@@ -546,7 +570,7 @@ class Datapoints(CogniteResource):
                 setattr(instance, snake_key, data)
         return instance
 
-    def _extend(self, other_dps: "Datapoints") -> None:
+    def _extend(self, other_dps: Datapoints) -> None:
         if self.id is None and self.external_id is None:
             self.id = other_dps.id
             self.external_id = other_dps.external_id
@@ -586,7 +610,7 @@ class Datapoints(CogniteResource):
         self.__datapoint_objects = new_dps_objects
         return self.__datapoint_objects
 
-    def _slice(self, slice: slice) -> "Datapoints":
+    def _slice(self, slice: slice) -> Datapoints:
         truncated_datapoints = Datapoints(id=self.id, external_id=self.external_id)
         for attr, value in self._get_non_empty_data_fields():
             setattr(truncated_datapoints, attr, value[slice])
@@ -594,13 +618,13 @@ class Datapoints(CogniteResource):
 
     def _repr_html_(self) -> str:
         is_synthetic_dps = self.error is not None
-        return self.to_pandas(include_errors=is_synthetic_dps)._repr_html_()
+        return notebook_display_with_fallback(self, include_errors=is_synthetic_dps)
 
 
 class DatapointsArrayList(CogniteResourceList):
     _RESOURCE = DatapointsArray
 
-    def __init__(self, resources: Collection[Any], cognite_client: "CogniteClient" = None):
+    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient = None):
         super().__init__(resources, cognite_client)
 
         # Fix what happens for duplicated identifiers:
@@ -640,15 +664,12 @@ class DatapointsArrayList(CogniteResourceList):
     def __str__(self) -> str:
         return json.dumps(self.dump(convert_timestamps=True), indent=4)
 
-    def _repr_html_(self) -> str:
-        return self.to_pandas()._repr_html_()
-
     def to_pandas(  # type: ignore [override]
         self,
         column_names: Literal["id", "external_id"] = "external_id",
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
-    ) -> "pandas.DataFrame":
+    ) -> pandas.DataFrame:
         """Convert the DatapointsArrayList into a pandas DataFrame.
 
         Args:
@@ -682,7 +703,7 @@ class DatapointsArrayList(CogniteResourceList):
 class DatapointsList(CogniteResourceList):
     _RESOURCE = Datapoints
 
-    def __init__(self, resources: Collection[Any], cognite_client: "CogniteClient" = None):
+    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient = None):
         super().__init__(resources, cognite_client)
 
         # Fix what happens for duplicated identifiers:
@@ -730,7 +751,7 @@ class DatapointsList(CogniteResourceList):
         column_names: Literal["id", "external_id"] = "external_id",
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
-    ) -> "pandas.DataFrame":
+    ) -> pandas.DataFrame:
         """Convert the datapoints list into a pandas DataFrame.
 
         Args:
@@ -747,6 +768,3 @@ class DatapointsList(CogniteResourceList):
             return pd.DataFrame(index=pd.to_datetime([]))
 
         return concat_dataframes_with_nullable_int_cols(dfs)
-
-    def _repr_html_(self) -> str:
-        return self.to_pandas()._repr_html_()

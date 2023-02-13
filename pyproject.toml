@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "cognite-sdk"
 
-version = "5.1.0"
+version = "5.5.0"
 
 description = "Cognite Python SDK"
 readme = "README.md"
@@ -17,13 +17,13 @@ requests = "^2"
 requests_oauthlib = "^1"
 msal = "^1"
 sortedcontainers = "^2.2"
-protobuf = "^4.21"
+protobuf = ">=3.16.0"
+pip = ">=20.0.0"  # make optional once poetry doesnt auto-remove it on "simple install"
 numpy = { version = "^1.20", optional = true }
 sympy = { version = "*", optional = true }
 pandas = { version = "^1.4", optional = true }
 geopandas = { version = ">=0.10.0", optional = true }
 shapely = { version = ">=1.7.0", optional = true }
-pip = { version = ">=20.0.0", optional = true}
 
 [tool.poetry.extras]
 pandas = ["pandas"]
@@ -33,27 +33,24 @@ sympy = ["sympy"]
 functions = ["pip"]
 all = ["pandas", "geopandas", "shapely", "sympy", "pip"]
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 docutils = "==0.15.2"
 sphinx = "^5.0.1"
-sphinx-rtd-theme = "^1.0.0"
-pytest = "^6.2.5"
-pytest-cov = "^3.0.0"
+sphinx-rtd-theme = ">=1.0.0"
+pytest = ">=7"
+pytest-cov = ">=3"
+pytest-rerunfailures = ">=10"
+pytest-asyncio = ">=0"
+pytest-xdist = ">=2"
 twine = "^4.0.1"
 pre-commit = "^2.20.0"
 responses = "^0.21.0"
-pytest-rerunfailures = "^10.2"
-pytest-asyncio = "^0.18.3"
 toml = "^0.10.2"
 python-dotenv = "^0.20.0"
-pytest-xdist = "^2.5.0"
 mypy = "^0.961"
 types-urllib3 = "^1.26.16"
 types-requests = "^2.28.1"
-
-[[tool.poetry.source]]
-name = "snakepit"
-url = "https://cognite.jfrog.io/cognite/api/pypi/snakepit/simple"
+pep8-naming = "^0"
 
 [build-system]
 requires = ["poetry>=1.0"]

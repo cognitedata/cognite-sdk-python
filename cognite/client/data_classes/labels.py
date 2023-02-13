@@ -1,12 +1,14 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
 
-from cognite.client import utils
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CognitePropertyClassUtil,
     CogniteResource,
     CogniteResourceList,
 )
+from cognite.client.utils._auxiliary import convert_all_keys_to_camel_case, to_camel_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -31,7 +33,7 @@ class LabelDefinition(CogniteResource):
         description: str = None,
         created_time: int = None,
         data_set_id: int = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.external_id = external_id
         self.name = name
@@ -56,7 +58,7 @@ class LabelDefinitionFilter(CogniteFilter):
         name: str = None,
         external_id_prefix: str = None,
         data_set_ids: List[Dict[str, Any]] = None,
-        cognite_client: "CogniteClient" = None,
+        cognite_client: CogniteClient = None,
     ):
         self.name = name
         self.external_id_prefix = external_id_prefix
@@ -82,9 +84,7 @@ class Label(dict):
     external_id = CognitePropertyClassUtil.declare_property("externalId")
 
     @classmethod
-    def _load_list(
-        cls, labels: Optional[Sequence[Union[str, dict, LabelDefinition, "Label"]]]
-    ) -> Optional[List["Label"]]:
+    def _load_list(cls, labels: Optional[Sequence[Union[str, dict, LabelDefinition, Label]]]) -> Optional[List[Label]]:
         def convert_label(label: Union[Label, str, LabelDefinition, dict]) -> Label:
             if isinstance(label, Label):
                 return label
@@ -95,27 +95,26 @@ class Label(dict):
             elif isinstance(label, dict):
                 if "externalId" in label:
                     return Label(label["externalId"])
-            raise ValueError("Could not parse label: {}".format(label))
+            raise ValueError(f"Could not parse label: {label}")
 
         if labels is None:
             return None
         return [convert_label(label) for label in labels]
 
     @classmethod
-    def _load(self, raw_label: Dict[str, Any]) -> "Label":
-        return Label(external_id=raw_label["externalId"])
+    def _load(cls, raw_label: Dict[str, Any]) -> Label:
+        return cls(external_id=raw_label["externalId"])
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        dump_key = lambda key: key if not camel_case else utils._auxiliary.to_camel_case(key)
-        return {dump_key(key): value for key, value in self.items()}
+        return convert_all_keys_to_camel_case(self) if camel_case else dict(self)
 
 
 class LabelFilter(dict, CogniteFilter):
     """Return only the resource matching the specified label constraints.
 
     Args:
-        contains_any (List[Label]): The resource item contains at least one of the listed labels. The labels are defined by a list of external ids.
-        contains_all (List[Label]): The resource item contains at least all the listed labels. The labels are defined by a list of external ids.
+        contains_any (List[str]): The resource item contains at least one of the listed labels. The labels are defined by a list of external ids.
+        contains_all (List[str]): The resource item contains all the listed labels. The labels are defined by a list of external ids.
         cognite_client (CogniteClient): The client to associate with this object.
 
     Examples:
@@ -132,16 +131,21 @@ class LabelFilter(dict, CogniteFilter):
     """
 
     def __init__(
-        self, contains_any: List[str] = None, contains_all: List[str] = None, cognite_client: "CogniteClient" = None
+        self, contains_any: List[str] = None, contains_all: List[str] = None, cognite_client: CogniteClient = None
     ):
         self.contains_any = contains_any
         self.contains_all = contains_all
         self._cognite_client = cast("CogniteClient", cognite_client)
 
+    @staticmethod
+    def _wrap_labels(values: Optional[List[str]]) -> Optional[List[Dict[str, str]]]:
+        if values is None:
+            return None
+        return [{"externalId": v} for v in values]
+
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        dump_key = lambda key: key if not camel_case else utils._auxiliary.to_camel_case(key)
-        wrap = lambda values: None if values is None else [{"externalId": value} for value in values]
-        return {dump_key(key): wrap(value) for key, value in self.items()}
+        keys = map(to_camel_case, self.keys()) if camel_case else self.keys()
+        return dict(zip(keys, map(self._wrap_labels, self.values())))
 
     contains_any = CognitePropertyClassUtil.declare_property("containsAny")
     contains_all = CognitePropertyClassUtil.declare_property("containsAll")

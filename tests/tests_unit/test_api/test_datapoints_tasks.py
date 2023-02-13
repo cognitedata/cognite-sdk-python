@@ -193,10 +193,10 @@ class TestSingleTSQueryValidator:
 
 @pytest.fixture
 def create_random_int_tuples(n_min=5):
-    return set(
+    return {
         tuple(random.choices(range(-5, 5), k=random.randint(1, 5)))
         for _ in range(max(n_min, random_gamma_dist_integer(100)))
-    )
+    }
 
 
 class TestSortedContainers:

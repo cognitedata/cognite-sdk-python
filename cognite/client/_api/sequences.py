@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy
 import math
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional
@@ -385,7 +387,7 @@ class SequencesAPI(APIClient):
                 >>> my_update = SequenceUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = c.sequences.update(my_update)
 
-        Updating column definitions:
+            **Updating column definitions**
 
             Currently, updating the column definitions of a sequence is only supported through partial update, using `add`, `remove` and `modify` methods on the `columns` property.
 
@@ -432,10 +434,10 @@ class SequencesAPI(APIClient):
                 >>> from cognite.client.data_classes import SequenceUpdate, SequenceColumnUpdate
                 >>> c = CogniteClient()
                 >>>
-                >>> column_updates = [\
-                      SequenceColumnUpdate(external_id="col_external_id_1").external_id.set("new_col_external_id"),\
-                      SequenceColumnUpdate(external_id="col_external_id_2").description.set("my new description"),\
-                    ]
+                >>> column_updates = [
+                ...     SequenceColumnUpdate(external_id="col_external_id_1").external_id.set("new_col_external_id"),
+                ...     SequenceColumnUpdate(external_id="col_external_id_2").description.set("my new description"),
+                ... ]
                 >>> my_update = SequenceUpdate(id=1).columns.modify(column_updates)
                 >>> res = c.sequences.update(my_update)
         """
@@ -570,12 +572,10 @@ class SequencesDataAPI(APIClient):
 
         row_objs = [{"rows": all_rows[i : i + rows_per_request]} for i in range(0, len(all_rows), rows_per_request)]
         tasks = [({**base_obj, **rows},) for rows in row_objs]  # type: ignore
-        summary = utils._concurrency.execute_tasks_concurrently(
-            self._insert_data, tasks, max_workers=self._config.max_workers
-        )
+        summary = utils._concurrency.execute_tasks(self._insert_data, tasks, max_workers=self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks()
 
-    def insert_dataframe(self, dataframe: "pandas.DataFrame", id: int = None, external_id: str = None) -> None:
+    def insert_dataframe(self, dataframe: pandas.DataFrame, id: int = None, external_id: str = None) -> None:
         """`Insert a Pandas dataframe. <https://docs.cognite.com/api/v1/#operation/postSequenceData>`_
 
         The index of the dataframe must contain the row numbers. The names of the remaining columns specify the column external ids.
@@ -702,7 +702,7 @@ class SequencesDataAPI(APIClient):
                 id=post_obj.get("id"), external_id=post_obj.get("externalId"), rows=seqdata, columns=columns
             )
 
-        tasks_summary = utils._concurrency.execute_tasks_concurrently(
+        tasks_summary = utils._concurrency.execute_tasks(
             _fetch_sequence, [(x,) for x in post_objs], max_workers=self._config.max_workers
         )
         if tasks_summary.exceptions:
@@ -754,7 +754,7 @@ class SequencesDataAPI(APIClient):
         column_names: str = None,
         id: int = None,
         limit: int = None,
-    ) -> "pandas.DataFrame":
+    ) -> pandas.DataFrame:
         """`Retrieve data from a sequence as a pandas dataframe <https://docs.cognite.com/api/v1/#operation/getSequenceData>`_
 
         Args:

@@ -4,9 +4,12 @@ This module provides helper methods and different utilities for the Cognite API 
 
 This module is protected and should not be used by end-users.
 """
+from __future__ import annotations
+
 import functools
 import heapq
 import importlib
+import math
 import numbers
 import platform
 import random
@@ -15,7 +18,21 @@ import string
 import warnings
 from decimal import Decimal
 from types import ModuleType
-from typing import Any, Dict, Hashable, Iterable, Iterator, List, Sequence, Set, Tuple, TypeVar, Union, overload
+from typing import (
+    Any,
+    Dict,
+    Hashable,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    TypeVar,
+    Union,
+    overload,
+)
 from urllib.parse import quote
 
 import cognite.client
@@ -24,6 +41,10 @@ from cognite.client.utils._version_checker import get_newest_version_in_major_re
 
 T = TypeVar("T")
 THashable = TypeVar("THashable", bound=Hashable)
+
+
+def is_unlimited(limit: Optional[Union[float, int]]) -> bool:
+    return limit in {None, -1, math.inf}
 
 
 @functools.lru_cache(maxsize=128)
@@ -46,6 +67,34 @@ def convert_all_keys_to_snake_case(d: Dict[str, Any]) -> Dict[str, Any]:
     return dict(zip(map(to_snake_case, d.keys()), d.values()))
 
 
+def basic_obj_dump(obj: Any, camel_case: bool) -> Dict[str, Any]:
+    if camel_case:
+        return convert_all_keys_to_camel_case(vars(obj))
+    return convert_all_keys_to_snake_case(vars(obj))
+
+
+def handle_deprecated_camel_case_argument(new_arg: T, old_arg_name: str, fn_name: str, kw_dct: Dict[str, Any]) -> T:
+    old_arg = kw_dct.pop(old_arg_name, None)
+    if kw_dct:
+        raise TypeError(f"Got unexpected keyword argument(s): {list(kw_dct)}")
+
+    new_arg_name = to_snake_case(old_arg_name)
+    if old_arg is None:
+        if new_arg is None:
+            raise TypeError(f"{fn_name}() missing 1 required positional argument: '{new_arg_name}'")
+        return new_arg
+
+    warnings.warn(
+        f"Argument '{old_arg_name}' have been changed to '{new_arg_name}', but the old is still supported until "
+        "the next major version. Consider updating your code.",
+        UserWarning,
+        stacklevel=2,
+    )
+    if new_arg is not None:
+        raise TypeError(f"Pass either '{new_arg_name}' or '{old_arg_name}' (deprecated), not both")
+    return old_arg
+
+
 def json_dump_default(x: Any) -> Any:
     if isinstance(x, numbers.Integral):
         return int(x)
@@ -53,25 +102,26 @@ def json_dump_default(x: Any) -> Any:
         return float(x)
     if hasattr(x, "__dict__"):
         return x.__dict__
-    raise TypeError("Object {} of type {} can't be serialized by the JSON encoder".format(x, x.__class__))
+    raise TypeError(f"Object {x} of type {x.__class__} can't be serialized by the JSON encoder")
 
 
 def unwrap_identifer(identifier: Union[str, int, Dict]) -> Union[str, int]:
+    # TODO: Move to Identifier class?
     if isinstance(identifier, (str, int)):
         return identifier
     if "externalId" in identifier:
         return identifier["externalId"]
     if "id" in identifier:
         return identifier["id"]
-    raise ValueError("{} does not contain 'id' or 'externalId'".format(identifier))
+    raise ValueError(f"{identifier} does not contain 'id' or 'externalId'")
 
 
 def assert_type(var: Any, var_name: str, types: List[type], allow_none: bool = False) -> None:
     if var is None:
         if not allow_none:
-            raise TypeError("{} cannot be None".format(var_name))
+            raise TypeError(f"{var_name} cannot be None")
     elif not isinstance(var, tuple(types)):
-        raise TypeError("{} must be one of types {}".format(var_name, types))
+        raise TypeError(f"{var_name} must be one of types {types}")
 
 
 def interpolate_and_url_encode(path: str, *args: Any) -> str:
@@ -96,24 +146,29 @@ def local_import(*module: str) -> Union[ModuleType, Tuple[ModuleType, ...]]:
     return tuple(modules)
 
 
+def import_legacy_protobuf() -> bool:
+    from google.protobuf import __version__ as pb_version
+
+    return 4 > int(pb_version.split(".")[0])
+
+
 def get_current_sdk_version() -> str:
     return cognite.client.__version__
 
 
 @functools.lru_cache(maxsize=1)
 def get_user_agent() -> str:
-    sdk_version = "CognitePythonSDK/{}".format(get_current_sdk_version())
-
-    python_version = "{}/{} ({};{})".format(
-        platform.python_implementation(), platform.python_version(), platform.python_build(), platform.python_compiler()
+    sdk_version = f"CognitePythonSDK/{get_current_sdk_version()}"
+    python_version = (
+        f"{platform.python_implementation()}/{platform.python_version()} "
+        f"({platform.python_build()};{platform.python_compiler()})"
     )
-
     os_version_info = [platform.release(), platform.machine(), platform.architecture()[0]]
     os_version_info = [s for s in os_version_info if s]  # Ignore empty strings
     os_version_info_str = "-".join(os_version_info)
-    operating_system = "{}/{}".format(platform.system(), os_version_info_str)
+    operating_system = f"{platform.system()}/{os_version_info_str}"
 
-    return "{} {} {}".format(sdk_version, python_version, operating_system)
+    return f"{sdk_version} {python_version} {operating_system}"
 
 
 def _check_client_has_newest_major_version() -> None:
@@ -192,13 +247,13 @@ def convert_true_match(true_match: Union[dict, list, Tuple[Union[int, str], Unio
     elif isinstance(true_match, dict):
         return true_match
     else:
-        raise ValueError("true_matches should be a dictionary or a two-element list: found {}".format(true_match))
+        raise ValueError(f"true_matches should be a dictionary or a two-element list: found {true_match}")
 
 
 def find_duplicates(seq: Iterable[THashable]) -> Set[THashable]:
     seen: Set[THashable] = set()
     add = seen.add  # skip future attr lookups for perf
-    return set(x for x in seq if x in seen or add(x))
+    return {x for x in seq if x in seen or add(x)}
 
 
 def exactly_one_is_not_none(*args: Any) -> bool:
