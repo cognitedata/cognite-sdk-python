@@ -10,6 +10,7 @@ import time
 import warnings
 from abc import ABC, abstractmethod
 from concurrent.futures import CancelledError
+from collections.abc import Mapping
 from copy import copy
 from datetime import datetime
 from itertools import chain
@@ -62,6 +63,7 @@ from cognite.client.utils._auxiliary import (
     local_import,
     split_into_chunks,
     split_into_n_parts,
+    validate_user_input_dict_with_identifier,
 )
 from cognite.client.utils._concurrency import collect_exc_info_and_raise, execute_tasks, get_priority_executor
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
@@ -1086,10 +1088,10 @@ class DatapointsAPI(APIClient):
             Or they can be a Datapoints or DatapointsArray object (with raw datapoints only). Note that the id or external_id
             set on these objects are not inspected/used (as they belong to the "from-time-series", and not the "to-time-series"),
             and so you must explicitly pass the identifier of the time series you want to insert into, which in this example is
-            `external_id="efgh"`::
+            `external_id="foo"`::
 
                 >>> data = c.time_series.data.retrieve(external_id="abc", start="1w-ago", end="now")
-                >>> c.time_series.data.insert(data, external_id="efgh")
+                >>> c.time_series.data.insert(data, external_id="foo")
         """
         post_dps_object = Identifier.of_either(id, external_id).as_dict()
         dps_to_post: Union[
@@ -1132,17 +1134,17 @@ class DatapointsAPI(APIClient):
                 ...         (datetime(2018,1,2,tzinfo=timezone.utc), 2000),
                 ... ]})
 
-                >>> # With ms since epoch and externalId
-                >>> datapoints.append({"externalId": "foo", "datapoints": [(150000000000, 1000), (160000000000, 2000)]})
+                >>> # With ms since epoch and external_id:
+                >>> datapoints.append({"external_id": "foo", "datapoints": [(150000000000, 1000), (160000000000, 2000)]})
 
-                >>> # With raw data in a Datapoints object (or DatapointsArray)
+                >>> # With raw data in a Datapoints object (or DatapointsArray):
                 >>> data_to_clone = client.time_series.data.retrieve(external_id="bar")
-                >>> datapoints.append({"externalId": "bar-clone", "datapoints": data_to_clone})
+                >>> datapoints.append({"external_id": "bar-clone", "datapoints": data_to_clone})
                 >>> client.time_series.data.insert_multiple(datapoints)
         """
         for dps_dct in datapoints:
             # Extract data inplace for any Datapoints and/or DatapointsArray:
-            if isinstance(dps_dct, dict) and isinstance(dps_dct["datapoints"], (Datapoints, DatapointsArray)):
+            if isinstance(dps_dct, Mapping) and isinstance(dps_dct["datapoints"], (Datapoints, DatapointsArray)):
                 dps_dct["datapoints"] = DatapointsPoster._extract_raw_data_from_dps_container(dps_dct["datapoints"])
         dps_poster = DatapointsPoster(self)
         dps_poster.insert(datapoints)
@@ -1188,31 +1190,25 @@ class DatapointsAPI(APIClient):
 
         Examples:
 
-            Each element in the list ranges must be specify either id or externalId, and a range::
+            Each element in the list ranges must be specify either id or external_id, and a range::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> ranges = [{"id": 1, "start": "2d-ago", "end": "now"},
-                ...             {"externalId": "abc", "start": "2d-ago", "end": "now"}]
+                ...           {"external_id": "abc", "start": "2d-ago", "end": "now"}]
                 >>> c.time_series.data.delete_ranges(ranges)
         """
         valid_ranges = []
-        for range in ranges:
-            for key in range:
-                if key not in ("id", "externalId", "start", "end"):
-                    raise AssertionError(
-                        f"Invalid key '{key}' in range. Must contain 'start', 'end', and 'id' or 'externalId"
-                    )
-            id = range.get("id")
-            external_id = range.get("externalId")
-            valid_range = Identifier.of_either(id, external_id).as_dict()
-            start = timestamp_to_ms(range["start"])
-            end = timestamp_to_ms(range["end"])
-            valid_range.update({"inclusiveBegin": start, "exclusiveEnd": end})
+        for time_range in ranges:
+            valid_range = validate_user_input_dict_with_identifier(time_range, required_keys={"start", "end"})
+            valid_range.update(
+                inclusiveBegin=timestamp_to_ms(time_range["start"]),
+                exclusiveEnd=timestamp_to_ms(time_range["end"]),
+            )
             valid_ranges.append(valid_range)
         self._delete_datapoints_ranges(valid_ranges)
 
-    def _delete_datapoints_ranges(self, delete_range_objects: List[Union[Dict]]) -> None:
+    def _delete_datapoints_ranges(self, delete_range_objects: List[Dict]) -> None:
         self._post(url_path=self._RESOURCE_PATH + "/delete", json={"items": delete_range_objects})
 
     def insert_dataframe(self, df: pd.DataFrame, external_id_headers: bool = True, dropna: bool = True) -> None:
@@ -1317,12 +1313,10 @@ class DatapointsPoster:
     def _validate_dps_objects(dps_object_list: List[Dict[str, Any]]) -> List[dict]:
         valid_dps_objects = []
         for dps_object in dps_object_list:
-            for key in dps_object:
-                if key not in ("id", "externalId", "datapoints"):
-                    raise ValueError(
-                        f"Invalid key '{key}' in datapoints. Must contain 'datapoints', and 'id' or 'externalId"
-                    )
-            valid_dps_object = {k: dps_object[k] for k in ["id", "externalId"] if k in dps_object}
+            valid_dps_object = cast(
+                Dict[str, Union[int, str, List[Tuple[int, Any]]]],
+                validate_user_input_dict_with_identifier(dps_object, required_keys={"datapoints"}),
+            )
             valid_dps_object["datapoints"] = DatapointsPoster._validate_and_format_datapoints(dps_object["datapoints"])
             valid_dps_objects.append(valid_dps_object)
         return valid_dps_objects

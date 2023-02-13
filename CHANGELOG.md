@@ -25,6 +25,10 @@ Changes are grouped as follows
 ### Fixed
 - Fixed an issue where `Content-Type` was not correctly set on file uploads to Azure.
 
+## [5.6.2] - 20-02-23
+### Added
+- Input validation on `DatapointsAPI.[insert, insert_multiple, delete_ranges]` now raise on missing keys, not just invalid keys.
+
 ## [5.6.1] - 20-02-23
 ### Fixed
 - Fixed an issue where `IndexError` was raised when a user queried `DatapointsAPI.retrieve_latest` for a single, non-existent time series while also passing `ignore_unknown_ids=True`. Changed to returning `None`, inline with other `retrieve` methods.
