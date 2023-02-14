@@ -278,13 +278,13 @@ class TestInsertDatapoints:
     def test_insert_multiple_ts_single_call__below_dps_limit_above_ts_limit(self, cognite_client, mock_post_datapoints):
         with patch(DATAPOINTS_API.format("POST_DPS_OBJECTS_LIMIT"), 100):
             dps = [{"timestamp": i * 1e11, "value": i} for i in range(1, 2)]
-            dps_objects = [{"id": i, "datapoints": dps} for i in range(101)]
+            dps_objects = [{"id": i, "datapoints": dps} for i in range(1, 102)]
             cognite_client.time_series.data.insert_multiple(dps_objects)
             assert 2 == len(mock_post_datapoints.calls)
 
     def test_insert_multiple_ts_single_call__above_dps_limit_below_ts_limit(self, cognite_client, mock_post_datapoints):
         dps = [{"timestamp": i * 1e11, "value": i} for i in range(1, 1002)]
-        dps_objects = [{"id": i, "datapoints": dps} for i in range(10)]
+        dps_objects = [{"id": i, "datapoints": dps} for i in range(1, 11)]
         cognite_client.time_series.data.insert_multiple(dps_objects)
         assert 2 == len(mock_post_datapoints.calls)
 
