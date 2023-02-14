@@ -4,8 +4,8 @@ from cognite.client.data_classes import APIKey, Group, SecurityCategory, Service
 from cognite.client.utils._auxiliary import random_string
 
 
+@pytest.mark.skip("ServiceAccountAPI has been removed from the greenfield cluster.")
 class TestServiceAccountAPI:
-    @pytest.mark.skip("ServiceAccount methods failing, probably due to api keys deprecation")
     def test_list(self, cognite_client):
         res = cognite_client.iam.service_accounts.list()
         assert isinstance(res, ServiceAccountList)
