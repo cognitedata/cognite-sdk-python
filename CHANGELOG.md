@@ -18,6 +18,10 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 
+## [5.5.1] - 10-02-23
+### Changed
+- Change `CredentialProvider` `Token` to be thread safe when given a callable that does token refresh.
+
 ## [5.5.0] - 10-02-23
 ### Added
 - support `instances` destination type on Transformations.
