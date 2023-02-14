@@ -976,7 +976,7 @@ class DatapointsAPI(APIClient):
         external_id: Union[str, LatestDatapointQuery, List[Union[str, LatestDatapointQuery]]] = None,
         before: Union[None, int, str, datetime] = None,
         ignore_unknown_ids: bool = False,
-    ) -> Union[Datapoints, DatapointsList]:
+    ) -> Union[None, Datapoints, DatapointsList]:
         """`Get the latest datapoint for one or more time series <https://docs.cognite.com/api/v1/#operation/getLatest>`_
 
         Args:
@@ -986,7 +986,7 @@ class DatapointsAPI(APIClient):
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
-            Union[Datapoints, DatapointsList]: A Datapoints object containing the requested data, or a DatapointsList if multiple were requested.
+            Union[None, Datapoints, DatapointsList]: A Datapoints object containing the requested data, or a DatapointsList if multiple were requested. If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
 
         Examples:
 
@@ -1027,9 +1027,11 @@ class DatapointsAPI(APIClient):
         """
         fetcher = RetrieveLatestDpsFetcher(id, external_id, before, ignore_unknown_ids, self)
         res = fetcher.fetch_datapoints()
-        if fetcher.input_is_singleton:
-            return Datapoints._load(res[0], cognite_client=self._cognite_client)
-        return DatapointsList._load(res, cognite_client=self._cognite_client)
+        if not fetcher.input_is_singleton:
+            return DatapointsList._load(res, cognite_client=self._cognite_client)
+        elif not res and ignore_unknown_ids:
+            return None
+        return Datapoints._load(res[0], cognite_client=self._cognite_client)
 
     def insert(
         self,
