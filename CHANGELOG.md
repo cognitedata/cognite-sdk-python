@@ -19,8 +19,8 @@ Changes are grouped as follows
 
 
 ## [5.5.1] - 10-02-23
-### Fixed
-- Fix `CredentialProvider` `Token` to be thread safe when given a callable that does token refresh.
+### Changed
+- Change `CredentialProvider` `Token` to be thread safe when given a callable that does token refresh.
 
 ## [5.5.0] - 10-02-23
 ### Added
