@@ -22,7 +22,7 @@ from cognite.client.utils._concurrency import T_Result, TaskExecutor, TaskFuture
 if TYPE_CHECKING:
     from types import TracebackType
 
-    from requests import PreparedRequest, Response, Session
+    from requests import Session
 
     from cognite.client._http_client import HTTPClient, HTTPClientConfig
 
@@ -34,11 +34,6 @@ def patch_sdk_for_pyodide() -> None:
     import pyodide_http  # type: ignore [import]
 
     pyodide_http.patch_all()
-
-    # - Patch the patched requests (from pyodide-http) as the SDK expects responses to have '.raw' attr:
-    pyo_http = pyodide_http._requests.PyodideHTTPAdapter
-    pyo_http._old_send = pyo_http.send
-    pyo_http.send = pyodide_http_adapter_send
 
     # -----------------
     # Patch Cognite SDK
@@ -79,13 +74,6 @@ def patch_sdk_for_pyodide() -> None:
     # - DatapointsAPI.retrieve/retrieve_arrays/retrieve_dataframe:
     cc._api.datapoints.PriorityThreadPoolExecutor = SerialPriorityThreadPoolExecutor  # type: ignore [assignment, misc]
     cc._api.datapoints.as_completed = serial_as_completed  # type: ignore [assignment]
-
-
-def pyodide_http_adapter_send(self: Any, request: PreparedRequest, **kwargs: Any) -> Response:
-    # 'self' is actually `pyodide_http._requests.PyodideHTTPAdapter`, but we don't want it as a
-    # dependency just for the sake of mypy; after all, we are patching like monkeys 🙈
-    (response := self._old_send(request, **kwargs)).raw.version = ""
-    return response
 
 
 def http_client__init__(
