@@ -54,7 +54,6 @@ class CogniteResponse:
         Returns:
             Dict[str, Any]: A dictionary representation of the instance.
         """
-        assert not hasattr(self, "cognite_client")
         return basic_instance_dump(self, camel_case=camel_case)
 
     @classmethod
@@ -101,7 +100,6 @@ class CogniteResource:
         Returns:
             Dict[str, Any]: A dictionary representation of the instance.
         """
-        assert not hasattr(self, "cognite_client")
         return basic_instance_dump(self, camel_case=camel_case)
 
     @classmethod
@@ -464,7 +462,6 @@ class CogniteFilter:
         Returns:
             Dict[str, Any]: A dictionary representation of the instance.
         """
-        assert not hasattr(self, "cognite_client")
         return basic_instance_dump(self, camel_case=camel_case)
 
 
