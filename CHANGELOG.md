@@ -17,6 +17,9 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [5.5.2] - 15-02-23
+### Fixed
+- Fixed JSON dumps serialization error of instances of `ExtractionPipelineConfigRevision` and all subclasses (`ExtractionPipelineConfig`) as they stored a reference to the CogniteClient as a non-private attribute.
 
 ## [5.5.1] - 10-02-23
 ### Changed
@@ -24,7 +27,7 @@ Changes are grouped as follows
 
 ## [5.5.0] - 10-02-23
 ### Added
-- support `instances` destination type on Transformations.
+- Support `instances` destination type on Transformations.
 
 ## [5.4.4] - 06-02-23
 ### Added
