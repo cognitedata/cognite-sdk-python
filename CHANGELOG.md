@@ -17,7 +17,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [5.5.3] - 16-02-23
+## [5.6.0] - 16-02-23
 ### Added
 - The SDK has been made `pyodide` compatible (to allow running natively in browsers). Missing features are `CredentialProvider`s with token refresh and `AssetsAPI.create_hierarchy`.
 
