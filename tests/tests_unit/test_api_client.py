@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import math
+import unittest
 from collections import namedtuple
 from typing import Any
 
@@ -419,9 +420,10 @@ class TestStandardRetrieveMultiple:
                 resource_path=URL_PATH,
                 identifiers=IdentifierSequence.of(1, 2),
             )
-
-        assert {"items": [{"id": 1}]} == jsgz_load(rsps.calls[0].request.body)
-        assert {"items": [{"id": 2}]} == jsgz_load(rsps.calls[1].request.body)
+        unittest.TestCase().assertCountEqual(
+            [{"items": [{"id": 1}]}, {"items": [{"id": 2}]}],
+            [jsgz_load(rsps.calls[0].request.body), jsgz_load(rsps.calls[1].request.body)],
+        )
 
 
 class TestStandardList:
@@ -868,7 +870,7 @@ class TestStandardDelete:
                     resource_path=URL_PATH, wrap_ids=False, identifiers=IdentifierSequence.of([1, 2, 3])
                 )
 
-        assert [{"id": 1}, {"id": 3}] == e.value.not_found
+        unittest.TestCase().assertCountEqual([{"id": 1}, {"id": 3}], e.value.not_found)
         assert [1, 2, 3] == e.value.failed
 
     def test_over_limit_concurrent(self, api_client_with_api_key, rsps):
@@ -879,8 +881,10 @@ class TestStandardDelete:
             api_client_with_api_key._delete_multiple(
                 resource_path=URL_PATH, identifiers=IdentifierSequence.of([1, 2, 3, 4]), wrap_ids=False
             )
-        assert {"items": [1, 2]} == jsgz_load(rsps.calls[0].request.body)
-        assert {"items": [3, 4]} == jsgz_load(rsps.calls[1].request.body)
+        unittest.TestCase().assertCountEqual(
+            [{"items": [1, 2]}, {"items": [3, 4]}],
+            [jsgz_load(rsps.calls[0].request.body), jsgz_load(rsps.calls[1].request.body)],
+        )
 
 
 class TestStandardUpdate:
@@ -1069,9 +1073,10 @@ class TestStandardUpdate:
                 resource_path=URL_PATH,
                 items=[SomeResource(1, 2, id=1), SomeResource(3, 4, id=2)],
             )
-
-        assert {"items": [{"id": 1, "update": {"y": {"set": 2}}}]} == jsgz_load(rsps.calls[0].request.body)
-        assert {"items": [{"id": 2, "update": {"y": {"set": 4}}}]} == jsgz_load(rsps.calls[1].request.body)
+        unittest.TestCase().assertCountEqual(
+            [{"items": [{"id": 1, "update": {"y": {"set": 2}}}]}, {"items": [{"id": 2, "update": {"y": {"set": 4}}}]}],
+            [jsgz_load(rsps.calls[0].request.body), jsgz_load(rsps.calls[1].request.body)],
+        )
 
 
 class TestStandardSearch:
