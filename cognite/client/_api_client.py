@@ -871,9 +871,13 @@ class APIClient:
             extra["response_payload"] = self._truncate(self._get_response_content_safe(res))
         extra["response_headers"] = res.headers
 
-        http_protocol_version = ".".join(list(str(res.raw.version)))
+        try:
+            http_protocol = f"HTTP/{'.'.join(str(res.raw.version))}"
+        except AttributeError:
+            # If this fails, it means we are running in a browser (pyodide) with patched requests package:
+            http_protocol = "XMLHTTP"
 
-        log.debug(f"HTTP/{http_protocol_version} {method} {url} {status_code}", extra=extra)
+        log.debug(f"{http_protocol} {method} {url} {status_code}", extra=extra)
 
     @staticmethod
     def _truncate(s: str, limit: int = 500) -> str:
