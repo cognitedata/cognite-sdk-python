@@ -413,8 +413,10 @@ class AssetsAPI(APIClient):
         return self._create_multiple(list_cls=AssetList, resource_cls=Asset, items=asset)
 
     def create_hierarchy(self, assets: Sequence[Asset]) -> AssetList:
-        """Create asset hierarchy. Like the create() method, when posting a large number of assets, the IDE will split the request into smaller requests.
-        However, create_hierarchy() will additionally make sure that the assets are posted in correct order. The ordering is determined from the
+        """Create an asset hierarchy.
+
+        When posting a large number of assets, like the create() method, the SDK will split the request into smaller requests.
+        Additionally, create_hierarchy() will make sure that the assets are posted in correct order. The ordering is determined from the
         external_id and parent_external_id properties of the assets, and the external_id is therefore required for all assets. Before posting, it is
         checked that all assets have a unique external_id and that there are no circular dependencies.
 
