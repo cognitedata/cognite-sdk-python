@@ -9,8 +9,8 @@ import statistics
 import time
 import warnings
 from abc import ABC, abstractmethod
-from concurrent.futures import CancelledError
 from collections.abc import Mapping
+from concurrent.futures import CancelledError
 from copy import copy
 from datetime import datetime
 from itertools import chain
