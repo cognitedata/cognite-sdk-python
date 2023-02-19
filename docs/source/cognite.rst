@@ -77,7 +77,7 @@ groups of objects, and assets are organized into an asset hierarchy. For example
 which is part of a subsystem on an oil platform.
 
 At the top of an asset hierarchy is a root asset (e.g., the oil platform). Each project can have multiple root assets.
-All assets have a name and a parent asset. No assets with the same parent can have the same name.
+Note that all assets must have a name (a non-empty string).
 
 To create a root asset (an asset without a parent), omit the parent ID when you post the asset to the API.
 To make an asset a child of an existing asset, you must specify a parent ID.
@@ -87,14 +87,14 @@ To make an asset a child of an existing asset, you must specify a parent ID.
     >>> from cognite.client import CogniteClient
     >>> from cognite.client.data_classes import Asset
     >>> c = CogniteClient()
-    >>> my_asset = Asset(name="my first asset", parent_id=123)
+    >>> my_asset = Asset(name="my first child asset", parent_id=123)
     >>> c.assets.create(my_asset)
 
 To post an entire asset hierarchy, you can describe the relations within your asset hierarchy
 using the :code:`external_id` and :code:`parent_external_id` attributes on the :code:`Asset` object. You can post
 an arbitrary number of assets, and the SDK will split the request into multiple requests. To make sure that the
 assets are posted in the correct order, you can use the .create_hierarchy() function, which takes care of the
-sorting before splitting the request into smaller chunks. However, note that the .create_hierarchy() function requires the
+topological sorting for you, before splitting the request into smaller chunks. However, note that the .create_hierarchy() function requires the
 external_id property to be set for all assets.
 
 This example shows how to post a three levels deep asset hierarchy consisting of three assets.
