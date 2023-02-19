@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import cProfile
 import functools
 import gzip
@@ -9,6 +11,27 @@ from contextlib import contextmanager
 
 from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS
 from cognite.client.utils._auxiliary import random_string
+
+
+def all_subclasses(base: type) -> list[type]:
+    """Returns a list (without duplicates) of all subclasses of a given class, sorted on import-path-name.
+    Ignores classes not part of the main library, e.g. subclasses part of tests.
+    """
+    return sorted(
+        filter(
+            lambda sub: str(sub).startswith("<class 'cognite.client"),
+            set(base.__subclasses__()).union(s for c in base.__subclasses__() for s in all_subclasses(c)),
+        ),
+        key=str,
+    )
+
+
+def all_mock_children(mock, parent_names=()):
+    """Returns a dictionary with correct dotted names mapping to mocked classes."""
+    dct = {".".join((*parent_names, k)): v for k, v in mock._mock_children.items()}
+    for name, child in dct.copy().items():
+        dct.update(all_mock_children(child, parent_names=(*parent_names, name)))
+    return dct
 
 
 @contextmanager
