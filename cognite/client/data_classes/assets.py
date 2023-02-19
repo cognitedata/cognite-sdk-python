@@ -10,7 +10,6 @@ from cognite.client.data_classes._base import (
     CogniteListUpdate,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
-    CognitePropertyClassUtil,
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
@@ -33,11 +32,9 @@ class AssetAggregate(dict):
         count (int): Size of the aggregation group
     """
 
-    def __init__(self, count: int = None, **kwargs: Any) -> None:
+    def __init__(self, count: int, **kwargs: Any) -> None:
+        super().__init__(count=count, **kwargs)
         self.count = count
-        self.update(kwargs)
-
-    count = CognitePropertyClassUtil.declare_property("count")
 
 
 class AggregateResultItem(dict):
@@ -49,17 +46,11 @@ class AggregateResultItem(dict):
         path (List[Dict[str, Any]]): IDs of assets on the path to the asset.
     """
 
-    def __init__(
-        self, child_count: int = None, depth: int = None, path: List[Dict[str, Any]] = None, **kwargs: Any
-    ) -> None:
+    def __init__(self, child_count: int, depth: int, path: List[Dict[str, Any]], **kwargs: Any) -> None:
+        super().__init__(childCount=child_count, depth=depth, path=path, **kwargs)
         self.child_count = child_count
         self.depth = depth
         self.path = path
-        self.update(kwargs)
-
-    child_count = CognitePropertyClassUtil.declare_property("childCount")
-    depth = CognitePropertyClassUtil.declare_property("depth")
-    path = CognitePropertyClassUtil.declare_property("path")
 
 
 class Asset(CogniteResource):

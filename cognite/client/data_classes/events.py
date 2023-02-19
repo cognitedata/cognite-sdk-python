@@ -8,7 +8,6 @@ from cognite.client.data_classes._base import (
     CogniteListUpdate,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
-    CognitePropertyClassUtil,
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
@@ -29,14 +28,10 @@ class EndTimeFilter(dict):
     """
 
     def __init__(self, max: int = None, min: int = None, is_null: bool = None, **kwargs: Any) -> None:
+        super().__init__(max=max, min=min, isNull=is_null, **kwargs)
         self.max = max
         self.min = min
         self.is_null = is_null
-        self.update(kwargs)
-
-    max = CognitePropertyClassUtil.declare_property("max")
-    min = CognitePropertyClassUtil.declare_property("min")
-    is_null = CognitePropertyClassUtil.declare_property("isNull")
 
 
 class Event(CogniteResource):

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Literal, Union, cast
 
-from cognite.client.data_classes._base import CognitePropertyClassUtil
 from cognite.client.utils._auxiliary import convert_all_keys_to_camel_case, handle_deprecated_camel_case_argument
 
 
@@ -15,12 +14,9 @@ class TimestampRange(dict):
     """
 
     def __init__(self, max: int = None, min: int = None, **kwargs: Any):
+        super().__init__(max=max, min=min, **kwargs)
         self.max = max
         self.min = min
-        self.update(kwargs)
-
-    max = CognitePropertyClassUtil.declare_property("max")
-    min = CognitePropertyClassUtil.declare_property("min")
 
 
 class AggregateResult(dict):
@@ -121,11 +117,9 @@ class Geometry(dict):
     ):
         if type not in self._VALID_TYPES:
             raise ValueError(f"type must be one of {self._VALID_TYPES}")
+        super().__init__(type=type, coordinates=coordinates)
         self.type = type
         self.coordinates = coordinates
-
-    type = CognitePropertyClassUtil.declare_property("type")
-    coordinates = CognitePropertyClassUtil.declare_property("coordinates")
 
     @classmethod
     def _load(cls, raw_geometry: Dict[str, Any]) -> Geometry:
@@ -149,13 +143,11 @@ class GeometryFilter(dict):
         type: Literal["Point", "LineString", "MultiLineString", "Polygon", "MultiPolygon"],
         coordinates: List,
     ):
+        super().__init__(type=type, coordinates=coordinates)
         if type not in self._VALID_TYPES:
             raise ValueError(f"type must be one of {self._VALID_TYPES}")
         self.type = type
         self.coordinates = coordinates
-
-    type = CognitePropertyClassUtil.declare_property("type")
-    coordinates = CognitePropertyClassUtil.declare_property("coordinates")
 
 
 class GeoLocation(dict):
@@ -169,15 +161,12 @@ class GeoLocation(dict):
     _VALID_TYPES = frozenset({"Feature"})
 
     def __init__(self, type: Literal["Feature"], geometry: Geometry, properties: dict = None):
+        super().__init__(type=type, geometry=geometry, properties=properties)
         if type not in self._VALID_TYPES:
             raise ValueError("Only the 'Feature' type is supported.")
         self.type = type
         self.geometry = geometry
         self.properties = properties
-
-    type = CognitePropertyClassUtil.declare_property("type")
-    geometry = CognitePropertyClassUtil.declare_property("geometry")
-    properties = CognitePropertyClassUtil.declare_property("properties")
 
     @classmethod
     def _load(cls, raw_geo_location: Dict[str, Any] = None, **kwargs: Dict[str, Any]) -> GeoLocation:
@@ -204,11 +193,9 @@ class GeoLocationFilter(dict):
     """
 
     def __init__(self, relation: str, shape: GeometryFilter):
+        super().__init__(relation=relation, shape=shape)
         self.relation = relation
         self.shape = shape
-
-    relation = CognitePropertyClassUtil.declare_property("relation")
-    shape = CognitePropertyClassUtil.declare_property("shape")
 
     @classmethod
     def _load(cls, raw_geo_location_filter: Dict[str, Any] = None, **kwargs: Dict[str, Any]) -> GeoLocationFilter:

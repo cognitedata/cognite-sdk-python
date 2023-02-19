@@ -9,7 +9,6 @@ from cognite.client.data_classes._base import (
     CogniteListUpdate,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
-    CognitePropertyClassUtil,
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
@@ -281,10 +280,8 @@ class TimeSeriesAggregate(dict):
     """
 
     def __init__(self, count: int = None, **kwargs: Any) -> None:
+        super().__init__(count=count, **kwargs)
         self.count = count
-        self.update(kwargs)
-
-    count = CognitePropertyClassUtil.declare_property("count")
 
 
 class TimeSeriesList(CogniteResourceList):

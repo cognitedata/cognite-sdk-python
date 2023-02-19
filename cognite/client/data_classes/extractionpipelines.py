@@ -7,7 +7,6 @@ from cognite.client.data_classes._base import (
     CogniteListUpdate,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
-    CognitePropertyClassUtil,
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
@@ -30,15 +29,11 @@ class ExtractionPipelineContact(dict):
     """
 
     def __init__(self, name: str, email: str, role: str, send_notification: bool):
+        super().__init__(name=name, email=email, role=role, sendNotification=send_notification)
         self.name = name
         self.email = email
         self.role = role
         self.send_notification = send_notification
-
-    name = CognitePropertyClassUtil.declare_property("name")
-    email = CognitePropertyClassUtil.declare_property("email")
-    role = CognitePropertyClassUtil.declare_property("role")
-    send_notification = CognitePropertyClassUtil.declare_property("sendNotification")
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         return convert_all_keys_to_camel_case(self) if camel_case else dict(self)

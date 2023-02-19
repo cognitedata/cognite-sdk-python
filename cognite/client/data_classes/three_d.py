@@ -7,7 +7,6 @@ from cognite.client.data_classes._base import (
     CogniteListUpdate,
     CogniteObjectUpdate,
     CognitePrimitiveUpdate,
-    CognitePropertyClassUtil,
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
@@ -26,12 +25,9 @@ class RevisionCameraProperties(dict):
     """
 
     def __init__(self, target: List[float] = None, position: List[float] = None, **kwargs: Any):
+        super().__init__(target=target, position=position, **kwargs)
         self.target = target
         self.position = position
-        self.update(kwargs)
-
-    target = CognitePropertyClassUtil.declare_property("target")
-    position = CognitePropertyClassUtil.declare_property("position")
 
 
 class BoundingBox3D(dict):
@@ -43,12 +39,9 @@ class BoundingBox3D(dict):
     """
 
     def __init__(self, max: List[float] = None, min: List[float] = None, **kwargs: Any):
+        super().__init__(max=max, min=min, **kwargs)
         self.max = max
         self.min = min
-        self.update(kwargs)
-
-    max = CognitePropertyClassUtil.declare_property("max")
-    min = CognitePropertyClassUtil.declare_property("min")
 
 
 class ThreeDModel(CogniteResource):

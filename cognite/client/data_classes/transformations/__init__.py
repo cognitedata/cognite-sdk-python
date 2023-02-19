@@ -8,7 +8,6 @@ from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteListUpdate,
     CognitePrimitiveUpdate,
-    CognitePropertyClassUtil,
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,

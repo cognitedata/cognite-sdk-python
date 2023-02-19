@@ -2,12 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
 
-from cognite.client.data_classes._base import (
-    CogniteFilter,
-    CognitePropertyClassUtil,
-    CogniteResource,
-    CogniteResourceList,
-)
+from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList
 from cognite.client.utils._auxiliary import convert_all_keys_to_camel_case, to_camel_case
 
 if TYPE_CHECKING:
@@ -78,10 +73,8 @@ class Label(dict):
     """
 
     def __init__(self, external_id: str = None, **kwargs: Any):
+        super().__init__(externalId=external_id, **kwargs)
         self.external_id = external_id
-        self.update(kwargs)
-
-    external_id = CognitePropertyClassUtil.declare_property("externalId")
 
     @classmethod
     def _load_list(cls, labels: Optional[Sequence[Union[str, dict, LabelDefinition, Label]]]) -> Optional[List[Label]]:
@@ -133,9 +126,14 @@ class LabelFilter(dict, CogniteFilter):
     def __init__(
         self, contains_any: List[str] = None, contains_all: List[str] = None, cognite_client: CogniteClient = None
     ):
+        super().__init__()
         self.contains_any = contains_any
         self.contains_all = contains_all
         self._cognite_client = cast("CogniteClient", cognite_client)
+        if contains_any is not None:
+            self["containsAny"] = contains_any
+        if contains_all is not None:
+            self["containsAll"] = contains_all
 
     @staticmethod
     def _wrap_labels(values: Optional[List[str]]) -> Optional[List[Dict[str, str]]]:
@@ -146,6 +144,3 @@ class LabelFilter(dict, CogniteFilter):
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         keys = map(to_camel_case, self.keys()) if camel_case else self.keys()
         return dict(zip(keys, map(self._wrap_labels, self.values())))
-
-    contains_any = CognitePropertyClassUtil.declare_property("containsAny")
-    contains_all = CognitePropertyClassUtil.declare_property("containsAll")
