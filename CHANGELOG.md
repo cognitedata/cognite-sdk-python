@@ -17,6 +17,9 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [5.6.2] - 21-02-23
+### Fixed
+- Fixed an issue where `Content-Type` was not correctly set on file uploads to Azure.
 
 ## [5.6.1] - 20-02-23
 ### Fixed
