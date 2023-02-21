@@ -696,7 +696,7 @@ class FilesAPI(APIClient):
         )
         returned_file_metadata = res.json()
         upload_url = returned_file_metadata["uploadUrl"]
-        headers = {"X-Upload-Content-Type": file_metadata.mime_type}
+        headers = {"Content-Type": file_metadata.mime_type}
         self._http_client_with_retry.request(
             "PUT", upload_url, data=content, timeout=self._config.file_transfer_timeout, headers=headers
         )
