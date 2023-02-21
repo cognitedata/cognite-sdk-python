@@ -196,7 +196,7 @@ class TransformationSchedulesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> transformation_schedule = c.transformations.schedules.retrieve(id=1)
                 >>> transformation_schedule.is_paused = True
-                >>> res = c.transformations.update(transformation)
+                >>> res = c.transformations.schedules.update(transformation_schedule)
 
             Perform a partial update on a transformation schedule, updating the interval and unpausing it::
 
