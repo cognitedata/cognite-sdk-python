@@ -273,6 +273,13 @@ class NonceCredentials:
 
 
 class TransformationBlockedInfo:
+    """Information about the reason why and when a transformation is blocked.
+
+    Args:
+        reason (str): Reason why the transformation is blocked.
+        created_time (Optional[int]): Timestamp when the transformation was blocked.
+    """
+
     def __init__(self, reason: str = None, created_time: Optional[int] = None):
         self.reason = reason
         self.created_time = created_time
