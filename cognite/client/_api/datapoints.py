@@ -9,7 +9,7 @@ import statistics
 import time
 import warnings
 from abc import ABC, abstractmethod
-from concurrent.futures import CancelledError, as_completed
+from concurrent.futures import CancelledError
 from copy import copy
 from datetime import datetime
 from itertools import chain
@@ -63,9 +63,8 @@ from cognite.client.utils._auxiliary import (
     split_into_chunks,
     split_into_n_parts,
 )
-from cognite.client.utils._concurrency import collect_exc_info_and_raise, execute_tasks
+from cognite.client.utils._concurrency import collect_exc_info_and_raise, execute_tasks, get_priority_executor
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
-from cognite.client.utils._priority_tpe import PriorityThreadPoolExecutor
 from cognite.client.utils._time import timestamp_to_ms
 
 if not import_legacy_protobuf():
@@ -80,6 +79,8 @@ if TYPE_CHECKING:
     from concurrent.futures import Future
 
     import pandas as pd
+
+    from cognite.client.utils._priority_tpe import PriorityThreadPoolExecutor
 
 
 POST_DPS_OBJECTS_LIMIT = 10_000
@@ -152,12 +153,12 @@ class DpsFetchStrategy(ABC):
                 )
 
     def fetch_all_datapoints(self) -> DatapointsList:
-        with PriorityThreadPoolExecutor(max_workers=self.max_workers) as pool:
+        with get_priority_executor(max_workers=self.max_workers) as pool:
             ordered_results = self._fetch_all(pool, use_numpy=False)
         return self._finalize_tasks(ordered_results, resource_lst=DatapointsList)
 
     def fetch_all_datapoints_numpy(self) -> DatapointsArrayList:
-        with PriorityThreadPoolExecutor(max_workers=self.max_workers) as pool:
+        with get_priority_executor(max_workers=self.max_workers) as pool:
             ordered_results = self._fetch_all(pool, use_numpy=True)
         return self._finalize_tasks(ordered_results, resource_lst=DatapointsArrayList)
 
@@ -215,7 +216,7 @@ class EagerDpsFetcher(DpsFetchStrategy):
 
         # Run until all top level tasks are complete:
         while futures_dct:
-            future = next(as_completed(futures_dct))
+            future = next(pool.as_completed(futures_dct))
             ts_task = (subtask := futures_dct.pop(future)).parent
             res = self._get_result_with_exception_handling(future, ts_task, ts_task_lookup, futures_dct)
             if res is None:
@@ -325,7 +326,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         ts_task_lookup, missing_to_raise = {}, set()
         initial_query_limits, initial_futures_dct = self._create_initial_tasks(pool)
 
-        for future in as_completed(initial_futures_dct):
+        for future in pool.as_completed(initial_futures_dct):
             res_lst = future.result()
             chunk_agg_qs, chunk_raw_qs = initial_futures_dct.pop(future)
             new_ts_tasks, chunk_missing = self._create_ts_tasks_and_handle_missing(
@@ -357,7 +358,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         ts_task_lookup: Dict[_SingleTSQueryBase, BaseConcurrentTask],
     ) -> None:
         while futures_dct:
-            future = next(as_completed(futures_dct))
+            future = next(pool.as_completed(futures_dct))
             res_lst, subtask_lst = future.result(), futures_dct.pop(future)
             for subtask, res in zip(subtask_lst, res_lst):
                 # We may dynamically split subtasks based on what % of time range was returned:
@@ -975,7 +976,7 @@ class DatapointsAPI(APIClient):
         external_id: Union[str, LatestDatapointQuery, List[Union[str, LatestDatapointQuery]]] = None,
         before: Union[None, int, str, datetime] = None,
         ignore_unknown_ids: bool = False,
-    ) -> Union[Datapoints, DatapointsList]:
+    ) -> Union[None, Datapoints, DatapointsList]:
         """`Get the latest datapoint for one or more time series <https://docs.cognite.com/api/v1/#operation/getLatest>`_
 
         Args:
@@ -985,7 +986,7 @@ class DatapointsAPI(APIClient):
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
-            Union[Datapoints, DatapointsList]: A Datapoints object containing the requested data, or a DatapointsList if multiple were requested.
+            Union[None, Datapoints, DatapointsList]: A Datapoints object containing the requested data, or a DatapointsList if multiple were requested. If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
 
         Examples:
 
@@ -1026,9 +1027,11 @@ class DatapointsAPI(APIClient):
         """
         fetcher = RetrieveLatestDpsFetcher(id, external_id, before, ignore_unknown_ids, self)
         res = fetcher.fetch_datapoints()
-        if fetcher.input_is_singleton:
-            return Datapoints._load(res[0], cognite_client=self._cognite_client)
-        return DatapointsList._load(res, cognite_client=self._cognite_client)
+        if not fetcher.input_is_singleton:
+            return DatapointsList._load(res, cognite_client=self._cognite_client)
+        elif not res and ignore_unknown_ids:
+            return None
+        return Datapoints._load(res[0], cognite_client=self._cognite_client)
 
     def insert(
         self,

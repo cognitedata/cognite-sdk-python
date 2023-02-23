@@ -17,6 +17,30 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [5.6.2] - 21-02-23
+### Fixed
+- Fixed an issue where `Content-Type` was not correctly set on file uploads to Azure.
+
+## [5.6.1] - 20-02-23
+### Fixed
+- Fixed an issue where `IndexError` was raised when a user queried `DatapointsAPI.retrieve_latest` for a single, non-existent time series while also passing `ignore_unknown_ids=True`. Changed to returning `None`, inline with other `retrieve` methods.
+
+## [5.6.0] - 16-02-23
+### Added
+- The SDK has been made `pyodide` compatible (to allow running natively in browsers). Missing features are `CredentialProvider`s with token refresh and `AssetsAPI.create_hierarchy`.
+
+## [5.5.2] - 15-02-23
+### Fixed
+- Fixed JSON dumps serialization error of instances of `ExtractionPipelineConfigRevision` and all subclasses (`ExtractionPipelineConfig`) as they stored a reference to the CogniteClient as a non-private attribute.
+
+## [5.5.1] - 10-02-23
+### Changed
+- Change `CredentialProvider` `Token` to be thread safe when given a callable that does token refresh.
+
+## [5.5.0] - 10-02-23
+### Added
+- Support `instances` destination type on Transformations.
+
 ## [5.4.4] - 06-02-23
 ### Added
 - Added user warnings when wrongly calling `/login/status` (i.e. without an API key) and `/token/inspect` (without OIDC credentials).
