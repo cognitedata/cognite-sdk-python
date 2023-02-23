@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [5.6.3] - 23-02-23
+### Added
+- Make the SDK compatible with `pandas` major version 2 ahead of release.
+
 ## [5.6.2] - 21-02-23
 ### Fixed
 - Fixed an issue where `Content-Type` was not correctly set on file uploads to Azure.
