@@ -21,7 +21,7 @@ protobuf = ">=3.16.0"
 pip = ">=20.0.0"  # make optional once poetry doesnt auto-remove it on "simple install"
 numpy = { version = "^1.20", optional = true }
 sympy = { version = "*", optional = true }
-pandas = { version = "^1.4", optional = true }
+pandas = { version = ">=1.4", optional = true }
 geopandas = { version = ">=0.10.0", optional = true }
 shapely = { version = ">=1.7.0", optional = true }
 pyodide-http = {version = "^0.2.0", optional = true }
