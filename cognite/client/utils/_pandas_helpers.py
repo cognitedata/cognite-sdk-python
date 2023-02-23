@@ -16,6 +16,12 @@ if TYPE_CHECKING:
     from cognite.client.data_classes._base import T_CogniteResource, T_CogniteResourceList
 
 
+def pandas_major_version() -> int:
+    from pandas import __version__
+
+    return int(__version__.split(".")[0])
+
+
 def notebook_display_with_fallback(inst: Union[T_CogniteResource, T_CogniteResourceList], **kwargs: Any) -> str:
     if "camel_case" in signature(inst.to_pandas).parameters:
         # Default of False enforced (when accepted by method):
@@ -43,14 +49,19 @@ def concat_dataframes_with_nullable_int_cols(dfs: Sequence[pd.DataFrame]) -> pd.
     if not int_cols:
         return df
 
-    # As of pandas>=1.5.0, converting float cols (that used to be int) to nullable int using iloc raises FutureWarning,
-    # but the suggested code change (to use `frame.isetitem(...)`) results in the wrong dtype (object).
-    # See Github Issue: https://github.com/pandas-dev/pandas/issues/49922
-    with warnings.catch_warnings():
-        warnings.filterwarnings(
-            action="ignore",
-            message=re.escape("In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace"),
-            category=FutureWarning,
-        )
-        df.iloc[:, int_cols] = df.iloc[:, int_cols].astype("Int64")
-        return df
+    if pandas_major_version() < 2:
+        # As of pandas>=1.5.0, converting float cols (that used to be int) to nullable int using iloc raises FutureWarning,
+        # but the suggested code change (to use `frame.isetitem(...)`) results in the wrong dtype (object).
+        # See Github Issue: https://github.com/pandas-dev/pandas/issues/49922
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                action="ignore",
+                message=re.escape(
+                    "In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace"
+                ),
+                category=FutureWarning,
+            )
+            df.iloc[:, int_cols] = df.iloc[:, int_cols].astype("Int64")
+    else:
+        df.isetitem(int_cols, df.iloc[:, int_cols].astype("Int64"))  # They actually fixed it :D
+    return df
