@@ -259,7 +259,7 @@ class TestInsertDatapoints:
     def test_insert_datapoints_in_multiple_time_series_invalid_key(self, cognite_client):
         dps = [{"timestamp": i * 1e11, "value": i} for i in range(1, 11)]
         dps_objects = [{"extId": "1", "datapoints": dps}]
-        with pytest.raises(ValueError, match="Invalid key 'extId'"):
+        with pytest.raises(ValueError, match="Exactly one of id or external id must be specified, got neither"):
             cognite_client.time_series.data.insert_multiple(dps_objects)
 
     def test_insert_datapoints_ts_does_not_exist(self, cognite_client, mock_post_datapoints_400):
@@ -268,23 +268,23 @@ class TestInsertDatapoints:
 
     def test_insert_multiple_ts__below_ts_and_dps_limit(self, cognite_client, mock_post_datapoints):
         dps = [{"timestamp": i * 1e11, "value": i} for i in range(1, 2)]
-        dps_objects = [{"id": i, "datapoints": dps} for i in range(100)]
+        dps_objects = [{"id": i, "datapoints": dps} for i in range(1, 101)]
         cognite_client.time_series.data.insert_multiple(dps_objects)
         assert 1 == len(mock_post_datapoints.calls)
         request_body = jsgz_load(mock_post_datapoints.calls[0].request.body)
-        for i, dps in enumerate(request_body["items"]):
+        for i, dps in enumerate(request_body["items"], 1):
             assert i == dps["id"]
 
     def test_insert_multiple_ts_single_call__below_dps_limit_above_ts_limit(self, cognite_client, mock_post_datapoints):
         with patch(DATAPOINTS_API.format("POST_DPS_OBJECTS_LIMIT"), 100):
             dps = [{"timestamp": i * 1e11, "value": i} for i in range(1, 2)]
-            dps_objects = [{"id": i, "datapoints": dps} for i in range(101)]
+            dps_objects = [{"id": i, "datapoints": dps} for i in range(1, 102)]
             cognite_client.time_series.data.insert_multiple(dps_objects)
             assert 2 == len(mock_post_datapoints.calls)
 
     def test_insert_multiple_ts_single_call__above_dps_limit_below_ts_limit(self, cognite_client, mock_post_datapoints):
         dps = [{"timestamp": i * 1e11, "value": i} for i in range(1, 1002)]
-        dps_objects = [{"id": i, "datapoints": dps} for i in range(10)]
+        dps_objects = [{"id": i, "datapoints": dps} for i in range(1, 11)]
         cognite_client.time_series.data.insert_multiple(dps_objects)
         assert 2 == len(mock_post_datapoints.calls)
 
@@ -332,12 +332,17 @@ class TestDeleteDatapoints:
             ]
         } == jsgz_load(mock_delete_datapoints.calls[0].request.body)
 
-    def test_delete_ranges_invalid_ids(self, cognite_client):
-        ranges = [{"idz": 1, "start": 0, "end": 1}]
-        with pytest.raises(AssertionError, match="Invalid key 'idz'"):
-            cognite_client.time_series.data.delete_ranges(ranges)
-        ranges = [{"start": 0, "end": 1}]
-        with pytest.raises(ValueError, match="Exactly one of id or external id must be specified"):
+    @pytest.mark.parametrize(
+        "input_dct, err_suffix",
+        (
+            ({}, "neither"),
+            ({"id": 1, "external_id": "a"}, "both"),
+            ({"id": 1, "externalId": "a"}, "both"),
+        ),
+    )
+    def test_delete_ranges_invalid_ids(self, input_dct, err_suffix, cognite_client):
+        ranges = [{"start": 0, "end": 1, **input_dct}]
+        with pytest.raises(ValueError, match=f"Exactly one of id or external id must be specified, got {err_suffix}"):
             cognite_client.time_series.data.delete_ranges(ranges)
 
 

@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [5.6.4] - 28-02-23
+### Added
+- Input validation on `DatapointsAPI.[insert, insert_multiple, delete_ranges]` now raise on missing keys, not just invalid keys.
+
 ## [5.6.3] - 23-02-23
 ### Added
 - Make the SDK compatible with `pandas` major version 2 ahead of release.

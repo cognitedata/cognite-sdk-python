@@ -9,6 +9,7 @@ import os
 import random
 from contextlib import contextmanager
 
+from cognite.client._constants import MAX_VALID_INTERNAL_ID
 from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS
 from cognite.client.utils._auxiliary import random_string
 
@@ -50,7 +51,7 @@ def rng_context(seed: int):
 
 def random_cognite_ids(n):
     # Returns list of random, valid Cognite internal IDs:
-    return random.choices(range(1, 9007199254740992), k=n)
+    return random.choices(range(1, MAX_VALID_INTERNAL_ID + 1), k=n)
 
 
 def random_cognite_external_ids(n, str_len=50):

@@ -103,14 +103,14 @@ class TestSingleTSQueryValidator:
 
     @pytest.mark.parametrize("limit, exp_limit", [(0, 0), (1, 1), (-1, None), (math.inf, None), (None, None)])
     def test_valid_limits(self, limit, exp_limit):
-        ts_query = _SingleTSQueryValidator(_DatapointsQuery(id=0, limit=limit)).validate_and_create_single_queries()
+        ts_query = _SingleTSQueryValidator(_DatapointsQuery(id=1, limit=limit)).validate_and_create_single_queries()
         assert len(ts_query) == 1
         assert ts_query[0].limit == exp_limit
 
     @pytest.mark.parametrize("limit", (-2, -math.inf, math.nan, ..., "5000"))
     def test_limits_not_allowed_values(self, limit):
         with pytest.raises(TypeError, match=re.escape("Parameter `limit` must be a non-negative integer -OR-")):
-            _SingleTSQueryValidator(_DatapointsQuery(id=0, limit=limit)).validate_and_create_single_queries()
+            _SingleTSQueryValidator(_DatapointsQuery(id=1, limit=limit)).validate_and_create_single_queries()
 
     @pytest.mark.parametrize(
         "granularity, aggregates, outside, exp_err, exp_err_msg_idx",
@@ -133,7 +133,7 @@ class TestSingleTSQueryValidator:
             "'Include outside points' is not supported for aggregates.",
         ]
         user_query = _DatapointsQuery(
-            id=0, granularity=granularity, aggregates=aggregates, include_outside_points=outside
+            id=1, granularity=granularity, aggregates=aggregates, include_outside_points=outside
         )
         with pytest.raises(exp_err, match=re.escape(err_msgs[exp_err_msg_idx])):
             _SingleTSQueryValidator(user_query).validate_and_create_single_queries()
@@ -153,7 +153,7 @@ class TestSingleTSQueryValidator:
     def test_function__verify_time_range__valid_inputs(self, start, end):
         gran_dct = {"granularity": random_granularity(), "aggregates": random_aggregates()}
         for kwargs in [{}, gran_dct]:
-            user_query = _DatapointsQuery(id=0, start=start, end=end, **kwargs)
+            user_query = _DatapointsQuery(id=1, start=start, end=end, **kwargs)
             ts_query = _SingleTSQueryValidator(user_query).validate_and_create_single_queries()
             assert isinstance(ts_query[0].start, int)
             assert isinstance(ts_query[0].end, int)
@@ -174,7 +174,7 @@ class TestSingleTSQueryValidator:
     def test_function__verify_time_range__raises(self, start, end):
         gran_dct = {"granularity": random_granularity(), "aggregates": random_aggregates()}
         for kwargs in [{}, gran_dct]:
-            user_query = _DatapointsQuery(id=0, start=start, end=end, **kwargs)
+            user_query = _DatapointsQuery(id=1, start=start, end=end, **kwargs)
             with pytest.raises(ValueError, match="Invalid time range"):
                 _SingleTSQueryValidator(user_query).validate_and_create_single_queries()
 
