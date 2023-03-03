@@ -1,8 +1,6 @@
-from __future__ import annotations
-
 import json
 from decimal import Decimal
-from typing import Any, Dict, List
+from typing import Dict, List
 from unittest import mock
 
 import pytest
@@ -54,7 +52,7 @@ class MyUpdate(CogniteUpdate):
 
 
 class PrimitiveUpdate(CognitePrimitiveUpdate):
-    def set(self, value: Any) -> MyUpdate:
+    def set(self, value) -> MyUpdate:
         return self._set(value)
 
 

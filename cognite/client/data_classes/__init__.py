@@ -1,9 +1,4 @@
-from cognite.client.data_classes.annotations import (
-    Annotation,
-    AnnotationFilter,
-    AnnotationList,
-    AnnotationUpdate,
-)
+from cognite.client.data_classes.annotations import Annotation, AnnotationFilter, AnnotationList, AnnotationUpdate
 from cognite.client.data_classes.assets import (
     AggregateResultItem,
     Asset,
@@ -139,20 +134,11 @@ from cognite.client.data_classes.transformations.schedules import (
     TransformationScheduleList,
     TransformationScheduleUpdate,
 )
-
 from cognite.client.data_classes.transformations.schema import (
     TransformationSchemaColumn,
     TransformationSchemaColumnList,
 )
-
-from cognite.client.data_classes.data_sets import (
-    DataSet,
-    DataSetAggregate,
-    DataSetFilter,
-    DataSetList,
-    DataSetUpdate,
-)
-
+from cognite.client.data_classes.data_sets import DataSet, DataSetAggregate, DataSetFilter, DataSetList, DataSetUpdate
 from cognite.client.data_classes.shared import (
     AggregateResult,
     AggregateUniqueValuesResult,
@@ -162,7 +148,6 @@ from cognite.client.data_classes.shared import (
     GeometryFilter,
     TimestampRange,
 )
-
 from cognite.client.data_classes.datapoints import (
     Datapoint,
     Datapoints,

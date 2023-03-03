@@ -1,6 +1,3 @@
-from __future__ import annotations
-
-from dataclasses import dataclass
 from typing import Dict, Optional
 
 from cognite.client.data_classes.annotation_types.primitives import (
@@ -12,16 +9,17 @@ from cognite.client.data_classes.annotation_types.primitives import (
 )
 
 
-@dataclass
 class ObjectDetection(VisionResource):
     label: str
     confidence: Optional[float]
-    # A valid object detection instance needs to have *exactly one* of these
     bounding_box: Optional[BoundingBox] = None
     polygon: Optional[Polygon] = None
     polyline: Optional[PolyLine] = None
 
-    def __post_init__(self) -> None:
+    def __init__(self, *a, **kw):
+        raise NotImplementedError("Not support in Python 3.6")
+
+    def __post_init__(self):
         if isinstance(self.bounding_box, Dict):
             self.bounding_box = BoundingBox(**self.bounding_box)
         if isinstance(self.polygon, Dict):
@@ -30,25 +28,29 @@ class ObjectDetection(VisionResource):
             self.polyline = PolyLine(**self.polyline)
 
 
-@dataclass
 class TextRegion(VisionResource):
     text: str
     text_region: BoundingBox
     confidence: Optional[float] = None
 
-    def __post_init__(self) -> None:
+    def __init__(self, *a, **kw):
+        raise NotImplementedError("Not support in Python 3.6")
+
+    def __post_init__(self):
         if isinstance(self.text_region, Dict):
             self.text_region = BoundingBox(**self.text_region)
 
 
-@dataclass
 class AssetLink(VisionResource):
     text: str
     text_region: BoundingBox
     asset_ref: CdfResourceRef
     confidence: Optional[float] = None
 
-    def __post_init__(self) -> None:
+    def __init__(self, *a, **kw):
+        raise NotImplementedError("Not support in Python 3.6")
+
+    def __post_init__(self):
         if isinstance(self.text_region, Dict):
             self.text_region = BoundingBox(**self.text_region)
         if isinstance(self.asset_ref, Dict):

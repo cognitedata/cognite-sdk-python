@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import re
 from contextlib import nullcontext as does_not_raise
 from copy import deepcopy

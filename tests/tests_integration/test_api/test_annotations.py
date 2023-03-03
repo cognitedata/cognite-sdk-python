@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import uuid
 from copy import deepcopy
 from typing import Any, Dict, List, Optional

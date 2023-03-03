@@ -1,6 +1,4 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Union, cast
+from typing import Dict
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -15,21 +13,9 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._auxiliary import convert_all_keys_to_camel_case
 
-if TYPE_CHECKING:
-    from cognite.client import CogniteClient
-
 
 class ExtractionPipelineContact(dict):
-    """A contact for an extraction pipeline
-
-    Args:
-        name (str): Name of contact
-        email (str): Email address of contact
-        role (str): Role of contact, such as Owner, Maintainer, etc.
-        send_notification (bool): Whether to send notifications to this contact or not
-    """
-
-    def __init__(self, name: str, email: str, role: str, send_notification: bool):
+    def __init__(self, name, email, role, send_notification):
         self.name = name
         self.email = email
         self.role = role
@@ -40,56 +26,32 @@ class ExtractionPipelineContact(dict):
     role = CognitePropertyClassUtil.declare_property("role")
     send_notification = CognitePropertyClassUtil.declare_property("sendNotification")
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+    def dump(self, camel_case=False):
         return convert_all_keys_to_camel_case(self) if camel_case else dict(self)
 
 
 class ExtractionPipeline(CogniteResource):
-    """An extraction pipeline is a representation of a process writing data to CDF, such as an extractor or an ETL tool.
-
-    Args:
-        id (int): A server-generated ID for the object.
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        name (str): The name of the extraction pipeline.
-        description (str): The description of the extraction pipeline.
-        data_set_id (int): The id of the dataset this extraction pipeline related with.
-        raw_tables (List[Dict[str, str]): list of raw tables in list format: [{"dbName": "value", "tableName" : "value"}].
-        last_success (int): Milliseconds value of last success status.
-        last_failure (int): Milliseconds value of last failure status.
-        last_message (str): Message of last failure.
-        last_seen (int): Milliseconds value of last seen status.
-        schedule (str): None/On trigger/Continuous/cron regex.
-        contacts (List[ExtractionPipelineContact]): list of contacts
-        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
-        source (str): Source text value for extraction pipeline.
-        documentation (str): Documentation text value for extraction pipeline.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_by (str): Extraction pipeline creator, usually an email.
-        cognite_client (CogniteClient): The client to associate with this object.
-    """
-
     def __init__(
         self,
-        id: int = None,
-        external_id: str = None,
-        name: str = None,
-        description: str = None,
-        data_set_id: int = None,
-        raw_tables: List[Dict[str, str]] = None,
-        last_success: int = None,
-        last_failure: int = None,
-        last_message: str = None,
-        last_seen: int = None,
-        schedule: str = None,
-        contacts: List[ExtractionPipelineContact] = None,
-        metadata: Dict[str, str] = None,
-        source: str = None,
-        documentation: str = None,
-        created_time: int = None,
-        last_updated_time: int = None,
-        created_by: str = None,
-        cognite_client: CogniteClient = None,
+        id=None,
+        external_id=None,
+        name=None,
+        description=None,
+        data_set_id=None,
+        raw_tables=None,
+        last_success=None,
+        last_failure=None,
+        last_message=None,
+        last_seen=None,
+        schedule=None,
+        contacts=None,
+        metadata=None,
+        source=None,
+        documentation=None,
+        created_time=None,
+        last_updated_time=None,
+        created_by=None,
+        cognite_client=None,
     ):
         self.id = id
         self.external_id = external_id
@@ -109,87 +71,80 @@ class ExtractionPipeline(CogniteResource):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.created_by = created_by
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> ExtractionPipeline:
+    def _load(cls, resource, cognite_client=None):
         instance = super()._load(resource, cognite_client)
         return instance
 
-    def __hash__(self) -> int:
+    def __hash__(self):
         return hash(self.external_id)
 
 
 class ExtractionPipelineUpdate(CogniteUpdate):
-    """Changes applied to an extraction pipeline
-
-    Args:
-        id (int): A server-generated ID for the object.
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-    """
-
     class _PrimitiveExtractionPipelineUpdate(CognitePrimitiveUpdate):
-        def set(self, value: Any) -> ExtractionPipelineUpdate:
+        def set(self, value):
             return self._set(value)
 
     class _ObjectExtractionPipelineUpdate(CogniteObjectUpdate):
-        def set(self, value: Dict) -> ExtractionPipelineUpdate:
+        def set(self, value):
             return self._set(value)
 
-        def add(self, value: Dict) -> ExtractionPipelineUpdate:
+        def add(self, value):
             return self._add(value)
 
-        def remove(self, value: List) -> ExtractionPipelineUpdate:
+        def remove(self, value):
             return self._remove(value)
 
     class _ListExtractionPipelineUpdate(CogniteListUpdate):
-        def set(self, value: List) -> ExtractionPipelineUpdate:
+        def set(self, value):
             return self._set(value)
 
-        def add(self, value: List) -> ExtractionPipelineUpdate:
+        def add(self, value):
             return self._add(value)
 
-        def remove(self, value: List) -> ExtractionPipelineUpdate:
+        def remove(self, value):
             return self._remove(value)
 
     @property
-    def external_id(self) -> _PrimitiveExtractionPipelineUpdate:
+    def external_id(self):
         return ExtractionPipelineUpdate._PrimitiveExtractionPipelineUpdate(self, "externalId")
 
     @property
-    def name(self) -> _PrimitiveExtractionPipelineUpdate:
+    def name(self):
         return ExtractionPipelineUpdate._PrimitiveExtractionPipelineUpdate(self, "name")
 
     @property
-    def description(self) -> _PrimitiveExtractionPipelineUpdate:
+    def description(self):
         return ExtractionPipelineUpdate._PrimitiveExtractionPipelineUpdate(self, "description")
 
     @property
-    def data_set_id(self) -> _PrimitiveExtractionPipelineUpdate:
+    def data_set_id(self):
         return ExtractionPipelineUpdate._PrimitiveExtractionPipelineUpdate(self, "dataSetId")
 
     @property
-    def raw_tables(self) -> _ListExtractionPipelineUpdate:
+    def raw_tables(self):
         return ExtractionPipelineUpdate._ListExtractionPipelineUpdate(self, "rawTables")
 
     @property
-    def metadata(self) -> _ObjectExtractionPipelineUpdate:
+    def metadata(self):
         return ExtractionPipelineUpdate._ObjectExtractionPipelineUpdate(self, "metadata")
 
     @property
-    def source(self) -> _PrimitiveExtractionPipelineUpdate:
+    def source(self):
         return ExtractionPipelineUpdate._PrimitiveExtractionPipelineUpdate(self, "source")
 
     @property
-    def documentation(self) -> _PrimitiveExtractionPipelineUpdate:
+    def documentation(self):
         return ExtractionPipelineUpdate._PrimitiveExtractionPipelineUpdate(self, "documentation")
 
     @property
-    def schedule(self) -> _PrimitiveExtractionPipelineUpdate:
+    def schedule(self):
         return ExtractionPipelineUpdate._PrimitiveExtractionPipelineUpdate(self, "schedule")
 
     @property
-    def contacts(self) -> _ListExtractionPipelineUpdate:
+    def contacts(self):
         return ExtractionPipelineUpdate._ListExtractionPipelineUpdate(self, "contacts")
 
 
@@ -198,34 +153,17 @@ class ExtractionPipelineList(CogniteResourceList):
 
 
 class ExtractionPipelineRun(CogniteResource):
-    """A representation of an extraction pipeline run.
-
-    Args:
-        external_id (str): The external ID of the extraction pipeline.
-        status (str): success/failure/seen.
-        message (str): Optional status message.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        cognite_client (CogniteClient): The client to associate with this object.
-    """
-
-    def __init__(
-        self,
-        external_id: str = None,
-        status: str = None,
-        message: str = None,
-        created_time: int = None,
-        cognite_client: CogniteClient = None,
-    ):
+    def __init__(self, external_id=None, status=None, message=None, created_time=None, cognite_client=None):
         self.external_id = external_id
         self.status = status
         self.message = message
         self.created_time = created_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
 
 class ExtractionPipelineRunUpdate(CogniteUpdate):
     class _PrimitiveExtractionPipelineRunUpdate(CognitePrimitiveUpdate):
-        def set(self, value: Any) -> ExtractionPipelineRunUpdate:
+        def set(self, value):
             return self._set(value)
 
 
@@ -234,43 +172,20 @@ class ExtractionPipelineRunList(CogniteResourceList):
 
 
 class StringFilter(CogniteFilter):
-    """Filter runs on substrings of the message
-
-    Args:
-        substring (str): Part of message
-    """
-
-    def __init__(self, substring: str = None):
+    def __init__(self, substring=None):
         self.substring = substring
 
 
 class ExtractionPipelineRunFilter(CogniteFilter):
-    """Filter runs with exact matching
-
-    Args:
-        external_id (str): The external ID of related ExtractionPipeline provided by the client. Must be unique for the resource type.
-        statuses (Sequence[str]): success/failure/seen.
-        message (StringFilter): message filter.
-        created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-        cognite_client (CogniteClient): The client to associate with this object.
-    """
-
-    def __init__(
-        self,
-        external_id: str = None,
-        statuses: Sequence[str] = None,
-        message: StringFilter = None,
-        created_time: Union[Dict[str, Any], TimestampRange] = None,
-        cognite_client: CogniteClient = None,
-    ):
+    def __init__(self, external_id=None, statuses=None, message=None, created_time=None, cognite_client=None):
         self.external_id = external_id
         self.statuses = statuses
         self.message = message
         self.created_time = created_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str]) -> ExtractionPipelineRunFilter:
+    def _load(cls, resource):
         instance = super()._load(resource)
         if isinstance(resource, Dict):
             if instance.created_time is not None:
@@ -279,24 +194,7 @@ class ExtractionPipelineRunFilter(CogniteFilter):
 
 
 class ExtractionPipelineConfigRevision(CogniteResource):
-    """An extraction pipeline config revision
-
-    Args:
-        external_id (str): The external ID of the associated extraction pipeline.
-        revision (int): The revision number of this config as a positive integer.
-        description (str): Short description of this configuration revision.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        cognite_client (CogniteClient): The client to associate with this object.
-    """
-
-    def __init__(
-        self,
-        external_id: str = None,
-        revision: int = None,
-        description: str = None,
-        created_time: int = None,
-        cognite_client: CogniteClient = None,
-    ):
+    def __init__(self, external_id=None, revision=None, description=None, created_time=None, cognite_client=None):
         self.external_id = external_id
         self.revision = revision
         self.description = description
@@ -305,25 +203,8 @@ class ExtractionPipelineConfigRevision(CogniteResource):
 
 
 class ExtractionPipelineConfig(ExtractionPipelineConfigRevision):
-    """An extraction pipeline config revision
-
-    Args:
-        external_id (str): The external ID of the associated extraction pipeline.
-        config (str): Contents of this configuration revision.
-        revision (int): The revision number of this config as a positive integer.
-        description (str): Short description of this configuration revision.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        cognite_client (CogniteClient): The client to associate with this object.
-    """
-
     def __init__(
-        self,
-        external_id: str = None,
-        config: str = None,
-        revision: int = None,
-        description: str = None,
-        created_time: int = None,
-        cognite_client: CogniteClient = None,
+        self, external_id=None, config=None, revision=None, description=None, created_time=None, cognite_client=None
     ):
         super().__init__(
             external_id=external_id,
