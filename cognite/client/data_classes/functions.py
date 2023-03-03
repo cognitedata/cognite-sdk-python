@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import time
 from numbers import Number
 from typing import TYPE_CHECKING, Dict, List, Optional, Union, cast

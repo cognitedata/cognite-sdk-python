@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Any, Dict, List, Literal, Union, cast
 
 from cognite.client.data_classes._base import CognitePropertyClassUtil

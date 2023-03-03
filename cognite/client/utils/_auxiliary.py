@@ -4,7 +4,7 @@ This module provides helper methods and different utilities for the Cognite API 
 
 This module is protected and should not be used by end-users.
 """
-from __future__ import annotations
+
 
 import functools
 import heapq

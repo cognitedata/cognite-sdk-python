@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import math
 import numbers
 import operator as op
@@ -211,7 +209,8 @@ class _SingleTSQueryValidator:
 
             elif isinstance(ts, dict):
                 ts_validated = self._validate_user_supplied_dict_keys(ts, arg_name)
-                if not isinstance(identifier := ts_validated[arg_name], exp_type):  # type: ignore [literal-required]
+                identifier = ts_validated[arg_name]
+                if not isinstance(identifier, exp_type):  # type: ignore [literal-required]
                     self._raise_on_wrong_ts_identifier_type(identifier, arg_name, exp_type)
                 # We merge 'defaults' and given ts-dict, ts-dict takes precedence:
                 ts_dct = {**self.defaults, **ts_validated}
@@ -237,11 +236,13 @@ class _SingleTSQueryValidator:
     @staticmethod
     def _validate_user_supplied_dict_keys(dct: Dict[str, Any], arg_name: str) -> Dict[str, Any]:
         if arg_name not in dct:
-            if (arg_name_cc := to_camel_case(arg_name)) not in dct:
+            arg_name_cc = to_camel_case(arg_name)
+            if arg_name_cc not in dct:
                 raise KeyError(f"Missing required key `{arg_name}` in dict: {dct}.")
             # For backwards compatibility we accept identifiers in camel case: (Make copy to avoid side effects
             # for user's input). Also means we need to return it.
-            dct[arg_name] = (dct := dct.copy()).pop(arg_name_cc)
+            dct = dct.copy()
+            dct[arg_name] = dct.pop(arg_name_cc)
 
         opt_dct_keys = {
             "start",
@@ -318,7 +319,8 @@ class _SingleTSQueryValidator:
         if is_raw:
             converted["include_outside_points"] = dct["include_outside_points"]
         else:
-            if isinstance(aggs := dct["aggregates"], str):
+            aggs = dct["aggregates"]
+            if isinstance(aggs, str):
                 aggs = [aggs]
             converted["aggregates"] = aggs
             converted["granularity"] = dct["granularity"]
@@ -647,7 +649,8 @@ class OutsideDpsFetchSubtask(BaseDpsFetchSubtask):
     def store_partial_result(self, res: DataPointListItem) -> None:
         # `Oneof` field `datapointType` can be either `numericDatapoints` or `stringDatapoints`
         # (or `aggregateDatapoints`, but not here of course):
-        if dps := get_datapoints_from_proto(res):
+        dps = get_datapoints_from_proto(res)
+        if dps:
             self.parent._extract_outside_points(cast(DatapointsRaw, dps))
         self.is_done = True
         return None
@@ -710,7 +713,8 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
             # In eager mode, first task to complete gets the honor to store ts info:
             self.parent._store_ts_info(res)
 
-        if not (dps := get_datapoints_from_proto(res)):
+        dps = get_datapoints_from_proto(res)
+        if not dps:
             self.is_done = True
             return None
 
@@ -757,13 +761,15 @@ class SplittingFetchSubtask(SerialFetchSubtask):
 
     def _split_self_into_new_subtasks_if_needed(self, last_ts: int) -> Optional[List[SplittingFetchSubtask]]:
         # How many new tasks because of % of time range was fetched?
-        tot_ms = self.end - (start := self.prev_start)
+        start = self.prev_start
+        tot_ms = self.end - start
         part_ms = last_ts - start
         ratio_retrieved = part_ms / tot_ms
         n_new_pct = math.floor(1 / ratio_retrieved)
         # How many new tasks because of limit left (if limit)?
         n_new_lim = math.inf
-        if (remaining_limit := self.get_remaining_limit()) is not None:
+        remaining_limit = self.get_remaining_limit()
+        if remaining_limit is not None:
             n_new_lim = math.ceil(remaining_limit / self.max_query_limit)
         # We pick strictest criterion:
         n_new_tasks = min(cast(int, n_new_lim), n_new_pct, self.max_splitting_factor + 1)  # +1 for "self next"
@@ -906,7 +912,8 @@ class BaseConcurrentTask:
 
     def _create_uniformly_split_subtasks(self, n_workers_per_queries: int) -> List[BaseDpsFetchSubtask]:
         start = self.query.start if self.eager_mode else self.first_start
-        tot_ms = (end := self.query.end) - start
+        end = self.query.end
+        tot_ms = end - start
         n_periods = self._find_number_of_subtasks_uniform_split(tot_ms, n_workers_per_queries)
         boundaries = split_time_range(start, end, n_periods, self.offset_next)
         limit = self.query.limit - self.n_dps_first_batch if self.has_limit else None
@@ -958,7 +965,8 @@ class BaseConcurrentTask:
         with self.lock:  # Keep sorted list `subtasks` from being mutated
             for task in self.subtasks:
                 # Sum up to - but not including - given subtask:
-                if task is subtask or (remaining := remaining - task.n_dps_fetched) <= 0:
+                remaining = remaining - task.n_dps_fetched
+                if task is subtask or remaining <= 0:
                     break
         return max(0, remaining)
 
@@ -1076,8 +1084,9 @@ class BaseConcurrentRawTask(BaseConcurrentTask):
                 self.dps_data[subtask_idx] = self.dps_data[subtask_idx][: j + 1]
                 # Remove later sublists (if any). We keep using DefaultSortedDicts due to the possibility of
                 # having to insert/add 'outside points' later:
-                (new_ts := create_dps_container()).update(self.ts_data.items()[: i + 1])
-                (new_dps := create_dps_container()).update(self.dps_data.items()[: i + 1])
+                new_ts, new_dps = create_dps_container(), create_dps_container()
+                new_ts.update(self.ts_data.items()[: i + 1])
+                new_dps.update(self.dps_data.items()[: i + 1])
                 self.ts_data, self.dps_data = new_ts, new_dps
                 return None
 

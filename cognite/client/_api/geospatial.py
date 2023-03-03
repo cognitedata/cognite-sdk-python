@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import json as complexjson
 import numbers
 import urllib.parse

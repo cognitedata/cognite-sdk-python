@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Iterator, Sequence, Union, cast
 
 from cognite.client._api_client import APIClient

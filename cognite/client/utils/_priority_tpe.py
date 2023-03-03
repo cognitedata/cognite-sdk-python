@@ -28,7 +28,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from __future__ import annotations
+
 
 import inspect
 import itertools
@@ -117,7 +117,8 @@ class PriorityThreadPoolExecutor(ThreadPoolExecutor):
             if _SHUTDOWN:
                 raise RuntimeError("Cannot schedule new futures after interpreter shutdown")
 
-            if (priority := kwargs.pop("priority", 0)) < 0:
+            priority = kwargs.pop("priority", 0)
+            if priority < 0:
                 raise ValueError("'priority' has to be a nonnegative number, 0 being the highest possible priority")
 
             future = Future()

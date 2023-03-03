@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import warnings
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
@@ -46,7 +44,8 @@ class CogniteClient:
     _API_VERSION = "v1"
 
     def __init__(self, config: Optional[ClientConfig] = None) -> None:
-        if (client_config := config or global_config.default_client_config) is None:
+        client_config = config or global_config.default_client_config
+        if client_config is None:
             raise ValueError(
                 "No ClientConfig has been provided, either pass it directly to CogniteClient "
                 "or set global_config.default_client_config."

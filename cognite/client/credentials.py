@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import atexit
 import inspect
 import tempfile
@@ -331,7 +329,8 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         # We make sure that whatever is passed as part of 'token_custom_args' can't set or override any of the
         # named parameters that 'fetch_token' accepts:
         reserved = set(inspect.signature(self.__oauth.fetch_token).parameters) - {"kwargs"}
-        if bad_args := reserved.intersection(self.__token_custom_args):
+        bad_args = reserved.intersection(self.__token_custom_args)
+        if bad_args:
             raise TypeError(
                 f"The following reserved token custom arg(s) were passed: {sorted(bad_args)}. The full list of "
                 f"reserved custom args is: {sorted(reserved)}."

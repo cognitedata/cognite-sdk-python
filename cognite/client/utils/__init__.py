@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from cognite.client.utils import (
     _auxiliary,
     _concurrency,

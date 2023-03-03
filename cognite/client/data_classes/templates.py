@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import json
 from collections import UserDict
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union, cast

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import warnings
 
 from cognite.client._api_client import APIClient

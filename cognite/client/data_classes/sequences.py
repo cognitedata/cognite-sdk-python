@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import json
 import math
 from typing import TYPE_CHECKING, Any, Dict, Generator, List

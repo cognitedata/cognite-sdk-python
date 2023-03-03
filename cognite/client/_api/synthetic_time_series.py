@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import re
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Tuple, Union, cast
@@ -167,7 +165,8 @@ class SyntheticDatapointsAPI(APIClient):
                     return f"(1/{process_symbol(sym.args[0])})"
                 return f"pow({','.join(map(process_symbol, sym.args))})"
 
-            if funop := functions.get(sym.__class__):
+            funop = functions.get(sym.__class__)
+            if funop:
                 return f"{funop}({','.join(map(process_symbol, sym.args))})"
             raise ValueError(f"Unsupported sympy class {sym.__class__} encountered in expression")
 

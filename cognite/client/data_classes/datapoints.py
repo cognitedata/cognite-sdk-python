@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import json
 import operator as op
 import warnings
@@ -276,9 +274,9 @@ class DatapointsArray(CogniteResource):
 
     def _data_fields(self) -> Tuple[List[str], List[npt.NDArray]]:
         data_field_tuples = [
-            (attr, arr)
+            (attr, getattr(self, attr))
             for attr in ("timestamp", "value", *ALL_SORTED_DP_AGGS)  # ts must be first!
-            if (arr := getattr(self, attr)) is not None
+            if getattr(self, attr) is not None
         ]
         attrs, arrays = map(list, zip(*data_field_tuples))
         return attrs, arrays  # type: ignore [return-value]
@@ -358,7 +356,8 @@ class DatapointsArray(CogniteResource):
         ]
         # Since columns might contain duplicates, we can't instantiate from dict as only the
         # last key (array/column) would be kept:
-        (df := pd.DataFrame(dict(enumerate(arrays)), index=self.timestamp, copy=False)).columns = columns
+        df = pd.DataFrame(dict(enumerate(arrays)), index=self.timestamp, copy=False)
+        df.columns = columns
         return df
 
 
@@ -543,7 +542,8 @@ class Datapoints(CogniteResource):
                 data_lists.append(data.astype("float64"))
 
         idx = pd.to_datetime(self.timestamp, unit="ms")
-        (df := pd.DataFrame(dict(enumerate(data_lists)), index=idx)).columns = field_names
+        df = pd.DataFrame(dict(enumerate(data_lists)), index=idx)
+        df.columns = field_names
         return df
 
     @classmethod
@@ -634,9 +634,11 @@ class DatapointsArrayList(CogniteResourceList):
         dupe_xids, xid_dct = find_duplicates(xids), defaultdict(list)
 
         for dps in self:
-            if (id_ := dps.id) is not None and id_ in dupe_ids:
+            id_ = dps.id
+            if id_ is not None and id_ in dupe_ids:
                 id_dct[id_].append(dps)
-            if (xid := dps.external_id) is not None and xid in dupe_xids:
+            xid = dps.external_id
+            if xid is not None and xid in dupe_xids:
                 xid_dct[xid].append(dps)
 
         self._id_to_item.update(id_dct)
@@ -713,9 +715,11 @@ class DatapointsList(CogniteResourceList):
         dupe_xids, xid_dct = find_duplicates(xids), defaultdict(list)
 
         for dps in self:
-            if (id_ := dps.id) is not None and id_ in dupe_ids:
+            id_ = dps.id
+            if id_ is not None and id_ in dupe_ids:
                 id_dct[id_].append(dps)
-            if (xid := dps.external_id) is not None and xid in dupe_xids:
+            xid = dps.external_id
+            if xid is not None and xid in dupe_xids:
                 xid_dct[xid].append(dps)
 
         self._id_to_item.update(id_dct)

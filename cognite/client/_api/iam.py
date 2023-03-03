@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import numbers
 import warnings
 from typing import TYPE_CHECKING, Optional, Sequence, Union
@@ -411,7 +409,8 @@ class SessionsAPI(APIClient):
         Returns:
             CreatedSession: The object with token inspection details.
         """
-        if client_credentials is None and isinstance((creds := self._config.credentials), OAuthClientCredentials):
+        creds = self._config.credentials
+        if client_credentials is None and isinstance(creds, OAuthClientCredentials):
             client_credentials = ClientCredentials(creds.client_id, creds.client_secret)
 
         items = {"tokenExchange": True} if client_credentials is None else client_credentials.dump(camel_case=True)

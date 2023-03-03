@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import numbers
 from typing import Dict, Generic, Iterable, List, Optional, Sequence, Tuple, TypeVar, Union, cast, overload
 

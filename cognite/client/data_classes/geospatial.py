@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import dataclasses
 import json
 from abc import ABC, abstractmethod

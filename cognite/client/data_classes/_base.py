@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import json
 from collections import UserList
 from typing import TYPE_CHECKING, Any, Collection, Dict, Generic, List, Optional, Sequence, Type, TypeVar, Union, cast

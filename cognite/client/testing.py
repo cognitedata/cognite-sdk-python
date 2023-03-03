@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from contextlib import contextmanager
 from typing import Any, Iterator
 from unittest.mock import MagicMock

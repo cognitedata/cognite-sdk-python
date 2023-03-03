@@ -644,7 +644,8 @@ class TestRetrieveAggregateDatapointsAPI:
                         {"external_id": ts.external_id, "granularity": "1s", "aggregates": aggs[3]},
                     ],
                 )
-                assert ((df := res.to_pandas()).isna().sum() == 0).all()
+                df = res.to_pandas()
+                assert (df.isna().sum() == 0).all()
                 assert df.index[0] == pd.Timestamp(exp_start, unit="ms")
                 assert df.index[-1] == pd.Timestamp(exp_end, unit="ms")
 
@@ -1126,7 +1127,8 @@ class TestRetrieveDataFrameAPI:
         self, include_aggregate_name, column_names, cognite_client, one_mill_dps_ts
     ):
         ts = one_mill_dps_ts[0]
-        random.shuffle(aggs := ALL_SORTED_DP_AGGS[:])
+        aggs = ALL_SORTED_DP_AGGS[:]
+        random.shuffle(aggs)
 
         res_df = cognite_client.time_series.data.retrieve_dataframe(
             id=ts.id,

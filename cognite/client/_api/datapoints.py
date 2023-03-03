@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import contextlib
 import functools
 import heapq
@@ -180,7 +178,8 @@ class DpsFetchStrategy(ABC):
         ).content
 
     def _request_datapoints(self, payload: DatapointsPayload) -> Sequence[DataPointListItem]:
-        (res := DataPointListResponse()).MergeFromString(self._make_dps_request_using_protobuf(payload))
+        res = DataPointListResponse()
+        res.MergeFromString(self._make_dps_request_using_protobuf(payload))
         return res.items
 
     @abstractmethod
@@ -206,7 +205,8 @@ class EagerDpsFetcher(DpsFetchStrategy):
     ) -> Optional[Sequence[DataPointListItem]]:
         # Note: We delay getting the next payload as much as possible; this way, when we count number of
         # points left to fetch JIT, we have the most up-to-date estimate (and may quit early):
-        if (item := task.get_next_payload()) is None:
+        item = task.get_next_payload()
+        if item is None:
             return None
 
         dps_payload: DatapointsPayload = cast(DatapointsPayload, copy(payload) or {})
@@ -219,12 +219,14 @@ class EagerDpsFetcher(DpsFetchStrategy):
         # Run until all top level tasks are complete:
         while futures_dct:
             future = next(pool.as_completed(futures_dct))
-            ts_task = (subtask := futures_dct.pop(future)).parent
+            subtask = futures_dct.pop(future)
+            ts_task = subtask.parent
             res = self._get_result_with_exception_handling(future, ts_task, ts_task_lookup, futures_dct)
             if res is None:
                 continue
             # We may dynamically split subtasks based on what % of time range was returned:
-            if new_subtasks := subtask.store_partial_result(res):
+            new_subtasks = subtask.store_partial_result(res)
+            if new_subtasks:
                 self._queue_new_subtasks(pool, futures_dct, new_subtasks)
             if ts_task.is_done:  # "Parent" ts task might be done before a subtask is finished
                 if all(parent.is_done for parent in ts_task_lookup.values()):
@@ -272,7 +274,8 @@ class EagerDpsFetcher(DpsFetchStrategy):
         futures_dct: Dict[Future, BaseDpsFetchSubtask],
     ) -> Optional[DataPointListItem]:
         try:
-            if (res := future.result()) is not None:
+            res = future.result()
+            if res is not None:
                 return res[0]
             return None
         except CancelledError:
@@ -340,7 +343,8 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         if missing_to_raise:
             raise CogniteNotFoundError(not_found=[q.identifier.as_dict(camel_case=False) for q in missing_to_raise])
 
-        if ts_tasks_left := self._update_queries_with_new_chunking_limit(ts_task_lookup):
+        ts_tasks_left = self._update_queries_with_new_chunking_limit(ts_task_lookup)
+        if ts_tasks_left:
             self._add_to_subtask_pools(
                 chain.from_iterable(
                     task.split_into_subtasks(max_workers=self.max_workers, n_tot_queries=len(ts_tasks_left))
@@ -364,12 +368,14 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
             res_lst, subtask_lst = future.result(), futures_dct.pop(future)
             for subtask, res in zip(subtask_lst, res_lst):
                 # We may dynamically split subtasks based on what % of time range was returned:
-                if new_subtasks := subtask.store_partial_result(res):
+                new_subtasks = subtask.store_partial_result(res)
+                if new_subtasks:
                     self._add_to_subtask_pools(new_subtasks)
                 if not subtask.is_done:
                     self._add_to_subtask_pools([subtask])
             # Check each parent in current batch once if we may cancel some queued subtasks:
-            if done_ts_tasks := {sub.parent for sub in subtask_lst if sub.parent.is_done}:
+            done_ts_tasks = {sub.parent for sub in subtask_lst if sub.parent.is_done}
+            if done_ts_tasks:
                 self._cancel_subtasks(done_ts_tasks)
 
             self._queue_new_subtasks(pool, futures_dct)
@@ -392,7 +398,8 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
             items = []
             for queries, max_lim in zip(query_chunks, [DPS_LIMIT_AGG, DPS_LIMIT]):
                 maxed_limits = self._find_initial_query_limits([q.capped_limit for q in queries], max_lim)
-                initial_query_limits.update(chunk_query_limits := dict(zip(queries, maxed_limits)))
+                chunk_query_limits = dict(zip(queries, maxed_limits))
+                initial_query_limits.update(chunk_query_limits)
                 items.extend([{**q.to_payload(), "limit": lim} for q, lim in chunk_query_limits.items()])
 
             payload = {"ignoreUnknownIds": True, "items": items}
@@ -431,7 +438,8 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         for task in new_subtasks:
             # We leverage how tuples are compared to prioritise items. First `priority`, then `payload limit`
             # (to easily group smaller queries), then counter to always break ties, but keep order (never use tasks themselves):
-            n_dps_left = math.inf if (n_dps_left := task.get_remaining_limit()) is None else n_dps_left
+            n_dps_left = task.get_remaining_limit()
+            n_dps_left = math.inf if n_dps_left is None else n_dps_left
             limit = min(n_dps_left, task.max_query_limit)
             new_subtask: PoolSubtaskType = (task.priority, limit, next(self.counter), task)
             heapq.heappush(self.subtask_pools[task.is_raw_query], new_subtask)
@@ -442,7 +450,8 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         while pool._work_queue.qsize() == 0 and any(self.subtask_pools):
             # While the number of unstarted tasks is 0 and we have unqueued subtasks in one of the pools,
             # we keep combining subtasks into "chunked dps requests" to feed to the thread pool
-            if (new_request := self._combine_subtasks_into_new_request()) is None:
+            new_request = self._combine_subtasks_into_new_request()
+            if new_request is None:
                 return
             payload, subtask_lst, priority = new_request
             future = pool.submit(self._request_datapoints, payload, priority=priority)
@@ -496,7 +505,8 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         batch_start, batch_end = ts_task.start_ts_first_batch, ts_task.end_ts_first_batch
         est_remaining_dps = ts_task.n_dps_first_batch * (query.end - batch_end) / (batch_end - batch_start)
         # To use the full request limit on a single ts, the estimate must be >> max_limit (raw/agg dependent):
-        if est_remaining_dps > 5 * (max_limit := query.max_query_limit):
+        max_limit = query.max_query_limit
+        if est_remaining_dps > 5 * max_limit:
             return max_limit
         # To build full queries, we want dps chunk sizes that easily combines to 100 %, e.g. we don't want
         # 1/3, because 1/3 + 1/2 -> 83 % full, but 1/8 is fine as 4 x 1/8 + 1/2 = 100 %:
@@ -1300,7 +1310,8 @@ class DatapointsPoster:
             raise ValueError(
                 "Only raw datapoints are supported when inserting data from `Datapoints` or `DatapointsArray`"
             )
-        if (n_ts := len(dps.timestamp)) != (n_dps := len(dps.value)):
+        n_ts, n_dps = len(dps.timestamp), len(dps.value)
+        if n_ts != n_dps:
             raise ValueError(f"Number of timestamps ({n_ts}) does not match number of datapoints ({n_dps}) to insert")
 
         if isinstance(dps, Datapoints):
@@ -1408,7 +1419,8 @@ class RetrieveLatestDpsFetcher:
         query: LatestDatapointQuery,
         identifier_type: Literal["id", "external_id"],
     ) -> Union[int, str]:
-        if (as_primitive := getattr(query, identifier_type)) is None:
+        as_primitive = getattr(query, identifier_type)
+        if as_primitive is None:
             raise ValueError(f"Missing '{identifier_type}' from: '{query}'")
         return as_primitive
 

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Any, Dict
 
 from cognite.client.data_classes._base import CogniteResponse

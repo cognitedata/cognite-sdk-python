@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import sys
 
 from cognite.client._cognite_client import CogniteClient

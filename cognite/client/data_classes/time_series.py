@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
 
@@ -108,7 +106,8 @@ class TimeSeries(CogniteResource):
             Datapoint: A datapoint object containing the value and timestamp of the latest datapoint.
         """
         identifier = Identifier.load(self.id, self.external_id).as_dict()
-        if dps := self._cognite_client.time_series.data.retrieve_latest(**identifier, before=before):
+        dps = self._cognite_client.time_series.data.retrieve_latest(**identifier, before=before)
+        if dps:
             return dps[0]
         return None
 

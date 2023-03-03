@@ -11,7 +11,7 @@ authors = ["Erlend Vollset <erlend.vollset@cognite.com>"]
 packages = [{ include="cognite", from="." }]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.6"
 
 requests = "^2"
 requests_oauthlib = "^1"
@@ -19,40 +19,14 @@ msal = "^1"
 sortedcontainers = "^2.2"
 protobuf = ">=3.16.0"
 pip = ">=20.0.0"  # make optional once poetry doesnt auto-remove it on "simple install"
-numpy = { version = "^1.20", optional = true }
+numpy = { version = "^1.19", optional = true }
 sympy = { version = "*", optional = true }
-pandas = { version = ">=1.4", optional = true }
-geopandas = { version = ">=0.10.0", optional = true }
-shapely = { version = ">=1.7.0", optional = true }
-pyodide-http = {version = "^0.2.0", optional = true }
 
 [tool.poetry.extras]
-pandas = ["pandas"]
 numpy = ["numpy"]
-geo = ["geopandas", "shapely"]
 sympy = ["sympy"]
 functions = ["pip"]
-pyodide = ["pyodide-http"]  # keep pyodide related dependencies outside of 'all'
-all = ["pandas", "geopandas", "shapely", "sympy", "pip"]
-
-[tool.poetry.group.dev.dependencies]
-docutils = "==0.15.2"
-sphinx = "^5.0.1"
-sphinx-rtd-theme = ">=1.0.0"
-pytest = ">=7"
-pytest-cov = ">=3"
-pytest-rerunfailures = ">=10"
-pytest-asyncio = ">=0"
-pytest-xdist = ">=2"
-twine = "^4.0.1"
-pre-commit = "^2.20.0"
-responses = "^0.21.0"
-toml = "^0.10.2"
-python-dotenv = "^0.20.0"
-mypy = "^0.961"
-types-urllib3 = "^1.26.16"
-types-requests = "^2.28.1"
-pep8-naming = "^0"
+all = ["numpy", "sympy", "pip"]
 
 [build-system]
 requires = ["poetry>=1.0"]
