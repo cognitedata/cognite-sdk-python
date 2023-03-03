@@ -3,6 +3,7 @@ import warnings
 from inspect import signature
 from itertools import chain
 from numbers import Integral
+from typing import Any, cast
 
 from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._auxiliary import local_import

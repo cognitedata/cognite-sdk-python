@@ -10,7 +10,7 @@ import string
 import warnings
 from collections.abc import Mapping
 from decimal import Decimal
-from typing import Hashable, TypeVar
+from typing import Hashable, Sequence, Set, TypeVar
 from urllib.parse import quote
 
 import cognite.client

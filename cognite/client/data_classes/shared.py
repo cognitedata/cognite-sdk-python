@@ -1,3 +1,5 @@
+from typing import Any, Dict, cast
+
 from cognite.client.data_classes._base import CognitePropertyClassUtil
 from cognite.client.utils._auxiliary import convert_all_keys_to_camel_case, handle_deprecated_camel_case_argument
 

@@ -1,3 +1,5 @@
+from typing import Union, Sequence, Optional, List, Dict
+
 from abc import abstractmethod
 from cognite.client import utils
 from cognite.client.data_classes._base import (

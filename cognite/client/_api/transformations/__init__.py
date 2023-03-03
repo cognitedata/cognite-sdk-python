@@ -1,3 +1,5 @@
+from typing import Sequence, Dict, List, Optional, Any
+
 from cognite.client._api.transformations.jobs import TransformationJobsAPI
 from cognite.client._api.transformations.notifications import TransformationNotificationsAPI
 from cognite.client._api.transformations.schedules import TransformationSchedulesAPI

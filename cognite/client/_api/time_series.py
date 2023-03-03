@@ -1,3 +1,5 @@
+from typing import Iterator, cast, overload
+
 from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import (

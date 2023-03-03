@@ -1,5 +1,6 @@
 import pprint
 from contextlib import suppress
+from typing import Dict, Optional, Set
 
 from cognite.client import utils
 from cognite.client._version import __api_subversion__

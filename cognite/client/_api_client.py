@@ -5,7 +5,7 @@ import logging
 import re
 from collections import UserList
 from json.decoder import JSONDecodeError
-from typing import TypeVar
+from typing import Any, Dict, List, MutableMapping, Sequence, TypeVar, Union, cast, overload
 from urllib.parse import urljoin
 
 import requests.utils

@@ -1,3 +1,5 @@
+from typing import Dict, Optional
+
 from cognite.client.data_classes.annotation_types.primitives import (
     BoundingBox,
     CdfResourceRef,

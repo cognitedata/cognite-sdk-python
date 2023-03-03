@@ -1,6 +1,7 @@
 import asyncio
 import time
 from enum import Enum
+from typing import Dict, Optional
 
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList
 from cognite.client.data_classes.transformations.common import _load_destination_dct
@@ -99,8 +100,7 @@ class TransformationJob(CogniteResource):
             waited += polling_interval
         return self
 
-    async def wait_async(self, polling_interval: float = 1, timeout: Optional[float] = None) -> TransformationJob:
-        "Asyncio coroutine, waits for the job to finish asynchronously.\n\n        Args:\n            polling_interval (float): time (s) to wait between job status updates, default is one second.\n            timeout (Optional[float]): maximum time (s) to wait, default is None (infinite time). Once the timeout is reached, it returns with the current status.\n\n        Returns:\n            Awaitable[TransformationJob]: coroutine object that will finish when the job finishes and resolves to self.\n\n        Examples:\n\n            run transformations 1 and 2 in parallel, and run 3 once they finish successfully:\n\n                >>> from asyncio import ensure_future\n                >>> from cognite.client import CogniteClient\n                >>> c = CogniteClient()\n                >>>\n                >>> async def run_successive_transformations():\n                >>>     job1 = c.transformations.run(id = 1, wait = False)\n                >>>     job2 = c.transformations.run(id = 2, wait = False)\n                >>>     await job1.wait_async()\n                >>>     await job2.wait_async()\n                >>>     if TransformationJobStatus.FAILED not in [job1.status, job2.status]:\n                >>>         c.transformations.run(id = 3, wait = False)\n                >>>\n                >>> ensure_future(run_successive_transformations())\n\n            wait transformation for 5 minutes and do something if still running:\n\n                >>> from asyncio import ensure_future\n                >>> from cognite.client import CogniteClient\n                >>> c = CogniteClient()\n                >>>\n                >>> async def run_successive_transformations():\n                >>>     job = c.transformations.run(id = 1, wait = False)\n                >>>     await job.wait_async(timeout = 5.0*60)\n                >>>     if job.status == TransformationJobStatus.FAILED:\n                >>>         # do something if job failed\n                >>>     elif job.status == TransformationJobStatus.COMPLETED:\n                >>>         # do something if job completed successfully\n                >>>     else:\n                >>>         # do something if job is still running\n                >>>\n                >>> ensure_future(run_successive_transformations())\n"
+    async def wait_async(self, polling_interval: float = 1, timeout: Optional[float] = None):
         self.update()
         if timeout is None:
             timeout = float("inf")

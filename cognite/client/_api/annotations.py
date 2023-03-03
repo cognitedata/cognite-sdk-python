@@ -1,4 +1,5 @@
 from copy import deepcopy
+from typing import Any, Dict, List, Sequence, Union
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Annotation, AnnotationFilter, AnnotationList, AnnotationUpdate

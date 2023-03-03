@@ -1,6 +1,6 @@
-import dataclasses
 import json
 from abc import ABC, abstractmethod
+from typing import Any, List, Optional, cast
 
 from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
@@ -57,17 +57,26 @@ class FeatureTypeUpdate:
         self._cognite_client = cognite_client
 
 
-@dataclasses.dataclass
 class Patches:
-    add = None
-    remove: Optional[List[str]] = None
+    def __init__(
+        self,
+        add=None,
+        remove: Optional[List[str]] = None,
+    ):
+        self.add = add
+        self.remove = remove
 
 
-@dataclasses.dataclass
 class FeatureTypePatch:
-    external_id: Optional[str] = None
-    property_patches: Optional[Patches] = None
-    search_spec_patches: Optional[Patches] = None
+    def __init__(
+        self,
+        external_id: Optional[str] = None,
+        property_patches: Optional[Patches] = None,
+        search_spec_patches: Optional[Patches] = None,
+    ):
+        self.external_id = external_id
+        self.property_patches = property_patches
+        self.search_spec_patches = search_spec_patches
 
 
 class FeatureTypeUpdateList:

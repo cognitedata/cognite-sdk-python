@@ -1,4 +1,5 @@
 import copy
+from typing import Dict, Type
 
 from cognite.client.data_classes._base import (
     CogniteFilter,

@@ -1,4 +1,5 @@
 import copy
+from typing import Iterator, List, Sequence, cast
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient

@@ -1,4 +1,5 @@
 import re
+from typing import Any, List, Sequence, cast
 
 import cognite.client.utils._time
 from cognite.client import utils

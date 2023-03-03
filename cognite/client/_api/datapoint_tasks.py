@@ -3,10 +3,9 @@ import numbers
 import operator as op
 import warnings
 from abc import abstractmethod
-from datetime import datetime
-from functools import cached_property
 from itertools import chain
 from threading import Lock
+from typing import Any, Callable, Dict, Generic, List, MutableSequence, Optional, Sequence, Tuple, TypeVar, Union, cast
 
 from google.protobuf.message import Message
 from sortedcontainers import SortedDict, SortedList
@@ -48,37 +47,6 @@ DatapointsRaw = Union[(DatapointsNum, DatapointsStr)]
 RawDatapointValue = Union[(float, str)]
 DatapointsId = Union[(None, int, Dict[(str, Any)], Sequence[Union[(int, Dict[(str, Any)])]])]
 DatapointsExternalId = Union[(None, str, Dict[(str, Any)], Sequence[Union[(str, Dict[(str, Any)])]])]
-
-
-class CustomDatapointsQuery(TypedDict, total=False):
-    start: Union[(int, str, datetime, None)]
-    end: Union[(int, str, datetime, None)]
-    aggregates: Optional[List[str]]
-    granularity: Optional[str]
-    limit: Optional[int]
-    include_outside_points: Optional[bool]
-    ignore_unknown_ids: Optional[bool]
-
-
-class DatapointsQueryId(CustomDatapointsQuery):
-    id: int
-
-
-class DatapointsQueryExternalId(CustomDatapointsQuery):
-    external_id: str
-
-
-class CustomDatapoints(TypedDict, total=False):
-    start: int
-    end: int
-    aggregates: Optional[List[str]]
-    granularity: Optional[str]
-    limit: int
-    include_outside_points: bool
-
-
-class DatapointsPayload(CustomDatapoints):
-    items: List[CustomDatapoints]
 
 
 class _DatapointsQuery:
@@ -163,18 +131,14 @@ class _SingleTSQueryValidator:
         for ts in id_or_xid_seq:
             if isinstance(ts, exp_type):
                 ts_dct = {**self.defaults, arg_name: ts}
-                queries.append(
-                    self._validate_and_create_query(cast(Union[(DatapointsQueryId, DatapointsQueryExternalId)], ts_dct))
-                )
+                queries.append(self._validate_and_create_query(ts_dct))
             elif isinstance(ts, dict):
                 ts_validated = self._validate_user_supplied_dict_keys(ts, arg_name)
                 identifier = ts_validated[arg_name]
                 if not isinstance(identifier, exp_type):
                     self._raise_on_wrong_ts_identifier_type(identifier, arg_name, exp_type)
                 ts_dct = {**self.defaults, **ts_validated}
-                queries.append(
-                    self._validate_and_create_query(cast(Union[(DatapointsQueryId, DatapointsQueryExternalId)], ts_dct))
-                )
+                queries.append(self._validate_and_create_query(ts_dct))
             else:
                 self._raise_on_wrong_ts_identifier_type(ts, arg_name, exp_type)
         return queries
@@ -395,7 +359,6 @@ class _SingleTSQueryAgg(_SingleTSQueryBase):
     def is_raw_query(self):
         return False
 
-    @cached_property
     def aggregates_cc(self):
         return list(map(to_camel_case, self.aggregates))
 
@@ -538,15 +501,13 @@ class OutsideDpsFetchSubtask(BaseDpsFetchSubtask):
         return self._create_payload_item()
 
     def _create_payload_item(self):
-        return CustomDatapoints(
-            {
-                **self.identifier.as_dict(),
-                "start": self.start,
-                "end": self.end,
-                "limit": 0,
-                "includeOutsidePoints": True,
-            }
-        )
+        return {
+            **self.identifier.as_dict(),
+            "start": self.start,
+            "end": self.end,
+            "limit": 0,
+            "includeOutsidePoints": True,
+        }
 
     def store_partial_result(self, res):
         dps = get_datapoints_from_proto(res)
@@ -592,15 +553,13 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
         return self._create_payload_item(math.inf if (remaining is None) else remaining)
 
     def _create_payload_item(self, remaining_limit):
-        return CustomDatapoints(
-            {
-                **self.identifier.as_dict(),
-                "start": self.next_start,
-                "end": self.end,
-                "limit": min(remaining_limit, self.max_query_limit),
-                **self.agg_kwargs,
-            }
-        )
+        return {
+            **self.identifier.as_dict(),
+            "start": self.next_start,
+            "end": self.end,
+            "limit": min(remaining_limit, self.max_query_limit),
+            **self.agg_kwargs,
+        }
 
     def store_partial_result(self, res):
         if self.parent.ts_info is None:
@@ -979,7 +938,6 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
         self._set_aggregate_vars(aggregates_cc, use_numpy)
         super().__init__(query=query, use_numpy=use_numpy, **kwargs)
 
-    @cached_property
     def offset_next(self):
         return granularity_to_ms(self.query.granularity)
 

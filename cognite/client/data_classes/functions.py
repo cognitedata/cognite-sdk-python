@@ -1,4 +1,5 @@
 import time
+from typing import cast
 
 from cognite.client._constants import LIST_LIMIT_CEILING, LIST_LIMIT_DEFAULT
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList, CogniteResponse

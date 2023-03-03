@@ -3,8 +3,9 @@ import inspect
 import tempfile
 import threading
 import time
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import Optional
 
 from msal import PublicClientApplication, SerializableTokenCache
 from oauthlib.oauth2 import BackendApplicationClient, OAuth2Error
@@ -13,7 +14,7 @@ from requests_oauthlib import OAuth2Session
 from cognite.client.exceptions import CogniteAuthError
 
 
-class CredentialProvider(Protocol):
+class CredentialProvider(ABC):
     @abstractmethod
     def authorization_header(self):
         raise NotImplementedError

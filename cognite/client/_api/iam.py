@@ -1,5 +1,6 @@
 import numbers
 import warnings
+from typing import Sequence, Union
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient

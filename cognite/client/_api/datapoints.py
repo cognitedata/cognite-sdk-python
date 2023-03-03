@@ -8,17 +8,30 @@ import time
 import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
-from concurrent.futures import CancelledError
+from concurrent.futures import CancelledError, Future
 from copy import copy
 from datetime import datetime
 from itertools import chain
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    List,
+    MutableSequence,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    TypeVar,
+    Union,
+    cast,
+)
 
 from cognite.client._api.datapoint_tasks import (
     DPS_LIMIT,
     DPS_LIMIT_AGG,
     BaseDpsFetchSubtask,
-    CustomDatapoints,
-    DatapointsPayload,
     _DatapointsQuery,
     _SingleTSQueryBase,
     _SingleTSQueryValidator,
@@ -135,7 +148,7 @@ class EagerDpsFetcher(DpsFetchStrategy):
         item = task.get_next_payload()
         if item is None:
             return None
-        dps_payload: DatapointsPayload = cast(DatapointsPayload, (copy(payload) or {}))
+        dps_payload = copy(payload) or {}
         dps_payload["items"] = [item]
         return self._request_datapoints(dps_payload)
 
@@ -309,7 +322,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
             time.sleep(0.0001)
 
     def _combine_subtasks_into_new_request(self):
-        next_items: List[CustomDatapoints] = []
+        next_items: List = []
         next_subtasks: List[BaseDpsFetchSubtask] = []
         (agg_pool, raw_pool) = self.subtask_pools
         for (task_pool, request_max_limit, is_raw) in zip(
@@ -321,7 +334,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
             while task_pool:
                 if (len(next_items) + 1) > FETCH_TS_LIMIT:
                     priority = statistics.mean(task.priority for task in next_subtasks)
-                    payload: DatapointsPayload = {"items": next_items}
+                    payload = {"items": next_items}
                     return (payload, next_subtasks, priority)
                 (*_, next_task) = task_pool[0]
                 next_payload = next_task.get_next_payload()

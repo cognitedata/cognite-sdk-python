@@ -1,7 +1,7 @@
 import time
 import warnings
 from enum import Enum
-from typing import TypeVar
+from typing import Any, Dict, List, Optional, Type, TypeVar, Union, cast
 
 from cognite.client.data_classes import Annotation
 from cognite.client.data_classes._base import (

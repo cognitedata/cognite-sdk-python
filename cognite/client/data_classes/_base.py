@@ -1,6 +1,6 @@
 import json
 from collections import UserList
-from typing import Generic, TypeVar
+from typing import Dict, Generic, List, TypeVar
 
 from cognite.client import utils
 from cognite.client.exceptions import CogniteMissingClientError

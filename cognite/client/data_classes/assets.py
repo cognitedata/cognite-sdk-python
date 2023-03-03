@@ -1,4 +1,5 @@
 import threading
+from typing import Dict, List
 
 from cognite.client import utils
 from cognite.client.data_classes._base import (

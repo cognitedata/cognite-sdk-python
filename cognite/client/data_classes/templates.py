@@ -1,5 +1,6 @@
 import json
 from collections import UserDict
+from typing import Dict, Type, Union
 
 from cognite.client import utils
 from cognite.client.data_classes._base import (

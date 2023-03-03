@@ -1,3 +1,5 @@
+from typing import Iterator, cast
+
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import DataSet, DataSetAggregate, DataSetFilter, DataSetList, DataSetUpdate
 from cognite.client.utils._identifier import IdentifierSequence

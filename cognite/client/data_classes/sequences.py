@@ -1,5 +1,6 @@
 import json
 import math
+from typing import Dict, List, cast
 
 from cognite.client import utils
 from cognite.client.data_classes._base import (

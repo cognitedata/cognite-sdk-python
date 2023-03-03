@@ -1,4 +1,5 @@
 import json
+from typing import Optional
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -34,7 +35,7 @@ class Annotation(CogniteResource):
         self.id: Optional[int] = None
         self.created_time: Optional[int] = None
         self.last_updated_time: Optional[int] = None
-        self._cognite_client: CogniteClient = cast("CogniteClient", None)
+        self._cognite_client = None
 
     @classmethod
     def _load(cls, resource, cognite_client=None):
@@ -60,7 +61,7 @@ class Annotation(CogniteResource):
         annotation.id = data.get("id")
         annotation.created_time = data.get("created_time")
         annotation.last_updated_time = data.get("last_updated_time")
-        annotation._cognite_client = cast("CogniteClient", cognite_client)
+        annotation._cognite_client = cognite_client
         return annotation
 
     def dump(self, camel_case=False):

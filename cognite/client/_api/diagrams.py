@@ -1,5 +1,5 @@
 from math import ceil
-from typing import TypeVar
+from typing import Any, Dict, List, TypeVar
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes._base import CogniteResource

@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from typing import Optional
 
 from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList

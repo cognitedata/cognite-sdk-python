@@ -1,3 +1,5 @@
+from typing import Dict
+
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.utils._auxiliary import convert_all_keys_to_snake_case
 

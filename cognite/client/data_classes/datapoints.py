@@ -2,9 +2,8 @@ import json
 import operator as op
 import warnings
 from collections import defaultdict
-from dataclasses import dataclass
 from datetime import datetime
-from functools import cached_property
+from typing import Any, List, Optional, Union, cast, overload
 
 from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
@@ -50,13 +49,16 @@ except ImportError:
     NUMPY_IS_AVAILABLE = False
 
 
-@dataclass(frozen=True)
 class LatestDatapointQuery:
-    id: Optional[int] = None
-    external_id: Optional[str] = None
-    before: Union[(None, int, str, datetime)] = None
-
-    def __post_init__(self):
+    def __init__(
+        self,
+        id: Optional[int] = None,
+        external_id: Optional[str] = None,
+        before: Union[(None, int, str, datetime)] = None,
+    ):
+        self.id = id
+        self.external_id = external_id
+        self.before = before
         Identifier.of_either(self.id, self.external_id)
 
 
@@ -196,7 +198,6 @@ class DatapointsArray(CogniteResource):
             )
         )
 
-    @cached_property
     def _dtype_fix(self):
         if self.is_string:
             return lambda s: s

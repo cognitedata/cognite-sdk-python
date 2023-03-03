@@ -3,7 +3,7 @@ import inspect
 from collections import UserList
 from concurrent.futures import CancelledError
 from concurrent.futures.thread import ThreadPoolExecutor
-from typing import TypeVar
+from typing import List, Optional, TypeVar
 
 from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, CogniteNotFoundError
 from cognite.client.utils._priority_tpe import PriorityThreadPoolExecutor

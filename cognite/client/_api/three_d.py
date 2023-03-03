@@ -1,3 +1,5 @@
+from typing import Any, Dict, Iterator, Sequence, Union, cast
+
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import (

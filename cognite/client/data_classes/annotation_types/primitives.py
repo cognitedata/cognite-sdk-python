@@ -1,3 +1,5 @@
+from typing import Dict, List, Optional
+
 from cognite.client import utils
 from cognite.client.data_classes._base import EXCLUDE_VALUE, CogniteResource
 

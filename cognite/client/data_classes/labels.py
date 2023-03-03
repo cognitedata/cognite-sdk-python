@@ -1,3 +1,5 @@
+from typing import Union
+
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CognitePropertyClassUtil,

@@ -7,6 +7,7 @@ from inspect import getdoc, getsource
 from numbers import Number
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import Any, Dict, List, Sequence, Union, cast
 from zipfile import ZipFile
 
 from cognite.client import utils
@@ -65,7 +66,7 @@ class FunctionsAPI(APIClient):
         super().__init__(*args, **kwargs)
         self.calls = FunctionCallsAPI(*args, **kwargs)
         self.schedules = FunctionSchedulesAPI(*args, **kwargs)
-        self._cognite_client: CogniteClient = cast("CogniteClient", self._cognite_client)
+        self._cognite_client = self._cognite_client
 
     def create(
         self,
@@ -398,7 +399,7 @@ class FunctionCallsAPI(APIClient):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._cognite_client: CogniteClient = cast("CogniteClient", self._cognite_client)
+        self._cognite_client = self._cognite_client
 
     def list(
         self,
@@ -455,7 +456,7 @@ class FunctionSchedulesAPI(APIClient):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._cognite_client: CogniteClient = cast("CogniteClient", self._cognite_client)
+        self._cognite_client = self._cognite_client
 
     def retrieve(self, id):
         return self._retrieve_multiple(
