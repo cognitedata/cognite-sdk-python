@@ -1,6 +1,6 @@
-
 from contextlib import contextmanager
 from unittest.mock import MagicMock
+
 from cognite.client import CogniteClient
 from cognite.client._api.annotations import AnnotationsAPI
 from cognite.client._api.assets import AssetsAPI
@@ -9,27 +9,57 @@ from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.diagrams import DiagramsAPI
 from cognite.client._api.entity_matching import EntityMatchingAPI
 from cognite.client._api.events import EventsAPI
-from cognite.client._api.extractionpipelines import ExtractionPipelineConfigsAPI, ExtractionPipelineRunsAPI, ExtractionPipelinesAPI
+from cognite.client._api.extractionpipelines import (
+    ExtractionPipelineConfigsAPI,
+    ExtractionPipelineRunsAPI,
+    ExtractionPipelinesAPI,
+)
 from cognite.client._api.files import FilesAPI
 from cognite.client._api.functions import FunctionCallsAPI, FunctionsAPI, FunctionSchedulesAPI
 from cognite.client._api.geospatial import GeospatialAPI
-from cognite.client._api.iam import IAMAPI, APIKeysAPI, GroupsAPI, SecurityCategoriesAPI, ServiceAccountsAPI, SessionsAPI, TokenAPI
+from cognite.client._api.iam import (
+    IAMAPI,
+    APIKeysAPI,
+    GroupsAPI,
+    SecurityCategoriesAPI,
+    ServiceAccountsAPI,
+    SessionsAPI,
+    TokenAPI,
+)
 from cognite.client._api.labels import LabelsAPI
 from cognite.client._api.login import LoginAPI
 from cognite.client._api.raw import RawAPI, RawDatabasesAPI, RawRowsAPI, RawTablesAPI
 from cognite.client._api.relationships import RelationshipsAPI
 from cognite.client._api.sequences import SequencesAPI, SequencesDataAPI
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
-from cognite.client._api.templates import TemplateGroupsAPI, TemplateGroupVersionsAPI, TemplateInstancesAPI, TemplatesAPI, TemplateViewsAPI
-from cognite.client._api.three_d import ThreeDAPI, ThreeDAssetMappingAPI, ThreeDFilesAPI, ThreeDModelsAPI, ThreeDRevisionsAPI
+from cognite.client._api.templates import (
+    TemplateGroupsAPI,
+    TemplateGroupVersionsAPI,
+    TemplateInstancesAPI,
+    TemplatesAPI,
+    TemplateViewsAPI,
+)
+from cognite.client._api.three_d import (
+    ThreeDAPI,
+    ThreeDAssetMappingAPI,
+    ThreeDFilesAPI,
+    ThreeDModelsAPI,
+    ThreeDRevisionsAPI,
+)
 from cognite.client._api.time_series import TimeSeriesAPI
-from cognite.client._api.transformations import TransformationJobsAPI, TransformationNotificationsAPI, TransformationsAPI, TransformationSchedulesAPI, TransformationSchemaAPI
+from cognite.client._api.transformations import (
+    TransformationJobsAPI,
+    TransformationNotificationsAPI,
+    TransformationsAPI,
+    TransformationSchedulesAPI,
+    TransformationSchemaAPI,
+)
 from cognite.client._api.vision import VisionAPI
 
-class CogniteClientMock(MagicMock):
 
+class CogniteClientMock(MagicMock):
     def __init__(self, *args: Any, **kwargs: Any):
-        if ('parent' in kwargs):
+        if "parent" in kwargs:
             super().__init__(*args, **kwargs)
             return None
         super().__init__(*args, spec=CogniteClient, **kwargs)
@@ -84,9 +114,10 @@ class CogniteClientMock(MagicMock):
         self.transformations.schema = MagicMock(spec_set=TransformationSchemaAPI)
         self.vision = MagicMock(spec_set=VisionAPI)
 
+
 @contextmanager
 def monkeypatch_cognite_client():
     cognite_client_mock = CogniteClientMock()
-    CogniteClient.__new__ = (lambda *args, **kwargs: cognite_client_mock)
+    CogniteClient.__new__ = lambda *args, **kwargs: cognite_client_mock
     (yield cognite_client_mock)
-    CogniteClient.__new__ = (lambda cls, *args, **kwargs: object.__new__(cls))
+    CogniteClient.__new__ = lambda cls, *args, **kwargs: object.__new__(cls)

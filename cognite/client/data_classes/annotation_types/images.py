@@ -1,6 +1,13 @@
-
 from dataclasses import dataclass
-from cognite.client.data_classes.annotation_types.primitives import BoundingBox, CdfResourceRef, Polygon, PolyLine, VisionResource
+
+from cognite.client.data_classes.annotation_types.primitives import (
+    BoundingBox,
+    CdfResourceRef,
+    Polygon,
+    PolyLine,
+    VisionResource,
+)
+
 
 @dataclass
 class ObjectDetection(VisionResource):
@@ -18,6 +25,7 @@ class ObjectDetection(VisionResource):
         if isinstance(self.polyline, Dict):
             self.polyline = PolyLine(**self.polyline)
 
+
 @dataclass
 class TextRegion(VisionResource):
     text: str
@@ -27,6 +35,7 @@ class TextRegion(VisionResource):
     def __post_init__(self):
         if isinstance(self.text_region, Dict):
             self.text_region = BoundingBox(**self.text_region)
+
 
 @dataclass
 class AssetLink(VisionResource):

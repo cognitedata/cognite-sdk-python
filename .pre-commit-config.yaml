@@ -35,7 +35,7 @@ repos:
           - --line-length
           - '120'
           - --target-version
-          - py38
+          - py36
           - --include
           - \.py$
     repo: https://github.com/psf/black
@@ -56,8 +56,7 @@ repos:
     - id: pyupgrade
       exclude: ^cognite/client/_proto.*$
       args:
-          - --py38-plus
-          - --keep-runtime-typing  # remove when >=3.10
+          - --py36-plus
 
   - hooks:
       - id: mypy

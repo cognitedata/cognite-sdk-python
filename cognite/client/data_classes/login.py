@@ -1,8 +1,7 @@
-
 from cognite.client.data_classes._base import CogniteResponse
 
-class LoginStatus(CogniteResponse):
 
+class LoginStatus(CogniteResponse):
     def __init__(self, user, project, logged_in, project_id, api_key_id):
         self.user = user
         self.project = project
@@ -12,5 +11,11 @@ class LoginStatus(CogniteResponse):
 
     @classmethod
     def _load(cls, api_response):
-        data = api_response['data']
-        return cls(user=data['user'], project=data['project'], logged_in=data['loggedIn'], project_id=data['projectId'], api_key_id=data.get('apiKeyId'))
+        data = api_response["data"]
+        return cls(
+            user=data["user"],
+            project=data["project"],
+            logged_in=data["loggedIn"],
+            project_id=data["projectId"],
+            api_key_id=data.get("apiKeyId"),
+        )

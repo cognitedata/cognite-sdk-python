@@ -1,6 +1,5 @@
-
 import warnings
-from requests import Response
+
 from cognite.client import utils
 from cognite.client._api.annotations import AnnotationsAPI
 from cognite.client._api.assets import AssetsAPI
@@ -8,7 +7,7 @@ from cognite.client._api.data_sets import DataSetsAPI
 from cognite.client._api.diagrams import DiagramsAPI
 from cognite.client._api.entity_matching import EntityMatchingAPI
 from cognite.client._api.events import EventsAPI
-from cognite.client._api.extractionpipelines import ExtractionPipelineRunsAPI, ExtractionPipelinesAPI
+from cognite.client._api.extractionpipelines import ExtractionPipelinesAPI
 from cognite.client._api.files import FilesAPI
 from cognite.client._api.functions import FunctionsAPI
 from cognite.client._api.geospatial import GeospatialAPI
@@ -24,17 +23,21 @@ from cognite.client._api.time_series import TimeSeriesAPI
 from cognite.client._api.transformations import TransformationsAPI
 from cognite.client._api.vision import VisionAPI
 from cognite.client._api_client import APIClient
-from cognite.client.config import ClientConfig, global_config
-if TYPE_CHECKING:
-    from cognite.client._api.datapoints import DatapointsAPI
+from cognite.client.config import global_config
 
-class CogniteClient():
-    _API_VERSION = 'v1'
+if TYPE_CHECKING:
+    pass
+
+
+class CogniteClient:
+    _API_VERSION = "v1"
 
     def __init__(self, config=None):
-        client_config = (config or global_config.default_client_config)
-        if (client_config is None):
-            raise ValueError('No ClientConfig has been provided, either pass it directly to CogniteClient or set global_config.default_client_config.')
+        client_config = config or global_config.default_client_config
+        if client_config is None:
+            raise ValueError(
+                "No ClientConfig has been provided, either pass it directly to CogniteClient or set global_config.default_client_config."
+            )
         else:
             self._config = client_config
         self.login = LoginAPI(self._config, cognite_client=self)
@@ -53,7 +56,9 @@ class CogniteClient():
         self.entity_matching = EntityMatchingAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.templates = TemplatesAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.vision = VisionAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
-        self.extraction_pipelines = ExtractionPipelinesAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
+        self.extraction_pipelines = ExtractionPipelinesAPI(
+            self._config, api_version=self._API_VERSION, cognite_client=self
+        )
         self.transformations = TransformationsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.diagrams = DiagramsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
         self.annotations = AnnotationsAPI(self._config, api_version=self._API_VERSION, cognite_client=self)
@@ -74,9 +79,14 @@ class CogniteClient():
 
     @property
     def datapoints(self):
-        if (int(self.version.split('.')[0]) >= 6):
-            raise AttributeError("'CogniteClient' object has no attribute 'datapoints'. Use 'time_series.data' instead.")
-        warnings.warn('Accessing the DatapointsAPI through `client.datapoints` is deprecated and will be removed in major version 6.0.0. Use `client.time_series.data` instead.', DeprecationWarning)
+        if int(self.version.split(".")[0]) >= 6:
+            raise AttributeError(
+                "'CogniteClient' object has no attribute 'datapoints'. Use 'time_series.data' instead."
+            )
+        warnings.warn(
+            "Accessing the DatapointsAPI through `client.datapoints` is deprecated and will be removed in major version 6.0.0. Use `client.time_series.data` instead.",
+            DeprecationWarning,
+        )
         return self.time_series.data
 
     @property
@@ -89,7 +99,12 @@ class CogniteClient():
 
     @property
     def extraction_pipeline_runs(self):
-        if (int(self.version.split('.')[0]) >= 6):
-            raise AttributeError("'CogniteClient' object has no attribute 'extraction_pipeline_runs'. Use 'extraction_pipelines.runs' instead.")
-        warnings.warn('Accessing the ExtractionPipelineRunsAPI through `client.extraction_pipeline_runs` is deprecated and will be removed in major version 6.0.0. Use `client.extraction_pipelines.runs` instead.', DeprecationWarning)
+        if int(self.version.split(".")[0]) >= 6:
+            raise AttributeError(
+                "'CogniteClient' object has no attribute 'extraction_pipeline_runs'. Use 'extraction_pipelines.runs' instead."
+            )
+        warnings.warn(
+            "Accessing the ExtractionPipelineRunsAPI through `client.extraction_pipeline_runs` is deprecated and will be removed in major version 6.0.0. Use `client.extraction_pipelines.runs` instead.",
+            DeprecationWarning,
+        )
         return self.extraction_pipelines.runs
