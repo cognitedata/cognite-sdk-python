@@ -196,7 +196,7 @@ def _check_client_has_newest_major_version() -> None:
     newest_version = get_newest_version_in_major_release("cognite-sdk", version)
     if newest_version != version:
         warnings.warn(
-            f"You are using {version=} of the SDK, however version='{newest_version}' is available. "
+            f"You are using version={version} of the SDK, however version='{newest_version}' is available. "
             "To suppress this warning, either upgrade or do the following:\n"
             ">>> from cognite.client.config import global_config\n"
             ">>> global_config.disable_pypi_version_check = True",
@@ -227,16 +227,16 @@ class PriorityQueue:
 
 
 @overload
-def split_into_n_parts(seq: List[T], /, n: int) -> Iterator[List[T]]:
+def split_into_n_parts(seq: List[T], n: int) -> Iterator[List[T]]:
     ...
 
 
 @overload
-def split_into_n_parts(seq: Sequence[T], /, n: int) -> Iterator[Sequence[T]]:
+def split_into_n_parts(seq: Sequence[T], n: int) -> Iterator[Sequence[T]]:
     ...
 
 
-def split_into_n_parts(seq: Sequence[T], /, n: int) -> Iterator[Sequence[T]]:
+def split_into_n_parts(seq: Sequence[T], n: int) -> Iterator[Sequence[T]]:
     # NB: Chaotic sampling: jumps n for each starting position
     yield from (seq[i::n] for i in range(n))
 

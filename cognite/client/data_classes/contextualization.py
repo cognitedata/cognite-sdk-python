@@ -596,7 +596,7 @@ class DetectJobBundle:
         self._result: List[Dict[str, Any]] = []
 
     def __str__(self) -> str:
-        return f"DetectJobBundle({self.job_ids=}, {self.jobs=}, {self._result=}, {self._remaining_job_ids=})"
+        return f"DetectJobBundle(self.job_ids={self.job_ids}, self.jobs={self.jobs}, self._result={self._result}, self._remaining_job_ids={self._remaining_job_ids})"
 
     def _back_off(self) -> None:
         """

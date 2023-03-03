@@ -36,7 +36,7 @@ def ms_to_datetime(ms: Union[int, float]) -> datetime:
         datetime: Aware datetime object in UTC.
     """
     if not (MIN_TIMESTAMP_MS <= ms <= MAX_TIMESTAMP_MS):
-        raise ValueError(f"Input {ms=} does not satisfy: {MIN_TIMESTAMP_MS} <= ms <= {MAX_TIMESTAMP_MS}")
+        raise ValueError(f"Input ms={ms} does not satisfy: {MIN_TIMESTAMP_MS} <= ms <= {MAX_TIMESTAMP_MS}")
 
     # Note: We don't use fromtimestamp because it typically fails for negative values on Windows
     return datetime(1970, 1, 1, tzinfo=timezone.utc) + timedelta(milliseconds=ms)
@@ -157,11 +157,11 @@ def align_start_and_end_for_granularity(start: int, end: int, granularity: str) 
 
 def split_time_range(start: int, end: int, n_splits: int, granularity_in_ms: int) -> List[int]:
     if n_splits < 1:
-        raise ValueError(f"Cannot split into less than 1 piece, got {n_splits=}")
+        raise ValueError(f"Cannot split into less than 1 piece, got n_splits={n_splits}")
     tot_ms = end - start
     if n_splits * granularity_in_ms > tot_ms:
         raise ValueError(
-            f"Given time interval ({tot_ms=}) could not be split as `{n_splits=}` times `{granularity_in_ms=}` "
+            f"Given time interval (tot_ms={tot_ms}) could not be split as `n_splits={n_splits}` times `granularity_in_ms={granularity_in_ms}` "
             "is larger than the interval itself."
         )
     # Find a `delta_ms` thats a multiple of granularity in ms (trivial for raw queries).

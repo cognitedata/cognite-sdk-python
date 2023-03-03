@@ -98,7 +98,7 @@ TResLst = TypeVar("TResLst", DatapointsList, DatapointsArrayList)
 def select_dps_fetch_strategy(dps_client: DatapointsAPI, user_query: _DatapointsQuery) -> DpsFetchStrategy:
     max_workers = dps_client._config.max_workers
     if max_workers < 1:  # Dps fetching does not use fn `execute_tasks_concurrently`, so we must check:
-        raise RuntimeError(f"Invalid option for `{max_workers=}`. Must be at least 1")
+        raise RuntimeError(f"Invalid option for `max_workers={max_workers}`. Must be at least 1")
 
     all_queries = _SingleTSQueryValidator(user_query).validate_and_create_single_queries()
     agg_queries, raw_queries = split_queries_into_raw_and_aggs(all_queries)
@@ -947,7 +947,7 @@ class DatapointsAPI(APIClient):
         """
         _, pd = local_import("numpy", "pandas")  # Verify that deps are available or raise CogniteImportError
         if column_names not in {"id", "external_id"}:
-            raise ValueError(f"Given parameter {column_names=} must be one of 'id' or 'external_id'")
+            raise ValueError(f"Given parameter column_names={column_names} must be one of 'id' or 'external_id'")
 
         query = _DatapointsQuery(
             start=start,

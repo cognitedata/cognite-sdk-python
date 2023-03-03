@@ -334,7 +334,7 @@ class _SingleTSQueryValidator:
                 # We don't want weird stuff like numpy dtypes etc:
                 return int(limit)
             except Exception:  # pragma no cover
-                raise TypeError(f"Unable to convert given {limit=} to integer")
+                raise TypeError(f"Unable to convert given limit={limit} to integer")
         raise TypeError(
             "Parameter `limit` must be a non-negative integer -OR- one of [None, -1, inf] to "
             f"indicate an unlimited query. Got: {limit} with type: {type(limit)}"
@@ -353,7 +353,7 @@ class _SingleTSQueryValidator:
 
         if end <= start:
             raise ValueError(
-                f"Invalid time range, {end=} must be later than {start=} "
+                f"Invalid time range, end={end} must be later than start={start} "
                 f"(from query: {identifier.as_dict(camel_case=False)})"
             )
         if not is_raw:  # API rounds aggregate query timestamps in a very particular fashion
@@ -530,7 +530,7 @@ FIRST_IDX = (0,)
 
 
 class DefaultSortedDict(SortedDict, Generic[T]):
-    def __init__(self, default_factory: Callable[[], T], /, **kw: Any):
+    def __init__(self, default_factory: Callable[[], T], **kw: Any):
         self.default_factory = default_factory
         super().__init__(**kw)
 
