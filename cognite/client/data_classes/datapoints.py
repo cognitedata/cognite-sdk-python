@@ -35,8 +35,8 @@ ALL_SORTED_DP_AGGS = sorted(
         "total_variation",
     ]
 )
-if TYPE_CHECKING:
-    pass
+
+
 try:
     import numpy as np
     import numpy.typing as npt
@@ -181,7 +181,7 @@ class DatapointsArray(CogniteResource):
         )
 
     def _slice(self, part):
-        data: Dict[(str, Any)] = {attr: arr[part] for (attr, arr) in zip(*self._data_fields())}
+        data = {attr: arr[part] for (attr, arr) in zip(*self._data_fields())}
         return DatapointsArray(**self._ts_info, **data)
 
     def __iter__(self):

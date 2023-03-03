@@ -13,7 +13,7 @@ from cognite.client.utils._identifier import IdentifierSequence
 class TimeSeriesAPI(APIClient):
     _RESOURCE_PATH = "/timeseries"
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.data = DatapointsAPI(*args, **kwargs)
 

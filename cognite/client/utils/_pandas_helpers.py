@@ -7,9 +7,6 @@ from numbers import Integral
 from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._auxiliary import local_import
 
-if TYPE_CHECKING:
-    pass
-
 
 def pandas_major_version():
     from pandas import __version__
@@ -17,7 +14,7 @@ def pandas_major_version():
     return int(__version__.split(".")[0])
 
 
-def notebook_display_with_fallback(inst, **kwargs: Any):
+def notebook_display_with_fallback(inst, **kwargs):
     if "camel_case" in signature(inst.to_pandas).parameters:
         kwargs["camel_case"] = False
     try:

@@ -11,9 +11,6 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.shared import TimestampRange
 
-if TYPE_CHECKING:
-    pass
-
 
 class DataSet(CogniteResource):
     def __init__(
@@ -36,7 +33,7 @@ class DataSet(CogniteResource):
         self.id = id
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
 
 class DataSetFilter(CogniteFilter):
@@ -54,7 +51,7 @@ class DataSetFilter(CogniteFilter):
         self.last_updated_time = last_updated_time
         self.external_id_prefix = external_id_prefix
         self.write_protected = write_protected
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     @classmethod
     def _load(cls, resource):
@@ -121,7 +118,7 @@ class DataSetUpdate(CogniteUpdate):
 
 
 class DataSetAggregate(dict):
-    def __init__(self, count=None, **kwargs: Any):
+    def __init__(self, count=None, **kwargs):
         self.count = count
         self.update(kwargs)
 

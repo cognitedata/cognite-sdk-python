@@ -15,12 +15,9 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.labels import Label, LabelFilter
 from cognite.client.data_classes.shared import GeoLocation, TimestampRange
 
-if TYPE_CHECKING:
-    pass
-
 
 class AssetAggregate(dict):
-    def __init__(self, count=None, **kwargs: Any):
+    def __init__(self, count=None, **kwargs):
         self.count = count
         self.update(kwargs)
 
@@ -28,7 +25,7 @@ class AssetAggregate(dict):
 
 
 class AggregateResultItem(dict):
-    def __init__(self, child_count=None, depth=None, path=None, **kwargs: Any):
+    def __init__(self, child_count=None, depth=None, path=None, **kwargs):
         self.child_count = child_count
         self.depth = depth
         self.path = path
@@ -76,7 +73,7 @@ class Asset(CogniteResource):
         self.last_updated_time = last_updated_time
         self.root_id = root_id
         self.aggregates = aggregates
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     @classmethod
     def _load(cls, resource, cognite_client=None):
@@ -103,16 +100,16 @@ class Asset(CogniteResource):
     def subtree(self, depth=None):
         return self._cognite_client.assets.retrieve_subtree(id=self.id, depth=depth)
 
-    def time_series(self, **kwargs: Any):
+    def time_series(self, **kwargs):
         return self._cognite_client.time_series.list(asset_ids=[self.id], **kwargs)
 
-    def sequences(self, **kwargs: Any):
+    def sequences(self, **kwargs):
         return self._cognite_client.sequences.list(asset_ids=[self.id], **kwargs)
 
-    def events(self, **kwargs: Any):
+    def events(self, **kwargs):
         return self._cognite_client.events.list(asset_ids=[self.id], **kwargs)
 
-    def files(self, **kwargs: Any):
+    def files(self, **kwargs):
         return self._cognite_client.files.list(asset_ids=[self.id], **kwargs)
 
     def dump(self, camel_case=False):
@@ -286,7 +283,7 @@ class AssetFilter(CogniteFilter):
         self.external_id_prefix = external_id_prefix
         self.labels = labels
         self.geo_location = geo_location
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
         if (labels is not None) and (not isinstance(labels, LabelFilter)):
             raise TypeError("AssetFilter.labels must be of type LabelFilter")
 

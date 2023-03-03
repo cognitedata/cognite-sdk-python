@@ -5,9 +5,6 @@ from cognite.client.data_classes._base import (
     CogniteUpdate,
 )
 
-if TYPE_CHECKING:
-    pass
-
 
 class TransformationSchedule(CogniteResource):
     def __init__(
@@ -26,7 +23,7 @@ class TransformationSchedule(CogniteResource):
         self.last_updated_time = last_updated_time
         self.interval = interval
         self.is_paused = is_paused
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     def __hash__(self):
         return hash(self.id)

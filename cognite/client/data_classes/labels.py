@@ -6,9 +6,6 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.utils._auxiliary import convert_all_keys_to_camel_case, to_camel_case
 
-if TYPE_CHECKING:
-    pass
-
 
 class LabelDefinition(CogniteResource):
     def __init__(
@@ -19,7 +16,7 @@ class LabelDefinition(CogniteResource):
         self.description = description
         self.created_time = created_time
         self.data_set_id = data_set_id
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
 
 class LabelDefinitionFilter(CogniteFilter):
@@ -27,7 +24,7 @@ class LabelDefinitionFilter(CogniteFilter):
         self.name = name
         self.external_id_prefix = external_id_prefix
         self.data_set_ids = data_set_ids
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
 
 class LabelDefinitionList(CogniteResourceList):
@@ -35,7 +32,7 @@ class LabelDefinitionList(CogniteResourceList):
 
 
 class Label(dict):
-    def __init__(self, external_id=None, **kwargs: Any):
+    def __init__(self, external_id=None, **kwargs):
         self.external_id = external_id
         self.update(kwargs)
 
@@ -71,7 +68,7 @@ class LabelFilter(dict, CogniteFilter):
     def __init__(self, contains_any=None, contains_all=None, cognite_client=None):
         self.contains_any = contains_any
         self.contains_all = contains_all
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     @staticmethod
     def _wrap_labels(values):

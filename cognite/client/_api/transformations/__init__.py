@@ -19,7 +19,7 @@ class TransformationsAPI(APIClient):
     _RESOURCE_PATH = "/transformations"
     _LIST_CLASS = TransformationList
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.jobs = TransformationJobsAPI(*args, **kwargs)
         self.schedules = TransformationSchedulesAPI(*args, **kwargs)

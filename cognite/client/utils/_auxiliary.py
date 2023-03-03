@@ -10,6 +10,7 @@ import string
 import warnings
 from collections.abc import Mapping
 from decimal import Decimal
+from typing import Hashable, TypeVar
 from urllib.parse import quote
 
 import cognite.client
@@ -112,7 +113,7 @@ def validate_user_input_dict_with_identifier(dct, required_keys):
     return id_dct
 
 
-def interpolate_and_url_encode(path, *args: Any):
+def interpolate_and_url_encode(path, *args):
     return path.format(*[quote(str(arg), safe="") for arg in args])
 
 
@@ -172,7 +173,7 @@ def random_string(size=100, sample_from=(string.ascii_uppercase + string.digits)
 
 class PriorityQueue:
     def __init__(self):
-        self.__heap: List[Any] = []
+        self.__heap = []
         self.__id = 0
 
     def add(self, elem, priority):
@@ -187,22 +188,12 @@ class PriorityQueue:
         return len(self.__heap) > 0
 
 
-@overload
-def split_into_n_parts(seq, n):
-    ...
-
-
-@overload
-def split_into_n_parts(seq, n):
-    ...
-
-
 def split_into_n_parts(seq, n):
     (yield from (seq[i::n] for i in range(n)))
 
 
 def split_into_chunks(collection, chunk_size):
-    chunks: List[Union[(List, Dict)]] = []
+    chunks = []
     if isinstance(collection, list):
         for i in range(0, len(collection), chunk_size):
             chunks.append(collection[i : (i + chunk_size)])
@@ -236,5 +227,5 @@ def find_duplicates(seq):
     return {x for x in seq if ((x in seen) or add(x))}
 
 
-def exactly_one_is_not_none(*args: Any):
+def exactly_one_is_not_none(*args):
     return sum((1 if (a is not None) else 0) for a in args) == 1

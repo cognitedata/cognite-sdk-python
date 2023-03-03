@@ -9,14 +9,6 @@ from cognite.client.utils._identifier import IdentifierSequence
 class AnnotationsAPI(APIClient):
     _RESOURCE_PATH = "/annotations"
 
-    @overload
-    def create(self, annotations):
-        ...
-
-    @overload
-    def create(self, annotations):
-        ...
-
     def create(self, annotations):
         assert_type(annotations, "annotations", [Annotation, Sequence])
         return self._create_multiple(
@@ -25,14 +17,6 @@ class AnnotationsAPI(APIClient):
             resource_path=(self._RESOURCE_PATH + "/"),
             items=annotations,
         )
-
-    @overload
-    def suggest(self, annotations):
-        ...
-
-    @overload
-    def suggest(self, annotations):
-        ...
 
     def suggest(self, annotations):
         assert_type(annotations, "annotations", [Annotation, Sequence])
@@ -80,14 +64,6 @@ class AnnotationsAPI(APIClient):
         for attr in update_attributes:
             getattr(annotation_update, attr).set(getattr(annotation, attr))
         return annotation_update.dump()
-
-    @overload
-    def update(self, item):
-        ...
-
-    @overload
-    def update(self, item):
-        ...
 
     def update(self, item):
         return self._update_multiple(

@@ -9,7 +9,7 @@ class TransformationNotificationsAPI(APIClient):
     _RESOURCE_PATH = "/transformations/notifications"
     _LIST_CLASS = TransformationNotificationList
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def create(self, notification):

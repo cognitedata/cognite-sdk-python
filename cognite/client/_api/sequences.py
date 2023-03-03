@@ -14,14 +14,11 @@ from cognite.client.data_classes import (
 )
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 
-if TYPE_CHECKING:
-    pass
-
 
 class SequencesAPI(APIClient):
     _RESOURCE_PATH = "/sequences"
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.data = SequencesDataAPI(self, *args, **kwargs)
 
@@ -178,7 +175,7 @@ class SequencesAPI(APIClient):
 class SequencesDataAPI(APIClient):
     _DATA_PATH = "/sequences/data"
 
-    def __init__(self, sequences_api, *args: Any, **kwargs: Any):
+    def __init__(self, sequences_api, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._sequences_api = sequences_api
         self._SEQ_POST_LIMIT_ROWS = 10000
@@ -237,7 +234,7 @@ class SequencesDataAPI(APIClient):
     def retrieve(self, start, end, column_external_ids=None, external_id=None, id=None, limit=None):
         post_objs = IdentifierSequence.load(id, external_id).as_dicts()
 
-        def _fetch_sequence(post_obj: Dict[(str, Any)]) -> SequenceData:
+        def _fetch_sequence(post_obj) -> SequenceData:
             post_obj.update(self._process_columns(column_external_ids=column_external_ids))
             post_obj.update({"start": start, "end": end, "limit": limit})
             seqdata: List = []

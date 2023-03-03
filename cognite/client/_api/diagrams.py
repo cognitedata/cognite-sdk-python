@@ -1,4 +1,5 @@
 from math import ceil
+from typing import TypeVar
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes._base import CogniteResource
@@ -27,7 +28,7 @@ class DiagramsAPI(APIClient):
             headers=headers,
         )
 
-    def _run_job(self, job_cls, job_path, status_path=None, headers=None, **kwargs: Any):
+    def _run_job(self, job_cls, job_path, status_path=None, headers=None, **kwargs):
         if status_path is None:
             status_path = job_path + "/"
         return job_cls._load_with_status(
@@ -62,7 +63,6 @@ class DiagramsAPI(APIClient):
         file_reference_objects = [file_reference.to_api_item() for file_reference in file_references]
         return [*id_objs, *external_id_objs, *file_reference_objects]
 
-    @overload
     def detect(
         self,
         entities,
@@ -73,49 +73,7 @@ class DiagramsAPI(APIClient):
         file_external_ids=None,
         file_references=None,
         *,
-        multiple_jobs: Literal[False],
-    ):
-        ...
-
-    @overload
-    def detect(
-        self,
-        entities,
-        search_field="name",
-        partial_match=False,
-        min_tokens=2,
-        file_ids=None,
-        file_external_ids=None,
-        file_references=None,
-        *,
-        multiple_jobs: Literal[True],
-    ):
-        ...
-
-    @overload
-    def detect(
-        self,
-        entities,
-        search_field="name",
-        partial_match=False,
-        min_tokens=2,
-        file_ids=None,
-        file_external_ids=None,
-        file_references=None,
-    ):
-        ...
-
-    def detect(
-        self,
-        entities,
-        search_field="name",
-        partial_match=False,
-        min_tokens=2,
-        file_ids=None,
-        file_external_ids=None,
-        file_references=None,
-        *,
-        multiple_jobs: bool = False,
+        multiple_jobs=False,
     ):
         items = self._process_file_ids(file_ids, file_external_ids, file_references)
         entities = [

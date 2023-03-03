@@ -5,9 +5,6 @@ from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Datapoints, DatapointsList, TimeSeries
 
-if TYPE_CHECKING:
-    pass
-
 
 class SyntheticDatapointsAPI(APIClient):
     _RESOURCE_PATH = "/timeseries/synthetic"
@@ -93,7 +90,7 @@ class SyntheticDatapointsAPI(APIClient):
             sympy_module.Abs: "abs",
         }
 
-        def process_symbol(sym: Any) -> str:
+        def process_symbol(sym) -> str:
             if isinstance(sym, sympy_module.AtomicExpr):
                 if isinstance(sym, sympy_module.NumberSymbol):
                     return str(sym.evalf(15))

@@ -3,12 +3,10 @@ import inspect
 from collections import UserList
 from concurrent.futures import CancelledError
 from concurrent.futures.thread import ThreadPoolExecutor
+from typing import TypeVar
 
 from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, CogniteNotFoundError
 from cognite.client.utils._priority_tpe import PriorityThreadPoolExecutor
-
-if TYPE_CHECKING:
-    pass
 
 
 class TasksSummary:
@@ -101,18 +99,18 @@ def collect_exc_info_and_raise(exceptions, successful=None, failed=None, unknown
 T_Result = TypeVar("T_Result", covariant=True)
 
 
-class TaskExecutor(Protocol):
-    def submit(self, fn, *args: Any, **kwargs: Any):
+class TaskExecutor:
+    def submit(self, fn, *args, **kwargs):
         ...
 
 
-class TaskFuture(Protocol[T_Result]):
+class TaskFuture:
     def result(self):
         ...
 
 
 class SyncFuture(TaskFuture):
-    def __init__(self, fn, *args: Any, **kwargs: Any):
+    def __init__(self, fn, *args, **kwargs):
         self.__fn = fn
         self.__args = args
         self.__kwargs = kwargs
@@ -122,14 +120,14 @@ class SyncFuture(TaskFuture):
 
 
 class MainThreadExecutor(TaskExecutor):
-    def submit(self, fn, *args: Any, **kwargs: Any):
+    def submit(self, fn, *args, **kwargs):
         return SyncFuture(fn, *args, **kwargs)
 
 
 class ExtendedSyncFuture(TaskFuture):
-    def __init__(self, fn, *args: Any, **kwargs: Any):
+    def __init__(self, fn, *args, **kwargs):
         self._task = functools.partial(fn, *args, **kwargs)
-        self._result: Optional[T_Result] = None
+        self._result = None
         self._is_cancelled = False
 
     def result(self):
@@ -146,7 +144,7 @@ class ExtendedSyncFuture(TaskFuture):
 class ExtendedMainThreadExecutor(TaskExecutor):
     __doc__ = MainThreadExecutor.__doc__
 
-    def submit(self, fn, *args: Any, **kwargs: Any):
+    def submit(self, fn, *args, **kwargs):
         if "priority" in inspect.signature(fn).parameters:
             raise TypeError(f"Given function {fn} cannot accept reserved parameter name `priority`")
         kwargs.pop("priority", None)
@@ -171,8 +169,8 @@ _MAIN_THREAD_EXECUTOR_SINGLETON = MainThreadExecutor()
 
 
 class ConcurrencySettings:
-    executor_type: Literal[("threadpool", "mainthread")] = "threadpool"
-    priority_executor_type: Literal[("priority_threadpool", "mainthread")] = "priority_threadpool"
+    executor_type = "threadpool"
+    priority_executor_type = "priority_threadpool"
 
 
 def get_executor(max_workers):

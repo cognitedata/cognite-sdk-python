@@ -5,6 +5,7 @@ import logging
 import re
 from collections import UserList
 from json.decoder import JSONDecodeError
+from typing import TypeVar
 from urllib.parse import urljoin
 
 import requests.utils
@@ -17,8 +18,6 @@ from cognite.client.data_classes._base import CogniteFilter, CogniteResource, Co
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import is_unlimited
 
-if TYPE_CHECKING:
-    pass
 log = logging.getLogger("cognite-sdk")
 T = TypeVar("T")
 
@@ -90,7 +89,7 @@ class APIClient:
     def _put(self, url_path, json=None, headers=None):
         return self._do_request("PUT", url_path, json=json, headers=headers, timeout=self._config.timeout)
 
-    def _do_request(self, method, url_path, accept="application/json", **kwargs: Any):
+    def _do_request(self, method, url_path, accept="application/json", **kwargs):
         (is_retryable, full_url) = self._resolve_url(method, url_path)
         json_payload = kwargs.get("json")
         headers = self._configure_headers(accept, additional_headers=self._config.headers.copy())
@@ -458,7 +457,7 @@ class APIClient:
         else:
             dumped_filter = {}
         resource_path = resource_path or self._RESOURCE_PATH
-        body: Dict[(str, Any)] = {"filter": dumped_filter}
+        body = {"filter": dumped_filter}
         if aggregate is not None:
             body["aggregate"] = aggregate
         if fields is not None:
@@ -675,7 +674,7 @@ class APIClient:
                 msg = res.content.decode()
         except Exception:
             msg = res.content.decode()
-        error_details: Dict[(str, Any)] = {"X-Request-ID": x_request_id}
+        error_details = {"X-Request-ID": x_request_id}
         if payload:
             error_details["payload"] = payload
         if missing:
@@ -694,7 +693,7 @@ class APIClient:
         log.debug(f"HTTP Error {code} {res.request.method} {res.request.url}: {msg}", extra=error_details)
         raise CogniteAPIError(msg, code, x_request_id, missing=missing, duplicated=duplicated, extra=extra)
 
-    def _log_request(self, res, **kwargs: Any):
+    def _log_request(self, res, **kwargs):
         method = res.request.method
         url = res.request.url
         status_code = res.status_code

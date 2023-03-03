@@ -94,7 +94,7 @@ class HTTPClient:
         self.config = config
         self.retry_tracker_factory = retry_tracker_factory
 
-    def request(self, method, url, **kwargs: Any):
+    def request(self, method, url, **kwargs):
         retry_tracker = self.retry_tracker_factory(self.config)
         last_status = None
         while True:
@@ -115,7 +115,7 @@ class HTTPClient:
                     raise e
             time.sleep(retry_tracker.get_backoff_time())
 
-    def _do_request(self, method, url, **kwargs: Any):
+    def _do_request(self, method, url, **kwargs):
         try:
             res = self.session.request(method=method, url=url, **kwargs)
             return res

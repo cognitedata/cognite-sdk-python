@@ -6,9 +6,6 @@ from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.utils._auxiliary import to_snake_case
 
-if TYPE_CHECKING:
-    pass
-
 RESERVED_PROPERTIES = {"externalId", "dataSetId", "assetIds", "createdTime", "lastUpdatedTime"}
 
 
@@ -29,7 +26,7 @@ class FeatureType(CogniteResource):
         self.last_updated_time = last_updated_time
         self.properties = properties
         self.search_spec = search_spec
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     @classmethod
     def _load(cls, resource, cognite_client=None):
@@ -57,12 +54,12 @@ class FeatureTypeUpdate:
         self.external_id = external_id
         self.add = add if (add is not None) else PropertyAndSearchSpec()
         self.remove = remove if (remove is not None) else PropertyAndSearchSpec()
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
 
 @dataclasses.dataclass
 class Patches:
-    add: Optional[Dict[(str, Any)]] = None
+    add = None
     remove: Optional[List[str]] = None
 
 
@@ -80,11 +77,11 @@ class FeatureTypeUpdateList:
 class Feature(CogniteResource):
     PRE_DEFINED_SNAKE_CASE_NAMES = {to_snake_case(key) for key in RESERVED_PROPERTIES}
 
-    def __init__(self, external_id=None, cognite_client=None, **properties: Any):
+    def __init__(self, external_id=None, cognite_client=None, **properties):
         self.external_id = external_id
         for key in properties:
             setattr(self, key, properties[key])
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     @classmethod
     def _load(cls, resource, cognite_client=None):
@@ -208,7 +205,7 @@ def nan_to_none(column_value):
 
 class FeatureAggregate(CogniteResource):
     def __init__(self, cognite_client=None):
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     @classmethod
     def _load(cls, resource, cognite_client=None):
@@ -230,7 +227,7 @@ class CoordinateReferenceSystem(CogniteResource):
         self.srid = srid
         self.wkt = wkt
         self.proj_string = proj_string
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     @classmethod
     def _load(cls, resource, cognite_client=None):
@@ -254,7 +251,7 @@ class OrderSpec:
 
 
 class RasterMetadata:
-    def __init__(self, **properties: Any):
+    def __init__(self, **properties):
         for key in properties:
             setattr(self, key, properties[key])
 
@@ -299,7 +296,7 @@ class GeospatialGeometryValueComputeFunction(GeospatialGeometryComputeFunction):
 class GeospatialComputedItem(CogniteResource):
     def __init__(self, resource, cognite_client=None):
         self.resource = resource
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     @classmethod
     def _load(cls, resource, cognite_client=None):
@@ -319,7 +316,7 @@ class GeospatialComputedItemList(CogniteResourceList):
 class GeospatialComputedResponse(CogniteResource):
     def __init__(self, computed_item_list, cognite_client=None):
         self.items = computed_item_list
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     @classmethod
     def _load(cls, resource, cognite_client=None):

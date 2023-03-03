@@ -1,10 +1,5 @@
-from dataclasses import dataclass
-
 from cognite.client import utils
 from cognite.client.data_classes._base import EXCLUDE_VALUE, CogniteResource
-
-if TYPE_CHECKING:
-    pass
 
 
 class VisionResource(CogniteResource):
@@ -18,7 +13,7 @@ class VisionResource(CogniteResource):
         }
 
     def to_pandas(self, camel_case=False):
-        pd = cast(Any, utils._auxiliary.local_import("pandas"))
+        pd = utils._auxiliary.local_import("pandas")
         df = pd.DataFrame(columns=["value"])
         for (key, value) in self.__dict__.items():
             if isinstance(value, list) and all(hasattr(v, "dump") for v in value):
@@ -34,10 +29,12 @@ class VisionResource(CogniteResource):
         return df
 
 
-@dataclass
 class Point(VisionResource):
     x: float
     y: float
+
+    def __init__(self, *a, **kw):
+        raise NotImplementedError("Not support in Python 3.6")
 
 
 PointDict = Dict[(str, float)]
@@ -55,31 +52,39 @@ def _process_vertices(vertices):
     return processed_vertices
 
 
-@dataclass
 class BoundingBox(VisionResource):
     x_min: float
     x_max: float
     y_min: float
     y_max: float
 
+    def __init__(self, *a, **kw):
+        raise NotImplementedError("Not support in Python 3.6")
 
-@dataclass
+
 class CdfResourceRef(VisionResource):
     id: Optional[int] = None
     external_id: Optional[str] = None
 
+    def __init__(self, *a, **kw):
+        raise NotImplementedError("Not support in Python 3.6")
 
-@dataclass
+
 class Polygon(VisionResource):
     vertices: List[Point]
+
+    def __init__(self, *a, **kw):
+        raise NotImplementedError("Not support in Python 3.6")
 
     def __post_init__(self):
         self.vertices = _process_vertices(self.vertices)
 
 
-@dataclass
 class PolyLine(VisionResource):
     vertices: List[Point]
+
+    def __init__(self, *a, **kw):
+        raise NotImplementedError("Not support in Python 3.6")
 
     def __post_init__(self):
         self.vertices = _process_vertices(self.vertices)

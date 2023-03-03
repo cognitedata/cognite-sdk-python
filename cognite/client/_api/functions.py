@@ -31,8 +31,6 @@ from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._identifier import IdentifierSequence
 
-if TYPE_CHECKING:
-    from cognite.client import CogniteClient
 HANDLER_FILE_NAME = "handler.py"
 MAX_RETRIES = 5
 REQUIREMENTS_FILE_NAME = "requirements.txt"
@@ -63,7 +61,7 @@ class FunctionsAPI(APIClient):
     _RESOURCE_PATH = "/functions"
     _LIST_CLASS = FunctionList
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.calls = FunctionCallsAPI(*args, **kwargs)
         self.schedules = FunctionSchedulesAPI(*args, **kwargs)
@@ -109,7 +107,7 @@ class FunctionsAPI(APIClient):
         else:
             raise OSError("Could not retrieve file from files API")
         url = "/functions"
-        function: Dict[(str, Any)] = {
+        function = {
             "name": name,
             "description": description,
             "owner": owner,
@@ -398,7 +396,7 @@ def _get_fn_docstring_requirements(fn):
 class FunctionCallsAPI(APIClient):
     _LIST_CLASS = FunctionCallList
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._cognite_client: CogniteClient = cast("CogniteClient", self._cognite_client)
 
@@ -455,7 +453,7 @@ class FunctionSchedulesAPI(APIClient):
     _RESOURCE_PATH = "/functions/schedules"
     _LIST_CLASS = FunctionSchedulesList
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._cognite_client: CogniteClient = cast("CogniteClient", self._cognite_client)
 

@@ -18,7 +18,7 @@ from cognite.client.utils._identifier import IdentifierSequence
 
 
 class TemplatesAPI(APIClient):
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.groups = TemplateGroupsAPI(*args, **kwargs)
         self.versions = TemplateGroupVersionsAPI(*args, **kwargs)
@@ -35,7 +35,7 @@ class TemplatesAPI(APIClient):
 class TemplateGroupsAPI(APIClient):
     _RESOURCE_PATH = "/templategroups"
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def create(self, template_groups):
@@ -90,7 +90,7 @@ class TemplateGroupsAPI(APIClient):
 class TemplateGroupVersionsAPI(APIClient):
     _RESOURCE_PATH = "/templategroups/{}/versions"
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def upsert(self, external_id, version):
@@ -166,7 +166,7 @@ class TemplateInstancesAPI(APIClient):
 
     def list(self, external_id, version, limit=25, data_set_ids=None, template_names=None):
         resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
-        filter: Dict[(str, Any)] = {}
+        filter = {}
         if data_set_ids is not None:
             filter["dataSetIds"] = data_set_ids
         if template_names is not None:

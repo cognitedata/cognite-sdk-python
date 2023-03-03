@@ -10,9 +10,6 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.utils._auxiliary import to_snake_case
 
-if TYPE_CHECKING:
-    from cognite.client import CogniteClient
-
 
 class Annotation(CogniteResource):
     def __init__(

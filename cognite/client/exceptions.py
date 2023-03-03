@@ -3,19 +3,19 @@ import reprlib
 
 
 class CogniteException(Exception):
-    pass
+    ...
 
 
 class CogniteConnectionError(CogniteException):
-    pass
+    ...
 
 
 class CogniteConnectionRefused(CogniteConnectionError):
-    pass
+    ...
 
 
 class CogniteReadTimeout(CogniteException):
-    pass
+    ...
 
 
 class CogniteMultiException(CogniteException):

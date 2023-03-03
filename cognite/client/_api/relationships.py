@@ -10,7 +10,7 @@ from cognite.client.utils._identifier import IdentifierSequence
 class RelationshipsAPI(APIClient):
     _RESOURCE_PATH = "/relationships"
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._CREATE_LIMIT = 1000
         self._LIST_SUBQUERY_LIMIT = 1000

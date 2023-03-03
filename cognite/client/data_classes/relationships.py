@@ -15,9 +15,6 @@ from cognite.client.data_classes.labels import Label, LabelFilter
 from cognite.client.data_classes.sequences import Sequence
 from cognite.client.data_classes.time_series import TimeSeries
 
-if TYPE_CHECKING:
-    pass
-
 
 class Relationship(CogniteResource):
     _RESOURCE_TYPES = frozenset({"asset", "timeseries", "file", "event", "sequence"})
@@ -54,7 +51,7 @@ class Relationship(CogniteResource):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.labels = Label._load_list(labels)
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     def _validate_resource_types(self):
         rel = copy.copy(self)
@@ -118,7 +115,7 @@ class RelationshipFilter(CogniteFilter):
         self.created_time = created_time
         self.active_at_time = active_at_time
         self.labels = labels
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     def dump(self, camel_case=False):
         result = super().dump(camel_case)

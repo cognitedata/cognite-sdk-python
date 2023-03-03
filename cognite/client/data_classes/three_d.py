@@ -9,12 +9,9 @@ from cognite.client.data_classes._base import (
     CogniteUpdate,
 )
 
-if TYPE_CHECKING:
-    pass
-
 
 class RevisionCameraProperties(dict):
-    def __init__(self, target=None, position=None, **kwargs: Any):
+    def __init__(self, target=None, position=None, **kwargs):
         self.target = target
         self.position = position
         self.update(kwargs)
@@ -24,7 +21,7 @@ class RevisionCameraProperties(dict):
 
 
 class BoundingBox3D(dict):
-    def __init__(self, max=None, min=None, **kwargs: Any):
+    def __init__(self, max=None, min=None, **kwargs):
         self.max = max
         self.min = min
         self.update(kwargs)
@@ -39,7 +36,7 @@ class ThreeDModel(CogniteResource):
         self.id = id
         self.created_time = created_time
         self.metadata = metadata
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
 
 class ThreeDModelUpdate(CogniteUpdate):
@@ -114,7 +111,7 @@ class ThreeDModelRevision(CogniteResource):
         self.thumbnail_url = thumbnail_url
         self.asset_mapping_count = asset_mapping_count
         self.created_time = created_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     @classmethod
     def _load(cls, resource, cognite_client=None):
@@ -199,7 +196,7 @@ class ThreeDNode(CogniteResource):
         self.subtree_size = subtree_size
         self.properties = properties
         self.bounding_box = bounding_box
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     @classmethod
     def _load(cls, resource, cognite_client=None):
@@ -220,7 +217,7 @@ class ThreeDAssetMapping(CogniteResource):
         self.asset_id = asset_id
         self.tree_index = tree_index
         self.subtree_size = subtree_size
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
 
 class ThreeDAssetMappingList(CogniteResourceList):

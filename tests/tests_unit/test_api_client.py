@@ -2,7 +2,6 @@ import json
 import math
 import unittest
 from collections import namedtuple
-from typing import Any
 
 import pytest
 from requests import Response
@@ -215,7 +214,7 @@ class SomeUpdate(CogniteUpdate):
 
 
 class PrimitiveUpdate(CognitePrimitiveUpdate):
-    def set(self, value: Any) -> SomeUpdate:
+    def set(self, value) -> SomeUpdate:
         return self._set(value)
 
 

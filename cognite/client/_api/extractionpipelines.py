@@ -18,7 +18,7 @@ from cognite.client.utils._identifier import IdentifierSequence
 class ExtractionPipelinesAPI(APIClient):
     _RESOURCE_PATH = "/extpipes"
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.runs = ExtractionPipelineRunsAPI(*args, **kwargs)
         self.config = ExtractionPipelineConfigsAPI(*args, **kwargs)
@@ -42,14 +42,14 @@ class ExtractionPipelinesAPI(APIClient):
         return self._list(list_cls=ExtractionPipelineList, resource_cls=ExtractionPipeline, method="GET", limit=limit)
 
     @overload
-    def create(self, extraction_pipeline, **kwargs: Dict[(str, Any)]):
+    def create(self, extraction_pipeline, **kwargs):
         ...
 
     @overload
-    def create(self, extraction_pipeline, **kwargs: Dict[(str, Any)]):
+    def create(self, extraction_pipeline, **kwargs):
         ...
 
-    def create(self, extraction_pipeline=None, **kwargs: Dict[(str, Any)]):
+    def create(self, extraction_pipeline=None, **kwargs):
         extraction_pipeline = cast(
             Union[(ExtractionPipeline, Sequence[ExtractionPipeline])],
             handle_deprecated_camel_case_argument(extraction_pipeline, "extractionPipeline", "create", kwargs),

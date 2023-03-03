@@ -16,7 +16,7 @@ from cognite.client.utils._identifier import IdentifierSequence, InternalId
 
 
 class ThreeDAPI(APIClient):
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.models = ThreeDModelsAPI(*args, **kwargs)
         self.revisions = ThreeDRevisionsAPI(*args, **kwargs)

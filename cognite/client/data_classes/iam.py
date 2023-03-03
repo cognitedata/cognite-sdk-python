@@ -1,9 +1,6 @@
 from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, CogniteResponse
 
-if TYPE_CHECKING:
-    pass
-
 
 class ServiceAccount(CogniteResource):
     def __init__(self, name=None, groups=None, id=None, is_deleted=None, deleted_time=None, cognite_client=None):
@@ -12,7 +9,7 @@ class ServiceAccount(CogniteResource):
         self.id = id
         self.is_deleted = is_deleted
         self.deleted_time = deleted_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
 
 class ServiceAccountList(CogniteResourceList):
@@ -28,7 +25,7 @@ class APIKey(CogniteResource):
         self.created_time = created_time
         self.status = status
         self.value = value
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
 
 class APIKeyList(CogniteResourceList):
@@ -52,7 +49,7 @@ class Group(CogniteResource):
         self.id = id
         self.is_deleted = is_deleted
         self.deleted_time = deleted_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
 
 class GroupList(CogniteResourceList):
@@ -63,7 +60,7 @@ class SecurityCategory(CogniteResource):
     def __init__(self, name=None, id=None, cognite_client=None):
         self.name = name
         self.id = id
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
 
 class SecurityCategoryList(CogniteResourceList):

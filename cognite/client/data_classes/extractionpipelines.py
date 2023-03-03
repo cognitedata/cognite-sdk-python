@@ -11,9 +11,6 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._auxiliary import convert_all_keys_to_camel_case
 
-if TYPE_CHECKING:
-    pass
-
 
 class ExtractionPipelineContact(dict):
     def __init__(self, name, email, role, send_notification):
@@ -72,7 +69,7 @@ class ExtractionPipeline(CogniteResource):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.created_by = created_by
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     @classmethod
     def _load(cls, resource, cognite_client=None):
@@ -159,7 +156,7 @@ class ExtractionPipelineRun(CogniteResource):
         self.status = status
         self.message = message
         self.created_time = created_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
 
 class ExtractionPipelineRunUpdate(CogniteUpdate):
@@ -183,7 +180,7 @@ class ExtractionPipelineRunFilter(CogniteFilter):
         self.statuses = statuses
         self.message = message
         self.created_time = created_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     @classmethod
     def _load(cls, resource):

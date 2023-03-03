@@ -1,4 +1,5 @@
 import numbers
+from typing import Generic, Sequence, TypeVar
 
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
 
@@ -84,7 +85,7 @@ class IdentifierSequence:
 
     def as_singleton(self):
         self.assert_singleton()
-        return cast(SingletonIdentifierSequence, self)
+        return self
 
     def chunked(self, chunk_size):
         return [
@@ -98,18 +99,8 @@ class IdentifierSequence:
     def as_primitives(self):
         return [identifier.as_primitive() for identifier in self._identifiers]
 
-    @overload
     @classmethod
-    def of(cls, *ids: List[Union[(int, str)]]):
-        ...
-
-    @overload
-    @classmethod
-    def of(cls, *ids: Union[(int, str)]):
-        ...
-
-    @classmethod
-    def of(cls, *ids: Union[(int, str, Sequence[Union[(int, str)]])]):
+    def of(cls, *ids):
         if (len(ids) == 1) and isinstance(ids[0], Sequence) and (not isinstance(ids[0], str)):
             return cls([Identifier(val) for val in ids[0]], is_singleton=False)
         else:
@@ -118,7 +109,7 @@ class IdentifierSequence:
     @classmethod
     def load(cls, ids=None, external_ids=None):
         value_passed_as_primitive = False
-        all_identifiers: List[Union[(int, str)]] = []
+        all_identifiers = []
         if ids is not None:
             if isinstance(ids, numbers.Integral):
                 value_passed_as_primitive = True

@@ -1,5 +1,3 @@
-from dataclasses import dataclass
-
 from cognite.client.data_classes.annotation_types.primitives import (
     BoundingBox,
     CdfResourceRef,
@@ -9,13 +7,15 @@ from cognite.client.data_classes.annotation_types.primitives import (
 )
 
 
-@dataclass
 class ObjectDetection(VisionResource):
     label: str
     confidence: Optional[float]
     bounding_box: Optional[BoundingBox] = None
     polygon: Optional[Polygon] = None
     polyline: Optional[PolyLine] = None
+
+    def __init__(self, *a, **kw):
+        raise NotImplementedError("Not support in Python 3.6")
 
     def __post_init__(self):
         if isinstance(self.bounding_box, Dict):
@@ -26,23 +26,27 @@ class ObjectDetection(VisionResource):
             self.polyline = PolyLine(**self.polyline)
 
 
-@dataclass
 class TextRegion(VisionResource):
     text: str
     text_region: BoundingBox
     confidence: Optional[float] = None
+
+    def __init__(self, *a, **kw):
+        raise NotImplementedError("Not support in Python 3.6")
 
     def __post_init__(self):
         if isinstance(self.text_region, Dict):
             self.text_region = BoundingBox(**self.text_region)
 
 
-@dataclass
 class AssetLink(VisionResource):
     text: str
     text_region: BoundingBox
     asset_ref: CdfResourceRef
     confidence: Optional[float] = None
+
+    def __init__(self, *a, **kw):
+        raise NotImplementedError("Not support in Python 3.6")
 
     def __post_init__(self):
         if isinstance(self.text_region, Dict):

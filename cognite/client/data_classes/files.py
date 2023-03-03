@@ -12,9 +12,6 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.labels import Label, LabelFilter
 from cognite.client.data_classes.shared import GeoLocation, GeoLocationFilter, TimestampRange
 
-if TYPE_CHECKING:
-    pass
-
 
 class FileMetadata(CogniteResource):
     def __init__(
@@ -59,7 +56,7 @@ class FileMetadata(CogniteResource):
         self.uploaded_time = uploaded_time
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     @classmethod
     def _load(cls, resource, cognite_client=None):
@@ -111,7 +108,7 @@ class FileMetadataFilter(CogniteFilter):
         self.external_id_prefix = external_id_prefix
         self.directory_prefix = directory_prefix
         self.uploaded = uploaded
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
         if (labels is not None) and (not isinstance(labels, LabelFilter)):
             raise TypeError("FileMetadataFilter.labels must be of type LabelFilter")
         if (geo_location is not None) and (not isinstance(geo_location, GeoLocationFilter)):
@@ -224,7 +221,7 @@ class FileMetadataUpdate(CogniteUpdate):
 
 
 class FileAggregate(dict):
-    def __init__(self, count=None, **kwargs: Any):
+    def __init__(self, count=None, **kwargs):
         self.count = count
         self.update(kwargs)
 

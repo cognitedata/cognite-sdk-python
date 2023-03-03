@@ -8,13 +8,13 @@ from cognite.client._version import __api_subversion__
 class GlobalConfig:
     def __init__(self):
         self.default_client_config: Optional[ClientConfig] = None
-        self.disable_gzip: bool = False
-        self.disable_pypi_version_check: bool = False
+        self.disable_gzip = False
+        self.disable_pypi_version_check = False
         self.status_forcelist: Set[int] = {429, 502, 503, 504}
         self.max_retries: int = 10
         self.max_retry_backoff: int = 30
         self.max_connection_pool_size: int = 50
-        self.disable_ssl: bool = False
+        self.disable_ssl = False
         self.proxies: Optional[Dict[(str, str)]] = {}
 
 

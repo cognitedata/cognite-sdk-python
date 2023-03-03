@@ -182,13 +182,13 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
 
 
 class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
-    def __init__(self, token_url, client_id, client_secret, scopes, **token_custom_args: Any):
+    def __init__(self, token_url, client_id, client_secret, scopes, **token_custom_args):
         super().__init__()
         self.__token_url = token_url
         self.__client_id = client_id
         self.__client_secret = client_secret
         self.__scopes = scopes
-        self.__token_custom_args: Dict[(str, Any)] = token_custom_args
+        self.__token_custom_args = token_custom_args
         self.__oauth = OAuth2Session(client=BackendApplicationClient(client_id=self.__client_id, scope=self.__scopes))
         self._validate_token_custom_args()
 

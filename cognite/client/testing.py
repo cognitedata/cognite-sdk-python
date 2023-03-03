@@ -58,7 +58,7 @@ from cognite.client._api.vision import VisionAPI
 
 
 class CogniteClientMock(MagicMock):
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args, **kwargs):
         if "parent" in kwargs:
             super().__init__(*args, **kwargs)
             return None

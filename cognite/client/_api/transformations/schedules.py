@@ -9,7 +9,7 @@ class TransformationSchedulesAPI(APIClient):
     _RESOURCE_PATH = "/transformations/schedules"
     _LIST_CLASS = TransformationScheduleList
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._CREATE_LIMIT = 5
         self._DELETE_LIMIT = 5

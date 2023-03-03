@@ -1,8 +1,5 @@
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList
 
-if TYPE_CHECKING:
-    pass
-
 
 class TransformationNotification(CogniteResource):
     def __init__(
@@ -21,7 +18,7 @@ class TransformationNotification(CogniteResource):
         self.destination = destination
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     def __hash__(self):
         return hash(self.id)

@@ -6,9 +6,6 @@ from cognite.client._http_client import _RetryTracker
 from cognite.client.config import ClientConfig
 from cognite.client.credentials import CredentialProvider
 
-if TYPE_CHECKING:
-    pass
-
 
 def patch_sdk_for_pyodide():
     from pyodide_http import patch_all
@@ -38,7 +35,7 @@ def http_client__init__(self, config, session, retry_tracker_factory=_RetryTrack
 
 
 class NotImplementedAssetPoster:
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args, **kwargs):
         raise NotImplementedError("AssetsAPI.create_hierarchy is not pyodide/web-browser compatible yet! Stay tuned!")
 
 

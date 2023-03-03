@@ -16,9 +16,6 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._identifier import Identifier
 
-if TYPE_CHECKING:
-    pass
-
 
 class Sequence(CogniteResource):
     def __init__(
@@ -45,7 +42,7 @@ class Sequence(CogniteResource):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.data_set_id = data_set_id
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     def rows(self, start, end):
         identifier = Identifier.load(self.id, self.external_id).as_dict()
@@ -83,7 +80,7 @@ class SequenceFilter(CogniteFilter):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.data_set_ids = data_set_ids
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     @classmethod
     def _load(cls, resource):
@@ -210,7 +207,7 @@ class SequenceUpdate(CogniteUpdate):
 
 
 class SequenceAggregate(dict):
-    def __init__(self, count=None, **kwargs: Any):
+    def __init__(self, count=None, **kwargs):
         self.count = count
         self.update(kwargs)
 

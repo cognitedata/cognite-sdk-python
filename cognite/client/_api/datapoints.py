@@ -50,8 +50,7 @@ if not import_legacy_protobuf():
     from cognite.client._proto.data_point_list_response_pb2 import DataPointListResponse
 else:
     from cognite.client._proto_legacy.data_point_list_response_pb2 import DataPointListResponse
-if TYPE_CHECKING:
-    from concurrent.futures import Future
+
 POST_DPS_OBJECTS_LIMIT = 10000
 FETCH_TS_LIMIT = 100
 RETRIEVE_LATEST_LIMIT = 100
@@ -206,7 +205,7 @@ class EagerDpsFetcher(DpsFetchStrategy):
 
 
 class ChunkingDpsFetcher(DpsFetchStrategy):
-    def __init__(self, *args: Any):
+    def __init__(self, *args):
         super().__init__(*args)
         self.counter = itertools.count()
         self.raw_subtask_pool: List[PoolSubtaskType] = []
@@ -406,7 +405,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
 class DatapointsAPI(APIClient):
     _RESOURCE_PATH = "/timeseries/data"
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.synthetic = SyntheticDatapointsAPI(
             self._config, api_version=self._api_version, cognite_client=self._cognite_client
@@ -422,8 +421,8 @@ class DatapointsAPI(APIClient):
         aggregates: Union[(str, List[str], None)] = None,
         granularity: Optional[str] = None,
         limit: Optional[int] = None,
-        include_outside_points: bool = False,
-        ignore_unknown_ids: bool = False,
+        include_outside_points=False,
+        ignore_unknown_ids=False,
     ):
         query = _DatapointsQuery(
             start=start,
@@ -454,8 +453,8 @@ class DatapointsAPI(APIClient):
         aggregates: Union[(str, List[str], None)] = None,
         granularity: Optional[str] = None,
         limit: Optional[int] = None,
-        include_outside_points: bool = False,
-        ignore_unknown_ids: bool = False,
+        include_outside_points=False,
+        ignore_unknown_ids=False,
     ):
         local_import("numpy")
         query = _DatapointsQuery(
@@ -480,19 +479,19 @@ class DatapointsAPI(APIClient):
     def retrieve_dataframe(
         self,
         *,
-        id: Union[(None, int, Dict[(str, Any)], Sequence[Union[(int, Dict[(str, Any)])]])] = None,
-        external_id: Union[(None, str, Dict[(str, Any)], Sequence[Union[(str, Dict[(str, Any)])]])] = None,
-        start: Union[(int, str, datetime, None)] = None,
-        end: Union[(int, str, datetime, None)] = None,
-        aggregates: Union[(str, List[str], None)] = None,
-        granularity: Optional[str] = None,
-        limit: Optional[int] = None,
-        include_outside_points: bool = False,
-        ignore_unknown_ids: bool = False,
-        uniform_index: bool = False,
-        include_aggregate_name: bool = True,
-        include_granularity_name: bool = False,
-        column_names: Literal[("id", "external_id")] = "external_id",
+        id=None,
+        external_id=None,
+        start=None,
+        end=None,
+        aggregates=None,
+        granularity=None,
+        limit=None,
+        include_outside_points=False,
+        ignore_unknown_ids=False,
+        uniform_index=False,
+        include_aggregate_name=True,
+        include_granularity_name=False,
+        column_names="external_id",
     ):
         (_, pd) = local_import("numpy", "pandas")
         if column_names not in {"id", "external_id"}:

@@ -4,9 +4,6 @@ from cognite.client._constants import LIST_LIMIT_CEILING, LIST_LIMIT_DEFAULT
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList, CogniteResponse
 from cognite.client.utils._auxiliary import is_unlimited
 
-if TYPE_CHECKING:
-    pass
-
 
 class Function(CogniteResource):
     def __init__(
@@ -49,7 +46,7 @@ class Function(CogniteResource):
         self.runtime_version = runtime_version
         self.metadata = metadata
         self.error = error
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     def call(self, data=None, wait=True):
         return self._cognite_client.functions.call(id=self.id, data=data, wait=wait)
@@ -126,7 +123,7 @@ class FunctionSchedule(CogniteResource):
         self.cron_expression = cron_expression
         self.created_time = created_time
         self.session_id = session_id
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     def get_input_data(self):
         return self._cognite_client.functions.schedules.get_input_data(id=self.id)
@@ -170,7 +167,7 @@ class FunctionCall(CogniteResource):
         self.schedule_id = schedule_id
         self.error = error
         self.function_id = function_id
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     def get_response(self):
         return self._cognite_client.functions.calls.get_response(call_id=self.id, function_id=self.function_id)
@@ -198,7 +195,7 @@ class FunctionCallLogEntry(CogniteResource):
     def __init__(self, timestamp=None, message=None, cognite_client=None):
         self.timestamp = timestamp
         self.message = message
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
 
 class FunctionCallLog(CogniteResourceList):

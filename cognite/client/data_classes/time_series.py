@@ -13,9 +13,6 @@ from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS
 
-if TYPE_CHECKING:
-    pass
-
 
 class TimeSeries(CogniteResource):
     def __init__(
@@ -50,7 +47,7 @@ class TimeSeries(CogniteResource):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.legacy_name = legacy_name
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     def count(self):
         if self.is_string:
@@ -112,7 +109,7 @@ class TimeSeriesFilter(CogniteFilter):
         self.external_id_prefix = external_id_prefix
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     @classmethod
     def _load(cls, resource):
@@ -195,7 +192,7 @@ class TimeSeriesUpdate(CogniteUpdate):
 
 
 class TimeSeriesAggregate(dict):
-    def __init__(self, count=None, **kwargs: Any):
+    def __init__(self, count=None, **kwargs):
         self.count = count
         self.update(kwargs)
 

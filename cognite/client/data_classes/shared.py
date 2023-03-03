@@ -3,7 +3,7 @@ from cognite.client.utils._auxiliary import convert_all_keys_to_camel_case, hand
 
 
 class TimestampRange(dict):
-    def __init__(self, max=None, min=None, **kwargs: Any):
+    def __init__(self, max=None, min=None, **kwargs):
         self.max = max
         self.min = min
         self.update(kwargs)
@@ -13,19 +13,19 @@ class TimestampRange(dict):
 
 
 class AggregateResult(dict):
-    def __init__(self, count=None, **kwargs: Any):
+    def __init__(self, count=None, **kwargs):
         super().__init__(count=count, **kwargs)
         self.count = count
 
 
 class AggregateUniqueValuesResult(AggregateResult):
-    def __init__(self, count=None, value=None, **kwargs: Any):
+    def __init__(self, count=None, value=None, **kwargs):
         super().__init__(count=count, value=value, **kwargs)
         self.value = value
 
 
 class AggregateBucketResult(AggregateResult):
-    def __init__(self, count=None, value=None, **kwargs: Any):
+    def __init__(self, count=None, value=None, **kwargs):
         super().__init__(count=count, value=value, **kwargs)
         self.value = value
 
@@ -78,7 +78,7 @@ class GeoLocation(dict):
     properties = CognitePropertyClassUtil.declare_property("properties")
 
     @classmethod
-    def _load(cls, raw_geo_location=None, **kwargs: Dict[(str, Any)]):
+    def _load(cls, raw_geo_location=None, **kwargs):
         raw_geo_location = cast(
             Dict[(str, Any)],
             handle_deprecated_camel_case_argument(raw_geo_location, "raw_geoLocation", "_load", kwargs),
@@ -102,7 +102,7 @@ class GeoLocationFilter(dict):
     shape = CognitePropertyClassUtil.declare_property("shape")
 
     @classmethod
-    def _load(cls, raw_geo_location_filter=None, **kwargs: Dict[(str, Any)]):
+    def _load(cls, raw_geo_location_filter=None, **kwargs):
         raw_geo_location_filter = cast(
             Dict[(str, Any)],
             handle_deprecated_camel_case_argument(raw_geo_location_filter, "raw_geoLocation_filter", "_load", kwargs),

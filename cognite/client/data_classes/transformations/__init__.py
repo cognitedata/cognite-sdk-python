@@ -26,9 +26,6 @@ from cognite.client.data_classes.transformations.schedules import Transformation
 from cognite.client.data_classes.transformations.schema import TransformationSchemaColumnList
 from cognite.client.utils._auxiliary import convert_all_keys_to_snake_case
 
-if TYPE_CHECKING:
-    from cognite.client import CogniteClient
-
 
 class SessionDetails:
     def __init__(self, session_id=None, client_id=None, project_name=None):
@@ -110,7 +107,7 @@ class Transformation(CogniteResource):
         self.source_session = source_session
         self.destination_session = destination_session
         self.tags = tags
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     def copy(self):
         return Transformation(
@@ -393,7 +390,7 @@ class TransformationPreviewResult(CogniteResource):
     def __init__(self, schema=None, results=None, cognite_client=None):
         self.schema = schema
         self.results = results
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     @classmethod
     def _load(cls, resource, cognite_client=None):

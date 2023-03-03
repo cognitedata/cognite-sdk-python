@@ -21,9 +21,6 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes.iam import TokenInspection
 from cognite.client.utils._identifier import IdentifierSequence
 
-if TYPE_CHECKING:
-    pass
-
 
 class IAMAPI(APIClient):
     def __init__(self, config, api_version=None, cognite_client=None):

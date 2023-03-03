@@ -13,9 +13,6 @@ from cognite.client.data_classes import (
 )
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 
-if TYPE_CHECKING:
-    pass
-
 
 class FilesAPI(APIClient):
     _RESOURCE_PATH = "/files"

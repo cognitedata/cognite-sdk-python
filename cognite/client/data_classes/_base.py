@@ -1,5 +1,6 @@
 import json
 from collections import UserList
+from typing import Generic, TypeVar
 
 from cognite.client import utils
 from cognite.client.exceptions import CogniteMissingClientError
@@ -8,8 +9,6 @@ from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._pandas_helpers import notebook_display_with_fallback
 from cognite.client.utils._time import convert_time_attributes_to_datetime
 
-if TYPE_CHECKING:
-    pass
 EXCLUDE_VALUE = [None]
 
 
@@ -53,9 +52,7 @@ T_CogniteResponse = TypeVar("T_CogniteResponse", bound=CogniteResponse)
 
 
 class CogniteResource:
-    _cognite_client: Any
-
-    def __new__(cls, *args: Any, **kwargs: Any):
+    def __new__(cls, *args, **kwargs):
         obj = super().__new__(cls)
         obj._cognite_client = None
         if "cognite_client" in kwargs:
@@ -94,7 +91,7 @@ class CogniteResource:
 
     def to_pandas(self, expand=("metadata",), ignore=None, camel_case=False):
         ignore = [] if (ignore is None) else ignore
-        pd = cast(Any, utils._auxiliary.local_import("pandas"))
+        pd = utils._auxiliary.local_import("pandas")
         dumped = self.dump(camel_case=camel_case)
         for element in ignore:
             del dumped[element]
@@ -134,15 +131,13 @@ class CognitePropertyClassUtil:
 
 
 class CogniteResourceList(UserList):
-    _RESOURCE: Type[CogniteResource]
-
     def __init__(self, resources, cognite_client=None):
         for resource in resources:
             if not isinstance(resource, self._RESOURCE):
                 raise TypeError(
                     f"All resources for class '{self.__class__.__name__}' must be of type '{self._RESOURCE.__name__}', not '{type(resource)}'."
                 )
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
         super().__init__(resources)
         (self._id_to_item, self._external_id_to_item) = ({}, {})
         if self.data:
@@ -182,7 +177,7 @@ class CogniteResourceList(UserList):
         return self._external_id_to_item.get(external_id)
 
     def to_pandas(self, camel_case=False):
-        pd = cast(Any, utils._auxiliary.local_import("pandas"))
+        pd = utils._auxiliary.local_import("pandas")
         df = pd.DataFrame(self.dump(camel_case=camel_case))
         nullable_int_cols = ["start_time", "end_time", "asset_id", "parent_id", "data_set_id"]
         if camel_case:
@@ -210,7 +205,7 @@ class CogniteUpdate:
     def __init__(self, id=None, external_id=None):
         self._id = id
         self._external_id = external_id
-        self._update_object: Dict[(str, Any)] = {}
+        self._update_object = {}
 
     def __eq__(self, other):
         return (type(self) == type(other)) and (self.dump() == other.dump())
@@ -259,7 +254,7 @@ class CogniteUpdate:
         self._update_object[name] = update_obj
 
     def dump(self):
-        dumped: Dict[(str, Any)] = {"update": self._update_object}
+        dumped = {"update": self._update_object}
         if self._id is not None:
             dumped["id"] = self._id
         elif self._external_id is not None:

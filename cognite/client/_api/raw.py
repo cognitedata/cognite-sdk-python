@@ -4,12 +4,9 @@ from cognite.client.data_classes import Database, DatabaseList, Row, RowList, Ta
 from cognite.client.utils._auxiliary import is_unlimited, local_import
 from cognite.client.utils._identifier import Identifier
 
-if TYPE_CHECKING:
-    pass
-
 
 class RawAPI(APIClient):
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.databases = RawDatabasesAPI(*args, **kwargs)
         self.tables = RawTablesAPI(*args, **kwargs)

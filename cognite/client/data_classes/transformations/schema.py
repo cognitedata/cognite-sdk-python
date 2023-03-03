@@ -1,9 +1,6 @@
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.utils._auxiliary import convert_all_keys_to_snake_case
 
-if TYPE_CHECKING:
-    pass
-
 
 class TransformationSchemaType:
     def __init__(self, type=None):
@@ -31,7 +28,7 @@ class TransformationSchemaColumn(CogniteResource):
         self.sql_type = sql_type
         self.type = type
         self.nullable = nullable
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     @classmethod
     def _load(cls, resource, cognite_client=None):

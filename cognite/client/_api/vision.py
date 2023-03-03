@@ -18,7 +18,7 @@ class VisionAPI(APIClient):
         ]
         return [*id_objs, *external_id_objs]
 
-    def _run_job(self, job_path, job_cls, status_path=None, headers=None, **kwargs: Any):
+    def _run_job(self, job_path, job_cls, status_path=None, headers=None, **kwargs):
         if status_path is None:
             status_path = job_path + "/"
         res = self._post(

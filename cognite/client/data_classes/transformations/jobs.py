@@ -5,9 +5,6 @@ from enum import Enum
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList
 from cognite.client.data_classes.transformations.common import _load_destination_dct
 
-if TYPE_CHECKING:
-    pass
-
 
 class TransformationJobStatus(str, Enum):
     RUNNING = "Running"
@@ -21,7 +18,7 @@ class TransformationJobMetric(CogniteResource):
         self.timestamp = timestamp
         self.name = name
         self.count = count
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     @classmethod
     def _load(cls, resource, cognite_client=None):
@@ -68,7 +65,7 @@ class TransformationJob(CogniteResource):
         self.started_time = started_time
         self.finished_time = finished_time
         self.last_seen_time = last_seen_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     def update(self):
         updated = self._cognite_client.transformations.jobs.retrieve(id=self.id)

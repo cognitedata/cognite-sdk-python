@@ -25,9 +25,6 @@ from cognite.client._api.vision import VisionAPI
 from cognite.client._api_client import APIClient
 from cognite.client.config import global_config
 
-if TYPE_CHECKING:
-    pass
-
 
 class CogniteClient:
     _API_VERSION = "v1"

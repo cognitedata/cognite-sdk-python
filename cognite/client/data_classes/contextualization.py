@@ -1,7 +1,7 @@
 import time
 import warnings
-from dataclasses import dataclass
 from enum import Enum
+from typing import TypeVar
 
 from cognite.client.data_classes import Annotation
 from cognite.client.data_classes._base import (
@@ -14,9 +14,6 @@ from cognite.client.data_classes.annotation_types.images import AssetLink, Objec
 from cognite.client.data_classes.annotation_types.primitives import VisionResource
 from cognite.client.exceptions import CogniteAPIError, CogniteException, ModelFailedException
 from cognite.client.utils._auxiliary import convert_true_match, exactly_one_is_not_none, to_snake_case
-
-if TYPE_CHECKING:
-    pass
 
 
 class JobStatus(Enum):
@@ -74,8 +71,8 @@ class ContextualizationJob(CogniteResource):
         self.start_time = start_time
         self.status_time = status_time
         self.error_message = error_message
-        self._cognite_client = cast("CogniteClient", cognite_client)
-        self._result: Optional[Dict[(str, Any)]] = None
+        self._cognite_client = cognite_client
+        self._result = None
         self._status_path = status_path
 
     def update_status(self):
@@ -157,7 +154,7 @@ class EntityMatchingModel(CogniteResource):
         self.name = name
         self.description = description
         self.external_id = external_id
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     def __str__(self):
         return f"{self.__class__.__name__}(id={self.id}, status={self.status}, error={self.error_message})"
@@ -267,7 +264,7 @@ class DiagramConvertPage(CogniteResource):
         self.page = page
         self.png_url = png_url
         self.svg_url = svg_url
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
 
 class DiagramConvertPageList(CogniteResourceList):
@@ -279,7 +276,7 @@ class DiagramConvertItem(CogniteResource):
         self.file_id = file_id
         self.file_external_id = file_external_id
         self.results = results
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     def __len__(self):
         assert self.results
@@ -299,7 +296,7 @@ class DiagramConvertItem(CogniteResource):
 class DiagramConvertResults(ContextualizationJob):
     _JOB_TYPE = ContextualizationJobType.DIAGRAMS
 
-    def __init__(self, **kwargs: Any):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._items: Optional[list] = None
 
@@ -342,7 +339,7 @@ class DiagramDetectItem(CogniteResource):
         self.file_external_id = file_external_id
         self.annotations = annotations
         self.error_message = error_message
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
         self.page_range = page_range
 
     def to_pandas(self, camel_case=False):
@@ -354,7 +351,7 @@ class DiagramDetectItem(CogniteResource):
 class DiagramDetectResults(ContextualizationJob):
     _JOB_TYPE = ContextualizationJobType.DIAGRAMS
 
-    def __init__(self, **kwargs: Any):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._items: Optional[List[DiagramDetectItem]] = None
 
@@ -405,7 +402,6 @@ class VisionFeature(str, Enum):
         return {cls.INDUSTRIAL_OBJECT_DETECTION, cls.PERSONAL_PROTECTIVE_EQUIPMENT_DETECTION}
 
 
-@dataclass
 class VisionExtractPredictions(VisionResource):
     text_predictions: Optional[List[TextRegion]] = None
     asset_tag_predictions: Optional[List[AssetLink]] = None
@@ -413,8 +409,11 @@ class VisionExtractPredictions(VisionResource):
     people_predictions: Optional[List[ObjectDetection]] = None
     personal_protective_equipment_predictions: Optional[List[ObjectDetection]] = None
 
+    def __init__(self, *a, **kw):
+        raise NotImplementedError("Not support in Python 3.6")
 
-VISION_FEATURE_MAP: Dict[(str, Any)] = {
+
+VISION_FEATURE_MAP = {
     "text_predictions": TextRegion,
     "asset_tag_predictions": AssetLink,
     "industrial_object_predictions": ObjectDetection,
@@ -430,35 +429,39 @@ VISION_ANNOTATION_TYPE_MAP: Dict[(str, str)] = {
 }
 
 
-@dataclass
 class ThresholdParameter:
     threshold: Optional[float] = None
 
+    def __init__(self, *a, **kw):
+        raise NotImplementedError("Not support in Python 3.6")
 
-@dataclass
+
 class AssetTagDetectionParameters(VisionResource, ThresholdParameter):
     partial_match: Optional[bool] = None
     asset_subtree_ids: Optional[List[int]] = None
 
+    def __init__(self, *a, **kw):
+        raise NotImplementedError("Not support in Python 3.6")
 
-@dataclass
+
 class TextDetectionParameters(VisionResource, ThresholdParameter):
-    pass
+    def __init__(self, *a, **kw):
+        raise NotImplementedError("Not support in Python 3.6")
 
 
-@dataclass
 class PeopleDetectionParameters(VisionResource, ThresholdParameter):
-    pass
+    def __init__(self, *a, **kw):
+        raise NotImplementedError("Not support in Python 3.6")
 
 
-@dataclass
 class IndustrialObjectDetectionParameters(VisionResource, ThresholdParameter):
-    pass
+    def __init__(self, *a, **kw):
+        raise NotImplementedError("Not support in Python 3.6")
 
 
-@dataclass
 class PersonalProtectiveEquipmentDetectionParameters(VisionResource, ThresholdParameter):
-    pass
+    def __init__(self, *a, **kw):
+        raise NotImplementedError("Not support in Python 3.6")
 
 
 class DetectJobBundle:
@@ -470,7 +473,7 @@ class DetectJobBundle:
         warnings.warn(
             "DetectJobBundle.result is calling a beta endpoint which is still in development. Breaking changes can happen in between patch versions."
         )
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
         if not job_ids:
             raise ValueError("You need to specify job_ids")
         self.job_ids = job_ids
@@ -525,13 +528,15 @@ class DetectJobBundle:
         return (succeeded, failed)
 
 
-@dataclass
 class FeatureParameters(VisionResource):
     text_detection_parameters: Optional[TextDetectionParameters] = None
     asset_tag_detection_parameters: Optional[AssetTagDetectionParameters] = None
     people_detection_parameters: Optional[PeopleDetectionParameters] = None
     industrial_object_detection_parameters: Optional[IndustrialObjectDetectionParameters] = None
     personal_protective_equipment_detection_parameters: Optional[PersonalProtectiveEquipmentDetectionParameters] = None
+
+    def __init__(self, *a, **kw):
+        raise NotImplementedError("Not support in Python 3.6")
 
 
 class VisionJob(ContextualizationJob):
@@ -554,7 +559,7 @@ class VisionExtractItem(CogniteResource):
         self.error_message = error_message
         self.predictions = self._process_predictions_dict(predictions) if isinstance(predictions, Dict) else predictions
         self._predictions_dict = predictions
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     @classmethod
     def _load(cls, resource, cognite_client=None):
@@ -596,7 +601,7 @@ class VisionExtractItem(CogniteResource):
 class VisionExtractJob(VisionJob):
     _JOB_TYPE = ContextualizationJobType.VISION
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._items: Optional[List[VisionExtractItem]] = None
 

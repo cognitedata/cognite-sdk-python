@@ -11,12 +11,9 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.shared import TimestampRange
 
-if TYPE_CHECKING:
-    pass
-
 
 class EndTimeFilter(dict):
-    def __init__(self, max=None, min=None, is_null=None, **kwargs: Any):
+    def __init__(self, max=None, min=None, is_null=None, **kwargs):
         self.max = max
         self.min = min
         self.is_null = is_null
@@ -58,7 +55,7 @@ class Event(CogniteResource):
         self.id = id
         self.last_updated_time = last_updated_time
         self.created_time = created_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
 
 class EventFilter(CogniteFilter):
@@ -94,7 +91,7 @@ class EventFilter(CogniteFilter):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.external_id_prefix = external_id_prefix
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
 
     @classmethod
     def _load(cls, resource):

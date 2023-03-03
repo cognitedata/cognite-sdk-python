@@ -3,7 +3,6 @@ import numbers
 import operator as op
 import warnings
 from abc import abstractmethod
-from dataclasses import dataclass
 from datetime import datetime
 from functools import cached_property
 from itertools import chain
@@ -37,8 +36,8 @@ if NUMPY_IS_AVAILABLE:
     import numpy as np
 
     from cognite.client.data_classes.datapoints import NumpyFloat64Array, NumpyInt64Array, NumpyObjArray
-if TYPE_CHECKING:
-    pass
+
+
 DPS_LIMIT_AGG = 10000
 DPS_LIMIT = 100000
 DatapointsAgg = MutableSequence[AggregateDatapoint]
@@ -82,17 +81,28 @@ class DatapointsPayload(CustomDatapoints):
     items: List[CustomDatapoints]
 
 
-@dataclass
 class _DatapointsQuery:
-    start: Union[(int, str, datetime, None)] = None
-    end: Union[(int, str, datetime, None)] = None
-    id: Optional[DatapointsId] = None
-    external_id: Optional[DatapointsExternalId] = None
-    aggregates: Union[(str, List[str], None)] = None
-    granularity: Optional[str] = None
-    limit: Optional[int] = None
-    include_outside_points: bool = False
-    ignore_unknown_ids: bool = False
+    def __init__(
+        self,
+        start=None,
+        end=None,
+        id=None,
+        external_id=None,
+        aggregates=None,
+        granularity=None,
+        limit=None,
+        include_outside_points=False,
+        ignore_unknown_ids=False,
+    ):
+        self.start = start
+        self.end = end
+        self.id = id
+        self.external_id = external_id
+        self.aggregates = aggregates
+        self.granularity = granularity
+        self.limit = limit
+        self.include_outside_points = include_outside_points
+        self.ignore_unknown_ids = ignore_unknown_ids
 
     @property
     def is_single_identifier(self):
@@ -104,7 +114,7 @@ class _DatapointsQuery:
 class _SingleTSQueryValidator:
     def __init__(self, user_query):
         self.user_query = user_query
-        self.defaults: Dict[(str, Any)] = dict(
+        self.defaults = dict(
             start=user_query.start,
             end=user_query.end,
             limit=user_query.limit,
@@ -336,7 +346,7 @@ class _SingleTSQueryBase:
 
 
 class _SingleTSQueryRaw(_SingleTSQueryBase):
-    def __init__(self, **kwargs: Any):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs, max_query_limit=DPS_LIMIT)
         self.aggregates = self.aggregates_cc = None
         self.granularity = None
@@ -356,7 +366,7 @@ class _SingleTSQueryRaw(_SingleTSQueryBase):
 
 
 class _SingleTSQueryRawLimited(_SingleTSQueryRaw):
-    def __init__(self, *, limit: int, **kwargs: Any):
+    def __init__(self, *, limit: int, **kwargs):
         super().__init__(limit=limit, **kwargs)
         assert isinstance(limit, int)
 
@@ -366,7 +376,7 @@ class _SingleTSQueryRawLimited(_SingleTSQueryRaw):
 
 
 class _SingleTSQueryRawUnlimited(_SingleTSQueryRaw):
-    def __init__(self, *, limit: None, **kwargs: Any):
+    def __init__(self, *, limit: None, **kwargs):
         super().__init__(limit=limit, **kwargs)
 
     @property
@@ -375,8 +385,8 @@ class _SingleTSQueryRawUnlimited(_SingleTSQueryRaw):
 
 
 class _SingleTSQueryAgg(_SingleTSQueryBase):
-    def __init__(self, *, aggregates: List[str], granularity: str, **kwargs: Any):
-        agg_query_settings: Dict[(str, Any)] = dict(include_outside_points=False, max_query_limit=DPS_LIMIT_AGG)
+    def __init__(self, *, aggregates: List[str], granularity: str, **kwargs):
+        agg_query_settings = dict(include_outside_points=False, max_query_limit=DPS_LIMIT_AGG)
         super().__init__(**kwargs, **agg_query_settings)
         self.aggregates = aggregates
         self.granularity = granularity
@@ -402,7 +412,7 @@ class _SingleTSQueryAgg(_SingleTSQueryBase):
 
 
 class _SingleTSQueryAggLimited(_SingleTSQueryAgg):
-    def __init__(self, *, limit: int, **kwargs: Any):
+    def __init__(self, *, limit: int, **kwargs):
         super().__init__(limit=limit, **kwargs)
         assert isinstance(limit, int)
 
@@ -412,7 +422,7 @@ class _SingleTSQueryAggLimited(_SingleTSQueryAgg):
 
 
 class _SingleTSQueryAggUnlimited(_SingleTSQueryAgg):
-    def __init__(self, *, limit: None, **kwargs: Any):
+    def __init__(self, *, limit: None, **kwargs):
         super().__init__(limit=limit, **kwargs)
 
     @property
@@ -436,7 +446,7 @@ FIRST_IDX = (0,)
 
 
 class DefaultSortedDict(SortedDict, Generic[T]):
-    def __init__(self, default_factory, **kw: Any):
+    def __init__(self, default_factory, **kw):
         self.default_factory = default_factory
         super().__init__(**kw)
 
@@ -518,8 +528,8 @@ class BaseDpsFetchSubtask:
 
 
 class OutsideDpsFetchSubtask(BaseDpsFetchSubtask):
-    def __init__(self, **kwargs: Any):
-        outside_dps_settings: Dict[(str, Any)] = dict(priority=0, is_raw_query=True, max_query_limit=0)
+    def __init__(self, **kwargs):
+        outside_dps_settings = dict(priority=0, is_raw_query=True, max_query_limit=0)
         super().__init__(**kwargs, **outside_dps_settings)
 
     def get_next_payload(self):
@@ -554,7 +564,7 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
         aggregates: Optional[List[str]],
         granularity: Optional[str],
         subtask_idx: Tuple[(float, ...)],
-        **kwargs: Any,
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.limit = limit
@@ -615,7 +625,7 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
 
 
 class SplittingFetchSubtask(SerialFetchSubtask):
-    def __init__(self, *, max_splitting_factor: int = 10, **kwargs: Any):
+    def __init__(self, *, max_splitting_factor: int = 10, **kwargs):
         super().__init__(**kwargs)
         self.max_splitting_factor = max_splitting_factor
         self.split_subidx: int = 0
@@ -648,7 +658,7 @@ class SplittingFetchSubtask(SerialFetchSubtask):
             return None
         boundaries = split_time_range(last_ts, self.end, n_new_tasks, self.parent.offset_next)
         self.end = boundaries[1]
-        static_params: Dict[(str, Any)] = {
+        static_params = {
             "parent": self.parent,
             "priority": self.priority,
             "identifier": self.identifier,
@@ -850,7 +860,7 @@ class ConcurrentLimitedMixin(BaseConcurrentTask):
 
 
 class BaseConcurrentRawTask(BaseConcurrentTask):
-    def __init__(self, **kwargs: Any):
+    def __init__(self, **kwargs):
         self.dp_outside_start: Optional[Tuple[(int, RawDatapointValue)]] = None
         self.dp_outside_end: Optional[Tuple[(int, RawDatapointValue)]] = None
         super().__init__(**kwargs)
@@ -946,13 +956,13 @@ class BaseConcurrentRawTask(BaseConcurrentTask):
 
 
 class ParallelUnlimitedRawTask(BaseConcurrentRawTask):
-    def __init__(self, **kwargs: Any):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
         assert isinstance(self.query, _SingleTSQueryRawUnlimited)
 
 
 class ParallelLimitedRawTask(ConcurrentLimitedMixin, BaseConcurrentRawTask):
-    def __init__(self, **kwargs: Any):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
         assert isinstance(self.query, _SingleTSQueryRawLimited)
 
@@ -964,7 +974,7 @@ class ParallelLimitedRawTask(ConcurrentLimitedMixin, BaseConcurrentRawTask):
 
 
 class BaseConcurrentAggTask(BaseConcurrentTask):
-    def __init__(self, *, query: _SingleTSQueryAgg, use_numpy: bool, **kwargs: Any):
+    def __init__(self, *, query: _SingleTSQueryAgg, use_numpy: bool, **kwargs):
         aggregates_cc = query.aggregates_cc
         self._set_aggregate_vars(aggregates_cc, use_numpy)
         super().__init__(query=query, use_numpy=use_numpy, **kwargs)
@@ -1080,7 +1090,7 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
             self.count_data[idx].append(list(map(ensure_int, (getattr(dp, "count") for dp in dps))))
         if self.has_non_count_aggs:
             try:
-                lst: List[Any] = list(map(self.agg_unpack_fn, dps))
+                lst = list(map(self.agg_unpack_fn, dps))
             except AttributeError:
                 if self.single_non_count_agg:
                     lst = [getattr(dp, self.first_non_count_agg, None) for dp in dps]
@@ -1090,13 +1100,13 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
 
 
 class ParallelUnlimitedAggTask(BaseConcurrentAggTask):
-    def __init__(self, **kwargs: Any):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
         assert isinstance(self.query, _SingleTSQueryAggUnlimited)
 
 
 class ParallelLimitedAggTask(ConcurrentLimitedMixin, BaseConcurrentAggTask):
-    def __init__(self, **kwargs: Any):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
         assert isinstance(self.query, _SingleTSQueryAggLimited)
 
