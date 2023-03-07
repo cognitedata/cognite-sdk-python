@@ -95,19 +95,17 @@ class TestTransformationJobsAPI:
     @pytest.mark.asyncio
     async def test_run_without_wait(self, cognite_client, new_running_transformation):
         (job, new_transformation) = new_running_transformation
-        assert (
-            job.id is not None
-            and job.status == TransformationJobStatus.CREATED
-            and job.transformation_id == new_transformation.id
-            and job.transformation_external_id == new_transformation.external_id
-            and job.source_project == cognite_client.config.project
-            and job.destination_project == cognite_client.config.project
-            and job.destination == TransformationDestination.assets()
-            and job.conflict_mode == "upsert"
-            and job.query == new_transformation.query
-            and job.error is None
-            and job.ignore_null_fields
-        )
+        assert job.id is not None
+        assert job.status == TransformationJobStatus.CREATED
+        assert job.transformation_id == new_transformation.id
+        assert job.transformation_external_id == new_transformation.external_id
+        assert job.source_project == cognite_client.config.project
+        assert job.destination_project == cognite_client.config.project
+        assert job.destination == TransformationDestination.assets()
+        assert job.conflict_mode == "upsert"
+        assert job.query == new_transformation.query
+        assert job.error is None
+        assert job.ignore_null_fields
         await asyncio.sleep(0.8)
         retrieved_transformation = cognite_client.transformations.retrieve(id=new_transformation.id)
 
@@ -116,19 +114,17 @@ class TestTransformationJobsAPI:
     def test_run(self, cognite_client, new_transformation: Transformation):
         job = new_transformation.run()
 
-        assert (
-            job.id is not None
-            and job.status == TransformationJobStatus.COMPLETED
-            and job.transformation_id == new_transformation.id
-            and job.transformation_external_id == new_transformation.external_id
-            and job.source_project == cognite_client.config.project
-            and job.destination_project == cognite_client.config.project
-            and job.destination == TransformationDestination.assets()
-            and job.conflict_mode == "upsert"
-            and job.query == new_transformation.query
-            and job.error is None
-            and job.ignore_null_fields
-        )
+        assert job.id is not None
+        assert job.status == TransformationJobStatus.COMPLETED
+        assert job.transformation_id == new_transformation.id
+        assert job.transformation_external_id == new_transformation.external_id
+        assert job.source_project == cognite_client.config.project
+        assert job.destination_project == cognite_client.config.project
+        assert job.destination == TransformationDestination.assets()
+        assert job.conflict_mode == "upsert"
+        assert job.query == new_transformation.query
+        assert job.error is None
+        assert job.ignore_null_fields
 
         retrieved_transformation = cognite_client.transformations.retrieve(id=new_transformation.id)
 
@@ -150,19 +146,17 @@ class TestTransformationJobsAPI:
     async def test_run_async(self, cognite_client, new_transformation: Transformation):
         job = await new_transformation.run_async()
 
-        assert (
-            job.id is not None
-            and job.status == TransformationJobStatus.COMPLETED
-            and job.transformation_id == new_transformation.id
-            and job.transformation_external_id == new_transformation.external_id
-            and job.source_project == cognite_client.config.project
-            and job.destination_project == cognite_client.config.project
-            and job.destination == TransformationDestination.assets()
-            and job.conflict_mode == "upsert"
-            and job.query == new_transformation.query
-            and job.error is None
-            and job.ignore_null_fields
-        )
+        assert job.id is not None
+        assert job.status == TransformationJobStatus.COMPLETED
+        assert job.transformation_id == new_transformation.id
+        assert job.transformation_external_id == new_transformation.external_id
+        assert job.source_project == cognite_client.config.project
+        assert job.destination_project == cognite_client.config.project
+        assert job.destination == TransformationDestination.assets()
+        assert job.conflict_mode == "upsert"
+        assert job.query == new_transformation.query
+        assert job.error is None
+        assert job.ignore_null_fields
 
     @pytest.mark.asyncio
     @pytest.mark.xfail(reason="sometimes it takes longer to start")
@@ -178,36 +172,32 @@ class TestTransformationJobsAPI:
     async def test_run_by_external_id_async(self, cognite_client, new_transformation: Transformation):
         job = await cognite_client.transformations.run_async(transformation_external_id=new_transformation.external_id)
 
-        assert (
-            job.id is not None
-            and job.status == TransformationJobStatus.COMPLETED
-            and job.transformation_id == new_transformation.id
-            and job.transformation_external_id == new_transformation.external_id
-            and job.source_project == cognite_client.config.project
-            and job.destination_project == cognite_client.config.project
-            and job.destination == TransformationDestination.assets()
-            and job.conflict_mode == "upsert"
-            and job.query == new_transformation.query
-            and job.error is None
-            and job.ignore_null_fields
-        )
+        assert job.id is not None
+        assert job.status == TransformationJobStatus.COMPLETED
+        assert job.transformation_id == new_transformation.id
+        assert job.transformation_external_id == new_transformation.external_id
+        assert job.source_project == cognite_client.config.project
+        assert job.destination_project == cognite_client.config.project
+        assert job.destination == TransformationDestination.assets()
+        assert job.conflict_mode == "upsert"
+        assert job.query == new_transformation.query
+        assert job.error is None
+        assert job.ignore_null_fields
 
     @pytest.mark.asyncio
     async def test_run_raw_transformation(self, cognite_client, new_raw_transformation):
         job = await new_raw_transformation.run_async()
 
-        assert (
-            job.id is not None
-            and job.status not in [TransformationJobStatus.CREATED, TransformationJobStatus.RUNNING]
-            and job.transformation_id == new_raw_transformation.id
-            and job.transformation_external_id == new_raw_transformation.external_id
-            and job.source_project == cognite_client.config.project
-            and job.destination_project == cognite_client.config.project
-            and job.destination == TransformationDestination.raw("my_db", "my_table")
-            and job.conflict_mode == "upsert"
-            and job.query == new_raw_transformation.query
-            and job.ignore_null_fields
-        )
+        assert job.id is not None
+        assert job.status not in [TransformationJobStatus.CREATED, TransformationJobStatus.RUNNING]
+        assert job.transformation_id == new_raw_transformation.id
+        assert job.transformation_external_id == new_raw_transformation.external_id
+        assert job.source_project == cognite_client.config.project
+        assert job.destination_project == cognite_client.config.project
+        assert job.destination == TransformationDestination.raw("my_db", "my_table")
+        assert job.conflict_mode == "upsert"
+        assert job.query == new_raw_transformation.query
+        assert job.ignore_null_fields
 
     @pytest.mark.asyncio
     async def test_cancel_job(self, new_running_transformation):
