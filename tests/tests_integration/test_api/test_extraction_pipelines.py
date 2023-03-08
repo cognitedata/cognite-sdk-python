@@ -68,7 +68,9 @@ class TestExtractionPipelinesAPI:
         intial_message = cognite_client.extraction_pipelines.retrieve(new_extpipe.id).last_message
         assert intial_message is None
 
-        cognite_client.extraction_pipelines.runs.create(ExtractionPipelineRun(status="failure", message="Oh no!"))
+        cognite_client.extraction_pipelines.runs.create(
+            ExtractionPipelineRun(status="failure", message="Oh no!", extpipe_external_id=new_extpipe.external_id)
+        )
         new_message = cognite_client.extraction_pipelines.retrieve(new_extpipe.id).last_message
         assert new_message == "Oh no!"
 
