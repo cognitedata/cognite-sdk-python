@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Union, cast
+import warnings
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -13,7 +14,11 @@ from cognite.client.data_classes._base import (
     CogniteUpdate,
 )
 from cognite.client.data_classes.shared import TimestampRange
-from cognite.client.utils._auxiliary import convert_all_keys_to_camel_case
+from cognite.client.utils._auxiliary import (
+    convert_all_keys_to_camel_case,
+    get_current_sdk_version,
+    handle_renamed_argument,
+)
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -202,6 +207,7 @@ class ExtractionPipelineRun(CogniteResource):
 
     Args:
         id (int): A server-generated ID for the object.
+        extpipe_external_id (str): The external ID of the extraction pipeline.
         status (str): success/failure/seen.
         message (str): Optional status message.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -210,17 +216,68 @@ class ExtractionPipelineRun(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
+        extpipe_external_id: str = None,
         status: str = None,
         message: str = None,
         created_time: int = None,
         cognite_client: CogniteClient = None,
+        id: int = None,
+        **kwargs: Any,
     ):
+        extpipe_external_id = handle_renamed_argument(
+            new_arg=extpipe_external_id,
+            new_arg_name="extpipe_external_id",
+            old_arg_name="external_id",
+            fn_name=self.__class__.__name__,
+            kw_dct=kwargs,
+            required=False,
+        )
         self.id = id
+        self.extpipe_external_id = extpipe_external_id
         self.status = status
         self.message = message
         self.created_time = created_time
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @property
+    def external_id(self) -> Optional[str]:
+        if int(get_current_sdk_version().split(".")[0]) >= 6:
+            raise AttributeError(  # ...in case we forget to delete these properties in v6...
+                "'ExtractionPipelineRun' object has no attribute 'external_id'. Did you mean 'extpipe_external_id'?"
+            )
+        warnings.warn(
+            "Accessing the extraction pipeline external ID through attribute `external_id` is deprecated and will "
+            "be removed in major version >= 6. Use `extpipe_external_id` instead.",
+            DeprecationWarning,
+        )
+        return self.extpipe_external_id
+
+    @external_id.setter
+    def external_id(self, value: Optional[str]) -> None:
+        self.external_id  # Trigger warning or AttributeError if necessary
+        self.extpipe_external_id = value
+
+    @classmethod
+    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> ExtractionPipelineRun:
+        obj = super()._load(resource, cognite_client)
+        # Note: The API ONLY returns IDs, but if they chose to change this, we're ready:
+        if isinstance(resource, dict):
+            obj.extpipe_external_id = resource.get("externalId")
+        return obj
+
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        dct = super().dump(camel_case=camel_case)
+        # Note: No way to make this id/xid API mixup completely correct. Either:
+        # 1. We use id / external_id for respecively "self id" / "ext.pipe external id"
+        #   - Problem: Only dataclass in the SDK where id and external_id does not point to same object...
+        # 2. We rename external_id to extpipe_external_id in the SDK only
+        #   - Problem: This dump method might be surprising to the user - if used (its public)...
+        # ...and 2 was chosen:
+        if camel_case:
+            dct["externalId"] = dct.pop("extpipeExternalId")
+        else:
+            dct["external_id"] = dct.pop("extpipe_external_id")
+        return dct
 
 
 class ExtractionPipelineRunList(CogniteResourceList):
