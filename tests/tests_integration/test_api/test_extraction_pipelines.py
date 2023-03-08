@@ -68,7 +68,7 @@ class TestExtractionPipelinesAPI:
         intial_message = cognite_client.extraction_pipelines.retrieve(new_extpipe.id).last_message
         assert intial_message is None
 
-        cognite_client.extraction_pipeline_runs.create(ExtractionPipelineRun(status="failure", message="Oh no!"))
+        cognite_client.extraction_pipelines.runs.create(ExtractionPipelineRun(status="failure", message="Oh no!"))
         new_message = cognite_client.extraction_pipelines.retrieve(new_extpipe.id).last_message
         assert new_message == "Oh no!"
 
@@ -80,7 +80,7 @@ class TestExtractionPipelinesAPI:
         assert extpipe.last_seen == 0
 
         # IDEA: Add convenience method to update an ext.pipe? (inspiration, see: FunctionsAPI)
-        new_run = cognite_client.extraction_pipeline_runs.create
+        new_run = cognite_client.extraction_pipelines.runs.create
         new_run(ExtractionPipelineRun(extpipe_external_id=new_extpipe.external_id, status="seen"))
         extpipe = retrieve(external_id=new_extpipe.external_id)
         assert extpipe.last_failure == 0
