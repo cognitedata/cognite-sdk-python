@@ -75,26 +75,37 @@ def basic_obj_dump(obj: Any, camel_case: bool) -> Dict[str, Any]:
     return convert_all_keys_to_snake_case(vars(obj))
 
 
-def handle_deprecated_camel_case_argument(new_arg: T, old_arg_name: str, fn_name: str, kw_dct: Dict[str, Any]) -> T:
+def handle_renamed_argument(
+    new_arg: T,
+    new_arg_name: str,
+    old_arg_name: str,
+    fn_name: str,
+    kw_dct: Dict[str, Any],
+    required: bool = True,
+) -> T:
     old_arg = kw_dct.pop(old_arg_name, None)
     if kw_dct:
         raise TypeError(f"Got unexpected keyword argument(s): {list(kw_dct)}")
 
-    new_arg_name = to_snake_case(old_arg_name)
     if old_arg is None:
-        if new_arg is None:
-            raise TypeError(f"{fn_name}() missing 1 required positional argument: '{new_arg_name}'")
+        if new_arg is None and required:
+            raise TypeError(f"{fn_name}() missing 1 required positional argument: {new_arg_name!r}")
         return new_arg
 
     warnings.warn(
-        f"Argument '{old_arg_name}' have been changed to '{new_arg_name}', but the old is still supported until "
+        f"Argument {old_arg_name!r} have been changed to {new_arg_name!r}, but the old is still supported until "
         "the next major version. Consider updating your code.",
         UserWarning,
         stacklevel=2,
     )
     if new_arg is not None:
-        raise TypeError(f"Pass either '{new_arg_name}' or '{old_arg_name}' (deprecated), not both")
+        raise TypeError(f"Pass either {new_arg_name!r} or {old_arg_name!r} (deprecated), not both")
     return old_arg
+
+
+def handle_deprecated_camel_case_argument(new_arg: T, old_arg_name: str, fn_name: str, kw_dct: Dict[str, Any]) -> T:
+    new_arg_name = to_snake_case(old_arg_name)
+    return handle_renamed_argument(new_arg, new_arg_name, old_arg_name, fn_name, kw_dct)
 
 
 def json_dump_default(x: Any) -> Any:
