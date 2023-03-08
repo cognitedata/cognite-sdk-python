@@ -31,7 +31,6 @@ from cognite.client.data_classes.extractionpipelines import (
     ExtractionPipelineRun,
     ExtractionPipelineRunFilter,
     ExtractionPipelineRunList,
-    ExtractionPipelineRunUpdate,
     ExtractionPipelineUpdate,
 )
 from cognite.client.data_classes.files import (

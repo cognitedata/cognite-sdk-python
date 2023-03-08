@@ -223,12 +223,6 @@ class ExtractionPipelineRun(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
 
-class ExtractionPipelineRunUpdate(CogniteUpdate):
-    class _PrimitiveExtractionPipelineRunUpdate(CognitePrimitiveUpdate):
-        def set(self, value: Any) -> ExtractionPipelineRunUpdate:
-            return self._set(value)
-
-
 class ExtractionPipelineRunList(CogniteResourceList):
     _RESOURCE = ExtractionPipelineRun
 
