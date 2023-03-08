@@ -201,7 +201,7 @@ class ExtractionPipelineRun(CogniteResource):
     """A representation of an extraction pipeline run.
 
     Args:
-        external_id (str): The external ID of the extraction pipeline.
+        id (int): A server-generated ID for the object.
         status (str): success/failure/seen.
         message (str): Optional status message.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -210,13 +210,13 @@ class ExtractionPipelineRun(CogniteResource):
 
     def __init__(
         self,
-        external_id: str = None,
+        id: int = None,
         status: str = None,
         message: str = None,
         created_time: int = None,
         cognite_client: CogniteClient = None,
     ):
-        self.external_id = external_id
+        self.id = id
         self.status = status
         self.message = message
         self.created_time = created_time
@@ -299,7 +299,7 @@ class ExtractionPipelineConfigRevision(CogniteResource):
 
 
 class ExtractionPipelineConfig(ExtractionPipelineConfigRevision):
-    """An extraction pipeline config revision
+    """An extraction pipeline config
 
     Args:
         external_id (str): The external ID of the associated extraction pipeline.
