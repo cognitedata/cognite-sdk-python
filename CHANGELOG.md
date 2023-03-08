@@ -17,6 +17,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [5.6.5] - 08-03-23
+### Removed
+- `ExtractionPipelineRunUpdate` was removed as runs are immutable.
+
+### Fixed
+- `ExtractionPipelinesRunsAPI` was hiding `id` of runs because `ExtractionPipelineRun` only defined `external_id` (which doesn't exist for the resource), it only has `id` (and "parent" ext.pipe external ID is not returned by the API).
+
 ## [5.6.4] - 28-02-23
 ### Added
 - Input validation on `DatapointsAPI.[insert, insert_multiple, delete_ranges]` now raise on missing keys, not just invalid keys.
