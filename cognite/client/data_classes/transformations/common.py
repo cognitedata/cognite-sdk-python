@@ -126,28 +126,44 @@ class TransformationDestination:
         )
 
     @staticmethod
-    def instances(
-        view_external_id: str = "",
-        view_version: str = "",
-        view_space_external_id: str = "",
-        instance_space_external_id: str = "",
-    ) -> Instances:
-        """To be used when the transformation is meant to produce instances.
+    def instance_nodes(
+        view: Optional[ViewInfo] = None,
+        instance_space: Optional[str] = None,
+    ) -> InstanceNodes:
+        """To be used when the transformation is meant to produce node's instances.
             Flexible Data Models resource type is on `beta` version currently.
 
         Args:
-            view_external_id (str): external_id of the view.
-            view_version (str): version of the view.
-            view_space_external_id (str): space external_id of the view.
-            instance_space_external_id (str): space external_id of the instance.
+            view (ViewInfo): information of the view.
+            instance_space (str): space id of the instance.
         Returns:
             TransformationDestination pointing to the target flexible data model.
         """
-        return Instances(
-            view_external_id=view_external_id,
-            view_version=view_version,
-            view_space_external_id=view_space_external_id,
-            instance_space_external_id=instance_space_external_id,
+        return InstanceNodes(
+            view=view,
+            instance_space=instance_space,
+        )
+
+    @staticmethod
+    def instance_edges(
+        view: Optional[ViewInfo] = None,
+        instance_space: Optional[str] = None,
+        edge_type: Optional[EdgeType] = None,
+    ) -> InstanceEdges:
+        """To be used when the transformation is meant to produce edge's instances.
+            Flexible Data Models resource type is on `beta` version currently.
+
+        Args:
+            view (ViewInfo): information of the view.
+            instance_space (str): space id of the instance.
+            edge_type (EdgeType): information about the type of the edge
+        Returns:
+            TransformationDestination pointing to the target flexible data model.
+        """
+        return InstanceEdges(
+            view=view,
+            instance_space=instance_space,
+            edge_type=edge_type,
         )
 
 
@@ -188,33 +204,96 @@ class DataModelInstances(TransformationDestination):
         return hash((self.type, self.model_external_id, self.space_external_id, self.instance_space_external_id))
 
 
-class Instances(TransformationDestination):
+class ViewInfo:
     def __init__(
         self,
-        view_external_id: str = None,
-        view_version: str = None,
-        view_space_external_id: str = None,
-        instance_space_external_id: str = None,
+        space: str,
+        external_id: str,
+        version: str,
+    ):
+        super().__init__()
+        self.space = space
+        self.external_id = external_id
+        self.version = version
+
+    def __hash__(self) -> int:
+        return hash(
+            (
+                self.space,
+                self.external_id,
+                self.version,
+            )
+        )
+
+
+class EdgeType:
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+    ):
+        super().__init__()
+        self.space = space
+        self.external_id = external_id
+
+    def __hash__(self) -> int:
+        return hash(
+            (
+                self.space,
+                self.external_id,
+            )
+        )
+
+
+class InstanceNodes(TransformationDestination):
+    def __init__(
+        self,
+        view: Optional[ViewInfo] = None,
+        instance_space: Optional[str] = None,
     ):
         warnings.warn(
             "Feature DataModelStorage is in beta and still in development. "
             "Breaking changes can happen in between patch versions.",
             stacklevel=2,
         )
-        super().__init__(type="instances")
-        self.view_external_id = view_external_id
-        self.view_version = view_version
-        self.view_space_external_id = view_space_external_id
-        self.instance_space_external_id = instance_space_external_id
+        super().__init__(type="nodes")
+        self.view = view
+        self.instance_space = instance_space
 
     def __hash__(self) -> int:
         return hash(
             (
                 self.type,
-                self.view_external_id,
-                self.view_version,
-                self.view_space_external_id,
-                self.instance_space_external_id,
+                self.view,
+                self.instance_space,
+            )
+        )
+
+
+class InstanceEdges(TransformationDestination):
+    def __init__(
+        self,
+        view: Optional[ViewInfo] = None,
+        instance_space: Optional[str] = None,
+        edge_type: Optional[EdgeType] = None,
+    ):
+        warnings.warn(
+            "Feature DataModelStorage is in beta and still in development. "
+            "Breaking changes can happen in between patch versions.",
+            stacklevel=2,
+        )
+        super().__init__(type="edges")
+        self.view = view
+        self.instance_space = instance_space
+        self.edge_type = edge_type
+
+    def __hash__(self) -> int:
+        return hash(
+            (
+                self.type,
+                self.view,
+                self.instance_space,
+                self.edge_type,
             )
         )
 
@@ -287,7 +366,7 @@ class TransformationBlockedInfo:
 
 def _load_destination_dct(
     dct: Dict[str, Any]
-) -> Union[RawTable, DataModelInstances, Instances, SequenceRows, TransformationDestination]:
+) -> Union[RawTable, DataModelInstances, InstanceNodes,InstanceEdges, SequenceRows, TransformationDestination]:
     """Helper function to load destination from dictionary"""
     snake_dict = convert_all_keys_to_snake_case(dct)
     destination_type = snake_dict.pop("type")
@@ -295,7 +374,7 @@ def _load_destination_dct(
         dest_dct = {
             "raw": RawTable,
             "data_model_instances": DataModelInstances,
-            "instances": Instances,
+            "instances": InstanceNodes,
             "sequence_rows": SequenceRows,
         }
         return dest_dct[destination_type](**snake_dict)
