@@ -11,7 +11,13 @@ from cognite.client.data_classes import (
     TransformationUpdate,
 )
 from cognite.client.data_classes.transformations import ContainsAny
-from cognite.client.data_classes.transformations.common import EdgeType, NonceCredentials, OidcCredentials, SequenceRows, ViewInfo
+from cognite.client.data_classes.transformations.common import (
+    EdgeType,
+    NonceCredentials,
+    OidcCredentials,
+    SequenceRows,
+    ViewInfo,
+)
 from cognite.client.utils._auxiliary import random_string
 
 
@@ -159,9 +165,7 @@ class TestTransformationsAPI:
             external_id=f"{prefix}-transformation",
             destination=TransformationDestination.instance_nodes(
                 view=ViewInfo(
-                    external_id="testInstanceViewExternalId",
-                    version="testInstanceViewVersion",
-                    space="test-space"
+                    external_id="testInstanceViewExternalId", version="testInstanceViewVersion", space="test-space"
                 ),
                 instance_space="test-space",
             ),
@@ -183,15 +187,13 @@ class TestTransformationsAPI:
             external_id=f"{prefix}-transformation",
             destination=TransformationDestination.instance_edges(
                 view=ViewInfo(
-                    external_id="testInstanceViewExternalId",
-                    version="testInstanceViewVersion",
-                    space="test-space"
+                    external_id="testInstanceViewExternalId", version="testInstanceViewVersion", space="test-space"
                 ),
                 instance_space="test-space",
                 edge_type=EdgeType(
                     space="edge-space",
                     external_id="my-edge",
-                )
+                ),
             ),
         )
         ts = cognite_client.transformations.create(transform)
@@ -355,14 +357,12 @@ class TestTransformationsAPI:
         )
         partial_update = TransformationUpdate(id=new_transformation.id).destination.set(
             TransformationDestination.instance_nodes(
-                ViewInfo("myViewExternalId", "myViewVersion2", "test-space"),
-                "test-space"
+                ViewInfo("myViewExternalId", "myViewVersion2", "test-space"), "test-space"
             )
         )
         updated_transformation = cognite_client.transformations.update(new_transformation)
         assert updated_transformation.destination == TransformationDestination.instance_nodes(
-            ViewInfo("myViewExternalId", "myViewVersion", "test-space"),
-            "test-space"
+            ViewInfo("myViewExternalId", "myViewVersion", "test-space"), "test-space"
         )
         partial_updated = cognite_client.transformations.update(partial_update)
         assert partial_updated.destination == TransformationDestination.instance_nodes(
@@ -371,28 +371,24 @@ class TestTransformationsAPI:
 
     def test_update_instance_edges(self, cognite_client, new_transformation):
         new_transformation.destination = TransformationDestination.instance_edges(
-            ViewInfo("myViewExternalId", "myViewVersion", "test-space"),
-            "test-space",
-            EdgeType("edge-space", "myEdge")
+            ViewInfo("myViewExternalId", "myViewVersion", "test-space"), "test-space", EdgeType("edge-space", "myEdge")
         )
         partial_update = TransformationUpdate(id=new_transformation.id).destination.set(
             TransformationDestination.instance_edges(
                 ViewInfo("myViewExternalId", "myViewVersion2", "test-space"),
                 "test-space",
-                EdgeType("edge-space2", "myEdge2")
+                EdgeType("edge-space2", "myEdge2"),
             )
         )
         updated_transformation = cognite_client.transformations.update(new_transformation)
         assert updated_transformation.destination == TransformationDestination.instance_nodes(
-            ViewInfo("myViewExternalId", "myViewVersion", "test-space"),
-            "test-space",
-            EdgeType("edge-space", "myEdge")
+            ViewInfo("myViewExternalId", "myViewVersion", "test-space"), "test-space", EdgeType("edge-space", "myEdge")
         )
         partial_updated = cognite_client.transformations.update(partial_update)
         assert partial_updated.destination == TransformationDestination.instance_nodes(
             ViewInfo("myViewExternalId", "myViewVersion2", "test-space"),
             "test-space",
-            EdgeType("edge-space2", "myEdge2")
+            EdgeType("edge-space2", "myEdge2"),
         )
 
     def test_update_sequence_rows_update(self, cognite_client, new_transformation):

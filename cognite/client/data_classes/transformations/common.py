@@ -366,7 +366,7 @@ class TransformationBlockedInfo:
 
 def _load_destination_dct(
     dct: Dict[str, Any]
-) -> Union[RawTable, DataModelInstances, InstanceNodes,InstanceEdges, SequenceRows, TransformationDestination]:
+) -> Union[RawTable, DataModelInstances, InstanceNodes, InstanceEdges, SequenceRows, TransformationDestination]:
     """Helper function to load destination from dictionary"""
     snake_dict = convert_all_keys_to_snake_case(dct)
     destination_type = snake_dict.pop("type")
