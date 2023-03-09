@@ -25,12 +25,9 @@ class TransformationDestination:
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         ret = basic_obj_dump(self, camel_case)
 
-        for name, prop in ret.items():
-            if isinstance(
-                prop,
-                (ViewInfo, EdgeType),
-            ):
-                ret[name] = prop.dump(camel_case=camel_case)
+        needs_dump = {"view", "edgeType"}
+        for k in needs_dump.intersection(ret):
+            ret[k] = ret[k].dump(camel_case=camel_case)
         return ret
 
     @staticmethod
