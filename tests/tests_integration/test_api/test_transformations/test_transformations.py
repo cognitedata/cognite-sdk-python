@@ -172,7 +172,8 @@ class TestTransformationsAPI:
             destination=instance_nodes,
         )
         ts = cognite_client.transformations.create(transform)
-        assert ts.destination.type == "nodes" and ts.destination == instance_nodes
+        assert ts.destination.type == "nodes"
+        assert ts.destination == instance_nodes
         cognite_client.transformations.delete(id=ts.id)
 
     def test_create_instance_edges_transformation(self, cognite_client):
@@ -194,7 +195,8 @@ class TestTransformationsAPI:
             destination=instance_edges,
         )
         ts = cognite_client.transformations.create(transform)
-        assert ts.destination.type == "edges" and ts.destination == instance_edges
+        assert ts.destination.type == "edges"
+        assert ts.destination == instance_edges
         cognite_client.transformations.delete(id=ts.id)
 
     def test_create_sequence_rows_transformation(self, cognite_client):

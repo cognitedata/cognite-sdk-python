@@ -142,7 +142,7 @@ class TransformationDestination:
             view (ViewInfo): information of the view.
             instance_space (str): space id of the instance.
         Returns:
-            TransformationDestination pointing to the target flexible data model.
+            InstanceNodes: pointing to the target flexible data model.
         """
         return InstanceNodes(view=view, instance_space=instance_space)
 
@@ -160,7 +160,7 @@ class TransformationDestination:
             instance_space (str): space id of the instance.
             edge_type (EdgeType): information about the type of the edge
         Returns:
-            TransformationDestination pointing to the target flexible data model.
+            InstanceEdges: pointing to the target flexible data model.
         """
         return InstanceEdges(view=view, instance_space=instance_space, edge_type=edge_type)
 
