@@ -3,7 +3,7 @@ from __future__ import annotations
 import warnings
 from typing import Any, Dict, Optional, Union
 
-from cognite.client.utils._auxiliary import basic_obj_dump, convert_all_keys_to_snake_case
+from cognite.client.utils._auxiliary import basic_obj_dump, convert_all_keys_to_snake_case, iterable_to_case
 
 
 class TransformationDestination:
@@ -25,7 +25,7 @@ class TransformationDestination:
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         ret = basic_obj_dump(self, camel_case)
 
-        needs_dump = {"view", "edgeType"}
+        needs_dump = set(iterable_to_case(("view", "edge_type"), camel_case))
         for k in needs_dump.intersection(ret):
             ret[k] = ret[k].dump(camel_case=camel_case)
         return ret
@@ -239,6 +239,13 @@ class InstanceNodes(TransformationDestination):
         self.view = view
         self.instance_space = instance_space
 
+    @classmethod
+    def _load(cls, resource: Dict[str, Any]) -> InstanceNodes:
+        inst = cls(**resource)
+        if isinstance(inst.view, dict):
+            inst.view = ViewInfo(**convert_all_keys_to_snake_case(inst.view))
+        return inst
+
 
 class InstanceEdges(TransformationDestination):
     def __init__(
@@ -256,6 +263,15 @@ class InstanceEdges(TransformationDestination):
         self.view = view
         self.instance_space = instance_space
         self.edge_type = edge_type
+
+    @classmethod
+    def _load(cls, resource: Dict[str, Any]) -> InstanceEdges:
+        inst = cls(**resource)
+        if isinstance(inst.view, dict):
+            inst.view = ViewInfo(**convert_all_keys_to_snake_case(inst.view))
+        if isinstance(inst.edge_type, dict):
+            inst.edge_type = EdgeType(**convert_all_keys_to_snake_case(inst.edge_type))
+        return inst
 
 
 class OidcCredentials:
@@ -330,14 +346,19 @@ def _load_destination_dct(
     """Helper function to load destination from dictionary"""
     snake_dict = convert_all_keys_to_snake_case(dct)
     destination_type = snake_dict.pop("type")
-    try:
-        dest_dct = {
-            "raw": RawTable,
-            "data_model_instances": DataModelInstances,
-            "nodes": InstanceNodes,
-            "edges": InstanceEdges,
-            "sequence_rows": SequenceRows,
-        }
-        return dest_dct[destination_type](**snake_dict)
-    except KeyError:
-        return TransformationDestination(destination_type)
+    simple = {
+        "raw": RawTable,
+        "data_model_instances": DataModelInstances,
+        "sequence_rows": SequenceRows,
+    }
+    if destination_type in simple:
+        return simple[destination_type](**snake_dict)
+
+    nested: Dict[str, Union[type[InstanceNodes], type[InstanceEdges]]] = {
+        "nodes": InstanceNodes,
+        "edges": InstanceEdges,
+    }
+    if destination_type in nested:
+        return nested[destination_type]._load(snake_dict)
+
+    return TransformationDestination(destination_type)

@@ -266,31 +266,31 @@ class Transformation(CogniteResource):
     @classmethod
     def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> Transformation:
         instance = super()._load(resource, cognite_client)
-        if isinstance(instance.destination, Dict):
+        if isinstance(instance.destination, dict):
             instance.destination = _load_destination_dct(instance.destination)
 
-        if isinstance(instance.running_job, Dict):
+        if isinstance(instance.running_job, dict):
             snake_dict = convert_all_keys_to_snake_case(instance.running_job)
             instance.running_job = TransformationJob._load(snake_dict, cognite_client=cognite_client)
 
-        if isinstance(instance.last_finished_job, Dict):
+        if isinstance(instance.last_finished_job, dict):
             snake_dict = convert_all_keys_to_snake_case(instance.last_finished_job)
             instance.last_finished_job = TransformationJob._load(snake_dict, cognite_client=cognite_client)
 
-        if isinstance(instance.blocked, Dict):
+        if isinstance(instance.blocked, dict):
             snake_dict = convert_all_keys_to_snake_case(instance.blocked)
             snake_dict.pop("time")
             instance.blocked = TransformationBlockedInfo(**snake_dict)
 
-        if isinstance(instance.schedule, Dict):
+        if isinstance(instance.schedule, dict):
             snake_dict = convert_all_keys_to_snake_case(instance.schedule)
             instance.schedule = TransformationSchedule._load(snake_dict, cognite_client=cognite_client)
 
-        if isinstance(instance.source_session, Dict):
+        if isinstance(instance.source_session, dict):
             snake_dict = convert_all_keys_to_snake_case(instance.source_session)
             instance.source_session = SessionDetails(**snake_dict)
 
-        if isinstance(instance.destination_session, Dict):
+        if isinstance(instance.destination_session, dict):
             snake_dict = convert_all_keys_to_snake_case(instance.destination_session)
             instance.destination_session = SessionDetails(**snake_dict)
         return instance

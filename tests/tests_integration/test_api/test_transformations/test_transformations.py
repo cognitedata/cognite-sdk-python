@@ -13,6 +13,7 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes.transformations import ContainsAny
 from cognite.client.data_classes.transformations.common import (
     EdgeType,
+    InstanceEdges,
     NonceCredentials,
     OidcCredentials,
     SequenceRows,
@@ -180,12 +181,14 @@ class TestTransformationsAPI:
         prefix = random_string(6, string.ascii_letters)
         instance_edges = TransformationDestination.instance_edges(
             view=ViewInfo(
-                external_id="testInstanceViewExternalId", version="testInstanceViewVersion", space="test-space"
+                external_id="view-testInstanceViewExternalId",
+                version="view-testInstanceViewVersion",
+                space="view-test-space",
             ),
-            instance_space="test-space",
+            instance_space="test-instance-space",
             edge_type=EdgeType(
-                space="edge-space",
-                external_id="my-edge",
+                space="edge_type-space",
+                external_id="edge_type-edge",
             ),
         )
 
@@ -196,7 +199,18 @@ class TestTransformationsAPI:
         )
         ts = cognite_client.transformations.create(transform)
         assert ts.destination.type == "edges"
-        assert ts.destination == instance_edges
+        assert isinstance(ts.destination, InstanceEdges)
+        assert isinstance(ts.destination.view, ViewInfo)
+
+        assert ts.destination.view.external_id == "view-testInstanceViewExternalId"
+        assert ts.destination.view.version == "view-testInstanceViewVersion"
+        assert ts.destination.view.space == "view-test-space"
+
+        assert ts.destination.instance_space == "test-instance-space"
+        assert isinstance(ts.destination.edge_type, EdgeType)
+        assert ts.destination.edge_type.space == "edge_type-space"
+        assert ts.destination.edge_type.external_id == "edge_type-edge"
+
         cognite_client.transformations.delete(id=ts.id)
 
     def test_create_sequence_rows_transformation(self, cognite_client):
