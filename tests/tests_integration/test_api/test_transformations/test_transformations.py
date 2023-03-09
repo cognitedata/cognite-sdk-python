@@ -160,52 +160,41 @@ class TestTransformationsAPI:
 
     def test_create_instance_nodes_transformation(self, cognite_client):
         prefix = random_string(6, string.ascii_letters)
+        instance_nodes = TransformationDestination.instance_nodes(
+            view=ViewInfo(
+                space="test-space", external_id="testInstanceViewExternalId", version="testInstanceViewVersion"
+            ),
+            instance_space="test-space",
+        )
         transform = Transformation(
             name="any",
             external_id=f"{prefix}-transformation",
-            destination=TransformationDestination.instance_nodes(
-                view=ViewInfo(
-                    external_id="testInstanceViewExternalId", version="testInstanceViewVersion", space="test-space"
-                ),
-                instance_space="test-space",
-            ),
+            destination=instance_nodes,
         )
         ts = cognite_client.transformations.create(transform)
-        assert (
-            ts.destination.type == "instances"
-            and ts.destination.view.external_id == "testInstanceViewExternalId"
-            and ts.destination.view.version == "testInstanceViewVersion"
-            and ts.destination.view.space == "test-space"
-            and ts.destination.instance_space == "test-space"
-        )
+        assert ts.destination.type == "nodes" and ts.destination == instance_nodes
         cognite_client.transformations.delete(id=ts.id)
 
     def test_create_instance_edges_transformation(self, cognite_client):
         prefix = random_string(6, string.ascii_letters)
+        instance_edges = TransformationDestination.instance_edges(
+            view=ViewInfo(
+                external_id="testInstanceViewExternalId", version="testInstanceViewVersion", space="test-space"
+            ),
+            instance_space="test-space",
+            edge_type=EdgeType(
+                space="edge-space",
+                external_id="my-edge",
+            ),
+        )
+
         transform = Transformation(
             name="any",
             external_id=f"{prefix}-transformation",
-            destination=TransformationDestination.instance_edges(
-                view=ViewInfo(
-                    external_id="testInstanceViewExternalId", version="testInstanceViewVersion", space="test-space"
-                ),
-                instance_space="test-space",
-                edge_type=EdgeType(
-                    space="edge-space",
-                    external_id="my-edge",
-                ),
-            ),
+            destination=instance_edges,
         )
         ts = cognite_client.transformations.create(transform)
-        assert (
-            ts.destination.type == "instances"
-            and ts.destination.view.external_id == "testInstanceViewExternalId"
-            and ts.destination.view.version == "testInstanceViewVersion"
-            and ts.destination.view.space == "test-space"
-            and ts.destination.instance_space == "test-space"
-            and ts.destination.edge_type.space == "edge-space"
-            and ts.destination.edge_type.external_id == "my-edge"
-        )
+        assert ts.destination.type == "edges" and ts.destination == instance_edges
         cognite_client.transformations.delete(id=ts.id)
 
     def test_create_sequence_rows_transformation(self, cognite_client):
@@ -381,11 +370,11 @@ class TestTransformationsAPI:
             )
         )
         updated_transformation = cognite_client.transformations.update(new_transformation)
-        assert updated_transformation.destination == TransformationDestination.instance_nodes(
+        assert updated_transformation.destination == TransformationDestination.instance_edges(
             ViewInfo("myViewExternalId", "myViewVersion", "test-space"), "test-space", EdgeType("edge-space", "myEdge")
         )
         partial_updated = cognite_client.transformations.update(partial_update)
-        assert partial_updated.destination == TransformationDestination.instance_nodes(
+        assert partial_updated.destination == TransformationDestination.instance_edges(
             ViewInfo("myViewExternalId", "myViewVersion2", "test-space"),
             "test-space",
             EdgeType("edge-space2", "myEdge2"),

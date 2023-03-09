@@ -23,7 +23,15 @@ class TransformationDestination:
         return isinstance(other, type(self)) and hash(other) == hash(self)
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        return basic_obj_dump(self, camel_case)
+        ret = basic_obj_dump(self, camel_case)
+
+        for name, prop in ret.items():
+            if isinstance(
+                prop,
+                (ViewInfo, EdgeType),
+            ):
+                ret[name] = prop.dump(camel_case=camel_case)
+        return ret
 
     @staticmethod
     def assets() -> TransformationDestination:
@@ -126,10 +134,7 @@ class TransformationDestination:
         )
 
     @staticmethod
-    def instance_nodes(
-        view: Optional[ViewInfo] = None,
-        instance_space: Optional[str] = None,
-    ) -> InstanceNodes:
+    def instance_nodes(view: Optional[ViewInfo] = None, instance_space: Optional[str] = None) -> InstanceNodes:
         """To be used when the transformation is meant to produce node's instances.
             Flexible Data Models resource type is on `beta` version currently.
 
@@ -139,10 +144,7 @@ class TransformationDestination:
         Returns:
             TransformationDestination pointing to the target flexible data model.
         """
-        return InstanceNodes(
-            view=view,
-            instance_space=instance_space,
-        )
+        return InstanceNodes(view=view, instance_space=instance_space)
 
     @staticmethod
     def instance_edges(
@@ -160,11 +162,7 @@ class TransformationDestination:
         Returns:
             TransformationDestination pointing to the target flexible data model.
         """
-        return InstanceEdges(
-            view=view,
-            instance_space=instance_space,
-            edge_type=edge_type,
-        )
+        return InstanceEdges(view=view, instance_space=instance_space, edge_type=edge_type)
 
 
 class RawTable(TransformationDestination):
@@ -205,44 +203,28 @@ class DataModelInstances(TransformationDestination):
 
 
 class ViewInfo:
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-        version: str,
-    ):
-        super().__init__()
+    def __init__(self, space: str, external_id: str, version: str):
         self.space = space
         self.external_id = external_id
         self.version = version
 
     def __hash__(self) -> int:
-        return hash(
-            (
-                self.space,
-                self.external_id,
-                self.version,
-            )
-        )
+        return hash(self.space, self.external_id, self.version)
+
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        return basic_obj_dump(self, camel_case)
 
 
 class EdgeType:
-    def __init__(
-        self,
-        space: str,
-        external_id: str,
-    ):
-        super().__init__()
+    def __init__(self, space: str, external_id: str):
         self.space = space
         self.external_id = external_id
 
     def __hash__(self) -> int:
-        return hash(
-            (
-                self.space,
-                self.external_id,
-            )
-        )
+        return hash(self.space, self.external_id)
+
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        return basic_obj_dump(self, camel_case)
 
 
 class InstanceNodes(TransformationDestination):
@@ -259,15 +241,6 @@ class InstanceNodes(TransformationDestination):
         super().__init__(type="nodes")
         self.view = view
         self.instance_space = instance_space
-
-    def __hash__(self) -> int:
-        return hash(
-            (
-                self.type,
-                self.view,
-                self.instance_space,
-            )
-        )
 
 
 class InstanceEdges(TransformationDestination):
@@ -286,16 +259,6 @@ class InstanceEdges(TransformationDestination):
         self.view = view
         self.instance_space = instance_space
         self.edge_type = edge_type
-
-    def __hash__(self) -> int:
-        return hash(
-            (
-                self.type,
-                self.view,
-                self.instance_space,
-                self.edge_type,
-            )
-        )
 
 
 class OidcCredentials:
@@ -374,7 +337,8 @@ def _load_destination_dct(
         dest_dct = {
             "raw": RawTable,
             "data_model_instances": DataModelInstances,
-            "instances": InstanceNodes,
+            "nodes": InstanceNodes,
+            "edges": InstanceEdges,
             "sequence_rows": SequenceRows,
         }
         return dest_dct[destination_type](**snake_dict)
