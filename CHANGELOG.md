@@ -17,9 +17,19 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [5.6.5] - 23-03-08
+## [5.7.1] - 09-03-23
 ### Changed
 - Split `instances` destination type of Transformations to `nodes` and `edges`.
+
+## [5.7.0] - 08-03-23
+### Removed
+- `ExtractionPipelineRunUpdate` was removed as runs are immutable.
+
+### Fixed
+- `ExtractionPipelinesRunsAPI` was hiding `id` of runs because `ExtractionPipelineRun` only defined `external_id` which doesn't exist for the "run resource", only for the "parent" ext.pipe (but this is not returned by the API; only used to query).
+
+### Changed
+- Rename and deprecate `external_id` in `ExtractionPipelinesRunsAPI` in favour of the more descriptive `extpipe_external_id`. The change is backwards-compatible, but will issue a `UserWarning` for the old usage pattern.
 
 ## [5.6.4] - 28-02-23
 ### Added

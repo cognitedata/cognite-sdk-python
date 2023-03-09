@@ -313,7 +313,8 @@ class ExtractionPipelineRunsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ExtractionPipelineRun
                 >>> c = CogniteClient()
-                >>> res = c.extraction_pipelines.runs.create(ExtractionPipelineRun(status="success", external_id="extId"))
+                >>> res = c.extraction_pipelines.runs.create(
+                ...     ExtractionPipelineRun(status="success", extpipe_external_id="extId"))
         """
         utils._auxiliary.assert_type(run, "run", [ExtractionPipelineRun, Sequence])
         return self._create_multiple(list_cls=ExtractionPipelineRunList, resource_cls=ExtractionPipelineRun, items=run)
