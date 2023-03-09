@@ -209,7 +209,7 @@ class ViewInfo:
         self.version = version
 
     def __hash__(self) -> int:
-        return hash(self.space, self.external_id, self.version)
+        return hash((self.space, self.external_id, self.version))
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         return basic_obj_dump(self, camel_case)
@@ -221,7 +221,7 @@ class EdgeType:
         self.external_id = external_id
 
     def __hash__(self) -> int:
-        return hash(self.space, self.external_id)
+        return hash((self.space, self.external_id))
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         return basic_obj_dump(self, camel_case)
