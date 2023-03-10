@@ -178,11 +178,11 @@ class TestTransformationsAPI:
         assert ts.destination.type == "nodes"
 
         assert isinstance(ts.destination.view, ViewInfo)
-        assert ts.destination.view.space == "view-test-space"
+        assert ts.destination.view.space == "test-space"
         assert ts.destination.view.external_id == "testInstanceViewExternalId"
         assert ts.destination.view.version == "testInstanceViewVersion"
 
-        assert ts.destination.instance_space == "test-instance-space"
+        assert ts.destination.instance_space == "test-space"
 
         cognite_client.transformations.delete(id=ts.id)
 
