@@ -56,7 +56,7 @@ COGNITE_CLIENT_ID=6b0b4266-ffa4-4b9b-8e13-ddbbc8a19ea6
 # (such as transformations).
 #LOGIN_FLOW=client_credentials
 #COGNITE_TOKEN_SCOPES=https://greenfield.cognitedata.com/.default
-#COGNITE_TOKEN_URL=https://login.microsoftonline.com/dff7763f-e2f5-4ffd-9b8a-4ba4bafba5ea/oauth/v2.0/token
+#COGNITE_TOKEN_URL=https://login.microsoftonline.com/dff7763f-e2f5-4ffd-9b8a-4ba4bafba5ea/oauth2/v2.0/token
 #COGNITE_CLIENT_ID=6b0b4266-ffa4-4b9b-8e13-ddbbc8a19ea6
 #COGNITE_CLIENT_SECRET=....
 ```
