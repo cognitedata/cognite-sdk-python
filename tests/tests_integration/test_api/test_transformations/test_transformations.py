@@ -14,6 +14,7 @@ from cognite.client.data_classes.transformations import ContainsAny
 from cognite.client.data_classes.transformations.common import (
     EdgeType,
     InstanceEdges,
+    InstanceNodes,
     NonceCredentials,
     OidcCredentials,
     SequenceRows,
@@ -173,7 +174,7 @@ class TestTransformationsAPI:
             destination=instance_nodes,
         )
         ts = cognite_client.transformations.create(transform)
-        assert isinstance(ts.destination, InstanceEdges)
+        assert isinstance(ts.destination, InstanceNodes)
         assert ts.destination.type == "nodes"
 
         assert isinstance(ts.destination.view, ViewInfo)
