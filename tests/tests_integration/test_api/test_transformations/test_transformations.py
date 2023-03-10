@@ -186,7 +186,7 @@ class TestTransformationsAPI:
 
         cognite_client.transformations.delete(id=ts.id)
 
-    def test_create_instance_edges_transformation(self, cognite_client):
+    def test_create_instance_edges_view_transformation(self, cognite_client):
         prefix = random_string(6, string.ascii_letters)
         instance_edges = TransformationDestination.instance_edges(
             view=ViewInfo(
@@ -195,10 +195,7 @@ class TestTransformationsAPI:
                 space="view-test-space",
             ),
             instance_space="test-instance-space",
-            edge_type=EdgeType(
-                space="edge_type-space",
-                external_id="edge_type-edge",
-            ),
+            edge_type=None,
         )
 
         transform = Transformation(
@@ -214,6 +211,33 @@ class TestTransformationsAPI:
         assert ts.destination.view.external_id == "view-testInstanceViewExternalId"
         assert ts.destination.view.version == "view-testInstanceViewVersion"
         assert ts.destination.view.space == "view-test-space"
+
+        assert ts.destination.instance_space == "test-instance-space"
+        assert ts.destination.edge_type is None
+
+        cognite_client.transformations.delete(id=ts.id)
+
+    def test_create_instance_edges_type_transformation(self, cognite_client):
+        prefix = random_string(6, string.ascii_letters)
+        instance_edges = TransformationDestination.instance_edges(
+            view=None,
+            instance_space="test-instance-space",
+            edge_type=EdgeType(
+                space="edge_type-space",
+                external_id="edge_type-edge",
+            ),
+        )
+
+        transform = Transformation(
+            name="any",
+            external_id=f"{prefix}-transformation",
+            destination=instance_edges,
+        )
+        ts = cognite_client.transformations.create(transform)
+        assert ts.destination.type == "edges"
+        assert isinstance(ts.destination, InstanceEdges)
+
+        assert ts.destination.view is None
 
         assert ts.destination.instance_space == "test-instance-space"
         assert isinstance(ts.destination.edge_type, EdgeType)

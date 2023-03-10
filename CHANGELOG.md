@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [5.7.2] - 10-03-23
+### Fixed
+- Fix method dump in TransformationDestination to ignore None.
+
 ## [5.7.1] - 09-03-23
 ### Changed
 - Split `instances` destination type of Transformations to `nodes` and `edges`.

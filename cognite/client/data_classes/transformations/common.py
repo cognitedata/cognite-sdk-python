@@ -27,7 +27,8 @@ class TransformationDestination:
 
         needs_dump = set(iterable_to_case(("view", "edge_type"), camel_case))
         for k in needs_dump.intersection(ret):
-            ret[k] = ret[k].dump(camel_case=camel_case)
+            if ret[k] is not None:
+                ret[k] = ret[k].dump(camel_case=camel_case)
         return ret
 
     @staticmethod
