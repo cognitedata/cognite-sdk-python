@@ -61,6 +61,13 @@ def to_snake_case(camel_case_string: str) -> str:
     return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
 
 
+def iterable_to_case(seq: Sequence[str], camel_case: bool) -> Iterator[str]:
+    if camel_case:
+        yield from map(to_camel_case, seq)
+    else:
+        yield from map(to_snake_case, seq)
+
+
 def convert_all_keys_to_camel_case(d: Dict[str, Any]) -> Dict[str, Any]:
     return dict(zip(map(to_camel_case, d.keys()), d.values()))
 
