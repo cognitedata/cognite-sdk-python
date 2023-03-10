@@ -173,8 +173,16 @@ class TestTransformationsAPI:
             destination=instance_nodes,
         )
         ts = cognite_client.transformations.create(transform)
+        assert isinstance(ts.destination, InstanceEdges)
         assert ts.destination.type == "nodes"
-        assert ts.destination == instance_nodes
+
+        assert isinstance(ts.destination.view, ViewInfo)
+        assert ts.destination.view.space == "view-test-space"
+        assert ts.destination.view.external_id == "testInstanceViewExternalId"
+        assert ts.destination.view.version == "testInstanceViewVersion"
+
+        assert ts.destination.instance_space == "test-instance-space"
+
         cognite_client.transformations.delete(id=ts.id)
 
     def test_create_instance_edges_transformation(self, cognite_client):
