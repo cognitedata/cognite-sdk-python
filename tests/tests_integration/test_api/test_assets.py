@@ -4,7 +4,6 @@ from unittest import mock
 
 import pytest
 
-from cognite.client import utils
 from cognite.client.data_classes import (
     Asset,
     AssetFilter,
@@ -16,15 +15,8 @@ from cognite.client.data_classes import (
     GeometryFilter,
 )
 from cognite.client.exceptions import CogniteNotFoundError
+from cognite.client.utils._auxiliary import random_string
 from tests.utils import set_request_limit
-
-
-@pytest.fixture
-def new_asset(cognite_client):
-    ts = cognite_client.assets.create(Asset(name="any", description="haha", metadata={"a": "b"}))
-    yield ts
-    cognite_client.assets.delete(id=ts.id)
-    assert cognite_client.assets.retrieve(ts.id) is None
 
 
 def generate_asset_tree(root_external_id: str, depth: int, children_per_node: int, current_depth=1):
@@ -45,6 +37,14 @@ def generate_asset_tree(root_external_id: str, depth: int, children_per_node: in
 
 
 @pytest.fixture
+def new_asset(cognite_client):
+    ts = cognite_client.assets.create(Asset(name="any", description="haha", metadata={"a": "b"}))
+    yield ts
+    cognite_client.assets.delete(id=ts.id)
+    assert cognite_client.assets.retrieve(ts.id) is None
+
+
+@pytest.fixture
 def post_spy(cognite_client):
     with mock.patch.object(cognite_client.assets, "_post", wraps=cognite_client.assets._post) as _:
         yield
@@ -52,13 +52,13 @@ def post_spy(cognite_client):
 
 @pytest.fixture
 def new_asset_hierarchy(cognite_client, post_spy):
-    random_prefix = f"test_{utils._auxiliary.random_string(10)}_"
+    random_prefix = f"test_{random_string(10)}_"
     assets = generate_asset_tree(random_prefix + "0", depth=5, children_per_node=5)
 
     with set_request_limit(cognite_client.assets, 50):
         cognite_client.assets.create_hierarchy(assets)
 
-    assert 20 < cognite_client.assets._post.call_count < 30
+    assert cognite_client.assets._post.call_count == 16
 
     ext_ids = [a.external_id for a in assets]
     yield random_prefix, ext_ids
@@ -68,17 +68,15 @@ def new_asset_hierarchy(cognite_client, post_spy):
 
 @pytest.fixture
 def root_test_asset(cognite_client):
-    for _ in range(5):  # remove after race condition CDF-10303 is fixed
-        for asset in cognite_client.assets(root=True):
-            if asset.name.startswith("test__"):
-                return asset
-        time.sleep(1)
-    assert False  # should never be reached
+    for asset in cognite_client.assets.list(root=True, limit=None):
+        if asset.name.startswith("test__"):
+            return asset
+    assert False, "has the root test asset been deleted?"
 
 
 @pytest.fixture
 def new_root_asset(cognite_client):
-    external_id = f"my_root_{utils._auxiliary.random_string(10)}"
+    external_id = f"my_root_{random_string(10)}"
     root = Asset(external_id=external_id, name="my_root")
     root = cognite_client.assets.create(root)
     yield root
@@ -187,7 +185,7 @@ class TestAssetsAPI:
         assert 790 == len(cognite_client.assets.retrieve_subtree(root_test_asset.id))
         subtree = cognite_client.assets.retrieve_subtree(root_test_asset.id, depth=1)
         assert 6 == len(subtree)
-        assert all(subtree.get(id=a.id) is not None for a in subtree)  # test if .get works on result
+        assert all(subtree.get(id=a.id) is not None for a in subtree)
 
     def test_create_asset_hierarchy_parent_external_id_not_in_request(self, cognite_client, new_root_asset):
         root = new_root_asset
@@ -199,12 +197,11 @@ class TestAssetsAPI:
 
         external_ids = [asset.external_id for asset in children] + [root.external_id]
         posted_assets = cognite_client.assets.retrieve_multiple(external_ids=external_ids)
-        external_id_to_id = {a.external_id: a.id for a in posted_assets}
         for asset in posted_assets:
             if asset.external_id == root.external_id:
                 assert asset.parent_id is None
             else:
-                assert asset.parent_id == external_id_to_id[asset.external_id[:-1]]
+                assert asset.parent_id == posted_assets.get(external_id=asset.external_id[:-1]).id
 
     def test_create_with_geo_location(self, cognite_client):
         geo_location = GeoLocation(

@@ -43,8 +43,9 @@ from cognite.client.data_classes._base import (
     T_CogniteResourceList,
 )
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
-from cognite.client.utils._auxiliary import is_unlimited
+from cognite.client.utils._auxiliary import is_unlimited, split_into_chunks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence, SingletonIdentifierSequence
+from cognite.client.utils._text import shorten
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -610,7 +611,7 @@ class APIClient:
 
     def _create_multiple(
         self,
-        items: Union[Sequence[CogniteResource], Sequence[Dict[str, Any]], CogniteResource, Dict[str, Any]],
+        items: Union[Sequence[T_CogniteResource], Sequence[Dict[str, Any]], T_CogniteResource, Dict[str, Any]],
         list_cls: Type[T_CogniteResourceList],
         resource_cls: Type[T_CogniteResource],
         resource_path: Optional[str] = None,
@@ -623,21 +624,14 @@ class APIClient:
         limit = limit or self._CREATE_LIMIT
         single_item = not isinstance(items, Sequence)
         if single_item:
-            items = cast(Union[Sequence[CogniteResource], Sequence[Dict[str, Any]]], [items])
+            items = cast(Union[Sequence[T_CogniteResource], Sequence[Dict[str, Any]]], [items])
         else:
-            items = cast(Union[Sequence[CogniteResource], Sequence[Dict[str, Any]]], items)
+            items = cast(Union[Sequence[T_CogniteResource], Sequence[Dict[str, Any]]], items)
 
-        items_split = []
-        for i in range(0, len(items), limit):
-            if isinstance(items[i], CogniteResource):
-                items = cast(List[CogniteResource], items)
-                items_chunk = [item.dump(camel_case=True) for item in items[i : i + limit]]
-            else:
-                items = cast(List[Dict[str, Any]], items)
-                items_chunk = [item for item in items[i : i + limit]]
-            items_split.append({"items": items_chunk, **(extra_body_fields or {})})
-
-        tasks = [(resource_path, task_items, params, headers) for task_items in items_split]
+        tasks = [
+            (resource_path, task_items, params, headers)
+            for task_items in self._prepare_item_chunks(items, limit, extra_body_fields)
+        ]
         summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
 
         def unwrap_element(el: T) -> Union[CogniteResource, T]:
@@ -747,7 +741,7 @@ class APIClient:
                     patch_object_update["metadata"] = {"set": {}}
             else:
                 raise ValueError("update item must be of type CogniteResource or CogniteUpdate")
-        patch_object_chunks = utils._auxiliary.split_into_chunks(patch_objects, self._UPDATE_LIMIT)
+        patch_object_chunks = split_into_chunks(patch_objects, self._UPDATE_LIMIT)
 
         tasks = [
             {"url_path": resource_path + "/update", "json": {"items": chunk}, "params": params, "headers": headers}
@@ -788,6 +782,20 @@ class APIClient:
             headers=headers,
         )
         return list_cls._load(res.json()["items"], cognite_client=self._cognite_client)
+
+    @staticmethod
+    def _prepare_item_chunks(
+        items: Union[Sequence[T_CogniteResource], Sequence[Dict[str, Any]]],
+        limit: int,
+        extra_body_fields: Optional[Dict],
+    ) -> List[Dict[str, Any]]:
+        return [
+            {"items": chunk, **(extra_body_fields or {})}
+            for chunk in split_into_chunks(
+                [it.dump(camel_case=True) if isinstance(it, CogniteResource) else it for it in items],
+                chunk_size=limit,
+            )
+        ]
 
     @staticmethod
     def _convert_resource_to_patch_object(
@@ -844,7 +852,7 @@ class APIClient:
             error_details["duplicated"] = duplicated
         error_details["headers"] = res.request.headers.copy()
         cls._sanitize_headers(error_details["headers"])
-        error_details["response_payload"] = cls._truncate(cls._get_response_content_safe(res))
+        error_details["response_payload"] = shorten(cls._get_response_content_safe(res), 500)
         error_details["response_headers"] = res.headers
 
         if res.history:
@@ -868,7 +876,7 @@ class APIClient:
 
         stream = kwargs.get("stream")
         if not stream and self._config.debug is True:
-            extra["response_payload"] = self._truncate(self._get_response_content_safe(res))
+            extra["response_payload"] = shorten(self._get_response_content_safe(res), 500)
         extra["response_headers"] = res.headers
 
         try:
@@ -880,13 +888,7 @@ class APIClient:
         log.debug(f"{http_protocol} {method} {url} {status_code}", extra=extra)
 
     @staticmethod
-    def _truncate(s: str, limit: int = 500) -> str:
-        if len(s) > limit:
-            return s[:limit] + "..."
-        return s
-
-    @classmethod
-    def _get_response_content_safe(cls, res: Response) -> str:
+    def _get_response_content_safe(res: Response) -> str:
         try:
             return _json.dumps(res.json())
         except JSONDecodeError:

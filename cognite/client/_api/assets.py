@@ -1,9 +1,31 @@
 from __future__ import annotations
 
-import queue
-import threading
-from collections import OrderedDict
-from typing import Any, Dict, Iterator, List, Optional, Sequence, Set, Union, cast, overload
+import functools
+import heapq
+import itertools
+import math
+import operator as op
+from collections import namedtuple
+from functools import cached_property
+from types import MappingProxyType
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Literal,
+    NoReturn,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+    cast,
+    overload,
+)
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -11,6 +33,7 @@ from cognite.client.data_classes import (
     Asset,
     AssetAggregate,
     AssetFilter,
+    AssetHierarchy,
     AssetList,
     AssetUpdate,
     GeoLocationFilter,
@@ -18,8 +41,17 @@ from cognite.client.data_classes import (
     TimestampRange,
 )
 from cognite.client.data_classes.shared import AggregateBucketResult
-from cognite.client.exceptions import CogniteAPIError
+from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError
+from cognite.client.utils._auxiliary import split_into_n_parts, to_camel_case, unwrap_identifer
+from cognite.client.utils._concurrency import get_as_completed_fn, get_priority_executor
 from cognite.client.utils._identifier import IdentifierSequence
+
+if TYPE_CHECKING:
+    from concurrent.futures import Future
+
+    from cognite.client.utils._priority_tpe import PriorityThreadPoolExecutor
+
+UpsertOptions = Literal["patch", "replace"]
 
 
 class AssetsAPI(APIClient):
@@ -76,7 +108,7 @@ class AssetsAPI(APIClient):
             Union[Asset, AssetList]: yields Asset one by one if chunk is not specified, else AssetList objects.
         """
         if aggregated_properties:
-            aggregated_properties = [utils._auxiliary.to_camel_case(s) for s in aggregated_properties]
+            aggregated_properties = [to_camel_case(s) for s in aggregated_properties]
 
         asset_subtree_ids_processed = None
         if asset_subtree_ids or asset_subtree_external_ids:
@@ -265,7 +297,7 @@ class AssetsAPI(APIClient):
                 >>> asset_list = c.assets.list(labels=my_label_filter)
         """
         if aggregated_properties:
-            aggregated_properties = [utils._auxiliary.to_camel_case(s) for s in aggregated_properties]
+            aggregated_properties = [to_camel_case(s) for s in aggregated_properties]
 
         asset_subtree_ids_processed = None
         if asset_subtree_ids or asset_subtree_external_ids:
@@ -412,19 +444,42 @@ class AssetsAPI(APIClient):
         utils._auxiliary.assert_type(asset, "asset", [Asset, Sequence])
         return self._create_multiple(list_cls=AssetList, resource_cls=Asset, items=asset)
 
-    def create_hierarchy(self, assets: Sequence[Asset]) -> AssetList:
-        """Create an asset hierarchy.
+    def create_hierarchy(
+        self,
+        assets: Union[Sequence[Asset], AssetHierarchy],
+        upsert: bool = False,
+        upsert_mode: UpsertOptions = "patch",
+    ) -> AssetList:
+        """Create an asset hierarchy with validation.
 
-        When posting a large number of assets, like the create() method, the SDK will split the request into smaller requests.
-        Additionally, create_hierarchy() will make sure that the assets are posted in correct order. The ordering is determined from the
-        external_id and parent_external_id properties of the assets, and the external_id is therefore required for all assets. Before posting, it is
-        checked that all assets have a unique external_id and that there are no circular dependencies.
+        This helper function makes it easy to insert large asset hierarchies. It solves the problem of topological insertion
+        order, i.e. a parent asset must exist before it can be referenced by any 'children' assets.
+
+        Additionally, prior to insertion, this function will run validation on the given assets, raising an error if ('category'
+        below is the name of the attribute you might access on the raised error to get the collection of 'bad' assets):
+
+            1. Any assets are invalid (category "invalid"):
+                1. Missing external ID
+                2. Missing a valid name
+                3. Has an ID set
+            2. Any asset duplicates exist (category "duplicates")
+            3. Any assets have an ambiguous parent link (category "unsure_parents")
+            4. Any group of assets form a cycle, e.g. A->B->A (category "cycles")
+
+        It is worth noting that validation is done "offline", i.e. existing assets in CDF are not inspected. This means:
+
+            1. All assets linking a parent by ID are assumed valid
+            2. All orphan assets are assumed valid. "Orphan" means the parent is not part of the given assets (category "orphans")
 
         Args:
-            assets (Sequence[Asset]]): List of assets to create. Requires each asset to have a unique external id.
+            assets (Sequence[Asset] | AssetHierarchy): List of assets to create or an instance of AssetHierarchy.
+            upsert (bool): Already existing assets will be updated instead of an exception being raised. You may control how updates
+                are applied with the 'upsert_mode' argument.
+            upsert_mode ("patch" | "replace"): Only applicable with upsert. Pass 'patch' to only update fields with non-null values
+                (default), or 'replace' to do full updates.
 
         Returns:
-            AssetList: Created asset hierarchy
+            AssetList: Created (and possibly updated) asset hierarchy
 
         Examples:
 
@@ -433,11 +488,33 @@ class AssetsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import Asset
                 >>> c = CogniteClient()
-                >>> assets = [Asset(external_id="root", name="root"), Asset(external_id="child1", parent_external_id="root", name="child1"), Asset(external_id="child2", parent_external_id="root", name="child2")]
+                >>> assets = [
+                ...     Asset(external_id="root", name="root"),
+                ...     Asset(external_id="child1", parent_external_id="root", name="child1"),
+                ...     Asset(external_id="child2", parent_external_id="root", name="child2")]
                 >>> res = c.assets.create_hierarchy(assets)
+
+            If the validation for some reason fail, you may inspect the issues by catching CogniteAssetHierarchyError::
+
+                >>> from cognite.client.exceptions import CogniteAssetHierarchyError
+                >>> try:
+                ...     res = c.assets.create_hierarchy(assets)
+                ... except CogniteAssetHierarchyError as err:
+                ...     if err.duplicates:
+                ...         ...  # do something
+
+            In addition to 'duplicates', you may inspect 'invalid', 'unsure_parents', 'orphans' and 'cycles'. Note that
+            cycles are not available if any of the other basic issues exist, as the search for cyclical references
+            requires a clean asset hierarchy to begin with.
+
+            You may also run this validation prior to calling `AssetsAPI.create_hierarchy()`.
+            See :class:`~cognite.client.data_classes.assets.AssetHierarchy`.
         """
-        utils._auxiliary.assert_type(assets, "assets", [Sequence])
-        return _AssetPoster(assets, client=self).post()
+        if not isinstance(assets, AssetHierarchy):
+            utils._auxiliary.assert_type(assets, "assets", [Sequence])
+            assets = AssetHierarchy(assets, ignore_orphans=True)
+
+        return _AssetHierarchyCreator(assets, assets_api=self).create(upsert, upsert_mode)
 
     def delete(
         self,
@@ -641,234 +718,246 @@ class AssetsAPI(APIClient):
         return children
 
 
-class _AssetsFailedToPost:
-    def __init__(self, exc: Exception, assets: Sequence[Asset]):
-        self.exc = exc
-        self.assets = assets
+_CreateTask = namedtuple("_CreateTask", ("items", "priority"))
 
 
-class _AssetPosterWorker(threading.Thread):
-    def __init__(
+class _AssetHierarchyCreator:
+    def __init__(self, hierarchy: AssetHierarchy, assets_api: AssetsAPI) -> None:
+        hierarchy.is_valid(on_error="raise")
+        self.hierarchy = hierarchy
+        self.n_assets = len(hierarchy._assets)
+        self.assets_api = assets_api
+        self.create_limit = assets_api._CREATE_LIMIT
+        self.resource_path = assets_api._RESOURCE_PATH
+        self.max_workers = assets_api._config.max_workers
+        self.failed: List[Asset] = []
+        self.unknown: List[Asset] = []
+        self.exception: Union[CogniteAPIError, CogniteDuplicatedError, None] = None
+
+        self.__counter = itertools.count().__next__
+
+    def create(self, upsert: bool, upsert_mode: UpsertOptions) -> AssetList:
+        insert_fn = functools.partial(self._insert, upsert=upsert, upsert_mode=upsert_mode)
+        insert_dct = self.hierarchy.groupby_parent_xid()
+        subtree_count = self.hierarchy.count_subtree(insert_dct)
+
+        with get_priority_executor(max_workers=self.max_workers) as pool:
+            return self._create(pool, insert_fn, insert_dct, subtree_count)
+
+    def _create(
         self,
-        client: AssetsAPI,
-        request_queue: queue.Queue,
-        response_queue: queue.Queue,
-    ):
-        self.client = client
-        self.request_queue = request_queue
-        self.response_queue = response_queue
-        self.stop = False
-        super().__init__(daemon=True)
-
-    def run(self) -> None:
-        request: Sequence[Asset] = []
-        while not self.stop:
-            try:
-                try:
-                    request = cast(Sequence[Asset], self.request_queue.get(timeout=0.1))
-                except queue.Empty:
-                    continue
-                assets = cast(AssetList, self.client.create(request))
-                self.response_queue.put(assets)
-            except Exception as e:
-                self.response_queue.put(_AssetsFailedToPost(e, request))
-
-
-class _AssetPoster:
-    def __init__(self, assets: Sequence[Asset], client: AssetsAPI):
-        self._validate_asset_hierarchy(assets)
-        self.remaining_external_ids: OrderedDict[str, Optional[str]] = OrderedDict()
-        self.remaining_external_ids_set = set()
-        self.external_id_to_asset = {}
-
-        for asset in assets:
-            self.remaining_external_ids[cast(str, asset.external_id)] = None
-            self.remaining_external_ids_set.add(asset.external_id)
-            self.external_id_to_asset[asset.external_id] = asset
-
-        self.client = client
-
-        self.num_of_assets = len(self.remaining_external_ids)
-        self.external_ids_without_circular_deps: Set[str] = set()
-        self.external_id_to_children: Dict[str, Set[Asset]] = {
-            external_id: set() for external_id in self.remaining_external_ids
-        }
-        self.external_id_to_descendent_count = {external_id: 0 for external_id in self.remaining_external_ids}
-        self.successfully_posted_external_ids: Set[str] = set()
-        self.posted_assets: Set[Asset] = set()
-        self.may_have_been_posted_assets: Set[Asset] = set()
-        self.not_posted_assets: Set[Asset] = set()
-        self.exception: Optional[Exception] = None
-
-        self.request_queue: queue.Queue[Sequence[Asset]] = queue.Queue()
-        self.response_queue: queue.Queue[Union[AssetList, _AssetsFailedToPost]] = queue.Queue()
-
-        self._initialize()
-
-    def assets_remaining(self) -> bool:
-        return (
-            len(self.posted_assets) + len(self.may_have_been_posted_assets) + len(self.not_posted_assets)
-            < self.num_of_assets
+        pool: PriorityThreadPoolExecutor,
+        insert_fn: Callable,
+        insert_dct: Dict[Optional[str], List[Asset]],
+        subtree_count: Dict[str, int],
+    ) -> AssetList:
+        queue_fn = functools.partial(
+            self._queue_tasks,
+            pool=pool,
+            insert_fn=insert_fn,
+            insert_dct=insert_dct,
+            subtree_count=subtree_count,
         )
+        created_assets = AssetList([], cognite_client=self.assets_api._cognite_client)
+
+        # Kick things off with all...:
+        # 1. Root assets
+        # 2. Assets linking parent by ID
+        # 3. Orphans assets (if `hierarchy.ignore_orphans` is True)
+        futures = queue_fn(insert_dct.pop(None))
+
+        as_completed = get_as_completed_fn(pool)
+        while futures:
+            futures.remove(fut := next(as_completed(futures)))
+            new_assets, failed, unknown = fut.result()
+            created_assets.extend(new_assets)
+            # if unknown or failed:
+            #     self.failed.extend(failed)
+            #     self.unknown.extend(unknown)
+            #     self._skip_all_descendants(unknown, failed, insert_dct)
+
+            # Newly created assets are now unblocked as parents for the next iteration:
+            to_create = list(self._get_child_assets(new_assets, insert_dct))
+            futures |= queue_fn(to_create)
+
+        # if self.unknown or self.failed:
+        #     self._raise_latest_exception(created_assets)
+        return created_assets
+
+    def _queue_tasks(
+        self,
+        assets: List[Asset],
+        *,
+        pool: PriorityThreadPoolExecutor,
+        insert_fn: Callable,
+        insert_dct: Dict[Optional[str], List[Asset]],
+        subtree_count: Dict[str, int],
+    ) -> Set[Future]:
+        if not assets:
+            return set()
+        return {
+            pool.submit(insert_fn, self._dump_assets(task.items), priority=self.n_assets - task.priority)
+            for task in self._split_and_prioritise_assets(assets, insert_dct, subtree_count)
+        }
+
+    def _insert(
+        self,
+        assets: Dict[str, List[Dict]],
+        *,
+        upsert: bool,
+        upsert_mode: UpsertOptions,
+    ) -> Tuple[AssetList, List[Asset], List[Asset]]:
+        try:
+            resp = self.assets_api._post(self.resource_path, assets)
+            success = AssetList._load(resp.json()["items"])
+            return success, [], []
+
+        except (CogniteAPIError, CogniteDuplicatedError) as err:
+            raise NotImplementedError("upsert not rdy")
+            if err.duplicated:
+                if not upsert:
+                    raise
+                # TODO: How to deal with exceptions here?
+                updated = self._update(assets, cast(List, err.duplicated), cast(List, err.failed), upsert_mode)
+                err.successful.extend(updated)  # type: ignore [attr-defined]
+
+            self._update_latest_exception(err)
+            return cast(AssetList, err.successful), cast(List[Asset], err.failed), cast(List[Asset], err.unknown)
+
+    def _update(
+        self, assets: List[Asset], duplicated: List[Dict], failed: List[Asset], upsert_mode: UpsertOptions
+    ) -> AssetList:
+        subset = self._extract_subset(duplicated, assets)
+        if upsert_mode == "patch":
+            updated = self.assets_api.update(subset)
+
+        elif upsert_mode == "replace":
+            updates = list(map(self.make_replace_update, subset))
+            updated = self.assets_api.update(updates)
+        else:
+            raise ValueError(f"'upsert_mode' must be one of {list(UpsertOptions.__args__)}, not {upsert_mode!r}")
+
+        # Duplicated are also passed as failed, we need to clear up which are not failures:
+        # TODO: Verify implementation works when we use inserts using 'parent_id'
+        still_failed = [f for f in failed if updated.get(external_id=f.external_id) is None]
+        failed.clear()
+        if still_failed:
+            failed.extend(still_failed)
+        return updated
+
+    def make_replace_update(self, asset: Asset) -> AssetUpdate:
+        # TODO: The SDK makes it very hard to do full updates... this feels hacky:
+        patch = asset.dump(camel_case=True)
+        full_update = {**self.clear_all_update, **{k: {"set": v} for k, v in patch.items()}}
+        for key in ("ExternalId", "parentId", "parentExternalId"):
+            full_update.pop(key, None)
+        (upd := AssetUpdate(external_id=asset.external_id))._update_object = full_update
+        return upd
+
+    @cached_property
+    def clear_all_update(self) -> MappingProxyType[str, Dict[str, Any]]:
+        props = set(map(to_camel_case, AssetUpdate._get_update_properties()))
+        dct: Dict[str, Dict[str, Any]] = {k: {"setNull": True} for k in props}
+        # Handle metadata separately... lol:
+        # https://github.com/cognitedata/cognite-sdk-python/pull/757#issuecomment-723973727
+        dct["metadata"] = {"set": {}}
+        return MappingProxyType(dct)
+
+    def _split_and_prioritise_assets(
+        self,
+        to_create: List[Asset],
+        insert_dct: Dict[Optional[str], List[Asset]],
+        subtree_count: Dict[str, int],
+    ) -> Iterator[_CreateTask]:
+        # We want to dive as deep down the hierarchy as possible while prioritising assets with the biggest
+        # subtree, that way we more quickly get into a state with enough unblocked parents to always keep
+        # our worker threads fed with create-requests.
+        n = len(to_create)
+        n_parts = min(n, max(self.max_workers, math.ceil(n / self.create_limit)))
+        tasks = [
+            self._extend_with_unblocked_from_subtree(set(chunk), insert_dct, subtree_count)
+            for chunk in split_into_n_parts(to_create, n=n_parts)
+        ]
+        # Also, to not waste worker threads on tiny requests, we might recombine:
+        tasks.sort(key=lambda task: len(task.items))
+        yield from self._recombine_chunks(tasks, limit=self.create_limit)
 
     @staticmethod
-    def _validate_asset_hierarchy(assets: Sequence[Asset]) -> None:
-        external_ids_seen = set()
-        for asset in assets:
-            if asset.external_id is None:
-                raise AssertionError("An asset does not have external_id.")
-            if asset.external_id in external_ids_seen:
-                raise AssertionError(f"Duplicate external_id '{asset.external_id}' found")
-            external_ids_seen.add(asset.external_id)
+    def _dump_assets(assets: Set[Asset]) -> Dict[str, List[Dict[str, Any]]]:
+        return {"items": [asset.dump(camel_case=True) for asset in assets]}
 
-            parent_ref = asset.parent_external_id
-            if parent_ref:
-                if asset.parent_id is not None:
-                    raise AssertionError(
-                        f"An asset has both parent_id '{asset.parent_id}' and parent_external_id "
-                        f"'{asset.parent_external_id}' set."
-                    )
-
-    def _initialize(self) -> None:
-        root_assets = set()
-        for external_id in self.remaining_external_ids:
-            asset = self.external_id_to_asset[external_id]
-            if asset.parent_external_id not in self.external_id_to_asset or asset.parent_id is not None:
-                root_assets.add(asset)
-            elif asset.parent_external_id in self.external_id_to_children:
-                self.external_id_to_children[asset.parent_external_id].add(asset)
-            self._verify_asset_is_not_part_of_tree_with_circular_deps(asset)
-
-        for root_asset in root_assets:
-            self._initialize_asset_to_descendant_count(root_asset)
-
-        self.remaining_external_ids = self._sort_external_ids_by_descendant_count(self.remaining_external_ids)
-
-    def _initialize_asset_to_descendant_count(self, asset: Asset) -> int:
-        for child in self.external_id_to_children[cast(str, asset.external_id)]:
-            self.external_id_to_descendent_count[
-                cast(str, asset.external_id)
-            ] += 1 + self._initialize_asset_to_descendant_count(child)
-        return self.external_id_to_descendent_count[cast(str, asset.external_id)]
-
-    def _get_descendants(self, asset: Asset) -> Sequence[Asset]:
-        descendants = []
-        for child in self.external_id_to_children[cast(str, asset.external_id)]:
-            descendants.append(child)
-            descendants.extend(self._get_descendants(child))
-        return descendants
-
-    def _verify_asset_is_not_part_of_tree_with_circular_deps(self, asset: Asset) -> None:
-        next_asset: Optional[Asset] = asset
-        seen = {cast(str, asset.external_id)}
-        while next_asset is not None and next_asset.parent_external_id is not None:
-            next_asset = self.external_id_to_asset.get(next_asset.parent_external_id)
-            if next_asset is None:
-                break
-            if next_asset.external_id in self.external_ids_without_circular_deps:
-                break
-            if next_asset.external_id not in seen:
-                seen.add(cast(str, next_asset.external_id))
+    @staticmethod
+    def _recombine_chunks(lst: List[_CreateTask], limit: int) -> Iterator[_CreateTask]:
+        task = lst[0]
+        for next_task in lst[1:]:
+            if len(task.items) + len(next_task.items) > limit:
+                yield task
+                task = next_task
             else:
-                raise AssertionError("The asset hierarchy has circular dependencies")
-        self.external_ids_without_circular_deps.update(seen)
+                task = _CreateTask(task.items | next_task.items, max(task.priority, next_task.priority))
+        yield task
 
-    def _sort_external_ids_by_descendant_count(self, external_ids: OrderedDict) -> OrderedDict:
-        sorted_external_ids = sorted(external_ids, key=lambda x: self.external_id_to_descendent_count[x], reverse=True)
-        return OrderedDict({external_id: None for external_id in sorted_external_ids})
+    def _extend_with_unblocked_from_subtree(
+        self,
+        to_create: Set[Asset],
+        insert_dct: Dict[Optional[str], List[Asset]],
+        subtree_count: Dict[str, int],
+    ) -> _CreateTask:
+        pri_q = [(-subtree_count[cast(str, asset.external_id)], self.__counter(), asset) for asset in to_create]
+        heapq.heapify(pri_q)
+        priority = -pri_q[0][0]  # No child asset can have a larger subtree than its parent
 
-    def _get_assets_unblocked_locally(self, asset: Asset, limit: int) -> Set[Asset]:
-        pq = utils._auxiliary.PriorityQueue()
-        pq.add(asset, self.external_id_to_descendent_count[cast(str, asset.external_id)])
-        unblocked_descendents: Set[Asset] = set()
-        while pq:
-            if len(unblocked_descendents) == limit:
+        while pri_q:  # Queue should seriously be spelled q
+            *_, asset = heapq.heappop(pri_q)
+            to_create.add(asset)
+            if children := insert_dct.get(asset.parent_external_id):
+                children.remove(asset)  # TODO: Change to set (at least benchmark on real data)
+            if len(to_create) == self.create_limit:
                 break
-            asset = pq.get()
-            unblocked_descendents.add(asset)
-            self.remaining_external_ids_set.remove(asset.external_id)
-            for child in self.external_id_to_children[cast(str, asset.external_id)]:
-                pq.add(child, self.external_id_to_descendent_count[cast(str, child.external_id)])
-        return unblocked_descendents
+            for child in insert_dct.get(asset.external_id, []):
+                heapq.heappush(pri_q, (-subtree_count[cast(str, child.external_id)], self.__counter(), child))
 
-    def _get_unblocked_assets(self) -> Sequence[Set[Asset]]:
-        limit = self.client._CREATE_LIMIT
-        unblocked_assets_lists = []
-        unblocked_assets_chunk: Set[Asset] = set()
-        for external_id in self.remaining_external_ids:
-            asset = self.external_id_to_asset[external_id]
-            parent_external_id = asset.parent_external_id
+        return _CreateTask(to_create, priority)
 
-            if external_id in self.remaining_external_ids_set:
-                has_parent_id = asset.parent_id is not None
-                is_root = (not has_parent_id) and parent_external_id not in self.external_id_to_asset
-                is_unblocked = parent_external_id in self.successfully_posted_external_ids
-                if is_root or has_parent_id or is_unblocked:
-                    unblocked_assets_chunk.update(
-                        self._get_assets_unblocked_locally(asset, limit - len(unblocked_assets_chunk))
-                    )
-                    if len(unblocked_assets_chunk) == limit:
-                        unblocked_assets_lists.append(unblocked_assets_chunk)
-                        unblocked_assets_chunk = set()
-        if len(unblocked_assets_chunk) > 0:
-            unblocked_assets_lists.append(unblocked_assets_chunk)
+    @staticmethod
+    def _get_child_assets(assets: Iterable[Asset], insert_dct: Dict[Optional[str], List[Asset]]) -> Iterator[Asset]:
+        return itertools.chain.from_iterable(insert_dct.pop(asset.external_id, []) for asset in assets)
 
-        for unblocked_assets_chunk in unblocked_assets_lists:
-            for unblocked_asset in unblocked_assets_chunk:
-                del self.remaining_external_ids[cast(str, unblocked_asset.external_id)]
+    @staticmethod
+    def _extract_subset(xids_subset: List[Dict[str, str]], assets: List[Asset]) -> List[Asset]:
+        # Avoids repeated list-lookups (O(N^2))
+        lookup = {asset.external_id: asset for asset in assets}
+        return [lookup[cast(str, xid)] for xid in map(unwrap_identifer, xids_subset)]
 
-        return unblocked_assets_lists
+    def _skip_all_descendants(
+        self,
+        unknown: List[Asset],
+        failed: List[Asset],
+        insert_dct: Dict[Optional[str], List[Asset]],
+    ) -> None:
+        skip_assets = [*unknown, *failed]
+        while skip_assets:
+            skip_assets = list(self._get_child_assets(skip_assets, insert_dct))
+            self.failed.extend(skip_assets)
 
-    def run(self) -> None:
-        unblocked_assets_lists = self._get_unblocked_assets()
-        for unblocked_assets in unblocked_assets_lists:
-            self.request_queue.put(list(unblocked_assets))
-        while self.assets_remaining():
-            res = self.response_queue.get()
-            if isinstance(res, _AssetsFailedToPost):
-                if isinstance(res.exc, CogniteAPIError):
-                    self.exception = res.exc
-                    for asset in res.assets:
-                        if res.exc.code >= 500:
-                            self.may_have_been_posted_assets.add(asset)
-                        elif res.exc.code >= 400:
-                            self.not_posted_assets.add(asset)
-                        for descendant in self._get_descendants(asset):
-                            self.not_posted_assets.add(descendant)
-                else:
-                    raise res.exc
-            else:
-                for asset in res:
-                    self.posted_assets.add(asset)
-                    self.successfully_posted_external_ids.add(cast(str, asset.external_id))
-                unblocked_assets_lists = self._get_unblocked_assets()
-                for unblocked_assets in unblocked_assets_lists:
-                    self.request_queue.put(list(unblocked_assets))
-        if len(self.may_have_been_posted_assets) > 0 or len(self.not_posted_assets) > 0:
-            if isinstance(self.exception, CogniteAPIError):
-                raise CogniteAPIError(
-                    message=self.exception.message,
-                    code=self.exception.code,
-                    x_request_id=self.exception.x_request_id,
-                    missing=self.exception.missing,
-                    duplicated=self.exception.duplicated,
-                    successful=AssetList(list(self.posted_assets)),
-                    unknown=AssetList(list(self.may_have_been_posted_assets)),
-                    failed=AssetList(list(self.not_posted_assets)),
-                    unwrap_fn=lambda a: a.external_id,
-                )
-            raise cast(Exception, self.exception)
+    def _update_latest_exception(self, exception: Union[CogniteAPIError, CogniteDuplicatedError]) -> None:
+        if exception.failed or exception.unknown:
+            self.exception = exception
 
-    def post(self) -> AssetList:
-        workers = []
-        for _ in range(self.client._config.max_workers):
-            worker = _AssetPosterWorker(self.client, self.request_queue, self.response_queue)
-            workers.append(worker)
-            worker.start()
-
-        self.run()
-
-        for worker in workers:
-            worker.stop = True
-
-        return AssetList(self.posted_assets)
+    def _raise_latest_exception(self, successful: AssetList) -> NoReturn:
+        assert self.exception is not None
+        err_details: Dict[str, Any] = dict(
+            message="One or more errors happened during asset creation",
+            code=None,
+            successful=successful,
+            unknown=AssetList(self.unknown),
+            failed=AssetList(self.failed),
+            unwrap_fn=op.attrgetter("external_id"),
+        )
+        if isinstance(self.exception, CogniteAPIError):
+            err_details.update(
+                message=f"{err_details['message']}. Latest error: {self.exception.message}",
+                code=self.exception.code,
+                x_request_id=self.exception.x_request_id,
+            )
+        raise CogniteAPIError(**err_details)  # type: ignore [arg-type]

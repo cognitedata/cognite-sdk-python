@@ -410,7 +410,7 @@ class RawRowsAPI(APIClient):
         rows = [Row(key=key, columns=cols) for key, cols in df_dict.items()]
         self.insert(db_name=db_name, table_name=table_name, row=rows, ensure_parent=ensure_parent)
 
-    def _process_row_input(self, row: Union[Sequence[Row], Row, Dict]) -> List[Union[List, Dict]]:
+    def _process_row_input(self, row: Union[Sequence[Row], Row, Dict]) -> List[List[Dict]]:
         utils._auxiliary.assert_type(row, "row", [Sequence, dict, Row])
         rows = []
         if isinstance(row, dict):

@@ -65,7 +65,12 @@ from cognite.client.utils._auxiliary import (
     split_into_n_parts,
     validate_user_input_dict_with_identifier,
 )
-from cognite.client.utils._concurrency import collect_exc_info_and_raise, execute_tasks, get_priority_executor
+from cognite.client.utils._concurrency import (
+    collect_exc_info_and_raise,
+    execute_tasks,
+    get_as_completed_fn,
+    get_priority_executor,
+)
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._time import timestamp_to_ms
 
@@ -217,8 +222,9 @@ class EagerDpsFetcher(DpsFetchStrategy):
         futures_dct, ts_task_lookup = self._create_initial_tasks(pool, use_numpy)
 
         # Run until all top level tasks are complete:
+        as_completed = get_as_completed_fn(pool)
         while futures_dct:
-            future = next(pool.as_completed(futures_dct))
+            future = next(as_completed(futures_dct))
             ts_task = (subtask := futures_dct.pop(future)).parent
             res = self._get_result_with_exception_handling(future, ts_task, ts_task_lookup, futures_dct)
             if res is None:
@@ -328,7 +334,8 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         ts_task_lookup, missing_to_raise = {}, set()
         initial_query_limits, initial_futures_dct = self._create_initial_tasks(pool)
 
-        for future in pool.as_completed(initial_futures_dct):
+        as_completed = get_as_completed_fn(pool)
+        for future in as_completed(initial_futures_dct):
             res_lst = future.result()
             chunk_agg_qs, chunk_raw_qs = initial_futures_dct.pop(future)
             new_ts_tasks, chunk_missing = self._create_ts_tasks_and_handle_missing(
@@ -359,8 +366,9 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         futures_dct: Dict[Future, List[BaseDpsFetchSubtask]],
         ts_task_lookup: Dict[_SingleTSQueryBase, BaseConcurrentTask],
     ) -> None:
+        as_completed = get_as_completed_fn(pool)
         while futures_dct:
-            future = next(pool.as_completed(futures_dct))
+            future = next(as_completed(futures_dct))
             res_lst, subtask_lst = future.result(), futures_dct.pop(future)
             for subtask, res in zip(subtask_lst, res_lst):
                 # We may dynamically split subtasks based on what % of time range was returned:

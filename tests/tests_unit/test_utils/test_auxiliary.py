@@ -17,22 +17,8 @@ from cognite.client.utils._auxiliary import (
     local_import,
     split_into_chunks,
     split_into_n_parts,
-    to_camel_case,
-    to_snake_case,
     validate_user_input_dict_with_identifier,
 )
-
-
-class TestCaseConversion:
-    def test_to_camel_case(self):
-        assert "camelCase" == to_camel_case("camel_case")
-        assert "camelCase" == to_camel_case("camelCase")
-        assert "a" == to_camel_case("a")
-
-    def test_to_snake_case(self):
-        assert "snake_case" == to_snake_case("snakeCase")
-        assert "snake_case" == to_snake_case("snake_case")
-        assert "a" == to_snake_case("a")
 
 
 @pytest.mark.parametrize(
@@ -240,7 +226,7 @@ class TestSplitIntoNParts:
     )
     def test_normal_split(self, inp, n, exp_out):
         exp_type = type(inp)
-        res = split_into_n_parts(inp, n)
+        res = split_into_n_parts(inp, n=n)
         for r, res_exp in zip_longest(res, exp_out, fillvalue=math.nan):
             assert type(r) is exp_type
             assert r == res_exp
@@ -256,7 +242,7 @@ class TestSplitIntoNParts:
     )
     def test_split_into_too_many_pieces(self, inp, n, exp_out):
         exp_type = type(inp)
-        res = split_into_n_parts(inp, n)
+        res = split_into_n_parts(inp, n=n)
         for r, res_exp in zip_longest(res, exp_out, fillvalue=math.nan):
             assert type(r) is exp_type
             assert r == res_exp

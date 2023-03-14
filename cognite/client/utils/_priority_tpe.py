@@ -34,11 +34,10 @@ import inspect
 import itertools
 import sys
 import weakref
-from concurrent.futures import Future, as_completed
+from concurrent.futures import Future
 from concurrent.futures.thread import ThreadPoolExecutor, _base, _WorkItem
 from queue import Empty, PriorityQueue
 from threading import Lock, Thread
-from typing import Iterable, Iterator
 
 NULL_ENTRY = (-1, None, None)
 _THREADS_QUEUES = weakref.WeakKeyDictionary()
@@ -100,11 +99,6 @@ class PriorityThreadPoolExecutor(ThreadPoolExecutor):
         super().__init__(max_workers)
         self._work_queue = PriorityQueue()
         self._task_counter = itertools.count().__next__
-
-    @staticmethod
-    def as_completed(futures: Iterable[Future]) -> Iterator[Future]:
-        # This is just here to make a serial non-threading version "hot-swappable"
-        return as_completed(futures)
 
     def submit(self, fn, *args, **kwargs):
         if "priority" in inspect.signature(fn).parameters:

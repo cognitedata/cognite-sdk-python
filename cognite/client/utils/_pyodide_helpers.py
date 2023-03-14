@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import warnings
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Callable, Dict, Optional, Tuple
 
 import cognite.client as cc
 from cognite.client._http_client import _RetryTracker
@@ -43,9 +43,6 @@ def patch_sdk_for_pyodide() -> None:
     cc.utils._concurrency.ConcurrencySettings.executor_type = "mainthread"
     cc.utils._concurrency.ConcurrencySettings.priority_executor_type = "mainthread"
 
-    # - AssetsAPI.create_hierarchy is not implemented yet (custom threading solution)
-    cc._api.assets._AssetPoster = NotImplementedAssetPoster  # type: ignore [assignment, misc]
-
     # - Auto-ignore protobuf warning for the user (as they can't fix this):
     warnings.filterwarnings(
         action="ignore",
@@ -72,11 +69,6 @@ def http_client__init__(
     self._old__init__(config, session, retry_tracker_factory)  # type: ignore [attr-defined]
     self.session.mount("https://", pyodide_http._requests.PyodideHTTPAdapter())
     self.session.mount("http://", pyodide_http._requests.PyodideHTTPAdapter())
-
-
-class NotImplementedAssetPoster:
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        raise NotImplementedError("AssetsAPI.create_hierarchy is not pyodide/web-browser compatible yet! Stay tuned!")
 
 
 class EnvVarToken(CredentialProvider):

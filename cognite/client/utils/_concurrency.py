@@ -3,13 +3,14 @@ from __future__ import annotations
 import functools
 import inspect
 from collections import UserList
-from concurrent.futures import CancelledError
-from concurrent.futures.thread import ThreadPoolExecutor
+from concurrent.futures import CancelledError, Future, ThreadPoolExecutor, as_completed
+from copy import copy
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
     Dict,
+    Iterable,
     Iterator,
     List,
     Literal,
@@ -193,10 +194,6 @@ class ExtendedMainThreadExecutor(TaskExecutor):
     def shutdown(self, wait: bool = False) -> None:
         return None
 
-    @staticmethod
-    def as_completed(dct: Dict[ExtendedSyncFuture, Any]) -> Iterator[ExtendedSyncFuture]:
-        return iter(dct.copy())
-
     def __enter__(self) -> ExtendedMainThreadExecutor:
         return self
 
@@ -235,6 +232,22 @@ def get_executor(max_workers: int) -> TaskExecutor:
     else:
         raise RuntimeError(f"Invalid executor type '{ConcurrencySettings.executor_type}'")
     return executor
+
+
+def get_as_completed_fn(
+    pool: Union[ThreadPoolExecutor, PriorityThreadPoolExecutor],
+) -> Callable[[Iterable[Future]], Iterator[Future]]:
+    if isinstance(pool, (ThreadPoolExecutor, PriorityThreadPoolExecutor)):
+        return as_completed
+
+    elif isinstance(pool, (MainThreadExecutor, ExtendedMainThreadExecutor)):
+
+        def no_thread_as_completed(it: Iterable[ExtendedSyncFuture]) -> Iterator[ExtendedSyncFuture]:
+            return iter(copy(it))
+
+        return no_thread_as_completed
+
+    raise TypeError(f"Unknown pool type: {type(pool)}")
 
 
 def get_priority_executor(max_workers: int) -> PriorityThreadPoolExecutor:
