@@ -65,10 +65,10 @@ else:
 if NUMPY_IS_AVAILABLE:
     import numpy as np
 
-    from cognite.client.data_classes.datapoints import NumpyFloat64Array, NumpyInt64Array, NumpyObjArray
-
 if TYPE_CHECKING:
     import numpy.typing as npt
+
+    from cognite.client.data_classes.datapoints import NumpyFloat64Array, NumpyInt64Array, NumpyObjArray
 
 DPS_LIMIT_AGG = 10_000
 DPS_LIMIT = 100_000
