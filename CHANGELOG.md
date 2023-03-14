@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [5.7.3] - 14-03-23
+### Improved
+- For users unknowingly using a too old version of `numpy` (against the SDK dependency requirements), an exception could be raised (`NameError: name 'np' is not defined`). This has been fixed.
+
 ## [5.7.2] - 10-03-23
 ### Fixed
 - Fix method dump in TransformationDestination to ignore None.

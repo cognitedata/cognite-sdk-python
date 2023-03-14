@@ -55,23 +55,24 @@ ALL_SORTED_DP_AGGS = sorted(
     ]
 )
 
+try:
+    import numpy as np
+
+    NUMPY_IS_AVAILABLE = True
+
+except ImportError:  # pragma no cover
+    NUMPY_IS_AVAILABLE = False
+
 if TYPE_CHECKING:
+    import numpy.typing as npt
     import pandas
 
     from cognite.client import CogniteClient
-
-try:
-    import numpy as np
-    import numpy.typing as npt
 
     NumpyDatetime64NSArray = npt.NDArray[np.datetime64]
     NumpyInt64Array = npt.NDArray[np.int64]
     NumpyFloat64Array = npt.NDArray[np.float64]
     NumpyObjArray = npt.NDArray[np.object_]
-    NUMPY_IS_AVAILABLE = True
-
-except ImportError:  # pragma no cover
-    NUMPY_IS_AVAILABLE = False
 
 
 @dataclass(frozen=True)
