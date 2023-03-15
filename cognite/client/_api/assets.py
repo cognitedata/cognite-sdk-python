@@ -514,7 +514,7 @@ class AssetsAPI(APIClient):
             You may also run this validation prior to calling `AssetsAPI.create_hierarchy()`.
             See :class:`~cognite.client.data_classes.assets.AssetHierarchy`.
 
-                >>> from coginte.client.data_classes import AssetHierarchy
+                >>> from cognite.client.data_classes import AssetHierarchy
                 >>> hierarchy = AssetHierarchy(assets)
                 >>> if hierarchy.is_valid():
                 ...     res = c.assets.create_hierarchy(hierarchy)

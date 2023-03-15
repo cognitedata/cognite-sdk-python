@@ -2,7 +2,7 @@ from string import ascii_lowercase
 
 import pytest
 
-from cognite.client.utils._auxiliary import shorten
+from cognite.client.utils._text import shorten
 
 
 @pytest.mark.parametrize(

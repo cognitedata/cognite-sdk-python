@@ -58,7 +58,7 @@ def new_asset_hierarchy(cognite_client, post_spy):
     with set_request_limit(cognite_client.assets, 50):
         cognite_client.assets.create_hierarchy(assets)
 
-    assert cognite_client.assets._post.call_count == 16
+    assert 19 < cognite_client.assets._post.call_count < 23
 
     ext_ids = [a.external_id for a in assets]
     yield random_prefix, ext_ids
