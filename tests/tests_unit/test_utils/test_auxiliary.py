@@ -17,8 +17,22 @@ from cognite.client.utils._auxiliary import (
     local_import,
     split_into_chunks,
     split_into_n_parts,
+    to_camel_case,
+    to_snake_case,
     validate_user_input_dict_with_identifier,
 )
+
+
+class TestCaseConversion:
+    def test_to_camel_case(self):
+        assert "camelCase" == to_camel_case("camel_case")
+        assert "camelCase" == to_camel_case("camelCase")
+        assert "a" == to_camel_case("a")
+
+    def test_to_snake_case(self):
+        assert "snake_case" == to_snake_case("snakeCase")
+        assert "snake_case" == to_snake_case("snake_case")
+        assert "a" == to_snake_case("a")
 
 
 @pytest.mark.parametrize(
