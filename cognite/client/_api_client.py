@@ -45,7 +45,6 @@ from cognite.client.data_classes._base import (
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import is_unlimited, split_into_chunks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence, SingletonIdentifierSequence
-from cognite.client.utils._text import shorten
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -852,7 +851,7 @@ class APIClient:
             error_details["duplicated"] = duplicated
         error_details["headers"] = res.request.headers.copy()
         cls._sanitize_headers(error_details["headers"])
-        error_details["response_payload"] = shorten(cls._get_response_content_safe(res), 500)
+        error_details["response_payload"] = cls._truncate(cls._get_response_content_safe(res))
         error_details["response_headers"] = res.headers
 
         if res.history:
@@ -876,7 +875,7 @@ class APIClient:
 
         stream = kwargs.get("stream")
         if not stream and self._config.debug is True:
-            extra["response_payload"] = shorten(self._get_response_content_safe(res), 500)
+            extra["response_payload"] = self._truncate(self._get_response_content_safe(res))
         extra["response_headers"] = res.headers
 
         try:
@@ -886,6 +885,12 @@ class APIClient:
             http_protocol = "XMLHTTP"
 
         log.debug(f"{http_protocol} {method} {url} {status_code}", extra=extra)
+
+    @staticmethod
+    def _truncate(s: str, limit: int = 500) -> str:
+        if len(s) > limit:
+            return s[:limit] + "..."
+        return s
 
     @staticmethod
     def _get_response_content_safe(res: Response) -> str:

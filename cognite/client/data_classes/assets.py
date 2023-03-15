@@ -483,6 +483,40 @@ class AssetHierarchy:
     """Class that verifies if a collection of Assets is valid, by validating its internal consistency.
     This is done "offline", meaning CDF is -not- queried for the already existing assets. As a result,
     any asset providing a parent link by ID instead of external ID, are assumed valid.
+
+    Example usage:
+
+        >>> from cognite.client import CogniteClient
+        >>> from cognite.client.data_classes import AssetHierarchy
+        >>> client = CogniteClient()
+        >>> hierarchy = AssetHierarchy(assets)
+        >>> # Get a report written to the terminal listing any issues:
+        >>> hierarchy.validate_and_report()
+        >>> if hierarchy.is_valid():
+        ...     res = client.assets.create_hierarchy(hierarchy)
+        ... # If there are issues, you may inspect them directly:
+        ... else:
+        ...     hierarchy.orphans
+        ...     hierarchy.invalid
+        ...     hierarchy.unsure_parents
+        ...     hierarchy.duplicates
+        ...     hierarchy.cycles  # Requires no other basic issues
+
+    There are other ways to generate the report than to write directly to screen. You may pass an
+    ``output_file`` which can be either a ``Path`` object (writes are done in append-mode) or a
+    file-like object supporting ``write`` (default is ``None`` which is just regular ``print``):
+
+        >>> # Get a report written to file:
+        >>> from pathlib import Path
+        >>> report = Path("path/to/my_report.txt")
+        >>> hierarchy = AssetHierarchy(assets)
+        >>> hierarchy.validate_and_report(output_file=report)
+
+        >>> # Get a report as text "in memory":
+        >>> import io
+        >>> with io.StringIO() as file_like:
+        ...     hierarchy.validate_and_report(output_file=file_like)
+        ...     report = file_like.getvalue()
     """
 
     def __init__(self, assets: Sequence[Asset], ignore_orphans: bool = False) -> None:
@@ -496,6 +530,9 @@ class AssetHierarchy:
         self._cycles: Optional[List[List[str]]] = None
 
         self.__validation_has_run = False
+
+    def __len__(self) -> int:
+        return len(self._assets)
 
     def is_valid(self, on_error: OnErrorOptions = "ignore") -> bool:
         if not self.__validation_has_run:
@@ -601,7 +638,14 @@ class AssetHierarchy:
         return mapping
 
     def count_subtree(self, mapping: Dict[Optional[str], List[Asset]]) -> Dict[str, int]:
-        """Requires mapping given by `groupby_parent_xid`. If not passed, will recreate (slightly expensive)"""
+        """Returns a mapping from asset external ID to the size of its subtree (children and children of chidren etc.).
+
+        Args:
+            mapping (Dict | None): The mapping returned by `groupby_parent_xid()`. If None is passed, will be recreated (slightly expensive).
+
+        Returns:
+            Dict[str, int]: Lookup from external ID to descendant count.
+        """
         if mapping is None:
             mapping = self.groupby_parent_xid()
 
@@ -617,6 +661,7 @@ class AssetHierarchy:
         )
         counts = [(parent, _count_subtree(parent)) for parent in sorter.static_order()]
         counts.sort(key=lambda args: -args[-1])
+        # The count for the fictitious "root of roots" is just len(assets), so we remove it:
         (count_dct := dict(counts)).pop(None, None)
         return count_dct
 

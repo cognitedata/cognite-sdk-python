@@ -42,7 +42,7 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.shared import AggregateBucketResult
 from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError
-from cognite.client.utils._auxiliary import split_into_n_parts, to_camel_case, unwrap_identifer
+from cognite.client.utils._auxiliary import split_into_n_parts, to_camel_case
 from cognite.client.utils._concurrency import get_as_completed_fn, get_priority_executor
 from cognite.client.utils._identifier import IdentifierSequence
 
@@ -108,7 +108,7 @@ class AssetsAPI(APIClient):
             Union[Asset, AssetList]: yields Asset one by one if chunk is not specified, else AssetList objects.
         """
         if aggregated_properties:
-            aggregated_properties = [to_camel_case(s) for s in aggregated_properties]
+            aggregated_properties = [utils._auxiliary.to_camel_case(s) for s in aggregated_properties]
 
         asset_subtree_ids_processed = None
         if asset_subtree_ids or asset_subtree_external_ids:
@@ -297,7 +297,7 @@ class AssetsAPI(APIClient):
                 >>> asset_list = c.assets.list(labels=my_label_filter)
         """
         if aggregated_properties:
-            aggregated_properties = [to_camel_case(s) for s in aggregated_properties]
+            aggregated_properties = [utils._auxiliary.to_camel_case(s) for s in aggregated_properties]
 
         asset_subtree_ids_processed = None
         if asset_subtree_ids or asset_subtree_external_ids:
@@ -455,25 +455,29 @@ class AssetsAPI(APIClient):
         This helper function makes it easy to insert large asset hierarchies. It solves the problem of topological insertion
         order, i.e. a parent asset must exist before it can be referenced by any 'children' assets.
 
-        Additionally, prior to insertion, this function will run validation on the given assets, raising an error if ('category'
-        below is the name of the attribute you might access on the raised error to get the collection of 'bad' assets):
+        Additionally, prior to insertion, this function will run validation on the given assets, raising an error if:
 
-            1. Any assets are invalid (category "invalid"):
-                1. Missing external ID
-                2. Missing a valid name
-                3. Has an ID set
-            2. Any asset duplicates exist (category "duplicates")
-            3. Any assets have an ambiguous parent link (category "unsure_parents")
-            4. Any group of assets form a cycle, e.g. A->B->A (category "cycles")
+            1. Any assets are invalid (category: ``invalid``):
+
+                - Missing external ID.
+                - Missing a valid name.
+                - Has an ID set.
+            2. Any asset duplicates exist (category: ``duplicates``)
+            3. Any assets have an ambiguous parent link (category: ``unsure_parents``)
+            4. Any group of assets form a cycle, e.g. A->B->A (category: ``cycles``)
 
         It is worth noting that validation is done "offline", i.e. existing assets in CDF are not inspected. This means:
 
             1. All assets linking a parent by ID are assumed valid
-            2. All orphan assets are assumed valid. "Orphan" means the parent is not part of the given assets (category "orphans")
+            2. All orphan assets are assumed valid. "Orphan" means the parent is not part of the given assets (category: ``orphans``)
+
+        Note:
+            The different categories specified above corresponds to the name of the attribute you might access on the raised error to
+            get the collection of 'bad' assets falling in that group, e.g. ``error.duplicates``.
 
         Args:
             assets (Sequence[Asset] | AssetHierarchy): List of assets to create or an instance of AssetHierarchy.
-            upsert (bool): Already existing assets will be updated instead of an exception being raised. You may control how updates
+            upsert (bool): If used, already existing assets will be updated instead of an exception being raised. You may control how updates
                 are applied with the 'upsert_mode' argument.
             upsert_mode ("patch" | "replace"): Only applicable with upsert. Pass 'patch' to only update fields with non-null values
                 (default), or 'replace' to do full updates.
@@ -500,15 +504,20 @@ class AssetsAPI(APIClient):
                 >>> try:
                 ...     res = c.assets.create_hierarchy(assets)
                 ... except CogniteAssetHierarchyError as err:
-                ...     if err.duplicates:
+                ...     if err.invalid:
                 ...         ...  # do something
 
-            In addition to 'duplicates', you may inspect 'invalid', 'unsure_parents', 'orphans' and 'cycles'. Note that
+            In addition to 'invalid', you may inspect 'duplicates', 'unsure_parents', 'orphans' and 'cycles'. Note that
             cycles are not available if any of the other basic issues exist, as the search for cyclical references
             requires a clean asset hierarchy to begin with.
 
             You may also run this validation prior to calling `AssetsAPI.create_hierarchy()`.
             See :class:`~cognite.client.data_classes.assets.AssetHierarchy`.
+
+                >>> from coginte.client.data_classes import AssetHierarchy
+                >>> hierarchy = AssetHierarchy(assets)
+                >>> if hierarchy.is_valid():
+                ...     res = c.assets.create_hierarchy(hierarchy)
         """
         if not isinstance(assets, AssetHierarchy):
             utils._auxiliary.assert_type(assets, "assets", [Sequence])
@@ -725,7 +734,7 @@ class _AssetHierarchyCreator:
     def __init__(self, hierarchy: AssetHierarchy, assets_api: AssetsAPI) -> None:
         hierarchy.is_valid(on_error="raise")
         self.hierarchy = hierarchy
-        self.n_assets = len(hierarchy._assets)
+        self.n_assets = len(hierarchy)
         self.assets_api = assets_api
         self.create_limit = assets_api._CREATE_LIMIT
         self.resource_path = assets_api._RESOURCE_PATH
@@ -771,17 +780,17 @@ class _AssetHierarchyCreator:
             futures.remove(fut := next(as_completed(futures)))
             new_assets, failed, unknown = fut.result()
             created_assets.extend(new_assets)
-            # if unknown or failed:
-            #     self.failed.extend(failed)
-            #     self.unknown.extend(unknown)
-            #     self._skip_all_descendants(unknown, failed, insert_dct)
+            if unknown or failed:
+                self.failed.extend(failed)
+                self.unknown.extend(unknown)
+                self._skip_all_descendants(unknown, failed, insert_dct)
 
             # Newly created assets are now unblocked as parents for the next iteration:
             to_create = list(self._get_child_assets(new_assets, insert_dct))
             futures |= queue_fn(to_create)
 
-        # if self.unknown or self.failed:
-        #     self._raise_latest_exception(created_assets)
+        if self.exception is not None or self.failed or self.unknown:
+            self._raise_latest_exception(created_assets)
         return created_assets
 
     def _queue_tasks(
@@ -813,45 +822,44 @@ class _AssetHierarchyCreator:
             return success, [], []
 
         except (CogniteAPIError, CogniteDuplicatedError) as err:
-            raise NotImplementedError("upsert not rdy")
+            successful = AssetList([])
             if err.duplicated:
                 if not upsert:
                     raise
-                # TODO: How to deal with exceptions here?
+                # TODO: Do we want to deal with exceptions here?
                 updated = self._update(assets, cast(List, err.duplicated), cast(List, err.failed), upsert_mode)
-                err.successful.extend(updated)  # type: ignore [attr-defined]
+                successful.extend(updated)  # type: ignore [attr-defined]
 
             self._update_latest_exception(err)
-            return cast(AssetList, err.successful), cast(List[Asset], err.failed), cast(List[Asset], err.unknown)
+            return successful, cast(List[Asset], err.failed), cast(List[Asset], err.unknown)
 
     def _update(
-        self, assets: List[Asset], duplicated: List[Dict], failed: List[Asset], upsert_mode: UpsertOptions
+        self, assets: Dict[str, List[Dict]], duplicated: List[Dict], failed: List[Asset], upsert_mode: UpsertOptions
     ) -> AssetList:
         subset = self._extract_subset(duplicated, assets)
         if upsert_mode == "patch":
-            updated = self.assets_api.update(subset)
-
+            updates = [self._make_asset_updates(asset, patch=True) for asset in subset]
         elif upsert_mode == "replace":
-            updates = list(map(self.make_replace_update, subset))
-            updated = self.assets_api.update(updates)
+            updates = [self._make_asset_updates(asset, patch=False) for asset in subset]
         else:
             raise ValueError(f"'upsert_mode' must be one of {list(UpsertOptions.__args__)}, not {upsert_mode!r}")
 
         # Duplicated are also passed as failed, we need to clear up which are not failures:
-        # TODO: Verify implementation works when we use inserts using 'parent_id'
+        # TODO: Verify implementation works when we use inserts with 'parent_id'
+        updated = self.assets_api.update(updates)
         still_failed = [f for f in failed if updated.get(external_id=f.external_id) is None]
         failed.clear()
         if still_failed:
             failed.extend(still_failed)
         return updated
 
-    def make_replace_update(self, asset: Asset) -> AssetUpdate:
-        # TODO: The SDK makes it very hard to do full updates... this feels hacky:
-        patch = asset.dump(camel_case=True)
-        full_update = {**self.clear_all_update, **{k: {"set": v} for k, v in patch.items()}}
-        for key in ("ExternalId", "parentId", "parentExternalId"):
-            full_update.pop(key, None)
-        (upd := AssetUpdate(external_id=asset.external_id))._update_object = full_update
+    def _make_asset_updates(self, dumped: Dict[str, Any], patch: bool) -> AssetUpdate:
+        # TODO: The SDK makes it very hard to do full updates...
+        dct_update = {} if patch else self.clear_all_update.copy()
+        dct_update.update({k: {"set": v} for k, v in dumped.items()})
+        for key in ("externalId", "parentId", "parentExternalId"):
+            dct_update.pop(key, None)
+        (upd := AssetUpdate(external_id=dumped["externalId"]))._update_object = dct_update
         return upd
 
     @cached_property
@@ -883,7 +891,7 @@ class _AssetHierarchyCreator:
         yield from self._recombine_chunks(tasks, limit=self.create_limit)
 
     @staticmethod
-    def _dump_assets(assets: Set[Asset]) -> Dict[str, List[Dict[str, Any]]]:
+    def _dump_assets(assets: Set[Asset]) -> Dict[str, List[Dict]]:
         return {"items": [asset.dump(camel_case=True) for asset in assets]}
 
     @staticmethod
@@ -911,7 +919,7 @@ class _AssetHierarchyCreator:
             *_, asset = heapq.heappop(pri_q)
             to_create.add(asset)
             if children := insert_dct.get(asset.parent_external_id):
-                children.remove(asset)  # TODO: Change to set (at least benchmark on real data)
+                children.remove(asset)  # Counter-intuitive: Using a set is not faster with small avg. list sizes
             if len(to_create) == self.create_limit:
                 break
             for child in insert_dct.get(asset.external_id, []):
@@ -924,10 +932,10 @@ class _AssetHierarchyCreator:
         return itertools.chain.from_iterable(insert_dct.pop(asset.external_id, []) for asset in assets)
 
     @staticmethod
-    def _extract_subset(xids_subset: List[Dict[str, str]], assets: List[Asset]) -> List[Asset]:
+    def _extract_subset(subset: List[Dict[str, str]], assets: Dict[str, List[Dict]]) -> List[Dict[str, Any]]:
         # Avoids repeated list-lookups (O(N^2))
-        lookup = {asset.external_id: asset for asset in assets}
-        return [lookup[cast(str, xid)] for xid in map(unwrap_identifer, xids_subset)]
+        lookup = {asset["externalId"]: asset for asset in assets["items"]}
+        return [lookup[asset["externalId"]] for asset in subset]
 
     def _skip_all_descendants(
         self,

@@ -55,15 +55,15 @@ class CogniteAPIError(CogniteMultiException):
     failed to be processed (4xx).
 
     Args:
-        message (str): The error message produced by the API
-        code (int): The error code produced by the failure
+        message (str): The error message produced by the API.
+        code (int): The error code produced by the failure.
         x_request_id (str): The request-id generated for the failed request.
-        missing: (TODO) TODO
-        duplicated: (TODO) TODO
+        missing: (List) List of missing identifiers.
+        duplicated: (List) List of duplicated identifiers.
         successful (List): List of items which were successfully processed.
         failed (List): List of items which failed.
         unknown (List): List of items which may or may not have been successfully processed.
-        unwrap_fn: (TODO) TODO
+        unwrap_fn: (Callable): Function to extract identifier from the Cognite resource.
         extra (Dict): A dict of any additional information.
 
     Examples:
@@ -159,7 +159,7 @@ class CogniteDuplicatedError(CogniteMultiException):
         successful (List): List of items which were successfully processed.
         failed (List): List of items which failed.
         unknown (List): List of items which may or may not have been successfully processed.
-        unwrap_fn (Callable): TODO
+        unwrap_fn: (Callable): Function to extract identifier from the Cognite resource.
     """
 
     def __init__(
@@ -227,7 +227,7 @@ class CogniteAssetHierarchyError(CogniteException, AssertionError):
         For historical reasons, we make the error catchable as an AssertionError.
 
     Args:
-        message (str): TODO
+        message (str): The error message to output.
         hierarchy (AssetHierarchy): An instance of AssetHierarchy that holds various groups
             of assets that failed validation.
     """

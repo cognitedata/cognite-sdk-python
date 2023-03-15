@@ -35,6 +35,7 @@ from typing import (
 )
 from urllib.parse import quote
 
+import cognite.client
 from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._identifier import T_ID, Identifier
 from cognite.client.utils._version_checker import get_newest_version_in_major_release
@@ -204,9 +205,7 @@ def import_legacy_protobuf() -> bool:
 
 
 def get_current_sdk_version() -> str:
-    from cognite.client import __version__
-
-    return __version__
+    return cognite.client.__version__
 
 
 @functools.lru_cache(maxsize=1)

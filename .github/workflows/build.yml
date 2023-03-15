@@ -3,7 +3,7 @@ name: build
 
 on:
   pull_request:
-    branches: [master-nananan]  # TODO: revert (just skipping PR checks for now)
+    branches: [master]
 
 jobs:
   lint:
