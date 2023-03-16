@@ -18,6 +18,7 @@ from cognite.client.data_classes import (
 )
 from cognite.client.exceptions import CogniteAssetHierarchyError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import random_string
+from cognite.client.utils._time import timestamp_to_ms
 from tests.utils import set_request_limit
 
 
@@ -41,8 +42,19 @@ def root_test_asset(cognite_client):
 
 
 @pytest.fixture(scope="module")
-def root_test_asset_subtree(root_test_asset):
-    return root_test_asset.subtree(depth=3)  # Don't need all for testing, just some children
+def root_test_asset_subtree(cognite_client, root_test_asset):
+    yield (tree := root_test_asset.subtree(depth=3))  # Don't need all for testing, just some children
+    try:
+        # Add a little cleanup to make sure we don't grow this tree over time (as stuff fails)
+        to_delete = [
+            asset.id
+            for asset in tree
+            if not asset.name.startswith("test__asset_") and asset.created_time < timestamp_to_ms("6h-ago")
+        ]
+        if to_delete:
+            cognite_client.assets.delete(id=to_delete)
+    except Exception:
+        pass
 
 
 class TestAssetsAPI:
@@ -132,7 +144,8 @@ class TestAssetsAPI:
         assert isinstance(cognite_client.assets.retrieve_subtree(id=random.randint(1, 10)), AssetList)
         assert 0 == len(cognite_client.assets.retrieve_subtree(external_id="non_existing_asset"))
         assert 0 == len(cognite_client.assets.retrieve_subtree(id=random.randint(1, 10)))
-        assert 790 == len(cognite_client.assets.retrieve_subtree(root_test_asset.id))
+        # 'root_test_asset' (+children) is used in other tests as parents, so we just check '>=':
+        assert 781 >= len(cognite_client.assets.retrieve_subtree(root_test_asset.id))
         subtree = cognite_client.assets.retrieve_subtree(root_test_asset.id, depth=1)
         assert 6 == len(subtree)
         assert all(subtree.get(id=a.id) is not None for a in subtree)

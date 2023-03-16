@@ -523,7 +523,7 @@ class AssetsAPI(APIClient):
                 >>> from cognite.client.exceptions import CogniteAPIError
                 >>> try:
                 ...     c.assets.create_hierarchy(assets)
-                >>> except CogniteAPIError as err:
+                ... except CogniteAPIError as err:
                 ...     created = err.successful
                 ...     maybe_created = err.unknown
                 ...     not_created = err.failed
