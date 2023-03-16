@@ -99,7 +99,7 @@ class ContextualizationJob(CogniteResource):
 
     def update_status(self) -> str:
         """Updates the model status and returns it"""
-        headers = {"X-Job-Token": self.job_token} if self.job_token else {}
+        headers = {"X-Job-Token": self.jobToken} if self.jobToken else {}
         data = (
             getattr(self._cognite_client, self._JOB_TYPE.value)
             ._get(f"{self._status_path}{self.job_id}", headers=headers)
