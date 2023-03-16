@@ -83,6 +83,7 @@ class ContextualizationJob(CogniteResource):
         start_time: int = None,
         status_time: int = None,
         status_path: str = None,
+        job_token: str = None,
         cognite_client: CogniteClient = None,
     ):
         """Data class for the result of a contextualization job."""
@@ -93,13 +94,14 @@ class ContextualizationJob(CogniteResource):
         self.start_time = start_time
         self.status_time = status_time
         self.error_message = error_message
+        self.job_token = job_token
         self._cognite_client = cast("CogniteClient", cognite_client)
         self._result: Optional[Dict[str, Any]] = None
         self._status_path = status_path
 
     def update_status(self) -> str:
         """Updates the model status and returns it"""
-        headers = {"X-Job-Token": self.jobToken} if self.jobToken else {}
+        headers = {"X-Job-Token": self.job_token} if self.job_token else {}
         data = (
             getattr(self._cognite_client, self._JOB_TYPE.value)
             ._get(f"{self._status_path}{self.job_id}", headers=headers)
