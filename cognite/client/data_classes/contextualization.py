@@ -147,6 +147,7 @@ class ContextualizationJob(CogniteResource):
     @classmethod
     def _load_with_status(
         cls: Type[T_ContextualizationJob],
+        *,
         data: Dict[str, Any],
         headers: CaseInsensitiveDict[str],
         status_path: str,

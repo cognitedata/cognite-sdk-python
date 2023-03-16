@@ -47,8 +47,8 @@ class VisionAPI(APIClient):
             headers=headers,
         )
         return job_cls._load_with_status(
-            res.json(),
-            res.headers,
+            data=res.json(),
+            headers=res.headers,
             status_path=self._RESOURCE_PATH + status_path,
             cognite_client=self._cognite_client,
         )

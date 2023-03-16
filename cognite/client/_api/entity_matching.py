@@ -33,8 +33,8 @@ class EntityMatchingAPI(APIClient):
         response = self._post(self._RESOURCE_PATH + job_path, json=json, headers=headers)
 
         return job_cls._load_with_status(
-            response.json(),
-            response.headers,
+            data=response.json(),
+            headers=response.headers,
             status_path=self._RESOURCE_PATH + status_path,
             cognite_client=self._cognite_client,
         )
