@@ -52,8 +52,10 @@ class DiagramsAPI(APIClient):
     ) -> T_ContextualizationJob:
         if status_path is None:
             status_path = job_path + "/"
+        response = self._camel_post(job_path, json=kwargs, headers=headers).json()
         return job_cls._load_with_status(
-            self._camel_post(job_path, json=kwargs, headers=headers).json(),
+            response.json(),
+            response.headers,
             status_path=self._RESOURCE_PATH + status_path,
             cognite_client=self._cognite_client,
         )
@@ -76,7 +78,6 @@ class DiagramsAPI(APIClient):
         external_ids: Union[Sequence[str], str, None],
         file_references: Union[Sequence[FileReference], FileReference, None],
     ) -> List[Union[Dict[str, Union[int, str, Dict[str, int]]], Dict[str, str], Dict[str, int]]]:
-
         ids = DiagramsAPI._list_from_instance_or_list(ids, int, "ids must be int or list of int")
         external_ids = DiagramsAPI._list_from_instance_or_list(
             external_ids, str, "external_ids must be str or list of str"
@@ -148,7 +149,6 @@ class DiagramsAPI(APIClient):
         *,
         multiple_jobs: bool = False,
     ) -> Union[DiagramDetectResults, Tuple[Optional[DetectJobBundle], List[Dict[str, Any]]]]:
-
         """Detect entities in a PNID. The results are not written to CDF.
 
         Note:
@@ -237,7 +237,10 @@ class DiagramsAPI(APIClient):
         jobs = res.json()["items"]
         return [
             DiagramDetectResults._load_with_status(
-                data=job, cognite_client=self._cognite_client, status_path="/context/diagram/detect/"
+                data=job,
+                headers=res.headers,
+                cognite_client=self._cognite_client,
+                status_path="/context/diagram/detect/",
             )
             for job in jobs
         ]
