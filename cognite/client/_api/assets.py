@@ -447,15 +447,27 @@ class AssetsAPI(APIClient):
     def create_hierarchy(
         self,
         assets: Union[Sequence[Asset], AssetHierarchy],
+        *,
         upsert: bool = False,
         upsert_mode: UpsertOptions = "patch",
     ) -> AssetList:
         """Create an asset hierarchy with validation.
 
-        This helper function makes it easy to insert large asset hierarchies. It solves the problem of topological insertion
-        order, i.e. a parent asset must exist before it can be referenced by any 'children' assets.
+        This helper function makes it easy to insert large asset hierarchies. It solves the problem of topological
+        insertion order, i.e. a parent asset must exist before it can be referenced by any 'children' assets.
 
-        Additionally, prior to insertion, this function will run validation on the given assets, raising an error if:
+        Args:
+            assets (Sequence[Asset] | AssetHierarchy): List of assets to create or an instance of AssetHierarchy.
+            upsert (bool): If used, already existing assets will be updated instead of an exception being raised.
+                You may control how updates are applied with the 'upsert_mode' argument.
+            upsert_mode ("patch" | "replace"): Only applicable with upsert. Pass 'patch' to only update fields with
+                non-null values (default), or 'replace' to do full updates (unset fields become null or empty).
+
+        Returns:
+            AssetList: Created (and possibly updated) asset hierarchy
+
+        Prior to insertion, this function will run validation on the given assets and raise an error if any of
+        the issues are found:
 
             1. Any assets are invalid (category: ``invalid``):
 
@@ -471,23 +483,16 @@ class AssetsAPI(APIClient):
             1. All assets linking a parent by ID are assumed valid
             2. All orphan assets are assumed valid. "Orphan" means the parent is not part of the given assets (category: ``orphans``)
 
-        Note:
+        Tip:
             The different categories specified above corresponds to the name of the attribute you might access on the raised error to
             get the collection of 'bad' assets falling in that group, e.g. ``error.duplicates``.
 
-        Args:
-            assets (Sequence[Asset] | AssetHierarchy): List of assets to create or an instance of AssetHierarchy.
-            upsert (bool): If used, already existing assets will be updated instead of an exception being raised. You may control how updates
-                are applied with the 'upsert_mode' argument.
-            upsert_mode ("patch" | "replace"): Only applicable with upsert. Pass 'patch' to only update fields with non-null values
-                (default), or 'replace' to do full updates.
-
-        Returns:
-            AssetList: Created (and possibly updated) asset hierarchy
+        Warning:
+            The API does not natively support upsert, so the SDK has to simulate the behaviour at the cost of insertion speed.
 
         Examples:
 
-            Create asset hierarchy::
+            Create an asset hierarchy:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import Asset
@@ -498,7 +503,8 @@ class AssetsAPI(APIClient):
                 ...     Asset(external_id="child2", parent_external_id="root", name="child2")]
                 >>> res = c.assets.create_hierarchy(assets)
 
-            If the validation for some reason fail, you may inspect the issues by catching CogniteAssetHierarchyError::
+            If the validation for some reason fail, you may inspect the issues by catching
+            :class:`~cognite.client.exceptions.CogniteAssetHierarchyError`:
 
                 >>> from cognite.client.exceptions import CogniteAssetHierarchyError
                 >>> try:
@@ -507,12 +513,30 @@ class AssetsAPI(APIClient):
                 ...     if err.invalid:
                 ...         ...  # do something
 
-            In addition to 'invalid', you may inspect 'duplicates', 'unsure_parents', 'orphans' and 'cycles'. Note that
-            cycles are not available if any of the other basic issues exist, as the search for cyclical references
-            requires a clean asset hierarchy to begin with.
+            In addition to ``invalid``, you may inspect ``duplicates``, ``unsure_parents``, ``orphans`` and ``cycles``.
+            Note that cycles are not available if any of the other basic issues exist, as the search for cyclical
+            references requires a clean asset hierarchy to begin with.
 
-            You may also run this validation prior to calling `AssetsAPI.create_hierarchy()`.
-            See :class:`~cognite.client.data_classes.assets.AssetHierarchy`.
+            You may also wrap the ``create_hierarchy()`` call in a try-except to get information if any of the assets
+            fails to be created (assuming a valid hierarchy):
+
+                >>> from cognite.client.exceptions import CogniteAPIError
+                >>> try:
+                ...     c.assets.create_hierarchy(assets)
+                >>> except CogniteAPIError as err:
+                ...     created = err.successful
+                ...     maybe_created = err.unknown
+                ...     not_created = err.failed
+
+            Here's a slightly longer explanation of the different groups:
+
+                - ``err.successful``: Which assets were created (request yielded a 201)
+                - ``err.unknown``: Which assets may have been created (request yielded 5xx)
+                - ``err.failed``: Which assets were not created (request yielded 4xx, or was a descendant of an asset with unknown status)
+
+            The preferred way to create an asset hierarchy, is to run validation *prior to insertion*. You may do this by
+            using the :class:`~cognite.client.data_classes.assets.AssetHierarchy` class. It also provide helpful methods to
+            create reports of any issues, check out ``validate_and_report``.
 
                 >>> from cognite.client.data_classes import AssetHierarchy
                 >>> hierarchy = AssetHierarchy(assets)
@@ -756,7 +780,7 @@ class _AssetHierarchyCreator:
     def _create(
         self,
         pool: PriorityThreadPoolExecutor,
-        insert_fn: Callable,
+        insert_fn: Callable[[Dict[str, List[Dict]]], Tuple[List[Asset], List[Asset], List[Asset]]],
         insert_dct: Dict[Optional[str], List[Asset]],
         subtree_count: Dict[str, int],
     ) -> AssetList:
@@ -767,12 +791,11 @@ class _AssetHierarchyCreator:
             insert_dct=insert_dct,
             subtree_count=subtree_count,
         )
-        created_assets = AssetList([], cognite_client=self.assets_api._cognite_client)
-
         # Kick things off with all...:
         # 1. Root assets
         # 2. Assets linking parent by ID
         # 3. Orphans assets (if `hierarchy.ignore_orphans` is True)
+        created_assets = []
         futures = queue_fn(insert_dct.pop(None))
 
         as_completed = get_as_completed_fn(pool)
@@ -791,7 +814,7 @@ class _AssetHierarchyCreator:
 
         if self.exception is not None or self.failed or self.unknown:
             self._raise_latest_exception(created_assets)
-        return created_assets
+        return AssetList(created_assets, cognite_client=self.assets_api._cognite_client)
 
     def _queue_tasks(
         self,
@@ -815,20 +838,20 @@ class _AssetHierarchyCreator:
         *,
         upsert: bool,
         upsert_mode: UpsertOptions,
-    ) -> Tuple[AssetList, List[Asset], List[Asset]]:
+    ) -> Tuple[List[Asset], List[Asset], List[Asset]]:
         try:
             resp = self.assets_api._post(self.resource_path, assets)
-            success = AssetList._load(resp.json()["items"])
+            success = AssetList._load(resp.json()["items"]).data
             return success, [], []
 
         except (CogniteAPIError, CogniteDuplicatedError) as err:
-            successful = AssetList([])
+            successful = []
             if err.duplicated:
                 if not upsert:
                     raise
                 # TODO: Do we want to deal with exceptions here?
                 updated = self._update(assets, cast(List, err.duplicated), cast(List, err.failed), upsert_mode)
-                successful.extend(updated)  # type: ignore [attr-defined]
+                successful.extend(updated.data)
 
             self._update_latest_exception(err)
             return successful, cast(List[Asset], err.failed), cast(List[Asset], err.unknown)
@@ -857,18 +880,27 @@ class _AssetHierarchyCreator:
         # TODO: The SDK makes it very hard to do full updates...
         dct_update = {} if patch else self.clear_all_update.copy()
         dct_update.update({k: {"set": v} for k, v in dumped.items()})
-        for key in ("externalId", "parentId", "parentExternalId"):
-            dct_update.pop(key, None)
+        # Since we enforce XID given and 'no ID', there's no point in "renaming to itself":
+        dct_update.pop("externalId")
+        if patch:
+            if "metadata" in dumped:
+                dct_update["metadata"]["add"] = dct_update["metadata"].pop("set")
+            if "labels" in dumped:
+                dct_update["labels"]["add"] = dct_update["labels"].pop("set")
         (upd := AssetUpdate(external_id=dumped["externalId"]))._update_object = dct_update
         return upd
 
     @cached_property
     def clear_all_update(self) -> MappingProxyType[str, Dict[str, Any]]:
         props = set(map(to_camel_case, AssetUpdate._get_update_properties()))
+        # Does not support setNull:
+        props -= {"name", "parentExternalId", "parentId"}
         dct: Dict[str, Dict[str, Any]] = {k: {"setNull": True} for k in props}
         # Handle metadata separately... lol:
         # https://github.com/cognitedata/cognite-sdk-python/pull/757#issuecomment-723973727
         dct["metadata"] = {"set": {}}
+        # Handle labels separately...
+        dct["labels"] = {"set": []}
         return MappingProxyType(dct)
 
     def _split_and_prioritise_assets(
@@ -952,12 +984,12 @@ class _AssetHierarchyCreator:
         if exception.failed or exception.unknown:
             self.exception = exception
 
-    def _raise_latest_exception(self, successful: AssetList) -> NoReturn:
+    def _raise_latest_exception(self, successful: List[Asset]) -> NoReturn:
         assert self.exception is not None
         err_details: Dict[str, Any] = dict(
             message="One or more errors happened during asset creation",
             code=None,
-            successful=successful,
+            successful=AssetList(successful),
             unknown=AssetList(self.unknown),
             failed=AssetList(self.failed),
             unwrap_fn=op.attrgetter("external_id"),
