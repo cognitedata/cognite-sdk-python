@@ -632,9 +632,12 @@ class AssetHierarchy:
         mapping.setdefault(None, [])
         mapping[None].extend(
             itertools.chain.from_iterable(
-                mapping.pop(parent, []) for parent in {a.parent_external_id for a in self._orphans}
+                mapping.pop(parent, [])
+                for parent in {a.parent_external_id for a in self._orphans}
+                if parent is not None
             )
         )
+        mapping
         return mapping
 
     def count_subtree(self, mapping: Dict[Optional[str], List[Asset]]) -> Dict[str, int]:

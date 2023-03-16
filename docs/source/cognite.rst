@@ -142,15 +142,15 @@ Wrap the ``create_hierarchy()`` call in a try-except to get information if creat
     from cognite.client.exceptions import CogniteAPIError
     try:
         c.assets.create_hierarchy([root, child, descendant])
-    except CogniteAPIError as e:
-        assets_created = e.successful
-        assets_may_have_been_created = e.unknown
-        assets_not_created = e.failed
+    except CogniteAPIError as err:
+        created = err.successful
+        maybe_created = err.unknown
+        not_created = err.failed
 
 Prior to creating the Assets, it might be useful to do some validation on the assets you have. To do this without
 potentially sending API requests, import and use :class:`~cognite.client.data_classes.assets.AssetHierarchy`:
 
-.. code::
+.. code:: python
 
     from cognite.client.data_classes import AssetHierarchy
     hierarchy = AssetHierarchy(assets)
@@ -167,7 +167,7 @@ potentially sending API requests, import and use :class:`~cognite.client.data_cl
 Note that validation will run automatically for you when calling ``create_hierarchy()``. You may choose to catch
 ``CogniteAssetHierarchyError`` and inspect any raised issues:
 
-.. code::
+.. code:: python
 
     from cognite.client.exceptions import CogniteAssetHierarchyError
     try:
