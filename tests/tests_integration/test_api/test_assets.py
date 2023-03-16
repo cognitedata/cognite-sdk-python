@@ -1,12 +1,14 @@
 import random
 import time
-from unittest import mock
+from contextlib import contextmanager
+from unittest.mock import patch
 
 import pytest
 
 from cognite.client.data_classes import (
     Asset,
     AssetFilter,
+    AssetHierarchy,
     AssetList,
     AssetUpdate,
     GeoLocation,
@@ -14,26 +16,9 @@ from cognite.client.data_classes import (
     Geometry,
     GeometryFilter,
 )
-from cognite.client.exceptions import CogniteNotFoundError
+from cognite.client.exceptions import CogniteAssetHierarchyError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import random_string
 from tests.utils import set_request_limit
-
-
-def generate_asset_tree(root_external_id: str, depth: int, children_per_node: int, current_depth=1):
-    assert 1 <= children_per_node <= 10, "children_per_node must be between 1 and 10"
-    assets = []
-    if current_depth == 1:
-        assets = [Asset(external_id=root_external_id, name=root_external_id)]
-    if depth > current_depth:
-        for i in range(children_per_node):
-            external_id = f"{root_external_id}{i}"
-            asset = Asset(parent_external_id=root_external_id, external_id=external_id, name=external_id)
-            assets.append(asset)
-            if depth > current_depth + 1:
-                assets.extend(
-                    generate_asset_tree(root_external_id + str(i), depth, children_per_node, current_depth + 1)
-                )
-    return assets
 
 
 @pytest.fixture
@@ -46,42 +31,18 @@ def new_asset(cognite_client):
 
 @pytest.fixture
 def post_spy(cognite_client):
-    with mock.patch.object(cognite_client.assets, "_post", wraps=cognite_client.assets._post) as _:
+    with patch.object(cognite_client.assets, "_post", wraps=cognite_client.assets._post) as _:
         yield
 
 
-@pytest.fixture
-def new_asset_hierarchy(cognite_client, post_spy):
-    random_prefix = f"test_{random_string(10)}_"
-    assets = generate_asset_tree(random_prefix + "0", depth=5, children_per_node=5)
-
-    with set_request_limit(cognite_client.assets, 50):
-        cognite_client.assets.create_hierarchy(assets)
-
-    assert 19 < cognite_client.assets._post.call_count < 23
-
-    ext_ids = [a.external_id for a in assets]
-    yield random_prefix, ext_ids
-
-    cognite_client.assets.delete(external_id=random_prefix + "0", recursive=True)
-
-
-@pytest.fixture
+@pytest.fixture(scope="module")
 def root_test_asset(cognite_client):
-    for asset in cognite_client.assets.list(root=True, limit=None):
-        if asset.name.startswith("test__"):
-            return asset
-    assert False, "has the root test asset been deleted?"
+    return cognite_client.assets.retrieve(external_id="test__asset_0")
 
 
-@pytest.fixture
-def new_root_asset(cognite_client):
-    external_id = f"my_root_{random_string(10)}"
-    root = Asset(external_id=external_id, name="my_root")
-    root = cognite_client.assets.create(root)
-    yield root
-    cognite_client.assets.delete(external_id=external_id, recursive=True)
-    assert cognite_client.assets.retrieve(external_id=external_id) is None
+@pytest.fixture(scope="module")
+def root_test_asset_subtree(root_test_asset):
+    return root_test_asset.subtree(depth=3)  # Don't need all for testing, just some children
 
 
 class TestAssetsAPI:
@@ -167,17 +128,6 @@ class TestAssetsAPI:
         cognite_client.assets.delete(id=a.id, external_id="this asset does not exist", ignore_unknown_ids=True)
         assert cognite_client.assets.retrieve(id=a.id) is None
 
-    def test_post_asset_hierarchy(self, cognite_client, new_asset_hierarchy):
-        prefix, ext_ids = new_asset_hierarchy
-        posted_assets = cognite_client.assets.retrieve_multiple(external_ids=ext_ids)
-        external_id_to_id = {a.external_id: a.id for a in posted_assets}
-
-        for asset in posted_assets:
-            if asset.external_id == prefix + "0":
-                assert asset.parent_id is None
-            else:
-                assert asset.parent_id == external_id_to_id[asset.external_id[:-1]]
-
     def test_get_subtree(self, cognite_client, root_test_asset):
         assert isinstance(cognite_client.assets.retrieve_subtree(id=random.randint(1, 10)), AssetList)
         assert 0 == len(cognite_client.assets.retrieve_subtree(external_id="non_existing_asset"))
@@ -187,29 +137,12 @@ class TestAssetsAPI:
         assert 6 == len(subtree)
         assert all(subtree.get(id=a.id) is not None for a in subtree)
 
-    def test_create_asset_hierarchy_parent_external_id_not_in_request(self, cognite_client, new_root_asset):
-        root = new_root_asset
-        children = generate_asset_tree(
-            root_external_id=root.external_id, depth=5, children_per_node=10, current_depth=2
-        )
-
-        cognite_client.assets.create_hierarchy(children)
-
-        external_ids = [asset.external_id for asset in children] + [root.external_id]
-        posted_assets = cognite_client.assets.retrieve_multiple(external_ids=external_ids)
-        for asset in posted_assets:
-            if asset.external_id == root.external_id:
-                assert asset.parent_id is None
-            else:
-                assert asset.parent_id == posted_assets.get(external_id=asset.external_id[:-1]).id
-
     def test_create_with_geo_location(self, cognite_client):
         geo_location = GeoLocation(
             type="Feature",
             geometry=Geometry(type="LineString", coordinates=[[1.0, 1.0], [2.0, 2.0], [3.0, 3.0]]),
             properties={},
         )
-
         try:
             a = cognite_client.assets.create(Asset(name="any", geo_location=geo_location))
 
@@ -242,3 +175,183 @@ class TestAssetsAPI:
 
         finally:
             cognite_client.assets.delete(id=a.id)
+
+
+def generate_orphan_assets(n_id, n_xid, sample_from):
+    # Orphans only: We link all assets to an existing asset (some by ID, others by XID):
+    s = random_string(20)
+    id_assets = [
+        Asset(name="a", external_id=f"child-by-id-{i}-{s}", parent_id=parent.id)
+        for i, parent in enumerate(random.sample(sample_from, k=n_id))
+    ]
+    xid_assets = [
+        Asset(name="a", external_id=f"child-by-xid-{i}-{s}", parent_external_id=parent.external_id)
+        for i, parent in enumerate(random.sample(sample_from, k=n_xid))
+    ]
+    # Shuffle for good measure ;)
+    random.shuffle(assets := id_assets + xid_assets)
+    return assets
+
+
+def create_asset_tower(n):
+    xid = f"test-tower-{{}}-{random_string(15)}"
+    props = dict(
+        name=random_string(10),
+        description=random_string(10),
+        metadata={random_string(5): random_string(5)},
+        source=random_string(10),
+    )
+    return [
+        Asset(external_id=xid.format(0), **props),
+        *(Asset(external_id=xid.format(i), parent_external_id=xid.format(i - 1), **props) for i in range(1, n)),
+    ]
+
+
+@contextmanager
+def create_hierarchy_with_cleanup(client, assets, upsert=False, upsert_mode=""):
+    # Do not call this auto-cleanup method for asset hierarchies expected to fail, it will
+    # just cause you more misery since delete also will fail in 'finally' block :)
+    assert len(assets) <= 1000, "cleanup might fail if we can't fit all in 1 request"
+    try:
+        yield client.assets.create_hierarchy(assets, upsert=upsert, upsert_mode=upsert_mode)
+    finally:
+        if isinstance(assets, AssetHierarchy):
+            assets = assets._assets
+        client.assets.delete(external_id=[a.external_id for a in assets])
+
+
+@pytest.fixture(scope="class")
+def set_create_lim(cognite_client):
+    with pytest.MonkeyPatch.context() as mp:
+        # We set a low limit to hopefully detect bugs in how resources are split (+threading)
+        # without unnecessarily overloading the API with many thousand assets/request:
+        mp.setattr(cognite_client.assets, "_CREATE_LIMIT", 3)
+        mp.setattr(cognite_client.assets._config, "max_workers", 2)
+        yield
+
+
+class TestAssetsAPICreateHierarchy:
+    @pytest.mark.parametrize("n_roots", (0, 1, 4))
+    def test_variable_number_of_root_assets(self, cognite_client, n_roots, root_test_asset, set_create_lim):
+        s = random_string(10)
+        assets = []
+        for i in range(n_roots):
+            assets.append(Asset(name="a", external_id=f"root-{i}-{s}"))
+            assets.append(Asset(name="a", external_id=f"child-{i}-{s}", parent_external_id=f"root-{i}-{s}"))
+        if not assets:
+            assets.append(Asset(name="a", external_id=f"child-1-{s}", parent_external_id=root_test_asset.external_id))
+
+        with create_hierarchy_with_cleanup(cognite_client, assets) as created:
+            assert len(assets) == len(created)
+            # Make sure `.get` has the exact same mapping keys:
+            assert set(AssetList(assets)._external_id_to_item) == set(created._external_id_to_item)
+
+    @pytest.mark.parametrize(
+        "n_id, n_xid, pass_hierarchy",
+        (
+            # we dont bother testing "only xids" as this is done extensively in other tests
+            (1, 0, False),
+            (1, 0, True),
+            (1, 1, False),
+            (1, 1, True),
+            (4, 2, False),
+            (4, 2, True),
+        ),
+    )
+    def test_orphans__parent_linked_using_mixed_ids_xids(
+        self, n_id, n_xid, pass_hierarchy, cognite_client, root_test_asset_subtree, set_create_lim
+    ):
+        assets = generate_orphan_assets(n_id, n_xid, sample_from=root_test_asset_subtree)
+        expected = set(AssetList(assets)._external_id_to_item)
+        if pass_hierarchy:
+            assets = AssetHierarchy(assets, ignore_orphans=True)
+
+        with create_hierarchy_with_cleanup(cognite_client, assets) as created:
+            assert len(assets) == len(created)
+            # Make sure `.get` has the exact same mapping keys:
+            assert expected == set(created._external_id_to_item)
+
+    def test_orphans__blocked_if_passed_as_asset_hierarchy_instance(self, cognite_client, root_test_asset_subtree):
+        assets = generate_orphan_assets(2, 2, sample_from=root_test_asset_subtree)
+        hierarchy_fails = AssetHierarchy(assets, ignore_orphans=False)
+        hierarchy_succeeds = AssetHierarchy(assets, ignore_orphans=True)
+
+        with pytest.raises(CogniteAssetHierarchyError, match=r"^Asset hierarchy is not valid. Issue\(s\): 4 orphans$"):
+            cognite_client.assets.create_hierarchy(hierarchy_fails, upsert=False)
+
+        with create_hierarchy_with_cleanup(cognite_client, hierarchy_succeeds) as created:
+            assert len(assets) == len(created)
+
+    def test_upsert_mode_with_patch(self, cognite_client):
+        assets = create_asset_tower(5)
+        created = cognite_client.assets.create_hierarchy(assets, upsert=False)
+        assert len(assets) == len(created)
+
+        # We set only a subset of fields to ensure existing fields are left untouched.
+        # Given metadata should extend existing. #TODO: Do the same for labels.
+        patch_assets = [
+            Asset(name="a", description="b", metadata={"meta": "data"}, external_id=a.external_id) for a in assets
+        ]
+        # Advanced update: Move one asset to new parent:
+        moved = patch_assets[-2]
+        moved_old_parent = assets[-2].parent_external_id  # Note: not part of patch_assets[-2]
+        moved.parent_external_id = assets[0].external_id
+
+        with create_hierarchy_with_cleanup(
+            cognite_client, patch_assets, upsert=True, upsert_mode="patch"
+        ) as patch_created:
+            assert len(patch_assets) == len(patch_created)
+            # Was 'moved' moved?!
+            patch_moved = patch_created.get(external_id=moved.external_id)
+            assert moved_old_parent != moved.parent_external_id
+            assert moved.parent_external_id == patch_moved.parent_external_id
+
+            for a1, a2, a3 in zip(
+                sorted(assets, key=hash),
+                sorted(patch_assets, key=hash),
+                sorted(patch_created, key=hash),
+            ):
+                # Was patched:
+                assert a1.name != a2.name == a3.name
+                assert a1.description != a2.description == a3.description
+                # Should have been left untouched:
+                assert a2.source is None and a1.source == a3.source
+                # Should have been added:
+                assert a3.metadata == {**a2.metadata, **a1.metadata}
+
+    def test_upsert_mode_with_replace(self, cognite_client):
+        assets = create_asset_tower(5)
+        created = cognite_client.assets.create_hierarchy(assets, upsert=False)
+        assert len(assets) == len(created)
+
+        # We set only a subset of fields to ensure existing fields are removed/nulled.
+        # Given metadata should replace existing. #TODO: Do the same for labels.
+        patch_assets = [
+            Asset(name="a", description="b", metadata={"meta": "data"}, external_id=a.external_id) for a in assets
+        ]
+        # Advanced update: Move one asset to new parent:
+        moved = patch_assets[-2]
+        moved_old_parent = assets[-2].parent_external_id  # Note: not part of patch_assets[-2]
+        moved.parent_external_id = assets[0].external_id
+
+        with create_hierarchy_with_cleanup(
+            cognite_client, patch_assets, upsert=True, upsert_mode="replace"
+        ) as patch_created:
+            assert len(patch_assets) == len(patch_created)
+            # Was 'moved' moved?!
+            patch_moved = patch_created.get(external_id=moved.external_id)
+            assert moved_old_parent != moved.parent_external_id
+            assert moved.parent_external_id == patch_moved.parent_external_id
+
+            for a1, a2, a3 in zip(
+                sorted(assets, key=hash),
+                sorted(patch_assets, key=hash),
+                sorted(patch_created, key=hash),
+            ):
+                # Was patched:
+                assert a1.name != a2.name == a3.name
+                assert a1.description != a2.description == a3.description
+                # Should have been nulled:
+                assert a1.source != a3.source is a2.source is None
+                # Should have been replaced:
+                assert a3.metadata == a2.metadata != a1.metadata
