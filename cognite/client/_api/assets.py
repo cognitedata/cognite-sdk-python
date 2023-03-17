@@ -469,7 +469,7 @@ class AssetsAPI(APIClient):
             AssetList: Created (and possibly updated) asset hierarchy
 
         Prior to insertion, this function will run validation on the given assets and raise an error if any of
-        the issues are found:
+        the following issues are found:
 
             1. Any assets are invalid (category: ``invalid``):
 
@@ -489,9 +489,15 @@ class AssetsAPI(APIClient):
             The different categories specified above corresponds to the name of the attribute you might access on the raised error to
             get the collection of 'bad' assets falling in that group, e.g. ``error.duplicates``.
 
+        Note:
+            Updating ``external_id`` via upsert is not supported (and will not be supported). Use ``AssetsAPI.update`` instead.
+
         Warning:
             The API does not natively support upsert, so the SDK has to simulate the behaviour at the cost of some insertion speed.
-            Note also that updating ``external_id`` is not supported (and will not be supported). Use ``AssetsAPI.update`` instead.
+
+            Be careful when moving assets to new parents via upsert: Please do so only by specifying ``parent_external_id``
+            (instead of ``parent_id``) to avoid race conditions in insertion order (temporary cycles might form since we
+            can only make changes to 1000 assets at the time).
 
         Examples:
 
@@ -511,7 +517,7 @@ class AssetsAPI(APIClient):
                 >>> res = c.assets.create_hierarchy(assets, upsert=True, upsert_mode="patch")
 
             Patch will only update the parameters you have defined on your assets. Note that specifically setting
-            something to ``None`` is the same as not setting it. For ``metadata`, this will extend your existing
+            something to ``None`` is the same as not setting it. For ``metadata``, this will extend your existing
             data, only overwriting when keys overlap. For ``labels`` the behavour is mostly the same, existing are
             left untouched, and your new ones are simply added.
 
@@ -1059,6 +1065,7 @@ class _AssetHierarchyCreator:
         # the underlying reason from the user. We also do this because we promise that 'successful', 'unknown'
         # and 'failed' can be inspected:
         raise CogniteAPIError(
-            message=f"{err_message} ({type(self.latest_exception).__name__}) {self.latest_exception}",
+            message=f"{err_message} {type(self.latest_exception).__name__}('{self.latest_exception}')",
+            code=None,  # type: ignore [arg-type]
             **common,  # type: ignore [arg-type]
         ) from self.latest_exception

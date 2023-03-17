@@ -383,7 +383,8 @@ class TestAssetsAPICreateHierarchy:
         ) as patch_created:
             assert len(patch_created) == 4
             assert set(AssetList(assets)._external_id_to_item) == set(patch_created._external_id_to_item)
-
-            assert 1 + 3 == cognite_client.assets._post.call_count  # 3 additional calls were made
+            # 1+3 because 3 additional calls were made:
+            # 1) Try create all (fail), 2) create non-duplicated (success), 3) update duplicated (success)
+            assert 1 + 3 == cognite_client.assets._post.call_count
             resource_paths = [call[0][0] for call in cognite_client.assets._post.call_args_list]
             assert resource_paths == ["/assets", "/assets", "/assets", "/assets/update"]
