@@ -184,7 +184,7 @@ class TestAssetsAPI:
         assert isinstance(cognite_client.assets.retrieve_subtree(id=random.randint(1, 10)), AssetList)
         assert 0 == len(cognite_client.assets.retrieve_subtree(external_id="non_existing_asset"))
         assert 0 == len(cognite_client.assets.retrieve_subtree(id=random.randint(1, 10)))
-        assert 781 == len(cognite_client.assets.retrieve_subtree(root_test_asset.id))
+        assert 790 == len(cognite_client.assets.retrieve_subtree(root_test_asset.id))
         subtree = cognite_client.assets.retrieve_subtree(root_test_asset.id, depth=1)
         assert 6 == len(subtree)
         assert all(subtree.get(id=a.id) is not None for a in subtree)  # test if .get works on result
