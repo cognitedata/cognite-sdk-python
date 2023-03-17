@@ -85,9 +85,10 @@ Limits for listing resources default to 25, so the following code will return th
 
 .. code:: python
 
-    >>> from cognite.client import CogniteClient
-    >>> c = CogniteClient()
-    >>> ts_list = c.time_series.list()
+    from cognite.client import CogniteClient
+
+    c = CogniteClient()
+    ts_list = c.time_series.list()
 
 Create an asset hierarchy
 -------------------------
@@ -101,13 +102,14 @@ Note that all assets must have a name (a non-empty string).
 To create a root asset (an asset without a parent), omit the parent ID when you post the asset to the API.
 To make an asset a child of an existing asset, you must specify a parent ID.
 
-.. code::
+.. code:: python
 
-    >>> from cognite.client import CogniteClient
-    >>> from cognite.client.data_classes import Asset
-    >>> c = CogniteClient()
-    >>> my_asset = Asset(name="my first child asset", parent_id=123)
-    >>> c.assets.create(my_asset)
+    from cognite.client import CogniteClient
+    from cognite.client.data_classes import Asset
+
+    c = CogniteClient()
+    my_asset = Asset(name="my first child asset", parent_id=123)
+    c.assets.create(my_asset)
 
 To post an entire asset hierarchy, you can describe the relations within your asset hierarchy
 using the :code:`external_id` and :code:`parent_external_id` attributes on the :code:`Asset` object. You can post
@@ -118,15 +120,16 @@ external_id property to be set for all assets.
 
 This example shows how to post a three levels deep asset hierarchy consisting of three assets.
 
-.. code::
+.. code:: python
 
-    >>> from cognite.client import CogniteClient
-    >>> from cognite.client.data_classes import Asset
-    >>> c = CogniteClient()
-    >>> root = Asset(name="root", external_id="1")
-    >>> child = Asset(name="child", external_id="2", parent_external_id="1")
-    >>> descendant = Asset(name="descendant", external_id="3", parent_external_id="2")
-    >>> c.assets.create_hierarchy([root, child, descendant])
+    from cognite.client import CogniteClient
+    from cognite.client.data_classes import Asset
+
+    c = CogniteClient()
+    root = Asset(name="root", external_id="1")
+    child = Asset(name="child", external_id="2", parent_external_id="1")
+    descendant = Asset(name="descendant", external_id="3", parent_external_id="2")
+    c.assets.create_hierarchy([root, child, descendant])
 
 Wrap the .create_hierarchy() call in a try-except to get information if posting the assets fails:
 
@@ -134,15 +137,16 @@ Wrap the .create_hierarchy() call in a try-except to get information if posting 
 - Which assets may have been posted. (The request yielded 5xx.)
 - Which assets were not posted. (The request yielded 4xx, or was a descendant of another asset which may or may not have been posted.)
 
-.. code::
+.. code:: python
 
-    >>> from cognite.client.exceptions import CogniteAPIError
-    >>> try:
-    ...     c.assets.create_hierarchy([root, child, descendant])
-    >>> except CogniteAPIError as e:
-    ...     assets_posted = e.successful
-    ...     assets_may_have_been_posted = e.unknown
-    ...     assets_not_posted = e.failed
+    from cognite.client.exceptions import CogniteAPIError
+
+    try:
+        c.assets.create_hierarchy([root, child, descendant])
+    except CogniteAPIError as e:
+        assets_posted = e.successful
+        assets_may_have_been_posted = e.unknown
+        assets_not_posted = e.failed
 
 Retrieve all events related to an asset subtree
 -----------------------------------------------
@@ -155,21 +159,22 @@ To retrieve all events related to a given subtree of assets, we first fetch the 
 :code:`.subtree()` method. This returns an :code:`AssetList` object, which has a :code:`.events()` method. This method will
 return events related to any asset in the :code:`AssetList`.
 
-.. code::
+.. code:: python
 
-    >>> from cognite.client import CogniteClient
-    >>> from cognite.client.data_classes import Asset
-    >>> c = CogniteClient()
-    >>> subtree_root_asset="some-external-id"
-    >>> subtree = c.assets.retrieve(external_id=subtree_root_asset).subtree()
-    >>> related_events = subtree.events()
+    from cognite.client import CogniteClient
+    from cognite.client.data_classes import Asset
+
+    c = CogniteClient()
+    subtree_root_asset = "some-external-id"
+    subtree = c.assets.retrieve(external_id=subtree_root_asset).subtree()
+    related_events = subtree.events()
 
 You can use the same pattern to retrieve all time series or files related to a set of assets.
 
-.. code::
+.. code:: python
 
-    >>> related_files = subtree.files()
-    >>> related_time_series = subtree.time_series()
+    related_files = subtree.files()
+    related_time_series = subtree.time_series()
 
 Settings
 ========
@@ -1089,13 +1094,14 @@ Start an asynchronous job to extract information from image files stored in CDF:
 
 .. code:: python
 
-    >>> from cognite.client import CogniteClient
-    >>> from cognite.client.data_classes.contextualization import VisionFeature
-    >>> c = CogniteClient()
-    >>> extract_job = c.vision.extract(
-    ...     features=[VisionFeature.ASSET_TAG_DETECTION, VisionFeature.PEOPLE_DETECTION],
-    ...     file_ids=[1, 2],
-    ... )
+    from cognite.client import CogniteClient
+    from cognite.client.data_classes.contextualization import VisionFeature
+
+    c = CogniteClient()
+    extract_job = c.vision.extract(
+        features=[VisionFeature.ASSET_TAG_DETECTION, VisionFeature.PEOPLE_DETECTION],
+        file_ids=[1, 2],
+    )
 
 
 The returned job object, :code:`extract_job`, can be used to retrieve the status of the job and the prediction results once the job is completed.
@@ -1103,16 +1109,16 @@ Wait for job completion and get the parsed results:
 
 .. code:: python
 
-    >>> extract_job.wait_for_completion()
-    >>> for item in extract_job.items:
-    ...     predictions = item.predictions
-    ...     # do something with the predictions
+    extract_job.wait_for_completion()
+    for item in extract_job.items:
+        predictions = item.predictions
+        # do something with the predictions
 
 Save the prediction results in CDF as `Annotations <https://docs.cognite.com/api/v1/#tag/Annotations>`_:
 
 .. code:: python
 
-    >>> extract_job.save_predictions()
+    extract_job.save_predictions()
 
 .. note::
     Prediction results are stored in CDF as `Annotations <https://docs.cognite.com/api/v1/#tag/Annotations>`_ using the :code:`images.*` annotation types. In particular, text detections are stored as :code:`images.TextRegion`, asset tag detections are stored as :code:`images.AssetLink`, while other detections are stored as :code:`images.ObjectDetection`.
@@ -1121,12 +1127,13 @@ Tweaking the parameters of a feature extractor:
 
 .. code:: python
 
-    >>> from cognite.client.data_classes.contextualization import FeatureParameters, TextDetectionParameters
-    >>> extract_job = c.vision.extract(
-    ...     features=VisionFeature.TEXT_DETECTION,
-    ...     file_ids=[1, 2],
-    ...     parameters=FeatureParameters(text_detection_parameters=TextDetectionParameters(threshold=0.9))
-    ... )
+    from cognite.client.data_classes.contextualization import FeatureParameters, TextDetectionParameters
+
+    extract_job = c.vision.extract(
+        features=VisionFeature.TEXT_DETECTION,
+        file_ids=[1, 2],
+        parameters=FeatureParameters(text_detection_parameters=TextDetectionParameters(threshold=0.9))
+    )
 
 Extract
 ~~~~~~~
