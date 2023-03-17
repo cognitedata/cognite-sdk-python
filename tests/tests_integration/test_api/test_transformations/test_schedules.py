@@ -1,3 +1,4 @@
+import os
 import string
 
 import pytest
@@ -71,6 +72,9 @@ def other_schedule(cognite_client, other_transformation):
 
 
 class TestTransformationSchedulesAPI:
+    @pytest.mark.skipif(
+        os.environ.get("LOGIN_FLOW") != "client_credentials", reason="This test requires client_credentials auth"
+    )
     def test_create(self, new_schedule: TransformationSchedule):
         assert (
             new_schedule.interval == "0 * * * *"
@@ -79,6 +83,9 @@ class TestTransformationSchedulesAPI:
             and new_schedule.last_updated_time is not None
         )
 
+    @pytest.mark.skipif(
+        os.environ.get("LOGIN_FLOW") != "client_credentials", reason="This test requires client_credentials auth"
+    )
     def test_schedule_member(self, cognite_client, new_schedule: TransformationSchedule):
         retrieved_transformation = cognite_client.transformations.retrieve(id=new_schedule.id)
         assert (
@@ -86,6 +93,9 @@ class TestTransformationSchedulesAPI:
             and retrieved_transformation.schedule.is_paused is False
         )
 
+    @pytest.mark.skipif(
+        os.environ.get("LOGIN_FLOW") != "client_credentials", reason="This test requires client_credentials auth"
+    )
     def test_retrieve(self, cognite_client, new_schedule: TransformationSchedule):
         retrieved_schedule = cognite_client.transformations.schedules.retrieve(new_schedule.id)
         assert (
@@ -94,6 +104,9 @@ class TestTransformationSchedulesAPI:
             and new_schedule.is_paused == retrieved_schedule.is_paused
         )
 
+    @pytest.mark.skipif(
+        os.environ.get("LOGIN_FLOW") != "client_credentials", reason="This test requires client_credentials auth"
+    )
     def test_retrieve_multiple(
         self, cognite_client, new_schedule: TransformationSchedule, other_schedule: TransformationSchedule
     ):
@@ -112,6 +125,9 @@ class TestTransformationSchedulesAPI:
                 and other_schedule.is_paused == retrieved_schedule.is_paused
             )
 
+    @pytest.mark.skipif(
+        os.environ.get("LOGIN_FLOW") != "client_credentials", reason="This test requires client_credentials auth"
+    )
     def test_update_full(self, cognite_client, new_schedule):
         new_schedule.interval = "5 * * * *"
         new_schedule.is_paused = True
@@ -121,6 +137,9 @@ class TestTransformationSchedulesAPI:
         assert updated_schedule.is_paused is True
         assert retrieved_schedule.is_paused is True
 
+    @pytest.mark.skipif(
+        os.environ.get("LOGIN_FLOW") != "client_credentials", reason="This test requires client_credentials auth"
+    )
     def test_update_partial(self, cognite_client, new_schedule):
         update_schedule = TransformationScheduleUpdate(id=new_schedule.id).interval.set("5 * * * *").is_paused.set(True)
         updated_schedule = cognite_client.transformations.schedules.update(update_schedule)
@@ -129,6 +148,9 @@ class TestTransformationSchedulesAPI:
         assert updated_schedule.is_paused is True
         assert retrieved_schedule.is_paused is True
 
+    @pytest.mark.skipif(
+        os.environ.get("LOGIN_FLOW") != "client_credentials", reason="This test requires client_credentials auth"
+    )
     def test_list(self, cognite_client, new_schedule):
         retrieved_schedules = cognite_client.transformations.schedules.list()
         assert new_schedule.id in [schedule.id for schedule in retrieved_schedules]

@@ -1,8 +1,9 @@
+import os
 import string
 
 import pytest
 
-from cognite.client.credentials import OAuthClientCredentials
+from cognite.client.credentials import OAuthClientCertificate, OAuthClientCredentials
 from cognite.client.data_classes import (
     DataSet,
     Transformation,
@@ -42,7 +43,7 @@ def new_datasets(cognite_client):
 def new_transformation(cognite_client, new_datasets):
     prefix = random_string(6, string.ascii_letters)
     creds = cognite_client.config.credentials
-    assert isinstance(creds, OAuthClientCredentials)
+    assert isinstance(creds, OAuthClientCredentials) or isinstance(creds, OAuthClientCertificate)
     transform = Transformation(
         name="any",
         query="select 1",
@@ -53,14 +54,14 @@ def new_transformation(cognite_client, new_datasets):
             client_id="invalidClientId",
             client_secret="InvalidClientSecret",
             scopes=",".join(creds.scopes),
-            token_uri=creds.token_url,
+            token_uri="InvalidTokenUrl",
             cdf_project_name=cognite_client.config.project,
         ),
         destination_oidc_credentials=OidcCredentials(
             client_id="invalidClientId",
             client_secret="InvalidClientSecret",
             scopes=",".join(creds.scopes),
-            token_uri=creds.token_url,
+            token_uri="InvalidTokenUrl",
             cdf_project_name=cognite_client.config.project,
         ),
     )
@@ -314,6 +315,9 @@ class TestTransformationsAPI:
             and updated_transformation.query == retrieved_transformation.query == "SELECT * from _cdf.assets"
         )
 
+    @pytest.mark.skipif(
+        os.environ.get("LOGIN_FLOW") == "client_certificate", reason="Sessions do not work with client_certificate"
+    )
     def test_update_nonce(self, cognite_client, new_transformation):
         session = cognite_client.iam.sessions.create()
         update_transformation = (
@@ -331,6 +335,9 @@ class TestTransformationsAPI:
             and retrieved_transformation.destination_session.session_id == session.id
         )
 
+    @pytest.mark.skipif(
+        os.environ.get("LOGIN_FLOW") == "client_certificate", reason="Sessions do not work with client_certificate"
+    )
     def test_update_nonce_full(self, cognite_client, new_transformation):
         session = cognite_client.iam.sessions.create()
         new_transformation.source_nonce = NonceCredentials(session.id, session.nonce, cognite_client._config.project)

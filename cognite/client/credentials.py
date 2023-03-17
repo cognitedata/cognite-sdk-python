@@ -9,7 +9,7 @@ from abc import abstractmethod
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple, Union
 
-from msal import PublicClientApplication, SerializableTokenCache
+from msal import ConfidentialClientApplication, PublicClientApplication, SerializableTokenCache
 from oauthlib.oauth2 import BackendApplicationClient, OAuth2Error
 from requests_oauthlib import OAuth2Session
 
@@ -372,3 +372,68 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
             raise CogniteAuthError(
                 f"Error generating access token: {oauth_err.error}, {oauth_err.status_code}, {oauth_err.description}"
             ) from oauth_err
+
+
+class OAuthClientCertificate(_OAuthCredentialProviderWithTokenRefresh):
+    """OAuth credential provider for authenticating with a client certificate.
+
+    Args:
+        authority_url (str): OAuth authority url
+        client_id (str): Your application's client id.
+        cert_thumbprint (str): Your certificate's thumbprint. You get it when you upload your certificate to Azure AD.
+        certificate (str): Your private certificate, typically read from a .pem file
+        scopes (List[str]): A list of scopes.
+        **token_custom_args (Any): Optional additional arguments to pass as query parameters to the token fetch request.
+
+    Examples:
+
+            >>> from cognite.client.credentials import OAuthClientCertificate
+            >>> import os
+            >>> oauth_provider = OAuthClientCertificate(
+            ...     authority_url="https://login.microsoftonline.com/xyz",
+            ...     client_id="abcd",
+            ...     cert_thumbprint="XYZ123",
+            ...     certificate=open("certificate.pem").read(),
+            ...     scopes=["https://greenfield.cognitedata.com/.default"],
+            ... )
+    """
+
+    def __init__(self, authority_url: str, client_id: str, cert_thumbprint: str, certificate: str, scopes: List[str]):
+        super().__init__()
+        self.__authority_url = authority_url
+        self.__client_id = client_id
+        self.__cert_thumbprint = cert_thumbprint
+        self.__certificate = certificate
+        self.__scopes = scopes
+
+        self.__app = ConfidentialClientApplication(
+            client_id=self.__client_id,
+            authority=self.__authority_url,
+            client_credential={"thumbprint": self.__cert_thumbprint, "private_key": self.__certificate},
+        )
+
+    @property
+    def authority_url(self) -> str:
+        return self.__authority_url
+
+    @property
+    def client_id(self) -> str:
+        return self.__client_id
+
+    @property
+    def cert_thumbprint(self) -> str:
+        return self.__cert_thumbprint
+
+    @property
+    def certificate(self) -> str:
+        return self.__certificate
+
+    @property
+    def scopes(self) -> List[str]:
+        return self.__scopes
+
+    def _refresh_access_token(self) -> Tuple[str, float]:
+        credentials = self.__app.acquire_token_for_client(scopes=self.__scopes)
+
+        self._verify_credentials(credentials)
+        return credentials["access_token"], time.time() + credentials["expires_in"]
