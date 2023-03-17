@@ -620,8 +620,18 @@ class AssetHierarchy:
             The same is true for all assets linking its parent by ID.
         """
         self.is_valid(on_error="raise")
-        # Sort (on parent) as required by groupby. We also hash to avoid comparing string with None:
-        parent_sorted = sorted(self._assets, key=lambda a: hash(a.parent_external_id))
+
+        # Sort (on parent) as required by groupby. This is tricky as we need to avoid comparing string with None,
+        # and can't simply hash it because of the possibility of collisions. Further, the empty string is a valid
+        # external ID leaving no other choice than to prepend all strings with ' ' before comparison:
+
+        def parent_sort_fn(asset: Asset) -> str:
+            # All assets using 'parent_id' will be grouped together with the root assets:
+            if (pxid := asset.parent_external_id) is None:
+                return ""
+            return f" {pxid}"
+
+        parent_sorted = sorted(self._assets, key=parent_sort_fn)
         mapping = {
             parent: list(child_assets)
             for parent, child_assets in itertools.groupby(parent_sorted, key=op.attrgetter("parent_external_id"))
