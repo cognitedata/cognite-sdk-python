@@ -647,7 +647,6 @@ class AssetHierarchy:
                 if parent is not None
             )
         )
-        mapping
         return mapping
 
     def count_subtree(self, mapping: Dict[Optional[str], List[Asset]]) -> Dict[str, int]:
