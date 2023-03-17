@@ -13,7 +13,7 @@ To enable this, use one of the credential providers such as OAuthClientCredentia
 .. note::
     The following example sets a global client configuration which will be used if no config is
     explicitly passed to `CogniteClient`_.
-    All examples in this documentation assume that a default configuration has been set.
+    All examples in this documentation assume that such a global configuration has been set.
 
 .. code:: python
 
