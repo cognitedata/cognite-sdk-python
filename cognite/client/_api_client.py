@@ -734,7 +734,7 @@ class APIClient:
             if isinstance(item, CogniteResource):
                 patch_objects.append(self._convert_resource_to_patch_object(item, update_cls._get_update_properties()))
             elif isinstance(item, CogniteUpdate):
-                patch_objects.append(item.dump())
+                patch_objects.append(item.dump(camel_case=True))
                 patch_object_update = patch_objects[index]["update"]
                 if "metadata" in patch_object_update and patch_object_update["metadata"] == {"set": None}:
                     patch_object_update["metadata"] = {"set": {}}

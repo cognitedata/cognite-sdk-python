@@ -324,12 +324,13 @@ class CogniteUpdate:
         update_obj["modify"] = value
         self._update_object[name] = update_obj
 
-    def dump(self) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> Dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Returns:
             Dict[str, Any]: A dictionary representation of the instance.
         """
+        assert camel_case is True, "snake_case is currently unsupported"  # TODO maybe (when unifying classes)
         dumped: Dict[str, Any] = {"update": self._update_object}
         if self._id is not None:
             dumped["id"] = self._id

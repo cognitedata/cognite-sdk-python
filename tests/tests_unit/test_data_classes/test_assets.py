@@ -299,6 +299,7 @@ class TestAssetHierarchy:
 
     @pytest.mark.parametrize("exc_type", (AssertionError, CogniteAssetHierarchyError))
     def test_validate_asset_hierarchy_self_dependency(self, exc_type):
+        # Shortest cycle possible is self->self:
         assets = [Asset(name="a", external_id="2", parent_external_id="2")]
         ahv = AssetHierarchy(assets).validate(on_error="ignore")
         assert len(ahv.cycles) == 1

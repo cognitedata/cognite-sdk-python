@@ -292,12 +292,18 @@ def execute_tasks(
             results.append(res)
         except Exception as e:
             exceptions.append(e)
-            if isinstance(e, CogniteAPIError):
-                if e.code < 500:
-                    failed_tasks.append(tasks[i])
-                else:
-                    unknown_result_tasks.append(tasks[i])
-            else:
+            if classify_error(e) == "failed":
                 failed_tasks.append(tasks[i])
+            else:
+                unknown_result_tasks.append(tasks[i])
 
     return TasksSummary(successful_tasks, unknown_result_tasks, failed_tasks, results, exceptions)
+
+
+def classify_error(err: Exception) -> Literal["failed", "unknown"]:
+    if isinstance(err, CogniteAPIError):
+        if err.code < 500:
+            return "failed"
+        else:
+            return "unknown"
+    return "failed"

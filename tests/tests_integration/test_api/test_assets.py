@@ -368,3 +368,22 @@ class TestAssetsAPICreateHierarchy:
                 assert a1.source != a3.source is a2.source is None
                 # Should have been replaced:
                 assert a3.metadata == a2.metadata != a1.metadata
+
+    @pytest.mark.parametrize("upsert_mode", ("patch", "replace"))
+    def test_upsert_and_insert_in_same_request(self, cognite_client, upsert_mode, monkeypatch, post_spy):
+        assets = create_asset_tower(4)
+        # Create only first 2:
+        created = cognite_client.assets.create_hierarchy(assets[:2], upsert=False)
+        assert len(created) == 2
+        assert 1 == cognite_client.assets._post.call_count
+        # We now send a request with both assets that needs to be created and updated:
+        monkeypatch.setattr(cognite_client.assets, "_CREATE_LIMIT", 50)  # Monkeypatch inside a monkeypatch, nice
+        with create_hierarchy_with_cleanup(
+            cognite_client, assets, upsert=True, upsert_mode=upsert_mode
+        ) as patch_created:
+            assert len(patch_created) == 4
+            assert set(AssetList(assets)._external_id_to_item) == set(patch_created._external_id_to_item)
+
+            assert 1 + 3 == cognite_client.assets._post.call_count  # 3 additional calls were made
+            resource_paths = [call[0][0] for call in cognite_client.assets._post.call_args_list]
+            assert resource_paths == ["/assets", "/assets", "/assets", "/assets/update"]

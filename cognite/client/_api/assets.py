@@ -5,7 +5,6 @@ import heapq
 import itertools
 import math
 import operator as op
-from collections import namedtuple
 from functools import cached_property
 from types import MappingProxyType
 from typing import (
@@ -17,6 +16,7 @@ from typing import (
     Iterator,
     List,
     Literal,
+    NamedTuple,
     NoReturn,
     Optional,
     Sequence,
@@ -41,9 +41,9 @@ from cognite.client.data_classes import (
     TimestampRange,
 )
 from cognite.client.data_classes.shared import AggregateBucketResult
-from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError
+from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._auxiliary import split_into_n_parts, to_camel_case
-from cognite.client.utils._concurrency import get_as_completed_fn, get_priority_executor
+from cognite.client.utils._concurrency import classify_error, get_as_completed_fn, get_priority_executor
 from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
@@ -455,6 +455,8 @@ class AssetsAPI(APIClient):
 
         This helper function makes it easy to insert large asset hierarchies. It solves the problem of topological
         insertion order, i.e. a parent asset must exist before it can be referenced by any 'children' assets.
+        You may pass any number of partial- or full hierarchies: there are no requirements on the number of root
+        assets, so you may pass zero, one or many (same goes for the non-root assets).
 
         Args:
             assets (Sequence[Asset] | AssetHierarchy): List of assets to create or an instance of AssetHierarchy.
@@ -488,7 +490,8 @@ class AssetsAPI(APIClient):
             get the collection of 'bad' assets falling in that group, e.g. ``error.duplicates``.
 
         Warning:
-            The API does not natively support upsert, so the SDK has to simulate the behaviour at the cost of insertion speed.
+            The API does not natively support upsert, so the SDK has to simulate the behaviour at the cost of some insertion speed.
+            Note also that updating ``external_id`` is not supported (and will not be supported). Use ``AssetsAPI.update`` instead.
 
         Examples:
 
@@ -503,8 +506,21 @@ class AssetsAPI(APIClient):
                 ...     Asset(external_id="child2", parent_external_id="root", name="child2")]
                 >>> res = c.assets.create_hierarchy(assets)
 
-            If the validation for some reason fail, you may inspect the issues by catching
-            :class:`~cognite.client.exceptions.CogniteAssetHierarchyError`:
+            Create an asset hierarchy, but run update for existing assets:
+
+                >>> res = c.assets.create_hierarchy(assets, upsert=True, upsert_mode="patch")
+
+            Patch will only update the parameters you have defined on your assets. Note that specifically setting
+            something to ``None`` is the same as not setting it. For ``metadata`, this will extend your existing
+            data, only overwriting when keys overlap. For ``labels`` the behavour is mostly the same, existing are
+            left untouched, and your new ones are simply added.
+
+            You may also pass ``upsert_mode="replace"`` to make sure the updated assets look identical to the ones
+            you passed to the method. For both ``metadata`` and ``labels`` this will clear out all existing,
+            before (potentially) adding the new ones.
+
+            If the hierarchy validation for some reason fail, you may inspect all the issues that were found by
+            catching :class:`~cognite.client.exceptions.CogniteAssetHierarchyError`:
 
                 >>> from cognite.client.exceptions import CogniteAssetHierarchyError
                 >>> try:
@@ -531,17 +547,22 @@ class AssetsAPI(APIClient):
             Here's a slightly longer explanation of the different groups:
 
                 - ``err.successful``: Which assets were created (request yielded a 201)
-                - ``err.unknown``: Which assets may have been created (request yielded 5xx)
-                - ``err.failed``: Which assets were not created (request yielded 4xx, or was a descendant of an asset with unknown status)
+                - ``err.unknown``: Which assets *may* have been created (request yielded 5xx)
+                - ``err.failed``: Which assets were *not* created (request yielded 4xx, or was a descendant of an asset with unknown status)
 
             The preferred way to create an asset hierarchy, is to run validation *prior to insertion*. You may do this by
-            using the :class:`~cognite.client.data_classes.assets.AssetHierarchy` class. It also provide helpful methods to
-            create reports of any issues, check out ``validate_and_report``.
+            using the :class:`~cognite.client.data_classes.assets.AssetHierarchy` class. It will by default consider orphan
+            assets to be problematic (but accepts the boolean parameter ``ignore_orphans``), contrary to how ``create_hierarchy``
+            works (which accepts them in order to be backwards-compatible). It also provides helpful methods to create reports
+            of any issues found, check out ``validate_and_report``:
 
                 >>> from cognite.client.data_classes import AssetHierarchy
+                >>> from pathlib import Path
                 >>> hierarchy = AssetHierarchy(assets)
                 >>> if hierarchy.is_valid():
                 ...     res = c.assets.create_hierarchy(hierarchy)
+                ... else:
+                ...     hierarchy.validate_and_report(output_file=Path("report.txt"))
         """
         if not isinstance(assets, AssetHierarchy):
             utils._auxiliary.assert_type(assets, "assets", [Sequence])
@@ -639,7 +660,7 @@ class AssetsAPI(APIClient):
                 >>> my_update = AssetUpdate(id=1).labels.remove("PUMP")
                 >>> res = c.assets.update(my_update)
 
-            Rewrite all labels for an asset::
+            Replace all labels for an asset::
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import AssetUpdate
@@ -751,7 +772,15 @@ class AssetsAPI(APIClient):
         return children
 
 
-_CreateTask = namedtuple("_CreateTask", ("items", "priority"))
+class _CreateTask(NamedTuple):
+    items: Set[Asset]
+    priority: int
+
+
+class _TaskResult(NamedTuple):
+    successful: List[Asset]
+    failed: List[Asset]
+    unknown: List[Asset]
 
 
 class _AssetHierarchyCreator:
@@ -765,7 +794,7 @@ class _AssetHierarchyCreator:
         self.max_workers = assets_api._config.max_workers
         self.failed: List[Asset] = []
         self.unknown: List[Asset] = []
-        self.exception: Union[CogniteAPIError, CogniteDuplicatedError, None] = None
+        self.latest_exception: Optional[Exception] = None
 
         self.__counter = itertools.count().__next__
 
@@ -780,7 +809,7 @@ class _AssetHierarchyCreator:
     def _create(
         self,
         pool: PriorityThreadPoolExecutor,
-        insert_fn: Callable[[Dict[str, List[Dict]]], Tuple[List[Asset], List[Asset], List[Asset]]],
+        insert_fn: Callable[[List[Asset]], _TaskResult],
         insert_dct: Dict[Optional[str], List[Asset]],
         subtree_count: Dict[str, int],
     ) -> AssetList:
@@ -809,10 +838,10 @@ class _AssetHierarchyCreator:
                 self._skip_all_descendants(unknown, failed, insert_dct)
 
             # Newly created assets are now unblocked as parents for the next iteration:
-            to_create = list(self._get_child_assets(new_assets, insert_dct))
+            to_create = list(self._pop_child_assets(new_assets, insert_dct))
             futures |= queue_fn(to_create)
 
-        if self.exception is not None or self.failed or self.unknown:
+        if self.latest_exception is not None:
             self._raise_latest_exception(created_assets)
         return AssetList(created_assets, cognite_client=self.assets_api._cognite_client)
 
@@ -828,59 +857,89 @@ class _AssetHierarchyCreator:
         if not assets:
             return set()
         return {
-            pool.submit(insert_fn, self._dump_assets(task.items), priority=self.n_assets - task.priority)
+            pool.submit(insert_fn, task.items, priority=self.n_assets - task.priority)
             for task in self._split_and_prioritise_assets(assets, insert_dct, subtree_count)
         }
 
     def _insert(
         self,
-        assets: Dict[str, List[Dict]],
+        assets: List[Asset],
         *,
         upsert: bool,
         upsert_mode: UpsertOptions,
-    ) -> Tuple[List[Asset], List[Asset], List[Asset]]:
+        no_recursion: bool = False,
+    ) -> _TaskResult:
         try:
-            resp = self.assets_api._post(self.resource_path, assets)
-            success = AssetList._load(resp.json()["items"]).data
-            return success, [], []
-
-        except (CogniteAPIError, CogniteDuplicatedError) as err:
+            resp = self.assets_api._post(self.resource_path, self._dump_assets(assets))
+            successful = AssetList._load(resp.json()["items"]).data
+            return _TaskResult(successful, failed=[], unknown=[])
+        except Exception as err:
+            self.latest_exception = err
             successful = []
-            if err.duplicated:
-                if not upsert:
-                    raise
-                # TODO: Do we want to deal with exceptions here?
-                updated = self._update(assets, cast(List, err.duplicated), cast(List, err.failed), upsert_mode)
-                successful.extend(updated.data)
+            failed: List[Asset] = []
+            unknown: List[Asset] = []
+            # Store to 'failed' or 'unknown':
+            err_status = classify_error(err)
+            bad_assets = {"failed": failed, "unknown": unknown}[err_status]
+            bad_assets.extend(assets)
 
-            self._update_latest_exception(err)
-            return successful, cast(List[Asset], err.failed), cast(List[Asset], err.unknown)
+            # Note the last cond.: we got CogniteAPIError and are running with upsert, but no duplicates gotten:
+            if no_recursion or not isinstance(err, CogniteAPIError) or err.duplicated is None:
+                return _TaskResult(successful, failed, unknown)
 
-    def _update(
-        self, assets: Dict[str, List[Dict]], duplicated: List[Dict], failed: List[Asset], upsert_mode: UpsertOptions
-    ) -> AssetList:
-        subset = self._extract_subset(duplicated, assets)
+            # Split assets based on their is-duplicated status:
+            non_dupes, dupe_assets = self._split_out_duplicated(cast(List[Dict], err.duplicated), assets)
+            # We should try to create the non-duplicated assets before running update (as these might be dependent):
+            if non_dupes:
+                result = self._insert(non_dupes, no_recursion=True, upsert=False, upsert_mode=upsert_mode)
+                if result.successful:
+                    successful.extend(result.successful)
+                    # The assets that were not duplicated should be removed from "bad":
+                    bad_assets.clear()
+                    bad_assets.extend(dupe_assets)
+
+                elif not upsert:
+                    return _TaskResult(successful, failed, unknown)
+
+            if dupe_assets:
+                updated = self._update(dupe_assets, upsert_mode)
+                # If update went well: Add to list of successful assets and remove from "bad":
+                if updated is not None:
+                    successful.extend(updated)
+                    still_bad = set(bad_assets).difference(updated)
+                    bad_assets.clear()
+                    bad_assets.extend(still_bad)
+
+            return _TaskResult(successful, failed, unknown)
+
+    def _update(self, to_update: List[Asset], upsert_mode: UpsertOptions) -> Optional[List[Asset]]:
         if upsert_mode == "patch":
-            updates = [self._make_asset_updates(asset, patch=True) for asset in subset]
+            updates = [self._make_asset_updates(asset, patch=True) for asset in to_update]
         elif upsert_mode == "replace":
-            updates = [self._make_asset_updates(asset, patch=False) for asset in subset]
+            updates = [self._make_asset_updates(asset, patch=False) for asset in to_update]
         else:
             raise ValueError(f"'upsert_mode' must be one of {list(UpsertOptions.__args__)}, not {upsert_mode!r}")
+        return self._update_post(updates)
 
-        # Duplicated are also passed as failed, we need to clear up which are not failures:
-        # TODO: Verify implementation works when we use inserts with 'parent_id'
-        updated = self.assets_api.update(updates)
-        still_failed = [f for f in failed if updated.get(external_id=f.external_id) is None]
-        failed.clear()
-        if still_failed:
-            failed.extend(still_failed)
-        return updated
+    def _update_post(self, items: List[AssetUpdate]) -> Optional[List[Asset]]:
+        try:
+            resp = self.assets_api._post(self.resource_path + "/update", json=self._dump_assets(items))
+            updated = AssetList._load(resp.json()["items"]).data
+            self.latest_exception = None  # Update worked, so we hide exception
+            return updated
+        except Exception as err:
+            # At this point, we don't care what caused the failure (well, we store error to show the user):
+            # All assets that failed the update are already marked as either failed or unknown.
+            self.latest_exception = err
+            return None
 
-    def _make_asset_updates(self, dumped: Dict[str, Any], patch: bool) -> AssetUpdate:
-        # TODO: The SDK makes it very hard to do full updates...
+    def _make_asset_updates(self, asset: Asset, patch: bool) -> AssetUpdate:
+        # Note: The SDK makes it very hard to do full updates... we also rely on the update-object to
+        # have an updated list of all "updateable" parameters...
+        dumped = asset.dump(camel_case=True)
         dct_update = {} if patch else self.clear_all_update.copy()
         dct_update.update({k: {"set": v} for k, v in dumped.items()})
-        # Since we enforce XID given and 'no ID', there's no point in "renaming to itself":
+        # Since we enforce XID given and 'no ID', there's no point in "renaming xid to itself":
         dct_update.pop("externalId")
         if patch:
             if "metadata" in dumped:
@@ -896,11 +955,8 @@ class _AssetHierarchyCreator:
         # Does not support setNull:
         props -= {"name", "parentExternalId", "parentId"}
         dct: Dict[str, Dict[str, Any]] = {k: {"setNull": True} for k in props}
-        # Handle metadata separately... lol:
-        # https://github.com/cognitedata/cognite-sdk-python/pull/757#issuecomment-723973727
-        dct["metadata"] = {"set": {}}
-        # Handle labels separately...
-        dct["labels"] = {"set": []}
+        # Handle labels and metadata separately...
+        dct.update(labels={"set": []}, metadata={"set": {}})
         return MappingProxyType(dct)
 
     def _split_and_prioritise_assets(
@@ -923,7 +979,7 @@ class _AssetHierarchyCreator:
         yield from self._recombine_chunks(tasks, limit=self.create_limit)
 
     @staticmethod
-    def _dump_assets(assets: Set[Asset]) -> Dict[str, List[Dict]]:
+    def _dump_assets(assets: Union[Sequence[Asset], Sequence[AssetUpdate]]) -> Dict[str, List[Dict]]:
         return {"items": [asset.dump(camel_case=True) for asset in assets]}
 
     @staticmethod
@@ -960,14 +1016,17 @@ class _AssetHierarchyCreator:
         return _CreateTask(to_create, priority)
 
     @staticmethod
-    def _get_child_assets(assets: Iterable[Asset], insert_dct: Dict[Optional[str], List[Asset]]) -> Iterator[Asset]:
+    def _pop_child_assets(assets: Iterable[Asset], insert_dct: Dict[Optional[str], List[Asset]]) -> Iterator[Asset]:
         return itertools.chain.from_iterable(insert_dct.pop(asset.external_id, []) for asset in assets)
 
     @staticmethod
-    def _extract_subset(subset: List[Dict[str, str]], assets: Dict[str, List[Dict]]) -> List[Dict[str, Any]]:
+    def _split_out_duplicated(subset: List[Dict[str, str]], assets: List[Asset]) -> Tuple[List[Asset], List[Asset]]:
         # Avoids repeated list-lookups (O(N^2))
-        lookup = {asset["externalId"]: asset for asset in assets["items"]}
-        return [lookup[asset["externalId"]] for asset in subset]
+        duplicated = {asset["externalId"] for asset in subset}
+        split_assets: Tuple[List[Asset], List[Asset]] = [], []
+        for a in assets:
+            split_assets[a.external_id in duplicated].append(a)
+        return split_assets
 
     def _skip_all_descendants(
         self,
@@ -977,27 +1036,29 @@ class _AssetHierarchyCreator:
     ) -> None:
         skip_assets = [*unknown, *failed]
         while skip_assets:
-            skip_assets = list(self._get_child_assets(skip_assets, insert_dct))
+            skip_assets = list(self._pop_child_assets(skip_assets, insert_dct))
             self.failed.extend(skip_assets)
 
-    def _update_latest_exception(self, exception: Union[CogniteAPIError, CogniteDuplicatedError]) -> None:
-        if exception.failed or exception.unknown:
-            self.exception = exception
-
     def _raise_latest_exception(self, successful: List[Asset]) -> NoReturn:
-        assert self.exception is not None
-        err_details: Dict[str, Any] = dict(
-            message="One or more errors happened during asset creation",
-            code=None,
+        common = dict(
             successful=AssetList(successful),
             unknown=AssetList(self.unknown),
             failed=AssetList(self.failed),
             unwrap_fn=op.attrgetter("external_id"),
         )
-        if isinstance(self.exception, CogniteAPIError):
-            err_details.update(
-                message=f"{err_details['message']}. Latest error: {self.exception.message}",
-                code=self.exception.code,
-                x_request_id=self.exception.x_request_id,
+        err_message = "One or more errors happened during asset creation. Latest error:"
+        if isinstance(self.latest_exception, CogniteAPIError):
+            raise CogniteAPIError(
+                message=f"{err_message} {self.latest_exception.message}",
+                x_request_id=self.latest_exception.x_request_id,
+                code=self.latest_exception.code,
+                extra=self.latest_exception.extra,
+                **common,  # type: ignore [arg-type]
             )
-        raise CogniteAPIError(**err_details)  # type: ignore [arg-type]
+        # If a non-Cognite-exception was raised, we still raise CogniteAPIError, but use 'from' to not hide
+        # the underlying reason from the user. We also do this because we promise that 'successful', 'unknown'
+        # and 'failed' can be inspected:
+        raise CogniteAPIError(
+            message=f"{err_message} ({type(self.latest_exception).__name__}) {self.latest_exception}",
+            **common,  # type: ignore [arg-type]
+        ) from self.latest_exception
