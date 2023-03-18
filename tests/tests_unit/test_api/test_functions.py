@@ -567,7 +567,7 @@ class TestFunctionsAPI:
 
     @pytest.mark.usefixtures("mock_sessions_with_client_credentials")
     def test_function_call_from_oidc_client_credentials_flow(
-        self, mock_functions_call_responses, cognite_client_with_client_credentials_flow, rsps
+        self, mock_functions_call_responses, cognite_client_with_client_credentials_flow
     ):
         res = cognite_client_with_client_credentials_flow.functions.call(id=FUNCTION_ID)
 
