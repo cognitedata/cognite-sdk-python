@@ -414,6 +414,9 @@ class TestTransformationsAPI:
             ViewInfo("myViewExternalId", "myViewVersion2", "test-space"), "test-space"
         )
 
+    @pytest.mark.xfail(
+        reason="This test currently fails for both certificate and secret auth. Probably due to recent changes to the API. Non-GA."
+    )
     def test_update_instance_edges(self, cognite_client, new_transformation):
         new_transformation.destination = TransformationDestination.instance_edges(
             instance_space="test-space", edge_type=EdgeType("edge-space", "myEdge")

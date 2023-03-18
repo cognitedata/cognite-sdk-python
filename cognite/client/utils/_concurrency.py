@@ -170,7 +170,7 @@ class ExtendedSyncFuture(TaskFuture):
         self._result: Optional[T_Result] = None
         self._is_cancelled = False
 
-    def result(self) -> T_Result:
+    def result(self) -> T_Result:  # type: ignore
         if self._is_cancelled:
             raise CancelledError
         if self._result is None:
