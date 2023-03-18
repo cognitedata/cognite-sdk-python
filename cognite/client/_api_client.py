@@ -80,7 +80,7 @@ class APIClient:
         self._config = config
         self._api_version = api_version
         self._api_subversion = config.api_subversion
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
         session = get_global_requests_session()
 
