@@ -83,7 +83,7 @@ class TestSecurityCategoriesAPI:
 
 class TestSessionsAPI:
     @pytest.mark.skipif(
-        os.environ.get("LOGIN_FLOW") == "client_certificate", reason="Sessions do not work with client_certificate"
+        os.getenv("LOGIN_FLOW") == "client_certificate", reason="Sessions do not work with client_certificate"
     )
     def test_create_and_revoke(self, cognite_client):
         res = cognite_client.iam.sessions.create()

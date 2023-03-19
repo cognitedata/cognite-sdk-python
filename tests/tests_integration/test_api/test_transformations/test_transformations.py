@@ -316,7 +316,7 @@ class TestTransformationsAPI:
         )
 
     @pytest.mark.skipif(
-        os.environ.get("LOGIN_FLOW") == "client_certificate", reason="Sessions do not work with client_certificate"
+        os.getenv("LOGIN_FLOW") == "client_certificate", reason="Sessions do not work with client_certificate"
     )
     def test_update_nonce(self, cognite_client, new_transformation):
         session = cognite_client.iam.sessions.create()
@@ -336,7 +336,7 @@ class TestTransformationsAPI:
         )
 
     @pytest.mark.skipif(
-        os.environ.get("LOGIN_FLOW") == "client_certificate", reason="Sessions do not work with client_certificate"
+        os.getenv("LOGIN_FLOW") == "client_certificate", reason="Sessions do not work with client_certificate"
     )
     def test_update_nonce_full(self, cognite_client, new_transformation):
         session = cognite_client.iam.sessions.create()

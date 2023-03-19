@@ -383,17 +383,16 @@ class OAuthClientCertificate(_OAuthCredentialProviderWithTokenRefresh):
         cert_thumbprint (str): Your certificate's thumbprint. You get it when you upload your certificate to Azure AD.
         certificate (str): Your private certificate, typically read from a .pem file
         scopes (List[str]): A list of scopes.
-        **token_custom_args (Any): Optional additional arguments to pass as query parameters to the token fetch request.
 
     Examples:
 
             >>> from cognite.client.credentials import OAuthClientCertificate
-            >>> import os
+            >>> from pathlib import Path
             >>> oauth_provider = OAuthClientCertificate(
             ...     authority_url="https://login.microsoftonline.com/xyz",
             ...     client_id="abcd",
             ...     cert_thumbprint="XYZ123",
-            ...     certificate=open("certificate.pem").read(),
+            ...     certificate=Path("certificate.pem").read_text(),
             ...     scopes=["https://greenfield.cognitedata.com/.default"],
             ... )
     """
