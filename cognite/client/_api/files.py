@@ -839,7 +839,7 @@ class FilesAPI(APIClient):
         ) as r:
             r = cast("Response", r)
             with path.open("wb") as f:
-                for chunk in r.iter_content(chunk_size=chunk_size):  # type: ignore
+                for chunk in r.iter_content(chunk_size=chunk_size):
                     if chunk:  # filter out keep-alive new chunks
                         f.write(chunk)
 

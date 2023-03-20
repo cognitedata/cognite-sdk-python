@@ -144,7 +144,7 @@ class TaskFuture(Protocol[T_Result]):
         ...
 
 
-class SyncFuture(TaskFuture):
+class SyncFuture(TaskFuture[T_Result]):
     def __init__(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any):
         self._task = functools.partial(fn, *args, **kwargs)
         self._result: Optional[T_Result] = None
