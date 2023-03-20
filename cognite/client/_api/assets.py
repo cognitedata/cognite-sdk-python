@@ -43,7 +43,7 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes.shared import AggregateBucketResult
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._auxiliary import split_into_n_parts, to_camel_case
-from cognite.client.utils._concurrency import classify_error, get_as_completed_fn, get_priority_executor
+from cognite.client.utils._concurrency import classify_error, get_priority_executor
 from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
@@ -831,9 +831,8 @@ class _AssetHierarchyCreator:
         created_assets = []
         futures = queue_fn(insert_dct.pop(None))
 
-        as_completed = get_as_completed_fn(pool)
         while futures:
-            futures.remove(fut := next(as_completed(futures)))
+            futures.remove(fut := next(pool.as_completed(futures)))
             new_assets, failed, unknown = fut.result()
             created_assets.extend(new_assets)
             if unknown or failed:
