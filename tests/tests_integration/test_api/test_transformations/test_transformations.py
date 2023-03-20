@@ -140,26 +140,6 @@ class TestTransformationsAPI:
         assert {"vu", "hai"} == set(ts.tags)
         cognite_client.transformations.delete(id=ts.id)
 
-    @pytest.mark.skip
-    def test_create_dmi_transformation(self, cognite_client):
-        prefix = random_string(6, string.ascii_letters)
-        transform = Transformation(
-            name="any",
-            external_id=f"{prefix}-transformation",
-            destination=TransformationDestination.data_model_instances(
-                model_external_id="testInstance",
-                space_external_id="test-space",
-                instance_space_external_id="test-space",
-            ),
-        )
-        ts = cognite_client.transformations.create(transform)
-        assert (
-            ts.destination.type == "data_model_instances"
-            and ts.destination.model_external_id == "testInstance"
-            and ts.destination.space_external_id == "test-space"
-            and ts.destination.instance_space_external_id == "test-space"
-        )
-        cognite_client.transformations.delete(id=ts.id)
 
     def test_create_instance_nodes_transformation(self, cognite_client):
         prefix = random_string(6, string.ascii_letters)
