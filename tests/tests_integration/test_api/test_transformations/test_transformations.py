@@ -140,7 +140,6 @@ class TestTransformationsAPI:
         assert {"vu", "hai"} == set(ts.tags)
         cognite_client.transformations.delete(id=ts.id)
 
-
     def test_create_instance_nodes_transformation(self, cognite_client):
         prefix = random_string(6, string.ascii_letters)
         instance_nodes = TransformationDestination.instance_nodes(
