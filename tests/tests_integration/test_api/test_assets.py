@@ -19,7 +19,7 @@ from cognite.client.data_classes import (
 from cognite.client.exceptions import CogniteAssetHierarchyError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import random_string
 from cognite.client.utils._time import timestamp_to_ms
-from tests.utils import set_request_limit
+from tests.utils import set_max_workers, set_request_limit
 
 
 @pytest.fixture
@@ -235,11 +235,10 @@ def create_hierarchy_with_cleanup(client, assets, upsert=False, upsert_mode=""):
 
 @pytest.fixture(scope="class")
 def set_create_lim(cognite_client):
-    with pytest.MonkeyPatch.context() as mp:
+    with set_max_workers(2), pytest.MonkeyPatch.context() as mp:
         # We set a low limit to hopefully detect bugs in how resources are split (+threading)
         # without unnecessarily overloading the API with many thousand assets/request:
         mp.setattr(cognite_client.assets, "_CREATE_LIMIT", 3)
-        mp.setattr(cognite_client.assets._config, "max_workers", 2)
         yield
 
 

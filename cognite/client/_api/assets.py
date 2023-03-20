@@ -51,8 +51,6 @@ if TYPE_CHECKING:
 
     from cognite.client.utils._priority_tpe import PriorityThreadPoolExecutor
 
-UpsertOptions = Literal["patch", "replace"]
-
 
 class AssetsAPI(APIClient):
     _RESOURCE_PATH = "/assets"
@@ -449,7 +447,7 @@ class AssetsAPI(APIClient):
         assets: Union[Sequence[Asset], AssetHierarchy],
         *,
         upsert: bool = False,
-        upsert_mode: UpsertOptions = "patch",
+        upsert_mode: Literal["patch", "replace"] = "patch",
     ) -> AssetList:
         """Create an asset hierarchy with validation.
 
@@ -804,7 +802,7 @@ class _AssetHierarchyCreator:
 
         self.__counter = itertools.count().__next__
 
-    def create(self, upsert: bool, upsert_mode: UpsertOptions) -> AssetList:
+    def create(self, upsert: bool, upsert_mode: Literal["patch", "replace"]) -> AssetList:
         insert_fn = functools.partial(self._insert, upsert=upsert, upsert_mode=upsert_mode)
         insert_dct = self.hierarchy.groupby_parent_xid()
         subtree_count = self.hierarchy.count_subtree(insert_dct)
@@ -872,7 +870,7 @@ class _AssetHierarchyCreator:
         assets: List[Asset],
         *,
         upsert: bool,
-        upsert_mode: UpsertOptions,
+        upsert_mode: Literal["patch", "replace"],
         no_recursion: bool = False,
     ) -> _TaskResult:
         try:
@@ -918,13 +916,13 @@ class _AssetHierarchyCreator:
 
             return _TaskResult(successful, failed, unknown)
 
-    def _update(self, to_update: List[Asset], upsert_mode: UpsertOptions) -> Optional[List[Asset]]:
+    def _update(self, to_update: List[Asset], upsert_mode: Literal["patch", "replace"]) -> Optional[List[Asset]]:
         if upsert_mode == "patch":
             updates = [self._make_asset_updates(asset, patch=True) for asset in to_update]
         elif upsert_mode == "replace":
             updates = [self._make_asset_updates(asset, patch=False) for asset in to_update]
         else:
-            raise ValueError(f"'upsert_mode' must be one of {list(UpsertOptions.__args__)}, not {upsert_mode!r}")
+            raise ValueError(f"'upsert_mode' must be either 'patch' or 'replace', not {upsert_mode!r}")
         return self._update_post(updates)
 
     def _update_post(self, items: List[AssetUpdate]) -> Optional[List[Asset]]:

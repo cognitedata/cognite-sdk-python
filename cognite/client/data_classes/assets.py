@@ -476,9 +476,6 @@ class AssetFilter(CogniteFilter):
         return result
 
 
-OnErrorOptions = Literal["ignore", "warn", "raise"]
-
-
 class AssetHierarchy:
     """Class that verifies if a collection of Assets is valid, by validating its internal consistency.
     This is done "offline", meaning CDF is -not- queried for the already existing assets. As a result,
@@ -534,7 +531,7 @@ class AssetHierarchy:
     def __len__(self) -> int:
         return len(self._assets)
 
-    def is_valid(self, on_error: OnErrorOptions = "ignore") -> bool:
+    def is_valid(self, on_error: Literal["ignore", "warn", "raise"] = "ignore") -> bool:
         if not self.__validation_has_run:
             self.validate(verbose=False, on_error="ignore")
             return self.is_valid(on_error=on_error)
@@ -588,7 +585,7 @@ class AssetHierarchy:
         self,
         verbose: bool = False,
         output_file: Optional[Path] = None,
-        on_error: OnErrorOptions = "warn",
+        on_error: Literal["ignore", "warn", "raise"] = "warn",
     ) -> AssetHierarchy:
         self._roots, self._orphans, self._invalid, self._unsure_parents, self._duplicates = self._inspect_attributes()
         if verbose:
@@ -677,7 +674,7 @@ class AssetHierarchy:
         (count_dct := dict(counts)).pop(None, None)
         return count_dct
 
-    def _on_error(self, on_error: OnErrorOptions, message: str) -> None:
+    def _on_error(self, on_error: Literal["ignore", "warn", "raise"], message: str) -> None:
         if on_error == "warn":
             warnings.warn(message + " See report for details: `validate_and_report()`")
         elif on_error == "raise":
@@ -710,7 +707,7 @@ class AssetHierarchy:
 
         return roots, orphans, invalid, unsure_parents, dict(duplicates)
 
-    def _preconditions_for_cycle_check_are_met(self, on_error: OnErrorOptions) -> bool:
+    def _preconditions_for_cycle_check_are_met(self, on_error: Literal["ignore", "warn", "raise"]) -> bool:
         if self._no_basic_issues():
             return True
         self._on_error(on_error, "Unable to run cycle-check before basic issues are fixed.")
