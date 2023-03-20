@@ -235,7 +235,7 @@ def create_hierarchy_with_cleanup(client, assets, upsert=False, upsert_mode=""):
 
 @pytest.fixture(scope="class")
 def set_create_lim(cognite_client):
-    with set_max_workers(2), pytest.MonkeyPatch.context() as mp:
+    with set_max_workers(cognite_client, 2), pytest.MonkeyPatch.context() as mp:
         # We set a low limit to hopefully detect bugs in how resources are split (+threading)
         # without unnecessarily overloading the API with many thousand assets/request:
         mp.setattr(cognite_client.assets, "_CREATE_LIMIT", 3)
