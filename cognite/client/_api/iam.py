@@ -406,7 +406,8 @@ class SessionsAPI(APIClient):
             client_credentials (Optional[ClientCredentials]): The client credentials to create the session. If set to None,
                 a session will be created using the credentials used to instantiate -this- CogniteClient object. If that
                 was done using a token, a session will be created using token exchange. Similarly, if the credentials were
-                client credentials, a session will be created using client credentials.
+                client credentials, a session will be created using client credentials. This method does not work when
+                using client certificates (not supported server-side).
 
         Returns:
             CreatedSession: The object with token inspection details.

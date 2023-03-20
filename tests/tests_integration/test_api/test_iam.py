@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 from cognite.client.data_classes import APIKey, Group, SecurityCategory, ServiceAccount, ServiceAccountList
@@ -80,6 +82,9 @@ class TestSecurityCategoriesAPI:
 
 
 class TestSessionsAPI:
+    @pytest.mark.skipif(
+        os.getenv("LOGIN_FLOW") == "client_certificate", reason="Sessions do not work with client_certificate"
+    )
     def test_create_and_revoke(self, cognite_client):
         res = cognite_client.iam.sessions.create()
         assert res.id in {s.id for s in cognite_client.iam.sessions.list("READY")}

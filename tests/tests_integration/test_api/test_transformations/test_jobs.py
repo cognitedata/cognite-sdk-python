@@ -1,4 +1,5 @@
 import asyncio
+import os
 import string
 import time
 
@@ -91,6 +92,9 @@ async def other_running_transformation(other_transformation):
         yield transform
 
 
+@pytest.mark.skipif(
+    os.getenv("LOGIN_FLOW") != "client_credentials", reason="This test requires client_credentials auth"
+)
 class TestTransformationJobsAPI:
     @pytest.mark.asyncio
     async def test_run_without_wait(self, cognite_client, new_running_transformation):

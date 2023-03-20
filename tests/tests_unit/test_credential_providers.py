@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 import pytest
 from oauthlib.oauth2 import InvalidClientIdError
 
-from cognite.client.credentials import APIKey, OAuthClientCredentials, Token
+from cognite.client.credentials import APIKey, OAuthClientCertificate, OAuthClientCredentials, Token
 from cognite.client.exceptions import CogniteAuthError
 
 
@@ -67,3 +67,22 @@ class TestOauthClientCredentials:
         creds = OAuthClientCredentials(**self.DEFAULT_PROVIDER_ARGS)
         assert "Authorization", "Bearer azure_token_expired" == creds.authorization_header()
         assert "Authorization", "Bearer azure_token_refreshed" == creds.authorization_header()
+
+
+class TestOAuthClientCertificate:
+    DEFAULT_PROVIDER_ARGS = {
+        "authority_url": "https://login.microsoftonline.com/xyz",
+        "client_id": "azure-client-id",
+        "cert_thumbprint": "XYZ123",
+        "certificate": "certificatecontents123",
+        "scopes": ["https://greenfield.cognitedata.com/.default"],
+    }
+
+    @patch("cognite.client.credentials.ConfidentialClientApplication")
+    def test_access_token_generated(self, mock_msal_app):
+        mock_msal_app().acquire_token_for_client.return_value = {
+            "access_token": "azure_token",
+            "expires_in": 1000,
+        }
+        creds = OAuthClientCertificate(**self.DEFAULT_PROVIDER_ARGS)
+        assert "Authorization", "Bearer azure_token" == creds.authorization_header()

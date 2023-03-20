@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [5.8.0] - 20-03-23
+### Added
+- Support for client certificate authentication to Azure AD.
+
 ## [5.7.4] - 17-03-23
 ### Added
 - Use `X-Job-Token` header for contextualization jobs to reduce required capabilities.
