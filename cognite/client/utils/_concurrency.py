@@ -301,9 +301,6 @@ def execute_tasks(
 
 
 def classify_error(err: Exception) -> Literal["failed", "unknown"]:
-    if isinstance(err, CogniteAPIError):
-        if err.code < 500:
-            return "failed"
-        else:
-            return "unknown"
+    if isinstance(err, CogniteAPIError) and err.code >= 500
+        return "unknown"
     return "failed"
