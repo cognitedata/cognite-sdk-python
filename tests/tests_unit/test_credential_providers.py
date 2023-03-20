@@ -80,11 +80,9 @@ class TestOAuthClientCertificate:
 
     @patch("cognite.client.credentials.ConfidentialClientApplication")
     def test_access_token_generated(self, mock_msal_app):
-        mock_msal_app().return_value = Mock()
         mock_msal_app().acquire_token_for_client.return_value = {
             "access_token": "azure_token",
             "expires_in": 1000,
         }
         creds = OAuthClientCertificate(**self.DEFAULT_PROVIDER_ARGS)
-        creds._refresh_access_token()
         assert "Authorization", "Bearer azure_token" == creds.authorization_header()
