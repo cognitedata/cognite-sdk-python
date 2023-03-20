@@ -409,13 +409,12 @@ class TestTransformationsAPI:
 
     def test_update_instance_edges(self, cognite_client, new_transformation):
         new_transformation.destination = TransformationDestination.instance_edges(
-            ViewInfo("myViewExternalId", "myViewVersion", "test-space"), "test-space", EdgeType("edge-space", "myEdge")
+            instance_space="test-space", edge_type=EdgeType("edge-space", "myEdge")
         )
         partial_update = TransformationUpdate(id=new_transformation.id).destination.set(
             TransformationDestination.instance_edges(
-                ViewInfo("myViewExternalId", "myViewVersion2", "test-space"),
-                "test-space",
-                EdgeType("edge-space2", "myEdge2"),
+                instance_space="test-space",
+                edge_type=EdgeType("edge-space2", "myEdge2"),
             )
         )
         updated_transformation = cognite_client.transformations.update(new_transformation)

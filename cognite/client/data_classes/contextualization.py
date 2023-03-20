@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast
 
+from requests.utils import CaseInsensitiveDict
+
 from cognite.client.data_classes import Annotation
 from cognite.client.data_classes._base import (
     CognitePrimitiveUpdate,
@@ -66,6 +68,7 @@ class ContextualizationJob(CogniteResource):
             "createdTime",
             "startTime",
             "statusTime",
+            "jobToken",
         }
     )
     _JOB_TYPE = ContextualizationJobType.ENTITY_MATCHING
@@ -80,6 +83,7 @@ class ContextualizationJob(CogniteResource):
         start_time: int = None,
         status_time: int = None,
         status_path: str = None,
+        job_token: str = None,
         cognite_client: CogniteClient = None,
     ):
         """Data class for the result of a contextualization job."""
@@ -90,13 +94,19 @@ class ContextualizationJob(CogniteResource):
         self.start_time = start_time
         self.status_time = status_time
         self.error_message = error_message
+        self.job_token = job_token
         self._cognite_client = cast("CogniteClient", cognite_client)
         self._result: Optional[Dict[str, Any]] = None
         self._status_path = status_path
 
     def update_status(self) -> str:
         """Updates the model status and returns it"""
-        data = getattr(self._cognite_client, self._JOB_TYPE.value)._get(f"{self._status_path}{self.job_id}").json()
+        headers = {"X-Job-Token": self.job_token} if self.job_token else {}
+        data = (
+            getattr(self._cognite_client, self._JOB_TYPE.value)
+            ._get(f"{self._status_path}{self.job_id}", headers=headers)
+            .json()
+        )
         self.status = data["status"]
         self.status_time = data.get("statusTime")
         self.start_time = data.get("startTime")
@@ -138,9 +148,14 @@ class ContextualizationJob(CogniteResource):
 
     @classmethod
     def _load_with_status(
-        cls: Type[T_ContextualizationJob], data: Dict[str, Any], status_path: str, cognite_client: Any
+        cls: Type[T_ContextualizationJob],
+        *,
+        data: Dict[str, Any],
+        headers: CaseInsensitiveDict[str],
+        status_path: str,
+        cognite_client: Any,
     ) -> T_ContextualizationJob:
-        obj = cls._load(data, cognite_client=cognite_client)
+        obj = cls._load({**data, "jobToken": headers.get("X-Job-Token")}, cognite_client=cognite_client)
         obj._status_path = status_path
         return obj
 
@@ -780,7 +795,6 @@ class VisionExtractJob(VisionJob):
         creating_app: Optional[str] = None,
         creating_app_version: Optional[str] = None,
     ) -> List[Annotation]:
-
         return [
             Annotation(
                 annotated_resource_id=item.file_id,
