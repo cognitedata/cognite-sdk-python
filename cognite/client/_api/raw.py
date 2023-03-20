@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence,
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client.config import ClientConfig
 from cognite.client.data_classes import Database, DatabaseList, Row, RowList, Table, TableList
 from cognite.client.utils._auxiliary import is_unlimited, local_import
 from cognite.client.utils._identifier import Identifier
@@ -13,14 +12,15 @@ if TYPE_CHECKING:
     import pandas
 
     from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
 
 
 class RawAPI(APIClient):
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.databases = RawDatabasesAPI(*args, **kwargs)
-        self.tables = RawTablesAPI(*args, **kwargs)
-        self.rows = RawRowsAPI(*args, **kwargs)
+    def __init__(self, config: ClientConfig, cognite_client: CogniteClient) -> None:
+        super().__init__(config, cognite_client)
+        self.databases = RawDatabasesAPI(config, cognite_client)
+        self.tables = RawTablesAPI(config, cognite_client)
+        self.rows = RawRowsAPI(config, cognite_client)
 
 
 class RawDatabasesAPI(APIClient):
@@ -296,13 +296,7 @@ class RawTablesAPI(APIClient):
 class RawRowsAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs/{}/tables/{}/rows"
 
-    def __init__(
-        self,
-        config: ClientConfig,
-        api_version: Optional[str] = None,
-        cognite_client: CogniteClient = None,
-    ) -> None:
-        super().__init__(config, api_version, cognite_client)
+    def _override_request_limits(self) -> None:
         self._CREATE_LIMIT = 5000
         self._LIST_LIMIT = 10000
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional, Sequence, Union
+from typing import Optional, Sequence, Union
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -12,9 +12,6 @@ from cognite.client.utils._identifier import IdentifierSequence
 class TransformationNotificationsAPI(APIClient):
     _RESOURCE_PATH = "/transformations/notifications"
     _LIST_CLASS = TransformationNotificationList
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
 
     def create(
         self, notification: Union[TransformationNotification, Sequence[TransformationNotification]]

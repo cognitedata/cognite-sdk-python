@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -20,14 +20,18 @@ from cognite.client.data_classes.templates import (
 )
 from cognite.client.utils._identifier import IdentifierSequence
 
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
+
 
 class TemplatesAPI(APIClient):
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.groups = TemplateGroupsAPI(*args, **kwargs)
-        self.versions = TemplateGroupVersionsAPI(*args, **kwargs)
-        self.instances = TemplateInstancesAPI(*args, **kwargs)
-        self.views = TemplateViewsAPI(*args, **kwargs)
+    def __init__(self, config: ClientConfig, cognite_client: CogniteClient) -> None:
+        super().__init__(config, cognite_client)
+        self.groups = TemplateGroupsAPI(config, cognite_client)
+        self.versions = TemplateGroupVersionsAPI(config, cognite_client)
+        self.instances = TemplateInstancesAPI(config, cognite_client)
+        self.views = TemplateViewsAPI(config, cognite_client)
 
     def graphql_query(self, external_id: str, version: int, query: str) -> GraphQlResponse:
         """
@@ -74,9 +78,6 @@ class TemplatesAPI(APIClient):
 
 class TemplateGroupsAPI(APIClient):
     _RESOURCE_PATH = "/templategroups"
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
 
     def create(
         self, template_groups: Union[TemplateGroup, Sequence[TemplateGroup]]
@@ -220,9 +221,6 @@ class TemplateGroupsAPI(APIClient):
 
 class TemplateGroupVersionsAPI(APIClient):
     _RESOURCE_PATH = "/templategroups/{}/versions"
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
 
     def upsert(self, external_id: str, version: TemplateGroupVersion) -> TemplateGroupVersion:
         """`Upsert a template group version.`

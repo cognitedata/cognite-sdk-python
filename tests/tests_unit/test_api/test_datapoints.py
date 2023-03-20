@@ -141,11 +141,11 @@ class TestGetLatest:
         for res in res_list:
             assert 0 == len(res)
 
-    def test_retrieve_latest_concurrent_fails(self, cognite_client, mock_retrieve_latest_with_failure):
-        with patch(DATAPOINTS_API.format("RETRIEVE_LATEST_LIMIT"), 2):
-            with pytest.raises(CogniteAPIError) as e:
-                cognite_client.time_series.data.retrieve_latest(id=[1, 2, 3])
-            assert e.value.code == 500
+    def test_retrieve_latest_concurrent_fails(self, cognite_client, mock_retrieve_latest_with_failure, monkeypatch):
+        monkeypatch.setattr(cognite_client.time_series.data, "_RETRIEVE_LATEST_LIMIT", 2)
+        with pytest.raises(CogniteAPIError) as e:
+            cognite_client.time_series.data.retrieve_latest(id=[1, 2, 3])
+        assert e.value.code == 500
 
     @pytest.mark.parametrize(
         "id, external_id, pass_as, err_msg",
@@ -225,11 +225,11 @@ class TestInsertDatapoints:
         with pytest.raises(AssertionError, match="is missing the"):
             cognite_client.time_series.data.insert(dps, id=1)
 
-    def test_insert_datapoints_over_limit(self, cognite_client, mock_post_datapoints):
+    def test_insert_datapoints_over_limit(self, cognite_client, mock_post_datapoints, monkeypatch):
         dps = [(i * 1e11, i) for i in range(1, 11)]
-        with patch(DATAPOINTS_API.format("DPS_LIMIT"), 5):
-            with patch(DATAPOINTS_API.format("POST_DPS_OBJECTS_LIMIT"), 5):
-                res = cognite_client.time_series.data.insert(dps, id=1)
+        with patch(DATAPOINTS_API.format("_DPS_LIMIT_RAW"), 5):
+            monkeypatch.setattr(cognite_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 5)
+            res = cognite_client.time_series.data.insert(dps, id=1)
         assert res is None
         request_bodies = [jsgz_load(call.request.body) for call in mock_post_datapoints.calls]
         assert {
@@ -275,12 +275,14 @@ class TestInsertDatapoints:
         for i, dps in enumerate(request_body["items"], 1):
             assert i == dps["id"]
 
-    def test_insert_multiple_ts_single_call__below_dps_limit_above_ts_limit(self, cognite_client, mock_post_datapoints):
-        with patch(DATAPOINTS_API.format("POST_DPS_OBJECTS_LIMIT"), 100):
-            dps = [{"timestamp": i * 1e11, "value": i} for i in range(1, 2)]
-            dps_objects = [{"id": i, "datapoints": dps} for i in range(1, 102)]
-            cognite_client.time_series.data.insert_multiple(dps_objects)
-            assert 2 == len(mock_post_datapoints.calls)
+    def test_insert_multiple_ts_single_call__below_dps_limit_above_ts_limit(
+        self, cognite_client, mock_post_datapoints, monkeypatch
+    ):
+        monkeypatch.setattr(cognite_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 100)
+        dps = [{"timestamp": i * 1e11, "value": i} for i in range(1, 2)]
+        dps_objects = [{"id": i, "datapoints": dps} for i in range(1, 102)]
+        cognite_client.time_series.data.insert_multiple(dps_objects)
+        assert 2 == len(mock_post_datapoints.calls)
 
     def test_insert_multiple_ts_single_call__above_dps_limit_below_ts_limit(self, cognite_client, mock_post_datapoints):
         dps = [{"timestamp": i * 1e11, "value": i} for i in range(1, 1002)]

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional, Sequence, Union
+from typing import Optional, Sequence, Union
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -13,9 +13,7 @@ class TransformationSchedulesAPI(APIClient):
     _RESOURCE_PATH = "/transformations/schedules"
     _LIST_CLASS = TransformationScheduleList
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-
+    def _override_request_limits(self) -> None:
         self._CREATE_LIMIT = 5
         self._DELETE_LIMIT = 5
         self._UPDATE_LIMIT = 5

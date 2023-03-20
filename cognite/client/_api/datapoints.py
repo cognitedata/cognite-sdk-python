@@ -35,8 +35,6 @@ from typing import (
 )
 
 from cognite.client._api.datapoint_tasks import (
-    DPS_LIMIT,
-    DPS_LIMIT_AGG,
     BaseConcurrentTask,
     BaseDpsFetchSubtask,
     CustomDatapoints,
@@ -82,12 +80,9 @@ if TYPE_CHECKING:
 
     import pandas as pd
 
+    from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
     from cognite.client.utils._priority_tpe import PriorityThreadPoolExecutor
-
-
-POST_DPS_OBJECTS_LIMIT = 10_000
-FETCH_TS_LIMIT = 100
-RETRIEVE_LATEST_LIMIT = 100
 
 
 TSQueryList = List[_SingleTSQueryBase]
@@ -102,7 +97,12 @@ def select_dps_fetch_strategy(dps_client: DatapointsAPI, user_query: _Datapoints
     if max_workers < 1:  # Dps fetching does not use fn `execute_tasks_concurrently`, so we must check:
         raise RuntimeError(f"Invalid option for `{max_workers=}`. Must be at least 1")
 
-    all_queries = _SingleTSQueryValidator(user_query).validate_and_create_single_queries()
+    validator = _SingleTSQueryValidator(
+        user_query,
+        dps_limit_raw=dps_client._DPS_LIMIT_RAW,
+        dps_limit_agg=dps_client._DPS_LIMIT_AGG,
+    )
+    all_queries = validator.validate_and_create_single_queries()
     agg_queries, raw_queries = split_queries_into_raw_and_aggs(all_queries)
 
     # Running mode is decided based on how many time series are requested VS. number of workers:
@@ -310,7 +310,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
     Is used when the number of time series to fetch is larger than the number of `max_workers`. How many
     time series are chunked per request is dynamic and is decided by the overall number to fetch, their
     individual number of datapoints and wheter or not raw- or aggregate datapoints are asked for since
-    they are independent in requests - as long as the total number of time series does not exceed FETCH_TS_LIMIT.
+    they are independent in requests - as long as the total number of time series does not exceed `_FETCH_TS_LIMIT`.
     """
 
     def __init__(self, *args: Any) -> None:
@@ -384,13 +384,13 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         initial_query_limits: Dict[_SingleTSQueryBase, int] = {}
         initial_futures_dct: Dict[Future, Tuple[TSQueryList, TSQueryList]] = {}
         # Optimal queries uses the entire worker pool. We may be forced to use more (queue) when we
-        # can't fit all individual time series (maxes out at `FETCH_TS_LIMIT * max_workers`):
-        n_queries = max(self.max_workers, math.ceil(self.n_queries / FETCH_TS_LIMIT))
+        # can't fit all individual time series (maxes out at `_FETCH_TS_LIMIT * max_workers`):
+        n_queries = max(self.max_workers, math.ceil(self.n_queries / self.dps_client._FETCH_TS_LIMIT))
         splitter: Callable[[List[T]], Iterator[List[T]]] = functools.partial(split_into_n_parts, n=n_queries)
         for query_chunks in zip(splitter(self.agg_queries), splitter(self.raw_queries)):
             # Agg and raw limits are independent in the query, so we max out on both:
             items = []
-            for queries, max_lim in zip(query_chunks, [DPS_LIMIT_AGG, DPS_LIMIT]):
+            for queries, max_lim in zip(query_chunks, [self.dps_client._DPS_LIMIT_AGG, self.dps_client._DPS_LIMIT_RAW]):
                 maxed_limits = self._find_initial_query_limits([q.capped_limit for q in queries], max_lim)
                 initial_query_limits.update(chunk_query_limits := dict(zip(queries, maxed_limits)))
                 items.extend([{**q.to_payload(), "limit": lim} for q, lim in chunk_query_limits.items()])
@@ -456,12 +456,16 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         next_items: List[CustomDatapoints] = []
         next_subtasks: List[BaseDpsFetchSubtask] = []
         agg_pool, raw_pool = self.subtask_pools
-        for task_pool, request_max_limit, is_raw in zip(self.subtask_pools, (DPS_LIMIT_AGG, DPS_LIMIT), [False, True]):
+        for task_pool, request_max_limit, is_raw in zip(
+            self.subtask_pools,
+            (self.dps_client._DPS_LIMIT_AGG, self.dps_client._DPS_LIMIT_RAW),
+            [False, True],
+        ):
             if not task_pool:
                 continue
             limit_used = 0  # Dps limit for raw and agg is independent (in same query)
             while task_pool:
-                if len(next_items) + 1 > FETCH_TS_LIMIT:
+                if len(next_items) + 1 > self.dps_client._FETCH_TS_LIMIT:
                     # Hard limit on N ts, quit immediately (even if below dps limit):
                     priority = statistics.mean(task.priority for task in next_subtasks)
                     payload: DatapointsPayload = {"items": next_items}
@@ -491,7 +495,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         return None
 
     @staticmethod
-    def _decide_individual_query_limit(query: _SingleTSQueryBase, ts_task: BaseConcurrentTask) -> int:
+    def _decide_individual_query_limit(query: _SingleTSQueryBase, ts_task: BaseConcurrentTask, n_ts_limit: int) -> int:
         # For a better estimate, we use first ts of first batch instead of `query.start`:
         batch_start, batch_end = ts_task.start_ts_first_batch, ts_task.end_ts_first_batch
         est_remaining_dps = ts_task.n_dps_first_batch * (query.end - batch_end) / (batch_end - batch_start)
@@ -503,7 +507,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         for chunk_size in (1, 2, 4, 8, 16, 32):
             if est_remaining_dps > max_limit // chunk_size:
                 return max_limit // (2 * chunk_size)
-        return max_limit // FETCH_TS_LIMIT
+        return max_limit // n_ts_limit
 
     def _update_queries_with_new_chunking_limit(
         self, ts_task_lookup: Dict[_SingleTSQueryBase, BaseConcurrentTask]
@@ -518,7 +522,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         # Many tasks left, decide how we'll chunk'em by estimating which are dense (and need little to
         # no chunking), and which are not (...and may be grouped - and how "tightly"):
         for query, ts_task in remaining_tasks.items():
-            est_limit = self._decide_individual_query_limit(query, ts_task)
+            est_limit = self._decide_individual_query_limit(query, ts_task, self.dps_client._FETCH_TS_LIMIT)
             query.override_max_query_limit(est_limit)
 
         return list(remaining_tasks.values())
@@ -571,11 +575,16 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
 class DatapointsAPI(APIClient):
     _RESOURCE_PATH = "/timeseries/data"
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.synthetic = SyntheticDatapointsAPI(
-            self._config, api_version=self._api_version, cognite_client=self._cognite_client
-        )
+    def __init__(self, config: ClientConfig, cognite_client: CogniteClient) -> None:
+        super().__init__(config, cognite_client)
+        self.synthetic = SyntheticDatapointsAPI(config, cognite_client)
+
+    def _override_request_limits(self) -> None:
+        self._FETCH_TS_LIMIT = 100
+        self._DPS_LIMIT_AGG = 10_000
+        self._DPS_LIMIT_RAW = 100_000
+        self._RETRIEVE_LATEST_LIMIT = 100
+        self._POST_DPS_OBJECTS_LIMIT = 10_000
 
     def retrieve(
         self,
@@ -1283,8 +1292,8 @@ class DatapointsBin:
 
 
 class DatapointsPoster:
-    def __init__(self, client: DatapointsAPI) -> None:
-        self.client = client
+    def __init__(self, dps_client: DatapointsAPI) -> None:
+        self.dps_client = dps_client
         self.bins: List[DatapointsBin] = []
 
     def insert(self, dps_object_list: List[Dict[str, Any]]) -> None:
@@ -1345,15 +1354,15 @@ class DatapointsPoster:
 
     def _bin_datapoints(self, dps_object_list: List[Dict[str, Any]]) -> List[List[Dict[str, Any]]]:
         for dps_object in dps_object_list:
-            for i in range(0, len(dps_object["datapoints"]), DPS_LIMIT):
+            for i in range(0, len(dps_object["datapoints"]), self.dps_client._DPS_LIMIT_RAW):
                 dps_object_chunk = {k: dps_object[k] for k in ["id", "externalId"] if k in dps_object}
-                dps_object_chunk["datapoints"] = dps_object["datapoints"][i : i + DPS_LIMIT]
+                dps_object_chunk["datapoints"] = dps_object["datapoints"][i : i + self.dps_client._DPS_LIMIT_RAW]
                 for bin in self.bins:
                     if bin.will_fit(len(dps_object_chunk["datapoints"])):
                         bin.add(dps_object_chunk)
                         break
                 else:
-                    bin = DatapointsBin(DPS_LIMIT, POST_DPS_OBJECTS_LIMIT)
+                    bin = DatapointsBin(self.dps_client._DPS_LIMIT_RAW, self.dps_client._POST_DPS_OBJECTS_LIMIT)
                     bin.add(dps_object_chunk)
                     self.bins.append(bin)
         binned_dps_object_list = []
@@ -1365,7 +1374,7 @@ class DatapointsPoster:
         tasks = []
         for dps_object_list in dps_object_lists:
             tasks.append((dps_object_list,))
-        summary = execute_tasks(self._insert_datapoints, tasks, max_workers=self.client._config.max_workers)
+        summary = execute_tasks(self._insert_datapoints, tasks, max_workers=self.dps_client._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda x: x[0],
             task_list_element_unwrap_fn=lambda x: {k: x[k] for k in ["id", "externalId"] if k in x},
@@ -1375,7 +1384,7 @@ class DatapointsPoster:
         # convert to memory intensive format as late as possible and clean up after
         for it in post_dps_objects:
             it["datapoints"] = [{"timestamp": t, "value": v} for t, v in it["datapoints"]]
-        self.client._post(url_path=self.client._RESOURCE_PATH, json={"items": post_dps_objects})
+        self.dps_client._post(url_path=self.dps_client._RESOURCE_PATH, json={"items": post_dps_objects})
         for it in post_dps_objects:
             del it["datapoints"]
 
@@ -1459,7 +1468,7 @@ class RetrieveLatestDpsFetcher:
                 "url_path": self.dps_client._RESOURCE_PATH + "/latest",
                 "json": {"items": chunk, "ignoreUnknownIds": self.ignore_unknown_ids},
             }
-            for chunk in split_into_chunks(self._all_identifiers, RETRIEVE_LATEST_LIMIT)
+            for chunk in split_into_chunks(self._all_identifiers, self.dps_client._RETRIEVE_LATEST_LIMIT)
         ]
         tasks_summary = execute_tasks(self.dps_client._post, tasks, max_workers=self.dps_client._config.max_workers)
         if tasks_summary.exceptions:

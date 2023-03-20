@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterator, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Iterator, Optional, Sequence, Union, cast
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -18,14 +18,18 @@ from cognite.client.data_classes import (
 )
 from cognite.client.utils._identifier import IdentifierSequence, InternalId
 
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
+
 
 class ThreeDAPI(APIClient):
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.models = ThreeDModelsAPI(*args, **kwargs)
-        self.revisions = ThreeDRevisionsAPI(*args, **kwargs)
-        self.files = ThreeDFilesAPI(*args, **kwargs)
-        self.asset_mappings = ThreeDAssetMappingAPI(*args, **kwargs)
+    def __init__(self, config: ClientConfig, cognite_client: CogniteClient) -> None:
+        super().__init__(config, cognite_client)
+        self.models = ThreeDModelsAPI(config, cognite_client)
+        self.revisions = ThreeDRevisionsAPI(config, cognite_client)
+        self.files = ThreeDFilesAPI(config, cognite_client)
+        self.asset_mappings = ThreeDAssetMappingAPI(config, cognite_client)
 
 
 class ThreeDModelsAPI(APIClient):

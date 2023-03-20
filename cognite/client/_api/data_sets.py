@@ -17,8 +17,7 @@ from cognite.client.utils._identifier import IdentifierSequence
 class DataSetsAPI(APIClient):
     _RESOURCE_PATH = "/datasets"
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
+    def _override_request_limits(self) -> None:
         self._CREATE_LIMIT = 10
 
     def __call__(

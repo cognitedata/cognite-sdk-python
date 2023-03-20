@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Sequence, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Union, cast, overload
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -19,14 +19,18 @@ from cognite.client.data_classes.extractionpipelines import StringFilter
 from cognite.client.utils._auxiliary import handle_deprecated_camel_case_argument
 from cognite.client.utils._identifier import IdentifierSequence
 
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
+
 
 class ExtractionPipelinesAPI(APIClient):
     _RESOURCE_PATH = "/extpipes"
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.runs = ExtractionPipelineRunsAPI(*args, **kwargs)
-        self.config = ExtractionPipelineConfigsAPI(*args, **kwargs)
+    def __init__(self, config: ClientConfig, cognite_client: CogniteClient) -> None:
+        super().__init__(config, cognite_client)
+        self.runs = ExtractionPipelineRunsAPI(config, cognite_client)
+        self.config = ExtractionPipelineConfigsAPI(config, cognite_client)
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[ExtractionPipeline]:
         """`Retrieve a single extraction pipeline by id. <https://docs.cognite.com/api/v1/#operation/showExtPipe>`_

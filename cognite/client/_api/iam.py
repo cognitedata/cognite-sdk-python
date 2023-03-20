@@ -30,14 +30,15 @@ if TYPE_CHECKING:
 
 
 class IAMAPI(APIClient):
-    def __init__(self, config: ClientConfig, api_version: str = None, cognite_client: CogniteClient = None) -> None:
-        super().__init__(config, api_version=api_version, cognite_client=cognite_client)
-        self.service_accounts = ServiceAccountsAPI(config, api_version=api_version, cognite_client=cognite_client)
-        self.api_keys = APIKeysAPI(config, api_version=api_version, cognite_client=cognite_client)
-        self.groups = GroupsAPI(config, api_version=api_version, cognite_client=cognite_client)
-        self.security_categories = SecurityCategoriesAPI(config, api_version=api_version, cognite_client=cognite_client)
-        self.sessions = SessionsAPI(config, api_version=api_version, cognite_client=cognite_client)
-        self.token = TokenAPI(config, cognite_client=cognite_client)
+    def __init__(self, config: ClientConfig, cognite_client: CogniteClient) -> None:
+        super().__init__(config, cognite_client)
+
+        self.service_accounts = ServiceAccountsAPI(config, cognite_client)
+        self.api_keys = APIKeysAPI(config, cognite_client)
+        self.groups = GroupsAPI(config, cognite_client)
+        self.security_categories = SecurityCategoriesAPI(config, cognite_client)
+        self.sessions = SessionsAPI(config, cognite_client)
+        self.token = TokenAPI(config, cognite_client)
 
 
 class ServiceAccountsAPI(APIClient):
@@ -395,8 +396,7 @@ class SessionsAPI(APIClient):
     _LIST_CLASS = SessionList
     _RESOURCE_PATH = "/sessions"
 
-    def __init__(self, config: ClientConfig, api_version: str = None, cognite_client: CogniteClient = None) -> None:
-        super().__init__(config, api_version=api_version, cognite_client=cognite_client)
+    def _override_request_limits(self) -> None:
         self._LIST_LIMIT = 100
 
     def create(self, client_credentials: Optional[ClientCredentials] = None) -> CreatedSession:

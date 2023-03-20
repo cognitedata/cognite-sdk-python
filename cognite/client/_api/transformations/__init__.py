@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any, Awaitable, Dict, List, Optional, Sequence, Union
 
 from cognite.client._api.transformations.jobs import TransformationJobsAPI
@@ -15,18 +17,23 @@ from cognite.client.data_classes.transformations import (
     TransformationUpdate,
 )
 from cognite.client.utils._identifier import IdentifierSequence
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from cognite.client.config import ClientConfig
+    from cognite.client import CogniteClient
 
 
 class TransformationsAPI(APIClient):
     _RESOURCE_PATH = "/transformations"
     _LIST_CLASS = TransformationList
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.jobs = TransformationJobsAPI(*args, **kwargs)
-        self.schedules = TransformationSchedulesAPI(*args, **kwargs)
-        self.schema = TransformationSchemaAPI(*args, **kwargs)
-        self.notifications = TransformationNotificationsAPI(*args, **kwargs)
+    def __init__(self, config: ClientConfig, cognite_client: CogniteClient) -> None:
+        super().__init__(config, cognite_client)
+        self.jobs = TransformationJobsAPI(config, cognite_client)
+        self.schedules = TransformationSchedulesAPI(config, cognite_client)
+        self.schema = TransformationSchemaAPI(config, cognite_client)
+        self.notifications = TransformationNotificationsAPI(config, cognite_client)
 
     def create(
         self, transformation: Union[Transformation, Sequence[Transformation]]

@@ -38,6 +38,8 @@ from cognite.client.utils._identifier import IdentifierSequence, SingletonIdenti
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
+
 
 HANDLER_FILE_NAME = "handler.py"
 MAX_RETRIES = 5
@@ -72,11 +74,10 @@ class FunctionsAPI(APIClient):
     _RESOURCE_PATH = "/functions"
     _LIST_CLASS = FunctionList
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.calls = FunctionCallsAPI(*args, **kwargs)
-        self.schedules = FunctionSchedulesAPI(*args, **kwargs)
-        self._cognite_client: CogniteClient = cast("CogniteClient", self._cognite_client)
+    def __init__(self, config: ClientConfig, cognite_client: CogniteClient) -> None:
+        super().__init__(config, cognite_client)
+        self.calls = FunctionCallsAPI(config, cognite_client)
+        self.schedules = FunctionSchedulesAPI(config, cognite_client)
 
     def create(
         self,

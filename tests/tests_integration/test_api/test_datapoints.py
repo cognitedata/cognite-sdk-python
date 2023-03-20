@@ -314,22 +314,22 @@ class TestRetrieveRawDatapointsAPI:
 
     @pytest.mark.parametrize("start, end, has_before, has_after", PARAMETRIZED_VALUES_OUTSIDE_POINTS)
     def test_retrieve_outside_points__query_limit_plusminus1_tests(
-        self, retrieve_endpoints, outside_points_ts, start, end, has_before, has_after
+        self, retrieve_endpoints, outside_points_ts, start, end, has_before, has_after, cognite_client, monkeypatch
     ):
         limit = 3
         for dps_limit in range(limit - 1, limit + 2):
-            with patch(DATAPOINTS_API.format("DPS_LIMIT"), dps_limit):
-                for ts, endpoint in itertools.product(outside_points_ts, retrieve_endpoints):
-                    res = endpoint(id=ts.id, limit=limit, start=start, end=end, include_outside_points=True)
-                    index, values = validate_raw_datapoints(ts, res, check_delta=False)
-                    assert len(res) - 3 == has_before + has_after
-                    first_ts, last_ts = index[0].item(), index[-1].item()  # numpy bool != py bool
-                    assert (start > first_ts) is has_before
-                    assert (end <= last_ts) is has_after
-                    if has_before:
-                        assert start > first_ts == -100
-                    if has_after:
-                        assert end <= last_ts == 100
+            monkeypatch.setattr(cognite_client.time_series.data, "_DPS_LIMIT_RAW", dps_limit)
+            for ts, endpoint in itertools.product(outside_points_ts, retrieve_endpoints):
+                res = endpoint(id=ts.id, limit=limit, start=start, end=end, include_outside_points=True)
+                index, values = validate_raw_datapoints(ts, res, check_delta=False)
+                assert len(res) - 3 == has_before + has_after
+                first_ts, last_ts = index[0].item(), index[-1].item()  # numpy bool != py bool
+                assert (start > first_ts) is has_before
+                assert (end <= last_ts) is has_after
+                if has_before:
+                    assert start > first_ts == -100
+                if has_after:
+                    assert end <= last_ts == 100
 
     @pytest.mark.parametrize(
         "start, end, exp_first_ts, exp_last_ts",
@@ -1190,12 +1190,12 @@ class TestRetrieveLatestDatapointsAPI:
             assert 1 == len(dps)
 
     @pytest.mark.usefixtures("post_spy")
-    def test_retrieve_latest_many(self, cognite_client):
+    def test_retrieve_latest_many(self, cognite_client, monkeypatch):
         ids = [t.id for t in cognite_client.time_series.list(limit=12) if not t.security_categories]
         assert len(ids) > 10  # more than one page
 
-        with patch(DATAPOINTS_API.format("RETRIEVE_LATEST_LIMIT"), 10):
-            res = cognite_client.time_series.data.retrieve_latest(id=ids, ignore_unknown_ids=True)
+        monkeypatch.setattr(cognite_client.time_series.data, "_RETRIEVE_LATEST_LIMIT", 10)
+        res = cognite_client.time_series.data.retrieve_latest(id=ids, ignore_unknown_ids=True)
 
         assert {dps.id for dps in res}.issubset(set(ids))
         assert 2 == cognite_client.time_series.data._post.call_count
@@ -1234,17 +1234,19 @@ class TestRetrieveLatestDatapointsAPI:
 
 class TestInsertDatapointsAPI:
     @pytest.mark.usefixtures("post_spy")
-    def test_insert(self, cognite_client, new_ts):
+    def test_insert(self, cognite_client, new_ts, monkeypatch):
         datapoints = [(datetime(year=2018, month=1, day=1, hour=1, minute=i), i) for i in range(60)]
-        with patch(DATAPOINTS_API.format("DPS_LIMIT"), 30), patch(DATAPOINTS_API.format("POST_DPS_OBJECTS_LIMIT"), 30):
-            cognite_client.time_series.data.insert(datapoints, id=new_ts.id)
+        monkeypatch.setattr(cognite_client.time_series.data, "_DPS_LIMIT_RAW", 30)
+        monkeypatch.setattr(cognite_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 30)
+        cognite_client.time_series.data.insert(datapoints, id=new_ts.id)
         assert 2 == cognite_client.time_series.data._post.call_count
 
     @pytest.mark.usefixtures("post_spy")
-    def test_insert_before_epoch(self, cognite_client, new_ts):
+    def test_insert_before_epoch(self, cognite_client, new_ts, monkeypatch):
         datapoints = [(datetime(year=1950, month=1, day=1, hour=1, minute=i), i) for i in range(60)]
-        with patch(DATAPOINTS_API.format("DPS_LIMIT"), 30), patch(DATAPOINTS_API.format("POST_DPS_OBJECTS_LIMIT"), 30):
-            cognite_client.time_series.data.insert(datapoints, id=new_ts.id)
+        monkeypatch.setattr(cognite_client.time_series.data, "_DPS_LIMIT_RAW", 30)
+        monkeypatch.setattr(cognite_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 30)
+        cognite_client.time_series.data.insert(datapoints, id=new_ts.id)
         assert 2 == cognite_client.time_series.data._post.call_count
 
     @pytest.mark.parametrize("endpoint_attr", ("retrieve", "retrieve_arrays"))
@@ -1266,13 +1268,14 @@ class TestInsertDatapointsAPI:
             cognite_client.time_series.data.insert(data, id=new_ts.id)
 
     @pytest.mark.usefixtures("post_spy")
-    def test_insert_pandas_dataframe(self, cognite_client, new_ts, post_spy):
+    def test_insert_pandas_dataframe(self, cognite_client, new_ts, post_spy, monkeypatch):
         df = pd.DataFrame(
             {new_ts.id: np.random.normal(0, 1, 30)},
             index=pd.date_range(start="2018", freq="1D", periods=30),
         )
-        with patch(DATAPOINTS_API.format("DPS_LIMIT"), 20), patch(DATAPOINTS_API.format("POST_DPS_OBJECTS_LIMIT"), 20):
-            cognite_client.time_series.data.insert_dataframe(df, external_id_headers=False)
+        monkeypatch.setattr(cognite_client.time_series.data, "_DPS_LIMIT_RAW", 20)
+        monkeypatch.setattr(cognite_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 20)
+        cognite_client.time_series.data.insert_dataframe(df, external_id_headers=False)
         assert 2 == cognite_client.time_series.data._post.call_count
 
     def test_delete_range(self, cognite_client, new_ts):
