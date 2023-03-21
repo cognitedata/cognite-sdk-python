@@ -39,7 +39,8 @@ class IAMAPI(APIClient):
         self.groups = GroupsAPI(config, api_version, cognite_client)
         self.security_categories = SecurityCategoriesAPI(config, api_version, cognite_client)
         self.sessions = SessionsAPI(config, api_version, cognite_client)
-        self.token = TokenAPI(config, api_version, cognite_client)
+        # TokenAPI only uses base_url, so we pass `api_version=None`:
+        self.token = TokenAPI(config, api_version=None, cognite_client=cognite_client)
 
 
 class ServiceAccountsAPI(APIClient):
