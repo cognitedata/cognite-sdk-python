@@ -583,6 +583,7 @@ class DatapointsAPI(APIClient):
         self._FETCH_TS_LIMIT = 100
         self._DPS_LIMIT_AGG = 10_000
         self._DPS_LIMIT_RAW = 100_000
+        self._DPS_INSERT_LIMIT = 100_000
         self._RETRIEVE_LATEST_LIMIT = 100
         self._POST_DPS_OBJECTS_LIMIT = 10_000
 
@@ -1294,6 +1295,7 @@ class DatapointsBin:
 class DatapointsPoster:
     def __init__(self, dps_client: DatapointsAPI) -> None:
         self.dps_client = dps_client
+        self.limit = self.dps_client._DPS_INSERT_LIMIT
         self.bins: List[DatapointsBin] = []
 
     def insert(self, dps_object_list: List[Dict[str, Any]]) -> None:
@@ -1354,15 +1356,15 @@ class DatapointsPoster:
 
     def _bin_datapoints(self, dps_object_list: List[Dict[str, Any]]) -> List[List[Dict[str, Any]]]:
         for dps_object in dps_object_list:
-            for i in range(0, len(dps_object["datapoints"]), self.dps_client._DPS_LIMIT_RAW):
+            for i in range(0, len(dps_object["datapoints"]), self.limit):
                 dps_object_chunk = {k: dps_object[k] for k in ["id", "externalId"] if k in dps_object}
-                dps_object_chunk["datapoints"] = dps_object["datapoints"][i : i + self.dps_client._DPS_LIMIT_RAW]
+                dps_object_chunk["datapoints"] = dps_object["datapoints"][i : i + self.limit]
                 for bin in self.bins:
                     if bin.will_fit(len(dps_object_chunk["datapoints"])):
                         bin.add(dps_object_chunk)
                         break
                 else:
-                    bin = DatapointsBin(self.dps_client._DPS_LIMIT_RAW, self.dps_client._POST_DPS_OBJECTS_LIMIT)
+                    bin = DatapointsBin(self.limit, self.dps_client._POST_DPS_OBJECTS_LIMIT)
                     bin.add(dps_object_chunk)
                     self.bins.append(bin)
         binned_dps_object_list = []
