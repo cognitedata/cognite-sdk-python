@@ -18,6 +18,8 @@ from cognite.client.data_classes.transformations import (
 )
 from cognite.client.utils._identifier import IdentifierSequence
 from typing import TYPE_CHECKING
+from cognite.client._constants import LIST_LIMIT_DEFAULT
+
 
 if TYPE_CHECKING:
     from cognite.client.config import ClientConfig
@@ -141,7 +143,7 @@ class TransformationsAPI(APIClient):
         data_set_ids: List[int] = None,
         data_set_external_ids: List[str] = None,
         tags: Optional[TagsFilter] = None,
-        limit: Optional[int] = 25,
+        limit: Optional[int] = LIST_LIMIT_DEFAULT,
     ) -> TransformationList:
         """`List all transformations. <https://docs.cognite.com/api/v1/#operation/getTransformations>`_
 

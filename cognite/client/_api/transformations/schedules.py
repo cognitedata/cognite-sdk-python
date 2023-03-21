@@ -4,6 +4,7 @@ from typing import Optional, Sequence, Union
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import TransformationSchedule, TransformationScheduleList, TransformationScheduleUpdate
 from cognite.client.data_classes.transformations import TransformationFilter
 from cognite.client.utils._identifier import IdentifierSequence
@@ -111,7 +112,9 @@ class TransformationSchedulesAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def list(self, include_public: bool = True, limit: Optional[int] = 25) -> TransformationScheduleList:
+    def list(
+        self, include_public: bool = True, limit: Optional[int] = LIST_LIMIT_DEFAULT
+    ) -> TransformationScheduleList:
         """`List all transformation schedules. <https://docs.cognite.com/api/v1/#operation/getTransformationSchedules>`_
 
         Args:

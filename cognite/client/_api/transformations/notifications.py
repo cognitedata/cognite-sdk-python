@@ -4,6 +4,7 @@ from typing import Optional, Sequence, Union
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import TransformationNotification, TransformationNotificationList
 from cognite.client.data_classes.transformations.notifications import TransformationNotificationFilter
 from cognite.client.utils._identifier import IdentifierSequence
@@ -44,7 +45,7 @@ class TransformationNotificationsAPI(APIClient):
         transformation_id: Optional[int] = None,
         transformation_external_id: str = None,
         destination: str = None,
-        limit: Optional[int] = 25,
+        limit: Optional[int] = LIST_LIMIT_DEFAULT,
     ) -> TransformationNotificationList:
         """`List notification subscriptions. <https://docs.cognite.com/api/v1/#operation/getTransformationNotifications>`_
 

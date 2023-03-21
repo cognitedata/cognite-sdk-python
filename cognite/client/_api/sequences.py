@@ -8,6 +8,7 @@ from typing import Tuple, Union, cast, overload
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import (
     Sequence,
     SequenceAggregate,
@@ -183,7 +184,7 @@ class SequencesAPI(APIClient):
         data_set_external_ids: SequenceType[str] = None,
         created_time: (Union[Dict[str, Any], TimestampRange]) = None,
         last_updated_time: (Union[Dict[str, Any], TimestampRange]) = None,
-        limit: Optional[int] = 25,
+        limit: Optional[int] = LIST_LIMIT_DEFAULT,
     ) -> SequenceList:
         """`Iterate over sequences <https://docs.cognite.com/api/v1/#operation/advancedListSequences>`_
 

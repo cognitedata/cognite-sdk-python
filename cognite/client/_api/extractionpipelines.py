@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Union, cast, ov
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import (
     ExtractionPipeline,
     ExtractionPipelineConfig,
@@ -100,7 +101,7 @@ class ExtractionPipelinesAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def list(self, limit: int = 25) -> ExtractionPipelineList:
+    def list(self, limit: int = LIST_LIMIT_DEFAULT) -> ExtractionPipelineList:
         """`List extraction pipelines <https://docs.cognite.com/api/v1/#operation/listExtPipes>`_
 
         Args:
@@ -236,7 +237,7 @@ class ExtractionPipelineRunsAPI(APIClient):
         statuses: Sequence[str] = None,
         message_substring: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
-        limit: int = 25,
+        limit: int = LIST_LIMIT_DEFAULT,
     ) -> ExtractionPipelineRunList:
         """`List runs for an extraction pipeline with given external_id <https://docs.cognite.com/api/v1/#operation/filterRuns>`_
 

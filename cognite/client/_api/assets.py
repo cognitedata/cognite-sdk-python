@@ -29,6 +29,7 @@ from typing import (
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import (
     Asset,
     AssetAggregate,
@@ -237,7 +238,7 @@ class AssetsAPI(APIClient):
         external_id_prefix: str = None,
         aggregated_properties: Sequence[str] = None,
         partitions: int = None,
-        limit: int = 25,
+        limit: int = LIST_LIMIT_DEFAULT,
     ) -> AssetList:
         """`List assets <https://docs.cognite.com/api/v1/#operation/listAssets>`_
 

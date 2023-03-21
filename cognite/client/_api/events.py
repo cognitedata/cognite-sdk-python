@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Union, cast, overload
 
 from cognite.client._api_client import APIClient
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import (
     AggregateResult,
     AggregateUniqueValuesResult,
@@ -200,7 +201,7 @@ class EventsAPI(APIClient):
         external_id_prefix: str = None,
         sort: Sequence[str] = None,
         partitions: int = None,
-        limit: int = 25,
+        limit: int = LIST_LIMIT_DEFAULT,
     ) -> EventList:
         """`List events <https://docs.cognite.com/api/v1/#operation/advancedListEvents>`_
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Union, cast
 
 from cognite.client._api_client import APIClient
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import (
     DataSet,
     DataSetAggregate,
@@ -157,7 +158,7 @@ class DataSetsAPI(APIClient):
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
         external_id_prefix: str = None,
         write_protected: bool = None,
-        limit: int = 25,
+        limit: int = LIST_LIMIT_DEFAULT,
     ) -> DataSetList:
         """`List data sets <https://docs.cognite.com/api/v1/#operation/listDataSets>`_
 

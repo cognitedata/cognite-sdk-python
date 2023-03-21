@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence,
 
 from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api_client import APIClient
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import (
     TimeSeries,
     TimeSeriesAggregate,
@@ -196,7 +197,7 @@ class TimeSeriesAPI(APIClient):
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         partitions: int = None,
-        limit: int = 25,
+        limit: int = LIST_LIMIT_DEFAULT,
     ) -> TimeSeriesList:
         """`List over time series <https://docs.cognite.com/api/v1/#operation/listTimeSeries>`_
 

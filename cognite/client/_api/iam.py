@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Optional, Sequence, Union
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.config import ClientConfig
 from cognite.client.credentials import OAuthClientCredentials
 from cognite.client.data_classes import (
@@ -309,7 +310,7 @@ class GroupsAPI(APIClient):
 class SecurityCategoriesAPI(APIClient):
     _RESOURCE_PATH = "/securitycategories"
 
-    def list(self, limit: int = 25) -> SecurityCategoryList:
+    def list(self, limit: int = LIST_LIMIT_DEFAULT) -> SecurityCategoryList:
         """`List security categories. <https://docs.cognite.com/api/v1/#operation/getSecurityCategories>`_
 
         Args:
