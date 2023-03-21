@@ -14,7 +14,7 @@ from zipfile import ZipFile
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_CEILING, LIST_LIMIT_DEFAULT
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.credentials import APIKey, OAuthClientCertificate
 from cognite.client.data_classes import (
     ClientCredentials,
@@ -78,6 +78,10 @@ class FunctionsAPI(APIClient):
         super().__init__(config, cognite_client)
         self.calls = FunctionCallsAPI(config, cognite_client)
         self.schedules = FunctionSchedulesAPI(config, cognite_client)
+
+    def _override_request_limits(self) -> None:
+        # variable used to guarantee all items are returned when list(limit) is None, inf or -1.
+        self._LIST_LIMIT_CEILING = 10_000
 
     def create(
         self,
@@ -276,7 +280,7 @@ class FunctionsAPI(APIClient):
                 >>> functions_list = c.functions.list()
         """
         if is_unlimited(limit):
-            limit = LIST_LIMIT_CEILING
+            limit = self._LIST_LIMIT_CEILING
 
         filter = FunctionFilter(
             name=name,
@@ -857,6 +861,9 @@ class FunctionSchedulesAPI(APIClient):
     _RESOURCE_PATH = "/functions/schedules"
     _LIST_CLASS = FunctionSchedulesList
 
+    def _override_request_limits(self) -> None:
+        self._LIST_LIMIT_CEILING = 10_000
+
     def retrieve(self, id: int) -> Union[FunctionSchedule, FunctionSchedulesList, None]:
         """`Retrieve a single function schedule by id. <https://docs.cognite.com/api/v1/#operation/byIdsFunctionSchedules>`_
 
@@ -925,7 +932,7 @@ class FunctionSchedulesAPI(APIClient):
                 raise AssertionError("Only function_id or function_external_id allowed when listing schedules.")
 
         if is_unlimited(limit):
-            limit = LIST_LIMIT_CEILING
+            limit = self._LIST_LIMIT_CEILING
 
         filter = FunctionSchedulesFilter(
             name=name,
