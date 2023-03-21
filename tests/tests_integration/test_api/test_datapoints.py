@@ -1236,7 +1236,7 @@ class TestInsertDatapointsAPI:
     @pytest.mark.usefixtures("post_spy")
     def test_insert(self, cognite_client, new_ts, monkeypatch):
         datapoints = [(datetime(year=2018, month=1, day=1, hour=1, minute=i), i) for i in range(60)]
-        monkeypatch.setattr(cognite_client.time_series.data, "_DPS_LIMIT_RAW", 30)
+        monkeypatch.setattr(cognite_client.time_series.data, "_DPS_INSERT_LIMIT", 30)
         monkeypatch.setattr(cognite_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 30)
         cognite_client.time_series.data.insert(datapoints, id=new_ts.id)
         assert 2 == cognite_client.time_series.data._post.call_count
@@ -1244,7 +1244,7 @@ class TestInsertDatapointsAPI:
     @pytest.mark.usefixtures("post_spy")
     def test_insert_before_epoch(self, cognite_client, new_ts, monkeypatch):
         datapoints = [(datetime(year=1950, month=1, day=1, hour=1, minute=i), i) for i in range(60)]
-        monkeypatch.setattr(cognite_client.time_series.data, "_DPS_LIMIT_RAW", 30)
+        monkeypatch.setattr(cognite_client.time_series.data, "_DPS_INSERT_LIMIT", 30)
         monkeypatch.setattr(cognite_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 30)
         cognite_client.time_series.data.insert(datapoints, id=new_ts.id)
         assert 2 == cognite_client.time_series.data._post.call_count
@@ -1273,7 +1273,7 @@ class TestInsertDatapointsAPI:
             {new_ts.id: np.random.normal(0, 1, 30)},
             index=pd.date_range(start="2018", freq="1D", periods=30),
         )
-        monkeypatch.setattr(cognite_client.time_series.data, "_DPS_LIMIT_RAW", 20)
+        monkeypatch.setattr(cognite_client.time_series.data, "_DPS_INSERT_LIMIT", 20)
         monkeypatch.setattr(cognite_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 20)
         cognite_client.time_series.data.insert_dataframe(df, external_id_headers=False)
         assert 2 == cognite_client.time_series.data._post.call_count
