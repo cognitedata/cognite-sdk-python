@@ -31,15 +31,15 @@ if TYPE_CHECKING:
 
 
 class IAMAPI(APIClient):
-    def __init__(self, config: ClientConfig, cognite_client: CogniteClient) -> None:
-        super().__init__(config, cognite_client)
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
 
-        self.service_accounts = ServiceAccountsAPI(config, cognite_client)
-        self.api_keys = APIKeysAPI(config, cognite_client)
-        self.groups = GroupsAPI(config, cognite_client)
-        self.security_categories = SecurityCategoriesAPI(config, cognite_client)
-        self.sessions = SessionsAPI(config, cognite_client)
-        self.token = TokenAPI(config, cognite_client)
+        self.service_accounts = ServiceAccountsAPI(config, api_version, cognite_client)
+        self.api_keys = APIKeysAPI(config, api_version, cognite_client)
+        self.groups = GroupsAPI(config, api_version, cognite_client)
+        self.security_categories = SecurityCategoriesAPI(config, api_version, cognite_client)
+        self.sessions = SessionsAPI(config, api_version, cognite_client)
+        self.token = TokenAPI(config, api_version, cognite_client)
 
 
 class ServiceAccountsAPI(APIClient):

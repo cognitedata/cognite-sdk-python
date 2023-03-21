@@ -17,11 +17,11 @@ if TYPE_CHECKING:
 
 
 class RawAPI(APIClient):
-    def __init__(self, config: ClientConfig, cognite_client: CogniteClient) -> None:
-        super().__init__(config, cognite_client)
-        self.databases = RawDatabasesAPI(config, cognite_client)
-        self.tables = RawTablesAPI(config, cognite_client)
-        self.rows = RawRowsAPI(config, cognite_client)
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self.databases = RawDatabasesAPI(config, api_version, cognite_client)
+        self.tables = RawTablesAPI(config, api_version, cognite_client)
+        self.rows = RawRowsAPI(config, api_version, cognite_client)
 
 
 class RawDatabasesAPI(APIClient):

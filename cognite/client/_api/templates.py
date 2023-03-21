@@ -27,12 +27,12 @@ if TYPE_CHECKING:
 
 
 class TemplatesAPI(APIClient):
-    def __init__(self, config: ClientConfig, cognite_client: CogniteClient) -> None:
-        super().__init__(config, cognite_client)
-        self.groups = TemplateGroupsAPI(config, cognite_client)
-        self.versions = TemplateGroupVersionsAPI(config, cognite_client)
-        self.instances = TemplateInstancesAPI(config, cognite_client)
-        self.views = TemplateViewsAPI(config, cognite_client)
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self.groups = TemplateGroupsAPI(config, api_version, cognite_client)
+        self.versions = TemplateGroupVersionsAPI(config, api_version, cognite_client)
+        self.instances = TemplateInstancesAPI(config, api_version, cognite_client)
+        self.views = TemplateViewsAPI(config, api_version, cognite_client)
 
     def graphql_query(self, external_id: str, version: int, query: str) -> GraphQlResponse:
         """

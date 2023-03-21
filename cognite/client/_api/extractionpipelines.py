@@ -28,10 +28,10 @@ if TYPE_CHECKING:
 class ExtractionPipelinesAPI(APIClient):
     _RESOURCE_PATH = "/extpipes"
 
-    def __init__(self, config: ClientConfig, cognite_client: CogniteClient) -> None:
-        super().__init__(config, cognite_client)
-        self.runs = ExtractionPipelineRunsAPI(config, cognite_client)
-        self.config = ExtractionPipelineConfigsAPI(config, cognite_client)
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self.runs = ExtractionPipelineRunsAPI(config, api_version, cognite_client)
+        self.config = ExtractionPipelineConfigsAPI(config, api_version, cognite_client)
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[ExtractionPipeline]:
         """`Retrieve a single extraction pipeline by id. <https://docs.cognite.com/api/v1/#operation/showExtPipe>`_

@@ -74,10 +74,10 @@ class FunctionsAPI(APIClient):
     _RESOURCE_PATH = "/functions"
     _LIST_CLASS = FunctionList
 
-    def __init__(self, config: ClientConfig, cognite_client: CogniteClient) -> None:
-        super().__init__(config, cognite_client)
-        self.calls = FunctionCallsAPI(config, cognite_client)
-        self.schedules = FunctionSchedulesAPI(config, cognite_client)
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self.calls = FunctionCallsAPI(config, api_version, cognite_client)
+        self.schedules = FunctionSchedulesAPI(config, api_version, cognite_client)
 
     def _override_request_limits(self) -> None:
         # variable used to guarantee all items are returned when list(limit) is None, inf or -1.

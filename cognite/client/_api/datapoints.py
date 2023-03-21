@@ -575,9 +575,9 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
 class DatapointsAPI(APIClient):
     _RESOURCE_PATH = "/timeseries/data"
 
-    def __init__(self, config: ClientConfig, cognite_client: CogniteClient) -> None:
-        super().__init__(config, cognite_client)
-        self.synthetic = SyntheticDatapointsAPI(config, cognite_client)
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self.synthetic = SyntheticDatapointsAPI(config, api_version, cognite_client)
 
     def _override_request_limits(self) -> None:
         self._FETCH_TS_LIMIT = 100

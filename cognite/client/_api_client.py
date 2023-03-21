@@ -74,9 +74,9 @@ class APIClient:
         )
     }
 
-    def __init__(self, config: ClientConfig, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
         self._config = config
-        self._api_version = cognite_client._API_VERSION
+        self._api_version = api_version
         self._api_subversion = config.api_subversion
         self._cognite_client = cognite_client
         self._init_http_clients()

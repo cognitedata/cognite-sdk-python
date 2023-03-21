@@ -4,11 +4,9 @@ from cognite.client.exceptions import CogniteAPIError
 
 
 @pytest.fixture
-def cognite_client_with_wrong_base_url(cognite_client):
-    url = cognite_client.config.base_url
-    cognite_client.config.base_url = "https://cognitedata.com"
+def cognite_client_with_wrong_base_url(cognite_client, monkeypatch):
+    monkeypatch.setattr(cognite_client.config, "base_url", "https://cognitedata.com")
     yield cognite_client
-    cognite_client.config.base_url = url
 
 
 class TestCogniteClient:

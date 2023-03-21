@@ -25,12 +25,12 @@ if TYPE_CHECKING:
 
 
 class ThreeDAPI(APIClient):
-    def __init__(self, config: ClientConfig, cognite_client: CogniteClient) -> None:
-        super().__init__(config, cognite_client)
-        self.models = ThreeDModelsAPI(config, cognite_client)
-        self.revisions = ThreeDRevisionsAPI(config, cognite_client)
-        self.files = ThreeDFilesAPI(config, cognite_client)
-        self.asset_mappings = ThreeDAssetMappingAPI(config, cognite_client)
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self.models = ThreeDModelsAPI(config, api_version, cognite_client)
+        self.revisions = ThreeDRevisionsAPI(config, api_version, cognite_client)
+        self.files = ThreeDFilesAPI(config, api_version, cognite_client)
+        self.asset_mappings = ThreeDAssetMappingAPI(config, api_version, cognite_client)
 
 
 class ThreeDModelsAPI(APIClient):

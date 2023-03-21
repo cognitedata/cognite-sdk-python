@@ -30,12 +30,12 @@ class TransformationsAPI(APIClient):
     _RESOURCE_PATH = "/transformations"
     _LIST_CLASS = TransformationList
 
-    def __init__(self, config: ClientConfig, cognite_client: CogniteClient) -> None:
-        super().__init__(config, cognite_client)
-        self.jobs = TransformationJobsAPI(config, cognite_client)
-        self.schedules = TransformationSchedulesAPI(config, cognite_client)
-        self.schema = TransformationSchemaAPI(config, cognite_client)
-        self.notifications = TransformationNotificationsAPI(config, cognite_client)
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self.jobs = TransformationJobsAPI(config, api_version, cognite_client)
+        self.schedules = TransformationSchedulesAPI(config, api_version, cognite_client)
+        self.schema = TransformationSchemaAPI(config, api_version, cognite_client)
+        self.notifications = TransformationNotificationsAPI(config, api_version, cognite_client)
 
     def create(
         self, transformation: Union[Transformation, Sequence[Transformation]]
