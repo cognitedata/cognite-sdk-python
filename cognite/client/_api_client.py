@@ -43,7 +43,7 @@ from cognite.client.data_classes._base import (
     T_CogniteResourceList,
 )
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
-from cognite.client.utils._auxiliary import is_unlimited
+from cognite.client.utils._auxiliary import is_unlimited, split_into_chunks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence, SingletonIdentifierSequence
 
 if TYPE_CHECKING:
@@ -610,7 +610,7 @@ class APIClient:
 
     def _create_multiple(
         self,
-        items: Union[Sequence[CogniteResource], Sequence[Dict[str, Any]], CogniteResource, Dict[str, Any]],
+        items: Union[Sequence[T_CogniteResource], Sequence[Dict[str, Any]], T_CogniteResource, Dict[str, Any]],
         list_cls: Type[T_CogniteResourceList],
         resource_cls: Type[T_CogniteResource],
         resource_path: Optional[str] = None,
@@ -623,21 +623,14 @@ class APIClient:
         limit = limit or self._CREATE_LIMIT
         single_item = not isinstance(items, Sequence)
         if single_item:
-            items = cast(Union[Sequence[CogniteResource], Sequence[Dict[str, Any]]], [items])
+            items = cast(Union[Sequence[T_CogniteResource], Sequence[Dict[str, Any]]], [items])
         else:
-            items = cast(Union[Sequence[CogniteResource], Sequence[Dict[str, Any]]], items)
+            items = cast(Union[Sequence[T_CogniteResource], Sequence[Dict[str, Any]]], items)
 
-        items_split = []
-        for i in range(0, len(items), limit):
-            if isinstance(items[i], CogniteResource):
-                items = cast(List[CogniteResource], items)
-                items_chunk = [item.dump(camel_case=True) for item in items[i : i + limit]]
-            else:
-                items = cast(List[Dict[str, Any]], items)
-                items_chunk = [item for item in items[i : i + limit]]
-            items_split.append({"items": items_chunk, **(extra_body_fields or {})})
-
-        tasks = [(resource_path, task_items, params, headers) for task_items in items_split]
+        tasks = [
+            (resource_path, task_items, params, headers)
+            for task_items in self._prepare_item_chunks(items, limit, extra_body_fields)
+        ]
         summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
 
         def unwrap_element(el: T) -> Union[CogniteResource, T]:
@@ -741,13 +734,13 @@ class APIClient:
             if isinstance(item, CogniteResource):
                 patch_objects.append(self._convert_resource_to_patch_object(item, update_cls._get_update_properties()))
             elif isinstance(item, CogniteUpdate):
-                patch_objects.append(item.dump())
+                patch_objects.append(item.dump(camel_case=True))
                 patch_object_update = patch_objects[index]["update"]
                 if "metadata" in patch_object_update and patch_object_update["metadata"] == {"set": None}:
                     patch_object_update["metadata"] = {"set": {}}
             else:
                 raise ValueError("update item must be of type CogniteResource or CogniteUpdate")
-        patch_object_chunks = utils._auxiliary.split_into_chunks(patch_objects, self._UPDATE_LIMIT)
+        patch_object_chunks = split_into_chunks(patch_objects, self._UPDATE_LIMIT)
 
         tasks = [
             {"url_path": resource_path + "/update", "json": {"items": chunk}, "params": params, "headers": headers}
@@ -788,6 +781,20 @@ class APIClient:
             headers=headers,
         )
         return list_cls._load(res.json()["items"], cognite_client=self._cognite_client)
+
+    @staticmethod
+    def _prepare_item_chunks(
+        items: Union[Sequence[T_CogniteResource], Sequence[Dict[str, Any]]],
+        limit: int,
+        extra_body_fields: Optional[Dict],
+    ) -> List[Dict[str, Any]]:
+        return [
+            {"items": chunk, **(extra_body_fields or {})}
+            for chunk in split_into_chunks(
+                [it.dump(camel_case=True) if isinstance(it, CogniteResource) else it for it in items],
+                chunk_size=limit,
+            )
+        ]
 
     @staticmethod
     def _convert_resource_to_patch_object(
@@ -885,8 +892,8 @@ class APIClient:
             return s[:limit] + "..."
         return s
 
-    @classmethod
-    def _get_response_content_safe(cls, res: Response) -> str:
+    @staticmethod
+    def _get_response_content_safe(res: Response) -> str:
         try:
             return _json.dumps(res.json())
         except JSONDecodeError:

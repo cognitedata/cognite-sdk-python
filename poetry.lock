@@ -580,6 +580,18 @@ pyproj = ">=2.6.1.post1"
 shapely = ">=1.7"
 
 [[package]]
+name = "graphlib-backport"
+version = "1.0.3"
+description = "Backport of the Python 3.9 graphlib module for Python 3.6+"
+category = "main"
+optional = false
+python-versions = ">=3.6,<4.0"
+files = [
+    {file = "graphlib_backport-1.0.3-py3-none-any.whl", hash = "sha256:24246967b9e7e6a91550bc770e6169585d35aa32790258579a8a3899a8c18fde"},
+    {file = "graphlib_backport-1.0.3.tar.gz", hash = "sha256:7bb8fc7757b8ae4e6d8000a26cd49e9232aaa9a3aa57edb478474b8424bfaae2"},
+]
+
+[[package]]
 name = "identify"
 version = "2.5.21"
 description = "File identification library for Python"
@@ -2162,4 +2174,4 @@ sympy = ["sympy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "9d47d46c56d0cc39373e57664f32114192a0d1031a986d747836c1743c0fa7a5"
+content-hash = "8bf2217daaa88e2e1b42cdae73c764233567589c07a3c9b6111c9a08e4b1a347"

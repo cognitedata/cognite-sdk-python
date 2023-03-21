@@ -9,6 +9,7 @@ from cognite.client.data_classes.assets import (
     Asset,
     AssetAggregate,
     AssetFilter,
+    AssetHierarchy,
     AssetList,
     AssetUpdate,
 )

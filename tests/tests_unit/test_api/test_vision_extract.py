@@ -118,11 +118,17 @@ class TestVisionExtract:
     @pytest.mark.parametrize(
         "features, parameters, error_message",
         [
-            ("foo", None, "features must be one of types \\[<enum 'VisionFeature'>, <class 'list'>\\]"),
+            (
+                "foo",
+                None,
+                re.escape(
+                    "'features' must be one of types [<enum 'VisionFeature'>, <class 'list'>], not <class 'str'>"
+                ),
+            ),
             (
                 [VisionFeature.TEXT_DETECTION, "foo"],
                 None,
-                "feature 'foo' must be one of types \\[<enum 'VisionFeature'>]",
+                re.escape("\"feature 'foo'\" must be one of types [<enum 'VisionFeature'>], not <class 'str'>"),
             ),
             (None, None, "features cannot be None"),
             (VisionFeature.TEXT_DETECTION, None, None),

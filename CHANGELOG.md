@@ -17,6 +17,22 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [5.9.0] - 20-03-23
+### Added
+- New class `AssetHierarchy` for easy verification and reporting on asset hierarchy issues without explicitly trying to insert them.
+- Orphan assets can now be reported on (orphan is an asset whose parent is not part of the given assets). Also, `AssetHierarchy` accepts an `ignore_orphans` argument to mimic the old behaviour where all orphans were assumed to be valid.
+- `AssetsAPI.create_hierarchy` now accepts two new parameters: `upsert` and `upsert_mode`. These allow the user to do "insert or update" instead of an error being raised when trying to create an already existing asset. Upsert mode controls whether updates should replace/overwrite or just patch (partial update to non-null values only).
+- `AssetsAPI.create_hierarchy` now also verifies the `name` parameter which is required and that `id` has not been set.
+
+### Changed
+- `AssetsAPI.create_hierarchy` now uses `AssetHierarchy` under the hood to offer concrete feedback on asset hierarchy issues, accessible through attributes on the raised exception, e.g. invalid assets, duplicates, orphans, or any cyclical asset references.
+
+### Fixed
+- `AssetsAPI.create_hierarchy`...:
+  - Now respects `max_workers` when spawning worker threads.
+  - Can no longer raise `RecursionError`. Used to be an issue for asset hierarchies deeper than `sys.getrecursionlimit()` (typically set at 1000 to avoid stack overflow).
+  - Is now `pyodide` compatible.
+
 ## [5.8.0] - 20-03-23
 ### Added
 - Support for client certificate authentication to Azure AD.

@@ -100,7 +100,7 @@ At the top of an asset hierarchy is a root asset (e.g., the oil platform). Each 
 Note that all assets must have a name (a non-empty string).
 
 To create a root asset (an asset without a parent), omit the parent ID when you post the asset to the API.
-To make an asset a child of an existing asset, you must specify a parent ID.
+To make an asset a child of an existing asset, you must specify a parent ID (or parent external ID):
 
 .. code:: python
 
@@ -112,11 +112,11 @@ To make an asset a child of an existing asset, you must specify a parent ID.
     c.assets.create(my_asset)
 
 To post an entire asset hierarchy, you can describe the relations within your asset hierarchy
-using the :code:`external_id` and :code:`parent_external_id` attributes on the :code:`Asset` object. You can post
+using the ``external_id`` and ``parent_external_id`` attributes on the ``Asset`` object. You can post
 an arbitrary number of assets, and the SDK will split the request into multiple requests. To make sure that the
-assets are posted in the correct order, you can use the .create_hierarchy() function, which takes care of the
-topological sorting for you, before splitting the request into smaller chunks. However, note that the .create_hierarchy() function requires the
-external_id property to be set for all assets.
+assets are created in the correct order, you can use the ``create_hierarchy()`` function, which takes care of the
+topological sorting for you, before splitting the request into smaller chunks. However, note that the ``create_hierarchy()``
+function requires the ``external_id`` property to be set for all assets.
 
 This example shows how to post a three levels deep asset hierarchy consisting of three assets.
 
@@ -131,22 +131,54 @@ This example shows how to post a three levels deep asset hierarchy consisting of
     descendant = Asset(name="descendant", external_id="3", parent_external_id="2")
     c.assets.create_hierarchy([root, child, descendant])
 
-Wrap the .create_hierarchy() call in a try-except to get information if posting the assets fails:
+Wrap the ``create_hierarchy()`` call in a try-except to get information if creating the assets fails:
 
-- Which assets were posted. (The request yielded a 201.)
-- Which assets may have been posted. (The request yielded 5xx.)
-- Which assets were not posted. (The request yielded 4xx, or was a descendant of another asset which may or may not have been posted.)
+- Which assets were created. (The request yielded a 201.)
+- Which assets may have been created. (The request yielded 5xx.)
+- Which assets were not created. (The request yielded 4xx, or was a descendant of another asset which may or may not have been created.)
 
 .. code:: python
 
     from cognite.client.exceptions import CogniteAPIError
-
     try:
         c.assets.create_hierarchy([root, child, descendant])
-    except CogniteAPIError as e:
-        assets_posted = e.successful
-        assets_may_have_been_posted = e.unknown
-        assets_not_posted = e.failed
+    except CogniteAPIError as err:
+        created = err.successful
+        maybe_created = err.unknown
+        not_created = err.failed
+
+Prior to creating the Assets, it might be useful to do some validation on the assets you have. To do this without
+potentially sending API requests, import and use :class:`~cognite.client.data_classes.assets.AssetHierarchy`:
+
+.. code:: python
+
+    from cognite.client.data_classes import AssetHierarchy
+    hierarchy = AssetHierarchy(assets)
+    # Get a report written to the terminal listing any issues:
+    hierarchy.validate_and_report()
+    # If there are issues, you may inspect them directly:
+    if not hierarchy.is_valid():
+        hierarchy.orphans
+        hierarchy.invalid
+        hierarchy.unsure_parents
+        hierarchy.duplicates
+        hierarchy.cycles  # Requires no other basic issues
+
+Note that validation will run automatically for you when calling ``create_hierarchy()``. You may choose to catch
+``CogniteAssetHierarchyError`` and inspect any raised issues:
+
+.. code:: python
+
+    from cognite.client.exceptions import CogniteAssetHierarchyError
+    try:
+        c.assets.create_hierarchy(assets)
+    except CogniteAssetHierarchyError as err:
+        # You may inspect the following attributes:
+        err.orphans
+        err.invalid
+        err.unsure_parents
+        err.duplicates
+        err.cycles  # Requires no other basic issues
 
 Retrieve all events related to an asset subtree
 -----------------------------------------------

@@ -7,7 +7,6 @@ This module is protected and should not be used by end-users.
 from __future__ import annotations
 
 import functools
-import heapq
 import importlib
 import math
 import numbers
@@ -125,6 +124,21 @@ def json_dump_default(x: Any) -> Any:
     raise TypeError(f"Object {x} of type {x.__class__} can't be serialized by the JSON encoder")
 
 
+@overload
+def unwrap_identifer(identifier: str) -> str:
+    ...
+
+
+@overload
+def unwrap_identifer(identifier: int) -> int:
+    ...
+
+
+@overload
+def unwrap_identifer(identifier: Dict) -> Union[str, int]:
+    ...
+
+
 def unwrap_identifer(identifier: Union[str, int, Dict]) -> Union[str, int]:
     # TODO: Move to Identifier class?
     if isinstance(identifier, (str, int)):
@@ -141,7 +155,7 @@ def assert_type(var: Any, var_name: str, types: List[type], allow_none: bool = F
         if not allow_none:
             raise TypeError(f"{var_name} cannot be None")
     elif not isinstance(var, tuple(types)):
-        raise TypeError(f"{var_name} must be one of types {types}")
+        raise TypeError(f"{var_name!r} must be one of types {types}, not {type(var)}")
 
 
 def validate_user_input_dict_with_identifier(dct: Mapping, required_keys: Set[str]) -> Dict[str, T_ID]:
@@ -226,51 +240,40 @@ def random_string(size: int = 100, sample_from: str = string.ascii_uppercase + s
     return "".join(random.choices(sample_from, k=size))
 
 
-class PriorityQueue:
-    # TODO: Just use queue.PriorityQueue()
-    def __init__(self) -> None:
-        self.__heap: List[Any] = []
-        self.__id = 0
-
-    def add(self, elem: Any, priority: int) -> None:
-        heapq.heappush(self.__heap, (-priority, self.__id, elem))
-        self.__id += 1
-
-    def get(self) -> Any:
-        _, _, elem = heapq.heappop(self.__heap)
-        return elem
-
-    def __bool__(self) -> bool:
-        return len(self.__heap) > 0
-
-
 @overload
-def split_into_n_parts(seq: List[T], /, n: int) -> Iterator[List[T]]:
+def split_into_n_parts(seq: List[T], *, n: int) -> Iterator[List[T]]:
     ...
 
 
 @overload
-def split_into_n_parts(seq: Sequence[T], /, n: int) -> Iterator[Sequence[T]]:
+def split_into_n_parts(seq: Sequence[T], *, n: int) -> Iterator[Sequence[T]]:
     ...
 
 
-def split_into_n_parts(seq: Sequence[T], /, n: int) -> Iterator[Sequence[T]]:
+def split_into_n_parts(seq: Sequence[T], *, n: int) -> Iterator[Sequence[T]]:
     # NB: Chaotic sampling: jumps n for each starting position
     yield from (seq[i::n] for i in range(n))
 
 
-def split_into_chunks(collection: Union[List, Dict], chunk_size: int) -> List[Union[List, Dict]]:
-    chunks: List[Union[List, Dict]] = []
+@overload
+def split_into_chunks(collection: List, chunk_size: int) -> List[List]:
+    ...
+
+
+@overload
+def split_into_chunks(collection: Dict, chunk_size: int) -> List[Dict]:
+    ...
+
+
+def split_into_chunks(collection: Union[List, Dict], chunk_size: int) -> Union[List[List], List[Dict]]:
     if isinstance(collection, list):
-        for i in range(0, len(collection), chunk_size):
-            chunks.append(collection[i : i + chunk_size])
-        return chunks
+        return [collection[i : i + chunk_size] for i in range(0, len(collection), chunk_size)]
+
     if isinstance(collection, dict):
         collection = list(collection.items())
-        for i in range(0, len(collection), chunk_size):
-            chunks.append({k: v for k, v in collection[i : i + chunk_size]})
-        return chunks
-    raise ValueError("Can only split list or dict")
+        return [dict(collection[i : i + chunk_size]) for i in range(0, len(collection), chunk_size)]
+
+    raise ValueError(f"Can only split list or dict, not {type(collection)}")
 
 
 def convert_true_match(true_match: Union[dict, list, Tuple[Union[int, str], Union[int, str]]]) -> dict:

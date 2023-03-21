@@ -3,13 +3,14 @@ from __future__ import annotations
 import functools
 import inspect
 from collections import UserList
-from concurrent.futures import CancelledError
-from concurrent.futures.thread import ThreadPoolExecutor
+from concurrent.futures import CancelledError, ThreadPoolExecutor
+from copy import copy
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
     Dict,
+    Iterable,
     Iterator,
     List,
     Literal,
@@ -194,8 +195,8 @@ class ExtendedMainThreadExecutor(TaskExecutor):
         return None
 
     @staticmethod
-    def as_completed(dct: Dict[ExtendedSyncFuture, Any]) -> Iterator[ExtendedSyncFuture]:
-        return iter(dct.copy())
+    def as_completed(it: Iterable[ExtendedSyncFuture]) -> Iterator[ExtendedSyncFuture]:
+        return iter(copy(it))
 
     def __enter__(self) -> ExtendedMainThreadExecutor:
         return self
@@ -279,12 +280,15 @@ def execute_tasks(
             results.append(res)
         except Exception as e:
             exceptions.append(e)
-            if isinstance(e, CogniteAPIError):
-                if e.code < 500:
-                    failed_tasks.append(tasks[i])
-                else:
-                    unknown_result_tasks.append(tasks[i])
-            else:
+            if classify_error(e) == "failed":
                 failed_tasks.append(tasks[i])
+            else:
+                unknown_result_tasks.append(tasks[i])
 
     return TasksSummary(successful_tasks, unknown_result_tasks, failed_tasks, results, exceptions)
+
+
+def classify_error(err: Exception) -> Literal["failed", "unknown"]:
+    if isinstance(err, CogniteAPIError) and err.code >= 500:
+        return "unknown"
+    return "failed"

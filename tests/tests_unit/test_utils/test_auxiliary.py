@@ -240,7 +240,7 @@ class TestSplitIntoNParts:
     )
     def test_normal_split(self, inp, n, exp_out):
         exp_type = type(inp)
-        res = split_into_n_parts(inp, n)
+        res = split_into_n_parts(inp, n=n)
         for r, res_exp in zip_longest(res, exp_out, fillvalue=math.nan):
             assert type(r) is exp_type
             assert r == res_exp
@@ -256,7 +256,7 @@ class TestSplitIntoNParts:
     )
     def test_split_into_too_many_pieces(self, inp, n, exp_out):
         exp_type = type(inp)
-        res = split_into_n_parts(inp, n)
+        res = split_into_n_parts(inp, n=n)
         for r, res_exp in zip_longest(res, exp_out, fillvalue=math.nan):
             assert type(r) is exp_type
             assert r == res_exp
