@@ -41,6 +41,7 @@ def api_client_with_api_key(cognite_client):
             max_workers=1,
             headers={"x-cdp-app": "python-sdk-integration-tests"},
         ),
+        api_version=None,
         cognite_client=cognite_client,
     )
 
@@ -56,6 +57,7 @@ def api_client_with_token_factory(cognite_client):
             headers={"x-cdp-app": "python-sdk-integration-tests"},
             credentials=Token(lambda: "abc"),
         ),
+        api_version=None,
         cognite_client=cognite_client,
     )
 
@@ -71,6 +73,7 @@ def api_client_with_token(cognite_client):
             headers={"x-cdp-app": "python-sdk-integration-tests"},
             credentials=Token("abc"),
         ),
+        api_version=None,
         cognite_client=cognite_client,
     )
 

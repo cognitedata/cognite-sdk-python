@@ -3,7 +3,6 @@ import math
 import re
 from datetime import datetime, timezone
 from random import random
-from unittest.mock import patch
 
 import pytest
 
@@ -226,10 +225,10 @@ class TestInsertDatapoints:
             cognite_client.time_series.data.insert(dps, id=1)
 
     def test_insert_datapoints_over_limit(self, cognite_client, mock_post_datapoints, monkeypatch):
+        monkeypatch.setattr(cognite_client.time_series.data, "_DPS_LIMIT_RAW", 5)
+        monkeypatch.setattr(cognite_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 5)
         dps = [(i * 1e11, i) for i in range(1, 11)]
-        with patch(DATAPOINTS_API.format("_DPS_LIMIT_RAW"), 5):
-            monkeypatch.setattr(cognite_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 5)
-            res = cognite_client.time_series.data.insert(dps, id=1)
+        res = cognite_client.time_series.data.insert(dps, id=1)
         assert res is None
         request_bodies = [jsgz_load(call.request.body) for call in mock_post_datapoints.calls]
         assert {
