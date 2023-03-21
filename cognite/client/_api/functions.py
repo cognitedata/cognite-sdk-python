@@ -15,7 +15,7 @@ from zipfile import ZipFile
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client._constants import LIST_LIMIT_CEILING, LIST_LIMIT_DEFAULT
-from cognite.client.credentials import APIKey
+from cognite.client.credentials import APIKey, OAuthClientCertificate
 from cognite.client.data_classes import (
     ClientCredentials,
     Function,
@@ -32,6 +32,7 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.functions import FunctionCallsFilter, FunctionsStatus
+from cognite.client.exceptions import CogniteAuthError
 from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._identifier import IdentifierSequence, SingletonIdentifierSequence
 
@@ -538,8 +539,12 @@ def _create_session_and_return_nonce(
     client: CogniteClient,
     client_credentials: Union[Dict, ClientCredentials, None] = None,
 ) -> Optional[str]:
-    if client_credentials is None and isinstance(client._config.credentials, APIKey):
-        return None
+    if client_credentials is None:
+        if isinstance(client._config.credentials, APIKey):
+            return None
+        elif isinstance(client._config.credentials, OAuthClientCertificate):
+            raise CogniteAuthError("Client certificate credentials is not supported with the Functions API")
+
     elif isinstance(client_credentials, dict):
         client_credentials = ClientCredentials(client_credentials["client_id"], client_credentials["client_secret"])
     return client.iam.sessions.create(client_credentials).nonce
