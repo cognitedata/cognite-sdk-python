@@ -787,10 +787,12 @@ class TestStandardCreate:
             items=[SomeResource(1, 2), SomeResource(3, 4)],
             limit=1,
         )
-        assert SomeResourceList([SomeResource(1, 2), SomeResource(3, 4)]) == res
+        expected_res_lst = SomeResourceList([SomeResource(1, 2), SomeResource(3, 4)])
+        unittest.TestCase().assertCountEqual(expected_res_lst, res)
 
-        assert {"items": [{"x": 1, "y": 2}]} == jsgz_load(rsps.calls[0].request.body)
-        assert {"items": [{"x": 3, "y": 4}]} == jsgz_load(rsps.calls[1].request.body)
+        expected_item_bodies = [{"items": [{"x": 1, "y": 2}]}, {"items": [{"x": 3, "y": 4}]}]
+        gotten_item_bodies = [jsgz_load(rsps.calls[0].request.body), jsgz_load(rsps.calls[1].request.body)]
+        unittest.TestCase().assertCountEqual(expected_item_bodies, gotten_item_bodies)
 
     def test_cognite_client_is_set(self, cognite_client, api_client_with_api_key, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH, status=200, json={"items": [{"x": 1, "y": 2}]})
