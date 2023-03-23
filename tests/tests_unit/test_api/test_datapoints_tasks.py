@@ -13,7 +13,7 @@ from cognite.client._api.datapoint_tasks import (
     create_dps_container,
     create_subtask_lst,
 )
-from cognite.client.utils._auxiliary import random_string
+from cognite.client.utils._text import random_string
 from tests.utils import random_aggregates, random_cognite_ids, random_gamma_dist_integer, random_granularity
 
 

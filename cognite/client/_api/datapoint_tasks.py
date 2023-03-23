@@ -35,14 +35,9 @@ from google.protobuf.message import Message
 from sortedcontainers import SortedDict, SortedList
 
 from cognite.client.data_classes.datapoints import NUMPY_IS_AVAILABLE, Datapoints, DatapointsArray
-from cognite.client.utils._auxiliary import (
-    convert_all_keys_to_snake_case,
-    import_legacy_protobuf,
-    is_unlimited,
-    to_camel_case,
-    to_snake_case,
-)
+from cognite.client.utils._auxiliary import import_legacy_protobuf, is_unlimited
 from cognite.client.utils._identifier import Identifier
+from cognite.client.utils._text import convert_all_keys_to_snake_case, to_camel_case, to_snake_case
 from cognite.client.utils._time import (
     align_start_and_end_for_granularity,
     granularity_to_ms,

@@ -17,7 +17,7 @@ from cognite.client.data_classes import (
     GeometryFilter,
 )
 from cognite.client.exceptions import CogniteAssetHierarchyError, CogniteNotFoundError
-from cognite.client.utils._auxiliary import random_string
+from cognite.client.utils._text import random_string
 from cognite.client.utils._time import timestamp_to_ms
 from tests.utils import set_max_workers, set_request_limit
 

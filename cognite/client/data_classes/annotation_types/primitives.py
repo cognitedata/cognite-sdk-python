@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 
 from cognite.client import utils
 from cognite.client.data_classes._base import EXCLUDE_VALUE, CogniteResource
+from cognite.client.utils._text import to_camel_case
 
 if TYPE_CHECKING:
     import pandas
@@ -21,7 +22,7 @@ class VisionResource(CogniteResource):
             Dict[str, Any]: A dictionary representation of the instance.
         """
         return {
-            utils._auxiliary.to_camel_case(key)
+            to_camel_case(key)
             if camel_case
             else key: value.dump(camel_case=camel_case)
             if hasattr(value, "dump")
@@ -44,14 +45,12 @@ class VisionResource(CogniteResource):
 
         for key, value in self.__dict__.items():
             if isinstance(value, list) and all(hasattr(v, "dump") for v in value):
-                df.loc[utils._auxiliary.to_camel_case(key) if camel_case else key] = [
-                    [v.dump(camel_case=camel_case) for v in value]
-                ]
+                df.loc[to_camel_case(key) if camel_case else key] = [[v.dump(camel_case=camel_case) for v in value]]
             if hasattr(value, "dump"):
-                df.loc[utils._auxiliary.to_camel_case(key) if camel_case else key] = [value.dump(camel_case=camel_case)]
+                df.loc[to_camel_case(key) if camel_case else key] = [value.dump(camel_case=camel_case)]
             else:
                 if value not in EXCLUDE_VALUE:
-                    df.loc[utils._auxiliary.to_camel_case(key) if camel_case else key] = [value]
+                    df.loc[to_camel_case(key) if camel_case else key] = [value]
 
         return df
 

@@ -6,8 +6,9 @@ from typing import Any, Collection, Dict, List, Optional, Sequence, Union, overl
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Annotation, AnnotationFilter, AnnotationList, AnnotationUpdate
 from cognite.client.data_classes._base import CogniteResource
-from cognite.client.utils._auxiliary import assert_type, to_camel_case
+from cognite.client.utils._auxiliary import assert_type
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._text import to_camel_case
 
 
 class AnnotationsAPI(APIClient):

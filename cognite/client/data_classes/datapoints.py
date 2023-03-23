@@ -27,17 +27,17 @@ from typing import (
 
 from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
-from cognite.client.utils._auxiliary import (
-    convert_all_keys_to_camel_case,
-    convert_all_keys_to_snake_case,
-    find_duplicates,
-    local_import,
-    to_camel_case,
-)
+from cognite.client.utils._auxiliary import find_duplicates, local_import
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._pandas_helpers import (
     concat_dataframes_with_nullable_int_cols,
     notebook_display_with_fallback,
+)
+from cognite.client.utils._text import (
+    convert_all_keys_to_camel_case,
+    convert_all_keys_to_snake_case,
+    to_camel_case,
+    to_snake_case,
 )
 
 ALL_SORTED_DP_AGGS = sorted(
@@ -484,7 +484,7 @@ class Datapoints(CogniteResource):
             "datapoints": [dp.dump(camel_case=camel_case) for dp in self.__get_datapoint_objects()],
         }
         if camel_case:
-            dumped = {utils._auxiliary.to_camel_case(key): value for key, value in dumped.items()}
+            dumped = convert_all_keys_to_camel_case(dumped)
         return {key: value for key, value in dumped.items() if value is not None}
 
     def to_pandas(  # type: ignore [override]
@@ -562,12 +562,12 @@ class Datapoints(CogniteResource):
         expected_fields = (expected_fields or ["value"]) + ["timestamp"]
         if len(dps_object["datapoints"]) == 0:
             for key in expected_fields:
-                snake_key = utils._auxiliary.to_snake_case(key)
+                snake_key = to_snake_case(key)
                 setattr(instance, snake_key, [])
         else:
             for key in expected_fields:
                 data = [dp.get(key) for dp in dps_object["datapoints"]]
-                snake_key = utils._auxiliary.to_snake_case(key)
+                snake_key = to_snake_case(key)
                 setattr(instance, snake_key, data)
         return instance
 

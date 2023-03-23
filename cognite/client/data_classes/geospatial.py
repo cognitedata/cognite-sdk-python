@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 
 from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
-from cognite.client.utils._auxiliary import to_snake_case
+from cognite.client.utils._text import to_camel_case, to_snake_case
 
 if TYPE_CHECKING:
     import geopandas
@@ -119,14 +119,14 @@ class Feature(CogniteResource):
         return instance
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        def to_camel_case(key: str) -> str:
+        def handle_case(key: str) -> str:
             # Keep properties defined in Feature Type as is
             if camel_case and key in self.PRE_DEFINED_SNAKE_CASE_NAMES:
-                return utils._auxiliary.to_camel_case(key)
+                return to_camel_case(key)
             return key
 
         return {
-            to_camel_case(key): value
+            handle_case(key): value
             for key, value in self.__dict__.items()
             if value is not None and not key.startswith("_")
         }

@@ -21,7 +21,7 @@ from cognite.client.data_classes.transformations.common import (
     SequenceRows,
     ViewInfo,
 )
-from cognite.client.utils._auxiliary import random_string
+from cognite.client.utils._text import random_string
 
 
 @pytest.fixture

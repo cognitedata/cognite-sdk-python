@@ -1,7 +1,7 @@
 import pytest
 
 from cognite.client.data_classes import Row
-from cognite.client.utils._auxiliary import random_string
+from cognite.client.utils._text import random_string
 
 
 @pytest.fixture(scope="session")
