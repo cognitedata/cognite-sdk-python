@@ -3,7 +3,7 @@ import pytest
 from cognite.client.data_classes import ExtractionPipeline, ExtractionPipelineRun, ExtractionPipelineUpdate
 from cognite.client.data_classes.extractionpipelines import ExtractionPipelineContact
 from cognite.client.exceptions import CogniteNotFoundError
-from cognite.client.utils._auxiliary import random_string
+from cognite.client.utils._text import random_string
 
 
 @pytest.fixture

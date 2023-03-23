@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, cast
 
-from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, CogniteResponse
+from cognite.client.utils._text import convert_all_keys_to_camel_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -176,7 +176,7 @@ class TokenInspection(CogniteResponse):
             "capabilities": self.capabilities,
         }
         if camel_case:
-            dumped = {utils._auxiliary.to_camel_case(key): value for key, value in dumped.items()}
+            dumped = convert_all_keys_to_camel_case(dumped)
         return dumped
 
 

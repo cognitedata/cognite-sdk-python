@@ -3,7 +3,8 @@ from __future__ import annotations
 import warnings
 from typing import Any, Dict, Optional, Union
 
-from cognite.client.utils._auxiliary import basic_obj_dump, convert_all_keys_to_snake_case, iterable_to_case
+from cognite.client.utils._auxiliary import basic_obj_dump
+from cognite.client.utils._text import convert_all_keys_to_snake_case, iterable_to_case
 
 
 class TransformationDestination:

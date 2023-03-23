@@ -4,7 +4,6 @@ import json
 from collections import UserDict
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union, cast
 
-from cognite.client import utils
 from cognite.client.data_classes._base import (
     EXCLUDE_VALUE,
     CogniteObjectUpdate,
@@ -12,6 +11,7 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     CogniteUpdate,
 )
+from cognite.client.utils._text import to_camel_case, to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -233,7 +233,7 @@ class TemplateInstance(CogniteResource):
         """
         if camel_case:
             return {
-                utils._auxiliary.to_camel_case(key): value
+                to_camel_case(key): value
                 if key != "field_resolvers"
                 else TemplateInstance._encode_field_resolvers(value, camel_case=camel_case)
                 for key, value in self.__dict__.items()
@@ -261,7 +261,7 @@ class TemplateInstance(CogniteResource):
         elif isinstance(resource, Dict):
             instance = cls(cognite_client=cognite_client)
             for key, value in resource.items():
-                snake_case_key = utils._auxiliary.to_snake_case(key)
+                snake_case_key = to_snake_case(key)
                 if hasattr(instance, snake_case_key):
                     if key == "fieldResolvers":
                         setattr(
@@ -364,7 +364,7 @@ class View(CogniteResource):
         """
         if camel_case:
             return {
-                utils._auxiliary.to_camel_case(key): View.resolve_nested_classes(value, camel_case)
+                to_camel_case(key): View.resolve_nested_classes(value, camel_case)
                 for key, value in self.__dict__.items()
                 if value not in EXCLUDE_VALUE and not key.startswith("_")
             }
@@ -388,7 +388,7 @@ class View(CogniteResource):
         elif isinstance(resource, Dict):
             instance = cls(cognite_client=cognite_client)
             for key, value in resource.items():
-                snake_case_key = utils._auxiliary.to_snake_case(key)
+                snake_case_key = to_snake_case(key)
                 if hasattr(instance, snake_case_key):
                     value = value if key != "source" else Source._load(value, cognite_client)
                     setattr(instance, snake_case_key, value)

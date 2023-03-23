@@ -11,9 +11,6 @@ import importlib
 import math
 import numbers
 import platform
-import random
-import re
-import string
 import warnings
 from collections.abc import Mapping
 from decimal import Decimal
@@ -38,6 +35,7 @@ from urllib.parse import quote
 import cognite.client
 from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._identifier import T_ID, Identifier
+from cognite.client.utils._text import convert_all_keys_to_camel_case, convert_all_keys_to_snake_case, to_snake_case
 from cognite.client.utils._version_checker import get_newest_version_in_major_release
 
 T = TypeVar("T")
@@ -46,33 +44,6 @@ THashable = TypeVar("THashable", bound=Hashable)
 
 def is_unlimited(limit: Optional[Union[float, int]]) -> bool:
     return limit in {None, -1, math.inf}
-
-
-@functools.lru_cache(maxsize=128)
-def to_camel_case(snake_case_string: str) -> str:
-    components = snake_case_string.split("_")
-    return components[0] + "".join(x.title() for x in components[1:])
-
-
-@functools.lru_cache(maxsize=128)
-def to_snake_case(camel_case_string: str) -> str:
-    s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", camel_case_string)
-    return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
-
-
-def iterable_to_case(seq: Sequence[str], camel_case: bool) -> Iterator[str]:
-    if camel_case:
-        yield from map(to_camel_case, seq)
-    else:
-        yield from map(to_snake_case, seq)
-
-
-def convert_all_keys_to_camel_case(d: Dict[str, Any]) -> Dict[str, Any]:
-    return dict(zip(map(to_camel_case, d.keys()), d.values()))
-
-
-def convert_all_keys_to_snake_case(d: Dict[str, Any]) -> Dict[str, Any]:
-    return dict(zip(map(to_snake_case, d.keys()), d.values()))
 
 
 def basic_obj_dump(obj: Any, camel_case: bool) -> Dict[str, Any]:
@@ -234,10 +205,6 @@ def _check_client_has_newest_major_version() -> None:
             ">>> global_config.disable_pypi_version_check = True",
             stacklevel=3,
         )
-
-
-def random_string(size: int = 100, sample_from: str = string.ascii_uppercase + string.digits) -> str:
-    return "".join(random.choices(sample_from, k=size))
 
 
 @overload

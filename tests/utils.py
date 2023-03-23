@@ -11,7 +11,7 @@ from contextlib import contextmanager
 
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
 from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS
-from cognite.client.utils._auxiliary import random_string
+from cognite.client.utils._text import random_string
 
 
 def all_subclasses(base: type) -> list[type]:

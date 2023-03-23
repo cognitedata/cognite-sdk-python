@@ -3,7 +3,7 @@ import os
 import pytest
 
 from cognite.client.data_classes import APIKey, Group, SecurityCategory, ServiceAccount, ServiceAccountList
-from cognite.client.utils._auxiliary import random_string
+from cognite.client.utils._text import random_string
 
 
 @pytest.mark.skip("ServiceAccountAPI has been removed from the greenfield cluster.")

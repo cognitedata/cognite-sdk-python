@@ -28,7 +28,7 @@ from cognite.client.data_classes.transformations.common import (
 from cognite.client.data_classes.transformations.jobs import TransformationJob, TransformationJobList
 from cognite.client.data_classes.transformations.schedules import TransformationSchedule
 from cognite.client.data_classes.transformations.schema import TransformationSchemaColumnList
-from cognite.client.utils._auxiliary import convert_all_keys_to_snake_case
+from cognite.client.utils._text import convert_all_keys_to_snake_case, convert_all_keys_to_camel_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -62,10 +62,10 @@ class SessionDetails:
         Returns:
             Dict[str, Any]: A dictionary representation of the instance.
         """
-        ret = self.__dict__
+        ret = vars(self)
 
         if camel_case:
-            return {utils._auxiliary.to_camel_case(key): value for key, value in ret.items()}
+            return convert_all_keys_to_camel_case(ret)
         return ret
 
 

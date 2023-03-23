@@ -42,9 +42,10 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.shared import AggregateBucketResult
 from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils._auxiliary import split_into_n_parts, to_camel_case
+from cognite.client.utils._auxiliary import split_into_n_parts
 from cognite.client.utils._concurrency import classify_error, get_priority_executor
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._text import to_camel_case
 
 if TYPE_CHECKING:
     from concurrent.futures import Future
@@ -106,7 +107,7 @@ class AssetsAPI(APIClient):
             Union[Asset, AssetList]: yields Asset one by one if chunk is not specified, else AssetList objects.
         """
         if aggregated_properties:
-            aggregated_properties = [utils._auxiliary.to_camel_case(s) for s in aggregated_properties]
+            aggregated_properties = [to_camel_case(s) for s in aggregated_properties]
 
         asset_subtree_ids_processed = None
         if asset_subtree_ids or asset_subtree_external_ids:
@@ -295,7 +296,7 @@ class AssetsAPI(APIClient):
                 >>> asset_list = c.assets.list(labels=my_label_filter)
         """
         if aggregated_properties:
-            aggregated_properties = [utils._auxiliary.to_camel_case(s) for s in aggregated_properties]
+            aggregated_properties = [to_camel_case(s) for s in aggregated_properties]
 
         asset_subtree_ids_processed = None
         if asset_subtree_ids or asset_subtree_external_ids:

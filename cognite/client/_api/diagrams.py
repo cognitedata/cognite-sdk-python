@@ -15,7 +15,7 @@ from cognite.client.data_classes.contextualization import (
     T_ContextualizationJob,
 )
 from cognite.client.exceptions import CogniteAPIError, CogniteMissingClientError
-from cognite.client.utils._auxiliary import to_camel_case
+from cognite.client.utils._text import to_camel_case
 
 DETECT_API_FILE_LIMIT = 50
 # https://docs.cognite.com/api/playground/#tag/Engineering-diagrams/operation/diagramDetect

@@ -45,6 +45,7 @@ from cognite.client.data_classes._base import (
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import is_unlimited, split_into_chunks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence, SingletonIdentifierSequence
+from cognite.client.utils._text import convert_all_keys_to_camel_case, shorten, to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -566,7 +567,7 @@ class APIClient:
         if isinstance(filter, CogniteFilter):
             dumped_filter = filter.dump(camel_case=True)
         elif isinstance(filter, Dict):
-            dumped_filter = utils._auxiliary.convert_all_keys_to_camel_case(filter)
+            dumped_filter = convert_all_keys_to_camel_case(filter)
         else:
             dumped_filter = {}
         resource_path = resource_path or self._RESOURCE_PATH
@@ -772,7 +773,7 @@ class APIClient:
         if isinstance(filter, CogniteFilter):
             filter = filter.dump(camel_case=True)
         elif isinstance(filter, dict):
-            filter = utils._auxiliary.convert_all_keys_to_camel_case(filter)
+            filter = convert_all_keys_to_camel_case(filter)
         resource_path = resource_path or self._RESOURCE_PATH
         res = self._post(
             url_path=resource_path + "/search",
@@ -811,7 +812,7 @@ class APIClient:
             patch_object["externalId"] = dumped_resource.pop("externalId")
 
         for key, value in dumped_resource.items():
-            if utils._auxiliary.to_snake_case(key) in update_attributes:
+            if to_snake_case(key) in update_attributes:
                 patch_object["update"][key] = {"set": value}
         return patch_object
 
@@ -851,7 +852,7 @@ class APIClient:
             error_details["duplicated"] = duplicated
         error_details["headers"] = res.request.headers.copy()
         cls._sanitize_headers(error_details["headers"])
-        error_details["response_payload"] = cls._truncate(cls._get_response_content_safe(res))
+        error_details["response_payload"] = shorten(cls._get_response_content_safe(res), 500)
         error_details["response_headers"] = res.headers
 
         if res.history:
@@ -875,7 +876,7 @@ class APIClient:
 
         stream = kwargs.get("stream")
         if not stream and self._config.debug is True:
-            extra["response_payload"] = self._truncate(self._get_response_content_safe(res))
+            extra["response_payload"] = shorten(self._get_response_content_safe(res), 500)
         extra["response_headers"] = res.headers
 
         try:
@@ -885,12 +886,6 @@ class APIClient:
             http_protocol = "XMLHTTP"
 
         log.debug(f"{http_protocol} {method} {url} {status_code}", extra=extra)
-
-    @staticmethod
-    def _truncate(s: str, limit: int = 500) -> str:
-        if len(s) > limit:
-            return s[:limit] + "..."
-        return s
 
     @staticmethod
     def _get_response_content_safe(res: Response) -> str:
