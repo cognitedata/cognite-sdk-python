@@ -17,6 +17,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [5.9.1] - 20-03-23
+### Fixed
+- `FunctionsAPI.call` now also works for clients using auth flow `OAuthInteractive`, `OAuthDeviceCode`, and any user-made subclass of `CredentialProvider`.
+
+### Improved
+- `FunctionSchedulesAPI.create` now also accepts an instance of `ClientCredentials` (used to be dictionary only).
+
 ## [5.9.0] - 20-03-23
 ### Added
 - New class `AssetHierarchy` for easy verification and reporting on asset hierarchy issues without explicitly trying to insert them.

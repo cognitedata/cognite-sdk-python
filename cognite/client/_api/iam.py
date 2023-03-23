@@ -425,7 +425,7 @@ class SessionsAPI(APIClient):
             id (Union[int, Sequence[int]): Id or list of session ids
 
         Returns:
-            List of revoked sessions. If the user does not have the sessionsAcl:LIST capability, then only the session IDs will be present in the response.
+            SessionList: List of revoked sessions. If the user does not have the sessionsAcl:LIST capability, then only the session IDs will be present in the response.
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=None)
         items = {"items": identifiers.as_dicts()}
