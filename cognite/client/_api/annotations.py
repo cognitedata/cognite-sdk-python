@@ -131,7 +131,7 @@ class AnnotationsAPI(APIClient):
         """Update annotations
 
         Args:
-            id (Union[int, Sequence[int]]): ID or list of IDs to be deleted
+            item (Union[Annotation, AnnotationUpdate, Sequence[Union[Annotation, AnnotationUpdate]]]): Annotation or list of annotations to update (or patch or list of patches to apply)
         """
         return self._update_multiple(
             list_cls=AnnotationList, resource_cls=Annotation, update_cls=AnnotationUpdate, items=item
