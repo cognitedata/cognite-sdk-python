@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [5.10.5] - 13-04-23
 ### Fixed
-- Subclasses of `VisionResource` inheriting `.dump` and `to_pandas` now work as expected for attributes storing lists of subclass instances like `Polygon`, `PolyLine`, `ObjectDetection` or `VisionExtractPredictions`.
+- Subclasses of `VisionResource` inheriting `.dump` and `to_pandas` now work as expected for attributes storing lists of subclass instances like `Polygon`, `PolyLine`, `ObjectDetection` or `VisionExtractPredictions` directly or indirectly.
 
 ## [5.10.4] - 13-04-23
 ### Fixed
