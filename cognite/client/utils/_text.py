@@ -35,12 +35,18 @@ def iterable_to_case(seq: Sequence[str], camel_case: bool) -> Iterator[str]:
         yield from map(to_snake_case, seq)
 
 
-def convert_all_keys_to_camel_case(d: Dict[str, Any]) -> Dict[str, Any]:
-    return dict(zip(map(to_camel_case, d.keys()), d.values()))
+def convert_all_keys_to_camel_case(dct: Dict[str, Any]) -> Dict[str, Any]:
+    return dict(zip(map(to_camel_case, dct.keys()), dct.values()))
 
 
-def convert_all_keys_to_snake_case(d: Dict[str, Any]) -> Dict[str, Any]:
-    return dict(zip(map(to_snake_case, d.keys()), d.values()))
+def convert_all_keys_to_snake_case(dct: Dict[str, Any]) -> Dict[str, Any]:
+    return dict(zip(map(to_snake_case, dct.keys()), dct.values()))
+
+
+def convert_dict_to_case(dct: Dict[str, Any], camel_case: bool) -> Dict[str, Any]:
+    if camel_case:
+        return convert_all_keys_to_camel_case(dct)
+    return convert_all_keys_to_snake_case(dct)
 
 
 def shorten(obj: Any, width: int = 20, placeholder: str = "...") -> str:
