@@ -799,7 +799,7 @@ class VisionExtractJob(VisionJob):
             Annotation(
                 annotated_resource_id=item.file_id,
                 annotation_type=VISION_ANNOTATION_TYPE_MAP[prediction_type],
-                data=data.dump(),
+                data=data,
                 annotated_resource_type="file",
                 status="suggested",
                 creating_app=creating_app or "cognite-sdk-python",
