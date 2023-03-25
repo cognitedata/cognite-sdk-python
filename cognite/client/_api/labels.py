@@ -31,7 +31,7 @@ class LabelsAPI(APIClient):
         data_set_external_ids: Sequence[str] = None,
     ) -> Union[Iterator[LabelDefinition], Iterator[LabelDefinitionList]]:
         data_set_ids_processed = None
-        if data_set_ids or data_set_external_ids:
+        if data_set_ids is not None or data_set_external_ids is not None:
             data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
         filter = LabelDefinitionFilter(
             name=name, external_id_prefix=external_id_prefix, data_set_ids=data_set_ids_processed
@@ -88,7 +88,7 @@ class LabelsAPI(APIClient):
                 ...     label_list # do something with the type definitions
         """
         data_set_ids_processed = None
-        if data_set_ids or data_set_external_ids:
+        if data_set_ids is not None or data_set_external_ids is not None:
             data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
         filter = LabelDefinitionFilter(
             name=name, external_id_prefix=external_id_prefix, data_set_ids=data_set_ids_processed

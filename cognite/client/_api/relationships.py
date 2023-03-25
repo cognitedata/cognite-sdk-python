@@ -97,7 +97,7 @@ class RelationshipsAPI(APIClient):
             Union[Relationship, RelationshipList]: yields Relationship one by one if chunk is not specified, else RelationshipList objects.
         """
         data_set_ids_processed = None
-        if data_set_ids or data_set_external_ids:
+        if data_set_ids is not None or data_set_external_ids is not None:
             data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
 
         filter = self._create_filter(
@@ -258,7 +258,7 @@ class RelationshipsAPI(APIClient):
                 ...     relationship # do something with the relationship
         """
         data_set_ids_processed = None
-        if data_set_ids or data_set_external_ids:
+        if data_set_ids is not None or data_set_external_ids is not None:
             data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
 
         filter = self._create_filter(

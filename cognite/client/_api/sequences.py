@@ -78,7 +78,7 @@ class SequencesAPI(APIClient):
             ).as_dicts()
 
         data_set_ids_processed = None
-        if data_set_ids or data_set_external_ids:
+        if data_set_ids is not None or data_set_external_ids is not None:
             data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
 
         filter = SequenceFilter(
@@ -236,7 +236,7 @@ class SequencesAPI(APIClient):
             ).as_dicts()
 
         data_set_ids_processed = None
-        if data_set_ids or data_set_external_ids:
+        if data_set_ids is not None or data_set_external_ids is not None:
             data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
 
         filter = SequenceFilter(
