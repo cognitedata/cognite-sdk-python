@@ -823,7 +823,7 @@ class VisionExtractJob(VisionJob):
         See https://docs.cognite.com/api/v1/#tag/Annotations/operation/annotationsSuggest
 
         Args:
-            creating_app (str, optional): The name of the app from which this annotation was created. Defaults to 'cognite-sdk-experimental'.
+            creating_app (str, optional): The name of the app from which this annotation was created. Defaults to 'cognite-sdk-python'.
             creating_app_version (str, optional): The version of the app that created this annotation. Must be a valid semantic versioning (SemVer) string. Defaults to client version.
             creating_user: (str, optional): A username, or email, or name. This is not checked nor enforced. If the value is None, it means the annotation was created by a service.
         Returns:
