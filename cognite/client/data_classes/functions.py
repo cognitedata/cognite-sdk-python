@@ -237,12 +237,12 @@ class FunctionSchedule(CogniteResource):
         self.session_id = session_id
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def get_input_data(self) -> dict:
+    def get_input_data(self) -> Optional[dict]:
         """
         Retrieve the input data to the associated function.
 
         Returns:
-            Input data to the associated function. This data is passed
+            Input data to the associated function or None if not set. This data is passed
             deserialized into the function through the data argument.
         """
         return self._cognite_client.functions.schedules.get_input_data(id=self.id)

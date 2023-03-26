@@ -1029,14 +1029,15 @@ class FunctionSchedulesAPI(APIClient):
         url = "/functions/schedules/delete"
         self._post(url, json=body)
 
-    def get_input_data(self, id: int) -> Dict:
+    def get_input_data(self, id: int) -> Optional[Dict]:
         """`Retrieve the input data to the associated function. <https://docs.cognite.com/api/v1/#operation/getFunctionScheduleInputData>`_
         Args:
             id (int): Id of the schedule
 
         Returns:
-            Input data to the associated function. This data is passed
+            Input data to the associated function or None if not set. This data is passed
             deserialized into the function through the data argument.
+
         Examples:
 
             Get schedule input data::
@@ -1048,4 +1049,4 @@ class FunctionSchedulesAPI(APIClient):
         url = f"/functions/schedules/{id}/input_data"
         res = self._get(url)
 
-        return res.json()["data"]
+        return res.json().get("data")
