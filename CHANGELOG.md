@@ -17,18 +17,23 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [5.9.2] - 20-03-23
+## [5.9.3] - 27-03-23
+### Fixed
+- After creating a schedule for a function, the returned `FunctionSchedule` was missing a reference to the `CogniteClient`, meaning later calls to `.get_input_data()` would fail and raise `CogniteMissingClientError`.
+- When calling `.get_input_data()` on a `FunctionSchedule` instance, it would fail and raise `KeyError` if no input data was specified for the schedule. This now returns `None`.
+
+## [5.9.2] - 27-03-23
 ### Fixed
 - After calling e.g. `.time_series()` or `.events()` on an `AssetList` instance, the resulting resource list would be missing the lookup tables that allow for quick lookups by ID or external ID through the `.get()` method. Additionally, for future-proofing, the resulting resource list now also correctly has a `CogniteClient` reference.
 
-## [5.9.1] - 20-03-23
+## [5.9.1] - 23-03-23
 ### Fixed
 - `FunctionsAPI.call` now also works for clients using auth flow `OAuthInteractive`, `OAuthDeviceCode`, and any user-made subclass of `CredentialProvider`.
 
 ### Improved
 - `FunctionSchedulesAPI.create` now also accepts an instance of `ClientCredentials` (used to be dictionary only).
 
-## [5.9.0] - 20-03-23
+## [5.9.0] - 21-03-23
 ### Added
 - New class `AssetHierarchy` for easy verification and reporting on asset hierarchy issues without explicitly trying to insert them.
 - Orphan assets can now be reported on (orphan is an asset whose parent is not part of the given assets). Also, `AssetHierarchy` accepts an `ignore_orphans` argument to mimic the old behaviour where all orphans were assumed to be valid.
@@ -48,7 +53,7 @@ Changes are grouped as follows
 ### Added
 - Support for client certificate authentication to Azure AD.
 
-## [5.7.4] - 17-03-23
+## [5.7.4] - 20-03-23
 ### Added
 - Use `X-Job-Token` header for contextualization jobs to reduce required capabilities.
 
@@ -60,7 +65,7 @@ Changes are grouped as follows
 ### Fixed
 - Fix method dump in TransformationDestination to ignore None.
 
-## [5.7.1] - 09-03-23
+## [5.7.1] - 10-03-23
 ### Changed
 - Split `instances` destination type of Transformations to `nodes` and `edges`.
 
