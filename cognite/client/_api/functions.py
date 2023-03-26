@@ -1005,7 +1005,7 @@ class FunctionSchedulesAPI(APIClient):
 
         url = "/functions/schedules"
         res = self._post(url, json=body)
-        return FunctionSchedule._load(res.json()["items"][0])
+        return FunctionSchedule._load(res.json()["items"][0], cognite_client=self._cognite_client)
 
     def delete(self, id: int) -> None:
         """`Delete a schedule associated with a specific project. <https://docs.cognite.com/api/v1/#operation/deleteFunctionSchedules>`_
