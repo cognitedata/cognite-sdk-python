@@ -1003,8 +1003,7 @@ class FunctionSchedulesAPI(APIClient):
         if data:
             body["items"][0]["data"] = data
 
-        url = "/functions/schedules"
-        res = self._post(url, json=body)
+        res = self._post(self._RESOURCE_PATH, json=body)
         return FunctionSchedule._load(res.json()["items"][0], cognite_client=self._cognite_client)
 
     def delete(self, id: int) -> None:
@@ -1026,7 +1025,7 @@ class FunctionSchedulesAPI(APIClient):
 
         """
         body = {"items": [{"id": id}]}
-        url = "/functions/schedules/delete"
+        url = f"{self._RESOURCE_PATH}/delete"
         self._post(url, json=body)
 
     def get_input_data(self, id: int) -> Optional[Dict]:
@@ -1044,9 +1043,9 @@ class FunctionSchedulesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> c.functions.schedules.get_input_data(id = 123)
+                >>> c.functions.schedules.get_input_data(id=123)
         """
-        url = f"/functions/schedules/{id}/input_data"
+        url = f"{self._RESOURCE_PATH}/{id}/input_data"
         res = self._get(url)
 
         return res.json().get("data")
