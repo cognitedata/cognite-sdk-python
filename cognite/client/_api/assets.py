@@ -47,6 +47,7 @@ from cognite.client.utils._auxiliary import split_into_n_parts
 from cognite.client.utils._concurrency import classify_error, get_priority_executor
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._text import to_camel_case
+from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 
 if TYPE_CHECKING:
     from concurrent.futures import Future
@@ -110,15 +111,8 @@ class AssetsAPI(APIClient):
         if aggregated_properties:
             aggregated_properties = [to_camel_case(s) for s in aggregated_properties]
 
-        asset_subtree_ids_processed = None
-        if asset_subtree_ids or asset_subtree_external_ids:
-            asset_subtree_ids_processed = IdentifierSequence.load(
-                asset_subtree_ids, asset_subtree_external_ids
-            ).as_dicts()
-
-        data_set_ids_processed = None
-        if data_set_ids is not None or data_set_external_ids is not None:
-            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
+        asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
+        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
         filter = AssetFilter(
             name=name,
@@ -299,15 +293,8 @@ class AssetsAPI(APIClient):
         if aggregated_properties:
             aggregated_properties = [to_camel_case(s) for s in aggregated_properties]
 
-        asset_subtree_ids_processed = None
-        if asset_subtree_ids or asset_subtree_external_ids:
-            asset_subtree_ids_processed = IdentifierSequence.load(
-                asset_subtree_ids, asset_subtree_external_ids
-            ).as_dicts()
-
-        data_set_ids_processed = None
-        if data_set_ids is not None or data_set_external_ids is not None:
-            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
+        asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
+        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
         filter = AssetFilter(
             name=name,

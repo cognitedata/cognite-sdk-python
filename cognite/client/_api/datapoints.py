@@ -62,7 +62,6 @@ from cognite.client.utils._auxiliary import (
     local_import,
     split_into_chunks,
     split_into_n_parts,
-    validate_user_input_dict_with_identifier,
 )
 from cognite.client.utils._concurrency import collect_exc_info_and_raise, execute_tasks, get_priority_executor
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
@@ -77,6 +76,7 @@ from cognite.client.utils._time import (
     to_pandas_freq,
     validate_timezone,
 )
+from cognite.client.utils._validation import validate_user_input_dict_with_identifier
 
 if not import_legacy_protobuf():
     from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem, DataPointListResponse

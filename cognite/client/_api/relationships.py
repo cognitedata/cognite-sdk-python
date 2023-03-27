@@ -9,6 +9,7 @@ from cognite.client.data_classes import Relationship, RelationshipFilter, Relati
 from cognite.client.data_classes.labels import LabelFilter
 from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._validation import process_data_set_ids
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -96,9 +97,7 @@ class RelationshipsAPI(APIClient):
         Yields:
             Union[Relationship, RelationshipList]: yields Relationship one by one if chunk is not specified, else RelationshipList objects.
         """
-        data_set_ids_processed = None
-        if data_set_ids is not None or data_set_external_ids is not None:
-            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
+        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
         filter = self._create_filter(
             source_external_ids=source_external_ids,
@@ -257,9 +256,7 @@ class RelationshipsAPI(APIClient):
                 >>> for relationship in c.relationships:
                 ...     relationship # do something with the relationship
         """
-        data_set_ids_processed = None
-        if data_set_ids is not None or data_set_external_ids is not None:
-            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
+        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
         filter = self._create_filter(
             source_external_ids=source_external_ids,

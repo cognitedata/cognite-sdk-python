@@ -4,6 +4,7 @@ import numbers
 from typing import Dict, Generic, Iterable, List, Optional, Sequence, Tuple, TypeVar, Union, cast, overload
 
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
+from cognite.client.utils._auxiliary import split_into_chunks
 
 T_ID = TypeVar("T_ID", int, str)
 
@@ -86,8 +87,8 @@ class IdentifierSequence:
 
     def chunked(self, chunk_size: int) -> Iterable[IdentifierSequence]:
         return [
-            IdentifierSequence(self._identifiers[i : i + chunk_size], is_singleton=self.is_singleton())
-            for i in range(0, len(self), chunk_size)
+            IdentifierSequence(chunk, is_singleton=self.is_singleton())
+            for chunk in split_into_chunks(self._identifiers, chunk_size)
         ]
 
     def as_dicts(self) -> List[Dict[str, Union[int, str]]]:
@@ -118,8 +119,14 @@ class IdentifierSequence:
 
     @classmethod
     def load(
-        cls, ids: Optional[Union[int, Sequence[int]]] = None, external_ids: Optional[Union[str, Sequence[str]]] = None
+        cls,
+        ids: Optional[Union[int, Sequence[int]]] = None,
+        external_ids: Optional[Union[str, Sequence[str]]] = None,
+        *,
+        id_name: str = "",
     ) -> IdentifierSequence:
+        if id_name and not id_name.endswith("_"):
+            id_name += "_"
         value_passed_as_primitive = False
         all_identifiers: List[Union[int, str]] = []
 
@@ -130,7 +137,7 @@ class IdentifierSequence:
             elif isinstance(ids, Sequence) and not isinstance(ids, str):
                 all_identifiers.extend([int(id_) for id_ in ids])
             else:
-                raise TypeError(f"ids must be of type int or Sequence[int]. Found {type(ids)}")
+                raise TypeError(f"{id_name}ids must be of type int or Sequence[int]. Found {type(ids)}")
 
         if external_ids is not None:
             if isinstance(external_ids, str):
@@ -139,7 +146,9 @@ class IdentifierSequence:
             elif isinstance(external_ids, Sequence):
                 all_identifiers.extend([str(extid) for extid in external_ids])
             else:
-                raise TypeError(f"external_ids must be of type str or Sequence[str]. Found {type(external_ids)}")
+                raise TypeError(
+                    f"{id_name}external_ids must be of type str or Sequence[str]. Found {type(external_ids)}"
+                )
 
         is_singleton = value_passed_as_primitive and len(all_identifiers) == 1
         return cls(identifiers=[Identifier(val) for val in all_identifiers], is_singleton=is_singleton)

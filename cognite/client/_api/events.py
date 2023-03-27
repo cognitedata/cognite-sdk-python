@@ -15,6 +15,7 @@ from cognite.client.data_classes import (
     TimestampRange,
 )
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 
 
 class EventsAPI(APIClient):
@@ -72,15 +73,8 @@ class EventsAPI(APIClient):
         Yields:
             Union[Event, EventList]: yields Event one by one if chunk is not specified, else EventList objects.
         """
-        asset_subtree_ids_processed = None
-        if asset_subtree_ids or asset_subtree_external_ids:
-            asset_subtree_ids_processed = IdentifierSequence.load(
-                asset_subtree_ids, asset_subtree_external_ids
-            ).as_dicts()
-
-        data_set_ids_processed = None
-        if data_set_ids is not None or data_set_external_ids is not None:
-            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
+        asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
+        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
         filter = EventFilter(
             start_time=start_time,
@@ -252,15 +246,8 @@ class EventsAPI(APIClient):
                 >>> for event_list in c.events(chunk_size=2500):
                 ...     event_list # do something with the events
         """
-        asset_subtree_ids_processed = None
-        if asset_subtree_ids or asset_subtree_external_ids:
-            asset_subtree_ids_processed = IdentifierSequence.load(
-                asset_subtree_ids, asset_subtree_external_ids
-            ).as_dicts()
-
-        data_set_ids_processed = None
-        if data_set_ids is not None or data_set_external_ids is not None:
-            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
+        asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
+        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
         if end_time and ("max" in end_time or "min" in end_time) and "isNull" in end_time:
             raise ValueError("isNull cannot be used with min or max values")
