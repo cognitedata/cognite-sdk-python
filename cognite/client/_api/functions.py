@@ -1034,7 +1034,7 @@ class FunctionSchedulesAPI(APIClient):
             id (int): Id of the schedule
 
         Returns:
-            Input data to the associated function or None if not set. This data is passed
+            Optional[Dict]: Input data to the associated function or None if not set. This data is passed
             deserialized into the function through the data argument.
 
         Examples:
