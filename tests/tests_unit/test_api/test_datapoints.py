@@ -432,7 +432,7 @@ class TestDatapointsObject:
         res = Datapoints(id=1, timestamp=[1, 2, 3])._slice(slice(None, 1))
         assert [1] == res.timestamp
 
-    def test_extend(self, cognite_client):
+    def test__extend(self, cognite_client):  # test _extend, not extend
         d0 = Datapoints()
         d1 = Datapoints(id=1, external_id="1", timestamp=[1, 2, 3], value=[1, 2, 3])
         d2 = Datapoints(id=1, external_id="1", timestamp=[4, 5, 6], value=[4, 5, 6])

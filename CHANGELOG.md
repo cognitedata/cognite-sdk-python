@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [5.9.2] - 20-03-23
+### Fixed
+- After calling e.g. `.time_series()` or `.events()` on an `AssetList` instance, the resulting resource list would be missing the lookup tables that allow for quick lookups by ID or external ID through the `.get()` method. Additionally, for future-proofing, the resulting resource list now also correctly has a `CogniteClient` reference.
+
 ## [5.9.1] - 20-03-23
 ### Fixed
 - `FunctionsAPI.call` now also works for clients using auth flow `OAuthInteractive`, `OAuthDeviceCode`, and any user-made subclass of `CredentialProvider`.

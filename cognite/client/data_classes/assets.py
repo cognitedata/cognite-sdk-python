@@ -37,11 +37,11 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
-    T_CogniteResourceList,
 )
 from cognite.client.data_classes.labels import Label, LabelDefinition, LabelFilter
 from cognite.client.data_classes.shared import GeoLocation, GeoLocationFilter, TimestampRange
 from cognite.client.exceptions import CogniteAssetHierarchyError
+from cognite.client.utils._auxiliary import split_into_chunks
 from cognite.client.utils._concurrency import execute_tasks
 from cognite.client.utils._graph import find_all_cycles_with_elements
 from cognite.client.utils._text import DrawTables, shorten
@@ -51,6 +51,7 @@ if TYPE_CHECKING:
 
     from cognite.client import CogniteClient
     from cognite.client.data_classes import EventList, FileMetadataList, SequenceList, TimeSeriesList
+    from cognite.client.data_classes._base import T_CogniteResource, T_CogniteResourceList
 
 
 class AssetAggregate(dict):
@@ -380,28 +381,19 @@ class AssetList(CogniteResourceList):
     def _retrieve_related_resources(
         self, resource_list_class: Type[T_CogniteResourceList], resource_api: Any
     ) -> T_CogniteResourceList:
-        seen = set()
+        seen: Set[int] = set()
+        add_to_seen = seen.add
         lock = threading.Lock()
 
-        def retrieve_and_deduplicate(asset_ids: List[int]) -> CogniteResourceList:
+        def retrieve_and_deduplicate(asset_ids: List[int]) -> List[T_CogniteResource]:
             res = resource_api.list(asset_ids=asset_ids, limit=-1)
-            resources = resource_list_class([])
             with lock:
-                for resource in res:
-                    if resource.id not in seen:
-                        resources.append(resource)
-                        seen.add(resource.id)
-            return resources
+                return [r for r in res if not (r.id in seen or add_to_seen(r.id))]
 
         ids = [a.id for a in self.data]
-        tasks = []
-        for i in range(0, len(ids), self._retrieve_chunk_size):
-            tasks.append({"asset_ids": ids[i : i + self._retrieve_chunk_size]})
+        tasks = [{"asset_ids": chunk} for chunk in split_into_chunks(ids, self._retrieve_chunk_size)]
         res_list = execute_tasks(retrieve_and_deduplicate, tasks, resource_api._config.max_workers).results
-        resources = resource_list_class([])
-        for res in res_list:
-            resources.extend(res)
-        return resources
+        return resource_list_class(list(itertools.chain.from_iterable(res_list)), cognite_client=self._cognite_client)
 
 
 class AssetFilter(CogniteFilter):

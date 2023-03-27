@@ -243,11 +243,38 @@ class TestCogniteResourceList:
         rl_sliced = rl[:]
         assert rl._cognite_client == rl_sliced._cognite_client
 
-    def test_extend(self):
+    def test_extend__no_identifiers(self):
         resource_list = MyResourceList([MyResource(1, 2), MyResource(2, 3)])
         another_resource_list = MyResourceList([MyResource(4, 5), MyResource(6, 7)])
         resource_list.extend(another_resource_list)
-        assert MyResourceList([MyResource(1, 2), MyResource(2, 3), MyResource(4, 5), MyResource(6, 7)]) == resource_list
+
+        expected = MyResourceList([MyResource(1, 2), MyResource(2, 3), MyResource(4, 5), MyResource(6, 7)])
+        assert expected == resource_list
+        assert resource_list._id_to_item == {}
+        assert resource_list._external_id_to_item == {}
+
+    def test_extend__with_identifiers(self):
+        resource_list = MyResourceList([MyResource(id=1, external_id="2"), MyResource(id=2, external_id="3")])
+        another_resource_list = MyResourceList([MyResource(id=4, external_id="5"), MyResource(id=6, external_id="7")])
+        resource_list.extend(another_resource_list)
+
+        expected = MyResourceList(
+            [
+                MyResource(id=1, external_id="2"),
+                MyResource(id=2, external_id="3"),
+                MyResource(id=4, external_id="5"),
+                MyResource(id=6, external_id="7"),
+            ]
+        )
+        assert expected == resource_list
+        assert expected._id_to_item == resource_list._id_to_item
+        assert expected._external_id_to_item == resource_list._external_id_to_item
+
+    def test_extend__fails_with_overlapping_identifiers(self):
+        resource_list = MyResourceList([MyResource(id=1), MyResource(id=2)])
+        another_resource_list = MyResourceList([MyResource(id=2), MyResource(id=6)])
+        with pytest.raises(ValueError, match="^Unable to extend as this would introduce duplicates$"):
+            resource_list.extend(another_resource_list)
 
     def test_len(self):
         resource_list = MyResourceList([MyResource(1, 2), MyResource(2, 3)])
