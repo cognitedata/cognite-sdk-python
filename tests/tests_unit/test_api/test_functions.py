@@ -841,6 +841,15 @@ def mock_schedule_get_data_response(rsps, cognite_client):
     yield rsps
 
 
+@pytest.fixture
+def mock_schedule_no_data_response(rsps, cognite_client):
+    schedule_id = SCHEDULE_WITH_FUNCTION_ID_AND_SESSION["id"]
+    url = full_url(cognite_client, f"/functions/schedules/{schedule_id}/input_data")
+    rsps.add(rsps.GET, url, status=200, json={"id": schedule_id})
+
+    yield rsps
+
+
 class TestFunctionSchedulesAPI:
     def test_retrieve_schedules(self, mock_function_schedules_retrieve_response, cognite_client):
         res = cognite_client.functions.schedules.retrieve(id=SCHEDULE_WITH_FUNCTION_EXTERNAL_ID["id"])
@@ -875,6 +884,7 @@ class TestFunctionSchedulesAPI:
             description="Hi",
         )
         assert isinstance(res, FunctionSchedule)
+        assert res._cognite_client is cognite_client  # make sure the created schedule has client ref
         expected = mock_function_schedules_response.calls[0].response.json()["items"][0]
         expected.pop("when")
         assert expected == res.dump(camel_case=True)
@@ -934,12 +944,16 @@ class TestFunctionSchedulesAPI:
         res = cognite_client.functions.schedules.delete(id=8012683333564363)
         assert res is None
 
-    def test_schedule_get_data(self, mock_schedule_get_data_response, cognite_client):
+    def test_schedule_get_data__function_has_data(self, mock_schedule_get_data_response, cognite_client):
         res = cognite_client.functions.schedules.get_input_data(id=8012683333564363)
 
         assert isinstance(res, dict)
         expected = mock_schedule_get_data_response.calls[0].response.json()["data"]
         assert res == expected
+
+    def test_schedule_get_data__function_is_missing_data(self, mock_schedule_no_data_response, cognite_client):
+        res = cognite_client.functions.schedules.get_input_data(id=8012683333564363)
+        assert res is None
 
 
 class TestFunctionCallsAPI:
