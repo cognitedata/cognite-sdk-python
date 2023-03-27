@@ -2,7 +2,21 @@ from __future__ import annotations
 
 import json
 from collections import UserList
-from typing import TYPE_CHECKING, Any, Collection, Dict, Generic, List, Optional, Sequence, Type, TypeVar, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Collection,
+    Dict,
+    Generic,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 from cognite.client import utils
 from cognite.client.exceptions import CogniteMissingClientError
@@ -212,6 +226,10 @@ class CogniteResourceList(UserList):
     def __str__(self) -> str:
         item = convert_time_attributes_to_datetime(self.dump())
         return json.dumps(item, default=utils._auxiliary.json_dump_default, indent=4)
+
+    def extend(self, other: Iterable[T_CogniteResource]) -> None:
+        # TODO: We inherit a lot from UserList that we don't actually support...
+        raise NotImplementedError
 
     def dump(self, camel_case: bool = False) -> List[Dict[str, Any]]:
         """Dump the instance into a json serializable Python data type.
