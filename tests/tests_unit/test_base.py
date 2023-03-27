@@ -250,8 +250,8 @@ class TestCogniteResourceList:
 
         expected = MyResourceList([MyResource(1, 2), MyResource(2, 3), MyResource(4, 5), MyResource(6, 7)])
         assert expected == resource_list
-        assert expected._id_to_item == resource_list._id_to_item
-        assert expected._external_id_to_item == resource_list._external_id_to_item
+        assert resource_list._id_to_item == {}
+        assert resource_list._external_id_to_item == {}
 
     def test_extend__with_identifiers(self):
         resource_list = MyResourceList([MyResource(id=1, external_id="2"), MyResource(id=2, external_id="3")])
