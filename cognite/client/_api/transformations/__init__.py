@@ -53,10 +53,19 @@ class TransformationsAPI(APIClient):
                 >>>     ),
                 >>>     Transformation(
                 >>>         name="transformation2",
-                >>>         destination=TransformationDestination.raw("myDatabase", "myTable"),
+                >>>         destination=TransformationDestination.raw("myDatabase", "myTable")
                 >>>     ),
+                >>>     Transformation(
+                >>>         name="transformation3",
+                >>>         destination=TransformationDestination.instance_nodes("view", "instance_space")
+                >>>     ),
+                >>>     Transformation(
+                >>>         name="transformation4",
+                >>>         destination=TransformationDestination.instance_edges("view", "instance_space","edge_type")
+                >>>     )
                 >>> ]
                 >>> res = c.transformations.create(transformations)
+
         """
         if isinstance(transformation, Sequence):
             sessions: Dict[str, NonceCredentials] = {}
