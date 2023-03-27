@@ -2,21 +2,7 @@ from __future__ import annotations
 
 import json
 from collections import UserList
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Collection,
-    Dict,
-    Generic,
-    Iterable,
-    List,
-    Optional,
-    Sequence,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Collection, Dict, Generic, List, Optional, Sequence, Type, TypeVar, Union, cast
 
 from cognite.client import utils
 from cognite.client.exceptions import CogniteMissingClientError
@@ -227,9 +213,15 @@ class CogniteResourceList(UserList):
         item = convert_time_attributes_to_datetime(self.dump())
         return json.dumps(item, default=utils._auxiliary.json_dump_default, indent=4)
 
-    def extend(self, other: Iterable[T_CogniteResource]) -> None:
-        # TODO: We inherit a lot from UserList that we don't actually support...
-        raise NotImplementedError
+    # TODO: We inherit a lot from UserList that we don't actually support...
+    def extend(self, other: Collection[Any]) -> None:  # type: ignore [override]
+        other_res_list = type(self)(other)  # See if we can accept the types
+        if set(self._id_to_item).isdisjoint(other_res_list._id_to_item):
+            super().extend(other)
+            self._external_id_to_item.update(other_res_list._external_id_to_item)
+            self._id_to_item.update(other_res_list._id_to_item)
+        else:
+            raise ValueError("Unable to extend as this would introduce duplicates")
 
     def dump(self, camel_case: bool = False) -> List[Dict[str, Any]]:
         """Dump the instance into a json serializable Python data type.
