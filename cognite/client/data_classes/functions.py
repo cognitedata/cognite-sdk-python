@@ -242,7 +242,7 @@ class FunctionSchedule(CogniteResource):
         Retrieve the input data to the associated function.
 
         Returns:
-            Input data to the associated function or None if not set. This data is passed
+            Optional[Dict]: Input data to the associated function or None if not set. This data is passed
             deserialized into the function through the data argument.
         """
         return self._cognite_client.functions.schedules.get_input_data(id=self.id)
