@@ -4,7 +4,7 @@ import numbers
 import re
 import time
 from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union, overload
 
 UNIT_IN_MS_WITHOUT_WEEK = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000}
 UNIT_IN_MS = {**UNIT_IN_MS_WITHOUT_WEEK, "w": 604800000}
@@ -125,21 +125,28 @@ def _convert_time_attributes_in_dict(item: Dict) -> Dict:
     for k, v in item.items():
         if k in TIME_ATTRIBUTES:
             try:
-                v = str(datetime.utcfromtimestamp(v / 1000))
-            except (ValueError, OSError):
+                v = str(ms_to_datetime(v).replace(tzinfo=None))
+            except ValueError:
                 pass
         new_item[k] = v
     return new_item
+
+
+@overload
+def convert_time_attributes_to_datetime(item: Dict) -> Dict:
+    ...
+
+
+@overload
+def convert_time_attributes_to_datetime(item: List[Dict]) -> List[Dict]:
+    ...
 
 
 def convert_time_attributes_to_datetime(item: Union[Dict, List[Dict]]) -> Union[Dict, List[Dict]]:
     if isinstance(item, dict):
         return _convert_time_attributes_in_dict(item)
     if isinstance(item, list):
-        new_items = []
-        for el in item:
-            new_items.append(_convert_time_attributes_in_dict(el))
-        return new_items
+        return list(map(_convert_time_attributes_in_dict, item))
     raise TypeError("item must be dict or list of dicts")
 
 
