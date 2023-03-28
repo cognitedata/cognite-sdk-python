@@ -490,7 +490,8 @@ class SequencesAPI(APIClient):
 class SequencesDataAPI(APIClient):
     _DATA_PATH = "/sequences/data"
 
-    def _override_request_limits(self) -> None:
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
         self._SEQ_POST_LIMIT_ROWS = 10000
         self._SEQ_POST_LIMIT_VALUES = 100000
         self._SEQ_RETRIEVE_LIMIT = 10000

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
 import cognite.client.utils._time
 from cognite.client import utils
@@ -12,11 +12,15 @@ from cognite.client.data_classes import Datapoints, DatapointsList, TimeSeries
 if TYPE_CHECKING:
     import sympy
 
+    from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
+
 
 class SyntheticDatapointsAPI(APIClient):
     _RESOURCE_PATH = "/timeseries/synthetic"
 
-    def _override_request_limits(self) -> None:
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
         self._DPS_LIMIT_SYNTH = 10_000
 
     def query(

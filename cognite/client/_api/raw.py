@@ -297,7 +297,8 @@ class RawTablesAPI(APIClient):
 class RawRowsAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs/{}/tables/{}/rows"
 
-    def _override_request_limits(self) -> None:
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
         self._CREATE_LIMIT = 5000
         self._LIST_LIMIT = 10000
 

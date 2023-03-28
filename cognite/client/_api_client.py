@@ -34,7 +34,7 @@ from requests.structures import CaseInsensitiveDict
 
 from cognite.client import utils
 from cognite.client._http_client import HTTPClient, HTTPClientConfig, get_global_requests_session
-from cognite.client.config import ClientConfig, global_config
+from cognite.client.config import global_config
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteResource,
@@ -49,6 +49,7 @@ from cognite.client.utils._text import convert_all_keys_to_camel_case, shorten, 
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
 
 log = logging.getLogger("cognite-sdk")
 
@@ -86,7 +87,6 @@ class APIClient:
         self._RETRIEVE_LIMIT = 1000
         self._DELETE_LIMIT = 1000
         self._UPDATE_LIMIT = 1000
-        self._override_request_limits()
 
     def _init_http_clients(self) -> None:
         session = get_global_requests_session()
@@ -114,9 +114,6 @@ class APIClient:
             ),
             session=session,
         )
-
-    def _override_request_limits(self) -> None:
-        """Allow sub-APIs to more easily override specific limits without the full super().__init__ dance"""
 
     def _delete(
         self, url_path: str, params: Optional[Dict[str, Any]] = None, headers: Optional[Dict[str, Any]] = None

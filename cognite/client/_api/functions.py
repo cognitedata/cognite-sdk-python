@@ -78,9 +78,7 @@ class FunctionsAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self.calls = FunctionCallsAPI(config, api_version, cognite_client)
         self.schedules = FunctionSchedulesAPI(config, api_version, cognite_client)
-
-    def _override_request_limits(self) -> None:
-        # variable used to guarantee all items are returned when list(limit) is None, inf or -1.
+        # Variable used to guarantee all items are returned when list(limit) is None, inf or -1.
         self._LIST_LIMIT_CEILING = 10_000
 
     def create(
@@ -861,7 +859,8 @@ class FunctionSchedulesAPI(APIClient):
     _RESOURCE_PATH = "/functions/schedules"
     _LIST_CLASS = FunctionSchedulesList
 
-    def _override_request_limits(self) -> None:
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
         self._LIST_LIMIT_CEILING = 10_000
 
     def retrieve(self, id: int) -> Union[FunctionSchedule, FunctionSchedulesList, None]:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterator, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence, Union, cast
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import LIST_LIMIT_DEFAULT
@@ -14,11 +14,16 @@ from cognite.client.data_classes import (
 )
 from cognite.client.utils._identifier import IdentifierSequence
 
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
+
 
 class DataSetsAPI(APIClient):
     _RESOURCE_PATH = "/datasets"
 
-    def _override_request_limits(self) -> None:
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
         self._CREATE_LIMIT = 10
 
     def __call__(

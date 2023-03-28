@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from math import ceil
-from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, Type, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Tuple, Type, TypeVar, Union, overload
 
 from requests import Response
 
@@ -17,13 +17,18 @@ from cognite.client.data_classes.contextualization import (
 from cognite.client.exceptions import CogniteAPIError, CogniteMissingClientError
 from cognite.client.utils._text import to_camel_case
 
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
+
 _T = TypeVar("_T")
 
 
 class DiagramsAPI(APIClient):
     _RESOURCE_PATH = "/context/diagram"
 
-    def _override_request_limits(self) -> None:
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
         # https://docs.cognite.com/api/playground/#tag/Engineering-diagrams/operation/diagramDetect
         self._DETECT_API_FILE_LIMIT = 50
         # https://docs.cognite.com/api/playground/#tag/Engineering-diagrams/operation/diagramDetectMultipleResults

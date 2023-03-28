@@ -398,7 +398,8 @@ class SessionsAPI(APIClient):
     _LIST_CLASS = SessionList
     _RESOURCE_PATH = "/sessions"
 
-    def _override_request_limits(self) -> None:
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
         self._LIST_LIMIT = 100
 
     def create(self, client_credentials: Optional[ClientCredentials] = None) -> CreatedSession:
