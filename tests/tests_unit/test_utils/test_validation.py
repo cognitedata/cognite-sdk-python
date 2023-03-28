@@ -5,7 +5,6 @@ import pytest
 from cognite.client.utils._validation import (
     process_asset_subtree_ids,
     process_data_set_ids,
-    process_function_ids,
     validate_user_input_dict_with_identifier,
 )
 
@@ -50,8 +49,8 @@ class TestValidateUserInputDictWithIdentifier:
             validate_user_input_dict_with_identifier(dct, required_keys=keys)
 
 
-process_fns = process_function_ids, process_data_set_ids, process_asset_subtree_ids
-process_fns_names = "function", "data_set", "asset_subtree"
+process_fns = process_data_set_ids, process_asset_subtree_ids
+process_fns_names = "data_set", "asset_subtree"
 
 
 class TestProcessIdentifiers:
