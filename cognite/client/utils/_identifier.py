@@ -40,6 +40,14 @@ class Identifier(Generic[T_ID]):
     def as_primitive(self) -> T_ID:
         return self.__value
 
+    @property
+    def is_id(self) -> bool:
+        return isinstance(self.as_primitive(), int)
+
+    @property
+    def is_external_id(self) -> bool:
+        return isinstance(self.as_primitive(), str)
+
     def as_dict(self, camel_case: bool = True) -> Dict[str, T_ID]:
         return {self.name(camel_case): self.__value}
 

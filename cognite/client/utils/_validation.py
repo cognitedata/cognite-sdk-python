@@ -39,6 +39,5 @@ def _process_identifiers(
     return IdentifierSequence.load(ids, external_ids, id_name=id_name).as_dicts()
 
 
-process_function_ids = functools.partial(_process_identifiers, id_name="function")
 process_data_set_ids = functools.partial(_process_identifiers, id_name="data_set")
 process_asset_subtree_ids = functools.partial(_process_identifiers, id_name="asset_subtree")
