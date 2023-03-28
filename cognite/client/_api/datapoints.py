@@ -980,6 +980,23 @@ class DatapointsAPI(APIClient):
         freq = cast(str, granularity).replace("m", "T")
         return df.reindex(pd.date_range(start=start, end=end, freq=freq, inclusive="left"))
 
+    def aggregate_to_timezone_dataframe(
+        self,
+        *,
+        id: Union[None, int, Dict[str, Any], Sequence[Union[int, Dict[str, Any]]]] = None,
+        external_id: Union[None, str, Dict[str, Any], Sequence[Union[str, Dict[str, Any]]]] = None,
+        start: Union[int, str, datetime, None],
+        end: Union[int, str, datetime, None],
+        aggregates: List[Literal["average", "sum"]],
+        granularity: str,
+        timezone: str,
+        ignore_unknown_ids: bool = False,
+        include_aggregate_name: bool = False,
+        include_granularity_name: bool = False,
+        column_names: Literal["id", "external_id"] = "external_id",
+    ) -> pd.DataFrame:
+        raise NotImplementedError()
+
     def retrieve_latest(
         self,
         id: Union[int, LatestDatapointQuery, List[Union[int, LatestDatapointQuery]]] = None,
