@@ -45,6 +45,7 @@ class TransformationsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import Transformation, TransformationDestination
+                >>> from cognite.client.data_classes.transformations.common import ViewInfo, EdgeType
                 >>> c = CogniteClient()
                 >>> transformations = [
                 >>>     Transformation(
@@ -55,14 +56,21 @@ class TransformationsAPI(APIClient):
                 >>>         name="transformation2",
                 >>>         destination=TransformationDestination.raw("myDatabase", "myTable")
                 >>>     ),
-                >>>     Transformation(
-                >>>         name="transformation3",
-                >>>         destination=TransformationDestination.instance_nodes("view", "instance_space")
-                >>>     ),
-                >>>     Transformation(
-                >>>         name="transformation4",
-                >>>         destination=TransformationDestination.instance_edges("view", "instance_space","edge_type")
-                >>>     )
+                >>>      Transformation(
+                >>>      name="transformation3",
+                >>>      view = ViewInfo(space="TypeSpace", external_id="TypeExtId", version="version"),
+                >>>      destination=TransformationDestination.instance_nodes(view, "InstanceSpace")
+                >>>      ),
+                >>>      Transformation(
+                >>>      name="transformation4",
+                >>>      view = ViewInfo(space="TypeSpace", external_id="TypeExtId", version="version"),
+                >>>      destination=TransformationDestination.instance_edges(view, "InstanceSpace")
+                >>>      ),
+                >>>      Transformation(
+                >>>      name="transformation5",
+                >>>      edge_type = EdgeType(space="TypeSpace", external_id="TypeExtId"),
+                >>>      destination=TransformationDestination.instance_edges(edge_type,"InstanceSpace")
+                >>>      ),
                 >>> ]
                 >>> res = c.transformations.create(transformations)
 
