@@ -16,6 +16,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from cognite.client import CogniteClient
 from cognite.client.data_classes import (
     Datapoints,
     DatapointsArray,
@@ -82,6 +83,8 @@ def all_test_time_series(cognite_client):
             f"{prefix} 114: 1mill dps, random distribution, 1950-2020, numeric",
             f"{prefix} 115: 1mill dps, random distribution, 1950-2020, string",
             f"{prefix} 116: 5mill dps, 2k dps (.1s res) burst per day, 2000-01-01 12:00:00 - 2013-09-08 12:03:19.900, numeric",
+            f"{prefix} 119: hourly normally distributed (0,1) data, 2020-2024 numeric",
+            f"{prefix} 120: minute normally distributed (0,1) data, 2023-01-01 00:00:00 - 2023-12-31 23:59:59, numeric",
         ]
     )
 
@@ -109,6 +112,16 @@ def one_mill_dps_ts(all_test_time_series):
 @pytest.fixture
 def ms_bursty_ts(all_test_time_series):
     return all_test_time_series[115]
+
+
+@pytest.fixture
+def hourly_normal_dist(all_test_time_series) -> TimeSeries:
+    return all_test_time_series[116]
+
+
+@pytest.fixture
+def minutely_normal_dist(all_test_time_series) -> TimeSeries:
+    return all_test_time_series[117]
 
 
 @pytest.fixture(scope="session")
@@ -990,6 +1003,46 @@ class TestRetrieveAggregateDatapointsAPI:
             assert len(res_lst.get(id=ts_string.id)) == 2
             assert len(res_lst.get(external_id=ts_numeric.external_id)) == 3
             assert len(res_lst.get(external_id=ts_string.external_id)) == 2
+
+
+@pytest.mark.parametrize(
+    "raw_granularity, granularity, aggregation, timezone",
+    (
+        ("hourly", "1d", "average", "Europe/Oslo"),
+        ("hourly", "1d", "sum", "Europe/Oslo"),
+        # ("hourly", "1month", "average", "Europe/Oslo"),
+        # ("hourly", "1month", "sum", "Europe/Oslo"),
+        # ("hourly", "1year", "average", "Europe/Oslo"),
+        # ("hourly", "1year", "sum", "Europe/Oslo"),
+    ),
+)
+def test_aggregate_timezone(
+    raw_granularity: str,
+    granularity: str,
+    aggregation: str,
+    timezone: str,
+    cognite_client: CogniteClient,
+    hourly_normal_dist: TimeSeries,
+    minutely_normal_dist: TimeSeries,
+):
+    # Arrange
+    time_series = {"hourly": hourly_normal_dist, "minutely": minutely_normal_dist}[raw_granularity]
+    raw_df = cognite_client.time_series.data.retrieve_dataframe(external_id=time_series.external_id)
+    pandas_agg = {"average": "mean"}.get(aggregation, aggregation)
+    pandas_gran = {"1d": "1D"}.get(granularity, granularity)
+    # Note pandas handles timezones correctly, which is why we use it for reference.
+    pandas_aggregate = raw_df.tz_localize("UTC").tz_convert(timezone).resample(pandas_gran).agg(pandas_agg)
+
+    # Act
+    cdf_aggregate = cognite_client.time_series.data.aggregate_to_timezone_dataframe(
+        external_id=time_series.external_id,
+        aggregates=aggregation,
+        granularity=granularity,
+        timezone=timezone,
+    )
+
+    # Assert
+    pd.testing.assert_extension_array_equal(pandas_aggregate.values, cdf_aggregate.values)
 
 
 class TestRetrieveMixedRawAndAgg:
