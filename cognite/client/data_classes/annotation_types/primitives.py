@@ -25,9 +25,9 @@ class VisionResource(CogniteResource):
         for k, v in vars(self).items():
             if v is None or k.startswith("_"):
                 continue
-            if isinstance(v, list) and all(hasattr(item, "dump") for item in v):
+            if isinstance(v, list) and all(isinstance(item, VisionResource) for item in v):
                 v = [item.dump(camel_case) for item in v]
-            elif hasattr(v, "dump"):
+            elif isinstance(v, VisionResource):
                 v = v.dump(camel_case)
             dumped[k] = v
 
