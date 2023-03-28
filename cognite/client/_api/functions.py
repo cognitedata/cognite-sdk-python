@@ -34,7 +34,8 @@ from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.functions import FunctionCallsFilter, FunctionsStatus
 from cognite.client.exceptions import CogniteAuthError
 from cognite.client.utils._auxiliary import is_unlimited
-from cognite.client.utils._identifier import IdentifierSequence, SingletonIdentifierSequence
+from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._validation import process_function_ids
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -48,25 +49,22 @@ REQUIREMENTS_REG = re.compile(r"(\[\/?requirements\]){1}$", flags=re.M)  # Match
 UNCOMMENTED_LINE_REG = re.compile(r"^[^\#]]*.*")
 
 
-def _get_function_internal_id(_cognite_client: CogniteClient, identifier: SingletonIdentifierSequence) -> int:
-    id_object = identifier[0]
-    id_dict = id_object.as_dict()
-
+def _get_function_internal_id(cognite_client: CogniteClient, id_dict: Dict[str, int | str]) -> int:
     if "id" in id_dict:
-        return id_object.as_primitive()
+        return cast(int, id_dict["id"])
 
     if "externalId" in id_dict:
-        function = _cognite_client.functions.retrieve(external_id=id_object.as_primitive())
+        function = cognite_client.functions.retrieve(external_id=cast(str, id_dict["externalId"]))
         if function:
             return function.id
 
-    raise ValueError(f'Function with external ID "{id_object.as_primitive()}" is not found')
+    raise ValueError(f'Function with external ID "{id_dict["externalId"]}" is not found')
 
 
-def _get_function_identifier(id: Optional[int], external_id: Optional[str]) -> SingletonIdentifierSequence:
-    identifier = IdentifierSequence.load(ids=id, external_ids=external_id)
-    if identifier.is_singleton():
-        return identifier.as_singleton()
+def _get_function_identifier(id: Optional[int], external_id: Optional[str]) -> Dict[str, int | str]:
+    processed_ids = process_function_ids(id, external_id)
+    if processed_ids and len(processed_ids) == 1:
+        return processed_ids[0]
     raise AssertionError("Exactly one of function_id and function_external_id must be specified")
 
 
@@ -389,7 +387,7 @@ class FunctionsAPI(APIClient):
                 >>> call = func.call()
         """
         identifier = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
-        id = _get_function_internal_id(self._cognite_client, identifier)
+        id = _get_function_internal_id(self._cognite_client, identifier[0].as_dict())
         nonce = _create_session_and_return_nonce(self._cognite_client)
 
         if data is None:
@@ -726,8 +724,8 @@ class FunctionCallsAPI(APIClient):
                 >>> calls = func.list_calls()
 
         """
-        identifier = _get_function_identifier(function_id, function_external_id)
-        function_id = _get_function_internal_id(self._cognite_client, identifier)
+        id_dct = _get_function_identifier(function_id, function_external_id)
+        function_id = _get_function_internal_id(self._cognite_client, id_dct)
         filter = FunctionCallsFilter(
             status=status, schedule_id=schedule_id, start_time=start_time, end_time=end_time
         ).dump(camel_case=True)
@@ -770,8 +768,8 @@ class FunctionCallsAPI(APIClient):
                 >>> call = func.retrieve_call(id=2)
 
         """
-        identifier = _get_function_identifier(function_id, function_external_id)
-        function_id = _get_function_internal_id(self._cognite_client, identifier)
+        id_dct = _get_function_identifier(function_id, function_external_id)
+        function_id = _get_function_internal_id(self._cognite_client, id_dct)
 
         resource_path = f"/functions/{function_id}/calls"
         identifiers = IdentifierSequence.load(ids=call_id).as_singleton()
@@ -812,8 +810,8 @@ class FunctionCallsAPI(APIClient):
                 >>> response = call.get_response()
 
         """
-        identifier = _get_function_identifier(function_id, function_external_id)
-        function_id = _get_function_internal_id(self._cognite_client, identifier)
+        id_dct = _get_function_identifier(function_id, function_external_id)
+        function_id = _get_function_internal_id(self._cognite_client, id_dct)
         url = f"/functions/{function_id}/calls/{call_id}/response"
         res = self._get(url)
         return res.json().get("response")
@@ -847,8 +845,8 @@ class FunctionCallsAPI(APIClient):
                 >>> logs = call.get_logs()
 
         """
-        identifier = _get_function_identifier(function_id, function_external_id)
-        function_id = _get_function_internal_id(self._cognite_client, identifier)
+        id_dct = _get_function_identifier(function_id, function_external_id)
+        function_id = _get_function_internal_id(self._cognite_client, id_dct)
 
         url = f"/functions/{function_id}/calls/{call_id}/logs"
         res = self._get(url)
