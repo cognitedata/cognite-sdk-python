@@ -1,9 +1,11 @@
+import sys
 import time
+from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
 
-from cognite.client import CogniteClient
+from cognite.client._api.time_series import TimeSeriesAPI
 from cognite.client.data_classes import TimeSeries
 from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS, UNIT_IN_MS
 
@@ -27,6 +29,8 @@ NAMES = [
         "114: 1mill dps, random distribution, 1950-2020, numeric",
         "115: 1mill dps, random distribution, 1950-2020, string",
         "116: 5mill dps, 2k dps (.1s res) burst per day, 2000-01-01 12:00:00 - 2013-09-08 12:03:19.900, numeric",
+        "119: hourly normally distributed (0,1) data, 2020-2024 numeric",
+        "120: minute normally distributed (0,1) data, 2023-01-01 00:00:00 - 2023-12-31 23:59:59, numeric",
     ]
 ]
 SPARSE_NAMES = [
@@ -39,6 +43,7 @@ def create_dense_rand_dist_ts(xid, seed, n=1_000_000):
     np.random.seed(seed)
     idx = np.sort(
         np.random.randint(
+            # Windows throws a ValueError: low is out of bounds for int32 here.
             pd.Timestamp("1950-01-01").value // int(1e6),
             pd.Timestamp("2020-01-01").value // int(1e6),
             n,
@@ -55,9 +60,10 @@ def create_dense_rand_dist_ts(xid, seed, n=1_000_000):
 
 
 def create_bursty_ts(xid, offset):
-    idxs = []
-    for day in pd.date_range(start="2000", periods=5000, freq="D"):
-        idxs.append(pd.date_range(start=day + pd.Timedelta("12h"), periods=2000, freq="100ms"))
+    idxs = [
+        pd.date_range(start=day + pd.Timedelta("12h"), periods=2000, freq="100ms")
+        for day in pd.date_range(start="2000", periods=5000, freq="D")
+    ]
     idxs = np.concatenate(idxs)
     return pd.DataFrame({xid: idxs.astype(np.int64) // int(1e6) + offset}, index=idxs)
 
@@ -84,7 +90,7 @@ def create_edge_case_time_series(ts_api):
     print(f"Created {len(ts_lst)} sparse ts with data")
 
 
-def create_dense_time_series(ts_api):
+def create_dense_time_series() -> Tuple[List[TimeSeries], List[pd.DataFrame]]:
     ts_add = (ts_lst := []).append
     df_add = (df_lst := []).append
     ts_add(TimeSeries(name=NAMES[0], external_id=NAMES[0], is_string=False, metadata={"offset": 1, "delta": 10}))
@@ -176,25 +182,27 @@ def create_dense_time_series(ts_api):
         df_add(pd.DataFrame({NAMES[i + 4]: arr + i + 5}, index=millisec_idx))
         i += 5
 
-    ts_add(
-        TimeSeries(
-            name=NAMES[113],
-            external_id=NAMES[113],
-            is_string=False,
-            metadata={"offset": "n/a", "delta": "uniform random"},
+    if sys.platform != "win32":
+        # Windows does not support the low bound used for the index in create_dense_rand_dist_ts
+        ts_add(
+            TimeSeries(
+                name=NAMES[113],
+                external_id=NAMES[113],
+                is_string=False,
+                metadata={"offset": "n/a", "delta": "uniform random"},
+            )
         )
-    )
-    df_add(create_dense_rand_dist_ts(NAMES[113], seed=42))
+        df_add(create_dense_rand_dist_ts(NAMES[113], seed=42))
 
-    ts_add(
-        TimeSeries(
-            name=NAMES[114],
-            external_id=NAMES[114],
-            is_string=True,
-            metadata={"offset": "n/a", "delta": "uniform random"},
+        ts_add(
+            TimeSeries(
+                name=NAMES[114],
+                external_id=NAMES[114],
+                is_string=True,
+                metadata={"offset": "n/a", "delta": "uniform random"},
+            )
         )
-    )
-    df_add(create_dense_rand_dist_ts(NAMES[114], seed=43).astype(str))
+        df_add(create_dense_rand_dist_ts(NAMES[114], seed=43).astype(str))
 
     ts_add(
         TimeSeries(
@@ -206,10 +214,50 @@ def create_dense_time_series(ts_api):
     )
     df_add(create_bursty_ts(NAMES[115], 116))
 
+    ts_add(
+        TimeSeries(name=NAMES[116], external_id=NAMES[116], is_string=False, metadata={"offset": "n/a", "delta": "1H"})
+    )
+    hourly_idx = pd.date_range(start="2020-01-01", end="2024-12-31 23:59:59", freq="1H", tz="UTC")
+    df_add(pd.DataFrame(index=hourly_idx, data=np.random.normal(0, 1, len(hourly_idx)), columns=[NAMES[116]]))
+
+    ts_add(
+        TimeSeries(name=NAMES[117], external_id=NAMES[117], is_string=False, metadata={"offset": "n/a", "delta": "1M"})
+    )
+    minutely_idx = pd.date_range(start="2023-01-01", end="2023-12-31 23:59:59", freq="1min", tz="UTC")
+    df_add(pd.DataFrame(index=minutely_idx, data=np.random.normal(0, 1, len(minutely_idx)), columns=[NAMES[117]]))
+    return ts_lst, df_lst
+
+
+def create_if_not_exists(ts_api: TimeSeriesAPI, ts_list: List[TimeSeries], df_lst: List[pd.DataFrame]):
+    existing = {
+        t.external_id
+        for t in ts_api.retrieve_multiple(external_ids=[t.external_id for t in ts_list], ignore_unknown_ids=True)
+    }
+    if to_create := [t for t in ts_list if t.external_id not in existing]:
+        created = ts_api.create(to_create)
+        print(f"Created {len(created)} ts")
+        time.sleep(5)
+    else:
+        print("No timeseries to create")
+
+    # Concat consumes too much RAM, loop through dfs:
+    inserted = 0
+    for df in df_lst:
+        if df.columns[0] in existing:
+            continue
+        ts_api.data.insert_dataframe(
+            df,
+            external_id_headers=True,
+            dropna=True,
+        )
+        inserted += 1
+    print(f"Inserted {inserted} series of datapoints")
+
+
+def create_time_series(ts_api, ts_lst: List[TimeSeries], df_lst: List[pd.DataFrame]):
     ts_api.create(ts_lst)
     print(f"Created {len(ts_lst)} ts")
     time.sleep(5)
-
     # Concat consumes too much RAM, loop through dfs:
     for df in df_lst:
         ts_api.data.insert_dataframe(
@@ -222,7 +270,11 @@ def create_dense_time_series(ts_api):
 
 if __name__ == "__main__":
     # To avoid accidental runs, please provide a valid config to CogniteClient:
-    client = CogniteClient(...)
+    from scripts import local_client
+
+    client = local_client.get_interactive()
+
     delete_all_time_series(client.time_series)
-    create_dense_time_series(client.time_series)
+    ts_lst, df_lst = create_dense_time_series()
+    create_if_not_exists(client.time_series, ts_lst, df_lst)
     create_edge_case_time_series(client.time_series)

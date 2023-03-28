@@ -49,3 +49,5 @@ test-report.xml
 # tox
 .tox/
 .python-version
+
+scripts/local_client.py
