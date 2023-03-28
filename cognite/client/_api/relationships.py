@@ -59,8 +59,8 @@ class RelationshipsAPI(APIClient):
         source_types: Sequence[str] = None,
         target_external_ids: Sequence[str] = None,
         target_types: Sequence[str] = None,
-        data_set_ids: Sequence[int] = None,
-        data_set_external_ids: Sequence[str] = None,
+        data_set_ids: Union[int, Sequence[int]] = None,
+        data_set_external_ids: Union[str, Sequence[str]] = None,
         start_time: Dict[str, int] = None,
         end_time: Dict[str, int] = None,
         confidence: Dict[str, int] = None,
@@ -82,8 +82,8 @@ class RelationshipsAPI(APIClient):
             source_types (Sequence[str]): Include relationships that have any of these values in their source Type field
             target_external_ids (Sequence[str]): Include relationships that have any of these values in their target External Id field
             target_types (Sequence[str]): Include relationships that have any of these values in their target Type field
-            data_set_ids (Sequence[int]): Return only relationships in the specified data sets with these ids.
-            data_set_external_ids (Sequence[str]): Return only relationships in the specified data sets with these external ids.
+            data_set_ids (Union[int, Sequence[int]]): Return only relationships in the specified data set(s) with this id / these ids.
+            data_set_external_ids (Union[str, Sequence[str]]): Return only relationships in the specified data set(s) with this external id / these external ids.
             start_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
             end_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
             confidence (Dict[str, int]): Range to filter the field for (inclusive).
@@ -95,7 +95,7 @@ class RelationshipsAPI(APIClient):
             partitions (int): Retrieve relationships in parallel using this number of workers. Also requires `limit=None` to be passed.
 
         Yields:
-            Union[Relationship, RelationshipList]: yields Relationship one by one if chunk is not specified, else RelationshipList objects.
+            Union[Relationship, RelationshipList]: yields Relationship one by one if chunk_size is not specified, else RelationshipList objects.
         """
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
@@ -203,8 +203,8 @@ class RelationshipsAPI(APIClient):
         source_types: Sequence[str] = None,
         target_external_ids: Sequence[str] = None,
         target_types: Sequence[str] = None,
-        data_set_ids: Sequence[int] = None,
-        data_set_external_ids: Sequence[str] = None,
+        data_set_ids: Union[int, Sequence[int]] = None,
+        data_set_external_ids: Union[str, Sequence[str]] = None,
         start_time: Dict[str, int] = None,
         end_time: Dict[str, int] = None,
         confidence: Dict[str, int] = None,
@@ -223,8 +223,8 @@ class RelationshipsAPI(APIClient):
             source_types (Sequence[str]): Include relationships that have any of these values in their source Type field
             target_external_ids (Sequence[str]): Include relationships that have any of these values in their target External Id field
             target_types (Sequence[str]): Include relationships that have any of these values in their target Type field
-            data_set_ids (Sequence[int]): Return only relationships in the specified data sets with these ids.
-            data_set_external_ids (Sequence[str]): Return only relationships in the specified data sets with these external ids.
+            data_set_ids (Union[int, Sequence[int]]): Return only relationships in the specified data set(s) with this id / these ids.
+            data_set_external_ids (Union[str, Sequence[str]]): Return only relationships in the specified data set(s) with this external id / these external ids.
             start_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
             end_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
             confidence (Dict[str, int]): Range to filter the field for (inclusive).

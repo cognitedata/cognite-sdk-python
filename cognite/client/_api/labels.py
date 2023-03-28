@@ -28,8 +28,8 @@ class LabelsAPI(APIClient):
         external_id_prefix: str = None,
         limit: int = None,
         chunk_size: int = None,
-        data_set_ids: Sequence[int] = None,
-        data_set_external_ids: Sequence[str] = None,
+        data_set_ids: Union[int, Sequence[int]] = None,
+        data_set_external_ids: Union[str, Sequence[str]] = None,
     ) -> Union[Iterator[LabelDefinition], Iterator[LabelDefinitionList]]:
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
@@ -49,16 +49,16 @@ class LabelsAPI(APIClient):
         self,
         name: str = None,
         external_id_prefix: str = None,
-        data_set_ids: Sequence[int] = None,
-        data_set_external_ids: Sequence[str] = None,
+        data_set_ids: Union[int, Sequence[int]] = None,
+        data_set_external_ids: Union[str, Sequence[str]] = None,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> LabelDefinitionList:
         """`List Labels <https://docs.cognite.com/api/v1/#operation/listLabels>`_
 
         Args:
             name (str): returns the label definitions matching that name
-            data_set_ids (Sequence[int]): return only labels in the data sets with these ids.
-            data_set_external_ids (Sequence[str]): return only labels in the data sets with these external ids.
+            data_set_ids (Union[int, Sequence[int]]): return only labels in the data sets with this id / these ids.
+            data_set_external_ids (Union[str, Sequence[str]]): return only labels in the data sets with this external id / these external ids.
             external_id_prefix (str): filter label definitions with external ids starting with the prefix specified
             limit (int, optional): Maximum number of label definitions to return.
 
