@@ -855,14 +855,12 @@ class TestFunctionSchedulesAPI:
         res = cognite_client.functions.schedules.retrieve(id=SCHEDULE_WITH_FUNCTION_EXTERNAL_ID["id"])
         assert isinstance(res, FunctionSchedule)
         expected = mock_function_schedules_retrieve_response.calls[0].response.json()["items"][0]
-        expected.pop("when")
         assert expected == res.dump(camel_case=True)
 
     def test_list_schedules(self, mock_filter_function_schedules_response, cognite_client):
         res = cognite_client.functions.schedules.list()
         assert isinstance(res, FunctionSchedulesList)
         expected = mock_filter_function_schedules_response.calls[0].response.json()["items"]
-        expected[0].pop("when")
         assert expected == res.dump(camel_case=True)
 
     def test_list_schedules_with_limit(self, mock_filter_function_schedules_response, cognite_client):
