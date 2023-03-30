@@ -884,7 +884,6 @@ class TestFunctionSchedulesAPI:
         assert isinstance(res, FunctionSchedule)
         assert res._cognite_client is cognite_client  # make sure the created schedule has client ref
         expected = mock_function_schedules_response.calls[0].response.json()["items"][0]
-        expected.pop("when")
         assert expected == res.dump(camel_case=True)
 
     def test_create_schedules_with_function_id_and_client_credentials(
@@ -900,7 +899,6 @@ class TestFunctionSchedulesAPI:
 
         assert isinstance(res, FunctionSchedule)
         expected = mock_function_schedules_response_oidc_client_credentials.calls[1].response.json()["items"][0]
-        expected.pop("when")
         assert expected == res.dump(camel_case=True)
 
     def test_create_schedules_with_function_external_id_and_client_credentials_raises(self, cognite_client):
@@ -935,7 +933,6 @@ class TestFunctionSchedulesAPI:
         )
         assert isinstance(res, FunctionSchedule)
         expected = mock_function_schedules_response.calls[0].response.json()["items"][0]
-        expected.pop("when")
         assert expected == res.dump(camel_case=True)
 
     def test_delete_schedules(self, mock_function_schedules_delete_response, cognite_client):
