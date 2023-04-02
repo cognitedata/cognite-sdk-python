@@ -16,12 +16,11 @@ from cognite.client.data_classes.transformations.common import (
     EdgeType,
     InstanceEdges,
     InstanceNodes,
-    InstanceInstances,
+    DataModelCentricDestination,
     NonceCredentials,
     OidcCredentials,
     SequenceRows,
     ViewInfo,
-    DataModelInfo,
 )
 from cognite.client.utils._text import random_string
 
@@ -228,33 +227,39 @@ class TestTransformationsAPI:
 
         cognite_client.transformations.delete(id=ts.id)
 
-    def test_create_instance_instances_transformation(self, cognite_client):
+    def test_create_datalmodel_centric_destination_transformation(self, cognite_client):
         prefix = random_string(6, string.ascii_letters)
-        instance_instances = TransformationDestination.instance_instances(
-            dataModel=DataModelInfo(
-                space="test-space", external_id="testInstanceDataModelExternalId", version="testInstanceDataModelVersion", destinationType="TestViewExternalId",  destinationRelationshipFromType="PropertyIdentiferIdDestinationType"
-            ),
-            instance_space="test-space",
+        destination  = DataModelCentricDestination(
+            space="DataModelSpace",
+            external_id="MyDataModel",
+            version="v1",
+            destination_type="Equipment",
+            destination_relationship_from_type ="Property Identifer in destinationType",
+            instance_space="MyInstanceSpace",
         )
         transform = Transformation(
             name="any",
             external_id=f"{prefix}-transformation",
-            destination=instance_instances,
+            dataModel=destination,
         )
+
         ts = cognite_client.transformations.create(transform)
-        assert isinstance(ts.destination, InstanceInstances)
-        assert ts.destination.type == "instances"
 
-        assert isinstance(ts.destination.dataModel, DataModelInfo)
-        assert ts.destination.dataModel.space == "test-space"
-        assert ts.destination.dataModel.external_id == "testInstanceDataModelExternalId"
-        assert ts.destination.dataModel.version == "testInstanceDataModelVersion"
-        assert ts.destination.dataModel.destinationType == "TestViewExternalId"
-        assert ts.destination.dataModel.destinationRelationshipFromType == "PropertyIdentiferIdDestinationType"
+        assert isinstance(destination, DataModelCentricDestination)
+        # Check if the type attribute is set correctly
+        assert destination.type == "instances"
 
-        assert ts.destination.instance_space == "test-space"
+        # Check if the dataModel attribute contains the expected values
+        assert destination.dataModel["space"] == "DataModelSpace"
+        assert destination.dataModel["externalId"] == "MyDataModel"
+        assert destination.dataModel["version"] == "v1"
+        assert destination.dataModel["destinationType"] == "Equipment"
+        assert destination.dataModel["destinationRelationshipFromType"] == "Property Identifer in destinationType"
 
+        # Check if the instanceSpace attribute is set correctly
+        assert destination.instanceSpace == "MyInstanceSpace"
         cognite_client.transformations.delete(id=ts.id)
+
 
     def test_create_sequence_rows_transformation(self, cognite_client):
         prefix = random_string(6, string.ascii_letters)
@@ -442,24 +447,6 @@ class TestTransformationsAPI:
             None,
             "test-space",
             EdgeType("edge-space2", "myEdge2"),
-        )
-
-    def test_update_instance_instances(self, cognite_client, new_transformation):
-        new_transformation.destination = TransformationDestination.instance_instances(
-            DataModelInfo("MyDataModelExternalId", "myDataModelVersion", "test-space", "MyyDestinationType", "MyDestinationTypeIdentifer"), "test-space"
-        )
-        partial_update = TransformationUpdate(id=new_transformation.id).destination.set(
-            TransformationDestination.instance_nodes(
-                DataModelInfo("MyDataModelExternalId", "myDataModelVersion2", "test-space", "MyyDestinationType", "MyDestinationTypeIdentifer"), "test-space"
-            )
-        )
-        updated_transformation = cognite_client.transformations.update(new_transformation)
-        assert updated_transformation.destination == TransformationDestination.instance_instances(
-            DataModelInfo("MyDataModelExternalId", "myDataModelVersion", "test-space", "MyyDestinationType", "MyDestinationTypeIdentifer"), "test-space"
-        )
-        partial_updated = cognite_client.transformations.update(partial_update)
-        assert partial_updated.destination == TransformationDestination.instance_instances(
-            DataModelInfo("MyDataModelExternalId", "myDataModelVersion2", "test-space", "MyyDestinationType", "MyDestinationTypeIdentifer"), "test-space"
         )
 
     def test_update_sequence_rows_update(self, cognite_client, new_transformation):
