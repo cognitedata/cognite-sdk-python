@@ -102,6 +102,7 @@ class Transformation(CogniteResource):
         destination_nonce (NonceCredentials): Single use credentials to bind to a CDF session for writing.
         source_session (SessionDetails): Details for the session used to read from the source project.
         destination_session (SessionDetails): Details for the session used to write to the destination project.
+        dataModel: The data model centric destination type in transformation
     """
 
     def __init__(
@@ -137,6 +138,7 @@ class Transformation(CogniteResource):
         source_session: Optional[SessionDetails] = None,
         destination_session: Optional[SessionDetails] = None,
         tags: Optional[List[str]] = None,
+        dataModel: TransformationDestination = None,
     ):
         self.id = id
         self.external_id = external_id
@@ -171,6 +173,7 @@ class Transformation(CogniteResource):
         self.destination_session = destination_session
         self.tags = tags
         self._cognite_client = cast("CogniteClient", cognite_client)
+        self.dataModel =dataModel
 
     def copy(self) -> Transformation:
         return Transformation(
@@ -205,6 +208,7 @@ class Transformation(CogniteResource):
             self.source_session,
             self.destination_session,
             self.tags,
+            self.dataModel,
         )
 
     def _process_credentials(self, sessions_cache: Dict[str, NonceCredentials] = None, keep_none: bool = False) -> None:
@@ -400,6 +404,7 @@ class TransformationUpdate(CogniteUpdate):
     @property
     def tags(self) -> _ListTransformationUpdate:
         return TransformationUpdate._ListTransformationUpdate(self, "tags")
+
 
     def dump(self, camel_case: bool = True) -> Dict[str, Any]:
         obj = super().dump()
