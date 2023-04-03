@@ -20,6 +20,7 @@ class GlobalConfig:
             Defaults to False.
         status_forcelist (Set[int]): HTTP status codes to retry. Defaults to {429, 502, 503, 504}
         max_retries (int): Max number of retries on a given http request. Defaults to 10.
+        max_retries_connect (int): Max number of retries on connection errors. Defaults to 3.
         max_retry_backoff (int): Retry strategy employs exponential backoff. This parameter sets a max on the amount of
             backoff after any request failure. Defaults to 30.
         max_connection_pool_size (int): The maximum number of connections which will be kept in the SDKs connection pool.
@@ -34,6 +35,7 @@ class GlobalConfig:
         self.disable_pypi_version_check: bool = False
         self.status_forcelist: Set[int] = {429, 502, 503, 504}
         self.max_retries: int = 10
+        self.max_retries_connect: int = 3
         self.max_retry_backoff: int = 30
         self.max_connection_pool_size: int = 50
         self.disable_ssl: bool = False

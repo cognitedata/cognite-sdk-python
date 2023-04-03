@@ -14,7 +14,7 @@ DEFAULT_CONFIG = HTTPClientConfig(
     max_backoff_seconds=30,
     max_retries_total=10,
     max_retries_read=5,
-    max_retries_connect=5,
+    max_retries_connect=4,
     max_retries_status=10,
 )
 
@@ -139,7 +139,7 @@ class TestHTTPClient:
         with pytest.raises(CogniteConnectionRefused):
             c.request("GET", "bla")
 
-        assert retry_tracker.total == DEFAULT_CONFIG.max_retries_read
+        assert retry_tracker.total == DEFAULT_CONFIG.max_retries_connect
 
     def test_status_errors(self):
         cnf = DEFAULT_CONFIG

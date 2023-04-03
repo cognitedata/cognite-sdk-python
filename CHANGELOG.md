@@ -22,6 +22,9 @@ Changes are grouped as follows
 - Implemented automatic retries for connection errors by default, improving the reliability of the connection to the Cognite API.
 - Added a user-readable message to `CogniteConnectionRefused` error for improved user experience.
 
+### Changed
+- Introduce a `max_retries_connect` attribute on the global config, and default it to 3.
+
 ## [5.9.3] - 27-03-23
 ### Fixed
 - After creating a schedule for a function, the returned `FunctionSchedule` was missing a reference to the `CogniteClient`, meaning later calls to `.get_input_data()` would fail and raise `CogniteMissingClientError`.
