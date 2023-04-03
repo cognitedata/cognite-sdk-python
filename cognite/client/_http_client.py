@@ -120,7 +120,7 @@ class HTTPClient:
                     raise e
             except CogniteConnectionError as e:
                 retry_tracker.connect += 1
-                if isinstance(e, CogniteConnectionRefused) or not retry_tracker.should_retry(status_code=last_status):
+                if not retry_tracker.should_retry(status_code=last_status):
                     raise e
             time.sleep(retry_tracker.get_backoff_time())
 

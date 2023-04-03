@@ -17,7 +17,8 @@ class CogniteConnectionError(CogniteException):
 
 
 class CogniteConnectionRefused(CogniteConnectionError):
-    pass
+    def __str__(self) -> str:
+        return "Cognite API connection refused. Please try again later."
 
 
 class CogniteReadTimeout(CogniteException):
