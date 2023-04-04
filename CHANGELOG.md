@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [5.10.1] - 04-04-23
+### Fixed
+- Add missing field `when` (human readable version of the CRON expression) to `FunctionSchedule` class.
+
 ## [5.10.0] - 03-04-23
 ### Fixed
 - Implemented automatic retries for connection errors by default, improving the reliability of the connection to the Cognite API.

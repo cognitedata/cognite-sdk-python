@@ -212,6 +212,7 @@ class FunctionSchedule(CogniteResource):
         cron_expression (str): Cron expression
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         session_id (int): ID of the session running with the schedule.
+        when (str): When the schedule will trigger, in human readable text (server generated from cron_expression).
         cognite_client (CogniteClient): An optional CogniteClient to associate with this data class.
     """
 
@@ -225,6 +226,7 @@ class FunctionSchedule(CogniteResource):
         created_time: int = None,
         cron_expression: str = None,
         session_id: int = None,
+        when: str = None,
         cognite_client: CogniteClient = None,
     ) -> None:
         self.id = id
@@ -235,6 +237,7 @@ class FunctionSchedule(CogniteResource):
         self.cron_expression = cron_expression
         self.created_time = created_time
         self.session_id = session_id
+        self.when = when
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     def get_input_data(self) -> Optional[dict]:
