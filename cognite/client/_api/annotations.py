@@ -4,6 +4,7 @@ from copy import deepcopy
 from typing import Any, Collection, Dict, List, Optional, Sequence, Union, overload
 
 from cognite.client._api_client import APIClient
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import Annotation, AnnotationFilter, AnnotationList, AnnotationUpdate
 from cognite.client.data_classes._base import CogniteResource
 from cognite.client.utils._auxiliary import assert_type
@@ -77,7 +78,7 @@ class AnnotationsAPI(APIClient):
             del item["status"]
         return item
 
-    def list(self, filter: Union[AnnotationFilter, Dict], limit: int = 25) -> AnnotationList:
+    def list(self, filter: Union[AnnotationFilter, Dict], limit: int = LIST_LIMIT_DEFAULT) -> AnnotationList:
         """List annotations.
 
         Args:

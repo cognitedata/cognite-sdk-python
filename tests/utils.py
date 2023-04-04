@@ -135,7 +135,6 @@ def set_request_limit(client, limit):
         "_RETRIEVE_LIMIT",
         "_UPDATE_LIMIT",
         "_DELETE_LIMIT",
-        "_DPS_LIMIT",
     ]
 
     tmp = {lim: 0 for lim in limits}

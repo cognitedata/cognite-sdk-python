@@ -8,6 +8,7 @@ from typing import Tuple, Union, cast, overload
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import (
     Sequence,
     SequenceAggregate,
@@ -23,13 +24,16 @@ from cognite.client.utils._identifier import Identifier, IdentifierSequence
 if TYPE_CHECKING:
     import pandas
 
+    from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
+
 
 class SequencesAPI(APIClient):
     _RESOURCE_PATH = "/sequences"
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.data = SequencesDataAPI(self, *args, **kwargs)
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self.data = SequencesDataAPI(config, api_version, cognite_client)
 
     def __call__(
         self,
@@ -180,7 +184,7 @@ class SequencesAPI(APIClient):
         data_set_external_ids: SequenceType[str] = None,
         created_time: (Union[Dict[str, Any], TimestampRange]) = None,
         last_updated_time: (Union[Dict[str, Any], TimestampRange]) = None,
-        limit: Optional[int] = 25,
+        limit: Optional[int] = LIST_LIMIT_DEFAULT,
     ) -> SequenceList:
         """`Iterate over sequences <https://docs.cognite.com/api/v1/#operation/advancedListSequences>`_
 
@@ -486,9 +490,8 @@ class SequencesAPI(APIClient):
 class SequencesDataAPI(APIClient):
     _DATA_PATH = "/sequences/data"
 
-    def __init__(self, sequences_api: SequencesAPI, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self._sequences_api = sequences_api
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
         self._SEQ_POST_LIMIT_ROWS = 10000
         self._SEQ_POST_LIMIT_VALUES = 100000
         self._SEQ_RETRIEVE_LIMIT = 10000
@@ -597,7 +600,7 @@ class SequencesDataAPI(APIClient):
                 >>> df = c.sequences.data.retrieve_dataframe(id=123, start=0, end=None)
                 >>> c.sequences.data.insert_dataframe(df*2, id=123)
         """
-        dataframe = dataframe.replace({math.nan: None})
+        dataframe = dataframe.replace({math.nan: None})  # TODO: Optimization required (memory usage)
         data = [(v[0], list(v[1:])) for v in dataframe.itertuples()]
         column_external_ids = [str(s) for s in dataframe.columns]
         self.insert(rows=data, column_external_ids=column_external_ids, id=id, external_id=external_id)
@@ -646,7 +649,7 @@ class SequencesDataAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.sequences.data.delete_range(id=0, start=0, end=None)
         """
-        sequence = self._sequences_api.retrieve(id=id, external_id=external_id)
+        sequence = self._cognite_client.sequences.retrieve(id=id, external_id=external_id)
         assert sequence is not None
         post_obj = Identifier.of_either(id, external_id).as_dict()
         post_obj.update(self._process_columns(column_external_ids=[sequence.column_external_ids[0]]))

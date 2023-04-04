@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Optional, Sequence, Union
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.config import ClientConfig
 from cognite.client.credentials import OAuthClientCredentials
 from cognite.client.data_classes import (
@@ -30,14 +31,16 @@ if TYPE_CHECKING:
 
 
 class IAMAPI(APIClient):
-    def __init__(self, config: ClientConfig, api_version: str = None, cognite_client: CogniteClient = None) -> None:
-        super().__init__(config, api_version=api_version, cognite_client=cognite_client)
-        self.service_accounts = ServiceAccountsAPI(config, api_version=api_version, cognite_client=cognite_client)
-        self.api_keys = APIKeysAPI(config, api_version=api_version, cognite_client=cognite_client)
-        self.groups = GroupsAPI(config, api_version=api_version, cognite_client=cognite_client)
-        self.security_categories = SecurityCategoriesAPI(config, api_version=api_version, cognite_client=cognite_client)
-        self.sessions = SessionsAPI(config, api_version=api_version, cognite_client=cognite_client)
-        self.token = TokenAPI(config, cognite_client=cognite_client)
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+
+        self.service_accounts = ServiceAccountsAPI(config, api_version, cognite_client)
+        self.api_keys = APIKeysAPI(config, api_version, cognite_client)
+        self.groups = GroupsAPI(config, api_version, cognite_client)
+        self.security_categories = SecurityCategoriesAPI(config, api_version, cognite_client)
+        self.sessions = SessionsAPI(config, api_version, cognite_client)
+        # TokenAPI only uses base_url, so we pass `api_version=None`:
+        self.token = TokenAPI(config, api_version=None, cognite_client=cognite_client)
 
 
 class ServiceAccountsAPI(APIClient):
@@ -308,7 +311,7 @@ class GroupsAPI(APIClient):
 class SecurityCategoriesAPI(APIClient):
     _RESOURCE_PATH = "/securitycategories"
 
-    def list(self, limit: int = 25) -> SecurityCategoryList:
+    def list(self, limit: int = LIST_LIMIT_DEFAULT) -> SecurityCategoryList:
         """`List security categories. <https://docs.cognite.com/api/v1/#operation/getSecurityCategories>`_
 
         Args:
@@ -395,8 +398,8 @@ class SessionsAPI(APIClient):
     _LIST_CLASS = SessionList
     _RESOURCE_PATH = "/sessions"
 
-    def __init__(self, config: ClientConfig, api_version: str = None, cognite_client: CogniteClient = None) -> None:
-        super().__init__(config, api_version=api_version, cognite_client=cognite_client)
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
         self._LIST_LIMIT = 100
 
     def create(self, client_credentials: Optional[ClientCredentials] = None) -> CreatedSession:

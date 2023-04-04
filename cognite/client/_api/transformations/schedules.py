@@ -1,21 +1,25 @@
 from __future__ import annotations
 
-from typing import Any, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Optional, Sequence, Union
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import TransformationSchedule, TransformationScheduleList, TransformationScheduleUpdate
 from cognite.client.data_classes.transformations import TransformationFilter
 from cognite.client.utils._identifier import IdentifierSequence
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
 
 
 class TransformationSchedulesAPI(APIClient):
     _RESOURCE_PATH = "/transformations/schedules"
     _LIST_CLASS = TransformationScheduleList
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
         self._CREATE_LIMIT = 5
         self._DELETE_LIMIT = 5
         self._UPDATE_LIMIT = 5
@@ -113,7 +117,9 @@ class TransformationSchedulesAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def list(self, include_public: bool = True, limit: Optional[int] = 25) -> TransformationScheduleList:
+    def list(
+        self, include_public: bool = True, limit: Optional[int] = LIST_LIMIT_DEFAULT
+    ) -> TransformationScheduleList:
         """`List all transformation schedules. <https://docs.cognite.com/api/v1/#operation/getTransformationSchedules>`_
 
         Args:

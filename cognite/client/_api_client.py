@@ -34,7 +34,7 @@ from requests.structures import CaseInsensitiveDict
 
 from cognite.client import utils
 from cognite.client._http_client import HTTPClient, HTTPClientConfig, get_global_requests_session
-from cognite.client.config import ClientConfig, global_config
+from cognite.client.config import global_config
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteResource,
@@ -49,6 +49,7 @@ from cognite.client.utils._text import convert_all_keys_to_camel_case, shorten, 
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
 
 log = logging.getLogger("cognite-sdk")
 
@@ -74,16 +75,21 @@ class APIClient:
         )
     }
 
-    def __init__(
-        self, config: ClientConfig, api_version: Optional[str] = None, cognite_client: CogniteClient = None
-    ) -> None:
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
         self._config = config
         self._api_version = api_version
         self._api_subversion = config.api_subversion
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client
+        self._init_http_clients()
 
+        self._CREATE_LIMIT = 1000
+        self._LIST_LIMIT = 1000
+        self._RETRIEVE_LIMIT = 1000
+        self._DELETE_LIMIT = 1000
+        self._UPDATE_LIMIT = 1000
+
+    def _init_http_clients(self) -> None:
         session = get_global_requests_session()
-
         self._http_client = HTTPClient(
             config=HTTPClientConfig(
                 status_codes_to_retry={429},
@@ -96,7 +102,6 @@ class APIClient:
             ),
             session=session,
         )
-
         self._http_client_with_retry = HTTPClient(
             config=HTTPClientConfig(
                 status_codes_to_retry=global_config.status_forcelist,
@@ -109,12 +114,6 @@ class APIClient:
             ),
             session=session,
         )
-
-        self._CREATE_LIMIT = 1000
-        self._LIST_LIMIT = 1000
-        self._RETRIEVE_LIMIT = 1000
-        self._DELETE_LIMIT = 1000
-        self._UPDATE_LIMIT = 1000
 
     def _delete(
         self, url_path: str, params: Optional[Dict[str, Any]] = None, headers: Optional[Dict[str, Any]] = None

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any, Awaitable, Dict, List, Optional, Sequence, Union
 
 from cognite.client._api.transformations.jobs import TransformationJobsAPI
@@ -15,18 +17,25 @@ from cognite.client.data_classes.transformations import (
     TransformationUpdate,
 )
 from cognite.client.utils._identifier import IdentifierSequence
+from typing import TYPE_CHECKING
+from cognite.client._constants import LIST_LIMIT_DEFAULT
+
+
+if TYPE_CHECKING:
+    from cognite.client.config import ClientConfig
+    from cognite.client import CogniteClient
 
 
 class TransformationsAPI(APIClient):
     _RESOURCE_PATH = "/transformations"
     _LIST_CLASS = TransformationList
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.jobs = TransformationJobsAPI(*args, **kwargs)
-        self.schedules = TransformationSchedulesAPI(*args, **kwargs)
-        self.schema = TransformationSchemaAPI(*args, **kwargs)
-        self.notifications = TransformationNotificationsAPI(*args, **kwargs)
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self.jobs = TransformationJobsAPI(config, api_version, cognite_client)
+        self.schedules = TransformationSchedulesAPI(config, api_version, cognite_client)
+        self.schema = TransformationSchemaAPI(config, api_version, cognite_client)
+        self.notifications = TransformationNotificationsAPI(config, api_version, cognite_client)
 
     def create(
         self, transformation: Union[Transformation, Sequence[Transformation]]
@@ -134,7 +143,7 @@ class TransformationsAPI(APIClient):
         data_set_ids: List[int] = None,
         data_set_external_ids: List[str] = None,
         tags: Optional[TagsFilter] = None,
-        limit: Optional[int] = 25,
+        limit: Optional[int] = LIST_LIMIT_DEFAULT,
     ) -> TransformationList:
         """`List all transformations. <https://docs.cognite.com/api/v1/#operation/getTransformations>`_
 

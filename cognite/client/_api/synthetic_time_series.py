@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
 import cognite.client.utils._time
 from cognite.client import utils
@@ -12,10 +12,16 @@ from cognite.client.data_classes import Datapoints, DatapointsList, TimeSeries
 if TYPE_CHECKING:
     import sympy
 
+    from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
+
 
 class SyntheticDatapointsAPI(APIClient):
     _RESOURCE_PATH = "/timeseries/synthetic"
-    _DPS_LIMIT = 10000
+
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self._DPS_LIMIT_SYNTH = 10_000
 
     def query(
         self,
@@ -98,12 +104,12 @@ class SyntheticDatapointsAPI(APIClient):
 
     def _fetch_datapoints(self, query: Dict[str, Any], datapoints: Datapoints, limit: int) -> Datapoints:
         while True:
-            query["limit"] = min(limit, self._DPS_LIMIT)
+            query["limit"] = min(limit, self._DPS_LIMIT_SYNTH)
             resp = self._post(url_path=self._RESOURCE_PATH + "/query", json={"items": [query]})
             data = resp.json()["items"][0]
             datapoints._extend(Datapoints._load(data, expected_fields=["value", "error"]))
             limit -= len(data["datapoints"])
-            if len(data["datapoints"]) < self._DPS_LIMIT or limit <= 0:
+            if len(data["datapoints"]) < self._DPS_LIMIT_SYNTH or limit <= 0:
                 break
             query["start"] = data["datapoints"][-1]["timestamp"] + 1
         return datapoints

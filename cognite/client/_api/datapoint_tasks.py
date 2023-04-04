@@ -65,9 +65,6 @@ if TYPE_CHECKING:
 
     from cognite.client.data_classes.datapoints import NumpyFloat64Array, NumpyInt64Array, NumpyObjArray
 
-DPS_LIMIT_AGG = 10_000
-DPS_LIMIT = 100_000
-
 DatapointsAgg = MutableSequence[AggregateDatapoint]
 DatapointsNum = MutableSequence[NumericDatapoint]
 DatapointsStr = MutableSequence[StringDatapoint]
@@ -139,8 +136,10 @@ class _DatapointsQuery:
 
 
 class _SingleTSQueryValidator:
-    def __init__(self, user_query: _DatapointsQuery) -> None:
+    def __init__(self, user_query: _DatapointsQuery, *, dps_limit_raw: int, dps_limit_agg: int) -> None:
         self.user_query = user_query
+        self.dps_limit_raw = dps_limit_raw
+        self.dps_limit_agg = dps_limit_agg
         self.defaults: Dict[str, Any] = dict(
             start=user_query.start,
             end=user_query.end,
@@ -272,8 +271,8 @@ class _SingleTSQueryValidator:
                 # Request is for raw datapoints:
                 raw_query = self._convert_parameters(dct, limit, is_raw=True)
                 if limit is None:
-                    return _SingleTSQueryRawUnlimited(**raw_query)
-                return _SingleTSQueryRawLimited(**raw_query)
+                    return _SingleTSQueryRawUnlimited(**raw_query, max_query_limit=self.dps_limit_raw)
+                return _SingleTSQueryRawLimited(**raw_query, max_query_limit=self.dps_limit_raw)
             raise ValueError("When passing `granularity`, argument `aggregates` is also required.")
 
         elif isinstance(aggregates, list) and len(aggregates) == 0:
@@ -290,8 +289,8 @@ class _SingleTSQueryValidator:
         # Request is for one or more aggregates:
         agg_query = self._convert_parameters(dct, limit, is_raw=False)
         if limit is None:
-            return _SingleTSQueryAggUnlimited(**agg_query)
-        return _SingleTSQueryAggLimited(**agg_query)
+            return _SingleTSQueryAggUnlimited(**agg_query, max_query_limit=self.dps_limit_agg)
+        return _SingleTSQueryAggLimited(**agg_query, max_query_limit=self.dps_limit_agg)
 
     def _convert_parameters(
         self,
@@ -424,7 +423,7 @@ class _SingleTSQueryBase:
 
 class _SingleTSQueryRaw(_SingleTSQueryBase):
     def __init__(self, **kwargs: Any) -> None:
-        super().__init__(**kwargs, max_query_limit=DPS_LIMIT)
+        super().__init__(**kwargs)
         self.aggregates = self.aggregates_cc = None
         self.granularity = None
 
@@ -463,8 +462,7 @@ class _SingleTSQueryRawUnlimited(_SingleTSQueryRaw):
 
 class _SingleTSQueryAgg(_SingleTSQueryBase):
     def __init__(self, *, aggregates: List[str], granularity: str, **kwargs: Any) -> None:
-        agg_query_settings: Dict[str, Any] = dict(include_outside_points=False, max_query_limit=DPS_LIMIT_AGG)
-        super().__init__(**kwargs, **agg_query_settings)
+        super().__init__(**kwargs, include_outside_points=False)
         self.aggregates = aggregates
         self.granularity = granularity
 

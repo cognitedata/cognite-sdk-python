@@ -21,6 +21,7 @@ from typing import (
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import (
     FileAggregate,
     FileMetadata,
@@ -269,7 +270,7 @@ class FilesAPI(APIClient):
         external_id_prefix: str = None,
         directory_prefix: str = None,
         uploaded: bool = None,
-        limit: int = 25,
+        limit: int = LIST_LIMIT_DEFAULT,
     ) -> FileMetadataList:
         """`List files <https://docs.cognite.com/api/v1/#operation/advancedListFiles>`_
 

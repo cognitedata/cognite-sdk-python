@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from math import ceil
-from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, Type, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Tuple, Type, TypeVar, Union, overload
 
 from requests import Response
 
@@ -17,16 +17,22 @@ from cognite.client.data_classes.contextualization import (
 from cognite.client.exceptions import CogniteAPIError, CogniteMissingClientError
 from cognite.client.utils._text import to_camel_case
 
-DETECT_API_FILE_LIMIT = 50
-# https://docs.cognite.com/api/playground/#tag/Engineering-diagrams/operation/diagramDetect
-DETECT_API_STATUS_JOB_LIMIT = 1000
-# https://docs.cognite.com/api/playground/#tag/Engineering-diagrams/operation/diagramDetectMultipleResults
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
 
 _T = TypeVar("_T")
 
 
 class DiagramsAPI(APIClient):
     _RESOURCE_PATH = "/context/diagram"
+
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        # https://docs.cognite.com/api/playground/#tag/Engineering-diagrams/operation/diagramDetect
+        self._DETECT_API_FILE_LIMIT = 50
+        # https://docs.cognite.com/api/playground/#tag/Engineering-diagrams/operation/diagramDetectMultipleResults
+        self._DETECT_API_STATUS_JOB_LIMIT = 1000
 
     def _camel_post(
         self,
@@ -186,16 +192,16 @@ class DiagramsAPI(APIClient):
             entity.dump(camel_case=True) if isinstance(entity, CogniteResource) else entity for entity in entities
         ]
         if multiple_jobs:
-            num_new_jobs = ceil(len(items) / DETECT_API_FILE_LIMIT)
-            if num_new_jobs > DETECT_API_STATUS_JOB_LIMIT:
+            num_new_jobs = ceil(len(items) / self._DETECT_API_FILE_LIMIT)
+            if num_new_jobs > self._DETECT_API_STATUS_JOB_LIMIT:
                 raise ValueError(
-                    f"Number of jobs exceed limit of: '{DETECT_API_STATUS_JOB_LIMIT}'. Number of jobs: '{num_new_jobs}'"
+                    f"Number of jobs exceed limit of: '{self._DETECT_API_STATUS_JOB_LIMIT}'. Number of jobs: '{num_new_jobs}'"
                 )
 
             jobs: List[DiagramDetectResults] = []
             unposted_files: List[Dict[str, Any]] = []
             for i in range(num_new_jobs):
-                batch = items[(DETECT_API_FILE_LIMIT * i) : DETECT_API_FILE_LIMIT * (i + 1)]
+                batch = items[(self._DETECT_API_FILE_LIMIT * i) : self._DETECT_API_FILE_LIMIT * (i + 1)]
 
                 try:
                     posted_job = self._run_job(

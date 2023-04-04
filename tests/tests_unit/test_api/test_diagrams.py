@@ -34,6 +34,7 @@ class TestPNIDParsingUnit:
         mocked_diagrams_post: MagicMock,
         base_job_response: Dict[str, Any],
         cognite_client: CogniteClient,
+        monkeypatch,
     ):
         entities = [{"name": "YT-96122"}, {"name": "XE-96125", "ee": 123}, {"name": "XWDW-9615"}]
         file_ids = [1, 2, 3]
@@ -75,14 +76,15 @@ class TestPNIDParsingUnit:
             job, _unposted_jobs = cognite_client.diagrams.detect(file_ids=None, entities=entities, multiple_jobs=True)
 
         # Provoking failing because num_posts > limit
-        with patch("cognite.client._api.diagrams.DETECT_API_FILE_LIMIT", 1):
+        monkeypatch.setattr(cognite_client.diagrams, "_DETECT_API_FILE_LIMIT", 1)
+        job_bundle, _unposted_jobs = cognite_client.diagrams.detect(
+            file_ids=file_ids, entities=entities, multiple_jobs=True
+        )
+        successes, _failures = job_bundle.result
+        assert len(successes) == 3
+
+        monkeypatch.setattr(cognite_client.diagrams, "_DETECT_API_STATUS_JOB_LIMIT", 1)
+        with pytest.raises(ValueError):
             job_bundle, _unposted_jobs = cognite_client.diagrams.detect(
                 file_ids=file_ids, entities=entities, multiple_jobs=True
             )
-            successes, _failures = job_bundle.result
-            assert len(successes) == 3
-            with patch("cognite.client._api.diagrams.DETECT_API_STATUS_JOB_LIMIT", 1):
-                with pytest.raises(ValueError):
-                    job_bundle, _unposted_jobs = cognite_client.diagrams.detect(
-                        file_ids=file_ids, entities=entities, multiple_jobs=True
-                    )

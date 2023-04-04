@@ -14,7 +14,7 @@ from zipfile import ZipFile
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_CEILING, LIST_LIMIT_DEFAULT
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.credentials import APIKey, OAuthClientCertificate
 from cognite.client.data_classes import (
     ClientCredentials,
@@ -38,6 +38,8 @@ from cognite.client.utils._identifier import IdentifierSequence, SingletonIdenti
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
+
 
 HANDLER_FILE_NAME = "handler.py"
 MAX_RETRIES = 5
@@ -72,11 +74,12 @@ class FunctionsAPI(APIClient):
     _RESOURCE_PATH = "/functions"
     _LIST_CLASS = FunctionList
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.calls = FunctionCallsAPI(*args, **kwargs)
-        self.schedules = FunctionSchedulesAPI(*args, **kwargs)
-        self._cognite_client: CogniteClient = cast("CogniteClient", self._cognite_client)
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self.calls = FunctionCallsAPI(config, api_version, cognite_client)
+        self.schedules = FunctionSchedulesAPI(config, api_version, cognite_client)
+        # Variable used to guarantee all items are returned when list(limit) is None, inf or -1.
+        self._LIST_LIMIT_CEILING = 10_000
 
     def create(
         self,
@@ -275,7 +278,7 @@ class FunctionsAPI(APIClient):
                 >>> functions_list = c.functions.list()
         """
         if is_unlimited(limit):
-            limit = LIST_LIMIT_CEILING
+            limit = self._LIST_LIMIT_CEILING
 
         filter = FunctionFilter(
             name=name,
@@ -856,6 +859,10 @@ class FunctionSchedulesAPI(APIClient):
     _RESOURCE_PATH = "/functions/schedules"
     _LIST_CLASS = FunctionSchedulesList
 
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self._LIST_LIMIT_CEILING = 10_000
+
     def retrieve(self, id: int) -> Union[FunctionSchedule, FunctionSchedulesList, None]:
         """`Retrieve a single function schedule by id. <https://docs.cognite.com/api/v1/#operation/byIdsFunctionSchedules>`_
 
@@ -924,7 +931,7 @@ class FunctionSchedulesAPI(APIClient):
                 raise AssertionError("Only function_id or function_external_id allowed when listing schedules.")
 
         if is_unlimited(limit):
-            limit = LIST_LIMIT_CEILING
+            limit = self._LIST_LIMIT_CEILING
 
         filter = FunctionSchedulesFilter(
             name=name,

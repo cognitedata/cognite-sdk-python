@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterator, List, Optional, Sequence, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence, Union, cast, overload
 
 from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api_client import APIClient
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import (
     TimeSeries,
     TimeSeriesAggregate,
@@ -13,13 +14,17 @@ from cognite.client.data_classes import (
 )
 from cognite.client.utils._identifier import IdentifierSequence
 
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
+
 
 class TimeSeriesAPI(APIClient):
     _RESOURCE_PATH = "/timeseries"
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.data = DatapointsAPI(*args, **kwargs)
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self.data = DatapointsAPI(config, api_version, cognite_client)
 
     def __call__(
         self,
@@ -192,7 +197,7 @@ class TimeSeriesAPI(APIClient):
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         partitions: int = None,
-        limit: int = 25,
+        limit: int = LIST_LIMIT_DEFAULT,
     ) -> TimeSeriesList:
         """`List over time series <https://docs.cognite.com/api/v1/#operation/listTimeSeries>`_
 
