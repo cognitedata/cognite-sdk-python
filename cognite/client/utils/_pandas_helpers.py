@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from cognite.client.data_classes._base import T_CogniteResource, T_CogniteResourceList
 
 
-NULLABLE_INT_COLS = [
+NULLABLE_INT_COLS = {
     "start_time",
     "end_time",
     "asset_id",
@@ -32,8 +32,8 @@ NULLABLE_INT_COLS = [
     "last_seen",
     "last_seen_time",
     "last_updated_time",
-]
-NULLABLE_INT_COLS_CC = list(map(to_camel_case, NULLABLE_INT_COLS))
+}
+NULLABLE_INT_COLS_CC = set(map(to_camel_case, NULLABLE_INT_COLS))
 
 
 def pandas_major_version() -> int:
