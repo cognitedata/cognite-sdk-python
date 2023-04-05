@@ -24,6 +24,7 @@ from cognite.client.data_classes import (
     DatapointsList,
     LatestDatapointQuery,
     TimeSeries,
+    TimeSeriesList,
 )
 from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
@@ -33,6 +34,7 @@ from cognite.client.utils._time import (
     MIN_TIMESTAMP_MS,
     UNIT_IN_MS,
     align_start_and_end_for_granularity,
+    cdf_aggregate,
     granularity_to_ms,
     timestamp_to_ms,
 )
@@ -59,32 +61,32 @@ YEAR_MS = {
 }
 DPS_TYPES = (Datapoints, DatapointsArray)
 DPS_LST_TYPES = (DatapointsList, DatapointsArrayList)
+TEST_PREFIX = "PYSDK integration test "
 
 
 @pytest.fixture(scope="session")
-def all_test_time_series(cognite_client):
-    prefix = "PYSDK integration test"
+def all_test_time_series(cognite_client) -> TimeSeriesList:
     return cognite_client.time_series.retrieve_multiple(
         external_ids=[
-            f"{prefix} 001: outside points, numeric",
-            f"{prefix} 002: outside points, string",
-            *[f"{prefix} {i:03d}: weekly values, 1950-2000, numeric" for i in range(3, 54)],
-            *[f"{prefix} {i:03d}: weekly values, 1950-2000, string" for i in range(54, 104)],
-            f"{prefix} 104: daily values, 1965-1975, numeric",
-            f"{prefix} 105: hourly values, 1969-10-01 - 1970-03-01, numeric",
-            f"{prefix} 106: every minute, 1969-12-31 - 1970-01-02, numeric",
-            f"{prefix} 107: every second, 1969-12-31 23:30:00 - 1970-01-01 00:30:00, numeric",
-            f"{prefix} 108: every millisecond, 1969-12-31 23:59:58.500 - 1970-01-01 00:00:01.500, numeric",
-            f"{prefix} 109: daily values, is_step=True, 1965-1975, numeric",
-            f"{prefix} 110: hourly values, is_step=True, 1969-10-01 - 1970-03-01, numeric",
-            f"{prefix} 111: every minute, is_step=True, 1969-12-31 - 1970-01-02, numeric",
-            f"{prefix} 112: every second, is_step=True, 1969-12-31 23:30:00 - 1970-01-01 00:30:00, numeric",
-            f"{prefix} 113: every millisecond, is_step=True, 1969-12-31 23:59:58.500 - 1970-01-01 00:00:01.500, numeric",
-            f"{prefix} 114: 1mill dps, random distribution, 1950-2020, numeric",
-            f"{prefix} 115: 1mill dps, random distribution, 1950-2020, string",
-            f"{prefix} 116: 5mill dps, 2k dps (.1s res) burst per day, 2000-01-01 12:00:00 - 2013-09-08 12:03:19.900, numeric",
-            f"{prefix} 119: hourly normally distributed (0,1) data, 2020-2024 numeric",
-            f"{prefix} 120: minute normally distributed (0,1) data, 2023-01-01 00:00:00 - 2023-12-31 23:59:59, numeric",
+            f"{TEST_PREFIX}001: outside points, numeric",
+            f"{TEST_PREFIX}002: outside points, string",
+            *[f"{TEST_PREFIX}{i:03d}: weekly values, 1950-2000, numeric" for i in range(3, 54)],
+            *[f"{TEST_PREFIX}{i:03d}: weekly values, 1950-2000, string" for i in range(54, 104)],
+            f"{TEST_PREFIX}104: daily values, 1965-1975, numeric",
+            f"{TEST_PREFIX}105: hourly values, 1969-10-01 - 1970-03-01, numeric",
+            f"{TEST_PREFIX}106: every minute, 1969-12-31 - 1970-01-02, numeric",
+            f"{TEST_PREFIX}107: every second, 1969-12-31 23:30:00 - 1970-01-01 00:30:00, numeric",
+            f"{TEST_PREFIX}108: every millisecond, 1969-12-31 23:59:58.500 - 1970-01-01 00:00:01.500, numeric",
+            f"{TEST_PREFIX}109: daily values, is_step=True, 1965-1975, numeric",
+            f"{TEST_PREFIX}110: hourly values, is_step=True, 1969-10-01 - 1970-03-01, numeric",
+            f"{TEST_PREFIX}111: every minute, is_step=True, 1969-12-31 - 1970-01-02, numeric",
+            f"{TEST_PREFIX}112: every second, is_step=True, 1969-12-31 23:30:00 - 1970-01-01 00:30:00, numeric",
+            f"{TEST_PREFIX}113: every millisecond, is_step=True, 1969-12-31 23:59:58.500 - 1970-01-01 00:00:01.500, numeric",
+            f"{TEST_PREFIX}114: 1mill dps, random distribution, 1950-2020, numeric",
+            f"{TEST_PREFIX}115: 1mill dps, random distribution, 1950-2020, string",
+            f"{TEST_PREFIX}116: 5mill dps, 2k dps (.1s res) burst per day, 2000-01-01 12:00:00 - 2013-09-08 12:03:19.900, numeric",
+            f"{TEST_PREFIX}119: hourly normally distributed (0,1) data, 2020-2024 numeric",
+            f"{TEST_PREFIX}120: minute normally distributed (0,1) data, 2023-01-01 00:00:00 - 2023-12-31 23:59:59, numeric",
         ]
     )
 
@@ -1005,36 +1007,90 @@ class TestRetrieveAggregateDatapointsAPI:
             assert len(res_lst.get(external_id=ts_string.external_id)) == 2
 
 
+def get_test_series(test_series_no: str, available_test_series: TimeSeriesList) -> TimeSeries:
+    time_series = next(
+        (t for t in available_test_series if t.external_id.startswith(f"{TEST_PREFIX}{test_series_no}")), None
+    )
+    if time_series is None:
+        raise ValueError(f"Invalid test data, test case {test_series_no} does not exists")
+    return time_series
+
+
 @pytest.mark.parametrize(
-    "raw_granularity, granularity, aggregation, timezone",
+    "test_series_no, start, end, aggregation, granularity",
     (
-        ("hourly", "1d", "average", "Europe/Oslo"),
-        ("hourly", "1d", "sum", "Europe/Oslo"),
-        # ("hourly", "1month", "average", "Europe/Oslo"),
-        # ("hourly", "1month", "sum", "Europe/Oslo"),
-        # ("hourly", "1year", "average", "Europe/Oslo"),
-        # ("hourly", "1year", "sum", "Europe/Oslo"),
+        ("119", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "average", "2h"),
+        ("119", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "average", "3h"),
+        ("119", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "sum", "5h"),
+        ("120", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:59+00:00", "average", "2m"),
+        ("120", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "sum", "30m"),
+        ("120", "2023-01-01T00:00:00+00:00", "2023-01-01T23:59:01+00:00", "average", "15m"),
+        ("120", "2023-01-01T00:00:00+00:00", "2023-01-01T23:59:01+00:00", "average", "1h"),
+    ),
+)
+def test_cdf_aggregate(
+    test_series_no: str,
+    start: str,
+    end: str,
+    aggregation: str,
+    granularity: str,
+    cognite_client: CogniteClient,
+    all_test_time_series: TimeSeriesList,
+):
+    # Arrange
+    time_series = get_test_series(test_series_no, all_test_time_series)
+    start, end = datetime.fromisoformat(start), datetime.fromisoformat(end)
+    raw_df = cognite_client.time_series.data.retrieve_dataframe(
+        external_id=time_series.external_id, start=start, end=end
+    )
+    expected_aggregate = cognite_client.time_series.data.retrieve_dataframe(
+        start=start,
+        end=end,
+        external_id=time_series.external_id,
+        aggregates=aggregation,
+        granularity=granularity,
+        include_aggregate_name=False,
+        include_granularity_name=False,
+    )
+
+    # Act
+    actual_aggregate = cdf_aggregate(raw_df, aggregation, granularity, time_series.is_step)
+
+    # Assert
+    # Pandas adds the correct frequency to the index, while the SDK does not.
+    # The last point is not compared as the raw data might be missing information to do the correct aggregate.
+    pd.testing.assert_frame_equal(
+        expected_aggregate.iloc[:-1], actual_aggregate.iloc[:-1], check_freq=False, check_exact=False
+    )
+
+
+@pytest.mark.skip("In development")
+@pytest.mark.parametrize(
+    "test_series_no, aggregation, granularity, timezone",
+    (
+        ("119", "1d", "average", "Europe/Oslo"),
+        ("119", "1d", "sum", "Europe/Oslo"),
     ),
 )
 def test_aggregate_timezone(
-    raw_granularity: str,
-    granularity: str,
+    test_series_no: str,
     aggregation: str,
+    granularity: str,
     timezone: str,
     cognite_client: CogniteClient,
-    hourly_normal_dist: TimeSeries,
-    minutely_normal_dist: TimeSeries,
+    all_test_time_series: TimeSeriesList,
 ):
     # Arrange
-    time_series = {"hourly": hourly_normal_dist, "minutely": minutely_normal_dist}[raw_granularity]
-    raw_df = cognite_client.time_series.data.retrieve_dataframe(external_id=time_series.external_id)
-    pandas_agg = {"average": "mean"}.get(aggregation, aggregation)
-    pandas_gran = {"1d": "1D"}.get(granularity, granularity)
-    # Note pandas handles timezones correctly, which is why we use it for reference.
-    pandas_aggregate = raw_df.tz_localize("UTC").tz_convert(timezone).resample(pandas_gran).agg(pandas_agg)
+    time_series = get_test_series(test_series_no, all_test_time_series)
+    raw_df = (
+        cognite_client.time_series.data.retrieve_dataframe(external_id=time_series.external_id)
+        .tz_localize("UTC")
+        .tz_convert(timezone)
+    )
+    expected_aggregate = cdf_aggregate(raw_df, aggregation, granularity, time_series.is_step)
 
     # Act
-    cdf_aggregate = cognite_client.time_series.data.aggregate_to_timezone_dataframe(
+    actual_aggregate = cognite_client.time_series.data.aggregate_to_timezone_dataframe(
         external_id=time_series.external_id,
         aggregates=aggregation,
         granularity=granularity,
@@ -1042,7 +1098,7 @@ def test_aggregate_timezone(
     )
 
     # Assert
-    pd.testing.assert_extension_array_equal(pandas_aggregate.values, cdf_aggregate.values)
+    pd.testing.assert_frame_equal(expected_aggregate, actual_aggregate)
 
 
 class TestRetrieveMixedRawAndAgg:
