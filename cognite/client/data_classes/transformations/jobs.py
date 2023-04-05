@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import time
 from enum import Enum
-from typing import TYPE_CHECKING, Dict, Optional, Union, cast
+from typing import TYPE_CHECKING, Dict, Optional, cast
 
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList
 from cognite.client.data_classes.transformations.common import TransformationDestination, _load_destination_dct
@@ -43,7 +43,7 @@ class TransformationJobMetric(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> TransformationJobMetric:
+    def _load(cls, resource: Dict, cognite_client: CogniteClient = None) -> TransformationJobMetric:
         instance = super()._load(resource, cognite_client)
         return instance
 
@@ -246,7 +246,7 @@ class TransformationJob(CogniteResource):
         return self
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> TransformationJob:
+    def _load(cls, resource: Dict, cognite_client: CogniteClient = None) -> TransformationJob:
         instance = super()._load(resource, cognite_client)
         if isinstance(instance.destination, Dict):
             instance.destination = _load_destination_dct(instance.destination)

@@ -9,22 +9,7 @@ import warnings
 from collections import Counter, defaultdict
 from functools import lru_cache
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Collection,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Sequence,
-    Set,
-    TextIO,
-    Tuple,
-    Type,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Set, TextIO, Tuple, Type, Union, cast
 
 from graphlib import TopologicalSorter
 
@@ -152,7 +137,7 @@ class Asset(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> Asset:
+    def _load(cls, resource: Dict, cognite_client: CogniteClient = None) -> Asset:
         instance = super()._load(resource, cognite_client)
         if isinstance(resource, Dict):
             if instance.aggregates is not None:
@@ -335,7 +320,7 @@ class AssetUpdate(CogniteUpdate):
 class AssetList(CogniteResourceList):
     _RESOURCE = Asset
 
-    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient = None):
+    def __init__(self, resources: List[Asset], cognite_client: CogniteClient = None):
         super().__init__(resources, cognite_client)
         self._retrieve_chunk_size = 100
 
@@ -414,7 +399,6 @@ class AssetFilter(CogniteFilter):
         external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
         labels (LabelFilter): Return only the resource matching the specified label constraints.
         geo_location (GeoLocationFilter): Only include files matching the specified geographic relation.
-        cognite_client (CogniteClient): The client to associate with this object.
     """
 
     def __init__(
@@ -432,7 +416,6 @@ class AssetFilter(CogniteFilter):
         external_id_prefix: str = None,
         labels: LabelFilter = None,
         geo_location: GeoLocationFilter = None,
-        cognite_client: CogniteClient = None,
     ):
         self.name = name
         self.parent_ids = parent_ids
@@ -447,20 +430,9 @@ class AssetFilter(CogniteFilter):
         self.external_id_prefix = external_id_prefix
         self.labels = labels
         self.geo_location = geo_location
-        self._cognite_client = cast("CogniteClient", cognite_client)
 
         if labels is not None and not isinstance(labels, LabelFilter):
             raise TypeError("AssetFilter.labels must be of type LabelFilter")
-
-    @classmethod
-    def _load(cls, resource: Union[Dict, str]) -> AssetFilter:
-        instance = super()._load(resource)
-        if isinstance(resource, Dict):
-            if instance.created_time is not None:
-                instance.created_time = TimestampRange(**instance.created_time)
-            if instance.last_updated_time is not None:
-                instance.last_updated_time = TimestampRange(**instance.last_updated_time)
-        return instance
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         result = super().dump(camel_case)

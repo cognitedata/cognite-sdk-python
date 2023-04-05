@@ -66,7 +66,6 @@ class DataSetFilter(CogniteFilter):
         last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
         external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
         write_protected (bool): No description.
-        cognite_client (CogniteClient): The client to associate with this object.
     """
 
     def __init__(
@@ -76,24 +75,12 @@ class DataSetFilter(CogniteFilter):
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
         external_id_prefix: str = None,
         write_protected: bool = None,
-        cognite_client: CogniteClient = None,
     ):
         self.metadata = metadata
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.external_id_prefix = external_id_prefix
         self.write_protected = write_protected
-        self._cognite_client = cast("CogniteClient", cognite_client)
-
-    @classmethod
-    def _load(cls, resource: Union[Dict, str]) -> DataSetFilter:
-        instance = super()._load(resource)
-        if isinstance(resource, Dict):
-            if instance.created_time is not None:
-                instance.created_time = TimestampRange(**instance.created_time)
-            if instance.last_updated_time is not None:
-                instance.last_updated_time = TimestampRange(**instance.last_updated_time)
-        return instance
 
 
 class DataSetUpdate(CogniteUpdate):

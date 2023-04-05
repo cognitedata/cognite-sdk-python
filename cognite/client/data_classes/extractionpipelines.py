@@ -112,7 +112,7 @@ class ExtractionPipeline(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> ExtractionPipeline:
+    def _load(cls, resource: Dict, cognite_client: CogniteClient = None) -> ExtractionPipeline:
         instance = super()._load(resource, cognite_client)
         return instance
 
@@ -226,7 +226,7 @@ class ExtractionPipelineRun(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> ExtractionPipelineRun:
+    def _load(cls, resource: Dict, cognite_client: CogniteClient = None) -> ExtractionPipelineRun:
         obj = super()._load(resource, cognite_client)
         # Note: The API ONLY returns IDs, but if they chose to change this, we're ready:
         if isinstance(resource, dict):
@@ -271,7 +271,6 @@ class ExtractionPipelineRunFilter(CogniteFilter):
         statuses (Sequence[str]): success/failure/seen.
         message (StringFilter): message filter.
         created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-        cognite_client (CogniteClient): The client to associate with this object.
     """
 
     def __init__(
@@ -280,21 +279,11 @@ class ExtractionPipelineRunFilter(CogniteFilter):
         statuses: Sequence[str] = None,
         message: StringFilter = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
-        cognite_client: CogniteClient = None,
     ):
         self.external_id = external_id
         self.statuses = statuses
         self.message = message
         self.created_time = created_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
-
-    @classmethod
-    def _load(cls, resource: Union[Dict, str]) -> ExtractionPipelineRunFilter:
-        instance = super()._load(resource)
-        if isinstance(resource, Dict):
-            if instance.created_time is not None:
-                instance.created_time = TimestampRange(**instance.created_time)
-        return instance
 
 
 class ExtractionPipelineConfigRevision(CogniteResource):

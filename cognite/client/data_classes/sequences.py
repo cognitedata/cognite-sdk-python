@@ -112,7 +112,6 @@ class SequenceFilter(CogniteFilter):
         created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
         last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
         data_set_ids (SequenceType[Dict[str, Any]]): Only include sequences that belong to these datasets.
-        cognite_client (CogniteClient): The client to associate with this object.
     """
 
     def __init__(
@@ -125,7 +124,6 @@ class SequenceFilter(CogniteFilter):
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
         data_set_ids: SequenceType[Dict[str, Any]] = None,
-        cognite_client: CogniteClient = None,
     ):
         self.name = name
         self.external_id_prefix = external_id_prefix
@@ -135,17 +133,6 @@ class SequenceFilter(CogniteFilter):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.data_set_ids = data_set_ids
-        self._cognite_client = cast("CogniteClient", cognite_client)
-
-    @classmethod
-    def _load(cls, resource: Union[Dict, str]) -> SequenceFilter:
-        instance = super()._load(resource)
-        if isinstance(resource, Dict):
-            if instance.created_time is not None:
-                instance.created_time = TimestampRange(**instance.created_time)
-            if instance.last_updated_time is not None:
-                instance.last_updated_time = TimestampRange(**instance.last_updated_time)
-        return instance
 
 
 class SequenceColumnUpdate(CogniteUpdate):

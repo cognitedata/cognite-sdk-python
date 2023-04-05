@@ -15,6 +15,7 @@ import warnings
 from decimal import Decimal
 from types import ModuleType
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
     Hashable,
@@ -33,8 +34,17 @@ from urllib.parse import quote
 
 import cognite.client
 from cognite.client.exceptions import CogniteImportError
-from cognite.client.utils._text import convert_all_keys_to_camel_case, convert_all_keys_to_snake_case, to_snake_case
+from cognite.client.utils._text import (
+    convert_all_keys_to_camel_case,
+    convert_all_keys_to_snake_case,
+    to_camel_case,
+    to_snake_case,
+)
 from cognite.client.utils._version_checker import get_newest_version_in_major_release
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
+    from cognite.client.data_classes._base import T_CogniteResource
 
 T = TypeVar("T")
 THashable = TypeVar("THashable", bound=Hashable)
@@ -42,6 +52,23 @@ THashable = TypeVar("THashable", bound=Hashable)
 
 def is_unlimited(limit: Optional[Union[float, int]]) -> bool:
     return limit in {None, -1, math.inf}
+
+
+@functools.lru_cache(None)
+def get_accepted_params(cls: type[T_CogniteResource]) -> Dict[str, str]:
+    return {to_camel_case(k): k for k in vars(cls()) if not k.startswith("_")}
+
+
+def fast_dict_load(
+    cls: type[T_CogniteResource], item: Dict[str, Any], cognite_client: Optional[CogniteClient]
+) -> T_CogniteResource:
+    instance = cls(cognite_client=cognite_client)
+    # Note: Do not use cast(Hashable, cls) here as this is called in a hot loop
+    accepted = get_accepted_params(cls)  # type: ignore [arg-type]
+    for camel_attr, value in item.items():
+        if snake_attr := accepted.get(camel_attr):
+            setattr(instance, snake_attr, value)
+    return instance
 
 
 def basic_obj_dump(obj: Any, camel_case: bool) -> Dict[str, Any]:

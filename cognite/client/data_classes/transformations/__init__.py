@@ -243,7 +243,7 @@ class Transformation(CogniteResource):
         return self._cognite_client.transformations.jobs.list(transformation_id=self.id)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> Transformation:
+    def _load(cls, resource: Dict, cognite_client: CogniteClient = None) -> Transformation:
         instance = super()._load(resource, cognite_client)
         if isinstance(instance.destination, dict):
             instance.destination = _load_destination_dct(instance.destination)
@@ -457,18 +457,9 @@ class TransformationFilter(CogniteFilter):
         self.data_set_ids = data_set_ids
         self.tags = tags
 
-    @classmethod
-    def _load(cls, resource: Union[Dict, str]) -> TransformationFilter:
-        instance = super()._load(resource)
-        if isinstance(resource, Dict):
-            if instance.created_time is not None:
-                instance.created_time = TimestampRange(**instance.created_time)
-            if instance.last_updated_time is not None:
-                instance.last_updated_time = TimestampRange(**instance.last_updated_time)
-        return instance
-
     def dump(self, camel_case: bool = True) -> Dict[str, Any]:
         obj = super().dump(camel_case=camel_case)
+        # TODO: These .get only work when camel_case is True:
         if obj.get("includePublic") is not None:
             is_public = obj.pop("includePublic")
             obj["isPublic"] = is_public
@@ -497,7 +488,7 @@ class TransformationPreviewResult(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> TransformationPreviewResult:
+    def _load(cls, resource: Dict, cognite_client: CogniteClient = None) -> TransformationPreviewResult:
         instance = super()._load(resource, cognite_client)
         if isinstance(instance.schema, Dict):
             items = instance.schema.get("items")

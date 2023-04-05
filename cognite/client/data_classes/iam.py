@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, CogniteResponse
+from cognite.client.utils._auxiliary import basic_obj_dump
 from cognite.client.utils._text import convert_all_keys_to_camel_case
 
 if TYPE_CHECKING:
@@ -131,7 +132,7 @@ class CreatedSession(CogniteResource):
         type: str = None,
         status: str = None,
         nonce: str = None,
-        client_id: str = None,
+        client_id: Optional[str] = None,
         cognite_client: CogniteClient = None,
     ):
         self.id = id
@@ -139,6 +140,7 @@ class CreatedSession(CogniteResource):
         self.status = status
         self.nonce = nonce
         self.client_id = client_id
+        self.cognite_client = cognite_client
 
 
 class Session(CogniteResource):
@@ -160,7 +162,7 @@ class Session(CogniteResource):
         status: str = None,
         creation_time: int = None,
         expiration_time: int = None,
-        client_id: str = None,
+        client_id: Optional[str] = None,
         cognite_client: CogniteClient = None,
     ):
         self.id = id
@@ -169,14 +171,15 @@ class Session(CogniteResource):
         self.creation_time = creation_time
         self.expiration_time = expiration_time
         self.client_id = client_id
+        self.cognite_client = cognite_client
 
 
 class SessionList(CogniteResourceList):
     _RESOURCE = Session
 
 
-class ClientCredentials(CogniteResource):
-    """Client credentials for session creation
+class ClientCredentials:
+    """Object to store client credentials.
 
     Args:
         client_id (str): Client ID from identity provider.
@@ -186,3 +189,6 @@ class ClientCredentials(CogniteResource):
     def __init__(self, client_id: str, client_secret: str):
         self.client_id = client_id
         self.client_secret = client_secret
+
+    def dump(self, camel_case: bool = False) -> Dict[str, str]:
+        return basic_obj_dump(self, camel_case)

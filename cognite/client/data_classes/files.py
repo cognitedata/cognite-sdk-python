@@ -90,7 +90,7 @@ class FileMetadata(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> FileMetadata:
+    def _load(cls, resource: Dict, cognite_client: CogniteClient = None) -> FileMetadata:
         instance = super()._load(resource, cognite_client)
         instance.labels = Label._load_list(instance.labels)
         if instance.geo_location is not None:
@@ -120,7 +120,6 @@ class FileMetadataFilter(CogniteFilter):
         external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
         directory_prefix (str): Filter by this (case-sensitive) prefix for the directory provided by the client.
         uploaded (bool): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
-        cognite_client (CogniteClient): The client to associate with this object.
     """
 
     def __init__(
@@ -143,7 +142,6 @@ class FileMetadataFilter(CogniteFilter):
         external_id_prefix: str = None,
         directory_prefix: str = None,
         uploaded: bool = None,
-        cognite_client: CogniteClient = None,
     ):
         self.name = name
         self.mime_type = mime_type
@@ -163,28 +161,11 @@ class FileMetadataFilter(CogniteFilter):
         self.external_id_prefix = external_id_prefix
         self.directory_prefix = directory_prefix
         self.uploaded = uploaded
-        self._cognite_client = cast("CogniteClient", cognite_client)
 
         if labels is not None and not isinstance(labels, LabelFilter):
             raise TypeError("FileMetadataFilter.labels must be of type LabelFilter")
         if geo_location is not None and not isinstance(geo_location, GeoLocationFilter):
             raise TypeError("FileMetadata.geo_location should be of type GeoLocationFilter")
-
-    @classmethod
-    def _load(cls, resource: Union[Dict, str]) -> FileMetadataFilter:
-        instance = super()._load(resource)
-        if isinstance(resource, Dict):
-            if instance.created_time is not None:
-                instance.created_time = TimestampRange(**instance.created_time)
-            if instance.last_updated_time is not None:
-                instance.last_updated_time = TimestampRange(**instance.last_updated_time)
-            if instance.uploaded_time is not None:
-                instance.uploaded_time = TimestampRange(**instance.uploaded_time)
-            if instance.labels is not None:
-                instance.labels = LabelFilter._load(instance.labels)
-            if instance.geo_location is not None:
-                instance.geo_location = GeoLocationFilter._load(**instance.geo_location)
-        return instance
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         result = super().dump(camel_case)

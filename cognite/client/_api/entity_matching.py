@@ -122,9 +122,7 @@ class EntityMatchingAPI(APIClient):
         filter = {k: v for k, v in filter.items() if v is not None}
         # NB no pagination support yet
         models = self._post(self._RESOURCE_PATH + "/list", json={"filter": filter, "limit": limit}).json()["items"]
-        return EntityMatchingModelList(
-            [EntityMatchingModel._load(model, cognite_client=self._cognite_client) for model in models]
-        )
+        return EntityMatchingModelList._load(models, cognite_client=self._cognite_client)
 
     def list_jobs(self) -> ContextualizationJobList:
         """List jobs, typically model fit and predict runs.

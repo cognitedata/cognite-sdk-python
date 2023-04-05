@@ -309,7 +309,7 @@ class RelationshipsAPI(APIClient):
             )
             if tasks_summary.exceptions:
                 raise tasks_summary.exceptions[0]
-            return RelationshipList(tasks_summary.joined_results())
+            return RelationshipList(tasks_summary.joined_results(), cognite_client=None)
         return self._list(
             list_cls=RelationshipList,
             resource_cls=Relationship,

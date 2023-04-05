@@ -12,7 +12,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Collection,
     Dict,
     Generator,
     Iterator,
@@ -644,7 +643,7 @@ class Datapoints(CogniteResource):
 class DatapointsArrayList(CogniteResourceList):
     _RESOURCE = DatapointsArray
 
-    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient = None):
+    def __init__(self, resources: List[DatapointsArray], cognite_client: CogniteClient = None):
         super().__init__(resources, cognite_client)
 
         # Fix what happens for duplicated identifiers:
@@ -763,7 +762,7 @@ class DatapointsArrayList(CogniteResourceList):
 class DatapointsList(CogniteResourceList):
     _RESOURCE = Datapoints
 
-    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient = None):
+    def __init__(self, resources: List[Datapoints], cognite_client: CogniteClient = None):
         super().__init__(resources, cognite_client)
 
         # Fix what happens for duplicated identifiers:

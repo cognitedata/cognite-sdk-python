@@ -345,7 +345,7 @@ class FunctionCallList(CogniteResourceList):
     _RESOURCE = FunctionCall
 
 
-class FunctionCallLogEntry(CogniteResource):
+class FunctionCallLogEntry(CogniteResponse):
     """A log entry for a function call.
 
     Args:
@@ -353,12 +353,7 @@ class FunctionCallLogEntry(CogniteResource):
         message (str): Single line from stdout / stderr.
     """
 
-    def __init__(
-        self,
-        timestamp: int = None,
-        message: str = None,
-        cognite_client: CogniteClient = None,
-    ):
+    def __init__(self, timestamp: int = None, message: str = None, cognite_client: CogniteClient = None):
         self.timestamp = timestamp
         self.message = message
         self._cognite_client = cast("CogniteClient", cognite_client)
@@ -373,7 +368,7 @@ class FunctionsLimits(CogniteResponse):
 
     Args:
         timeout_minutes (int): Timeout of each function call.
-        cpu_cores (Dict[str, float]): The number of CPU cores per function exectuion (i.e. function call).
+        cpu_cores (Dict[str, float]): The number of CPU cores per function execution (i.e. function call).
         memory_gb (Dict[str, float]): The amount of available memory in GB per function execution (i.e. function call).
         runtimes (List[str]): Available runtimes. For example, "py37" translates to the latest version of the Python 3.7.x series.
         response_size_mb (Optional[int]): Maximum response size of function calls.
@@ -411,14 +406,9 @@ class FunctionsStatus(CogniteResponse):
         status (str): Activation Status for the associated project.
     """
 
-    def __init__(
-        self,
-        status: str,
-    ) -> None:
+    def __init__(self, status: str) -> None:
         self.status = status
 
     @classmethod
     def _load(cls, api_response: Dict) -> FunctionsStatus:
-        return cls(
-            status=api_response["status"],
-        )
+        return cls(status=api_response["status"])

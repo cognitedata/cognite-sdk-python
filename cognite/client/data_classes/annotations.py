@@ -61,7 +61,6 @@ class Annotation(CogniteResource):
         self.id: Optional[int] = None  # Read only
         self.created_time: Optional[int] = None  # Read only
         self.last_updated_time: Optional[int] = None  # Read only
-        self._cognite_client: CogniteClient = cast("CogniteClient", None)  # Read only
 
     @classmethod
     def _load(cls, resource: Union[Dict[str, Any], str], cognite_client: CogniteClient = None) -> Annotation:

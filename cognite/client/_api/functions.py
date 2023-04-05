@@ -285,9 +285,7 @@ class FunctionsAPI(APIClient):
 
         return self._LIST_CLASS._load(res.json()["items"], cognite_client=self._cognite_client)
 
-    def retrieve(
-        self, id: Optional[int] = None, external_id: Optional[str] = None
-    ) -> Union[FunctionList, Function, None]:
+    def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Function]:
         """`Retrieve a single function by id. <https://docs.cognite.com/api/v1/#operation/byIdsFunctions>`_
 
         Args:
@@ -842,7 +840,7 @@ class FunctionCallsAPI(APIClient):
 
         url = f"/functions/{function_id}/calls/{call_id}/logs"
         res = self._get(url)
-        return FunctionCallLog._load(res.json()["items"])
+        return FunctionCallLog._load(res.json()["items"], cognite_client=None)
 
 
 class FunctionSchedulesAPI(APIClient):

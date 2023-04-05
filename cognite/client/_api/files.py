@@ -618,7 +618,7 @@ class FilesAPI(APIClient):
                 self._upload_file_from_path, tasks, self._config.max_workers
             )
             tasks_summary.raise_compound_exception_if_failed_tasks(task_unwrap_fn=lambda x: x[0].name)
-            return FileMetadataList(tasks_summary.results)
+            return FileMetadataList(tasks_summary.results, cognite_client=None)
         raise ValueError(f"The path '{path}' does not exist")
 
     def _upload_file_from_path(self, file: FileMetadata, file_path: str, overwrite: bool) -> FileMetadata:

@@ -54,7 +54,7 @@ class GroupsAPI(APIClient):
                 >>> res = c.iam.groups.list()
         """
         res = self._get(self._RESOURCE_PATH, params={"all": all})
-        return GroupList._load(res.json()["items"])
+        return GroupList._load(res.json()["items"], cognite_client=None)
 
     def create(self, group: Union[Group, Sequence[Group]]) -> Union[Group, GroupList]:
         """`Create one or more groups. <https://docs.cognite.com/api/v1/#operation/createGroups>`_
@@ -201,7 +201,10 @@ class SessionsAPI(APIClient):
             client_credentials = ClientCredentials(creds.client_id, creds.client_secret)
 
         items = {"tokenExchange": True} if client_credentials is None else client_credentials.dump(camel_case=True)
-        return CreatedSession._load(self._post(self._RESOURCE_PATH, {"items": [items]}).json()["items"][0])
+        return CreatedSession._load(
+            self._post(self._RESOURCE_PATH, {"items": [items]}).json()["items"][0],
+            cognite_client=None,
+        )
 
     def revoke(self, id: Union[int, Sequence[int]]) -> SessionList:
         """`Revoke access to a session. Revocation of a session may in some cases take up to 1 hour to take effect. <https://docs.cognite.com/api/v1/#operation/revokeSessions>`_
@@ -215,7 +218,10 @@ class SessionsAPI(APIClient):
         identifiers = IdentifierSequence.load(ids=id, external_ids=None)
         items = {"items": identifiers.as_dicts()}
 
-        return self._LIST_CLASS._load(self._post(self._RESOURCE_PATH + "/revoke", items).json()["items"])
+        return self._LIST_CLASS._load(
+            self._post(self._RESOURCE_PATH + "/revoke", items).json()["items"],
+            cognite_client=None,
+        )
 
     def list(self, status: Optional[str] = None) -> SessionList:
         """`List all sessions in the current project. <https://docs.cognite.com/api/v1/#operation/listSessions>`_

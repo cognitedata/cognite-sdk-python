@@ -4,13 +4,7 @@ import json
 from collections import UserDict
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union, cast
 
-from cognite.client.data_classes._base import (
-    EXCLUDE_VALUE,
-    CogniteObjectUpdate,
-    CogniteResource,
-    CogniteResourceList,
-    CogniteUpdate,
-)
+from cognite.client.data_classes._base import CogniteObjectUpdate, CogniteResource, CogniteResourceList, CogniteUpdate
 from cognite.client.utils._text import to_camel_case, to_snake_case
 
 if TYPE_CHECKING:
@@ -237,14 +231,14 @@ class TemplateInstance(CogniteResource):
                 if key != "field_resolvers"
                 else TemplateInstance._encode_field_resolvers(value, camel_case=camel_case)
                 for key, value in self.__dict__.items()
-                if value not in EXCLUDE_VALUE and not key.startswith("_")
+                if value is not None and not key.startswith("_")
             }
         return {
             key: value
             if key != "field_resolvers"
             else TemplateInstance._encode_field_resolvers(value, camel_case=camel_case)
             for key, value in self.__dict__.items()
-            if value not in EXCLUDE_VALUE and not key.startswith("_")
+            if value is not None and not key.startswith("_")
         }
 
     @staticmethod
@@ -255,7 +249,7 @@ class TemplateInstance(CogniteResource):
         }
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> TemplateInstance:
+    def _load(cls, resource: Dict, cognite_client: CogniteClient = None) -> TemplateInstance:
         if isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
         elif isinstance(resource, Dict):
@@ -366,12 +360,12 @@ class View(CogniteResource):
             return {
                 to_camel_case(key): View.resolve_nested_classes(value, camel_case)
                 for key, value in self.__dict__.items()
-                if value not in EXCLUDE_VALUE and not key.startswith("_")
+                if value is not None and not key.startswith("_")
             }
         return {
             key: View.resolve_nested_classes(value, camel_case)
             for key, value in self.__dict__.items()
-            if value not in EXCLUDE_VALUE and not key.startswith("_")
+            if value is not None and not key.startswith("_")
         }
 
     @staticmethod
@@ -382,7 +376,7 @@ class View(CogniteResource):
             return value
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> View:
+    def _load(cls, resource: Dict, cognite_client: CogniteClient = None) -> View:
         if isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
         elif isinstance(resource, Dict):
