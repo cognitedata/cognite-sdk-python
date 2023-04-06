@@ -16,10 +16,12 @@ from cognite.client.data_classes.transformations.common import (
     EdgeType,
     InstanceEdges,
     InstanceNodes,
+    InstanceDataModel,
     NonceCredentials,
     OidcCredentials,
     SequenceRows,
     ViewInfo,
+    DataModelInfo,
 )
 from cognite.client.utils._text import random_string
 
@@ -252,6 +254,38 @@ class TestTransformationsAPI:
 
         cognite_client.transformations.delete(id=ts.id)
 
+    def test_create_instance_data_model_transformation(self, cognite_client):
+        prefix = random_string(6, string.ascii_letters)
+        instance_data_model = TransformationDestination.instance_data_model(
+            data_model=DataModelInfo(
+                space="authorBook",
+                external_id="author_book",
+                version="v2",
+                destination_type="AuthorBook_relation",
+                destination_relationship_from_type =  None
+            ),
+            instance_space="test-instanceSpace",
+        )
+        transform = Transformation(
+            name="any",
+            external_id=f"{prefix}-transformation",
+            query="SELECT * FROM my_source_table",
+            destination=instance_data_model,
+        )
+        ts = cognite_client.transformations.create(transform)
+        assert isinstance(ts.destination, InstanceDataModel)
+        assert ts.destination.type == "instances"
+
+        assert isinstance(ts.destination.data_model, DataModelInfo)
+        assert ts.destination.data_model.space == "authorBook"
+        assert ts.destination.data_model.external_id == "author_book"
+        assert ts.destination.data_model.version == "v2"
+        assert ts.destination.data_model.destination_type == "AuthorBook_relation"
+        assert ts.destination.data_model.destination_relationship_from_type == None
+        assert ts.destination.instance_space == "test-instanceSpace"
+
+        cognite_client.transformations.delete(id=ts.id)
+
     def test_create_sequence_rows_transformation(self, cognite_client):
         prefix = random_string(6, string.ascii_letters)
         transform = Transformation(
@@ -440,6 +474,23 @@ class TestTransformationsAPI:
             EdgeType("edge-space2", "myEdge2"),
         )
 
+    def test_update_instance_data_model(self, cognite_client, new_transformation):
+        new_transformation.destination = TransformationDestination.instance_data_model(
+            DataModelInfo("authorBook", "author_book", "v2", "AuthorBook_relation", None), "test-instanceSpace"
+        )
+        partial_update = TransformationUpdate(id=new_transformation.id).destination.set(
+            TransformationDestination.instance_data_model(
+                DataModelInfo("authorBook", "author_book", "v2", "AuthorBook_relation", "author_book"), "test-instanceSpace"
+            )
+        )
+        updated_transformation = cognite_client.transformations.update(new_transformation)
+        assert updated_transformation.destination == TransformationDestination.instance_data_model(
+            DataModelInfo("authorBook", "author_book", "v2", "AuthorBook_relation", None), "test-instanceSpace"
+        )
+        partial_updated = cognite_client.transformations.update(partial_update)
+        assert partial_updated.destination == TransformationDestination.instance_data_model(
+            DataModelInfo("authorBook", "author_book", "v2", "AuthorBook_relation", "author_book"), "test-instanceSpace"
+        )
     def test_update_sequence_rows_update(self, cognite_client, new_transformation):
         new_transformation.destination = SequenceRows("myTest")
         updated_transformation = cognite_client.transformations.update(new_transformation)
