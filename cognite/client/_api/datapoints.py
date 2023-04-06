@@ -309,7 +309,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
 
     Is used when the number of time series to fetch is larger than the number of `max_workers`. How many
     time series are chunked per request is dynamic and is decided by the overall number to fetch, their
-    individual number of datapoints and wheter or not raw- or aggregate datapoints are asked for since
+    individual number of datapoints and whether raw- or aggregate datapoints are asked for since
     they are independent in requests - as long as the total number of time series does not exceed `_FETCH_TS_LIMIT`.
     """
 
@@ -615,8 +615,8 @@ class DatapointsAPI(APIClient):
             aggregates (Union[str, List[str], None]): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
             limit (int): Maximum number of datapoints to return for each time series. Default: None (no limit)
-            include_outside_points (bool): Whether or not to include outside points. Not allowed when fetching aggregates. Default: False
-            ignore_unknown_ids (bool): Whether or not to ignore missing time series rather than raising an exception. Default: False
+            include_outside_points (bool): Whether to include outside points. Not allowed when fetching aggregates. Default: False
+            ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
 
         Returns:
             Union[None, Datapoints, DatapointsList]: A `Datapoints` object containing the requested data, or a `DatapointsList` if multiple time series were asked for (the ordering is ids first, then external_ids). If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
@@ -796,8 +796,8 @@ class DatapointsAPI(APIClient):
             aggregates (Union[str, List[str], None]): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
             limit (int): Maximum number of datapoints to return for each time series. Default: None (no limit)
-            include_outside_points (bool): Whether or not to include outside points. Not allowed when fetching aggregates. Default: False
-            ignore_unknown_ids (bool): Whether or not to ignore missing time series rather than raising an exception. Default: False
+            include_outside_points (bool): Whether to include outside points. Not allowed when fetching aggregates. Default: False
+            ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
 
         Returns:
             Union[None, DatapointsArray, DatapointsArrayList]: A `DatapointsArray` object containing the requested data, or a `DatapointsArrayList` if multiple time series were asked for (the ordering is ids first, then external_ids). If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
@@ -896,8 +896,8 @@ class DatapointsAPI(APIClient):
             aggregates (Union[str, List[str], None]): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
             limit (int): Maximum number of datapoints to return for each time series. Default: None (no limit)
-            include_outside_points (bool): Whether or not to include outside points. Not allowed when fetching aggregates. Default: False
-            ignore_unknown_ids (bool): Whether or not to ignore missing time series rather than raising an exception. Default: False
+            include_outside_points (bool): Whether to include outside points. Not allowed when fetching aggregates. Default: False
+            ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
             uniform_index (bool): If only querying aggregates AND a single granularity is used AND no limit is used, specifying `uniform_index=True` will return a dataframe with an
                 equidistant datetime index from the earliest `start` to the latest `end` (missing values will be NaNs). If these requirements are not met, a ValueError is raised. Default: False
             include_aggregate_name (bool): Include 'aggregate' in the column name, e.g. `my-ts|average`. Ignored for raw time series. Default: True
@@ -934,7 +934,7 @@ class DatapointsAPI(APIClient):
                 ...     end=datetime(2020, 12, 31, tzinfo=timezone.utc),
                 ...     uniform_index=True)
 
-            Get a pandas dataframe containing the 'average' aggregate for two time series using a 30 day granularity,
+            Get a pandas dataframe containing the 'average' aggregate for two time series using a 30-day granularity,
             starting Jan 1, 1970 all the way up to present, without having the aggregate name in the column names::
 
                 >>> df = client.time_series.data.retrieve_dataframe(
