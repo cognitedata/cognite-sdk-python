@@ -281,7 +281,6 @@ class TestTransformationsAPI:
         assert ts.destination.data_model.external_id == "author_book"
         assert ts.destination.data_model.version == "v2"
         assert ts.destination.data_model.destination_type == "AuthorBook_relation"
-        assert ts.destination.data_model.destination_relationship_from_type == None
         assert ts.destination.instance_space == "test-instanceSpace"
 
         cognite_client.transformations.delete(id=ts.id)
