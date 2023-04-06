@@ -32,9 +32,6 @@ class TransformationDestination:
                 ret[k] = ret[k].dump(camel_case=camel_case)
         return ret
 
-
-
-
     @staticmethod
     def assets() -> TransformationDestination:
         """To be used when the transformation is meant to produce assets."""
@@ -167,7 +164,9 @@ class TransformationDestination:
         return InstanceEdges(view=view, instance_space=instance_space, edge_type=edge_type)
 
     @staticmethod
-    def instance_data_model(data_model: Optional[DataModelInfo] = None, instance_space: Optional[str] = None) -> InstanceDataModel:
+    def instance_data_model(
+        data_model: Optional[DataModelInfo] = None, instance_space: Optional[str] = None
+    ) -> InstanceDataModel:
         """To be used when the transformation is meant to produce dataModel's instances.
             Flexible Data Models resource type is on `beta` version currently.
 
@@ -178,6 +177,7 @@ class TransformationDestination:
             InstanceDataModel: pointing to the target centric data model.
         """
         return InstanceDataModel(data_model=data_model, instance_space=instance_space)
+
 
 class RawTable(TransformationDestination):
     def __init__(self, database: str = None, table: str = None):
@@ -240,8 +240,16 @@ class EdgeType:
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         return basic_obj_dump(self, camel_case)
 
+
 class DataModelInfo:
-    def __init__(self, space: str, external_id: str, version: str, destination_type: str, destination_relationship_from_type: Optional[str] = None):
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: str,
+        destination_type: str,
+        destination_relationship_from_type: Optional[str] = None,
+    ):
 
         self.space = space
         self.external_id = external_id
@@ -251,13 +259,21 @@ class DataModelInfo:
 
     def __hash__(self) -> int:
         if self.destination_relationship_from_type is not None:
-            return hash((self.space, self.external_id, self.version, self.destination_type,
-                         self.destination_relationship_from_type))
+            return hash(
+                (
+                    self.space,
+                    self.external_id,
+                    self.version,
+                    self.destination_type,
+                    self.destination_relationship_from_type,
+                )
+            )
         else:
             return hash((self.space, self.external_id, self.version, self.destination_type))
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         return basic_obj_dump(self, camel_case)
+
 
 class InstanceNodes(TransformationDestination):
     def __init__(
@@ -307,6 +323,7 @@ class InstanceEdges(TransformationDestination):
         if isinstance(inst.edge_type, dict):
             inst.edge_type = EdgeType(**convert_all_keys_to_snake_case(inst.edge_type))
         return inst
+
 
 class InstanceDataModel(TransformationDestination):
     def __init__(
@@ -399,7 +416,15 @@ class TransformationBlockedInfo:
 
 def _load_destination_dct(
     dct: Dict[str, Any]
-) -> Union[RawTable, DataModelInstances, InstanceNodes, InstanceEdges, InstanceDataModel, SequenceRows, TransformationDestination]:
+) -> Union[
+    RawTable,
+    DataModelInstances,
+    InstanceNodes,
+    InstanceEdges,
+    InstanceDataModel,
+    SequenceRows,
+    TransformationDestination,
+]:
     """Helper function to load destination from dictionary"""
     snake_dict = convert_all_keys_to_snake_case(dct)
     destination_type = snake_dict.pop("type")
