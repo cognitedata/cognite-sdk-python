@@ -13,15 +13,15 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.transformations import ContainsAny
 from cognite.client.data_classes.transformations.common import (
+    DataModelInfo,
     EdgeType,
+    InstanceDataModel,
     InstanceEdges,
     InstanceNodes,
-    InstanceDataModel,
     NonceCredentials,
     OidcCredentials,
     SequenceRows,
     ViewInfo,
-    DataModelInfo,
 )
 from cognite.client.utils._text import random_string
 
@@ -236,7 +236,7 @@ class TestTransformationsAPI:
                 external_id="author_book",
                 version="v2",
                 destination_type="AuthorBook_relation",
-                destination_relationship_from_type =  None
+                destination_relationship_from_type=None,
             ),
             instance_space="test-instanceSpace",
         )
@@ -255,7 +255,6 @@ class TestTransformationsAPI:
         assert ts.destination.data_model.external_id == "author_book"
         assert ts.destination.data_model.version == "v2"
         assert ts.destination.data_model.destination_type == "AuthorBook_relation"
-
         assert ts.destination.instance_space == "test-instanceSpace"
 
         cognite_client.transformations.delete(id=ts.id)
@@ -454,7 +453,8 @@ class TestTransformationsAPI:
         )
         partial_update = TransformationUpdate(id=new_transformation.id).destination.set(
             TransformationDestination.instance_data_model(
-                DataModelInfo("authorBook", "author_book", "v2", "AuthorBook_relation", "author_book"), "test-instanceSpace"
+                DataModelInfo("authorBook", "author_book", "v2", "AuthorBook_relation", "author_book"),
+                "test-instanceSpace",
             )
         )
         updated_transformation = cognite_client.transformations.update(new_transformation)
@@ -465,6 +465,7 @@ class TestTransformationsAPI:
         assert partial_updated.destination == TransformationDestination.instance_data_model(
             DataModelInfo("authorBook", "author_book", "v2", "AuthorBook_relation", "author_book"), "test-instanceSpace"
         )
+
     def test_update_sequence_rows_update(self, cognite_client, new_transformation):
         new_transformation.destination = SequenceRows("myTest")
         updated_transformation = cognite_client.transformations.update(new_transformation)
