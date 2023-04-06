@@ -255,8 +255,7 @@ class DataModelInfo:
                          self.destination_relationship_from_type))
         else:
             return hash((self.space, self.external_id, self.version, self.destination_type))
-    def __hash__(self) -> int:
-        return hash((self.space, self.external_id, self.version, self.destination_type))
+
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         return basic_obj_dump(self, camel_case)
 
