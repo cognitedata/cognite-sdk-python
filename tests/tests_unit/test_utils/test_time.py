@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import platform
 import re
 import time
@@ -12,6 +14,7 @@ from cognite.client.utils._time import (
     align_start_and_end_for_granularity,
     convert_time_attributes_to_datetime,
     datetime_to_ms,
+    dst_transition_dates,
     granularity_to_ms,
     granularity_unit_to_ms,
     ms_to_datetime,
@@ -261,3 +264,35 @@ class TestAlignToGranularity:
         gran_ms = granularity_to_ms(granularity)
         start, end = gran_ms - 1, 2 * gran_ms
         assert expected == align_start_and_end_for_granularity(start, end, granularity)
+
+
+class TestDSTTransitionDates:
+    @staticmethod
+    @pytest.mark.dsl
+    @pytest.mark.parametrize(
+        "tz, year, expected_dates",
+        [
+            ("Europe/Oslo", 2023, (datetime(2023, 3, 26), datetime(2023, 10, 29))),
+            ("Europe/Oslo", 2024, (datetime(2024, 3, 31), datetime(2024, 10, 27))),
+            ("Europe/Oslo", 2000, (datetime(2000, 3, 26), datetime(2000, 10, 29))),
+            ("America/New_York", 2023, (datetime(2023, 3, 12), datetime(2023, 11, 5))),
+            ("America/New_York", 2024, (datetime(2024, 3, 10), datetime(2024, 11, 3))),
+            ("America/New_York", 2000, (datetime(2000, 4, 2), datetime(2000, 10, 29))),
+            ("Brazil/East", 2023, None),
+        ],
+    )
+    def test_dst_transition_dates(tz: str, year: int, expected_dates: None | tuple[datetime, datetime]):
+        # Arrange
+        try:
+            import zoneinfo
+        except ImportError:
+            from backports import zoneinfo
+        utc = zoneinfo.ZoneInfo("UTC")
+        if expected_dates:
+            expected_dates = expected_dates[0].replace(tzinfo=utc), expected_dates[1].replace(tzinfo=utc)
+
+        # Act
+        actual_dates = dst_transition_dates(zoneinfo.ZoneInfo(tz), year)
+
+        # Assert
+        assert actual_dates == expected_dates

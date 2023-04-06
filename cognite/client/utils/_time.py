@@ -11,6 +11,12 @@ from cognite.client.utils._auxiliary import local_import
 if TYPE_CHECKING:
     import pandas
 
+    try:
+        import zoneinfo  # type:ignore
+    except ImportError:
+        from backports import zoneinfo  # type:ignore
+
+
 UNIT_IN_MS_WITHOUT_WEEK = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000}
 UNIT_IN_MS = {**UNIT_IN_MS_WITHOUT_WEEK, "w": 604800000}
 
@@ -247,3 +253,65 @@ def cdf_aggregate(
         .shift(-step)
         .iloc[::step]
     )
+
+
+def dst_transition_dates(tz: zoneinfo.ZoneInfo, year: int) -> None | tuple[datetime, datetime]:
+    """
+    Convenience function for getting datetime saving time (DST) transition dates for a given timezone and year.
+    It returns None if the timezone does not have a DST for the given year.
+
+    Apparently this is not included in any python library
+    https://stackoverflow.com/questions/59938388/convenience-function-to-get-daylight-saving-time-dates-for-a-certain-year
+
+    This is implemented with a binary search algorithm.
+
+    """
+    try:
+        import zoneinfo  # type:ignore
+    except ImportError:
+        from backports import zoneinfo  # type:ignore
+
+    utc = zoneinfo.ZoneInfo("UTC")
+
+    current = datetime(year, 3, 31, tzinfo=utc)
+    spring = _binary_search_dst_transition(
+        datetime(year, 1, 1, tzinfo=utc), datetime(year, 6, 30, tzinfo=utc), current, tz
+    )
+    if spring is None:
+        return None
+    current = datetime(year, 10, 1, tzinfo=utc)
+    fall = _binary_search_dst_transition(
+        datetime(year, 7, 1, tzinfo=utc), datetime(year, 12, 31, tzinfo=utc), current, tz
+    )
+    return None if fall is None else (spring, fall)
+
+
+def _binary_search_dst_transition(
+    low_utc: datetime, high_utc: datetime, today_utc: datetime, tz: zoneinfo.ZoneInfo
+) -> datetime | None:
+    """
+    Binary search algorithm to find transition from std to dst or dst to std.
+
+    Note all comparison is done in local time, while arithmetic is done in UTC to avoid mistakes due to DST.
+    """
+    low_tz = low_utc.astimezone(tz)
+    high_tz = high_utc.astimezone(tz)
+    if high_tz.dst() == low_tz.dst():
+        # No daylight savings
+        return None
+
+    today_tz = today_utc.astimezone(tz)
+    tomorrow_tz = (today_utc + timedelta(days=1)).astimezone(tz)
+    if today_tz.dst() != tomorrow_tz.dst():
+        # Today will switch to or away from DST.
+        return today_utc
+
+    if today_tz.dst() == high_tz.dst():
+        # New high limit -> transition is between low and today.
+        new_today = low_utc + (today_utc - low_utc) / 2
+        return _binary_search_dst_transition(low_utc, today_utc, new_today.replace(hour=0, minute=0), tz)
+
+    assert today_tz.dst() == low_tz.dst()
+    # New low limit -> transition is between today and high.
+    new_today = today_utc + (high_utc - today_utc) / 2
+    return _binary_search_dst_transition(today_utc, high_utc, new_today.replace(hour=0, minute=0), tz)
