@@ -174,7 +174,7 @@ class DpsFetchStrategy(ABC):
         return self.dps_client._do_request(
             json=payload,
             method="POST",
-            url_path=self.dps_client._RESOURCE_PATH + "/list",
+            url_path=f"{self.dps_client._RESOURCE_PATH}/list",
             accept="application/protobuf",
             timeout=self.dps_client._config.timeout,
         ).content
