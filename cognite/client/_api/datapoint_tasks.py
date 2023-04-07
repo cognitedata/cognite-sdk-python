@@ -65,6 +65,11 @@ if TYPE_CHECKING:
 
     from cognite.client.data_classes.datapoints import NumpyFloat64Array, NumpyInt64Array, NumpyObjArray
 
+    try:
+        from zoneinfo import ZoneInfo  # type:ignore
+    except ImportError:
+        from backports.zoneinfo import ZoneInfo  # type:ignore
+
 DatapointsAgg = MutableSequence[AggregateDatapoint]
 DatapointsNum = MutableSequence[NumericDatapoint]
 DatapointsStr = MutableSequence[StringDatapoint]
@@ -133,6 +138,30 @@ class _DatapointsQuery:
             or isinstance(self.external_id, (dict, str))
             and self.id is None
         )
+
+
+def validate_timezone(start: datetime, end: datetime) -> ZoneInfo:
+    try:
+        from zoneinfo import ZoneInfo
+    except ModuleNotFoundError:
+        from backports.zoneinfo import ZoneInfo
+
+    if missing := [name for name, timestamp in zip(("start", "end"), (start, end)) if not timestamp.tzinfo]:
+        names = " and ".join(missing)
+        end_sentence = " do not have timezones." if len(missing) >= 2 else " does not have a timezone."
+        raise ValueError(f"All times must be time zone aware, {names}{end_sentence}")
+
+    if any(not isinstance(timestamp.tzinfo, ZoneInfo) for timestamp in (start, end)):
+        raise ValueError("Only ZoneInfo implementation of tzinfo is supported")
+
+    if start.tzinfo != end.tzinfo:
+        raise ValueError(
+            # Mypy fail to understand that we are guaranteed to have ZoneInfo objects, which have the key attribute.
+            f"start and end have different timezones, {start.tzinfo.key!r} and {end.tzinfo.key!r}. "  # type:ignore
+            "They must be the same."
+        )
+
+    return start.tzinfo
 
 
 class _TimeRangeValidator:

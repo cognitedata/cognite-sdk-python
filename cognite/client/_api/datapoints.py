@@ -980,16 +980,18 @@ class DatapointsAPI(APIClient):
         freq = cast(str, granularity).replace("m", "T")
         return df.reindex(pd.date_range(start=start, end=end, freq=freq, inclusive="left"))
 
-    def aggregate_to_timezone_dataframe(
+    TZAggregates = Literal["average", "sum"]
+
+    def retrieve_dataframe_in_tz(
         self,
         *,
-        id: Union[None, int, Dict[str, Any], Sequence[Union[int, Dict[str, Any]]]] = None,
-        external_id: Union[None, str, Dict[str, Any], Sequence[Union[str, Dict[str, Any]]]] = None,
-        start: Union[int, str, datetime, None],
-        end: Union[int, str, datetime, None],
-        aggregates: List[Literal["average", "sum"]],
+        id: int | Sequence[int] | None = None,
+        external_id: str | Sequence[str] | None = None,
+        start: datetime,
+        end: datetime,
+        aggregates: TZAggregates,
         granularity: str,
-        timezone: str,
+        limit: Optional[int] = None,
         ignore_unknown_ids: bool = False,
         include_aggregate_name: bool = False,
         include_granularity_name: bool = False,
