@@ -959,20 +959,23 @@ class DatapointsAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
         fetcher = select_dps_fetch_strategy(self, user_query=query)
-        if uniform_index:
-            grans_given = {q.granularity for q in fetcher.all_queries}
-            is_limited = any(q.limit is not None for q in fetcher.all_queries)
-            if fetcher.raw_queries or len(grans_given) > 1 or is_limited:
-                raise ValueError(
-                    "Cannot return a uniform index when asking for aggregates with multiple granularities "
-                    f"({grans_given}) OR when (partly) querying raw datapoints OR when a finite limit is used."
-                )
+        if not uniform_index:
+            return fetcher.fetch_all_datapoints_numpy().to_pandas(
+                column_names, include_aggregate_name, include_granularity_name
+            )
+
+        # Uniform Index Requires extra validation and processing
+        grans_given = {q.granularity for q in fetcher.all_queries}
+        is_limited = any(q.limit is not None for q in fetcher.all_queries)
+        if fetcher.raw_queries or len(grans_given) > 1 or is_limited:
+            raise ValueError(
+                "Cannot return a uniform index when asking for aggregates with multiple granularities "
+                f"({grans_given}) OR when (partly) querying raw datapoints OR when a finite limit is used."
+            )
+
         df = fetcher.fetch_all_datapoints_numpy().to_pandas(
             column_names, include_aggregate_name, include_granularity_name
         )
-        if not uniform_index:
-            return df
-
         start = pd.Timestamp(min(q.start for q in fetcher.agg_queries), unit="ms")
         end = pd.Timestamp(max(q.end for q in fetcher.agg_queries), unit="ms")
         (granularity,) = grans_given
@@ -991,7 +994,6 @@ class DatapointsAPI(APIClient):
         end: datetime,
         aggregates: TZAggregates,
         granularity: str,
-        limit: Optional[int] = None,
         ignore_unknown_ids: bool = False,
         include_aggregate_name: bool = False,
         include_granularity_name: bool = False,
