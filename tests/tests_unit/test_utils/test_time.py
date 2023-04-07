@@ -3,10 +3,12 @@ from __future__ import annotations
 import platform
 import re
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from typing import Iterable
 from unittest import mock
 
 import pytest
+from _pytest.mark import ParameterSet
 
 from cognite.client.utils._time import (
     MAX_TIMESTAMP_MS,
@@ -20,6 +22,7 @@ from cognite.client.utils._time import (
     ms_to_datetime,
     split_time_range,
     timestamp_to_ms,
+    to_fixed_utc_intervals,
 )
 from tests.utils import tmp_set_envvar
 
@@ -296,3 +299,49 @@ class TestDSTTransitionDates:
 
         # Assert
         assert actual_dates == expected_dates
+
+
+def to_fixed_utc_intervals_data() -> Iterable[ParameterSet]:
+    try:
+        from zoneinfo import ZoneInfo
+
+    except ModuleNotFoundError:
+        try:
+            from backports.zoneinfo import ZoneInfo
+        except ModuleNotFoundError:
+            # When running the core tests neither ZoneInfo or backportsZoneInfo are available
+            return []
+    oslo = ZoneInfo("Europe/Oslo")
+    utc = dict(tzinfo=ZoneInfo("UTC"))
+    dst = datetime(2023, 3, 25, 23, **utc)
+    std = datetime(2023, 10, 28, 22, **utc)
+    hour = timedelta(hours=1)
+
+    yield pytest.param(
+        datetime(2023, 1, 1, tzinfo=oslo),
+        datetime(2023, 12, 31, 23, 59, 59, tzinfo=oslo),
+        "1day",
+        [
+            {"start": datetime(2022, 12, 31, 23, **utc), "end": dst, "granularity": "24h"},
+            {"start": dst, "end": dst + hour, "granularity": "23h"},
+            {"start": dst + timedelta(hours=23), "end": std, "granularity": "24h"},
+            {"start": std, "end": std + hour, "granularity": "25h"},
+            {"start": std + timedelta(hours=25), "end": datetime(2023, 12, 31, 23, **utc), "granularity": "24h"},
+        ],
+        id="Year 2023 at daily granularity",
+    )
+
+
+class TestToFixedUTCIntervals:
+    @staticmethod
+    @pytest.mark.dsl
+    @pytest.mark.parametrize(
+        "start, end, granularity, expected_intervals",
+        list(to_fixed_utc_intervals_data()),
+    )
+    def test_to_fixed_utc_intervals(
+        start: datetime, end: datetime, granularity: str, expected_intervals: list[dict[str, int | str]]
+    ):
+        actual_intervals = to_fixed_utc_intervals(start, end, granularity)
+
+        assert actual_intervals == expected_intervals

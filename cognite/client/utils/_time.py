@@ -273,15 +273,15 @@ def dst_transition_dates(tz: zoneinfo.ZoneInfo, year: int) -> None | tuple[datet
 
     utc = zoneinfo.ZoneInfo("UTC")
 
-    current = datetime(year, 3, 31, tzinfo=utc)
+    start = datetime(year, 3, 31, tzinfo=utc)
     spring = _binary_search_dst_transition(
-        datetime(year, 1, 1, tzinfo=utc), datetime(year, 6, 30, tzinfo=utc), current, tz
+        datetime(year, 1, 1, tzinfo=utc), datetime(year, 6, 30, tzinfo=utc), start, tz
     )
     if spring is None:
         return None
-    current = datetime(year, 10, 1, tzinfo=utc)
+    start = datetime(year, 10, 1, tzinfo=utc)
     fall = _binary_search_dst_transition(
-        datetime(year, 7, 1, tzinfo=utc), datetime(year, 12, 31, tzinfo=utc), current, tz
+        datetime(year, 7, 1, tzinfo=utc), datetime(year, 12, 31, tzinfo=utc), start, tz
     )
     return None if fall is None else (spring, fall)
 
@@ -315,3 +315,42 @@ def _binary_search_dst_transition(
     # New low limit -> transition is between today and high.
     new_today = today_utc + (high_utc - today_utc) / 2
     return _binary_search_dst_transition(today_utc, high_utc, new_today.replace(hour=0, minute=0), tz)
+
+
+def to_fixed_utc_intervals(start: datetime, end: datetime, granularity: str) -> list[dict[str, datetime | str]]:
+    if granularity != "1day":
+        raise NotImplementedError("Currently granularity is hard coded to one day")
+    try:
+        from zoneinfo import ZoneInfo  # type:ignore
+    except ImportError:
+        from backports.zoneinfo import ZoneInfo  # type:ignore
+
+    start_ms, end_ms = align_start_and_end_for_granularity(datetime_to_ms(start), datetime_to_ms(end), "1h")
+    utc = ZoneInfo("UTC")
+    start_utc, end_utc = ms_to_datetime(start_ms).astimezone(utc), ms_to_datetime(end_ms).astimezone(utc)
+    tz = start.tzinfo
+    hour = timedelta(hours=1)
+    last_end = start_utc
+    out: list[dict[str, datetime | str]] = []
+    for year in range(start.year, end.year + 1):
+        transition = dst_transition_dates(start.tzinfo, year)
+        if transition is None:
+            # No daylight savings this year
+            continue
+        spring, fall = transition
+        spring = spring.replace(tzinfo=tz).astimezone(utc)
+        fall = fall.replace(tzinfo=tz).astimezone(utc)
+        out.extend(
+            [
+                {"start": last_end, "end": spring, "granularity": "24h"},
+                {"start": spring, "end": spring + hour, "granularity": "23h"},
+                {"start": spring + timedelta(hours=23), "end": fall, "granularity": "24h"},
+                {"start": fall, "end": fall + hour, "granularity": "25h"},
+            ]
+        )
+        last_end = fall + timedelta(hours=25)
+    out.append(
+        {"start": last_end, "end": end_utc, "granularity": "24h"},
+    )
+
+    return out
