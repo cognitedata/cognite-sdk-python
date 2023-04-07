@@ -9,7 +9,8 @@ import random
 import re
 import time
 from contextlib import nullcontext as does_not_raise
-from datetime import datetime
+from datetime import datetime, timedelta
+from typing import Literal
 from unittest.mock import patch
 
 import numpy as np
@@ -47,6 +48,12 @@ from tests.utils import (
     rng_context,
     set_max_workers,
 )
+
+try:
+    import zoneinfo
+except ImportError:
+    from backports import zoneinfo
+
 
 DATAPOINTS_API = "cognite.client._api.datapoints.{}"
 WEEK_MS = UNIT_IN_MS["w"]
@@ -116,12 +123,12 @@ def ms_bursty_ts(all_test_time_series):
     return all_test_time_series[115]
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def hourly_normal_dist(all_test_time_series) -> TimeSeries:
     return all_test_time_series[116]
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def minutely_normal_dist(all_test_time_series) -> TimeSeries:
     return all_test_time_series[117]
 
@@ -181,6 +188,15 @@ def validate_raw_datapoints(ts, dps, check_offset=True, check_delta=True):
         assert np.all(np.diff(values) == delta)
 
     return index, values
+
+
+def get_test_series(test_series_no: str, available_test_series: TimeSeriesList) -> TimeSeries:
+    time_series = next(
+        (t for t in available_test_series if t.external_id.startswith(f"{TEST_PREFIX}{test_series_no}")), None
+    )
+    if time_series is None:
+        raise ValueError(f"Invalid test data, test case {test_series_no} does not exists")
+    return time_series
 
 
 PARAMETRIZED_VALUES_OUTSIDE_POINTS = [
@@ -1007,98 +1023,107 @@ class TestRetrieveAggregateDatapointsAPI:
             assert len(res_lst.get(external_id=ts_string.external_id)) == 2
 
 
-def get_test_series(test_series_no: str, available_test_series: TimeSeriesList) -> TimeSeries:
-    time_series = next(
-        (t for t in available_test_series if t.external_id.startswith(f"{TEST_PREFIX}{test_series_no}")), None
+@pytest.fixture(scope="session")
+def hourly_2023(cognite_client, hourly_normal_dist) -> pd.DataFrame:
+    utc = zoneinfo.ZoneInfo("UTC")
+    # Adding a day to ensure we get the entire 2023 when converting to specific time zone later
+    day = timedelta(days=1)
+    start = datetime(2023, 1, 1, tzinfo=utc) - day
+    end = datetime(2023, 12, 31, hour=23, minute=59, second=59, tzinfo=utc) + day
+
+    return cognite_client.time_series.data.retrieve_dataframe(
+        external_id=hourly_normal_dist.external_id, start=start, end=end
+    ).tz_localize(utc)
+
+
+class TestReprieveAggregateTimezoneDatapointsAPI:
+    """
+    Integration testing of all the functionality related to aggregation in the correct timezone
+    """
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "test_series_no, start, end, aggregation, granularity",
+        (
+            ("119", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "average", "2h"),
+            ("119", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "average", "3h"),
+            ("119", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "sum", "5h"),
+            ("120", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:59+00:00", "average", "2m"),
+            ("120", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "sum", "30m"),
+            ("120", "2023-01-01T00:00:00+00:00", "2023-01-01T23:59:01+00:00", "average", "15m"),
+            ("120", "2023-01-01T00:00:00+00:00", "2023-01-01T23:59:01+00:00", "average", "1h"),
+        ),
     )
-    if time_series is None:
-        raise ValueError(f"Invalid test data, test case {test_series_no} does not exists")
-    return time_series
+    def test_cdf_aggregate(
+        test_series_no: str,
+        start: str,
+        end: str,
+        aggregation: str,
+        granularity: str,
+        cognite_client: CogniteClient,
+        all_test_time_series: TimeSeriesList,
+    ):
+        # Arrange
+        time_series = get_test_series(test_series_no, all_test_time_series)
+        start, end = datetime.fromisoformat(start), datetime.fromisoformat(end)
+        raw_df = cognite_client.time_series.data.retrieve_dataframe(
+            external_id=time_series.external_id, start=start, end=end
+        )
+        expected_aggregate = cognite_client.time_series.data.retrieve_dataframe(
+            start=start,
+            end=end,
+            external_id=time_series.external_id,
+            aggregates=aggregation,
+            granularity=granularity,
+            include_aggregate_name=False,
+            include_granularity_name=False,
+        )
 
+        # Act
+        actual_aggregate = cdf_aggregate(raw_df, aggregation, granularity, time_series.is_step)
 
-@pytest.mark.parametrize(
-    "test_series_no, start, end, aggregation, granularity",
-    (
-        ("119", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "average", "2h"),
-        ("119", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "average", "3h"),
-        ("119", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "sum", "5h"),
-        ("120", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:59+00:00", "average", "2m"),
-        ("120", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "sum", "30m"),
-        ("120", "2023-01-01T00:00:00+00:00", "2023-01-01T23:59:01+00:00", "average", "15m"),
-        ("120", "2023-01-01T00:00:00+00:00", "2023-01-01T23:59:01+00:00", "average", "1h"),
-    ),
-)
-def test_cdf_aggregate(
-    test_series_no: str,
-    start: str,
-    end: str,
-    aggregation: str,
-    granularity: str,
-    cognite_client: CogniteClient,
-    all_test_time_series: TimeSeriesList,
-):
-    # Arrange
-    time_series = get_test_series(test_series_no, all_test_time_series)
-    start, end = datetime.fromisoformat(start), datetime.fromisoformat(end)
-    raw_df = cognite_client.time_series.data.retrieve_dataframe(
-        external_id=time_series.external_id, start=start, end=end
+        # Assert
+        # Pandas adds the correct frequency to the index, while the SDK does not when uniform is not True.
+        # The last point is not compared as the raw data might be missing information to do the correct aggregate.
+        pd.testing.assert_frame_equal(
+            expected_aggregate.iloc[:-1], actual_aggregate.iloc[:-1], check_freq=False, check_exact=False
+        )
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "aggregation, granularity, tz_name",
+        (
+            ("average", "1d", "Europe/Oslo"),
+            # ("average", "5d", "Europe/Oslo"),
+        ),
     )
-    expected_aggregate = cognite_client.time_series.data.retrieve_dataframe(
-        start=start,
-        end=end,
-        external_id=time_series.external_id,
-        aggregates=aggregation,
-        granularity=granularity,
-        include_aggregate_name=False,
-        include_granularity_name=False,
-    )
+    def test_aggregate_raw_hourly(
+        aggregation: Literal["average", "sum"],
+        granularity: str,
+        tz_name: str,
+        cognite_client: CogniteClient,
+        hourly_2023: pd.DataFrame,
+    ):
+        # Arrange
+        tz = zoneinfo.ZoneInfo(tz_name)
+        start = datetime(2023, 1, 1, tzinfo=tz)
+        end = datetime(2023, 12, 31, 23, 0, 0, tzinfo=tz)
+        raw_df = hourly_2023.tz_convert(tz_name).loc[start:end].copy()
+        expected_aggregate = cdf_aggregate(raw_df, aggregation, granularity)
 
-    # Act
-    actual_aggregate = cdf_aggregate(raw_df, aggregation, granularity, time_series.is_step)
+        # Act
+        actual_aggregate = cognite_client.time_series.data.retrieve_dataframe_in_tz(
+            external_id=list(raw_df.columns),
+            aggregates=aggregation,
+            granularity=granularity,
+            start=start,
+            end=end,
+        )
 
-    # Assert
-    # Pandas adds the correct frequency to the index, while the SDK does not.
-    # The last point is not compared as the raw data might be missing information to do the correct aggregate.
-    pd.testing.assert_frame_equal(
-        expected_aggregate.iloc[:-1], actual_aggregate.iloc[:-1], check_freq=False, check_exact=False
-    )
-
-
-@pytest.mark.skip("In development")
-@pytest.mark.parametrize(
-    "test_series_no, aggregation, granularity, timezone",
-    (
-        ("119", "1d", "average", "Europe/Oslo"),
-        ("119", "1d", "sum", "Europe/Oslo"),
-    ),
-)
-def test_aggregate_timezone(
-    test_series_no: str,
-    aggregation: str,
-    granularity: str,
-    timezone: str,
-    cognite_client: CogniteClient,
-    all_test_time_series: TimeSeriesList,
-):
-    # Arrange
-    time_series = get_test_series(test_series_no, all_test_time_series)
-    raw_df = (
-        cognite_client.time_series.data.retrieve_dataframe(external_id=time_series.external_id)
-        .tz_localize("UTC")
-        .tz_convert(timezone)
-    )
-    expected_aggregate = cdf_aggregate(raw_df, aggregation, granularity, time_series.is_step)
-
-    # Act
-    actual_aggregate = cognite_client.time_series.data.aggregate_to_timezone_dataframe(
-        external_id=time_series.external_id,
-        aggregates=aggregation,
-        granularity=granularity,
-        timezone=timezone,
-    )
-
-    # Assert
-    pd.testing.assert_frame_equal(expected_aggregate, actual_aggregate)
+        # Assert
+        # When doing the aggregation in pandas frequency information is added to the
+        # resulting dataframe which is not included when retrieving from CDF.
+        pd.testing.assert_frame_equal(expected_aggregate, actual_aggregate, check_freq=False)
 
 
 class TestRetrieveMixedRawAndAgg:

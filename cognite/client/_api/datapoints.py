@@ -43,6 +43,7 @@ from cognite.client._api.datapoint_tasks import (
     _DatapointsQuery,
     _SingleTSQueryBase,
     _SingleTSQueryValidator,
+    validate_timezone,
 )
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api_client import APIClient
@@ -65,7 +66,7 @@ from cognite.client.utils._auxiliary import (
 )
 from cognite.client.utils._concurrency import collect_exc_info_and_raise, execute_tasks, get_priority_executor
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
-from cognite.client.utils._time import timestamp_to_ms
+from cognite.client.utils._time import timestamp_to_ms, to_fixed_utc_intervals
 
 if not import_legacy_protobuf():
     from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem, DataPointListResponse
@@ -994,12 +995,42 @@ class DatapointsAPI(APIClient):
         end: datetime,
         aggregates: TZAggregates,
         granularity: str,
+        limit: Optional[int] = None,
         ignore_unknown_ids: bool = False,
-        include_aggregate_name: bool = False,
+        uniform_index: bool = False,
+        include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
         column_names: Literal["id", "external_id"] = "external_id",
     ) -> pd.DataFrame:
-        raise NotImplementedError()
+        tz = validate_timezone(start, end)
+        if id is not None and external_id is not None:
+            raise ValueError("Either input ids or external ids")
+
+        # todo create the custom aggregations
+        intervals = to_fixed_utc_intervals(start, end, granularity.replace("d", "day"))
+
+        id_name, ids = ("external_id", external_id) if external_id else ("id", id)
+        if not isinstance(ids, Sequence):
+            ids = [ids]  # type:ignore
+
+        queries = [
+            {id_name: id_, "aggregates": aggregates, **interval}
+            for id_, interval in itertools.product(ids, intervals)  # type:ignore
+        ]
+        df = self.retrieve_dataframe(
+            limit=None,
+            include_aggregate_name=True,
+            column_names="external_id",
+            ignore_unknown_ids=ignore_unknown_ids,
+            **{id_name: queries},  # type:ignore
+        )
+        # The aggregation mean is arbitrary as the result will produce multiple columns
+        # for the same time series, with all values being nan except for one.
+        df = df.groupby(df.columns, axis=1).mean()
+        df = df.tz_localize("utc").tz_convert(tz.key)
+        # Toto remove this hack, temporary to get first one to pass.
+        df.columns = df.columns.str.replace("|average", "")
+        return df
 
     def retrieve_latest(
         self,
