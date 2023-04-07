@@ -135,20 +135,8 @@ class _DatapointsQuery:
         )
 
 
-class _SingleTSQueryValidator:
-    def __init__(self, user_query: _DatapointsQuery, *, dps_limit_raw: int, dps_limit_agg: int) -> None:
-        self.user_query = user_query
-        self.dps_limit_raw = dps_limit_raw
-        self.dps_limit_agg = dps_limit_agg
-        self.defaults: Dict[str, Any] = dict(
-            start=user_query.start,
-            end=user_query.end,
-            limit=user_query.limit,
-            aggregates=user_query.aggregates,
-            granularity=user_query.granularity,
-            include_outside_points=user_query.include_outside_points,
-            ignore_unknown_ids=user_query.ignore_unknown_ids,
-        )
+class _TimeRangeValidator:
+    def __init__(self) -> None:
         # We want all start/end = "now" (and those using the same relative time specifiers, like "4d-ago")
         # queries to get the same time domain to fetch. This also -guarantees- that we correctly raise
         # exception 'end not after start' if both are set to the same value.
@@ -163,6 +151,60 @@ class _SingleTSQueryValidator:
             return self.__time_now - time_ago_to_ms(ts)
         else:
             return timestamp_to_ms(ts)
+
+    def validate_and_align(
+        self,
+        start: Union[int, str, datetime, None],
+        end: Union[int, str, datetime, None],
+        granularity: Optional[str],
+        is_raw: bool,
+        identifier: Identifier,
+    ) -> Tuple[int, int]:
+        """
+        Validates the start and end time. In the case of aggregation, the start and end are aligned with the CDF API.
+
+
+        Args:
+            start: Start time
+            end: End time
+            granularity: If aggregation, must be passed.
+            is_raw: Whether query is for raw or aggregation
+            identifier: Query identifier (used to give a good error message in case validation fails).
+
+        Returns:
+            Start and end time given as ms
+        """
+
+        start = self._ts_to_ms_frozen_now(start, default=0)  # 1970-01-01
+        end = self._ts_to_ms_frozen_now(end, default=self.__time_now)
+
+        if end <= start:
+            raise ValueError(
+                f"Invalid time range, {end=} must be later than {start=} "
+                f"(from query: {identifier.as_dict(camel_case=False)})"
+            )
+        if is_raw:
+            return start, end
+
+        # API rounds aggregate query timestamps in a very particular fashion
+        return align_start_and_end_for_granularity(start, end, cast(str, granularity))
+
+
+class _SingleTSQueryValidator:
+    def __init__(self, user_query: _DatapointsQuery, *, dps_limit_raw: int, dps_limit_agg: int) -> None:
+        self.user_query = user_query
+        self.dps_limit_raw = dps_limit_raw
+        self.dps_limit_agg = dps_limit_agg
+        self.defaults: Dict[str, Any] = dict(
+            start=user_query.start,
+            end=user_query.end,
+            limit=user_query.limit,
+            aggregates=user_query.aggregates,
+            granularity=user_query.granularity,
+            include_outside_points=user_query.include_outside_points,
+            ignore_unknown_ids=user_query.ignore_unknown_ids,
+        )
+        self.time_range_validator = _TimeRangeValidator()
 
     def validate_and_create_single_queries(self) -> List[_SingleTSQueryBase]:
         queries = []
@@ -301,7 +343,9 @@ class _SingleTSQueryValidator:
         identifier = Identifier.of_either(
             cast(Optional[int], dct.get("id")), cast(Optional[str], dct.get("external_id"))
         )
-        start, end = self._verify_time_range(dct["start"], dct["end"], dct["granularity"], is_raw, identifier)
+        start, end = self.time_range_validator.validate_and_align(
+            dct["start"], dct["end"], dct["granularity"], is_raw, identifier
+        )
         converted = {
             "identifier": identifier,
             "start": start,
@@ -331,26 +375,6 @@ class _SingleTSQueryValidator:
             "Parameter `limit` must be a non-negative integer -OR- one of [None, -1, inf] to "
             f"indicate an unlimited query. Got: {limit} with type: {type(limit)}"
         )
-
-    def _verify_time_range(
-        self,
-        start: Union[int, str, datetime, None],
-        end: Union[int, str, datetime, None],
-        granularity: Optional[str],
-        is_raw: bool,
-        identifier: Identifier,
-    ) -> Tuple[int, int]:
-        start = self._ts_to_ms_frozen_now(start, default=0)  # 1970-01-01
-        end = self._ts_to_ms_frozen_now(end, default=self.__time_now)
-
-        if end <= start:
-            raise ValueError(
-                f"Invalid time range, {end=} must be later than {start=} "
-                f"(from query: {identifier.as_dict(camel_case=False)})"
-            )
-        if not is_raw:  # API rounds aggregate query timestamps in a very particular fashion
-            start, end = align_start_and_end_for_granularity(start, end, cast(str, granularity))
-        return start, end
 
 
 class _SingleTSQueryBase:
