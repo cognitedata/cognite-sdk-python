@@ -157,7 +157,7 @@ class CogniteResourceList(Generic[T_CogniteResource], UserList):
 
     _cognite_client = property(_cognite_client_getter, _cognite_client_setter)
 
-    def __init__(self, items: List[T_CogniteResource], cognite_client: Optional[CogniteClient]):
+    def __init__(self, items: List[T_CogniteResource], cognite_client: Optional[CogniteClient] = None):
         self._verify_items(items)
         super().__init__(items)
         self._init_lookup()
