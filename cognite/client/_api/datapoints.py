@@ -1016,19 +1016,18 @@ class DatapointsAPI(APIClient):
             {id_name: id_, "aggregates": aggregates, **interval}
             for id_, interval in itertools.product(ids, intervals)  # type:ignore
         ]
-        df = self.retrieve_dataframe(
+        arrays = self.retrieve_arrays(
             limit=None,
-            include_aggregate_name=True,
-            column_names="external_id",
             ignore_unknown_ids=ignore_unknown_ids,
             **{id_name: queries},  # type:ignore
         )
-        # The aggregation mean is arbitrary as the result will produce multiple columns
-        # for the same time series, with all values being nan except for one.
-        df = df.groupby(df.columns, axis=1).mean()
+        arrays = DatapointsArrayList.create_with_unique_ids(arrays)  # type:ignore
+        df = arrays.to_pandas(column_names, include_aggregate_name, include_granularity_name)
         df = df.tz_localize("utc").tz_convert(tz.key)
-        # Toto remove this hack, temporary to get first one to pass.
-        df.columns = df.columns.str.replace(r"\|average", "")
+        if uniform_index:
+            freq = granularity.replace("m", "T")
+            return df.reindex(pd.date_range(start=start, end=end, freq=freq, inclusive="left"))
+
         return df
 
     def retrieve_latest(

@@ -1118,6 +1118,7 @@ class TestReprieveAggregateTimezoneDatapointsAPI:
             granularity=granularity,
             start=start,
             end=end,
+            include_aggregate_name=False,
         )
 
         # Assert
