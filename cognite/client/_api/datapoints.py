@@ -995,7 +995,6 @@ class DatapointsAPI(APIClient):
         end: datetime,
         aggregates: TZAggregates,
         granularity: str,
-        limit: Optional[int] = None,
         ignore_unknown_ids: bool = False,
         uniform_index: bool = False,
         include_aggregate_name: bool = True,
@@ -1029,7 +1028,7 @@ class DatapointsAPI(APIClient):
         df = df.groupby(df.columns, axis=1).mean()
         df = df.tz_localize("utc").tz_convert(tz.key)
         # Toto remove this hack, temporary to get first one to pass.
-        df.columns = df.columns.str.replace("|average", "")
+        df.columns = df.columns.str.replace(r"\|average", "")
         return df
 
     def retrieve_latest(
