@@ -35,6 +35,8 @@ def validate_time_zone_invalid_arguments_data() -> list[ParameterSet]:
 
     oslo = ZoneInfo("Europe/Oslo")
     new_york = ZoneInfo("America/New_York")
+    katmandu = ZoneInfo("Asia/Katmandu")
+
     return [
         pytest.param(
             datetime(2023, 1, 1, tzinfo=oslo),
@@ -59,6 +61,12 @@ def validate_time_zone_invalid_arguments_data() -> list[ParameterSet]:
             datetime(2023, 1, 10),
             "All times must be time zone aware, end does not have a timezone",
             id="Missing end timezone",
+        ),
+        pytest.param(
+            datetime(2023, 1, 1, tzinfo=katmandu),
+            datetime(2023, 1, 10, tzinfo=katmandu),
+            "Timezone not supported, UTC offset must be in whole hour.",
+            id="Not supported timezone, Asia/Katmandu, as it does not have a whole hour offset from UTC.",
         ),
     ]
 

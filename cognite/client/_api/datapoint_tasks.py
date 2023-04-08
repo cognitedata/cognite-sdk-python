@@ -161,6 +161,11 @@ def validate_timezone(start: datetime, end: datetime) -> ZoneInfo:
             "They must be the same."
         )
 
+    if any(timestamp.utcoffset().total_seconds() % 3600 != 0 for timestamp in (start, end)):  # type:ignore
+        # DST is not guaranteed to be in whole minutes, we assume it is either 0 or an hour.
+        # https://docs.python.org/3/library/datetime.html#datetime.datetime.dst
+        raise ValueError("Timezone not supported, UTC offset must be in whole hour.")
+
     return start.tzinfo
 
 
