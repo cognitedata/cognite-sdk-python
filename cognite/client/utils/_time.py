@@ -446,7 +446,7 @@ def granularity_in_hours(multiplier_or_granularity: str | int, unit: str | None 
     unit_in_hours = {
         "week": 168,
         "day": 24,
-        "hour": 1,
+        "h": 1,
     }
     if unit not in unit_in_hours:
         raise ValueError(f"Unit {unit} is not supported")
