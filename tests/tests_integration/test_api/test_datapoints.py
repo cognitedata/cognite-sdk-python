@@ -1207,6 +1207,36 @@ class TestReprieveAggregateTimezoneDatapointsAPI:
         actual_df.columns = ["count"]
         pd.testing.assert_frame_equal(actual_df, expected_df, check_freq=False)
 
+    @staticmethod
+    @pytest.mark.parametrize(
+        "test_series_no, start, end, tz_name",
+        [
+            ("119", "2023-01-01", "2023-02-01", "Europe/Oslo"),
+            ("120", "2023-01-01", "2023-02-01", "Europe/Oslo"),
+        ],
+    )
+    def test_retrieve_dataframe_in_tz_raw_data(
+        test_series_no: str, start: str, end: str, tz_name: str, cognite_client, all_test_time_series
+    ):
+        # Arrange
+        timeseries = get_test_series(test_series_no, all_test_time_series)
+        start, end = pd.Timestamp(start).to_pydatetime(), pd.Timestamp(end).to_pydatetime()
+        tz = zoneinfo.ZoneInfo(tz_name)
+        start, end = start.replace(tzinfo=tz), end.replace(tzinfo=tz)
+        expected_df = (
+            cognite_client.time_series.data.retrieve_dataframe(external_id=timeseries.external_id, start=start, end=end)
+            .tz_localize("utc")
+            .tz_convert(tz_name)
+        )
+
+        # Act
+        actual_df = cognite_client.time_series.data.retrieve_dataframe_in_tz(
+            external_id=timeseries.external_id, start=start, end=end
+        )
+
+        # Assert
+        pd.testing.assert_frame_equal(actual_df, expected_df)
+
 
 class TestRetrieveMixedRawAndAgg:
     def test_multiple_settings_for_ignore_unknown_ids(
