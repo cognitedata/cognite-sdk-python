@@ -17,6 +17,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [5.11.0] - 04-11-23
+### Added
+- Client support for time zone aggregation, `cognite_client.time_series.data.retrieve_dataframe_in_tz(...)`. This means
+  that the developer can retrieve a dataframe aggregated correctly in the time zone given in the start and end arguments.
+  This includes accounting for DST (Daylight Savings Time). Aggregations supported second, minute, hour,
+  day, week, month, quarter and year.
+
 ## [5.10.1] - 04-04-23
 ### Fixed
 - Add missing field `when` (human readable version of the CRON expression) to `FunctionSchedule` class.
