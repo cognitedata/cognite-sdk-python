@@ -57,10 +57,9 @@ def ms_to_datetime(ms: Union[int, float]) -> datetime:
 
 def time_string_to_ms(pattern: str, string: str, unit_in_ms: Dict[str, int]) -> Optional[int]:
     pattern = pattern.format("|".join(unit_in_ms))
-    res = re.fullmatch(pattern, string)
-    if res:
-        magnitude = int(res.group(1))
-        unit = res.group(2)
+    if res := re.fullmatch(pattern, string):
+        magnitude = int(res[1])
+        unit = res[2]
         return magnitude * unit_in_ms[unit]
     return None
 
@@ -163,13 +162,11 @@ def convert_time_attributes_to_datetime(item: Union[Dict, List[Dict]]) -> Union[
 
 def align_start_and_end_for_granularity(start: int, end: int, granularity: str) -> Tuple[int, int]:
     # Note the API always aligns `start` with 1s, 1m, 1h or 1d (even when given e.g. 73h)
-    remainder = start % granularity_unit_to_ms(granularity)
-    if remainder:
+    if remainder := start % granularity_unit_to_ms(granularity):
         # Floor `start` when not exactly at boundary
         start -= remainder
     gms = granularity_to_ms(granularity)
-    remainder = (end - start) % gms
-    if remainder:
+    if remainder := (end - start) % gms:
         # Ceil `end` when not exactly at boundary decided by `start + N * granularity`
         end += gms - remainder
     return start, end
