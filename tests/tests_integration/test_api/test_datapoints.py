@@ -1096,7 +1096,8 @@ class TestReprieveAggregateTimezoneDatapointsAPI:
         "aggregation, granularity, tz_name",
         (
             ("average", "1d", "Europe/Oslo"),
-            # ("average", "5d", "Europe/Oslo"),
+            ("average", "5d", "Europe/Oslo"),
+            ("sum", "31d", "Europe/Oslo"),
         ),
     )
     def test_aggregate_raw_hourly(
@@ -1126,7 +1127,8 @@ class TestReprieveAggregateTimezoneDatapointsAPI:
         # Assert
         # When doing the aggregation in pandas frequency information is added to the
         # resulting dataframe which is not included when retrieving from CDF.
-        pd.testing.assert_frame_equal(expected_aggregate, actual_aggregate, check_freq=False)
+        # The last point is not compared as the raw data might be missing information to do the correct aggregate.
+        pd.testing.assert_frame_equal(expected_aggregate.iloc[:-1], actual_aggregate.iloc[:-1], check_freq=False)
 
 
 class TestRetrieveMixedRawAndAgg:

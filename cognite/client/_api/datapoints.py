@@ -984,7 +984,17 @@ class DatapointsAPI(APIClient):
         freq = cast(str, granularity).replace("m", "T")
         return df.reindex(pd.date_range(start=start, end=end, freq=freq, inclusive="left"))
 
-    TZAggregates = Literal["average", "sum"]
+    TZAggregates = Literal[
+        "average",
+        "sum",
+        "count",
+        "sum",
+        "interpolation",
+        "stepInterpolation",
+        "continuousVariance",
+        "discreteVariance",
+        "totalVariation",
+    ]
 
     def retrieve_dataframe_in_tz(
         self,
@@ -1005,8 +1015,7 @@ class DatapointsAPI(APIClient):
         if id is not None and external_id is not None:
             raise ValueError("Either input ids or external ids")
 
-        # todo create the custom aggregations
-        intervals = to_fixed_utc_intervals(start, end, granularity.replace("d", "day"))
+        intervals = to_fixed_utc_intervals(start, end, granularity)
 
         id_name, ids = ("external_id", external_id) if external_id else ("id", id)
         if not isinstance(ids, Sequence):
