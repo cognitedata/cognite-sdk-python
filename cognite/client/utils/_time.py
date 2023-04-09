@@ -400,8 +400,13 @@ def get_granularity_multiplier_and_unit(granularity: str, standardize: bool = Tr
 
 
 def standardize_unit(unit: str) -> str:
-    if unit in {"hours", "hour", "h"}:
-        return "hour"
+    # First three use one letter to be consistent with CDF API.
+    if unit in {"seconds", "second", "s"}:
+        return "s"
+    elif unit in {"minutes", "minute", "m"}:
+        return "m"
+    elif unit in {"hours", "hour", "h"}:
+        return "h"
     elif unit in {"day", "days", "d"}:
         return "day"
     elif unit in {"weeks", "w", "week"}:
@@ -585,10 +590,13 @@ def to_fixed_utc_intervals(start: datetime, end: datetime, granularity: str) -> 
         from backports.zoneinfo import ZoneInfo  # type:ignore
     utc = ZoneInfo("UTC")
     multiplier, unit = get_granularity_multiplier_and_unit(granularity, standardize=True)
+    if unit in {"h", "m", "s"}:
+        # UTC is always fixed for these intervals
+        return [{"start": start, "end": end, "granularity": f"{multiplier}{unit}"}]
     start, end = align_large_granularity(start, end, granularity)
     if unit in VARIABLE_LENGTH_UNITS:
         return _to_fixed_utc_intervals_variable_unit_length(start, end, multiplier, unit, utc)
-    elif unit in {"hour", "day", "week"}:
+    elif unit in {"day", "week"}:
         return _to_fixed_utc_intervals_fixed_unit_length(start, end, multiplier, unit, utc)
     raise ValueError(f"Not supported unit {unit}")
 

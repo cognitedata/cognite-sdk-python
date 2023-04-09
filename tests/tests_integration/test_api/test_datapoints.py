@@ -1096,9 +1096,50 @@ def retrieve_dataframe_in_tz_count_large_granularities_data():
     )
 
 
+def retrieve_dataframe_in_tz_count_small_granularities_data():
+    # "106: every minute, 1969-12-31 - 1970-01-02, numeric",
+    oslo = zoneinfo.ZoneInfo("Europe/Oslo")
+    yield pytest.param(
+        "106",
+        datetime(1970, 1, 1, 0, 0, 0, tzinfo=oslo),
+        datetime(1970, 1, 2, 0, 0, 0, tzinfo=oslo),
+        "6hours",
+        pd.DataFrame(
+            [6 * 60] * 4,
+            index=pd.date_range("1970-01-01 00:00:00", "1970-01-01 23:00:00", freq="6H", tz="Europe/Oslo"),
+            columns=["count"],
+            dtype="Int64",
+        ),
+        id="6 hour granularities on minute raw data",
+    )
+    yield pytest.param(
+        "106",
+        datetime(1970, 1, 1, 0, 0, 0, tzinfo=oslo),
+        datetime(1970, 1, 1, 0, 30, 0, tzinfo=oslo),
+        "10minutes",
+        pd.DataFrame(
+            [10] * 3,
+            index=pd.date_range("1970-01-01 00:00:00", "1970-01-01 00:29:00", freq="10T", tz="Europe/Oslo"),
+            columns=["count"],
+            dtype="Int64",
+        ),
+        id="10 minutes granularities on minute raw data",
+    )
+    yield pytest.param(
+        "106",
+        datetime(1970, 1, 1, 0, 0, 0, tzinfo=oslo),
+        datetime(1970, 1, 1, 0, 0, 2, tzinfo=oslo),
+        "1second",
+        pd.DataFrame(
+            [1], index=[pd.Timestamp("1970-01-01 00:00:00", tz="Europe/Oslo")], columns=["count"], dtype="Int64"
+        ),
+        id="1 second granularity on minute raw data",
+    )
+
+
 class TestReprieveAggregateTimezoneDatapointsAPI:
     """
-    Integration testing of all the functionality related to aggregation in the correct timezone
+    Integration testing of all the functionality related to retrieving in the correct timezone
     """
 
     @staticmethod
@@ -1199,6 +1240,31 @@ class TestReprieveAggregateTimezoneDatapointsAPI:
     ):
         actual_df = cognite_client.time_series.data.retrieve_dataframe_in_tz(
             external_id=hourly_normal_dist.external_id,
+            start=start,
+            end=end,
+            aggregates="count",
+            granularity=granularity,
+        )
+        actual_df.columns = ["count"]
+        pd.testing.assert_frame_equal(actual_df, expected_df, check_freq=False)
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "time_series_no, start, end, granularity, expected_df",
+        list(retrieve_dataframe_in_tz_count_small_granularities_data()),
+    )
+    def test_retrieve_dataframe_in_tz_count_small_granularities(
+        time_series_no: str,
+        start: datetime,
+        end: datetime,
+        granularity: str,
+        expected_df: pd.DataFrame,
+        cognite_client,
+        all_test_time_series,
+    ):
+        time_series = get_test_series(time_series_no, all_test_time_series)
+        actual_df = cognite_client.time_series.data.retrieve_dataframe_in_tz(
+            external_id=time_series.external_id,
             start=start,
             end=end,
             aggregates="count",
