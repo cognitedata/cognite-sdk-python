@@ -321,20 +321,20 @@ class TestGranularityInHours:
     @pytest.mark.parametrize(
         "granularity, expected_hours",
         [
-            ("1week", "168h"),
-            ("2weeks", "336h"),
-            ("1w", "168h"),
-            ("1d", "24h"),
-            ("3d", "72h"),
-            ("3days", "72h"),
-            ("1day", "24h"),
-            ("24h", "24h"),
+            ("1week", 168),
+            ("2weeks", 336),
+            ("1w", 168),
+            ("1d", 24),
+            ("3d", 72),
+            ("3days", 72),
+            ("1day", 24),
+            ("24h", 24),
         ],
     )
     def test_granularity_in_hours(granularity: str, expected_hours: str):
         actual_hours = granularity_in_hours(granularity)
 
-        assert actual_hours
+        assert actual_hours == expected_hours
 
 
 class TestCDFAggregation:
@@ -397,26 +397,115 @@ def to_fixed_utc_intervals_data() -> Iterable[ParameterSet]:
         try:
             from backports.zoneinfo import ZoneInfo
         except ModuleNotFoundError:
-            # When running the core tests neither ZoneInfo or backportsZoneInfo are available
+            # When running the core tests neither ZoneInfo nor backportsZoneInfo are available
             return []
     oslo = ZoneInfo("Europe/Oslo")
     utc = dict(tzinfo=ZoneInfo("UTC"))
-    dst = datetime(2023, 3, 25, 23, **utc)
-    std = datetime(2023, 10, 28, 22, **utc)
-    hour = timedelta(hours=1)
+    oslo_dst = datetime(2023, 3, 25, 23, **utc)
+    oslo_std = datetime(2023, 10, 28, 22, **utc)
 
     yield pytest.param(
         datetime(2023, 1, 1, tzinfo=oslo),
         datetime(2023, 12, 31, 23, 59, 59, tzinfo=oslo),
         "1day",
         [
-            {"start": datetime(2022, 12, 31, 23, **utc), "end": dst, "granularity": "24h"},
-            {"start": dst, "end": dst + hour, "granularity": "23h"},
-            {"start": dst + timedelta(hours=23), "end": std, "granularity": "24h"},
-            {"start": std, "end": std + hour, "granularity": "25h"},
-            {"start": std + timedelta(hours=25), "end": datetime(2023, 12, 31, 23, **utc), "granularity": "24h"},
+            {"start": datetime(2022, 12, 31, 23, **utc), "end": oslo_dst, "granularity": "24h"},
+            {"start": oslo_dst, "end": oslo_dst + timedelta(hours=23), "granularity": "23h"},
+            {"start": oslo_dst + timedelta(hours=23), "end": oslo_std, "granularity": "24h"},
+            {"start": oslo_std, "end": oslo_std + timedelta(hours=25), "granularity": "25h"},
+            {"start": oslo_std + timedelta(hours=25), "end": datetime(2023, 12, 31, 23, **utc), "granularity": "24h"},
         ],
         id="Year 2023 at daily granularity",
+    )
+
+    yield pytest.param(
+        datetime(2023, 3, 10, tzinfo=oslo),
+        datetime(2023, 4, 9, tzinfo=oslo),
+        "2weeks",
+        [
+            {"start": datetime(2023, 3, 5, 23, **utc), "end": datetime(2023, 3, 19, 23, **utc), "granularity": "336h"},
+            # Passing DST
+            {"start": datetime(2023, 3, 19, 23, **utc), "end": datetime(2023, 4, 2, 22, **utc), "granularity": "335h"},
+            {"start": datetime(2023, 4, 2, 22, **utc), "end": datetime(2023, 4, 16, 22, **utc), "granularity": "336h"},
+        ],
+        id="Passed DST with 2 weeks granularity",
+    )
+
+    yield pytest.param(
+        datetime(2023, 1, 10, tzinfo=oslo),
+        datetime(2023, 12, 12, tzinfo=oslo),
+        "1quarter",
+        [
+            {
+                "start": datetime(2022, 12, 31, 23, **utc),
+                "end": datetime(2023, 3, 31, 22, **utc),
+                "granularity": "2159h",
+            },
+            {
+                "start": datetime(2023, 3, 31, 22, **utc),
+                "end": datetime(2023, 6, 30, 22, **utc),
+                "granularity": "2184h",
+            },
+            {
+                "start": datetime(2023, 6, 30, 22, **utc),
+                "end": datetime(2023, 9, 30, 22, **utc),
+                "granularity": "2208h",
+            },
+            {
+                "start": datetime(2023, 9, 30, 22, **utc),
+                "end": datetime(2023, 12, 31, 23, **utc),
+                "granularity": "2209h",
+            },
+        ],
+        id="2023 in quarters",
+    )
+
+    yield pytest.param(
+        datetime(2022, 10, 13, tzinfo=oslo),
+        datetime(2023, 4, 9, tzinfo=oslo),
+        "2months",
+        [
+            {
+                "start": datetime(2022, 9, 30, 22, **utc),
+                "end": datetime(2022, 11, 30, 23, **utc),
+                "granularity": "1465h",
+            },
+            {
+                "start": datetime(2022, 11, 30, 23, **utc),
+                "end": datetime(2023, 1, 31, 23, **utc),
+                "granularity": "1488h",
+            },
+            {
+                "start": datetime(2023, 1, 31, 23, **utc),
+                "end": datetime(2023, 3, 31, 22, **utc),
+                "granularity": "1415h",
+            },
+            {
+                "start": datetime(2023, 3, 31, 22, **utc),
+                "end": datetime(2023, 5, 31, 22, **utc),
+                "granularity": "1464h",
+            },
+        ],
+        id="October 2022 to April 2023 in 2 month steps",
+    )
+
+    yield pytest.param(
+        datetime(2020, 1, 19, tzinfo=oslo),
+        datetime(2024, 1, 1, tzinfo=oslo),
+        "2years",
+        [
+            {
+                "start": datetime(2019, 12, 31, 23, **utc),
+                "end": datetime(2021, 12, 31, 23, **utc),
+                "granularity": "17544h",
+            },
+            {
+                "start": datetime(2021, 12, 31, 23, **utc),
+                "end": datetime(2023, 12, 31, 23, **utc),
+                "granularity": "17520h",
+            },
+        ],
+        id="From 2020 to 2024 in 2 year steps",
     )
 
 

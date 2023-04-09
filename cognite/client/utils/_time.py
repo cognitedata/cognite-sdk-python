@@ -277,7 +277,11 @@ class QuarterAligner(DateAligner):
         datetime.datetime(2023, 4, 1, 0, 0)
         >>> QuarterAligner.ceil(datetime(2023, 11, 15))
         datetime.datetime(2024, 1, 1, 0, 0)
+        >>> QuarterAligner.ceil(datetime(2023, 1, 1))
+        datetime.datetime(2023, 1, 1, 0, 0)
         """
+        if any(date == datetime(date.year, month, 1, tzinfo=date.tzinfo) for month in [1, 4, 7, 10]):
+            return date
         month = 3 * ((date.month - 1) // 3 + 1) + 1
         add_years, month = divmod(month, 12)
         return date.replace(year=date.year + add_years, month=month, day=1, hour=0, minute=0, microsecond=0)
@@ -309,6 +313,8 @@ class QuarterAligner(DateAligner):
 class YearAligner(DateAligner):
     @classmethod
     def ceil(cls, date: datetime) -> datetime:
+        if date == datetime(date.year, 1, 1, tzinfo=date.tzinfo):
+            return date
         return date.replace(year=date.year + 1, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
 
     @classmethod
@@ -394,17 +400,29 @@ def standardize_unit(unit: str) -> str:
     raise ValueError(f"Not supported unit {unit}")
 
 
-def granularity_in_hours(granularity: str) -> str:
+def granularity_in_hours(multiplier_or_granularity: str | int, unit: str | None = None) -> int:
     """
     Calculates the given granularity in hours.
     >>> granularity_in_hours("1week")
-    '168h'
+    168
+    >>> granularity_in_hours(1, "week")
+    168
     >>> granularity_in_hours("3d")
-    '72h'
+    72
+    >>> granularity_in_hours(3, "d")
+    72
     >>> granularity_in_hours("2w")
-    '336h'
+    336
+    >>> granularity_in_hours(2, "w")
+    336
     """
-    number, unit = get_granularity_multiplier_and_unit(granularity)
+    if isinstance(multiplier_or_granularity, str):
+        number, unit = get_granularity_multiplier_and_unit(multiplier_or_granularity)
+    else:
+        number = multiplier_or_granularity
+        if unit is None:
+            raise ValueError("You must pass in unit when only passing in multiplier.")
+        unit = standardize_unit(unit)
     unit_in_hours = {
         "week": 168,
         "day": 24,
@@ -412,7 +430,7 @@ def granularity_in_hours(granularity: str) -> str:
     }
     if unit not in unit_in_hours:
         raise ValueError(f"Unit {unit} is not supported")
-    return f"{number*unit_in_hours[unit]}h"
+    return number * unit_in_hours[unit]
 
 
 def cdf_aggregate(
@@ -546,39 +564,84 @@ def _binary_search_dst_transition(
 
 
 def to_fixed_utc_intervals(start: datetime, end: datetime, granularity: str) -> list[dict[str, datetime | str]]:
-    if granularity != "1day":
-        raise NotImplementedError("Currently granularity is hard coded to one day")
     try:
         from zoneinfo import ZoneInfo  # type:ignore
     except ImportError:
         from backports.zoneinfo import ZoneInfo  # type:ignore
-
-    start_ms, end_ms = align_start_and_end_for_granularity(datetime_to_ms(start), datetime_to_ms(end), "1h")
     utc = ZoneInfo("UTC")
-    start_utc, end_utc = ms_to_datetime(start_ms).astimezone(utc), ms_to_datetime(end_ms).astimezone(utc)
-    tz = start.tzinfo
-    hour = timedelta(hours=1)
-    last_end = start_utc
-    out: list[dict[str, datetime | str]] = []
-    for year in range(start.year, end.year + 1):
-        transition = dst_transition_dates(start.tzinfo, year)
-        if transition is None:
-            # No daylight savings this year
-            continue
-        spring, fall = transition
-        spring = spring.replace(tzinfo=tz).astimezone(utc)
-        fall = fall.replace(tzinfo=tz).astimezone(utc)
-        out.extend(
-            [
-                {"start": last_end, "end": spring, "granularity": "24h"},
-                {"start": spring, "end": spring + hour, "granularity": "23h"},
-                {"start": spring + timedelta(hours=23), "end": fall, "granularity": "24h"},
-                {"start": fall, "end": fall + hour, "granularity": "25h"},
-            ]
-        )
-        last_end = fall + timedelta(hours=25)
-    out.append(
-        {"start": last_end, "end": end_utc, "granularity": "24h"},
-    )
+    multiplier, unit = get_granularity_multiplier_and_unit(granularity, standardize=True)
+    start, end = align_large_granularity(start, end, granularity)
+    if unit in {"month", "quarter", "year"}:
+        return _to_fixed_utc_intervals_variable_unit_length(start, end, multiplier, unit, utc)
+    elif unit in {"hour", "day", "week"}:
+        return _to_fixed_utc_intervals_fixed_unit_length(start, end, multiplier, unit, utc)
+    raise ValueError(f"Not supported unit {unit}")
 
-    return out
+
+def _to_fixed_utc_intervals_variable_unit_length(
+    start: datetime, end: datetime, multiplier: int, unit: str, utc: zoneinfo.ZoneInfo
+) -> list[dict[str, datetime | str]]:
+    pd = cast(Any, local_import("pandas"))
+
+    # Pandas seems to have issues with ZoneInfo object, so removing the timezone and adding it back.
+    index = pd.date_range(start.replace(tzinfo=None), end.replace(tzinfo=None), freq="1D").tz_localize(start.tzinfo.key)  # type: ignore
+    # All units are always using the first of each month, filtering it out here makes index much smaller.
+    index = index[index.day == 1]
+    if unit == "month":
+        month_no = index.month - start.month + 12 * (index.year - start.year)
+        index = index[month_no % multiplier == 0].tz_convert(utc)
+    elif unit == "quarter":
+        quarter_no = (index.month - start.month) // 3 + 4 * (index.year - start.year)
+        index = index[index.month.isin({1, 4, 7, 10}) & (quarter_no % multiplier == 0)].tz_convert(utc)
+    elif unit == "year":
+        year_no = index.year - start.year
+        index = index[(index.month == 1) & (year_no % multiplier == 0)].tz_convert(utc)
+    else:
+        raise ValueError(f"Unit {unit} is not supported.")
+    return [
+        {
+            "start": start.to_pydatetime(),
+            "end": end.to_pydatetime(),
+            "granularity": f"{(end-start).total_seconds()//3600:.0f}h",
+        }
+        for start, end in zip(index[:-1], index[1:])
+    ]
+
+
+def _to_fixed_utc_intervals_fixed_unit_length(
+    start: datetime, end: datetime, multiplier: int, unit: str, utc: zoneinfo.ZoneInfo
+) -> list[dict[str, datetime | str]]:
+    pd = cast(Any, local_import("pandas"))
+
+    freq = granularity_in_hours(multiplier, unit)
+    # Pandas seems to have issues with ZoneInfo object, so removing the timezone and adding it back.
+    index = pd.date_range(start.replace(tzinfo=None), end.replace(tzinfo=None), freq=f"{freq}H").tz_localize(
+        start.tzinfo.key  # type: ignore
+    )
+    expected_freq = pd.Timedelta(f"{freq}H")
+    next_diff = index - index.to_series().shift(1)
+    last_diff = index - index.to_series().shift(-1)
+    index = index[(last_diff.abs() != expected_freq) | (next_diff.abs() != expected_freq)]
+
+    hour, zero = pd.Timedelta("1hour"), pd.Timedelta("0hour")
+    transitions = []
+    for start, end in zip(index[:-1], index[1:]):
+        if start.dst() == end.dst():
+            dst_adjustment = 0
+        elif start.dst() == hour and end.dst() == zero:
+            # Fall, going away from summer.
+            dst_adjustment = 1
+        elif start.dst() == zero and end.dst() == hour:
+            # Spring, going to summer.
+            dst_adjustment = -1
+        else:
+            raise ValueError(f"Invalid dst, {start} and {end}")
+
+        transitions.append(
+            {
+                "start": start.to_pydatetime().astimezone(utc),  # type: ignore
+                "end": end.to_pydatetime().astimezone(utc),  # type: ignore
+                "granularity": f"{freq+dst_adjustment}h",
+            }
+        )
+    return transitions
