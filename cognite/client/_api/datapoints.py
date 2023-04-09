@@ -989,7 +989,7 @@ class DatapointsAPI(APIClient):
         freq = cast(str, granularity).replace("m", "T")
         return df.reindex(pd.date_range(start=start, end=end, freq=freq, inclusive="left"))
 
-    TZAggregates = Literal[
+    Aggregates = Literal[
         "average",
         "sum",
         "count",
@@ -1008,26 +1008,54 @@ class DatapointsAPI(APIClient):
         external_id: str | Sequence[str] | None = None,
         start: datetime,
         end: datetime,
-        aggregates: TZAggregates,
-        granularity: str,
+        aggregates: list[Aggregates] | Aggregates | None = None,
+        granularity: Optional[str] = None,
         ignore_unknown_ids: bool = False,
         uniform_index: bool = False,
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
         column_names: Literal["id", "external_id"] = "external_id",
     ) -> pd.DataFrame:
-        tz = validate_timezone(start, end)
-        if id is not None and external_id is not None:
+        if (id is not None and external_id is not None) or (id is None and external_id is None):
             raise ValueError("Either input ids or external ids")
 
-        multiplier, unit = get_granularity_multiplier_and_unit(granularity)
-        if uniform_index and unit in VARIABLE_LENGTH_UNITS:
-            raise ValueError("Uniform index is not supported with a variable step length unit.")
+        if sum(arg is None for arg in (aggregates, granularity)) == 1:
+            raise ValueError(
+                "You cannot only pass in aggregates or granularity. "
+                "Pass both to get aggregates, or neither to get raw data"
+            )
 
-        intervals = to_fixed_utc_intervals(start, end, granularity)
+        tz = validate_timezone(start, end)
+        if aggregates is None and granularity is None:
+            # Raw Data only need to conveted the timezone
+            df = self.retrieve_dataframe(
+                id=id,
+                external_id=external_id,
+                start=start,
+                end=end,
+                aggregates=aggregates,
+                granularity=granularity,
+                ignore_unknown_ids=ignore_unknown_ids,
+                uniform_index=uniform_index,
+                include_aggregate_name=include_aggregate_name,
+                include_granularity_name=include_granularity_name,
+                column_names=column_names,
+            )
+            df = df.tz_localize("utc").tz_convert(tz.key)
+            return df
+
+        # Aggregates
+        multiplier, unit = get_granularity_multiplier_and_unit(granularity)  # type:ignore
+        if uniform_index and unit in VARIABLE_LENGTH_UNITS:
+            raise ValueError(
+                "Uniform index is not supported with a variable step length unit"
+                f" such as {', '.join(VARIABLE_LENGTH_UNITS)}."
+            )
+
+        intervals = to_fixed_utc_intervals(start, end, granularity)  # type:ignore
 
         id_name, ids = ("external_id", external_id) if external_id else ("id", id)
-        if isinstance(ids, (str, int)):
+        if isinstance(ids, (str, int)):  # type:ignore
             ids = [ids]  # type:ignore
 
         queries = [
@@ -1043,7 +1071,7 @@ class DatapointsAPI(APIClient):
         df = arrays.to_pandas(column_names, include_aggregate_name, include_granularity_name)
         df = df.tz_localize("utc").tz_convert(tz.key)
         if uniform_index:
-            freq = granularity.replace("m", "T")
+            freq = granularity.replace("m", "T")  # type:ignore
             return df.reindex(pd.date_range(start=start, end=end, freq=freq, inclusive="left"))
 
         return df
