@@ -3,6 +3,7 @@ from __future__ import annotations
 import numbers
 import re
 import time
+from abc import ABC, abstractmethod
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple, Union, cast, overload
 
@@ -172,6 +173,190 @@ def align_start_and_end_for_granularity(start: int, end: int, granularity: str) 
     return start, end
 
 
+class DateAligner(ABC):
+    @classmethod
+    @abstractmethod
+    def ceil(cls, date: datetime) -> datetime:
+        ...
+
+    @classmethod
+    @abstractmethod
+    def floor(cls, date: datetime) -> datetime:
+        ...
+
+    @classmethod
+    @abstractmethod
+    def units_between(cls, start: datetime, end: datetime) -> int:
+        ...
+
+    @classmethod
+    @abstractmethod
+    def add_units(cls, date: datetime, units: int) -> datetime:
+        ...
+
+
+class DayAligner(DateAligner):
+    @classmethod
+    def floor(cls, date: datetime) -> datetime:
+        return date.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    @classmethod
+    def ceil(cls, date: datetime) -> datetime:
+        return date.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
+
+    @classmethod
+    def units_between(cls, start: datetime, end: datetime) -> int:
+        return int((end - start).total_seconds() // (24 * 3600))
+
+    @classmethod
+    def add_units(cls, date: datetime, units: int) -> datetime:
+        return date + timedelta(days=units)
+
+
+class WeekAligner(DateAligner):
+    @classmethod
+    def ceil(cls, date: datetime) -> datetime:
+        """
+        Ceils the date to the next monday
+        >>> WeekAligner.ceil(datetime(2023, 4, 9 ))
+        datetime.datetime(2023, 4, 10, 0, 0)
+        """
+        date = date.replace(hour=0, minute=0, microsecond=0)
+        if (weekday := date.weekday()) != 0:
+            return date + timedelta(days=7 - weekday)
+        return date
+
+    @classmethod
+    def floor(cls, date: datetime) -> datetime:
+        """
+        Floors the date to the nearest monday
+        >>> WeekAligner.floor(datetime(2023, 4, 9))
+        datetime.datetime(2023, 4, 3, 0, 0)
+        """
+        date = date.replace(hour=0, minute=0, microsecond=0)
+        if (weekday := date.weekday()) != 0:
+            return date - timedelta(days=weekday)
+        return date
+
+    @classmethod
+    def units_between(cls, start: datetime, end: datetime) -> int:
+        return int((end - start).total_seconds() // (24 * 3600)) // 7
+
+    @classmethod
+    def add_units(cls, date: datetime, units: int) -> datetime:
+        return date + timedelta(days=units * 7)
+
+
+class MonthAligner(DateAligner):
+    @classmethod
+    def ceil(cls, date: datetime) -> datetime:
+        extra, month = divmod(date.month + 1, 12)
+        return date.replace(year=date.year + extra, month=month, day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    @classmethod
+    def floor(cls, date: datetime) -> datetime:
+        return date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    @classmethod
+    def units_between(cls, start: datetime, end: datetime) -> int:
+        return (end.year - start.year) * 12 + end.month - start.month
+
+    @classmethod
+    def add_units(cls, date: datetime, units: int) -> datetime:
+        extra_years, month = divmod(date.month + units, 12)
+        return date.replace(year=date.year + extra_years, month=month)
+
+
+class QuarterAligner(DateAligner):
+    @classmethod
+    def ceil(cls, date: datetime) -> datetime:
+        """
+        Ceils the months to the start of the next quarter
+        >>> from datetime import datetime
+        >>> QuarterAligner.ceil(datetime(2023, 2, 1))
+        datetime.datetime(2023, 4, 1, 0, 0)
+        >>> QuarterAligner.ceil(datetime(2023, 11, 15))
+        datetime.datetime(2024, 1, 1, 0, 0)
+        """
+        month = 3 * ((date.month - 1) // 3 + 1) + 1
+        add_years, month = divmod(month, 12)
+        return date.replace(year=date.year + add_years, month=month, day=1, hour=0, minute=0, microsecond=0)
+
+    @classmethod
+    def floor(cls, date: datetime) -> datetime:
+        """
+        Floors the months to start of quarter.
+        >>> QuarterAligner.floor(datetime(2023, 3, 1))
+        datetime.datetime(2023, 1, 1, 0, 0)
+        >>> QuarterAligner.floor(datetime(2023, 8, 1))
+        datetime.datetime(2023, 7, 1, 0, 0)
+        >>> QuarterAligner.floor(datetime(2023, 12, 1))
+        datetime.datetime(2023, 10, 1, 0, 0)
+        """
+        month = 3 * ((date.month - 1) // 3) + 1
+        return date.replace(month=month, day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    @classmethod
+    def units_between(cls, start: datetime, end: datetime) -> int:
+        return (end.year - start.year) * 4 + (end.month - start.month) // 3
+
+    @classmethod
+    def add_units(cls, date: datetime, units: int) -> datetime:
+        extra_years, month = divmod(date.month + 3 * units, 12)
+        return date.replace(year=date.year + extra_years, month=month)
+
+
+class YearAligner(DateAligner):
+    @classmethod
+    def ceil(cls, date: datetime) -> datetime:
+        return date.replace(year=date.year + 1, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    @classmethod
+    def floor(cls, date: datetime) -> datetime:
+        return date.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    @classmethod
+    def units_between(cls, start: datetime, end: datetime) -> int:
+        return end.year - start.year
+
+    @classmethod
+    def add_units(cls, date: datetime, units: int) -> datetime:
+        return date.replace(year=date.year + units)
+
+
+def align_large_granularity(start: datetime, end: datetime, granularity: str) -> tuple[datetime, datetime]:
+    """
+    Aligns the granularity by flooring the start wrt to the granularity unit, and ceiling the end.
+    This is done to get consistent behavior with how CDF is doing it at the database level.
+
+    Args:
+        start: Start date
+        end: End date,
+        granularity: The large granularity, day|week|month|quarter|year.
+
+    Returns:
+        start and end aligned with granularity
+    """
+    multiplier, unit = get_granularity_multiplier_and_unit(granularity)
+    # Can be replaced by a single dispatch pattern, but kept more explicit for readability.
+    try:
+        aligner = {
+            "day": DayAligner,
+            "week": WeekAligner,
+            "month": MonthAligner,
+            "quarter": QuarterAligner,
+            "year": YearAligner,
+        }[unit]
+    except KeyError as e:
+        raise ValueError(f"Unit {unit} is not supported.") from e
+    start = aligner.floor(start)
+    end = aligner.ceil(end)
+    unit_count = aligner.units_between(start, end)
+    if remainder := unit_count % multiplier:
+        end = aligner.add_units(end, multiplier - remainder)
+    return start, end
+
+
 def split_time_range(start: int, end: int, n_splits: int, granularity_in_ms: int) -> List[int]:
     if n_splits < 1:
         raise ValueError(f"Cannot split into less than 1 piece, got {n_splits=}")
@@ -184,6 +369,50 @@ def split_time_range(start: int, end: int, n_splits: int, granularity_in_ms: int
     # Find a `delta_ms` that's a multiple of granularity in ms (trivial for raw queries).
     delta_ms = granularity_in_ms * round(tot_ms / n_splits / granularity_in_ms)
     return [*(start + delta_ms * i for i in range(n_splits)), end]
+
+
+def get_granularity_multiplier_and_unit(granularity: str, standardize: bool = True) -> tuple[int, str]:
+    _, number, unit = re.split(r"(\d+)", granularity)
+    if standardize:
+        unit = standardize_unit(unit)
+    return int(number), unit
+
+
+def standardize_unit(unit: str) -> str:
+    if unit in {"hours", "hour", "h"}:
+        return "hour"
+    elif unit in {"day", "days", "d"}:
+        return "day"
+    elif unit in {"weeks", "w", "week"}:
+        return "week"
+    elif unit in {"months", "month"}:
+        return "month"
+    elif unit in {"quarters", "quarter", "q"}:
+        return "quarter"
+    elif unit in {"year", "years", "y"}:
+        return "year"
+    raise ValueError(f"Not supported unit {unit}")
+
+
+def granularity_in_hours(granularity: str) -> str:
+    """
+    Calculates the given granularity in hours.
+    >>> granularity_in_hours("1week")
+    '168h'
+    >>> granularity_in_hours("3d")
+    '72h'
+    >>> granularity_in_hours("2w")
+    '336h'
+    """
+    number, unit = get_granularity_multiplier_and_unit(granularity)
+    unit_in_hours = {
+        "week": 168,
+        "day": 24,
+        "hour": 1,
+    }
+    if unit not in unit_in_hours:
+        raise ValueError(f"Unit {unit} is not supported")
+    return f"{number*unit_in_hours[unit]}h"
 
 
 def cdf_aggregate(

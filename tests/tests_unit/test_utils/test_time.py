@@ -13,11 +13,13 @@ from _pytest.mark import ParameterSet
 from cognite.client.utils._time import (
     MAX_TIMESTAMP_MS,
     MIN_TIMESTAMP_MS,
+    align_large_granularity,
     align_start_and_end_for_granularity,
     cdf_aggregate,
     convert_time_attributes_to_datetime,
     datetime_to_ms,
     dst_transition_dates,
+    granularity_in_hours,
     granularity_to_ms,
     granularity_unit_to_ms,
     ms_to_datetime,
@@ -272,6 +274,30 @@ class TestAlignToGranularity:
         start, end = gran_ms - 1, 2 * gran_ms
         assert expected == align_start_and_end_for_granularity(start, end, granularity)
 
+    @staticmethod
+    @pytest.mark.parametrize(
+        "start, end, granularity, expected_start, expected_end",
+        [
+            (datetime(2023, 3, 4, 12), datetime(2023, 3, 9), "2days", datetime(2023, 3, 4), datetime(2023, 3, 10)),
+            (datetime(2023, 4, 9), datetime(2023, 4, 12), "2weeks", datetime(2023, 4, 3), datetime(2023, 4, 17)),
+            (datetime(2023, 1, 10), datetime(2023, 1, 11), "2months", datetime(2023, 1, 1), datetime(2023, 3, 1)),
+            (datetime(2023, 2, 10), datetime(2023, 6, 15), "2quarters", datetime(2023, 1, 1), datetime(2023, 7, 1)),
+            (datetime(2023, 1, 8), datetime(2023, 1, 8, second=1), "1year", datetime(2023, 1, 1), datetime(2024, 1, 1)),
+            (datetime(2022, 12, 10), datetime(2023, 1, 11), "3months", datetime(2022, 12, 1), datetime(2023, 3, 1)),
+            (datetime(2022, 12, 10), datetime(2023, 1, 11), "25months", datetime(2022, 12, 1), datetime(2025, 1, 1)),
+            (datetime(2023, 2, 10), datetime(2025, 8, 10), "10quarters", datetime(2023, 1, 1), datetime(2028, 1, 1)),
+            (datetime(2023, 4, 9), datetime(2023, 4, 12), "1week", datetime(2023, 4, 3), datetime(2023, 4, 17)),
+            (datetime(2023, 1, 10), datetime(2023, 2, 11), "1month", datetime(2023, 1, 1), datetime(2023, 3, 1)),
+        ],
+    )
+    def test_align_with_granularity(
+        start: datetime, end: datetime, granularity: str, expected_start: datetime, expected_end: datetime
+    ):
+        actual_start, actual_end = align_large_granularity(start, end, granularity)
+
+        assert actual_start == expected_start, "Start is not aligning"
+        assert actual_end == expected_end, "End is not aligning"
+
 
 def cdf_aggregate_test_data():
     try:
@@ -288,6 +314,27 @@ def cdf_aggregate_test_data():
         pd.DataFrame(index=pd.date_range(start, end, freq="7d"), data=[168, 168, 168], dtype="Int64"),
         id="1week aggregation",
     )
+
+
+class TestGranularityInHours:
+    @staticmethod
+    @pytest.mark.parametrize(
+        "granularity, expected_hours",
+        [
+            ("1week", "168h"),
+            ("2weeks", "336h"),
+            ("1w", "168h"),
+            ("1d", "24h"),
+            ("3d", "72h"),
+            ("3days", "72h"),
+            ("1day", "24h"),
+            ("24h", "24h"),
+        ],
+    )
+    def test_granularity_in_hours(granularity: str, expected_hours: str):
+        actual_hours = granularity_in_hours(granularity)
+
+        assert actual_hours
 
 
 class TestCDFAggregation:
