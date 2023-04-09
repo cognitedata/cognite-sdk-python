@@ -188,7 +188,7 @@ def split_time_range(start: int, end: int, n_splits: int, granularity_in_ms: int
 
 def cdf_aggregate(
     raw_df: pandas.DataFrame,
-    aggregate: Literal["average", "sum"],
+    aggregate: Literal["average", "sum", "count"],
     granularity: str,
     is_step: bool = False,
     raw_freq: str = None,
@@ -218,6 +218,8 @@ def cdf_aggregate(
     grouping = raw_df.groupby(pd.Grouper(freq=granularity_pd))
     if aggregate == "sum":
         return grouping.sum()
+    elif aggregate == "count":
+        return grouping.count().astype("Int64")
 
     # The average is calculated by the formula '1/(b-a) int_a^b f(t) dt' where f(t) is the continuous function
     # This is weighted average of the sampled version of f(t)
