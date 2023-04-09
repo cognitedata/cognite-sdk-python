@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 
 UNIT_IN_MS_WITHOUT_WEEK = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000}
 UNIT_IN_MS = {**UNIT_IN_MS_WITHOUT_WEEK, "w": 604800000}
+VARIABLE_LENGTH_UNITS = {"month", "quarter", "year"}
 
 MIN_TIMESTAMP_MS = -2208988800000  # 1900-01-01 00:00:00.000
 MAX_TIMESTAMP_MS = 4102444799999  # 2099-12-31 23:59:59.999
@@ -250,6 +251,20 @@ class WeekAligner(DateAligner):
 class MonthAligner(DateAligner):
     @classmethod
     def ceil(cls, date: datetime) -> datetime:
+        """
+        Ceils the date to the first of the next month.
+        >>> from datetime import datetime
+        >>> MonthAligner.ceil(datetime(2023, 11, 1))
+        datetime.datetime(2023, 11, 1, 0, 0)
+        >>> MonthAligner.ceil(datetime(2023, 10, 15))
+        datetime.datetime(2023, 11, 1, 0, 0)
+        >>> MonthAligner.ceil(datetime(2023, 12, 15))
+        datetime.datetime(2024, 1, 1, 0, 0)
+        >>> MonthAligner.ceil(datetime(2024, 1, 10))
+        datetime.datetime(2024, 2, 1, 0, 0)
+        """
+        if date == datetime(year=date.year, month=date.month, day=1, tzinfo=date.tzinfo):
+            return date
         extra, month = divmod(date.month + 1, 12)
         return date.replace(year=date.year + extra, month=month, day=1, hour=0, minute=0, second=0, microsecond=0)
 
@@ -571,7 +586,7 @@ def to_fixed_utc_intervals(start: datetime, end: datetime, granularity: str) -> 
     utc = ZoneInfo("UTC")
     multiplier, unit = get_granularity_multiplier_and_unit(granularity, standardize=True)
     start, end = align_large_granularity(start, end, granularity)
-    if unit in {"month", "quarter", "year"}:
+    if unit in VARIABLE_LENGTH_UNITS:
         return _to_fixed_utc_intervals_variable_unit_length(start, end, multiplier, unit, utc)
     elif unit in {"hour", "day", "week"}:
         return _to_fixed_utc_intervals_fixed_unit_length(start, end, multiplier, unit, utc)
