@@ -4,7 +4,7 @@ import platform
 import re
 import time
 from datetime import datetime, timedelta, timezone
-from typing import Iterable
+from typing import TYPE_CHECKING, Iterable
 from unittest import mock
 
 import pytest
@@ -14,6 +14,7 @@ from cognite.client.utils._time import (
     MAX_TIMESTAMP_MS,
     MIN_TIMESTAMP_MS,
     align_start_and_end_for_granularity,
+    cdf_aggregate,
     convert_time_attributes_to_datetime,
     datetime_to_ms,
     dst_transition_dates,
@@ -25,6 +26,9 @@ from cognite.client.utils._time import (
     to_fixed_utc_intervals,
 )
 from tests.utils import tmp_set_envvar
+
+if TYPE_CHECKING:
+    import pandas
 
 
 class TestDatetimeToMs:
@@ -267,6 +271,43 @@ class TestAlignToGranularity:
         gran_ms = granularity_to_ms(granularity)
         start, end = gran_ms - 1, 2 * gran_ms
         assert expected == align_start_and_end_for_granularity(start, end, granularity)
+
+
+def cdf_aggregate_test_data():
+    try:
+        import pandas as pd
+    except ModuleNotFoundError:
+        return []
+    start, end = "2023-03-20", "2023-04-09 23:59:59"
+
+    yield pytest.param(
+        start,
+        end,
+        "1h",
+        "7d",
+        pd.DataFrame(index=pd.date_range(start, end, freq="7d"), data=[168, 168, 168], dtype="Int64"),
+        id="1week aggregation",
+    )
+
+
+class TestCDFAggregation:
+    @staticmethod
+    @pytest.mark.dsl
+    @pytest.mark.parametrize("start, end, raw_freq, granularity, expected_aggregate", list(cdf_aggregate_test_data()))
+    def test_cdf_aggregation(
+        start: str, end: str, raw_freq: str, granularity: str, expected_aggregate: pandas.DataFrame
+    ):
+        # Arrange
+        import pandas as pd
+
+        index = pd.date_range(start, end, freq=raw_freq)
+        raw_df = pd.DataFrame(data=range(len(index)), index=index)
+
+        # Act
+        actual_aggregate = cdf_aggregate(raw_df=raw_df, aggregate="count", granularity=granularity, is_step=False)
+
+        # Assert
+        pd.testing.assert_frame_equal(actual_aggregate, expected_aggregate)
 
 
 class TestDSTTransitionDates:
