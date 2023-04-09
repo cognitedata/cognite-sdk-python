@@ -1048,17 +1048,19 @@ class TestReprieveAggregateTimezoneDatapointsAPI:
             ("119", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "average", "2h"),
             ("119", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "average", "3h"),
             ("119", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "sum", "5h"),
+            ("119", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "count", "5h"),
             ("120", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:59+00:00", "average", "2m"),
             ("120", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "sum", "30m"),
             ("120", "2023-01-01T00:00:00+00:00", "2023-01-01T23:59:01+00:00", "average", "15m"),
             ("120", "2023-01-01T00:00:00+00:00", "2023-01-01T23:59:01+00:00", "average", "1h"),
+            ("120", "2023-01-01T00:00:00+00:00", "2023-01-01T23:59:01+00:00", "count", "38m"),
         ),
     )
-    def test_cdf_aggregate(
+    def test_cdf_aggregate_equal_to_cdf(
         test_series_no: str,
         start: str,
         end: str,
-        aggregation: str,
+        aggregation: Literal["average", "sum", "count"],
         granularity: str,
         cognite_client: CogniteClient,
         all_test_time_series: TimeSeriesList,
