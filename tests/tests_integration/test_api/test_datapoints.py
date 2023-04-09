@@ -1246,6 +1246,7 @@ class TestReprieveAggregateTimezoneDatapointsAPI:
             granularity=granularity,
         )
         actual_df.columns = ["count"]
+
         pd.testing.assert_frame_equal(actual_df, expected_df, check_freq=False)
 
     @staticmethod
@@ -1271,6 +1272,7 @@ class TestReprieveAggregateTimezoneDatapointsAPI:
             granularity=granularity,
         )
         actual_df.columns = ["count"]
+
         pd.testing.assert_frame_equal(actual_df, expected_df, check_freq=False)
 
     @staticmethod
@@ -1302,6 +1304,28 @@ class TestReprieveAggregateTimezoneDatapointsAPI:
 
         # Assert
         pd.testing.assert_frame_equal(actual_df, expected_df)
+
+    @staticmethod
+    def test_retrieve_dataframe_in_tz_multiple_timeseries(cognite_client, hourly_normal_dist, minutely_normal_dist):
+        oslo = zoneinfo.ZoneInfo("Europe/Oslo")
+        start, end = datetime(2023, 1, 2, tzinfo=oslo), datetime(2023, 1, 2, 23, 59, 59, tzinfo=oslo)
+        expected_df = pd.DataFrame(
+            [[24, 24 * 60]],
+            index=[pd.Timestamp("2023-01-02", tz="Europe/Oslo")],
+            columns=[hourly_normal_dist.external_id, minutely_normal_dist.external_id],
+            dtype="Int64",
+        )
+
+        actual_df = cognite_client.time_series.data.retrieve_dataframe_in_tz(
+            external_id=[hourly_normal_dist.external_id, minutely_normal_dist.external_id],
+            start=start,
+            end=end,
+            aggregates="count",
+            granularity="1day",
+            include_aggregate_name=False,
+        )
+
+        pd.testing.assert_frame_equal(actual_df[sorted(actual_df)], expected_df[sorted(expected_df)])
 
 
 class TestRetrieveMixedRawAndAgg:
