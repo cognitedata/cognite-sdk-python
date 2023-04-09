@@ -66,7 +66,12 @@ from cognite.client.utils._auxiliary import (
 )
 from cognite.client.utils._concurrency import collect_exc_info_and_raise, execute_tasks, get_priority_executor
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
-from cognite.client.utils._time import timestamp_to_ms, to_fixed_utc_intervals
+from cognite.client.utils._time import (
+    VARIABLE_LENGTH_UNITS,
+    get_granularity_multiplier_and_unit,
+    timestamp_to_ms,
+    to_fixed_utc_intervals,
+)
 
 if not import_legacy_protobuf():
     from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem, DataPointListResponse
@@ -1015,10 +1020,14 @@ class DatapointsAPI(APIClient):
         if id is not None and external_id is not None:
             raise ValueError("Either input ids or external ids")
 
+        multiplier, unit = get_granularity_multiplier_and_unit(granularity)
+        if uniform_index and unit in VARIABLE_LENGTH_UNITS:
+            raise ValueError("Uniform index is not supported with a variable step length unit.")
+
         intervals = to_fixed_utc_intervals(start, end, granularity)
 
         id_name, ids = ("external_id", external_id) if external_id else ("id", id)
-        if not isinstance(ids, Sequence):
+        if isinstance(ids, (str, int)):
             ids = [ids]  # type:ignore
 
         queries = [

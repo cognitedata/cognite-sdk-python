@@ -1036,6 +1036,66 @@ def hourly_2023(cognite_client, hourly_normal_dist) -> pd.DataFrame:
     ).tz_localize(utc)
 
 
+def retrieve_dataframe_in_tz_count_large_granularities_data():
+    # "start, end, granularity, expected_df"
+    oslo = zoneinfo.ZoneInfo("Europe/Oslo")
+    start = datetime(2023, 3, 21, tzinfo=oslo)
+    end = datetime(2023, 4, 9, tzinfo=oslo)
+    hours_in_week = 24 * 7
+    index = pd.date_range("2023-03-20", "2023-04-09", freq="7D", tz="Europe/Oslo")
+
+    yield pytest.param(
+        start,
+        end,
+        "1week",
+        pd.DataFrame(
+            data=[hours_in_week - 1, hours_in_week, hours_in_week], index=index, columns=["count"], dtype="Int64"
+        ),
+        id="Weekly with first week DST transition",
+    )
+    start = datetime(2023, 3, 1, tzinfo=oslo)
+    end = datetime(2023, 11, 1, tzinfo=oslo)
+    index = pd.date_range("2023-03-01", "2023-10-31", freq="1D", tz="Europe/Oslo")
+    index = index[index.is_month_start & (index.month % 2 == 1)]
+    yield pytest.param(
+        start,
+        end,
+        "2months",
+        pd.DataFrame(
+            data=[(31 + 30) * 24 - 1, (31 + 30) * 24, (31 + 31) * 24, (31 + 30) * 24 + 1],
+            index=index,
+            columns=["count"],
+            dtype="Int64",
+        ),
+        id="Every other month from March to November 2023",
+    )
+    index = pd.date_range("2023-01-01", "2023-12-31", freq="1D", tz="Europe/Oslo")
+    index = index[index.is_month_start & index.month.isin({1, 7})]
+    yield pytest.param(
+        start,
+        end,
+        "2quarters",
+        pd.DataFrame(
+            data=[(31 + 28 + 31 + 30 + 31 + 30) * 24 - 1, (31 + 31 + 30 + 31 + 30 + 31) * 24 + 1],
+            index=index,
+            columns=["count"],
+            dtype="Int64",
+        ),
+        id="2023 in steps of 2 quarters",
+    )
+    start = datetime(2021, 7, 15, tzinfo=oslo)
+    end = datetime(2021, 7, 16, tzinfo=oslo)
+    yield pytest.param(
+        start,
+        end,
+        "3years",
+        pd.DataFrame(
+            data=[3 * 365 * 24], index=[pd.Timestamp("2021-01-01", tz="Europe/Oslo")], columns=["count"], dtype="Int64"
+        ),
+        id="Aggregate from 2021 to 2023",
+    )
+
+
 class TestReprieveAggregateTimezoneDatapointsAPI:
     """
     Integration testing of all the functionality related to aggregation in the correct timezone
@@ -1100,7 +1160,7 @@ class TestReprieveAggregateTimezoneDatapointsAPI:
             ("sum", "31d", "Europe/Oslo"),
         ),
     )
-    def test_aggregate_raw_hourly(
+    def test_retrieve_dataframe_in_tz_aggregate_raw_hourly(
         aggregation: Literal["average", "sum"],
         granularity: str,
         tz_name: str,
@@ -1129,6 +1189,23 @@ class TestReprieveAggregateTimezoneDatapointsAPI:
         # resulting dataframe which is not included when retrieving from CDF.
         # The last point is not compared as the raw data might be missing information to do the correct aggregate.
         pd.testing.assert_frame_equal(expected_aggregate.iloc[:-1], actual_aggregate.iloc[:-1], check_freq=False)
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "start, end, granularity, expected_df", list(retrieve_dataframe_in_tz_count_large_granularities_data())
+    )
+    def test_retrieve_dataframe_in_tz_count_large_granularities(
+        start: datetime, end: datetime, granularity: str, expected_df: pd.DataFrame, cognite_client, hourly_normal_dist
+    ):
+        actual_df = cognite_client.time_series.data.retrieve_dataframe_in_tz(
+            external_id=hourly_normal_dist.external_id,
+            start=start,
+            end=end,
+            aggregates="count",
+            granularity=granularity,
+        )
+        actual_df.columns = ["count"]
+        pd.testing.assert_frame_equal(actual_df, expected_df, check_freq=False)
 
 
 class TestRetrieveMixedRawAndAgg:
