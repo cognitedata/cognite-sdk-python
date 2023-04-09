@@ -1016,6 +1016,75 @@ class DatapointsAPI(APIClient):
         include_granularity_name: bool = False,
         column_names: Literal["id", "external_id"] = "external_id",
     ) -> pd.DataFrame:
+        """Get datapoints directly in a pandas dataframe in the time zone given in start and end.
+
+        **Note** This is a convenicence method. It builds on top of the retrieve_array and retrieve_dataframe methods.
+        It enables you to do correct aggregates in a local time zone with daily, weekly, quartely, and yearly
+        aggregates, including accounting for DST (Daylight Saving Time).
+
+        In short, this method function as follows:
+            1. Get the time zone from start and end.
+            2. Split the time range from start to end into intervals with fixed UTC offset.
+            3. Create a query for each interval and all the retrieve_array method.
+            4. Stack the resulting arrays into a single column in the resulting DataFrame.
+
+        The queries to retrieve_arrays are translated to a multiple of hours. This means that time zones which
+        are not a whole hour offset from UTC are not supported.
+
+        Args:
+            start (datetime): Inclusive start, must be time zone aware.
+            end (datetime): Exclusive end, must be time zone aware and have the same time zone as start.
+            id (Union[int | Sequence[int] | None]): ID or list of IDs.
+            external_id (Union[int | Sequence[int] | None]): External ID or list of External IDs.
+            aggregates (Union[Literal, None]): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
+            granularity (str): The granularity to fetch aggregates at supported second, minute, hour, day, week, month, quarter and year. Default: None.
+            ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
+            uniform_index (bool): If querying aggregates and not use variable unit lengths (month, quarter, and year), specifying `uniform_index=True` will return a dataframe with an
+                equidistant datetime index from the earliest `start` to the latest `end` (missing values will be NaNs). If these requirements are not met, a ValueError is raised. Default: False
+            include_aggregate_name (bool): Include 'aggregate' in the column name, e.g. `my-ts|average`. Ignored for raw time series. Default: True
+            include_granularity_name (bool): Include 'granularity' in the column name, e.g. `my-ts|12h`. Added after 'aggregate' when present. Ignored for raw time series. Default: False
+            column_names ("id" | "external_id"): Use either ids or external ids as column names. Time series missing external id will use id as backup. Default: "external_id"
+
+        Returns:
+            pandas.DataFrame: A pandas DataFrame containing the requested time series with a DateTimeIndex localized
+            to the time zone from the start time.
+
+        Examples:
+
+            Get a pandas dataframe in the local timezone in Oslo, Norway:
+
+                >>> from cognite.client import CogniteClient
+                >>> try:
+                ...     from zoneinfo import ZoneInfo
+                ... except ModuleNotFoundError:
+                ...     from backports.zoneinfo import ZoneInfo
+                >>> client = CogniteClient()
+                >>> df = client.time_series.data.retrieve_dataframe_in_tz(
+                ...     id=12345,
+                ...     start=datetime(2023, 1, 1, tzinfo=ZoneInfo("Europe/Oslo")),
+                ...     end=datetime(2023, 2, 1, tzinfo=ZoneInfo("Europe/Oslo")),
+                ...     aggregates="average",
+                ...     granularity="1week",
+                ...     column_names="id")
+
+            Get a pandas dataframe with the sum of the time series with external id "foo" and "bar",
+            for each quarter from 2020 to 2022 returned in the local time zone Oslo, Norway.
+
+                >>> from cognite.client import CogniteClient
+                >>> from datetime import datetime
+                >>> try:
+                ...     from zoneinfo import ZoneInfo
+                ... except ModuleNotFoundError:
+                ...     from backports.zoneinfo import ZoneInfo
+                >>> client = CogniteClient()
+                >>> df = client.time_series.data.retrieve_dataframe(
+                ...     external_id=["foo", "bar"],
+                ...     aggregates=["sum"],
+                ...     granularity="1quarter",
+                ...     start=datetime(2020, 1, 1, tzinfo=ZoneInfo("Europe/Oslo")),
+                ...     end=datetime(2022, 12, 31, tzinfo=ZoneInfo("Europe/Oslo")),
+                ...     )
+        """
         if (id is not None and external_id is not None) or (id is None and external_id is None):
             raise ValueError("Either input ids or external ids")
 
@@ -1057,6 +1126,9 @@ class DatapointsAPI(APIClient):
         id_name, ids = ("external_id", external_id) if external_id else ("id", id)
         if isinstance(ids, (str, int)):  # type:ignore
             ids = [ids]  # type:ignore
+
+        if len(ids) != len(set(ids)):  # type:ignore
+            raise ValueError(f"Duplicated {id_name} passed. This method requires unique IDs.")
 
         queries = [
             {id_name: id_, "aggregates": aggregates, **interval}
