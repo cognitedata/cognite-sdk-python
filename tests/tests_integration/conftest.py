@@ -1,5 +1,6 @@
 import os
 import random
+from pathlib import Path
 
 import pytest
 
@@ -29,7 +30,7 @@ def cognite_client() -> CogniteClient:
             authority_url=os.environ["COGNITE_AUTHORITY_URL"],
             client_id=os.environ["COGNITE_CLIENT_ID"],
             cert_thumbprint=os.environ["COGNITE_CERT_THUMBPRINT"],
-            certificate=open(os.environ["COGNITE_CERTIFICATE"]).read(),
+            certificate=Path(os.environ["COGNITE_CERTIFICATE"]).read_text(),
             scopes=os.environ.get("COGNITE_TOKEN_SCOPES", "").split(","),
         )
     else:
