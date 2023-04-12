@@ -16,7 +16,7 @@ from cognite.client.data_classes import (
     Geometry,
     GeometryFilter,
 )
-from cognite.client.exceptions import CogniteAssetHierarchyError, CogniteNotFoundError
+from cognite.client.exceptions import CogniteAPIError, CogniteAssetHierarchyError, CogniteNotFoundError
 from cognite.client.utils._text import random_string
 from cognite.client.utils._time import timestamp_to_ms
 from tests.utils import set_max_workers, set_request_limit
@@ -330,6 +330,21 @@ class TestAssetsAPICreateHierarchy:
                 assert a2.source is None and a1.source == a3.source
                 # Should have been added:
                 assert a3.metadata == {**a2.metadata, **a1.metadata}
+
+    def test_upsert_mode_false_doesnt_patch(self, cognite_client):
+        # SDK 5.10.1 and earlier versions had a bug that could run upsert even when False.
+        assets = create_asset_tower(5)
+        created = cognite_client.assets.create_hierarchy(assets, upsert=False)
+        assert len(assets) == len(created)
+
+        for a in assets:
+            a.name = "a"
+            a.metadata = {"meta": "data"}
+
+        with pytest.raises(CogniteAPIError, match="Latest error: Asset id duplicated") as err:
+            with create_hierarchy_with_cleanup(cognite_client, assets, upsert=False, upsert_mode="patch"):
+                pytest.fail("Expected 409 API error: 'Asset id duplicated'")
+        assert err.value.code == 409
 
     def test_upsert_mode_with_replace(self, cognite_client):
         assets = create_asset_tower(5)
