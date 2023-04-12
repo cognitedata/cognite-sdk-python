@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [5.10.2] - 12-04-23
+### Fixed
+- Fixed a bug that would cause `AssetsAPI.create_hierarchy` to not respect `upsert=False`.
+
 ## [5.10.1] - 04-04-23
 ### Fixed
 - Add missing field `when` (human readable version of the CRON expression) to `FunctionSchedule` class.
