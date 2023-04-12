@@ -903,10 +903,8 @@ class _AssetHierarchyCreator:
                     bad_assets.clear()
                     bad_assets.extend(dupe_assets)
 
-                elif not upsert:
-                    return _TaskResult(successful, failed, unknown)
-
-            if dupe_assets:
+            # If upsert=True, run update on any existing assets:
+            if upsert and dupe_assets:
                 updated = self._update(dupe_assets, upsert_mode)
                 # If update went well: Add to list of successful assets and remove from "bad":
                 if updated is not None:
