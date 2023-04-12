@@ -91,7 +91,6 @@ class FunctionsAPI(APIClient):
         external_id: Optional[str] = None,
         description: Optional[str] = "",
         owner: Optional[str] = "",
-        api_key: Optional[str] = None,
         secrets: Optional[Dict] = None,
         env_vars: Optional[Dict] = None,
         cpu: Optional[Number] = None,
@@ -109,7 +108,6 @@ class FunctionsAPI(APIClient):
 
         The function named `handle` is the entrypoint of the created function. Valid arguments to `handle` are `data`, `client`, `secrets` and `function_call_info`:\n
         - If the user calls the function with input data, this is passed through the `data` argument.\n
-        - If the user gives an `api_key` when creating the function, a pre instantiated CogniteClient is passed through the `client` argument.\n
         - If the user gives one or more secrets when creating the function, these are passed through the `secrets` argument. The API key can be access through `secrets["apikey"]`.\n
         - Data about the function call can be accessed via the argument `function_call_info`, which is a dictionary with keys `function_id` and, if the call is scheduled, `schedule_id` and `scheduled_time`.\n
 
@@ -122,7 +120,6 @@ class FunctionsAPI(APIClient):
             external_id (str, optional):             External id of the function.
             description (str, optional):             Description of the function.
             owner (str, optional):                   Owner of this function. Typically used to know who created it.
-            api_key (str, optional):                 API key that can be used inside the function to access data in CDF.
             secrets (Dict[str, str]):                Additional secrets as key/value pairs. These can e.g. password to simulators or other data sources. Keys must be lowercase characters, numbers or dashes (-) and at most 15 characters. You can create at most 30 secrets, all keys must be unique, and cannot be apikey.
             env_vars (Dict[str, str]):               Environment variables as key/value pairs. Keys can contain only letters, numbers or the underscore character. You can create at most 100 environment variables.
             cpu (Number, optional):                  Number of CPU cores per function. Allowed values are in the range [0.1, 0.6], and None translates to the API default which is 0.25 in GCP. The argument is unavailable in Azure.
@@ -212,8 +209,6 @@ class FunctionsAPI(APIClient):
             function["runtime"] = runtime
         if external_id:
             function["externalId"] = external_id
-        if api_key:
-            function["apiKey"] = api_key
         if secrets:
             function["secrets"] = secrets
         if extra_index_urls:
