@@ -1028,7 +1028,7 @@ class DatapointsAPI(APIClient):
             start (datetime): Inclusive start, must be time zone aware.
             end (datetime): Exclusive end, must be time zone aware and have the same time zone as start.
             id (Union[int | Sequence[int] | None]): ID or list of IDs.
-            external_id (Union[int | Sequence[int] | None]): External ID or list of External IDs.
+            external_id (str | Sequence[str] | None]): External ID or list of External IDs.
             aggregates (Union[Literal, None]): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str): The granularity to fetch aggregates at supported second, minute, hour, day, week, month, quarter and year. Default: None.
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
@@ -1039,18 +1039,16 @@ class DatapointsAPI(APIClient):
             column_names ("id" | "external_id"): Use either ids or external ids as column names. Time series missing external id will use id as backup. Default: "external_id"
 
         Returns:
-            pandas.DataFrame: A pandas DataFrame containing the requested time series with a DateTimeIndex localized
-            to the time zone from the start time.
+            pandas.DataFrame: A pandas DataFrame containing the requested time series with a DatetimeIndex localized
+            in the given time zone.
 
         Examples:
 
-            Get a pandas dataframe in the local timezone in Oslo, Norway:
+            Get a pandas dataframe in the time zone of Oslo, Norway:
 
                 >>> from cognite.client import CogniteClient
-                >>> try:
-                ...     from zoneinfo import ZoneInfo
-                ... except ModuleNotFoundError:
-                ...     from backports.zoneinfo import ZoneInfo
+                >>> # In Python >=3.9 you may import directly from `zoneinfo`
+                >>> from cognite.client.utils import ZoneInfo
                 >>> client = CogniteClient()
                 >>> df = client.time_series.data.retrieve_dataframe_in_tz(
                 ...     id=12345,
@@ -1078,12 +1076,12 @@ class DatapointsAPI(APIClient):
                 ...     end=datetime(2022, 12, 31, tzinfo=ZoneInfo("Europe/Oslo")),
                 ...     )
         """
-        if (id is not None and external_id is not None) or (id is None and external_id is None):
-            raise ValueError("Either input ids or external ids")
+        if not exactly_one_is_not_none(id, external_id):
+            raise ValueError("Either input id(s) or external_id(s)")
 
-        if sum(arg is None for arg in (aggregates, granularity)) == 1:
+        if exactly_one_is_not_none(aggregates, granularity)):
             raise ValueError(
-                "You cannot only pass in aggregates or granularity. "
+                "Got only one of 'aggregates' and 'granularity'. "
                 "Pass both to get aggregates, or neither to get raw data"
             )
 
