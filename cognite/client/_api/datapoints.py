@@ -1017,7 +1017,7 @@ class DatapointsAPI(APIClient):
     ) -> pd.DataFrame:
         """Get datapoints directly in a pandas dataframe in the same time zone as start and end.
 
-        **Note** This is a convenicence method. It builds on top of the retrieve_array and retrieve_dataframe methods.
+        **Note** This is a convenience method. It builds on top of the methods retrieve_arrays and retrieve_dataframe.
         It enables you to do correct aggregates in a local time zone with daily, weekly, quartely, and yearly
         aggregates, including accounting for DST (Daylight Saving Time).
 
