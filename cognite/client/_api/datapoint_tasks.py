@@ -162,7 +162,7 @@ class _TimeRangeValidator:
         identifier: Identifier,
     ) -> Tuple[int, int]:
         """
-        Validates the start and end time. In the case of aggregation, the start and end are aligned with the CDF API.
+        Validates the start- and end times. In the case of aggregation, the start and end are aligned with the CDF API.
 
         Args:
             start: Start time
