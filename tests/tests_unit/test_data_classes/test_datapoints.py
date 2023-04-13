@@ -5,12 +5,11 @@ import pytest
 from cognite.client.data_classes import DatapointsArray
 
 
+@pytest.mark.dsl
 def factory_method_from_array_data():
-    try:
-        import numpy as np
-        import pandas as pd
-    except ModuleNotFoundError:
-        return []
+    import numpy as np
+    import pandas as pd
+
     index = pd.date_range("2023-01-01", periods=4, freq="1H", tz="UTC").values
     arr1 = DatapointsArray(id=123, average=np.array([1.0, 2.0], dtype=np.float64), timestamp=index[:2])
     arr2 = DatapointsArray(id=123, average=np.array([3.0, 4.0], dtype=np.float64), timestamp=index[2:])
@@ -28,5 +27,4 @@ class TestDatapointsArray:
         actual_array = DatapointsArray.create_from_arrays(*arrays)
 
         np.testing.assert_allclose(actual_array.average, expected_array.average)
-        # Comparing timestamps directly leads to an incorrect assertion fail.
-        np.testing.assert_allclose(actual_array.timestamp.astype("long"), expected_array.timestamp.astype("long"))
+        np.testing.assert_equal(actual_array.timestamp, expected_array.timestamp)

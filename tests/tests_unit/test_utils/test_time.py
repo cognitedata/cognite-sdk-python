@@ -533,16 +533,12 @@ def validate_time_zone_invalid_arguments_data() -> list[ParameterSet]:
     ]
 
 
+@pytest.mark.dsl
 def validate_time_zone_valid_arguments_data() -> list[ParameterSet]:
     try:
         from zoneinfo import ZoneInfo
-
     except ModuleNotFoundError:
-        try:
-            from backports.zoneinfo import ZoneInfo
-        except ModuleNotFoundError:
-            # When running the core tests neither ZoneInfo nor backports.ZoneInfo are available
-            return []
+        from backports.zoneinfo import ZoneInfo
 
     oslo = ZoneInfo("Europe/Oslo")
     new_york = ZoneInfo("America/New_York")

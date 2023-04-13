@@ -192,7 +192,7 @@ def validate_raw_datapoints(ts, dps, check_offset=True, check_delta=True):
 
 def get_test_series(test_series_no: str, available_test_series: TimeSeriesList) -> TimeSeries:
     time_series = next(
-        (t for t in available_test_series if t.external_id.startswith(f"{TEST_PREFIX}{test_series_no}")), None
+        (t for t in available_test_series if t.external_id.startswith(f"{TEST_PREFIX} {test_series_no}")), None
     )
     if time_series is None:
         raise ValueError(f"Invalid test data, test case {test_series_no} does not exists")
