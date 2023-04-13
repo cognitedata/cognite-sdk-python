@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [5.10.3] - 13-04-23
+### Fixed
+- When passing `CogniteResource` classes (like `Asset` or `Event`) to `update`, any labels were skipped in the update (passing `AssetUpdate` works). This has been fixed for all Cognite resource classes.
+
 ## [5.10.2] - 12-04-23
 ### Fixed
 - Fixed a bug that would cause `AssetsAPI.create_hierarchy` to not respect `upsert=False`.

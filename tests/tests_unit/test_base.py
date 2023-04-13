@@ -52,6 +52,11 @@ class MyUpdate(CogniteUpdate):
     def labels(self):
         return LabelUpdate(self, "labels")
 
+    @property
+    def columns(self):
+        # Not really a PrimitiveUpdate, but we have this to ensure it is skipped from updates
+        return PrimitiveUpdate(self, "columns")
+
 
 class PrimitiveUpdate(CognitePrimitiveUpdate):
     def set(self, value: Any) -> MyUpdate:
@@ -433,7 +438,9 @@ class TestCogniteUpdate:
         ).object.set({"bla": "bla"}).string.set("bla").dump()
 
     def test_get_update_properties(self):
-        assert {"string", "list", "object"} == set(MyUpdate._get_update_properties())
+        props = MyUpdate._get_update_properties()
+        assert hasattr(MyUpdate, "columns") and "columns" not in props
+        assert {"string", "list", "object", "labels"} == set(props)
 
 
 class TestCogniteResponse:
