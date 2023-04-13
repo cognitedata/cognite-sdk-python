@@ -335,12 +335,14 @@ class TestCDFAggregation:
         pd.testing.assert_frame_equal(actual_aggregate, expected_aggregate)
 
 
-@pytest.mark.dsl
 def to_fixed_utc_intervals_data() -> Iterable[ParameterSet]:
     try:
-        from zoneinfo import ZoneInfo
-    except ModuleNotFoundError:
-        from backports.zoneinfo import ZoneInfo
+        try:
+            from zoneinfo import ZoneInfo
+        except ModuleNotFoundError:
+            from backports.zoneinfo import ZoneInfo
+    except ImportError:
+        return []
 
     oslo = ZoneInfo("Europe/Oslo")
     utc = dict(tzinfo=ZoneInfo("UTC"))
@@ -467,12 +469,14 @@ class TestToFixedUTCIntervals:
         assert actual_intervals == expected_intervals
 
 
-@pytest.mark.dsl
 def validate_time_zone_invalid_arguments_data() -> list[ParameterSet]:
     try:
-        from zoneinfo import ZoneInfo
-    except ModuleNotFoundError:
-        from backports.zoneinfo import ZoneInfo
+        try:
+            from zoneinfo import ZoneInfo
+        except ModuleNotFoundError:
+            from backports.zoneinfo import ZoneInfo
+    except ImportError:
+        return []
 
     oslo = ZoneInfo("Europe/Oslo")
     new_york = ZoneInfo("America/New_York")
@@ -505,12 +509,14 @@ def validate_time_zone_invalid_arguments_data() -> list[ParameterSet]:
     ]
 
 
-@pytest.mark.dsl
 def validate_time_zone_valid_arguments_data() -> list[ParameterSet]:
     try:
-        from zoneinfo import ZoneInfo
-    except ModuleNotFoundError:
-        from backports.zoneinfo import ZoneInfo
+        try:
+            from zoneinfo import ZoneInfo
+        except ModuleNotFoundError:
+            from backports.zoneinfo import ZoneInfo
+    except ImportError:
+        return []
 
     oslo = ZoneInfo("Europe/Oslo")
     new_york = ZoneInfo("America/New_York")
