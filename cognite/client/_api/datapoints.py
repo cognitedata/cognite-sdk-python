@@ -1005,14 +1005,18 @@ class DatapointsAPI(APIClient):
     ) -> pd.DataFrame:
         """Get datapoints directly in a pandas dataframe in the same time zone as start and end.
 
-        **Note** This is a convenicence method. It builds on top of the retrieve_array and retrieve_dataframe methods.
-        It enables you to do correct aggregates in a local time zone with daily, weekly, quartely, and yearly
-        aggregates, including accounting for DST (Daylight Saving Time).
+        **Note** This is a convenience method. It builds on top of the methods retrieve_arrays and retrieve_dataframe.
+        It enables you to get correct aggregates in your local time zone with daily, weekly, monthly, quarterly, and yearly
+        aggregates with automatic handling for daylight saving time (DST) transitions. If your time zone observes DST,
+        and your query crosses at least one DST-boundary, granularities like "3 days" or "1 week", that used to represent
+        fixed durations, no longer do so. To understand why, let's illustrate with an example: A typical time zone
+        that observes DST will skip one hour ahead during spring, leading to a day that is only 23 hours long, and oppositely
+        in the fall, turning back the clock one hour, yielding a 25-hour long day.
 
-        In short, this method function as follows:
-            1. Get the time zone from start and end.
-            2. Split the time range from start to end into intervals with fixed UTC offset.
-            3. Create a query for each interval and all the retrieve_array method.
+        In short, this method works as follows:
+            1. Get the time zone from start and end (must be equal).
+            2. Split the time range from start to end into intervals based on DST boundaries.
+            3. Create a query for each interval and pass all to the retrieve_arrays method.
             4. Stack the resulting arrays into a single column in the resulting DataFrame.
 
         Warning:
