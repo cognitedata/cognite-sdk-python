@@ -43,7 +43,6 @@ from cognite.client._api.datapoint_tasks import (
     _DatapointsQuery,
     _SingleTSQueryBase,
     _SingleTSQueryValidator,
-    validate_timezone,
 )
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api_client import APIClient
@@ -71,6 +70,7 @@ from cognite.client.utils._time import (
     get_granularity_multiplier_and_unit,
     timestamp_to_ms,
     to_fixed_utc_intervals,
+    validate_timezone,
 )
 
 if not import_legacy_protobuf():
@@ -1028,7 +1028,7 @@ class DatapointsAPI(APIClient):
             3. Create a query for each interval and all the retrieve_array method.
             4. Stack the resulting arrays into a single column in the resulting DataFrame.
 
-        The queries to retrieve_arrays are translated to a multiple of hours. This means that time zones which
+        **Caveat** The queries to retrieve_arrays are translated to a multiple of hours. This means that time zones which
         are not a whole hour offset from UTC are not supported.
 
         Args:
