@@ -566,7 +566,7 @@ def _to_fixed_utc_intervals_variable_unit_length(
         {
             "start": start.to_pydatetime(),
             "end": end.to_pydatetime(),
-            "granularity": f"{(end-start).total_seconds()//3600:.0f}h",
+            "granularity": f"{(end-start)/timedelta(hours=1):.0f}h",
         }
         for start, end in zip(index[:-1], index[1:])
     ]
