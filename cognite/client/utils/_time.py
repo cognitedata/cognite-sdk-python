@@ -176,24 +176,24 @@ def align_start_and_end_for_granularity(start: int, end: int, granularity: str) 
 
 
 class DateAligner(ABC):
-    @classmethod
+    @staticmethod
     @abstractmethod
-    def ceil(cls, date: datetime) -> datetime:
+    def ceil(date: datetime) -> datetime:
         ...
 
-    @classmethod
+    @staticmethod
     @abstractmethod
-    def floor(cls, date: datetime) -> datetime:
+    def floor(date: datetime) -> datetime:
         ...
 
-    @classmethod
+    @staticmethod
     @abstractmethod
-    def units_between(cls, start: datetime, end: datetime) -> int:
+    def units_between(start: datetime, end: datetime) -> int:
         ...
 
-    @classmethod
+    @staticmethod
     @abstractmethod
-    def add_units(cls, date: datetime, units: int) -> datetime:
+    def add_units(date: datetime, units: int) -> datetime:
         ...
 
 
