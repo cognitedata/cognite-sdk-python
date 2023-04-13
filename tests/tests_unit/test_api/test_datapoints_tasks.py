@@ -7,7 +7,6 @@ from datetime import datetime, timezone
 from decimal import Decimal
 
 import pytest
-from _pytest.mark import ParameterSet
 from sortedcontainers import SortedKeysView
 
 from cognite.client._api.datapoint_tasks import (
@@ -15,101 +14,11 @@ from cognite.client._api.datapoint_tasks import (
     _SingleTSQueryValidator,
     create_dps_container,
     create_subtask_lst,
-    validate_timezone,
 )
 from cognite.client.utils._text import random_string
 from tests.utils import random_aggregates, random_cognite_ids, random_gamma_dist_integer, random_granularity
 
 LIMIT_KWS = dict(dps_limit_raw=1234, dps_limit_agg=5678)
-
-
-def validate_time_zone_invalid_arguments_data() -> list[ParameterSet]:
-    try:
-        from zoneinfo import ZoneInfo
-    except ModuleNotFoundError:
-        try:
-            from backports.zoneinfo import ZoneInfo
-        except ModuleNotFoundError:
-            # When running the core tests neither ZoneInfo nor backports.ZoneInfo are available
-            return []
-
-    oslo = ZoneInfo("Europe/Oslo")
-    new_york = ZoneInfo("America/New_York")
-    katmandu = ZoneInfo("Asia/Katmandu")
-
-    return [
-        pytest.param(
-            datetime(2023, 1, 1, tzinfo=oslo),
-            datetime(2023, 1, 10, tzinfo=new_york),
-            "start and end have different timezones, 'Europe/Oslo' and 'America/New_York'. They must be the same.",
-            id="Different timezones",
-        ),
-        pytest.param(
-            datetime(2023, 1, 1),
-            datetime(2023, 1, 10, tzinfo=new_york),
-            "All times must be time zone aware, start does not have a timezone",
-            id="Missing start timezone",
-        ),
-        pytest.param(
-            datetime(2023, 1, 1),
-            datetime(2023, 1, 10),
-            "All times must be time zone aware, start and end do not have timezones",
-            id="Missing start and end timezone",
-        ),
-        pytest.param(
-            datetime(2023, 1, 1, tzinfo=oslo),
-            datetime(2023, 1, 10),
-            "All times must be time zone aware, end does not have a timezone",
-            id="Missing end timezone",
-        ),
-        pytest.param(
-            datetime(2023, 1, 1, tzinfo=katmandu),
-            datetime(2023, 1, 10, tzinfo=katmandu),
-            "Timezone not supported, UTC offset must be in whole hour.",
-            id="Not supported timezone, Asia/Katmandu, as it does not have a whole hour offset from UTC.",
-        ),
-    ]
-
-
-def validate_time_zone_valid_arguments_data() -> list[ParameterSet]:
-    try:
-        from zoneinfo import ZoneInfo
-
-    except ModuleNotFoundError:
-        try:
-            from backports.zoneinfo import ZoneInfo
-        except ModuleNotFoundError:
-            # When running the core tests neither ZoneInfo nor backports.ZoneInfo are available
-            return []
-
-    oslo = ZoneInfo("Europe/Oslo")
-    new_york = ZoneInfo("America/New_York")
-    return [
-        pytest.param(datetime(2023, 1, 1, tzinfo=oslo), datetime(2023, 1, 10, tzinfo=oslo), oslo, id="Oslo Timezone"),
-        pytest.param(
-            datetime(2023, 1, 1, tzinfo=new_york),
-            datetime(2023, 1, 10, tzinfo=new_york),
-            new_york,
-            id="New York Timezone",
-        ),
-    ]
-
-
-class TestValidateTimeZone:
-    @staticmethod
-    @pytest.mark.dsl
-    @pytest.mark.parametrize("start, end, expected_message", validate_time_zone_invalid_arguments_data())
-    def test_raise_value_error_invalid_arguments(start: datetime, end: datetime, expected_message: str):
-        with pytest.raises(ValueError, match=expected_message):
-            _ = validate_timezone(start, end)
-
-    @staticmethod
-    @pytest.mark.dsl
-    @pytest.mark.parametrize("start, end, expected_tz", validate_time_zone_valid_arguments_data())
-    def test_infer_timezone(start: datetime, end: datetime, expected_tz):
-        actual_tz = validate_timezone(start, end)
-
-        assert actual_tz == expected_tz
 
 
 class TestSingleTSQueryValidator:

@@ -13,9 +13,9 @@ if TYPE_CHECKING:
     import pandas
 
     try:
-        import zoneinfo  # type:ignore
+        from zoneinfo import ZoneInfo  # type:ignore
     except ImportError:
-        from backports import zoneinfo  # type:ignore
+        from backports.zoneinfo import ZoneInfo  # type:ignore
 
 
 UNIT_IN_MS_WITHOUT_WEEK = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000}
@@ -540,7 +540,7 @@ def to_fixed_utc_intervals(start: datetime, end: datetime, granularity: str) -> 
 
 
 def _to_fixed_utc_intervals_variable_unit_length(
-    start: datetime, end: datetime, multiplier: int, unit: str, utc: zoneinfo.ZoneInfo
+    start: datetime, end: datetime, multiplier: int, unit: str, utc: ZoneInfo
 ) -> list[dict[str, datetime | str]]:
     pd = cast(Any, local_import("pandas"))
 
@@ -570,7 +570,7 @@ def _to_fixed_utc_intervals_variable_unit_length(
 
 
 def _to_fixed_utc_intervals_fixed_unit_length(
-    start: datetime, end: datetime, multiplier: int, unit: str, utc: zoneinfo.ZoneInfo
+    start: datetime, end: datetime, multiplier: int, unit: str, utc: ZoneInfo
 ) -> list[dict[str, datetime | str]]:
     pd = cast(Any, local_import("pandas"))
 
@@ -606,3 +606,23 @@ def _to_fixed_utc_intervals_fixed_unit_length(
             }
         )
     return transitions
+
+
+def validate_timezone(start: datetime, end: datetime) -> ZoneInfo:
+    try:
+        from zoneinfo import ZoneInfo
+    except ModuleNotFoundError:
+        from backports.zoneinfo import ZoneInfo
+
+    if missing := [name for name, timestamp in zip(("start", "end"), (start, end)) if not timestamp.tzinfo]:
+        names = " and ".join(missing)
+        end_sentence = " do not have timezones." if len(missing) >= 2 else " does not have a timezone."
+        raise ValueError(f"All times must be time zone aware, {names}{end_sentence}")
+
+    if not isinstance(start.tzinfo, ZoneInfo) or not isinstance(end.tzinfo, ZoneInfo):
+        raise ValueError("Only ZoneInfo implementation of tzinfo is supported")
+
+    if start.tzinfo is not end.tzinfo:
+        raise ValueError(f"start and end have different timezones, {start.tzinfo.key!r} and {end.tzinfo.key!r}.")
+
+    return start.tzinfo
