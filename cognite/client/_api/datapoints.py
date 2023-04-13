@@ -1069,7 +1069,7 @@ class DatapointsAPI(APIClient):
                 ...     column_names="id")
 
             Get a pandas dataframe with the sum of the time series with external id "foo" and "bar",
-            for each quarter from 2020 to 2022 returned in the local time zone Oslo, Norway.
+            for each quarter from 2020 to 2022 returned in the time zone of Oslo, Norway:
 
                 >>> from cognite.client import CogniteClient
                 >>> from datetime import datetime
