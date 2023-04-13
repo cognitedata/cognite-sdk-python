@@ -582,7 +582,7 @@ def _to_fixed_utc_intervals_fixed_unit_length(
     index = pd.date_range(start.replace(tzinfo=None), end.replace(tzinfo=None), freq=f"{freq}H").tz_localize(
         start.tzinfo.key  # type: ignore
     )
-    expected_freq = pd.Timedelta(f"{freq}H")
+    expected_freq = pd.Timedelta(hours=freq)
     next_diff = index - index.to_series().shift(1)
     last_diff = index - index.to_series().shift(-1)
     index = index[(last_diff.abs() != expected_freq) | (next_diff.abs() != expected_freq)]
