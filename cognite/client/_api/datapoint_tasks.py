@@ -168,7 +168,7 @@ class _TimeRangeValidator:
             start: Start time
             end: End time
             granularity: If aggregation, must be passed.
-            is_raw: Whether query is for raw or aggregation
+            is_raw: Whether the query is for raw- or aggregated datapoints
             identifier: Query identifier (used to give a good error message in case validation fails).
 
         Returns:
