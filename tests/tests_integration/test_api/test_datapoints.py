@@ -1137,7 +1137,7 @@ def retrieve_dataframe_in_tz_count_small_granularities_data():
     )
 
 
-class TestReprieveAggregateTimezoneDatapointsAPI:
+class TestRetrieveAggregateTimezoneDatapointsAPI:
     """
     Integration testing of all the functionality related to retrieving in the correct timezone
     """
