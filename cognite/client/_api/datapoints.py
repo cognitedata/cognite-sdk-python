@@ -1121,7 +1121,7 @@ class DatapointsAPI(APIClient):
             raise ValueError(f"The following identifiers were not unique: {duplicated}")
 
         if not identifiers:
-            raise ValueError("You must pass in at least one identifier.")
+            return None
 
         queries = [
             {identifier.name(): identifier.as_primitive(), "aggregates": aggregates, **interval}  # type: ignore [arg-type]
@@ -1132,9 +1132,14 @@ class DatapointsAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
             **{identifiers[0].name(): queries},  # type: ignore [arg-type]
         )
-        arrays = DatapointsArrayList.create_with_unique_ids(arrays)  # type: ignore [arg-type]
-        df = arrays.to_pandas(column_names, include_aggregate_name, include_granularity_name)
-        df = df.tz_localize("utc").tz_convert(tz.key)
+        assert isinstance(arrays, DatapointsArrayList)  # mypy
+        arrays.concat_duplicate_ids()
+        df = (
+            arrays.to_pandas(column_names, include_aggregate_name, include_granularity_name)
+            .tz_localize("utc")
+            .tz_convert(tz.key)
+        )
+
         if uniform_index:
             freq = granularity.replace("m", "T")
             return df.reindex(pd.date_range(start=start, end=end, freq=freq, inclusive="left"))
