@@ -587,7 +587,7 @@ def _to_fixed_utc_intervals_fixed_unit_length(
     last_diff = index - index.to_series().shift(-1)
     index = index[(last_diff.abs() != expected_freq) | (next_diff.abs() != expected_freq)]
 
-    hour, zero = pd.Timedelta("1hour"), pd.Timedelta("0hour")
+    hour, zero = pd.Timedelta(hours=1), pd.Timedelta(0)
     transitions = []
     for start, end in zip(index[:-1], index[1:]):
         if start.dst() == end.dst():
