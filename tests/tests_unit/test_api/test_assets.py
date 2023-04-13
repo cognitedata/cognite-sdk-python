@@ -227,10 +227,10 @@ class TestAssets:
         expected = {"labels": {"set": [{"externalId": "PUMP"}, {"externalId": "VALVE"}]}}
         assert expected == jsgz_load(mock_assets_response.calls[0].request.body)["items"][0]["update"]
 
-    # resource.update doesn't support full replacement of labels (set operation)
-    def test_ignore_labels_resource_class(self, cognite_client, mock_assets_response):
+    def test_update_labels_resource_class(self, cognite_client, mock_assets_response):
         cognite_client.assets.update(Asset(id=1, labels=[Label(external_id="Pump")], name="Abc"))
-        assert {"name": {"set": "Abc"}} == jsgz_load(mock_assets_response.calls[0].request.body)["items"][0]["update"]
+        expected = {"name": {"set": "Abc"}, "labels": {"set": [{"externalId": "Pump"}]}}
+        assert expected == jsgz_load(mock_assets_response.calls[0].request.body)["items"][0]["update"]
 
     def test_labels_filter_contains_all(self, cognite_client, mock_assets_response):
         my_label_filter = LabelFilter(contains_all=["PUMP", "VERIFIED"])
