@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import numbers
 import re
 import sys
@@ -406,7 +407,7 @@ def standardize_unit(unit: str) -> str:
     # First three use one letter to be consistent with CDF API.
     if unit in {"seconds", "second", "s"}:
         return "s"
-    elif unit in {"minutes", "minute", "m"}:
+    elif unit in {"minutes", "minute", "m", "min", "T"}:
         return "m"
     elif unit in {"hours", "hour", "h"}:
         return "h"
@@ -548,9 +549,7 @@ def _to_fixed_utc_intervals_variable_unit_length(
     pd = cast(Any, local_import("pandas"))
 
     # Pandas seems to have issues with ZoneInfo object, so removing the timezone and adding it back.
-    index = pd.date_range(start.replace(tzinfo=None), end.replace(tzinfo=None), freq="1D").tz_localize(start.tzinfo.key)  # type: ignore
-    # All units are always using the first of each month, filtering it out here makes index much smaller.
-    index = index[index.day == 1]
+    index = pd.date_range(start.replace(tzinfo=None), end.replace(tzinfo=None), freq="MS", tz=start.tzinfo.key)  # type: ignore [union-attr]
     if unit == "month":
         month_no = index.month - start.month + 12 * (index.year - start.year)
         index = index[month_no % multiplier == 0].tz_convert(utc)
