@@ -354,8 +354,8 @@ def align_large_granularity(start: datetime, end: datetime, granularity: str) ->
     This is done to get consistent behavior with the Cognite Datapoints API.
 
     Args:
-        start: Start date
-        end: End date,
+        start: Start time
+        end: End time
         granularity: The large granularity, day|week|month|quarter|year.
 
     Returns:
