@@ -1,4 +1,3 @@
-import sys
 import time
 from typing import List, Tuple
 
@@ -6,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from cognite.client._api.time_series import TimeSeriesAPI
-from cognite.client.data_classes import TimeSeries
+from cognite.client.data_classes import DatapointsList, TimeSeries, TimeSeriesList
 from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS, UNIT_IN_MS
 
 NAMES = [
@@ -43,10 +42,10 @@ def create_dense_rand_dist_ts(xid, seed, n=1_000_000):
     np.random.seed(seed)
     idx = np.sort(
         np.random.randint(
-            # Windows throws a ValueError: low is out of bounds for int32 here.
             pd.Timestamp("1950-01-01").value // int(1e6),
             pd.Timestamp("2020-01-01").value // int(1e6),
             n,
+            dtype=np.int64,
         )
     )
     dupe = idx[:-1] == idx[1:]
@@ -74,20 +73,33 @@ def delete_all_time_series(ts_api):
     time.sleep(10)
 
 
-def create_edge_case_time_series(ts_api):
-    ts_lst = [
-        TimeSeries(name=SPARSE_NAMES[0], external_id=SPARSE_NAMES[0], is_string=False),
-        TimeSeries(name=SPARSE_NAMES[1], external_id=SPARSE_NAMES[1], is_string=False),
-    ]
-    ts_api.create(ts_lst)
-    time.sleep(1)
-    ts_api.data.insert_multiple(
+def _sparse_ts_and_dps():
+    return TimeSeriesList(
+        [
+            TimeSeries(name=SPARSE_NAMES[0], external_id=SPARSE_NAMES[0], is_string=False),
+            TimeSeries(name=SPARSE_NAMES[1], external_id=SPARSE_NAMES[1], is_string=False),
+        ]
+    ), DatapointsList(
         [
             {"externalId": SPARSE_NAMES[0], "datapoints": [(MIN_TIMESTAMP_MS, MIN_TIMESTAMP_MS)]},
             {"externalId": SPARSE_NAMES[1], "datapoints": [(MAX_TIMESTAMP_MS, MAX_TIMESTAMP_MS)]},
         ]
     )
+
+
+def create_edge_case_time_series(ts_api):
+    ts_lst, ts_dps = _sparse_ts_and_dps()
+
+    ts_api.create(ts_lst)
+
+    time.sleep(1)
+    ts_api.data.insert_multiple(ts_dps)
     print(f"Created {len(ts_lst)} sparse ts with data")
+
+
+def create_edge_case_if_not_exists(ts_api):
+    ts_lst, ts_dps = _sparse_ts_and_dps()
+    create_if_not_exists(ts_api, ts_lst, [ts_dps.to_pandas(column_names="external_id", include_aggregate_name=False)])
 
 
 def create_dense_time_series() -> Tuple[List[TimeSeries], List[pd.DataFrame]]:
@@ -182,27 +194,25 @@ def create_dense_time_series() -> Tuple[List[TimeSeries], List[pd.DataFrame]]:
         df_add(pd.DataFrame({NAMES[i + 4]: arr + i + 5}, index=millisec_idx))
         i += 5
 
-    if sys.platform != "win32":
-        # Windows does not support the low bound used for the index in create_dense_rand_dist_ts
-        ts_add(
-            TimeSeries(
-                name=NAMES[113],
-                external_id=NAMES[113],
-                is_string=False,
-                metadata={"offset": "n/a", "delta": "uniform random"},
-            )
+    ts_add(
+        TimeSeries(
+            name=NAMES[113],
+            external_id=NAMES[113],
+            is_string=False,
+            metadata={"offset": "n/a", "delta": "uniform random"},
         )
-        df_add(create_dense_rand_dist_ts(NAMES[113], seed=42))
+    )
+    df_add(create_dense_rand_dist_ts(NAMES[113], seed=42))
 
-        ts_add(
-            TimeSeries(
-                name=NAMES[114],
-                external_id=NAMES[114],
-                is_string=True,
-                metadata={"offset": "n/a", "delta": "uniform random"},
-            )
+    ts_add(
+        TimeSeries(
+            name=NAMES[114],
+            external_id=NAMES[114],
+            is_string=True,
+            metadata={"offset": "n/a", "delta": "uniform random"},
         )
-        df_add(create_dense_rand_dist_ts(NAMES[114], seed=43).astype(str))
+    )
+    df_add(create_dense_rand_dist_ts(NAMES[114], seed=43).astype(str))
 
     ts_add(
         TimeSeries(
@@ -228,7 +238,7 @@ def create_dense_time_series() -> Tuple[List[TimeSeries], List[pd.DataFrame]]:
     return ts_lst, df_lst
 
 
-def create_if_not_exists(ts_api: TimeSeriesAPI, ts_list: List[TimeSeries], df_lst: List[pd.DataFrame]):
+def create_if_not_exists(ts_api: TimeSeriesAPI, ts_list: List[TimeSeries], df_lst: List[pd.DataFrame]) -> None:
     existing = {
         t.external_id
         for t in ts_api.retrieve_multiple(external_ids=[t.external_id for t in ts_list], ignore_unknown_ids=True)
@@ -269,7 +279,7 @@ def create_time_series(ts_api, ts_lst: List[TimeSeries], df_lst: List[pd.DataFra
 
 
 if __name__ == "__main__":
-    # To avoid accidental runs, please provide a valid config to CogniteClient:
+    # # The code for getting a client is not committed, this is to avoid accidental runs.
     from scripts import local_client
 
     client = local_client.get_interactive()
@@ -277,4 +287,4 @@ if __name__ == "__main__":
     delete_all_time_series(client.time_series)
     ts_lst, df_lst = create_dense_time_series()
     create_if_not_exists(client.time_series, ts_lst, df_lst)
-    create_edge_case_time_series(client.time_series)
+    create_edge_case_if_not_exists(client.time_series)
