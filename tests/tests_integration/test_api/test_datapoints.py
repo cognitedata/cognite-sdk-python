@@ -9,7 +9,7 @@ import random
 import re
 import time
 from contextlib import nullcontext as does_not_raise
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Literal
 from unittest.mock import patch
 
@@ -1027,9 +1027,8 @@ class TestRetrieveAggregateDatapointsAPI:
 def hourly_2023(cognite_client, hourly_normal_dist) -> pd.DataFrame:
     utc = zoneinfo.ZoneInfo("UTC")
     # Adding a day to ensure we get the entire 2023 when converting to specific time zone later
-    day = timedelta(days=1)
-    start = datetime(2023, 1, 1, tzinfo=utc) - day
-    end = datetime(2023, 12, 31, hour=23, minute=59, second=59, tzinfo=utc) + day
+    start = datetime(2022, 12, 31, tzinfo=utc)
+    end = datetime(2024, 1, 1, hour=23, minute=59, second=59, tzinfo=utc)
 
     return cognite_client.time_series.data.retrieve_dataframe(
         external_id=hourly_normal_dist.external_id, start=start, end=end
@@ -1137,7 +1136,7 @@ def retrieve_dataframe_in_tz_count_small_granularities_data():
     )
 
 
-class TestRetrieveAggregateTimezoneDatapointsAPI:
+class TestRetrieveTimezoneDatapointsAPI:
     """
     Integration testing of all the functionality related to retrieving in the correct timezone
     """
