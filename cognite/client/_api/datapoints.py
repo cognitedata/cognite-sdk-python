@@ -1114,7 +1114,7 @@ class DatapointsAPI(APIClient):
 
         intervals = to_fixed_utc_intervals(start, end, granularity)  # type:ignore
 
-        id_name, ids = ("external_id", external_id) if external_id else ("id", id)
+        id_name, ids = ("id", id) if id else ("external_id", external_id)
         if isinstance(ids, (str, int)):  # type:ignore
             ids = [ids]  # type:ignore
 
