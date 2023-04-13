@@ -1089,22 +1089,24 @@ class DatapointsAPI(APIClient):
 
         tz = validate_timezone(start, end)
         if aggregates is None and granularity is None:
-            # Raw Data only need to conveted the timezone
-            df = self.retrieve_dataframe(
-                id=id,
-                external_id=external_id,
-                start=start,
-                end=end,
-                aggregates=aggregates,
-                granularity=granularity,
-                ignore_unknown_ids=ignore_unknown_ids,
-                uniform_index=uniform_index,
-                include_aggregate_name=include_aggregate_name,
-                include_granularity_name=include_granularity_name,
-                column_names=column_names,
+            # Raw Data only need to convert the timezone
+            return (
+                self.retrieve_dataframe(
+                    id=id,
+                    external_id=external_id,
+                    start=start,
+                    end=end,
+                    aggregates=aggregates,
+                    granularity=granularity,
+                    ignore_unknown_ids=ignore_unknown_ids,
+                    uniform_index=uniform_index,
+                    include_aggregate_name=include_aggregate_name,
+                    include_granularity_name=include_granularity_name,
+                    column_names=column_names,
+                )
+                .tz_localize("utc")
+                .tz_convert(tz.key)
             )
-            df = df.tz_localize("utc").tz_convert(tz.key)
-            return df
 
         # Aggregates
         multiplier, unit = get_granularity_multiplier_and_unit(granularity)  # type:ignore
