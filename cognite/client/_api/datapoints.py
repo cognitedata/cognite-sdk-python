@@ -1015,7 +1015,7 @@ class DatapointsAPI(APIClient):
         include_granularity_name: bool = False,
         column_names: Literal["id", "external_id"] = "external_id",
     ) -> pd.DataFrame:
-        """Get datapoints directly in a pandas dataframe in the time zone given in start and end.
+        """Get datapoints directly in a pandas dataframe in the same time zone as start and end.
 
         **Note** This is a convenicence method. It builds on top of the retrieve_array and retrieve_dataframe methods.
         It enables you to do correct aggregates in a local time zone with daily, weekly, quartely, and yearly
