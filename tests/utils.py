@@ -8,14 +8,15 @@ import math
 import os
 import random
 from contextlib import contextmanager
-from typing import Any, Literal, cast
-
-import pandas
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
 from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS
 from cognite.client.utils._auxiliary import local_import
 from cognite.client.utils._text import random_string
+
+if TYPE_CHECKING:
+    import pandas
 
 
 def all_subclasses(base: type) -> list[type]:
