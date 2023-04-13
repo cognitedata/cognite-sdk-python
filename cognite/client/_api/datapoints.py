@@ -1023,7 +1023,7 @@ class DatapointsAPI(APIClient):
 
         In short, this method works as follows:
             1. Get the time zone from start and end (must be equal).
-            2. Split the time range from start to end into intervals with fixed UTC offset.
+            2. Split the time range from start to end into intervals based on DST boundaries.
             3. Create a query for each interval and all the retrieve_array method.
             4. Stack the resulting arrays into a single column in the resulting DataFrame.
 
