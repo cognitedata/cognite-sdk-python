@@ -1049,8 +1049,8 @@ class DatapointsAPI(APIClient):
             column_names ("id" | "external_id"): Use either ids or external ids as column names. Time series missing external id will use id as backup. Default: "external_id"
 
         Returns:
-            pandas.DataFrame: A pandas DataFrame containing the requested time series with a DateTimeIndex localized
-            to the time zone from the start time.
+            pandas.DataFrame: A pandas DataFrame containing the requested time series with a DatetimeIndex localized
+            in the given time zone.
 
         Examples:
 
