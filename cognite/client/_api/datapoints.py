@@ -1088,8 +1088,8 @@ class DatapointsAPI(APIClient):
                 ...     end=datetime(2022, 12, 31, tzinfo=ZoneInfo("Europe/Oslo")),
                 ...     )
         """
-        if (id is not None and external_id is not None) or (id is None and external_id is None):
-            raise ValueError("Either input ids or external ids")
+        if not exactly_one_is_not_none(id, external_id):
+            raise ValueError("Either input id(s) or external_id(s)")
 
         if exactly_one_is_not_none(aggregates, granularity)):
             raise ValueError(
