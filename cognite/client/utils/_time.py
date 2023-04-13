@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import numbers
 import re
+import sys
 import time
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta, timezone
@@ -12,10 +13,10 @@ from cognite.client.utils._auxiliary import local_import
 if TYPE_CHECKING:
     import pandas
 
-    try:
-        from zoneinfo import ZoneInfo  # type:ignore
-    except ImportError:
-        from backports.zoneinfo import ZoneInfo  # type:ignore
+    if sys.version_info >= (3, 9):
+        from zoneinfo import ZoneInfo
+    else:
+        from backports.zoneinfo import ZoneInfo
 
 
 UNIT_IN_MS_WITHOUT_WEEK = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000}
@@ -609,9 +610,9 @@ def _to_fixed_utc_intervals_fixed_unit_length(
 
 
 def validate_timezone(start: datetime, end: datetime) -> ZoneInfo:
-    try:
+    if sys.version_info >= (3, 9):
         from zoneinfo import ZoneInfo
-    except ModuleNotFoundError:
+    else:
         from backports.zoneinfo import ZoneInfo
 
     if missing := [name for name, timestamp in zip(("start", "end"), (start, end)) if not timestamp.tzinfo]:
