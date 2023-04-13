@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, Mapping, Sequence
+from typing import TYPE_CHECKING, Callable, Mapping, Sequence
 
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 
@@ -39,5 +39,9 @@ def _process_identifiers(
     return IdentifierSequence.load(ids, external_ids, id_name=id_name).as_dicts()
 
 
-process_data_set_ids = functools.partial(_process_identifiers, id_name="data_set")
-process_asset_subtree_ids = functools.partial(_process_identifiers, id_name="asset_subtree")
+process_data_set_ids: Callable[
+    [int | Sequence[int] | None, str | Sequence[str] | None], list[dict[str, int | str]] | None
+] = functools.partial(_process_identifiers, id_name="data_set")
+process_asset_subtree_ids: Callable[
+    [int | Sequence[int] | None, str | Sequence[str] | None], list[dict[str, int | str]] | None
+] = functools.partial(_process_identifiers, id_name="asset_subtree")
