@@ -1115,21 +1115,22 @@ class DatapointsAPI(APIClient):
 
         intervals = to_fixed_utc_intervals(start, end, granularity)
 
-        id_name, ids = ("id", id) if id else ("external_id", external_id)
-        if isinstance(ids, (str, int)):
-            ids = [ids]  # type: ignore [assignment]
+        identifiers = IdentifierSequence.load(id, external_id)
+        if not identifiers.are_unique():
+            duplicated = find_duplicates(identifiers.as_primitives())
+            raise ValueError(f"The following identifiers were not unique: {duplicated}")
 
-        if len(ids) != len(set(ids)):  # type: ignore [arg-type]
-            raise ValueError(f"Duplicated {id_name} passed. This method requires unique IDs.")
+        if not identifiers:
+            raise ValueError("You must pass in at least one identifier.")
 
         queries = [
-            {id_name: id_, "aggregates": aggregates, **interval}  # type: ignore [arg-type]
-            for id_, interval in itertools.product(ids, intervals)  # type: ignore [arg-type]
+            {identifier.name(): identifier.as_primitive(), "aggregates": aggregates, **interval}  # type: ignore [arg-type]
+            for identifier, interval in itertools.product(identifiers, intervals)  # type: ignore [arg-type, call-overload]
         ]
         arrays = self.retrieve_arrays(
             limit=None,
             ignore_unknown_ids=ignore_unknown_ids,
-            **{id_name: queries},  # type: ignore [arg-type]
+            **{identifiers[0].name(): queries},  # type: ignore [arg-type]
         )
         arrays = DatapointsArrayList.create_with_unique_ids(arrays)  # type: ignore [arg-type]
         df = arrays.to_pandas(column_names, include_aggregate_name, include_granularity_name)

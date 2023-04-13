@@ -31,24 +31,19 @@ class Identifier(Generic[T_ID]):
             return Identifier(external_id)
         raise ValueError("At least one of id and external id must be specified")
 
+    def name(self, camel_case: bool = False) -> str:
+        if isinstance(self.__value, int):
+            return "id"
+        return "externalId" if camel_case else "external_id"
+
     def as_primitive(self) -> T_ID:
         return self.__value
 
     def as_dict(self, camel_case: bool = True) -> Dict[str, T_ID]:
-        if isinstance(self.__value, str):
-            if camel_case:
-                return {"externalId": self.__value}
-            return {"external_id": self.__value}
-        else:
-            return {"id": self.__value}
+        return {self.name(camel_case): self.__value}
 
     def as_tuple(self, camel_case: bool = True) -> Tuple[str, T_ID]:
-        if isinstance(self.__value, str):
-            if camel_case:
-                return ("externalId", self.__value)
-            return ("external_id", self.__value)
-        else:
-            return ("id", self.__value)
+        return self.name(camel_case), self.__value
 
     def __str__(self) -> str:
         return repr(self)
@@ -100,6 +95,9 @@ class IdentifierSequence:
 
     def as_primitives(self) -> List[Union[int, str]]:
         return [identifier.as_primitive() for identifier in self._identifiers]
+
+    def are_unique(self) -> bool:
+        return len(self) == len(set(self.as_primitives()))
 
     @overload
     @classmethod
