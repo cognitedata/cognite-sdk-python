@@ -351,7 +351,7 @@ class YearAligner(DateTimeAligner):
 def align_large_granularity(start: datetime, end: datetime, granularity: str) -> tuple[datetime, datetime]:
     """
     Aligns the granularity by flooring the start wrt to the granularity unit, and ceiling the end.
-    This is done to get consistent behavior with how CDF is doing it at the database level.
+    This is done to get consistent behavior with the Cognite Datapoints API.
 
     Args:
         start: Start date
