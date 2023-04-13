@@ -33,7 +33,7 @@ NULLABLE_INT_COLS = {
     "last_seen_time",
     "last_updated_time",
 }
-NULLABLE_INT_COLS_CC = set(map(to_camel_case, NULLABLE_INT_COLS))
+NULLABLE_INT_COLS_CAMEL_CASE = set(map(to_camel_case, NULLABLE_INT_COLS))
 
 
 def pandas_major_version() -> int:
@@ -58,7 +58,7 @@ def notebook_display_with_fallback(inst: Union[T_CogniteResource, T_CogniteResou
 
 
 def convert_nullable_int_cols(df: pd.DataFrame, camel_case: bool) -> pd.DataFrame:
-    cols = {True: NULLABLE_INT_COLS_CC, False: NULLABLE_INT_COLS}[camel_case]
+    cols = {True: NULLABLE_INT_COLS_CAMEL_CASE, False: NULLABLE_INT_COLS}[camel_case]
     to_convert = df.columns.intersection(cols)
     df[to_convert] = df[to_convert].astype("Int64")
     return df
