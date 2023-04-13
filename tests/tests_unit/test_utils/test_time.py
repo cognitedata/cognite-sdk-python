@@ -23,6 +23,7 @@ from cognite.client.utils._time import (
     split_time_range,
     timestamp_to_ms,
     to_fixed_utc_intervals,
+    to_pandas_freq,
     validate_timezone,
 )
 from tests.utils import cdf_aggregate, tmp_set_envvar
@@ -546,3 +547,36 @@ class TestValidateTimeZone:
         actual_tz = validate_timezone(start, end)
 
         assert actual_tz == expected_tz
+
+
+class TestToPandasFreq:
+    @staticmethod
+    @pytest.mark.dsl
+    @pytest.mark.parametrize(
+        "granularity, expected_first_step, offset",
+        [
+            ("week", "2023-01-09", "1day"),
+            ("quarter", "2023-04-01", None),
+            ("year", "2024-01-01", None),
+            ("d", "2023-01-02", None),
+            ("2years", "2025-01-01", None),
+            ("3quarters", "2023-10-01", None),
+            ("m", "2023-01-01 00:01:00", None),
+            ("s", "2023-01-01 00:00:01", None),
+            ("2d", "2023-01-03", None),
+            ("2weeks", "2023-01-16", "1day"),
+        ],
+    )
+    def test_to_pandas_freq(granularity: str, expected_first_step: str, offset: str | None):
+        # Arrange
+        import pandas as pd
+
+        offset = pd.Timedelta(offset) if offset is not None else pd.Timedelta(0)
+        expected_index = pd.DatetimeIndex([pd.Timestamp("2023-01-01") + offset, expected_first_step])
+
+        # Act
+        freq = to_pandas_freq(granularity)
+
+        # Assert
+        actual_index = pd.date_range("2023", periods=2, freq=freq, inclusive="both")
+        pd.testing.assert_index_equal(actual_index, expected_index)

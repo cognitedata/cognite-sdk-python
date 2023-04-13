@@ -400,6 +400,8 @@ def split_time_range(start: int, end: int, n_splits: int, granularity_in_ms: int
 
 
 def get_granularity_multiplier_and_unit(granularity: str, standardize: bool = True) -> tuple[int, str]:
+    if not granularity[0].isdigit():
+        granularity = f"1{granularity}"
     _, number, unit = re.split(r"(\d+)", granularity)
     if standardize:
         unit = standardize_unit(unit)
@@ -529,3 +531,12 @@ def validate_timezone(start: datetime, end: datetime) -> ZoneInfo:
         raise ValueError(f"start and end have different timezones, {start.tzinfo.key!r} and {end.tzinfo.key!r}.")
 
     return start.tzinfo
+
+
+def to_pandas_freq(granularity: str) -> str:
+    multiplier, unit = get_granularity_multiplier_and_unit(granularity, standardize=True)
+
+    unit = {"s": "S", "m": "T", "h": "H", "d": "D", "w": "W-MON", "month": "MS", "quarter": "QS", "year": "AS"}.get(
+        unit, unit
+    )
+    return f"{multiplier}{unit}"
