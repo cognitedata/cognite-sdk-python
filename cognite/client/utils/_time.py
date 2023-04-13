@@ -175,36 +175,38 @@ def align_start_and_end_for_granularity(start: int, end: int, granularity: str) 
     return start, end
 
 
-class DateAligner(ABC):
-    @staticmethod
+class DateTimeAligner(ABC):
+    _zeros_upto_hour = dict(hour=0, minute=0, second=0, microsecond=0)
+
+    @classmethod
     @abstractmethod
-    def ceil(date: datetime) -> datetime:
+    def ceil(cls, date: datetime) -> datetime:
         ...
 
-    @staticmethod
+    @classmethod
     @abstractmethod
-    def floor(date: datetime) -> datetime:
+    def floor(cls, date: datetime) -> datetime:
         ...
 
-    @staticmethod
+    @classmethod
     @abstractmethod
-    def units_between(start: datetime, end: datetime) -> int:
+    def units_between(cls, start: datetime, end: datetime) -> int:
         ...
 
-    @staticmethod
+    @classmethod
     @abstractmethod
-    def add_units(date: datetime, units: int) -> datetime:
+    def add_units(cls, date: datetime, units: int) -> datetime:
         ...
 
 
-class DayAligner(DateAligner):
+class DayAligner(DateTimeAligner):
     @classmethod
     def floor(cls, date: datetime) -> datetime:
-        return date.replace(hour=0, minute=0, second=0, microsecond=0)
+        return date.replace(**cls._zeros_upto_hour)  # type: ignore [arg-type]
 
     @classmethod
     def ceil(cls, date: datetime) -> datetime:
-        return date.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
+        return date.replace(**cls._zeros_upto_hour) + timedelta(days=1)  # type: ignore [arg-type]
 
     @classmethod
     def units_between(cls, start: datetime, end: datetime) -> int:
@@ -215,7 +217,7 @@ class DayAligner(DateAligner):
         return date + timedelta(days=units)
 
 
-class WeekAligner(DateAligner):
+class WeekAligner(DateTimeAligner):
     @classmethod
     def ceil(cls, date: datetime) -> datetime:
         """
@@ -223,7 +225,7 @@ class WeekAligner(DateAligner):
         >>> WeekAligner.ceil(datetime(2023, 4, 9 ))
         datetime.datetime(2023, 4, 10, 0, 0)
         """
-        date = date.replace(hour=0, minute=0, microsecond=0)
+        date = date.replace(**cls._zeros_upto_hour)  # type: ignore [arg-type]
         if (weekday := date.weekday()) != 0:
             return date + timedelta(days=7 - weekday)
         return date
@@ -235,7 +237,7 @@ class WeekAligner(DateAligner):
         >>> WeekAligner.floor(datetime(2023, 4, 9))
         datetime.datetime(2023, 4, 3, 0, 0)
         """
-        date = date.replace(hour=0, minute=0, microsecond=0)
+        date = date.replace(**cls._zeros_upto_hour)  # type: ignore [arg-type]
         if (weekday := date.weekday()) != 0:
             return date - timedelta(days=weekday)
         return date
@@ -249,7 +251,7 @@ class WeekAligner(DateAligner):
         return date + timedelta(days=units * 7)
 
 
-class MonthAligner(DateAligner):
+class MonthAligner(DateTimeAligner):
     @classmethod
     def ceil(cls, date: datetime) -> datetime:
         """
@@ -267,11 +269,11 @@ class MonthAligner(DateAligner):
         if date == datetime(year=date.year, month=date.month, day=1, tzinfo=date.tzinfo):
             return date
         extra, month = divmod(date.month + 1, 12)
-        return date.replace(year=date.year + extra, month=month, day=1, hour=0, minute=0, second=0, microsecond=0)
+        return date.replace(year=date.year + extra, month=month, day=1, **cls._zeros_upto_hour)  # type: ignore [arg-type]
 
     @classmethod
     def floor(cls, date: datetime) -> datetime:
-        return date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        return date.replace(day=1, **cls._zeros_upto_hour)  # type: ignore [arg-type]
 
     @classmethod
     def units_between(cls, start: datetime, end: datetime) -> int:
@@ -283,7 +285,7 @@ class MonthAligner(DateAligner):
         return date.replace(year=date.year + extra_years, month=month)
 
 
-class QuarterAligner(DateAligner):
+class QuarterAligner(DateTimeAligner):
     @classmethod
     def ceil(cls, date: datetime) -> datetime:
         """
@@ -300,7 +302,7 @@ class QuarterAligner(DateAligner):
             return date
         month = 3 * ((date.month - 1) // 3 + 1) + 1
         add_years, month = divmod(month, 12)
-        return date.replace(year=date.year + add_years, month=month, day=1, hour=0, minute=0, microsecond=0)
+        return date.replace(year=date.year + add_years, month=month, day=1, **cls._zeros_upto_hour)  # type: ignore [arg-type]
 
     @classmethod
     def floor(cls, date: datetime) -> datetime:
@@ -314,7 +316,7 @@ class QuarterAligner(DateAligner):
         datetime.datetime(2023, 10, 1, 0, 0)
         """
         month = 3 * ((date.month - 1) // 3) + 1
-        return date.replace(month=month, day=1, hour=0, minute=0, second=0, microsecond=0)
+        return date.replace(month=month, day=1, **cls._zeros_upto_hour)  # type: ignore [arg-type]
 
     @classmethod
     def units_between(cls, start: datetime, end: datetime) -> int:
@@ -326,16 +328,16 @@ class QuarterAligner(DateAligner):
         return date.replace(year=date.year + extra_years, month=month)
 
 
-class YearAligner(DateAligner):
+class YearAligner(DateTimeAligner):
     @classmethod
     def ceil(cls, date: datetime) -> datetime:
         if date == datetime(date.year, 1, 1, tzinfo=date.tzinfo):
             return date
-        return date.replace(year=date.year + 1, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+        return date.replace(year=date.year + 1, month=1, day=1, **cls._zeros_upto_hour)  # type: ignore [arg-type]
 
     @classmethod
     def floor(cls, date: datetime) -> datetime:
-        return date.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+        return date.replace(month=1, day=1, **cls._zeros_upto_hour)  # type: ignore [arg-type]
 
     @classmethod
     def units_between(cls, start: datetime, end: datetime) -> int:
