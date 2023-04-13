@@ -1021,8 +1021,8 @@ class DatapointsAPI(APIClient):
         It enables you to do correct aggregates in a local time zone with daily, weekly, quartely, and yearly
         aggregates, including accounting for DST (Daylight Saving Time).
 
-        In short, this method function as follows:
-            1. Get the time zone from start and end.
+        In short, this method works as follows:
+            1. Get the time zone from start and end (must be equal).
             2. Split the time range from start to end into intervals with fixed UTC offset.
             3. Create a query for each interval and all the retrieve_array method.
             4. Stack the resulting arrays into a single column in the resulting DataFrame.
