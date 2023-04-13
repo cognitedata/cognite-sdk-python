@@ -678,6 +678,8 @@ class DatapointsArrayList(CogniteResourceList):
         for ext_id, items in self._external_id_to_item.items():
             if not isinstance(items, list):
                 self.data.append(items)
+                if items.id is not None:
+                    has_external_ids.add(items.id)
                 continue
             concatenated = DatapointsArray.create_from_arrays(*items)
             self._external_id_to_item[ext_id] = concatenated
