@@ -1091,9 +1091,9 @@ class DatapointsAPI(APIClient):
         if (id is not None and external_id is not None) or (id is None and external_id is None):
             raise ValueError("Either input ids or external ids")
 
-        if sum(arg is None for arg in (aggregates, granularity)) == 1:
+        if exactly_one_is_not_none(aggregates, granularity)):
             raise ValueError(
-                "You cannot only pass in aggregates or granularity. "
+                "Got only one of 'aggregates' and 'granularity'. "
                 "Pass both to get aggregates, or neither to get raw data"
             )
 
