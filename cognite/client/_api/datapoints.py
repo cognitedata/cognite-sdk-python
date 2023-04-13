@@ -969,8 +969,7 @@ class DatapointsAPI(APIClient):
             return fetcher.fetch_all_datapoints_numpy().to_pandas(
                 column_names, include_aggregate_name, include_granularity_name
             )
-
-        # Uniform Index Requires extra validation and processing
+        # Uniform index requires extra validation and processing:
         grans_given = {q.granularity for q in fetcher.all_queries}
         is_limited = any(q.limit is not None for q in fetcher.all_queries)
         if fetcher.raw_queries or len(grans_given) > 1 or is_limited:
