@@ -7,7 +7,6 @@ from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
 from functools import cached_property
-from itertools import groupby
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -15,7 +14,6 @@ from typing import (
     Collection,
     Dict,
     Generator,
-    Iterable,
     Iterator,
     List,
     Literal,
@@ -229,40 +227,20 @@ class DatapointsArray(CogniteResource):
 
     @classmethod
     def create_from_arrays(cls, *arrays: DatapointsArray) -> DatapointsArray:
-        sort_by_time = sorted((a for a in arrays if a.timestamp is not None), key=lambda a: a.timestamp[0])
+        sort_by_time = sorted((a for a in arrays if len(a.timestamp) > 0), key=lambda a: a.timestamp[0])
         first = sort_by_time[0]
         if len(sort_by_time) == 1:
             return first
-        # Explicit for readability
+
+        arrays_by_attribute = defaultdict(list)
+        for array in sort_by_time:
+            for attr, arr in zip(*array._data_fields()):
+                arrays_by_attribute[attr].append(arr)
+        arrays_by_attribute = {attr: np.concatenate(arrs) for attr, arrs in arrays_by_attribute.items()}  # type: ignore [assignment]
+
         return cls(
-            id=first.id,
-            external_id=first.external_id,
-            is_string=first.is_string,
-            is_step=first.is_step,
-            unit=first.unit,
-            granularity=first.granularity,
-            timestamp=np.concatenate([a.timestamp for a in sort_by_time]),
-            value=np.concatenate([a.value for a in sort_by_time]) if first.value is not None else None,
-            average=np.concatenate([a.average for a in sort_by_time]) if first.average is not None else None,
-            max=np.concatenate([a.max for a in sort_by_time]) if first.max is not None else None,
-            min=np.concatenate([a.min for a in sort_by_time]) if first.min is not None else None,
-            count=np.concatenate([a.count for a in sort_by_time]) if first.count is not None else None,
-            sum=np.concatenate([a.sum for a in sort_by_time]) if first.sum is not None else None,
-            interpolation=np.concatenate([a.interpolation for a in sort_by_time])
-            if first.interpolation is not None
-            else None,
-            step_interpolation=np.concatenate([a.step_interpolation for a in sort_by_time])
-            if first.step_interpolation is not None
-            else None,
-            continuous_variance=np.concatenate([a.continuous_variance for a in sort_by_time])
-            if first.continuous_variance is not None
-            else None,
-            discrete_variance=np.concatenate([a.discrete_variance for a in sort_by_time])
-            if first.discrete_variance is not None
-            else None,
-            total_variation=np.concatenate([a.total_variation for a in sort_by_time])
-            if first.total_variation is not None
-            else None,
+            **first._ts_info,  # type: ignore [arg-type]
+            **arrays_by_attribute,  # type: ignore [arg-type]
         )
 
     def __len__(self) -> int:
@@ -683,19 +661,43 @@ class DatapointsArrayList(CogniteResourceList):
         self._id_to_item.update(id_dct)
         self._external_id_to_item.update(xid_dct)
 
-    @classmethod
-    def create_with_unique_ids(cls, arrays: Iterable[DatapointsArray]) -> DatapointsArrayList:
+    def concat_duplicate_ids(self) -> None:
         """
-        Creates a DatapointsArrayList in which all DataPointsArrays have unique IDs.
+        Concatenates all arrays with duplicated IDs.
 
-        Arrays with the same ids are stacked on top of each other.
+        Arrays with the same ids are stacked in chronological order.
+
+        **Caveat** This method is not guaranteed to preserve the order of the list.
         """
+        # Rebuilt list instead of removing duplicated one at a time at the cost of O(n).
+        self.data.clear()
 
-        def key(a: DatapointsArray) -> str | int:
-            return a.id or a.external_id or 0
+        # This implementation takes advantage of the ordering of the duplicated in the __init__ method
 
-        sort_by_id = sorted(arrays, key=key)
-        return cls(resources=[DatapointsArray.create_from_arrays(*group) for _, group in groupby(sort_by_id, key)])
+        has_external_ids = set()
+        for ext_id, items in self._external_id_to_item.items():
+            if not isinstance(items, list):
+                self.data.append(items)
+                continue
+            concatenated = DatapointsArray.create_from_arrays(*items)
+            self._external_id_to_item[ext_id] = concatenated
+            if concatenated.id is not None:
+                has_external_ids.add(concatenated.id)
+                self._id_to_item[concatenated.id] = concatenated
+            self.data.append(concatenated)
+
+        if not (only_ids := set(self._id_to_item) - has_external_ids):
+            return
+
+        for id_, items in self._id_to_item.items():
+            if id_ not in only_ids:
+                continue
+            if not isinstance(items, list):
+                self.data.append(items)
+                continue
+            concatenated = DatapointsArray.create_from_arrays(*items)
+            self._id_to_item[id_] = concatenated
+            self.data.append(concatenated)
 
     def get(  # type: ignore [override]
         self,
