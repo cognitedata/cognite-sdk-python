@@ -1068,7 +1068,7 @@ class DatapointsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> df = client.time_series.data.retrieve_dataframe(
                 ...     external_id=["foo", "bar"],
-                ...     aggregates=["sum"],
+                ...     aggregates=["sum", "continuous_variance"],
                 ...     granularity="1quarter",
                 ...     start=datetime(2020, 1, 1, tzinfo=ZoneInfo("Europe/Oslo")),
                 ...     end=datetime(2022, 12, 31, tzinfo=ZoneInfo("Europe/Oslo")),
