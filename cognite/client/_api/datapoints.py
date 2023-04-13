@@ -1047,10 +1047,8 @@ class DatapointsAPI(APIClient):
             Get a pandas dataframe in the time zone of Oslo, Norway:
 
                 >>> from cognite.client import CogniteClient
-                >>> try:
-                ...     from zoneinfo import ZoneInfo
-                ... except ModuleNotFoundError:
-                ...     from backports.zoneinfo import ZoneInfo
+                >>> # In Python >=3.9 you may import directly from `zoneinfo`
+                >>> from cognite.client.utils import ZoneInfo
                 >>> client = CogniteClient()
                 >>> df = client.time_series.data.retrieve_dataframe_in_tz(
                 ...     id=12345,
