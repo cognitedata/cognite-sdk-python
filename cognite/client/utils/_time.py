@@ -509,9 +509,7 @@ def _to_fixed_utc_intervals_fixed_unit_length(
     return transitions
 
 
-def pandas_date_range_tz(
-    start: datetime, end: datetime, freq: str, inclusive: str | None = None
-) -> pandas.DatetimeIndex:
+def pandas_date_range_tz(start: datetime, end: datetime, freq: str, inclusive: str = "both") -> pandas.DatetimeIndex:
     """
     Pandas date_range struggles with time zone aware datetimes.
     This function overcomes that limitation.
