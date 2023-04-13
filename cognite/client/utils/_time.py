@@ -355,8 +355,8 @@ def align_large_granularity(start: datetime, end: datetime, granularity: str) ->
     This is done to get consistent behavior with the Cognite Datapoints API.
 
     Args:
-        start: Start date
-        end: End date,
+        start: Start time
+        end: End time
         granularity: The large granularity, day|week|month|quarter|year.
 
     Returns:
@@ -565,7 +565,7 @@ def _to_fixed_utc_intervals_variable_unit_length(
         {
             "start": start.to_pydatetime(),
             "end": end.to_pydatetime(),
-            "granularity": f"{(end-start).total_seconds()//3600:.0f}h",
+            "granularity": f"{(end-start)/timedelta(hours=1):.0f}h",
         }
         for start, end in zip(index[:-1], index[1:])
     ]
@@ -582,9 +582,9 @@ def _to_fixed_utc_intervals_fixed_unit_length(
         start.tzinfo.key  # type: ignore
     )
     expected_freq = pd.Timedelta(hours=freq)
-    next_diff = index - index.to_series().shift(1)
-    last_diff = index - index.to_series().shift(-1)
-    index = index[(last_diff.abs() != expected_freq) | (next_diff.abs() != expected_freq)]
+    next_mask = (index - index.to_series().shift(1)) != expected_freq
+    last_mask = (index.to_series().shift(-1) - index) != expected_freq
+    index = index[last_mask | next_mask]
 
     hour, zero = pd.Timedelta(hours=1), pd.Timedelta(0)
     transitions = []
