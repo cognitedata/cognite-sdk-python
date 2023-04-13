@@ -164,7 +164,6 @@ class _TimeRangeValidator:
         """
         Validates the start and end time. In the case of aggregation, the start and end are aligned with the CDF API.
 
-
         Args:
             start: Start time
             end: End time
