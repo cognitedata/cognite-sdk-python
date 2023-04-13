@@ -1054,7 +1054,7 @@ class DatapointsAPI(APIClient):
 
         Examples:
 
-            Get a pandas dataframe in the local timezone in Oslo, Norway:
+            Get a pandas dataframe in the time zone of Oslo, Norway:
 
                 >>> from cognite.client import CogniteClient
                 >>> try:
