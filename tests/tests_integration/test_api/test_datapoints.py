@@ -68,32 +68,32 @@ YEAR_MS = {
 }
 DPS_TYPES = (Datapoints, DatapointsArray)
 DPS_LST_TYPES = (DatapointsList, DatapointsArrayList)
-TEST_PREFIX = "PYSDK integration test "
+TEST_PREFIX = "PYSDK integration test"
 
 
 @pytest.fixture(scope="session")
 def all_test_time_series(cognite_client) -> TimeSeriesList:
     return cognite_client.time_series.retrieve_multiple(
         external_ids=[
-            f"{TEST_PREFIX}001: outside points, numeric",
-            f"{TEST_PREFIX}002: outside points, string",
-            *[f"{TEST_PREFIX}{i:03d}: weekly values, 1950-2000, numeric" for i in range(3, 54)],
-            *[f"{TEST_PREFIX}{i:03d}: weekly values, 1950-2000, string" for i in range(54, 104)],
-            f"{TEST_PREFIX}104: daily values, 1965-1975, numeric",
-            f"{TEST_PREFIX}105: hourly values, 1969-10-01 - 1970-03-01, numeric",
-            f"{TEST_PREFIX}106: every minute, 1969-12-31 - 1970-01-02, numeric",
-            f"{TEST_PREFIX}107: every second, 1969-12-31 23:30:00 - 1970-01-01 00:30:00, numeric",
-            f"{TEST_PREFIX}108: every millisecond, 1969-12-31 23:59:58.500 - 1970-01-01 00:00:01.500, numeric",
-            f"{TEST_PREFIX}109: daily values, is_step=True, 1965-1975, numeric",
-            f"{TEST_PREFIX}110: hourly values, is_step=True, 1969-10-01 - 1970-03-01, numeric",
-            f"{TEST_PREFIX}111: every minute, is_step=True, 1969-12-31 - 1970-01-02, numeric",
-            f"{TEST_PREFIX}112: every second, is_step=True, 1969-12-31 23:30:00 - 1970-01-01 00:30:00, numeric",
-            f"{TEST_PREFIX}113: every millisecond, is_step=True, 1969-12-31 23:59:58.500 - 1970-01-01 00:00:01.500, numeric",
-            f"{TEST_PREFIX}114: 1mill dps, random distribution, 1950-2020, numeric",
-            f"{TEST_PREFIX}115: 1mill dps, random distribution, 1950-2020, string",
-            f"{TEST_PREFIX}116: 5mill dps, 2k dps (.1s res) burst per day, 2000-01-01 12:00:00 - 2013-09-08 12:03:19.900, numeric",
-            f"{TEST_PREFIX}119: hourly normally distributed (0,1) data, 2020-2024 numeric",
-            f"{TEST_PREFIX}120: minute normally distributed (0,1) data, 2023-01-01 00:00:00 - 2023-12-31 23:59:59, numeric",
+            f"{TEST_PREFIX} 001: outside points, numeric",
+            f"{TEST_PREFIX} 002: outside points, string",
+            *[f"{TEST_PREFIX} {i:03d}: weekly values, 1950-2000, numeric" for i in range(3, 54)],
+            *[f"{TEST_PREFIX} {i:03d}: weekly values, 1950-2000, string" for i in range(54, 104)],
+            f"{TEST_PREFIX} 104: daily values, 1965-1975, numeric",
+            f"{TEST_PREFIX} 105: hourly values, 1969-10-01 - 1970-03-01, numeric",
+            f"{TEST_PREFIX} 106: every minute, 1969-12-31 - 1970-01-02, numeric",
+            f"{TEST_PREFIX} 107: every second, 1969-12-31 23:30:00 - 1970-01-01 00:30:00, numeric",
+            f"{TEST_PREFIX} 108: every millisecond, 1969-12-31 23:59:58.500 - 1970-01-01 00:00:01.500, numeric",
+            f"{TEST_PREFIX} 109: daily values, is_step=True, 1965-1975, numeric",
+            f"{TEST_PREFIX} 110: hourly values, is_step=True, 1969-10-01 - 1970-03-01, numeric",
+            f"{TEST_PREFIX} 111: every minute, is_step=True, 1969-12-31 - 1970-01-02, numeric",
+            f"{TEST_PREFIX} 112: every second, is_step=True, 1969-12-31 23:30:00 - 1970-01-01 00:30:00, numeric",
+            f"{TEST_PREFIX} 113: every millisecond, is_step=True, 1969-12-31 23:59:58.500 - 1970-01-01 00:00:01.500, numeric",
+            f"{TEST_PREFIX} 114: 1mill dps, random distribution, 1950-2020, numeric",
+            f"{TEST_PREFIX} 115: 1mill dps, random distribution, 1950-2020, string",
+            f"{TEST_PREFIX} 116: 5mill dps, 2k dps (.1s res) burst per day, 2000-01-01 12:00:00 - 2013-09-08 12:03:19.900, numeric",
+            f"{TEST_PREFIX} 119: hourly normally distributed (0,1) data, 2020-2024 numeric",
+            f"{TEST_PREFIX} 120: minute normally distributed (0,1) data, 2023-01-01 00:00:00 - 2023-12-31 23:59:59, numeric",
         ]
     )
 
