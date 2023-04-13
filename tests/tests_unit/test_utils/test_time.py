@@ -311,6 +311,7 @@ def cdf_aggregate_test_data():
         end,
         "1h",
         "7d",
+        # Nullable int to match the output of retrieve_dataframe
         pd.DataFrame(index=pd.date_range(start, end, freq="7d"), data=[168, 168, 168], dtype="Int64"),
         id="1week aggregation",
     )
@@ -357,16 +358,13 @@ class TestCDFAggregation:
         pd.testing.assert_frame_equal(actual_aggregate, expected_aggregate)
 
 
+@pytest.mark.dsl
 def to_fixed_utc_intervals_data() -> Iterable[ParameterSet]:
     try:
         from zoneinfo import ZoneInfo
-
     except ModuleNotFoundError:
-        try:
-            from backports.zoneinfo import ZoneInfo
-        except ModuleNotFoundError:
-            # When running the core tests neither ZoneInfo nor backportsZoneInfo are available
-            return []
+        from backports.zoneinfo import ZoneInfo
+
     oslo = ZoneInfo("Europe/Oslo")
     utc = dict(tzinfo=ZoneInfo("UTC"))
     oslo_dst = datetime(2023, 3, 25, 23, **utc)
@@ -492,15 +490,12 @@ class TestToFixedUTCIntervals:
         assert actual_intervals == expected_intervals
 
 
+@pytest.mark.dsl
 def validate_time_zone_invalid_arguments_data() -> list[ParameterSet]:
     try:
         from zoneinfo import ZoneInfo
     except ModuleNotFoundError:
-        try:
-            from backports.zoneinfo import ZoneInfo
-        except ModuleNotFoundError:
-            # When running the core tests neither ZoneInfo nor backports.ZoneInfo are available
-            return []
+        from backports.zoneinfo import ZoneInfo
 
     oslo = ZoneInfo("Europe/Oslo")
     new_york = ZoneInfo("America/New_York")
