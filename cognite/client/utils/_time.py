@@ -210,7 +210,7 @@ class DayAligner(DateTimeAligner):
 
     @classmethod
     def units_between(cls, start: datetime, end: datetime) -> int:
-        return int((end - start).total_seconds() // (24 * 3600))
+        return math.floor((end - start) / timedelta(days=1))
 
     @classmethod
     def add_units(cls, date: datetime, units: int) -> datetime:
