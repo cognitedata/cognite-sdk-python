@@ -9,11 +9,31 @@ from typing import TYPE_CHECKING, Any, Sequence, Union, cast
 
 from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._auxiliary import local_import
+from cognite.client.utils._text import to_camel_case
 
 if TYPE_CHECKING:
     import pandas as pd
 
     from cognite.client.data_classes._base import T_CogniteResource, T_CogniteResourceList
+
+
+NULLABLE_INT_COLS = {
+    "start_time",
+    "end_time",
+    "asset_id",
+    "parent_id",
+    "data_set_id",
+    "scheduled_time",
+    "schedule_id",
+    "session_id",
+    "deleted_time",
+    "last_success",
+    "last_failure",
+    "last_seen",
+    "last_seen_time",
+    "last_updated_time",
+}
+NULLABLE_INT_COLS_CAMEL_CASE = set(map(to_camel_case, NULLABLE_INT_COLS))
 
 
 def pandas_major_version() -> int:
@@ -35,6 +55,13 @@ def notebook_display_with_fallback(inst: Union[T_CogniteResource, T_CogniteResou
             UserWarning,
         )
         return str(inst)
+
+
+def convert_nullable_int_cols(df: pd.DataFrame, camel_case: bool) -> pd.DataFrame:
+    cols = {True: NULLABLE_INT_COLS_CAMEL_CASE, False: NULLABLE_INT_COLS}[camel_case]
+    to_convert = df.columns.intersection(cols)
+    df[to_convert] = df[to_convert].astype("Int64")
+    return df
 
 
 def concat_dataframes_with_nullable_int_cols(dfs: Sequence[pd.DataFrame]) -> pd.DataFrame:
