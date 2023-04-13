@@ -452,7 +452,7 @@ def _to_fixed_utc_intervals_variable_unit_length(
     start: datetime, end: datetime, multiplier: int, unit: str, utc: ZoneInfo
 ) -> list[dict[str, datetime | str]]:
 
-    index = pandas_date_range_tz(start, end, "MS", localize=True)
+    index = pandas_date_range_tz(start, end, "MS")
     if unit == "month":
         month_no = index.month - start.month + 12 * (index.year - start.year)
         index = index[month_no % multiplier == 0].tz_convert(utc)
@@ -480,7 +480,7 @@ def _to_fixed_utc_intervals_fixed_unit_length(
     pd = cast(Any, local_import("pandas"))
 
     freq = multiplier * GRANULARITY_IN_HOURS[unit]
-    index = pandas_date_range_tz(start, end, f"{freq}H", localize=True)
+    index = pandas_date_range_tz(start, end, f"{freq}H")
     expected_freq = pd.Timedelta(hours=freq)
     next_mask = (index - index.to_series().shift(1)) != expected_freq
     last_mask = (index.to_series().shift(-1) - index) != expected_freq
@@ -511,7 +511,7 @@ def _to_fixed_utc_intervals_fixed_unit_length(
 
 
 def pandas_date_range_tz(
-    start: datetime, end: datetime, freq: str, inclusive: str | None = None, localize: bool = False
+    start: datetime, end: datetime, freq: str, inclusive: str | None = None
 ) -> pandas.DatetimeIndex:
     """
     Pandas date_range struggles with time zone aware datetimes.
@@ -519,8 +519,7 @@ def pandas_date_range_tz(
     """
     pd = local_import("pandas")
     # Pandas seems to have issues with ZoneInfo object, so removing the timezone and adding it back.
-    index = pd.date_range(start.replace(tzinfo=None), end.replace(tzinfo=None), freq=freq, inclusive=inclusive)  # type: ignore [union-attr]
-    return index.tz_localize(start.tzinfo.key) if localize else index  # type: ignore [union-attr]
+    return pd.date_range(start.replace(tzinfo=None), end.replace(tzinfo=None), freq=freq, inclusive=inclusive).tz_localize(start.tzinfo.key)  # type: ignore [union-attr]
 
 
 def validate_timezone(start: datetime, end: datetime) -> ZoneInfo:
