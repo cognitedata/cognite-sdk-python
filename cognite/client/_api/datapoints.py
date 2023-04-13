@@ -56,6 +56,7 @@ from cognite.client.data_classes.datapoints import (
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import (
     assert_type,
+    exactly_one_is_not_none,
     find_duplicates,
     import_legacy_protobuf,
     local_import,
@@ -1062,11 +1063,8 @@ class DatapointsAPI(APIClient):
             for each quarter from 2020 to 2022 returned in the local time zone Oslo, Norway.
 
                 >>> from cognite.client import CogniteClient
-                >>> from datetime import datetime
-                >>> try:
-                ...     from zoneinfo import ZoneInfo
-                ... except ModuleNotFoundError:
-                ...     from backports.zoneinfo import ZoneInfo
+                >>> # In Python >=3.9 you may import directly from `zoneinfo`
+                >>> from cognite.client.utils import ZoneInfo
                 >>> client = CogniteClient()
                 >>> df = client.time_series.data.retrieve_dataframe(
                 ...     external_id=["foo", "bar"],
@@ -1079,7 +1077,7 @@ class DatapointsAPI(APIClient):
         if not exactly_one_is_not_none(id, external_id):
             raise ValueError("Either input id(s) or external_id(s)")
 
-        if exactly_one_is_not_none(aggregates, granularity)):
+        if exactly_one_is_not_none(aggregates, granularity):
             raise ValueError(
                 "Got only one of 'aggregates' and 'granularity'. "
                 "Pass both to get aggregates, or neither to get raw data"
