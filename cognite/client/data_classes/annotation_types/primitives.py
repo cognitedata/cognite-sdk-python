@@ -4,8 +4,8 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 
 from cognite.client import utils
-from cognite.client.data_classes._base import EXCLUDE_VALUE, CogniteResource
-from cognite.client.utils._text import to_camel_case
+from cognite.client.data_classes._base import CogniteResource
+from cognite.client.utils._text import convert_dict_to_case
 
 if TYPE_CHECKING:
     import pandas
@@ -21,15 +21,17 @@ class VisionResource(CogniteResource):
         Returns:
             Dict[str, Any]: A dictionary representation of the instance.
         """
-        return {
-            to_camel_case(key)
-            if camel_case
-            else key: value.dump(camel_case=camel_case)
-            if hasattr(value, "dump")
-            else value
-            for key, value in self.__dict__.items()
-            if value not in EXCLUDE_VALUE and not key.startswith("_")
-        }
+        dumped = {}
+        for k, v in vars(self).items():
+            if v is None or k.startswith("_"):
+                continue
+            if isinstance(v, list) and all(isinstance(item, VisionResource) for item in v):
+                v = [item.dump(camel_case) for item in v]
+            elif isinstance(v, VisionResource):
+                v = v.dump(camel_case)
+            dumped[k] = v
+
+        return convert_dict_to_case(dumped, camel_case)
 
     def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:  # type: ignore[override]
         """Convert the instance into a pandas DataFrame.
@@ -41,18 +43,7 @@ class VisionResource(CogniteResource):
             pandas.DataFrame: The dataframe.
         """
         pd = cast(Any, utils._auxiliary.local_import("pandas"))
-        df = pd.DataFrame(columns=["value"])
-
-        for key, value in self.__dict__.items():
-            if isinstance(value, list) and all(hasattr(v, "dump") for v in value):
-                df.loc[to_camel_case(key) if camel_case else key] = [[v.dump(camel_case=camel_case) for v in value]]
-            if hasattr(value, "dump"):
-                df.loc[to_camel_case(key) if camel_case else key] = [value.dump(camel_case=camel_case)]
-            else:
-                if value not in EXCLUDE_VALUE:
-                    df.loc[to_camel_case(key) if camel_case else key] = [value]
-
-        return df
+        return pd.Series(self.dump(camel_case), name="value").to_frame()
 
 
 @dataclass
