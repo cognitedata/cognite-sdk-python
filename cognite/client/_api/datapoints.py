@@ -1015,8 +1015,10 @@ class DatapointsAPI(APIClient):
             3. Create a query for each interval and all the retrieve_array method.
             4. Stack the resulting arrays into a single column in the resulting DataFrame.
 
-        **Caveat** The queries to retrieve_arrays are translated to a multiple of hours. This means that time zones which
-        are not a whole hour offset from UTC are not supported.
+        Warning:
+            The queries to retrieve_arrays are translated to a multiple of hours. This means that time zones that
+            are not a whole hour offset from UTC are not supported (yet). The same is true for time zones that observe
+            DST with an offset from standard time that is not a multiple of 1 hour.
 
         Args:
             start (datetime): Inclusive start, must be time zone aware.
