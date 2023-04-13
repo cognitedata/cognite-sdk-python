@@ -144,34 +144,13 @@ class TaskFuture(Protocol[T_Result]):
         ...
 
 
-class SyncFuture(TaskFuture):
-    def __init__(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any):
-        self.__fn = fn
-        self.__args = args
-        self.__kwargs = kwargs
-
-    def result(self) -> T_Result:  # type: ignore
-        return self.__fn(*self.__args, **self.__kwargs)
-
-
-class MainThreadExecutor(TaskExecutor):
-    """
-    In order to support executing sdk methods in the browser using pyodide (a port of CPython to webassembly),
-    we need to be able to turn off the usage of threading. So we have this executor which implements the Executor
-    protocol but just executes everything serially in the main thread.
-    """
-
-    def submit(self, fn: Callable, *args: Any, **kwargs: Any) -> SyncFuture:
-        return SyncFuture(fn, *args, **kwargs)
-
-
-class ExtendedSyncFuture(TaskFuture):
+class SyncFuture(TaskFuture[T_Result]):
     def __init__(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any):
         self._task = functools.partial(fn, *args, **kwargs)
         self._result: Optional[T_Result] = None
         self._is_cancelled = False
 
-    def result(self) -> T_Result:  # type: ignore
+    def result(self) -> T_Result:
         if self._is_cancelled:
             raise CancelledError
         if self._result is None:
@@ -182,23 +161,27 @@ class ExtendedSyncFuture(TaskFuture):
         self._is_cancelled = True
 
 
-class ExtendedMainThreadExecutor(TaskExecutor):
-    __doc__ = MainThreadExecutor.__doc__
+class MainThreadExecutor(TaskExecutor):
+    """
+    In order to support executing sdk methods in the browser using pyodide (a port of CPython to webassembly),
+    we need to be able to turn off the usage of threading. So we have this executor which implements the Executor
+    protocol but just executes everything serially in the main thread.
+    """
 
-    def submit(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any) -> ExtendedSyncFuture:
+    def submit(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any) -> SyncFuture:
         if "priority" in inspect.signature(fn).parameters:
             raise TypeError(f"Given function {fn} cannot accept reserved parameter name `priority`")
         kwargs.pop("priority", None)
-        return ExtendedSyncFuture(fn, *args, **kwargs)
+        return SyncFuture(fn, *args, **kwargs)
 
     def shutdown(self, wait: bool = False) -> None:
         return None
 
     @staticmethod
-    def as_completed(it: Iterable[ExtendedSyncFuture]) -> Iterator[ExtendedSyncFuture]:
+    def as_completed(it: Iterable[SyncFuture]) -> Iterator[SyncFuture]:
         return iter(copy(it))
 
-    def __enter__(self) -> ExtendedMainThreadExecutor:
+    def __enter__(self) -> MainThreadExecutor:
         return self
 
     def __exit__(
@@ -227,10 +210,10 @@ def get_executor(max_workers: int) -> TaskExecutor:
 
     if ConcurrencySettings.executor_type == "threadpool":
         try:
-            executor: TaskExecutor = _THREAD_POOL_EXECUTOR_SINGLETON  # type: ignore
+            executor: TaskExecutor = _THREAD_POOL_EXECUTOR_SINGLETON
         except NameError:
             # TPE has not been initialized
-            executor = _THREAD_POOL_EXECUTOR_SINGLETON = ThreadPoolExecutor(max_workers)  # type: ignore
+            executor = _THREAD_POOL_EXECUTOR_SINGLETON = ThreadPoolExecutor(max_workers)
     elif ConcurrencySettings.executor_type == "mainthread":
         executor = _MAIN_THREAD_EXECUTOR_SINGLETON
     else:
@@ -245,7 +228,7 @@ def get_priority_executor(max_workers: int) -> PriorityThreadPoolExecutor:
     if ConcurrencySettings.priority_executor_type == "priority_threadpool":
         return PriorityThreadPoolExecutor(max_workers)
     elif ConcurrencySettings.priority_executor_type == "mainthread":
-        return ExtendedMainThreadExecutor()  # type: ignore [return-value]
+        return MainThreadExecutor()  # type: ignore [return-value]
 
     raise RuntimeError(f"Invalid priority-queue executor type '{ConcurrencySettings.priority_executor_type}'")
 
