@@ -1105,14 +1105,15 @@ class DatapointsAPI(APIClient):
             )
 
         # Aggregates
-        multiplier, unit = get_granularity_multiplier_and_unit(granularity)  # type: ignore [arg-type]
+        assert isinstance(granularity, str)  # mypy
+        multiplier, unit = get_granularity_multiplier_and_unit(granularity)
         if uniform_index and unit in VARIABLE_LENGTH_UNITS:
             raise ValueError(
                 "Uniform index is not supported with a variable step length unit"
                 f" such as {', '.join(VARIABLE_LENGTH_UNITS)}."
             )
 
-        intervals = to_fixed_utc_intervals(start, end, granularity)  # type: ignore [arg-type]
+        intervals = to_fixed_utc_intervals(start, end, granularity)
 
         id_name, ids = ("id", id) if id else ("external_id", external_id)
         if isinstance(ids, (str, int)):
@@ -1134,7 +1135,7 @@ class DatapointsAPI(APIClient):
         df = arrays.to_pandas(column_names, include_aggregate_name, include_granularity_name)
         df = df.tz_localize("utc").tz_convert(tz.key)
         if uniform_index:
-            freq = granularity.replace("m", "T")  # type: ignore [union-attr]
+            freq = granularity.replace("m", "T")
             return df.reindex(pd.date_range(start=start, end=end, freq=freq, inclusive="left"))
 
         return df
