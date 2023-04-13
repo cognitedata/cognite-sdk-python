@@ -1136,6 +1136,30 @@ def retrieve_dataframe_in_tz_count_small_granularities_data():
     )
 
 
+def retrieve_dataframe_in_tz_uniform_data():
+    oslo = ZoneInfo("Europe/Oslo")
+    yield pytest.param(
+        "119",
+        datetime(2019, 12, 23, tzinfo=oslo),
+        datetime(2020, 1, 14, tzinfo=oslo),
+        "1week",
+        pd.DatetimeIndex(
+            [pd.Timestamp(x) for x in ["2019-12-23", "2019-12-30", "2020-01-06", "2020-01-13"]],
+            tz="Europe/Oslo",
+        ),
+        id="Uniform Weekly",
+    )
+
+    yield pytest.param(
+        "119",
+        datetime(2019, 11, 23, tzinfo=oslo),
+        datetime(2020, 1, 14, tzinfo=oslo),
+        "2quarters",
+        pd.DatetimeIndex([pd.Timestamp(x) for x in ["2019-10-01"]], tz="Europe/Oslo", freq="2QS-OCT"),
+        id="Uniform 2nd Quarter",
+    )
+
+
 class TestRetrieveTimezoneDatapointsAPI:
     """
     Integration testing of all the functionality related to retrieving in the correct timezone
@@ -1273,6 +1297,33 @@ class TestRetrieveTimezoneDatapointsAPI:
         actual_df.columns = ["count"]
 
         pd.testing.assert_frame_equal(actual_df, expected_df, check_freq=False)
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "time_series_no, start, end, granularity, expected_index",
+        list(retrieve_dataframe_in_tz_uniform_data()),
+    )
+    def test_retrieve_dataframe_in_tz_uniform(
+        time_series_no: str,
+        start: datetime,
+        end: datetime,
+        granularity: str,
+        expected_index: pd.DatetimeIndex,
+        cognite_client,
+        all_test_time_series,
+    ):
+        time_series = get_test_series(time_series_no, all_test_time_series)
+        actual_df = cognite_client.time_series.data.retrieve_dataframe_in_tz(
+            external_id=time_series.external_id,
+            start=start,
+            end=end,
+            aggregates="count",
+            granularity=granularity,
+            uniform_index=True,
+        )
+        actual_df.columns = ["count"]
+
+        pd.testing.assert_index_equal(actual_df.index, expected_index)
 
     @staticmethod
     @pytest.mark.parametrize(

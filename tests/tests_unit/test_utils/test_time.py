@@ -553,30 +553,33 @@ class TestToPandasFreq:
     @staticmethod
     @pytest.mark.dsl
     @pytest.mark.parametrize(
-        "granularity, expected_first_step, offset",
+        "granularity, start, expected_first_step",
         [
-            ("week", "2023-01-09", "1day"),
-            ("quarter", "2023-04-01", None),
-            ("year", "2024-01-01", None),
-            ("d", "2023-01-02", None),
-            ("2years", "2025-01-01", None),
-            ("3quarters", "2023-10-01", None),
-            ("m", "2023-01-01 00:01:00", None),
-            ("s", "2023-01-01 00:00:01", None),
-            ("2d", "2023-01-03", None),
-            ("2weeks", "2023-01-16", "1day"),
+            ("week", "2023-01-02", "2023-01-09"),
+            ("quarter", "2023-01-01", "2023-04-01"),
+            ("quarter", "2022-10-01", "2023-01-01"),
+            ("quarter", "2022-07-01", "2022-10-01"),
+            ("quarter", "2022-04-01", "2022-07-01"),
+            ("year", "2023-01-01", "2024-01-01"),
+            ("d", "2023-01-01", "2023-01-02"),
+            ("2years", "2023-01-01", "2025-01-01"),
+            ("3quarters", "2023-01-01", "2023-10-01"),
+            ("m", "2023-01-01", "2023-01-01 00:01:00"),
+            ("s", "2023-01-01", "2023-01-01 00:00:01"),
+            ("2d", "2023-01-01", "2023-01-03"),
+            ("2weeks", "2023-01-02", "2023-01-16"),
         ],
     )
-    def test_to_pandas_freq(granularity: str, expected_first_step: str, offset: str | None):
+    def test_to_pandas_freq(granularity: str, start: str, expected_first_step: str):
         # Arrange
         import pandas as pd
 
-        offset = pd.Timedelta(offset) if offset is not None else pd.Timedelta(0)
-        expected_index = pd.DatetimeIndex([pd.Timestamp("2023-01-01") + offset, expected_first_step])
+        start = pd.Timestamp(start)
+        expected_index = pd.DatetimeIndex([start, expected_first_step])
 
         # Act
-        freq = to_pandas_freq(granularity)
+        freq = to_pandas_freq(granularity, start.to_pydatetime())
 
         # Assert
-        actual_index = pd.date_range("2023", periods=2, freq=freq, inclusive="both")
+        actual_index = pd.date_range(start, periods=2, freq=freq)
         pd.testing.assert_index_equal(actual_index, expected_index)

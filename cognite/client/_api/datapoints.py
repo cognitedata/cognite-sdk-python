@@ -67,10 +67,11 @@ from cognite.client.utils._auxiliary import (
 from cognite.client.utils._concurrency import collect_exc_info_and_raise, execute_tasks, get_priority_executor
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._time import (
-    VARIABLE_LENGTH_UNITS,
-    get_granularity_multiplier_and_unit,
+    align_large_granularity,
+    pandas_date_range_tz,
     timestamp_to_ms,
     to_fixed_utc_intervals,
+    to_pandas_freq,
     validate_timezone,
 )
 
@@ -1033,8 +1034,8 @@ class DatapointsAPI(APIClient):
             aggregates (str | list[str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str): The granularity to fetch aggregates at supported second, minute, hour, day, week, month, quarter and year. Default: None.
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
-            uniform_index (bool): If querying aggregates and not use variable unit lengths (month, quarter, and year), specifying `uniform_index=True` will return a dataframe with an
-                equidistant datetime index from the earliest `start` to the latest `end` (missing values will be NaNs). If these requirements are not met, a ValueError is raised. Default: False
+            uniform_index (bool): If querying aggregates, specifying `uniform_index=True` will return a dataframe with an
+                index given by the granularity datetime index from the earliest `start` to the latest `end` (missing values will be NaNs). If these requirements are not met, a ValueError is raised. Default: False
             include_aggregate_name (bool): Include 'aggregate' in the column name, e.g. `my-ts|average`. Ignored for raw time series. Default: True
             include_granularity_name (bool): Include 'granularity' in the column name, e.g. `my-ts|12h`. Added after 'aggregate' when present. Ignored for raw time series. Default: False
             column_names ("id" | "external_id"): Use either ids or external ids as column names. Time series missing external id will use id as backup. Default: "external_id"
@@ -1074,6 +1075,8 @@ class DatapointsAPI(APIClient):
                 ...     end=datetime(2022, 12, 31, tzinfo=ZoneInfo("Europe/Oslo")),
                 ...     )
         """
+        _, pd = local_import("numpy", "pandas")  # Verify that deps are available or raise CogniteImportError
+
         if not exactly_one_is_not_none(id, external_id):
             raise ValueError("Either input id(s) or external_id(s)")
 
@@ -1106,12 +1109,6 @@ class DatapointsAPI(APIClient):
 
         # Aggregates
         assert isinstance(granularity, str)  # mypy
-        multiplier, unit = get_granularity_multiplier_and_unit(granularity)
-        if uniform_index and unit in VARIABLE_LENGTH_UNITS:
-            raise ValueError(
-                "Uniform index is not supported with a variable step length unit"
-                f" such as {', '.join(VARIABLE_LENGTH_UNITS)}."
-            )
 
         intervals = to_fixed_utc_intervals(start, end, granularity)
 
@@ -1141,8 +1138,9 @@ class DatapointsAPI(APIClient):
         )
 
         if uniform_index:
-            freq = granularity.replace("m", "T")
-            return df.reindex(pd.date_range(start=start, end=end, freq=freq, inclusive="left"))
+            freq = to_pandas_freq(granularity, start)
+            start, end = align_large_granularity(start, end, granularity)
+            return df.reindex(pandas_date_range_tz(start, end, freq, inclusive="left")).tz_localize(start.tzinfo.key)  # type: ignore [union-attr]
 
         return df
 
