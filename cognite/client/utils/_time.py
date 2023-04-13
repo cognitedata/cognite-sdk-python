@@ -22,7 +22,11 @@ if TYPE_CHECKING:
 UNIT_IN_MS_WITHOUT_WEEK = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000}
 UNIT_IN_MS = {**UNIT_IN_MS_WITHOUT_WEEK, "w": 604800000}
 VARIABLE_LENGTH_UNITS = {"month", "quarter", "year"}
-
+GRANULARITY_IN_HOURS = {
+    "w": 168,
+    "d": 24,
+    "h": 1,
+}
 MIN_TIMESTAMP_MS = -2208988800000  # 1900-01-01 00:00:00.000
 MAX_TIMESTAMP_MS = 4102444799999  # 2099-12-31 23:59:59.999
 
@@ -365,8 +369,8 @@ def align_large_granularity(start: datetime, end: datetime, granularity: str) ->
     # Can be replaced by a single dispatch pattern, but kept more explicit for readability.
     try:
         aligner = {
-            "day": DayAligner,
-            "week": WeekAligner,
+            "d": DayAligner,
+            "w": WeekAligner,
             "month": MonthAligner,
             "quarter": QuarterAligner,
             "year": YearAligner,
@@ -411,9 +415,9 @@ def standardize_unit(unit: str) -> str:
     elif unit in {"hours", "hour", "h"}:
         return "h"
     elif unit in {"day", "days", "d"}:
-        return "day"
+        return "d"
     elif unit in {"weeks", "w", "week"}:
-        return "week"
+        return "w"
     elif unit in {"months", "month"}:
         return "month"
     elif unit in {"quarters", "quarter", "q"}:
@@ -421,39 +425,6 @@ def standardize_unit(unit: str) -> str:
     elif unit in {"year", "years", "y"}:
         return "year"
     raise ValueError(f"Not supported unit {unit}")
-
-
-def granularity_in_hours(multiplier_or_granularity: str | int, unit: str | None = None) -> int:
-    """
-    Calculates the given granularity in hours.
-    >>> granularity_in_hours("1week")
-    168
-    >>> granularity_in_hours(1, "week")
-    168
-    >>> granularity_in_hours("3d")
-    72
-    >>> granularity_in_hours(3, "d")
-    72
-    >>> granularity_in_hours("2w")
-    336
-    >>> granularity_in_hours(2, "w")
-    336
-    """
-    if isinstance(multiplier_or_granularity, str):
-        number, unit = get_granularity_multiplier_and_unit(multiplier_or_granularity)
-    else:
-        number = multiplier_or_granularity
-        if unit is None:
-            raise ValueError("You must pass in unit when only passing in multiplier.")
-        unit = standardize_unit(unit)
-    unit_in_hours = {
-        "week": 168,
-        "day": 24,
-        "h": 1,
-    }
-    if unit not in unit_in_hours:
-        raise ValueError(f"Unit {unit} is not supported")
-    return number * unit_in_hours[unit]
 
 
 def to_fixed_utc_intervals(start: datetime, end: datetime, granularity: str) -> list[dict[str, datetime | str]]:
@@ -506,7 +477,7 @@ def _to_fixed_utc_intervals_fixed_unit_length(
 ) -> list[dict[str, datetime | str]]:
     pd = cast(Any, local_import("pandas"))
 
-    freq = granularity_in_hours(multiplier, unit)
+    freq = multiplier * GRANULARITY_IN_HOURS[unit]
     # Pandas seems to have issues with ZoneInfo object, so removing the timezone and adding it back.
     index = pd.date_range(start.replace(tzinfo=None), end.replace(tzinfo=None), freq=f"{freq}H").tz_localize(
         start.tzinfo.key  # type: ignore

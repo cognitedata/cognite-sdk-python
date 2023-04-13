@@ -17,7 +17,6 @@ from cognite.client.utils._time import (
     align_start_and_end_for_granularity,
     convert_time_attributes_to_datetime,
     datetime_to_ms,
-    granularity_in_hours,
     granularity_to_ms,
     granularity_unit_to_ms,
     ms_to_datetime,
@@ -314,27 +313,6 @@ def cdf_aggregate_test_data():
         pd.DataFrame(index=pd.date_range(start, end, freq="7d"), data=[168, 168, 168], dtype="Int64"),
         id="1week aggregation",
     )
-
-
-class TestGranularityInHours:
-    @staticmethod
-    @pytest.mark.parametrize(
-        "granularity, expected_hours",
-        [
-            ("1week", 168),
-            ("2weeks", 336),
-            ("1w", 168),
-            ("1d", 24),
-            ("3d", 72),
-            ("3days", 72),
-            ("1day", 24),
-            ("24h", 24),
-        ],
-    )
-    def test_granularity_in_hours(granularity: str, expected_hours: str):
-        actual_hours = granularity_in_hours(granularity)
-
-        assert actual_hours == expected_hours
 
 
 class TestCDFAggregation:
