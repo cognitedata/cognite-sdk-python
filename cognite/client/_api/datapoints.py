@@ -989,18 +989,6 @@ class DatapointsAPI(APIClient):
         freq = cast(str, granularity).replace("m", "T")
         return df.reindex(pd.date_range(start=start, end=end, freq=freq, inclusive="left"))
 
-    Aggregates = Literal[
-        "average",
-        "sum",
-        "count",
-        "sum",
-        "interpolation",
-        "stepInterpolation",
-        "continuousVariance",
-        "discreteVariance",
-        "totalVariation",
-    ]
-
     def retrieve_dataframe_in_tz(
         self,
         *,
@@ -1008,7 +996,7 @@ class DatapointsAPI(APIClient):
         external_id: str | Sequence[str] | None = None,
         start: datetime,
         end: datetime,
-        aggregates: list[Aggregates] | Aggregates | None = None,
+        aggregates: list[str] | str | None = None,
         granularity: Optional[str] = None,
         ignore_unknown_ids: bool = False,
         uniform_index: bool = False,
