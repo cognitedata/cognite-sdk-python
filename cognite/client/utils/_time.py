@@ -7,12 +7,11 @@ import sys
 import time
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Tuple, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast, overload
 
 from cognite.client.utils._auxiliary import local_import
 
 if TYPE_CHECKING:
-    import pandas
 
     if sys.version_info >= (3, 9):
         from zoneinfo import ZoneInfo
@@ -457,74 +456,6 @@ def granularity_in_hours(multiplier_or_granularity: str | int, unit: str | None 
     return number * unit_in_hours[unit]
 
 
-def cdf_aggregate(
-    raw_df: pandas.DataFrame,
-    aggregate: Literal["average", "sum", "count"],
-    granularity: str,
-    is_step: bool = False,
-    raw_freq: str = None,
-) -> pandas.DataFrame:
-    """Aggregates the dataframe as CDF is doing it on the database layer.
-
-    **Motivation**: This is used in testing to verify that the correct aggregation is done with
-    on the client side when aggregating in given time zone.
-
-    Current assumptions:
-        * No step timeseries
-        * Uniform index.
-        * Known frequency of raw data.
-
-    Args:
-        raw_df (pd.DataFrame): Dataframe with the raw datapoints.
-        aggregate (str): Single aggregate to calculate, supported average, sum.
-        granularity (str): The granularity to aggregates at. e.g. '15s', '2h', '10d'.
-        is_step (bool): Whether to use stepwise or continuous interpolation.
-        raw_freq (str): The frequency of the raw data. If it is not given, it is attempted inferred from raw_df.
-    """
-    if is_step:
-        raise NotImplementedError()
-
-    pd = cast(Any, local_import("pandas"))
-    granularity_pd = granularity.replace("m", "T")
-    grouping = raw_df.groupby(pd.Grouper(freq=granularity_pd))
-    if aggregate == "sum":
-        return grouping.sum()
-    elif aggregate == "count":
-        return grouping.count().astype("Int64")
-
-    # The average is calculated by the formula '1/(b-a) int_a^b f(t) dt' where f(t) is the continuous function
-    # This is weighted average of the sampled version of f(t)
-    np = cast(Any, local_import("numpy"))
-
-    def integrate_average(values: pandas.DataFrame) -> pandas.Series:
-        return pd.Series(((values.iloc[1:].values + values.iloc[:-1].values) / 2.0).mean(), index=values.columns)
-
-    freq = raw_freq or raw_df.index.inferred_freq
-    if freq is None:
-        raise ValueError("Failed to infer frequency raw data.")
-    if not freq[0].isdigit():
-        freq = f"1{freq}"
-
-    # When the frequency of the data is 1 hour and above, the end point is excluded.
-    freq = pd.Timedelta(freq)
-    if freq >= pd.Timedelta("1hour"):
-        return grouping.apply(integrate_average)
-
-    def integrate_average_end_points(values: pandas.Series) -> float:
-        dt = values.index[-1] - values.index[0]
-        scale = np.diff(values.index) / 2.0 / dt
-        return (scale * (values.values[1:] + values.values[:-1])).sum()
-
-    step = pd.Timedelta(granularity_pd) // freq
-
-    return (
-        raw_df.rolling(window=pd.Timedelta(granularity_pd), closed="both")
-        .apply(integrate_average_end_points)
-        .shift(-step)
-        .iloc[::step]
-    )
-
-
 def to_fixed_utc_intervals(start: datetime, end: datetime, granularity: str) -> list[dict[str, datetime | str]]:
     try:
         from zoneinfo import ZoneInfo  # type:ignore
@@ -538,9 +469,8 @@ def to_fixed_utc_intervals(start: datetime, end: datetime, granularity: str) -> 
     start, end = align_large_granularity(start, end, granularity)
     if unit in VARIABLE_LENGTH_UNITS:
         return _to_fixed_utc_intervals_variable_unit_length(start, end, multiplier, unit, utc)
-    elif unit in {"day", "week"}:
+    else:  # unit in {"day", "week"}:
         return _to_fixed_utc_intervals_fixed_unit_length(start, end, multiplier, unit, utc)
-    raise ValueError(f"Not supported unit {unit}")
 
 
 def _to_fixed_utc_intervals_variable_unit_length(

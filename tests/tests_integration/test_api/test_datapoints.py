@@ -35,11 +35,11 @@ from cognite.client.utils._time import (
     MIN_TIMESTAMP_MS,
     UNIT_IN_MS,
     align_start_and_end_for_granularity,
-    cdf_aggregate,
     granularity_to_ms,
     timestamp_to_ms,
 )
 from tests.utils import (
+    cdf_aggregate,
     random_aggregates,
     random_cognite_external_ids,
     random_cognite_ids,

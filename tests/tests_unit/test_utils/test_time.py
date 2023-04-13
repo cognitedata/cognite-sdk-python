@@ -15,7 +15,6 @@ from cognite.client.utils._time import (
     MIN_TIMESTAMP_MS,
     align_large_granularity,
     align_start_and_end_for_granularity,
-    cdf_aggregate,
     convert_time_attributes_to_datetime,
     datetime_to_ms,
     granularity_in_hours,
@@ -27,7 +26,7 @@ from cognite.client.utils._time import (
     to_fixed_utc_intervals,
     validate_timezone,
 )
-from tests.utils import tmp_set_envvar
+from tests.utils import cdf_aggregate, tmp_set_envvar
 
 if TYPE_CHECKING:
     import pandas
