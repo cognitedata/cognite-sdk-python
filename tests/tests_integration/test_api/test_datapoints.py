@@ -50,9 +50,9 @@ from tests.utils import (
 )
 
 try:
-    import zoneinfo
+    from zoneinfo import ZoneInfo
 except ImportError:
-    from backports import zoneinfo
+    from backports.zoneinfo import ZoneInfo
 
 
 DATAPOINTS_API = "cognite.client._api.datapoints.{}"
@@ -1025,7 +1025,7 @@ class TestRetrieveAggregateDatapointsAPI:
 
 @pytest.fixture(scope="session")
 def hourly_2023(cognite_client, hourly_normal_dist) -> pd.DataFrame:
-    utc = zoneinfo.ZoneInfo("UTC")
+    utc = ZoneInfo("UTC")
     # Adding a day to ensure we get the entire 2023 when converting to specific time zone later
     start = datetime(2022, 12, 31, tzinfo=utc)
     end = datetime(2024, 1, 1, hour=23, minute=59, second=59, tzinfo=utc)
@@ -1037,7 +1037,7 @@ def hourly_2023(cognite_client, hourly_normal_dist) -> pd.DataFrame:
 
 def retrieve_dataframe_in_tz_count_large_granularities_data():
     # "start, end, granularity, expected_df"
-    oslo = zoneinfo.ZoneInfo("Europe/Oslo")
+    oslo = ZoneInfo("Europe/Oslo")
     start = datetime(2023, 3, 21, tzinfo=oslo)
     end = datetime(2023, 4, 9, tzinfo=oslo)
     hours_in_week = 24 * 7
@@ -1097,7 +1097,7 @@ def retrieve_dataframe_in_tz_count_large_granularities_data():
 
 def retrieve_dataframe_in_tz_count_small_granularities_data():
     # "106: every minute, 1969-12-31 - 1970-01-02, numeric",
-    oslo = zoneinfo.ZoneInfo("Europe/Oslo")
+    oslo = ZoneInfo("Europe/Oslo")
     yield pytest.param(
         "106",
         datetime(1970, 1, 1, 0, 0, 0, tzinfo=oslo),
@@ -1208,7 +1208,7 @@ class TestRetrieveTimezoneDatapointsAPI:
         hourly_2023: pd.DataFrame,
     ):
         # Arrange
-        tz = zoneinfo.ZoneInfo(tz_name)
+        tz = ZoneInfo(tz_name)
         start = datetime(2023, 1, 1, tzinfo=tz)
         end = datetime(2023, 12, 31, 23, 0, 0, tzinfo=tz)
         raw_df = hourly_2023.tz_convert(tz_name).loc[start:end].copy()
@@ -1288,7 +1288,7 @@ class TestRetrieveTimezoneDatapointsAPI:
         # Arrange
         timeseries = get_test_series(test_series_no, all_test_time_series)
         start, end = pd.Timestamp(start).to_pydatetime(), pd.Timestamp(end).to_pydatetime()
-        tz = zoneinfo.ZoneInfo(tz_name)
+        tz = ZoneInfo(tz_name)
         start, end = start.replace(tzinfo=tz), end.replace(tzinfo=tz)
         expected_df = (
             cognite_client.time_series.data.retrieve_dataframe(external_id=timeseries.external_id, start=start, end=end)
@@ -1306,7 +1306,7 @@ class TestRetrieveTimezoneDatapointsAPI:
 
     @staticmethod
     def test_retrieve_dataframe_in_tz_multiple_timeseries(cognite_client, hourly_normal_dist, minutely_normal_dist):
-        oslo = zoneinfo.ZoneInfo("Europe/Oslo")
+        oslo = ZoneInfo("Europe/Oslo")
         start, end = datetime(2023, 1, 2, tzinfo=oslo), datetime(2023, 1, 2, 23, 59, 59, tzinfo=oslo)
         expected_df = pd.DataFrame(
             [[24, 24 * 60]],
