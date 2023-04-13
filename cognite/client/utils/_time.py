@@ -9,11 +9,10 @@ from abc import ABC, abstractmethod
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast, overload
 
-import pandas
-
 from cognite.client.utils._auxiliary import local_import
 
 if TYPE_CHECKING:
+    import pandas
 
     if sys.version_info >= (3, 9):
         from zoneinfo import ZoneInfo
