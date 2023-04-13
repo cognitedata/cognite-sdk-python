@@ -350,7 +350,7 @@ class CogniteUpdate:
 
     @classmethod
     def _get_update_properties(cls) -> List[str]:
-        return [key for key in cls.__dict__.keys() if (not key.startswith("_")) and (key not in ["labels", "columns"])]
+        return [key for key in cls.__dict__ if not (key.startswith("_") or key == "columns")]
 
 
 T_CogniteUpdate = TypeVar("T_CogniteUpdate", bound=CogniteUpdate)
