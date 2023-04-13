@@ -582,9 +582,9 @@ def _to_fixed_utc_intervals_fixed_unit_length(
         start.tzinfo.key  # type: ignore
     )
     expected_freq = pd.Timedelta(hours=freq)
-    next_diff = index - index.to_series().shift(1)
-    last_diff = index - index.to_series().shift(-1)
-    index = index[(last_diff.abs() != expected_freq) | (next_diff.abs() != expected_freq)]
+    next_mask = (index - index.to_series().shift(1)) != expected_freq
+    last_mask = (index.to_series().shift(-1) - index) != expected_freq
+    index = index[last_mask | next_mask]
 
     hour, zero = pd.Timedelta(hours=1), pd.Timedelta(0)
     transitions = []
