@@ -450,19 +450,8 @@ def to_fixed_utc_intervals(start: datetime, end: datetime, granularity: str) -> 
 def _to_fixed_utc_intervals_variable_unit_length(
     start: datetime, end: datetime, multiplier: int, unit: str, utc: ZoneInfo
 ) -> list[dict[str, datetime | str]]:
-
-    index = pandas_date_range_tz(start, end, "MS")
-    if unit == "month":
-        month_no = index.month - start.month + 12 * (index.year - start.year)
-        index = index[month_no % multiplier == 0].tz_convert(utc)
-    elif unit == "quarter":
-        quarter_no = (index.month - start.month) // 3 + 4 * (index.year - start.year)
-        index = index[index.month.isin({1, 4, 7, 10}) & (quarter_no % multiplier == 0)].tz_convert(utc)
-    elif unit == "year":
-        year_no = index.year - start.year
-        index = index[(index.month == 1) & (year_no % multiplier == 0)].tz_convert(utc)
-    else:
-        raise ValueError(f"Unit {unit} is not supported.")
+    freq = to_pandas_freq(f"{multiplier}{unit}", start)
+    index = pandas_date_range_tz(start, end, freq)
     return [
         {
             "start": start.to_pydatetime(),
