@@ -817,7 +817,7 @@ class _AssetHierarchyCreator:
         pool: PriorityThreadPoolExecutor,
         insert_fn: Callable[[List[Asset]], _TaskResult],
         insert_dct: Dict[Optional[str], List[Asset]],
-        subtree_count: Dict[Optional[str], int],
+        subtree_count: Dict[str, int],
     ) -> AssetList:
         queue_fn = functools.partial(
             self._queue_tasks,

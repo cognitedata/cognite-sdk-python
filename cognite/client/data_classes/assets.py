@@ -638,14 +638,14 @@ class AssetHierarchy:
         )
         return mapping
 
-    def count_subtree(self, mapping: Dict[Optional[str], List[Asset]]) -> Dict[Optional[str], int]:
+    def count_subtree(self, mapping: Dict[Optional[str], List[Asset]]) -> Dict[str, int]:
         """Returns a mapping from asset external ID to the size of its subtree (children and children of chidren etc.).
 
         Args:
             mapping (Dict | None): The mapping returned by `groupby_parent_xid()`. If None is passed, will be recreated (slightly expensive).
 
         Returns:
-            Dict[Optional[str], int]: Lookup from external ID to descendant count.
+            Dict[str, int]: Lookup from external ID to descendant count.
         """
         if mapping is None:
             mapping = self.groupby_parent_xid()
