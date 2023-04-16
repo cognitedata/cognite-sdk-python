@@ -17,6 +17,22 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [5.10.5] - 13-04-23
+### Fixed
+- Subclasses of `VisionResource` inheriting `.dump` and `to_pandas` now work as expected for attributes storing lists of subclass instances like `Polygon`, `PolyLine`, `ObjectDetection` or `VisionExtractPredictions` directly or indirectly.
+
+## [5.10.4] - 13-04-23
+### Fixed
+- A lot of nullable integer attributes ended up as float after calling `.to_pandas`. These are now correctly converted to `dtype=Int64`.
+
+## [5.10.3] - 13-04-23
+### Fixed
+- When passing `CogniteResource` classes (like `Asset` or `Event`) to `update`, any labels were skipped in the update (passing `AssetUpdate` works). This has been fixed for all Cognite resource classes.
+
+## [5.10.2] - 12-04-23
+### Fixed
+- Fixed a bug that would cause `AssetsAPI.create_hierarchy` to not respect `upsert=False`.
+
 ## [5.10.1] - 04-04-23
 ### Fixed
 - Add missing field `when` (human readable version of the CRON expression) to `FunctionSchedule` class.

@@ -411,7 +411,7 @@ class SequenceData(CogniteResource):
             column_names.format(id=str(self.id), externalId=str(self.external_id), columnExternalId=eid)
             for eid in self.column_external_ids
         ]
-
+        # TODO: Optimization required (None/nan):
         return pd.DataFrame(  # type: ignore
             [[x if x is not None else math.nan for x in r] for r in self.values],
             index=self.row_numbers,

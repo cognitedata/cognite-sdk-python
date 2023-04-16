@@ -319,12 +319,10 @@ class TestFilesAPI:
         }
         assert jsgz_load(mock_files_response.calls[0].request.body)["items"][0]["update"] == expected
 
-    # resource.update doesn't support full replacement of labels (set operation)
-    def test_ignore_labels_resource_class(self, cognite_client, mock_files_response):
+    def test_update_labels_resource_class(self, cognite_client, mock_files_response):
         cognite_client.files.update(FileMetadata(id=1, labels=[Label(external_id="Pump")], external_id="newId"))
-        assert jsgz_load(mock_files_response.calls[0].request.body)["items"][0]["update"] == {
-            "externalId": {"set": "newId"}
-        }
+        expected = {"externalId": {"set": "newId"}, "labels": {"set": [{"externalId": "Pump"}]}}
+        assert expected == jsgz_load(mock_files_response.calls[0].request.body)["items"][0]["update"]
 
     def test_labels_filter_contains_all(self, cognite_client, mock_files_response):
         my_label_filter = LabelFilter(contains_all=["WELL LOG", "VERIFIED"])

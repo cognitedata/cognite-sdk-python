@@ -216,12 +216,11 @@ class TestRelationships:
         }
         assert expected == jsgz_load(mock_rel_response.calls[0].request.body)["items"][0]["update"]
 
-    # resource.update doesn't support full replacement of labels (set operation)
-    def test_ignore_labels_resource_class(self, cognite_client, mock_rel_response):
+    def test_update_labels_resource_class(self, cognite_client, mock_rel_response):
         cognite_client.relationships.update(
             Relationship(external_id="test1", labels=[Label(external_id="Pump")], source_external_id="source1")
         )
-        expected = {"sourceExternalId": {"set": "source1"}}
+        expected = {"sourceExternalId": {"set": "source1"}, "labels": {"set": [{"externalId": "Pump"}]}}
         assert expected == jsgz_load(mock_rel_response.calls[0].request.body)["items"][0]["update"]
 
     def test_iter_single(self, cognite_client, mock_rel_response):
