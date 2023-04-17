@@ -1125,7 +1125,7 @@ class DatapointsAPI(APIClient):
             multiplier, unit = get_granularity_multiplier_and_unit(granularity)
             days = _unit_in_days(unit)
             limit = math.floor(timedelta(hours=self._GRANULARITY_HOURS_LIMIT) / timedelta(days=days))
-            raise ValueError(f"Granularity above then maximum limit, {limit} {unit}s.")
+            raise ValueError(f"Granularity above the maximum limit, {limit} {unit}s.")
 
         identifiers = IdentifierSequence.load(id, external_id)
         if not identifiers.are_unique():
