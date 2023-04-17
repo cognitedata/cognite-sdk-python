@@ -193,7 +193,7 @@ def cdf_aggregate(
     np = cast(Any, local_import("numpy"))
 
     def integrate_average(values: pandas.DataFrame) -> pandas.Series:
-        inner = ((values.iloc[1:].values + values.iloc[:-1].values) / 2.0)
+        inner = (values.iloc[1:].values + values.iloc[:-1].values) / 2.0
         res = inner.mean() if inner.shape[0] else np.nan
         return pd.Series(res, index=values.columns)
 
