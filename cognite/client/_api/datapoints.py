@@ -1027,10 +1027,10 @@ class DatapointsAPI(APIClient):
             DST with an offset from standard time that is not a multiple of 1 hour.
 
         Args:
-            start (datetime): Inclusive start, must be time zone aware.
-            end (datetime): Exclusive end, must be time zone aware and have the same time zone as start.
             id (int | Sequence[int] | None): ID or list of IDs.
             external_id (str | Sequence[str] | None): External ID or list of External IDs.
+            start (datetime): Inclusive start, must be time zone aware.
+            end (datetime): Exclusive end, must be time zone aware and have the same time zone as start.
             aggregates (str | list[str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str): The granularity to fetch aggregates at supported second, minute, hour, day, week, month, quarter and year. Default: None.
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
@@ -1074,6 +1074,12 @@ class DatapointsAPI(APIClient):
                 ...     start=datetime(2020, 1, 1, tzinfo=ZoneInfo("Europe/Oslo")),
                 ...     end=datetime(2022, 12, 31, tzinfo=ZoneInfo("Europe/Oslo")),
                 ...     )
+
+            Note you can also use shorter granuraities such as second(s), minute(s), hour(s), which does not requeire
+            you to account for DST. In addition, you have all the longer granulaities which are adjusted for DST
+            day(s), week(s), month(s), quarter(s) and year(s). All the granularities support a one letter version
+            s, m, h, d, w, q, and y, except for month, which is to avoid confusion with minutes. Furthermore,
+            the granularity is expeced to be given as a lower case.
         """
         _, pd = local_import("numpy", "pandas")  # Verify that deps are available or raise CogniteImportError
 
@@ -1107,7 +1113,6 @@ class DatapointsAPI(APIClient):
                 .tz_convert(tz.key)
             )
 
-        # Aggregates
         assert isinstance(granularity, str)  # mypy
 
         intervals = to_fixed_utc_intervals(start, end, granularity)

@@ -406,10 +406,11 @@ def get_granularity_multiplier_and_unit(granularity: str, standardize: bool = Tr
 
 
 def standardize_unit(unit: str) -> str:
+    unit = unit.lower()
     # First three use one letter to be consistent with CDF API.
     if unit in {"seconds", "second", "s"}:
         return "s"
-    elif unit in {"minutes", "minute", "m", "min", "T"}:
+    elif unit in {"minutes", "minute", "m", "min", "t"}:
         return "m"
     elif unit in {"hours", "hour", "h"}:
         return "h"
