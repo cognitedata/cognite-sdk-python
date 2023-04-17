@@ -10,6 +10,7 @@ from unittest import mock
 import pytest
 from _pytest.mark import ParameterSet
 
+from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._time import (
     MAX_TIMESTAMP_MS,
     MIN_TIMESTAMP_MS,
@@ -19,6 +20,7 @@ from cognite.client.utils._time import (
     datetime_to_ms,
     granularity_to_ms,
     granularity_unit_to_ms,
+    import_zoneinfo,
     ms_to_datetime,
     split_time_range,
     timestamp_to_ms,
@@ -338,11 +340,8 @@ class TestCDFAggregation:
 
 def to_fixed_utc_intervals_data() -> Iterable[ParameterSet]:
     try:
-        try:
-            from zoneinfo import ZoneInfo
-        except ModuleNotFoundError:
-            from backports.zoneinfo import ZoneInfo
-    except ImportError:
+        ZoneInfo = import_zoneinfo()
+    except CogniteImportError:
         return []
 
     oslo = ZoneInfo("Europe/Oslo")
@@ -472,11 +471,8 @@ class TestToFixedUTCIntervals:
 
 def validate_time_zone_invalid_arguments_data() -> list[ParameterSet]:
     try:
-        try:
-            from zoneinfo import ZoneInfo
-        except ModuleNotFoundError:
-            from backports.zoneinfo import ZoneInfo
-    except ImportError:
+        ZoneInfo = import_zoneinfo()
+    except CogniteImportError:
         return []
 
     oslo = ZoneInfo("Europe/Oslo")
@@ -512,11 +508,8 @@ def validate_time_zone_invalid_arguments_data() -> list[ParameterSet]:
 
 def validate_time_zone_valid_arguments_data() -> list[ParameterSet]:
     try:
-        try:
-            from zoneinfo import ZoneInfo
-        except ModuleNotFoundError:
-            from backports.zoneinfo import ZoneInfo
-    except ImportError:
+        ZoneInfo = import_zoneinfo()
+    except CogniteImportError:
         return []
 
     oslo = ZoneInfo("Europe/Oslo")

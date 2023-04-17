@@ -9,6 +9,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast, overload
 
+from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._auxiliary import local_import
 
 if TYPE_CHECKING:
@@ -26,6 +27,26 @@ VARIABLE_LENGTH_UNITS = {"month", "quarter", "year"}
 GRANULARITY_IN_HOURS = {"w": 168, "d": 24, "h": 1}
 MIN_TIMESTAMP_MS = -2208988800000  # 1900-01-01 00:00:00.000
 MAX_TIMESTAMP_MS = 4102444799999  # 2099-12-31 23:59:59.999
+
+
+def import_zoneinfo() -> ZoneInfo:
+    try:
+        if sys.version_info >= (3, 9):
+            from zoneinfo import ZoneInfo
+        else:
+            from backports.zoneinfo import ZoneInfo
+        return ZoneInfo  # type: ignore [return-value]
+
+    except ImportError as e:
+        raise CogniteImportError(
+            "ZoneInfo is part of the standard library starting with Python >=3.9. In earlier versions "
+            "you need to install a backport. This is done automatically for you when installing with the pandas "
+            "group: 'cognite-sdk[pandas]', or with poetry: 'poetry install -E pandas'"
+        ) from e
+
+
+def get_utc_zoneinfo() -> ZoneInfo:
+    return import_zoneinfo()("UTC")  # type: ignore [operator]
 
 
 def datetime_to_ms(dt: datetime) -> int:
@@ -428,31 +449,27 @@ def standardize_unit(unit: str) -> str:
 
 
 def to_fixed_utc_intervals(start: datetime, end: datetime, granularity: str) -> list[dict[str, datetime | str]]:
-    try:
-        from zoneinfo import ZoneInfo  # type:ignore
-    except ImportError:
-        from backports.zoneinfo import ZoneInfo  # type:ignore
-    utc = ZoneInfo("UTC")
     multiplier, unit = get_granularity_multiplier_and_unit(granularity, standardize=True)
     if unit in {"h", "m", "s"}:
         # UTC is always fixed for these intervals
         return [{"start": start, "end": end, "granularity": f"{multiplier}{unit}"}]
     start, end = align_large_granularity(start, end, granularity)
     if unit in VARIABLE_LENGTH_UNITS:
-        return _to_fixed_utc_intervals_variable_unit_length(start, end, multiplier, unit, utc)
+        return _to_fixed_utc_intervals_variable_unit_length(start, end, multiplier, unit)
     else:  # unit in {"day", "week"}:
-        return _to_fixed_utc_intervals_fixed_unit_length(start, end, multiplier, unit, utc)
+        return _to_fixed_utc_intervals_fixed_unit_length(start, end, multiplier, unit)
 
 
 def _to_fixed_utc_intervals_variable_unit_length(
-    start: datetime, end: datetime, multiplier: int, unit: str, utc: ZoneInfo
+    start: datetime, end: datetime, multiplier: int, unit: str
 ) -> list[dict[str, datetime | str]]:
     freq = to_pandas_freq(f"{multiplier}{unit}", start)
     index = pandas_date_range_tz(start, end, freq)
+    utc = get_utc_zoneinfo()
     return [
         {
-            "start": start.to_pydatetime(),
-            "end": end.to_pydatetime(),
+            "start": start.to_pydatetime().astimezone(utc),
+            "end": end.to_pydatetime().astimezone(utc),
             "granularity": f"{(end-start)/timedelta(hours=1):.0f}h",
         }
         for start, end in zip(index[:-1], index[1:])
@@ -460,9 +477,10 @@ def _to_fixed_utc_intervals_variable_unit_length(
 
 
 def _to_fixed_utc_intervals_fixed_unit_length(
-    start: datetime, end: datetime, multiplier: int, unit: str, utc: ZoneInfo
+    start: datetime, end: datetime, multiplier: int, unit: str
 ) -> list[dict[str, datetime | str]]:
     pd = cast(Any, local_import("pandas"))
+    utc = get_utc_zoneinfo()
 
     freq = multiplier * GRANULARITY_IN_HOURS[unit]
     index = pandas_date_range_tz(start, end, f"{freq}H")
@@ -506,23 +524,20 @@ def pandas_date_range_tz(start: datetime, end: datetime, freq: str, inclusive: s
 
 
 def validate_timezone(start: datetime, end: datetime) -> ZoneInfo:
-    if sys.version_info >= (3, 9):
-        from zoneinfo import ZoneInfo
-    else:
-        from backports.zoneinfo import ZoneInfo
+    ZoneInfo = import_zoneinfo()
 
     if missing := [name for name, timestamp in zip(("start", "end"), (start, end)) if not timestamp.tzinfo]:
         names = " and ".join(missing)
         end_sentence = " do not have timezones." if len(missing) >= 2 else " does not have a timezone."
         raise ValueError(f"All times must be time zone aware, {names}{end_sentence}")
 
-    if not isinstance(start.tzinfo, ZoneInfo) or not isinstance(end.tzinfo, ZoneInfo):
+    if not isinstance(start.tzinfo, ZoneInfo) or not isinstance(end.tzinfo, ZoneInfo):  # type: ignore [arg-type]
         raise ValueError("Only ZoneInfo implementation of tzinfo is supported")
 
     if start.tzinfo is not end.tzinfo:
-        raise ValueError(f"start and end have different timezones, {start.tzinfo.key!r} and {end.tzinfo.key!r}.")
+        raise ValueError(f"start and end have different timezones, {start.tzinfo.key!r} and {end.tzinfo.key!r}.")  # type: ignore [union-attr]
 
-    return start.tzinfo
+    return start.tzinfo  # type: ignore [return-value]
 
 
 def to_pandas_freq(granularity: str, start: datetime) -> str:
