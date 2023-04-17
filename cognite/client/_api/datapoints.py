@@ -1088,7 +1088,7 @@ class DatapointsAPI(APIClient):
 
         if exactly_one_is_not_none(aggregates, granularity):
             raise ValueError(
-                "Got only one of 'aggregates' and 'granularity'. "
+                "Got only one of 'aggregates' and 'granularity'."
                 "Pass both to get aggregates, or neither to get raw data"
             )
 
@@ -1114,14 +1114,14 @@ class DatapointsAPI(APIClient):
                 .tz_convert(tz.key)
             )
 
-        assert isinstance(granularity, str)  # mypy
-
-        intervals = to_fixed_utc_intervals(start, end, granularity)
-
         identifiers = IdentifierSequence.load(id, external_id)
         if not identifiers.are_unique():
             duplicated = find_duplicates(identifiers.as_primitives())
             raise ValueError(f"The following identifiers were not unique: {duplicated}")
+
+        assert isinstance(granularity, str)  # mypy
+
+        intervals = to_fixed_utc_intervals(start, end, granularity)
 
         queries = [
             {**ident_dct, "aggregates": aggregates, **interval}  # type: ignore [arg-type]
