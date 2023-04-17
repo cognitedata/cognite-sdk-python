@@ -774,7 +774,7 @@ class TestRetrieveDataPointsInTz:
                 },
                 "Europe/Oslo",
                 "Europe/Oslo",
-                "Granularity above then maximum limit, 11 years.",
+                "Granularity above the maximum limit, 11 years.",
                 id="Granularity above maximum aggregation limit in hours",
             ),
             pytest.param(
