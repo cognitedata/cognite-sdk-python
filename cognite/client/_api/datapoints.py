@@ -1108,6 +1108,7 @@ class DatapointsAPI(APIClient):
                     include_aggregate_name=include_aggregate_name,
                     include_granularity_name=include_granularity_name,
                     column_names=column_names,
+                    limit=None,
                 )
                 .tz_localize("utc")
                 .tz_convert(tz.key)
@@ -1126,9 +1127,10 @@ class DatapointsAPI(APIClient):
             return None
 
         queries = [
-            {identifier.name(): identifier.as_primitive(), "aggregates": aggregates, **interval}  # type: ignore [arg-type]
-            for identifier, interval in itertools.product(identifiers, intervals)  # type: ignore [arg-type, call-overload]
+            {**ident_dct, **interval}  # type: ignore [arg-type]
+            for ident_dct, interval in itertools.product(identifiers.as_dicts(), intervals)
         ]
+
         arrays = self.retrieve_arrays(
             limit=None,
             ignore_unknown_ids=ignore_unknown_ids,
