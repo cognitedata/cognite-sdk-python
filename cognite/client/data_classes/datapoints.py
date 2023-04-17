@@ -238,10 +238,7 @@ class DatapointsArray(CogniteResource):
                 arrays_by_attribute[attr].append(arr)
         arrays_by_attribute = {attr: np.concatenate(arrs) for attr, arrs in arrays_by_attribute.items()}  # type: ignore [assignment]
 
-        return cls(
-            **first._ts_info,  # type: ignore [arg-type]
-            **arrays_by_attribute,  # type: ignore [arg-type]
-        )
+        return cls(**first._ts_info, **arrays_by_attribute)  # type: ignore [arg-type]
 
     def __len__(self) -> int:
         return len(self.timestamp)
