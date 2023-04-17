@@ -1123,9 +1123,6 @@ class DatapointsAPI(APIClient):
             duplicated = find_duplicates(identifiers.as_primitives())
             raise ValueError(f"The following identifiers were not unique: {duplicated}")
 
-        if not identifiers:
-            return None
-
         queries = [
             {**ident_dct, **interval}  # type: ignore [arg-type]
             for ident_dct, interval in itertools.product(identifiers.as_dicts(), intervals)
