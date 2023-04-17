@@ -65,6 +65,7 @@ if TYPE_CHECKING:
 
     from cognite.client.data_classes.datapoints import NumpyFloat64Array, NumpyInt64Array, NumpyObjArray
 
+
 DatapointsAgg = MutableSequence[AggregateDatapoint]
 DatapointsNum = MutableSequence[NumericDatapoint]
 DatapointsStr = MutableSequence[StringDatapoint]
@@ -246,13 +247,12 @@ class _SingleTSQueryValidator:
             "include_outside_points",
             "ignore_unknown_ids",
         }
-        bad_keys = set(dct) - opt_dct_keys - {arg_name}
-        if not bad_keys:
-            return dct
-        raise KeyError(
-            f"Dict provided by argument `{arg_name}` included key(s) not understood: {sorted(bad_keys)}. "
-            f"Required key: `{arg_name}`. Optional: {list(opt_dct_keys)}."
-        )
+        if bad_keys := set(dct) - opt_dct_keys - {arg_name}:
+            raise KeyError(
+                f"Dict provided by argument `{arg_name}` included key(s) not understood: {sorted(bad_keys)}. "
+                f"Required key: `{arg_name}`. Optional: {list(opt_dct_keys)}."
+            )
+        return dct
 
     def _validate_and_create_query(
         self, dct: Union[DatapointsQueryId, DatapointsQueryExternalId]

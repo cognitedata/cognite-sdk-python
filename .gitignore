@@ -49,3 +49,7 @@ test-report.xml
 # tox
 .tox/
 .python-version
+
+# Local development
+scripts/local_client.py
+playground.py

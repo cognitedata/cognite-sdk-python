@@ -12,7 +12,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from concurrent.futures import CancelledError
 from copy import copy
-from datetime import datetime
+from datetime import datetime, timedelta
 from itertools import chain
 from typing import (
     TYPE_CHECKING,
@@ -56,6 +56,7 @@ from cognite.client.data_classes.datapoints import (
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import (
     assert_type,
+    exactly_one_is_not_none,
     find_duplicates,
     import_legacy_protobuf,
     local_import,
@@ -65,7 +66,17 @@ from cognite.client.utils._auxiliary import (
 )
 from cognite.client.utils._concurrency import collect_exc_info_and_raise, execute_tasks, get_priority_executor
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
-from cognite.client.utils._time import timestamp_to_ms
+from cognite.client.utils._time import (
+    _unit_in_days,
+    align_large_granularity,
+    get_granularity_multiplier_and_unit,
+    in_timedelta,
+    pandas_date_range_tz,
+    timestamp_to_ms,
+    to_fixed_utc_intervals,
+    to_pandas_freq,
+    validate_timezone,
+)
 
 if not import_legacy_protobuf():
     from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem, DataPointListResponse
@@ -174,7 +185,7 @@ class DpsFetchStrategy(ABC):
         return self.dps_client._do_request(
             json=payload,
             method="POST",
-            url_path=self.dps_client._RESOURCE_PATH + "/list",
+            url_path=f"{self.dps_client._RESOURCE_PATH}/list",
             accept="application/protobuf",
             timeout=self.dps_client._config.timeout,
         ).content
@@ -309,7 +320,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
 
     Is used when the number of time series to fetch is larger than the number of `max_workers`. How many
     time series are chunked per request is dynamic and is decided by the overall number to fetch, their
-    individual number of datapoints and wheter or not raw- or aggregate datapoints are asked for since
+    individual number of datapoints and whether raw- or aggregate datapoints are asked for since
     they are independent in requests - as long as the total number of time series does not exceed `_FETCH_TS_LIMIT`.
     """
 
@@ -584,6 +595,7 @@ class DatapointsAPI(APIClient):
         self._DPS_INSERT_LIMIT = 100_000
         self._RETRIEVE_LATEST_LIMIT = 100
         self._POST_DPS_OBJECTS_LIMIT = 10_000
+        self._GRANULARITY_HOURS_LIMIT = 100_000
 
     def retrieve(
         self,
@@ -615,8 +627,8 @@ class DatapointsAPI(APIClient):
             aggregates (Union[str, List[str], None]): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
             limit (int): Maximum number of datapoints to return for each time series. Default: None (no limit)
-            include_outside_points (bool): Whether or not to include outside points. Not allowed when fetching aggregates. Default: False
-            ignore_unknown_ids (bool): Whether or not to ignore missing time series rather than raising an exception. Default: False
+            include_outside_points (bool): Whether to include outside points. Not allowed when fetching aggregates. Default: False
+            ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
 
         Returns:
             Union[None, Datapoints, DatapointsList]: A `Datapoints` object containing the requested data, or a `DatapointsList` if multiple time series were asked for (the ordering is ids first, then external_ids). If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
@@ -796,8 +808,8 @@ class DatapointsAPI(APIClient):
             aggregates (Union[str, List[str], None]): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
             limit (int): Maximum number of datapoints to return for each time series. Default: None (no limit)
-            include_outside_points (bool): Whether or not to include outside points. Not allowed when fetching aggregates. Default: False
-            ignore_unknown_ids (bool): Whether or not to ignore missing time series rather than raising an exception. Default: False
+            include_outside_points (bool): Whether to include outside points. Not allowed when fetching aggregates. Default: False
+            ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
 
         Returns:
             Union[None, DatapointsArray, DatapointsArrayList]: A `DatapointsArray` object containing the requested data, or a `DatapointsArrayList` if multiple time series were asked for (the ordering is ids first, then external_ids). If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
@@ -896,8 +908,8 @@ class DatapointsAPI(APIClient):
             aggregates (Union[str, List[str], None]): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
             limit (int): Maximum number of datapoints to return for each time series. Default: None (no limit)
-            include_outside_points (bool): Whether or not to include outside points. Not allowed when fetching aggregates. Default: False
-            ignore_unknown_ids (bool): Whether or not to ignore missing time series rather than raising an exception. Default: False
+            include_outside_points (bool): Whether to include outside points. Not allowed when fetching aggregates. Default: False
+            ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
             uniform_index (bool): If only querying aggregates AND a single granularity is used AND no limit is used, specifying `uniform_index=True` will return a dataframe with an
                 equidistant datetime index from the earliest `start` to the latest `end` (missing values will be NaNs). If these requirements are not met, a ValueError is raised. Default: False
             include_aggregate_name (bool): Include 'aggregate' in the column name, e.g. `my-ts|average`. Ignored for raw time series. Default: True
@@ -934,7 +946,7 @@ class DatapointsAPI(APIClient):
                 ...     end=datetime(2020, 12, 31, tzinfo=timezone.utc),
                 ...     uniform_index=True)
 
-            Get a pandas dataframe containing the 'average' aggregate for two time series using a 30 day granularity,
+            Get a pandas dataframe containing the 'average' aggregate for two time series using a 30-day granularity,
             starting Jan 1, 1970 all the way up to present, without having the aggregate name in the column names::
 
                 >>> df = client.time_series.data.retrieve_dataframe(
@@ -959,26 +971,193 @@ class DatapointsAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
         fetcher = select_dps_fetch_strategy(self, user_query=query)
-        if uniform_index:
-            grans_given = {q.granularity for q in fetcher.all_queries}
-            is_limited = any(q.limit is not None for q in fetcher.all_queries)
-            if fetcher.raw_queries or len(grans_given) > 1 or is_limited:
-                raise ValueError(
-                    "Cannot return a uniform index when asking for aggregates with multiple granularities "
-                    f"({grans_given}) OR when (partly) querying raw datapoints OR when a finite limit is used."
-                )
+        if not uniform_index:
+            return fetcher.fetch_all_datapoints_numpy().to_pandas(
+                column_names, include_aggregate_name, include_granularity_name
+            )
+        # Uniform index requires extra validation and processing:
+        grans_given = {q.granularity for q in fetcher.all_queries}
+        is_limited = any(q.limit is not None for q in fetcher.all_queries)
+        if fetcher.raw_queries or len(grans_given) > 1 or is_limited:
+            raise ValueError(
+                "Cannot return a uniform index when asking for aggregates with multiple granularities "
+                f"({grans_given}) OR when (partly) querying raw datapoints OR when a finite limit is used."
+            )
+
         df = fetcher.fetch_all_datapoints_numpy().to_pandas(
             column_names, include_aggregate_name, include_granularity_name
         )
-        if not uniform_index:
-            return df
-
         start = pd.Timestamp(min(q.start for q in fetcher.agg_queries), unit="ms")
         end = pd.Timestamp(max(q.end for q in fetcher.agg_queries), unit="ms")
         (granularity,) = grans_given
         # Pandas understand "Cognite granularities" except `m` (minutes) which we must translate:
         freq = cast(str, granularity).replace("m", "T")
         return df.reindex(pd.date_range(start=start, end=end, freq=freq, inclusive="left"))
+
+    def retrieve_dataframe_in_tz(
+        self,
+        *,
+        id: int | Sequence[int] | None = None,
+        external_id: str | Sequence[str] | None = None,
+        start: datetime,
+        end: datetime,
+        aggregates: Sequence[str] | str | None = None,
+        granularity: Optional[str] = None,
+        ignore_unknown_ids: bool = False,
+        uniform_index: bool = False,
+        include_aggregate_name: bool = True,
+        include_granularity_name: bool = False,
+        column_names: Literal["id", "external_id"] = "external_id",
+    ) -> pd.DataFrame:
+        """Get datapoints directly in a pandas dataframe in the same time zone as start and end.
+
+        Note:
+            This is a convenience method. It builds on top of the methods ``retrieve_arrays`` and ``retrieve_dataframe``.
+            It enables you to get correct aggregates in your local time zone with daily, weekly, monthly, quarterly, and yearly
+            aggregates with automatic handling for daylight saving time (DST) transitions. If your time zone observes DST,
+            and your query crosses at least one DST-boundary, granularities like "3 days" or "1 week", that used to represent
+            fixed durations, no longer do so. To understand why, let's illustrate with an example: A typical time zone
+            that observes DST will skip one hour ahead during spring, leading to a day that is only 23 hours long, and oppositely
+            in the fall, turning back the clock one hour, yielding a 25-hour long day.
+
+        In short, this method works as follows:
+            1. Get the time zone from start and end (must be equal).
+            2. Split the time range from start to end into intervals based on DST boundaries.
+            3. Create a query for each interval and pass all to the retrieve_arrays method.
+            4. Stack the resulting arrays into a single column in the resulting DataFrame.
+
+        Warning:
+            The queries to ``retrieve_arrays`` are translated to a multiple of hours. This means that time zones that
+            are not a whole hour offset from UTC are not supported (yet). The same is true for time zones that observe
+            DST with an offset from standard time that is not a multiple of 1 hour.
+
+        Args:
+            id (int | Sequence[int] | None): ID or list of IDs.
+            external_id (str | Sequence[str] | None): External ID or list of External IDs.
+            start (datetime): Inclusive start, must be time zone aware.
+            end (datetime): Exclusive end, must be time zone aware and have the same time zone as start.
+            aggregates (str | list[str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
+            granularity (str): The granularity to fetch aggregates at, supported are: second, minute, hour, day, week, month, quarter and year. Default: None.
+            ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
+            uniform_index (bool): If querying aggregates, specifying `uniform_index=True` will return a dataframe with an
+                index with constant spacing between timestamps decided by granularity all the way from `start` to `end` (missing values will be NaNs). Default: False
+            include_aggregate_name (bool): Include 'aggregate' in the column name, e.g. `my-ts|average`. Ignored for raw time series. Default: True
+            include_granularity_name (bool): Include 'granularity' in the column name, e.g. `my-ts|12h`. Added after 'aggregate' when present. Ignored for raw time series. Default: False
+            column_names ("id" | "external_id"): Use either ids or external ids as column names. Time series missing external id will use id as backup. Default: "external_id"
+
+        Returns:
+            pandas.DataFrame: A pandas DataFrame containing the requested time series with a DatetimeIndex localized
+            in the given time zone.
+
+        Examples:
+
+            Get a pandas dataframe in the time zone of Oslo, Norway:
+
+                >>> from cognite.client import CogniteClient
+                >>> # In Python >=3.9 you may import directly from `zoneinfo`
+                >>> from cognite.client.utils import ZoneInfo
+                >>> client = CogniteClient()
+                >>> df = client.time_series.data.retrieve_dataframe_in_tz(
+                ...     id=12345,
+                ...     start=datetime(2023, 1, 1, tzinfo=ZoneInfo("Europe/Oslo")),
+                ...     end=datetime(2023, 2, 1, tzinfo=ZoneInfo("Europe/Oslo")),
+                ...     aggregates="average",
+                ...     granularity="1week",
+                ...     column_names="id")
+
+            Get a pandas dataframe with the sum and continuous variance of the time series with external id "foo" and "bar",
+            for each quarter from 2020 to 2022 returned in the time zone of Oslo, Norway:
+
+                >>> from cognite.client import CogniteClient
+                >>> # In Python >=3.9 you may import directly from `zoneinfo`
+                >>> from cognite.client.utils import ZoneInfo
+                >>> client = CogniteClient()
+                >>> df = client.time_series.data.retrieve_dataframe(
+                ...     external_id=["foo", "bar"],
+                ...     aggregates=["sum", "continuous_variance"],
+                ...     granularity="1quarter",
+                ...     start=datetime(2020, 1, 1, tzinfo=ZoneInfo("Europe/Oslo")),
+                ...     end=datetime(2022, 12, 31, tzinfo=ZoneInfo("Europe/Oslo")))
+
+        Tip:
+            You can also use shorter granularities such as second(s), minute(s), hour(s), which do not require
+            any special handling of DST. The longer granularities at your disposal, which are adjusted for DST, are:
+            day(s), week(s), month(s), quarter(s) and year(s). All the granularities support a one-letter version
+            ``s``, ``m``, ``h``, ``d``, ``w``, ``q``, and ``y``, except for month, to avoid confusion with minutes.
+            Furthermore, the granularity is expected to be given as a lowercase.
+        """
+        _, pd = local_import("numpy", "pandas")  # Verify that deps are available or raise CogniteImportError
+
+        if not exactly_one_is_not_none(id, external_id):
+            raise ValueError("Either input id(s) or external_id(s)")
+
+        if exactly_one_is_not_none(aggregates, granularity):
+            raise ValueError(
+                "Got only one of 'aggregates' and 'granularity'."
+                "Pass both to get aggregates, or neither to get raw data"
+            )
+
+        tz = validate_timezone(start, end)
+        if aggregates is None and granularity is None:
+            # Raw Data only need to convert the timezone
+            return (
+                self.retrieve_dataframe(
+                    id=id,
+                    external_id=external_id,
+                    start=start,
+                    end=end,
+                    aggregates=aggregates,
+                    granularity=granularity,
+                    ignore_unknown_ids=ignore_unknown_ids,
+                    uniform_index=uniform_index,
+                    include_aggregate_name=include_aggregate_name,
+                    include_granularity_name=include_granularity_name,
+                    column_names=column_names,
+                    limit=None,
+                )
+                .tz_localize("utc")
+                .tz_convert(tz.key)
+            )
+
+        assert isinstance(granularity, str)  # mypy
+
+        if in_timedelta(granularity) / timedelta(hours=1) > self._GRANULARITY_HOURS_LIMIT:
+            multiplier, unit = get_granularity_multiplier_and_unit(granularity)
+            days = _unit_in_days(unit)
+            limit = math.floor(timedelta(hours=self._GRANULARITY_HOURS_LIMIT) / timedelta(days=days))
+            raise ValueError(f"Granularity above the maximum limit, {limit} {unit}s.")
+
+        identifiers = IdentifierSequence.load(id, external_id)
+        if not identifiers.are_unique():
+            duplicated = find_duplicates(identifiers.as_primitives())
+            raise ValueError(f"The following identifiers were not unique: {duplicated}")
+
+        intervals = to_fixed_utc_intervals(start, end, granularity)
+
+        queries = [
+            {**ident_dct, "aggregates": aggregates, **interval}  # type: ignore [arg-type]
+            for ident_dct, interval in itertools.product(identifiers.as_dicts(), intervals)
+        ]
+
+        arrays = self.retrieve_arrays(
+            limit=None,
+            ignore_unknown_ids=ignore_unknown_ids,
+            **{identifiers[0].name(): queries},  # type: ignore [arg-type]
+        )
+        assert isinstance(arrays, DatapointsArrayList)  # mypy
+        arrays.concat_duplicate_ids()
+        df = (
+            arrays.to_pandas(column_names, include_aggregate_name, include_granularity_name)
+            .tz_localize("utc")
+            .tz_convert(tz.key)
+        )
+
+        if uniform_index:
+            freq = to_pandas_freq(granularity, start)
+            start, end = align_large_granularity(start, end, granularity)
+            return df.reindex(pandas_date_range_tz(start, end, freq, inclusive="left"))
+
+        return df
 
     def retrieve_latest(
         self,

@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "cognite-sdk"
 
-version = "5.10.5"
+version = "5.11.0"
 
 description = "Cognite Python SDK"
 readme = "README.md"
@@ -22,19 +22,23 @@ pip = ">=20.0.0"  # make optional once poetry doesnt auto-remove it on "simple i
 numpy = { version = "^1.20", optional = true }
 sympy = { version = "*", optional = true }
 pandas = { version = ">=1.4", optional = true }
+backports-zoneinfo = { version = ">=0.2.1",  python = "<3.9", extras = ["tzdata"], optional = true}
+# Windows does not have a ANSI database and need tzdata
+tzdata = {version = ">=2023.3", markers = "sys_platform == 'win32'", optional = true }
 geopandas = { version = ">=0.10.0", optional = true }
 shapely = { version = ">=1.7.0", optional = true }
 pyodide-http = {version = "^0.2.0", optional = true }
 graphlib-backport = {version = "^1.0.0", python = "<3.9"}
 
+
 [tool.poetry.extras]
-pandas = ["pandas"]
+pandas = ["pandas", "backports-zoneinfo"]
 numpy = ["numpy"]
 geo = ["geopandas", "shapely"]
 sympy = ["sympy"]
 functions = ["pip"]
 pyodide = ["pyodide-http"]  # keep pyodide related dependencies outside of 'all'
-all = ["pandas", "geopandas", "shapely", "sympy", "pip"]
+all = ["pandas", "geopandas", "shapely", "sympy", "pip", "backports-zoneinfo"]
 
 [tool.poetry.group.dev.dependencies]
 docutils = "==0.15.2"
