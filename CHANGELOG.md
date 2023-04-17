@@ -17,12 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [5.11.0] - 13-11-23
+## [5.11.0] - 14-11-23
 ### Added
-- Client support for time zone aggregation, `cognite_client.time_series.data.retrieve_dataframe_in_tz(...)`. This means
-  that the developer can retrieve a dataframe aggregated correctly in the time zone given in the start and end arguments.
-  This includes accounting for DST (Daylight Savings Time). Aggregations supported second, minute, hour,
-  day, week, month, quarter and year.
+- The `DatapointsAPI` now supports time zones with the addition of a new method, `retrieve_dataframe_in_tz`. It does not support individual customization of query parameters (for good reasons, e.g. a DataFrame has a single index).
+- Asking for datapoints in a specific time zone, e.g. `America/New_York` or `Europe/London` is now easily accomplished: the user can just pass in their `datetimes` localized to their time zone directly.
+- Queries for aggregate datapoints are also supported, with the key feature being automatic handling of daylight savings time (DST) transitions, as this is not supported by the official API. Example usage: A user living in Oslo, Norway, wants daily averages in their local time. In Oslo, the standard time is UTC+1, with UTC+2 during the summer. This means during spring, there is a 23-hour long day when clocks roll 1 hour forward and a 25-hour day during fall.
+- New granularities with a longer time span have been added (only to this new method, for now): 'week', 'month', 'quarter' and 'year'. These do not all represent a fixed frequency, but like the example above, neither does for example 'day' when we use time zones without a fixed UTC offset.
 
 ## [5.10.5] - 13-04-23
 ### Fixed
