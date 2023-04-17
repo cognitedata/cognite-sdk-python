@@ -79,16 +79,12 @@ class Transformation(CogniteResource):
         conflict_mode (str): What to do in case of id collisions: either "abort", "upsert", "update" or "delete"
         is_public (bool): Indicates if the transformation is visible to all in project or only to the owner.
         ignore_null_fields (bool): Indicates how null values are handled on updates: ignore or set null.
-        source_api_key (str): Configures the transformation to authenticate with the given api key on the source.
-        destination_api_key (str): Configures the transformation to authenticate with the given api key on the destination.
         source_oidc_credentials (Optional[OidcCredentials]): Configures the transformation to authenticate with the given oidc credentials key on the destination.
         destination_oidc_credentials (Optional[OidcCredentials]): Configures the transformation to authenticate with the given oidc credentials on the destination.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         owner (str): Owner of the transformation: requester's identity.
         owner_is_current_user (bool): Indicates if the transformation belongs to the current user.
-        has_source_api_key (bool): Indicates if the transformation is configured with a source api key.
-        has_destination_api_key (bool): Indicates if the transformation is configured with a destination api key.
         has_source_oidc_credentials (bool): Indicates if the transformation is configured with a source oidc credentials set.
         has_destination_oidc_credentials (bool): Indicates if the transformation is configured with a destination oidc credentials set.
         running_job (TransformationJob): Details for the job of this transformation currently running.
@@ -112,16 +108,12 @@ class Transformation(CogniteResource):
         conflict_mode: str = None,
         is_public: bool = True,
         ignore_null_fields: bool = False,
-        source_api_key: str = None,
-        destination_api_key: str = None,
         source_oidc_credentials: Optional[OidcCredentials] = None,
         destination_oidc_credentials: Optional[OidcCredentials] = None,
         created_time: Optional[int] = None,
         last_updated_time: Optional[int] = None,
         owner: str = None,
         owner_is_current_user: bool = True,
-        has_source_api_key: Optional[bool] = None,
-        has_destination_api_key: Optional[bool] = None,
         has_source_oidc_credentials: Optional[bool] = None,
         has_destination_oidc_credentials: Optional[bool] = None,
         running_job: TransformationJob = None,
@@ -144,10 +136,6 @@ class Transformation(CogniteResource):
         self.conflict_mode = conflict_mode
         self.is_public = is_public
         self.ignore_null_fields = ignore_null_fields
-        self.source_api_key = source_api_key
-        self.has_source_api_key = has_source_api_key or source_api_key is not None
-        self.destination_api_key = destination_api_key
-        self.has_destination_api_key = has_destination_api_key or destination_api_key is not None
         self.source_oidc_credentials = source_oidc_credentials
         self.has_source_oidc_credentials = has_source_oidc_credentials or source_oidc_credentials is not None
         self.destination_oidc_credentials = destination_oidc_credentials
@@ -180,16 +168,12 @@ class Transformation(CogniteResource):
             self.conflict_mode,
             self.is_public,
             self.ignore_null_fields,
-            self.source_api_key,
-            self.destination_api_key,
             self.source_oidc_credentials,
             self.destination_oidc_credentials,
             self.created_time,
             self.last_updated_time,
             self.owner,
             self.owner_is_current_user,
-            self.has_source_api_key,
-            self.has_destination_api_key,
             self.has_source_oidc_credentials,
             self.has_destination_oidc_credentials,
             self.running_job,
@@ -236,12 +220,12 @@ class Transformation(CogniteResource):
                     ret = None
             return ret
 
-        if self.source_api_key is None and self.source_nonce is None:
+        if self.source_nonce is None:
             self.source_nonce = try_get_or_create_nonce(self.source_oidc_credentials)
             if self.source_nonce:
                 self.source_oidc_credentials = None
 
-        if self.destination_api_key is None and self.destination_nonce is None:
+        if self.destination_nonce is None:
             self.destination_nonce = try_get_or_create_nonce(self.destination_oidc_credentials)
             if self.destination_nonce:
                 self.destination_oidc_credentials = None
@@ -374,14 +358,6 @@ class TransformationUpdate(CogniteUpdate):
     @property
     def destination_nonce(self) -> _PrimitiveTransformationUpdate:
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "destinationNonce")
-
-    @property
-    def source_api_key(self) -> _PrimitiveTransformationUpdate:
-        return TransformationUpdate._PrimitiveTransformationUpdate(self, "sourceApiKey")
-
-    @property
-    def destination_api_key(self) -> _PrimitiveTransformationUpdate:
-        return TransformationUpdate._PrimitiveTransformationUpdate(self, "destinationApiKey")
 
     @property
     def is_public(self) -> _PrimitiveTransformationUpdate:

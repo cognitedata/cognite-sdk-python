@@ -7,7 +7,7 @@ from doctest import DocTestParser, Example
 from cognite.client import ClientConfig
 from cognite.client._api_client import APIClient
 from cognite.client.beta import CogniteClient
-from cognite.client.credentials import APIKey
+from cognite.client.credentials import Token
 
 
 def collect_apis(obj, done):
@@ -19,7 +19,7 @@ def collect_apis(obj, done):
     return apis + sub
 
 
-client = CogniteClient(ClientConfig(project="_", client_name="_", credentials=APIKey("_")))
+client = CogniteClient(ClientConfig(project="_", client_name="_", credentials=Token("_")))
 parser = DocTestParser()
 
 apis = collect_apis(client, {})

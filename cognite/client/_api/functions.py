@@ -15,7 +15,7 @@ from zipfile import ZipFile
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client._constants import LIST_LIMIT_DEFAULT
-from cognite.client.credentials import APIKey, OAuthClientCertificate
+from cognite.client.credentials import OAuthClientCertificate
 from cognite.client.data_classes import (
     ClientCredentials,
     Function,
@@ -89,7 +89,6 @@ class FunctionsAPI(APIClient):
         external_id: Optional[str] = None,
         description: Optional[str] = "",
         owner: Optional[str] = "",
-        api_key: Optional[str] = None,
         secrets: Optional[Dict] = None,
         env_vars: Optional[Dict] = None,
         cpu: Optional[Number] = None,
@@ -107,8 +106,7 @@ class FunctionsAPI(APIClient):
 
         The function named `handle` is the entrypoint of the created function. Valid arguments to `handle` are `data`, `client`, `secrets` and `function_call_info`:\n
         - If the user calls the function with input data, this is passed through the `data` argument.\n
-        - If the user gives an `api_key` when creating the function, a pre instantiated CogniteClient is passed through the `client` argument.\n
-        - If the user gives one or more secrets when creating the function, these are passed through the `secrets` argument. The API key can be access through `secrets["apikey"]`.\n
+        - If the user gives one or more secrets when creating the function, these are passed through the `secrets` argument. \n
         - Data about the function call can be accessed via the argument `function_call_info`, which is a dictionary with keys `function_id` and, if the call is scheduled, `schedule_id` and `scheduled_time`.\n
 
         Args:
@@ -120,8 +118,7 @@ class FunctionsAPI(APIClient):
             external_id (str, optional):             External id of the function.
             description (str, optional):             Description of the function.
             owner (str, optional):                   Owner of this function. Typically used to know who created it.
-            api_key (str, optional):                 API key that can be used inside the function to access data in CDF.
-            secrets (Dict[str, str]):                Additional secrets as key/value pairs. These can e.g. password to simulators or other data sources. Keys must be lowercase characters, numbers or dashes (-) and at most 15 characters. You can create at most 30 secrets, all keys must be unique, and cannot be apikey.
+            secrets (Dict[str, str]):                Additional secrets as key/value pairs. These can e.g. password to simulators or other data sources. Keys must be lowercase characters, numbers or dashes (-) and at most 15 characters. You can create at most 30 secrets, all keys must be unique.
             env_vars (Dict[str, str]):               Environment variables as key/value pairs. Keys can contain only letters, numbers or the underscore character. You can create at most 100 environment variables.
             cpu (Number, optional):                  Number of CPU cores per function. Allowed values are in the range [0.1, 0.6], and None translates to the API default which is 0.25 in GCP. The argument is unavailable in Azure.
             memory (Number, optional):               Memory per function measured in GB. Allowed values are in the range [0.1, 2.5], and None translates to the API default which is 1 GB in GCP. The argument is unavailable in Azure.
@@ -210,8 +207,6 @@ class FunctionsAPI(APIClient):
             function["runtime"] = runtime
         if external_id:
             function["externalId"] = external_id
-        if api_key:
-            function["apiKey"] = api_key
         if secrets:
             function["secrets"] = secrets
         if extra_index_urls:
@@ -541,11 +536,8 @@ def _create_session_and_return_nonce(
     client_credentials: Union[Dict, ClientCredentials, None] = None,
 ) -> Optional[str]:
     if client_credentials is None:
-        if isinstance(client._config.credentials, APIKey):
-            return None
-        elif isinstance(client._config.credentials, OAuthClientCertificate):
+        if isinstance(client._config.credentials, OAuthClientCertificate):
             raise CogniteAuthError("Client certificate credentials is not supported with the Functions API")
-
     elif isinstance(client_credentials, dict):
         client_credentials = ClientCredentials(client_credentials["client_id"], client_credentials["client_secret"])
     return client.iam.sessions.create(client_credentials).nonce

@@ -2,7 +2,7 @@ import pytest
 
 from cognite.client import ClientConfig, CogniteClient
 from cognite.client._api_client import APIClient
-from cognite.client.credentials import APIKey
+from cognite.client.credentials import Token
 from cognite.client.testing import CogniteClientMock, monkeypatch_cognite_client
 from tests.utils import all_mock_children, all_subclasses
 
@@ -35,8 +35,8 @@ def test_ensure_all_apis_are_specced_on_cognite_mock(api):
 
 def test_cognite_client_accepts_arguments_during_and_after_mock():
     with monkeypatch_cognite_client():
-        CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=APIKey("bla")))
-    CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=APIKey("bla")))
+        CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla")))
+    CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla")))
 
 
 def test_client_mock_can_access_attributes_not_explicitly_defined_on_children():

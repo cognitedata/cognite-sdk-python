@@ -20,17 +20,8 @@ from cognite.client._api.extractionpipelines import (
 from cognite.client._api.files import FilesAPI
 from cognite.client._api.functions import FunctionCallsAPI, FunctionsAPI, FunctionSchedulesAPI
 from cognite.client._api.geospatial import GeospatialAPI
-from cognite.client._api.iam import (
-    IAMAPI,
-    APIKeysAPI,
-    GroupsAPI,
-    SecurityCategoriesAPI,
-    ServiceAccountsAPI,
-    SessionsAPI,
-    TokenAPI,
-)
+from cognite.client._api.iam import IAMAPI, GroupsAPI, SecurityCategoriesAPI, SessionsAPI, TokenAPI
 from cognite.client._api.labels import LabelsAPI
-from cognite.client._api.login import LoginAPI
 from cognite.client._api.raw import RawAPI, RawDatabasesAPI, RawRowsAPI, RawTablesAPI
 from cognite.client._api.relationships import RelationshipsAPI
 from cognite.client._api.sequences import SequencesAPI, SequencesDataAPI
@@ -98,15 +89,12 @@ class CogniteClientMock(MagicMock):
         self.geospatial = MagicMock(spec_set=GeospatialAPI)
 
         self.iam = MagicMock(spec=IAMAPI)
-        self.iam.api_keys = MagicMock(spec_set=APIKeysAPI)
         self.iam.groups = MagicMock(spec_set=GroupsAPI)
         self.iam.security_categories = MagicMock(spec_set=SecurityCategoriesAPI)
-        self.iam.service_accounts = MagicMock(spec_set=ServiceAccountsAPI)
         self.iam.sessions = MagicMock(spec_set=SessionsAPI)
         self.iam.token = MagicMock(spec_set=TokenAPI)
 
         self.labels = MagicMock(spec_set=LabelsAPI)
-        self.login = MagicMock(spec_set=LoginAPI)
 
         self.raw = MagicMock(spec=RawAPI)
         self.raw.databases = MagicMock(spec_set=RawDatabasesAPI)
@@ -168,17 +156,16 @@ def monkeypatch_cognite_client() -> Iterator[CogniteClientMock]:
         This example shows how to set the return value of a given method::
 
             >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes import TimeSeries
-            >>> from cognite.client.data_classes import LoginStatus
+            >>> from cognite.client.data_classes.iam import TokenInspection
             >>> from cognite.client.testing import monkeypatch_cognite_client
             >>>
             >>> with monkeypatch_cognite_client() as c_mock:
-            >>>     c_mock.login.status.return_value = LoginStatus(
-            >>>         user="user", project="dummy", project_id=1, logged_in=True, api_key_id=1
+            >>>     c_mock.iam.token.inspect.return_value = TokenInspection(
+            >>>         subject="subject", projects=[], capabilities=[]
             >>>     )
             >>>     c = CogniteClient()
-            >>>     res = c.login.status()
-            >>>     assert "user" == res.user
+            >>>     res = c.iam.token.inspect()
+            >>>     assert "subject" == res.subject
 
         Here you can see how to have a given method raise an exception::
 
@@ -187,10 +174,10 @@ def monkeypatch_cognite_client() -> Iterator[CogniteClientMock]:
             >>> from cognite.client.testing import monkeypatch_cognite_client
             >>>
             >>> with monkeypatch_cognite_client() as c_mock:
-            >>>     c_mock.login.status.side_effect = CogniteAPIError(message="Something went wrong", code=400)
+            >>>     c_mock.iam.token.inspect.side_effect = CogniteAPIError(message="Something went wrong", code=400)
             >>>     c = CogniteClient()
             >>>     try:
-            >>>         res = c.login.status()
+            >>>         res = c.iam.token.inspect()
             >>>     except CogniteAPIError as e:
             >>>         assert 400 == e.code
             >>>         assert "Something went wrong" == e.message

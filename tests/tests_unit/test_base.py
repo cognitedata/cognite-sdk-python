@@ -8,7 +8,7 @@ from unittest import mock
 import pytest
 
 from cognite.client import ClientConfig, CogniteClient
-from cognite.client.credentials import APIKey
+from cognite.client.credentials import Token
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteLabelUpdate,
@@ -193,7 +193,7 @@ class TestCogniteResource:
         pd.testing.assert_frame_equal(expected_df, actual_df, check_like=True)
 
     def test_resource_client_correct(self):
-        c = CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=APIKey("bla")))
+        c = CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla")))
         with pytest.raises(CogniteMissingClientError):
             MyResource(1)._cognite_client
         assert MyResource(1, cognite_client=c)._cognite_client == c
@@ -324,7 +324,7 @@ class TestCogniteResourceList:
             MyResourceList([1, 2, 3])
 
     def test_resource_list_client_correct(self):
-        c = CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=APIKey("bla")))
+        c = CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla")))
         with pytest.raises(CogniteMissingClientError):
             MyResource(1)._cognite_client
         assert MyResource(1, cognite_client=c)._cognite_client == c
@@ -467,7 +467,7 @@ class TestCogniteResponse:
         assert MyResponse(1) != MyResponse()
 
     def test_response_client_correct(self):
-        c = CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=APIKey("bla")))
+        c = CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla")))
         with pytest.raises(CogniteMissingClientError):
             MyResource(1)._cognite_client
         assert MyResource(1, cognite_client=c)._cognite_client == c
