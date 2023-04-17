@@ -559,7 +559,7 @@ def to_pandas_freq(granularity: str, start: datetime) -> str:
     return f"{multiplier}{unit}"
 
 
-def unit_in_days(unit: str, ceil: bool = True) -> float:
+def _unit_in_days(unit: str, ceil: bool = True) -> float:
     if unit in {"w", "d", "h", "m", "s"}:
         unit = GRANULARITY_IN_TIMEDELTA_UNIT[unit]
         arg = {unit: 1}
@@ -591,10 +591,5 @@ def in_timedelta(granularity: str, ceil: bool = True) -> timedelta:
         unit = GRANULARITY_IN_TIMEDELTA_UNIT[unit]
         arg = {unit: multiplier}
         return timedelta(**arg)
-    if unit == "month":
-        days = 31 if ceil else 28
-    elif unit == "quarter":
-        days = 92 if ceil else 91
-    else:  # years
-        days = 366 if ceil else 365
+    days = _unit_in_days(unit, ceil)
     return timedelta(days=multiplier * days)

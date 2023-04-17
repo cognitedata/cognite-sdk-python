@@ -67,6 +67,7 @@ from cognite.client.utils._auxiliary import (
 from cognite.client.utils._concurrency import collect_exc_info_and_raise, execute_tasks, get_priority_executor
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._time import (
+    _unit_in_days,
     align_large_granularity,
     get_granularity_multiplier_and_unit,
     in_timedelta,
@@ -74,7 +75,6 @@ from cognite.client.utils._time import (
     timestamp_to_ms,
     to_fixed_utc_intervals,
     to_pandas_freq,
-    unit_in_days,
     validate_timezone,
 )
 
@@ -1122,7 +1122,7 @@ class DatapointsAPI(APIClient):
 
         if in_timedelta(granularity) / timedelta(hours=1) > self._GRANULARITY_HOURS_LIMIT:
             multiplier, unit = get_granularity_multiplier_and_unit(granularity)
-            days = unit_in_days(unit)
+            days = _unit_in_days(unit)
             limit = math.floor(timedelta(hours=self._GRANULARITY_HOURS_LIMIT) / timedelta(days=days))
             raise ValueError(f"Granularity above then maximum limit, {limit} {unit}s.")
 
