@@ -25,6 +25,7 @@ UNIT_IN_MS_WITHOUT_WEEK = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000}
 UNIT_IN_MS = {**UNIT_IN_MS_WITHOUT_WEEK, "w": 604800000}
 VARIABLE_LENGTH_UNITS = {"month", "quarter", "year"}
 GRANULARITY_IN_HOURS = {"w": 168, "d": 24, "h": 1}
+GRANULARITY_IN_TIMEDELTA_UNIT = {"w": "weeks", "d": "days", "h": "hours", "m": "minutes", "s": "seconds"}
 MIN_TIMESTAMP_MS = -2208988800000  # 1900-01-01 00:00:00.000
 MAX_TIMESTAMP_MS = 4102444799999  # 2099-12-31 23:59:59.999
 
@@ -556,3 +557,44 @@ def to_pandas_freq(granularity: str, start: datetime) -> str:
         }[floored.month]
 
     return f"{multiplier}{unit}"
+
+
+def unit_in_days(unit: str, ceil: bool = True) -> float:
+    if unit in {"w", "d", "h", "m", "s"}:
+        unit = GRANULARITY_IN_TIMEDELTA_UNIT[unit]
+        arg = {unit: 1}
+        return timedelta(**arg) / timedelta(hours=1)
+
+    if unit == "month":
+        days = 31.0 if ceil else 28.0
+    elif unit == "quarter":
+        days = 92.0 if ceil else 91.0
+    else:  # years
+        days = 366.0 if ceil else 365.0
+    return days
+
+
+def in_timedelta(granularity: str, ceil: bool = True) -> timedelta:
+    """
+    Converts the granularity to a timedelta.
+
+    Args:
+        granularity: The granularity.
+        ceil: In the case the unit is month, quarter or year. Ceil = True will use 31, 92, 366 days for these
+              timespans, and if ceil is false 28, 91, 365
+
+    Returns:
+        A timespan for the granularity
+    """
+    multiplier, unit = get_granularity_multiplier_and_unit(granularity, standardize=True)
+    if unit in {"w", "d", "h", "m", "s"}:
+        unit = GRANULARITY_IN_TIMEDELTA_UNIT[unit]
+        arg = {unit: multiplier}
+        return timedelta(**arg)
+    if unit == "month":
+        days = 31 if ceil else 28
+    elif unit == "quarter":
+        days = 92 if ceil else 91
+    else:  # years
+        days = 366 if ceil else 365
+    return timedelta(days=multiplier * days)

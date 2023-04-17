@@ -12,7 +12,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from concurrent.futures import CancelledError
 from copy import copy
-from datetime import datetime
+from datetime import datetime, timedelta
 from itertools import chain
 from typing import (
     TYPE_CHECKING,
@@ -68,10 +68,13 @@ from cognite.client.utils._concurrency import collect_exc_info_and_raise, execut
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._time import (
     align_large_granularity,
+    get_granularity_multiplier_and_unit,
+    in_timedelta,
     pandas_date_range_tz,
     timestamp_to_ms,
     to_fixed_utc_intervals,
     to_pandas_freq,
+    unit_in_days,
     validate_timezone,
 )
 
@@ -592,6 +595,7 @@ class DatapointsAPI(APIClient):
         self._DPS_INSERT_LIMIT = 100_000
         self._RETRIEVE_LATEST_LIMIT = 100
         self._POST_DPS_OBJECTS_LIMIT = 10_000
+        self._GRANULARITY_HOURS_LIMIT = 100_000.0
 
     def retrieve(
         self,
@@ -1114,12 +1118,18 @@ class DatapointsAPI(APIClient):
                 .tz_convert(tz.key)
             )
 
+        assert isinstance(granularity, str)  # mypy
+
+        if in_timedelta(granularity) / timedelta(hours=1) > self._GRANULARITY_HOURS_LIMIT:
+            multiplier, unit = get_granularity_multiplier_and_unit(granularity)
+            days = unit_in_days(unit)
+            limit = math.floor(timedelta(hours=self._GRANULARITY_HOURS_LIMIT) / timedelta(days=days))
+            raise ValueError(f"Granularity above then maximum limit, {limit} {unit}s.")
+
         identifiers = IdentifierSequence.load(id, external_id)
         if not identifiers.are_unique():
             duplicated = find_duplicates(identifiers.as_primitives())
             raise ValueError(f"The following identifiers were not unique: {duplicated}")
-
-        assert isinstance(granularity, str)  # mypy
 
         intervals = to_fixed_utc_intervals(start, end, granularity)
 
