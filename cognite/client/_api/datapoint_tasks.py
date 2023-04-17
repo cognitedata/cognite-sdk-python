@@ -252,8 +252,7 @@ class _SingleTSQueryValidator:
                 f"Dict provided by argument `{arg_name}` included key(s) not understood: {sorted(bad_keys)}. "
                 f"Required key: `{arg_name}`. Optional: {list(opt_dct_keys)}."
             )
-        else:
-            return dct
+        return dct
 
     def _validate_and_create_query(
         self, dct: Union[DatapointsQueryId, DatapointsQueryExternalId]
