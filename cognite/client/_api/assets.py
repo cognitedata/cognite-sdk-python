@@ -47,6 +47,7 @@ from cognite.client.utils._auxiliary import split_into_n_parts
 from cognite.client.utils._concurrency import classify_error, get_priority_executor
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._text import to_camel_case
+from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 
 if TYPE_CHECKING:
     from concurrent.futures import Future
@@ -63,11 +64,11 @@ class AssetsAPI(APIClient):
         name: str = None,
         parent_ids: Sequence[int] = None,
         parent_external_ids: Sequence[str] = None,
-        asset_subtree_ids: Sequence[int] = None,
-        asset_subtree_external_ids: Sequence[str] = None,
+        asset_subtree_ids: Union[int, Sequence[int]] = None,
+        asset_subtree_external_ids: Union[str, Sequence[str]] = None,
         metadata: Dict[str, str] = None,
-        data_set_ids: Sequence[int] = None,
-        data_set_external_ids: Sequence[str] = None,
+        data_set_ids: Union[int, Sequence[int]] = None,
+        data_set_external_ids: Union[str, Sequence[str]] = None,
         labels: LabelFilter = None,
         geo_location: GeoLocationFilter = None,
         source: str = None,
@@ -88,11 +89,11 @@ class AssetsAPI(APIClient):
             name (str): Name of asset. Often referred to as tag.
             parent_ids (Sequence[int]): Return only the direct descendants of the specified assets.
             parent_external_ids (Sequence[str]): Return only the direct descendants of the specified assets.
-            asset_subtree_ids (Sequence[int]): List of asset subtrees ids to filter on.
-            asset_subtree_external_ids (Sequence[str]): List of asset subtrees external ids to filter on.
+            asset_subtree_ids (Union[int, Sequence[int]]): Asset subtree id or list of asset subtree ids to filter on.
+            asset_subtree_external_ids (Union[str, Sequence[str]]): Asset subtree external id or list of asset subtree external ids to filter on.
             metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value
-            data_set_ids (Sequence[int]): Return only assets in the specified data sets with these ids.
-            data_set_external_ids (Sequence[str]): Return only assets in the specified data sets with these external ids.
+            data_set_ids (Union[int, Sequence[int]]): Return only assets in the specified data set(s) with this id / these ids.
+            data_set_external_ids (Union[str, Sequence[str]]): Return only assets in the specified data set(s) with this external id / these external ids.
             labels (LabelFilter): Return only the assets matching the specified label.
             geo_location (GeoLocationFilter): Only include files matching the specified geographic relation.
             source (str): The source of this asset
@@ -105,20 +106,13 @@ class AssetsAPI(APIClient):
             partitions (int): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed.
 
         Yields:
-            Union[Asset, AssetList]: yields Asset one by one if chunk is not specified, else AssetList objects.
+            Union[Asset, AssetList]: yields Asset one by one if chunk_size is not specified, else AssetList objects.
         """
         if aggregated_properties:
             aggregated_properties = [to_camel_case(s) for s in aggregated_properties]
 
-        asset_subtree_ids_processed = None
-        if asset_subtree_ids or asset_subtree_external_ids:
-            asset_subtree_ids_processed = IdentifierSequence.load(
-                asset_subtree_ids, asset_subtree_external_ids
-            ).as_dicts()
-
-        data_set_ids_processed = None
-        if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
+        asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
+        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
         filter = AssetFilter(
             name=name,
@@ -224,10 +218,10 @@ class AssetsAPI(APIClient):
         name: str = None,
         parent_ids: Sequence[int] = None,
         parent_external_ids: Sequence[str] = None,
-        asset_subtree_ids: Sequence[int] = None,
-        asset_subtree_external_ids: Sequence[str] = None,
-        data_set_ids: Sequence[int] = None,
-        data_set_external_ids: Sequence[str] = None,
+        asset_subtree_ids: Union[int, Sequence[int]] = None,
+        asset_subtree_external_ids: Union[str, Sequence[str]] = None,
+        data_set_ids: Union[int, Sequence[int]] = None,
+        data_set_external_ids: Union[str, Sequence[str]] = None,
         labels: LabelFilter = None,
         geo_location: GeoLocationFilter = None,
         metadata: Dict[str, str] = None,
@@ -246,10 +240,10 @@ class AssetsAPI(APIClient):
             name (str): Name of asset. Often referred to as tag.
             parent_ids (Sequence[int]): Return only the direct descendants of the specified assets.
             parent_external_ids (Sequence[str]): Return only the direct descendants of the specified assets.
-            asset_subtree_ids (Sequence[int]): List of asset subtrees ids to filter on.
-            asset_subtree_external_ids (Sequence[str]): List of asset subtrees external ids to filter on.
-            data_set_ids (Sequence[int]): Return only assets in the specified data sets with these ids.
-            data_set_external_ids (Sequence[str]): Return only assets in the specified data sets with these external ids.
+            asset_subtree_ids (Union[int, Sequence[int]]): Asset subtree id or list of asset subtree ids to filter on.
+            asset_subtree_external_ids (Union[str, Sequence[str]]): Asset subtree external id or list of asset subtree external ids to filter on.
+            data_set_ids (Union[int, Sequence[int]]): Return only assets in the specified data set(s) with this id / these ids.
+            data_set_external_ids (Union[str, Sequence[str]]): Return only assets in the specified data set(s) with this external id / these external ids.
             labels (LabelFilter): Return only the assets matching the specified label filter.
             geo_location (GeoLocationFilter): Only include files matching the specified geographic relation.
             metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value.
@@ -299,15 +293,8 @@ class AssetsAPI(APIClient):
         if aggregated_properties:
             aggregated_properties = [to_camel_case(s) for s in aggregated_properties]
 
-        asset_subtree_ids_processed = None
-        if asset_subtree_ids or asset_subtree_external_ids:
-            asset_subtree_ids_processed = IdentifierSequence.load(
-                asset_subtree_ids, asset_subtree_external_ids
-            ).as_dicts()
-
-        data_set_ids_processed = None
-        if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
+        asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
+        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
         filter = AssetFilter(
             name=name,

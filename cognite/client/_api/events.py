@@ -15,6 +15,7 @@ from cognite.client.data_classes import (
     TimestampRange,
 )
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 
 
 class EventsAPI(APIClient):
@@ -31,10 +32,10 @@ class EventsAPI(APIClient):
         metadata: Dict[str, str] = None,
         asset_ids: Sequence[int] = None,
         asset_external_ids: Sequence[str] = None,
-        asset_subtree_ids: Sequence[int] = None,
-        asset_subtree_external_ids: Sequence[str] = None,
-        data_set_ids: Sequence[int] = None,
-        data_set_external_ids: Sequence[str] = None,
+        asset_subtree_ids: Union[int, Sequence[int]] = None,
+        asset_subtree_external_ids: Union[str, Sequence[str]] = None,
+        data_set_ids: Union[int, Sequence[int]] = None,
+        data_set_external_ids: Union[str, Sequence[str]] = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -57,10 +58,10 @@ class EventsAPI(APIClient):
             metadata (Dict[str, str]): Customizable extra data about the event. String key -> String value.
             asset_ids (Sequence[int]): Asset IDs of related equipments that this event relates to.
             asset_external_ids (Sequence[str]): Asset External IDs of related equipment that this event relates to.
-            asset_subtree_ids (Sequence[int]): List of asset subtrees ids to filter on.
-            asset_subtree_external_ids (Sequence[str]): List of asset subtrees external ids to filter on.
-            data_set_ids (Sequence[int]): Return only events in the specified data sets with these ids.
-            data_set_external_ids (Sequence[str]): Return only events in the specified data sets with these external ids.
+            asset_subtree_ids (Union[int, Sequence[int]]): Asset subtree id or list of asset subtree ids to filter on.
+            asset_subtree_external_ids (Union[str, Sequence[str]]): Asset subtree external id or list of asset subtree external ids to filter on.
+            data_set_ids (Union[int, Sequence[int]]): Return only events in the specified data set(s) with this id / these ids.
+            data_set_external_ids (Sequence[str]): Return only events in the specified data set(s) with this external id / these external ids.
             source (str): The source of this event.
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
@@ -70,17 +71,10 @@ class EventsAPI(APIClient):
             partitions (int): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed.
 
         Yields:
-            Union[Event, EventList]: yields Event one by one if chunk is not specified, else EventList objects.
+            Union[Event, EventList]: yields Event one by one if chunk_size is not specified, else EventList objects.
         """
-        asset_subtree_ids_processed = None
-        if asset_subtree_ids or asset_subtree_external_ids:
-            asset_subtree_ids_processed = IdentifierSequence.load(
-                asset_subtree_ids, asset_subtree_external_ids
-            ).as_dicts()
-
-        data_set_ids_processed = None
-        if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
+        asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
+        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
         filter = EventFilter(
             start_time=start_time,
@@ -191,10 +185,10 @@ class EventsAPI(APIClient):
         metadata: Dict[str, str] = None,
         asset_ids: Sequence[int] = None,
         asset_external_ids: Sequence[str] = None,
-        asset_subtree_ids: Sequence[int] = None,
-        asset_subtree_external_ids: Sequence[str] = None,
-        data_set_ids: Sequence[int] = None,
-        data_set_external_ids: Sequence[str] = None,
+        asset_subtree_ids: Union[int, Sequence[int]] = None,
+        asset_subtree_external_ids: Union[str, Sequence[str]] = None,
+        data_set_ids: Union[int, Sequence[int]] = None,
+        data_set_external_ids: Union[str, Sequence[str]] = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -214,10 +208,10 @@ class EventsAPI(APIClient):
             metadata (Dict[str, str]): Customizable extra data about the event. String key -> String value.
             asset_ids (Sequence[int]): Asset IDs of related equipments that this event relates to.
             asset_external_ids (Sequence[str]): Asset External IDs of related equipment that this event relates to.
-            asset_subtree_ids (Sequence[int]): List of asset subtrees ids to filter on.
-            asset_subtree_external_ids (Sequence[str]): List of asset subtrees external ids to filter on.
-            data_set_ids (Sequence[int]): Return only events in the specified data sets with these ids.
-            data_set_external_ids (Sequence[str]): Return only events in the specified data sets with these external ids.
+            asset_subtree_ids (Union[int, Sequence[int]]): Asset subtree id or list of asset subtree ids to filter on.
+            asset_subtree_external_ids (Union[str, Sequence[str]]): Asset subtree external id or list of asset subtree external ids to filter on.
+            data_set_ids (Union[int, Sequence[int]]): Return only events in the specified data set(s) with this id / these ids.
+            data_set_external_ids (Sequence[str]): Return only events in the specified data set(s) with this external id / these external ids.
             source (str): The source of this event.
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
@@ -252,15 +246,8 @@ class EventsAPI(APIClient):
                 >>> for event_list in c.events(chunk_size=2500):
                 ...     event_list # do something with the events
         """
-        asset_subtree_ids_processed = None
-        if asset_subtree_ids or asset_subtree_external_ids:
-            asset_subtree_ids_processed = IdentifierSequence.load(
-                asset_subtree_ids, asset_subtree_external_ids
-            ).as_dicts()
-
-        data_set_ids_processed = None
-        if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
+        asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
+        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
         if end_time and ("max" in end_time or "min" in end_time) and "isNull" in end_time:
             raise ValueError("isNull cannot be used with min or max values")

@@ -34,7 +34,7 @@ from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.functions import FunctionCallsFilter, FunctionsStatus
 from cognite.client.exceptions import CogniteAuthError
 from cognite.client.utils._auxiliary import is_unlimited
-from cognite.client.utils._identifier import IdentifierSequence, SingletonIdentifierSequence
+from cognite.client.utils._identifier import Identifier, IdentifierSequence
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -48,25 +48,23 @@ REQUIREMENTS_REG = re.compile(r"(\[\/?requirements\]){1}$", flags=re.M)  # Match
 UNCOMMENTED_LINE_REG = re.compile(r"^[^\#]]*.*")
 
 
-def _get_function_internal_id(_cognite_client: CogniteClient, identifier: SingletonIdentifierSequence) -> int:
-    id_object = identifier[0]
-    id_dict = id_object.as_dict()
+def _get_function_internal_id(cognite_client: CogniteClient, identifier: Identifier) -> int:
+    primitive = identifier.as_primitive()
+    if identifier.is_id:
+        return primitive
 
-    if "id" in id_dict:
-        return id_object.as_primitive()
-
-    if "externalId" in id_dict:
-        function = _cognite_client.functions.retrieve(external_id=id_object.as_primitive())
+    if identifier.is_external_id:
+        function = cognite_client.functions.retrieve(external_id=primitive)
         if function:
             return function.id
 
-    raise ValueError(f'Function with external ID "{id_object.as_primitive()}" is not found')
+    raise ValueError(f'Function with external ID "{primitive}" is not found')
 
 
-def _get_function_identifier(id: Optional[int], external_id: Optional[str]) -> SingletonIdentifierSequence:
-    identifier = IdentifierSequence.load(ids=id, external_ids=external_id)
+def _get_function_identifier(function_id: Optional[int], function_external_id: Optional[str]) -> Identifier:
+    identifier = IdentifierSequence.load(function_id, function_external_id, id_name="function")
     if identifier.is_singleton():
-        return identifier.as_singleton()
+        return identifier[0]
     raise AssertionError("Exactly one of function_id and function_external_id must be specified")
 
 
@@ -388,7 +386,7 @@ class FunctionsAPI(APIClient):
                 >>> func = c.functions.retrieve(id=1)
                 >>> call = func.call()
         """
-        identifier = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
+        identifier = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()[0]
         id = _get_function_internal_id(self._cognite_client, identifier)
         nonce = _create_session_and_return_nonce(self._cognite_client)
 

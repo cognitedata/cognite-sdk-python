@@ -17,7 +17,6 @@ from cognite.client.utils._auxiliary import (
     local_import,
     split_into_chunks,
     split_into_n_parts,
-    validate_user_input_dict_with_identifier,
 )
 
 
@@ -270,43 +269,3 @@ class TestExactlyOneIsNotNone:
     )
     def test_exactly_one_is_not_none(self, inp, expected):
         assert exactly_one_is_not_none(*inp) == expected
-
-
-class TestValidateUserInputDictWithIdentifier:
-    @pytest.mark.parametrize(
-        "dct, keys, expected",
-        (
-            ({"id": 123, "a": None, "b": 0}, {"a", "b"}, {"id": 123}),
-            ({"external_id": "foo", "c": None}, {"c"}, {"externalId": "foo"}),
-            ({"externalId": "foo"}, set(), {"externalId": "foo"}),
-        ),
-    )
-    def test_validate_normal_input(self, dct, keys, expected):
-        assert expected == validate_user_input_dict_with_identifier(dct, required_keys=keys)
-
-    @pytest.mark.parametrize(
-        "dct, keys, err, err_msg",
-        (
-            (["id", 123], set(), TypeError, "Expected dict-like object, got <class 'list'>"),
-            ({}, set(), ValueError, "must be specified, got neither"),
-            ({"id": 123, "external_id": "foo"}, set(), ValueError, "must be specified, got both"),
-            ({"id": 123, "externalId": "foo"}, set(), ValueError, "must be specified, got both"),
-            ({"id": 123}, {"a"}, ValueError, re.escape("Invalid key(s): [], required key(s) missing: ['a'].")),
-            (
-                {"id": 123, "a": 0},
-                {"b"},
-                ValueError,
-                re.escape("Invalid key(s): ['a'], required key(s) missing: ['b']."),
-            ),
-            (
-                {"id": 123, "a": 0, "b": 1},
-                {"c", "d"},
-                ValueError,
-                re.escape("Invalid key(s): ['a', 'b'], required key(s) missing: ['c', 'd']."),
-            ),
-            ({"id": 123, "a": 0}, set(), ValueError, re.escape("Invalid key(s): ['a'], required key(s) missing: [].")),
-        ),
-    )
-    def test_validate_bad_input(self, dct, keys, err, err_msg):
-        with pytest.raises(err, match=err_msg):
-            validate_user_input_dict_with_identifier(dct, required_keys=keys)

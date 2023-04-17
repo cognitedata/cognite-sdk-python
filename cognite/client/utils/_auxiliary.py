@@ -12,7 +12,6 @@ import math
 import numbers
 import platform
 import warnings
-from collections.abc import Mapping
 from decimal import Decimal
 from types import ModuleType
 from typing import (
@@ -34,7 +33,6 @@ from urllib.parse import quote
 
 import cognite.client
 from cognite.client.exceptions import CogniteImportError
-from cognite.client.utils._identifier import T_ID, Identifier
 from cognite.client.utils._text import convert_all_keys_to_camel_case, convert_all_keys_to_snake_case, to_snake_case
 from cognite.client.utils._version_checker import get_newest_version_in_major_release
 
@@ -127,24 +125,6 @@ def assert_type(var: Any, var_name: str, types: List[type], allow_none: bool = F
             raise TypeError(f"{var_name} cannot be None")
     elif not isinstance(var, tuple(types)):
         raise TypeError(f"{var_name!r} must be one of types {types}, not {type(var)}")
-
-
-def validate_user_input_dict_with_identifier(dct: Mapping, required_keys: Set[str]) -> Dict[str, T_ID]:
-    if not isinstance(dct, Mapping):
-        raise TypeError(f"Expected dict-like object, got {type(dct)}")
-
-    # Verify that we have gotten exactly one identifier:
-    xid = dct.get("externalId") or dct.get("external_id")
-    id_dct = Identifier.of_either(dct.get("id"), xid).as_dict(camel_case=True)
-
-    missing_keys = required_keys.difference(dct)
-    invalid_keys = set(dct) - required_keys - {"id", "externalId", "external_id"}
-    if missing_keys or invalid_keys:
-        raise ValueError(
-            f"Given dictionary failed validation. Invalid key(s): {sorted(invalid_keys)}, "
-            f"required key(s) missing: {sorted(missing_keys)}."
-        )
-    return id_dct
 
 
 def interpolate_and_url_encode(path: str, *args: Any) -> str:

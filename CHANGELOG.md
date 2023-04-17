@@ -17,6 +17,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [5.11.1] - 17-04-23
+### Fixed
+- List (and `__call__`) methods for assets, events, files, labels, relationships, sequences and time series now raise if given bad input for `data_set_ids`, `data_set_external_ids`, `asset_subtree_ids` and `asset_subtree_external_ids` instead of ignoring/returning everything.
+
+### Improved
+- The listed parameters above have silently accepted non-list input, i.e. single `int` (for `ids`) or single `str` (for `external_ids`). Function signatures and docstrings have now been updated to reflect this "hidden functionality".
+
 ## [5.11.0] - 17-11-23
 ### Added
 - The `DatapointsAPI` now supports time zones with the addition of a new method, `retrieve_dataframe_in_tz`. It does not support individual customization of query parameters (for good reasons, e.g. a DataFrame has a single index).
