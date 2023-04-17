@@ -17,7 +17,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [5.11.0] - 14-11-23
+## [5.11.0] - 17-11-23
 ### Added
 - The `DatapointsAPI` now supports time zones with the addition of a new method, `retrieve_dataframe_in_tz`. It does not support individual customization of query parameters (for good reasons, e.g. a DataFrame has a single index).
 - Asking for datapoints in a specific time zone, e.g. `America/New_York` or `Europe/London` is now easily accomplished: the user can just pass in their `datetimes` localized to their time zone directly.
