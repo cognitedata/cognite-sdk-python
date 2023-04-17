@@ -1235,7 +1235,7 @@ class TestRetrieveTimezoneDatapointsAPI:
         tz = ZoneInfo(tz_name)
         start = datetime(2023, 1, 1, tzinfo=tz)
         end = datetime(2023, 12, 31, 23, 0, 0, tzinfo=tz)
-        raw_df = hourly_2023.tz_convert(tz_name).loc[start:end].copy()
+        raw_df = hourly_2023.tz_convert(tz_name).loc[str(start):str(end)].copy()
         expected_aggregate = cdf_aggregate(raw_df, aggregation, granularity)
 
         # Act
