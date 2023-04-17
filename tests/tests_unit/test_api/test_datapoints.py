@@ -718,6 +718,7 @@ class TestRetrieveDataPointsInTz:
     """
 
     @staticmethod
+    @pytest.mark.dsl
     @pytest.mark.parametrize(
         "args, start_tz, end_tz, expected_error_message",
         [
