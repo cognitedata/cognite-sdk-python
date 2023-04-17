@@ -560,6 +560,13 @@ def to_pandas_freq(granularity: str, start: datetime) -> str:
 
 
 def _unit_in_days(unit: str, ceil: bool = True) -> float:
+    """
+    Converts the unit to days.
+
+    **Caveat** Should not be used for precise calculations, as month, quarter, and year
+    do not have a precise timespan in days. Instead, the ceil argument is used to select between
+    the maximum and minimum length of a year, quarter, and month.
+    """
     if unit in {"w", "d", "h", "m", "s"}:
         unit = GRANULARITY_IN_TIMEDELTA_UNIT[unit]
         arg = {unit: 1}

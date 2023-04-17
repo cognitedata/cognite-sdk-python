@@ -595,7 +595,7 @@ class DatapointsAPI(APIClient):
         self._DPS_INSERT_LIMIT = 100_000
         self._RETRIEVE_LATEST_LIMIT = 100
         self._POST_DPS_OBJECTS_LIMIT = 10_000
-        self._GRANULARITY_HOURS_LIMIT = 100_000.0
+        self._GRANULARITY_HOURS_LIMIT = 100_000
 
     def retrieve(
         self,
