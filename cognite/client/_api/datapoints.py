@@ -1035,7 +1035,7 @@ class DatapointsAPI(APIClient):
             granularity (str): The granularity to fetch aggregates at supported second, minute, hour, day, week, month, quarter and year. Default: None.
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
             uniform_index (bool): If querying aggregates, specifying `uniform_index=True` will return a dataframe with an
-                index given by the granularity datetime index from the earliest `start` to the latest `end` (missing values will be NaNs). Default: False
+                index with constant spacing between timestamps decided by granularity all the way from `start` to `end` (missing values will be NaNs). Default: False
             include_aggregate_name (bool): Include 'aggregate' in the column name, e.g. `my-ts|average`. Ignored for raw time series. Default: True
             include_granularity_name (bool): Include 'granularity' in the column name, e.g. `my-ts|12h`. Added after 'aggregate' when present. Ignored for raw time series. Default: False
             column_names ("id" | "external_id"): Use either ids or external ids as column names. Time series missing external id will use id as backup. Default: "external_id"
