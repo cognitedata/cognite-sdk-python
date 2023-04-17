@@ -1124,7 +1124,7 @@ class DatapointsAPI(APIClient):
             raise ValueError(f"The following identifiers were not unique: {duplicated}")
 
         queries = [
-            {**ident_dct, **interval}  # type: ignore [arg-type]
+            {**ident_dct, "aggregates": aggregates, **interval}  # type: ignore [arg-type]
             for ident_dct, interval in itertools.product(identifiers.as_dicts(), intervals)
         ]
 
