@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.0.0] - 19-04-23
+### Removed
+- Support for legacy auth (apikeys, serviceaccounts, login.status)
+
 ## [5.12.0] - 18-04-23
 ### Changed
 - Enforce that types are explicitly exported in order to make very strict type checkers happy.
@@ -28,7 +32,7 @@ Changes are grouped as follows
 ### Improved
 - The listed parameters above have silently accepted non-list input, i.e. single `int` (for `ids`) or single `str` (for `external_ids`). Function signatures and docstrings have now been updated to reflect this "hidden functionality".
 
-## [5.11.0] - 17-11-23
+## [5.11.0] - 17-04-23
 ### Added
 - The `DatapointsAPI` now supports time zones with the addition of a new method, `retrieve_dataframe_in_tz`. It does not support individual customization of query parameters (for good reasons, e.g. a DataFrame has a single index).
 - Asking for datapoints in a specific time zone, e.g. `America/New_York` or `Europe/London` is now easily accomplished: the user can just pass in their `datetimes` localized to their time zone directly.
