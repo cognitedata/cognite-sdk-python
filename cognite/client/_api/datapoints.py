@@ -1011,13 +1011,14 @@ class DatapointsAPI(APIClient):
     ) -> pd.DataFrame:
         """Get datapoints directly in a pandas dataframe in the same time zone as start and end.
 
-        **Note** This is a convenience method. It builds on top of the methods retrieve_arrays and retrieve_dataframe.
-        It enables you to get correct aggregates in your local time zone with daily, weekly, monthly, quarterly, and yearly
-        aggregates with automatic handling for daylight saving time (DST) transitions. If your time zone observes DST,
-        and your query crosses at least one DST-boundary, granularities like "3 days" or "1 week", that used to represent
-        fixed durations, no longer do so. To understand why, let's illustrate with an example: A typical time zone
-        that observes DST will skip one hour ahead during spring, leading to a day that is only 23 hours long, and oppositely
-        in the fall, turning back the clock one hour, yielding a 25-hour long day.
+        Note:
+            This is a convenience method. It builds on top of the methods ``retrieve_arrays`` and ``retrieve_dataframe``.
+            It enables you to get correct aggregates in your local time zone with daily, weekly, monthly, quarterly, and yearly
+            aggregates with automatic handling for daylight saving time (DST) transitions. If your time zone observes DST,
+            and your query crosses at least one DST-boundary, granularities like "3 days" or "1 week", that used to represent
+            fixed durations, no longer do so. To understand why, let's illustrate with an example: A typical time zone
+            that observes DST will skip one hour ahead during spring, leading to a day that is only 23 hours long, and oppositely
+            in the fall, turning back the clock one hour, yielding a 25-hour long day.
 
         In short, this method works as follows:
             1. Get the time zone from start and end (must be equal).
@@ -1026,7 +1027,7 @@ class DatapointsAPI(APIClient):
             4. Stack the resulting arrays into a single column in the resulting DataFrame.
 
         Warning:
-            The queries to retrieve_arrays are translated to a multiple of hours. This means that time zones that
+            The queries to ``retrieve_arrays`` are translated to a multiple of hours. This means that time zones that
             are not a whole hour offset from UTC are not supported (yet). The same is true for time zones that observe
             DST with an offset from standard time that is not a multiple of 1 hour.
 
@@ -1036,7 +1037,7 @@ class DatapointsAPI(APIClient):
             start (datetime): Inclusive start, must be time zone aware.
             end (datetime): Exclusive end, must be time zone aware and have the same time zone as start.
             aggregates (str | list[str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
-            granularity (str): The granularity to fetch aggregates at supported second, minute, hour, day, week, month, quarter and year. Default: None.
+            granularity (str): The granularity to fetch aggregates at, supported are: second, minute, hour, day, week, month, quarter and year. Default: None.
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
             uniform_index (bool): If querying aggregates, specifying `uniform_index=True` will return a dataframe with an
                 index with constant spacing between timestamps decided by granularity all the way from `start` to `end` (missing values will be NaNs). Default: False
@@ -1076,14 +1077,14 @@ class DatapointsAPI(APIClient):
                 ...     aggregates=["sum", "continuous_variance"],
                 ...     granularity="1quarter",
                 ...     start=datetime(2020, 1, 1, tzinfo=ZoneInfo("Europe/Oslo")),
-                ...     end=datetime(2022, 12, 31, tzinfo=ZoneInfo("Europe/Oslo")),
-                ...     )
+                ...     end=datetime(2022, 12, 31, tzinfo=ZoneInfo("Europe/Oslo")))
 
-            Note you can also use shorter granuraities such as second(s), minute(s), hour(s), which does not requeire
-            you to account for DST. In addition, you have all the longer granulaities which are adjusted for DST
-            day(s), week(s), month(s), quarter(s) and year(s). All the granularities support a one letter version
-            s, m, h, d, w, q, and y, except for month, which is to avoid confusion with minutes. Furthermore,
-            the granularity is expeced to be given as a lower case.
+        Tip:
+            You can also use shorter granularities such as second(s), minute(s), hour(s), which do not require
+            any special handling of DST. The longer granularities at your disposal, which are adjusted for DST, are:
+            day(s), week(s), month(s), quarter(s) and year(s). All the granularities support a one-letter version
+            ``s``, ``m``, ``h``, ``d``, ``w``, ``q``, and ``y``, except for month, to avoid confusion with minutes.
+            Furthermore, the granularity is expected to be given as a lowercase.
         """
         _, pd = local_import("numpy", "pandas")  # Verify that deps are available or raise CogniteImportError
 
