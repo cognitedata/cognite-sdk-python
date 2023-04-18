@@ -10,12 +10,14 @@ import re
 import time
 from contextlib import nullcontext as does_not_raise
 from datetime import datetime
+from typing import Literal
 from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
 import pytest
 
+from cognite.client import CogniteClient
 from cognite.client.data_classes import (
     Datapoints,
     DatapointsArray,
@@ -23,6 +25,7 @@ from cognite.client.data_classes import (
     DatapointsList,
     LatestDatapointQuery,
     TimeSeries,
+    TimeSeriesList,
 )
 from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
@@ -36,6 +39,7 @@ from cognite.client.utils._time import (
     timestamp_to_ms,
 )
 from tests.utils import (
+    cdf_aggregate,
     random_aggregates,
     random_cognite_external_ids,
     random_cognite_ids,
@@ -44,6 +48,12 @@ from tests.utils import (
     rng_context,
     set_max_workers,
 )
+
+try:
+    from zoneinfo import ZoneInfo
+except ImportError:
+    from backports.zoneinfo import ZoneInfo
+
 
 DATAPOINTS_API = "cognite.client._api.datapoints.{}"
 WEEK_MS = UNIT_IN_MS["w"]
@@ -58,30 +68,32 @@ YEAR_MS = {
 }
 DPS_TYPES = (Datapoints, DatapointsArray)
 DPS_LST_TYPES = (DatapointsList, DatapointsArrayList)
+TEST_PREFIX = "PYSDK integration test"
 
 
 @pytest.fixture(scope="session")
-def all_test_time_series(cognite_client):
-    prefix = "PYSDK integration test"
+def all_test_time_series(cognite_client) -> TimeSeriesList:
     return cognite_client.time_series.retrieve_multiple(
         external_ids=[
-            f"{prefix} 001: outside points, numeric",
-            f"{prefix} 002: outside points, string",
-            *[f"{prefix} {i:03d}: weekly values, 1950-2000, numeric" for i in range(3, 54)],
-            *[f"{prefix} {i:03d}: weekly values, 1950-2000, string" for i in range(54, 104)],
-            f"{prefix} 104: daily values, 1965-1975, numeric",
-            f"{prefix} 105: hourly values, 1969-10-01 - 1970-03-01, numeric",
-            f"{prefix} 106: every minute, 1969-12-31 - 1970-01-02, numeric",
-            f"{prefix} 107: every second, 1969-12-31 23:30:00 - 1970-01-01 00:30:00, numeric",
-            f"{prefix} 108: every millisecond, 1969-12-31 23:59:58.500 - 1970-01-01 00:00:01.500, numeric",
-            f"{prefix} 109: daily values, is_step=True, 1965-1975, numeric",
-            f"{prefix} 110: hourly values, is_step=True, 1969-10-01 - 1970-03-01, numeric",
-            f"{prefix} 111: every minute, is_step=True, 1969-12-31 - 1970-01-02, numeric",
-            f"{prefix} 112: every second, is_step=True, 1969-12-31 23:30:00 - 1970-01-01 00:30:00, numeric",
-            f"{prefix} 113: every millisecond, is_step=True, 1969-12-31 23:59:58.500 - 1970-01-01 00:00:01.500, numeric",
-            f"{prefix} 114: 1mill dps, random distribution, 1950-2020, numeric",
-            f"{prefix} 115: 1mill dps, random distribution, 1950-2020, string",
-            f"{prefix} 116: 5mill dps, 2k dps (.1s res) burst per day, 2000-01-01 12:00:00 - 2013-09-08 12:03:19.900, numeric",
+            f"{TEST_PREFIX} 001: outside points, numeric",
+            f"{TEST_PREFIX} 002: outside points, string",
+            *[f"{TEST_PREFIX} {i:03d}: weekly values, 1950-2000, numeric" for i in range(3, 54)],
+            *[f"{TEST_PREFIX} {i:03d}: weekly values, 1950-2000, string" for i in range(54, 104)],
+            f"{TEST_PREFIX} 104: daily values, 1965-1975, numeric",
+            f"{TEST_PREFIX} 105: hourly values, 1969-10-01 - 1970-03-01, numeric",
+            f"{TEST_PREFIX} 106: every minute, 1969-12-31 - 1970-01-02, numeric",
+            f"{TEST_PREFIX} 107: every second, 1969-12-31 23:30:00 - 1970-01-01 00:30:00, numeric",
+            f"{TEST_PREFIX} 108: every millisecond, 1969-12-31 23:59:58.500 - 1970-01-01 00:00:01.500, numeric",
+            f"{TEST_PREFIX} 109: daily values, is_step=True, 1965-1975, numeric",
+            f"{TEST_PREFIX} 110: hourly values, is_step=True, 1969-10-01 - 1970-03-01, numeric",
+            f"{TEST_PREFIX} 111: every minute, is_step=True, 1969-12-31 - 1970-01-02, numeric",
+            f"{TEST_PREFIX} 112: every second, is_step=True, 1969-12-31 23:30:00 - 1970-01-01 00:30:00, numeric",
+            f"{TEST_PREFIX} 113: every millisecond, is_step=True, 1969-12-31 23:59:58.500 - 1970-01-01 00:00:01.500, numeric",
+            f"{TEST_PREFIX} 114: 1mill dps, random distribution, 1950-2020, numeric",
+            f"{TEST_PREFIX} 115: 1mill dps, random distribution, 1950-2020, string",
+            f"{TEST_PREFIX} 116: 5mill dps, 2k dps (.1s res) burst per day, 2000-01-01 12:00:00 - 2013-09-08 12:03:19.900, numeric",
+            f"{TEST_PREFIX} 119: hourly normally distributed (0,1) data, 2020-2024 numeric",
+            f"{TEST_PREFIX} 120: minute normally distributed (0,1) data, 2023-01-01 00:00:00 - 2023-12-31 23:59:59, numeric",
         ]
     )
 
@@ -109,6 +121,16 @@ def one_mill_dps_ts(all_test_time_series):
 @pytest.fixture
 def ms_bursty_ts(all_test_time_series):
     return all_test_time_series[115]
+
+
+@pytest.fixture(scope="session")
+def hourly_normal_dist(all_test_time_series) -> TimeSeries:
+    return all_test_time_series[116]
+
+
+@pytest.fixture(scope="session")
+def minutely_normal_dist(all_test_time_series) -> TimeSeries:
+    return all_test_time_series[117]
 
 
 @pytest.fixture(scope="session")
@@ -166,6 +188,15 @@ def validate_raw_datapoints(ts, dps, check_offset=True, check_delta=True):
         assert np.all(np.diff(values) == delta)
 
     return index, values
+
+
+def get_test_series(test_series_no: str, available_test_series: TimeSeriesList) -> TimeSeries:
+    time_series = next(
+        (t for t in available_test_series if t.external_id.startswith(f"{TEST_PREFIX} {test_series_no}")), None
+    )
+    if time_series is None:
+        raise ValueError(f"Invalid test data, test case {test_series_no} does not exists")
+    return time_series
 
 
 PARAMETRIZED_VALUES_OUTSIDE_POINTS = [
@@ -990,6 +1021,361 @@ class TestRetrieveAggregateDatapointsAPI:
             assert len(res_lst.get(id=ts_string.id)) == 2
             assert len(res_lst.get(external_id=ts_numeric.external_id)) == 3
             assert len(res_lst.get(external_id=ts_string.external_id)) == 2
+
+
+@pytest.fixture(scope="session")
+def hourly_2023(cognite_client, hourly_normal_dist) -> pd.DataFrame:
+    utc = ZoneInfo("UTC")
+    # Adding a day to ensure we get the entire 2023 when converting to specific time zone later
+    start = datetime(2022, 12, 31, tzinfo=utc)
+    end = datetime(2024, 1, 1, hour=23, minute=59, second=59, tzinfo=utc)
+
+    return cognite_client.time_series.data.retrieve_dataframe(
+        external_id=hourly_normal_dist.external_id, start=start, end=end
+    ).tz_localize(utc)
+
+
+def retrieve_dataframe_in_tz_count_large_granularities_data():
+    # "start, end, granularity, expected_df"
+    oslo = ZoneInfo("Europe/Oslo")
+    start = datetime(2023, 3, 21, tzinfo=oslo)
+    end = datetime(2023, 4, 9, tzinfo=oslo)
+    hours_in_week = 24 * 7
+    index = pd.date_range("2023-03-20", "2023-04-09", freq="7D", tz="Europe/Oslo")
+
+    yield pytest.param(
+        start,
+        end,
+        "1week",
+        pd.DataFrame(
+            data=[hours_in_week - 1, hours_in_week, hours_in_week], index=index, columns=["count"], dtype="Int64"
+        ),
+        id="Weekly with first week DST transition",
+    )
+    start = datetime(2023, 3, 1, tzinfo=oslo)
+    end = datetime(2023, 11, 1, tzinfo=oslo)
+    index = pd.date_range("2023-03-01", "2023-10-31", freq="1D", tz="Europe/Oslo")
+    index = index[index.is_month_start & (index.month % 2 == 1)]
+    yield pytest.param(
+        start,
+        end,
+        "2months",
+        pd.DataFrame(
+            data=[(31 + 30) * 24 - 1, (31 + 30) * 24, (31 + 31) * 24, (31 + 30) * 24 + 1],
+            index=index,
+            columns=["count"],
+            dtype="Int64",
+        ),
+        id="Every other month from March to November 2023",
+    )
+    index = pd.date_range("2023-01-01", "2023-12-31", freq="1D", tz="Europe/Oslo")
+    index = index[index.is_month_start & index.month.isin({1, 7})]
+    yield pytest.param(
+        start,
+        end,
+        "2quarters",
+        pd.DataFrame(
+            data=[(31 + 28 + 31 + 30 + 31 + 30) * 24 - 1, (31 + 31 + 30 + 31 + 30 + 31) * 24 + 1],
+            index=index,
+            columns=["count"],
+            dtype="Int64",
+        ),
+        id="2023 in steps of 2 quarters",
+    )
+    start = datetime(2021, 7, 15, tzinfo=oslo)
+    end = datetime(2021, 7, 16, tzinfo=oslo)
+    yield pytest.param(
+        start,
+        end,
+        "3years",
+        pd.DataFrame(
+            data=[3 * 365 * 24], index=[pd.Timestamp("2021-01-01", tz="Europe/Oslo")], columns=["count"], dtype="Int64"
+        ),
+        id="Aggregate from 2021 to 2023",
+    )
+
+
+def retrieve_dataframe_in_tz_count_small_granularities_data():
+    # "106: every minute, 1969-12-31 - 1970-01-02, numeric",
+    oslo = ZoneInfo("Europe/Oslo")
+    yield pytest.param(
+        "106",
+        datetime(1970, 1, 1, 0, 0, 0, tzinfo=oslo),
+        datetime(1970, 1, 2, 0, 0, 0, tzinfo=oslo),
+        "6hours",
+        pd.DataFrame(
+            [6 * 60] * 4,
+            index=pd.date_range("1970-01-01 00:00:00", "1970-01-01 23:00:00", freq="6H", tz="Europe/Oslo"),
+            columns=["count"],
+            dtype="Int64",
+        ),
+        id="6 hour granularities on minute raw data",
+    )
+    yield pytest.param(
+        "106",
+        datetime(1970, 1, 1, 0, 0, 0, tzinfo=oslo),
+        datetime(1970, 1, 1, 0, 30, 0, tzinfo=oslo),
+        "10minutes",
+        pd.DataFrame(
+            [10] * 3,
+            index=pd.date_range("1970-01-01 00:00:00", "1970-01-01 00:29:00", freq="10T", tz="Europe/Oslo"),
+            columns=["count"],
+            dtype="Int64",
+        ),
+        id="10 minutes granularities on minute raw data",
+    )
+    yield pytest.param(
+        "106",
+        datetime(1970, 1, 1, 0, 0, 0, tzinfo=oslo),
+        datetime(1970, 1, 1, 0, 0, 2, tzinfo=oslo),
+        "1second",
+        pd.DataFrame(
+            [1], index=[pd.Timestamp("1970-01-01 00:00:00", tz="Europe/Oslo")], columns=["count"], dtype="Int64"
+        ),
+        id="1 second granularity on minute raw data",
+    )
+
+
+def retrieve_dataframe_in_tz_uniform_data():
+    oslo = ZoneInfo("Europe/Oslo")
+    yield pytest.param(
+        "119",
+        datetime(2019, 12, 23, tzinfo=oslo),
+        datetime(2020, 1, 14, tzinfo=oslo),
+        "1week",
+        pd.DatetimeIndex(
+            [pd.Timestamp(x) for x in ["2019-12-23", "2019-12-30", "2020-01-06", "2020-01-13"]],
+            tz="Europe/Oslo",
+        ),
+        id="Uniform Weekly",
+    )
+
+    yield pytest.param(
+        "119",
+        datetime(2019, 11, 23, tzinfo=oslo),
+        datetime(2020, 1, 14, tzinfo=oslo),
+        "2quarters",
+        pd.DatetimeIndex([pd.Timestamp(x) for x in ["2019-10-01"]], tz="Europe/Oslo", freq="2QS-OCT"),
+        id="Uniform 2nd Quarter",
+    )
+
+
+class TestRetrieveTimezoneDatapointsAPI:
+    """
+    Integration testing of all the functionality related to retrieving in the correct timezone
+    """
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "test_series_no, start, end, aggregation, granularity",
+        (
+            ("119", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "average", "2h"),
+            ("119", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "average", "3h"),
+            ("119", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "sum", "5h"),
+            ("119", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "count", "5h"),
+            ("120", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:59+00:00", "average", "2m"),
+            ("120", "2023-01-01T00:00:00+00:00", "2023-01-02T00:00:01+00:00", "sum", "30m"),
+            ("120", "2023-01-01T00:00:00+00:00", "2023-01-01T23:59:01+00:00", "average", "15m"),
+            ("120", "2023-01-01T00:00:00+00:00", "2023-01-01T23:59:01+00:00", "average", "1h"),
+            ("120", "2023-01-01T00:00:00+00:00", "2023-01-01T23:59:01+00:00", "count", "38m"),
+        ),
+    )
+    def test_cdf_aggregate_equal_to_cdf(
+        test_series_no: str,
+        start: str,
+        end: str,
+        aggregation: Literal["average", "sum", "count"],
+        granularity: str,
+        cognite_client: CogniteClient,
+        all_test_time_series: TimeSeriesList,
+    ):
+        # Arrange
+        time_series = get_test_series(test_series_no, all_test_time_series)
+        start, end = datetime.fromisoformat(start), datetime.fromisoformat(end)
+        raw_df = cognite_client.time_series.data.retrieve_dataframe(
+            external_id=time_series.external_id, start=start, end=end
+        )
+        expected_aggregate = cognite_client.time_series.data.retrieve_dataframe(
+            start=start,
+            end=end,
+            external_id=time_series.external_id,
+            aggregates=aggregation,
+            granularity=granularity,
+            include_aggregate_name=False,
+            include_granularity_name=False,
+        )
+
+        # Act
+        actual_aggregate = cdf_aggregate(raw_df, aggregation, granularity, time_series.is_step)
+
+        # Assert
+        # Pandas adds the correct frequency to the index, while the SDK does not when uniform is not True.
+        # The last point is not compared as the raw data might be missing information to do the correct aggregate.
+        pd.testing.assert_frame_equal(
+            expected_aggregate.iloc[:-1], actual_aggregate.iloc[:-1], check_freq=False, check_exact=False
+        )
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "aggregation, granularity, tz_name",
+        (
+            ("average", "1d", "Europe/Oslo"),
+            ("average", "5d", "Europe/Oslo"),
+            ("sum", "31d", "Europe/Oslo"),
+        ),
+    )
+    def test_retrieve_dataframe_in_tz_aggregate_raw_hourly(
+        aggregation: Literal["average", "sum"],
+        granularity: str,
+        tz_name: str,
+        cognite_client: CogniteClient,
+        hourly_2023: pd.DataFrame,
+    ):
+        # Arrange
+        tz = ZoneInfo(tz_name)
+        start = datetime(2023, 1, 1, tzinfo=tz)
+        end = datetime(2023, 12, 31, 23, 0, 0, tzinfo=tz)
+        raw_df = hourly_2023.tz_convert(tz_name).loc[str(start) : str(end)].copy()
+        expected_aggregate = cdf_aggregate(raw_df, aggregation, granularity)
+
+        # Act
+        actual_aggregate = cognite_client.time_series.data.retrieve_dataframe_in_tz(
+            external_id=list(raw_df.columns),
+            aggregates=aggregation,
+            granularity=granularity,
+            start=start,
+            end=end,
+            include_aggregate_name=False,
+        )
+
+        # Assert
+        # When doing the aggregation in pandas frequency information is added to the
+        # resulting dataframe which is not included when retrieving from CDF.
+        # The last point is not compared as the raw data might be missing information to do the correct aggregate.
+        pd.testing.assert_frame_equal(expected_aggregate.iloc[:-1], actual_aggregate.iloc[:-1], check_freq=False)
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "start, end, granularity, expected_df", list(retrieve_dataframe_in_tz_count_large_granularities_data())
+    )
+    def test_retrieve_dataframe_in_tz_count_large_granularities(
+        start: datetime, end: datetime, granularity: str, expected_df: pd.DataFrame, cognite_client, hourly_normal_dist
+    ):
+        actual_df = cognite_client.time_series.data.retrieve_dataframe_in_tz(
+            external_id=hourly_normal_dist.external_id,
+            start=start,
+            end=end,
+            aggregates="count",
+            granularity=granularity,
+        )
+        actual_df.columns = ["count"]
+
+        pd.testing.assert_frame_equal(actual_df, expected_df, check_freq=False)
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "time_series_no, start, end, granularity, expected_df",
+        list(retrieve_dataframe_in_tz_count_small_granularities_data()),
+    )
+    def test_retrieve_dataframe_in_tz_count_small_granularities(
+        time_series_no: str,
+        start: datetime,
+        end: datetime,
+        granularity: str,
+        expected_df: pd.DataFrame,
+        cognite_client,
+        all_test_time_series,
+    ):
+        time_series = get_test_series(time_series_no, all_test_time_series)
+        actual_df = cognite_client.time_series.data.retrieve_dataframe_in_tz(
+            external_id=time_series.external_id,
+            start=start,
+            end=end,
+            aggregates="count",
+            granularity=granularity,
+        )
+        actual_df.columns = ["count"]
+
+        pd.testing.assert_frame_equal(actual_df, expected_df, check_freq=False)
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "time_series_no, start, end, granularity, expected_index",
+        list(retrieve_dataframe_in_tz_uniform_data()),
+    )
+    def test_retrieve_dataframe_in_tz_uniform(
+        time_series_no: str,
+        start: datetime,
+        end: datetime,
+        granularity: str,
+        expected_index: pd.DatetimeIndex,
+        cognite_client,
+        all_test_time_series,
+    ):
+        time_series = get_test_series(time_series_no, all_test_time_series)
+        actual_df = cognite_client.time_series.data.retrieve_dataframe_in_tz(
+            external_id=time_series.external_id,
+            start=start,
+            end=end,
+            aggregates="count",
+            granularity=granularity,
+            uniform_index=True,
+        )
+        actual_df.columns = ["count"]
+
+        pd.testing.assert_index_equal(actual_df.index, expected_index)
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "test_series_no, start, end, tz_name",
+        [
+            ("119", "2023-01-01", "2023-02-01", "Europe/Oslo"),
+            ("120", "2023-01-01", "2023-02-01", "Europe/Oslo"),
+        ],
+    )
+    def test_retrieve_dataframe_in_tz_raw_data(
+        test_series_no: str, start: str, end: str, tz_name: str, cognite_client, all_test_time_series
+    ):
+        # Arrange
+        timeseries = get_test_series(test_series_no, all_test_time_series)
+        start, end = pd.Timestamp(start).to_pydatetime(), pd.Timestamp(end).to_pydatetime()
+        tz = ZoneInfo(tz_name)
+        start, end = start.replace(tzinfo=tz), end.replace(tzinfo=tz)
+        expected_df = (
+            cognite_client.time_series.data.retrieve_dataframe(external_id=timeseries.external_id, start=start, end=end)
+            .tz_localize("utc")
+            .tz_convert(tz_name)
+        )
+
+        # Act
+        actual_df = cognite_client.time_series.data.retrieve_dataframe_in_tz(
+            external_id=timeseries.external_id, start=start, end=end
+        )
+
+        # Assert
+        pd.testing.assert_frame_equal(actual_df, expected_df)
+
+    @staticmethod
+    def test_retrieve_dataframe_in_tz_multiple_timeseries(cognite_client, hourly_normal_dist, minutely_normal_dist):
+        oslo = ZoneInfo("Europe/Oslo")
+        start, end = datetime(2023, 1, 2, tzinfo=oslo), datetime(2023, 1, 2, 23, 59, 59, tzinfo=oslo)
+        expected_df = pd.DataFrame(
+            [[24, 24 * 60]],
+            index=[pd.Timestamp("2023-01-02", tz="Europe/Oslo")],
+            columns=[hourly_normal_dist.external_id, minutely_normal_dist.external_id],
+            dtype="Int64",
+        )
+
+        actual_df = cognite_client.time_series.data.retrieve_dataframe_in_tz(
+            external_id=[hourly_normal_dist.external_id, minutely_normal_dist.external_id],
+            start=start,
+            end=end,
+            aggregates="count",
+            granularity="1day",
+            include_aggregate_name=False,
+        )
+
+        pd.testing.assert_frame_equal(actual_df[sorted(actual_df)], expected_df[sorted(expected_df)])
 
 
 class TestRetrieveMixedRawAndAgg:

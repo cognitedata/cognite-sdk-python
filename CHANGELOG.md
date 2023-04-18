@@ -17,6 +17,36 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [5.11.1] - 17-04-23
+### Fixed
+- List (and `__call__`) methods for assets, events, files, labels, relationships, sequences and time series now raise if given bad input for `data_set_ids`, `data_set_external_ids`, `asset_subtree_ids` and `asset_subtree_external_ids` instead of ignoring/returning everything.
+
+### Improved
+- The listed parameters above have silently accepted non-list input, i.e. single `int` (for `ids`) or single `str` (for `external_ids`). Function signatures and docstrings have now been updated to reflect this "hidden functionality".
+
+## [5.11.0] - 17-11-23
+### Added
+- The `DatapointsAPI` now supports time zones with the addition of a new method, `retrieve_dataframe_in_tz`. It does not support individual customization of query parameters (for good reasons, e.g. a DataFrame has a single index).
+- Asking for datapoints in a specific time zone, e.g. `America/New_York` or `Europe/London` is now easily accomplished: the user can just pass in their `datetimes` localized to their time zone directly.
+- Queries for aggregate datapoints are also supported, with the key feature being automatic handling of daylight savings time (DST) transitions, as this is not supported by the official API. Example usage: A user living in Oslo, Norway, wants daily averages in their local time. In Oslo, the standard time is UTC+1, with UTC+2 during the summer. This means during spring, there is a 23-hour long day when clocks roll 1 hour forward and a 25-hour day during fall.
+- New granularities with a longer time span have been added (only to this new method, for now): 'week', 'month', 'quarter' and 'year'. These do not all represent a fixed frequency, but like the example above, neither does for example 'day' when we use time zones without a fixed UTC offset.
+
+## [5.10.5] - 13-04-23
+### Fixed
+- Subclasses of `VisionResource` inheriting `.dump` and `to_pandas` now work as expected for attributes storing lists of subclass instances like `Polygon`, `PolyLine`, `ObjectDetection` or `VisionExtractPredictions` directly or indirectly.
+
+## [5.10.4] - 13-04-23
+### Fixed
+- A lot of nullable integer attributes ended up as float after calling `.to_pandas`. These are now correctly converted to `dtype=Int64`.
+
+## [5.10.3] - 13-04-23
+### Fixed
+- When passing `CogniteResource` classes (like `Asset` or `Event`) to `update`, any labels were skipped in the update (passing `AssetUpdate` works). This has been fixed for all Cognite resource classes.
+
+## [5.10.2] - 12-04-23
+### Fixed
+- Fixed a bug that would cause `AssetsAPI.create_hierarchy` to not respect `upsert=False`.
+
 ## [5.10.1] - 04-04-23
 ### Fixed
 - Add missing field `when` (human readable version of the CRON expression) to `FunctionSchedule` class.

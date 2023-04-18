@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING, Any, Collection, Dict, Generic, List, Optional
 from cognite.client import utils
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.utils._identifier import IdentifierSequence
-from cognite.client.utils._pandas_helpers import notebook_display_with_fallback
-from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case, to_snake_case
+from cognite.client.utils._pandas_helpers import convert_nullable_int_cols, notebook_display_with_fallback
+from cognite.client.utils._text import convert_all_keys_to_camel_case, to_snake_case
 from cognite.client.utils._time import convert_time_attributes_to_datetime
 
 if TYPE_CHECKING:
@@ -257,13 +257,7 @@ class CogniteResourceList(UserList):
         """
         pd = cast(Any, utils._auxiliary.local_import("pandas"))
         df = pd.DataFrame(self.dump(camel_case=camel_case))
-        nullable_int_cols = ["start_time", "end_time", "asset_id", "parent_id", "data_set_id"]
-        if camel_case:
-            nullable_int_cols = list(map(to_camel_case, nullable_int_cols))
-
-        to_convert = df.columns.intersection(nullable_int_cols)
-        df[to_convert] = df[to_convert].astype("Int64")
-        return df
+        return convert_nullable_int_cols(df, camel_case)
 
     def _repr_html_(self) -> str:
         return notebook_display_with_fallback(self)
@@ -350,7 +344,7 @@ class CogniteUpdate:
 
     @classmethod
     def _get_update_properties(cls) -> List[str]:
-        return [key for key in cls.__dict__.keys() if (not key.startswith("_")) and (key not in ["labels", "columns"])]
+        return [key for key in cls.__dict__ if not (key.startswith("_") or key == "columns")]
 
 
 T_CogniteUpdate = TypeVar("T_CogniteUpdate", bound=CogniteUpdate)

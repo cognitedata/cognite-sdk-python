@@ -13,6 +13,7 @@ from cognite.client.data_classes import (
     TimeSeriesUpdate,
 )
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -35,10 +36,10 @@ class TimeSeriesAPI(APIClient):
         is_step: bool = None,
         asset_ids: Sequence[int] = None,
         asset_external_ids: Sequence[str] = None,
-        asset_subtree_ids: Sequence[int] = None,
-        asset_subtree_external_ids: Sequence[str] = None,
-        data_set_ids: Sequence[int] = None,
-        data_set_external_ids: Sequence[str] = None,
+        asset_subtree_ids: Union[int, Sequence[int]] = None,
+        asset_subtree_external_ids: Union[str, Sequence[str]] = None,
+        data_set_ids: Union[int, Sequence[int]] = None,
+        data_set_external_ids: Union[str, Sequence[str]] = None,
         metadata: Dict[str, Any] = None,
         external_id_prefix: str = None,
         created_time: Dict[str, Any] = None,
@@ -58,10 +59,10 @@ class TimeSeriesAPI(APIClient):
             is_step (bool): Whether the time series is a step (piecewise constant) time series.
             asset_ids (Sequence[int], optional): List time series related to these assets.
             asset_external_ids  (Sequence[str], optional): List time series related to these assets.
-            asset_subtree_ids (Sequence[int]): List of asset subtrees ids to filter on.
-            asset_subtree_external_ids (Sequence[str]): List of asset subtrees external ids to filter on.
-            data_set_ids (Sequence[int]): Return only time series in the specified data sets with these ids.
-            data_set_external_ids (Sequence[str]): Return only time series in the specified data sets with these external ids.
+            asset_subtree_ids (Union[int, Sequence[int]]): Asset subtree id or list of asset subtree ids to filter on.
+            asset_subtree_external_ids (Union[str, Sequence[str]]): Asset external id or list of asset subtree external ids to filter on.
+            data_set_ids (Union[int, Sequence[int]]): Return only time series in the specified data set(s) with this id / these ids.
+            data_set_external_ids (Union[str, Sequence[str]]): Return only time series in the specified data set(s) with this external id / these external ids.
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
@@ -70,17 +71,11 @@ class TimeSeriesAPI(APIClient):
             partitions (int): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed.
 
         Yields:
-            Union[TimeSeries, TimeSeriesList]: yields TimeSeries one by one if chunk is not specified, else TimeSeriesList objects.
+            Union[TimeSeries, TimeSeriesList]: yields TimeSeries one by one if chunk_size is not specified, else TimeSeriesList objects.
         """
-        asset_subtree_ids_processed = None
-        if asset_subtree_ids or asset_subtree_external_ids:
-            asset_subtree_ids_processed = IdentifierSequence.load(
-                asset_subtree_ids, asset_subtree_external_ids
-            ).as_dicts()
+        asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
+        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
-        data_set_ids_processed = None
-        if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
         filter = TimeSeriesFilter(
             name=name,
             unit=unit,
@@ -188,10 +183,10 @@ class TimeSeriesAPI(APIClient):
         is_step: bool = None,
         asset_ids: Sequence[int] = None,
         asset_external_ids: Sequence[str] = None,
-        asset_subtree_ids: Sequence[int] = None,
-        asset_subtree_external_ids: Sequence[str] = None,
-        data_set_ids: Sequence[int] = None,
-        data_set_external_ids: Sequence[str] = None,
+        asset_subtree_ids: Union[int, Sequence[int]] = None,
+        asset_subtree_external_ids: Union[str, Sequence[str]] = None,
+        data_set_ids: Union[int, Sequence[int]] = None,
+        data_set_external_ids: Union[str, Sequence[str]] = None,
         metadata: Dict[str, Any] = None,
         external_id_prefix: str = None,
         created_time: Dict[str, Any] = None,
@@ -210,10 +205,10 @@ class TimeSeriesAPI(APIClient):
             is_step (bool): Whether the time series is a step (piecewise constant) time series.
             asset_ids (Sequence[int], optional): List time series related to these assets.
             asset_external_ids (Sequence[str], optional): List time series related to these assets.
-            asset_subtree_ids (Sequence[int]): List of asset subtrees ids to filter on.
-            asset_subtree_external_ids (Sequence[str]): List of asset subtrees external ids to filter on.
-            data_set_ids (Sequence[int]): Return only assets in the specified data sets with these ids.
-            data_set_external_ids (Sequence[str]): Return only assets in the specified data sets with these external ids.
+            asset_subtree_ids (Union[int, Sequence[int]]): Asset subtree id or list of asset subtree ids to filter on.
+            asset_subtree_external_ids (Union[str, Sequence[str]]): Asset external id or list of asset subtree external ids to filter on.
+            data_set_ids (Union[int, Sequence[int]]): Return only time series in the specified data set(s) with this id / these ids.
+            data_set_external_ids (Union[str, Sequence[str]]): Return only time series in the specified data set(s) with this external id / these external ids.
             metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
@@ -247,15 +242,9 @@ class TimeSeriesAPI(APIClient):
                 >>> for ts_list in c.time_series(chunk_size=2500):
                 ...     ts_list # do something with the time_series
         """
-        asset_subtree_ids_processed = None
-        if asset_subtree_ids or asset_subtree_external_ids:
-            asset_subtree_ids_processed = IdentifierSequence.load(
-                asset_subtree_ids, asset_subtree_external_ids
-            ).as_dicts()
+        asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
+        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
-        data_set_ids_processed = None
-        if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
         filter = TimeSeriesFilter(
             name=name,
             unit=unit,

@@ -16,15 +16,29 @@ from cognite.client.data_classes import (
     Geometry,
     GeometryFilter,
 )
-from cognite.client.exceptions import CogniteAssetHierarchyError, CogniteNotFoundError
+from cognite.client.exceptions import CogniteAPIError, CogniteAssetHierarchyError, CogniteNotFoundError
 from cognite.client.utils._text import random_string
 from cognite.client.utils._time import timestamp_to_ms
 from tests.utils import set_max_workers, set_request_limit
 
+TEST_LABEL = "integration test label, dont delete"
+
+
+@pytest.fixture(scope="module")
+def test_label(cognite_client):
+    # Labels does not support retrieve:
+    label = cognite_client.labels.list(external_id_prefix=TEST_LABEL, limit=None).get(external_id=TEST_LABEL)
+    if label is not None:
+        return label
+    # Recreate if someone has deleted it
+    from cognite.client.data_classes import LabelDefinition
+
+    return cognite_client.labels.create(LabelDefinition(external_id=TEST_LABEL, name="integration test label"))
+
 
 @pytest.fixture
-def new_asset(cognite_client):
-    ts = cognite_client.assets.create(Asset(name="any", description="haha", metadata={"a": "b"}))
+def new_asset(cognite_client, test_label):
+    ts = cognite_client.assets.create(Asset(name="any", description="haha", metadata={"a": "b"}, labels=[test_label]))
     yield ts
     cognite_client.assets.delete(id=ts.id)
     assert cognite_client.assets.retrieve(ts.id) is None
@@ -134,6 +148,33 @@ class TestAssetsAPI:
         assert "newname" == res.name
         assert res.metadata == {}
         assert res.description is None
+
+    def test_update_without_assetupdate(self, cognite_client, new_asset, test_label):
+        assert new_asset.metadata == {"a": "b"}
+        # Labels are subclasses of dict, so we can't compare so easily:
+        assert len(new_asset.labels) == 1
+        assert new_asset.labels[0].external_id == test_label.external_id
+
+        new_asset.metadata = {}
+        new_asset.labels = []
+        updated_asset = cognite_client.assets.update(new_asset)
+        # Both should be cleared:
+        assert updated_asset.metadata == {}
+        assert updated_asset.labels is None  # Api does not return empty list when empty :shrug:
+
+    def test_update_without_assetupdate_none_doesnt_replace(self, cognite_client, new_asset, test_label):
+        assert new_asset.metadata == {"a": "b"}
+        # Labels are subclasses of dict, so we can't compare so easily:
+        assert len(new_asset.labels) == 1
+        assert new_asset.labels[0].external_id == test_label.external_id
+
+        new_asset.metadata = None
+        new_asset.labels = None
+        updated_asset = cognite_client.assets.update(new_asset)
+        # Both should be left unchanged:
+        assert updated_asset.metadata == {"a": "b"}
+        assert len(updated_asset.labels) == 1
+        assert updated_asset.labels[0].external_id == test_label.external_id
 
     def test_delete_with_nonexisting(self, cognite_client):
         a = cognite_client.assets.create(Asset(name="any"))
@@ -330,6 +371,21 @@ class TestAssetsAPICreateHierarchy:
                 assert a2.source is None and a1.source == a3.source
                 # Should have been added:
                 assert a3.metadata == {**a2.metadata, **a1.metadata}
+
+    def test_upsert_mode_false_doesnt_patch(self, cognite_client):
+        # SDK 5.10.1 and earlier versions had a bug that could run upsert even when False.
+        assets = create_asset_tower(5)
+        created = cognite_client.assets.create_hierarchy(assets, upsert=False)
+        assert len(assets) == len(created)
+
+        for a in assets:
+            a.name = "a"
+            a.metadata = {"meta": "data"}
+
+        with pytest.raises(CogniteAPIError, match="Latest error: Asset id duplicated") as err:
+            with create_hierarchy_with_cleanup(cognite_client, assets, upsert=False, upsert_mode="patch"):
+                pytest.fail("Expected 409 API error: 'Asset id duplicated'")
+        assert err.value.code == 409
 
     def test_upsert_mode_with_replace(self, cognite_client):
         assets = create_asset_tower(5)

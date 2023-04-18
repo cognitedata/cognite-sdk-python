@@ -7,8 +7,8 @@ attributes that describe which project and service account your API key belongs 
 is a user-defined string intended to give the client a unique identifier. You
 can provide the :code:`client_name` by passing it directly to the :code:`ClientConfig` constructor.
 
-The preferred way to authenticating against the Cognite API is using OpenID Connect (OIDC).
-To enable this, use one of the credential providers such as OAuthClientCredentials:
+The Cognite API uses OpenID Connect (OIDC) to authenticate.
+Use one of the credential providers such as OAuthClientCredentials to authenticate:
 
 .. note::
     The following example sets a global client configuration which will be used if no config is
@@ -61,20 +61,6 @@ You can also make your own credential provider:
       base_url="https://<cluster>.cognitedata.com",
       project="my-project",
       credentials=Token(token_provider)
-    )
-    c = CogniteClient(cnf)
-
-If OIDC has not been enabled for your CDF project, you will want to authenticate using an API key.
-
-.. code:: python
-
-    from cognite.client import CogniteClient, ClientConfig
-    from cognite.client.credentials import APIKey
-    cnf = ClientConfig(
-      client_name="my-special-client",
-      base_url="https://<cluster>.cognitedata.com",
-      project="my-project",
-      credentials=APIKey("very-secret")
     )
     c = CogniteClient(cnf)
 
@@ -311,6 +297,9 @@ Credential Providers
     :members:
     :member-order: bysource
 .. autoclass:: cognite.client.credentials.OAuthDeviceCode
+    :members:
+    :member-order: bysource
+.. autoclass:: cognite.client.credentials.OAuthClientCertificate
     :members:
     :member-order: bysource
 
@@ -674,6 +663,10 @@ Retrieve datapoints as numpy arrays
 Retrieve datapoints in pandas dataframe
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve_dataframe
+
+Retrieve datapoints in time zone in pandas dataframe
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve_dataframe_in_tz
 
 Retrieve latest datapoint
 ^^^^^^^^^^^^^^^^^^^^^^^^^

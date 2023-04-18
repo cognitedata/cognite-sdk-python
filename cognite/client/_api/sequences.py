@@ -20,6 +20,7 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
+from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 
 if TYPE_CHECKING:
     import pandas
@@ -42,10 +43,10 @@ class SequencesAPI(APIClient):
         external_id_prefix: str = None,
         metadata: Dict[str, str] = None,
         asset_ids: SequenceType[int] = None,
-        asset_subtree_ids: SequenceType[int] = None,
-        asset_subtree_external_ids: SequenceType[str] = None,
-        data_set_ids: SequenceType[int] = None,
-        data_set_external_ids: SequenceType[str] = None,
+        asset_subtree_ids: Union[int, SequenceType[int]] = None,
+        asset_subtree_external_ids: Union[str, SequenceType[str]] = None,
+        data_set_ids: Union[int, SequenceType[int]] = None,
+        data_set_external_ids: Union[str, SequenceType[str]] = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         limit: int = None,
@@ -60,26 +61,19 @@ class SequencesAPI(APIClient):
             external_id_prefix (str): Filter out sequences that do not have this string as the start of the externalId
             metadata (Dict[str, Any]): Filter out sequences that do not match these metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
             asset_ids (SequenceType[int]): Filter out sequences that are not linked to any of these assets.
-            asset_subtree_ids (SequenceType[int]): List of asset subtrees ids to filter on.
-            asset_subtree_external_ids (SequenceType[str]): List of asset subtrees external ids to filter on.
-            data_set_ids (SequenceType[int]): Return only events in the specified data sets with these ids.
-            data_set_external_ids (SequenceType[str]): Return only events in the specified data sets with these external ids.
+            asset_subtree_ids (Union[int, SequenceType[int]]): Asset subtree id or list of asset subtree ids to filter on.
+            asset_subtree_external_ids (Union[str, SequenceType[str]]): Asset subtree external id or list of asset subtree external ids to filter on.
+            data_set_ids (Union[int, SequenceType[int]]): Return only sequences in the specified data set(s) with this id / these ids.
+            data_set_external_ids (SequenceType[str]): Return only sequences in the specified data set(s) with this external id / these external ids.
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             limit (int, optional): Max number of sequences to return. Defaults to return all items.
 
         Yields:
-            Union[Sequence, SequenceList]: yields Sequence one by one if chunk is not specified, else SequenceList objects.
+            Union[Sequence, SequenceList]: yields Sequence one by one if chunk_size is not specified, else SequenceList objects.
         """
-        asset_subtree_ids_processed = None
-        if asset_subtree_ids or asset_subtree_external_ids:
-            asset_subtree_ids_processed = IdentifierSequence.load(
-                asset_subtree_ids, asset_subtree_external_ids
-            ).as_dicts()
-
-        data_set_ids_processed = None
-        if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
+        asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
+        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
         filter = SequenceFilter(
             name=name,
@@ -178,10 +172,10 @@ class SequencesAPI(APIClient):
         external_id_prefix: str = None,
         metadata: Dict[str, str] = None,
         asset_ids: SequenceType[int] = None,
-        asset_subtree_ids: SequenceType[int] = None,
-        asset_subtree_external_ids: SequenceType[str] = None,
-        data_set_ids: SequenceType[int] = None,
-        data_set_external_ids: SequenceType[str] = None,
+        asset_subtree_ids: Union[int, SequenceType[int]] = None,
+        asset_subtree_external_ids: Union[str, SequenceType[str]] = None,
+        data_set_ids: Union[int, SequenceType[int]] = None,
+        data_set_external_ids: Union[str, SequenceType[str]] = None,
         created_time: (Union[Dict[str, Any], TimestampRange]) = None,
         last_updated_time: (Union[Dict[str, Any], TimestampRange]) = None,
         limit: Optional[int] = LIST_LIMIT_DEFAULT,
@@ -195,10 +189,10 @@ class SequencesAPI(APIClient):
             external_id_prefix (str): Filter out sequences that do not have this string as the start of the externalId
             metadata (Dict[str, Any]): Filter out sequences that do not match these metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
             asset_ids (SequenceType[int]): Filter out sequences that are not linked to any of these assets.
-            asset_subtree_ids (SequenceType[int]): List of asset subtrees ids to filter on.
-            asset_subtree_external_ids (SequenceType[str]): List of asset subtrees external ids to filter on.
-            data_set_ids (SequenceType[int]): Return only events in the specified data sets with these ids.
-            data_set_external_ids (SequenceType[str]): Return only events in the specified data sets with these external ids.
+            asset_subtree_ids (Union[int, SequenceType[int]]): Asset subtree id or list of asset subtree ids to filter on.
+            asset_subtree_external_ids (Union[str, SequenceType[str]]): Asset subtree external id or list of asset subtree external ids to filter on.
+            data_set_ids (Union[int, SequenceType[int]]): Return only sequences in the specified data set(s) with this id / these ids.
+            data_set_external_ids (SequenceType[str]): Return only sequences in the specified data set(s) with this external id / these external ids.
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             limit (int, optional): Max number of sequences to return. Defaults to 25. Set to -1, float("inf") or None
@@ -229,15 +223,8 @@ class SequencesAPI(APIClient):
                 >>> for seq_list in c.sequences(chunk_size=2500):
                 ...     seq_list # do something with the sequences
         """
-        asset_subtree_ids_processed = None
-        if asset_subtree_ids or asset_subtree_external_ids:
-            asset_subtree_ids_processed = IdentifierSequence.load(
-                asset_subtree_ids, asset_subtree_external_ids
-            ).as_dicts()
-
-        data_set_ids_processed = None
-        if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
+        asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
+        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
         filter = SequenceFilter(
             name=name,
