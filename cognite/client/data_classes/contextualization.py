@@ -19,7 +19,8 @@ from cognite.client.data_classes.annotation_types.images import AssetLink, Objec
 from cognite.client.data_classes.annotation_types.primitives import VisionResource
 from cognite.client.data_classes.annotations import AnnotationList
 from cognite.client.exceptions import CogniteAPIError, CogniteException, ModelFailedException
-from cognite.client.utils._auxiliary import convert_true_match, exactly_one_is_not_none, to_snake_case
+from cognite.client.utils._auxiliary import convert_true_match, exactly_one_is_not_none
+from cognite.client.utils._text import to_snake_case
 
 if TYPE_CHECKING:
     import pandas
@@ -28,6 +29,7 @@ if TYPE_CHECKING:
 
 
 class JobStatus(Enum):
+    _NOT_STARTED: None = None
     QUEUED = "Queued"
     RUNNING = "Running"
     COMPLETED = "Completed"
@@ -41,7 +43,7 @@ class JobStatus(Enum):
 
     def is_not_finished(self) -> bool:
         return self in {
-            None,
+            JobStatus._NOT_STARTED,
             JobStatus.QUEUED,
             JobStatus.RUNNING,
             JobStatus.DISTRIBUTED,

@@ -14,11 +14,8 @@ from cognite.client.data_classes._base import (
     CogniteUpdate,
 )
 from cognite.client.data_classes.shared import TimestampRange
-from cognite.client.utils._auxiliary import (
-    convert_all_keys_to_camel_case,
-    get_current_sdk_version,
-    handle_renamed_argument,
-)
+from cognite.client.utils._auxiliary import get_current_sdk_version, handle_renamed_argument
+from cognite.client.utils._text import convert_all_keys_to_camel_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient

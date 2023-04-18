@@ -3,12 +3,10 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Awaitable, Dict, List, Optional, Union, cast
 
-from cognite.client import utils
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteListUpdate,
     CognitePrimitiveUpdate,
-    CognitePropertyClassUtil,
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,

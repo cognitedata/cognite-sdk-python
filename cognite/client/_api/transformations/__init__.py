@@ -10,12 +10,12 @@ from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Transformation, TransformationJob, TransformationList
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.data_classes.transformations import (
-    NonceCredentials,
     TagsFilter,
     TransformationFilter,
     TransformationPreviewResult,
     TransformationUpdate,
 )
+from cognite.client.data_classes.transformations.common import NonceCredentials
 from cognite.client.utils._identifier import IdentifierSequence
 from typing import TYPE_CHECKING
 from cognite.client._constants import LIST_LIMIT_DEFAULT
@@ -24,6 +24,14 @@ from cognite.client._constants import LIST_LIMIT_DEFAULT
 if TYPE_CHECKING:
     from cognite.client.config import ClientConfig
     from cognite.client import CogniteClient
+
+__all__ = [
+    "TransformationSchemaAPI",
+    "TransformationsAPI",
+    "TransformationSchedulesAPI",
+    "TransformationNotificationsAPI",
+    "TransformationJobsAPI",
+]
 
 
 class TransformationsAPI(APIClient):
