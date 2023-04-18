@@ -50,6 +50,9 @@ test-report.xml
 .tox/
 .python-version
 
+# mypy
+.dmypy.json
+
 # Local development
 scripts/local_client.py
 playground.py

@@ -28,7 +28,6 @@ if TYPE_CHECKING:
 
 
 class JobStatus(Enum):
-    _NOT_STARTED = None
     QUEUED = "Queued"
     RUNNING = "Running"
     COMPLETED = "Completed"
@@ -42,7 +41,7 @@ class JobStatus(Enum):
 
     def is_not_finished(self) -> bool:
         return self in {
-            JobStatus._NOT_STARTED,
+            None,
             JobStatus.QUEUED,
             JobStatus.RUNNING,
             JobStatus.DISTRIBUTED,
