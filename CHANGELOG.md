@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [5.12.0] - 18-04-23
+### Changed
+- Enforce that types are explicitly exported in order to make very strict type checkers happy.
+
 ## [5.11.1] - 17-04-23
 ### Fixed
 - List (and `__call__`) methods for assets, events, files, labels, relationships, sequences and time series now raise if given bad input for `data_set_ids`, `data_set_external_ids`, `asset_subtree_ids` and `asset_subtree_external_ids` instead of ignoring/returning everything.
