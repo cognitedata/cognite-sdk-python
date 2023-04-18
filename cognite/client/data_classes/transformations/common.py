@@ -116,9 +116,7 @@ class TransformationDestination:
     def data_model_instances(
         model_external_id: str = "", space_external_id: str = "", instance_space_external_id: str = ""
     ) -> DataModelInstances:
-        """To be used when the transformation is meant to produce data model instances.
-            Flexible Data Models resource type is on `beta` version currently.
-
+        """
         Args:
             model_external_id (str): external_id of the flexible data model.
             space_external_id (str): space external_id of the flexible data model.
@@ -133,10 +131,8 @@ class TransformationDestination:
         )
 
     @staticmethod
-    def instance_nodes(view: Optional[ViewInfo] = None, instance_space: Optional[str] = None) -> InstanceNodes:
-        """To be used when the transformation is meant to produce node's instances.
-            Flexible Data Models resource type is on `beta` version currently.
-
+    def nodes(view: Optional[ViewInfo] = None, instance_space: Optional[str] = None) -> InstanceNodes:
+        """
         Args:
             view (ViewInfo): information of the view.
             instance_space (str): space id of the instance.
@@ -146,14 +142,12 @@ class TransformationDestination:
         return InstanceNodes(view=view, instance_space=instance_space)
 
     @staticmethod
-    def instance_edges(
+    def edges(
         view: Optional[ViewInfo] = None,
         instance_space: Optional[str] = None,
         edge_type: Optional[EdgeType] = None,
     ) -> InstanceEdges:
-        """To be used when the transformation is meant to produce edge's instances.
-            Flexible Data Models resource type is on `beta` version currently.
-
+        """
         Args:
             view (ViewInfo): information of the view.
             instance_space (str): space id of the instance.
@@ -164,12 +158,10 @@ class TransformationDestination:
         return InstanceEdges(view=view, instance_space=instance_space, edge_type=edge_type)
 
     @staticmethod
-    def instance_data_model(
+    def instances(
         data_model: Optional[DataModelInfo] = None, instance_space: Optional[str] = None
     ) -> InstanceDataModel:
-        """To be used when the transformation is meant to produce dataModel's instances.
-            Flexible Data Models resource type is on `beta` version currently.
-
+        """
         Args:
             dataModel (DataModelInfo): information of the Data Model.
             instance_space (str): space id of the instance.
