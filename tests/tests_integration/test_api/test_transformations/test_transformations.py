@@ -413,9 +413,7 @@ class TestTransformationsAPI:
             ViewInfo("myViewExternalId", "myViewVersion", "test-space"), "test-space"
         )
         partial_update = TransformationUpdate(id=new_transformation.id).destination.set(
-            TransformationDestination.nodes(
-                ViewInfo("myViewExternalId", "myViewVersion2", "test-space"), "test-space"
-            )
+            TransformationDestination.nodes(ViewInfo("myViewExternalId", "myViewVersion2", "test-space"), "test-space")
         )
         updated_transformation = cognite_client.transformations.update(new_transformation)
         assert updated_transformation.destination == TransformationDestination.nodes(
