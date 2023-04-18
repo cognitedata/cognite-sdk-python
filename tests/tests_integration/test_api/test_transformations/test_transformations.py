@@ -170,7 +170,7 @@ class TestTransformationsAPI:
 
     def test_create_instance_nodes_transformation(self, cognite_client):
         prefix = random_string(6, string.ascii_letters)
-        instance_nodes = TransformationDestination.instance_nodes(
+        nodes = TransformationDestination.nodes(
             view=ViewInfo(
                 space="test-space", external_id="testInstanceViewExternalId", version="testInstanceViewVersion"
             ),
@@ -179,7 +179,7 @@ class TestTransformationsAPI:
         transform = Transformation(
             name="any",
             external_id=f"{prefix}-transformation",
-            destination=instance_nodes,
+            destination=nodes,
         )
         ts = cognite_client.transformations.create(transform)
         assert isinstance(ts.destination, InstanceNodes)
@@ -196,7 +196,7 @@ class TestTransformationsAPI:
 
     def test_create_instance_edges_view_transformation(self, cognite_client):
         prefix = random_string(6, string.ascii_letters)
-        instance_edges = TransformationDestination.instance_edges(
+        edges = TransformationDestination.edges(
             view=ViewInfo(
                 external_id="view-testInstanceViewExternalId",
                 version="view-testInstanceViewVersion",
@@ -209,7 +209,7 @@ class TestTransformationsAPI:
         transform = Transformation(
             name="any",
             external_id=f"{prefix}-transformation",
-            destination=instance_edges,
+            destination=edges,
         )
         ts = cognite_client.transformations.create(transform)
         assert ts.destination.type == "edges"
@@ -227,7 +227,7 @@ class TestTransformationsAPI:
 
     def test_create_instance_edges_type_transformation(self, cognite_client):
         prefix = random_string(6, string.ascii_letters)
-        instance_edges = TransformationDestination.instance_edges(
+        edges = TransformationDestination.edges(
             view=None,
             instance_space="test-instance-space",
             edge_type=EdgeType(
@@ -239,7 +239,7 @@ class TestTransformationsAPI:
         transform = Transformation(
             name="any",
             external_id=f"{prefix}-transformation",
-            destination=instance_edges,
+            destination=edges,
         )
         ts = cognite_client.transformations.create(transform)
         assert ts.destination.type == "edges"
@@ -256,7 +256,7 @@ class TestTransformationsAPI:
 
     def test_create_instance_data_model_transformation(self, cognite_client):
         prefix = random_string(6, string.ascii_letters)
-        instance_data_model = TransformationDestination.instance_data_model(
+        instances = TransformationDestination.instances(
             data_model=DataModelInfo(
                 space="authorBook",
                 external_id="author_book",
@@ -270,7 +270,7 @@ class TestTransformationsAPI:
             name="any",
             external_id=f"{prefix}-transformation",
             query="SELECT * FROM my_source_table",
-            destination=instance_data_model,
+            destination=instances,
         )
         ts = cognite_client.transformations.create(transform)
         assert isinstance(ts.destination, InstanceDataModel)
@@ -435,60 +435,60 @@ class TestTransformationsAPI:
         )
 
     def test_update_instance_nodes(self, cognite_client, new_transformation):
-        new_transformation.destination = TransformationDestination.instance_nodes(
+        new_transformation.destination = TransformationDestination.nodes(
             ViewInfo("myViewExternalId", "myViewVersion", "test-space"), "test-space"
         )
         partial_update = TransformationUpdate(id=new_transformation.id).destination.set(
-            TransformationDestination.instance_nodes(
+            TransformationDestination.nodes(
                 ViewInfo("myViewExternalId", "myViewVersion2", "test-space"), "test-space"
             )
         )
         updated_transformation = cognite_client.transformations.update(new_transformation)
-        assert updated_transformation.destination == TransformationDestination.instance_nodes(
+        assert updated_transformation.destination == TransformationDestination.nodes(
             ViewInfo("myViewExternalId", "myViewVersion", "test-space"), "test-space"
         )
         partial_updated = cognite_client.transformations.update(partial_update)
-        assert partial_updated.destination == TransformationDestination.instance_nodes(
+        assert partial_updated.destination == TransformationDestination.nodes(
             ViewInfo("myViewExternalId", "myViewVersion2", "test-space"), "test-space"
         )
 
     def test_update_instance_edges(self, cognite_client, new_transformation):
-        new_transformation.destination = TransformationDestination.instance_edges(
+        new_transformation.destination = TransformationDestination.edges(
             instance_space="test-space", edge_type=EdgeType("edge-space", "myEdge")
         )
         partial_update = TransformationUpdate(id=new_transformation.id).destination.set(
-            TransformationDestination.instance_edges(
+            TransformationDestination.edges(
                 instance_space="test-space",
                 edge_type=EdgeType("edge-space2", "myEdge2"),
             )
         )
         updated_transformation = cognite_client.transformations.update(new_transformation)
-        assert updated_transformation.destination == TransformationDestination.instance_edges(
+        assert updated_transformation.destination == TransformationDestination.edges(
             None, "test-space", EdgeType("edge-space", "myEdge")
         )
         partial_updated = cognite_client.transformations.update(partial_update)
-        assert partial_updated.destination == TransformationDestination.instance_edges(
+        assert partial_updated.destination == TransformationDestination.edges(
             None,
             "test-space",
             EdgeType("edge-space2", "myEdge2"),
         )
 
     def test_update_instance_data_model(self, cognite_client, new_transformation):
-        new_transformation.destination = TransformationDestination.instance_data_model(
+        new_transformation.destination = TransformationDestination.instances(
             DataModelInfo("authorBook", "author_book", "v2", "AuthorBook_relation", None), "test-instanceSpace"
         )
         partial_update = TransformationUpdate(id=new_transformation.id).destination.set(
-            TransformationDestination.instance_data_model(
+            TransformationDestination.instances(
                 DataModelInfo("authorBook", "author_book", "v2", "AuthorBook_relation", "author_book"),
                 "test-instanceSpace",
             )
         )
         updated_transformation = cognite_client.transformations.update(new_transformation)
-        assert updated_transformation.destination == TransformationDestination.instance_data_model(
+        assert updated_transformation.destination == TransformationDestination.instances(
             DataModelInfo("authorBook", "author_book", "v2", "AuthorBook_relation", None), "test-instanceSpace"
         )
         partial_updated = cognite_client.transformations.update(partial_update)
-        assert partial_updated.destination == TransformationDestination.instance_data_model(
+        assert partial_updated.destination == TransformationDestination.instances(
             DataModelInfo("authorBook", "author_book", "v2", "AuthorBook_relation", "author_book"), "test-instanceSpace"
         )
 
