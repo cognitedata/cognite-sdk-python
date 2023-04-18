@@ -121,7 +121,6 @@ class CogniteClientMock(MagicMock):
         self.time_series = MagicMock(spec=TimeSeriesAPI)
         self.time_series.data = MagicMock(spec=DatapointsAPI)
         self.time_series.data.synthetic = MagicMock(spec_set=SyntheticDatapointsAPI)
-        self.datapoints = self.time_series.data  # TODO: In v6, remove and move to time_series.data
 
         self.transformations = MagicMock(spec=TransformationsAPI)
         self.transformations.jobs = MagicMock(spec_set=TransformationJobsAPI)

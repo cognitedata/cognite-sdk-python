@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import warnings
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -14,7 +13,6 @@ from cognite.client.data_classes._base import (
     CogniteUpdate,
 )
 from cognite.client.data_classes.shared import TimestampRange
-from cognite.client.utils._auxiliary import get_current_sdk_version, handle_renamed_argument
 from cognite.client.utils._text import convert_all_keys_to_camel_case
 
 if TYPE_CHECKING:
@@ -219,40 +217,13 @@ class ExtractionPipelineRun(CogniteResource):
         created_time: int = None,
         cognite_client: CogniteClient = None,
         id: int = None,
-        **kwargs: Any,
     ):
-        extpipe_external_id = handle_renamed_argument(
-            new_arg=extpipe_external_id,
-            new_arg_name="extpipe_external_id",
-            old_arg_name="external_id",
-            fn_name=self.__class__.__name__,
-            kw_dct=kwargs,
-            required=False,
-        )
         self.id = id
         self.extpipe_external_id = extpipe_external_id
         self.status = status
         self.message = message
         self.created_time = created_time
         self._cognite_client = cast("CogniteClient", cognite_client)
-
-    @property
-    def external_id(self) -> Optional[str]:
-        if int(get_current_sdk_version().split(".")[0]) >= 6:
-            raise AttributeError(  # ...in case we forget to delete these properties in v6...
-                "'ExtractionPipelineRun' object has no attribute 'external_id'. Did you mean 'extpipe_external_id'?"
-            )
-        warnings.warn(
-            "Accessing the extraction pipeline external ID through attribute `external_id` is deprecated and will "
-            "be removed in major version >= 6. Use `extpipe_external_id` instead.",
-            DeprecationWarning,
-        )
-        return self.extpipe_external_id
-
-    @external_id.setter
-    def external_id(self, value: Optional[str]) -> None:
-        self.external_id  # Trigger warning or AttributeError if necessary
-        self.extpipe_external_id = value
 
     @classmethod
     def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> ExtractionPipelineRun:
