@@ -2104,6 +2104,30 @@ rich = ">=12.0.0"
 urllib3 = ">=1.26.0"
 
 [[package]]
+name = "types-backports"
+version = "0.1.3"
+description = "Typing stubs for backports"
+category = "dev"
+optional = false
+python-versions = "*"
+files = [
+    {file = "types-backports-0.1.3.tar.gz", hash = "sha256:f4b7206c073df88d6200891e3d27506185fd60cda66fb289737b2fa92c0010cf"},
+    {file = "types_backports-0.1.3-py2.py3-none-any.whl", hash = "sha256:dafcd61848081503e738a7768872d1dd6c018401b4d2a1cfb608ea87ec9864b9"},
+]
+
+[[package]]
+name = "types-protobuf"
+version = "4.22.0.2"
+description = "Typing stubs for protobuf"
+category = "dev"
+optional = false
+python-versions = "*"
+files = [
+    {file = "types-protobuf-4.22.0.2.tar.gz", hash = "sha256:031a77403a8952b31869b9ff3883c9a21649dd224ca3673ee4287384e91ea2be"},
+    {file = "types_protobuf-4.22.0.2-py3-none-any.whl", hash = "sha256:51c23400114461ec96aeca718f1dc3e05d6afb4ef6cc0a94f27af760c576a5bf"},
+]
+
+[[package]]
 name = "types-requests"
 version = "2.28.11.17"
 description = "Typing stubs for requests"
@@ -2232,4 +2256,4 @@ sympy = ["sympy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "1482d8de089f75b1628e11ae9c7ceae2c40b795a451d96c1f6900648d2c8a1c3"
+content-hash = "6e9e3f755b9ced3676f3e409c706c35f3b2025823088779f07b2138c60989279"
