@@ -15,9 +15,9 @@ from cognite.client.data_classes.transformations import ContainsAny
 from cognite.client.data_classes.transformations.common import (
     DataModelInfo,
     EdgeType,
-    InstanceDataModel,
-    InstanceEdges,
-    InstanceNodes,
+    Instances,
+    Edges,
+    Nodes,
     NonceCredentials,
     OidcCredentials,
     SequenceRows,
@@ -182,7 +182,7 @@ class TestTransformationsAPI:
             destination=nodes,
         )
         ts = cognite_client.transformations.create(transform)
-        assert isinstance(ts.destination, InstanceNodes)
+        assert isinstance(ts.destination, Nodes)
         assert ts.destination.type == "nodes"
 
         assert isinstance(ts.destination.view, ViewInfo)
@@ -213,7 +213,7 @@ class TestTransformationsAPI:
         )
         ts = cognite_client.transformations.create(transform)
         assert ts.destination.type == "edges"
-        assert isinstance(ts.destination, InstanceEdges)
+        assert isinstance(ts.destination, Edges)
         assert isinstance(ts.destination.view, ViewInfo)
 
         assert ts.destination.view.external_id == "view-testInstanceViewExternalId"
@@ -243,7 +243,7 @@ class TestTransformationsAPI:
         )
         ts = cognite_client.transformations.create(transform)
         assert ts.destination.type == "edges"
-        assert isinstance(ts.destination, InstanceEdges)
+        assert isinstance(ts.destination, Edges)
 
         assert ts.destination.view is None
 
@@ -273,7 +273,7 @@ class TestTransformationsAPI:
             destination=instances,
         )
         ts = cognite_client.transformations.create(transform)
-        assert isinstance(ts.destination, InstanceDataModel)
+        assert isinstance(ts.destination, Instances)
         assert ts.destination.type == "instances"
 
         assert isinstance(ts.destination.data_model, DataModelInfo)
