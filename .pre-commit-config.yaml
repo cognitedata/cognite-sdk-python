@@ -58,14 +58,13 @@ repos:
       args:
           - --py38-plus
           - --keep-runtime-typing  # remove when >=3.10
-
   - hooks:
-      - id: mypy
-        name: mypy
-        entry: poetry run mypy cognite --non-interactive --install-types
-        language: system
-        files: ^.*.(py|pyi)$
-        pass_filenames: false
+    - id: mypy
+      name: mypy
+      entry: dmypy run -- cognite
+      files: ^.*.(py|pyi)$
+      language: system
+      pass_filenames: false
     repo: local
 
   - hooks:

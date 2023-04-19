@@ -20,6 +20,7 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
+from cognite.client.utils._text import convert_all_keys_to_camel_case
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 
 if TYPE_CHECKING:
@@ -307,7 +308,7 @@ class SequencesAPI(APIClient):
         sequence.columns = [
             {
                 k: v
-                for k, v in utils._auxiliary.convert_all_keys_to_camel_case(col).items()
+                for k, v in convert_all_keys_to_camel_case(col).items()
                 if k in ["externalId", "valueType", "metadata", "name", "description"]
             }
             for col in cast(List, sequence.columns)
