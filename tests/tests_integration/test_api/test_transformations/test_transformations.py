@@ -14,9 +14,9 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes.transformations import ContainsAny
 from cognite.client.data_classes.transformations.common import (
     DataModelInfo,
+    Edges,
     EdgeType,
     Instances,
-    Edges,
     Nodes,
     NonceCredentials,
     OidcCredentials,
