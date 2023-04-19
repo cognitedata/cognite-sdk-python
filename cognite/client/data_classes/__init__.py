@@ -42,16 +42,12 @@ from cognite.client.data_classes.files import (
     FileMetadataUpdate,
 )
 from cognite.client.data_classes.iam import (
-    APIKey,
-    APIKeyList,
     ClientCredentials,
     CreatedSession,
     Group,
     GroupList,
     SecurityCategory,
     SecurityCategoryList,
-    ServiceAccount,
-    ServiceAccountList,
     Session,
     SessionList,
 )
@@ -174,7 +170,6 @@ from cognite.client.data_classes.datapoints import (
     LatestDatapointQuery,
 )
 from cognite.client.data_classes.events import EndTimeFilter, Event, EventFilter, EventList, EventUpdate
-from cognite.client.data_classes.login import LoginStatus
 from cognite.client.data_classes.raw import Database, DatabaseList, Row, RowList, Table, TableList
 from cognite.client.data_classes.functions import (
     Function,

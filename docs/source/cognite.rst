@@ -207,9 +207,9 @@ You can set global configuration options like this:
 .. code:: python
 
     from cognite.client import global_config, ClientConfig
-    from cognite.client.credentials import APIKey
+    from cognite.client.credentials import Token
     global_config.default_client_config = ClientConfig(
-        client_name="my-client", project="myproj", credentials=APIKey("verysecret")
+        client_name="my-client", project="myproj", credentials=Token("verysecret")
     )
     global_config.disable_pypi_version_check = True
     global_config.disable_gzip = False
@@ -302,19 +302,6 @@ Credential Providers
 .. autoclass:: cognite.client.credentials.OAuthClientCertificate
     :members:
     :member-order: bysource
-
-Get login status
-^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.login.LoginAPI.status
-
-
-Data classes
-^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.login
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    :inherited-members:
 
 Assets
 ------
@@ -1327,36 +1314,6 @@ Inspect the token currently used by the client
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.iam.TokenAPI.inspect
 
-Service accounts
-^^^^^^^^^^^^^^^^
-List service accounts
-~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.ServiceAccountsAPI.list
-
-Create service accounts
-~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.ServiceAccountsAPI.create
-
-Delete service accounts
-~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.ServiceAccountsAPI.delete
-
-
-API keys
-^^^^^^^^
-List API keys
-~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.APIKeysAPI.list
-
-Create API keys
-~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.APIKeysAPI.create
-
-Delete API keys
-~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.APIKeysAPI.delete
-
-
 Groups
 ^^^^^^
 List groups
@@ -1370,18 +1327,6 @@ Create groups
 Delete groups
 ~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.iam.GroupsAPI.delete
-
-List service accounts in a group
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.GroupsAPI.list_service_accounts
-
-Add service accounts to a group
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.GroupsAPI.add_service_account
-
-Remove service accounts from a group
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.GroupsAPI.remove_service_account
 
 
 Security categories
@@ -1646,10 +1591,6 @@ CogniteNotFoundError
 CogniteDuplicatedError
 ^^^^^^^^^^^^^^^^^^^^^^
 .. autoexception:: cognite.client.exceptions.CogniteDuplicatedError
-
-CogniteAPIKeyError
-^^^^^^^^^^^^^^^^^^
-.. autoexception:: cognite.client.exceptions.CogniteAPIKeyError
 
 CogniteImportError
 ^^^^^^^^^^^^^^^^^^

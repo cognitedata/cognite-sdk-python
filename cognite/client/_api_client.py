@@ -59,7 +59,6 @@ T = TypeVar("T")
 class APIClient:
     _RESOURCE_PATH: str
 
-    # TODO: This following set should be generated from the openapi spec somehow.
     _RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS = {
         rf"^{path}(\?.*)?$"
         for path in (

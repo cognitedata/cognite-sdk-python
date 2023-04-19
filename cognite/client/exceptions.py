@@ -76,7 +76,7 @@ class CogniteAPIError(CogniteMultiException):
             c = CogniteClient()
 
             try:
-                c.login.status()
+                c.iam.token.inspect()
             except CogniteAPIError as e:
                 if e.code == 401:
                     print("You are not authorized")
@@ -210,13 +210,6 @@ class CogniteMissingClientError(CogniteException):
 
 class CogniteAuthError(CogniteException):
     ...
-
-
-class CogniteAPIKeyError(CogniteAuthError):
-    """Cognite API Key Error.
-
-    Raised if the API key is missing or invalid.
-    """
 
 
 class CogniteAssetHierarchyError(CogniteException, AssertionError):

@@ -473,8 +473,6 @@ class TestTransformationsAPI:
             "conflict_mode": "upsert",
             "is_public": True,
             "ignore_null_fields": False,
-            "has_source_api_key": False,
-            "has_destination_api_key": False,
             "has_source_oidc_credentials": True,
             "has_destination_oidc_credentials": True,
             "created_time": None,

@@ -22,27 +22,6 @@ class CredentialProvider(Protocol):
         raise NotImplementedError
 
 
-class APIKey(CredentialProvider):
-    """API key credential provider
-
-    Args:
-        api_key (str): The api key
-
-    Examples:
-        We recommend loading the API key from an environment variable. e.g.
-
-            >>> from cognite.client.credentials import APIKey
-            >>> import os
-            >>> api_key_provider = APIKey(os.environ["MY_SECRET_CDF_API_KEY"])
-    """
-
-    def __init__(self, api_key: str) -> None:
-        self.__api_key = api_key
-
-    def authorization_header(self) -> Tuple[str, str]:
-        return "api-key", self.__api_key
-
-
 class Token(CredentialProvider):
     """Token credential provider
 

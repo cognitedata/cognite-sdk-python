@@ -2,7 +2,12 @@ import string
 
 import pytest
 
-from cognite.client.data_classes import Transformation, TransformationDestination, TransformationNotification
+from cognite.client.data_classes import (
+    OidcCredentials,
+    Transformation,
+    TransformationDestination,
+    TransformationNotification,
+)
 from cognite.client.utils._text import random_string
 
 prefix = random_string(6, string.ascii_letters)
@@ -10,13 +15,26 @@ prefix = random_string(6, string.ascii_letters)
 
 @pytest.fixture
 def new_transformation(cognite_client):
+    creds = cognite_client.config.credentials
     transform = Transformation(
-        external_id=f"newTransformation-{prefix}",
         name="any",
+        external_id=f"{prefix}-transformation",
         destination=TransformationDestination.assets(),
         query="select * from _cdf.assets",
-        source_api_key=cognite_client.config.api_key,
-        destination_api_key=cognite_client.config.api_key,
+        source_oidc_credentials=OidcCredentials(
+            client_id=creds.client_id,
+            client_secret=creds.client_secret,
+            scopes=",".join(creds.scopes),
+            token_uri=creds.token_url,
+            cdf_project_name=cognite_client.config.project,
+        ),
+        destination_oidc_credentials=OidcCredentials(
+            client_id=creds.client_id,
+            client_secret=creds.client_secret,
+            scopes=",".join(creds.scopes),
+            token_uri=creds.token_url,
+            cdf_project_name=cognite_client.config.project,
+        ),
     )
     ts = cognite_client.transformations.create(transform)
 

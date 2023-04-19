@@ -26,7 +26,6 @@ class Function(CogniteResource):
         file_id (int): File id of the code represented by this object.
         function_path (str): Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on posix path format.
         created_time (int): Created time in UNIX.
-        api_key (str): Api key attached to the function.
         secrets (Dict[str, str]): Secrets attached to the function ((key, value) pairs).
         env_vars (Dict[str, str]): User specified environment variables on the function ((key, value) pairs).
         cpu (Number): Number of CPU cores per function. Defaults to 0.25. Allowed values are in the range [0.1, 0.6].
@@ -49,7 +48,6 @@ class Function(CogniteResource):
         file_id: int = None,
         function_path: str = None,
         created_time: int = None,
-        api_key: str = None,
         secrets: Dict = None,
         env_vars: Dict = None,
         cpu: Number = None,
@@ -69,7 +67,6 @@ class Function(CogniteResource):
         self.file_id = file_id
         self.function_path = function_path
         self.created_time = created_time
-        self.api_key = api_key
         self.secrets = secrets
         self.env_vars = env_vars
         self.cpu = cpu

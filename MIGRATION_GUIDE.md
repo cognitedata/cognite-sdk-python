@@ -8,6 +8,14 @@ Changes are grouped as follows:
 - `Changed` for changes that do not fall into any other category
 - `Optional` for new, optional methods/features that you should be aware of - *and could take advantage of*
 
+## From v5 to v6
+
+### Removed
+- Removed support for legacy auth (apikeys, serviceaccounts, client.login.status()). Use OIDC to authenitcate instead and use `client.iam.token.inspect()` instead of `login.status()`.
+- Removed the deprecated `extractionPipeline` argument to `client.extraction_pipelines.create`. Only `extraction_pipeline` is accepted now.
+- Removed the deprecated `client.datapoints` accessor attribute. The datapoints API can only be accessed through `client.time_series.data` now.
+- Removed the deprecated `client.extraction_pipeline_runs` accessor attribute. The extraction pipeline run API can only be accessed through `client.extraction_pipelines.runs` now.
+- Removed the deprecated `external_id` attribute on `ExtractionPipelineRun`. This has been replaced with `extpipe_external_id`.
 
 ## From v4 to v5
 

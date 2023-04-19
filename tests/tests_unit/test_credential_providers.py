@@ -4,14 +4,8 @@ from unittest.mock import Mock, patch
 import pytest
 from oauthlib.oauth2 import InvalidClientIdError
 
-from cognite.client.credentials import APIKey, OAuthClientCertificate, OAuthClientCredentials, Token
+from cognite.client.credentials import OAuthClientCertificate, OAuthClientCredentials, Token
 from cognite.client.exceptions import CogniteAuthError
-
-
-class TestAPIKey:
-    def test_api_key_auth_header(self) -> None:
-        creds = APIKey("abc")
-        assert "api-key", "abc" == creds.authorization_header()
 
 
 class TestToken:

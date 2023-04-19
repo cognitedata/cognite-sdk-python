@@ -14,7 +14,7 @@ from cognite.client._api.functions import (
     _validate_and_parse_requirements,
     validate_function_folder,
 )
-from cognite.client.credentials import APIKey, OAuthClientCredentials, Token
+from cognite.client.credentials import OAuthClientCredentials, Token
 from cognite.client.data_classes import (
     Function,
     FunctionCall,
@@ -68,7 +68,6 @@ EXAMPLE_FUNCTION = {
     "fileId": 1234,
     "functionPath": "handler.py",
     "createdTime": 1585662507939,
-    "apiKey": "***",
     "secrets": {"key1": "***", "key2": "***"},
     "envVars": {"env1": "foo", "env2": "bar"},
     "cpu": 0.25,
@@ -322,11 +321,6 @@ def cognite_client_with_client_credentials_flow(rsps):
 
 
 @pytest.fixture
-def cognite_client_with_api_key():
-    return CogniteClient(ClientConfig(client_name="any", project="dummy", credentials=APIKey("bla")))
-
-
-@pytest.fixture
 def cognite_client_with_token():
     return CogniteClient(ClientConfig(client_name="any", project="dummy", credentials=Token("aabbccddeeffgg")))
 
@@ -535,35 +529,6 @@ class TestFunctionsAPI:
         res = cognite_client.functions.retrieve_multiple(ids=[1], external_ids=["func1"])
         assert isinstance(res, FunctionList)
         assert mock_functions_retrieve_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
-
-    def test_function_call_from_api_key_flow(self, mock_functions_call_responses, cognite_client_with_api_key):
-        res = cognite_client_with_api_key.functions.call(id=FUNCTION_ID)
-        assert isinstance(res, FunctionCall)
-        assert mock_functions_call_responses.calls[1].response.json()["items"][0] == res.dump(camel_case=True)
-
-    def test_function_call_by_external_id_from_api_key_flow(
-        self, mock_functions_call_by_external_id_responses, cognite_client_with_api_key
-    ):
-        res = cognite_client_with_api_key.functions.call(external_id=f"func-no-{FUNCTION_ID}")
-
-        assert isinstance(res, FunctionCall)
-        assert mock_functions_call_by_external_id_responses.calls[2].response.json()["items"][0] == res.dump(
-            camel_case=True
-        )
-
-    def test_function_call_failed_from_api_key_flow(
-        self, mock_functions_call_failed_response, cognite_client_with_api_key
-    ):
-        res = cognite_client_with_api_key.functions.call(id=FUNCTION_ID)
-        assert isinstance(res, FunctionCall)
-        assert mock_functions_call_failed_response.calls[0].response.json() == res.dump(camel_case=True)
-
-    def test_function_call_timeout_from_api_key_flow(
-        self, mock_functions_call_timeout_response, cognite_client_with_api_key
-    ):
-        res = cognite_client_with_api_key.functions.call(id=FUNCTION_ID)
-        assert isinstance(res, FunctionCall)
-        assert mock_functions_call_timeout_response.calls[0].response.json() == res.dump(camel_case=True)
 
     @pytest.mark.usefixtures("mock_sessions_with_client_credentials")
     def test_function_call_from_oidc_client_credentials_flow(

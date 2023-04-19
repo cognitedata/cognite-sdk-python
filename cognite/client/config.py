@@ -52,7 +52,7 @@ class ClientConfig:
         client_name (str): A user-defined name for the client. Used to identify number of unique applications/scripts
             running on top of CDF.
         project (str): CDF Project name.
-        credentials (CredentialProvider): Credentials. e.g. APIKey, Token, ClientCredentials.
+        credentials (CredentialProvider): Credentials. e.g. Token, ClientCredentials.
         api_subversion (str): API subversion
         base_url (str): Base url to send requests to. Defaults to "https://api.cognitedata.com"
         max_workers (int): Max number of workers to spawn when parallelizing data fetching. Defaults to 10.

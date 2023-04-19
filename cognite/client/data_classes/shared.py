@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Union, cast
+from typing import Any, Dict, List, Literal, Union
 
 from cognite.client.data_classes._base import CognitePropertyClassUtil
-from cognite.client.utils._auxiliary import handle_deprecated_camel_case_argument
 from cognite.client.utils._text import convert_all_keys_to_camel_case
 
 
@@ -181,12 +180,7 @@ class GeoLocation(dict):
     properties = CognitePropertyClassUtil.declare_property("properties")
 
     @classmethod
-    def _load(cls, raw_geo_location: Dict[str, Any] = None, **kwargs: Dict[str, Any]) -> GeoLocation:
-        # TODO: Remove support for old argument name in major version 6
-        raw_geo_location = cast(
-            Dict[str, Any],
-            handle_deprecated_camel_case_argument(raw_geo_location, "raw_geoLocation", "_load", kwargs),
-        )
+    def _load(cls, raw_geo_location: Dict[str, Any]) -> GeoLocation:
         return cls(
             type=raw_geo_location.get("type", "Feature"),
             geometry=raw_geo_location["geometry"],
@@ -212,12 +206,7 @@ class GeoLocationFilter(dict):
     shape = CognitePropertyClassUtil.declare_property("shape")
 
     @classmethod
-    def _load(cls, raw_geo_location_filter: Dict[str, Any] = None, **kwargs: Dict[str, Any]) -> GeoLocationFilter:
-        # TODO: Remove support for old argument name in major version 6
-        raw_geo_location_filter = cast(
-            Dict[str, Any],
-            handle_deprecated_camel_case_argument(raw_geo_location_filter, "raw_geoLocation_filter", "_load", kwargs),
-        )
+    def _load(cls, raw_geo_location_filter: Dict[str, Any]) -> GeoLocationFilter:
         return cls(relation=raw_geo_location_filter["relation"], shape=raw_geo_location_filter["shape"])
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
