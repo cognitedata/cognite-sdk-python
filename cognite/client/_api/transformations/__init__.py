@@ -72,7 +72,6 @@ class TransformationsAPI(APIClient):
                 >>>      ),
                 >>>      Transformation(
                 >>>      name="transformation4",
-                >>>      view = ViewInfo(space="TypeSpace", external_id="TypeExtId", version="version"),
                 >>>      destination=TransformationDestination.nodes("InstanceSpace")
                 >>>      ),
                 >>>      Transformation(
