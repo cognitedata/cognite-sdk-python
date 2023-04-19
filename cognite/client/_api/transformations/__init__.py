@@ -68,17 +68,22 @@ class TransformationsAPI(APIClient):
                 >>>      Transformation(
                 >>>      name="transformation3",
                 >>>      view = ViewInfo(space="TypeSpace", external_id="TypeExtId", version="version"),
-                >>>      destination=TransformationDestination.instance_nodes(view, "InstanceSpace")
+                >>>      destination=TransformationDestination.nodes(view, "InstanceSpace")
                 >>>      ),
                 >>>      Transformation(
                 >>>      name="transformation4",
                 >>>      view = ViewInfo(space="TypeSpace", external_id="TypeExtId", version="version"),
-                >>>      destination=TransformationDestination.instance_edges(view, "InstanceSpace")
+                >>>      destination=TransformationDestination.nodes("InstanceSpace")
                 >>>      ),
                 >>>      Transformation(
                 >>>      name="transformation5",
+                >>>      view = ViewInfo(space="TypeSpace", external_id="TypeExtId", version="version"),
+                >>>      destination=TransformationDestination.edges(view, "InstanceSpace")
+                >>>      ),
+                >>>      Transformation(
+                >>>      name="transformation6",
                 >>>      edge_type = EdgeType(space="TypeSpace", external_id="TypeExtId"),
-                >>>      destination=TransformationDestination.instance_edges(edge_type,"InstanceSpace")
+                >>>      destination=TransformationDestination.edges(edge_type,"InstanceSpace")
                 >>>      ),
                 >>> ]
                 >>> res = c.transformations.create(transformations)
