@@ -192,7 +192,6 @@ def clean_old_feature_types(cognite_client):
             feature_type_age_in_milliseconds = time.time() * 1000 - ft.last_updated_time
             one_hour_in_milliseconds = 3600 * 1000
             if feature_type_age_in_milliseconds > one_hour_in_milliseconds:
-                print(f"Deleting old feature type {ft.external_id}")
                 cognite_client.geospatial.delete_feature_types(external_id=ft.external_id, recursive=True)
     except Exception:
         pass

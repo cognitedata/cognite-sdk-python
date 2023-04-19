@@ -8,7 +8,6 @@ import threading
 import warnings
 from collections import Counter, defaultdict
 from functools import lru_cache
-from graphlib import TopologicalSorter
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -26,6 +25,8 @@ from typing import (
     Union,
     cast,
 )
+
+from graphlib import TopologicalSorter
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -747,7 +748,7 @@ class AssetHierarchy:
     def print_to(*args: Any, output_file: Union[Path, TextIO, None]) -> None:
         out = "\n".join(s.rstrip() for s in map(str, args))
         if output_file is None:
-            print(out)
+            print(out)  # noqa: T201
         elif isinstance(output_file, Path):
             with output_file.open("a") as file:
                 print(out, file=file)
