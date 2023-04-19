@@ -137,7 +137,7 @@ class TransformationDestination:
             view (ViewInfo): information of the view.
             instance_space (str): space id of the instance.
         Returns:
-            InstanceNodes: pointing to the target flexible data model.
+            Nodes: pointing to the target flexible data model.
         """
         return Nodes(view=view, instance_space=instance_space)
 
@@ -153,20 +153,18 @@ class TransformationDestination:
             instance_space (str): space id of the instance.
             edge_type (EdgeType): information about the type of the edge
         Returns:
-            InstanceEdges: pointing to the target flexible data model.
+            Edges: pointing to the target flexible data model.
         """
         return Edges(view=view, instance_space=instance_space, edge_type=edge_type)
 
     @staticmethod
-    def instances(
-        data_model: Optional[DataModelInfo] = None, instance_space: Optional[str] = None
-    ) -> Instances:
+    def instances(data_model: Optional[DataModelInfo] = None, instance_space: Optional[str] = None) -> Instances:
         """
         Args:
             dataModel (DataModelInfo): information of the Data Model.
             instance_space (str): space id of the instance.
         Returns:
-            InstanceDataModel: pointing to the target centric data model.
+            Instances: pointing to the target centric data model.
         """
         return Instances(data_model=data_model, instance_space=instance_space)
 
@@ -283,7 +281,7 @@ class Nodes(TransformationDestination):
         self.instance_space = instance_space
 
     @classmethod
-    def _load(cls, resource: Dict[str, Any]) -> InstanceNodes:
+    def _load(cls, resource: Dict[str, Any]) -> Nodes:
         inst = cls(**resource)
         if isinstance(inst.view, dict):
             inst.view = ViewInfo(**convert_all_keys_to_snake_case(inst.view))
@@ -308,7 +306,7 @@ class Edges(TransformationDestination):
         self.edge_type = edge_type
 
     @classmethod
-    def _load(cls, resource: Dict[str, Any]) -> InstanceEdges:
+    def _load(cls, resource: Dict[str, Any]) -> Edges:
         inst = cls(**resource)
         if isinstance(inst.view, dict):
             inst.view = ViewInfo(**convert_all_keys_to_snake_case(inst.view))
@@ -333,7 +331,7 @@ class Instances(TransformationDestination):
         self.instance_space = instance_space
 
     @classmethod
-    def _load(cls, resource: Dict[str, Any]) -> InstanceDataModel:
+    def _load(cls, resource: Dict[str, Any]) -> Instances:
         inst = cls(**resource)
         if isinstance(inst.data_model, dict):
             inst.data_model = DataModelInfo(**convert_all_keys_to_snake_case(inst.data_model))
@@ -408,15 +406,7 @@ class TransformationBlockedInfo:
 
 def _load_destination_dct(
     dct: Dict[str, Any]
-) -> Union[
-    RawTable,
-    DataModel,
-    Nodes,
-    Edges,
-    Instances,
-    SequenceRows,
-    TransformationDestination,
-]:
+) -> Union[RawTable, DataModel, Nodes, Edges, Instances, SequenceRows, TransformationDestination,]:
     """Helper function to load destination from dictionary"""
     snake_dict = convert_all_keys_to_snake_case(dct)
     destination_type = snake_dict.pop("type")
