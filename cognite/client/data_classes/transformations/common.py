@@ -115,7 +115,7 @@ class TransformationDestination:
     @staticmethod
     def data_model_instances(
         model_external_id: str = "", space_external_id: str = "", instance_space_external_id: str = ""
-    ) -> DataModelInstances:
+    ) -> DataModel:
         """
         Args:
             model_external_id (str): external_id of the flexible data model.
@@ -124,14 +124,14 @@ class TransformationDestination:
         Returns:
             TransformationDestination pointing to the target flexible data model.
         """
-        return DataModelInstances(
+        return DataModel(
             model_external_id=model_external_id,
             space_external_id=space_external_id,
             instance_space_external_id=instance_space_external_id,
         )
 
     @staticmethod
-    def nodes(view: Optional[ViewInfo] = None, instance_space: Optional[str] = None) -> InstanceNodes:
+    def nodes(view: Optional[ViewInfo] = None, instance_space: Optional[str] = None) -> Nodes:
         """
         Args:
             view (ViewInfo): information of the view.
@@ -139,14 +139,14 @@ class TransformationDestination:
         Returns:
             InstanceNodes: pointing to the target flexible data model.
         """
-        return InstanceNodes(view=view, instance_space=instance_space)
+        return Nodes(view=view, instance_space=instance_space)
 
     @staticmethod
     def edges(
         view: Optional[ViewInfo] = None,
         instance_space: Optional[str] = None,
         edge_type: Optional[EdgeType] = None,
-    ) -> InstanceEdges:
+    ) -> Edges:
         """
         Args:
             view (ViewInfo): information of the view.
@@ -155,12 +155,12 @@ class TransformationDestination:
         Returns:
             InstanceEdges: pointing to the target flexible data model.
         """
-        return InstanceEdges(view=view, instance_space=instance_space, edge_type=edge_type)
+        return Edges(view=view, instance_space=instance_space, edge_type=edge_type)
 
     @staticmethod
     def instances(
         data_model: Optional[DataModelInfo] = None, instance_space: Optional[str] = None
-    ) -> InstanceDataModel:
+    ) -> Instances:
         """
         Args:
             dataModel (DataModelInfo): information of the Data Model.
@@ -168,7 +168,7 @@ class TransformationDestination:
         Returns:
             InstanceDataModel: pointing to the target centric data model.
         """
-        return InstanceDataModel(data_model=data_model, instance_space=instance_space)
+        return Instances(data_model=data_model, instance_space=instance_space)
 
 
 class RawTable(TransformationDestination):
@@ -190,7 +190,7 @@ class SequenceRows(TransformationDestination):
         return hash((self.type, self.external_id))
 
 
-class DataModelInstances(TransformationDestination):
+class DataModel(TransformationDestination):
     def __init__(
         self, model_external_id: str = None, space_external_id: str = None, instance_space_external_id: str = None
     ):
@@ -267,7 +267,7 @@ class DataModelInfo:
         return basic_obj_dump(self, camel_case)
 
 
-class InstanceNodes(TransformationDestination):
+class Nodes(TransformationDestination):
     def __init__(
         self,
         view: Optional[ViewInfo] = None,
@@ -290,7 +290,7 @@ class InstanceNodes(TransformationDestination):
         return inst
 
 
-class InstanceEdges(TransformationDestination):
+class Edges(TransformationDestination):
     def __init__(
         self,
         view: Optional[ViewInfo] = None,
@@ -317,7 +317,7 @@ class InstanceEdges(TransformationDestination):
         return inst
 
 
-class InstanceDataModel(TransformationDestination):
+class Instances(TransformationDestination):
     def __init__(
         self,
         data_model: Optional[DataModelInfo] = None,
@@ -410,10 +410,10 @@ def _load_destination_dct(
     dct: Dict[str, Any]
 ) -> Union[
     RawTable,
-    DataModelInstances,
-    InstanceNodes,
-    InstanceEdges,
-    InstanceDataModel,
+    DataModel,
+    Nodes,
+    Edges,
+    Instances,
     SequenceRows,
     TransformationDestination,
 ]:
@@ -422,16 +422,16 @@ def _load_destination_dct(
     destination_type = snake_dict.pop("type")
     simple = {
         "raw": RawTable,
-        "data_model_instances": DataModelInstances,
+        "data_model_instances": DataModel,
         "sequence_rows": SequenceRows,
     }
     if destination_type in simple:
         return simple[destination_type](**snake_dict)
 
-    nested: Dict[str, Union[type[InstanceNodes], type[InstanceEdges], type[InstanceDataModel]]] = {
-        "nodes": InstanceNodes,
-        "edges": InstanceEdges,
-        "instances": InstanceDataModel,
+    nested: Dict[str, Union[type[Nodes], type[Edges], type[Instances]]] = {
+        "nodes": Nodes,
+        "edges": Edges,
+        "instances": Instances,
     }
     if destination_type in nested:
         return nested[destination_type]._load(snake_dict)
