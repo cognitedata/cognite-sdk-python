@@ -41,7 +41,7 @@ class TransformationSchemaAPI(APIClient):
         filter = destination.dump(True)
         filter.pop("type")
 
-        if isinstance(destination, DataModelInstances):
+        if isinstance(destination, DataModel):
             filter["externalId"] = filter.pop("modelExternalId")
             filter.pop("instanceSpaceExternalId")
         if conflict_mode:
