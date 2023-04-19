@@ -16,7 +16,7 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.iam import ClientCredentials
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.data_classes.transformations.common import (
-    DataModelInstances,
+    DataModel,
     NonceCredentials,
     OidcCredentials,
     RawTable,
