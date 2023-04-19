@@ -9,7 +9,7 @@ from cognite.client.data_classes import (
     TransformationSchemaColumn,
     TransformationSchemaColumnList,
 )
-from cognite.client.data_classes.transformations.common import DataModelInstances
+from cognite.client.data_classes.transformations.common import DataModel
 
 
 class TransformationSchemaAPI(APIClient):
