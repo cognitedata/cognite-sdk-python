@@ -368,9 +368,9 @@ class TransformationsAPI(APIClient):
 
         return job
 
-    def run_async(
+    async def run_async(
         self, transformation_id: int = None, transformation_external_id: str = None, timeout: Optional[float] = None
-    ) -> Awaitable[TransformationJob]:
+    ) -> TransformationJob:
         """`Run a transformation to completion asynchronously. <https://docs.cognite.com/api/v1/#operation/runTransformation>`_
 
         Args:
@@ -401,7 +401,7 @@ class TransformationsAPI(APIClient):
         job = self.run(
             transformation_id=transformation_id, transformation_external_id=transformation_external_id, wait=False
         )
-        return job.wait_async(timeout=timeout)
+        return await job.wait_async(timeout=timeout)
 
     def cancel(self, transformation_id: int = None, transformation_external_id: str = None) -> None:
         """`Cancel a running transformation. <https://docs.cognite.com/api/v1/#operation/cancelTransformation>`_
