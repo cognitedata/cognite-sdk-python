@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [6.0.1] - 20-04-23
 ### Fixed
-- Fixed a bug that would cause `DatapointsAPI.retrieve_dataframe_in_tz` to raise an `IndexError` if there are empty time series in the response.
+- Fixed a bug that would cause `DatapointsAPI.retrieve_dataframe_in_tz` to raise an `IndexError` if there were only empty time series in the response.
 
 ## [6.0.0] - 19-04-23
 ### Removed
