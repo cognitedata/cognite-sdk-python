@@ -1377,6 +1377,29 @@ class TestRetrieveTimezoneDatapointsAPI:
 
         pd.testing.assert_frame_equal(actual_df[sorted(actual_df)], expected_df[sorted(expected_df)])
 
+    @staticmethod
+    def test_retrieve_dataframe_in_tz_empty_timeseries(cognite_client, hourly_normal_dist, minutely_normal_dist):
+        oslo = ZoneInfo("Europe/Oslo")
+        start, end = datetime(2010, 1, 1, tzinfo=oslo), datetime(2022, 1, 1, tzinfo=oslo)
+        index = pd.date_range("2020-01-01", "2021-12-31", tz="Europe/Oslo", freq="AS")
+        expected_df = pd.DataFrame(
+            [[366 * 24 - 1, pd.NA], [365 * 24, pd.NA]],
+            index=index,
+            columns=[hourly_normal_dist.external_id, minutely_normal_dist.external_id],
+            dtype="Int64",
+        )
+
+        actual_df = cognite_client.time_series.data.retrieve_dataframe_in_tz(
+            external_id=[hourly_normal_dist.external_id, minutely_normal_dist.external_id],
+            start=start,
+            end=end,
+            aggregates="count",
+            granularity="1year",
+            include_aggregate_name=False,
+        )
+
+        pd.testing.assert_frame_equal(actual_df[sorted(actual_df)], expected_df[sorted(expected_df)], check_freq=False)
+
 
 class TestRetrieveMixedRawAndAgg:
     def test_multiple_settings_for_ignore_unknown_ids(
