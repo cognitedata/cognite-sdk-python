@@ -228,9 +228,12 @@ class DatapointsArray(CogniteResource):
     @classmethod
     def create_from_arrays(cls, *arrays: DatapointsArray) -> DatapointsArray:
         sort_by_time = sorted((a for a in arrays if len(a.timestamp) > 0), key=lambda a: a.timestamp[0])
+        if len(sort_by_time) == 0:
+            return arrays[0]
+        elif len(sort_by_time) == 1:
+            return sort_by_time[0]
+
         first = sort_by_time[0]
-        if len(sort_by_time) == 1:
-            return first
 
         arrays_by_attribute = defaultdict(list)
         for array in sort_by_time:
