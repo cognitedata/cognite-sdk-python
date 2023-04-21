@@ -37,7 +37,7 @@ Changes are grouped as follows
 
 ## [6.0.0] - 19-04-23
 ### Removed
-- Removed support for legacy auth (apikeys, serviceaccounts, login.status)
+- Removed support for legacy auth (API keys, service accounts, login.status)
 - Removed the deprecated `extractionPipeline` argument to `client.extraction_pipelines.create`. Only `extraction_pipeline` is accepted now.
 - Removed the deprecated `client.datapoints` accessor attribute. The datapoints API can only be accessed through `client.time_series.data` now.
 - Removed the deprecated `client.extraction_pipeline_runs` accessor attribute. The extraction pipeline run API can only be accessed through `client.extraction_pipelines.runs` now.

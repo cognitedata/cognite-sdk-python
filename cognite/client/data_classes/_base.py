@@ -26,8 +26,8 @@ _T = TypeVar("_T")
 # so we define a getter and setter instead of using (incomprehensible) multiple inheritance:
 def _cognite_client_getter(self: T_CogniteResource | CogniteResourceList) -> CogniteClient:
     with contextlib.suppress(AttributeError):
-        if self.___cognite_client is not None:
-            return self.___cognite_client
+        if self.__cognite_client is not None:
+            return self.__cognite_client
     raise CogniteMissingClientError(self)
 
 
@@ -35,7 +35,7 @@ def _cognite_client_setter(self: T_CogniteResource | CogniteResourceList, value:
     from cognite.client import CogniteClient
 
     if value is None or isinstance(value, CogniteClient):
-        self.___cognite_client = value
+        self.__cognite_client = value
     else:
         raise AttributeError(
             "Can't set the CogniteClient reference to anything else than a CogniteClient instance or None"
@@ -98,7 +98,7 @@ class CogniteResource(CogniteBase):
     instantiated Cognite client in order to implement helper methods, e.g. `Asset.parent()`
     """
 
-    ___cognite_client: Optional[CogniteClient]
+    __cognite_client: Optional[CogniteClient]
     _cognite_client = property(_cognite_client_getter, _cognite_client_setter)
 
     def __init__(self, cognite_client: Optional[CogniteClient] = None) -> None:
@@ -153,7 +153,7 @@ T_CogniteResource = TypeVar("T_CogniteResource", bound=CogniteResource)
 
 class CogniteResourceList(Generic[T_CogniteResource], UserList):
     _RESOURCE: Type[T_CogniteResource]
-    ___cognite_client: Optional[CogniteClient]
+    __cognite_client: Optional[CogniteClient]
 
     _cognite_client = property(_cognite_client_getter, _cognite_client_setter)
 
@@ -208,7 +208,7 @@ class CogniteResourceList(Generic[T_CogniteResource], UserList):
 
     def _get_cognite_client(self) -> Optional[CogniteClient]:
         # Get client reference without raising (when missing)
-        return self.___cognite_client
+        return getattr(self, "__cognite_client")  # avoids name mangling
 
     def __str__(self) -> str:
         item = convert_time_attributes_to_datetime(self.dump())

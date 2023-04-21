@@ -140,7 +140,7 @@ class CreatedSession(CogniteResource):
         self.status = status
         self.nonce = nonce
         self.client_id = client_id
-        self.cognite_client = cognite_client
+        self._cognite_client = cognite_client
 
 
 class Session(CogniteResource):
@@ -171,7 +171,7 @@ class Session(CogniteResource):
         self.creation_time = creation_time
         self.expiration_time = expiration_time
         self.client_id = client_id
-        self.cognite_client = cognite_client
+        self._cognite_client = cognite_client
 
 
 class SessionList(CogniteResourceList):

@@ -130,6 +130,9 @@ class MyResponse(CogniteResponse):
 class TestVerifyAllCogniteSubclasses:
     @pytest.mark.parametrize("subclass", all_subclasses(CogniteResource))
     def test_all_cognite_resource_subclasses(self, subclass):
+        if subclass.__init__ is CogniteResource.__init__:
+            return  # all good, no method override
+
         src, accepts_client = "", False
         if is_dataclass(subclass):
             if hasattr(subclass, "__post_init__"):
@@ -141,7 +144,6 @@ class TestVerifyAllCogniteSubclasses:
             accepts_client = "cognite_client" in signature(subclass.__init__).parameters
 
         # TODO(haakonvt): All classes that do not accept cognite_client should most likely be CogniteResponse
-        print(subclass, "accepts_client:", accepts_client)
         if accepts_client:
             # Make sure all subclasses set cognite_client:
             if "self._cognite_client" not in src:
@@ -169,15 +171,17 @@ class TestCogniteResource:
         assert {"varA": 1} == MyResource(1).dump(camel_case=True)
 
     def test_load(self):
-        assert MyResource(1).dump() == MyResource._load({"varA": 1}).dump()
-        assert MyResource(1, 2).dump() == MyResource._load({"varA": 1, "varB": 2}).dump()
-        assert {"var_a": 1} == MyResource._load({"varA": 1, "varC": 1}).dump()
+        assert MyResource(1).dump() == MyResource._load({"varA": 1}, cognite_client=None).dump()
+        assert MyResource(1, 2).dump() == MyResource._load({"varA": 1, "varB": 2}, cognite_client=None).dump()
+        assert {"var_a": 1} == MyResource._load({"varA": 1, "varC": 1}, cognite_client=None).dump()
 
     def test_load_unknown_attribute(self):
-        assert {"var_a": 1, "var_b": 2} == MyResource._load({"varA": 1, "varB": 2, "varC": 3}).dump()
+        resource = MyResource._load({"varA": 1, "varB": 2, "varC": 3}, cognite_client=None).dump()
+        assert resource == {"var_a": 1, "var_b": 2}
 
     def test_load_object_attr(self):
-        assert {"var_a": 1, "var_b": {"camelCase": 1}} == MyResource._load({"varA": 1, "varB": {"camelCase": 1}}).dump()
+        resource = MyResource._load({"varA": 1, "varB": {"camelCase": 1}}, cognite_client=None).dump()
+        assert resource == {"var_a": 1, "var_b": {"camelCase": 1}}
 
     def test_eq(self, simple_mock_client):
         assert MyResource(1, "s") == MyResource(1, "s")
@@ -272,7 +276,10 @@ class TestCogniteResourceList:
         pd.testing.assert_frame_equal(resource_list.to_pandas(camel_case=False), expected_df)
 
     def test_load(self):
-        resource_list = MyResourceList._load([{"varA": 1, "varB": 2}, {"varA": 2, "varB": 3}, {"varA": 3}])
+        resource_list = MyResourceList._load(
+            [{"varA": 1, "varB": 2}, {"varA": 2, "varB": 3}, {"varA": 3}],
+            cognite_client=None,
+        )
 
         assert {"var_a": 1, "var_b": 2} == resource_list[0].dump()
         assert [{"var_a": 1, "var_b": 2}, {"var_a": 2, "var_b": 3}, {"var_a": 3}] == resource_list.dump()
