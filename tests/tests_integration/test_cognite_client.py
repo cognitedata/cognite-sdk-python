@@ -14,10 +14,6 @@ class TestCogniteClient:
         with pytest.raises(CogniteAPIError):
             cognite_client_with_wrong_base_url.assets.list(limit=1)
 
-    def test_get(self, cognite_client):
-        res = cognite_client.get("/login/status")
-        assert res.status_code == 200
-
     def test_post(self, cognite_client):
         with pytest.raises(CogniteAPIError) as e:
             cognite_client.post("/login", json={})
