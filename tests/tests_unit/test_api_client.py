@@ -1125,7 +1125,6 @@ class TestHelpers:
     @pytest.mark.parametrize(
         "method, path, expected",
         [
-            ("GET", "https://api.cognitedata.com/login/status", True),
             ("GET", "https://greenfield.cognitedata.com/api/v1/projects/blabla/assets", True),
             ("POST", "https://localhost:8000/api/v1/projects/blabla/files/list", True),
             ("PUT", "https://api.cognitedata.com/bla", True),
@@ -1139,7 +1138,6 @@ class TestHelpers:
             ("POST", "https://greenfield.cognitedata.com/api/playground/projects/blabla/relationships/list", True),
             ("PUT", "https://localhost:8000.com/api/v1/projects/blabla/assets", True),
             ("PATCH", "https://localhost:8000.com/api/v1/projects/blabla/patchy", True),
-            ("GET", "https://another-cluster.cognitedata.com/login/status", True),
             ("POST", "https://api.cognitedata.com/api/v1/projects/bla/raw/dbs/mydb/tables/mytable", True),
             ("POST", "https://api.cognitedata.com/api/v1/projects/bla/assets/list", True),
             ("POST", "https://api.cognitedata.com/api/v1/projects/bla/events/byids", True),
@@ -1154,7 +1152,7 @@ class TestHelpers:
         assert expected == api_client_with_token._is_retryable(method, path)
 
     @pytest.mark.parametrize(
-        "method, path", [("POST", "htt://bla/bla"), ("BLOP", "http://localhost:8000/login/status")]
+        "method, path", [("POST", "htt://bla/bla"), ("BLOP", "http://localhost:8000/token/inspect")]
     )
     def test_is_retryable_fail(self, api_client_with_token, method, path):
         with pytest.raises(ValueError, match="is not valid"):
