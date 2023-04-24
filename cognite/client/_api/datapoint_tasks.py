@@ -34,7 +34,7 @@ from typing import (
 from google.protobuf.message import Message
 from sortedcontainers import SortedDict, SortedList
 
-from cognite.client.data_classes.datapoints import NUMPY_IS_AVAILABLE, Datapoints, DatapointsArray
+from cognite.client.data_classes.datapoints import AGGREGATE, NUMPY_IS_AVAILABLE, Datapoints, DatapointsArray
 from cognite.client.utils._auxiliary import import_legacy_protobuf, is_unlimited
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_camel_case, to_snake_case
@@ -119,7 +119,7 @@ class _DatapointsQuery:
     end: Union[int, str, datetime, None] = None
     id: Optional[DatapointsId] = None
     external_id: Optional[DatapointsExternalId] = None
-    aggregates: Union[str, List[str], None] = None
+    aggregates: Union[AGGREGATE, List[AGGREGATE], None] = None
     granularity: Optional[str] = None
     limit: Optional[int] = None
     include_outside_points: bool = False

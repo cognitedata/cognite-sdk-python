@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import operator as op
+import typing
 import warnings
 from collections import defaultdict
 from dataclasses import dataclass
@@ -40,20 +41,36 @@ from cognite.client.utils._text import (
     to_snake_case,
 )
 
-ALL_SORTED_DP_AGGS = sorted(
-    [
-        "average",
-        "continuous_variance",
-        "count",
-        "discrete_variance",
-        "interpolation",
-        "max",
-        "min",
-        "step_interpolation",
-        "sum",
-        "total_variation",
-    ]
-)
+_AGGREGATE_SNAKE = Literal[
+    "average",
+    "continuous_variance",
+    "count",
+    "discrete_variance",
+    "interpolation",
+    "max",
+    "min",
+    "step_interpolation",
+    "sum",
+    "total_variation",
+]
+
+_AGGREGATE_CAMEL = Literal[
+    "average",
+    "continuousVariance",
+    "count",
+    "discreteVariance",
+    "interpolation",
+    "max",
+    "min",
+    "stepInterpolation",
+    "sum",
+    "totalVariation",
+]
+
+AGGREGATE = Literal[_AGGREGATE_SNAKE, _AGGREGATE_CAMEL]
+
+
+ALL_SORTED_DP_AGGS = sorted(typing.get_args(_AGGREGATE_SNAKE))
 
 try:
     import numpy as np

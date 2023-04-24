@@ -47,6 +47,7 @@ from cognite.client._api.datapoint_tasks import (
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.datapoints import (
+    AGGREGATE,
     Datapoints,
     DatapointsArray,
     DatapointsArrayList,
@@ -604,7 +605,7 @@ class DatapointsAPI(APIClient):
         external_id: Union[None, str, Dict[str, Any], Sequence[Union[str, Dict[str, Any]]]] = None,
         start: Union[int, str, datetime, None] = None,
         end: Union[int, str, datetime, None] = None,
-        aggregates: Union[str, List[str], None] = None,
+        aggregates: Union[AGGREGATE, List[AGGREGATE], None] = None,
         granularity: Optional[str] = None,
         limit: Optional[int] = None,
         include_outside_points: bool = False,
@@ -790,7 +791,7 @@ class DatapointsAPI(APIClient):
         external_id: Union[None, str, Dict[str, Any], Sequence[Union[str, Dict[str, Any]]]] = None,
         start: Union[int, str, datetime, None] = None,
         end: Union[int, str, datetime, None] = None,
-        aggregates: Union[str, List[str], None] = None,
+        aggregates: Union[AGGREGATE, List[AGGREGATE], None] = None,
         granularity: Optional[str] = None,
         limit: Optional[int] = None,
         include_outside_points: bool = False,
@@ -886,7 +887,7 @@ class DatapointsAPI(APIClient):
         external_id: Union[None, str, Dict[str, Any], Sequence[Union[str, Dict[str, Any]]]] = None,
         start: Union[int, str, datetime, None] = None,
         end: Union[int, str, datetime, None] = None,
-        aggregates: Union[str, List[str], None] = None,
+        aggregates: Union[AGGREGATE, List[AGGREGATE], None] = None,
         granularity: Optional[str] = None,
         limit: Optional[int] = None,
         include_outside_points: bool = False,
@@ -1001,7 +1002,7 @@ class DatapointsAPI(APIClient):
         external_id: str | Sequence[str] | None = None,
         start: datetime,
         end: datetime,
-        aggregates: Sequence[str] | str | None = None,
+        aggregates: Sequence[AGGREGATE] | AGGREGATE | None = None,
         granularity: Optional[str] = None,
         ignore_unknown_ids: bool = False,
         uniform_index: bool = False,
