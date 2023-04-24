@@ -1037,7 +1037,7 @@ class DatapointsAPI(APIClient):
             external_id (str | Sequence[str] | None): External ID or list of External IDs.
             start (datetime): Inclusive start, must be time zone aware.
             end (datetime): Exclusive end, must be time zone aware and have the same time zone as start.
-            aggregates (str | list[str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
+            aggregates (AGGREGATE | Sequence[AGGREGATE] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str): The granularity to fetch aggregates at, supported are: second, minute, hour, day, week, month, quarter and year. Default: None.
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
             uniform_index (bool): If querying aggregates, specifying `uniform_index=True` will return a dataframe with an
