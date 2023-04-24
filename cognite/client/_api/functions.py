@@ -840,7 +840,7 @@ class FunctionCallsAPI(APIClient):
 
         url = f"/functions/{function_id}/calls/{call_id}/logs"
         res = self._get(url)
-        return FunctionCallLog._load(res.json()["items"], cognite_client=None)
+        return FunctionCallLog._load(res.json()["items"])
 
 
 class FunctionSchedulesAPI(APIClient):
