@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-import contextlib
 import json
 from collections import UserList
+from contextlib import contextmanager, suppress
 from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar, Union, cast, overload
 
-from cognite.client import utils
 from cognite.client.exceptions import CogniteMissingClientError
-from cognite.client.utils._auxiliary import fast_dict_load
+from cognite.client.utils._auxiliary import fast_dict_load, json_dump_default, local_import
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._pandas_helpers import convert_nullable_int_cols, notebook_display_with_fallback
 from cognite.client.utils._text import convert_all_keys_to_camel_case
@@ -25,7 +24,7 @@ _T = TypeVar("_T")
 # We want to reuse these functions as a property for both 'CogniteResource' and 'CogniteResourceList',
 # so we define a getter and setter instead of using (incomprehensible) multiple inheritance:
 def _cognite_client_getter(self: T_CogniteResource | CogniteResourceList) -> CogniteClient:
-    with contextlib.suppress(AttributeError):
+    with suppress(AttributeError):
         if self.__cognite_client is not None:
             return self.__cognite_client
     raise CogniteMissingClientError(self)
@@ -48,7 +47,7 @@ class CogniteBase:
 
     def __str__(self) -> str:
         item = convert_time_attributes_to_datetime(self.dump())
-        return json.dumps(item, default=utils._auxiliary.json_dump_default, indent=4)
+        return json.dumps(item, default=json_dump_default, indent=4)
 
     def __repr__(self) -> str:
         return str(self)
@@ -74,6 +73,195 @@ class CogniteBase:
 T_CogniteBase = TypeVar("T_CogniteBase", bound=CogniteBase)
 
 
+class CogniteBaseList(UserList):
+    _RESOURCE: Type[T_CogniteBase]
+
+    def __str__(self) -> str:
+        item = convert_time_attributes_to_datetime(self.dump())
+        return json.dumps(item, default=json_dump_default, indent=4)
+
+    def __repr__(self) -> str:
+        return str(self)
+
+    def __eq__(self, other: Any) -> bool:
+        return type(self) is type(other) and self.dump() == other.dump()
+
+    @classmethod
+    def _load(cls: Type[T_CogniteBaseList], items: List[Dict[str, Any]]) -> T_CogniteBaseList:
+        raise NotImplementedError
+
+    def __init__(self, items: List[T_CogniteResource]) -> T_CogniteBaseList:
+        self._verify_items(items)
+        super().__init__(items)
+        self._init_lookup()
+
+    def _verify_items(self, items: List[T_CogniteBase]) -> None:
+        for item in items:
+            if not isinstance(item, self._RESOURCE):
+                raise TypeError(
+                    f"All resources for class '{type(self).__name__}' must be of type "
+                    f"'{self._RESOURCE}', not '{type(item)}'."
+                )
+
+    def _init_lookup(self) -> None:
+        self._id_to_item, self._external_id_to_item = {}, {}
+        if not self.data:
+            return
+        if hasattr(self.data[0], "external_id"):
+            self._external_id_to_item = {item.external_id: item for item in self.data if item.external_id is not None}  # type: ignore [attr-defined]
+        if hasattr(self.data[0], "id"):
+            self._id_to_item = {item.id: item for item in self.data if item.id is not None}  # type: ignore [attr-defined]
+
+    def _repr_html_(self) -> str:
+        return notebook_display_with_fallback(self)
+
+    # TODO: We inherit a lot from UserList that we don't actually support...
+    def extend(self, other: List[T_CogniteBase]) -> None:  # type: ignore [override]
+        other_res_list = type(self)(other, cognite_client=None)  # See if we can accept the types
+        if set(self._id_to_item).isdisjoint(other_res_list._id_to_item):
+            super().extend(other)
+            self._external_id_to_item.update(other_res_list._external_id_to_item)
+            self._id_to_item.update(other_res_list._id_to_item)
+        else:
+            raise ValueError("Unable to extend as this would introduce duplicates")
+
+    def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:
+        """Convert the instance into a pandas DataFrame.
+
+        Args:
+            camel_case (bool): Decide if the columns names should be camelCased. Defaults to False.
+
+        Returns:
+            pandas.DataFrame: The dataframe.
+        """
+        pd = cast(Any, local_import("pandas"))
+        df = pd.DataFrame(self.dump(camel_case=camel_case))
+        return convert_nullable_int_cols(df, camel_case)
+
+    def dump(self, camel_case: bool = False) -> List[Dict[str, Any]]:
+        """Dump the instance into a json serializable Python data type.
+
+        Args:
+            camel_case (bool): Use camelCase for attribute names. Defaults to False.
+
+        Returns:
+            List[Dict[str, Any]]: A list of dicts representing the instance.
+        """
+        return [resource.dump(camel_case) for resource in self.data]
+
+    def get(self, id: int = None, external_id: str = None) -> Optional[T_CogniteResource]:
+        """Get an item from this list by id or exernal_id. Specify either, but not both.
+
+        Args:
+            id (int): The id of the item to get.
+            external_id (str): The external_id of the item to get.
+
+        Returns:
+            Optional[CogniteResource]: The requested item
+        """
+        Identifier.of_either(id, external_id)
+        if id:
+            return self._id_to_item.get(id)
+        return self._external_id_to_item.get(external_id)
+
+    def _remove_from_mappings(self, item):
+        self._id_to_item.pop(item.id, None)
+        self._external_id_to_item.pop(item.external_id, None)
+
+    def __contains__(self, item):
+        if not isinstance(item, self._RESOURCE):
+            return False
+        return self.get(id=item.id) is not None or self.get(external_id=item.external_id) is not None
+
+    def __setitem__(self, i, item):
+        if isinstance(i, slice):
+            raise NotImplementedError
+        elif not isinstance(item, self._RESOURCE):
+            raise TypeError(f"item must be of type {self._RESOURCE}, not {type(item)}")
+        self.data[i] = item
+
+    def __delitem__(self, i):
+        to_del = self.data[i]
+        if not isinstance(i, slice):
+            to_del = [to_del]
+        for item in to_del:
+            self._remove_from_mappings(item)
+        del self.data[i]
+
+    def __add__(self, other):
+        raise NotImplementedError
+        # TODO: Implement to override UserList code:
+        # if isinstance(other, UserList):
+        #     return self.__class__(self.data + other.data)
+        # elif isinstance(other, type(self.data)):
+        #     return self.__class__(self.data + other)
+        # return self.__class__(self.data + list(other))
+
+    def __radd__(self, other):
+        raise NotImplementedError
+        # TODO: Implement to override UserList code:
+        # if isinstance(other, UserList):
+        #     return self.__class__(other.data + self.data)
+        # elif isinstance(other, type(self.data)):
+        #     return self.__class__(other + self.data)
+        # return self.__class__(list(other) + self.data)
+
+    def __iadd__(self, other):
+        raise NotImplementedError
+        # TODO: Implement to override UserList code:
+        # if isinstance(other, UserList):
+        #     self.data += other.data
+        # elif isinstance(other, type(self.data)):
+        #     self.data += other
+        # else:
+        #     self.data += list(other)
+        # return self
+
+    def __mul__(self, n):
+        raise NotImplementedError
+
+    __rmul__ = __mul__
+
+    def __imul__(self, n):
+        raise NotImplementedError
+
+    @contextmanager
+    def _verify_and_update_item(self, item):
+        if not isinstance(item, self._RESOURCE):
+            raise TypeError(f"item must be of type {self._RESOURCE}, not {type(item)}")
+        elif item.id in self._id_to_item or item.external_id in self._external_id_to_item:
+            raise ValueError("item id or external id already exists")
+        # Add operation might fail, so we don't update internal mapping before it completes:
+        yield
+        self._id_to_item[item.id] = item
+        self._external_id_to_item[item.external_id] = item
+
+    def append(self, item):
+        with self._verify_and_update_item(item):
+            self.data.append(item)
+
+    def insert(self, i, item):
+        with self._verify_and_update_item(item):
+            self.data.insert(i, item)
+
+    def pop(self, i=-1):
+        item = self.data.pop(i)  # raises if index out of range
+        self._remove_from_mappings(item)
+        return item
+
+    def remove(self, item):
+        self.data.remove(item)  # raises if not in data
+        self._remove_from_mappings(item)
+
+    def clear(self):
+        self.data.clear()
+        self._id_to_item.clear()
+        self._external_id_to_item.clear()
+
+
+T_CogniteBaseList = TypeVar("T_CogniteBaseList", bound=CogniteBaseList)
+
+
 class CogniteResponse(CogniteBase):
     def to_pandas(self) -> pandas.DataFrame:
         raise NotImplementedError
@@ -86,6 +274,19 @@ class CogniteResponse(CogniteBase):
 T_CogniteResponse = TypeVar("T_CogniteResponse", bound=CogniteResponse)
 
 
+class CogniteResponseList(Generic[T_CogniteResponse], CogniteBaseList):
+    _RESOURCE: Type[T_CogniteResponse]
+
+    @classmethod
+    def _load(cls: Type[T_CogniteResponseList], items: List[Dict[str, Any]]) -> T_CogniteResponseList:
+        if isinstance(items, list):
+            return cls(list(map(cls._RESOURCE._load, items)))
+        raise TypeError(f"The items to load must be a list (of dicts), not {type(items)}")
+
+
+T_CogniteResponseList = TypeVar("T_CogniteResponseList", bound=CogniteResponseList)
+
+
 class CogniteFilter(CogniteBase):
     ...
 
@@ -94,8 +295,11 @@ T_CogniteFilter = TypeVar("T_CogniteFilter", bound=CogniteFilter)
 
 
 class CogniteResource(CogniteBase):
-    """A CogniteResource, as opposed to CogniteResponse, is any resource that needs access to an
-    instantiated Cognite client in order to implement helper methods, e.g. `Asset.parent()`
+    """A ``CogniteResource``, as opposed to ``CogniteResponse``, is any resource that needs access to an
+    instantiated ``CogniteClient`` in order to implement helper methods, e.g. ``Asset.parent()``.
+
+    Note:
+        For historic reasons, this is not enforced, but should be a guideline for future additions.
     """
 
     __cognite_client: Optional[CogniteClient]
@@ -127,7 +331,7 @@ class CogniteResource(CogniteBase):
             pandas.DataFrame: The dataframe.
         """
         ignore = [] if ignore is None else ignore
-        pd = cast(Any, utils._auxiliary.local_import("pandas"))
+        pd = cast(Any, local_import("pandas"))
         dumped = self.dump(camel_case=camel_case)
 
         for element in ignore:
@@ -151,34 +355,15 @@ class CogniteResource(CogniteBase):
 T_CogniteResource = TypeVar("T_CogniteResource", bound=CogniteResource)
 
 
-class CogniteResourceList(Generic[T_CogniteResource], UserList):
+class CogniteResourceList(Generic[T_CogniteResource], CogniteBaseList):
     _RESOURCE: Type[T_CogniteResource]
     __cognite_client: Optional[CogniteClient]
 
     _cognite_client = property(_cognite_client_getter, _cognite_client_setter)
 
     def __init__(self, items: List[T_CogniteResource], cognite_client: Optional[CogniteClient] = None):
-        self._verify_items(items)
         super().__init__(items)
-        self._init_lookup()
         self._cognite_client = cognite_client
-
-    def _verify_items(self, items: List[T_CogniteBase]) -> None:
-        for item in items:
-            if not isinstance(item, self._RESOURCE):
-                raise TypeError(
-                    f"All resources for class '{type(self).__name__}' must be of type "
-                    f"'{self._RESOURCE}', not '{type(item)}'."
-                )
-
-    def _init_lookup(self) -> None:
-        self._id_to_item, self._external_id_to_item = {}, {}
-        if not self.data:
-            return
-        if hasattr(self.data[0], "external_id"):
-            self._external_id_to_item = {item.external_id: item for item in self.data if item.external_id is not None}  # type: ignore [attr-defined]
-        if hasattr(self.data[0], "id"):
-            self._id_to_item = {item.id: item for item in self.data if item.id is not None}  # type: ignore [attr-defined]
 
     @classmethod
     def _load(
@@ -210,68 +395,6 @@ class CogniteResourceList(Generic[T_CogniteResource], UserList):
         # Get client reference without raising (when missing)
         return getattr(self, "__cognite_client")  # avoids name mangling
 
-    def __str__(self) -> str:
-        item = convert_time_attributes_to_datetime(self.dump())
-        return json.dumps(item, default=utils._auxiliary.json_dump_default, indent=4)
-
-    def __repr__(self) -> str:
-        return str(self)
-
-    def __eq__(self, other: Any) -> bool:
-        return type(self) is type(other) and self.dump() == other.dump()
-
-    # TODO: We inherit a lot from UserList that we don't actually support...
-    def extend(self, other: List[T_CogniteResource]) -> None:  # type: ignore [override]
-        other_res_list = type(self)(other, cognite_client=None)  # See if we can accept the types
-        if set(self._id_to_item).isdisjoint(other_res_list._id_to_item):
-            super().extend(other)
-            self._external_id_to_item.update(other_res_list._external_id_to_item)
-            self._id_to_item.update(other_res_list._id_to_item)
-        else:
-            raise ValueError("Unable to extend as this would introduce duplicates")
-
-    def dump(self, camel_case: bool = False) -> List[Dict[str, Any]]:
-        """Dump the instance into a json serializable Python data type.
-
-        Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to False.
-
-        Returns:
-            List[Dict[str, Any]]: A list of dicts representing the instance.
-        """
-        return [resource.dump(camel_case) for resource in self.data]
-
-    def get(self, id: int = None, external_id: str = None) -> Optional[T_CogniteResource]:
-        """Get an item from this list by id or exernal_id. Specify either, but not both.
-
-        Args:
-            id (int): The id of the item to get.
-            external_id (str): The external_id of the item to get.
-
-        Returns:
-            Optional[CogniteResource]: The requested item
-        """
-        Identifier.of_either(id, external_id)
-        if id:
-            return self._id_to_item.get(id)
-        return self._external_id_to_item.get(external_id)
-
-    def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:
-        """Convert the instance into a pandas DataFrame.
-
-        Args:
-            camel_case (bool): Decide if the columns names should be camelCased. Defaults to False.
-
-        Returns:
-            pandas.DataFrame: The dataframe.
-        """
-        pd = cast(Any, utils._auxiliary.local_import("pandas"))
-        df = pd.DataFrame(self.dump(camel_case=camel_case))
-        return convert_nullable_int_cols(df, camel_case)
-
-    def _repr_html_(self) -> str:
-        return notebook_display_with_fallback(self)
-
 
 T_CogniteResourceList = TypeVar("T_CogniteResourceList", bound=CogniteResourceList)
 
@@ -286,7 +409,7 @@ class CogniteUpdate:
         return type(self) is type(other) and self.dump() == other.dump()
 
     def __str__(self) -> str:
-        return json.dumps(self.dump(), default=utils._auxiliary.json_dump_default, indent=4)
+        return json.dumps(self.dump(), default=json_dump_default, indent=4)
 
     def __repr__(self) -> str:
         return str(self)

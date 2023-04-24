@@ -2,10 +2,16 @@ from __future__ import annotations
 
 import time
 from numbers import Number
-from typing import TYPE_CHECKING, Dict, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 
 from cognite.client._constants import LIST_LIMIT_DEFAULT
-from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList, CogniteResponse
+from cognite.client.data_classes._base import (
+    CogniteFilter,
+    CogniteResource,
+    CogniteResourceList,
+    CogniteResponse,
+    CogniteResponseList,
+)
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._auxiliary import is_unlimited
 
@@ -353,13 +359,19 @@ class FunctionCallLogEntry(CogniteResponse):
         message (str): Single line from stdout / stderr.
     """
 
-    def __init__(self, timestamp: int = None, message: str = None, cognite_client: CogniteClient = None):
+    def __init__(self, timestamp: int, message: str):
         self.timestamp = timestamp
         self.message = message
-        self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, response: Dict[str, Any]) -> FunctionCallLogEntry:
+        return cls(
+            timestamp=response["timestamp"],
+            message=response["message"],
+        )
 
 
-class FunctionCallLog(CogniteResourceList):
+class FunctionCallLog(CogniteResponseList):
     _RESOURCE = FunctionCallLogEntry
 
 
