@@ -27,6 +27,7 @@ from cognite.client.utils._time import (
     timestamp_to_ms,
     to_fixed_utc_intervals,
     to_pandas_freq,
+    try_to_datetime,
     validate_timezone,
 )
 from tests.utils import cdf_aggregate, tmp_set_envvar
@@ -596,3 +597,40 @@ class TestPandasDateRangeTz:
 
         # Assert
         assert len(index) == expected_length
+
+
+def try_to_datetime_data() -> Iterable[ParameterSet]:
+    try:
+        ZoneInfo = import_zoneinfo()
+        import pandas as pd
+    except (ImportError, CogniteImportError):
+        return []
+
+    yield pytest.param((pd.Timestamp("2022-01-01"),), (datetime(2022, 1, 1),), id="Naive Timestamp to datetime")
+    yield pytest.param(
+        (pd.Timestamp("2023-01-01", tz="Europe/Oslo"),),
+        (datetime(2023, 1, 1, tzinfo=ZoneInfo("Europe/Oslo")),),
+        id="Timestamp with time zone to datetime",
+    )
+
+    yield pytest.param(
+        (pd.Timestamp("2023-01-01", tz="America/New_York"), pd.Timestamp("2023-01-01", tz="Europe/Oslo")),
+        (
+            datetime(2023, 1, 1, tzinfo=ZoneInfo("America/New_York")),
+            datetime(2023, 1, 1, tzinfo=ZoneInfo("Europe/Oslo")),
+        ),
+        id="Multiple Timestamps to datetimes",
+    )
+
+
+class TestTryToDatetime:
+    @staticmethod
+    @pytest.mark.dsl
+    @pytest.mark.parametrize(
+        "values, expected_values",
+        list(try_to_datetime_data()),
+    )
+    def test_try_to_datetime(values: tuple[pandas.Timestamp | datetime, ...], expected_values: tuple[datetime, ...]):
+        actual_values = try_to_datetime(*values)
+
+        assert actual_values == expected_values

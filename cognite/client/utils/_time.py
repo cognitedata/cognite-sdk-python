@@ -617,3 +617,28 @@ def in_timedelta(granularity: str, ceil: bool = True) -> timedelta:
         return timedelta(**arg)
     days = _unit_in_days(unit, ceil)
     return timedelta(days=multiplier * days)
+
+
+def try_to_datetime(*values: datetime | str | None | pandas.Timestamp) -> tuple[datetime | str | None, ...]:
+    """
+    Tries to convert a value to a datetime.
+
+    Args:
+        values: The values to convert.
+
+    Returns:
+        A tuple of converted values.
+    """
+    pd = local_import("pandas")
+    ZoneInfo = import_zoneinfo()
+    converted = []
+    for value in values:
+        if isinstance(value, pd.Timestamp):  # type: ignore [union-attr]
+            convert = value.to_pydatetime()
+            if convert.tzinfo is not None and not isinstance(convert.tzinfo, ZoneInfo):  # type: ignore [arg-type]
+                convert = convert.replace(tzinfo=ZoneInfo(str(convert.tzinfo)))  # type: ignore [operator]
+            converted.append(convert)
+        else:
+            converted.append(value)
+
+    return tuple(converted)

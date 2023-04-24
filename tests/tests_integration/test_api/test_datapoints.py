@@ -4,6 +4,8 @@ Note: If tests related to fetching datapoints are broken, all time series + thei
       credentials to the `CogniteClient` for the Python SDK integration test CDF project:
 >>> python scripts/create_ts_for_integration_tests.py
 """
+from __future__ import annotations
+
 import itertools
 import random
 import re
@@ -1415,6 +1417,22 @@ class TestRetrieveTimezoneDatapointsAPI:
         )
 
         pd.testing.assert_frame_equal(actual_df[sorted(actual_df)], expected_df[sorted(expected_df)], check_freq=False)
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "start, end",
+        [
+            (pd.Timestamp("2023-01-01", tz="Europe/Oslo"), pd.Timestamp("2023-02-01", tz="Europe/Oslo")),
+        ],
+    )
+    def test_retrieve_dataframe_in_tz_datetime_formats(
+        start: pd.Timestamp | str | datetime, end: pd.Timestamp | str | datetime, cognite_client, hourly_normal_dist
+    ):
+        df = cognite_client.time_series.data.retrieve_dataframe_in_tz(
+            external_id=hourly_normal_dist.external_id, start=start, end=end
+        )
+
+        assert not df.empty
 
 
 class TestRetrieveMixedRawAndAgg:

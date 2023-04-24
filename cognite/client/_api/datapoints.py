@@ -75,6 +75,7 @@ from cognite.client.utils._time import (
     timestamp_to_ms,
     to_fixed_utc_intervals,
     to_pandas_freq,
+    try_to_datetime,
     validate_timezone,
 )
 from cognite.client.utils._validation import validate_user_input_dict_with_identifier
@@ -885,8 +886,8 @@ class DatapointsAPI(APIClient):
         *,
         id: Union[None, int, Dict[str, Any], Sequence[Union[int, Dict[str, Any]]]] = None,
         external_id: Union[None, str, Dict[str, Any], Sequence[Union[str, Dict[str, Any]]]] = None,
-        start: Union[int, str, datetime, None] = None,
-        end: Union[int, str, datetime, None] = None,
+        start: Union[int, str, datetime, pd.Timestamp, None] = None,
+        end: Union[int, str, datetime, pd.Timestamp, None] = None,
         aggregates: Union[AGGREGATE, List[AGGREGATE], None] = None,
         granularity: Optional[str] = None,
         limit: Optional[int] = None,
@@ -960,6 +961,8 @@ class DatapointsAPI(APIClient):
         if column_names not in {"id", "external_id"}:
             raise ValueError(f"Given parameter {column_names=} must be one of 'id' or 'external_id'")
 
+        start, end = try_to_datetime(start, end)
+
         query = _DatapointsQuery(
             start=start,
             end=end,
@@ -1000,8 +1003,8 @@ class DatapointsAPI(APIClient):
         *,
         id: int | Sequence[int] | None = None,
         external_id: str | Sequence[str] | None = None,
-        start: datetime,
-        end: datetime,
+        start: datetime | pd.Timestamp,
+        end: datetime | pd.Timestamp,
         aggregates: Sequence[AGGREGATE] | AGGREGATE | None = None,
         granularity: Optional[str] = None,
         ignore_unknown_ids: bool = False,
@@ -1098,7 +1101,8 @@ class DatapointsAPI(APIClient):
                 "Pass both to get aggregates, or neither to get raw data"
             )
 
-        tz = validate_timezone(start, end)
+        start, end = try_to_datetime(start, end)
+        tz = validate_timezone(start, end)  # type: ignore [arg-type]
         if aggregates is None and granularity is None:
             # Raw Data only need to convert the timezone
             return (
@@ -1133,7 +1137,7 @@ class DatapointsAPI(APIClient):
             duplicated = find_duplicates(identifiers.as_primitives())
             raise ValueError(f"The following identifiers were not unique: {duplicated}")
 
-        intervals = to_fixed_utc_intervals(start, end, granularity)
+        intervals = to_fixed_utc_intervals(start, end, granularity)  # type: ignore [arg-type]
 
         queries = [
             {**ident_dct, "aggregates": aggregates, **interval}  # type: ignore [arg-type]
@@ -1154,8 +1158,8 @@ class DatapointsAPI(APIClient):
         )
 
         if uniform_index:
-            freq = to_pandas_freq(granularity, start)
-            start, end = align_large_granularity(start, end, granularity)
+            freq = to_pandas_freq(granularity, start)  # type: ignore [arg-type]
+            start, end = align_large_granularity(start, end, granularity)  # type: ignore [arg-type]
             return df.reindex(pandas_date_range_tz(start, end, freq, inclusive="left"))
 
         return df
