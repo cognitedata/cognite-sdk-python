@@ -1,32 +1,19 @@
 ---
 repos:
-  - repo: https://github.com/PyCQA/autoflake
-    rev: v2.0.0
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
     hooks:
-      - id: autoflake
-        exclude: ^cognite/client/_proto.*$
-        args:
-          - --remove-all-unused-imports
-          - --ignore-init-module-imports
-          - --remove-unused-variables
-          - --in-place
-
-  - hooks:
-      - id: isort
-        exclude: ^cognite/client/(_proto.*|.*__init__.py)
-        args:
-          - --profile
-          - black
-          - --line-length
-          - '120'
-          - -m
-          - '3'
-          - --tc
-          - --skip-glob
-          - ^((?!py$).)*$
-          - --float-to-top
-    repo: https://github.com/timothycrosley/isort
-    rev: 5.12.0
+      -   id: ruff
+          args:
+            - --fix
+            - --exit-non-zero-on-fix
+            - --line-length=120
+            - --ignore=E731,E501,W605
+            # See https://beta.ruff.rs/docs/rules for an overview of ruff rules
+            - --select=E,W,F,I,T,RUF,TID,UP
+            - --fixable=E,W,F,I,T,RUF,TID,UP
+            - --target-version=py38
+            - --exclude=cognite/client/_proto,cognite/client/_proto_legacy
+    rev: v0.0.261
 
   - hooks:
       - id: black
@@ -45,19 +32,8 @@ repos:
     rev: v4.4.0
     hooks:
       - id: debug-statements
-      - id: trailing-whitespace
-      - id: check-builtin-literals
-      - id: end-of-file-fixer
       - id: check-docstring-first
 
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v3.3.1
-    hooks:
-    - id: pyupgrade
-      exclude: ^cognite/client/_proto.*$
-      args:
-          - --py38-plus
-          - --keep-runtime-typing  # remove when >=3.10
   - hooks:
     - id: mypy
       name: mypy
@@ -68,28 +44,9 @@ repos:
     repo: local
 
   - hooks:
-      - id: flake8
-        exclude: ^cognite/client/_proto.*$
-# TODO: add this too
-#            additional_dependencies:
-#              - flake8-builtins
-    repo: https://github.com/pycqa/flake8
-    rev: 6.0.0
-
-  - repo: https://github.com/ikamensh/flynt/
-    rev: '0.77'
-    hooks:
-      - id: flynt
-
-  - hooks:
       - id: version-match-check
         name: version-match-check
         entry: poetry run python scripts/check_version_match.py
         language: system
         pass_filenames: false
     repo: local
-
-  - repo: https://github.com/asottile/yesqa
-    rev: v1.4.0
-    hooks:
-    -   id: yesqa

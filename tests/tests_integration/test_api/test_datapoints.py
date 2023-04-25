@@ -214,7 +214,7 @@ SEED = round(time.time(), -3)
 
 @pytest.fixture(scope="module", autouse=True)
 def make_dps_tests_reproducible():
-    print(
+    print(  # noqa: T201
         f"Random seed used in datapoints integration tests: {SEED}. If any datapoints test failed - and you weren't "
         "the cause, please create a new (Github) issue: https://github.com/cognitedata/cognite-sdk-python/issues"
     )
@@ -366,10 +366,10 @@ class TestRetrieveRawDatapointsAPI:
         "start, end, exp_first_ts, exp_last_ts",
         # fmt: off
         [
-            (631670400000 + 1, 693964800000,     631670400000,           693964800000),  # noqa: E241
-            (631670400000,     693964800000,     631670400000 - WEEK_MS, 693964800000),  # noqa: E241
-            (631670400000,     693964800000 + 1, 631670400000 - WEEK_MS, 693964800000 + WEEK_MS),  # noqa: E241
-            (631670400000 + 1, 693964800000 + 1, 631670400000,           693964800000 + WEEK_MS),  # noqa: E241
+            (631670400000 + 1, 693964800000,     631670400000,           693964800000),
+            (631670400000,     693964800000,     631670400000 - WEEK_MS, 693964800000),
+            (631670400000,     693964800000 + 1, 631670400000 - WEEK_MS, 693964800000 + WEEK_MS),
+            (631670400000 + 1, 693964800000 + 1, 631670400000,           693964800000 + WEEK_MS),
         ],
         # fmt: on
     )
@@ -481,8 +481,8 @@ class TestRetrieveRawDatapointsAPI:
         ts_exists = all_test_time_series[0]
         with set_max_workers(cognite_client, 9), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
             identifier = {
-                "id": [ts_exists.id] + random_cognite_ids(n_ts),
-                "external_id": [ts_exists.external_id] + random_cognite_external_ids(n_ts),
+                "id": [ts_exists.id, *random_cognite_ids(n_ts)],
+                "external_id": [ts_exists.external_id, *random_cognite_external_ids(n_ts)],
             }
             drop_id = random.choice(["id", "external_id", "keep"])
             if drop_id != "keep":
