@@ -46,11 +46,11 @@ class TestListAndIterSignatures:
     )
     def test_list_and_iter_signatures_same_as_filter_signature(self, api, filter, ignore):
         iter_parameters = dict(inspect.signature(api.__call__).parameters)
-        for name in set(ignore + ["chunk_size", "limit"]):
+        for name in set([*ignore, "chunk_size", "limit"]):
             del iter_parameters[name]
 
         list_parameters = dict(inspect.signature(api.list).parameters)
-        for name in ignore + ["limit"]:
+        for name in [*ignore, "limit"]:
             del list_parameters[name]
 
         filter_parameters = dict(inspect.signature(filter.__init__).parameters)

@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from typing import Any, Awaitable, Dict, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 
 from cognite.client._api.transformations.jobs import TransformationJobsAPI
 from cognite.client._api.transformations.notifications import TransformationNotificationsAPI
 from cognite.client._api.transformations.schedules import TransformationSchedulesAPI
 from cognite.client._api.transformations.schema import TransformationSchemaAPI
 from cognite.client._api_client import APIClient
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import Transformation, TransformationJob, TransformationList
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.data_classes.transformations import (
@@ -17,13 +18,10 @@ from cognite.client.data_classes.transformations import (
 )
 from cognite.client.data_classes.transformations.common import NonceCredentials
 from cognite.client.utils._identifier import IdentifierSequence
-from typing import TYPE_CHECKING
-from cognite.client._constants import LIST_LIMIT_DEFAULT
-
 
 if TYPE_CHECKING:
-    from cognite.client.config import ClientConfig
     from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
 
 __all__ = [
     "TransformationSchemaAPI",

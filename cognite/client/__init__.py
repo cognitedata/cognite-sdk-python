@@ -3,8 +3,8 @@ from __future__ import annotations
 import sys
 
 from cognite.client._cognite_client import CogniteClient
-from cognite.client.config import ClientConfig, global_config
 from cognite.client._version import __version__
+from cognite.client.config import ClientConfig, global_config
 
 __all__ = ["ClientConfig", "CogniteClient", "__version__", "global_config"]
 
