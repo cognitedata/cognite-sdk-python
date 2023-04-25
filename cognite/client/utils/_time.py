@@ -518,10 +518,27 @@ def pandas_date_range_tz(start: datetime, end: datetime, freq: str, inclusive: s
     """
     Pandas date_range struggles with time zone aware datetimes.
     This function overcomes that limitation.
+
+    Assumes that start and end have the same timezone.
     """
     pd = local_import("pandas")
-    # Pandas seems to have issues with ZoneInfo object, so removing the timezone and adding it back.
-    return pd.date_range(start.replace(tzinfo=None), end.replace(tzinfo=None), freq=freq, inclusive=inclusive).tz_localize(start.tzinfo.key)  # type: ignore [union-attr]
+    # There is a bug in date_range which makes it fail to handle ambiguous timesstamps when you use time zone aware
+    # datetimes. This is a workaround by passing the time zone as an argument to the function.
+    # In addition, pandas struggle with ZoneInfo objects, so  we convert it to a string, so pandas can use its own
+    # tzdata implementation.
+
+    # Ambiguous times are for example 1916-10-01 00:00:00 Europe/Oslo as this time has two UTC timestamps,
+    # 1916-10-01 00:00:00+02:00 and 1916-10-01 00:00:00+01:00 depending on whether you are before or after the
+    # DST transition. (Back in 1916 they did not consider the needs of software engineers in 2023 :P).
+    # Setting ambiguous=True will make pandas ignore the ambiguity and use the DST timestamp.
+    return pd.date_range(  # type: ignore [union-attr]
+        start.replace(tzinfo=None),
+        end.replace(tzinfo=None),
+        tz=str(start.tzinfo),
+        freq=freq,
+        inclusive=inclusive,
+        ambiguous=True,
+    )
 
 
 def validate_timezone(start: datetime, end: datetime) -> ZoneInfo:
