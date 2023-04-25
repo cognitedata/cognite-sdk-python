@@ -484,15 +484,13 @@ def _to_fixed_utc_intervals_fixed_unit_length(
     utc = get_utc_zoneinfo()
 
     freq = multiplier * GRANULARITY_IN_HOURS[unit]
-    index = pandas_date_range_tz(start, end, f"{freq}H")
-    expected_freq = pd.Timedelta(hours=freq)
-    next_mask = (index - index.to_series().shift(1)) != expected_freq
-    last_mask = (index.to_series().shift(-1) - index) != expected_freq
-    index = index[last_mask | next_mask]
+    index = pandas_date_range_tz(start, end, to_pandas_freq(f"{multiplier}{unit}", start))
+    utc_offsets = index.to_series().apply(lambda t: t.utcoffset())
+    transition_raw = index[(utc_offsets != utc_offsets.shift(-1)) | (utc_offsets != utc_offsets.shift(1))]
 
     hour, zero = pd.Timedelta(hours=1), pd.Timedelta(0)
     transitions = []
-    for start, end in zip(index[:-1], index[1:]):
+    for start, end in zip(transition_raw[:-1], transition_raw[1:]):
         if start.dst() == end.dst():
             dst_adjustment = 0
         elif start.dst() == hour and end.dst() == zero:
