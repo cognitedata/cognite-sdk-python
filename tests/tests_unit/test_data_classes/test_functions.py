@@ -3,17 +3,24 @@ from unittest.mock import MagicMock, call
 
 import pytest
 
+from cognite.client import CogniteClient
 from cognite.client.data_classes import Function, FunctionSchedule
 from tests.utils import jsgz_load
 
 
 @pytest.fixture
-def empty_function():
-    return Function(id=123, cognite_client=MagicMock())
+def mock_client():
+    (mock_client := MagicMock()).__class__ = CogniteClient
+    return mock_client
 
 
 @pytest.fixture
-def function():
+def empty_function(mock_client):
+    return Function(id=123, cognite_client=mock_client)
+
+
+@pytest.fixture
+def function(mock_client):
     return Function(
         id=123,
         name="my-function",
@@ -25,19 +32,19 @@ def function():
         function_path="handler.py",
         created_time="2020-06-19 08:49:37",
         secrets={},
-        cognite_client=MagicMock(),
+        cognite_client=mock_client,
     )
 
 
 @pytest.fixture
-def function_schedules():
+def function_schedules(mock_client):
     schedule_1 = FunctionSchedule(
         name="my-schedule-1",
         function_id=123,
         description="my schedule 1",
         created_time=12345,
         cron_expression="* * * * *",
-        cognite_client=MagicMock(),
+        cognite_client=mock_client,
     )
     schedule_2 = FunctionSchedule(
         name="my-schedule-2",
@@ -45,7 +52,7 @@ def function_schedules():
         description="my schedule 2",
         created_time=12345,
         cron_expression="* * * * *",
-        cognite_client=MagicMock(),
+        cognite_client=mock_client,
     )
     return [schedule_1, schedule_2]
 

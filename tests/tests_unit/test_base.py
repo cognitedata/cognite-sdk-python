@@ -285,7 +285,8 @@ class TestCogniteResourceList:
         assert [{"var_a": 1, "var_b": 2}, {"var_a": 2, "var_b": 3}, {"var_a": 3}] == resource_list.dump()
 
     def test_load_unknown_attribute(self):
-        assert [{"var_a": 1, "var_b": 2}] == MyResourceList._load([{"varA": 1, "varB": 2, "varC": 3}]).dump()
+        expected = MyResourceList._load([{"varA": 1, "varB": 2, "varC": 3}], cognite_client=None).dump()
+        assert expected == [{"var_a": 1, "var_b": 2}]
 
     def test_indexing(self):
         resource_list = MyResourceList([MyResource(1, 2), MyResource(2, 3)])
@@ -371,7 +372,11 @@ class TestCogniteResourceList:
         assert MyResource(id=2, external_id="2") == resource_list.get(external_id="2")
 
     def test_constructor_bad_type(self):
-        with pytest.raises(TypeError, match="must be of type 'MyResource'"):
+        exp_err = (
+            r"^All resources for class 'MyResourceList' must be of type '<class 'tests.tests_unit."
+            "test_base.MyResource'>', not '<class 'int'>'.$"
+        )
+        with pytest.raises(TypeError, match=exp_err):
             MyResourceList([1, 2, 3])
 
     def test_resource_list_client_correct(self):

@@ -38,9 +38,15 @@ def mock_update_status_completed(self):
 
 class TestVisionExtractPredictions:
     def test_visionextractpredictions_in_sync_with_vision_feature_map(self) -> None:
-        """This test ensures that the mapping and VisionExtractPredictions class is 'in sync'"""
+        """This test ensures that the mapping and VisionExtractPredictions classes are 'in sync'"""
+        # Since CogniteClient is just imported when TYPE_CHECKING (in the module defining VisionExtractPredictions),
+        # we import here and use locals() as a workaround (pass to 'get_type_hints'):
+        from cognite.client import CogniteClient  # noqa
+
         mapping_as_set = set(VISION_FEATURE_MAP.items())
-        (annot_dct := get_type_hints(VisionExtractPredictions)).pop("_cognite_client")
+        annot_dct = get_type_hints(VisionExtractPredictions, localns=locals())
+        annot_dct.pop("_CogniteResource__cognite_client")
+
         # Unwrap the first level of type hints, (MUST be an Optional), since Optional[X] == Union[X, None].
         # Unwrap the second level of type hint (i.e., the List[...]):
         annots_as_set = {(k, get_args(get_args(a)[0])[0]) for k, a in annot_dct.items()}
