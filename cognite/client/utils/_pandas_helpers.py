@@ -14,7 +14,7 @@ from cognite.client.utils._text import to_camel_case
 if TYPE_CHECKING:
     import pandas as pd
 
-    from cognite.client.data_classes._base import T_CogniteResource, T_CogniteResourceList
+    from cognite.client.data_classes._base import T_CogniteBaseList, T_CogniteResource
 
 
 NULLABLE_INT_COLS = {
@@ -42,7 +42,7 @@ def pandas_major_version() -> int:
     return int(__version__.split(".")[0])
 
 
-def notebook_display_with_fallback(inst: Union[T_CogniteResource, T_CogniteResourceList], **kwargs: Any) -> str:
+def notebook_display_with_fallback(inst: Union[T_CogniteResource, T_CogniteBaseList], **kwargs: Any) -> str:
     if "camel_case" in signature(inst.to_pandas).parameters:
         # Default of False enforced (when accepted by method):
         kwargs["camel_case"] = False

@@ -56,7 +56,7 @@ def _get_function_internal_id(cognite_client: CogniteClient, identifier: Identif
     if identifier.is_external_id:
         function = cognite_client.functions.retrieve(external_id=primitive)
         if function:
-            return function.id
+            return cast(int, function.id)
 
     raise ValueError(f'Function with external ID "{primitive}" is not found')
 

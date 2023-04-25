@@ -1,9 +1,26 @@
 from __future__ import annotations
 
 import json
+from abc import ABC, abstractmethod
 from collections import UserList
 from contextlib import contextmanager, suppress
-from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar, Union, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Generic,
+    Iterator,
+    List,
+    NoReturn,
+    Optional,
+    Sequence,
+    SupportsIndex,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.utils._auxiliary import fast_dict_load, json_dump_default, local_import
@@ -41,7 +58,8 @@ def _cognite_client_setter(self: T_CogniteResource | CogniteResourceList, value:
         )
 
 
-class CogniteBase:
+class CogniteBase(ABC):
+    @abstractmethod
     def __init__(self) -> None:
         raise NotImplementedError
 
@@ -74,7 +92,7 @@ T_CogniteBase = TypeVar("T_CogniteBase", bound=CogniteBase)
 
 
 class CogniteBaseList(UserList):
-    _RESOURCE: Type[T_CogniteBase]
+    _RESOURCE: Type[T_CogniteBase]  # type: ignore [valid-type]
 
     def __str__(self) -> str:
         item = convert_time_attributes_to_datetime(self.dump())
@@ -90,7 +108,7 @@ class CogniteBaseList(UserList):
     def _load(cls: Type[T_CogniteBaseList], items: List[Dict[str, Any]]) -> T_CogniteBaseList:
         raise NotImplementedError
 
-    def __init__(self, items: List[T_CogniteResource]) -> T_CogniteBaseList:
+    def __init__(self, items: List[T_CogniteBase]) -> None:
         self._verify_items(items)
         super().__init__(items)
         self._init_lookup()
@@ -115,9 +133,8 @@ class CogniteBaseList(UserList):
     def _repr_html_(self) -> str:
         return notebook_display_with_fallback(self)
 
-    # TODO: We inherit a lot from UserList that we don't actually support...
     def extend(self, other: List[T_CogniteBase]) -> None:  # type: ignore [override]
-        other_res_list = type(self)(other, cognite_client=None)  # See if we can accept the types
+        other_res_list = type(self)(other)  # See if we can accept the types
         if set(self._id_to_item).isdisjoint(other_res_list._id_to_item):
             super().extend(other)
             self._external_id_to_item.update(other_res_list._external_id_to_item)
@@ -149,7 +166,7 @@ class CogniteBaseList(UserList):
         """
         return [resource.dump(camel_case) for resource in self.data]
 
-    def get(self, id: int = None, external_id: str = None) -> Optional[T_CogniteResource]:
+    def get(self, id: int = None, external_id: str = None) -> Optional[T_CogniteBase]:
         """Get an item from this list by id or exernal_id. Specify either, but not both.
 
         Args:
@@ -159,28 +176,27 @@ class CogniteBaseList(UserList):
         Returns:
             Optional[CogniteResource]: The requested item
         """
-        Identifier.of_either(id, external_id)
-        if id:
+        if Identifier.of_either(id, external_id).is_id:
             return self._id_to_item.get(id)
         return self._external_id_to_item.get(external_id)
 
-    def _remove_from_mappings(self, item):
-        self._id_to_item.pop(item.id, None)
-        self._external_id_to_item.pop(item.external_id, None)
+    def _remove_from_mappings(self, item: T_CogniteBase) -> None:
+        self._id_to_item.pop(item.id, None)  # type: ignore [attr-defined]
+        self._external_id_to_item.pop(item.external_id, None)  # type: ignore [attr-defined]
 
-    def __contains__(self, item):
+    def __contains__(self, item: Any) -> bool:
         if not isinstance(item, self._RESOURCE):
             return False
-        return self.get(id=item.id) is not None or self.get(external_id=item.external_id) is not None
+        return self.get(id=item.id) is not None or self.get(external_id=item.external_id) is not None  # type: ignore [attr-defined]
 
-    def __setitem__(self, i, item):
+    def __setitem__(self, i: int, item: T_CogniteBase) -> None:  # type: ignore [override]
         if isinstance(i, slice):
             raise NotImplementedError
         elif not isinstance(item, self._RESOURCE):
             raise TypeError(f"item must be of type {self._RESOURCE}, not {type(item)}")
         self.data[i] = item
 
-    def __delitem__(self, i):
+    def __delitem__(self, i: SupportsIndex | slice) -> None:
         to_del = self.data[i]
         if not isinstance(i, slice):
             to_del = [to_del]
@@ -188,7 +204,7 @@ class CogniteBaseList(UserList):
             self._remove_from_mappings(item)
         del self.data[i]
 
-    def __add__(self, other):
+    def __add__(self, other: Any) -> NoReturn:
         raise NotImplementedError
         # TODO: Implement to override UserList code:
         # if isinstance(other, UserList):
@@ -197,7 +213,7 @@ class CogniteBaseList(UserList):
         #     return self.__class__(self.data + other)
         # return self.__class__(self.data + list(other))
 
-    def __radd__(self, other):
+    def __radd__(self, other: Any) -> NoReturn:
         raise NotImplementedError
         # TODO: Implement to override UserList code:
         # if isinstance(other, UserList):
@@ -206,7 +222,7 @@ class CogniteBaseList(UserList):
         #     return self.__class__(other + self.data)
         # return self.__class__(list(other) + self.data)
 
-    def __iadd__(self, other):
+    def __iadd__(self, other: Any) -> NoReturn:
         raise NotImplementedError
         # TODO: Implement to override UserList code:
         # if isinstance(other, UserList):
@@ -217,43 +233,45 @@ class CogniteBaseList(UserList):
         #     self.data += list(other)
         # return self
 
-    def __mul__(self, n):
+    def __mul__(self, n: int) -> NoReturn:
+        """Resource lists have unique elements, so __(/r/i)mul__ is not supported"""
         raise NotImplementedError
 
     __rmul__ = __mul__
 
-    def __imul__(self, n):
+    def __imul__(self, n: int) -> NoReturn:
+        """Resource lists have unique elements, so __(/r/i)mul__ is not supported"""
         raise NotImplementedError
 
     @contextmanager
-    def _verify_and_update_item(self, item):
+    def _verify_and_update_item(self, item: Any) -> Iterator[None]:
         if not isinstance(item, self._RESOURCE):
             raise TypeError(f"item must be of type {self._RESOURCE}, not {type(item)}")
-        elif item.id in self._id_to_item or item.external_id in self._external_id_to_item:
+        elif item.id in self._id_to_item or item.external_id in self._external_id_to_item:  # type: ignore [attr-defined]
             raise ValueError("item id or external id already exists")
         # Add operation might fail, so we don't update internal mapping before it completes:
         yield
-        self._id_to_item[item.id] = item
-        self._external_id_to_item[item.external_id] = item
+        self._id_to_item[item.id] = item  # type: ignore [attr-defined]
+        self._external_id_to_item[item.external_id] = item  # type: ignore [attr-defined]
 
-    def append(self, item):
+    def append(self, item: T_CogniteBase) -> None:
         with self._verify_and_update_item(item):
             self.data.append(item)
 
-    def insert(self, i, item):
+    def insert(self, i: int, item: T_CogniteBase) -> None:
         with self._verify_and_update_item(item):
             self.data.insert(i, item)
 
-    def pop(self, i=-1):
-        item = self.data.pop(i)  # raises if index out of range
+    def pop(self, i: int = -1) -> T_CogniteBase:  # type: ignore [type-var]
+        item: T_CogniteBase = self.data.pop(i)  # raises if index out of range
         self._remove_from_mappings(item)
         return item
 
-    def remove(self, item):
+    def remove(self, item: Any) -> None:
         self.data.remove(item)  # raises if not in data
         self._remove_from_mappings(item)
 
-    def clear(self):
+    def clear(self) -> None:
         self.data.clear()
         self._id_to_item.clear()
         self._external_id_to_item.clear()
@@ -366,13 +384,22 @@ class CogniteResourceList(Generic[T_CogniteResource], CogniteBaseList):
         self._cognite_client = cognite_client
 
     @classmethod
-    def _load(
+    def _load(  # type: ignore [override]
         cls: Type[T_CogniteResourceList], items: List[Dict[str, Any]], cognite_client: Optional[CogniteClient]
     ) -> T_CogniteResourceList:
         if isinstance(items, list):
             resources = [cls._RESOURCE._load(res, cognite_client=cognite_client) for res in items]
             return cls(resources, cognite_client=cognite_client)
         raise TypeError(f"The items to load must be a list (of dicts), not {type(items)}")
+
+    def extend(self, other: List[T_CogniteResource]) -> None:  # type: ignore [override]
+        other_res_list = type(self)(other, cognite_client=None)  # See if we can accept the types
+        if set(self._id_to_item).isdisjoint(other_res_list._id_to_item):
+            super().extend(other)
+            self._external_id_to_item.update(other_res_list._external_id_to_item)
+            self._id_to_item.update(other_res_list._id_to_item)
+        else:
+            raise ValueError("Unable to extend as this would introduce duplicates")
 
     @overload  # type: ignore [override]
     # Generic[T] + UserList does not like this overload:
