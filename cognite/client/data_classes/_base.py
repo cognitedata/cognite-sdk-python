@@ -15,6 +15,7 @@ from typing import (
     Optional,
     Sequence,
     SupportsIndex,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -180,14 +181,43 @@ class CogniteBaseList(UserList):
             return self._id_to_item.get(id)
         return self._external_id_to_item.get(external_id)
 
+    @staticmethod
+    def _get_item_id(item: Any) -> Optional[int]:
+        try:
+            return item.id
+        except AttributeError:
+            return None
+
+    @staticmethod
+    def _get_item_external_id(item: Any) -> Optional[str]:
+        try:
+            return item.external_id
+        except AttributeError:
+            return None
+
+    def _get_identifiers(self, item: Any) -> Tuple[Optional[int], Optional[str]]:
+        return self._get_item_id(item), self._get_item_external_id(item)
+
     def _remove_from_mappings(self, item: T_CogniteBase) -> None:
-        self._id_to_item.pop(item.id, None)  # type: ignore [attr-defined]
-        self._external_id_to_item.pop(item.external_id, None)  # type: ignore [attr-defined]
+        id_, xid = self._get_identifiers(item)
+        if id_ is not None:
+            self._id_to_item.pop(id_, None)
+        if xid is not None:
+            self._external_id_to_item.pop(xid, None)
 
     def __contains__(self, item: Any) -> bool:
         if not isinstance(item, self._RESOURCE):
             return False
-        return self.get(id=item.id) is not None or self.get(external_id=item.external_id) is not None  # type: ignore [attr-defined]
+        # Try to do O(1) lookup first:
+        id_, xid = self._get_identifiers(item)
+        if (
+            id_ is not None
+            and self.get(id=id_) is not None
+            or xid is not None
+            and self.get(external_id=xid) is not None
+        ):
+            return True
+        return item in self.data
 
     def __setitem__(self, i: int, item: T_CogniteBase) -> None:  # type: ignore [override]
         if isinstance(i, slice):
@@ -247,12 +277,14 @@ class CogniteBaseList(UserList):
     def _verify_and_update_item(self, item: Any) -> Iterator[None]:
         if not isinstance(item, self._RESOURCE):
             raise TypeError(f"item must be of type {self._RESOURCE}, not {type(item)}")
-        elif item.id in self._id_to_item or item.external_id in self._external_id_to_item:  # type: ignore [attr-defined]
+
+        id_, xid = self._get_identifiers(item)
+        if id_ is not None and id_ in self._id_to_item or xid is not None and xid in self._external_id_to_item:
             raise ValueError("item id or external id already exists")
         # Add operation might fail, so we don't update internal mapping before it completes:
         yield
-        self._id_to_item[item.id] = item  # type: ignore [attr-defined]
-        self._external_id_to_item[item.external_id] = item  # type: ignore [attr-defined]
+        self._id_to_item[id_] = item
+        self._external_id_to_item[xid] = item
 
     def append(self, item: T_CogniteBase) -> None:
         with self._verify_and_update_item(item):
