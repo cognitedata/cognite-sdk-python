@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import copy
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union, cast
 from typing import Sequence as SequenceType
-from typing import Type, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,

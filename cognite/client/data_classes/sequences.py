@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import json
 import math
-from typing import TYPE_CHECKING, Any, Dict, Generator, List
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Tuple, Union, cast
 from typing import Sequence as SequenceType
-from typing import Tuple, Union, cast
 
 from cognite.client import utils
 from cognite.client.data_classes._base import (

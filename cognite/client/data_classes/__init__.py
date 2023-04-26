@@ -22,6 +22,22 @@ from cognite.client.data_classes.contextualization import (
     EntityMatchingModelUpdate,
     JobStatus,
 )
+from cognite.client.data_classes.data_sets import (
+    DataSet,
+    DataSetAggregate,
+    DataSetFilter,
+    DataSetList,
+    DataSetUpdate,
+)
+from cognite.client.data_classes.datapoints import (
+    Datapoint,
+    Datapoints,
+    DatapointsArray,
+    DatapointsArrayList,
+    DatapointsList,
+    LatestDatapointQuery,
+)
+from cognite.client.data_classes.events import EndTimeFilter, Event, EventFilter, EventList, EventUpdate
 from cognite.client.data_classes.extractionpipelines import (
     ExtractionPipeline,
     ExtractionPipelineConfig,
@@ -41,6 +57,32 @@ from cognite.client.data_classes.files import (
     FileMetadataList,
     FileMetadataUpdate,
 )
+from cognite.client.data_classes.functions import (
+    Function,
+    FunctionCall,
+    FunctionCallList,
+    FunctionCallLog,
+    FunctionCallLogEntry,
+    FunctionFilter,
+    FunctionList,
+    FunctionSchedule,
+    FunctionSchedulesFilter,
+    FunctionSchedulesList,
+    FunctionsLimits,
+)
+from cognite.client.data_classes.geospatial import (
+    CoordinateReferenceSystem,
+    CoordinateReferenceSystemList,
+    Feature,
+    FeatureAggregate,
+    FeatureAggregateList,
+    FeatureList,
+    FeatureType,
+    FeatureTypeList,
+    FeatureTypePatch,
+    FeatureTypeUpdate,
+    FeatureTypeUpdateList,
+)
 from cognite.client.data_classes.iam import (
     ClientCredentials,
     CreatedSession,
@@ -58,6 +100,7 @@ from cognite.client.data_classes.labels import (
     LabelDefinitionList,
     LabelFilter,
 )
+from cognite.client.data_classes.raw import Database, DatabaseList, Row, RowList, Table, TableList
 from cognite.client.data_classes.relationships import (
     Relationship,
     RelationshipFilter,
@@ -73,6 +116,15 @@ from cognite.client.data_classes.sequences import (
     SequenceFilter,
     SequenceList,
     SequenceUpdate,
+)
+from cognite.client.data_classes.shared import (
+    AggregateResult,
+    AggregateUniqueValuesResult,
+    GeoLocation,
+    GeoLocationFilter,
+    Geometry,
+    GeometryFilter,
+    TimestampRange,
 )
 from cognite.client.data_classes.templates import (
     ConstantResolver,
@@ -137,65 +189,9 @@ from cognite.client.data_classes.transformations.schedules import (
     TransformationScheduleList,
     TransformationScheduleUpdate,
 )
-
 from cognite.client.data_classes.transformations.schema import (
     TransformationSchemaColumn,
     TransformationSchemaColumnList,
-)
-
-from cognite.client.data_classes.data_sets import (
-    DataSet,
-    DataSetAggregate,
-    DataSetFilter,
-    DataSetList,
-    DataSetUpdate,
-)
-
-from cognite.client.data_classes.shared import (
-    AggregateResult,
-    AggregateUniqueValuesResult,
-    GeoLocation,
-    GeoLocationFilter,
-    Geometry,
-    GeometryFilter,
-    TimestampRange,
-)
-
-from cognite.client.data_classes.datapoints import (
-    Datapoint,
-    Datapoints,
-    DatapointsList,
-    DatapointsArray,
-    DatapointsArrayList,
-    LatestDatapointQuery,
-)
-from cognite.client.data_classes.events import EndTimeFilter, Event, EventFilter, EventList, EventUpdate
-from cognite.client.data_classes.raw import Database, DatabaseList, Row, RowList, Table, TableList
-from cognite.client.data_classes.functions import (
-    Function,
-    FunctionFilter,
-    FunctionSchedule,
-    FunctionSchedulesFilter,
-    FunctionSchedulesList,
-    FunctionList,
-    FunctionCall,
-    FunctionCallList,
-    FunctionCallLogEntry,
-    FunctionCallLog,
-    FunctionsLimits,
-)
-from cognite.client.data_classes.geospatial import (
-    Feature,
-    FeatureList,
-    FeatureType,
-    FeatureTypeList,
-    FeatureTypePatch,
-    FeatureAggregate,
-    FeatureTypeUpdate,
-    FeatureAggregateList,
-    FeatureTypeUpdateList,
-    CoordinateReferenceSystemList,
-    CoordinateReferenceSystem,
 )
 
 __all__ = [

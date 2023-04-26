@@ -1,6 +1,7 @@
 import json
 import math
 import re
+import warnings
 from decimal import Decimal
 from itertools import zip_longest
 
@@ -30,7 +31,9 @@ from cognite.client.utils._auxiliary import (
     ),
 )
 def test_handle_deprecated_camel_case_argument__expected(new_arg, old_arg_name, fn_name, kw_dct, expected):
-    value = handle_deprecated_camel_case_argument(new_arg, old_arg_name, fn_name, kw_dct)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        value = handle_deprecated_camel_case_argument(new_arg, old_arg_name, fn_name, kw_dct)
     assert value == expected
 
 
@@ -61,7 +64,8 @@ def test_handle_deprecated_camel_case_argument__expected(new_arg, old_arg_name, 
     ),
 )
 def test_handle_deprecated_camel_case_argument__raises(new_arg, old_arg_name, fn_name, kw_dct, err_msg):
-    with pytest.raises(TypeError, match=re.escape(err_msg)):
+    with pytest.raises(TypeError, match=re.escape(err_msg)), warnings.catch_warnings():
+        warnings.simplefilter("ignore")
         handle_deprecated_camel_case_argument(new_arg, old_arg_name, fn_name, kw_dct)
 
 

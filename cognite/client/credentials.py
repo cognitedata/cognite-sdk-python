@@ -184,7 +184,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         if credentials is None:
             device_flow = self.__app.initiate_device_flow(scopes=self.__scopes)
             # print device code user instructions to screen
-            print(f"Device code: {device_flow['message']}")
+            print(f"Device code: {device_flow['message']}")  # noqa: T201
             credentials = self.__app.acquire_token_by_device_flow(flow=device_flow)
 
         self._verify_credentials(credentials)
