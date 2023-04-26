@@ -249,12 +249,12 @@ class Transformation(CogniteResource):
             instance.destination = _load_destination_dct(instance.destination)
 
         if isinstance(instance.running_job, dict):
-            snake_dict = convert_all_keys_to_snake_case(instance.running_job)
-            instance.running_job = TransformationJob._load(snake_dict, cognite_client=cognite_client)
+            instance.running_job = TransformationJob._load(instance.running_job, cognite_client=cognite_client)
 
         if isinstance(instance.last_finished_job, dict):
-            snake_dict = convert_all_keys_to_snake_case(instance.last_finished_job)
-            instance.last_finished_job = TransformationJob._load(snake_dict, cognite_client=cognite_client)
+            instance.last_finished_job = TransformationJob._load(
+                instance.last_finished_job, cognite_client=cognite_client
+            )
 
         if isinstance(instance.blocked, dict):
             snake_dict = convert_all_keys_to_snake_case(instance.blocked)
@@ -262,8 +262,7 @@ class Transformation(CogniteResource):
             instance.blocked = TransformationBlockedInfo(**snake_dict)
 
         if isinstance(instance.schedule, dict):
-            snake_dict = convert_all_keys_to_snake_case(instance.schedule)
-            instance.schedule = TransformationSchedule._load(snake_dict, cognite_client=cognite_client)
+            instance.schedule = TransformationSchedule._load(instance.schedule, cognite_client=cognite_client)
 
         if isinstance(instance.source_session, dict):
             snake_dict = convert_all_keys_to_snake_case(instance.source_session)

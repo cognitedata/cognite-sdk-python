@@ -450,42 +450,29 @@ class TestTransformationsAPI:
         ts3 = cognite_client.transformations.list(tags=ContainsAny(["hello", "kiki"]))
         assert len(ts3) == 2 and {i.id for i in ts3} == {new_transformation.id, other_transformation.id}
 
-    def test_transformation_str_function(self, cognite_client, new_transformation, new_datasets):
+    def test_transformation_dump_and_str(self, cognite_client, new_transformation, new_datasets):
         cognite_client.transformations.schedules.create(
             TransformationSchedule(external_id=new_transformation.external_id, interval="* * * * *", is_paused=True)
         )
         tr: Transformation = cognite_client.transformations.retrieve(external_id=new_transformation.external_id)
-        import json
 
-        str_res = json.loads(str(tr))
-        str_res["created_time"] = None
-        str_res["last_updated_time"] = None
-        str_res["owner"] = None
-        str_res["schedule"]["created_time"] = None
-        str_res["schedule"]["last_updated_time"] = None
+        dumped = tr.dump()  # str also uses dump
+        assert tr.id == dumped["id"] == new_transformation.id
+        assert tr.external_id == dumped["external_id"] == new_transformation.external_id
+        assert tr.name == dumped["name"] == "any"
+        assert tr.query == dumped["query"] == "select 1"
 
-        assert str_res == {
-            "id": new_transformation.id,
-            "external_id": new_transformation.external_id,
-            "name": "any",
-            "query": "select 1",
-            "destination": {"type": "assets"},
-            "conflict_mode": "upsert",
-            "is_public": True,
-            "ignore_null_fields": False,
-            "has_source_oidc_credentials": True,
-            "has_destination_oidc_credentials": True,
-            "created_time": None,
-            "last_updated_time": None,
-            "owner": None,
-            "owner_is_current_user": True,
-            "schedule": {
-                "id": new_transformation.id,
-                "external_id": new_transformation.external_id,
-                "created_time": None,
-                "last_updated_time": None,
-                "interval": "* * * * *",
-                "is_paused": True,
-            },
-            "data_set_id": new_datasets[0].id,
-        }
+        assert tr.destination.type == dumped["destination"]["type"] == "assets"
+        assert tr.conflict_mode == dumped["conflict_mode"] == "upsert"
+        assert tr.is_public is dumped["is_public"] is True
+        assert tr.ignore_null_fields is dumped["ignore_null_fields"] is False
+        assert tr.has_source_oidc_credentials is dumped["has_source_oidc_credentials"] is True
+        assert tr.has_destination_oidc_credentials is dumped["has_destination_oidc_credentials"] is True
+        assert tr.owner_is_current_user is dumped["owner_is_current_user"] is True
+        assert tr.data_set_id == dumped["data_set_id"] == new_datasets[0].id
+
+        schedule = dumped["schedule"]
+        assert tr.schedule.id == schedule["id"] == new_transformation.id  # not the id of the schedule...
+        assert tr.schedule.external_id == schedule["external_id"] == new_transformation.external_id
+        assert tr.schedule.interval == schedule["interval"] == "* * * * *"
+        assert tr.schedule.is_paused is schedule["is_paused"] is True
