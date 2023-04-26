@@ -158,6 +158,10 @@ class ContextualizationJob(CogniteResource):
     ) -> T_ContextualizationJob:
         obj = cls._load({**data, "jobToken": headers.get("X-Job-Token")}, cognite_client=cognite_client)
         obj._status_path = status_path
+        # '_load' does not see properties (real attribute stored under a different name, e.g. '_items' not 'items'):
+        if "items" in data and hasattr(obj, "items"):
+            # TODO: Remove type-ignore-comment after updating mypy:
+            obj.items = data["items"]  # type: ignore [attr-defined]
         return obj
 
 
