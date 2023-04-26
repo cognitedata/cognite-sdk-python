@@ -17,7 +17,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [6.0.2] - 20-04-25
+## [6.0.2] - 20-04-26
 ### Fixed
 - Fixed a bug in `DatapointsAPI.retrieve_dataframe_in_tz` to raise an `AmbiguousTimeError` when getting an ambiguous timestamp.
   An ambiguous timestamp is, for example, 1916-10-01 00:00:00 Europe/Oslo as this have two UTC times 1916-10-01 00:00:00+02:00
