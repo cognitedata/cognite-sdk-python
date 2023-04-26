@@ -9,6 +9,7 @@ from typing import (
     Any,
     Dict,
     Generic,
+    Iterable,
     Iterator,
     List,
     NoReturn,
@@ -131,15 +132,6 @@ class CogniteBaseList(UserList):
     def _repr_html_(self) -> str:
         return notebook_display_with_fallback(self)
 
-    def extend(self, other: List[T_CogniteBase]) -> None:  # type: ignore [override]
-        other_res_list = type(self)(other)  # See if we can accept the types
-        if set(self._id_to_item).isdisjoint(other_res_list._id_to_item):
-            super().extend(other)
-            self._external_id_to_item.update(other_res_list._external_id_to_item)
-            self._id_to_item.update(other_res_list._id_to_item)
-        else:
-            raise ValueError("Unable to extend as this would introduce duplicates")
-
     def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:
         """Convert the instance into a pandas DataFrame.
 
@@ -205,16 +197,14 @@ class CogniteBaseList(UserList):
     def __contains__(self, item: Any) -> bool:
         if not isinstance(item, self._RESOURCE):
             return False
-        # Try to do O(1) lookup first:
         id_, xid = self._get_identifiers(item)
-        if (
-            id_ is not None
-            and self.get(id=id_) is not None
-            or xid is not None
-            and self.get(external_id=xid) is not None
-        ):
-            return True
-        return item in self.data
+        if id_ is not None and (self_item := self.get(id=id_) is not None):
+            return item == self_item
+        elif xid is not None and (self_item := self.get(external_id=xid) is not None):
+            return item == self_item
+        else:
+            # O(1) lookups failed, search:
+            return item in self.data
 
     def __setitem__(self, i: int, item: T_CogniteBase) -> None:  # type: ignore [override]
         if isinstance(i, slice):
@@ -231,43 +221,18 @@ class CogniteBaseList(UserList):
             self._remove_from_mappings(item)
         del self.data[i]
 
-    def __add__(self, other: Any) -> NoReturn:
-        raise NotImplementedError
-        # TODO: Implement to override UserList code:
-        # if isinstance(other, UserList):
-        #     return self.__class__(self.data + other.data)
-        # elif isinstance(other, type(self.data)):
-        #     return self.__class__(self.data + other)
-        # return self.__class__(self.data + list(other))
-
-    def __radd__(self, other: Any) -> NoReturn:
-        raise NotImplementedError
-        # TODO: Implement to override UserList code:
-        # if isinstance(other, UserList):
-        #     return self.__class__(other.data + self.data)
-        # elif isinstance(other, type(self.data)):
-        #     return self.__class__(other + self.data)
-        # return self.__class__(list(other) + self.data)
-
-    def __iadd__(self, other: Any) -> NoReturn:
-        raise NotImplementedError
-        # TODO: Implement to override UserList code:
-        # if isinstance(other, UserList):
-        #     self.data += other.data
-        # elif isinstance(other, type(self.data)):
-        #     self.data += other
-        # else:
-        #     self.data += list(other)
-        # return self
+    def __iadd__(self: T_CogniteBaseList, other: Iterable[Any]) -> T_CogniteBaseList:
+        self.extend(other)  # type: ignore [arg-type]
+        return self
 
     def __mul__(self, n: int) -> NoReturn:
-        """Resource lists have unique elements, so __(/r/i)mul__ is not supported"""
+        """Cognite resource lists do not support ops that introduce duplicates, so __[,r,i]mul__ is not supported"""
         raise NotImplementedError
 
     __rmul__ = __mul__
 
     def __imul__(self, n: int) -> NoReturn:
-        """Resource lists have unique elements, so __(/r/i)mul__ is not supported"""
+        """Cognite resource lists do not support ops that introduce duplicates, so __[,r,i]mul__ is not supported"""
         raise NotImplementedError
 
     @contextmanager
@@ -286,6 +251,15 @@ class CogniteBaseList(UserList):
     def append(self, item: T_CogniteBase) -> None:
         with self._verify_and_update_item(item):
             self.data.append(item)
+
+    def extend(self, other: List[T_CogniteBase]) -> None:  # type: ignore [override]
+        other_res_list = type(self)(other)  # See if we can accept the types
+        if set(self._id_to_item).isdisjoint(other_res_list._id_to_item):
+            super().extend(other)
+            self._external_id_to_item.update(other_res_list._external_id_to_item)
+            self._id_to_item.update(other_res_list._id_to_item)
+        else:
+            raise ValueError("Unable to extend as this would introduce duplicates")
 
     def insert(self, i: int, item: T_CogniteBase) -> None:
         with self._verify_and_update_item(item):
