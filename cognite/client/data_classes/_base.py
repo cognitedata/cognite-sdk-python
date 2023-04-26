@@ -102,9 +102,6 @@ class CogniteBaseList(UserList):
     def __repr__(self) -> str:
         return str(self)
 
-    def __eq__(self, other: Any) -> bool:
-        return type(self) is type(other) and self.dump() == other.dump()
-
     @classmethod
     def _load(cls: Type[T_CogniteBaseList], items: List[Dict[str, Any]]) -> T_CogniteBaseList:
         raise NotImplementedError
