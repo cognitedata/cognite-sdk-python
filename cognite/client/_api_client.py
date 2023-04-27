@@ -327,11 +327,6 @@ class APIClient:
 
         retrieved_items = tasks_summary.joined_results(lambda res: res.json()["items"])
 
-        # from pprint import pprint
-        # print("----")
-        # print("retrieved_items[0]:")
-        # pprint(retrieved_items[0])
-        # print("----")
         if identifiers.is_singleton():
             return resource_cls._load(retrieved_items[0], cognite_client=self._cognite_client)
         return list_cls._load(retrieved_items, cognite_client=self._cognite_client)

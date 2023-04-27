@@ -37,29 +37,6 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-_T = TypeVar("_T")
-
-
-# We want to reuse these functions as a property for both 'CogniteResource' and 'CogniteResourceList',
-# so we define a getter and setter instead of using (incomprehensible) multiple inheritance:
-def _cognite_client_getter(self: T_CogniteResource | CogniteResourceList) -> CogniteClient:
-    with suppress(AttributeError):
-        if self.__cognite_client is not None:
-            return self.__cognite_client
-    raise CogniteMissingClientError(self)
-
-
-def _cognite_client_setter(self: T_CogniteResource | CogniteResourceList, value: Optional[CogniteClient]) -> None:
-    from cognite.client import CogniteClient
-
-    if value is None or isinstance(value, CogniteClient):
-        self.__cognite_client = value
-    else:
-        raise AttributeError(
-            "Can't set the CogniteClient reference to anything else than a CogniteClient instance or None"
-        )
-
-
 class CogniteBase(ABC):
     @abstractmethod
     def __init__(self) -> None:
@@ -283,6 +260,30 @@ class CogniteBaseList(UserList):
 T_CogniteBaseList = TypeVar("T_CogniteBaseList", bound=CogniteBaseList)
 
 
+class _WithClientMixin:
+    @property
+    def _cognite_client(self) -> CogniteClient:
+        with suppress(AttributeError):
+            if self.__cognite_client is not None:
+                return self.__cognite_client
+        raise CogniteMissingClientError(self)
+
+    @_cognite_client.setter
+    def _cognite_client(self, value: Optional[CogniteClient]) -> None:
+        from cognite.client import CogniteClient
+
+        if value is None or isinstance(value, CogniteClient):
+            self.__cognite_client = value
+        else:
+            raise AttributeError(
+                "Can't set the CogniteClient reference to anything else than a CogniteClient instance or None"
+            )
+
+    def _get_cognite_client(self) -> Optional[CogniteClient]:
+        """Get Cognite client reference without raising (when missing)"""
+        return self.__cognite_client
+
+
 class CogniteResponse(CogniteBase):
     def to_pandas(self) -> pandas.DataFrame:
         raise NotImplementedError
@@ -315,7 +316,7 @@ class CogniteFilter(CogniteBase):
 T_CogniteFilter = TypeVar("T_CogniteFilter", bound=CogniteFilter)
 
 
-class CogniteResource(CogniteBase):
+class CogniteResource(CogniteBase, _WithClientMixin):
     """A ``CogniteResource``, as opposed to ``CogniteResponse``, is any resource that needs access to an
     instantiated ``CogniteClient`` in order to implement helper methods, e.g. ``Asset.parent()``.
 
@@ -324,7 +325,6 @@ class CogniteResource(CogniteBase):
     """
 
     __cognite_client: Optional[CogniteClient]
-    _cognite_client = property(_cognite_client_getter, _cognite_client_setter)
 
     def __init__(self, cognite_client: Optional[CogniteClient] = None) -> None:
         raise NotImplementedError
@@ -376,11 +376,9 @@ class CogniteResource(CogniteBase):
 T_CogniteResource = TypeVar("T_CogniteResource", bound=CogniteResource)
 
 
-class CogniteResourceList(Generic[T_CogniteResource], CogniteBaseList):
+class CogniteResourceList(Generic[T_CogniteResource], CogniteBaseList, _WithClientMixin):
     _RESOURCE: Type[T_CogniteResource]
     __cognite_client: Optional[CogniteClient]
-
-    _cognite_client = property(_cognite_client_getter, _cognite_client_setter)
 
     def __init__(self, items: List[T_CogniteResource], cognite_client: Optional[CogniteClient] = None):
         super().__init__(items)
@@ -420,10 +418,6 @@ class CogniteResourceList(Generic[T_CogniteResource], CogniteBaseList):
         if isinstance(item, slice):
             return type(self)(value, cognite_client=self._get_cognite_client())
         return cast(T_CogniteResource, value)
-
-    def _get_cognite_client(self) -> Optional[CogniteClient]:
-        # Get client reference without raising (when missing)
-        return getattr(self, "__cognite_client")  # avoids name mangling
 
 
 T_CogniteResourceList = TypeVar("T_CogniteResourceList", bound=CogniteResourceList)
