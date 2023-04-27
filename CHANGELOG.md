@@ -19,10 +19,7 @@ Changes are grouped as follows
 
 ## [6.0.2] - 27-04-26
 ### Fixed
-- Fixed a bug in `DatapointsAPI.retrieve_dataframe_in_tz` to raise an `AmbiguousTimeError` when getting an ambiguous timestamp.
-  An ambiguous timestamp is, for example, 1916-10-01 00:00:00 Europe/Oslo as this have two UTC times 1916-10-01 00:00:00+02:00
-  and 1916-10-01 00:00:00+01:00 depending on whether you are before or after the DST transition. This would occur if you used
-  a start and end time before and after 1916-10-01 with a `1month` granularity.
+- Fixed a bug in `DatapointsAPI.retrieve_dataframe_in_tz` that could raise `AmbiguousTimeError` when subdividing the user-specified time range into UTC intervals (with fixed offset).
 
 ## [6.0.1] - 20-04-23
 ### Fixed
