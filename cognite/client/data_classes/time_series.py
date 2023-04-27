@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -76,7 +76,7 @@ class TimeSeries(CogniteResource):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.legacy_name = legacy_name
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client  # type: ignore [assignment]
 
     def count(self) -> int:
         """Returns the number of datapoints in this time series.
@@ -99,7 +99,7 @@ class TimeSeries(CogniteResource):
         dps = self._cognite_client.time_series.data.retrieve(
             **identifier, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS + 1, aggregates="count", granularity="100d"
         )
-        return sum(dps.count)
+        return sum(dps.count)  # type: ignore [union-attr, arg-type]
 
     def latest(self, before: Union[int, str, datetime] = None) -> Optional[Datapoint]:
         """Returns the latest datapoint in this time series. If empty, returns None.
@@ -134,7 +134,7 @@ class TimeSeries(CogniteResource):
         """
         if self.asset_id is None:
             raise ValueError("asset_id is None")
-        return self._cognite_client.assets.retrieve(id=self.asset_id)
+        return self._cognite_client.assets.retrieve_multiple(ids=[self.asset_id], ignore_unknown_ids=False)[0]
 
 
 class TimeSeriesFilter(CogniteFilter):

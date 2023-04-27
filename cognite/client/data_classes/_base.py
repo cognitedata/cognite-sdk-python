@@ -382,7 +382,7 @@ class CogniteResourceList(Generic[T_CogniteResource], CogniteBaseList, _WithClie
 
     def __init__(self, items: List[T_CogniteResource], cognite_client: Optional[CogniteClient] = None):
         super().__init__(items)
-        self._cognite_client = cognite_client
+        self._cognite_client = cognite_client  # type: ignore [assignment]
 
     @classmethod
     def _load(  # type: ignore [override]

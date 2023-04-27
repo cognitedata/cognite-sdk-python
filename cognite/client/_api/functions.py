@@ -731,7 +731,7 @@ class FunctionCallsAPI(APIClient):
 
     def retrieve(
         self, call_id: int, function_id: Optional[int] = None, function_external_id: Optional[str] = None
-    ) -> Union[FunctionCallList, FunctionCall, None]:
+    ) -> Optional[FunctionCall]:
         """`Retrieve a single function call by id. <https://docs.cognite.com/api/v1/#operation/byIdsFunctionCalls>`_
 
         Args:
@@ -740,7 +740,7 @@ class FunctionCallsAPI(APIClient):
             function_external_id (str, optional): External ID of the function on which the call was made.
 
         Returns:
-            Union[FunctionCallList, FunctionCall, None]: Requested function call.
+            Optional[FunctionCall]: Requested function call or None if not found.
 
         Examples:
 

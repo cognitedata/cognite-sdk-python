@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -40,7 +40,7 @@ class LabelDefinition(CogniteResource):
         self.description = description
         self.created_time = created_time
         self.data_set_id = data_set_id
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client  # type: ignore [assignment]
 
 
 class LabelDefinitionFilter(CogniteFilter):

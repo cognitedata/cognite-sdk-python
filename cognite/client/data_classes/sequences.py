@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import math
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Tuple, Union, cast
 from typing import Sequence as SequenceType
 
 from cognite.client import utils
@@ -68,16 +68,16 @@ class Sequence(CogniteResource):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.data_set_id = data_set_id
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client  # type: ignore [assignment]
 
-    def rows(self, start: int, end: int) -> List[dict]:
+    def rows(self, start: int, end: Optional[int]) -> SequenceData:
         """Retrieves rows from this sequence.
 
         Returns:
             List of sequence data.
         """
         identifier = Identifier.load(self.id, self.external_id).as_dict()
-        return self._cognite_client.sequences.data.retrieve(**identifier, start=start, end=end)
+        return cast(SequenceData, self._cognite_client.sequences.data.retrieve(**identifier, start=start, end=end))
 
     @property
     def column_external_ids(self) -> List[str]:

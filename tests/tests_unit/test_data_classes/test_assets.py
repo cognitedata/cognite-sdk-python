@@ -54,11 +54,11 @@ class TestAsset:
         assert cognite_client.files.list.call_count == 1
 
     def test_get_parent(self, cognite_client):
-        cognite_client.assets.retrieve = mock.MagicMock()
+        cognite_client.assets.retrieve_multiple = mock.MagicMock()
         a1 = Asset(parent_id=1, cognite_client=cognite_client)
         a1.parent()
-        assert cognite_client.assets.retrieve.call_args == call(id=1)
-        assert cognite_client.assets.retrieve.call_count == 1
+        assert cognite_client.assets.retrieve_multiple.call_args == call(ids=[1], ignore_unknown_ids=False)
+        assert cognite_client.assets.retrieve_multiple.call_count == 1
 
     def test_get_children(self, cognite_client):
         cognite_client.assets.list = mock.MagicMock()

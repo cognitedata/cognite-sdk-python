@@ -36,7 +36,7 @@ class FeatureType(CogniteResource):
         self.last_updated_time = last_updated_time
         self.properties = properties
         self.search_spec = search_spec
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client  # type: ignore [assignment]
 
     @classmethod
     def _load(cls, resource: Union[str, Dict[str, Any]], cognite_client: CogniteClient = None) -> FeatureType:
@@ -76,7 +76,7 @@ class FeatureTypeUpdate:
         self.external_id = external_id
         self.add = add if add is not None else PropertyAndSearchSpec()
         self.remove = remove if remove is not None else PropertyAndSearchSpec()
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client  # type: ignore [assignment]
 
 
 @dataclasses.dataclass
@@ -105,7 +105,7 @@ class Feature(CogniteResource):
         self.external_id = external_id
         for key in properties:
             setattr(self, key, properties[key])
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client  # type: ignore [assignment]
 
     @classmethod
     def _load(cls, resource: Union[str, Dict[str, Any]], cognite_client: CogniteClient = None) -> Feature:
@@ -288,7 +288,7 @@ class FeatureAggregate(CogniteResource):
     """A result of aggregating features in geospatial api."""
 
     def __init__(self, cognite_client: CogniteClient = None):
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client  # type: ignore [assignment]
 
     @classmethod
     def _load(cls, resource: Union[str, Dict[str, Any]], cognite_client: CogniteClient = None) -> FeatureAggregate:
@@ -314,7 +314,7 @@ class CoordinateReferenceSystem(CogniteResource):
         self.srid = srid
         self.wkt = wkt
         self.proj_string = proj_string
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client  # type: ignore [assignment]
 
     @classmethod
     def _load(
@@ -401,7 +401,7 @@ class GeospatialComputedItem(CogniteResource):
 
     def __init__(self, resource: Dict[str, Any], cognite_client: CogniteClient = None):
         self.resource = resource
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client  # type: ignore [assignment]
 
     @classmethod
     def _load(
@@ -426,7 +426,7 @@ class GeospatialComputedResponse(CogniteResource):
 
     def __init__(self, computed_item_list: GeospatialComputedItemList, cognite_client: CogniteClient = None):
         self.items = computed_item_list
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client  # type: ignore [assignment]
 
     @classmethod
     def _load(

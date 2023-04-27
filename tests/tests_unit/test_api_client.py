@@ -214,7 +214,7 @@ class SomeResource(CogniteResource):
         self.y = y
         self.id = id
         self.external_id = external_id
-        self._cognite_client = cognite_client
+        self._cognite_client = cognite_client  # type: ignore [assignment]
 
 
 class SomeResourceList(CogniteResourceList):

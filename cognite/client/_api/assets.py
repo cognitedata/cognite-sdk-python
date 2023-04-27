@@ -232,7 +232,7 @@ class AssetsAPI(APIClient):
         external_id_prefix: str = None,
         aggregated_properties: Sequence[str] = None,
         partitions: int = None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: Optional[int] = LIST_LIMIT_DEFAULT,
     ) -> AssetList:
         """`List assets <https://docs.cognite.com/api/v1/#operation/listAssets>`_
 

@@ -81,7 +81,7 @@ class Function(CogniteResource):
         self.runtime_version = runtime_version
         self.metadata = metadata
         self.error = error
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client  # type: ignore [assignment]
 
     def call(self, data: Optional[Dict] = None, wait: bool = True) -> FunctionCall:
         """`Call this particular function. <https://docs.cognite.com/api/v1/#operation/postFunctionsCall>`_
@@ -143,14 +143,14 @@ class Function(CogniteResource):
 
         return (schedules_by_external_id + schedules_by_id)[:limit]
 
-    def retrieve_call(self, id: int) -> FunctionCall:
+    def retrieve_call(self, id: int) -> Optional[FunctionCall]:
         """`Retrieve call by id. <https://docs.cognite.com/api/v1/#operation/getFunctionCall>`_
 
         Args:
             id (int): ID of the call.
 
         Returns:
-            FunctionCall: Function call.
+            Optional[FunctionCall]: Requested function call or None if not found.
         """
         return self._cognite_client.functions.calls.retrieve(call_id=id, function_id=self.id)
 
@@ -241,7 +241,7 @@ class FunctionSchedule(CogniteResource):
         self.created_time = created_time
         self.session_id = session_id
         self.when = when
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client  # type: ignore [assignment]
 
     def get_input_data(self) -> Optional[dict]:
         """
@@ -251,6 +251,7 @@ class FunctionSchedule(CogniteResource):
             Optional[Dict]: Input data to the associated function or None if not set. This data is passed
             deserialized into the function through the data argument.
         """
+        assert self.id is not None
         return self._cognite_client.functions.schedules.get_input_data(id=self.id)
 
 
@@ -312,7 +313,7 @@ class FunctionCall(CogniteResource):
         self.schedule_id = schedule_id
         self.error = error
         self.function_id = function_id
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client  # type: ignore [assignment]
 
     def get_response(self) -> Dict:
         """Retrieve the response from this function call.
@@ -320,6 +321,7 @@ class FunctionCall(CogniteResource):
         Returns:
             Response from the function call.
         """
+        assert self.id is not None
         return self._cognite_client.functions.calls.get_response(call_id=self.id, function_id=self.function_id)
 
     def get_logs(self) -> FunctionCallLog:
@@ -328,6 +330,7 @@ class FunctionCall(CogniteResource):
         Returns:
             FunctionCallLog: Log for the function call.
         """
+        assert self.id is not None
         return self._cognite_client.functions.calls.get_logs(call_id=self.id, function_id=self.function_id)
 
     def update(self) -> None:
@@ -336,7 +339,10 @@ class FunctionCall(CogniteResource):
         Returns:
             None
         """
+        assert self.id is not None
         latest = self._cognite_client.functions.calls.retrieve(call_id=self.id, function_id=self.function_id)
+        if latest is None:
+            raise RuntimeError("Unable to update the function call object")
         self.status = latest.status
         self.end_time = latest.end_time
         self.error = latest.error

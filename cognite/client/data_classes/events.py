@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Union
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -89,7 +89,7 @@ class Event(CogniteResource):
         self.id = id
         self.last_updated_time = last_updated_time
         self.created_time = created_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client  # type: ignore [assignment]
 
 
 class EventFilter(CogniteFilter):

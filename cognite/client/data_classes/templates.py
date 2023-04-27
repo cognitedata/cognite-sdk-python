@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from collections import UserDict
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
 
 from cognite.client.data_classes._base import CogniteObjectUpdate, CogniteResource, CogniteResourceList, CogniteUpdate
 from cognite.client.utils._text import to_camel_case, to_snake_case
@@ -42,7 +42,7 @@ class TemplateGroup(CogniteResource):
         self.data_set_id = data_set_id
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client  # type: ignore [assignment]
 
 
 class TemplateGroupList(CogniteResourceList):
@@ -78,7 +78,7 @@ class TemplateGroupVersion(CogniteResource):
         self.conflict_mode = conflict_mode
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client  # type: ignore [assignment]
 
 
 class TemplateGroupVersionList(CogniteResourceList):
@@ -95,7 +95,7 @@ class ConstantResolver(CogniteResource):
     def __init__(self, value: Any = None, cognite_client: CogniteClient = None):
         self.type = "constant"
         self.value = value
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client  # type: ignore [assignment]
 
 
 class RawResolver(CogniteResource):
@@ -121,7 +121,7 @@ class RawResolver(CogniteResource):
         self.table_name = table_name
         self.row_key = row_key
         self.column_name = column_name
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client  # type: ignore [assignment]
 
 
 class SyntheticTimeSeriesResolver(CogniteResource):
@@ -156,7 +156,7 @@ class SyntheticTimeSeriesResolver(CogniteResource):
         self.is_step = is_step
         self.is_string = is_string
         self.unit = unit
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client  # type: ignore [assignment]
 
 
 class ViewResolver(CogniteResource):
@@ -173,7 +173,7 @@ class ViewResolver(CogniteResource):
         self.type = "view"
         self.external_id = external_id
         self.input = input
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client  # type: ignore [assignment]
 
 
 FieldResolvers = Union[ConstantResolver, RawResolver, SyntheticTimeSeriesResolver, str, ViewResolver]
@@ -207,7 +207,7 @@ class TemplateInstance(CogniteResource):
         self.data_set_id = data_set_id
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client  # type: ignore [assignment]
 
     field_resolver_mapper: Dict[str, Type[CogniteResource]] = {
         "constant": ConstantResolver,
@@ -318,7 +318,7 @@ class Source(CogniteResource):
         self.type = type
         self.filter = filter
         self.mappings = mappings
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client  # type: ignore [assignment]
 
 
 class View(CogniteResource):
@@ -345,7 +345,7 @@ class View(CogniteResource):
         self.data_set_id = data_set_id
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client  # type: ignore [assignment]
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
@@ -393,7 +393,7 @@ class View(CogniteResource):
 class ViewResolveItem(UserDict, CogniteResource):
     def __init__(self, data: Dict[str, Any], cognite_client: CogniteClient = None) -> None:
         super().__init__(data)
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client  # type: ignore [assignment]
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         return self.data
@@ -417,14 +417,14 @@ class GraphQlError(CogniteResource):
         self.message = message
         self.path = path
         self.locations = locations
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client  # type: ignore [assignment]
 
 
 class GraphQlResponse(CogniteResource):
     def __init__(self, data: Any = None, errors: List[GraphQlError] = None, cognite_client: CogniteClient = None):
         self.data = data
         self.errors = errors
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client  # type: ignore [assignment]
 
 
 class TemplateInstanceList(CogniteResourceList):

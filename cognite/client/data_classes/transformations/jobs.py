@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import time
 from enum import Enum
-from typing import TYPE_CHECKING, Dict, Optional, cast
+from typing import TYPE_CHECKING, Dict, Optional
 
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList
 from cognite.client.data_classes.transformations.common import TransformationDestination, _load_destination_dct
@@ -40,7 +40,7 @@ class TransformationJobMetric(CogniteResource):
         self.timestamp = timestamp
         self.name = name
         self.count = count
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client  # type: ignore [assignment]
 
     @classmethod
     def _load(cls, resource: Dict, cognite_client: CogniteClient = None) -> TransformationJobMetric:
@@ -110,11 +110,15 @@ class TransformationJob(CogniteResource):
         self.started_time = started_time
         self.finished_time = finished_time
         self.last_seen_time = last_seen_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client  # type: ignore [assignment]
 
     def update(self) -> None:
         """`Get updated job status.`"""
+        if self.id is None:
+            raise ValueError("Unable to update, TransformationJob is missing 'id'")
         updated = self._cognite_client.transformations.jobs.retrieve(id=self.id)
+        if updated is None:
+            raise RuntimeError("Unable to update the transformation. Has it been deleted?")
         self.status = updated.status
         self.error = updated.error
         self.started_time = updated.started_time

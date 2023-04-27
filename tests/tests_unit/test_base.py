@@ -40,7 +40,7 @@ class MyResource(CogniteResource):
         self.var_b = var_b
         self.id = id
         self.external_id = external_id
-        self._cognite_client = cognite_client
+        self._cognite_client = cognite_client  # type: ignore [assignment]
 
     def use(self):
         return self._cognite_client

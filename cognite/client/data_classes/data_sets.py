@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Union
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -54,7 +54,7 @@ class DataSet(CogniteResource):
         self.id = id
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client  # type: ignore [assignment]
 
 
 class DataSetFilter(CogniteFilter):

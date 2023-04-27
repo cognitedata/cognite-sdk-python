@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import copy
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
 from typing import Sequence as SequenceType
 
 from cognite.client.data_classes._base import (
@@ -78,7 +78,7 @@ class Relationship(CogniteResource):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.labels = Label._load_list(labels)
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client  # type: ignore [assignment]
 
     def _validate_resource_types(self) -> Relationship:
         rel = copy.copy(self)

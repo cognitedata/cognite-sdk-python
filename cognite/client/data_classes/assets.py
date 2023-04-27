@@ -134,7 +134,7 @@ class Asset(CogniteResource):
         self.last_updated_time = last_updated_time
         self.root_id = root_id
         self.aggregates = aggregates
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client = cognite_client  # type: ignore [assignment]
 
     @classmethod
     def _load(cls, resource: Dict, cognite_client: CogniteClient = None) -> Asset:
@@ -158,7 +158,10 @@ class Asset(CogniteResource):
         """
         if self.parent_id is None:
             raise ValueError("parent_id is None")
-        return self._cognite_client.assets.retrieve(id=self.parent_id)
+        return self._cognite_client.assets.retrieve_multiple(
+            ids=[self.parent_id],
+            ignore_unknown_ids=False,
+        )[0]
 
     def children(self) -> AssetList:
         """Returns the children of this asset.
@@ -166,6 +169,7 @@ class Asset(CogniteResource):
         Returns:
             AssetList: The requested assets
         """
+        assert self.id is not None
         return self._cognite_client.assets.list(parent_ids=[self.id], limit=None)
 
     def subtree(self, depth: int = None) -> AssetList:
@@ -185,6 +189,7 @@ class Asset(CogniteResource):
         Returns:
             TimeSeriesList: All time series related to this asset.
         """
+        assert self.id is not None
         return self._cognite_client.time_series.list(asset_ids=[self.id], **kwargs)
 
     def sequences(self, **kwargs: Any) -> SequenceList:
@@ -193,6 +198,7 @@ class Asset(CogniteResource):
         Returns:
             SequenceList: All sequences related to this asset.
         """
+        assert self.id is not None
         return self._cognite_client.sequences.list(asset_ids=[self.id], **kwargs)
 
     def events(self, **kwargs: Any) -> EventList:
@@ -202,6 +208,7 @@ class Asset(CogniteResource):
             EventList: All events related to this asset.
         """
 
+        assert self.id is not None
         return self._cognite_client.events.list(asset_ids=[self.id], **kwargs)
 
     def files(self, **kwargs: Any) -> FileMetadataList:
@@ -210,6 +217,7 @@ class Asset(CogniteResource):
         Returns:
             FileMetadataList: Metadata about all files related to this asset.
         """
+        assert self.id is not None
         return self._cognite_client.files.list(asset_ids=[self.id], **kwargs)
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
