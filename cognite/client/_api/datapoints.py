@@ -1026,11 +1026,6 @@ class DatapointsAPI(APIClient):
             3. Create a query for each interval and pass all to the retrieve_arrays method.
             4. Stack the resulting arrays into a single column in the resulting DataFrame.
 
-        The splitting of time range into UTC intervals can lead to ambiguous timestamps. An ambiguous timestamp is,
-        for example, 1916-10-01 00:00:00 Europe/Oslo as this have two UTC times 1916-10-01 00:00:00+02:00
-        and 1916-10-01 00:00:00+01:00 depending on whether you are before or after the DST transition. In this case,
-        the splitting always chose the DST.
-
         Warning:
             The queries to ``retrieve_arrays`` are translated to a multiple of hours. This means that time zones that
             are not a whole hour offset from UTC are not supported (yet). The same is true for time zones that observe

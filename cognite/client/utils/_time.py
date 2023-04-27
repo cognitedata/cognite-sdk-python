@@ -536,6 +536,7 @@ def pandas_date_range_tz(start: datetime, end: datetime, freq: str, inclusive: s
         tz=str(start.tzinfo),
         freq=freq,
         inclusive=inclusive,
+        nonexistent="shift_forward",
         ambiguous=True,
     )
 
