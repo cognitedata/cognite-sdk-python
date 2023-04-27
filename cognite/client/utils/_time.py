@@ -528,7 +528,8 @@ def pandas_date_range_tz(start: datetime, end: datetime, freq: str, inclusive: s
     # An ambiguous timestamp is for example 1916-10-01 00:00:00 Europe/Oslo, as this corresponds to two different points in time,
     # 1916-10-01 00:00:00+02:00 and 1916-10-01 00:00:00+01:00; before and after the DST transition.
     # (Back in 1916 they did not consider the needs of software engineers in 2023 :P).
-    # Setting ambiguous=True will make pandas ignore the ambiguity and use the DST timestamp.
+    # Setting ambiguous=True will make pandas ignore the ambiguity and use the DST timestamp. This is what we want;
+    # for a user requesting monthly aggregates, we don't want to miss the first hour of the month.
     return pd.date_range(  # type: ignore [union-attr]
         start.replace(tzinfo=None),
         end.replace(tzinfo=None),
