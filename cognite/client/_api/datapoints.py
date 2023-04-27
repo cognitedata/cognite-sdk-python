@@ -1017,7 +1017,7 @@ class DatapointsAPI(APIClient):
             aggregates with automatic handling for daylight saving time (DST) transitions. If your time zone observes DST,
             and your query crosses at least one DST-boundary, granularities like "3 days" or "1 week", that used to represent
             fixed durations, no longer do so. To understand why, let's illustrate with an example: A typical time zone
-            (above Equator) that observes DST will skip one hour ahead during spring, leading to a day that is only
+            (above the equator) that observes DST will skip one hour ahead during spring, leading to a day that is only
             23 hours long, and oppositely in the fall, turning back the clock one hour, yielding a 25-hour-long day.
 
         In short, this method works as follows:
