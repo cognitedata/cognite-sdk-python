@@ -373,7 +373,7 @@ class FunctionCallLogEntry(CogniteResponse):
     def _load(cls, response: Dict[str, Any]) -> FunctionCallLogEntry:
         return cls(
             timestamp=response["timestamp"],
-            message=response["message"],
+            message=response.get("message", ""),
         )
 
 
