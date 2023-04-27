@@ -520,7 +520,7 @@ def pandas_date_range_tz(start: datetime, end: datetime, freq: str, inclusive: s
     Assumes that start and end have the same timezone.
     """
     pd = local_import("pandas")
-    # There is a bug in date_range which makes it fail to handle ambiguous timesstamps when you use time zone aware
+    # There is a bug in date_range which makes it fail to handle ambiguous timestamps when you use time zone aware
     # datetimes. This is a workaround by passing the time zone as an argument to the function.
     # In addition, pandas struggle with ZoneInfo objects, so  we convert it to a string, so pandas can use its own
     # tzdata implementation.
