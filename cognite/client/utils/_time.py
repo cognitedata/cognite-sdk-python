@@ -485,7 +485,7 @@ def _to_fixed_utc_intervals_fixed_unit_length(
 
     freq = multiplier * GRANULARITY_IN_HOURS[unit]
     index = pandas_date_range_tz(start, end, to_pandas_freq(f"{multiplier}{unit}", start))
-    utc_offsets = index.to_series().apply(lambda t: t.utcoffset())
+    utc_offsets = pd.Series([t.utcoffset() for t in index], index=index)
     transition_raw = index[(utc_offsets != utc_offsets.shift(-1)) | (utc_offsets != utc_offsets.shift(1))]
 
     hour, zero = pd.Timedelta(hours=1), pd.Timedelta(0)
