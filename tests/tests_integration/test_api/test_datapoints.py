@@ -1166,6 +1166,22 @@ class TestRetrieveTimezoneDatapointsAPI:
     """
 
     @staticmethod
+    def test_retrieve_dataframe_in_tz_ambiguous_time(cognite_client, hourly_normal_dist):
+        # Arrange
+        oslo = ZoneInfo("Europe/Oslo")
+
+        # Act
+        df = cognite_client.time_series.data.retrieve_dataframe_in_tz(
+            external_id=hourly_normal_dist.external_id,
+            start=datetime(1901, 1, 1, tzinfo=oslo),
+            end=datetime(2023, 1, 1, tzinfo=oslo),
+            aggregates="average",
+            granularity="1month",
+        )
+
+        assert not df.empty
+
+    @staticmethod
     @pytest.mark.parametrize(
         "test_series_no, start, end, aggregation, granularity",
         (

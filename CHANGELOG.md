@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.0.2] - 27-04-26
+### Fixed
+- Fixed a bug in `DatapointsAPI.retrieve_dataframe_in_tz` that could raise `AmbiguousTimeError` when subdividing the user-specified time range into UTC intervals (with fixed offset).
+
 ## [6.0.1] - 20-04-23
 ### Fixed
 - Fixed a bug that would cause `DatapointsAPI.retrieve_dataframe_in_tz` to raise an `IndexError` if there were only empty time series in the response.

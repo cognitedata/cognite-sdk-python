@@ -22,6 +22,7 @@ from cognite.client.utils._time import (
     granularity_unit_to_ms,
     import_zoneinfo,
     ms_to_datetime,
+    pandas_date_range_tz,
     split_time_range,
     timestamp_to_ms,
     to_fixed_utc_intervals,
@@ -576,3 +577,22 @@ class TestToPandasFreq:
         # Assert
         actual_index = pd.date_range(start, periods=2, freq=freq)
         pd.testing.assert_index_equal(actual_index, expected_index)
+
+
+class TestPandasDateRangeTz:
+    @staticmethod
+    @pytest.mark.dsl
+    def test_pandas_date_range_tz_ambiguous_time_error():
+        # Arrange
+        ZoneInfo = import_zoneinfo()
+        oslo = ZoneInfo("Europe/Oslo")
+        start = datetime(1916, 8, 1, tzinfo=oslo)
+        end = datetime(1916, 12, 1, tzinfo=oslo)
+        expected_length = 5
+        freq = to_pandas_freq("1month", start)
+
+        # Act
+        index = pandas_date_range_tz(start, end, freq)
+
+        # Assert
+        assert len(index) == expected_length
