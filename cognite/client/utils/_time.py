@@ -525,7 +525,7 @@ def pandas_date_range_tz(start: datetime, end: datetime, freq: str, inclusive: s
     # In addition, pandas struggle with ZoneInfo objects, so we convert them to string so that pandas can use its own
     # tzdata implementation.
 
-    # Ambiguous times are for example 1916-10-01 00:00:00 Europe/Oslo as this time has two UTC timestamps,
+    # An ambiguous timestamp is for example 1916-10-01 00:00:00 Europe/Oslo, as this corresponds to two different points in time,
     # 1916-10-01 00:00:00+02:00 and 1916-10-01 00:00:00+01:00 depending on whether you are before or after the
     # DST transition. (Back in 1916 they did not consider the needs of software engineers in 2023 :P).
     # Setting ambiguous=True will make pandas ignore the ambiguity and use the DST timestamp.
