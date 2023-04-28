@@ -19,7 +19,11 @@ from cognite.client.data_classes.transformations.common import (
     Instances,
     Nodes,
     NonceCredentials,
+    SourceNonceCredentials,
+    DestinationNonceCredentials,
     OidcCredentials,
+    SourceOidcCredentials,
+    DestinationOidcCredentials,
     SequenceRows,
     ViewInfo,
 )
@@ -52,19 +56,19 @@ def new_transformation(cognite_client, new_datasets):
         external_id=f"{prefix}-transformation",
         destination=TransformationDestination.assets(),
         data_set_id=new_datasets[0].id,
-        source_oidc_credentials=OidcCredentials(
+        source_oidc_credentials=SourceOidcCredentials(
             client_id="invalidClientId",
             client_secret="InvalidClientSecret",
             scopes=",".join(creds.scopes),
             token_uri="InvalidTokenUrl",
-            cdf_project_name=cognite_client.config.project,
+            cdf_project_name="InvalidProject",
         ),
-        destination_oidc_credentials=OidcCredentials(
+        destination_oidc_credentials=DestinationOidcCredentials(
             client_id="invalidClientId",
             client_secret="InvalidClientSecret",
             scopes=",".join(creds.scopes),
             token_uri="InvalidTokenUrl",
-            cdf_project_name=cognite_client.config.project,
+            cdf_project_name="InvalidProject",
         ),
     )
     ts = cognite_client.transformations.create(transform)
@@ -97,6 +101,28 @@ class TestTransformationsAPI:
         prefix = random_string(6, string.ascii_letters)
         transform = Transformation(
             name="any", external_id=f"{prefix}-transformation", destination=TransformationDestination.assets()
+        )
+        ts = cognite_client.transformations.create(transform)
+        cognite_client.transformations.delete(id=ts.id)
+
+    def test_create_asset_with_source_destination_oidc_transformation(self, cognite_client):
+        prefix = random_string(6, string.ascii_letters)
+        transform = Transformation(
+            name="any", external_id=f"{prefix}-transformation", destination=TransformationDestination.assets(),
+            source_oidc_credentials=SourceOidcCredentials(
+                client_id=cognite_client._config.credentials.client_id,
+                client_secret=cognite_client._config.credentials.client_secret,
+                scopes="https://bluefield.cognitedata.com/.default",
+                token_uri="https://login.microsoftonline.com/b86328db-09aa-4f0e-9a03-0136f604d20a/oauth2/v2.0/token",
+                cdf_project_name="extractor-bluefield-testing",
+            ),
+            destination_oidc_credentials=DestinationOidcCredentials(
+                client_id=cognite_client._config.credentials.client_id,
+                client_secret=cognite_client._config.credentials.client_secret,
+                scopes="https://bluefield.cognitedata.com/.default",
+                token_uri="https://login.microsoftonline.com/b86328db-09aa-4f0e-9a03-0136f604d20a/oauth2/v2.0/token",
+                cdf_project_name="extractor-bluefield-testing2",
+            ),
         )
         ts = cognite_client.transformations.create(transform)
         cognite_client.transformations.delete(id=ts.id)
@@ -334,11 +360,12 @@ class TestTransformationsAPI:
         session = cognite_client.iam.sessions.create()
         update_transformation = (
             TransformationUpdate(id=new_transformation.id)
-            .source_nonce.set(NonceCredentials(session.id, session.nonce, cognite_client._config.project))
-            .destination_nonce.set(NonceCredentials(session.id, session.nonce, cognite_client._config.project))
+            .source_nonce.set(SourceNonceCredentials(session.id, session.nonce, cognite_client._config.project))
+            .destination_nonce.set(DestinationNonceCredentials(session.id, session.nonce, cognite_client._config.project))
         )
 
         updated_transformation = cognite_client.transformations.update(update_transformation)
+        print(updated_transformation)
         retrieved_transformation = cognite_client.transformations.retrieve(new_transformation.id)
         assert (
             updated_transformation.source_session.session_id == session.id
@@ -352,10 +379,8 @@ class TestTransformationsAPI:
     )
     def test_update_nonce_full(self, cognite_client, new_transformation):
         session = cognite_client.iam.sessions.create()
-        new_transformation.source_nonce = NonceCredentials(session.id, session.nonce, cognite_client._config.project)
-        new_transformation.destination_nonce = NonceCredentials(
-            session.id, session.nonce, cognite_client._config.project
-        )
+        new_transformation.source_nonce = SourceNonceCredentials(session.id, session.nonce, cognite_client._config.project)
+        new_transformation.destination_nonce = DestinationNonceCredentials(session.id, session.nonce, cognite_client._config.project)
 
         updated_transformation = cognite_client.transformations.update(new_transformation)
         retrieved_transformation = cognite_client.transformations.retrieve(new_transformation.id)
