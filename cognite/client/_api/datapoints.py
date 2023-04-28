@@ -75,7 +75,6 @@ from cognite.client.utils._time import (
     timestamp_to_ms,
     to_fixed_utc_intervals,
     to_pandas_freq,
-    try_to_datetime,
     validate_timezone,
 )
 from cognite.client.utils._validation import validate_user_input_dict_with_identifier
@@ -886,8 +885,8 @@ class DatapointsAPI(APIClient):
         *,
         id: None | int | dict[str, Any] | Sequence[int | dict[str, Any]] = None,
         external_id: None | str | dict[str, Any] | Sequence[str | dict[str, Any]] = None,
-        start: int | str | datetime | pd.Timestamp | None = None,
-        end: int | str | datetime | pd.Timestamp | None = None,
+        start: int | str | datetime | None = None,
+        end: int | str | datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None,
         granularity: Optional[str] = None,
         limit: Optional[int] = None,
@@ -961,8 +960,6 @@ class DatapointsAPI(APIClient):
         if column_names not in {"id", "external_id"}:
             raise ValueError(f"Given parameter {column_names=} must be one of 'id' or 'external_id'")
 
-        start, end = try_to_datetime(start, end)
-
         query = _DatapointsQuery(
             start=start,
             end=end,
@@ -1003,8 +1000,8 @@ class DatapointsAPI(APIClient):
         *,
         id: int | Sequence[int] | None = None,
         external_id: str | Sequence[str] | None = None,
-        start: datetime | pd.Timestamp,
-        end: datetime | pd.Timestamp,
+        start: datetime,
+        end: datetime,
         aggregates: Aggregate | str | Sequence[Aggregate | str] | None,
         granularity: Optional[str] = None,
         ignore_unknown_ids: bool = False,
@@ -1101,7 +1098,6 @@ class DatapointsAPI(APIClient):
                 "Pass both to get aggregates, or neither to get raw data"
             )
 
-        start, end = try_to_datetime(start, end)
         tz = validate_timezone(start, end)  # type: ignore [arg-type]
         if aggregates is None and granularity is None:
             # Raw Data only need to convert the timezone
