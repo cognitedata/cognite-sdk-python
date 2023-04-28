@@ -41,7 +41,7 @@ from cognite.client.utils._text import (
     to_snake_case,
 )
 
-_AGGREGATE_SNAKE = Literal[
+Aggregate = Literal[
     "average",
     "continuous_variance",
     "count",
@@ -54,23 +54,7 @@ _AGGREGATE_SNAKE = Literal[
     "total_variation",
 ]
 
-_AGGREGATE_CAMEL = Literal[
-    "average",
-    "continuousVariance",
-    "count",
-    "discreteVariance",
-    "interpolation",
-    "max",
-    "min",
-    "stepInterpolation",
-    "sum",
-    "totalVariation",
-]
-
-Aggregate = Literal[_AGGREGATE_SNAKE, _AGGREGATE_CAMEL]
-
-
-ALL_SORTED_DP_AGGS = sorted(typing.get_args(_AGGREGATE_SNAKE))
+ALL_SORTED_DP_AGGS = sorted(typing.get_args(Aggregate))
 
 try:
     import numpy as np
