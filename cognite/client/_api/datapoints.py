@@ -922,7 +922,7 @@ class DatapointsAPI(APIClient):
 
         Examples:
 
-            Get a pandas dataframe using a single id, and use this id as column name, with no more than 100 datapoints::
+            Get a pandas dataframe using a single id, and use this id as column name, with no more than 100 datapoints:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -934,7 +934,7 @@ class DatapointsAPI(APIClient):
                 ...     column_names="id")
 
             Get the pandas dataframe with a uniform index (fixed spacing between points) of 1 day, for two time series with
-            individually specified aggregates, from 1990 through 2020::
+            individually specified aggregates, from 1990 through 2020:
 
                 >>> from datetime import datetime, timezone
                 >>> df = client.time_series.data.retrieve_dataframe(
@@ -948,13 +948,24 @@ class DatapointsAPI(APIClient):
                 ...     uniform_index=True)
 
             Get a pandas dataframe containing the 'average' aggregate for two time series using a 30-day granularity,
-            starting Jan 1, 1970 all the way up to present, without having the aggregate name in the column names::
+            starting Jan 1, 1970 all the way up to present, without having the aggregate name in the column names:
 
                 >>> df = client.time_series.data.retrieve_dataframe(
                 ...     external_id=["foo", "bar"],
                 ...     aggregates=["average"],
                 ...     granularity="30d",
                 ...     include_aggregate_name=False)
+
+            Remember that pandas.Timestamp is is a subclass of datetime, so you can use a Timestamps as start and
+            end arguments:
+
+                >>> import pandas as pd
+                >>> df = client.time_series.data.retrieve_dataframe(
+                ...     external_id="foo",
+                ...     start=pd.Timestamp("2023-01-01"),
+                ...     end=pd.Timestamp("2023-02-01"),
+                ...     )
+
         """
         _, pd = local_import("numpy", "pandas")  # Verify that deps are available or raise CogniteImportError
         if column_names not in {"id", "external_id"}:
