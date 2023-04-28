@@ -67,7 +67,7 @@ _AGGREGATE_CAMEL = Literal[
     "totalVariation",
 ]
 
-AGGREGATE = Literal[_AGGREGATE_SNAKE, _AGGREGATE_CAMEL]
+Aggregate = Literal[_AGGREGATE_SNAKE, _AGGREGATE_CAMEL]
 
 
 ALL_SORTED_DP_AGGS = sorted(typing.get_args(_AGGREGATE_SNAKE))
