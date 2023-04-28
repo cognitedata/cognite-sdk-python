@@ -114,6 +114,8 @@ from cognite.client.data_classes.time_series import (
 )
 from cognite.client.data_classes.transformations import (
     OidcCredentials,
+    SourceOidcCredentials,
+    DestinationOidcCredentials,
     RawTable,
     Transformation,
     TransformationBlockedInfo,
