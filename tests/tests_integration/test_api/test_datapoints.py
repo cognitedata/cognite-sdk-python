@@ -1420,16 +1420,33 @@ class TestRetrieveTimezoneDatapointsAPI:
 
     @staticmethod
     @pytest.mark.parametrize(
-        "start, end",
+        "start, end, aggregates, granularity",
         [
-            (pd.Timestamp("2023-01-01", tz="Europe/Oslo"), pd.Timestamp("2023-02-01", tz="Europe/Oslo")),
+            pytest.param(
+                pd.Timestamp("2023-01-01", tz="Europe/Oslo"),
+                pd.Timestamp("2023-02-01", tz="Europe/Oslo"),
+                None,
+                None,
+                id="RAW query with pandas.Timestamp",
+            ),
+            pytest.param(
+                pd.Timestamp("2023-01-01", tz="Europe/Oslo"),
+                pd.Timestamp("2023-02-01", tz="Europe/Oslo"),
+                "average",
+                "1day",
+                id="Aggregate query with pandas.Timestamp",
+            ),
         ],
     )
     def test_retrieve_dataframe_in_tz_datetime_formats(
-        start: pd.Timestamp | str | datetime, end: pd.Timestamp | str | datetime, cognite_client, hourly_normal_dist
+        start: datetime, end: datetime, cognite_client, aggregates: str, granularity: str, hourly_normal_dist
     ):
         df = cognite_client.time_series.data.retrieve_dataframe_in_tz(
-            external_id=hourly_normal_dist.external_id, start=start, end=end
+            external_id=hourly_normal_dist.external_id,
+            start=start,
+            end=end,
+            aggregates=aggregates,
+            granularity=granularity,
         )
 
         assert not df.empty

@@ -1117,7 +1117,7 @@ class DatapointsAPI(APIClient):
                     limit=None,
                 )
                 .tz_localize("utc")
-                .tz_convert(tz.key)
+                .tz_convert(str(tz))
             )
 
         assert isinstance(granularity, str)  # mypy
@@ -1150,7 +1150,7 @@ class DatapointsAPI(APIClient):
         df = (
             arrays.to_pandas(column_names, include_aggregate_name, include_granularity_name)
             .tz_localize("utc")
-            .tz_convert(tz.key)
+            .tz_convert(str(tz))
         )
 
         if uniform_index:
