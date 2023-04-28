@@ -605,7 +605,7 @@ class DatapointsAPI(APIClient):
         external_id: None | str | dict[str, Any] | Sequence[str | dict[str, Any]] = None,
         start: int | str | datetime | None = None,
         end: int | str | datetime | None = None,
-        aggregates: Aggregate | str | list[Aggregate | str] | None,
+        aggregates: Aggregate | str | list[Aggregate | str] | None = None,
         granularity: Optional[str] = None,
         limit: Optional[int] = None,
         include_outside_points: bool = False,
@@ -791,7 +791,7 @@ class DatapointsAPI(APIClient):
         external_id: None | str | dict[str, Any] | Sequence[str | dict[str, Any]] = None,
         start: int | str | datetime | None = None,
         end: int | str | datetime | None = None,
-        aggregates: Aggregate | str | list[Aggregate | str] | None,
+        aggregates: Aggregate | str | list[Aggregate | str] | None = None,
         granularity: Optional[str] = None,
         limit: Optional[int] = None,
         include_outside_points: bool = False,
@@ -887,7 +887,7 @@ class DatapointsAPI(APIClient):
         external_id: None | str | dict[str, Any] | Sequence[str | dict[str, Any]] = None,
         start: int | str | datetime | None = None,
         end: int | str | datetime | None = None,
-        aggregates: Aggregate | str | list[Aggregate | str] | None,
+        aggregates: Aggregate | str | list[Aggregate | str] | None = None,
         granularity: Optional[str] = None,
         limit: Optional[int] = None,
         include_outside_points: bool = False,
@@ -1002,7 +1002,7 @@ class DatapointsAPI(APIClient):
         external_id: str | Sequence[str] | None = None,
         start: datetime,
         end: datetime,
-        aggregates: Aggregate | str | Sequence[Aggregate | str] | None,
+        aggregates: Aggregate | str | Sequence[Aggregate | str] | None = None,
         granularity: Optional[str] = None,
         ignore_unknown_ids: bool = False,
         uniform_index: bool = False,
@@ -1098,7 +1098,7 @@ class DatapointsAPI(APIClient):
                 "Pass both to get aggregates, or neither to get raw data"
             )
 
-        tz = validate_timezone(start, end)  # type: ignore [arg-type]
+        tz = validate_timezone(start, end)
         if aggregates is None and granularity is None:
             # Raw Data only need to convert the timezone
             return (
