@@ -273,7 +273,7 @@ class FeatureList(CogniteResourceList):
                 else:
                     setattr(feature, prop_name, column_value)
             features.append(feature)
-        return FeatureList(features, cognite_client=None)
+        return FeatureList(features)
 
 
 def nan_to_none(column_value: Any) -> Any:

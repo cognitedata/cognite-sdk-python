@@ -393,15 +393,6 @@ class CogniteResourceList(Generic[T_CogniteResource], CogniteBaseList, _WithClie
             return cls(resources, cognite_client=cognite_client)
         raise TypeError(f"The items to load must be a list (of dicts), not {type(items)}")
 
-    def extend(self, other: List[T_CogniteResource]) -> None:  # type: ignore [override]
-        other_res_list = type(self)(other, cognite_client=None)  # See if we can accept the types
-        if set(self._id_to_item).isdisjoint(other_res_list._id_to_item):
-            super().extend(other)
-            self._external_id_to_item.update(other_res_list._external_id_to_item)
-            self._id_to_item.update(other_res_list._id_to_item)
-        else:
-            raise ValueError("Unable to extend as this would introduce duplicates")
-
     @overload  # type: ignore [override]
     # Generic[T] + UserList does not like this overload:
     def __getitem__(self: T_CogniteResourceList, item: int) -> T_CogniteResource:

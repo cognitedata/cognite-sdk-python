@@ -563,7 +563,7 @@ class RawRowsAPI(APIClient):
         summary = utils._concurrency.execute_tasks(self._list, tasks, max_workers=self._config.max_workers)
         if summary.exceptions:
             raise summary.exceptions[0]
-        return RowList(summary.joined_results(), cognite_client=None)
+        return RowList(summary.joined_results())
 
     def _make_columns_param(self, columns: Optional[List[str]]) -> Optional[str]:
         if columns is None:

@@ -701,7 +701,7 @@ class SequencesDataAPI(APIClient):
         if len(post_objs) == 1:
             return results[0]
         else:
-            return SequenceDataList(results, cognite_client=None)
+            return SequenceDataList(results)
 
     def retrieve_latest(
         self,
