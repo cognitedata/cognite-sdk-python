@@ -483,25 +483,25 @@ def validate_time_zone_invalid_arguments_data() -> list[ParameterSet]:
         pytest.param(
             datetime(2023, 1, 1, tzinfo=oslo),
             datetime(2023, 1, 10, tzinfo=new_york),
-            "start and end have different timezones, 'Europe/Oslo' and 'America/New_York'.",
+            "'start' and 'end' represent different timezones: 'Europe/Oslo' and 'America/New_York'.",
             id="Different timezones",
         ),
         pytest.param(
             datetime(2023, 1, 1),
             datetime(2023, 1, 10, tzinfo=new_york),
-            "All times must be time zone aware, start does not have a timezone",
+            "All times must be timezone aware, start does not have a timezone",
             id="Missing start timezone",
         ),
         pytest.param(
             datetime(2023, 1, 1),
             datetime(2023, 1, 10),
-            "All times must be time zone aware, start and end do not have timezones",
+            "All times must be timezone aware, start and end do not have timezones",
             id="Missing start and end timezone",
         ),
         pytest.param(
             datetime(2023, 1, 1, tzinfo=oslo),
             datetime(2023, 1, 10),
-            "All times must be time zone aware, end does not have a timezone",
+            "All times must be timezone aware, end does not have a timezone",
             id="Missing end timezone",
         ),
     ]
@@ -512,7 +512,7 @@ def validate_time_zone_valid_arguments_data() -> list[ParameterSet]:
         ZoneInfo = import_zoneinfo()
         import pandas as pd
         import pytz  # hard pandas dependency
-    except CogniteImportError:
+    except (ImportError, CogniteImportError):
         return []
 
     utc = ZoneInfo("UTC")

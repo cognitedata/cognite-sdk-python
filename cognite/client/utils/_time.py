@@ -14,6 +14,8 @@ from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._auxiliary import local_import
 
 if TYPE_CHECKING:
+    from datetime import tzinfo
+
     import pandas
 
     if sys.version_info >= (3, 9):
@@ -550,24 +552,39 @@ def pandas_date_range_tz(start: datetime, end: datetime, freq: str, inclusive: s
     )
 
 
+def _timezones_are_equal(start_tz: tzinfo, end_tz: tzinfo) -> bool:
+    """There are unfortunately several ways to pass/represent the same timezone (without it being a user error).
+    For example pandas uses 'pytz' under the hood -except- for UTC, then it uses the built-in `datetime.timezone.utc`
+    -except- when given something concrete like pytz.UTC or ZoneInfo(...).
+
+    To make sure we don't raise something silly like 'UTC != UTC', we convert both to ZoneInfo for comparison
+    via str(). This is safe as all return the lookup key (for the IANA time zone database).
+
+    Note:
+        We do not consider timezones with different keys, but equal fixed offsets from UTC to be equal. An example
+        would be Zulu Time (which is +00:00 ahead of UTC) and UTC.
+    """
+    if start_tz is end_tz:
+        return True
+    ZoneInfo, ZoneInfoNotFoundError = import_zoneinfo(), _import_zoneinfo_not_found_error()
+    with suppress(ValueError, ZoneInfoNotFoundError):
+        # ValueError is raised for non-conforming keys (ZoneInfoNotFoundError is self-explanatory)
+        if ZoneInfo(str(start_tz)) is ZoneInfo(str(end_tz)):
+            return True
+    return False
+
+
 def validate_timezone(start: datetime, end: datetime) -> ZoneInfo:
     if (start_tz := start.tzinfo) is None or (end_tz := end.tzinfo) is None:
         missing = [name for name, timestamp in zip(("start", "end"), (start, end)) if not timestamp.tzinfo]
         names = " and ".join(missing)
         end_sentence = " do not have timezones." if len(missing) >= 2 else " does not have a timezone."
-        raise ValueError(f"All times must be time zone aware, {names}{end_sentence}")
+        raise ValueError(f"All times must be timezone aware, {names}{end_sentence}")
 
-    # There are several ways to pass the same timezone unfortunately (without it being a user error):
-    # Pandas uses 'pytz' under the hood except for UTC, then it uses built-in `datetime.timezone.utc`...
-    # except when given something concrete like pytz.UTC or ZoneInfo(...). Converting to ZoneInfo via
-    # string is safe, all return timezone 'key':
+    if not _timezones_are_equal(start_tz, end_tz):
+        raise ValueError(f"'start' and 'end' represent different timezones: '{start_tz}' and '{end_tz}'.")
+
     ZoneInfo = import_zoneinfo()
-    tz_matches = start_tz is end_tz
-    with suppress(_import_zoneinfo_not_found_error()):
-        tz_matches = ZoneInfo(str(start_tz)) is ZoneInfo(str(end_tz))
-    if not tz_matches:
-        raise ValueError(f"start and end have different timezones, '{start_tz}' and '{end_tz}'.")
-
     if isinstance(start_tz, ZoneInfo):
         return start_tz
 
