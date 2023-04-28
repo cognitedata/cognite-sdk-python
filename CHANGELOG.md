@@ -17,6 +17,16 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.1.0] - 28-04-25
+
+### Added
+- Support for giving `start` and `end` arguments as `pandas.Timestamp` in
+  `DatapointsAPI.retrieve_dataframe_in_tz`.
+
+### Improved
+
+- Type hints for the `DatapointsAPI` methods.
+
 ## [6.0.2] - 27-04-26
 ### Fixed
 - Fixed a bug in `DatapointsAPI.retrieve_dataframe_in_tz` that could raise `AmbiguousTimeError` when subdividing the user-specified time range into UTC intervals (with fixed offset).

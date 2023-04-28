@@ -47,6 +47,7 @@ from cognite.client._api.datapoint_tasks import (
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.datapoints import (
+    Aggregate,
     Datapoints,
     DatapointsArray,
     DatapointsArrayList,
@@ -600,16 +601,16 @@ class DatapointsAPI(APIClient):
     def retrieve(
         self,
         *,
-        id: Union[None, int, Dict[str, Any], Sequence[Union[int, Dict[str, Any]]]] = None,
-        external_id: Union[None, str, Dict[str, Any], Sequence[Union[str, Dict[str, Any]]]] = None,
-        start: Union[int, str, datetime, None] = None,
-        end: Union[int, str, datetime, None] = None,
-        aggregates: Union[str, List[str], None] = None,
+        id: None | int | dict[str, Any] | Sequence[int | dict[str, Any]] = None,
+        external_id: None | str | dict[str, Any] | Sequence[str | dict[str, Any]] = None,
+        start: int | str | datetime | None = None,
+        end: int | str | datetime | None = None,
+        aggregates: Aggregate | str | list[Aggregate | str] | None = None,
         granularity: Optional[str] = None,
         limit: Optional[int] = None,
         include_outside_points: bool = False,
         ignore_unknown_ids: bool = False,
-    ) -> Union[None, Datapoints, DatapointsList]:
+    ) -> None | Datapoints | DatapointsList:
         """`Retrieve datapoints for one or more time series. <https://docs.cognite.com/api/v1/#operation/getMultiTimeSeriesDatapoints>`_
 
         **Performance guide**:
@@ -786,16 +787,16 @@ class DatapointsAPI(APIClient):
     def retrieve_arrays(
         self,
         *,
-        id: Union[None, int, Dict[str, Any], Sequence[Union[int, Dict[str, Any]]]] = None,
-        external_id: Union[None, str, Dict[str, Any], Sequence[Union[str, Dict[str, Any]]]] = None,
-        start: Union[int, str, datetime, None] = None,
-        end: Union[int, str, datetime, None] = None,
-        aggregates: Union[str, List[str], None] = None,
+        id: None | int | dict[str, Any] | Sequence[int | dict[str, Any]] = None,
+        external_id: None | str | dict[str, Any] | Sequence[str | dict[str, Any]] = None,
+        start: int | str | datetime | None = None,
+        end: int | str | datetime | None = None,
+        aggregates: Aggregate | str | list[Aggregate | str] | None = None,
         granularity: Optional[str] = None,
         limit: Optional[int] = None,
         include_outside_points: bool = False,
         ignore_unknown_ids: bool = False,
-    ) -> Union[None, DatapointsArray, DatapointsArrayList]:
+    ) -> None | DatapointsArray | DatapointsArrayList:
         """`Retrieve datapoints for one or more time series. <https://docs.cognite.com/api/v1/#operation/getMultiTimeSeriesDatapoints>`_
 
         **Note**: This method requires `numpy` to be installed.
@@ -882,11 +883,11 @@ class DatapointsAPI(APIClient):
     def retrieve_dataframe(
         self,
         *,
-        id: Union[None, int, Dict[str, Any], Sequence[Union[int, Dict[str, Any]]]] = None,
-        external_id: Union[None, str, Dict[str, Any], Sequence[Union[str, Dict[str, Any]]]] = None,
-        start: Union[int, str, datetime, None] = None,
-        end: Union[int, str, datetime, None] = None,
-        aggregates: Union[str, List[str], None] = None,
+        id: None | int | dict[str, Any] | Sequence[int | dict[str, Any]] = None,
+        external_id: None | str | dict[str, Any] | Sequence[str | dict[str, Any]] = None,
+        start: int | str | datetime | None = None,
+        end: int | str | datetime | None = None,
+        aggregates: Aggregate | str | list[Aggregate | str] | None = None,
         granularity: Optional[str] = None,
         limit: Optional[int] = None,
         include_outside_points: bool = False,
@@ -921,7 +922,7 @@ class DatapointsAPI(APIClient):
 
         Examples:
 
-            Get a pandas dataframe using a single id, and use this id as column name, with no more than 100 datapoints::
+            Get a pandas dataframe using a single id, and use this id as column name, with no more than 100 datapoints:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -933,7 +934,7 @@ class DatapointsAPI(APIClient):
                 ...     column_names="id")
 
             Get the pandas dataframe with a uniform index (fixed spacing between points) of 1 day, for two time series with
-            individually specified aggregates, from 1990 through 2020::
+            individually specified aggregates, from 1990 through 2020:
 
                 >>> from datetime import datetime, timezone
                 >>> df = client.time_series.data.retrieve_dataframe(
@@ -947,13 +948,24 @@ class DatapointsAPI(APIClient):
                 ...     uniform_index=True)
 
             Get a pandas dataframe containing the 'average' aggregate for two time series using a 30-day granularity,
-            starting Jan 1, 1970 all the way up to present, without having the aggregate name in the column names::
+            starting Jan 1, 1970 all the way up to present, without having the aggregate name in the column names:
 
                 >>> df = client.time_series.data.retrieve_dataframe(
                 ...     external_id=["foo", "bar"],
                 ...     aggregates=["average"],
                 ...     granularity="30d",
                 ...     include_aggregate_name=False)
+
+            Remember that pandas.Timestamp is a subclass of datetime, so you can use Timestamps as start and
+            end arguments:
+
+                >>> import pandas as pd
+                >>> df = client.time_series.data.retrieve_dataframe(
+                ...     external_id="foo",
+                ...     start=pd.Timestamp("2023-01-01"),
+                ...     end=pd.Timestamp("2023-02-01"),
+                ...     )
+
         """
         _, pd = local_import("numpy", "pandas")  # Verify that deps are available or raise CogniteImportError
         if column_names not in {"id", "external_id"}:
@@ -1001,7 +1013,7 @@ class DatapointsAPI(APIClient):
         external_id: str | Sequence[str] | None = None,
         start: datetime,
         end: datetime,
-        aggregates: Sequence[str] | str | None = None,
+        aggregates: Aggregate | str | Sequence[Aggregate | str] | None = None,
         granularity: Optional[str] = None,
         ignore_unknown_ids: bool = False,
         uniform_index: bool = False,
@@ -1036,7 +1048,7 @@ class DatapointsAPI(APIClient):
             external_id (str | Sequence[str] | None): External ID or list of External IDs.
             start (datetime): Inclusive start, must be time zone aware.
             end (datetime): Exclusive end, must be time zone aware and have the same time zone as start.
-            aggregates (str | list[str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
+            aggregates (Aggregate | str | Sequence[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str): The granularity to fetch aggregates at, supported are: second, minute, hour, day, week, month, quarter and year. Default: None.
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
             uniform_index (bool): If querying aggregates, specifying `uniform_index=True` will return a dataframe with an
@@ -1116,7 +1128,7 @@ class DatapointsAPI(APIClient):
                     limit=None,
                 )
                 .tz_localize("utc")
-                .tz_convert(tz.key)
+                .tz_convert(str(tz))
             )
 
         assert isinstance(granularity, str)  # mypy
@@ -1132,7 +1144,7 @@ class DatapointsAPI(APIClient):
             duplicated = find_duplicates(identifiers.as_primitives())
             raise ValueError(f"The following identifiers were not unique: {duplicated}")
 
-        intervals = to_fixed_utc_intervals(start, end, granularity)
+        intervals = to_fixed_utc_intervals(start, end, granularity)  # type: ignore [arg-type]
 
         queries = [
             {**ident_dct, "aggregates": aggregates, **interval}  # type: ignore [arg-type]
@@ -1149,23 +1161,23 @@ class DatapointsAPI(APIClient):
         df = (
             arrays.to_pandas(column_names, include_aggregate_name, include_granularity_name)
             .tz_localize("utc")
-            .tz_convert(tz.key)
+            .tz_convert(str(tz))
         )
 
         if uniform_index:
-            freq = to_pandas_freq(granularity, start)
-            start, end = align_large_granularity(start, end, granularity)
+            freq = to_pandas_freq(granularity, start)  # type: ignore [arg-type]
+            start, end = align_large_granularity(start, end, granularity)  # type: ignore [arg-type]
             return df.reindex(pandas_date_range_tz(start, end, freq, inclusive="left"))
 
         return df
 
     def retrieve_latest(
         self,
-        id: Union[int, LatestDatapointQuery, List[Union[int, LatestDatapointQuery]]] = None,
-        external_id: Union[str, LatestDatapointQuery, List[Union[str, LatestDatapointQuery]]] = None,
-        before: Union[None, int, str, datetime] = None,
+        id: int | LatestDatapointQuery | list[int | LatestDatapointQuery] | None = None,
+        external_id: str | LatestDatapointQuery | list[str | LatestDatapointQuery] | None = None,
+        before: None | int | str | datetime = None,
         ignore_unknown_ids: bool = False,
-    ) -> Union[None, Datapoints, DatapointsList]:
+    ) -> Datapoints | DatapointsList | None:
         """`Get the latest datapoint for one or more time series <https://docs.cognite.com/api/v1/#operation/getLatest>`_
 
         Args:
@@ -1224,12 +1236,10 @@ class DatapointsAPI(APIClient):
 
     def insert(
         self,
-        datapoints: Union[
-            Datapoints,
-            DatapointsArray,
-            Sequence[Dict[str, Union[int, float, str, datetime]]],
-            Sequence[Tuple[Union[int, float, datetime], Union[int, float, str]]],
-        ],
+        datapoints: Datapoints
+        | DatapointsArray
+        | Sequence[dict[str, int | float | str | datetime]]
+        | Sequence[tuple[int | float | datetime, int | float | str]],
         id: int = None,
         external_id: str = None,
     ) -> None:
@@ -1294,7 +1304,7 @@ class DatapointsAPI(APIClient):
         dps_poster = DatapointsPoster(self)
         dps_poster.insert([post_dps_object])
 
-    def insert_multiple(self, datapoints: List[Dict[str, Union[str, int, List, Datapoints, DatapointsArray]]]) -> None:
+    def insert_multiple(self, datapoints: list[dict[str, str | int | list | Datapoints | DatapointsArray]]) -> None:
         """`Insert datapoints into multiple time series <https://docs.cognite.com/api/v1/#operation/postMultiTimeSeriesDatapoints>`_
 
         Args:
@@ -1337,7 +1347,7 @@ class DatapointsAPI(APIClient):
         dps_poster.insert(datapoints)
 
     def delete_range(
-        self, start: Union[int, str, datetime], end: Union[int, str, datetime], id: int = None, external_id: str = None
+        self, start: int | str | datetime, end: int | str | datetime, id: int = None, external_id: str = None
     ) -> None:
         """Delete a range of datapoints from a time series.
 
@@ -1366,7 +1376,7 @@ class DatapointsAPI(APIClient):
         delete_dps_object = {**identifier, "inclusiveBegin": start, "exclusiveEnd": end}
         self._delete_datapoints_ranges([delete_dps_object])
 
-    def delete_ranges(self, ranges: List[Dict[str, Any]]) -> None:
+    def delete_ranges(self, ranges: list[dict[str, Any]]) -> None:
         """`Delete a range of datapoints from multiple time series. <https://docs.cognite.com/api/v1/#operation/deleteDatapoints>`_
 
         Args:
@@ -1395,7 +1405,7 @@ class DatapointsAPI(APIClient):
             valid_ranges.append(valid_range)
         self._delete_datapoints_ranges(valid_ranges)
 
-    def _delete_datapoints_ranges(self, delete_range_objects: List[Dict]) -> None:
+    def _delete_datapoints_ranges(self, delete_range_objects: list[dict]) -> None:
         self._post(url_path=self._RESOURCE_PATH + "/delete", json={"items": delete_range_objects})
 
     def insert_dataframe(self, df: pd.DataFrame, external_id_headers: bool = True, dropna: bool = True) -> None:
@@ -1459,7 +1469,7 @@ class DatapointsBin:
         self.current_num_datapoints = 0
         self.dps_object_list: List[dict] = []
 
-    def add(self, dps_object: Dict[str, Any]) -> None:
+    def add(self, dps_object: dict[str, Any]) -> None:
         self.current_num_datapoints += len(dps_object["datapoints"])
         self.dps_object_list.append(dps_object)
 
@@ -1475,7 +1485,7 @@ class DatapointsPoster:
         self.limit = self.dps_client._DPS_INSERT_LIMIT
         self.bins: List[DatapointsBin] = []
 
-    def insert(self, dps_object_list: List[Dict[str, Any]]) -> None:
+    def insert(self, dps_object_list: list[dict[str, Any]]) -> None:
         valid_dps_object_list = self._validate_dps_objects(dps_object_list)
         binned_dps_object_lists = self._bin_datapoints(valid_dps_object_list)
         self._insert_datapoints_concurrently(binned_dps_object_lists)

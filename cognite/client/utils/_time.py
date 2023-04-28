@@ -543,14 +543,17 @@ def pandas_date_range_tz(start: datetime, end: datetime, freq: str, inclusive: s
 
 def validate_timezone(start: datetime, end: datetime) -> ZoneInfo:
     ZoneInfo = import_zoneinfo()
+    pd = cast(Any, local_import("pandas"))
 
     if missing := [name for name, timestamp in zip(("start", "end"), (start, end)) if not timestamp.tzinfo]:
         names = " and ".join(missing)
         end_sentence = " do not have timezones." if len(missing) >= 2 else " does not have a timezone."
         raise ValueError(f"All times must be time zone aware, {names}{end_sentence}")
 
-    if not isinstance(start.tzinfo, ZoneInfo) or not isinstance(end.tzinfo, ZoneInfo):  # type: ignore [arg-type]
-        raise ValueError("Only ZoneInfo implementation of tzinfo is supported")
+    is_start_valid = isinstance(start, pd.Timestamp) or isinstance(start.tzinfo, ZoneInfo)  # type: ignore [arg-type]
+    is_end_valid = isinstance(end, pd.Timestamp) or isinstance(end.tzinfo, ZoneInfo)  # type: ignore [arg-type]
+    if not is_start_valid or not is_end_valid:
+        raise ValueError("Only pandas.Timestamp or datetime with ZoneInfo implementation of tzinfo are supported.")
 
     if start.tzinfo is not end.tzinfo:
         raise ValueError(f"start and end have different timezones, {start.tzinfo.key!r} and {end.tzinfo.key!r}.")  # type: ignore [union-attr]
