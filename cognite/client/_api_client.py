@@ -78,7 +78,7 @@ class APIClient:
         self._config = config
         self._api_version = api_version
         self._api_subversion = config.api_subversion
-        self._cognite_client = cognite_client  # type: ignore [assignment]
+        self._cognite_client = cognite_client
         self._init_http_clients()
 
         self._CREATE_LIMIT = 1000

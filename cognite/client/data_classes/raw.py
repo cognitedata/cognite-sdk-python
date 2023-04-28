@@ -32,7 +32,7 @@ class Row(CogniteResource):
         self.key = key
         self.columns = columns
         self.last_updated_time = last_updated_time
-        self._cognite_client = cognite_client  # type: ignore [assignment]
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def to_pandas(self) -> pandas.DataFrame:  # type: ignore[override]
         """Convert the instance into a pandas DataFrame.
@@ -69,7 +69,7 @@ class Table(CogniteResource):
     def __init__(self, name: str = None, created_time: int = None, cognite_client: CogniteClient = None):
         self.name = name
         self.created_time = created_time
-        self._cognite_client = cognite_client  # type: ignore [assignment]
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
         self._db_name: Optional[str] = None
 
@@ -117,7 +117,7 @@ class Database(CogniteResource):
     def __init__(self, name: str = None, created_time: int = None, cognite_client: CogniteClient = None):
         self.name = name
         self.created_time = created_time
-        self._cognite_client = cognite_client  # type: ignore [assignment]
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def tables(self, limit: int = None) -> TableList:
         """Get the tables in this database.

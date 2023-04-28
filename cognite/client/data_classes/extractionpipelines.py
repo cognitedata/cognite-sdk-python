@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -109,7 +109,7 @@ class ExtractionPipeline(CogniteResource):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.created_by = created_by
-        self._cognite_client = cognite_client  # type: ignore [assignment]
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
     def _load(cls, resource: Dict, cognite_client: CogniteClient = None) -> ExtractionPipeline:
@@ -223,7 +223,7 @@ class ExtractionPipelineRun(CogniteResource):
         self.status = status
         self.message = message
         self.created_time = created_time
-        self._cognite_client = cognite_client  # type: ignore [assignment]
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
     def _load(cls, resource: Dict, cognite_client: CogniteClient = None) -> ExtractionPipelineRun:
@@ -309,7 +309,7 @@ class ExtractionPipelineConfigRevision(CogniteResource):
         self.revision = revision
         self.description = description
         self.created_time = created_time
-        self._cognite_client = cognite_client  # type: ignore [assignment]
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class ExtractionPipelineConfig(ExtractionPipelineConfigRevision):

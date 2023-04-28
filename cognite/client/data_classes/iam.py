@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, CogniteResponse
 from cognite.client.utils._auxiliary import basic_obj_dump
@@ -39,7 +39,7 @@ class Group(CogniteResource):
         self.id = id
         self.is_deleted = is_deleted
         self.deleted_time = deleted_time
-        self._cognite_client = cognite_client  # type: ignore [assignment]
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class GroupList(CogniteResourceList):
@@ -58,7 +58,7 @@ class SecurityCategory(CogniteResource):
     def __init__(self, name: str = None, id: int = None, cognite_client: CogniteClient = None):
         self.name = name
         self.id = id
-        self._cognite_client = cognite_client  # type: ignore [assignment]
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class SecurityCategoryList(CogniteResourceList):
@@ -140,7 +140,7 @@ class CreatedSession(CogniteResource):
         self.status = status
         self.nonce = nonce
         self.client_id = client_id
-        self._cognite_client = cognite_client  # type: ignore [assignment]
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class Session(CogniteResource):
@@ -171,7 +171,7 @@ class Session(CogniteResource):
         self.creation_time = creation_time
         self.expiration_time = expiration_time
         self.client_id = client_id
-        self._cognite_client = cognite_client  # type: ignore [assignment]
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class SessionList(CogniteResourceList):

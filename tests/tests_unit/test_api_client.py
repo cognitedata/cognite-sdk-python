@@ -4,7 +4,7 @@ import json
 import math
 import unittest
 from collections import namedtuple
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from requests import Response
@@ -214,7 +214,7 @@ class SomeResource(CogniteResource):
         self.y = y
         self.id = id
         self.external_id = external_id
-        self._cognite_client = cognite_client  # type: ignore [assignment]
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class SomeResourceList(CogniteResourceList):

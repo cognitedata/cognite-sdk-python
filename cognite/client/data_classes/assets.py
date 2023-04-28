@@ -134,7 +134,7 @@ class Asset(CogniteResource):
         self.last_updated_time = last_updated_time
         self.root_id = root_id
         self.aggregates = aggregates
-        self._cognite_client = cognite_client  # type: ignore [assignment]
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
     def _load(cls, resource: Dict, cognite_client: CogniteClient = None) -> Asset:

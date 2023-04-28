@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, cast
 
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList
 
@@ -37,7 +37,7 @@ class TransformationNotification(CogniteResource):
         self.destination = destination
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self._cognite_client = cognite_client  # type: ignore [assignment]
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def __hash__(self) -> int:
         return hash(self.id)

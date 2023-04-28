@@ -68,7 +68,7 @@ class Sequence(CogniteResource):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.data_set_id = data_set_id
-        self._cognite_client = cognite_client  # type: ignore [assignment]
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def rows(self, start: int, end: Optional[int]) -> SequenceData:
         """Retrieves rows from this sequence.

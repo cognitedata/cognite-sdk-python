@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Awaitable, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Awaitable, Dict, List, Optional, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -153,7 +153,7 @@ class Transformation(CogniteResource):
         self.source_session = source_session
         self.destination_session = destination_session
         self.tags = tags
-        self._cognite_client = cognite_client  # type: ignore [assignment]
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def copy(self) -> Transformation:
         return Transformation(
@@ -485,7 +485,7 @@ class TransformationPreviewResult(CogniteResource):
     ) -> None:
         self.schema = schema
         self.results = results
-        self._cognite_client = cognite_client  # type: ignore [assignment]
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
     def _load(cls, resource: Dict, cognite_client: CogniteClient = None) -> TransformationPreviewResult:

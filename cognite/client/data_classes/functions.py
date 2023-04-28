@@ -81,7 +81,7 @@ class Function(CogniteResource):
         self.runtime_version = runtime_version
         self.metadata = metadata
         self.error = error
-        self._cognite_client = cognite_client  # type: ignore [assignment]
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def call(self, data: Optional[Dict] = None, wait: bool = True) -> FunctionCall:
         """`Call this particular function. <https://docs.cognite.com/api/v1/#operation/postFunctionsCall>`_
@@ -241,7 +241,7 @@ class FunctionSchedule(CogniteResource):
         self.created_time = created_time
         self.session_id = session_id
         self.when = when
-        self._cognite_client = cognite_client  # type: ignore [assignment]
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def get_input_data(self) -> Optional[dict]:
         """
@@ -313,7 +313,7 @@ class FunctionCall(CogniteResource):
         self.schedule_id = schedule_id
         self.error = error
         self.function_id = function_id
-        self._cognite_client = cognite_client  # type: ignore [assignment]
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def get_response(self) -> Dict:
         """Retrieve the response from this function call.

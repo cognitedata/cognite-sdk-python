@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteLabelUpdate,
@@ -74,7 +74,7 @@ class ThreeDModel(CogniteResource):
         self.id = id
         self.created_time = created_time
         self.metadata = metadata
-        self._cognite_client = cognite_client  # type: ignore [assignment]
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class ThreeDModelUpdate(CogniteUpdate):
@@ -172,7 +172,7 @@ class ThreeDModelRevision(CogniteResource):
         self.thumbnail_url = thumbnail_url
         self.asset_mapping_count = asset_mapping_count
         self.created_time = created_time
-        self._cognite_client = cognite_client  # type: ignore [assignment]
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
     def _load(cls, resource: Dict, cognite_client: CogniteClient = None) -> ThreeDModelRevision:
@@ -277,7 +277,7 @@ class ThreeDNode(CogniteResource):
         self.subtree_size = subtree_size
         self.properties = properties
         self.bounding_box = bounding_box
-        self._cognite_client = cognite_client  # type: ignore [assignment]
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
     def _load(cls, resource: Dict, cognite_client: CogniteClient = None) -> ThreeDNode:
@@ -315,7 +315,7 @@ class ThreeDAssetMapping(CogniteResource):
         self.asset_id = asset_id
         self.tree_index = tree_index
         self.subtree_size = subtree_size
-        self._cognite_client = cognite_client  # type: ignore [assignment]
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class ThreeDAssetMappingList(CogniteResourceList):

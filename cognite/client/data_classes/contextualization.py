@@ -98,7 +98,7 @@ class ContextualizationJob(CogniteResource):
         self.job_token = job_token
         self._result: Optional[Dict[str, Any]] = None
         self._status_path = status_path
-        self._cognite_client = cognite_client  # type: ignore [assignment]
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def update_status(self) -> str:
         """Updates the model status and returns it"""
@@ -207,7 +207,7 @@ class EntityMatchingModel(CogniteResource):
         self.name = name
         self.description = description
         self.external_id = external_id
-        self._cognite_client = cognite_client  # type: ignore [assignment]
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}(id={self.id}, status={self.status}, error={self.error_message})"
@@ -369,7 +369,7 @@ class DiagramConvertPage(CogniteResource):
         self.page = page
         self.png_url = png_url
         self.svg_url = svg_url
-        self._cognite_client = cognite_client  # type: ignore [assignment]
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class DiagramConvertPageList(CogniteResourceList):
@@ -387,7 +387,7 @@ class DiagramConvertItem(CogniteResource):
         self.file_id = file_id
         self.file_external_id = file_external_id
         self.results = results
-        self._cognite_client = cognite_client  # type: ignore [assignment]
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def __len__(self) -> int:
         assert self.results
@@ -461,7 +461,7 @@ class DiagramDetectItem(CogniteResource):
         self.annotations = annotations
         self.error_message = error_message
         self.page_range = page_range
-        self._cognite_client = cognite_client  # type: ignore [assignment]
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:  # type: ignore[override]
         """Convert the instance into a pandas DataFrame.
@@ -720,7 +720,7 @@ class VisionExtractItem(CogniteResource):
         self.predictions = self._process_predictions_dict(predictions) if isinstance(predictions, Dict) else predictions
 
         self._predictions_dict = predictions  # The "raw" predictions dict returned by the endpoint
-        self._cognite_client = cognite_client  # type: ignore [assignment]
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
     def _load(cls, resource: Dict, cognite_client: CogniteClient = None) -> VisionExtractItem:
