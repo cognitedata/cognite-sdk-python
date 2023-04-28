@@ -956,7 +956,7 @@ class DatapointsAPI(APIClient):
                 ...     granularity="30d",
                 ...     include_aggregate_name=False)
 
-            Remember that pandas.Timestamp is is a subclass of datetime, so you can use a Timestamps as start and
+            Remember that pandas.Timestamp is a subclass of datetime, so you can use a Timestamps as start and
             end arguments:
 
                 >>> import pandas as pd
