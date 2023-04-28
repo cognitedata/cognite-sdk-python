@@ -6,6 +6,7 @@ import re
 import sys
 import time
 from abc import ABC, abstractmethod
+from contextlib import suppress
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast, overload
 
@@ -16,9 +17,9 @@ if TYPE_CHECKING:
     import pandas
 
     if sys.version_info >= (3, 9):
-        from zoneinfo import ZoneInfo
+        from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
     else:
-        from backports.zoneinfo import ZoneInfo
+        from backports.zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 
 UNIT_IN_MS_WITHOUT_WEEK = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000}
@@ -30,7 +31,7 @@ MIN_TIMESTAMP_MS = -2208988800000  # 1900-01-01 00:00:00.000
 MAX_TIMESTAMP_MS = 4102444799999  # 2099-12-31 23:59:59.999
 
 
-def import_zoneinfo() -> ZoneInfo:
+def import_zoneinfo() -> type[ZoneInfo]:
     try:
         if sys.version_info >= (3, 9):
             from zoneinfo import ZoneInfo
@@ -44,6 +45,14 @@ def import_zoneinfo() -> ZoneInfo:
             "you need to install a backport. This is done automatically for you when installing with the pandas "
             "group: 'cognite-sdk[pandas]', or with poetry: 'poetry install -E pandas'"
         ) from e
+
+
+def _import_zoneinfo_not_found_error() -> type[ZoneInfoNotFoundError]:
+    if sys.version_info >= (3, 9):
+        from zoneinfo import ZoneInfoNotFoundError
+    else:
+        from backports.zoneinfo import ZoneInfoNotFoundError
+    return ZoneInfoNotFoundError
 
 
 def get_utc_zoneinfo() -> ZoneInfo:
@@ -542,23 +551,31 @@ def pandas_date_range_tz(start: datetime, end: datetime, freq: str, inclusive: s
 
 
 def validate_timezone(start: datetime, end: datetime) -> ZoneInfo:
-    ZoneInfo = import_zoneinfo()
-    pd = cast(Any, local_import("pandas"))
-
-    if missing := [name for name, timestamp in zip(("start", "end"), (start, end)) if not timestamp.tzinfo]:
+    if (start_tz := start.tzinfo) is None or (end_tz := end.tzinfo) is None:
+        missing = [name for name, timestamp in zip(("start", "end"), (start, end)) if not timestamp.tzinfo]
         names = " and ".join(missing)
         end_sentence = " do not have timezones." if len(missing) >= 2 else " does not have a timezone."
         raise ValueError(f"All times must be time zone aware, {names}{end_sentence}")
 
-    is_start_valid = isinstance(start, pd.Timestamp) or isinstance(start.tzinfo, ZoneInfo)  # type: ignore [arg-type]
-    is_end_valid = isinstance(end, pd.Timestamp) or isinstance(end.tzinfo, ZoneInfo)  # type: ignore [arg-type]
-    if not is_start_valid or not is_end_valid:
-        raise ValueError("Only pandas.Timestamp or datetime with ZoneInfo implementation of tzinfo are supported.")
+    # There are several ways to pass the same timezone unfortunately (without it being a user error):
+    # Pandas uses 'pytz' under the hood except for UTC, then it uses built-in `datetime.timezone.utc`...
+    # except when given something concrete like pytz.UTC or ZoneInfo(...). Converting to ZoneInfo via
+    # string is safe, all return timezone 'key':
+    ZoneInfo = import_zoneinfo()
+    tz_matches = start_tz is end_tz
+    with suppress(_import_zoneinfo_not_found_error()):
+        tz_matches = ZoneInfo(str(start_tz)) is ZoneInfo(str(end_tz))
+    if not tz_matches:
+        raise ValueError(f"start and end have different timezones, '{start_tz}' and '{end_tz}'.")
 
-    if start.tzinfo is not end.tzinfo:
-        raise ValueError(f"start and end have different timezones, {start.tzinfo.key!r} and {end.tzinfo.key!r}.")  # type: ignore [union-attr]
+    if isinstance(start_tz, ZoneInfo):
+        return start_tz
 
-    return start.tzinfo  # type: ignore [return-value]
+    pd = cast(Any, local_import("pandas"))
+    if isinstance(start, pd.Timestamp):
+        return ZoneInfo(str(start_tz))
+
+    raise ValueError("Only tz-aware pandas.Timestamp and datetime (must be using ZoneInfo) are supported.")
 
 
 def to_pandas_freq(granularity: str, start: datetime) -> str:
