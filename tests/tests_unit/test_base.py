@@ -171,16 +171,16 @@ class TestCogniteResource:
         assert {"varA": 1} == MyResource(1).dump(camel_case=True)
 
     def test_load(self):
-        assert MyResource(1).dump() == MyResource._load({"varA": 1}).dump()
-        assert MyResource(1, 2).dump() == MyResource._load({"varA": 1, "varB": 2}).dump()
-        assert {"var_a": 1} == MyResource._load({"varA": 1, "varC": 1}).dump()
+        assert MyResource(1).dump() == MyResource._load({"varA": 1}, cognite_client=None).dump()
+        assert MyResource(1, 2).dump() == MyResource._load({"varA": 1, "varB": 2}, cognite_client=None).dump()
+        assert {"var_a": 1} == MyResource._load({"varA": 1, "varC": 1}, cognite_client=None).dump()
 
     def test_load_unknown_attribute(self):
-        resource = MyResource._load({"varA": 1, "varB": 2, "varC": 3}).dump()
+        resource = MyResource._load({"varA": 1, "varB": 2, "varC": 3}, cognite_client=None).dump()
         assert resource == {"var_a": 1, "var_b": 2}
 
     def test_load_object_attr(self):
-        resource = MyResource._load({"varA": 1, "varB": {"camelCase": 1}}).dump()
+        resource = MyResource._load({"varA": 1, "varB": {"camelCase": 1}}, cognite_client=None).dump()
         assert resource == {"var_a": 1, "var_b": {"camelCase": 1}}
 
     def test_eq(self, simple_mock_client):
@@ -285,7 +285,7 @@ class TestCogniteResourceList:
         assert [{"var_a": 1, "var_b": 2}, {"var_a": 2, "var_b": 3}, {"var_a": 3}] == resource_list.dump()
 
     def test_load_unknown_attribute(self):
-        expected = MyResourceList._load([{"varA": 1, "varB": 2, "varC": 3}]).dump()
+        expected = MyResourceList._load([{"varA": 1, "varB": 2, "varC": 3}], cognite_client=None).dump()
         assert expected == [{"var_a": 1, "var_b": 2}]
 
     def test_indexing(self):
