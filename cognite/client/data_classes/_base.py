@@ -333,7 +333,7 @@ class CogniteResource(CogniteBase, _WithClientMixin):
     def _load(
         cls: Type[T_CogniteResource], item: Dict[str, Any], cognite_client: Optional[CogniteClient]
     ) -> T_CogniteResource:
-        if isinstance(item, Dict):
+        if isinstance(item, dict):
             return fast_dict_load(cls, item, cognite_client=cognite_client)
         raise TypeError(f"Item to load must be a mapping, not {type(item)}")
 

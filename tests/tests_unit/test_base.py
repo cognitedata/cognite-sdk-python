@@ -143,7 +143,7 @@ class TestVerifyAllCogniteSubclasses:
             src = getsource(subclass.__init__)
             accepts_client = "cognite_client" in signature(subclass.__init__).parameters
 
-        # TODO(haakonvt): All classes that do not accept cognite_client should most likely be CogniteResponse
+        # TODO: All classes that do not accept cognite_client should most likely not be CogniteResource(!)
         if accepts_client:
             # Make sure all subclasses set cognite_client:
             if "self._cognite_client" not in src:
