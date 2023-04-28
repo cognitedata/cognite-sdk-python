@@ -606,7 +606,7 @@ class DatapointsAPI(APIClient):
         external_id: None | str | dict[str, Any] | Sequence[str | dict[str, Any]] = None,
         start: int | str | datetime | None = None,
         end: int | str | datetime | None = None,
-        aggregates: Aggregate | List[Aggregate] | None = None,
+        aggregates: Aggregate | str | list[Aggregate | str] | None,
         granularity: Optional[str] = None,
         limit: Optional[int] = None,
         include_outside_points: bool = False,
@@ -792,7 +792,7 @@ class DatapointsAPI(APIClient):
         external_id: None | str | dict[str, Any] | Sequence[str | dict[str, Any]] = None,
         start: int | str | datetime | None = None,
         end: int | str | datetime | None = None,
-        aggregates: Aggregate | List[Aggregate] | None = None,
+        aggregates: Aggregate | str | list[Aggregate | str] | None,
         granularity: Optional[str] = None,
         limit: Optional[int] = None,
         include_outside_points: bool = False,
@@ -888,7 +888,7 @@ class DatapointsAPI(APIClient):
         external_id: None | str | dict[str, Any] | Sequence[str | dict[str, Any]] = None,
         start: int | str | datetime | pd.Timestamp | None = None,
         end: int | str | datetime | pd.Timestamp | None = None,
-        aggregates: Aggregate | List[Aggregate] | None = None,
+        aggregates: Aggregate | str | list[Aggregate | str] | None,
         granularity: Optional[str] = None,
         limit: Optional[int] = None,
         include_outside_points: bool = False,
@@ -1005,7 +1005,7 @@ class DatapointsAPI(APIClient):
         external_id: str | Sequence[str] | None = None,
         start: datetime | pd.Timestamp,
         end: datetime | pd.Timestamp,
-        aggregates: Sequence[Aggregate] | Aggregate | None = None,
+        aggregates: Aggregate | str | Sequence[Aggregate | str] | None,
         granularity: Optional[str] = None,
         ignore_unknown_ids: bool = False,
         uniform_index: bool = False,
@@ -1040,7 +1040,7 @@ class DatapointsAPI(APIClient):
             external_id (str | Sequence[str] | None): External ID or list of External IDs.
             start (datetime): Inclusive start, must be time zone aware.
             end (datetime): Exclusive end, must be time zone aware and have the same time zone as start.
-            aggregates (AGGREGATE | Sequence[AGGREGATE] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
+            aggregates (Aggregate | str | Sequence[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
             granularity (str): The granularity to fetch aggregates at, supported are: second, minute, hour, day, week, month, quarter and year. Default: None.
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
             uniform_index (bool): If querying aggregates, specifying `uniform_index=True` will return a dataframe with an

@@ -115,11 +115,11 @@ class DatapointsPayload(CustomDatapoints):
 class _DatapointsQuery:
     """Internal representation of a user request for datapoints, previously public (before v5)"""
 
-    start: Union[int, str, datetime, None] = None
-    end: Union[int, str, datetime, None] = None
+    start: int | str | datetime | None = None
+    end: int | str | datetime | None = None
     id: Optional[DatapointsId] = None
     external_id: Optional[DatapointsExternalId] = None
-    aggregates: Union[Aggregate, List[Aggregate], None] = None
+    aggregates: Aggregate | str | list[Aggregate | str] | None = None
     granularity: Optional[str] = None
     limit: Optional[int] = None
     include_outside_points: bool = False
