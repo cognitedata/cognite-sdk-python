@@ -11,6 +11,8 @@ from cognite.client.data_classes import Transformation, TransformationJob, Trans
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.data_classes.transformations import (
     NonceCredentials,
+    SourceNonceCredentials,
+    DestinationNonceCredentials,
     TagsFilter,
     TransformationFilter,
     TransformationPreviewResult,
@@ -89,7 +91,7 @@ class TransformationsAPI(APIClient):
 
         """
         if isinstance(transformation, Sequence):
-            sessions: Dict[str, NonceCredentials] = {}
+            sessions: Dict[str, Union[NonceCredentials, SourceNonceCredentials, DestinationNonceCredentials]] = {}
             transformation = [t.copy() for t in transformation]
             for t in transformation:
                 t._cognite_client = self._cognite_client
@@ -298,7 +300,7 @@ class TransformationsAPI(APIClient):
 
         if isinstance(item, Sequence):
             item = list(item).copy()
-            sessions: Dict[str, NonceCredentials] = {}
+            sessions: Dict[str,  Union[NonceCredentials, SourceNonceCredentials, DestinationNonceCredentials]] = {}
             for (i, t) in enumerate(item):
                 if isinstance(t, Transformation):
                     t = t.copy()
