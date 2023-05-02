@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.1.2] - 02-05-23
+### Fixed
+- Handling negative epochs in the `DatapointsAPI` on Windows.
+
 ## [6.1.1] - 28-04-23
 ### Fixed
 - `AttributeError` when passing `pandas.Timestamp`s with different timezones (*of which one was UTC*) to `DatapointsAPI.retrieve_dataframe_in_tz`.
