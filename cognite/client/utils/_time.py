@@ -62,7 +62,7 @@ def get_utc_zoneinfo() -> ZoneInfo:
 
 
 def datetime_to_ms(dt: datetime) -> int:
-    """Converts datetime object to milliseconds since epoch.
+    """Converts a datetime object to milliseconds since epoch.
 
     Args:
         dt (datetime): Naive or aware datetime object. Naive datetimes are interpreted as local time.
@@ -70,7 +70,11 @@ def datetime_to_ms(dt: datetime) -> int:
     Returns:
         ms: Milliseconds since epoch (negative for time prior to 1970-01-01)
     """
-    return int(1000 * dt.timestamp())
+    try:
+        return int(1000 * dt.timestamp())
+    except OSError:
+        # OSError is raised if dt.timestamp() is called before 1970-01-01 on Windows
+        return int(1000 * (dt - datetime(1970, 1, 1, tzinfo=dt.tzinfo)).total_seconds())
 
 
 def ms_to_datetime(ms: Union[int, float]) -> datetime:
