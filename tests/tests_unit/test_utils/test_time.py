@@ -59,6 +59,7 @@ class TestDatetimeToMs:
         assert datetime_to_ms(datetime(2018, 1, 31, tzinfo=utc)) == 1517356800000
         assert datetime_to_ms(datetime(2018, 1, 31, 11, 11, 11, tzinfo=utc)) == 1517397071000
         assert datetime_to_ms(datetime(100, 1, 31, tzinfo=utc)) == -59008867200000
+        assert datetime_to_ms(datetime(1900, 1, 1, tzinfo=utc)) == -2208988800000
 
     def test_ms_to_datetime__valid_input(self):  # TODO: Many tests here could benefit from parametrize
         utc = timezone.utc

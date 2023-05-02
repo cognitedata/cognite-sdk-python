@@ -73,8 +73,8 @@ def datetime_to_ms(dt: datetime) -> int:
     try:
         return int(1000 * dt.timestamp())
     except OSError:
-        # OSError is raised if dt.timestamp() is called before 1970-01-01 on Windows
-        return int(1000 * (dt - datetime(1970, 1, 1, tzinfo=dt.tzinfo)).total_seconds())
+        # OSError is raised if dt.timestamp() is called before 1970-01-01 on Windows for naive datetime.
+        return int(1000 * (dt - datetime(1970, 1, 1)).total_seconds())
 
 
 def ms_to_datetime(ms: Union[int, float]) -> datetime:
