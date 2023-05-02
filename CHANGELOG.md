@@ -17,17 +17,19 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [6.1.0] - 28-04-25
+## [6.1.1] - 28-04-23
+### Fixed
+- `AttributeError` when passing `pandas.Timestamp`s with different timezones (*of which one was UTC*) to `DatapointsAPI.retrieve_dataframe_in_tz`.
+- A `ValueError` is no longer raised when passing `pandas.Timestamp`s in the same timezone, but with different underlying implementations (e.g. `datetime.timezone.utc` / `pytz.UTC` / `ZoneInfo("UTC")`) to `DatapointsAPI.retrieve_dataframe_in_tz`.
 
+## [6.1.0] - 28-04-23
 ### Added
-- Support for giving `start` and `end` arguments as `pandas.Timestamp` in
-  `DatapointsAPI.retrieve_dataframe_in_tz`.
+- Support for giving `start` and `end` arguments as `pandas.Timestamp` in `DatapointsAPI.retrieve_dataframe_in_tz`.
 
 ### Improved
-
 - Type hints for the `DatapointsAPI` methods.
 
-## [6.0.2] - 27-04-26
+## [6.0.2] - 27-04-23
 ### Fixed
 - Fixed a bug in `DatapointsAPI.retrieve_dataframe_in_tz` that could raise `AmbiguousTimeError` when subdividing the user-specified time range into UTC intervals (with fixed offset).
 

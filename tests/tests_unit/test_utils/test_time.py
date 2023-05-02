@@ -483,25 +483,25 @@ def validate_time_zone_invalid_arguments_data() -> list[ParameterSet]:
         pytest.param(
             datetime(2023, 1, 1, tzinfo=oslo),
             datetime(2023, 1, 10, tzinfo=new_york),
-            "start and end have different timezones, 'Europe/Oslo' and 'America/New_York'.",
+            "'start' and 'end' represent different timezones: 'Europe/Oslo' and 'America/New_York'.",
             id="Different timezones",
         ),
         pytest.param(
             datetime(2023, 1, 1),
             datetime(2023, 1, 10, tzinfo=new_york),
-            "All times must be time zone aware, start does not have a timezone",
+            "All times must be timezone aware, start does not have a timezone",
             id="Missing start timezone",
         ),
         pytest.param(
             datetime(2023, 1, 1),
             datetime(2023, 1, 10),
-            "All times must be time zone aware, start and end do not have timezones",
+            "All times must be timezone aware, start and end do not have timezones",
             id="Missing start and end timezone",
         ),
         pytest.param(
             datetime(2023, 1, 1, tzinfo=oslo),
             datetime(2023, 1, 10),
-            "All times must be time zone aware, end does not have a timezone",
+            "All times must be timezone aware, end does not have a timezone",
             id="Missing end timezone",
         ),
     ]
@@ -510,18 +510,62 @@ def validate_time_zone_invalid_arguments_data() -> list[ParameterSet]:
 def validate_time_zone_valid_arguments_data() -> list[ParameterSet]:
     try:
         ZoneInfo = import_zoneinfo()
-    except CogniteImportError:
+        import pandas as pd
+        import pytz  # hard pandas dependency
+    except (ImportError, CogniteImportError):
         return []
 
+    utc = ZoneInfo("UTC")
     oslo = ZoneInfo("Europe/Oslo")
     new_york = ZoneInfo("America/New_York")
     return [
-        pytest.param(datetime(2023, 1, 1, tzinfo=oslo), datetime(2023, 1, 10, tzinfo=oslo), oslo, id="Oslo Timezone"),
+        pytest.param(
+            datetime(2023, 1, 1, tzinfo=oslo),
+            datetime(2023, 1, 10, tzinfo=oslo),
+            oslo,
+            id="Oslo Timezone",
+        ),
         pytest.param(
             datetime(2023, 1, 1, tzinfo=new_york),
             datetime(2023, 1, 10, tzinfo=new_york),
             new_york,
             id="New York Timezone",
+        ),
+        pytest.param(
+            pd.Timestamp(2020, 1, 1, tzinfo=oslo),
+            pd.Timestamp("2023", tz="Europe/Oslo"),
+            oslo,
+            id="Oslo Timezone via pandas: zoneinfo + parse string",
+        ),
+        pytest.param(
+            pd.Timestamp("2020", tzinfo=pytz.timezone("Europe/Oslo")),
+            pd.Timestamp("2023", tz="Europe/Oslo"),
+            oslo,
+            id="Oslo Timezone via pandas: pytz + parse string",
+        ),
+        pytest.param(
+            pd.Timestamp(2020, 1, 1, tzinfo=oslo),
+            pd.Timestamp("2023", tzinfo=pytz.timezone("Europe/Oslo")),
+            oslo,
+            id="Oslo Timezone via pandas: zoneinfo + pytz",
+        ),
+        pytest.param(
+            pd.Timestamp(2020, 1, 1, tzinfo=timezone.utc),
+            pd.Timestamp("2023", tz="UTC"),
+            utc,
+            id="UTC via pandas: built-in timezone.utc + string parse",
+        ),
+        pytest.param(
+            pd.Timestamp(2020, 1, 1, tzinfo=ZoneInfo("UTC")),
+            pd.Timestamp("2023", tz="utc"),
+            utc,
+            id="UTC via pandas: zoneinfo + string parse",
+        ),
+        pytest.param(
+            pd.Timestamp(2020, 1, 1, tzinfo=timezone.utc),
+            pd.Timestamp("2023", tz=pytz.UTC),
+            utc,
+            id="UTC via pandas: built-in timezone.utc + pytz",
         ),
     ]
 
@@ -540,7 +584,9 @@ class TestValidateTimeZone:
     def test_infer_timezone(start: datetime, end: datetime, expected_tz):
         actual_tz = validate_timezone(start, end)
 
-        assert actual_tz == expected_tz
+        ZoneInfo = import_zoneinfo()
+        assert isinstance(actual_tz, ZoneInfo)
+        assert actual_tz is expected_tz
 
 
 class TestToPandasFreq:

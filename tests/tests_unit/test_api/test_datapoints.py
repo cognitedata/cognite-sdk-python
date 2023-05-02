@@ -726,28 +726,28 @@ class TestRetrieveDataPointsInTz:
                 {"external_id": "123", "start": datetime(2023, 1, 1), "end": datetime(2023, 1, 2)},
                 None,
                 None,
-                "All times must be time zone aware, start and end do not have timezones.",
+                "All times must be timezone aware, start and end do not have timezones.",
                 id="Naive timezones",
             ),
             pytest.param(
                 {"external_id": "123", "start": datetime(2023, 1, 1), "end": datetime(2023, 1, 2)},
                 "Europe/Oslo",
                 "America/Los_Angeles",
-                "start and end have different timezones, 'Europe/Oslo' and 'America/Los_Angeles'.",
+                "'start' and 'end' represent different timezones: 'Europe/Oslo' and 'America/Los_Angeles'.",
                 id="Mismatch timezone",
             ),
             pytest.param(
                 {"external_id": "123", "start": datetime(2023, 1, 1), "end": datetime(2023, 1, 2)},
                 "Europe/Oslo",
                 None,
-                "All times must be time zone aware, end does not have a timezone.",
+                "All times must be timezone aware, end does not have a timezone.",
                 id="Missing end timezone",
             ),
             pytest.param(
                 {"external_id": "123", "start": datetime(2023, 1, 1), "end": datetime(2023, 1, 2)},
                 None,
                 "America/Los_Angeles",
-                "All times must be time zone aware, start does not have a timezone.",
+                "All times must be timezone aware, start does not have a timezone.",
                 id="Missing start timezone",
             ),
             pytest.param(
@@ -762,7 +762,7 @@ class TestRetrieveDataPointsInTz:
                 "Europe/Oslo",
                 "Europe/Oslo",
                 re.escape("Either input id(s) or external_id(s)"),
-                id="Passed both id or external id",
+                id="Passed both id and external id",
             ),
             pytest.param(
                 {
