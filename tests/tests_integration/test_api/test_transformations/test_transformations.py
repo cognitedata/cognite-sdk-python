@@ -43,7 +43,8 @@ def new_datasets(cognite_client):
 def new_transformation(cognite_client, new_datasets):
     prefix = random_string(6, string.ascii_letters)
     creds = cognite_client.config.credentials
-    assert isinstance(creds, OAuthClientCredentials) or isinstance(creds, OAuthClientCertificate)
+    if not isinstance(creds, (OAuthClientCredentials, OAuthClientCertificate)):
+        pytest.skip("Only run in CI environment")
     transform = Transformation(
         name="any",
         query="select 1",
