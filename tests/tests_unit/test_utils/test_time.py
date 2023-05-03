@@ -51,6 +51,10 @@ class TestDatetimeToMs:
             assert datetime_to_ms(datetime(2018, 1, 31, tzinfo=None)) == expected_ms
             assert timestamp_to_ms(datetime(2018, 1, 31, tzinfo=None)) == expected_ms
 
+    def test_naive_datetime_to_ms_including_windows(self):
+        assert datetime_to_ms(datetime(1900, 1, 1)) == -2208988800000
+        assert datetime_to_ms(datetime(1925, 8, 3)) == -1401580800000
+
     def test_aware_datetime_to_ms(self):
         # TODO: Starting from PY39 we should also add tests using:
         # from zoneinfo import ZoneInfo
@@ -59,7 +63,14 @@ class TestDatetimeToMs:
         assert datetime_to_ms(datetime(2018, 1, 31, tzinfo=utc)) == 1517356800000
         assert datetime_to_ms(datetime(2018, 1, 31, 11, 11, 11, tzinfo=utc)) == 1517397071000
         assert datetime_to_ms(datetime(100, 1, 31, tzinfo=utc)) == -59008867200000
-        assert datetime_to_ms(datetime(1900, 1, 1, tzinfo=utc)) == -2208988800000
+
+    @pytest.mark.dsl
+    def test_aware_datetime_to_ms_zoneinfo(self):
+        ZoneInfo = import_zoneinfo()
+        # The correct answer was obtained using: https://dencode.com/en/date/unix-time
+        assert datetime_to_ms(datetime(2018, 1, 31, tzinfo=ZoneInfo("Europe/Oslo"))) == 1517353200000
+        assert datetime_to_ms(datetime(1900, 1, 1, tzinfo=ZoneInfo("Europe/Oslo"))) == -2208992400000
+        assert datetime_to_ms(datetime(1900, 1, 1, tzinfo=ZoneInfo("America/New_York"))) == -2208970800000
 
     def test_ms_to_datetime__valid_input(self):  # TODO: Many tests here could benefit from parametrize
         utc = timezone.utc
