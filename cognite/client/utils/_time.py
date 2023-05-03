@@ -74,8 +74,10 @@ def datetime_to_ms(dt: datetime) -> int:
         return int(1000 * dt.timestamp())
     except OSError:
         # OSError is raised if dt.timestamp() is called before 1970-01-01 on Windows for naive datetime.
-        return int(1000 * (dt - datetime(1970, 1, 1)).total_seconds())
-
+        try:
+            return int(1000 * (dt - datetime(1970, 1, 1)).total_seconds())
+        except TypeError:
+            return int(1000 * (dt - datetime(1970, 1, 1, tzinfo=timezone.utc)).total_seconds())
 
 def ms_to_datetime(ms: Union[int, float]) -> datetime:
     """Converts valid Cognite timestamps, i.e. milliseconds since epoch, to datetime object.
