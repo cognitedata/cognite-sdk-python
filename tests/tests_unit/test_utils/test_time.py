@@ -45,13 +45,16 @@ class TestDatetimeToMs:
             ("America/Los_Angeles", 1517385600000),
         ],
     )
-    def test_naive_datetime_to_ms(self, local_tz, expected_ms):
+    def test_naive_datetime_to_ms_unix(self, local_tz, expected_ms):
         with tmp_set_envvar("TZ", local_tz):
             time.tzset()
             assert datetime_to_ms(datetime(2018, 1, 31, tzinfo=None)) == expected_ms
             assert timestamp_to_ms(datetime(2018, 1, 31, tzinfo=None)) == expected_ms
 
-    def test_naive_datetime_to_ms_including_windows(self):
+    @pytest.mark.skipif(
+        platform.system() != "Windows", reason="Windows assume naive dateimes are UTC, Unix assumes they are local"
+    )
+    def test_naive_datetime_to_ms_windows(self):
         assert datetime_to_ms(datetime(1900, 1, 1)) == -2208988800000
         assert datetime_to_ms(datetime(1925, 8, 3)) == -1401580800000
 
