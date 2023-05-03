@@ -79,6 +79,7 @@ def datetime_to_ms(dt: datetime) -> int:
         except TypeError:
             return int(1000 * (dt - datetime(1970, 1, 1, tzinfo=timezone.utc)).total_seconds())
 
+
 def ms_to_datetime(ms: Union[int, float]) -> datetime:
     """Converts valid Cognite timestamps, i.e. milliseconds since epoch, to datetime object.
 
