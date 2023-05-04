@@ -45,11 +45,21 @@ class TestDatetimeToMs:
             ("America/Los_Angeles", 1517385600000),
         ],
     )
-    def test_naive_datetime_to_ms(self, local_tz, expected_ms):
+    def test_naive_datetime_to_ms_unix(self, local_tz, expected_ms):
         with tmp_set_envvar("TZ", local_tz):
             time.tzset()
             assert datetime_to_ms(datetime(2018, 1, 31, tzinfo=None)) == expected_ms
             assert timestamp_to_ms(datetime(2018, 1, 31, tzinfo=None)) == expected_ms
+
+    @pytest.mark.skipif(platform.system() != "Windows", reason="Windows is typically unable to handle negative epochs.")
+    def test_naive_datetime_to_ms_windows(self):
+        with pytest.raises(
+            ValueError,
+            match="Failed to convert datetime to epoch. "
+            "This likely because you are using a naive datetime. "
+            "Try using a timezone aware datetime instead.",
+        ):
+            datetime_to_ms(datetime(1925, 8, 3))
 
     def test_aware_datetime_to_ms(self):
         # TODO: Starting from PY39 we should also add tests using:
@@ -59,6 +69,14 @@ class TestDatetimeToMs:
         assert datetime_to_ms(datetime(2018, 1, 31, tzinfo=utc)) == 1517356800000
         assert datetime_to_ms(datetime(2018, 1, 31, 11, 11, 11, tzinfo=utc)) == 1517397071000
         assert datetime_to_ms(datetime(100, 1, 31, tzinfo=utc)) == -59008867200000
+
+    @pytest.mark.dsl
+    def test_aware_datetime_to_ms_zoneinfo(self):
+        ZoneInfo = import_zoneinfo()
+        # The correct answer was obtained using: https://dencode.com/en/date/unix-time
+        assert datetime_to_ms(datetime(2018, 1, 31, tzinfo=ZoneInfo("Europe/Oslo"))) == 1517353200000
+        assert datetime_to_ms(datetime(1900, 1, 1, tzinfo=ZoneInfo("Europe/Oslo"))) == -2208992400000
+        assert datetime_to_ms(datetime(1900, 1, 1, tzinfo=ZoneInfo("America/New_York"))) == -2208970800000
 
     def test_ms_to_datetime__valid_input(self):  # TODO: Many tests here could benefit from parametrize
         utc = timezone.utc
@@ -141,7 +159,7 @@ class TestTimestampToMs:
         time_now = timestamp_to_ms("now")
         assert abs(expected_time_now - time_now) > 190
 
-    @pytest.mark.parametrize("t", [MIN_TIMESTAMP_MS - 1, datetime(1899, 12, 31), "100000000w-ago"])
+    @pytest.mark.parametrize("t", [MIN_TIMESTAMP_MS - 1, datetime(1899, 12, 31, tzinfo=timezone.utc), "100000000w-ago"])
     def test_negative(self, t):
         with pytest.raises(ValueError, match="must represent a time after 1.1.1900"):
             timestamp_to_ms(t)
@@ -483,25 +501,25 @@ def validate_time_zone_invalid_arguments_data() -> list[ParameterSet]:
         pytest.param(
             datetime(2023, 1, 1, tzinfo=oslo),
             datetime(2023, 1, 10, tzinfo=new_york),
-            "start and end have different timezones, 'Europe/Oslo' and 'America/New_York'.",
+            "'start' and 'end' represent different timezones: 'Europe/Oslo' and 'America/New_York'.",
             id="Different timezones",
         ),
         pytest.param(
             datetime(2023, 1, 1),
             datetime(2023, 1, 10, tzinfo=new_york),
-            "All times must be time zone aware, start does not have a timezone",
+            "All times must be timezone aware, start does not have a timezone",
             id="Missing start timezone",
         ),
         pytest.param(
             datetime(2023, 1, 1),
             datetime(2023, 1, 10),
-            "All times must be time zone aware, start and end do not have timezones",
+            "All times must be timezone aware, start and end do not have timezones",
             id="Missing start and end timezone",
         ),
         pytest.param(
             datetime(2023, 1, 1, tzinfo=oslo),
             datetime(2023, 1, 10),
-            "All times must be time zone aware, end does not have a timezone",
+            "All times must be timezone aware, end does not have a timezone",
             id="Missing end timezone",
         ),
     ]
@@ -510,18 +528,62 @@ def validate_time_zone_invalid_arguments_data() -> list[ParameterSet]:
 def validate_time_zone_valid_arguments_data() -> list[ParameterSet]:
     try:
         ZoneInfo = import_zoneinfo()
-    except CogniteImportError:
+        import pandas as pd
+        import pytz  # hard pandas dependency
+    except (ImportError, CogniteImportError):
         return []
 
+    utc = ZoneInfo("UTC")
     oslo = ZoneInfo("Europe/Oslo")
     new_york = ZoneInfo("America/New_York")
     return [
-        pytest.param(datetime(2023, 1, 1, tzinfo=oslo), datetime(2023, 1, 10, tzinfo=oslo), oslo, id="Oslo Timezone"),
+        pytest.param(
+            datetime(2023, 1, 1, tzinfo=oslo),
+            datetime(2023, 1, 10, tzinfo=oslo),
+            oslo,
+            id="Oslo Timezone",
+        ),
         pytest.param(
             datetime(2023, 1, 1, tzinfo=new_york),
             datetime(2023, 1, 10, tzinfo=new_york),
             new_york,
             id="New York Timezone",
+        ),
+        pytest.param(
+            pd.Timestamp(2020, 1, 1, tzinfo=oslo),
+            pd.Timestamp("2023", tz="Europe/Oslo"),
+            oslo,
+            id="Oslo Timezone via pandas: zoneinfo + parse string",
+        ),
+        pytest.param(
+            pd.Timestamp("2020", tzinfo=pytz.timezone("Europe/Oslo")),
+            pd.Timestamp("2023", tz="Europe/Oslo"),
+            oslo,
+            id="Oslo Timezone via pandas: pytz + parse string",
+        ),
+        pytest.param(
+            pd.Timestamp(2020, 1, 1, tzinfo=oslo),
+            pd.Timestamp("2023", tzinfo=pytz.timezone("Europe/Oslo")),
+            oslo,
+            id="Oslo Timezone via pandas: zoneinfo + pytz",
+        ),
+        pytest.param(
+            pd.Timestamp(2020, 1, 1, tzinfo=timezone.utc),
+            pd.Timestamp("2023", tz="UTC"),
+            utc,
+            id="UTC via pandas: built-in timezone.utc + string parse",
+        ),
+        pytest.param(
+            pd.Timestamp(2020, 1, 1, tzinfo=ZoneInfo("UTC")),
+            pd.Timestamp("2023", tz="utc"),
+            utc,
+            id="UTC via pandas: zoneinfo + string parse",
+        ),
+        pytest.param(
+            pd.Timestamp(2020, 1, 1, tzinfo=timezone.utc),
+            pd.Timestamp("2023", tz=pytz.UTC),
+            utc,
+            id="UTC via pandas: built-in timezone.utc + pytz",
         ),
     ]
 
@@ -540,7 +602,9 @@ class TestValidateTimeZone:
     def test_infer_timezone(start: datetime, end: datetime, expected_tz):
         actual_tz = validate_timezone(start, end)
 
-        assert actual_tz == expected_tz
+        ZoneInfo = import_zoneinfo()
+        assert isinstance(actual_tz, ZoneInfo)
+        assert actual_tz is expected_tz
 
 
 class TestToPandasFreq:

@@ -6,6 +6,7 @@ import re
 import sys
 import time
 from abc import ABC, abstractmethod
+from contextlib import suppress
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast, overload
 
@@ -13,12 +14,14 @@ from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._auxiliary import local_import
 
 if TYPE_CHECKING:
+    from datetime import tzinfo
+
     import pandas
 
     if sys.version_info >= (3, 9):
-        from zoneinfo import ZoneInfo
+        from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
     else:
-        from backports.zoneinfo import ZoneInfo
+        from backports.zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 
 UNIT_IN_MS_WITHOUT_WEEK = {"s": 1000, "m": 60000, "h": 3600000, "d": 86400000}
@@ -30,7 +33,7 @@ MIN_TIMESTAMP_MS = -2208988800000  # 1900-01-01 00:00:00.000
 MAX_TIMESTAMP_MS = 4102444799999  # 2099-12-31 23:59:59.999
 
 
-def import_zoneinfo() -> ZoneInfo:
+def import_zoneinfo() -> type[ZoneInfo]:
     try:
         if sys.version_info >= (3, 9):
             from zoneinfo import ZoneInfo
@@ -46,12 +49,20 @@ def import_zoneinfo() -> ZoneInfo:
         ) from e
 
 
+def _import_zoneinfo_not_found_error() -> type[ZoneInfoNotFoundError]:
+    if sys.version_info >= (3, 9):
+        from zoneinfo import ZoneInfoNotFoundError
+    else:
+        from backports.zoneinfo import ZoneInfoNotFoundError
+    return ZoneInfoNotFoundError
+
+
 def get_utc_zoneinfo() -> ZoneInfo:
     return import_zoneinfo()("UTC")  # type: ignore [operator]
 
 
 def datetime_to_ms(dt: datetime) -> int:
-    """Converts datetime object to milliseconds since epoch.
+    """Converts a datetime object to milliseconds since epoch.
 
     Args:
         dt (datetime): Naive or aware datetime object. Naive datetimes are interpreted as local time.
@@ -59,7 +70,15 @@ def datetime_to_ms(dt: datetime) -> int:
     Returns:
         ms: Milliseconds since epoch (negative for time prior to 1970-01-01)
     """
-    return int(1000 * dt.timestamp())
+    try:
+        return int(1000 * dt.timestamp())
+    except OSError as e:
+        # OSError is raised if dt.timestamp() is called before 1970-01-01 on Windows for naive datetime.
+        raise ValueError(
+            "Failed to convert datetime to epoch. "
+            "This likely because you are using a naive datetime."
+            " Try using a timezone aware datetime instead."
+        ) from e
 
 
 def ms_to_datetime(ms: Union[int, float]) -> datetime:
@@ -541,24 +560,47 @@ def pandas_date_range_tz(start: datetime, end: datetime, freq: str, inclusive: s
     )
 
 
-def validate_timezone(start: datetime, end: datetime) -> ZoneInfo:
-    ZoneInfo = import_zoneinfo()
-    pd = cast(Any, local_import("pandas"))
+def _timezones_are_equal(start_tz: tzinfo, end_tz: tzinfo) -> bool:
+    """There are unfortunately several ways to pass/represent the same timezone (without it being a user error).
+    For example pandas uses 'pytz' under the hood -except- for UTC, then it uses the built-in `datetime.timezone.utc`
+    -except- when given something concrete like pytz.UTC or ZoneInfo(...).
 
-    if missing := [name for name, timestamp in zip(("start", "end"), (start, end)) if not timestamp.tzinfo]:
+    To make sure we don't raise something silly like 'UTC != UTC', we convert both to ZoneInfo for comparison
+    via str(). This is safe as all return the lookup key (for the IANA time zone database).
+
+    Note:
+        We do not consider timezones with different keys, but equal fixed offsets from UTC to be equal. An example
+        would be Zulu Time (which is +00:00 ahead of UTC) and UTC.
+    """
+    if start_tz is end_tz:
+        return True
+    ZoneInfo, ZoneInfoNotFoundError = import_zoneinfo(), _import_zoneinfo_not_found_error()
+    with suppress(ValueError, ZoneInfoNotFoundError):
+        # ValueError is raised for non-conforming keys (ZoneInfoNotFoundError is self-explanatory)
+        if ZoneInfo(str(start_tz)) is ZoneInfo(str(end_tz)):
+            return True
+    return False
+
+
+def validate_timezone(start: datetime, end: datetime) -> ZoneInfo:
+    if (start_tz := start.tzinfo) is None or (end_tz := end.tzinfo) is None:
+        missing = [name for name, timestamp in zip(("start", "end"), (start, end)) if not timestamp.tzinfo]
         names = " and ".join(missing)
         end_sentence = " do not have timezones." if len(missing) >= 2 else " does not have a timezone."
-        raise ValueError(f"All times must be time zone aware, {names}{end_sentence}")
+        raise ValueError(f"All times must be timezone aware, {names}{end_sentence}")
 
-    is_start_valid = isinstance(start, pd.Timestamp) or isinstance(start.tzinfo, ZoneInfo)  # type: ignore [arg-type]
-    is_end_valid = isinstance(end, pd.Timestamp) or isinstance(end.tzinfo, ZoneInfo)  # type: ignore [arg-type]
-    if not is_start_valid or not is_end_valid:
-        raise ValueError("Only pandas.Timestamp or datetime with ZoneInfo implementation of tzinfo are supported.")
+    if not _timezones_are_equal(start_tz, end_tz):
+        raise ValueError(f"'start' and 'end' represent different timezones: '{start_tz}' and '{end_tz}'.")
 
-    if start.tzinfo is not end.tzinfo:
-        raise ValueError(f"start and end have different timezones, {start.tzinfo.key!r} and {end.tzinfo.key!r}.")  # type: ignore [union-attr]
+    ZoneInfo = import_zoneinfo()
+    if isinstance(start_tz, ZoneInfo):
+        return start_tz
 
-    return start.tzinfo  # type: ignore [return-value]
+    pd = cast(Any, local_import("pandas"))
+    if isinstance(start, pd.Timestamp):
+        return ZoneInfo(str(start_tz))
+
+    raise ValueError("Only tz-aware pandas.Timestamp and datetime (must be using ZoneInfo) are supported.")
 
 
 def to_pandas_freq(granularity: str, start: datetime) -> str:
