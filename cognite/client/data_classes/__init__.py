@@ -167,8 +167,6 @@ from cognite.client.data_classes.transformations import (
     TransformationUpdate,
 )
 from cognite.client.data_classes.transformations.common import (
-    SourceOidcCredentials,
-    DestinationOidcCredentials,
     RawTable,
     TransformationBlockedInfo,
     TransformationDestination,
