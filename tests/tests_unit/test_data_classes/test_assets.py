@@ -352,7 +352,7 @@ class TestAssetHierarchy:
 
         # Try again with Path instead of str:
         AssetHierarchy(assets).validate_and_report(output_file=tmp_path)
-        assert exp_output == (output := tmp_path.read_text()) or output.startswith(exp_output)
+        assert exp_output == (output := tmp_path.read_text(encoding="utf-8")) or output.startswith(exp_output)
 
     @pytest.mark.parametrize(
         "assets, exp_output",
@@ -363,9 +363,9 @@ class TestAssetHierarchy:
     )
     def test_validate_asset_hierarchy__arbitrart_file_obj(self, tmp_path, assets, exp_output):
         outfile = Path(tmp_path) / "report.txt"
-        with outfile.open("w") as file:
+        with outfile.open("w", encoding="utf-8") as file:
             AssetHierarchy(assets).validate_and_report(output_file=file)
-        assert exp_output == (output := outfile.read_text()) or output.startswith(exp_output)
+        assert exp_output == (output := outfile.read_text(encoding="utf-8")) or output.startswith(exp_output)
 
         with io.StringIO() as file_like:
             AssetHierarchy(assets).validate_and_report(output_file=file_like)

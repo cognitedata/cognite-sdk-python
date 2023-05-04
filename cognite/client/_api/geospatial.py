@@ -1107,7 +1107,7 @@ class GeospatialAPI(APIClient):
         <https://docs.cognite.com/api/v1/#tag/Geospatial/operation/getRaster>
 
         Args:
-            feature_type_external_id : Feature type definition for the features to create.
+            feature_type_external_id: Feature type definition for the features to create.
             feature_external_id: one feature or a list of features to create
             raster_property_name: the raster property name
             raster_format: the raster output format
