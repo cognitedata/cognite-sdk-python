@@ -11,7 +11,7 @@ import random
 import re
 import time
 from contextlib import nullcontext as does_not_raise
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Literal
 from unittest.mock import patch
 
@@ -1703,7 +1703,9 @@ class TestInsertDatapointsAPI:
 
     @pytest.mark.usefixtures("post_spy")
     def test_insert_before_epoch(self, cognite_client, new_ts, monkeypatch):
-        datapoints = [(datetime(year=1950, month=1, day=1, hour=1, minute=i), i) for i in range(60)]
+        datapoints = [
+            (datetime(year=1950, month=1, day=1, hour=1, minute=i, tzinfo=timezone.utc), i) for i in range(60)
+        ]
         monkeypatch.setattr(cognite_client.time_series.data, "_DPS_INSERT_LIMIT", 30)
         monkeypatch.setattr(cognite_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 30)
         cognite_client.time_series.data.insert(datapoints, id=new_ts.id)

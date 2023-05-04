@@ -750,7 +750,7 @@ class AssetHierarchy:
         if output_file is None:
             print(out)  # noqa: T201
         elif isinstance(output_file, Path):
-            with output_file.open("a") as file:
+            with output_file.open("a", encoding="utf-8") as file:
                 print(out, file=file)
         else:
             try:

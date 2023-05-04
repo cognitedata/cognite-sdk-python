@@ -17,6 +17,14 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.1.2] - 04-05-23
+### Improved
+- The SDK has received several minor bugfixes to be more user-friendly on Windows.
+
+### Fixed
+- The utility function `cognite.client.utils.datetime_to_ms` now raises an understandable `ValueError` when unable to convert pre-epoch datetimes.
+- Several functions reading and writing to disk now explicitly use UTF-8 encoding
+
 ## [6.1.1] - 28-04-23
 ### Fixed
 - `AttributeError` when passing `pandas.Timestamp`s with different timezones (*of which one was UTC*) to `DatapointsAPI.retrieve_dataframe_in_tz`.

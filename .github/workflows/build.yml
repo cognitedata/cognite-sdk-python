@@ -5,6 +5,9 @@ on:
   pull_request:
     branches: [master]
 
+env:
+  PYTHON_VERSION: '3.8'
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -12,7 +15,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install required dependencies
         run: |
@@ -24,13 +27,25 @@ jobs:
         run: |
           pre-commit run --all-files
 
+      - name: Verify proto files
+        env:
+          TMPDIR: latest_proto
+          PROTO_URL: https://raw.githubusercontent.com/cognitedata/protobuf-files/master/v1/timeseries
+        run: |
+          mkdir $TMPDIR
+          curl --silent $PROTO_URL/data_points.proto --output $TMPDIR/data_points.proto
+          curl --silent $PROTO_URL/data_point_list_response.proto --output $TMPDIR/data_point_list_response.proto
+          diff $TMPDIR/data_points.proto cognite/client/_proto/data_points.proto
+          diff $TMPDIR/data_point_list_response.proto cognite/client/_proto/data_point_list_response.proto
+
+
   build_docs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install core dependencies
         run: |
@@ -47,7 +62,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install core dependencies
         run: |
@@ -61,30 +76,23 @@ jobs:
         run: pytest tests/tests_unit -n8 --dist loadscope --maxfail 10 -m 'not dsl'
           --test-deps-only-core
 
-  test_full_and_build:
-    runs-on: ubuntu-latest
+  test_full:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install full dependencies
         run: |
           python3 -m pip install --upgrade pip poetry
           poetry config virtualenvs.create false
           poetry install -E all
-
-      - name: Verify proto files
-        env:
-          TMPDIR: latest_proto
-          PROTO_URL: https://raw.githubusercontent.com/cognitedata/protobuf-files/master/v1/timeseries
-        run: |
-          mkdir $TMPDIR
-          curl --silent $PROTO_URL/data_points.proto --output $TMPDIR/data_points.proto
-          curl --silent $PROTO_URL/data_point_list_response.proto --output $TMPDIR/data_point_list_response.proto
-          diff $TMPDIR/data_points.proto cognite/client/_proto/data_points.proto
-          diff $TMPDIR/data_point_list_response.proto cognite/client/_proto/data_point_list_response.proto
 
       - name: Test full
         env:
@@ -104,6 +112,18 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage.xml
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install full dependencies
+        run: |
+          python3 -m pip install --upgrade pip poetry
 
       - name: Build package
         run: poetry build
