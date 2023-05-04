@@ -19,7 +19,11 @@ Changes are grouped as follows
 
 ## [6.1.2] - 04-05-23
 ### Improved
-- Error message when failing to convert naive `datetime`s in the utility function `cognite.client.utils.datetime_to_ms`.
+- The SDK has received several minor bugfixes to be more user-friendly on Windows.
+
+### Fixed
+- The utility function `cognite.client.utils.datetime_to_ms` now raises an understandable `ValueError` when unable to convert pre-epoch datetimes.
+- Several functions reading and writing to disk now explicitly use UTF-8 encoding
 
 ## [6.1.1] - 28-04-23
 ### Fixed
