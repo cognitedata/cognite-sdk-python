@@ -261,7 +261,7 @@ class Transformation(CogniteResource):
                 try:
                     session = self._cognite_client.iam.sessions.create(credentials)
                     ret = SourceNonceCredentials(
-                        session.id, session.nonce, self.source_oidc_credentials.cdf_project_name
+                        session.id, session.nonce, source_oidc_credentials.cdf_project_name
                     )
                     sessions_cache[key] = ret
                 except Exception:
@@ -298,7 +298,7 @@ class Transformation(CogniteResource):
                 try:
                     session = self._cognite_client.iam.sessions.create(credentials)
                     ret = DestinationNonceCredentials(
-                        session.id, session.nonce, self.destination_oidc_credentials.cdf_project_name
+                        session.id, session.nonce, destination_oidc_credentials.cdf_project_name
                     )
                     sessions_cache[key] = ret
                 except Exception:
