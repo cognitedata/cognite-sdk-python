@@ -16,7 +16,7 @@ from cognite.client.data_classes.transformations import (
     TransformationPreviewResult,
     TransformationUpdate,
 )
-from cognite.client.data_classes.transformations.common import NonceCredentials
+from cognite.client.data_classes.transformations.common import  SourceNonceCredentials, DestinationNonceCredentials
 from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
@@ -91,7 +91,7 @@ class TransformationsAPI(APIClient):
 
         """
         if isinstance(transformation, Sequence):
-            sessions: Dict[str, NonceCredentials] = {}
+            sessions: Dict[str, Union[SourceNonceCredentials, DestinationNonceCredentials]] = {}
             transformation = [t.copy() for t in transformation]
             for t in transformation:
                 t._cognite_client = self._cognite_client
@@ -300,7 +300,7 @@ class TransformationsAPI(APIClient):
 
         if isinstance(item, Sequence):
             item = list(item).copy()
-            sessions: Dict[str, NonceCredentials] = {}
+            sessions: Dict[str,  Union[SourceNonceCredentials, DestinationNonceCredentials]] = {}
             for (i, t) in enumerate(item):
                 if isinstance(t, Transformation):
                     t = t.copy()
