@@ -276,7 +276,7 @@ class InstanceEdges(TransformationDestination):
         return inst
 
 
-class OidcCredentials:
+class SourceOidcCredentials:
     def __init__(
         self,
         client_id: str = None,
@@ -306,7 +306,60 @@ class OidcCredentials:
         return basic_obj_dump(self, camel_case)
 
 
-class NonceCredentials:
+class DestinationOidcCredentials:
+    def __init__(
+        self,
+        client_id: str = None,
+        client_secret: str = None,
+        scopes: str = None,
+        token_uri: str = None,
+        audience: str = None,
+        cdf_project_name: str = None,
+    ):
+
+        self.client_id = client_id
+        self.client_secret = client_secret
+        self.scopes = scopes
+        self.token_uri = token_uri
+        self.audience = audience
+        self.cdf_project_name = cdf_project_name
+
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        """Dump the instance into a json serializable Python data type.
+
+        Args:
+            camel_case (bool): Use camelCase for attribute names. Defaults to False.
+
+        Returns:
+            Dict[str, Any]: A dictionary representation of the instance.
+        """
+        return basic_obj_dump(self, camel_case)
+
+
+class SourceNonceCredentials:
+    def __init__(
+        self,
+        session_id: int,
+        nonce: str,
+        cdf_project_name: str,
+    ):
+        self.session_id = session_id
+        self.nonce = nonce
+        self.cdf_project_name = cdf_project_name
+
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        """Dump the instance into a json serializable Python data type.
+
+        Args:
+            camel_case (bool): Use camelCase for attribute names. Defaults to False.
+
+        Returns:
+            Dict[str, Any]: A dictionary representation of the instance.
+        """
+        return basic_obj_dump(self, camel_case)
+
+
+class DestinationNonceCredentials:
     def __init__(
         self,
         session_id: int,
