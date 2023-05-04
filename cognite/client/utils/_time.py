@@ -74,9 +74,11 @@ def datetime_to_ms(dt: datetime) -> int:
         return int(1000 * dt.timestamp())
     except OSError as e:
         # OSError is raised if dt.timestamp() is called before 1970-01-01 on Windows for naive datetime.
-        raise ValueError("Failed to convert datetime to epoch. "
-                         "This likely because you are using a naive datetime."
-                         " Try using a timezone aware datetime instead.") from e
+        raise ValueError(
+            "Failed to convert datetime to epoch. "
+            "This likely because you are using a naive datetime."
+            " Try using a timezone aware datetime instead."
+        ) from e
 
 
 def ms_to_datetime(ms: Union[int, float]) -> datetime:

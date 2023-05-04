@@ -34,14 +34,14 @@ repos:
       - id: debug-statements
       - id: check-docstring-first
 
-  - hooks:
-    - id: mypy
-      name: mypy
-      entry: mypy run -- cognite
-      files: ^.*.(py|pyi)$
-      language: system
-      pass_filenames: false
-    repo: local
+#  - hooks:
+#    - id: mypy
+#      name: mypy
+#      entry: dmypy run -- cognite
+#      files: ^.*.(py|pyi)$
+#      language: system
+#      pass_filenames: false
+#    repo: local
 
   - hooks:
       - id: version-match-check

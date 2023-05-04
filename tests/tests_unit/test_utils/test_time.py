@@ -51,12 +51,15 @@ class TestDatetimeToMs:
             assert datetime_to_ms(datetime(2018, 1, 31, tzinfo=None)) == expected_ms
             assert timestamp_to_ms(datetime(2018, 1, 31, tzinfo=None)) == expected_ms
 
-    @pytest.mark.skipif(
-        platform.system() != "Windows", reason="Windows assume naive dateimes are UTC, Unix assumes they are local"
-    )
+    @pytest.mark.skipif(platform.system() != "Windows", reason="Windows is typically unable to handle negative epochs.")
     def test_naive_datetime_to_ms_windows(self):
-        assert datetime_to_ms(datetime(1900, 1, 1)) == -2208988800000
-        assert datetime_to_ms(datetime(1925, 8, 3)) == -1401580800000
+        with pytest.raises(
+            ValueError,
+            match="Failed to convert datetime to epoch. "
+            "This likely because you are using a naive datetime. "
+            "Try using a timezone aware datetime instead.",
+        ):
+            datetime_to_ms(datetime(1925, 8, 3))
 
     def test_aware_datetime_to_ms(self):
         # TODO: Starting from PY39 we should also add tests using:
