@@ -10,6 +10,7 @@ from unittest.mock import call
 
 import pytest
 
+from cognite.client import CogniteClient
 from cognite.client.data_classes import (
     Asset,
     AssetHierarchy,
@@ -53,11 +54,11 @@ class TestAsset:
         assert cognite_client.files.list.call_count == 1
 
     def test_get_parent(self, cognite_client):
-        cognite_client.assets.retrieve = mock.MagicMock()
+        cognite_client.assets.retrieve_multiple = mock.MagicMock()
         a1 = Asset(parent_id=1, cognite_client=cognite_client)
         a1.parent()
-        assert cognite_client.assets.retrieve.call_args == call(id=1)
-        assert cognite_client.assets.retrieve.call_count == 1
+        assert cognite_client.assets.retrieve_multiple.call_args == call(ids=[1], ignore_unknown_ids=False)
+        assert cognite_client.assets.retrieve_multiple.call_count == 1
 
     def test_get_children(self, cognite_client):
         cognite_client.assets.list = mock.MagicMock()
@@ -115,7 +116,8 @@ class TestAssetList:
         resources_a2 = resource_list_class([r2, r3])
         resources_a3 = resource_list_class([r2, r3])
 
-        mock_cognite_client = mock.MagicMock()
+        # Make a mock that pass isinstance checks for 'CogniteClient':
+        (mock_cognite_client := mock.MagicMock()).__class__ = CogniteClient
         mock_method = getattr(mock_cognite_client, method)
         mock_method.list.side_effect = [resources_a1, resources_a2, resources_a3]
         mock_method._config = mock.Mock(max_workers=3)
@@ -124,7 +126,7 @@ class TestAssetList:
         assets._retrieve_chunk_size = 1
 
         resources = getattr(assets, method)()
-        expected = [r1, r2, r3]
+        expected = resource_list_class([r1, r2, r3])
         assert expected == resources
 
     @pytest.mark.dsl

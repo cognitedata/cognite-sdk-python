@@ -9,22 +9,7 @@ import warnings
 from collections import Counter, defaultdict
 from functools import lru_cache
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Collection,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Sequence,
-    Set,
-    TextIO,
-    Tuple,
-    Type,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Set, TextIO, Tuple, Type, Union, cast
 
 from graphlib import TopologicalSorter
 
@@ -152,7 +137,7 @@ class Asset(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> Asset:
+    def _load(cls, resource: Dict, cognite_client: CogniteClient = None) -> Asset:
         instance = super()._load(resource, cognite_client)
         if isinstance(resource, Dict):
             if instance.aggregates is not None:
@@ -173,7 +158,10 @@ class Asset(CogniteResource):
         """
         if self.parent_id is None:
             raise ValueError("parent_id is None")
-        return self._cognite_client.assets.retrieve(id=self.parent_id)
+        return self._cognite_client.assets.retrieve_multiple(
+            ids=[self.parent_id],
+            ignore_unknown_ids=False,
+        )[0]
 
     def children(self) -> AssetList:
         """Returns the children of this asset.
@@ -181,6 +169,7 @@ class Asset(CogniteResource):
         Returns:
             AssetList: The requested assets
         """
+        assert self.id is not None
         return self._cognite_client.assets.list(parent_ids=[self.id], limit=None)
 
     def subtree(self, depth: int = None) -> AssetList:
@@ -200,6 +189,7 @@ class Asset(CogniteResource):
         Returns:
             TimeSeriesList: All time series related to this asset.
         """
+        assert self.id is not None
         return self._cognite_client.time_series.list(asset_ids=[self.id], **kwargs)
 
     def sequences(self, **kwargs: Any) -> SequenceList:
@@ -208,6 +198,7 @@ class Asset(CogniteResource):
         Returns:
             SequenceList: All sequences related to this asset.
         """
+        assert self.id is not None
         return self._cognite_client.sequences.list(asset_ids=[self.id], **kwargs)
 
     def events(self, **kwargs: Any) -> EventList:
@@ -217,6 +208,7 @@ class Asset(CogniteResource):
             EventList: All events related to this asset.
         """
 
+        assert self.id is not None
         return self._cognite_client.events.list(asset_ids=[self.id], **kwargs)
 
     def files(self, **kwargs: Any) -> FileMetadataList:
@@ -225,6 +217,7 @@ class Asset(CogniteResource):
         Returns:
             FileMetadataList: Metadata about all files related to this asset.
         """
+        assert self.id is not None
         return self._cognite_client.files.list(asset_ids=[self.id], **kwargs)
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
@@ -335,7 +328,7 @@ class AssetUpdate(CogniteUpdate):
 class AssetList(CogniteResourceList):
     _RESOURCE = Asset
 
-    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient = None):
+    def __init__(self, resources: List[Asset], cognite_client: CogniteClient = None):
         super().__init__(resources, cognite_client)
         self._retrieve_chunk_size = 100
 
@@ -414,7 +407,6 @@ class AssetFilter(CogniteFilter):
         external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
         labels (LabelFilter): Return only the resource matching the specified label constraints.
         geo_location (GeoLocationFilter): Only include files matching the specified geographic relation.
-        cognite_client (CogniteClient): The client to associate with this object.
     """
 
     def __init__(
@@ -432,7 +424,6 @@ class AssetFilter(CogniteFilter):
         external_id_prefix: str = None,
         labels: LabelFilter = None,
         geo_location: GeoLocationFilter = None,
-        cognite_client: CogniteClient = None,
     ):
         self.name = name
         self.parent_ids = parent_ids
@@ -447,20 +438,9 @@ class AssetFilter(CogniteFilter):
         self.external_id_prefix = external_id_prefix
         self.labels = labels
         self.geo_location = geo_location
-        self._cognite_client = cast("CogniteClient", cognite_client)
 
         if labels is not None and not isinstance(labels, LabelFilter):
             raise TypeError("AssetFilter.labels must be of type LabelFilter")
-
-    @classmethod
-    def _load(cls, resource: Union[Dict, str]) -> AssetFilter:
-        instance = super()._load(resource)
-        if isinstance(resource, Dict):
-            if instance.created_time is not None:
-                instance.created_time = TimestampRange(**instance.created_time)
-            if instance.last_updated_time is not None:
-                instance.last_updated_time = TimestampRange(**instance.last_updated_time)
-        return instance
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         result = super().dump(camel_case)

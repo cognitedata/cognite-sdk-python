@@ -99,7 +99,7 @@ class TimeSeries(CogniteResource):
         dps = self._cognite_client.time_series.data.retrieve(
             **identifier, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS + 1, aggregates="count", granularity="100d"
         )
-        return sum(dps.count)
+        return sum(dps.count)  # type: ignore [union-attr, arg-type]
 
     def latest(self, before: Union[int, str, datetime] = None) -> Optional[Datapoint]:
         """Returns the latest datapoint in this time series. If empty, returns None.
@@ -134,7 +134,7 @@ class TimeSeries(CogniteResource):
         """
         if self.asset_id is None:
             raise ValueError("asset_id is None")
-        return self._cognite_client.assets.retrieve(id=self.asset_id)
+        return self._cognite_client.assets.retrieve_multiple(ids=[self.asset_id], ignore_unknown_ids=False)[0]
 
 
 class TimeSeriesFilter(CogniteFilter):
@@ -153,7 +153,6 @@ class TimeSeriesFilter(CogniteFilter):
         external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
         created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
         last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-        cognite_client (CogniteClient): The client to associate with this object.
     """
 
     def __init__(
@@ -170,7 +169,6 @@ class TimeSeriesFilter(CogniteFilter):
         external_id_prefix: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        cognite_client: CogniteClient = None,
     ):
         self.name = name
         self.unit = unit
@@ -184,17 +182,6 @@ class TimeSeriesFilter(CogniteFilter):
         self.external_id_prefix = external_id_prefix
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
-
-    @classmethod
-    def _load(cls, resource: Union[Dict, str]) -> TimeSeriesFilter:
-        instance = super()._load(resource)
-        if isinstance(resource, Dict):
-            if instance.created_time is not None:
-                instance.created_time = TimestampRange(**instance.created_time)
-            if instance.last_updated_time is not None:
-                instance.last_updated_time = TimestampRange(**instance.last_updated_time)
-        return instance
 
 
 class TimeSeriesUpdate(CogniteUpdate):

@@ -56,7 +56,7 @@ def _get_function_internal_id(cognite_client: CogniteClient, identifier: Identif
     if identifier.is_external_id:
         function = cognite_client.functions.retrieve(external_id=primitive)
         if function:
-            return function.id
+            return cast(int, function.id)
 
     raise ValueError(f'Function with external ID "{primitive}" is not found')
 
@@ -285,9 +285,7 @@ class FunctionsAPI(APIClient):
 
         return self._LIST_CLASS._load(res.json()["items"], cognite_client=self._cognite_client)
 
-    def retrieve(
-        self, id: Optional[int] = None, external_id: Optional[str] = None
-    ) -> Union[FunctionList, Function, None]:
+    def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Function]:
         """`Retrieve a single function by id. <https://docs.cognite.com/api/v1/#operation/byIdsFunctions>`_
 
         Args:
@@ -733,7 +731,7 @@ class FunctionCallsAPI(APIClient):
 
     def retrieve(
         self, call_id: int, function_id: Optional[int] = None, function_external_id: Optional[str] = None
-    ) -> Union[FunctionCallList, FunctionCall, None]:
+    ) -> Optional[FunctionCall]:
         """`Retrieve a single function call by id. <https://docs.cognite.com/api/v1/#operation/byIdsFunctionCalls>`_
 
         Args:
@@ -742,7 +740,7 @@ class FunctionCallsAPI(APIClient):
             function_external_id (str, optional): External ID of the function on which the call was made.
 
         Returns:
-            Union[FunctionCallList, FunctionCall, None]: Requested function call.
+            Optional[FunctionCall]: Requested function call or None if not found.
 
         Examples:
 

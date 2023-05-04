@@ -499,7 +499,7 @@ class APIClient:
             headers=headers,
             initial_cursor=initial_cursor,
         ):
-            items.extend(resource_list.data)
+            items.extend(cast(T_CogniteResourceList, resource_list).data)
         return list_cls(items, cognite_client=self._cognite_client)
 
     def _list_partitioned(

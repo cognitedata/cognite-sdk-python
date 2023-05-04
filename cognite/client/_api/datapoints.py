@@ -178,7 +178,7 @@ class DpsFetchStrategy(ABC):
 
     def _finalize_tasks(self, ordered_results: List[BaseConcurrentTask], resource_lst: Type[TResLst]) -> TResLst:
         return resource_lst(
-            [ts_task.get_result() for ts_task in ordered_results],
+            [ts_task.get_result() for ts_task in ordered_results],  # type: ignore [misc]
             cognite_client=self.dps_client._cognite_client,
         )
 

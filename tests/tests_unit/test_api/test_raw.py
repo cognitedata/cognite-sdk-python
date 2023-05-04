@@ -178,8 +178,8 @@ class TestRawTables:
 
     def test_get_rows_in_table(self, cognite_client, mock_raw_table_response, mock_raw_row_response):
         tables = cognite_client.raw.tables.list(db_name="db1")
-        rows = tables[0].rows()
-        assert RowList([Row._load({"key": "row1", "columns": {"c1": 1, "c2": "2"}})]) == rows
+        exp_rows = RowList._load([{"key": "row1", "columns": {"c1": 1, "c2": "2"}}], cognite_client=None)
+        assert tables[0].rows() == exp_rows
 
 
 class TestRawRows:

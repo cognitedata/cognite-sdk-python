@@ -50,7 +50,6 @@ class LabelDefinitionFilter(CogniteFilter):
         name (str): Returns the label definitions matching that name.
         external_id_prefix (str): filter label definitions with external ids starting with the prefix specified
         data_set_ids (List[Dict[str, Any]]): Only include labels that belong to these datasets.
-        cognite_client (CogniteClient): The client to associate with this object.
     """
 
     def __init__(
@@ -58,12 +57,10 @@ class LabelDefinitionFilter(CogniteFilter):
         name: str = None,
         external_id_prefix: str = None,
         data_set_ids: List[Dict[str, Any]] = None,
-        cognite_client: CogniteClient = None,
     ):
         self.name = name
         self.external_id_prefix = external_id_prefix
         self.data_set_ids = data_set_ids
-        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class LabelDefinitionList(CogniteResourceList):
@@ -130,12 +127,9 @@ class LabelFilter(dict, CogniteFilter):
                 >>> my_label_filter = LabelFilter(contains_any=["PUMP", "VALVE"])
     """
 
-    def __init__(
-        self, contains_any: List[str] = None, contains_all: List[str] = None, cognite_client: CogniteClient = None
-    ):
+    def __init__(self, contains_any: List[str] = None, contains_all: List[str] = None):
         self.contains_any = contains_any
         self.contains_all = contains_all
-        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @staticmethod
     def _wrap_labels(values: Optional[List[str]]) -> Optional[List[Dict[str, str]]]:

@@ -241,7 +241,7 @@ class RawTablesAPI(APIClient):
             task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda el: el["name"]
         )
 
-    def list(self, db_name: str, limit: int = LIST_LIMIT_DEFAULT) -> TableList:
+    def list(self, db_name: str, limit: Optional[int] = LIST_LIMIT_DEFAULT) -> TableList:
         """`List tables <https://docs.cognite.com/api/v1/#operation/getTables>`_
 
         Args:
@@ -494,7 +494,7 @@ class RawRowsAPI(APIClient):
         min_last_updated_time: int = None,
         max_last_updated_time: int = None,
         columns: List[str] = None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: Optional[int] = LIST_LIMIT_DEFAULT,
     ) -> RowList:
         """`List rows in a table. <https://docs.cognite.com/api/v1/#operation/getRows>`_
 

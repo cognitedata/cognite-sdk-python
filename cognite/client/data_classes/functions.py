@@ -2,10 +2,16 @@ from __future__ import annotations
 
 import time
 from numbers import Number
-from typing import TYPE_CHECKING, Dict, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 
 from cognite.client._constants import LIST_LIMIT_DEFAULT
-from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList, CogniteResponse
+from cognite.client.data_classes._base import (
+    CogniteFilter,
+    CogniteResource,
+    CogniteResourceList,
+    CogniteResponse,
+    CogniteResponseList,
+)
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._auxiliary import is_unlimited
 
@@ -137,14 +143,14 @@ class Function(CogniteResource):
 
         return (schedules_by_external_id + schedules_by_id)[:limit]
 
-    def retrieve_call(self, id: int) -> FunctionCall:
+    def retrieve_call(self, id: int) -> Optional[FunctionCall]:
         """`Retrieve call by id. <https://docs.cognite.com/api/v1/#operation/getFunctionCall>`_
 
         Args:
             id (int): ID of the call.
 
         Returns:
-            FunctionCall: Function call.
+            Optional[FunctionCall]: Requested function call or None if not found.
         """
         return self._cognite_client.functions.calls.retrieve(call_id=id, function_id=self.id)
 
@@ -245,6 +251,7 @@ class FunctionSchedule(CogniteResource):
             Optional[Dict]: Input data to the associated function or None if not set. This data is passed
             deserialized into the function through the data argument.
         """
+        assert self.id is not None
         return self._cognite_client.functions.schedules.get_input_data(id=self.id)
 
 
@@ -314,6 +321,7 @@ class FunctionCall(CogniteResource):
         Returns:
             Response from the function call.
         """
+        assert self.id is not None
         return self._cognite_client.functions.calls.get_response(call_id=self.id, function_id=self.function_id)
 
     def get_logs(self) -> FunctionCallLog:
@@ -322,6 +330,7 @@ class FunctionCall(CogniteResource):
         Returns:
             FunctionCallLog: Log for the function call.
         """
+        assert self.id is not None
         return self._cognite_client.functions.calls.get_logs(call_id=self.id, function_id=self.function_id)
 
     def update(self) -> None:
@@ -330,7 +339,10 @@ class FunctionCall(CogniteResource):
         Returns:
             None
         """
+        assert self.id is not None
         latest = self._cognite_client.functions.calls.retrieve(call_id=self.id, function_id=self.function_id)
+        if latest is None:
+            raise RuntimeError("Unable to update the function call object")
         self.status = latest.status
         self.end_time = latest.end_time
         self.error = latest.error
@@ -345,7 +357,7 @@ class FunctionCallList(CogniteResourceList):
     _RESOURCE = FunctionCall
 
 
-class FunctionCallLogEntry(CogniteResource):
+class FunctionCallLogEntry(CogniteResponse):
     """A log entry for a function call.
 
     Args:
@@ -353,18 +365,19 @@ class FunctionCallLogEntry(CogniteResource):
         message (str): Single line from stdout / stderr.
     """
 
-    def __init__(
-        self,
-        timestamp: int = None,
-        message: str = None,
-        cognite_client: CogniteClient = None,
-    ):
+    def __init__(self, timestamp: int, message: str):
         self.timestamp = timestamp
         self.message = message
-        self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, response: Dict[str, Any]) -> FunctionCallLogEntry:
+        return cls(
+            timestamp=response["timestamp"],
+            message=response.get("message", ""),
+        )
 
 
-class FunctionCallLog(CogniteResourceList):
+class FunctionCallLog(CogniteResponseList):
     _RESOURCE = FunctionCallLogEntry
 
 
@@ -373,7 +386,7 @@ class FunctionsLimits(CogniteResponse):
 
     Args:
         timeout_minutes (int): Timeout of each function call.
-        cpu_cores (Dict[str, float]): The number of CPU cores per function exectuion (i.e. function call).
+        cpu_cores (Dict[str, float]): The number of CPU cores per function execution (i.e. function call).
         memory_gb (Dict[str, float]): The amount of available memory in GB per function execution (i.e. function call).
         runtimes (List[str]): Available runtimes. For example, "py37" translates to the latest version of the Python 3.7.x series.
         response_size_mb (Optional[int]): Maximum response size of function calls.
@@ -411,14 +424,9 @@ class FunctionsStatus(CogniteResponse):
         status (str): Activation Status for the associated project.
     """
 
-    def __init__(
-        self,
-        status: str,
-    ) -> None:
+    def __init__(self, status: str) -> None:
         self.status = status
 
     @classmethod
     def _load(cls, api_response: Dict) -> FunctionsStatus:
-        return cls(
-            status=api_response["status"],
-        )
+        return cls(status=api_response["status"])

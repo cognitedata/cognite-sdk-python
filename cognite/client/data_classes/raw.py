@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import OrderedDict
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast, overload
 
 from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
@@ -73,7 +73,15 @@ class Table(CogniteResource):
 
         self._db_name: Optional[str] = None
 
-    def rows(self, key: str = None, limit: int = None) -> Union[Row, RowList]:
+    @overload
+    def rows(self, key: str, limit: int = None) -> Optional[Row]:
+        ...
+
+    @overload
+    def rows(self, key: None, limit: int = None) -> RowList:
+        ...
+
+    def rows(self, key: str = None, limit: int = None) -> Union[None, Row, RowList]:
         """Get the rows in this table.
 
         Args:
@@ -83,7 +91,12 @@ class Table(CogniteResource):
         Returns:
             Union[Row, RowList]: List of tables in this database.
         """
-        if key:
+        if self._db_name is None:
+            raise ValueError("Table is not linked to a database, did you instantiate it yourself?")
+        elif self.name is None:
+            raise ValueError("Table 'name' is missing")
+
+        if key is not None:
             return self._cognite_client.raw.rows.retrieve(db_name=self._db_name, table_name=self.name, key=key)
         return self._cognite_client.raw.rows.list(db_name=self._db_name, table_name=self.name, limit=limit)
 
@@ -115,6 +128,8 @@ class Database(CogniteResource):
         Returns:
             TableList: List of tables in this database.
         """
+        if self.name is None:
+            raise ValueError("Unable to list tables, 'name' is not set on instance")
         return self._cognite_client.raw.tables.list(db_name=self.name, limit=limit)
 
 

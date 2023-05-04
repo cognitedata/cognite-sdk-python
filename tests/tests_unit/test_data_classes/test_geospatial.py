@@ -55,7 +55,8 @@ class TestFeatureList:
                     "lastUpdatedTime": 1654612200225,
                     "dataSetId": 12,
                 }
-            ]
+            ],
+            cognite_client=None,
         )
         assert len(features) == 1
         feature = features[0]

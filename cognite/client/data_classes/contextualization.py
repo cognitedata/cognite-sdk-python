@@ -96,9 +96,9 @@ class ContextualizationJob(CogniteResource):
         self.status_time = status_time
         self.error_message = error_message
         self.job_token = job_token
-        self._cognite_client = cast("CogniteClient", cognite_client)
         self._result: Optional[Dict[str, Any]] = None
         self._status_path = status_path
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def update_status(self) -> str:
         """Updates the model status and returns it"""
@@ -158,6 +158,10 @@ class ContextualizationJob(CogniteResource):
     ) -> T_ContextualizationJob:
         obj = cls._load({**data, "jobToken": headers.get("X-Job-Token")}, cognite_client=cognite_client)
         obj._status_path = status_path
+        # '_load' does not see properties (real attribute stored under a different name, e.g. '_items' not 'items'):
+        if "items" in data and hasattr(obj, "items"):
+            # TODO: Remove type-ignore-comment after updating mypy:
+            obj.items = data["items"]  # type: ignore [attr-defined]
         return obj
 
 
@@ -449,15 +453,15 @@ class DiagramDetectItem(CogniteResource):
         file_external_id: str = None,
         annotations: list = None,
         error_message: str = None,
-        cognite_client: CogniteClient = None,
         page_range: Optional[Dict[str, int]] = None,
+        cognite_client: CogniteClient = None,
     ):
         self.file_id = file_id
         self.file_external_id = file_external_id
         self.annotations = annotations
         self.error_message = error_message
-        self._cognite_client = cast("CogniteClient", cognite_client)
         self.page_range = page_range
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:  # type: ignore[override]
         """Convert the instance into a pandas DataFrame.
@@ -603,7 +607,7 @@ class DetectJobBundle:
             "Breaking changes can happen in between patch versions."
         )
 
-        self._cognite_client = cast("CogniteClient", cognite_client)
+        self._cognite_client: CogniteClient = cognite_client  # type: ignore [assignment]
         if not job_ids:
             raise ValueError("You need to specify job_ids")
         self.job_ids = job_ids
@@ -719,7 +723,7 @@ class VisionExtractItem(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> VisionExtractItem:
+    def _load(cls, resource: Dict, cognite_client: CogniteClient = None) -> VisionExtractItem:
         """Override CogniteResource._load so that we can convert the dicts returned by the API to data classes"""
         extracted_item = super()._load(resource, cognite_client=cognite_client)
         if isinstance(extracted_item.predictions, dict):

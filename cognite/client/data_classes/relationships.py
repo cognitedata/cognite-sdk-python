@@ -91,7 +91,7 @@ class Relationship(CogniteResource):
             raise TypeError(f"Invalid source or target '{resource_type}' in relationship")
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> Relationship:
+    def _load(cls, resource: Dict, cognite_client: CogniteClient = None) -> Relationship:
         instance = super()._load(resource, cognite_client)
         if instance.source is not None:
             instance.source = instance._convert_resource(instance.source, instance.source_type)  # type: ignore
@@ -131,7 +131,6 @@ class RelationshipFilter(CogniteFilter):
         created_time (Dict[str, int]): Range to filter the field for (inclusive).
         active_at_time (Dict[str, int]): Limits results to those active at any point within the given time range, i.e. if there is any overlap in the intervals [activeAtTime.min, activeAtTime.max] and [startTime, endTime], where both intervals are inclusive. If a relationship does not have a startTime, it is regarded as active from the begining of time by this filter. If it does not have an endTime is will be regarded as active until the end of time. Similarly, if a min is not supplied to the filter, the min will be implicitly set to the beginning of time, and if a max is not supplied, the max will be implicitly set to the end of time.
         labels (LabelFilter): Return only the resource matching the specified label constraints.
-        cognite_client (CogniteClient): The client to associate with this object.
     """
 
     def __init__(
@@ -148,7 +147,6 @@ class RelationshipFilter(CogniteFilter):
         created_time: Dict[str, int] = None,
         active_at_time: Dict[str, int] = None,
         labels: LabelFilter = None,
-        cognite_client: CogniteClient = None,
     ):
         self.source_external_ids = source_external_ids
         self.source_types = source_types
@@ -162,7 +160,6 @@ class RelationshipFilter(CogniteFilter):
         self.created_time = created_time
         self.active_at_time = active_at_time
         self.labels = labels
-        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         result = super().dump(camel_case)

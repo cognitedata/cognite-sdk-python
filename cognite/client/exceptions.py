@@ -204,8 +204,14 @@ class CogniteMissingClientError(CogniteException):
     Raised if the user attempts to make use of a method which requires the cognite_client being set, but it is not.
     """
 
+    def __init__(self, obj: Any) -> None:
+        self.type = type(obj)
+
     def __str__(self) -> str:
-        return "A CogniteClient has not been set on this object. Pass it in the constructor to use it."
+        return (
+            f"A CogniteClient has not been set on this object ({self.type}), did you create it yourself? "
+            "You can pass an instantiated client along when you initialise the object."
+        )
 
 
 class CogniteAuthError(CogniteException):

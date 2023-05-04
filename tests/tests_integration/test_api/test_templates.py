@@ -12,7 +12,7 @@ from cognite.client.data_classes import (
     TemplateInstanceList,
 )
 from cognite.client.data_classes.events import Event
-from cognite.client.data_classes.templates import Source, TemplateInstanceUpdate, View, ViewResolver
+from cognite.client.data_classes.templates import Source, TemplateInstanceUpdate, View, ViewResolveList, ViewResolver
 from cognite.client.exceptions import CogniteNotFoundError
 
 
@@ -233,14 +233,22 @@ class TestTemplatesCogniteClient:
         res = cognite_client.templates.views.resolve(
             ext_id, new_version.version, view.external_id, input={"minStartTime": 10 * 1000}, limit=10
         )
-        assert res == [{"startTime": (i + 10) * 1000, "test_type": "test_templates_1"} for i in range(0, 10)]
+        expected = ViewResolveList._load(
+            [{"startTime": (i + 10) * 1000, "test_type": "test_templates_1"} for i in range(0, 10)],
+            cognite_client=cognite_client,
+        )
+        assert res == expected
 
     def test_view_resolve_pagination(self, cognite_client, new_view):
         new_group, ext_id, new_version, view = new_view
         res = cognite_client.templates.views.resolve(
             ext_id, new_version.version, view.external_id, input={"minStartTime": 0}, limit=-1
         )
-        assert res == [{"startTime": i * 1000, "test_type": "test_templates_1"} for i in range(0, 1001)]
+        expected = ViewResolveList._load(
+            [{"startTime": i, "test_type": "test_templates_1"} for i in range(0, 1_000_001, 1000)],
+            cognite_client=cognite_client,
+        )
+        assert res == expected
 
     def test_view_upsert(self, cognite_client, new_view):
         new_group, ext_id, new_version, view = new_view

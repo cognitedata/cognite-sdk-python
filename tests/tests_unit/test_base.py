@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import json
+import re
+from dataclasses import is_dataclass
 from decimal import Decimal
-from typing import Any, Dict, List
+from inspect import getsource, signature
+from typing import Any, Dict, List, cast
 from unittest import mock
 
 import pytest
@@ -21,6 +24,14 @@ from cognite.client.data_classes._base import (
     CogniteUpdate,
 )
 from cognite.client.exceptions import CogniteMissingClientError
+from tests.utils import all_subclasses
+
+
+@pytest.fixture
+def simple_mock_client():
+    # We allow the mock to pass isinstance checks
+    (client := mock.MagicMock()).__class__ = CogniteClient
+    return client
 
 
 class MyResource(CogniteResource):
@@ -29,7 +40,7 @@ class MyResource(CogniteResource):
         self.var_b = var_b
         self.id = id
         self.external_id = external_id
-        self._cognite_client = cognite_client
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     def use(self):
         return self._cognite_client
@@ -94,13 +105,9 @@ class LabelUpdate(CogniteLabelUpdate):
 
 
 class MyFilter(CogniteFilter):
-    def __init__(self, var_a=None, var_b=None, cognite_client=None):
+    def __init__(self, var_a=None, var_b=None):
         self.var_a = var_a
         self.var_b = var_b
-        self._cognite_client = cognite_client
-
-    def use(self):
-        return self._cognite_client
 
 
 class MyResourceList(CogniteResourceList):
@@ -111,17 +118,48 @@ class MyResourceList(CogniteResourceList):
 
 
 class MyResponse(CogniteResponse):
-    def __init__(self, var_a=None, cognite_client=None):
+    def __init__(self, var_a=None):
         self.var_a = var_a
-        self._cognite_client = cognite_client
 
     @classmethod
     def _load(cls, api_response):
         data = api_response["data"]
         return cls(data["varA"])
 
-    def use(self):
-        return self._cognite_client
+
+class TestVerifyAllCogniteSubclasses:
+    @pytest.mark.parametrize("subclass", all_subclasses(CogniteResource))
+    def test_all_cognite_resource_subclasses(self, subclass):
+        if subclass.__init__ is CogniteResource.__init__:
+            return  # all good, no method override
+
+        src, accepts_client = "", False
+        if is_dataclass(subclass):
+            if hasattr(subclass, "__post_init__"):
+                src = getsource(subclass.__post_init__)
+                accepts_client = "cognite_client" in signature(subclass.__post_init__).parameters
+
+        elif subclass.__init__ is not object.__init__:
+            src = getsource(subclass.__init__)
+            accepts_client = "cognite_client" in signature(subclass.__init__).parameters
+
+        # TODO: All classes that do not accept cognite_client should most likely not be CogniteResource(!)
+        if accepts_client:
+            # Make sure all subclasses set cognite_client:
+            if "self._cognite_client" not in src:
+                # Passing to super().__init__ is fine:
+                match = re.search(
+                    r"super\(\)\.__init__\(.*cognite_client=cognite_client.*\)", "".join(src.splitlines())
+                )
+                assert match is not None
+
+    @pytest.mark.parametrize("subclass", all_subclasses(CogniteResponse))
+    def test_all_cognite_response_subclasses(self, subclass):
+        assert "cognite_client" not in signature(subclass.__init__).parameters
+
+    @pytest.mark.parametrize("subclass", all_subclasses(CogniteFilter))
+    def test_all_cognite_filter_subclasses(self, subclass):
+        assert "cognite_client" not in signature(subclass.__init__).parameters
 
 
 class TestCogniteResource:
@@ -133,22 +171,33 @@ class TestCogniteResource:
         assert {"varA": 1} == MyResource(1).dump(camel_case=True)
 
     def test_load(self):
-        assert MyResource(1).dump() == MyResource._load({"varA": 1}).dump()
-        assert MyResource(1, 2).dump() == MyResource._load({"var_a": 1, "var_b": 2}).dump()
-        assert {"var_a": 1} == MyResource._load({"var_a": 1, "var_c": 1}).dump()
+        assert MyResource(1).dump() == MyResource._load({"varA": 1}, cognite_client=None).dump()
+        assert MyResource(1, 2).dump() == MyResource._load({"varA": 1, "varB": 2}, cognite_client=None).dump()
+        assert {"var_a": 1} == MyResource._load({"varA": 1, "varC": 1}, cognite_client=None).dump()
 
     def test_load_unknown_attribute(self):
-        assert {"var_a": 1, "var_b": 2} == MyResource._load({"varA": 1, "varB": 2, "varC": 3}).dump()
+        resource = MyResource._load({"varA": 1, "varB": 2, "varC": 3}, cognite_client=None).dump()
+        assert resource == {"var_a": 1, "var_b": 2}
 
     def test_load_object_attr(self):
-        assert {"var_a": 1, "var_b": {"camelCase": 1}} == MyResource._load({"varA": 1, "varB": {"camelCase": 1}}).dump()
+        resource = MyResource._load({"varA": 1, "varB": {"camelCase": 1}}, cognite_client=None).dump()
+        assert resource == {"var_a": 1, "var_b": {"camelCase": 1}}
 
-    def test_eq(self):
+    def test_eq(self, simple_mock_client):
         assert MyResource(1, "s") == MyResource(1, "s")
-        assert MyResource(1, "s") == MyResource(1, "s", cognite_client=mock.MagicMock())
+        assert MyResource(1, "s") == MyResource(1, "s", cognite_client=simple_mock_client)
         assert MyResource() == MyResource()
         assert MyResource(1, "s") != MyResource(1)
         assert MyResource(1, "s") != MyResource(2, "t")
+
+    @pytest.mark.parametrize("client", (None, CogniteClient(ClientConfig("client_name", "project", "credentials"))))
+    def test_accepted_values_for_cognite_client(self, client):
+        MyResource(cognite_client=client)
+
+    @pytest.mark.parametrize("client", ("no", object(), mock.MagicMock()))
+    def test_raises_if_given_bad_cognite_client(self, client):
+        with pytest.raises(AttributeError):
+            MyResource(cognite_client=client)
 
     def test_str_repr(self):
         assert json.dumps({"var_a": 1}, indent=4) == str(MyResource(1))
@@ -227,13 +276,17 @@ class TestCogniteResourceList:
         pd.testing.assert_frame_equal(resource_list.to_pandas(camel_case=False), expected_df)
 
     def test_load(self):
-        resource_list = MyResourceList._load([{"varA": 1, "varB": 2}, {"varA": 2, "varB": 3}, {"varA": 3}])
+        resource_list = MyResourceList._load(
+            [{"varA": 1, "varB": 2}, {"varA": 2, "varB": 3}, {"varA": 3}],
+            cognite_client=None,
+        )
 
         assert {"var_a": 1, "var_b": 2} == resource_list[0].dump()
         assert [{"var_a": 1, "var_b": 2}, {"var_a": 2, "var_b": 3}, {"var_a": 3}] == resource_list.dump()
 
     def test_load_unknown_attribute(self):
-        assert [{"var_a": 1, "var_b": 2}] == MyResourceList._load([{"varA": 1, "varB": 2, "varC": 3}]).dump()
+        expected = MyResourceList._load([{"varA": 1, "varB": 2, "varC": 3}], cognite_client=None).dump()
+        assert expected == [{"var_a": 1, "var_b": 2}]
 
     def test_indexing(self):
         resource_list = MyResourceList([MyResource(1, 2), MyResource(2, 3)])
@@ -242,9 +295,8 @@ class TestCogniteResourceList:
         assert MyResourceList([MyResource(1, 2), MyResource(2, 3)]) == resource_list[:]
         assert isinstance(resource_list[:], MyResourceList)
 
-    def test_slice_list_client_remains(self):
-        mock_client = mock.MagicMock()
-        rl = MyResourceList([MyResource(1, 2)], cognite_client=mock_client)
+    def test_slice_list_client_remains(self, simple_mock_client):
+        rl = MyResourceList([MyResource(1, 2)], cognite_client=simple_mock_client)
         rl_sliced = rl[:]
         assert rl._cognite_client == rl_sliced._cognite_client
 
@@ -320,7 +372,11 @@ class TestCogniteResourceList:
         assert MyResource(id=2, external_id="2") == resource_list.get(external_id="2")
 
     def test_constructor_bad_type(self):
-        with pytest.raises(TypeError, match="must be of type 'MyResource'"):
+        exp_err = (
+            r"^All resources for class 'MyResourceList' must be of type '<class 'tests.tests_unit."
+            "test_base.MyResource'>', not '<class 'int'>'.$"
+        )
+        with pytest.raises(TypeError, match=exp_err):
             MyResourceList([1, 2, 3])
 
     def test_resource_list_client_correct(self):
@@ -342,9 +398,12 @@ class TestCogniteFilter:
 
     def test_eq(self):
         assert MyFilter(1, 2) == MyFilter(1, 2)
-        assert MyFilter(1, 2) == MyFilter(1, 2, cognite_client=mock.MagicMock())
         assert MyFilter(1) != MyFilter(1, 2)
         assert MyFilter() == MyFilter()
+
+    def test_raises_if_given_cognite_client(self):
+        with pytest.raises(TypeError, match=r"^__init__\(\) got an unexpected keyword argument 'cognite_client'$"):
+            MyFilter(1, 2, cognite_client=mock.MagicMock())
 
     def test_str(self):
         assert json.dumps({"var_a": 1}, indent=4) == str(MyFilter(1))
@@ -353,10 +412,10 @@ class TestCogniteFilter:
     def test_repr(self):
         assert json.dumps({"var_a": 1}, indent=4) == repr(MyFilter(1))
 
-    def test_use_method_which_requires_cognite_client__client_not_set(self):
-        mr = MyFilter()
-        with pytest.raises(CogniteMissingClientError):
-            mr.use()
+    def test_filter_no_cogclient_ref(self):
+        # CogniteResponse does not have a reference to the cognite client:
+        with pytest.raises(AttributeError):
+            MyFilter()._cognite_client
 
 
 class TestCogniteUpdate:
@@ -462,17 +521,14 @@ class TestCogniteResponse:
 
     def test_eq(self):
         assert MyResponse(1) == MyResponse(1)
-        assert MyResponse(1) == MyResponse(1, cognite_client=mock.MagicMock())
         assert MyResponse(1) != MyResponse(2)
         assert MyResponse(1) != MyResponse()
 
-    def test_response_client_correct(self):
-        c = CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla")))
-        with pytest.raises(CogniteMissingClientError):
-            MyResource(1)._cognite_client
-        assert MyResource(1, cognite_client=c)._cognite_client == c
+    def test_raises_if_given_cognite_client(self):
+        with pytest.raises(TypeError, match=r"^__init__\(\) got an unexpected keyword argument 'cognite_client'$"):
+            MyResponse(1, cognite_client=mock.MagicMock())
 
-    def test_use_method_which_requires_cognite_client__client_not_set(self):
-        mr = MyResponse()
-        with pytest.raises(CogniteMissingClientError):
-            mr.use()
+    def test_response_no_cogclient_ref(self):
+        # CogniteResponse does not have a reference to the cognite client:
+        with pytest.raises(AttributeError):
+            MyResponse(1)._cognite_client

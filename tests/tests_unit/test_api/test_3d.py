@@ -326,4 +326,4 @@ class Test3DAssetMappings:
             cognite_client.three_d.asset_mappings.delete(
                 model_id=1, revision_id=1, asset_mapping=[ThreeDAssetMapping(1, 1)]
             )
-        assert e.value.unknown == [ThreeDAssetMapping._load({"assetId": 1, "nodeId": 1})]
+        assert e.value.unknown == [ThreeDAssetMapping._load({"assetId": 1, "nodeId": 1}, cognite_client)]
