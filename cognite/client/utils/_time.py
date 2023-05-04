@@ -39,7 +39,7 @@ def import_zoneinfo() -> type[ZoneInfo]:
             from zoneinfo import ZoneInfo
         else:
             from backports.zoneinfo import ZoneInfo
-        return ZoneInfo  # type: ignore [return-value]
+        return ZoneInfo
 
     except ImportError as e:
         raise CogniteImportError(
@@ -58,7 +58,7 @@ def _import_zoneinfo_not_found_error() -> type[ZoneInfoNotFoundError]:
 
 
 def get_utc_zoneinfo() -> ZoneInfo:
-    return import_zoneinfo()("UTC")  # type: ignore [operator]
+    return import_zoneinfo()("UTC")
 
 
 def datetime_to_ms(dt: datetime) -> int:
@@ -218,7 +218,9 @@ def align_start_and_end_for_granularity(start: int, end: int, granularity: str) 
 
 
 class DateTimeAligner(ABC):
-    _zeros_upto_hour = dict(hour=0, minute=0, second=0, microsecond=0)
+    @staticmethod
+    def normalize(date: datetime) -> datetime:
+        return date.replace(hour=0, minute=0, second=0, microsecond=0)
 
     @classmethod
     @abstractmethod
@@ -244,11 +246,11 @@ class DateTimeAligner(ABC):
 class DayAligner(DateTimeAligner):
     @classmethod
     def floor(cls, date: datetime) -> datetime:
-        return date.replace(**cls._zeros_upto_hour)  # type: ignore [arg-type]
+        return cls.normalize(date)
 
     @classmethod
     def ceil(cls, date: datetime) -> datetime:
-        return date.replace(**cls._zeros_upto_hour) + timedelta(days=1)  # type: ignore [arg-type]
+        return cls.normalize(date) + timedelta(days=1)
 
     @classmethod
     def units_between(cls, start: datetime, end: datetime) -> int:
@@ -267,7 +269,7 @@ class WeekAligner(DateTimeAligner):
         >>> WeekAligner.ceil(datetime(2023, 4, 9 ))
         datetime.datetime(2023, 4, 10, 0, 0)
         """
-        date = date.replace(**cls._zeros_upto_hour)  # type: ignore [arg-type]
+        date = cls.normalize(date)
         if (weekday := date.weekday()) != 0:
             return date + timedelta(days=7 - weekday)
         return date
@@ -279,7 +281,7 @@ class WeekAligner(DateTimeAligner):
         >>> WeekAligner.floor(datetime(2023, 4, 9))
         datetime.datetime(2023, 4, 3, 0, 0)
         """
-        date = date.replace(**cls._zeros_upto_hour)  # type: ignore [arg-type]
+        date = cls.normalize(date)
         if (weekday := date.weekday()) != 0:
             return date - timedelta(days=weekday)
         return date
@@ -311,11 +313,11 @@ class MonthAligner(DateTimeAligner):
         if date == datetime(year=date.year, month=date.month, day=1, tzinfo=date.tzinfo):
             return date
         extra, month = divmod(date.month + 1, 12)
-        return date.replace(year=date.year + extra, month=month, day=1, **cls._zeros_upto_hour)  # type: ignore [arg-type]
+        return cls.normalize(date.replace(year=date.year + extra, month=month, day=1))
 
     @classmethod
     def floor(cls, date: datetime) -> datetime:
-        return date.replace(day=1, **cls._zeros_upto_hour)  # type: ignore [arg-type]
+        return cls.normalize(date.replace(day=1))
 
     @classmethod
     def units_between(cls, start: datetime, end: datetime) -> int:
@@ -344,7 +346,7 @@ class QuarterAligner(DateTimeAligner):
             return date
         month = 3 * ((date.month - 1) // 3 + 1) + 1
         add_years, month = divmod(month, 12)
-        return date.replace(year=date.year + add_years, month=month, day=1, **cls._zeros_upto_hour)  # type: ignore [arg-type]
+        return cls.normalize(date.replace(year=date.year + add_years, month=month, day=1))
 
     @classmethod
     def floor(cls, date: datetime) -> datetime:
@@ -358,7 +360,7 @@ class QuarterAligner(DateTimeAligner):
         datetime.datetime(2023, 10, 1, 0, 0)
         """
         month = 3 * ((date.month - 1) // 3) + 1
-        return date.replace(month=month, day=1, **cls._zeros_upto_hour)  # type: ignore [arg-type]
+        return cls.normalize(date.replace(month=month, day=1))
 
     @classmethod
     def units_between(cls, start: datetime, end: datetime) -> int:
@@ -375,11 +377,11 @@ class YearAligner(DateTimeAligner):
     def ceil(cls, date: datetime) -> datetime:
         if date == datetime(date.year, 1, 1, tzinfo=date.tzinfo):
             return date
-        return date.replace(year=date.year + 1, month=1, day=1, **cls._zeros_upto_hour)  # type: ignore [arg-type]
+        return cls.normalize(date.replace(year=date.year + 1, month=1, day=1))
 
     @classmethod
     def floor(cls, date: datetime) -> datetime:
-        return date.replace(month=1, day=1, **cls._zeros_upto_hour)  # type: ignore [arg-type]
+        return cls.normalize(date.replace(month=1, day=1))
 
     @classmethod
     def units_between(cls, start: datetime, end: datetime) -> int:
@@ -509,22 +511,22 @@ def _to_fixed_utc_intervals_fixed_unit_length(
 
     hour, zero = pd.Timedelta(hours=1), pd.Timedelta(0)
     transitions = []
-    for start, end in zip(transition_raw[:-1], transition_raw[1:]):
-        if start.dst() == end.dst():
+    for t_start, t_end in zip(transition_raw[:-1], transition_raw[1:]):
+        if t_start.dst() == t_end.dst():
             dst_adjustment = 0
-        elif start.dst() == hour and end.dst() == zero:
-            # Fall, going away from summer.
+        elif t_start.dst() == hour and t_end.dst() == zero:
+            # Fall, going away from summer (above the equator).
             dst_adjustment = 1
-        elif start.dst() == zero and end.dst() == hour:
-            # Spring, going to summer.
+        elif t_start.dst() == zero and t_end.dst() == hour:
+            # Spring, going to summer (above the equator).
             dst_adjustment = -1
         else:
-            raise ValueError(f"Invalid dst, {start} and {end}")
+            raise ValueError(f"Invalid dst, {t_start} and {t_end}")
 
         transitions.append(
             {
-                "start": start.to_pydatetime().astimezone(utc),  # type: ignore
-                "end": end.to_pydatetime().astimezone(utc),  # type: ignore
+                "start": t_start.to_pydatetime().astimezone(utc),
+                "end": t_end.to_pydatetime().astimezone(utc),
                 "granularity": f"{freq+dst_adjustment}h",
             }
         )
@@ -538,7 +540,7 @@ def pandas_date_range_tz(start: datetime, end: datetime, freq: str, inclusive: s
 
     Assumes that start and end have the same timezone.
     """
-    pd = local_import("pandas")
+    pd = cast(Any, local_import("pandas"))
     # There is a bug in date_range which makes it fail to handle ambiguous timestamps when you use time zone aware
     # datetimes. This is a workaround by passing the time zone as an argument to the function.
     # In addition, pandas struggle with ZoneInfo objects, so we convert them to string so that pandas can use its own
@@ -549,7 +551,7 @@ def pandas_date_range_tz(start: datetime, end: datetime, freq: str, inclusive: s
     # (Back in 1916 they did not consider the needs of software engineers in 2023 :P).
     # Setting ambiguous=True will make pandas ignore the ambiguity and use the DST timestamp. This is what we want;
     # for a user requesting monthly aggregates, we don't want to miss the first hour of the month.
-    return pd.date_range(  # type: ignore [union-attr]
+    return pd.date_range(
         start.replace(tzinfo=None),
         end.replace(tzinfo=None),
         tz=str(start.tzinfo),
