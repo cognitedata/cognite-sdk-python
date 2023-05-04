@@ -17,9 +17,9 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [6.1.2] - 03-05-23
-### Fixed
-- Handling `datetime`s in local time (naive) before epoch no longer raises on Windows (utility function `cognite.client.utils.datetime_to_ms`).
+## [6.1.2] - 04-05-23
+### Improved
+- Error message when failing to convert naive `datetime`s in the utility function `cognite.client.utils.datetime_to_ms`.
 
 ## [6.1.1] - 28-04-23
 ### Fixed
