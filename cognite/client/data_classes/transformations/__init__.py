@@ -14,8 +14,10 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.iam import ClientCredentials
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.data_classes.transformations.common import (
-    NonceCredentials,
-    OidcCredentials,
+    DestinationNonceCredentials,
+    DestinationOidcCredentials,
+    SourceNonceCredentials,
+    SourceOidcCredentials,
     TransformationBlockedInfo,
     TransformationDestination,
     _load_destination_dct,
@@ -29,13 +31,48 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class SessionDetails:
-    """Details of a session which provid.
+class SessionSourceDetails:
+    """Details of a source session which provid.
 
     Args:
-        session_id (int): CDF session ID
-        client_id (str): Idp client ID
-        project_name (str): CDF project name
+        session_id (int): CDF source session ID
+        client_id (str): Idp source client ID
+        project_name (str): CDF source project name
+    """
+
+    def __init__(
+        self,
+        session_id: int = None,
+        client_id: str = None,
+        project_name: str = None,
+    ):
+        self.session_id = session_id
+        self.client_id = client_id
+        self.project_name = project_name
+
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        """Dump the instance into a json serializable Python data type.
+
+        Args:
+            camel_case (bool): Use camelCase for attribute names. Defaults to False.
+
+        Returns:
+            Dict[str, Any]: A dictionary representation of the instance.
+        """
+        ret = vars(self)
+
+        if camel_case:
+            return convert_all_keys_to_camel_case(ret)
+        return ret
+
+
+class SessionDestinationDetails:
+    """Details of a destination session which provid.
+
+    Args:
+        session_id (int): CDF destination session ID
+        client_id (str): Idp destination client ID
+        project_name (str): CDF destination project name
     """
 
     def __init__(
@@ -76,8 +113,8 @@ class Transformation(CogniteResource):
         conflict_mode (str): What to do in case of id collisions: either "abort", "upsert", "update" or "delete"
         is_public (bool): Indicates if the transformation is visible to all in project or only to the owner.
         ignore_null_fields (bool): Indicates how null values are handled on updates: ignore or set null.
-        source_oidc_credentials (Optional[OidcCredentials]): Configures the transformation to authenticate with the given oidc credentials key on the destination.
-        destination_oidc_credentials (Optional[OidcCredentials]): Configures the transformation to authenticate with the given oidc credentials on the destination.
+        source_oidc_credentials (Optional[SourceOidcCredentials]): Configures the transformation to authenticate with the given oidc credentials key on the destination.
+        destination_oidc_credentials (Optional[DestinationOidcCredentials]): Configures the transformation to authenticate with the given oidc credentials on the destination.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         owner (str): Owner of the transformation: requester's identity.
@@ -89,10 +126,10 @@ class Transformation(CogniteResource):
         blocked (TransformationBlockedInfo): Provides reason and time if the transformation is blocked.
         schedule (TransformationSchedule): Details for the schedule if the transformation is scheduled.
         cognite_client (CogniteClient): The client to associate with this object.
-        source_nonce (NonceCredentials): Single use credentials to bind to a CDF session for reading.
-        destination_nonce (NonceCredentials): Single use credentials to bind to a CDF session for writing.
-        source_session (SessionDetails): Details for the session used to read from the source project.
-        destination_session (SessionDetails): Details for the session used to write to the destination project.
+        source_nonce (SourceNonceCredentials): Single use credentials to bind to a CDF session for reading.
+        destination_nonce (DestinationNonceCredentials): Single use credentials to bind to a CDF session for writing.
+        source_session (SessionSourceDetails): Details for the session used to read from the source project.
+        destination_session (SessionDestinationDetails): Details for the session used to write to the destination project.
     """
 
     def __init__(
@@ -105,8 +142,8 @@ class Transformation(CogniteResource):
         conflict_mode: str = None,
         is_public: bool = True,
         ignore_null_fields: bool = False,
-        source_oidc_credentials: Optional[OidcCredentials] = None,
-        destination_oidc_credentials: Optional[OidcCredentials] = None,
+        source_oidc_credentials: Optional[SourceOidcCredentials] = None,
+        destination_oidc_credentials: Optional[DestinationOidcCredentials] = None,
         created_time: Optional[int] = None,
         last_updated_time: Optional[int] = None,
         owner: str = None,
@@ -119,10 +156,10 @@ class Transformation(CogniteResource):
         schedule: TransformationSchedule = None,
         data_set_id: int = None,
         cognite_client: CogniteClient = None,
-        source_nonce: Optional[NonceCredentials] = None,
-        destination_nonce: Optional[NonceCredentials] = None,
-        source_session: Optional[SessionDetails] = None,
-        destination_session: Optional[SessionDetails] = None,
+        source_nonce: Optional[SourceNonceCredentials] = None,
+        destination_nonce: Optional[DestinationNonceCredentials] = None,
+        source_session: Optional[SessionSourceDetails] = None,
+        destination_session: Optional[SessionDestinationDetails] = None,
         tags: Optional[List[str]] = None,
     ):
         self.id = id
@@ -186,45 +223,96 @@ class Transformation(CogniteResource):
             self.tags,
         )
 
-    def _process_credentials(self, sessions_cache: Dict[str, NonceCredentials] = None, keep_none: bool = False) -> None:
+    def _process_credentials(
+        self,
+        sessions_cache: Dict[str, Union[SourceNonceCredentials, DestinationNonceCredentials]] = None,
+        keep_none: bool = False,
+    ) -> None:
         if sessions_cache is None:
             sessions_cache = {}
 
-        def try_get_or_create_nonce(oidc_credentials: Optional[OidcCredentials]) -> Optional[NonceCredentials]:
-            if keep_none and oidc_credentials is None:
+        def try_get_or_create_source_nonce(
+            source_oidc_credentials: Optional[SourceOidcCredentials],
+        ) -> Optional[SourceNonceCredentials]:
+            if keep_none and source_oidc_credentials is None:
                 return None
 
             # MyPy requires this to make sure it's not changed to None after inner declaration
             assert sessions_cache is not None
 
             key = (
-                f"{oidc_credentials.client_id}:{hash(oidc_credentials.client_secret)}"
-                if oidc_credentials
+                f"{source_oidc_credentials.client_id}:{hash(source_oidc_credentials.client_secret)}"
+                if source_oidc_credentials
                 else "DEFAULT"
             )
 
             ret = sessions_cache.get(key)
             if not ret:
-                if oidc_credentials and oidc_credentials.client_id and oidc_credentials.client_secret:
-                    credentials = ClientCredentials(oidc_credentials.client_id, oidc_credentials.client_secret)
+                if (
+                    source_oidc_credentials
+                    and source_oidc_credentials.client_id
+                    and source_oidc_credentials.client_secret
+                ):
+                    credentials = ClientCredentials(
+                        source_oidc_credentials.client_id, source_oidc_credentials.client_secret
+                    )
                 else:
                     credentials = None
                 try:
                     session = self._cognite_client.iam.sessions.create(credentials)
-                    ret = NonceCredentials(session.id, session.nonce, self._cognite_client._config.project)
+                    ret = SourceNonceCredentials(
+                        session.id, session.nonce, self.source_oidc_credentials.cdf_project_name
+                    )
                     sessions_cache[key] = ret
                 except Exception:
                     ret = None
             return ret
 
-        if self.source_nonce is None:
-            self.source_nonce = try_get_or_create_nonce(self.source_oidc_credentials)
-            if self.source_nonce:
+        def try_get_or_create_destination_nonce(
+            destination_oidc_credentials: Optional[DestinationOidcCredentials],
+        ) -> Optional[DestinationNonceCredentials]:
+            if keep_none and destination_oidc_credentials is None:
+                return None
+
+            # MyPy requires this to make sure it's not changed to None after inner declaration
+            assert sessions_cache is not None
+
+            key = (
+                f"{destination_oidc_credentials.client_id}:{hash(destination_oidc_credentials.client_secret)}"
+                if destination_oidc_credentials
+                else "DEFAULT"
+            )
+
+            ret = sessions_cache.get(key)
+            if not ret:
+                if (
+                    destination_oidc_credentials
+                    and destination_oidc_credentials.client_id
+                    and destination_oidc_credentials.client_secret
+                ):
+                    credentials = ClientCredentials(
+                        destination_oidc_credentials.client_id, destination_oidc_credentials.client_secret
+                    )
+                else:
+                    credentials = None
+                try:
+                    session = self._cognite_client.iam.sessions.create(credentials)
+                    ret = DestinationNonceCredentials(
+                        session.id, session.nonce, self.destination_oidc_credentials.cdf_project_name
+                    )
+                    sessions_cache[key] = ret
+                except Exception:
+                    ret = None
+            return ret
+
+        if self.source_nonce:
+            self.source_nonce = try_get_or_create_source_nonce(self.source_oidc_credentials)
+            if self.source_nonce is None:
                 self.source_oidc_credentials = None
 
-        if self.destination_nonce is None:
-            self.destination_nonce = try_get_or_create_nonce(self.destination_oidc_credentials)
-            if self.destination_nonce:
+        if self.destination_nonce:
+            self.destination_nonce = try_get_or_create_destination_nonce(self.destination_oidc_credentials)
+            if self.destination_nonce is None:
                 self.destination_oidc_credentials = None
 
     def run(self, wait: bool = True, timeout: Optional[float] = None) -> TransformationJob:
@@ -267,11 +355,11 @@ class Transformation(CogniteResource):
 
         if isinstance(instance.source_session, dict):
             snake_dict = convert_all_keys_to_snake_case(instance.source_session)
-            instance.source_session = SessionDetails(**snake_dict)
+            instance.source_session = SessionSourceDetails(**snake_dict)
 
         if isinstance(instance.destination_session, dict):
             snake_dict = convert_all_keys_to_snake_case(instance.destination_session)
-            instance.destination_session = SessionDetails(**snake_dict)
+            instance.destination_session = SessionDestinationDetails(**snake_dict)
         return instance
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
@@ -289,7 +377,16 @@ class Transformation(CogniteResource):
         for name, prop in ret.items():
             if isinstance(
                 prop,
-                (OidcCredentials, NonceCredentials, TransformationDestination, SessionDetails, TransformationSchedule),
+                (
+                    SourceOidcCredentials,
+                    DestinationOidcCredentials,
+                    SourceNonceCredentials,
+                    DestinationNonceCredentials,
+                    TransformationDestination,
+                    SessionSourceDetails,
+                    SessionDestinationDetails,
+                    TransformationSchedule,
+                ),
             ):
                 ret[name] = prop.dump(camel_case=camel_case)
         return ret
@@ -377,7 +474,16 @@ class TransformationUpdate(CogniteUpdate):
 
         for update in obj.get("update", {}).values():
             item = update.get("set")
-            if isinstance(item, (TransformationDestination, OidcCredentials, NonceCredentials)):
+            if isinstance(
+                item,
+                (
+                    TransformationDestination,
+                    SourceOidcCredentials,
+                    DestinationOidcCredentials,
+                    SourceNonceCredentials,
+                    DestinationNonceCredentials,
+                ),
+            ):
                 update["set"] = item.dump(camel_case=camel_case)
         return obj
 
