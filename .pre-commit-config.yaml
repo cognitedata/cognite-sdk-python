@@ -37,7 +37,7 @@ repos:
   - hooks:
     - id: mypy
       name: mypy
-      entry: dmypy run -- cognite
+      entry: mypy run -- cognite
       files: ^.*.(py|pyi)$
       language: system
       pass_filenames: false
