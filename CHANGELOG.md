@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.2.0] - 05-05-23
+### Fixed
+- Pickling a `CogniteClient` instance with certain `CredentialProvider`s no longer causes a `TypeError: cannot pickle ...` to be raised.
+
 ## [6.1.2] - 04-05-23
 ### Improved
 - The SDK has received several minor bugfixes to be more user-friendly on Windows.
