@@ -3,8 +3,8 @@ import string
 import pytest
 
 from cognite.client.data_classes import (
-    SourceOidcCredentials,
     DestinationOidcCredentials,
+    SourceOidcCredentials,
     Transformation,
     TransformationDestination,
     TransformationNotification,
