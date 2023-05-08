@@ -7,7 +7,8 @@ import pytest
 
 from cognite.client.credentials import OAuthClientCredentials
 from cognite.client.data_classes import (
-    OidcCredentials,
+    SourceOidcCredentials,
+    DestinationOidcCredentials,
     Transformation,
     TransformationDestination,
     TransformationJobStatus,
@@ -25,14 +26,14 @@ def new_transformation(cognite_client):
         external_id=f"{prefix}-transformation",
         destination=TransformationDestination.assets(),
         query="select 'test-sdk-transfornations' as externalId, 'test-sdk-transfornations' as name",
-        source_oidc_credentials=OidcCredentials(
+        source_oidc_credentials=SourceOidcCredentials(
             client_id=creds.client_id,
             client_secret=creds.client_secret,
             scopes=",".join(creds.scopes),
             token_uri=creds.token_url,
             cdf_project_name=cognite_client.config.project,
         ),
-        destination_oidc_credentials=OidcCredentials(
+        destination_oidc_credentials=DestinationOidcCredentials(
             client_id=creds.client_id,
             client_secret=creds.client_secret,
             scopes=",".join(creds.scopes),
@@ -95,6 +96,7 @@ async def other_running_transformation(other_transformation):
 @pytest.mark.skipif(
     os.getenv("LOGIN_FLOW") != "client_credentials", reason="This test requires client_credentials auth"
 )
+
 class TestTransformationJobsAPI:
     @pytest.mark.asyncio
     async def test_run_without_wait(self, cognite_client, new_running_transformation):
@@ -117,13 +119,13 @@ class TestTransformationJobsAPI:
 
     def test_run(self, cognite_client, new_transformation: Transformation):
         job = new_transformation.run()
-
+        print(job)
         assert job.id is not None
         assert job.status == TransformationJobStatus.COMPLETED
         assert job.transformation_id == new_transformation.id
         assert job.transformation_external_id == new_transformation.external_id
-        assert job.source_project == cognite_client.config.project
-        assert job.destination_project == cognite_client.config.project
+        assert job.source_project == new_transformation.source_project
+        assert job.destination_project == new_transformation.destination_project
         assert job.destination == TransformationDestination.assets()
         assert job.conflict_mode == "upsert"
         assert job.query == new_transformation.query
