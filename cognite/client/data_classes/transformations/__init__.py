@@ -223,96 +223,69 @@ class Transformation(CogniteResource):
             self.tags,
         )
 
-    def _process_credentials(
-        self,
-        sessions_cache: Dict[str, Union[SourceNonceCredentials, DestinationNonceCredentials]] = None,
-        keep_none: bool = False,
-    ) -> None:
+    def _process_credentials(self, sessions_cache: Dict[
+        str, Union[SourceNonceCredentials, DestinationNonceCredentials]] = None, keep_none: bool = False) -> None:
         if sessions_cache is None:
             sessions_cache = {}
 
-        def try_get_or_create_source_nonce(
-            source_oidc_credentials: Optional[SourceOidcCredentials],
-        ) -> Optional[SourceNonceCredentials]:
-            if keep_none and source_oidc_credentials is None:
-                return None
-
-            # MyPy requires this to make sure it's not changed to None after inner declaration
-            assert sessions_cache is not None
-
+        def try_get_or_create_source_nonce(source_oidc_credentials: Optional[SourceOidcCredentials]) -> Optional[
+            SourceNonceCredentials]:
             key = (
                 f"{source_oidc_credentials.client_id}:{hash(source_oidc_credentials.client_secret)}"
                 if source_oidc_credentials
                 else "DEFAULT"
             )
 
-            ret = sessions_cache.get(key)
-            if not ret:
-                if (
-                    source_oidc_credentials
-                    and source_oidc_credentials.client_id
-                    and source_oidc_credentials.client_secret
-                ):
-                    credentials = ClientCredentials(
-                        source_oidc_credentials.client_id, source_oidc_credentials.client_secret
-                    )
-                else:
-                    credentials = None
-                try:
-                    session = self._cognite_client.iam.sessions.create(credentials)
-                    ret = SourceNonceCredentials(
-                        session.id, session.nonce, source_oidc_credentials.cdf_project_name
-                    )
-                    sessions_cache[key] = ret
-                except Exception:
-                    ret = None
+            if key in sessions_cache:
+                return sessions_cache[key]
+
+            if source_oidc_credentials and source_oidc_credentials.client_id and source_oidc_credentials.client_secret:
+                credentials = ClientCredentials(source_oidc_credentials.client_id,
+                                                source_oidc_credentials.client_secret)
+            else:
+                credentials = None
+            try:
+                session = cognite_client.iam.sessions.create(credentials)
+                ret = SourceNonceCredentials(session.id, session.nonce, source_oidc_credentials.cdf_project_name)
+                sessions_cache[key] = ret
+            except Exception:
+                ret = None
+
             return ret
 
-        def try_get_or_create_destination_nonce(
-            destination_oidc_credentials: Optional[DestinationOidcCredentials],
-        ) -> Optional[DestinationNonceCredentials]:
-            if keep_none and destination_oidc_credentials is None:
-                return None
-
-            # MyPy requires this to make sure it's not changed to None after inner declaration
-            assert sessions_cache is not None
-
+        def try_get_or_create_destination_nonce(destination_oidc_credentials: Optional[DestinationOidcCredentials]) -> Optional[
+            DestinationNonceCredentials]:
             key = (
                 f"{destination_oidc_credentials.client_id}:{hash(destination_oidc_credentials.client_secret)}"
                 if destination_oidc_credentials
                 else "DEFAULT"
             )
 
-            ret = sessions_cache.get(key)
-            if not ret:
-                if (
-                    destination_oidc_credentials
-                    and destination_oidc_credentials.client_id
-                    and destination_oidc_credentials.client_secret
-                ):
-                    credentials = ClientCredentials(
-                        destination_oidc_credentials.client_id, destination_oidc_credentials.client_secret
-                    )
-                else:
-                    credentials = None
-                try:
-                    session = self._cognite_client.iam.sessions.create(credentials)
-                    ret = DestinationNonceCredentials(
-                        session.id, session.nonce, destination_oidc_credentials.cdf_project_name
-                    )
-                    sessions_cache[key] = ret
-                except Exception:
-                    ret = None
+            if key in sessions_cache:
+                return sessions_cache[key]
+
+            if destination_oidc_credentials and destination_oidc_credentials.client_id and destination_oidc_credentials.client_secret:
+                credentials = ClientCredentials(destination_oidc_credentials.client_id,
+                                                destination_oidc_credentials.client_secret)
+            else:
+                credentials = None
+            try:
+                session = cognite_client.iam.sessions.create(credentials)
+                ret = DestinationNonceCredentials(session.id, session.nonce, destination_oidc_credentials.cdf_project_name)
+                sessions_cache[key] = ret
+            except Exception:
+                ret = None
+
             return ret
 
-        if self.source_nonce:
+        if self.source_nonce is None:
             self.source_nonce = try_get_or_create_source_nonce(self.source_oidc_credentials)
-            if self.source_nonce is None:
+            if self.source_nonce:
                 self.source_oidc_credentials = None
 
-        if self.destination_nonce:
+        if self.destination_nonce is None:
             self.destination_nonce = try_get_or_create_destination_nonce(self.destination_oidc_credentials)
-            if self.destination_nonce is None:
+            if self.destination_nonce:
                 self.destination_oidc_credentials = None
 
     def run(self, wait: bool = True, timeout: Optional[float] = None) -> TransformationJob:
