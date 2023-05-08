@@ -7,8 +7,8 @@ import pytest
 
 from cognite.client.credentials import OAuthClientCredentials
 from cognite.client.data_classes import (
-    SourceOidcCredentials,
     DestinationOidcCredentials,
+    SourceOidcCredentials,
     Transformation,
     TransformationDestination,
     TransformationJobStatus,
@@ -96,7 +96,6 @@ async def other_running_transformation(other_transformation):
 @pytest.mark.skipif(
     os.getenv("LOGIN_FLOW") != "client_credentials", reason="This test requires client_credentials auth"
 )
-
 class TestTransformationJobsAPI:
     @pytest.mark.asyncio
     async def test_run_without_wait(self, cognite_client, new_running_transformation):
@@ -119,7 +118,6 @@ class TestTransformationJobsAPI:
 
     def test_run(self, cognite_client, new_transformation: Transformation):
         job = new_transformation.run()
-        print(job)
         assert job.id is not None
         assert job.status == TransformationJobStatus.COMPLETED
         assert job.transformation_id == new_transformation.id
