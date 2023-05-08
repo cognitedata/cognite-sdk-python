@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.1.3] - 08-05-23
+### Fixed
+- Set the license of the package in poetry build.
+
+
 ## [6.1.2] - 04-05-23
 ### Improved
 - The SDK has received several minor bugfixes to be more user-friendly on Windows.
