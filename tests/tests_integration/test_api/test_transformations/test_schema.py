@@ -1,5 +1,3 @@
-import os
-
 from cognite.client.data_classes import TransformationDestination
 
 
