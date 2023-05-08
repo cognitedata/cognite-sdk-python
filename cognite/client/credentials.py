@@ -129,6 +129,22 @@ class _WithMsalSerializableTokenCache:
         atexit.register(__at_exit)
         return token_cache
 
+    @staticmethod
+    def _resolve_token_cache_path(token_cache_path: Optional[Path], client_id: str) -> Path:
+        return token_cache_path or Path(tempfile.gettempdir()) / f"cognitetokencache.{client_id}.bin"
+
+    def _create_client_app(self, token_cache_path: Path, client_id: str, authority_url: str) -> PublicClientApplication:
+        from cognite.client.config import global_config
+
+        # In addition to caching in memory, we also cache the token on disk so it can be reused across processes:
+        serializable_token_cache = self._create_serializable_token_cache(token_cache_path)
+        return PublicClientApplication(
+            client_id=client_id,
+            authority=authority_url,
+            token_cache=serializable_token_cache,
+            verify=not global_config.disable_ssl,
+        )
+
 
 class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerializableTokenCache):
     """OAuth credential provider for the device code login flow.
@@ -157,22 +173,25 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         scopes: List[str],
         token_cache_path: Path = None,
     ) -> None:
-        from cognite.client.config import global_config
-
         super().__init__()
         self.__authority_url = authority_url
         self.__client_id = client_id
         self.__scopes = scopes
 
         # In addition to caching in memory, we also cache the token on disk so it can be reused across processes.
-        token_cache_path = token_cache_path or Path(tempfile.gettempdir()) / f"cognitetokencache.{self.__client_id}.bin"
-        serializable_token_cache = self._create_serializable_token_cache(token_cache_path)
-        self.__app = PublicClientApplication(
-            client_id=self.__client_id,
-            authority=self.__authority_url,
-            token_cache=serializable_token_cache,
-            verify=not global_config.disable_ssl,
-        )
+        self._token_cache_path = self._resolve_token_cache_path(token_cache_path, client_id)
+        self.__app = self._create_client_app(self._token_cache_path, client_id, authority_url)
+
+    def __getstate__(self) -> dict[str, Any]:
+        # PublicClientApplication is not picklable, temporarily remove:
+        app_tmp, self.__app = self.__app, None
+        state = super().__getstate__()
+        self.__app = app_tmp
+        return state
+
+    def __setstate__(self, state: dict[str, Any]) -> None:
+        super().__setstate__(state)
+        self.__app = self._create_client_app(self._token_cache_path, self.__client_id, self.__authority_url)
 
     @property
     def authority_url(self) -> str:
@@ -233,7 +252,6 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         redirect_port: int = 53000,
         token_cache_path: Path = None,
     ) -> None:
-        from cognite.client.config import global_config
 
         super().__init__()
         self.__authority_url = authority_url
@@ -242,14 +260,19 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         self.__redirect_port = redirect_port
 
         # In addition to caching in memory, we also cache the token on disk so it can be reused across processes.
-        token_cache_path = token_cache_path or Path(tempfile.gettempdir()) / f"cognitetokencache.{self.__client_id}.bin"
-        serializable_token_cache = self._create_serializable_token_cache(token_cache_path)
-        self.__app = PublicClientApplication(
-            client_id=self.__client_id,
-            authority=self.__authority_url,
-            token_cache=serializable_token_cache,
-            verify=not global_config.disable_ssl,
-        )
+        self._token_cache_path = self._resolve_token_cache_path(token_cache_path, client_id)
+        self.__app = self._create_client_app(self._token_cache_path, client_id, authority_url)
+
+    def __getstate__(self) -> dict[str, Any]:
+        # PublicClientApplication is not picklable, temporarily remove:
+        app_tmp, self.__app = self.__app, None
+        state = super().__getstate__()
+        self.__app = app_tmp
+        return state
+
+    def __setstate__(self, state: dict[str, Any]) -> None:
+        super().__setstate__(state)
+        self.__app = self._create_client_app(self._token_cache_path, self.__client_id, self.__authority_url)
 
     @property
     def authority_url(self) -> str:
@@ -265,11 +288,10 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
 
     def _refresh_access_token(self) -> Tuple[str, float]:
         # First check if there is a serialized token cached on disk.
-        accounts = self.__app.get_accounts()
-        credentials = self.__app.acquire_token_silent(scopes=self.__scopes, account=accounts[0]) if accounts else None
-
+        if accounts := self.__app.get_accounts():
+            credentials = self.__app.acquire_token_silent(scopes=self.__scopes, account=accounts[0])
         # If not, we acquire a new token interactively
-        if credentials is None:
+        else:
             credentials = self.__app.acquire_token_interactive(scopes=self.__scopes, port=self.__redirect_port)
 
         self._verify_credentials(credentials)
