@@ -68,6 +68,17 @@ class _OAuthCredentialProviderWithTokenRefresh(CredentialProvider):
         self.__access_token: Optional[str] = None
         self.__access_token_expires_at: Optional[float] = None
 
+    def __getstate__(self) -> dict[str, Any]:
+        # threading.Lock is not picklable, temporarily remove:
+        lock_tmp, self.__token_refresh_lock = self.__token_refresh_lock, None  # type: ignore [assignment]
+        state = self.__dict__.copy()
+        self.__token_refresh_lock = lock_tmp
+        return state
+
+    def __setstate__(self, state: dict[str, Any]) -> None:
+        self.__dict__ = state
+        self.__token_refresh_lock = threading.Lock()
+
     @abstractmethod
     def _refresh_access_token(self) -> Tuple[str, float]:
         """This method should return the access_token and expiry time"""
@@ -118,6 +129,22 @@ class _WithMsalSerializableTokenCache:
         atexit.register(__at_exit)
         return token_cache
 
+    @staticmethod
+    def _resolve_token_cache_path(token_cache_path: Optional[Path], client_id: str) -> Path:
+        return token_cache_path or Path(tempfile.gettempdir()) / f"cognitetokencache.{client_id}.bin"
+
+    def _create_client_app(self, token_cache_path: Path, client_id: str, authority_url: str) -> PublicClientApplication:
+        from cognite.client.config import global_config
+
+        # In addition to caching in memory, we also cache the token on disk so it can be reused across processes:
+        serializable_token_cache = self._create_serializable_token_cache(token_cache_path)
+        return PublicClientApplication(
+            client_id=client_id,
+            authority=authority_url,
+            token_cache=serializable_token_cache,
+            verify=not global_config.disable_ssl,
+        )
+
 
 class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerializableTokenCache):
     """OAuth credential provider for the device code login flow.
@@ -146,22 +173,24 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         scopes: List[str],
         token_cache_path: Path = None,
     ) -> None:
-        from cognite.client.config import global_config
-
         super().__init__()
         self.__authority_url = authority_url
         self.__client_id = client_id
         self.__scopes = scopes
 
-        # In addition to caching in memory, we also cache the token on disk so it can be reused across processes.
-        token_cache_path = token_cache_path or Path(tempfile.gettempdir()) / f"cognitetokencache.{self.__client_id}.bin"
-        serializable_token_cache = self._create_serializable_token_cache(token_cache_path)
-        self.__app = PublicClientApplication(
-            client_id=self.__client_id,
-            authority=self.__authority_url,
-            token_cache=serializable_token_cache,
-            verify=not global_config.disable_ssl,
-        )
+        self._token_cache_path = self._resolve_token_cache_path(token_cache_path, client_id)
+        self.__app = self._create_client_app(self._token_cache_path, client_id, authority_url)
+
+    def __getstate__(self) -> dict[str, Any]:
+        # PublicClientApplication is not picklable, temporarily remove:
+        app_tmp, self.__app = self.__app, None
+        state = super().__getstate__()
+        self.__app = app_tmp
+        return state
+
+    def __setstate__(self, state: dict[str, Any]) -> None:
+        super().__setstate__(state)
+        self.__app = self._create_client_app(self._token_cache_path, self.__client_id, self.__authority_url)
 
     @property
     def authority_url(self) -> str:
@@ -177,11 +206,10 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
 
     def _refresh_access_token(self) -> Tuple[str, float]:
         # First check if there is a serialized token cached on disk.
-        accounts = self.__app.get_accounts()
-        credentials = self.__app.acquire_token_silent(scopes=self.__scopes, account=accounts[0]) if accounts else None
-
-        # If not, we acquire a new token interactively
-        if credentials is None:
+        if accounts := self.__app.get_accounts():
+            credentials = self.__app.acquire_token_silent(scopes=self.__scopes, account=accounts[0])
+        # If not, we acquire a new token using device code auth flow:
+        else:
             device_flow = self.__app.initiate_device_flow(scopes=self.__scopes)
             # print device code user instructions to screen
             print(f"Device code: {device_flow['message']}")  # noqa: T201
@@ -222,7 +250,6 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         redirect_port: int = 53000,
         token_cache_path: Path = None,
     ) -> None:
-        from cognite.client.config import global_config
 
         super().__init__()
         self.__authority_url = authority_url
@@ -230,15 +257,19 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         self.__scopes = scopes
         self.__redirect_port = redirect_port
 
-        # In addition to caching in memory, we also cache the token on disk so it can be reused across processes.
-        token_cache_path = token_cache_path or Path(tempfile.gettempdir()) / f"cognitetokencache.{self.__client_id}.bin"
-        serializable_token_cache = self._create_serializable_token_cache(token_cache_path)
-        self.__app = PublicClientApplication(
-            client_id=self.__client_id,
-            authority=self.__authority_url,
-            token_cache=serializable_token_cache,
-            verify=not global_config.disable_ssl,
-        )
+        self._token_cache_path = self._resolve_token_cache_path(token_cache_path, client_id)
+        self.__app = self._create_client_app(self._token_cache_path, client_id, authority_url)
+
+    def __getstate__(self) -> dict[str, Any]:
+        # PublicClientApplication is not picklable, temporarily remove:
+        app_tmp, self.__app = self.__app, None
+        state = super().__getstate__()
+        self.__app = app_tmp
+        return state
+
+    def __setstate__(self, state: dict[str, Any]) -> None:
+        super().__setstate__(state)
+        self.__app = self._create_client_app(self._token_cache_path, self.__client_id, self.__authority_url)
 
     @property
     def authority_url(self) -> str:
@@ -254,11 +285,10 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
 
     def _refresh_access_token(self) -> Tuple[str, float]:
         # First check if there is a serialized token cached on disk.
-        accounts = self.__app.get_accounts()
-        credentials = self.__app.acquire_token_silent(scopes=self.__scopes, account=accounts[0]) if accounts else None
-
+        if accounts := self.__app.get_accounts():
+            credentials = self.__app.acquire_token_silent(scopes=self.__scopes, account=accounts[0])
         # If not, we acquire a new token interactively
-        if credentials is None:
+        else:
             credentials = self.__app.acquire_token_interactive(scopes=self.__scopes, port=self.__redirect_port)
 
         self._verify_credentials(credentials)
@@ -303,8 +333,11 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         self.__client_secret = client_secret
         self.__scopes = scopes
         self.__token_custom_args: Dict[str, Any] = token_custom_args
-        self.__oauth = OAuth2Session(client=BackendApplicationClient(client_id=self.__client_id, scope=self.__scopes))
+        self.__oauth = self._create_oauth_session()
         self._validate_token_custom_args()
+
+    def _create_oauth_session(self) -> OAuth2Session:
+        return OAuth2Session(client=BackendApplicationClient(client_id=self.__client_id, scope=self.__scopes))
 
     def _validate_token_custom_args(self) -> None:
         # We make sure that whatever is passed as part of 'token_custom_args' can't set or override any of the
@@ -315,6 +348,17 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
                 f"The following reserved token custom arg(s) were passed: {sorted(bad_args)}. The full list of "
                 f"reserved custom args is: {sorted(reserved)}."
             )
+
+    def __getstate__(self) -> dict[str, Any]:
+        # OAuth2Session is not picklable, temporarily remove:
+        oauth_session_tmp, self.__oauth = self.__oauth, None
+        state = super().__getstate__()
+        self.__oauth = oauth_session_tmp
+        return state
+
+    def __setstate__(self, state: dict[str, Any]) -> None:
+        super().__setstate__(state)
+        self.__oauth = self._create_oauth_session()
 
     @property
     def token_url(self) -> str:

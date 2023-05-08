@@ -4,7 +4,11 @@ from unittest.mock import Mock, patch
 import pytest
 from oauthlib.oauth2 import InvalidClientIdError
 
-from cognite.client.credentials import OAuthClientCertificate, OAuthClientCredentials, Token
+from cognite.client.credentials import (
+    OAuthClientCertificate,
+    OAuthClientCredentials,
+    Token,
+)
 from cognite.client.exceptions import CogniteAuthError
 
 

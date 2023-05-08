@@ -17,10 +17,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [6.1.3] - 08-05-23
+## [6.1.4] - 08-05-23
 ### Fixed
-- Set the license of the package in poetry build.
+- Pickling a `CogniteClient` instance with certain `CredentialProvider`s no longer causes a `TypeError: cannot pickle ...` to be raised.
 
+## [6.1.3] - 08-05-23
+### Added
+- Add the license of the package in poetry build.
 
 ## [6.1.2] - 04-05-23
 ### Improved

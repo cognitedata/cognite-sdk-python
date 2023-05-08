@@ -1,5 +1,8 @@
+import pickle
+
 import pytest
 
+from cognite.client.credentials import OAuthClientCertificate, Token
 from cognite.client.exceptions import CogniteAPIError
 
 
@@ -28,3 +31,10 @@ class TestCogniteClient:
         with pytest.raises(CogniteAPIError) as e:
             cognite_client.delete("/login")
         assert e.value.code == 404
+
+
+def test_cognite_client_is_picklable(cognite_client):
+    if isinstance(cognite_client.config.credentials, (Token, OAuthClientCertificate)):
+        pytest.skip()
+    roundtrip_client = pickle.loads(pickle.dumps(cognite_client))
+    assert roundtrip_client.iam.token.inspect().projects
