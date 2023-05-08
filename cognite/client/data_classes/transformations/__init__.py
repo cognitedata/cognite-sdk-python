@@ -30,12 +30,12 @@ if TYPE_CHECKING:
 
 
 class SessionDetails:
-    """Details of a session which provid.
+    """Details of a source session which provid.
 
     Args:
-        session_id (int): CDF session ID
-        client_id (str): Idp client ID
-        project_name (str): CDF project name
+        session_id (int): CDF source session ID
+        client_id (str): Idp source client ID
+        project_name (str): CDF source project name
     """
 
     def __init__(
@@ -190,7 +190,9 @@ class Transformation(CogniteResource):
         if sessions_cache is None:
             sessions_cache = {}
 
-        def try_get_or_create_nonce(oidc_credentials: Optional[OidcCredentials]) -> Optional[NonceCredentials]:
+        def try_get_or_create_nonce(
+            oidc_credentials: Optional[OidcCredentials], project: str
+        ) -> Optional[NonceCredentials]:
             if keep_none and oidc_credentials is None:
                 return None
 
@@ -198,7 +200,7 @@ class Transformation(CogniteResource):
             assert sessions_cache is not None
 
             key = (
-                f"{oidc_credentials.client_id}:{hash(oidc_credentials.client_secret)}"
+                f"{oidc_credentials.client_id}:{hash(oidc_credentials.client_secret)}:{project}"
                 if oidc_credentials
                 else "DEFAULT"
             )
@@ -210,20 +212,22 @@ class Transformation(CogniteResource):
                 else:
                     credentials = None
                 try:
-                    session = self._cognite_client.iam.sessions.create(credentials)
-                    ret = NonceCredentials(session.id, session.nonce, self._cognite_client._config.project)
+                    session = self._cognite_client.iam.sessions.create(credentials, project=project)
+                    ret = NonceCredentials(session.id, session.nonce, project)
                     sessions_cache[key] = ret
                 except Exception:
                     ret = None
             return ret
 
-        if self.source_nonce is None:
-            self.source_nonce = try_get_or_create_nonce(self.source_oidc_credentials)
+        if self.source_nonce is None and self.source_oidc_credentials:
+            project = self.source_oidc_credentials.cdf_project_name or self._cognite_client.project
+            self.source_nonce = try_get_or_create_nonce(self.source_oidc_credentials, project)
             if self.source_nonce:
                 self.source_oidc_credentials = None
 
-        if self.destination_nonce is None:
-            self.destination_nonce = try_get_or_create_nonce(self.destination_oidc_credentials)
+        if self.destination_nonce is None and self.destination_oidc_credentials:
+            project = self.destination_oidc_credentials.cdf_project_name or self._cognite_client.project
+            self.destination_nonce = try_get_or_create_nonce(self.destination_oidc_credentials, project)
             if self.destination_nonce:
                 self.destination_oidc_credentials = None
 
@@ -289,7 +293,13 @@ class Transformation(CogniteResource):
         for name, prop in ret.items():
             if isinstance(
                 prop,
-                (OidcCredentials, NonceCredentials, TransformationDestination, SessionDetails, TransformationSchedule),
+                (
+                    OidcCredentials,
+                    NonceCredentials,
+                    TransformationDestination,
+                    SessionDetails,
+                    TransformationSchedule,
+                ),
             ):
                 ret[name] = prop.dump(camel_case=camel_case)
         return ret
