@@ -2,7 +2,7 @@ import pickle
 
 import pytest
 
-from cognite.client.credentials import OAuthClientCertificate
+from cognite.client.credentials import OAuthClientCertificate, Token
 from cognite.client.exceptions import CogniteAPIError
 
 
@@ -34,8 +34,7 @@ class TestCogniteClient:
 
 
 def test_cognite_client_is_picklable(cognite_client):
-    if isinstance(cognite_client.config.credentials, OAuthClientCertificate):
-        pytest.skip("Not yet implemented")
-
+    if isinstance(cognite_client.config.credentials, (Token, OAuthClientCertificate)):
+        pytest.skip()
     roundtrip_client = pickle.loads(pickle.dumps(cognite_client))
     assert roundtrip_client.iam.token.inspect().projects

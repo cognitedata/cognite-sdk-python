@@ -178,7 +178,6 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         self.__client_id = client_id
         self.__scopes = scopes
 
-        # In addition to caching in memory, we also cache the token on disk so it can be reused across processes.
         self._token_cache_path = self._resolve_token_cache_path(token_cache_path, client_id)
         self.__app = self._create_client_app(self._token_cache_path, client_id, authority_url)
 
@@ -207,11 +206,10 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
 
     def _refresh_access_token(self) -> Tuple[str, float]:
         # First check if there is a serialized token cached on disk.
-        accounts = self.__app.get_accounts()
-        credentials = self.__app.acquire_token_silent(scopes=self.__scopes, account=accounts[0]) if accounts else None
-
-        # If not, we acquire a new token interactively
-        if credentials is None:
+        if accounts := self.__app.get_accounts():
+            credentials = self.__app.acquire_token_silent(scopes=self.__scopes, account=accounts[0])
+        # If not, we acquire a new token using device code auth flow:
+        else:
             device_flow = self.__app.initiate_device_flow(scopes=self.__scopes)
             # print device code user instructions to screen
             print(f"Device code: {device_flow['message']}")  # noqa: T201
@@ -259,7 +257,6 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         self.__scopes = scopes
         self.__redirect_port = redirect_port
 
-        # In addition to caching in memory, we also cache the token on disk so it can be reused across processes.
         self._token_cache_path = self._resolve_token_cache_path(token_cache_path, client_id)
         self.__app = self._create_client_app(self._token_cache_path, client_id, authority_url)
 
