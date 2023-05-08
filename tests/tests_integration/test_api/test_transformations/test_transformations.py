@@ -119,6 +119,7 @@ class TestTransformationsAPI:
             name="any",
             external_id=f"{prefix}-transformation",
             destination=TransformationDestination.assets(),
+            query="select * from _cdf.assets",
             source_oidc_credentials=SourceOidcCredentials(
                 client_id=cognite_client._config.credentials.client_id,
                 client_secret=cognite_client._config.credentials.client_secret,
