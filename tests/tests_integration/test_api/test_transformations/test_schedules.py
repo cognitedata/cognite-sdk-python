@@ -5,8 +5,8 @@ import pytest
 
 from cognite.client.credentials import OAuthClientCredentials
 from cognite.client.data_classes import (
-    SourceOidcCredentials,
     DestinationOidcCredentials,
+    SourceOidcCredentials,
     Transformation,
     TransformationDestination,
     TransformationSchedule,
@@ -30,14 +30,14 @@ def new_transformation(cognite_client):
             client_secret=creds.client_secret,
             scopes=",".join(creds.scopes),
             token_uri=creds.token_url,
-            cdf_project_name=source_oidc_credentials.cdf_project_name,
+            cdf_project_name=cognite_client.config.project,
         ),
         destination_oidc_credentials=DestinationOidcCredentials(
             client_id=creds.client_id,
             client_secret=creds.client_secret,
             scopes=",".join(creds.scopes),
             token_uri=creds.token_url,
-            cdf_project_name=destination_oidc_credentials.cdf_project_name,
+            cdf_project_name=cognite_client.config.project,
         ),
     )
     ts = cognite_client.transformations.create(transform)
