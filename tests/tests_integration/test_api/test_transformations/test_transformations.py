@@ -100,6 +100,31 @@ class TestTransformationsAPI:
         ts = cognite_client.transformations.create(transform)
         cognite_client.transformations.delete(id=ts.id)
 
+    def test_create_asset_with_source_destination_oidc_transformation(self, cognite_client):
+        prefix = random_string(6, string.ascii_letters)
+        transform = Transformation(
+            name="any",
+            external_id=f"{prefix}-transformation",
+            destination=TransformationDestination.assets(),
+            query="select * from _cdf.assets",
+            source_oidc_credentials=OidcCredentials(
+                client_id=cognite_client._config.credentials.client_id,
+                client_secret=cognite_client._config.credentials.client_secret,
+                scopes="https://bluefield.cognitedata.com/.default",
+                token_uri="https://login.microsoftonline.com/b86328db-09aa-4f0e-9a03-0136f604d20a/oauth2/v2.0/token",
+                cdf_project_name="extractor-bluefield-testing",
+            ),
+            destination_oidc_credentials=OidcCredentials(
+                client_id=cognite_client._config.credentials.client_id,
+                client_secret=cognite_client._config.credentials.client_secret,
+                scopes="https://bluefield.cognitedata.com/.default",
+                token_uri="https://login.microsoftonline.com/b86328db-09aa-4f0e-9a03-0136f604d20a/oauth2/v2.0/token",
+                cdf_project_name="extractor-bluefield-testing2",
+            ),
+        )
+        ts = cognite_client.transformations.create(transform)
+        cognite_client.transformations.delete(id=ts.id)
+
     def test_create_raw_transformation(self, cognite_client):
         prefix = random_string(6, string.ascii_letters)
         transform = Transformation(
