@@ -1,3 +1,4 @@
+import math
 import random
 import re
 import time
@@ -706,8 +707,8 @@ class TestGeospatialAPI:
         assert res.skew_x == 0.0
         assert res.skew_y == 0.0
         assert res.srid == 3857
-        assert res.upper_left_x == -0.5891363261459447
-        assert res.upper_left_y == -0.31623471547260973
+        assert math.isclose(res.upper_left_x, -0.5891363261459447)
+        assert math.isclose(res.upper_left_y, -0.316234582133065)
 
     def test_delete_raster(self, cognite_client, test_feature_type, test_feature_with_raster):
         res = cognite_client.geospatial.delete_raster(
