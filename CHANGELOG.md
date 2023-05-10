@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.1.5] - 10-05-23
+### Fixed
+- When creating a transformation with a different source- and destination CDF project, the project setting is no longer overridden by the setting in the `CogniteClient` configuration allowing the user to read from the specified source project and write to the specified and potentially different destination project. 
+
 ## [6.1.4] - 08-05-23
 ### Fixed
 - Pickling a `CogniteClient` instance with certain `CredentialProvider`s no longer causes a `TypeError: cannot pickle ...` to be raised.
