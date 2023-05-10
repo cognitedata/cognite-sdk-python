@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [6.1.5] - 10-05-23
 ### Fixed
-- source and destination project issue fixed. 
+- source and destination project issue fixed. The source and destination project was overrided by the client config project. So, defined project variables seperatly for source and destination. 
 - self.source_nonce = try_get_or_create_nonce(self.source_oidc_credentials, project)
 - self.destination_nonce = try_get_or_create_nonce(self.destination_oidc_credentials, project)
 
