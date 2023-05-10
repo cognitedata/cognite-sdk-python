@@ -19,9 +19,7 @@ Changes are grouped as follows
 
 ## [6.1.5] - 10-05-23
 ### Fixed
-- When create a transformation with different source and destination project, the system has been overriden the source and destination project with the client config project. Therefore, the user was not able to read from the required source project and write to required destination prject. 
-- Form this version release, now source and destination project is taken from the user defined source and destination project value. 
-
+- When creating a transformation with a different source- and destination CDF project, the project setting is no longer overridden by the setting in the `CogniteClient` configuration allowing the user to read from the specified source project and write to the specified and potentially different destination project. 
 
 ## [6.1.4] - 08-05-23
 ### Fixed
