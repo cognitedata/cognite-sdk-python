@@ -20,6 +20,8 @@ Changes are grouped as follows
 ## [6.1.5] - 10-05-23
 ### Fixed
 - source and destination project issue fixed. 
+- self.source_nonce = try_get_or_create_nonce(self.source_oidc_credentials, project)
+- self.destination_nonce = try_get_or_create_nonce(self.destination_oidc_credentials, project)
 
 ## [6.1.4] - 08-05-23
 ### Fixed
