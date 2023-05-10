@@ -30,7 +30,6 @@ from cognite.client.data_classes import (
     FunctionsLimits,
     TimestampRange,
 )
-from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.functions import FunctionCallsFilter, FunctionsStatus
 from cognite.client.exceptions import CogniteAuthError
 from cognite.client.utils._auxiliary import is_unlimited
@@ -415,71 +414,54 @@ class FunctionsAPI(APIClient):
         return FunctionsLimits._load(res.json())
 
     def _zip_and_upload_folder(self, folder: str, name: str, external_id: Optional[str] = None) -> int:
-        # / is not allowed in file names
-        name = name.replace("/", "-")
-
+        name = _sanitize_filename(name)
         current_dir = os.getcwd()
         os.chdir(folder)
-
         try:
             with TemporaryDirectory() as tmpdir:
-                zip_path = os.path.join(tmpdir, "function.zip")
+                zip_path = Path(tmpdir, "function.zip")
                 with ZipFile(zip_path, "w") as zf:
                     for root, dirs, files in os.walk("."):
                         zf.write(root)
 
                         for filename in files:
-                            zf.write(os.path.join(root, filename))
+                            zf.write(Path(root, filename))
 
                 overwrite = True if external_id else False
-                file = cast(
-                    FileMetadata,
-                    self._cognite_client.files.upload(
-                        zip_path, name=f"{name}.zip", external_id=external_id, overwrite=overwrite
-                    ),
+                file = self._cognite_client.files.upload_bytes(
+                    zip_path.read_bytes(), name=f"{name}.zip", external_id=external_id, overwrite=overwrite
                 )
-
-            file_id = cast(int, file.id)
-
-            return file_id
+                return cast(int, file.id)
         finally:
             os.chdir(current_dir)
 
     def _zip_and_upload_handle(self, function_handle: Callable, name: str, external_id: Optional[str] = None) -> int:
-        # / is not allowed in file names
-        name = name.replace("/", "-")
-
+        name = _sanitize_filename(name)
         docstr_requirements = _get_fn_docstring_requirements(function_handle)
 
         with TemporaryDirectory() as tmpdir:
-            handle_path = os.path.join(tmpdir, HANDLER_FILE_NAME)
-            with open(handle_path, "w") as f:
+            handle_path = Path(tmpdir, HANDLER_FILE_NAME)
+            with handle_path.open("w") as f:
                 source = getsource(function_handle)
                 f.write(source)
 
             if docstr_requirements:
-                requirements_path = os.path.join(tmpdir, REQUIREMENTS_FILE_NAME)
-                with open(requirements_path, "w") as f:
+                requirements_path = Path(tmpdir, REQUIREMENTS_FILE_NAME)
+                with requirements_path.open("w") as f:
                     for req in docstr_requirements:
                         f.write(f"{req}\n")
 
-            zip_path = os.path.join(tmpdir, "function.zip")
+            zip_path = Path(tmpdir, "function.zip")
             with ZipFile(zip_path, "w") as zf:
                 zf.write(handle_path, arcname=HANDLER_FILE_NAME)
                 if docstr_requirements:
                     zf.write(requirements_path, arcname=REQUIREMENTS_FILE_NAME)
 
             overwrite = True if external_id else False
-            file = cast(
-                FileMetadata,
-                self._cognite_client.files.upload(
-                    zip_path, name=f"{name}.zip", external_id=external_id, overwrite=overwrite
-                ),
+            file = self._cognite_client.files.upload_bytes(
+                zip_path.read_bytes(), name=f"{name}.zip", external_id=external_id, overwrite=overwrite
             )
-
-            file_id = cast(int, file.id)
-
-        return file_id
+            return cast(int, file.id)
 
     @staticmethod
     def _assert_exactly_one_of_folder_or_file_id_or_function_handle(
@@ -671,6 +653,11 @@ def _get_fn_docstring_requirements(fn: Callable) -> List[str]:
             return parsed_reqs
 
     return []
+
+
+def _sanitize_filename(filename: str) -> str:
+    # Forwardslash, '/', is not allowed in file names:
+    return filename.replace("/", "-")
 
 
 class FunctionCallsAPI(APIClient):
