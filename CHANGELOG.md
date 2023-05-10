@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.1.5] - 10-05-23
+### Fixed
+- source and destination project issue fixed. 
+
 ## [6.1.4] - 08-05-23
 ### Fixed
 - Pickling a `CogniteClient` instance with certain `CredentialProvider`s no longer causes a `TypeError: cannot pickle ...` to be raised.
