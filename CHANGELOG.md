@@ -19,9 +19,9 @@ Changes are grouped as follows
 
 ## [6.1.5] - 10-05-23
 ### Fixed
-- source and destination project issue fixed. The source and destination project was overrided by the client config project. So, defined project variables seperatly for source and destination. 
-- self.source_nonce = try_get_or_create_nonce(self.source_oidc_credentials, project)
-- self.destination_nonce = try_get_or_create_nonce(self.destination_oidc_credentials, project)
+- When create a transformation with different source and destination project, the system has been overriden the source and destination project with the client config project. Therefore, the user was not able to read from the required source project and write to required destination prject. 
+- Form this version release, now source and destination project is taken from the user defined source and destination project value. 
+
 
 ## [6.1.4] - 08-05-23
 ### Fixed
