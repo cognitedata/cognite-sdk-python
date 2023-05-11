@@ -17,6 +17,9 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.1.7] - 11-05-23
+- Removed DMS v2 destination in transformations
+
 ## [6.1.6] - 11-05-23
 - `FunctionsAPI.create` now work in Wasm-like Python runtimes such as `pyodide`.
 
