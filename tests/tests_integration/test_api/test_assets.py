@@ -205,7 +205,7 @@ class TestAssetsAPI:
             assert result_asset.geo_location == geo_location
 
         finally:
-            cognite_client.assets.delete(id=a.id)
+            cognite_client.assets.delete(id=a.id)  # TODO: raises UnboundLocalError for 'a' when call fails
 
     def test_filter_by_geo_location(self, cognite_client):
         geo_location = GeoLocation(
