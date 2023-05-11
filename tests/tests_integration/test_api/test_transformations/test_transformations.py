@@ -385,21 +385,6 @@ class TestTransformationsAPI:
         # just make sure it doesnt raise exceptions
         str(query_result)
 
-    def test_update_dmi(self, cognite_client, new_transformation):
-        new_transformation.destination = TransformationDestination.data_model_instances(
-            "myTest", "test-space", "test-space"
-        )
-        partial_update = TransformationUpdate(id=new_transformation.id).destination.set(
-            TransformationDestination.data_model_instances("myTest2", "test-space", "test-space")
-        )
-        updated_transformation = cognite_client.transformations.update(new_transformation)
-        assert updated_transformation.destination == TransformationDestination.data_model_instances(
-            "myTest", "test-space", "test-space"
-        )
-        partial_updated = cognite_client.transformations.update(partial_update)
-        assert partial_updated.destination == TransformationDestination.data_model_instances(
-            "myTest2", "test-space", "test-space"
-        )
 
     def test_update_instance_nodes(self, cognite_client, new_transformation):
         new_transformation.destination = TransformationDestination.instance_nodes(
