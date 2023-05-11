@@ -1097,11 +1097,12 @@ def test__zip_and_upload_handle__zip_file_content(
             assert zip_file.testzip() is None
             assert zip_file.namelist() == ["handler.py", "requirements.txt"]
             with zip_file.open("handler.py", "r") as py_file:
-                expected_file_content = (
-                    b'def handle(data, client, secrets):\n    """\n    [requirements]\n    pandas\n    '
-                    b'[/requirements]\n    """\n'
+                expected_lines = (
+                    'def handle(data, client, secrets):\n    """\n    [requirements]\n    pandas\n    '
+                    '[/requirements]\n    """\n'
                 )
-                assert py_file.read() == expected_file_content
+                # We use splitlines to ignore line ending differences between OSs:
+                assert py_file.read().decode("utf-8").splitlines() == expected_lines.splitlines()
         return FileMetadata(id=123)
 
     mock = fns_api_with_client_mocked._cognite_client

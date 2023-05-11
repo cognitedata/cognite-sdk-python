@@ -530,13 +530,10 @@ def convert_file_path_to_module_path(file_path: str) -> str:
 
 
 def validate_function_folder(root_path: str, function_path: str) -> None:
-    file_extension = Path(function_path).suffix
-    if file_extension != ".py":
+    if Path(function_path).suffix != ".py":
         raise TypeError(f"{function_path} is not a valid value for function_path. File extension must be .py.")
 
-    function_path_full = Path(root_path) / Path(
-        function_path
-    )  # This converts function_path to a Windows path if running on Windows
+    function_path_full = Path(root_path, function_path)
     if not function_path_full.is_file():
         raise FileNotFoundError(f"No file found at location '{function_path}' in '{root_path}'.")
 
