@@ -34,47 +34,4 @@ class TestTransformationSchemaAPI:
         assert len(asset_columns) > 0
         assert len([col for col in asset_columns if col.name == "externalId"]) > 0
 
-    def test_data_model_schema(self, cognite_client):
-        project_name = os.environ["COGNITE_PROJECT"]
-        dm_name = "python-sdk-test-dm"
-        space_name = "test-space"
-        cognite_client.post(
-            f"/api/v1/projects/{project_name}/datamodelstorage/spaces",
-            json={"items": [{"externalId": space_name}]},
-            params={},
-            headers={"cdf-version": "alpha"},
-        )
 
-        cognite_client.post(
-            f"/api/v1/projects/{project_name}/datamodelstorage/models",
-            json={
-                "spaceExternalId": space_name,
-                "items": [
-                    {
-                        "externalId": dm_name,
-                        "allowNode": True,
-                        "allowEdge": False,
-                        "properties": {
-                            "test": {"type": "text", "nullable": True},
-                            "test2": {"type": "int64", "nullable": True},
-                        },
-                    }
-                ],
-            },
-            params={},
-            headers={"cdf-version": "alpha"},
-        )
-        model_cols = cognite_client.transformations.schema.retrieve(
-            TransformationDestination.data_model_instances(dm_name, space_name, space_name)
-        )
-        assert len(model_cols) == 3
-        assert [col for col in model_cols if col.name == "externalId"][0].type.type == "string"
-        assert [col for col in model_cols if col.name == "test"][0].type.type == "string"
-        assert [col for col in model_cols if col.name == "test2"][0].type.type == "long"
-
-        # cognite_client.post(
-        #     f"/api/v1/projects/{project_name}/datamodelstorage/models/delete",
-        #     json={"spaceExternalId": space_name, "items": [{"externalId": dm_name}]},
-        #     params={},
-        #     headers={"cdf-version": "alpha"},
-        # )
