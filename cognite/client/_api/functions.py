@@ -4,6 +4,7 @@ import importlib.util
 import os
 import re
 import sys
+import textwrap
 import time
 from inspect import getdoc, getsource
 from numbers import Number
@@ -442,8 +443,7 @@ class FunctionsAPI(APIClient):
         with TemporaryDirectory() as tmpdir:
             handle_path = Path(tmpdir, HANDLER_FILE_NAME)
             with handle_path.open("w") as f:
-                source = getsource(function_handle)
-                f.write(source)
+                f.write(textwrap.dedent(getsource(function_handle)))
 
             if docstr_requirements:
                 requirements_path = Path(tmpdir, REQUIREMENTS_FILE_NAME)
