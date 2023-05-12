@@ -163,8 +163,6 @@ class SequenceRows(TransformationDestination):
     def __hash__(self) -> int:
         return hash((self.type, self.external_id))
 
-    def __hash__(self) -> int:
-        return hash((self.type, self.model_external_id, self.space_external_id, self.instance_space_external_id))
 
 
 class ViewInfo:
