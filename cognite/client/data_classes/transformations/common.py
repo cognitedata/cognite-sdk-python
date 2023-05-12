@@ -112,7 +112,6 @@ class TransformationDestination:
         """
         return SequenceRows(external_id=external_id)
 
-
     @staticmethod
     def instance_nodes(view: Optional[ViewInfo] = None, instance_space: Optional[str] = None) -> InstanceNodes:
         """To be used when the transformation is meant to produce node's instances.
@@ -162,7 +161,6 @@ class SequenceRows(TransformationDestination):
 
     def __hash__(self) -> int:
         return hash((self.type, self.external_id))
-
 
 
 class ViewInfo:
