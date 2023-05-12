@@ -113,26 +113,6 @@ class TransformationDestination:
         return SequenceRows(external_id=external_id)
 
     @staticmethod
-    def data_model_instances(
-        model_external_id: str = "", space_external_id: str = "", instance_space_external_id: str = ""
-    ) -> DataModelInstances:
-        """To be used when the transformation is meant to produce data model instances.
-            Flexible Data Models resource type is on `beta` version currently.
-
-        Args:
-            model_external_id (str): external_id of the flexible data model.
-            space_external_id (str): space external_id of the flexible data model.
-            instance_space_external_id (str): space external_id of the flexible data model instance.
-        Returns:
-            TransformationDestination pointing to the target flexible data model.
-        """
-        return DataModelInstances(
-            model_external_id=model_external_id,
-            space_external_id=space_external_id,
-            instance_space_external_id=instance_space_external_id,
-        )
-
-    @staticmethod
     def instance_nodes(view: Optional[ViewInfo] = None, instance_space: Optional[str] = None) -> InstanceNodes:
         """To be used when the transformation is meant to produce node's instances.
             Flexible Data Models resource type is on `beta` version currently.
@@ -181,24 +161,6 @@ class SequenceRows(TransformationDestination):
 
     def __hash__(self) -> int:
         return hash((self.type, self.external_id))
-
-
-class DataModelInstances(TransformationDestination):
-    def __init__(
-        self, model_external_id: str = None, space_external_id: str = None, instance_space_external_id: str = None
-    ):
-        warnings.warn(
-            "Feature DataModelStorage is in beta and still in development. "
-            "Breaking changes can happen in between patch versions.",
-            stacklevel=2,
-        )
-        super().__init__(type="data_model_instances")
-        self.model_external_id = model_external_id
-        self.space_external_id = space_external_id
-        self.instance_space_external_id = instance_space_external_id
-
-    def __hash__(self) -> int:
-        return hash((self.type, self.model_external_id, self.space_external_id, self.instance_space_external_id))
 
 
 class ViewInfo:
@@ -344,13 +306,12 @@ class TransformationBlockedInfo:
 
 def _load_destination_dct(
     dct: Dict[str, Any]
-) -> Union[RawTable, DataModelInstances, InstanceNodes, InstanceEdges, SequenceRows, TransformationDestination]:
+) -> Union[RawTable, InstanceNodes, InstanceEdges, SequenceRows, TransformationDestination]:
     """Helper function to load destination from dictionary"""
     snake_dict = convert_all_keys_to_snake_case(dct)
     destination_type = snake_dict.pop("type")
     simple = {
         "raw": RawTable,
-        "data_model_instances": DataModelInstances,
         "sequence_rows": SequenceRows,
     }
     if destination_type in simple:
