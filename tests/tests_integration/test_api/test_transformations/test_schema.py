@@ -1,5 +1,3 @@
-import os
-
 from cognite.client.data_classes import TransformationDestination
 
 
@@ -33,5 +31,3 @@ class TestTransformationSchemaAPI:
         )
         assert len(asset_columns) > 0
         assert len([col for col in asset_columns if col.name == "externalId"]) > 0
-
-
