@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Union, overload
+from typing import TYPE_CHECKING, Any, Dict, Literal, Optional, Sequence, Union, overload
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -264,21 +264,21 @@ class ExtractionPipelineRunsAPI(APIClient):
                 message=StringFilter(substring=message_substring),
                 created_time=created_time,
             ).dump(camel_case=True)
-            return self._list(
-                list_cls=ExtractionPipelineRunList,
-                resource_cls=ExtractionPipelineRun,
-                method="POST",
-                limit=limit,
-                filter=filter,
-            )
+            method: Literal["POST", "GET"] = "POST"
+        else:
+            filter = {"externalId": external_id}
+            method = "GET"
 
-        return self._list(
+        res = self._list(
             list_cls=ExtractionPipelineRunList,
             resource_cls=ExtractionPipelineRun,
-            method="GET",
+            method=method,
             limit=limit,
-            filter={"externalId": external_id},
+            filter=filter,
         )
+        for run in res:
+            run.extpipe_external_id = external_id
+        return res
 
     @overload
     def create(self, run: ExtractionPipelineRun) -> ExtractionPipelineRun:
