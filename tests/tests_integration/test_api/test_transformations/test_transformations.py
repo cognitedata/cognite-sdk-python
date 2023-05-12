@@ -385,7 +385,6 @@ class TestTransformationsAPI:
         # just make sure it doesnt raise exceptions
         str(query_result)
 
-
     def test_update_instance_nodes(self, cognite_client, new_transformation):
         new_transformation.destination = TransformationDestination.instance_nodes(
             ViewInfo("myViewExternalId", "myViewVersion", "test-space"), "test-space"
