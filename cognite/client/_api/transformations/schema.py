@@ -37,10 +37,14 @@ class TransformationSchemaAPI(APIClient):
         """
 
         url_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}", str(destination.type))
+        filter = destination.dump(True)
+        filter.pop("type")
         other_params = {"conflictMode": conflict_mode} if conflict_mode else None
+
         return self._list(
             list_cls=TransformationSchemaColumnList,
             resource_cls=TransformationSchemaColumn,
             method="GET",
             resource_path=url_path,
+            filter=other_params,
         )
