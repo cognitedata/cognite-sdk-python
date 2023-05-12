@@ -1,5 +1,6 @@
 import pytest
 
+from cognite.client import CogniteClient
 from cognite.client.data_classes import ExtractionPipeline, ExtractionPipelineRun, ExtractionPipelineUpdate
 from cognite.client.data_classes.extractionpipelines import ExtractionPipelineContact
 from cognite.client.exceptions import CogniteNotFoundError
@@ -100,3 +101,18 @@ class TestExtractionPipelinesAPI:
         assert extpipe.last_failure != 0
         assert extpipe.last_success != 0
         assert extpipe.last_seen != 0
+
+    def test_list_extraction_pipeline_runs(
+        self, cognite_client: CogniteClient, new_extpipe: ExtractionPipeline
+    ) -> None:
+        cognite_client.extraction_pipelines.runs.create(
+            ExtractionPipelineRun(extpipe_external_id=new_extpipe.external_id, status="seen")
+        )
+        res = cognite_client.extraction_pipelines.runs.list(new_extpipe.external_id)
+        for run in res:
+            assert run.extpipe_external_id == new_extpipe.external_id
+
+        # Make sure we can dump it without errors
+        dumped = res.dump()
+        for run in dumped:
+            assert run["external_id"] == new_extpipe.external_id
