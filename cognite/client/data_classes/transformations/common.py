@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from typing import Any, Dict, Optional, Union
 
 from cognite.client.utils._auxiliary import basic_obj_dump
