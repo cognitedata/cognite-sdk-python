@@ -17,14 +17,21 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [6.1.8] - 12-05-23
+## [6.1.9] - 15-05-23
 ### Fixed
 - Renaming instance_nodes -> nodes and instance_edges -> edges. Because the SDK is not consistent with the destination in the Transformation API and CLI
 
+## [6.1.8] - 12-05-23
+### Fixed
+- ExtractionPipelinesRun:dump method will not throw an error when camel_case=True anymore
+
+
 ## [6.1.7] - 11-05-23
+### Removed
 - Removed DMS v2 destination in transformations
 
 ## [6.1.6] - 11-05-23
+### Fixed
 - `FunctionsAPI.create` now work in Wasm-like Python runtimes such as `pyodide`.
 
 ## [6.1.5] - 10-05-23
