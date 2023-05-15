@@ -192,11 +192,7 @@ class Nodes(TransformationDestination):
         view: Optional[ViewInfo] = None,
         instance_space: Optional[str] = None,
     ):
-        warnings.warn(
-            "Feature DataModelStorage is in beta and still in development. "
-            "Breaking changes can happen in between patch versions.",
-            stacklevel=2,
-        )
+
         super().__init__(type="nodes")
         self.view = view
         self.instance_space = instance_space
@@ -216,11 +212,7 @@ class Edges(TransformationDestination):
         instance_space: Optional[str] = None,
         edge_type: Optional[EdgeType] = None,
     ):
-        warnings.warn(
-            "Feature DataModelStorage is in beta and still in development. "
-            "Breaking changes can happen in between patch versions.",
-            stacklevel=2,
-        )
+
         super().__init__(type="edges")
         self.view = view
         self.instance_space = instance_space
