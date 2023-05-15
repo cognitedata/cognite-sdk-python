@@ -451,7 +451,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
     def _queue_new_subtasks(
         self, pool: PriorityThreadPoolExecutor, futures_dct: Dict[Future, List[BaseDpsFetchSubtask]]
     ) -> None:
-        while pool._work_queue.qsize() == 0 and any(self.subtask_pools):
+        while pool._work_queue.empty() and any(self.subtask_pools):
             # While the number of unstarted tasks is 0 and we have unqueued subtasks in one of the pools,
             # we keep combining subtasks into "chunked dps requests" to feed to the thread pool
             if (new_request := self._combine_subtasks_into_new_request()) is None:
