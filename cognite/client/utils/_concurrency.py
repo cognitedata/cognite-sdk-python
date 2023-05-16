@@ -168,6 +168,15 @@ class MainThreadExecutor(TaskExecutor):
     protocol but just executes everything serially in the main thread.
     """
 
+    def __init__(self) -> None:
+        # This "queue" is not used, but currently needed because of the datapoints logic that
+        # decides when to add new tasks to the task executor task pool.
+        class AlwaysEmpty:
+            def empty(self) -> Literal[True]:
+                return True
+
+        self._work_queue = AlwaysEmpty()
+
     def submit(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any) -> SyncFuture:
         if "priority" in inspect.signature(fn).parameters:
             raise TypeError(f"Given function {fn} cannot accept reserved parameter name `priority`")
