@@ -17,9 +17,14 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [6.1.9] - 15-05-23
+## [6.1.10] - 19-05-23
 ### Fixed
-- Renaming instance_nodes -> nodes and instance_edges -> edges. Because the SDK is not consistent with the destination in the Transformation API and CLI
+- Data modelling is now GA. Renaming instance_nodes -> nodes and instance_edges -> edges to make the naming in SDK consistent with Transformation API and CLI
+
+## [6.1.9] - 16-05-23
+### Fixed
+- Fixed a rare issue with datapoints fetching that could raise `AttributeError` when running with `pyodide`.
+
 
 ## [6.1.8] - 12-05-23
 ### Fixed
