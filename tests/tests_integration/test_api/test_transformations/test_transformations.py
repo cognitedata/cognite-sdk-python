@@ -254,7 +254,7 @@ class TestTransformationsAPI:
 
         cognite_client.transformations.delete(id=ts.id)
 
-    def test_create_instance_data_model_transformation(self, cognite_client):
+    def test_create_instance_type_data_model_transformation(self, cognite_client):
         prefix = random_string(6, string.ascii_letters)
         instances = TransformationDestination.instances(
             data_model=DataModelInfo(
@@ -281,6 +281,38 @@ class TestTransformationsAPI:
         assert ts.destination.data_model.external_id == "author_book"
         assert ts.destination.data_model.version == "2"
         assert ts.destination.data_model.destination_type == "AuthorBook_relation"
+        assert ts.destination.instance_space == "test-instanceSpace"
+
+        cognite_client.transformations.delete(id=ts.id)
+
+    def test_create_instance_relationship_data_model_transformation(self, cognite_client):
+        prefix = random_string(6, string.ascii_letters)
+        instances = TransformationDestination.instances(
+            data_model=DataModelInfo(
+                space="authorBook",
+                external_id="author_book",
+                version="2",
+                destination_type="AuthorBook_relation",
+                destination_relationship_from_type="author_book",
+            ),
+            instance_space="test-instanceSpace",
+        )
+        transform = Transformation(
+            name="any",
+            external_id=f"{prefix}-transformation",
+            query="SELECT * FROM my_source_table",
+            destination=instances,
+        )
+        ts = cognite_client.transformations.create(transform)
+        assert isinstance(ts.destination, Instances)
+        assert ts.destination.type == "instances"
+
+        assert isinstance(ts.destination.data_model, DataModelInfo)
+        assert ts.destination.data_model.space == "authorBook"
+        assert ts.destination.data_model.external_id == "author_book"
+        assert ts.destination.data_model.version == "2"
+        assert ts.destination.data_model.destination_type == "AuthorBook_relation"
+        assert ts.destination.data_model.destination_relationship_from_type == "author_book"
         assert ts.destination.instance_space == "test-instanceSpace"
 
         cognite_client.transformations.delete(id=ts.id)
