@@ -369,7 +369,7 @@ def _load_destination_dct(
     if destination_type in simple:
         return simple[destination_type](**snake_dict)
 
-    nested: Dict[str, Union[type[Nodes], type[Edges]]] = {
+    nested: Dict[str, Union[type[Nodes], type[Edges], type[Instances]]] = {
         "nodes": Nodes,
         "edges": Edges,
         "instances": Instances,
