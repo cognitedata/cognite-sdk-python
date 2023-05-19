@@ -146,6 +146,8 @@ class ThreeDModelRevision(CogniteResource):
         file_id (int | None): The file id.
         published (bool | None): True if the revision is marked as published.
         rotation (list[float] | None): No description.
+        scale (List[float]): Scale of 3D model in directions X,Y and Z. Should be uniform.
+        translation (List[float]): 3D offset of the model.
         camera (dict[str, Any] | RevisionCameraProperties | None): Initial camera position and target.
         status (str | None): The status of the revision.
         metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
@@ -162,6 +164,8 @@ class ThreeDModelRevision(CogniteResource):
         file_id: int | None = None,
         published: bool | None = None,
         rotation: list[float] | None = None,
+        scale: list[float] = None,
+        translation: list[float] = None,
         camera: dict[str, Any] | RevisionCameraProperties | None = None,
         status: str | None = None,
         metadata: dict[str, str] | None = None,
@@ -175,6 +179,8 @@ class ThreeDModelRevision(CogniteResource):
         self.file_id = file_id
         self.published = published
         self.rotation = rotation
+        self.scale = scale
+        self.translation = translation
         self.camera = camera
         self.status = status
         self.metadata = metadata
@@ -238,6 +244,14 @@ class ThreeDModelRevisionUpdate(CogniteUpdate):
     @property
     def rotation(self) -> _ListThreeDModelRevisionUpdate:
         return ThreeDModelRevisionUpdate._ListThreeDModelRevisionUpdate(self, "rotation")
+
+    @property
+    def scale(self) -> _ListThreeDModelRevisionUpdate:
+        return ThreeDModelRevisionUpdate._ListThreeDModelRevisionUpdate(self, "scale")
+
+    @property
+    def translation(self) -> _ListThreeDModelRevisionUpdate:
+        return ThreeDModelRevisionUpdate._ListThreeDModelRevisionUpdate(self, "translation")
 
     @property
     def camera(self) -> _ObjectThreeDModelRevisionUpdate:
