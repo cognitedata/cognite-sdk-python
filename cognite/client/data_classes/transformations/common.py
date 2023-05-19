@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from typing import Any, Dict, Optional, Union
 
 from cognite.client.utils._auxiliary import basic_obj_dump
@@ -113,35 +112,33 @@ class TransformationDestination:
         return SequenceRows(external_id=external_id)
 
     @staticmethod
-    def instance_nodes(view: Optional[ViewInfo] = None, instance_space: Optional[str] = None) -> InstanceNodes:
-        """To be used when the transformation is meant to produce node's instances.
-            Flexible Data Models resource type is on `beta` version currently.
+    def nodes(view: Optional[ViewInfo] = None, instance_space: Optional[str] = None) -> Nodes:
+        """
 
         Args:
             view (ViewInfo): information of the view.
             instance_space (str): space id of the instance.
         Returns:
-            InstanceNodes: pointing to the target flexible data model.
+            Nodes: pointing to the target flexible data model.
         """
-        return InstanceNodes(view=view, instance_space=instance_space)
+        return Nodes(view=view, instance_space=instance_space)
 
     @staticmethod
-    def instance_edges(
+    def edges(
         view: Optional[ViewInfo] = None,
         instance_space: Optional[str] = None,
         edge_type: Optional[EdgeType] = None,
-    ) -> InstanceEdges:
-        """To be used when the transformation is meant to produce edge's instances.
-            Flexible Data Models resource type is on `beta` version currently.
+    ) -> Edges:
+        """
 
         Args:
             view (ViewInfo): information of the view.
             instance_space (str): space id of the instance.
             edge_type (EdgeType): information about the type of the edge
         Returns:
-            InstanceEdges: pointing to the target flexible data model.
+            Edges: pointing to the target flexible data model.
         """
-        return InstanceEdges(view=view, instance_space=instance_space, edge_type=edge_type)
+        return Edges(view=view, instance_space=instance_space, edge_type=edge_type)
 
 
 class RawTable(TransformationDestination):
@@ -188,48 +185,40 @@ class EdgeType:
         return basic_obj_dump(self, camel_case)
 
 
-class InstanceNodes(TransformationDestination):
+class Nodes(TransformationDestination):
     def __init__(
         self,
         view: Optional[ViewInfo] = None,
         instance_space: Optional[str] = None,
     ):
-        warnings.warn(
-            "Feature DataModelStorage is in beta and still in development. "
-            "Breaking changes can happen in between patch versions.",
-            stacklevel=2,
-        )
+
         super().__init__(type="nodes")
         self.view = view
         self.instance_space = instance_space
 
     @classmethod
-    def _load(cls, resource: Dict[str, Any]) -> InstanceNodes:
+    def _load(cls, resource: Dict[str, Any]) -> Nodes:
         inst = cls(**resource)
         if isinstance(inst.view, dict):
             inst.view = ViewInfo(**convert_all_keys_to_snake_case(inst.view))
         return inst
 
 
-class InstanceEdges(TransformationDestination):
+class Edges(TransformationDestination):
     def __init__(
         self,
         view: Optional[ViewInfo] = None,
         instance_space: Optional[str] = None,
         edge_type: Optional[EdgeType] = None,
     ):
-        warnings.warn(
-            "Feature DataModelStorage is in beta and still in development. "
-            "Breaking changes can happen in between patch versions.",
-            stacklevel=2,
-        )
+
         super().__init__(type="edges")
         self.view = view
         self.instance_space = instance_space
         self.edge_type = edge_type
 
     @classmethod
-    def _load(cls, resource: Dict[str, Any]) -> InstanceEdges:
+    def _load(cls, resource: Dict[str, Any]) -> Edges:
         inst = cls(**resource)
         if isinstance(inst.view, dict):
             inst.view = ViewInfo(**convert_all_keys_to_snake_case(inst.view))
@@ -306,7 +295,7 @@ class TransformationBlockedInfo:
 
 def _load_destination_dct(
     dct: Dict[str, Any]
-) -> Union[RawTable, InstanceNodes, InstanceEdges, SequenceRows, TransformationDestination]:
+) -> Union[RawTable, Nodes, Edges, SequenceRows, TransformationDestination]:
     """Helper function to load destination from dictionary"""
     snake_dict = convert_all_keys_to_snake_case(dct)
     destination_type = snake_dict.pop("type")
@@ -317,9 +306,9 @@ def _load_destination_dct(
     if destination_type in simple:
         return simple[destination_type](**snake_dict)
 
-    nested: Dict[str, Union[type[InstanceNodes], type[InstanceEdges]]] = {
-        "nodes": InstanceNodes,
-        "edges": InstanceEdges,
+    nested: Dict[str, Union[type[Nodes], type[Edges]]] = {
+        "nodes": Nodes,
+        "edges": Edges,
     }
     if destination_type in nested:
         return nested[destination_type]._load(snake_dict)

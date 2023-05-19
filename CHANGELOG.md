@@ -17,13 +17,19 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.1.10] - 19-05-23
+### Fixed
+- Data modelling is now GA. Renaming instance_nodes -> nodes and instance_edges -> edges to make the naming in SDK consistent with Transformation API and CLI
+
 ## [6.1.9] - 16-05-23
 ### Fixed
 - Fixed a rare issue with datapoints fetching that could raise `AttributeError` when running with `pyodide`.
 
+
 ## [6.1.8] - 12-05-23
 ### Fixed
 - ExtractionPipelinesRun:dump method will not throw an error when camel_case=True anymore
+
 
 ## [6.1.7] - 11-05-23
 ### Removed
