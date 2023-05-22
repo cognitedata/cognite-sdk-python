@@ -242,9 +242,9 @@ class ExtractionPipelineRun(CogniteResource):
         #   - Problem: This dump method might be surprising to the user - if used (its public)...
         # ...and 2 was chosen:
         if camel_case:
-            dct["externalId"] = dct.pop("extpipeExternalId")
+            dct["externalId"] = dct.pop("extpipeExternalId", None)
         else:
-            dct["external_id"] = dct.pop("extpipe_external_id")
+            dct["external_id"] = dct.pop("extpipe_external_id", None)
         return dct
 
 

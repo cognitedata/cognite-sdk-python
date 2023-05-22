@@ -1,7 +1,10 @@
+import io
 import operator as op
 import os
 from datetime import datetime
-from unittest.mock import patch
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+from zipfile import ZipFile
 
 import pytest
 from requests import PreparedRequest
@@ -16,6 +19,7 @@ from cognite.client._api.functions import (
 )
 from cognite.client.credentials import OAuthClientCredentials, Token
 from cognite.client.data_classes import (
+    FileMetadata,
     Function,
     FunctionCall,
     FunctionCallList,
@@ -272,6 +276,18 @@ def mock_functions_call_timeout_response(rsps, cognite_client):
 def function_handle():
     def handle(data, client, secrets):
         pass
+
+    return handle
+
+
+@pytest.fixture
+def function_handle_with_reqs():
+    def handle(data, client, secrets):
+        """
+        [requirements]
+        pandas
+        [/requirements]
+        """
 
     return handle
 
@@ -1047,3 +1063,97 @@ class TestFunctionCallsAPI:
         response = call.get_response()
         assert isinstance(response, dict)
         assert mock_function_call_response_response.calls[1].response.json()["response"] == response
+
+
+@pytest.fixture
+def fns_api_with_mock_client(cognite_client):
+    cognite_client.functions._cognite_client = MagicMock()
+    return cognite_client.functions
+
+
+@pytest.mark.parametrize("xid, overwrite", ((None, False), ("xid", True)))
+def test__zip_and_upload_handle__call_signature(fns_api_with_mock_client, xid, overwrite, function_handle):
+    mock = fns_api_with_mock_client._cognite_client
+    mock.files.upload_bytes.return_value = FileMetadata(id=123)
+    file_id = fns_api_with_mock_client._zip_and_upload_handle(function_handle, name="name", external_id=xid)
+    assert file_id == 123
+
+    mock.files.upload_bytes.assert_called_once()
+    call = mock.files.upload_bytes.call_args
+    assert len(call.args) == 1 and type(call.args[0]) is bytes
+    assert call.kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite}
+
+
+@pytest.mark.parametrize("xid, overwrite", ((None, False), ("xid", True)))
+def test__zip_and_upload_handle__zip_file_content(fns_api_with_mock_client, xid, overwrite, function_handle_with_reqs):
+    def validate_file_upload_call(*args, **kwargs):
+        assert len(args) == 1 and type(args[0]) is bytes
+        assert kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite}
+
+        with io.BytesIO(args[0]) as wrapped_binary, ZipFile(wrapped_binary, "r") as zip_file:
+            assert zip_file.testzip() is None
+            assert zip_file.namelist() == ["handler.py", "requirements.txt"]
+            with zip_file.open("handler.py", "r") as py_file:
+                expected_lines = [
+                    "def handle(data, client, secrets):",
+                    '    """',
+                    "    [requirements]",
+                    "    pandas",
+                    "    [/requirements]",
+                    '    """',
+                ]
+                # We use splitlines to ignore line ending differences between OSs:
+                assert py_file.read().decode("utf-8").splitlines() == expected_lines
+        return FileMetadata(id=123)
+
+    mock = fns_api_with_mock_client._cognite_client
+    mock.files.upload_bytes = validate_file_upload_call
+
+    file_id = fns_api_with_mock_client._zip_and_upload_handle(function_handle_with_reqs, name="name", external_id=xid)
+    assert file_id == 123
+
+
+@pytest.mark.parametrize("xid, overwrite", ((None, False), ("xid", True)))
+def test__zip_and_upload_folder__call_signature(fns_api_with_mock_client, xid, overwrite):
+
+    mock = fns_api_with_mock_client._cognite_client
+    mock.files.upload_bytes.return_value = FileMetadata(id=123)
+
+    folder = Path(__file__).parent / "function_test_resources" / "good_absolute_import"
+    file_id = fns_api_with_mock_client._zip_and_upload_folder(folder, name="name", external_id=xid)
+    assert file_id == 123
+
+    mock.files.upload_bytes.assert_called_once()
+    call = mock.files.upload_bytes.call_args
+    assert len(call.args) == 1 and type(call.args[0]) is bytes
+    assert call.kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite}
+
+
+@pytest.mark.parametrize("xid, overwrite", ((None, False), ("xid", True)))
+def test__zip_and_upload_folder__zip_file_content(fns_api_with_mock_client, xid, overwrite):
+    def validate_file_upload_call(*args, **kwargs):
+        assert len(args) == 1 and type(args[0]) is bytes
+        assert kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite}
+
+        with io.BytesIO(args[0]) as wrapped_binary, ZipFile(wrapped_binary, "r") as zip_file:
+            assert zip_file.testzip() is None
+            expected_names = {"./", "shared/", "shared/util.py", "my_functions/", "my_functions/handler.py"}
+            assert set(zip_file.namelist()) >= expected_names
+            with zip_file.open("my_functions/handler.py", "r") as py_file:
+                expected_lines = [
+                    "from shared.util import shared_func",
+                    "",
+                    "",
+                    "def handle():",
+                    "    return shared_func()",
+                ]
+                # We use splitlines to ignore line ending differences between OSs:
+                assert py_file.read().decode("utf-8").splitlines() == expected_lines
+        return FileMetadata(id=123)
+
+    mock = fns_api_with_mock_client._cognite_client
+    mock.files.upload_bytes = validate_file_upload_call
+
+    folder = Path(__file__).parent / "function_test_resources" / "good_absolute_import"
+    file_id = fns_api_with_mock_client._zip_and_upload_folder(folder, name="name", external_id=xid)
+    assert file_id == 123
