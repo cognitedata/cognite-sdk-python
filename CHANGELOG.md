@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.2.0] - 22-05-23
+### Changed
+
+- Changed documentation to reflect the addition of Python 3.10 as a Cognite Function runtime in the API.
 ## [6.1.5] - 10-05-23
 ### Fixed
 - When creating a transformation with a different source- and destination CDF project, the project setting is no longer overridden by the setting in the `CogniteClient` configuration allowing the user to read from the specified source project and write to the specified and potentially different destination project. 
