@@ -17,11 +17,6 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [6.2.0] - 22-05-23
-### Changed
-
-- Changed documentation to reflect the addition of Python 3.10 as a Cognite Function runtime in the API.
-
 ## [6.1.10] - 19-05-23
 ### Fixed
 - Data modelling is now GA. Renaming instance_nodes -> nodes and instance_edges -> edges to make the naming in SDK consistent with Transformation API and CLI
