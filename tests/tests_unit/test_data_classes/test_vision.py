@@ -7,8 +7,14 @@ import pytest
 
 from cognite.client import CogniteClient, utils
 from cognite.client.data_classes import Annotation
-from cognite.client.data_classes.annotation_types.images import TextRegion
-from cognite.client.data_classes.annotation_types.primitives import BoundingBox, CdfResourceRef, VisionResource
+from cognite.client.data_classes.annotation_types.images import ObjectDetection, Polygon, TextRegion
+from cognite.client.data_classes.annotation_types.primitives import (
+    BoundingBox,
+    CdfResourceRef,
+    Point,
+    PolyLine,
+    VisionResource,
+)
 from cognite.client.data_classes.contextualization import (
     AssetTagDetectionParameters,
     FeatureParameters,
@@ -56,30 +62,45 @@ class TestVisionResource:
                 {"text": "foo", "text_region": {"x_min": 0.1, "x_max": 0.1, "y_min": 0.1, "y_max": 0.1}},
                 False,
             ),
+            (
+                # Ensure nested objects with list of VisionResource subclasses are recursively dumped:
+                Polygon([Point(1, 2), Point(3, 4), Point(-1, 0)]),
+                {"vertices": [{"x": 1, "y": 2}, {"x": 3, "y": 4}, {"x": -1, "y": 0}]},
+                False,
+            ),
+            (
+                ObjectDetection(label="foo", confidence=None, polyline=PolyLine([Point(1, 2), Point(3, 4)])),
+                {"label": "foo", "polyline": {"vertices": [{"x": 1, "y": 2}, {"x": 3, "y": 4}]}},
+                False,
+            ),
         ],
-        ids=["valid_dump", "valid_dump_camel_case", "valid_dump_mix"],
+        ids=["valid_dump", "valid_dump_camel_case", "valid_dump_mix", "valid_nested_dump1", "valid_nested_dump2"],
     )
     def test_dump(self, item: VisionResource, expected_dump: Dict[str, Any], camel_case: bool) -> None:
         assert item.dump(camel_case) == expected_dump
 
+    @pytest.mark.dsl
     @pytest.mark.parametrize(
-        "item, expected_dump, camel_case",
+        "item, exp_df_data, exp_df_index, camel_case",
         [
             (
                 CdfResourceRef(id=1, external_id="a"),
-                {"id": 1, "external_id": "a"},
+                {"value": [1, "a"]},
+                ["id", "external_id"],
                 False,
             ),
             (
                 CdfResourceRef(id=1, external_id="a"),
-                {"id": 1, "externalId": "a"},
+                {"value": [1, "a"]},
+                ["id", "externalId"],
                 True,
             ),
             (
                 TextRegion(
                     text="foo", text_region={"x_min": 0.1, "x_max": 0.1, "y_min": 0.1, "y_max": 0.1}, confidence=None
                 ),
-                {"text": "foo", "text_region": {"x_min": 0.1, "x_max": 0.1, "y_min": 0.1, "y_max": 0.1}},
+                {"value": ["foo", {"x_min": 0.1, "x_max": 0.1, "y_min": 0.1, "y_max": 0.1}]},
+                ["text", "text_region"],
                 False,
             ),
             (
@@ -92,24 +113,19 @@ class TestVisionResource:
                         )
                     ]
                 ),
-                {
-                    "textPredictions": [
-                        {"text": "foo", "textRegion": {"xMin": 0.1, "xMax": 0.1, "yMin": 0.1, "yMax": 0.1}}
-                    ]
-                },
+                {"value": [[{"text": "foo", "textRegion": {"xMin": 0.1, "xMax": 0.1, "yMin": 0.1, "yMax": 0.1}}]]},
+                ["textPredictions"],
                 True,
             ),
         ],
         ids=["valid_dump", "valid_dump_camel_case", "valid_dump_mix", "valid_dump_list"],
     )
-    @pytest.mark.dsl
-    def test_to_pandas(self, item: VisionResource, expected_dump: Dict[str, Any], camel_case: bool) -> None:
+    def test_to_pandas(self, item: VisionResource, exp_df_data, exp_df_index, camel_case: bool) -> None:
         pd = utils._auxiliary.local_import("pandas")
 
-        assert all(
-            item.to_pandas(camel_case)
-            == pd.DataFrame(columns=["value"], index=list(expected_dump.keys()), data=list(expected_dump.values()))
-        )
+        res = item.to_pandas(camel_case)
+        exp = pd.DataFrame(exp_df_data, index=exp_df_index)
+        pd.testing.assert_frame_equal(res, exp)
 
 
 class TestVisionExtractItem:

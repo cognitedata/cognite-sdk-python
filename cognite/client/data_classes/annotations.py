@@ -11,7 +11,7 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     CogniteUpdate,
 )
-from cognite.client.utils._auxiliary import to_snake_case
+from cognite.client.utils._text import to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient

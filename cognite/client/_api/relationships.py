@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import copy
-from typing import Any, Dict, Iterator, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence, Union, cast
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -9,14 +9,18 @@ from cognite.client.data_classes import Relationship, RelationshipFilter, Relati
 from cognite.client.data_classes.labels import LabelFilter
 from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._validation import process_data_set_ids
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
 
 
 class RelationshipsAPI(APIClient):
     _RESOURCE_PATH = "/relationships"
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self._CREATE_LIMIT = 1000
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
         self._LIST_SUBQUERY_LIMIT = 1000
 
     def _create_filter(
@@ -55,8 +59,8 @@ class RelationshipsAPI(APIClient):
         source_types: Sequence[str] = None,
         target_external_ids: Sequence[str] = None,
         target_types: Sequence[str] = None,
-        data_set_ids: Sequence[int] = None,
-        data_set_external_ids: Sequence[str] = None,
+        data_set_ids: Union[int, Sequence[int]] = None,
+        data_set_external_ids: Union[str, Sequence[str]] = None,
         start_time: Dict[str, int] = None,
         end_time: Dict[str, int] = None,
         confidence: Dict[str, int] = None,
@@ -78,8 +82,8 @@ class RelationshipsAPI(APIClient):
             source_types (Sequence[str]): Include relationships that have any of these values in their source Type field
             target_external_ids (Sequence[str]): Include relationships that have any of these values in their target External Id field
             target_types (Sequence[str]): Include relationships that have any of these values in their target Type field
-            data_set_ids (Sequence[int]): Return only relationships in the specified data sets with these ids.
-            data_set_external_ids (Sequence[str]): Return only relationships in the specified data sets with these external ids.
+            data_set_ids (Union[int, Sequence[int]]): Return only relationships in the specified data set(s) with this id / these ids.
+            data_set_external_ids (Union[str, Sequence[str]]): Return only relationships in the specified data set(s) with this external id / these external ids.
             start_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
             end_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
             confidence (Dict[str, int]): Range to filter the field for (inclusive).
@@ -91,11 +95,9 @@ class RelationshipsAPI(APIClient):
             partitions (int): Retrieve relationships in parallel using this number of workers. Also requires `limit=None` to be passed.
 
         Yields:
-            Union[Relationship, RelationshipList]: yields Relationship one by one if chunk is not specified, else RelationshipList objects.
+            Union[Relationship, RelationshipList]: yields Relationship one by one if chunk_size is not specified, else RelationshipList objects.
         """
-        data_set_ids_processed = None
-        if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
+        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
         filter = self._create_filter(
             source_external_ids=source_external_ids,
@@ -201,8 +203,8 @@ class RelationshipsAPI(APIClient):
         source_types: Sequence[str] = None,
         target_external_ids: Sequence[str] = None,
         target_types: Sequence[str] = None,
-        data_set_ids: Sequence[int] = None,
-        data_set_external_ids: Sequence[str] = None,
+        data_set_ids: Union[int, Sequence[int]] = None,
+        data_set_external_ids: Union[str, Sequence[str]] = None,
         start_time: Dict[str, int] = None,
         end_time: Dict[str, int] = None,
         confidence: Dict[str, int] = None,
@@ -221,8 +223,8 @@ class RelationshipsAPI(APIClient):
             source_types (Sequence[str]): Include relationships that have any of these values in their source Type field
             target_external_ids (Sequence[str]): Include relationships that have any of these values in their target External Id field
             target_types (Sequence[str]): Include relationships that have any of these values in their target Type field
-            data_set_ids (Sequence[int]): Return only relationships in the specified data sets with these ids.
-            data_set_external_ids (Sequence[str]): Return only relationships in the specified data sets with these external ids.
+            data_set_ids (Union[int, Sequence[int]]): Return only relationships in the specified data set(s) with this id / these ids.
+            data_set_external_ids (Union[str, Sequence[str]]): Return only relationships in the specified data set(s) with this external id / these external ids.
             start_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
             end_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
             confidence (Dict[str, int]): Range to filter the field for (inclusive).
@@ -254,9 +256,7 @@ class RelationshipsAPI(APIClient):
                 >>> for relationship in c.relationships:
                 ...     relationship # do something with the relationship
         """
-        data_set_ids_processed = None
-        if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
+        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
         filter = self._create_filter(
             source_external_ids=source_external_ids,

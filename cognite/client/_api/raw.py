@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence,
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client.config import ClientConfig
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import Database, DatabaseList, Row, RowList, Table, TableList
 from cognite.client.utils._auxiliary import is_unlimited, local_import
 from cognite.client.utils._identifier import Identifier
@@ -13,14 +13,15 @@ if TYPE_CHECKING:
     import pandas
 
     from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
 
 
 class RawAPI(APIClient):
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.databases = RawDatabasesAPI(*args, **kwargs)
-        self.tables = RawTablesAPI(*args, **kwargs)
-        self.rows = RawRowsAPI(*args, **kwargs)
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self.databases = RawDatabasesAPI(config, api_version, cognite_client)
+        self.tables = RawTablesAPI(config, api_version, cognite_client)
+        self.rows = RawRowsAPI(config, api_version, cognite_client)
 
 
 class RawDatabasesAPI(APIClient):
@@ -106,7 +107,7 @@ class RawDatabasesAPI(APIClient):
             task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda el: el["name"]
         )
 
-    def list(self, limit: int = 25) -> DatabaseList:
+    def list(self, limit: int = LIST_LIMIT_DEFAULT) -> DatabaseList:
         """`List databases <https://docs.cognite.com/api/v1/#operation/getDBs>`_
 
         Args:
@@ -240,7 +241,7 @@ class RawTablesAPI(APIClient):
             task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda el: el["name"]
         )
 
-    def list(self, db_name: str, limit: int = 25) -> TableList:
+    def list(self, db_name: str, limit: int = LIST_LIMIT_DEFAULT) -> TableList:
         """`List tables <https://docs.cognite.com/api/v1/#operation/getTables>`_
 
         Args:
@@ -296,12 +297,7 @@ class RawTablesAPI(APIClient):
 class RawRowsAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs/{}/tables/{}/rows"
 
-    def __init__(
-        self,
-        config: ClientConfig,
-        api_version: Optional[str] = None,
-        cognite_client: CogniteClient = None,
-    ) -> None:
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._CREATE_LIMIT = 5000
         self._LIST_LIMIT = 10000
@@ -325,8 +321,8 @@ class RawRowsAPI(APIClient):
             table_name (str): Name of the table to iterate over rows for
             chunk_size (int, optional): Number of rows to return in each chunk. Defaults to yielding one row a time.
             limit (int, optional): Maximum number of rows to return. Defaults to return all items.
-            min_last_updated_time (int): Rows must have been last updated after this time. ms since epoch.
-            max_last_updated_time (int): Rows must have been last updated before this time. ms since epoch.
+            min_last_updated_time (int): Rows must have been last updated after this time (exclusive). ms since epoch.
+            max_last_updated_time (int): Rows must have been last updated before this time (inclusive). ms since epoch.
             columns (List[str]): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
         """
         return self._list_generator(
@@ -410,7 +406,7 @@ class RawRowsAPI(APIClient):
         rows = [Row(key=key, columns=cols) for key, cols in df_dict.items()]
         self.insert(db_name=db_name, table_name=table_name, row=rows, ensure_parent=ensure_parent)
 
-    def _process_row_input(self, row: Union[Sequence[Row], Row, Dict]) -> List[Union[List, Dict]]:
+    def _process_row_input(self, row: Union[Sequence[Row], Row, Dict]) -> List[List[Dict]]:
         utils._auxiliary.assert_type(row, "row", [Sequence, dict, Row])
         rows = []
         if isinstance(row, dict):
@@ -498,15 +494,15 @@ class RawRowsAPI(APIClient):
         min_last_updated_time: int = None,
         max_last_updated_time: int = None,
         columns: List[str] = None,
-        limit: int = 25,
+        limit: int = LIST_LIMIT_DEFAULT,
     ) -> RowList:
         """`List rows in a table. <https://docs.cognite.com/api/v1/#operation/getRows>`_
 
         Args:
             db_name (str): Name of the database.
             table_name (str): Name of the table.
-            min_last_updated_time (int): Rows must have been last updated after this time. ms since epoch.
-            max_last_updated_time (int): Rows must have been last updated before this time. ms since epoch.
+            min_last_updated_time (int): Rows must have been last updated after this time (exclusive). ms since epoch.
+            max_last_updated_time (int): Rows must have been last updated before this time (inclusive). ms since epoch.
             columns (List[str]): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
             limit (int): The number of rows to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
@@ -586,7 +582,7 @@ class RawRowsAPI(APIClient):
         min_last_updated_time: int = None,
         max_last_updated_time: int = None,
         columns: List[str] = None,
-        limit: int = 25,
+        limit: int = LIST_LIMIT_DEFAULT,
     ) -> pandas.DataFrame:
         """`Retrieve rows in a table as a pandas dataframe. <https://docs.cognite.com/api/v1/#operation/getRows>`_
 

@@ -1,5 +1,5 @@
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest import mock
 
 import pytest
@@ -37,7 +37,7 @@ class TestSyntheticDatapointsAPI:
     def test_query_with_start_before_epoch(self, cognite_client, test_time_series, post_spy):
         query = f"ts{{id:{test_time_series[0].id}}} + ts{{id:{test_time_series[1].id}}}"
         dps = cognite_client.time_series.data.synthetic.query(
-            expressions=query, start=datetime(1920, 1, 1), end="now", limit=23456
+            expressions=query, start=datetime(1920, 1, 1, tzinfo=timezone.utc), end="now", limit=23456
         )
         assert 23456 == len(dps)
         assert 3 == cognite_client.time_series.data.synthetic._post.call_count

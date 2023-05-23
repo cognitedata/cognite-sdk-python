@@ -12,7 +12,6 @@ from cognite.client._api import (
     events,
     files,
     iam,
-    login,
     raw,
     relationships,
     sequences,
@@ -54,9 +53,6 @@ class TestDocstringExamples:
 
     def test_files(self):
         run_docstring_tests(files)
-
-    def test_login(self):
-        run_docstring_tests(login)
 
     @pytest.mark.dsl
     def test_raw(self):

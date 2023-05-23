@@ -8,7 +8,7 @@ from unittest import mock
 import pytest
 
 from cognite.client import ClientConfig, CogniteClient
-from cognite.client.credentials import APIKey
+from cognite.client.credentials import Token
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteLabelUpdate,
@@ -51,6 +51,11 @@ class MyUpdate(CogniteUpdate):
     @property
     def labels(self):
         return LabelUpdate(self, "labels")
+
+    @property
+    def columns(self):
+        # Not really a PrimitiveUpdate, but we have this to ensure it is skipped from updates
+        return PrimitiveUpdate(self, "columns")
 
 
 class PrimitiveUpdate(CognitePrimitiveUpdate):
@@ -188,7 +193,7 @@ class TestCogniteResource:
         pd.testing.assert_frame_equal(expected_df, actual_df, check_like=True)
 
     def test_resource_client_correct(self):
-        c = CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=APIKey("bla")))
+        c = CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla")))
         with pytest.raises(CogniteMissingClientError):
             MyResource(1)._cognite_client
         assert MyResource(1, cognite_client=c)._cognite_client == c
@@ -243,11 +248,38 @@ class TestCogniteResourceList:
         rl_sliced = rl[:]
         assert rl._cognite_client == rl_sliced._cognite_client
 
-    def test_extend(self):
+    def test_extend__no_identifiers(self):
         resource_list = MyResourceList([MyResource(1, 2), MyResource(2, 3)])
         another_resource_list = MyResourceList([MyResource(4, 5), MyResource(6, 7)])
         resource_list.extend(another_resource_list)
-        assert MyResourceList([MyResource(1, 2), MyResource(2, 3), MyResource(4, 5), MyResource(6, 7)]) == resource_list
+
+        expected = MyResourceList([MyResource(1, 2), MyResource(2, 3), MyResource(4, 5), MyResource(6, 7)])
+        assert expected == resource_list
+        assert resource_list._id_to_item == {}
+        assert resource_list._external_id_to_item == {}
+
+    def test_extend__with_identifiers(self):
+        resource_list = MyResourceList([MyResource(id=1, external_id="2"), MyResource(id=2, external_id="3")])
+        another_resource_list = MyResourceList([MyResource(id=4, external_id="5"), MyResource(id=6, external_id="7")])
+        resource_list.extend(another_resource_list)
+
+        expected = MyResourceList(
+            [
+                MyResource(id=1, external_id="2"),
+                MyResource(id=2, external_id="3"),
+                MyResource(id=4, external_id="5"),
+                MyResource(id=6, external_id="7"),
+            ]
+        )
+        assert expected == resource_list
+        assert expected._id_to_item == resource_list._id_to_item
+        assert expected._external_id_to_item == resource_list._external_id_to_item
+
+    def test_extend__fails_with_overlapping_identifiers(self):
+        resource_list = MyResourceList([MyResource(id=1), MyResource(id=2)])
+        another_resource_list = MyResourceList([MyResource(id=2), MyResource(id=6)])
+        with pytest.raises(ValueError, match="^Unable to extend as this would introduce duplicates$"):
+            resource_list.extend(another_resource_list)
 
     def test_len(self):
         resource_list = MyResourceList([MyResource(1, 2), MyResource(2, 3)])
@@ -292,7 +324,7 @@ class TestCogniteResourceList:
             MyResourceList([1, 2, 3])
 
     def test_resource_list_client_correct(self):
-        c = CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=APIKey("bla")))
+        c = CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla")))
         with pytest.raises(CogniteMissingClientError):
             MyResource(1)._cognite_client
         assert MyResource(1, cognite_client=c)._cognite_client == c
@@ -406,7 +438,9 @@ class TestCogniteUpdate:
         ).object.set({"bla": "bla"}).string.set("bla").dump()
 
     def test_get_update_properties(self):
-        assert {"string", "list", "object"} == set(MyUpdate._get_update_properties())
+        props = MyUpdate._get_update_properties()
+        assert hasattr(MyUpdate, "columns") and "columns" not in props
+        assert {"string", "list", "object", "labels"} == set(props)
 
 
 class TestCogniteResponse:
@@ -433,7 +467,7 @@ class TestCogniteResponse:
         assert MyResponse(1) != MyResponse()
 
     def test_response_client_correct(self):
-        c = CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=APIKey("bla")))
+        c = CogniteClient(ClientConfig(client_name="bla", project="bla", credentials=Token("bla")))
         with pytest.raises(CogniteMissingClientError):
             MyResource(1)._cognite_client
         assert MyResource(1, cognite_client=c)._cognite_client == c

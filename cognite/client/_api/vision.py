@@ -10,8 +10,9 @@ from cognite.client.data_classes.contextualization import (
     VisionExtractJob,
     VisionFeature,
 )
-from cognite.client.utils._auxiliary import assert_type, to_camel_case
+from cognite.client.utils._auxiliary import assert_type
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._text import to_camel_case
 
 
 class VisionAPI(APIClient):
@@ -47,7 +48,8 @@ class VisionAPI(APIClient):
             headers=headers,
         )
         return job_cls._load_with_status(
-            res.json(),
+            data=res.json(),
+            headers=res.headers,
             status_path=self._RESOURCE_PATH + status_path,
             cognite_client=self._cognite_client,
         )

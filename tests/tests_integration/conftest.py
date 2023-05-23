@@ -1,10 +1,11 @@
 import os
 import random
+from pathlib import Path
 
 import pytest
 
 from cognite.client import ClientConfig, CogniteClient
-from cognite.client.credentials import OAuthClientCredentials, OAuthInteractive
+from cognite.client.credentials import OAuthClientCertificate, OAuthClientCredentials, OAuthInteractive
 
 
 @pytest.fixture(scope="session")
@@ -24,8 +25,18 @@ def cognite_client() -> CogniteClient:
             scopes=os.environ.get("COGNITE_TOKEN_SCOPES", "").split(","),
             redirect_port=random.randint(53000, 60000),  # random port so we can run the test suite in parallel
         )
+    elif login_flow == "client_certificate":
+        credentials = OAuthClientCertificate(
+            authority_url=os.environ["COGNITE_AUTHORITY_URL"],
+            client_id=os.environ["COGNITE_CLIENT_ID"],
+            cert_thumbprint=os.environ["COGNITE_CERT_THUMBPRINT"],
+            certificate=Path(os.environ["COGNITE_CERTIFICATE"]).read_text(),
+            scopes=os.environ.get("COGNITE_TOKEN_SCOPES", "").split(","),
+        )
     else:
-        raise ValueError("Environment variable LOGIN_FLOW must be set to either 'client_credentials' or 'interactive'")
+        raise ValueError(
+            "Environment variable LOGIN_FLOW must be set to 'client_credentials', 'client_certificate' or 'interactive'"
+        )
 
     return CogniteClient(
         ClientConfig(

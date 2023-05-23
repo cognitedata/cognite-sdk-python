@@ -1,6 +1,5 @@
 import time
 import uuid
-from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 import pytest
 
@@ -15,7 +14,7 @@ from cognite.client.data_classes import (
     Label,
     LabelDefinition,
 )
-from cognite.client.utils._auxiliary import random_string
+from cognite.client.utils._text import random_string
 
 
 @pytest.fixture(scope="class")
@@ -166,15 +165,14 @@ class TestFilesAPI:
     def test_download_new_file(self, cognite_client, new_file):
         assert b"blabla" == cognite_client.files.download_bytes(id=new_file.id)
 
-    def test_download_empty_file(self, cognite_client, empty_file):
+    def test_download_empty_file(self, cognite_client, empty_file, tmp_path):
         content = cognite_client.files.download_bytes(external_id=empty_file.external_id)
         assert content == b""
 
-        with TemporaryDirectory() as tmpdir:
-            cognite_client.files.download(directory=tmpdir, external_id=empty_file.external_id)
+        cognite_client.files.download(directory=tmp_path, external_id=empty_file.external_id)
 
-        with NamedTemporaryFile() as tmpfile:
-            cognite_client.files.download_to_path(path=tmpfile.name, external_id=empty_file.external_id)
+        tmp_file = tmp_path / empty_file.name
+        cognite_client.files.download_to_path(path=tmp_file, external_id=empty_file.external_id)
 
     def test_retrieve_file_with_labels(self, cognite_client, new_file_with_label):
         file, label_external_id = new_file_with_label

@@ -1,9 +1,33 @@
 from __future__ import annotations
 
+import functools
+import itertools
+import operator as op
+import textwrap
 import threading
-from typing import TYPE_CHECKING, Any, Collection, Dict, List, Sequence, Type, Union, cast
+import warnings
+from collections import Counter, defaultdict
+from functools import lru_cache
+from pathlib import Path
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Collection,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Set,
+    TextIO,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
-from cognite.client import utils
+from graphlib import TopologicalSorter
+
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteLabelUpdate,
@@ -14,16 +38,21 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
-    T_CogniteResourceList,
 )
 from cognite.client.data_classes.labels import Label, LabelDefinition, LabelFilter
 from cognite.client.data_classes.shared import GeoLocation, GeoLocationFilter, TimestampRange
+from cognite.client.exceptions import CogniteAssetHierarchyError
+from cognite.client.utils._auxiliary import split_into_chunks
+from cognite.client.utils._concurrency import execute_tasks
+from cognite.client.utils._graph import find_all_cycles_with_elements
+from cognite.client.utils._text import DrawTables, shorten
 
 if TYPE_CHECKING:
     import pandas
 
     from cognite.client import CogniteClient
     from cognite.client.data_classes import EventList, FileMetadataList, SequenceList, TimeSeriesList
+    from cognite.client.data_classes._base import T_CogniteResource, T_CogniteResourceList
 
 
 class AssetAggregate(dict):
@@ -353,30 +382,19 @@ class AssetList(CogniteResourceList):
     def _retrieve_related_resources(
         self, resource_list_class: Type[T_CogniteResourceList], resource_api: Any
     ) -> T_CogniteResourceList:
-        seen = set()
+        seen: Set[int] = set()
+        add_to_seen = seen.add
         lock = threading.Lock()
 
-        def retrieve_and_deduplicate(asset_ids: List[int]) -> CogniteResourceList:
+        def retrieve_and_deduplicate(asset_ids: List[int]) -> List[T_CogniteResource]:
             res = resource_api.list(asset_ids=asset_ids, limit=-1)
-            resources = resource_list_class([])
             with lock:
-                for resource in res:
-                    if resource.id not in seen:
-                        resources.append(resource)
-                        seen.add(resource.id)
-            return resources
+                return [r for r in res if not (r.id in seen or add_to_seen(r.id))]
 
         ids = [a.id for a in self.data]
-        tasks = []
-        for i in range(0, len(ids), self._retrieve_chunk_size):
-            tasks.append({"asset_ids": ids[i : i + self._retrieve_chunk_size]})
-        res_list = utils._concurrency.execute_tasks(
-            retrieve_and_deduplicate, tasks, resource_api._config.max_workers
-        ).results
-        resources = resource_list_class([])
-        for res in res_list:
-            resources.extend(res)
-        return resources
+        tasks = [{"asset_ids": chunk} for chunk in split_into_chunks(ids, self._retrieve_chunk_size)]
+        res_list = execute_tasks(retrieve_and_deduplicate, tasks, resource_api._config.max_workers).results
+        return resource_list_class(list(itertools.chain.from_iterable(res_list)), cognite_client=self._cognite_client)
 
 
 class AssetFilter(CogniteFilter):
@@ -449,3 +467,367 @@ class AssetFilter(CogniteFilter):
         if isinstance(self.labels, LabelFilter):
             result["labels"] = self.labels.dump(camel_case)
         return result
+
+
+class AssetHierarchy:
+    """Class that verifies if a collection of Assets is valid, by validating its internal consistency.
+    This is done "offline", meaning CDF is -not- queried for the already existing assets. As a result,
+    any asset providing a parent link by ID instead of external ID, are assumed valid.
+
+    Example usage:
+
+        >>> from cognite.client import CogniteClient
+        >>> from cognite.client.data_classes import AssetHierarchy
+        >>> client = CogniteClient()
+        >>> hierarchy = AssetHierarchy(assets)
+        >>> # Get a report written to the terminal listing any issues:
+        >>> hierarchy.validate_and_report()
+        >>> if hierarchy.is_valid():
+        ...     res = client.assets.create_hierarchy(hierarchy)
+        ... # If there are issues, you may inspect them directly:
+        ... else:
+        ...     hierarchy.orphans
+        ...     hierarchy.invalid
+        ...     hierarchy.unsure_parents
+        ...     hierarchy.duplicates
+        ...     hierarchy.cycles  # Requires no other basic issues
+
+    There are other ways to generate the report than to write directly to screen. You may pass an
+    ``output_file`` which can be either a ``Path`` object (writes are done in append-mode) or a
+    file-like object supporting ``write`` (default is ``None`` which is just regular ``print``):
+
+        >>> # Get a report written to file:
+        >>> from pathlib import Path
+        >>> report = Path("path/to/my_report.txt")
+        >>> hierarchy = AssetHierarchy(assets)
+        >>> hierarchy.validate_and_report(output_file=report)
+
+        >>> # Get a report as text "in memory":
+        >>> import io
+        >>> with io.StringIO() as file_like:
+        ...     hierarchy.validate_and_report(output_file=file_like)
+        ...     report = file_like.getvalue()
+    """
+
+    def __init__(self, assets: Sequence[Asset], ignore_orphans: bool = False) -> None:
+        self._assets = assets
+        self._roots: Optional[List[Asset]] = None
+        self._orphans: Optional[List[Asset]] = None
+        self._ignore_orphans = ignore_orphans
+        self._invalid: Optional[List[Asset]] = None
+        self._unsure_parents: Optional[List[Asset]] = None
+        self._duplicates: Optional[Dict[str, List[Asset]]] = None
+        self._cycles: Optional[List[List[str]]] = None
+
+        self.__validation_has_run = False
+
+    def __len__(self) -> int:
+        return len(self._assets)
+
+    def is_valid(self, on_error: Literal["ignore", "warn", "raise"] = "ignore") -> bool:
+        if not self.__validation_has_run:
+            self.validate(verbose=False, on_error="ignore")
+            return self.is_valid(on_error=on_error)
+
+        elif self._no_basic_issues() and not self._cycles:
+            return True
+
+        self._on_error(on_error, "Asset hierarchy is not valid.")
+        return False
+
+    @property
+    def roots(self) -> AssetList:
+        if self._roots is None:
+            raise RuntimeError("Unable to list root assets before validation has run")
+        return AssetList(self._roots)
+
+    @property
+    def orphans(self) -> AssetList:
+        if self._orphans is None:  # Note: The option 'ignore_orphans' has no impact on this
+            raise RuntimeError("Unable to list orphan assets before validation has run")
+        return AssetList(self._orphans)
+
+    @property
+    def invalid(self) -> AssetList:
+        if self._invalid is None:
+            raise RuntimeError("Unable to list assets invalid attributes before validation has run")
+        return AssetList(self._invalid)
+
+    @property
+    def unsure_parents(self) -> AssetList:
+        if self._unsure_parents is None:
+            raise RuntimeError("Unable to list assets with unsure parent link before validation has run")
+        return AssetList(self._unsure_parents)
+
+    @property
+    def duplicates(self) -> Dict[str, List[Asset]]:
+        if self._duplicates is None:
+            raise RuntimeError("Unable to list duplicate assets before validation has run")
+        # NB: Do not return AssetList (as it does not handle duplicates well):
+        return {xid: assets for xid, assets in self._duplicates.items()}
+
+    @property
+    def cycles(self) -> List[List[str]]:
+        if self._cycles is None:
+            if self.__validation_has_run:
+                self._preconditions_for_cycle_check_are_met(on_error="raise")
+            raise RuntimeError("Unable to list cycles before validation has run")
+        return self._cycles
+
+    def validate(
+        self,
+        verbose: bool = False,
+        output_file: Optional[Path] = None,
+        on_error: Literal["ignore", "warn", "raise"] = "warn",
+    ) -> AssetHierarchy:
+        self._roots, self._orphans, self._invalid, self._unsure_parents, self._duplicates = self._inspect_attributes()
+        if verbose:
+            self._report_on_identifiers(output_file)
+
+        if self._preconditions_for_cycle_check_are_met("ignore"):
+            cycle_subtree_size, self._cycles = self._locate_cycles()
+            if verbose:
+                self._report_on_cycles(output_file, cycle_subtree_size)
+        elif verbose:
+            self.print_to(
+                "\nUnable to check for cyclical references before above issues are fixed", output_file=output_file
+            )
+
+        self.__validation_has_run = True
+        self.is_valid(on_error=on_error)
+        return self
+
+    def validate_and_report(self, output_file: Optional[Path] = None) -> AssetHierarchy:
+        return self.validate(verbose=True, output_file=output_file, on_error="ignore")
+
+    def groupby_parent_xid(self) -> Dict[Optional[str], List[Asset]]:
+        """Returns a mapping from parent external ID to a list of its direct children.
+
+        Note:
+            If the AssetHierarchy was initialized with `ignore_orphans=True`, all orphans assets,
+            if any, are returned as part of the root assets in the mapping and can be accessed by
+            `mapping[None]`.
+            The same is true for all assets linking its parent by ID.
+        """
+        self.is_valid(on_error="raise")
+
+        # Sort (on parent) as required by groupby. This is tricky as we need to avoid comparing string with None,
+        # and can't simply hash it because of the possibility of collisions. Further, the empty string is a valid
+        # external ID leaving no other choice than to prepend all strings with ' ' before comparison:
+
+        def parent_sort_fn(asset: Asset) -> str:
+            # All assets using 'parent_id' will be grouped together with the root assets:
+            if (pxid := asset.parent_external_id) is None:
+                return ""
+            return f" {pxid}"
+
+        parent_sorted = sorted(self._assets, key=parent_sort_fn)
+        mapping = {
+            parent: list(child_assets)
+            for parent, child_assets in itertools.groupby(parent_sorted, key=op.attrgetter("parent_external_id"))
+        }
+        if not (self._ignore_orphans and self._orphans):
+            return mapping
+
+        mapping.setdefault(None, [])
+        mapping[None].extend(
+            itertools.chain.from_iterable(
+                mapping.pop(parent, [])
+                for parent in {a.parent_external_id for a in self._orphans}
+                if parent is not None
+            )
+        )
+        return mapping
+
+    def count_subtree(self, mapping: Dict[Optional[str], List[Asset]]) -> Dict[str, int]:
+        """Returns a mapping from asset external ID to the size of its subtree (children and children of chidren etc.).
+
+        Args:
+            mapping (Dict | None): The mapping returned by `groupby_parent_xid()`. If None is passed, will be recreated (slightly expensive).
+
+        Returns:
+            Dict[str, int]: Lookup from external ID to descendant count.
+        """
+        if mapping is None:
+            mapping = self.groupby_parent_xid()
+
+        @lru_cache(None)
+        def _count_subtree(xid: str, count: int = 0) -> int:
+            for child in mapping.get(xid, []):
+                count += 1 + _count_subtree(child.external_id)
+            return count
+
+        # Avoid recursion error by counting in reverse topological order ("bottom up"):
+        sorter = TopologicalSorter(
+            {xid: [asset.external_id for asset in children] for xid, children in mapping.items()}
+        )
+        counts = [(parent, _count_subtree(parent)) for parent in sorter.static_order()]
+        counts.sort(key=lambda args: -args[-1])
+        # The count for the fictitious "root of roots" is just len(assets), so we remove it:
+        (count_dct := dict(counts)).pop(None, None)
+        return count_dct
+
+    def _on_error(self, on_error: Literal["ignore", "warn", "raise"], message: str) -> None:
+        if on_error == "warn":
+            warnings.warn(message + " See report for details: `validate_and_report()`")
+        elif on_error == "raise":
+            raise CogniteAssetHierarchyError(message, hierarchy=self)
+
+    def _no_basic_issues(self) -> bool:
+        return not (
+            self._invalid or self._unsure_parents or self._duplicates or (self._orphans and not self._ignore_orphans)
+        )
+
+    def _inspect_attributes(self) -> Tuple[List[Asset], List[Asset], List[Asset], List[Asset], Dict[str, List[Asset]]]:
+        invalid, orphans, roots, unsure_parents, duplicates = [], [], [], [], defaultdict(list)
+        xid_count = Counter(a.external_id for a in self._assets)
+
+        for asset in self._assets:
+            id_, xid, name = asset.id, asset.external_id, asset.name
+            if xid is None or name is None or len(name) < 1 or id_ is not None:
+                invalid.append(asset)
+                continue  # Don't report invalid as part of any other group
+
+            if xid_count[xid] > 1:
+                duplicates[xid].append(asset)
+
+            if (pxid := asset.parent_external_id) is (pid := asset.parent_id) is None:
+                roots.append(asset)
+            elif pxid is not None and pid is not None:
+                unsure_parents.append(asset)  # Both parent links are given
+            elif pxid not in xid_count:
+                orphans.append(asset)  # Only parent XID given, but not part of assets given
+
+        return roots, orphans, invalid, unsure_parents, dict(duplicates)
+
+    def _preconditions_for_cycle_check_are_met(self, on_error: Literal["ignore", "warn", "raise"]) -> bool:
+        if self._no_basic_issues():
+            return True
+        self._on_error(on_error, "Unable to run cycle-check before basic issues are fixed.")
+        return False
+
+    def _locate_cycles(self) -> Tuple[int, List[List[str]]]:
+        has_cycles = set()
+        no_cycles = {None, *(a.external_id for a in self._roots or [])}
+        edges = cast(Dict[str, Optional[str]], {a.external_id: a.parent_external_id for a in self._assets})
+
+        if self._ignore_orphans:
+            no_cycles |= {a.parent_external_id for a in cast(List[Asset], self._orphans)}
+
+        for xid, parent in edges.items():
+            if parent in no_cycles:
+                no_cycles.add(xid)
+
+            elif parent in has_cycles or xid == parent:
+                has_cycles.add(xid)
+            else:
+                self._cycle_search(cast(str, xid), parent, edges, no_cycles, has_cycles)
+
+        return len(has_cycles), find_all_cycles_with_elements(has_cycles, edges)
+
+    @staticmethod
+    def _cycle_search(
+        xid: str,
+        parent: Optional[str],
+        edges: Dict[str, Optional[str]],
+        no_cycles: Set[str | None],
+        has_cycles: Set[str],
+    ) -> None:
+        seen = {xid}
+        while True:
+            xid, parent = parent, edges[parent]  # type: ignore [assignment, index]
+            seen.add(xid)
+            if parent in no_cycles:
+                no_cycles |= seen
+                return
+            elif parent in seen:
+                has_cycles |= seen
+                return
+
+    @staticmethod
+    def print_to(*args: Any, output_file: Union[Path, TextIO, None]) -> None:
+        out = "\n".join(s.rstrip() for s in map(str, args))
+        if output_file is None:
+            print(out)  # noqa: T201
+        elif isinstance(output_file, Path):
+            with output_file.open("a", encoding="utf-8") as file:
+                print(out, file=file)
+        else:
+            try:
+                # There are no isinstance checks for TextIO
+                output_file.write(out + "\n")
+            except Exception as e:
+                raise TypeError("Unable to write to `output_file`, a file-like object is required") from e
+
+    def _report_on_identifiers(self, output_file: Optional[Path]) -> None:
+        print_fn = functools.partial(self.print_to, output_file=output_file)
+
+        def print_header(title: str, columns: List[str]) -> None:
+            print_fn(
+                title,
+                DrawTables.TOPLINE.join(DrawTables.HLINE * 20 for _ in columns),
+                DrawTables.VLINE.join(f"{col:^20}" for col in columns),
+                DrawTables.XLINE.join(DrawTables.HLINE * 20 for _ in columns),
+            )
+
+        def print_table(lst: List[Asset], columns: List[str]) -> None:
+            for entry in lst:
+                cols = (f"{shorten(getattr(entry, col)):<20}" for col in columns)
+                print_fn(DrawTables.VLINE.join(cols))
+
+        add_vspace = False
+
+        def maybe_add_vspace() -> None:
+            nonlocal add_vspace
+            if add_vspace:
+                print_fn()
+            else:
+                add_vspace = True
+
+        cols_with_parent_id = ["External ID", "Parent ID", "Parent external ID", "Name"]
+        attrs_with_parent_id = ["external_id", "parent_id", "parent_external_id", "name"]
+
+        if self._invalid:
+            maybe_add_vspace()
+            print_header("Invalid assets (no name, external ID, or with ID set):", cols_with_parent_id)
+            print_table(self._invalid, attrs_with_parent_id)
+
+        if self._unsure_parents:
+            maybe_add_vspace()
+            print_header("Assets with parent link given by both ID and external ID:", cols_with_parent_id)
+            print_table(self._unsure_parents, attrs_with_parent_id)
+
+        cols_with_description = ["External ID", "Parent external ID", "Name", "Description"]
+        attrs_with_description = ["external_id", "parent_external_id", "name", "description"]
+
+        if self._orphans and not self._ignore_orphans:
+            maybe_add_vspace()
+            print_header("Orphan assets (parent ext. ID not part of given assets)", cols_with_description)
+            print_table(self._orphans, attrs_with_description)
+
+        if self._duplicates:
+            maybe_add_vspace()
+            print_header("Assets with duplicated external ID:", cols_with_description)
+            for dupe_assets in self._duplicates.values():
+                print_table(dupe_assets, attrs_with_description)
+
+    def _report_on_cycles(self, output_file: Optional[Path], cycle_subtree_size: int) -> None:
+        if not (cycles := self._cycles):
+            return
+
+        n_cycles, n_cycle_assets = len(cycles), sum(map(len, cycles))
+        n_subtree_cycle_assets = cycle_subtree_size - n_cycle_assets
+
+        print_fn = functools.partial(self.print_to, output_file=output_file)
+        print_fn(
+            "Asset hierarchy had cyclical references:",
+            f"- {n_cycles} cycles",
+            f"- {n_cycle_assets} assets part of a cycle",
+            f"- {n_subtree_cycle_assets} non-cycle assets connected to a cycle asset",
+            DrawTables.HLINE * 83,
+        )
+        for i, cycle in enumerate(cycles, 1):
+            print_fn(
+                f"Cycle {i}/{n_cycles}:",
+                textwrap.fill(" -> ".join(map(repr, cycle)), width=80, break_on_hyphens=False),
+            )

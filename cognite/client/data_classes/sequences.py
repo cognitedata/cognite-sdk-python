@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import json
 import math
-from typing import TYPE_CHECKING, Any, Dict, Generator, List
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Tuple, Union, cast
 from typing import Sequence as SequenceType
-from typing import Tuple, Union, cast
 
 from cognite.client import utils
 from cognite.client.data_classes._base import (
@@ -20,6 +19,7 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._identifier import Identifier
+from cognite.client.utils._text import convert_all_keys_to_camel_case
 
 if TYPE_CHECKING:
     import pandas
@@ -383,7 +383,7 @@ class SequenceData(CogniteResource):
             "rows": [{"rowNumber": r, "values": v} for r, v in zip(self.row_numbers, self.values)],
         }
         if camel_case:
-            dumped = {utils._auxiliary.to_camel_case(key): value for key, value in dumped.items()}
+            dumped = convert_all_keys_to_camel_case(dumped)
         return {key: value for key, value in dumped.items() if value is not None}
 
     def to_pandas(self, column_names: str = "columnExternalId") -> pandas.DataFrame:  # type: ignore[override]
@@ -410,7 +410,7 @@ class SequenceData(CogniteResource):
             column_names.format(id=str(self.id), externalId=str(self.external_id), columnExternalId=eid)
             for eid in self.column_external_ids
         ]
-
+        # TODO: Optimization required (None/nan):
         return pd.DataFrame(  # type: ignore
             [[x if x is not None else math.nan for x in r] for r in self.values],
             index=self.row_numbers,

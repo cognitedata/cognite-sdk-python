@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes.templates import (
     GraphQlResponse,
     TemplateGroup,
@@ -20,14 +21,18 @@ from cognite.client.data_classes.templates import (
 )
 from cognite.client.utils._identifier import IdentifierSequence
 
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
+
 
 class TemplatesAPI(APIClient):
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.groups = TemplateGroupsAPI(*args, **kwargs)
-        self.versions = TemplateGroupVersionsAPI(*args, **kwargs)
-        self.instances = TemplateInstancesAPI(*args, **kwargs)
-        self.views = TemplateViewsAPI(*args, **kwargs)
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self.groups = TemplateGroupsAPI(config, api_version, cognite_client)
+        self.versions = TemplateGroupVersionsAPI(config, api_version, cognite_client)
+        self.instances = TemplateInstancesAPI(config, api_version, cognite_client)
+        self.views = TemplateViewsAPI(config, api_version, cognite_client)
 
     def graphql_query(self, external_id: str, version: int, query: str) -> GraphQlResponse:
         """
@@ -74,9 +79,6 @@ class TemplatesAPI(APIClient):
 
 class TemplateGroupsAPI(APIClient):
     _RESOURCE_PATH = "/templategroups"
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
 
     def create(
         self, template_groups: Union[TemplateGroup, Sequence[TemplateGroup]]
@@ -162,7 +164,7 @@ class TemplateGroupsAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def list(self, limit: int = 25, owners: Sequence[str] = None) -> TemplateGroupList:
+    def list(self, limit: int = LIST_LIMIT_DEFAULT, owners: Sequence[str] = None) -> TemplateGroupList:
         """`Lists template groups stored in the project based on a query filter given in the payload of this request.`
         Up to 1000 template groups can be retrieved in one operation.
 
@@ -221,9 +223,6 @@ class TemplateGroupsAPI(APIClient):
 class TemplateGroupVersionsAPI(APIClient):
     _RESOURCE_PATH = "/templategroups/{}/versions"
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-
     def upsert(self, external_id: str, version: TemplateGroupVersion) -> TemplateGroupVersion:
         """`Upsert a template group version.`
         A Template Group update supports specifying different conflict modes, which is used when an existing schema already exists.
@@ -269,7 +268,11 @@ class TemplateGroupVersionsAPI(APIClient):
         return TemplateGroupVersion._load(version_res)
 
     def list(
-        self, external_id: str, limit: int = 25, min_version: Optional[int] = None, max_version: Optional[int] = None
+        self,
+        external_id: str,
+        limit: int = LIST_LIMIT_DEFAULT,
+        min_version: Optional[int] = None,
+        max_version: Optional[int] = None,
     ) -> TemplateGroupVersionList:
         """`Lists versions of a specified template group.`
         Up to 1000 template group version can be retrieved in one operation.
@@ -487,7 +490,7 @@ class TemplateInstancesAPI(APIClient):
         self,
         external_id: str,
         version: int,
-        limit: int = 25,
+        limit: int = LIST_LIMIT_DEFAULT,
         data_set_ids: Optional[Sequence[int]] = None,
         template_names: Optional[Sequence[str]] = None,
     ) -> TemplateInstanceList:
@@ -641,7 +644,12 @@ class TemplateViewsAPI(APIClient):
         return res
 
     def resolve(
-        self, external_id: str, version: int, view_external_id: str, input: Optional[Dict[str, Any]], limit: int = 25
+        self,
+        external_id: str,
+        version: int,
+        view_external_id: str,
+        input: Optional[Dict[str, Any]],
+        limit: int = LIST_LIMIT_DEFAULT,
     ) -> ViewResolveList:
         """`Resolves a View.`
         It resolves the source specified in a View with the provided input and applies the mapping rules to the response.
@@ -673,7 +681,7 @@ class TemplateViewsAPI(APIClient):
             other_params={"externalId": view_external_id, "input": input},
         )
 
-    def list(self, external_id: str, version: int, limit: int = 25) -> ViewList:
+    def list(self, external_id: str, version: int, limit: int = LIST_LIMIT_DEFAULT) -> ViewList:
         """`Lists view in a template group.`
         Up to 1000 views can be retrieved in one operation.
 

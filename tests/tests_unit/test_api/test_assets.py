@@ -1,15 +1,11 @@
-import json
-import queue
 import re
-import time
-from collections import OrderedDict
 
 import pytest
 
-from cognite.client._api.assets import Asset, AssetList, AssetUpdate, _AssetPoster, _AssetPosterWorker
+from cognite.client._api.assets import Asset, AssetList, AssetUpdate
 from cognite.client.data_classes import AssetFilter, Label, LabelFilter, TimestampRange
 from cognite.client.exceptions import CogniteAPIError
-from tests.utils import jsgz_load, set_request_limit
+from tests.utils import jsgz_load
 
 EXAMPLE_ASSET = {
     "externalId": "string",
@@ -231,10 +227,10 @@ class TestAssets:
         expected = {"labels": {"set": [{"externalId": "PUMP"}, {"externalId": "VALVE"}]}}
         assert expected == jsgz_load(mock_assets_response.calls[0].request.body)["items"][0]["update"]
 
-    # resource.update doesn't support full replacement of labels (set operation)
-    def test_ignore_labels_resource_class(self, cognite_client, mock_assets_response):
+    def test_update_labels_resource_class(self, cognite_client, mock_assets_response):
         cognite_client.assets.update(Asset(id=1, labels=[Label(external_id="Pump")], name="Abc"))
-        assert {"name": {"set": "Abc"}} == jsgz_load(mock_assets_response.calls[0].request.body)["items"][0]["update"]
+        expected = {"name": {"set": "Abc"}, "labels": {"set": [{"externalId": "Pump"}]}}
+        assert expected == jsgz_load(mock_assets_response.calls[0].request.body)["items"][0]["update"]
 
     def test_labels_filter_contains_all(self, cognite_client, mock_assets_response):
         my_label_filter = LabelFilter(contains_all=["PUMP", "VERIFIED"])
@@ -312,239 +308,6 @@ class TestAssets:
             .data_set_id.set(123),
             AssetUpdate,
         )
-
-
-class TestAssetPosterWorker:
-    def test_run(self, cognite_client, mock_assets_response):
-        q_req = queue.Queue()
-        q_res = queue.Queue()
-
-        w = _AssetPosterWorker(request_queue=q_req, response_queue=q_res, client=cognite_client.assets)
-        w.start()
-        q_req.put([Asset()])
-        time.sleep(1)
-        w.stop = True
-        assert [Asset._load(mock_assets_response.calls[0].response.json()["items"][0])] == q_res.get()
-        assert 1 == len(mock_assets_response.calls)
-
-
-def generate_asset_tree(root_external_id: str, depth: int, children_per_node: int, current_depth=1):
-    assert 1 <= children_per_node <= 10, "children_per_node must be between 1 and 10"
-    assets = []
-    if current_depth == 1:
-        assets = [Asset(external_id=root_external_id)]
-    if depth > current_depth:
-        for i in range(children_per_node):
-            asset = Asset(parent_external_id=root_external_id, external_id=f"{root_external_id}{i}")
-            assets.append(asset)
-            if depth > current_depth + 1:
-                assets.extend(
-                    generate_asset_tree(root_external_id + str(i), depth, children_per_node, current_depth + 1)
-                )
-    return assets
-
-
-class TestAssetPoster:
-    def test_validate_asset_hierarchy_asset_has_parent_id_and_parent_ref_id(self, cognite_client):
-        assets = [Asset(external_id="1"), Asset(parent_external_id="1", parent_id=1, external_id="2")]
-        with pytest.raises(AssertionError, match="has both"):
-            _AssetPoster(assets, cognite_client.assets)
-
-    def test_validate_asset_hierarchy_duplicate_ref_ids(self, cognite_client):
-        assets = [Asset(external_id="1"), Asset(parent_external_id="1", external_id="1")]
-        with pytest.raises(AssertionError, match="Duplicate"):
-            _AssetPoster(assets, cognite_client.assets)
-
-    def test_validate_asset_hierarchy__more_than_limit_only_resolved_assets(self, cognite_client):
-        with set_request_limit(cognite_client.assets, 1):
-            _AssetPoster(
-                [Asset(external_id="a1", parent_id=1), Asset(external_id="a2", parent_id=2)], cognite_client.assets
-            )
-
-    def test_validate_asset_hierarchy_circular_dependencies(self, cognite_client):
-        assets = [
-            Asset(external_id="1", parent_external_id="3"),
-            Asset(external_id="2", parent_external_id="1"),
-            Asset(external_id="3", parent_external_id="2"),
-        ]
-        with set_request_limit(cognite_client.assets, 1):
-            with pytest.raises(AssertionError, match="circular dependencies"):
-                _AssetPoster(assets, cognite_client.assets)
-
-    def test_validate_asset_hierarchy_self_dependency(self, cognite_client):
-        assets = [Asset(external_id="1"), Asset(external_id="2", parent_external_id="2")]
-        with set_request_limit(cognite_client.assets, 1):
-            with pytest.raises(AssertionError, match="circular dependencies"):
-                _AssetPoster(assets, cognite_client.assets)
-
-    def test_initialize(self, cognite_client):
-        assets = [
-            Asset(external_id="1"),
-            Asset(external_id="3", parent_external_id="1"),
-            Asset(external_id="2", parent_external_id="1"),
-            Asset(external_id="4", parent_external_id="2"),
-        ]
-
-        ap = _AssetPoster(assets, cognite_client.assets)
-        assert OrderedDict({str(i): None for i in range(1, 5)}) == ap.remaining_external_ids
-        assert {
-            "1": {Asset(external_id="2", parent_external_id="1"), Asset(external_id="3", parent_external_id="1")},
-            "2": {Asset(external_id="4", parent_external_id="2")},
-            "3": set(),
-            "4": set(),
-        } == ap.external_id_to_children
-        assert {"1": 3, "2": 1, "3": 0, "4": 0} == ap.external_id_to_descendent_count
-        assert ap.assets_remaining() is True
-        assert 0 == len(ap.posted_assets)
-        assert ap.request_queue.empty()
-        assert ap.response_queue.empty()
-        assert {"1", "2", "3", "4"} == ap.remaining_external_ids_set
-
-    def test_get_unblocked_assets__assets_unblocked_by_default_less_than_limit(self, cognite_client):
-        assets = generate_asset_tree(root_external_id="0", depth=4, children_per_node=10)
-        ap = _AssetPoster(assets=assets, client=cognite_client.assets)
-        unblocked_assets_lists = ap._get_unblocked_assets()
-        assert 1 == len(unblocked_assets_lists)
-        assert 1000 == len(unblocked_assets_lists[0])
-
-    def test_get_unblocked_assets__assets_unblocked_by_default_more_than_limit(self, cognite_client):
-        assets = []
-        for i in range(4):
-            assets.extend(generate_asset_tree(root_external_id=str(i), depth=2, children_per_node=2))
-        with set_request_limit(cognite_client.assets, 3):
-            ap = _AssetPoster(assets=assets, client=cognite_client.assets)
-            unblocked_assets_lists = ap._get_unblocked_assets()
-        assert 4 == len(unblocked_assets_lists)
-        for li in unblocked_assets_lists:
-            assert 3 == len(li)
-
-    def test_get_unblocked_assets_parent_ref_null_pointer(self, cognite_client):
-        assets = [Asset(parent_external_id="1", external_id="2")]
-        ap = _AssetPoster(assets, cognite_client.assets)
-        asset_list = ap._get_unblocked_assets()
-        assert len(asset_list) == 1
-
-    @pytest.fixture
-    def mock_post_asset_hierarchy(self, cognite_client, rsps):
-        cognite_client.assets._config.max_workers = 1
-
-        def request_callback(request):
-            items = jsgz_load(request.body)["items"]
-            response_assets = []
-            for item in items:
-                parent_id = None
-                if "parentId" in item:
-                    parent_id = item["parentId"]
-                if "parentExternalId" in item:
-                    parent_id = item["parentExternalId"] + "id"
-                id = item.get("externalId", "root_") + "id"
-                response_assets.append(
-                    {
-                        "id": id,
-                        "parentId": parent_id,
-                        "externalId": item["externalId"],
-                        "parentExternalId": item.get("parentExternalId"),
-                    }
-                )
-            return 200, {}, json.dumps({"items": response_assets})
-
-        rsps.add_callback(
-            rsps.POST,
-            cognite_client.assets._get_base_url_with_base_path() + "/assets",
-            callback=request_callback,
-            content_type="application/json",
-        )
-        yield rsps
-        cognite_client.assets._config.max_workers = 10
-
-    @pytest.mark.parametrize(
-        "limit, depth, children_per_node, expected_num_calls",
-        [(100, 4, 10, 13), (9, 3, 9, 11), (100, 101, 1, 2), (1, 10, 1, 10)],
-    )
-    def test_post_hierarchy(
-        self, cognite_client, limit, depth, children_per_node, expected_num_calls, mock_post_asset_hierarchy
-    ):
-        assets = generate_asset_tree(root_external_id="0", depth=depth, children_per_node=children_per_node)
-        with set_request_limit(cognite_client.assets, limit):
-            created_assets = cognite_client.assets.create_hierarchy(assets)
-
-        assert len(assets) == len(created_assets)
-        assert expected_num_calls - 1 <= len(mock_post_asset_hierarchy.calls) <= expected_num_calls + 1
-        for asset in created_assets:
-            if asset.id == "0id":
-                assert asset.parent_id is None
-            else:
-                assert asset.id[:-3] == asset.parent_id[:-2]
-
-    def test_post_assets_over_limit_only_resolved(self, cognite_client, mock_post_asset_hierarchy):
-        with set_request_limit(cognite_client.assets, 1):
-            _AssetPoster(
-                [Asset(external_id="a1", parent_id=1), Asset(external_id="a2", parent_id=2)], cognite_client.assets
-            ).post()
-        assert 2 == len(mock_post_asset_hierarchy.calls)
-
-    @pytest.fixture
-    def mock_post_assets_failures(self, cognite_client, rsps):
-        def request_callback(request):
-            items = jsgz_load(request.body)["items"]
-            response_assets = []
-            item = items[0]
-            parent_id = None
-            if "parentId" in item:
-                parent_id = item["parentId"]
-            if "parentExternalId" in item:
-                parent_id = item["parentExternalId"] + "id"
-            id = item.get("refId", "root_") + "id"
-            response_assets.append(
-                {
-                    "id": id,
-                    "parentId": parent_id,
-                    "externalId": item["externalId"],
-                    "parentExternalId": item.get("parentExternalId"),
-                }
-            )
-
-            if item["name"] == "400":
-                return 400, {}, json.dumps({"error": {"message": "user error", "code": 400}})
-
-            if item["name"] == "500":
-                return 500, {}, json.dumps({"error": {"message": "internal server error", "code": 500}})
-
-            return 200, {}, json.dumps({"items": response_assets})
-
-        rsps.add_callback(
-            rsps.POST,
-            cognite_client.assets._get_base_url_with_base_path() + "/assets",
-            callback=request_callback,
-            content_type="application/json",
-        )
-        with set_request_limit(cognite_client.assets, 1):
-            yield rsps
-
-    def test_post_with_failures(self, cognite_client, mock_post_assets_failures):
-        assets = [
-            Asset(name="200", external_id="0"),
-            Asset(name="200", parent_external_id="0", external_id="01"),
-            Asset(name="400", parent_external_id="0", external_id="02"),
-            Asset(name="200", parent_external_id="02", external_id="021"),
-            Asset(name="200", parent_external_id="021", external_id="0211"),
-            Asset(name="500", parent_external_id="0", external_id="03"),
-            Asset(name="200", parent_external_id="03", external_id="031"),
-        ]
-        with pytest.raises(CogniteAPIError) as e:
-            cognite_client.assets.create_hierarchy(assets)
-
-        assert {a.external_id for a in e.value.unknown} == {"03"}
-        assert {a.external_id for a in e.value.failed} == {"02", "021", "0211", "031"}
-        assert {a.external_id for a in e.value.successful} == {"0", "01"}
-
-    def test_post_with_all_failures_and_more_requests_than_workers(self, cognite_client, mock_post_assets_failures):
-        num_assets = cognite_client.config.max_workers * 10
-        assets = [Asset(name="400", external_id=str(i)) for i in range(num_assets)]
-        with pytest.raises(CogniteAPIError) as e:
-            cognite_client.assets.create_hierarchy(assets)
-
-        assert {a.external_id for a in e.value.failed} == {str(i) for i in range(num_assets)}
 
 
 @pytest.fixture

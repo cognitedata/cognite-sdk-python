@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import operator as op
+import typing
 import warnings
 from collections import defaultdict
 from dataclasses import dataclass
@@ -27,51 +28,52 @@ from typing import (
 
 from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
-from cognite.client.utils._auxiliary import (
-    convert_all_keys_to_camel_case,
-    convert_all_keys_to_snake_case,
-    find_duplicates,
-    local_import,
-    to_camel_case,
-)
+from cognite.client.utils._auxiliary import find_duplicates, local_import
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._pandas_helpers import (
     concat_dataframes_with_nullable_int_cols,
     notebook_display_with_fallback,
 )
-
-ALL_SORTED_DP_AGGS = sorted(
-    [
-        "average",
-        "continuous_variance",
-        "count",
-        "discrete_variance",
-        "interpolation",
-        "max",
-        "min",
-        "step_interpolation",
-        "sum",
-        "total_variation",
-    ]
+from cognite.client.utils._text import (
+    convert_all_keys_to_camel_case,
+    convert_all_keys_to_snake_case,
+    to_camel_case,
+    to_snake_case,
 )
 
-if TYPE_CHECKING:
-    import pandas
+Aggregate = Literal[
+    "average",
+    "continuous_variance",
+    "count",
+    "discrete_variance",
+    "interpolation",
+    "max",
+    "min",
+    "step_interpolation",
+    "sum",
+    "total_variation",
+]
 
-    from cognite.client import CogniteClient
+ALL_SORTED_DP_AGGS = sorted(typing.get_args(Aggregate))
 
 try:
     import numpy as np
+
+    NUMPY_IS_AVAILABLE = True
+
+except ImportError:  # pragma no cover
+    NUMPY_IS_AVAILABLE = False
+
+if TYPE_CHECKING:
     import numpy.typing as npt
+    import pandas
+
+    from cognite.client import CogniteClient
 
     NumpyDatetime64NSArray = npt.NDArray[np.datetime64]
     NumpyInt64Array = npt.NDArray[np.int64]
     NumpyFloat64Array = npt.NDArray[np.float64]
     NumpyObjArray = npt.NDArray[np.object_]
-    NUMPY_IS_AVAILABLE = True
-
-except ImportError:  # pragma no cover
-    NUMPY_IS_AVAILABLE = False
 
 
 @dataclass(frozen=True)
@@ -223,6 +225,24 @@ class DatapointsArray(CogniteResource):
         # (also future-proofs the SDK; ns is coming!):
         dps_dct["timestamp"] = dps_dct["timestamp"].astype("datetime64[ms]").astype("datetime64[ns]")
         return cls(**convert_all_keys_to_snake_case(dps_dct))
+
+    @classmethod
+    def create_from_arrays(cls, *arrays: DatapointsArray) -> DatapointsArray:
+        sort_by_time = sorted((a for a in arrays if len(a.timestamp) > 0), key=lambda a: a.timestamp[0])
+        if len(sort_by_time) == 0:
+            return arrays[0]
+        elif len(sort_by_time) == 1:
+            return sort_by_time[0]
+
+        first = sort_by_time[0]
+
+        arrays_by_attribute = defaultdict(list)
+        for array in sort_by_time:
+            for attr, arr in zip(*array._data_fields()):
+                arrays_by_attribute[attr].append(arr)
+        arrays_by_attribute = {attr: np.concatenate(arrs) for attr, arrs in arrays_by_attribute.items()}  # type: ignore [assignment]
+
+        return cls(**first._ts_info, **arrays_by_attribute)  # type: ignore [arg-type]
 
     def __len__(self) -> int:
         return len(self.timestamp)
@@ -483,7 +503,7 @@ class Datapoints(CogniteResource):
             "datapoints": [dp.dump(camel_case=camel_case) for dp in self.__get_datapoint_objects()],
         }
         if camel_case:
-            dumped = {utils._auxiliary.to_camel_case(key): value for key, value in dumped.items()}
+            dumped = convert_all_keys_to_camel_case(dumped)
         return {key: value for key, value in dumped.items() if value is not None}
 
     def to_pandas(  # type: ignore [override]
@@ -561,12 +581,12 @@ class Datapoints(CogniteResource):
         expected_fields = (expected_fields or ["value"]) + ["timestamp"]
         if len(dps_object["datapoints"]) == 0:
             for key in expected_fields:
-                snake_key = utils._auxiliary.to_snake_case(key)
+                snake_key = to_snake_case(key)
                 setattr(instance, snake_key, [])
         else:
             for key in expected_fields:
                 data = [dp.get(key) for dp in dps_object["datapoints"]]
-                snake_key = utils._auxiliary.to_snake_case(key)
+                snake_key = to_snake_case(key)
                 setattr(instance, snake_key, data)
         return instance
 
@@ -641,6 +661,46 @@ class DatapointsArrayList(CogniteResourceList):
 
         self._id_to_item.update(id_dct)
         self._external_id_to_item.update(xid_dct)
+
+    def concat_duplicate_ids(self) -> None:
+        """
+        Concatenates all arrays with duplicated IDs.
+
+        Arrays with the same ids are stacked in chronological order.
+
+        **Caveat** This method is not guaranteed to preserve the order of the list.
+        """
+        # Rebuilt list instead of removing duplicated one at a time at the cost of O(n).
+        self.data.clear()
+
+        # This implementation takes advantage of the ordering of the duplicated in the __init__ method
+
+        has_external_ids = set()
+        for ext_id, items in self._external_id_to_item.items():
+            if not isinstance(items, list):
+                self.data.append(items)
+                if items.id is not None:
+                    has_external_ids.add(items.id)
+                continue
+            concatenated = DatapointsArray.create_from_arrays(*items)
+            self._external_id_to_item[ext_id] = concatenated
+            if concatenated.id is not None:
+                has_external_ids.add(concatenated.id)
+                self._id_to_item[concatenated.id] = concatenated
+            self.data.append(concatenated)
+
+        if not (only_ids := set(self._id_to_item) - has_external_ids):
+            return
+
+        for id_, items in self._id_to_item.items():
+            if id_ not in only_ids:
+                continue
+            if not isinstance(items, list):
+                self.data.append(items)
+                continue
+            concatenated = DatapointsArray.create_from_arrays(*items)
+            self._id_to_item[id_] = concatenated
+            self.data.append(concatenated)
 
     def get(  # type: ignore [override]
         self,

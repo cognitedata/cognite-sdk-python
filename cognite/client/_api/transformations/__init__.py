@@ -1,32 +1,47 @@
-from typing import Any, Awaitable, Dict, List, Optional, Sequence, Union
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 
 from cognite.client._api.transformations.jobs import TransformationJobsAPI
 from cognite.client._api.transformations.notifications import TransformationNotificationsAPI
 from cognite.client._api.transformations.schedules import TransformationSchedulesAPI
 from cognite.client._api.transformations.schema import TransformationSchemaAPI
 from cognite.client._api_client import APIClient
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import Transformation, TransformationJob, TransformationList
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.data_classes.transformations import (
-    NonceCredentials,
     TagsFilter,
     TransformationFilter,
     TransformationPreviewResult,
     TransformationUpdate,
 )
+from cognite.client.data_classes.transformations.common import NonceCredentials
 from cognite.client.utils._identifier import IdentifierSequence
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
+
+__all__ = [
+    "TransformationSchemaAPI",
+    "TransformationsAPI",
+    "TransformationSchedulesAPI",
+    "TransformationNotificationsAPI",
+    "TransformationJobsAPI",
+]
 
 
 class TransformationsAPI(APIClient):
     _RESOURCE_PATH = "/transformations"
     _LIST_CLASS = TransformationList
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.jobs = TransformationJobsAPI(*args, **kwargs)
-        self.schedules = TransformationSchedulesAPI(*args, **kwargs)
-        self.schema = TransformationSchemaAPI(*args, **kwargs)
-        self.notifications = TransformationNotificationsAPI(*args, **kwargs)
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self.jobs = TransformationJobsAPI(config, api_version, cognite_client)
+        self.schedules = TransformationSchedulesAPI(config, api_version, cognite_client)
+        self.schema = TransformationSchemaAPI(config, api_version, cognite_client)
+        self.notifications = TransformationNotificationsAPI(config, api_version, cognite_client)
 
     def create(
         self, transformation: Union[Transformation, Sequence[Transformation]]
@@ -45,6 +60,7 @@ class TransformationsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import Transformation, TransformationDestination
+                >>> from cognite.client.data_classes.transformations.common import ViewInfo, EdgeType
                 >>> c = CogniteClient()
                 >>> transformations = [
                 >>>     Transformation(
@@ -53,10 +69,26 @@ class TransformationsAPI(APIClient):
                 >>>     ),
                 >>>     Transformation(
                 >>>         name="transformation2",
-                >>>         destination=TransformationDestination.raw("myDatabase", "myTable"),
+                >>>         destination=TransformationDestination.raw("myDatabase", "myTable")
                 >>>     ),
+                >>>      Transformation(
+                >>>      name="transformation3",
+                >>>      view = ViewInfo(space="TypeSpace", external_id="TypeExtId", version="version"),
+                >>>      destination=TransformationDestination.nodes(view, "InstanceSpace")
+                >>>      ),
+                >>>      Transformation(
+                >>>      name="transformation4",
+                >>>      view = ViewInfo(space="TypeSpace", external_id="TypeExtId", version="version"),
+                >>>      destination=TransformationDestination.edges(view, "InstanceSpace")
+                >>>      ),
+                >>>      Transformation(
+                >>>      name="transformation5",
+                >>>      edge_type = EdgeType(space="TypeSpace", external_id="TypeExtId"),
+                >>>      destination=TransformationDestination.edges(edge_type,"InstanceSpace")
+                >>>      ),
                 >>> ]
                 >>> res = c.transformations.create(transformations)
+
         """
         if isinstance(transformation, Sequence):
             sessions: Dict[str, NonceCredentials] = {}
@@ -117,7 +149,7 @@ class TransformationsAPI(APIClient):
         data_set_ids: List[int] = None,
         data_set_external_ids: List[str] = None,
         tags: Optional[TagsFilter] = None,
-        limit: Optional[int] = 25,
+        limit: Optional[int] = LIST_LIMIT_DEFAULT,
     ) -> TransformationList:
         """`List all transformations. <https://docs.cognite.com/api/v1/#operation/getTransformations>`_
 
@@ -334,9 +366,9 @@ class TransformationsAPI(APIClient):
 
         return job
 
-    def run_async(
+    async def run_async(
         self, transformation_id: int = None, transformation_external_id: str = None, timeout: Optional[float] = None
-    ) -> Awaitable[TransformationJob]:
+    ) -> TransformationJob:
         """`Run a transformation to completion asynchronously. <https://docs.cognite.com/api/v1/#operation/runTransformation>`_
 
         Args:
@@ -367,7 +399,7 @@ class TransformationsAPI(APIClient):
         job = self.run(
             transformation_id=transformation_id, transformation_external_id=transformation_external_id, wait=False
         )
-        return job.wait_async(timeout=timeout)
+        return await job.wait_async(timeout=timeout)
 
     def cancel(self, transformation_id: int = None, transformation_external_id: str = None) -> None:
         """`Cancel a running transformation. <https://docs.cognite.com/api/v1/#operation/cancelTransformation>`_

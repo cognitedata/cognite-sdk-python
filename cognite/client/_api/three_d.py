@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterator, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Iterator, Optional, Sequence, Union, cast
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import (
     ThreeDAssetMapping,
     ThreeDAssetMappingList,
@@ -18,14 +19,18 @@ from cognite.client.data_classes import (
 )
 from cognite.client.utils._identifier import IdentifierSequence, InternalId
 
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
+
 
 class ThreeDAPI(APIClient):
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.models = ThreeDModelsAPI(*args, **kwargs)
-        self.revisions = ThreeDRevisionsAPI(*args, **kwargs)
-        self.files = ThreeDFilesAPI(*args, **kwargs)
-        self.asset_mappings = ThreeDAssetMappingAPI(*args, **kwargs)
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self.models = ThreeDModelsAPI(config, api_version, cognite_client)
+        self.revisions = ThreeDRevisionsAPI(config, api_version, cognite_client)
+        self.files = ThreeDFilesAPI(config, api_version, cognite_client)
+        self.asset_mappings = ThreeDAssetMappingAPI(config, api_version, cognite_client)
 
 
 class ThreeDModelsAPI(APIClient):
@@ -84,7 +89,7 @@ class ThreeDModelsAPI(APIClient):
         """
         return self._retrieve(cls=ThreeDModel, identifier=InternalId(id))
 
-    def list(self, published: bool = None, limit: int = 25) -> ThreeDModelList:
+    def list(self, published: bool = None, limit: int = LIST_LIMIT_DEFAULT) -> ThreeDModelList:
         """`List 3d models. <https://docs.cognite.com/api/v1/#operation/get3DModels>`_
 
         Args:
@@ -286,7 +291,7 @@ class ThreeDRevisionsAPI(APIClient):
             items=revision,
         )
 
-    def list(self, model_id: int, published: bool = False, limit: int = 25) -> ThreeDModelRevisionList:
+    def list(self, model_id: int, published: bool = False, limit: int = LIST_LIMIT_DEFAULT) -> ThreeDModelRevisionList:
         """`List 3d model revisions. <https://docs.cognite.com/api/v1/#operation/get3DRevisions>`_
 
         Args:
@@ -417,7 +422,7 @@ class ThreeDRevisionsAPI(APIClient):
         depth: int = None,
         sort_by_node_id: bool = False,
         partitions: int = None,
-        limit: int = 25,
+        limit: int = LIST_LIMIT_DEFAULT,
     ) -> ThreeDNodeList:
         """`Retrieves a list of nodes from the hierarchy in the 3D Model. <https://docs.cognite.com/api/v1/#operation/get3DNodes>`_
 
@@ -464,7 +469,7 @@ class ThreeDRevisionsAPI(APIClient):
         model_id: int,
         revision_id: int,
         properties: Dict[str, Dict[str, Sequence[str]]] = None,
-        limit: int = 25,
+        limit: int = LIST_LIMIT_DEFAULT,
         partitions: int = None,
     ) -> ThreeDNodeList:
         """`List nodes in a revision, filtered by node property values. <https://docs.cognite.com/api/v1/#operation/filter3DNodes>`_
@@ -502,7 +507,7 @@ class ThreeDRevisionsAPI(APIClient):
         )
 
     def list_ancestor_nodes(
-        self, model_id: int, revision_id: int, node_id: int = None, limit: int = 25
+        self, model_id: int, revision_id: int, node_id: int = None, limit: int = LIST_LIMIT_DEFAULT
     ) -> ThreeDNodeList:
         """`Retrieves a list of ancestor nodes of a given node, including itself, in the hierarchy of the 3D model <https://docs.cognite.com/api/v1/#operation/get3DNodeAncestors>`_
 
@@ -566,7 +571,12 @@ class ThreeDAssetMappingAPI(APIClient):
     _LIST_CLASS = ThreeDAssetMappingList
 
     def list(
-        self, model_id: int, revision_id: int, node_id: int = None, asset_id: int = None, limit: int = 25
+        self,
+        model_id: int,
+        revision_id: int,
+        node_id: int = None,
+        asset_id: int = None,
+        limit: int = LIST_LIMIT_DEFAULT,
     ) -> ThreeDAssetMappingList:
         """`List 3D node asset mappings. <https://docs.cognite.com/api/v1/#operation/get3DMappings>`_
 

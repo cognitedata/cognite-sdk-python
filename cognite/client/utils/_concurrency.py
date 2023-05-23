@@ -1,10 +1,32 @@
 from __future__ import annotations
 
+import functools
+import inspect
 from collections import UserList
-from concurrent.futures.thread import ThreadPoolExecutor
-from typing import Any, Callable, Dict, List, Literal, Optional, Protocol, Sequence, Tuple, TypeVar, Union
+from concurrent.futures import CancelledError, ThreadPoolExecutor
+from copy import copy
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Literal,
+    Optional,
+    Protocol,
+    Sequence,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, CogniteNotFoundError
+from cognite.client.utils._priority_tpe import PriorityThreadPoolExecutor
+
+if TYPE_CHECKING:
+    from types import TracebackType
 
 
 class TasksSummary:
@@ -122,14 +144,21 @@ class TaskFuture(Protocol[T_Result]):
         ...
 
 
-class SyncFuture(TaskFuture):
+class SyncFuture(TaskFuture[T_Result]):
     def __init__(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any):
-        self.__fn = fn
-        self.__args = args
-        self.__kwargs = kwargs
+        self._task = functools.partial(fn, *args, **kwargs)
+        self._result: Optional[T_Result] = None
+        self._is_cancelled = False
 
     def result(self) -> T_Result:
-        return self.__fn(*self.__args, **self.__kwargs)
+        if self._is_cancelled:
+            raise CancelledError
+        if self._result is None:
+            self._result = self._task()
+        return self._result
+
+    def cancel(self) -> None:
+        self._is_cancelled = True
 
 
 class MainThreadExecutor(TaskExecutor):
@@ -139,8 +168,38 @@ class MainThreadExecutor(TaskExecutor):
     protocol but just executes everything serially in the main thread.
     """
 
-    def submit(self, fn: Callable, *args: Any, **kwargs: Any) -> SyncFuture:
+    def __init__(self) -> None:
+        # This "queue" is not used, but currently needed because of the datapoints logic that
+        # decides when to add new tasks to the task executor task pool.
+        class AlwaysEmpty:
+            def empty(self) -> Literal[True]:
+                return True
+
+        self._work_queue = AlwaysEmpty()
+
+    def submit(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any) -> SyncFuture:
+        if "priority" in inspect.signature(fn).parameters:
+            raise TypeError(f"Given function {fn} cannot accept reserved parameter name `priority`")
+        kwargs.pop("priority", None)
         return SyncFuture(fn, *args, **kwargs)
+
+    def shutdown(self, wait: bool = False) -> None:
+        return None
+
+    @staticmethod
+    def as_completed(it: Iterable[SyncFuture]) -> Iterator[SyncFuture]:
+        return iter(copy(it))
+
+    def __enter__(self) -> MainThreadExecutor:
+        return self
+
+    def __exit__(
+        self,
+        type: Optional[type[BaseException]],
+        value: Optional[BaseException],
+        traceback: Optional[TracebackType],
+    ) -> None:
+        self.shutdown()
 
 
 _THREAD_POOL_EXECUTOR_SINGLETON: ThreadPoolExecutor
@@ -149,6 +208,7 @@ _MAIN_THREAD_EXECUTOR_SINGLETON = MainThreadExecutor()
 
 class ConcurrencySettings:
     executor_type: Literal["threadpool", "mainthread"] = "threadpool"
+    priority_executor_type: Literal["priority_threadpool", "mainthread"] = "priority_threadpool"
 
 
 def get_executor(max_workers: int) -> TaskExecutor:
@@ -168,6 +228,18 @@ def get_executor(max_workers: int) -> TaskExecutor:
     else:
         raise RuntimeError(f"Invalid executor type '{ConcurrencySettings.executor_type}'")
     return executor
+
+
+def get_priority_executor(max_workers: int) -> PriorityThreadPoolExecutor:
+    if max_workers < 1:
+        raise RuntimeError(f"Number of workers should be >= 1, was {max_workers}")
+
+    if ConcurrencySettings.priority_executor_type == "priority_threadpool":
+        return PriorityThreadPoolExecutor(max_workers)
+    elif ConcurrencySettings.priority_executor_type == "mainthread":
+        return MainThreadExecutor()  # type: ignore [return-value]
+
+    raise RuntimeError(f"Invalid priority-queue executor type '{ConcurrencySettings.priority_executor_type}'")
 
 
 def execute_tasks(
@@ -200,12 +272,15 @@ def execute_tasks(
             results.append(res)
         except Exception as e:
             exceptions.append(e)
-            if isinstance(e, CogniteAPIError):
-                if e.code < 500:
-                    failed_tasks.append(tasks[i])
-                else:
-                    unknown_result_tasks.append(tasks[i])
-            else:
+            if classify_error(e) == "failed":
                 failed_tasks.append(tasks[i])
+            else:
+                unknown_result_tasks.append(tasks[i])
 
     return TasksSummary(successful_tasks, unknown_result_tasks, failed_tasks, results, exceptions)
+
+
+def classify_error(err: Exception) -> Literal["failed", "unknown"]:
+    if isinstance(err, CogniteAPIError) and err.code >= 500:
+        return "unknown"
+    return "failed"

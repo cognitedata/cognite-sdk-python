@@ -17,10 +17,215 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.1.10] - 19-05-23
+### Fixed
+- Data modelling is now GA. Renaming instance_nodes -> nodes and instance_edges -> edges to make the naming in SDK consistent with Transformation API and CLI
+
+## [6.1.9] - 16-05-23
+### Fixed
+- Fixed a rare issue with datapoints fetching that could raise `AttributeError` when running with `pyodide`.
+
+
+## [6.1.8] - 12-05-23
+### Fixed
+- ExtractionPipelinesRun:dump method will not throw an error when camel_case=True anymore
+
+
+## [6.1.7] - 11-05-23
+### Removed
+- Removed DMS v2 destination in transformations
+
+## [6.1.6] - 11-05-23
+### Fixed
+- `FunctionsAPI.create` now work in Wasm-like Python runtimes such as `pyodide`.
+
+## [6.1.5] - 10-05-23
+### Fixed
+- When creating a transformation with a different source- and destination CDF project, the project setting is no longer overridden by the setting in the `CogniteClient` configuration allowing the user to read from the specified source project and write to the specified and potentially different destination project.
+
+## [6.1.4] - 08-05-23
+### Fixed
+- Pickling a `CogniteClient` instance with certain `CredentialProvider`s no longer causes a `TypeError: cannot pickle ...` to be raised.
+
+## [6.1.3] - 08-05-23
+### Added
+- Add the license of the package in poetry build.
+
+## [6.1.2] - 04-05-23
+### Improved
+- The SDK has received several minor bugfixes to be more user-friendly on Windows.
+
+### Fixed
+- The utility function `cognite.client.utils.datetime_to_ms` now raises an understandable `ValueError` when unable to convert pre-epoch datetimes.
+- Several functions reading and writing to disk now explicitly use UTF-8 encoding
+
+## [6.1.1] - 28-04-23
+### Fixed
+- `AttributeError` when passing `pandas.Timestamp`s with different timezones (*of which one was UTC*) to `DatapointsAPI.retrieve_dataframe_in_tz`.
+- A `ValueError` is no longer raised when passing `pandas.Timestamp`s in the same timezone, but with different underlying implementations (e.g. `datetime.timezone.utc` / `pytz.UTC` / `ZoneInfo("UTC")`) to `DatapointsAPI.retrieve_dataframe_in_tz`.
+
+## [6.1.0] - 28-04-23
+### Added
+- Support for giving `start` and `end` arguments as `pandas.Timestamp` in `DatapointsAPI.retrieve_dataframe_in_tz`.
+
+### Improved
+- Type hints for the `DatapointsAPI` methods.
+
+## [6.0.2] - 27-04-23
+### Fixed
+- Fixed a bug in `DatapointsAPI.retrieve_dataframe_in_tz` that could raise `AmbiguousTimeError` when subdividing the user-specified time range into UTC intervals (with fixed offset).
+
+## [6.0.1] - 20-04-23
+### Fixed
+- Fixed a bug that would cause `DatapointsAPI.retrieve_dataframe_in_tz` to raise an `IndexError` if there were only empty time series in the response.
+
+## [6.0.0] - 19-04-23
+### Removed
+- Removed support for legacy auth (apikeys, serviceaccounts, login.status)
+- Removed the deprecated `extractionPipeline` argument to `client.extraction_pipelines.create`. Only `extraction_pipeline` is accepted now.
+- Removed the deprecated `client.datapoints` accessor attribute. The datapoints API can only be accessed through `client.time_series.data` now.
+- Removed the deprecated `client.extraction_pipeline_runs` accessor attribute. The extraction pipeline run API can only be accessed through `client.extraction_pipelines.runs` now.
+- Removed the deprecated `external_id` attribute on `ExtractionPipelineRun`. This has been replaced with `extpipe_external_id`.
+
+## [5.12.0] - 18-04-23
+### Changed
+- Enforce that types are explicitly exported in order to make very strict type checkers happy.
+
+## [5.11.1] - 17-04-23
+### Fixed
+- List (and `__call__`) methods for assets, events, files, labels, relationships, sequences and time series now raise if given bad input for `data_set_ids`, `data_set_external_ids`, `asset_subtree_ids` and `asset_subtree_external_ids` instead of ignoring/returning everything.
+
+### Improved
+- The listed parameters above have silently accepted non-list input, i.e. single `int` (for `ids`) or single `str` (for `external_ids`). Function signatures and docstrings have now been updated to reflect this "hidden functionality".
+
+## [5.11.0] - 17-04-23
+### Added
+- The `DatapointsAPI` now supports time zones with the addition of a new method, `retrieve_dataframe_in_tz`. It does not support individual customization of query parameters (for good reasons, e.g. a DataFrame has a single index).
+- Asking for datapoints in a specific time zone, e.g. `America/New_York` or `Europe/London` is now easily accomplished: the user can just pass in their `datetimes` localized to their time zone directly.
+- Queries for aggregate datapoints are also supported, with the key feature being automatic handling of daylight savings time (DST) transitions, as this is not supported by the official API. Example usage: A user living in Oslo, Norway, wants daily averages in their local time. In Oslo, the standard time is UTC+1, with UTC+2 during the summer. This means during spring, there is a 23-hour long day when clocks roll 1 hour forward and a 25-hour day during fall.
+- New granularities with a longer time span have been added (only to this new method, for now): 'week', 'month', 'quarter' and 'year'. These do not all represent a fixed frequency, but like the example above, neither does for example 'day' when we use time zones without a fixed UTC offset.
+
+## [5.10.5] - 13-04-23
+### Fixed
+- Subclasses of `VisionResource` inheriting `.dump` and `to_pandas` now work as expected for attributes storing lists of subclass instances like `Polygon`, `PolyLine`, `ObjectDetection` or `VisionExtractPredictions` directly or indirectly.
+
+## [5.10.4] - 13-04-23
+### Fixed
+- A lot of nullable integer attributes ended up as float after calling `.to_pandas`. These are now correctly converted to `dtype=Int64`.
+
+## [5.10.3] - 13-04-23
+### Fixed
+- When passing `CogniteResource` classes (like `Asset` or `Event`) to `update`, any labels were skipped in the update (passing `AssetUpdate` works). This has been fixed for all Cognite resource classes.
+
+## [5.10.2] - 12-04-23
+### Fixed
+- Fixed a bug that would cause `AssetsAPI.create_hierarchy` to not respect `upsert=False`.
+
+## [5.10.1] - 04-04-23
+### Fixed
+- Add missing field `when` (human readable version of the CRON expression) to `FunctionSchedule` class.
+
+## [5.10.0] - 03-04-23
+### Fixed
+- Implemented automatic retries for connection errors by default, improving the reliability of the connection to the Cognite API.
+- Added a user-readable message to `CogniteConnectionRefused` error for improved user experience.
+
+### Changed
+- Introduce a `max_retries_connect` attribute on the global config, and default it to 3.
+
+## [5.9.3] - 27-03-23
+### Fixed
+- After creating a schedule for a function, the returned `FunctionSchedule` was missing a reference to the `CogniteClient`, meaning later calls to `.get_input_data()` would fail and raise `CogniteMissingClientError`.
+- When calling `.get_input_data()` on a `FunctionSchedule` instance, it would fail and raise `KeyError` if no input data was specified for the schedule. This now returns `None`.
+
+## [5.9.2] - 27-03-23
+### Fixed
+- After calling e.g. `.time_series()` or `.events()` on an `AssetList` instance, the resulting resource list would be missing the lookup tables that allow for quick lookups by ID or external ID through the `.get()` method. Additionally, for future-proofing, the resulting resource list now also correctly has a `CogniteClient` reference.
+
+## [5.9.1] - 23-03-23
+### Fixed
+- `FunctionsAPI.call` now also works for clients using auth flow `OAuthInteractive`, `OAuthDeviceCode`, and any user-made subclass of `CredentialProvider`.
+
+### Improved
+- `FunctionSchedulesAPI.create` now also accepts an instance of `ClientCredentials` (used to be dictionary only).
+
+## [5.9.0] - 21-03-23
+### Added
+- New class `AssetHierarchy` for easy verification and reporting on asset hierarchy issues without explicitly trying to insert them.
+- Orphan assets can now be reported on (orphan is an asset whose parent is not part of the given assets). Also, `AssetHierarchy` accepts an `ignore_orphans` argument to mimic the old behaviour where all orphans were assumed to be valid.
+- `AssetsAPI.create_hierarchy` now accepts two new parameters: `upsert` and `upsert_mode`. These allow the user to do "insert or update" instead of an error being raised when trying to create an already existing asset. Upsert mode controls whether updates should replace/overwrite or just patch (partial update to non-null values only).
+- `AssetsAPI.create_hierarchy` now also verifies the `name` parameter which is required and that `id` has not been set.
+
+### Changed
+- `AssetsAPI.create_hierarchy` now uses `AssetHierarchy` under the hood to offer concrete feedback on asset hierarchy issues, accessible through attributes on the raised exception, e.g. invalid assets, duplicates, orphans, or any cyclical asset references.
+
+### Fixed
+- `AssetsAPI.create_hierarchy`...:
+  - Now respects `max_workers` when spawning worker threads.
+  - Can no longer raise `RecursionError`. Used to be an issue for asset hierarchies deeper than `sys.getrecursionlimit()` (typically set at 1000 to avoid stack overflow).
+  - Is now `pyodide` compatible.
+
+## [5.8.0] - 20-03-23
+### Added
+- Support for client certificate authentication to Azure AD.
+
+## [5.7.4] - 20-03-23
+### Added
+- Use `X-Job-Token` header for contextualization jobs to reduce required capabilities.
+
+## [5.7.3] - 14-03-23
+### Improved
+- For users unknowingly using a too old version of `numpy` (against the SDK dependency requirements), an exception could be raised (`NameError: name 'np' is not defined`). This has been fixed.
+
+## [5.7.2] - 10-03-23
+### Fixed
+- Fix method dump in TransformationDestination to ignore None.
+
+## [5.7.1] - 10-03-23
+### Changed
+- Split `instances` destination type of Transformations to `nodes` and `edges`.
+
+## [5.7.0] - 08-03-23
+### Removed
+- `ExtractionPipelineRunUpdate` was removed as runs are immutable.
+
+### Fixed
+- `ExtractionPipelinesRunsAPI` was hiding `id` of runs because `ExtractionPipelineRun` only defined `external_id` which doesn't exist for the "run resource", only for the "parent" ext.pipe (but this is not returned by the API; only used to query).
+
+### Changed
+- Rename and deprecate `external_id` in `ExtractionPipelinesRunsAPI` in favour of the more descriptive `extpipe_external_id`. The change is backwards-compatible, but will issue a `UserWarning` for the old usage pattern.
+
+## [5.6.4] - 28-02-23
+### Added
+- Input validation on `DatapointsAPI.[insert, insert_multiple, delete_ranges]` now raise on missing keys, not just invalid keys.
+
+## [5.6.3] - 23-02-23
+### Added
+- Make the SDK compatible with `pandas` major version 2 ahead of release.
+
+## [5.6.2] - 21-02-23
+### Fixed
+- Fixed an issue where `Content-Type` was not correctly set on file uploads to Azure.
+
+## [5.6.1] - 20-02-23
+### Fixed
+- Fixed an issue where `IndexError` was raised when a user queried `DatapointsAPI.retrieve_latest` for a single, non-existent time series while also passing `ignore_unknown_ids=True`. Changed to returning `None`, inline with other `retrieve` methods.
+
+## [5.6.0] - 16-02-23
+### Added
+- The SDK has been made `pyodide` compatible (to allow running natively in browsers). Missing features are `CredentialProvider`s with token refresh and `AssetsAPI.create_hierarchy`.
+
+## [5.5.2] - 15-02-23
+### Fixed
+- Fixed JSON dumps serialization error of instances of `ExtractionPipelineConfigRevision` and all subclasses (`ExtractionPipelineConfig`) as they stored a reference to the CogniteClient as a non-private attribute.
+
+## [5.5.1] - 10-02-23
+### Changed
+- Change `CredentialProvider` `Token` to be thread safe when given a callable that does token refresh.
 
 ## [5.5.0] - 10-02-23
 ### Added
-- support `instances` destination type on Transformations.
+- Support `instances` destination type on Transformations.
 
 ## [5.4.4] - 06-02-23
 ### Added

@@ -30,8 +30,11 @@ class EntityMatchingAPI(APIClient):
     ) -> T_ContextualizationJob:
         if status_path is None:
             status_path = job_path + "/"
+        response = self._post(self._RESOURCE_PATH + job_path, json=json, headers=headers)
+
         return job_cls._load_with_status(
-            self._post(self._RESOURCE_PATH + job_path, json=json, headers=headers).json(),
+            data=response.json(),
+            headers=response.headers,
             status_path=self._RESOURCE_PATH + status_path,
             cognite_client=self._cognite_client,
         )

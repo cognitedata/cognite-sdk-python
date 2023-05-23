@@ -1,24 +1,38 @@
+from __future__ import annotations
+
 import platform
 import re
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from typing import TYPE_CHECKING, Iterable
 from unittest import mock
 
 import pytest
+from _pytest.mark import ParameterSet
 
+from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._time import (
     MAX_TIMESTAMP_MS,
     MIN_TIMESTAMP_MS,
+    align_large_granularity,
     align_start_and_end_for_granularity,
     convert_time_attributes_to_datetime,
     datetime_to_ms,
     granularity_to_ms,
     granularity_unit_to_ms,
+    import_zoneinfo,
     ms_to_datetime,
+    pandas_date_range_tz,
     split_time_range,
     timestamp_to_ms,
+    to_fixed_utc_intervals,
+    to_pandas_freq,
+    validate_timezone,
 )
-from tests.utils import tmp_set_envvar
+from tests.utils import cdf_aggregate, tmp_set_envvar
+
+if TYPE_CHECKING:
+    import pandas
 
 
 class TestDatetimeToMs:
@@ -31,11 +45,21 @@ class TestDatetimeToMs:
             ("America/Los_Angeles", 1517385600000),
         ],
     )
-    def test_naive_datetime_to_ms(self, local_tz, expected_ms):
+    def test_naive_datetime_to_ms_unix(self, local_tz, expected_ms):
         with tmp_set_envvar("TZ", local_tz):
             time.tzset()
             assert datetime_to_ms(datetime(2018, 1, 31, tzinfo=None)) == expected_ms
             assert timestamp_to_ms(datetime(2018, 1, 31, tzinfo=None)) == expected_ms
+
+    @pytest.mark.skipif(platform.system() != "Windows", reason="Windows is typically unable to handle negative epochs.")
+    def test_naive_datetime_to_ms_windows(self):
+        with pytest.raises(
+            ValueError,
+            match="Failed to convert datetime to epoch. "
+            "This likely because you are using a naive datetime. "
+            "Try using a timezone aware datetime instead.",
+        ):
+            datetime_to_ms(datetime(1925, 8, 3))
 
     def test_aware_datetime_to_ms(self):
         # TODO: Starting from PY39 we should also add tests using:
@@ -45,6 +69,14 @@ class TestDatetimeToMs:
         assert datetime_to_ms(datetime(2018, 1, 31, tzinfo=utc)) == 1517356800000
         assert datetime_to_ms(datetime(2018, 1, 31, 11, 11, 11, tzinfo=utc)) == 1517397071000
         assert datetime_to_ms(datetime(100, 1, 31, tzinfo=utc)) == -59008867200000
+
+    @pytest.mark.dsl
+    def test_aware_datetime_to_ms_zoneinfo(self):
+        ZoneInfo = import_zoneinfo()
+        # The correct answer was obtained using: https://dencode.com/en/date/unix-time
+        assert datetime_to_ms(datetime(2018, 1, 31, tzinfo=ZoneInfo("Europe/Oslo"))) == 1517353200000
+        assert datetime_to_ms(datetime(1900, 1, 1, tzinfo=ZoneInfo("Europe/Oslo"))) == -2208992400000
+        assert datetime_to_ms(datetime(1900, 1, 1, tzinfo=ZoneInfo("America/New_York"))) == -2208970800000
 
     def test_ms_to_datetime__valid_input(self):  # TODO: Many tests here could benefit from parametrize
         utc = timezone.utc
@@ -127,7 +159,7 @@ class TestTimestampToMs:
         time_now = timestamp_to_ms("now")
         assert abs(expected_time_now - time_now) > 190
 
-    @pytest.mark.parametrize("t", [MIN_TIMESTAMP_MS - 1, datetime(1899, 12, 31), "100000000w-ago"])
+    @pytest.mark.parametrize("t", [MIN_TIMESTAMP_MS - 1, datetime(1899, 12, 31, tzinfo=timezone.utc), "100000000w-ago"])
     def test_negative(self, t):
         with pytest.raises(ValueError, match="must represent a time after 1.1.1900"):
             timestamp_to_ms(t)
@@ -261,3 +293,370 @@ class TestAlignToGranularity:
         gran_ms = granularity_to_ms(granularity)
         start, end = gran_ms - 1, 2 * gran_ms
         assert expected == align_start_and_end_for_granularity(start, end, granularity)
+
+    @staticmethod
+    @pytest.mark.parametrize(
+        "start, end, granularity, expected_start, expected_end",
+        [
+            (datetime(2023, 3, 4, 12), datetime(2023, 3, 9), "2days", datetime(2023, 3, 4), datetime(2023, 3, 10)),
+            (datetime(2023, 4, 9), datetime(2023, 4, 12), "2weeks", datetime(2023, 4, 3), datetime(2023, 4, 17)),
+            (datetime(2023, 1, 10), datetime(2023, 1, 11), "2months", datetime(2023, 1, 1), datetime(2023, 3, 1)),
+            (datetime(2023, 2, 10), datetime(2023, 6, 15), "2quarters", datetime(2023, 1, 1), datetime(2023, 7, 1)),
+            (datetime(2023, 1, 8), datetime(2023, 1, 8, second=1), "1year", datetime(2023, 1, 1), datetime(2024, 1, 1)),
+            (datetime(2022, 12, 10), datetime(2023, 1, 11), "3months", datetime(2022, 12, 1), datetime(2023, 3, 1)),
+            (datetime(2022, 12, 10), datetime(2023, 1, 11), "25months", datetime(2022, 12, 1), datetime(2025, 1, 1)),
+            (datetime(2023, 2, 10), datetime(2025, 8, 10), "10quarters", datetime(2023, 1, 1), datetime(2028, 1, 1)),
+            (datetime(2023, 4, 9), datetime(2023, 4, 12), "1week", datetime(2023, 4, 3), datetime(2023, 4, 17)),
+            (datetime(2023, 1, 10), datetime(2023, 2, 11), "1month", datetime(2023, 1, 1), datetime(2023, 3, 1)),
+        ],
+    )
+    def test_align_with_granularity(
+        start: datetime, end: datetime, granularity: str, expected_start: datetime, expected_end: datetime
+    ):
+        actual_start, actual_end = align_large_granularity(start, end, granularity)
+
+        assert actual_start == expected_start, "Start is not aligning"
+        assert actual_end == expected_end, "End is not aligning"
+
+
+def cdf_aggregate_test_data():
+    try:
+        import pandas as pd
+    except ModuleNotFoundError:
+        return []
+    start, end = "2023-03-20", "2023-04-09 23:59:59"
+
+    yield pytest.param(
+        start,
+        end,
+        "1h",
+        "7d",
+        # Nullable int to match the output of retrieve_dataframe
+        pd.DataFrame(index=pd.date_range(start, end, freq="7d"), data=[168, 168, 168], dtype="Int64"),
+        id="1week aggregation",
+    )
+
+
+class TestCDFAggregation:
+    @staticmethod
+    @pytest.mark.dsl
+    @pytest.mark.parametrize("start, end, raw_freq, granularity, expected_aggregate", list(cdf_aggregate_test_data()))
+    def test_cdf_aggregation(
+        start: str, end: str, raw_freq: str, granularity: str, expected_aggregate: pandas.DataFrame
+    ):
+        # Arrange
+        import pandas as pd
+
+        index = pd.date_range(start, end, freq=raw_freq)
+        raw_df = pd.DataFrame(data=range(len(index)), index=index)
+
+        # Act
+        actual_aggregate = cdf_aggregate(raw_df=raw_df, aggregate="count", granularity=granularity, is_step=False)
+
+        # Assert
+        pd.testing.assert_frame_equal(actual_aggregate, expected_aggregate)
+
+
+def to_fixed_utc_intervals_data() -> Iterable[ParameterSet]:
+    try:
+        ZoneInfo = import_zoneinfo()
+    except CogniteImportError:
+        return []
+
+    oslo = ZoneInfo("Europe/Oslo")
+    utc = dict(tzinfo=ZoneInfo("UTC"))
+    oslo_dst = datetime(2023, 3, 25, 23, **utc)
+    oslo_std = datetime(2023, 10, 28, 22, **utc)
+
+    yield pytest.param(
+        datetime(2023, 1, 1, tzinfo=oslo),
+        datetime(2023, 12, 31, 23, 59, 59, tzinfo=oslo),
+        "1day",
+        [
+            {"start": datetime(2022, 12, 31, 23, **utc), "end": oslo_dst, "granularity": "24h"},
+            {"start": oslo_dst, "end": oslo_dst + timedelta(hours=23), "granularity": "23h"},
+            {"start": oslo_dst + timedelta(hours=23), "end": oslo_std, "granularity": "24h"},
+            {"start": oslo_std, "end": oslo_std + timedelta(hours=25), "granularity": "25h"},
+            {"start": oslo_std + timedelta(hours=25), "end": datetime(2023, 12, 31, 23, **utc), "granularity": "24h"},
+        ],
+        id="Year 2023 at daily granularity",
+    )
+
+    yield pytest.param(
+        datetime(2023, 3, 10, tzinfo=oslo),
+        datetime(2023, 4, 9, tzinfo=oslo),
+        "2weeks",
+        [
+            {"start": datetime(2023, 3, 5, 23, **utc), "end": datetime(2023, 3, 19, 23, **utc), "granularity": "336h"},
+            # Passing DST
+            {"start": datetime(2023, 3, 19, 23, **utc), "end": datetime(2023, 4, 2, 22, **utc), "granularity": "335h"},
+            {"start": datetime(2023, 4, 2, 22, **utc), "end": datetime(2023, 4, 16, 22, **utc), "granularity": "336h"},
+        ],
+        id="Passed DST with 2 weeks granularity",
+    )
+
+    yield pytest.param(
+        datetime(2023, 1, 10, tzinfo=oslo),
+        datetime(2023, 12, 12, tzinfo=oslo),
+        "1quarter",
+        [
+            {
+                "start": datetime(2022, 12, 31, 23, **utc),
+                "end": datetime(2023, 3, 31, 22, **utc),
+                "granularity": "2159h",
+            },
+            {
+                "start": datetime(2023, 3, 31, 22, **utc),
+                "end": datetime(2023, 6, 30, 22, **utc),
+                "granularity": "2184h",
+            },
+            {
+                "start": datetime(2023, 6, 30, 22, **utc),
+                "end": datetime(2023, 9, 30, 22, **utc),
+                "granularity": "2208h",
+            },
+            {
+                "start": datetime(2023, 9, 30, 22, **utc),
+                "end": datetime(2023, 12, 31, 23, **utc),
+                "granularity": "2209h",
+            },
+        ],
+        id="2023 in quarters",
+    )
+
+    yield pytest.param(
+        datetime(2022, 10, 13, tzinfo=oslo),
+        datetime(2023, 4, 9, tzinfo=oslo),
+        "2months",
+        [
+            {
+                "start": datetime(2022, 9, 30, 22, **utc),
+                "end": datetime(2022, 11, 30, 23, **utc),
+                "granularity": "1465h",
+            },
+            {
+                "start": datetime(2022, 11, 30, 23, **utc),
+                "end": datetime(2023, 1, 31, 23, **utc),
+                "granularity": "1488h",
+            },
+            {
+                "start": datetime(2023, 1, 31, 23, **utc),
+                "end": datetime(2023, 3, 31, 22, **utc),
+                "granularity": "1415h",
+            },
+            {
+                "start": datetime(2023, 3, 31, 22, **utc),
+                "end": datetime(2023, 5, 31, 22, **utc),
+                "granularity": "1464h",
+            },
+        ],
+        id="October 2022 to April 2023 in 2 month steps",
+    )
+
+    yield pytest.param(
+        datetime(2020, 1, 19, tzinfo=oslo),
+        datetime(2024, 1, 1, tzinfo=oslo),
+        "2years",
+        [
+            {
+                "start": datetime(2019, 12, 31, 23, **utc),
+                "end": datetime(2021, 12, 31, 23, **utc),
+                "granularity": "17544h",
+            },
+            {
+                "start": datetime(2021, 12, 31, 23, **utc),
+                "end": datetime(2023, 12, 31, 23, **utc),
+                "granularity": "17520h",
+            },
+        ],
+        id="From 2020 to 2024 in 2 year steps",
+    )
+
+
+class TestToFixedUTCIntervals:
+    @staticmethod
+    @pytest.mark.dsl
+    @pytest.mark.parametrize(
+        "start, end, granularity, expected_intervals",
+        list(to_fixed_utc_intervals_data()),
+    )
+    def test_to_fixed_utc_intervals(
+        start: datetime, end: datetime, granularity: str, expected_intervals: list[dict[str, int | str]]
+    ):
+        actual_intervals = to_fixed_utc_intervals(start, end, granularity)
+
+        assert actual_intervals == expected_intervals
+
+
+def validate_time_zone_invalid_arguments_data() -> list[ParameterSet]:
+    try:
+        ZoneInfo = import_zoneinfo()
+    except CogniteImportError:
+        return []
+
+    oslo = ZoneInfo("Europe/Oslo")
+    new_york = ZoneInfo("America/New_York")
+
+    return [
+        pytest.param(
+            datetime(2023, 1, 1, tzinfo=oslo),
+            datetime(2023, 1, 10, tzinfo=new_york),
+            "'start' and 'end' represent different timezones: 'Europe/Oslo' and 'America/New_York'.",
+            id="Different timezones",
+        ),
+        pytest.param(
+            datetime(2023, 1, 1),
+            datetime(2023, 1, 10, tzinfo=new_york),
+            "All times must be timezone aware, start does not have a timezone",
+            id="Missing start timezone",
+        ),
+        pytest.param(
+            datetime(2023, 1, 1),
+            datetime(2023, 1, 10),
+            "All times must be timezone aware, start and end do not have timezones",
+            id="Missing start and end timezone",
+        ),
+        pytest.param(
+            datetime(2023, 1, 1, tzinfo=oslo),
+            datetime(2023, 1, 10),
+            "All times must be timezone aware, end does not have a timezone",
+            id="Missing end timezone",
+        ),
+    ]
+
+
+def validate_time_zone_valid_arguments_data() -> list[ParameterSet]:
+    try:
+        ZoneInfo = import_zoneinfo()
+        import pandas as pd
+        import pytz  # hard pandas dependency
+    except (ImportError, CogniteImportError):
+        return []
+
+    utc = ZoneInfo("UTC")
+    oslo = ZoneInfo("Europe/Oslo")
+    new_york = ZoneInfo("America/New_York")
+    return [
+        pytest.param(
+            datetime(2023, 1, 1, tzinfo=oslo),
+            datetime(2023, 1, 10, tzinfo=oslo),
+            oslo,
+            id="Oslo Timezone",
+        ),
+        pytest.param(
+            datetime(2023, 1, 1, tzinfo=new_york),
+            datetime(2023, 1, 10, tzinfo=new_york),
+            new_york,
+            id="New York Timezone",
+        ),
+        pytest.param(
+            pd.Timestamp(2020, 1, 1, tzinfo=oslo),
+            pd.Timestamp("2023", tz="Europe/Oslo"),
+            oslo,
+            id="Oslo Timezone via pandas: zoneinfo + parse string",
+        ),
+        pytest.param(
+            pd.Timestamp("2020", tzinfo=pytz.timezone("Europe/Oslo")),
+            pd.Timestamp("2023", tz="Europe/Oslo"),
+            oslo,
+            id="Oslo Timezone via pandas: pytz + parse string",
+        ),
+        pytest.param(
+            pd.Timestamp(2020, 1, 1, tzinfo=oslo),
+            pd.Timestamp("2023", tzinfo=pytz.timezone("Europe/Oslo")),
+            oslo,
+            id="Oslo Timezone via pandas: zoneinfo + pytz",
+        ),
+        pytest.param(
+            pd.Timestamp(2020, 1, 1, tzinfo=timezone.utc),
+            pd.Timestamp("2023", tz="UTC"),
+            utc,
+            id="UTC via pandas: built-in timezone.utc + string parse",
+        ),
+        pytest.param(
+            pd.Timestamp(2020, 1, 1, tzinfo=ZoneInfo("UTC")),
+            pd.Timestamp("2023", tz="utc"),
+            utc,
+            id="UTC via pandas: zoneinfo + string parse",
+        ),
+        pytest.param(
+            pd.Timestamp(2020, 1, 1, tzinfo=timezone.utc),
+            pd.Timestamp("2023", tz=pytz.UTC),
+            utc,
+            id="UTC via pandas: built-in timezone.utc + pytz",
+        ),
+    ]
+
+
+class TestValidateTimeZone:
+    @staticmethod
+    @pytest.mark.dsl
+    @pytest.mark.parametrize("start, end, expected_message", validate_time_zone_invalid_arguments_data())
+    def test_raise_value_error_invalid_arguments(start: datetime, end: datetime, expected_message: str):
+        with pytest.raises(ValueError, match=expected_message):
+            _ = validate_timezone(start, end)
+
+    @staticmethod
+    @pytest.mark.dsl
+    @pytest.mark.parametrize("start, end, expected_tz", validate_time_zone_valid_arguments_data())
+    def test_infer_timezone(start: datetime, end: datetime, expected_tz):
+        actual_tz = validate_timezone(start, end)
+
+        ZoneInfo = import_zoneinfo()
+        assert isinstance(actual_tz, ZoneInfo)
+        assert actual_tz is expected_tz
+
+
+class TestToPandasFreq:
+    @staticmethod
+    @pytest.mark.dsl
+    @pytest.mark.parametrize(
+        "granularity, start, expected_first_step",
+        [
+            ("week", "2023-01-02", "2023-01-09"),
+            ("quarter", "2023-01-01", "2023-04-01"),
+            ("quarter", "2022-10-01", "2023-01-01"),
+            ("quarter", "2022-07-01", "2022-10-01"),
+            ("quarter", "2022-04-01", "2022-07-01"),
+            ("year", "2023-01-01", "2024-01-01"),
+            ("d", "2023-01-01", "2023-01-02"),
+            ("2years", "2023-01-01", "2025-01-01"),
+            ("3quarters", "2023-01-01", "2023-10-01"),
+            ("m", "2023-01-01", "2023-01-01 00:01:00"),
+            ("s", "2023-01-01", "2023-01-01 00:00:01"),
+            ("2d", "2023-01-01", "2023-01-03"),
+            ("2weeks", "2023-01-02", "2023-01-16"),
+        ],
+    )
+    def test_to_pandas_freq(granularity: str, start: str, expected_first_step: str):
+        # Arrange
+        import pandas as pd
+
+        start = pd.Timestamp(start)
+        expected_index = pd.DatetimeIndex([start, expected_first_step])
+
+        # Act
+        freq = to_pandas_freq(granularity, start.to_pydatetime())
+
+        # Assert
+        actual_index = pd.date_range(start, periods=2, freq=freq)
+        pd.testing.assert_index_equal(actual_index, expected_index)
+
+
+class TestPandasDateRangeTz:
+    @staticmethod
+    @pytest.mark.dsl
+    def test_pandas_date_range_tz_ambiguous_time_error():
+        # Arrange
+        ZoneInfo = import_zoneinfo()
+        oslo = ZoneInfo("Europe/Oslo")
+        start = datetime(1916, 8, 1, tzinfo=oslo)
+        end = datetime(1916, 12, 1, tzinfo=oslo)
+        expected_length = 5
+        freq = to_pandas_freq("1month", start)
+
+        # Act
+        index = pandas_date_range_tz(start, end, freq)
+
+        # Assert
+        assert len(index) == expected_length

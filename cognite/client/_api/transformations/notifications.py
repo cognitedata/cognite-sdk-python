@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Optional, Sequence, Union
+from typing import Optional, Sequence, Union
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import TransformationNotification, TransformationNotificationList
 from cognite.client.data_classes.transformations.notifications import TransformationNotificationFilter
 from cognite.client.utils._identifier import IdentifierSequence
@@ -12,9 +13,6 @@ from cognite.client.utils._identifier import IdentifierSequence
 class TransformationNotificationsAPI(APIClient):
     _RESOURCE_PATH = "/transformations/notifications"
     _LIST_CLASS = TransformationNotificationList
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
 
     def create(
         self, notification: Union[TransformationNotification, Sequence[TransformationNotification]]
@@ -47,7 +45,7 @@ class TransformationNotificationsAPI(APIClient):
         transformation_id: Optional[int] = None,
         transformation_external_id: str = None,
         destination: str = None,
-        limit: Optional[int] = 25,
+        limit: Optional[int] = LIST_LIMIT_DEFAULT,
     ) -> TransformationNotificationList:
         """`List notification subscriptions. <https://docs.cognite.com/api/v1/#operation/getTransformationNotifications>`_
 

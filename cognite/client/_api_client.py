@@ -34,7 +34,7 @@ from requests.structures import CaseInsensitiveDict
 
 from cognite.client import utils
 from cognite.client._http_client import HTTPClient, HTTPClientConfig, get_global_requests_session
-from cognite.client.config import ClientConfig, global_config
+from cognite.client.config import global_config
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteResource,
@@ -43,11 +43,13 @@ from cognite.client.data_classes._base import (
     T_CogniteResourceList,
 )
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
-from cognite.client.utils._auxiliary import is_unlimited
+from cognite.client.utils._auxiliary import is_unlimited, split_into_chunks
 from cognite.client.utils._identifier import Identifier, IdentifierSequence, SingletonIdentifierSequence
+from cognite.client.utils._text import convert_all_keys_to_camel_case, shorten, to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
 
 log = logging.getLogger("cognite-sdk")
 
@@ -57,7 +59,6 @@ T = TypeVar("T")
 class APIClient:
     _RESOURCE_PATH: str
 
-    # TODO: This following set should be generated from the openapi spec somehow.
     _RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS = {
         rf"^{path}(\?.*)?$"
         for path in (
@@ -73,16 +74,21 @@ class APIClient:
         )
     }
 
-    def __init__(
-        self, config: ClientConfig, api_version: Optional[str] = None, cognite_client: CogniteClient = None
-    ) -> None:
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
         self._config = config
         self._api_version = api_version
         self._api_subversion = config.api_subversion
         self._cognite_client = cognite_client
+        self._init_http_clients()
 
+        self._CREATE_LIMIT = 1000
+        self._LIST_LIMIT = 1000
+        self._RETRIEVE_LIMIT = 1000
+        self._DELETE_LIMIT = 1000
+        self._UPDATE_LIMIT = 1000
+
+    def _init_http_clients(self) -> None:
         session = get_global_requests_session()
-
         self._http_client = HTTPClient(
             config=HTTPClientConfig(
                 status_codes_to_retry={429},
@@ -90,12 +96,11 @@ class APIClient:
                 max_backoff_seconds=global_config.max_retry_backoff,
                 max_retries_total=global_config.max_retries,
                 max_retries_read=0,
-                max_retries_connect=global_config.max_retries,
+                max_retries_connect=global_config.max_retries_connect,
                 max_retries_status=global_config.max_retries,
             ),
             session=session,
         )
-
         self._http_client_with_retry = HTTPClient(
             config=HTTPClientConfig(
                 status_codes_to_retry=global_config.status_forcelist,
@@ -103,17 +108,11 @@ class APIClient:
                 max_backoff_seconds=global_config.max_retry_backoff,
                 max_retries_total=global_config.max_retries,
                 max_retries_read=global_config.max_retries,
-                max_retries_connect=global_config.max_retries,
+                max_retries_connect=global_config.max_retries_connect,
                 max_retries_status=global_config.max_retries,
             ),
             session=session,
         )
-
-        self._CREATE_LIMIT = 1000
-        self._LIST_LIMIT = 1000
-        self._RETRIEVE_LIMIT = 1000
-        self._DELETE_LIMIT = 1000
-        self._UPDATE_LIMIT = 1000
 
     def _delete(
         self, url_path: str, params: Optional[Dict[str, Any]] = None, headers: Optional[Dict[str, Any]] = None
@@ -566,7 +565,7 @@ class APIClient:
         if isinstance(filter, CogniteFilter):
             dumped_filter = filter.dump(camel_case=True)
         elif isinstance(filter, Dict):
-            dumped_filter = utils._auxiliary.convert_all_keys_to_camel_case(filter)
+            dumped_filter = convert_all_keys_to_camel_case(filter)
         else:
             dumped_filter = {}
         resource_path = resource_path or self._RESOURCE_PATH
@@ -610,7 +609,7 @@ class APIClient:
 
     def _create_multiple(
         self,
-        items: Union[Sequence[CogniteResource], Sequence[Dict[str, Any]], CogniteResource, Dict[str, Any]],
+        items: Union[Sequence[T_CogniteResource], Sequence[Dict[str, Any]], T_CogniteResource, Dict[str, Any]],
         list_cls: Type[T_CogniteResourceList],
         resource_cls: Type[T_CogniteResource],
         resource_path: Optional[str] = None,
@@ -623,21 +622,14 @@ class APIClient:
         limit = limit or self._CREATE_LIMIT
         single_item = not isinstance(items, Sequence)
         if single_item:
-            items = cast(Union[Sequence[CogniteResource], Sequence[Dict[str, Any]]], [items])
+            items = cast(Union[Sequence[T_CogniteResource], Sequence[Dict[str, Any]]], [items])
         else:
-            items = cast(Union[Sequence[CogniteResource], Sequence[Dict[str, Any]]], items)
+            items = cast(Union[Sequence[T_CogniteResource], Sequence[Dict[str, Any]]], items)
 
-        items_split = []
-        for i in range(0, len(items), limit):
-            if isinstance(items[i], CogniteResource):
-                items = cast(List[CogniteResource], items)
-                items_chunk = [item.dump(camel_case=True) for item in items[i : i + limit]]
-            else:
-                items = cast(List[Dict[str, Any]], items)
-                items_chunk = [item for item in items[i : i + limit]]
-            items_split.append({"items": items_chunk, **(extra_body_fields or {})})
-
-        tasks = [(resource_path, task_items, params, headers) for task_items in items_split]
+        tasks = [
+            (resource_path, task_items, params, headers)
+            for task_items in self._prepare_item_chunks(items, limit, extra_body_fields)
+        ]
         summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
 
         def unwrap_element(el: T) -> Union[CogniteResource, T]:
@@ -741,13 +733,13 @@ class APIClient:
             if isinstance(item, CogniteResource):
                 patch_objects.append(self._convert_resource_to_patch_object(item, update_cls._get_update_properties()))
             elif isinstance(item, CogniteUpdate):
-                patch_objects.append(item.dump())
+                patch_objects.append(item.dump(camel_case=True))
                 patch_object_update = patch_objects[index]["update"]
                 if "metadata" in patch_object_update and patch_object_update["metadata"] == {"set": None}:
                     patch_object_update["metadata"] = {"set": {}}
             else:
                 raise ValueError("update item must be of type CogniteResource or CogniteUpdate")
-        patch_object_chunks = utils._auxiliary.split_into_chunks(patch_objects, self._UPDATE_LIMIT)
+        patch_object_chunks = split_into_chunks(patch_objects, self._UPDATE_LIMIT)
 
         tasks = [
             {"url_path": resource_path + "/update", "json": {"items": chunk}, "params": params, "headers": headers}
@@ -779,7 +771,7 @@ class APIClient:
         if isinstance(filter, CogniteFilter):
             filter = filter.dump(camel_case=True)
         elif isinstance(filter, dict):
-            filter = utils._auxiliary.convert_all_keys_to_camel_case(filter)
+            filter = convert_all_keys_to_camel_case(filter)
         resource_path = resource_path or self._RESOURCE_PATH
         res = self._post(
             url_path=resource_path + "/search",
@@ -788,6 +780,20 @@ class APIClient:
             headers=headers,
         )
         return list_cls._load(res.json()["items"], cognite_client=self._cognite_client)
+
+    @staticmethod
+    def _prepare_item_chunks(
+        items: Union[Sequence[T_CogniteResource], Sequence[Dict[str, Any]]],
+        limit: int,
+        extra_body_fields: Optional[Dict],
+    ) -> List[Dict[str, Any]]:
+        return [
+            {"items": chunk, **(extra_body_fields or {})}
+            for chunk in split_into_chunks(
+                [it.dump(camel_case=True) if isinstance(it, CogniteResource) else it for it in items],
+                chunk_size=limit,
+            )
+        ]
 
     @staticmethod
     def _convert_resource_to_patch_object(
@@ -804,7 +810,7 @@ class APIClient:
             patch_object["externalId"] = dumped_resource.pop("externalId")
 
         for key, value in dumped_resource.items():
-            if utils._auxiliary.to_snake_case(key) in update_attributes:
+            if to_snake_case(key) in update_attributes:
                 patch_object["update"][key] = {"set": value}
         return patch_object
 
@@ -844,7 +850,7 @@ class APIClient:
             error_details["duplicated"] = duplicated
         error_details["headers"] = res.request.headers.copy()
         cls._sanitize_headers(error_details["headers"])
-        error_details["response_payload"] = cls._truncate(cls._get_response_content_safe(res))
+        error_details["response_payload"] = shorten(cls._get_response_content_safe(res), 500)
         error_details["response_headers"] = res.headers
 
         if res.history:
@@ -868,21 +874,19 @@ class APIClient:
 
         stream = kwargs.get("stream")
         if not stream and self._config.debug is True:
-            extra["response_payload"] = self._truncate(self._get_response_content_safe(res))
+            extra["response_payload"] = shorten(self._get_response_content_safe(res), 500)
         extra["response_headers"] = res.headers
 
-        http_protocol_version = ".".join(list(str(res.raw.version)))
+        try:
+            http_protocol = f"HTTP/{'.'.join(str(res.raw.version))}"
+        except AttributeError:
+            # If this fails, it means we are running in a browser (pyodide) with patched requests package:
+            http_protocol = "XMLHTTP"
 
-        log.debug(f"HTTP/{http_protocol_version} {method} {url} {status_code}", extra=extra)
+        log.debug(f"{http_protocol} {method} {url} {status_code}", extra=extra)
 
     @staticmethod
-    def _truncate(s: str, limit: int = 500) -> str:
-        if len(s) > limit:
-            return s[:limit] + "..."
-        return s
-
-    @classmethod
-    def _get_response_content_safe(cls, res: Response) -> str:
+    def _get_response_content_safe(res: Response) -> str:
         try:
             return _json.dumps(res.json())
         except JSONDecodeError:

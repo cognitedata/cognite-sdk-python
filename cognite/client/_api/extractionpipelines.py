@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Sequence, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Dict, Literal, Optional, Sequence, Union, overload
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import (
     ExtractionPipeline,
     ExtractionPipelineConfig,
@@ -16,17 +17,20 @@ from cognite.client.data_classes import (
     TimestampRange,
 )
 from cognite.client.data_classes.extractionpipelines import StringFilter
-from cognite.client.utils._auxiliary import handle_deprecated_camel_case_argument
 from cognite.client.utils._identifier import IdentifierSequence
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
 
 
 class ExtractionPipelinesAPI(APIClient):
     _RESOURCE_PATH = "/extpipes"
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.runs = ExtractionPipelineRunsAPI(*args, **kwargs)
-        self.config = ExtractionPipelineConfigsAPI(*args, **kwargs)
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self.runs = ExtractionPipelineRunsAPI(config, api_version, cognite_client)
+        self.config = ExtractionPipelineConfigsAPI(config, api_version, cognite_client)
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[ExtractionPipeline]:
         """`Retrieve a single extraction pipeline by id. <https://docs.cognite.com/api/v1/#operation/showExtPipe>`_
@@ -96,7 +100,7 @@ class ExtractionPipelinesAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def list(self, limit: int = 25) -> ExtractionPipelineList:
+    def list(self, limit: int = LIST_LIMIT_DEFAULT) -> ExtractionPipelineList:
         """`List extraction pipelines <https://docs.cognite.com/api/v1/#operation/listExtPipes>`_
 
         Args:
@@ -118,19 +122,15 @@ class ExtractionPipelinesAPI(APIClient):
         return self._list(list_cls=ExtractionPipelineList, resource_cls=ExtractionPipeline, method="GET", limit=limit)
 
     @overload
-    def create(self, extraction_pipeline: ExtractionPipeline, **kwargs: Dict[str, Any]) -> ExtractionPipeline:
+    def create(self, extraction_pipeline: ExtractionPipeline) -> ExtractionPipeline:
         ...
 
     @overload
-    def create(
-        self, extraction_pipeline: Sequence[ExtractionPipeline], **kwargs: Dict[str, Any]
-    ) -> ExtractionPipelineList:
+    def create(self, extraction_pipeline: Sequence[ExtractionPipeline]) -> ExtractionPipelineList:
         ...
 
     def create(
-        self,
-        extraction_pipeline: Union[ExtractionPipeline, Sequence[ExtractionPipeline]] = None,
-        **kwargs: Dict[str, Any],
+        self, extraction_pipeline: Union[ExtractionPipeline, Sequence[ExtractionPipeline]]
     ) -> Union[ExtractionPipeline, ExtractionPipelineList]:
         """`Create one or more extraction pipelines. <https://docs.cognite.com/api/v1/#operation/createExtPipes>`_
 
@@ -152,11 +152,6 @@ class ExtractionPipelinesAPI(APIClient):
                 >>> extpipes = [ExtractionPipeline(name="extPipe1",...), ExtractionPipeline(name="extPipe2",...)]
                 >>> res = c.extraction_pipelines.create(extpipes)
         """
-        # TODO: Remove support for old argument name in major version 6
-        extraction_pipeline = cast(
-            Union[ExtractionPipeline, Sequence[ExtractionPipeline]],
-            handle_deprecated_camel_case_argument(extraction_pipeline, "extractionPipeline", "create", kwargs),
-        )
         utils._auxiliary.assert_type(extraction_pipeline, "extraction_pipeline", [ExtractionPipeline, Sequence])
         return self._create_multiple(
             list_cls=ExtractionPipelineList, resource_cls=ExtractionPipeline, items=extraction_pipeline
@@ -232,7 +227,7 @@ class ExtractionPipelineRunsAPI(APIClient):
         statuses: Sequence[str] = None,
         message_substring: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
-        limit: int = 25,
+        limit: int = LIST_LIMIT_DEFAULT,
     ) -> ExtractionPipelineRunList:
         """`List runs for an extraction pipeline with given external_id <https://docs.cognite.com/api/v1/#operation/filterRuns>`_
 
@@ -269,21 +264,21 @@ class ExtractionPipelineRunsAPI(APIClient):
                 message=StringFilter(substring=message_substring),
                 created_time=created_time,
             ).dump(camel_case=True)
-            return self._list(
-                list_cls=ExtractionPipelineRunList,
-                resource_cls=ExtractionPipelineRun,
-                method="POST",
-                limit=limit,
-                filter=filter,
-            )
+            method: Literal["POST", "GET"] = "POST"
+        else:
+            filter = {"externalId": external_id}
+            method = "GET"
 
-        return self._list(
+        res = self._list(
             list_cls=ExtractionPipelineRunList,
             resource_cls=ExtractionPipelineRun,
-            method="GET",
+            method=method,
             limit=limit,
-            filter={"externalId": external_id},
+            filter=filter,
         )
+        for run in res:
+            run.extpipe_external_id = external_id
+        return res
 
     @overload
     def create(self, run: ExtractionPipelineRun) -> ExtractionPipelineRun:
@@ -313,7 +308,8 @@ class ExtractionPipelineRunsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ExtractionPipelineRun
                 >>> c = CogniteClient()
-                >>> res = c.extraction_pipelines.runs.create(ExtractionPipelineRun(status="success", external_id="extId"))
+                >>> res = c.extraction_pipelines.runs.create(
+                ...     ExtractionPipelineRun(status="success", extpipe_external_id="extId"))
         """
         utils._auxiliary.assert_type(run, "run", [ExtractionPipelineRun, Sequence])
         return self._create_multiple(list_cls=ExtractionPipelineRunList, resource_cls=ExtractionPipelineRun, items=run)

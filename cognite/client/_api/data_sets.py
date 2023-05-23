@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterator, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence, Union, cast
 
 from cognite.client._api_client import APIClient
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import (
     DataSet,
     DataSetAggregate,
@@ -13,12 +14,16 @@ from cognite.client.data_classes import (
 )
 from cognite.client.utils._identifier import IdentifierSequence
 
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
+
 
 class DataSetsAPI(APIClient):
     _RESOURCE_PATH = "/datasets"
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
         self._CREATE_LIMIT = 10
 
     def __call__(
@@ -158,7 +163,7 @@ class DataSetsAPI(APIClient):
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
         external_id_prefix: str = None,
         write_protected: bool = None,
-        limit: int = 25,
+        limit: int = LIST_LIMIT_DEFAULT,
     ) -> DataSetList:
         """`List data sets <https://docs.cognite.com/api/v1/#operation/listDataSets>`_
 

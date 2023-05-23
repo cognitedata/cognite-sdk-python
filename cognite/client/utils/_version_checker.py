@@ -83,6 +83,6 @@ if __name__ == "__main__":
     version_exists = check_if_version_exists(args.package, args.version)
 
     if version_exists:
-        print("yes")
+        print("yes")  # noqa: T201
     else:
-        print("no")
+        print("no")  # noqa: T201

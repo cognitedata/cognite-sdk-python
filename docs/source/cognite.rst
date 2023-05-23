@@ -7,34 +7,42 @@ attributes that describe which project and service account your API key belongs 
 is a user-defined string intended to give the client a unique identifier. You
 can provide the :code:`client_name` by passing it directly to the :code:`ClientConfig` constructor.
 
-You may set a default client configuration which will be used if no config is passed to CogniteClient.
-All examples in this documentation assume that a default configuration has been set.
+The Cognite API uses OpenID Connect (OIDC) to authenticate.
+Use one of the credential providers such as OAuthClientCredentials to authenticate:
+
+.. note::
+    The following example sets a global client configuration which will be used if no config is
+    explicitly passed to `CogniteClient`_.
+    All examples in this documentation assume that such a global configuration has been set.
 
 .. code:: python
 
-    >>> from cognite.client import CogniteClient, ClientConfig, global_config
-    >>> from cognite.client.credentials import APIKey
-    >>> cnf = ClientConfig(client_name="my-special-client", base_url="https://<cluster>.cognitedata.com", project="my-project", credentials=APIKey("very-secret"))
-    >>> global_config.default_client_config = cnf
-    >>> c = CogniteClient()
-    >>> status = c.login.status()
+    from cognite.client import CogniteClient, ClientConfig, global_config
+    from cognite.client.credentials import OAuthClientCredentials
 
-Read more about the `CogniteClient`_ and the functionality it exposes below.
+    # This value will depend on the cluster your CDF project runs on
+    cluster = "api"
+    base_url = f"https://{cluster}.cognitedata.com"
+    tenant_id = "my-tenant-id"
+    client_id = "my-client-id"
+    # client secret should not be stored in-code, so we load it from an environment variable
+    client_secret = os.environ["MY_CLIENT_SECRET"]
+    creds = OAuthClientCredentials(
+      token_url=f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token",
+      client_id=client_id,
+      client_secret=client_secret,
+      scopes=[f"{base_url}/.default"]
+    )
 
-Authenticate
-------------
+    cnf = ClientConfig(
+      client_name="my-special-client",
+      base_url=base_url,
+      project="my-project",
+      credentials=creds
+    )
 
-The preferred way to authenticating against the Cognite API is using OpenID Connect (OIDC).
-To enable this, use one of the credential providers such as OAuthClientCredentials:
-
-.. code:: python
-
-    >>> from cognite.client import CogniteClient, ClientConfig
-    >>> from cognite.client.credentials import OAuthClientCredentials
-    >>>
-    >>> creds = OAuthClientCredentials(token_url=..., client_id=..., client_secret=..., scopes=[...])
-    >>> cnf = ClientConfig(client_name="my-special-client", base_url="https://<cluster>.cognitedata.com", project="my-project", credentials=creds)
-    >>> c = CogniteClient(cnf)
+    global_config.default_client_config = cnf
+    c = CogniteClient()
 
 Examples for all OAuth credential providers can be found in the `Credential Providers`_ section.
 
@@ -42,22 +50,19 @@ You can also make your own credential provider:
 
 .. code:: python
 
-    >>> from cognite.client import CogniteClient, ClientConfig
-    >>> from cognite.client.credentials import Token
-    >>> def token_provider():
-    >>>     ...
-    >>>
-    >>> cnf = ClientConfig(client_name="my-special-client", base_url="https://<cluster>.cognitedata.com", project="my-project", credentials=Token(token_provider))
-    >>> c = CogniteClient(cnf)
+    from cognite.client import CogniteClient, ClientConfig
+    from cognite.client.credentials import Token
 
-If OIDC has not been enabled for your CDF project, you will want to authenticate using an API key.
+    def token_provider():
+        ...
 
-.. code:: python
-
-    >>> from cognite.client import CogniteClient, ClientConfig
-    >>> from cognite.client.credentials import APIKey
-    >>> cnf = ClientConfig(client_name="<your-client-name>", base_url="https://<cluster>.cognitedata.com", project="my-project", credentials=APIKey("very-secret"))
-    >>> c = CogniteClient(cnf)
+    cnf = ClientConfig(
+      client_name="my-special-client",
+      base_url="https://<cluster>.cognitedata.com",
+      project="my-project",
+      credentials=Token(token_provider)
+    )
+    c = CogniteClient(cnf)
 
 Discover time series
 --------------------
@@ -66,9 +71,10 @@ Limits for listing resources default to 25, so the following code will return th
 
 .. code:: python
 
-    >>> from cognite.client import CogniteClient
-    >>> c = CogniteClient()
-    >>> ts_list = c.time_series.list()
+    from cognite.client import CogniteClient
+
+    c = CogniteClient()
+    ts_list = c.time_series.list()
 
 Create an asset hierarchy
 -------------------------
@@ -77,53 +83,88 @@ groups of objects, and assets are organized into an asset hierarchy. For example
 which is part of a subsystem on an oil platform.
 
 At the top of an asset hierarchy is a root asset (e.g., the oil platform). Each project can have multiple root assets.
-All assets have a name and a parent asset. No assets with the same parent can have the same name.
+Note that all assets must have a name (a non-empty string).
 
 To create a root asset (an asset without a parent), omit the parent ID when you post the asset to the API.
-To make an asset a child of an existing asset, you must specify a parent ID.
+To make an asset a child of an existing asset, you must specify a parent ID (or parent external ID):
 
-.. code::
+.. code:: python
 
-    >>> from cognite.client import CogniteClient
-    >>> from cognite.client.data_classes import Asset
-    >>> c = CogniteClient()
-    >>> my_asset = Asset(name="my first asset", parent_id=123)
-    >>> c.assets.create(my_asset)
+    from cognite.client import CogniteClient
+    from cognite.client.data_classes import Asset
+
+    c = CogniteClient()
+    my_asset = Asset(name="my first child asset", parent_id=123)
+    c.assets.create(my_asset)
 
 To post an entire asset hierarchy, you can describe the relations within your asset hierarchy
-using the :code:`external_id` and :code:`parent_external_id` attributes on the :code:`Asset` object. You can post
+using the ``external_id`` and ``parent_external_id`` attributes on the ``Asset`` object. You can post
 an arbitrary number of assets, and the SDK will split the request into multiple requests. To make sure that the
-assets are posted in the correct order, you can use the .create_hierarchy() function, which takes care of the
-sorting before splitting the request into smaller chunks. However, note that the .create_hierarchy() function requires the
-external_id property to be set for all assets.
+assets are created in the correct order, you can use the ``create_hierarchy()`` function, which takes care of the
+topological sorting for you, before splitting the request into smaller chunks. However, note that the ``create_hierarchy()``
+function requires the ``external_id`` property to be set for all assets.
 
 This example shows how to post a three levels deep asset hierarchy consisting of three assets.
 
-.. code::
+.. code:: python
 
-    >>> from cognite.client import CogniteClient
-    >>> from cognite.client.data_classes import Asset
-    >>> c = CogniteClient()
-    >>> root = Asset(name="root", external_id="1")
-    >>> child = Asset(name="child", external_id="2", parent_external_id="1")
-    >>> descendant = Asset(name="descendant", external_id="3", parent_external_id="2")
-    >>> c.assets.create_hierarchy([root, child, descendant])
+    from cognite.client import CogniteClient
+    from cognite.client.data_classes import Asset
 
-Wrap the .create_hierarchy() call in a try-except to get information if posting the assets fails:
+    c = CogniteClient()
+    root = Asset(name="root", external_id="1")
+    child = Asset(name="child", external_id="2", parent_external_id="1")
+    descendant = Asset(name="descendant", external_id="3", parent_external_id="2")
+    c.assets.create_hierarchy([root, child, descendant])
 
-- Which assets were posted. (The request yielded a 201.)
-- Which assets may have been posted. (The request yielded 5xx.)
-- Which assets were not posted. (The request yielded 4xx, or was a descendant of another asset which may or may not have been posted.)
+Wrap the ``create_hierarchy()`` call in a try-except to get information if creating the assets fails:
 
-.. code::
+- Which assets were created. (The request yielded a 201.)
+- Which assets may have been created. (The request yielded 5xx.)
+- Which assets were not created. (The request yielded 4xx, or was a descendant of another asset which may or may not have been created.)
 
-    >>> from cognite.client.exceptions import CogniteAPIError
-    >>> try:
-    ...     c.assets.create_hierarchy([root, child, descendant])
-    >>> except CogniteAPIError as e:
-    ...     assets_posted = e.successful
-    ...     assets_may_have_been_posted = e.unknown
-    ...     assets_not_posted = e.failed
+.. code:: python
+
+    from cognite.client.exceptions import CogniteAPIError
+    try:
+        c.assets.create_hierarchy([root, child, descendant])
+    except CogniteAPIError as err:
+        created = err.successful
+        maybe_created = err.unknown
+        not_created = err.failed
+
+Prior to creating the Assets, it might be useful to do some validation on the assets you have. To do this without
+potentially sending API requests, import and use :class:`~cognite.client.data_classes.assets.AssetHierarchy`:
+
+.. code:: python
+
+    from cognite.client.data_classes import AssetHierarchy
+    hierarchy = AssetHierarchy(assets)
+    # Get a report written to the terminal listing any issues:
+    hierarchy.validate_and_report()
+    # If there are issues, you may inspect them directly:
+    if not hierarchy.is_valid():
+        hierarchy.orphans
+        hierarchy.invalid
+        hierarchy.unsure_parents
+        hierarchy.duplicates
+        hierarchy.cycles  # Requires no other basic issues
+
+Note that validation will run automatically for you when calling ``create_hierarchy()``. You may choose to catch
+``CogniteAssetHierarchyError`` and inspect any raised issues:
+
+.. code:: python
+
+    from cognite.client.exceptions import CogniteAssetHierarchyError
+    try:
+        c.assets.create_hierarchy(assets)
+    except CogniteAssetHierarchyError as err:
+        # You may inspect the following attributes:
+        err.orphans
+        err.invalid
+        err.unsure_parents
+        err.duplicates
+        err.cycles  # Requires no other basic issues
 
 Retrieve all events related to an asset subtree
 -----------------------------------------------
@@ -136,27 +177,28 @@ To retrieve all events related to a given subtree of assets, we first fetch the 
 :code:`.subtree()` method. This returns an :code:`AssetList` object, which has a :code:`.events()` method. This method will
 return events related to any asset in the :code:`AssetList`.
 
-.. code::
+.. code:: python
 
-    >>> from cognite.client import CogniteClient
-    >>> from cognite.client.data_classes import Asset
-    >>> c = CogniteClient()
-    >>> subtree_root_asset="some-external-id"
-    >>> subtree = c.assets.retrieve(external_id=subtree_root_asset).subtree()
-    >>> related_events = subtree.events()
+    from cognite.client import CogniteClient
+    from cognite.client.data_classes import Asset
+
+    c = CogniteClient()
+    subtree_root_asset = "some-external-id"
+    subtree = c.assets.retrieve(external_id=subtree_root_asset).subtree()
+    related_events = subtree.events()
 
 You can use the same pattern to retrieve all time series or files related to a set of assets.
 
-.. code::
+.. code:: python
 
-    >>> related_files = subtree.files()
-    >>> related_time_series = subtree.time_series()
+    related_files = subtree.files()
+    related_time_series = subtree.time_series()
 
 Settings
 ========
 Client configuration
 --------------------
-You can pass configuration arguments directly to the :code:`CogniteClient` constructor, for example to configure the base url of your requests and additional headers. For a list of all configuration arguments, see the `CogniteClient`_ class definition.
+You can pass configuration arguments directly to the `CogniteClient`_ constructor, for example to configure the base url of your requests and additional headers. For a list of all configuration arguments, see the `CogniteClient`_ class definition.
 
 global configuration
 -------------------------
@@ -165,9 +207,9 @@ You can set global configuration options like this:
 .. code:: python
 
     from cognite.client import global_config, ClientConfig
-    from cognite.client.credentials import APIKey
+    from cognite.client.credentials import Token
     global_config.default_client_config = ClientConfig(
-        client_name="my-client", project="myproj", credentials=APIKey("verysecret")
+        client_name="my-client", project="myproj", credentials=Token("verysecret")
     )
     global_config.disable_pypi_version_check = True
     global_config.disable_gzip = False
@@ -183,9 +225,9 @@ Concurrency and connection pooling
 ----------------------------------
 This library does not expose API limits to the user. If your request exceeds API limits, the SDK splits your
 request into chunks and performs the sub-requests in parallel. To control how many concurrent requests you send
-to the API, you can either pass the :code:`max_workers` attribute when you instantiate the :code:`CogniteClient` or set the :code:`max_workers` config option.
+to the API, you can either pass the :code:`max_workers` attribute when you instantiate the `CogniteClient`_ or set the :code:`max_workers` config option.
 
-If you are working with multiple instances of :code:`CogniteClient`, all instances will share the same connection pool.
+If you are working with multiple instances of `CogniteClient`_, all instances will share the same connection pool.
 If you have several instances, you can increase the max connection pool size to reuse connections if you are performing a large amount of concurrent requests.
 You can increase the max connection pool size by setting the :code:`max_connection_pool_size` config option.
 
@@ -257,19 +299,9 @@ Credential Providers
 .. autoclass:: cognite.client.credentials.OAuthDeviceCode
     :members:
     :member-order: bysource
-
-Get login status
-^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.login.LoginAPI.status
-
-
-Data classes
-^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.login
+.. autoclass:: cognite.client.credentials.OAuthClientCertificate
     :members:
-    :undoc-members:
-    :show-inheritance:
-    :inherited-members:
+    :member-order: bysource
 
 Assets
 ------
@@ -618,6 +650,10 @@ Retrieve datapoints as numpy arrays
 Retrieve datapoints in pandas dataframe
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve_dataframe
+
+Retrieve datapoints in time zone in pandas dataframe
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.datapoints.DatapointsAPI.retrieve_dataframe_in_tz
 
 Retrieve latest datapoint
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1070,13 +1106,14 @@ Start an asynchronous job to extract information from image files stored in CDF:
 
 .. code:: python
 
-    >>> from cognite.client import CogniteClient
-    >>> from cognite.client.data_classes.contextualization import VisionFeature
-    >>> c = CogniteClient()
-    >>> extract_job = c.vision.extract(
-    ...     features=[VisionFeature.ASSET_TAG_DETECTION, VisionFeature.PEOPLE_DETECTION],
-    ...     file_ids=[1, 2],
-    ... )
+    from cognite.client import CogniteClient
+    from cognite.client.data_classes.contextualization import VisionFeature
+
+    c = CogniteClient()
+    extract_job = c.vision.extract(
+        features=[VisionFeature.ASSET_TAG_DETECTION, VisionFeature.PEOPLE_DETECTION],
+        file_ids=[1, 2],
+    )
 
 
 The returned job object, :code:`extract_job`, can be used to retrieve the status of the job and the prediction results once the job is completed.
@@ -1084,16 +1121,16 @@ Wait for job completion and get the parsed results:
 
 .. code:: python
 
-    >>> extract_job.wait_for_completion()
-    >>> for item in extract_job.items:
-    ...     predictions = item.predictions
-    ...     # do something with the predictions
+    extract_job.wait_for_completion()
+    for item in extract_job.items:
+        predictions = item.predictions
+        # do something with the predictions
 
 Save the prediction results in CDF as `Annotations <https://docs.cognite.com/api/v1/#tag/Annotations>`_:
 
 .. code:: python
 
-    >>> extract_job.save_predictions()
+    extract_job.save_predictions()
 
 .. note::
     Prediction results are stored in CDF as `Annotations <https://docs.cognite.com/api/v1/#tag/Annotations>`_ using the :code:`images.*` annotation types. In particular, text detections are stored as :code:`images.TextRegion`, asset tag detections are stored as :code:`images.AssetLink`, while other detections are stored as :code:`images.ObjectDetection`.
@@ -1102,12 +1139,13 @@ Tweaking the parameters of a feature extractor:
 
 .. code:: python
 
-    >>> from cognite.client.data_classes.contextualization import FeatureParameters, TextDetectionParameters
-    >>> extract_job = c.vision.extract(
-    ...     features=VisionFeature.TEXT_DETECTION,
-    ...     file_ids=[1, 2],
-    ...     parameters=FeatureParameters(text_detection_parameters=TextDetectionParameters(threshold=0.9))
-    ... )
+    from cognite.client.data_classes.contextualization import FeatureParameters, TextDetectionParameters
+
+    extract_job = c.vision.extract(
+        features=VisionFeature.TEXT_DETECTION,
+        file_ids=[1, 2],
+        parameters=FeatureParameters(text_detection_parameters=TextDetectionParameters(threshold=0.9))
+    )
 
 Extract
 ~~~~~~~
@@ -1276,36 +1314,6 @@ Inspect the token currently used by the client
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.iam.TokenAPI.inspect
 
-Service accounts
-^^^^^^^^^^^^^^^^
-List service accounts
-~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.ServiceAccountsAPI.list
-
-Create service accounts
-~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.ServiceAccountsAPI.create
-
-Delete service accounts
-~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.ServiceAccountsAPI.delete
-
-
-API keys
-^^^^^^^^
-List API keys
-~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.APIKeysAPI.list
-
-Create API keys
-~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.APIKeysAPI.create
-
-Delete API keys
-~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.APIKeysAPI.delete
-
-
 Groups
 ^^^^^^
 List groups
@@ -1319,18 +1327,6 @@ Create groups
 Delete groups
 ~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.iam.GroupsAPI.delete
-
-List service accounts in a group
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.GroupsAPI.list_service_accounts
-
-Add service accounts to a group
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.GroupsAPI.add_service_account
-
-Remove service accounts from a group
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.GroupsAPI.remove_service_account
 
 
 Security categories
@@ -1595,10 +1591,6 @@ CogniteNotFoundError
 CogniteDuplicatedError
 ^^^^^^^^^^^^^^^^^^^^^^
 .. autoexception:: cognite.client.exceptions.CogniteDuplicatedError
-
-CogniteAPIKeyError
-^^^^^^^^^^^^^^^^^^
-.. autoexception:: cognite.client.exceptions.CogniteAPIKeyError
 
 CogniteImportError
 ^^^^^^^^^^^^^^^^^^

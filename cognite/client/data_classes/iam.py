@@ -2,77 +2,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, List, cast
 
-from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, CogniteResponse
+from cognite.client.utils._text import convert_all_keys_to_camel_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
-
-
-class ServiceAccount(CogniteResource):
-    """No description.
-
-    Args:
-        name (str): Unique name of the service account
-        groups (List[int]): List of group ids
-        id (int): No description.
-        is_deleted (bool): If this service account has been logically deleted
-        deleted_time (int): Time of deletion
-        cognite_client (CogniteClient): The client to associate with this object.
-    """
-
-    def __init__(
-        self,
-        name: str = None,
-        groups: List[int] = None,
-        id: int = None,
-        is_deleted: bool = None,
-        deleted_time: int = None,
-        cognite_client: CogniteClient = None,
-    ):
-        self.name = name
-        self.groups = groups
-        self.id = id
-        self.is_deleted = is_deleted
-        self.deleted_time = deleted_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
-
-
-class ServiceAccountList(CogniteResourceList):
-    _RESOURCE = ServiceAccount
-
-
-class APIKey(CogniteResource):
-    """No description.
-
-    Args:
-        id (int): The internal ID for the API key.
-        service_account_id (int): The ID of the service account.
-        created_time (int): The time of creation in Unix milliseconds.
-        status (str): The status of the API key.
-        value (str): The API key to be used against the API.
-        cognite_client (CogniteClient): The client to associate with this object.
-    """
-
-    def __init__(
-        self,
-        id: int = None,
-        service_account_id: int = None,
-        created_time: int = None,
-        status: str = None,
-        value: str = None,
-        cognite_client: CogniteClient = None,
-    ):
-        self.id = id
-        self.service_account_id = service_account_id
-        self.created_time = created_time
-        self.status = status
-        self.value = value
-        self._cognite_client = cast("CogniteClient", cognite_client)
-
-
-class APIKeyList(CogniteResourceList):
-    _RESOURCE = APIKey
 
 
 class Group(CogniteResource):
@@ -176,7 +110,7 @@ class TokenInspection(CogniteResponse):
             "capabilities": self.capabilities,
         }
         if camel_case:
-            dumped = {utils._auxiliary.to_camel_case(key): value for key, value in dumped.items()}
+            dumped = convert_all_keys_to_camel_case(dumped)
         return dumped
 
 

@@ -34,15 +34,10 @@ from typing import (
 from google.protobuf.message import Message
 from sortedcontainers import SortedDict, SortedList
 
-from cognite.client.data_classes.datapoints import NUMPY_IS_AVAILABLE, Datapoints, DatapointsArray
-from cognite.client.utils._auxiliary import (
-    convert_all_keys_to_snake_case,
-    import_legacy_protobuf,
-    is_unlimited,
-    to_camel_case,
-    to_snake_case,
-)
+from cognite.client.data_classes.datapoints import NUMPY_IS_AVAILABLE, Aggregate, Datapoints, DatapointsArray
+from cognite.client.utils._auxiliary import import_legacy_protobuf, is_unlimited
 from cognite.client.utils._identifier import Identifier
+from cognite.client.utils._text import convert_all_keys_to_snake_case, to_camel_case, to_snake_case
 from cognite.client.utils._time import (
     align_start_and_end_for_granularity,
     granularity_to_ms,
@@ -65,13 +60,11 @@ else:
 if NUMPY_IS_AVAILABLE:
     import numpy as np
 
-    from cognite.client.data_classes.datapoints import NumpyFloat64Array, NumpyInt64Array, NumpyObjArray
-
 if TYPE_CHECKING:
     import numpy.typing as npt
 
-DPS_LIMIT_AGG = 10_000
-DPS_LIMIT = 100_000
+    from cognite.client.data_classes.datapoints import NumpyFloat64Array, NumpyInt64Array, NumpyObjArray
+
 
 DatapointsAgg = MutableSequence[AggregateDatapoint]
 DatapointsNum = MutableSequence[NumericDatapoint]
@@ -122,11 +115,11 @@ class DatapointsPayload(CustomDatapoints):
 class _DatapointsQuery:
     """Internal representation of a user request for datapoints, previously public (before v5)"""
 
-    start: Union[int, str, datetime, None] = None
-    end: Union[int, str, datetime, None] = None
+    start: int | str | datetime | None = None
+    end: int | str | datetime | None = None
     id: Optional[DatapointsId] = None
     external_id: Optional[DatapointsExternalId] = None
-    aggregates: Union[str, List[str], None] = None
+    aggregates: Aggregate | str | list[Aggregate | str] | None = None
     granularity: Optional[str] = None
     limit: Optional[int] = None
     include_outside_points: bool = False
@@ -144,8 +137,10 @@ class _DatapointsQuery:
 
 
 class _SingleTSQueryValidator:
-    def __init__(self, user_query: _DatapointsQuery) -> None:
+    def __init__(self, user_query: _DatapointsQuery, *, dps_limit_raw: int, dps_limit_agg: int) -> None:
         self.user_query = user_query
+        self.dps_limit_raw = dps_limit_raw
+        self.dps_limit_agg = dps_limit_agg
         self.defaults: Dict[str, Any] = dict(
             start=user_query.start,
             end=user_query.end,
@@ -252,13 +247,12 @@ class _SingleTSQueryValidator:
             "include_outside_points",
             "ignore_unknown_ids",
         }
-        bad_keys = set(dct) - opt_dct_keys - {arg_name}
-        if not bad_keys:
-            return dct
-        raise KeyError(
-            f"Dict provided by argument `{arg_name}` included key(s) not understood: {sorted(bad_keys)}. "
-            f"Required key: `{arg_name}`. Optional: {list(opt_dct_keys)}."
-        )
+        if bad_keys := set(dct) - opt_dct_keys - {arg_name}:
+            raise KeyError(
+                f"Dict provided by argument `{arg_name}` included key(s) not understood: {sorted(bad_keys)}. "
+                f"Required key: `{arg_name}`. Optional: {list(opt_dct_keys)}."
+            )
+        return dct
 
     def _validate_and_create_query(
         self, dct: Union[DatapointsQueryId, DatapointsQueryExternalId]
@@ -277,8 +271,8 @@ class _SingleTSQueryValidator:
                 # Request is for raw datapoints:
                 raw_query = self._convert_parameters(dct, limit, is_raw=True)
                 if limit is None:
-                    return _SingleTSQueryRawUnlimited(**raw_query)
-                return _SingleTSQueryRawLimited(**raw_query)
+                    return _SingleTSQueryRawUnlimited(**raw_query, max_query_limit=self.dps_limit_raw)
+                return _SingleTSQueryRawLimited(**raw_query, max_query_limit=self.dps_limit_raw)
             raise ValueError("When passing `granularity`, argument `aggregates` is also required.")
 
         elif isinstance(aggregates, list) and len(aggregates) == 0:
@@ -295,8 +289,8 @@ class _SingleTSQueryValidator:
         # Request is for one or more aggregates:
         agg_query = self._convert_parameters(dct, limit, is_raw=False)
         if limit is None:
-            return _SingleTSQueryAggUnlimited(**agg_query)
-        return _SingleTSQueryAggLimited(**agg_query)
+            return _SingleTSQueryAggUnlimited(**agg_query, max_query_limit=self.dps_limit_agg)
+        return _SingleTSQueryAggLimited(**agg_query, max_query_limit=self.dps_limit_agg)
 
     def _convert_parameters(
         self,
@@ -429,7 +423,7 @@ class _SingleTSQueryBase:
 
 class _SingleTSQueryRaw(_SingleTSQueryBase):
     def __init__(self, **kwargs: Any) -> None:
-        super().__init__(**kwargs, max_query_limit=DPS_LIMIT)
+        super().__init__(**kwargs)
         self.aggregates = self.aggregates_cc = None
         self.granularity = None
 
@@ -468,8 +462,7 @@ class _SingleTSQueryRawUnlimited(_SingleTSQueryRaw):
 
 class _SingleTSQueryAgg(_SingleTSQueryBase):
     def __init__(self, *, aggregates: List[str], granularity: str, **kwargs: Any) -> None:
-        agg_query_settings: Dict[str, Any] = dict(include_outside_points=False, max_query_limit=DPS_LIMIT_AGG)
-        super().__init__(**kwargs, **agg_query_settings)
+        super().__init__(**kwargs, include_outside_points=False)
         self.aggregates = aggregates
         self.granularity = granularity
 

@@ -4,10 +4,12 @@ from copy import deepcopy
 from typing import Any, Collection, Dict, List, Optional, Sequence, Union, overload
 
 from cognite.client._api_client import APIClient
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import Annotation, AnnotationFilter, AnnotationList, AnnotationUpdate
 from cognite.client.data_classes._base import CogniteResource
-from cognite.client.utils._auxiliary import assert_type, to_camel_case
+from cognite.client.utils._auxiliary import assert_type
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._text import to_camel_case
 
 
 class AnnotationsAPI(APIClient):
@@ -76,7 +78,7 @@ class AnnotationsAPI(APIClient):
             del item["status"]
         return item
 
-    def list(self, filter: Union[AnnotationFilter, Dict], limit: int = 25) -> AnnotationList:
+    def list(self, filter: Union[AnnotationFilter, Dict], limit: int = LIST_LIMIT_DEFAULT) -> AnnotationList:
         """List annotations.
 
         Args:
@@ -130,7 +132,7 @@ class AnnotationsAPI(APIClient):
         """Update annotations
 
         Args:
-            id (Union[int, Sequence[int]]): ID or list of IDs to be deleted
+            item (Union[Annotation, AnnotationUpdate, Sequence[Union[Annotation, AnnotationUpdate]]]): Annotation or list of annotations to update (or patch or list of patches to apply)
         """
         return self._update_multiple(
             list_cls=AnnotationList, resource_cls=Annotation, update_cls=AnnotationUpdate, items=item

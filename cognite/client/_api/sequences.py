@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import copy
 import math
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple, Union, cast, overload
 from typing import Sequence as SequenceType
-from typing import Tuple, Union, cast, overload
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import (
     Sequence,
     SequenceAggregate,
@@ -19,17 +19,22 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
+from cognite.client.utils._text import convert_all_keys_to_camel_case
+from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 
 if TYPE_CHECKING:
     import pandas
+
+    from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
 
 
 class SequencesAPI(APIClient):
     _RESOURCE_PATH = "/sequences"
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.data = SequencesDataAPI(self, *args, **kwargs)
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self.data = SequencesDataAPI(config, api_version, cognite_client)
 
     def __call__(
         self,
@@ -38,10 +43,10 @@ class SequencesAPI(APIClient):
         external_id_prefix: str = None,
         metadata: Dict[str, str] = None,
         asset_ids: SequenceType[int] = None,
-        asset_subtree_ids: SequenceType[int] = None,
-        asset_subtree_external_ids: SequenceType[str] = None,
-        data_set_ids: SequenceType[int] = None,
-        data_set_external_ids: SequenceType[str] = None,
+        asset_subtree_ids: Union[int, SequenceType[int]] = None,
+        asset_subtree_external_ids: Union[str, SequenceType[str]] = None,
+        data_set_ids: Union[int, SequenceType[int]] = None,
+        data_set_external_ids: Union[str, SequenceType[str]] = None,
         created_time: Dict[str, Any] = None,
         last_updated_time: Dict[str, Any] = None,
         limit: int = None,
@@ -56,26 +61,19 @@ class SequencesAPI(APIClient):
             external_id_prefix (str): Filter out sequences that do not have this string as the start of the externalId
             metadata (Dict[str, Any]): Filter out sequences that do not match these metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
             asset_ids (SequenceType[int]): Filter out sequences that are not linked to any of these assets.
-            asset_subtree_ids (SequenceType[int]): List of asset subtrees ids to filter on.
-            asset_subtree_external_ids (SequenceType[str]): List of asset subtrees external ids to filter on.
-            data_set_ids (SequenceType[int]): Return only events in the specified data sets with these ids.
-            data_set_external_ids (SequenceType[str]): Return only events in the specified data sets with these external ids.
+            asset_subtree_ids (Union[int, SequenceType[int]]): Asset subtree id or list of asset subtree ids to filter on.
+            asset_subtree_external_ids (Union[str, SequenceType[str]]): Asset subtree external id or list of asset subtree external ids to filter on.
+            data_set_ids (Union[int, SequenceType[int]]): Return only sequences in the specified data set(s) with this id / these ids.
+            data_set_external_ids (SequenceType[str]): Return only sequences in the specified data set(s) with this external id / these external ids.
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             limit (int, optional): Max number of sequences to return. Defaults to return all items.
 
         Yields:
-            Union[Sequence, SequenceList]: yields Sequence one by one if chunk is not specified, else SequenceList objects.
+            Union[Sequence, SequenceList]: yields Sequence one by one if chunk_size is not specified, else SequenceList objects.
         """
-        asset_subtree_ids_processed = None
-        if asset_subtree_ids or asset_subtree_external_ids:
-            asset_subtree_ids_processed = IdentifierSequence.load(
-                asset_subtree_ids, asset_subtree_external_ids
-            ).as_dicts()
-
-        data_set_ids_processed = None
-        if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
+        asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
+        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
         filter = SequenceFilter(
             name=name,
@@ -174,13 +172,13 @@ class SequencesAPI(APIClient):
         external_id_prefix: str = None,
         metadata: Dict[str, str] = None,
         asset_ids: SequenceType[int] = None,
-        asset_subtree_ids: SequenceType[int] = None,
-        asset_subtree_external_ids: SequenceType[str] = None,
-        data_set_ids: SequenceType[int] = None,
-        data_set_external_ids: SequenceType[str] = None,
+        asset_subtree_ids: Union[int, SequenceType[int]] = None,
+        asset_subtree_external_ids: Union[str, SequenceType[str]] = None,
+        data_set_ids: Union[int, SequenceType[int]] = None,
+        data_set_external_ids: Union[str, SequenceType[str]] = None,
         created_time: (Union[Dict[str, Any], TimestampRange]) = None,
         last_updated_time: (Union[Dict[str, Any], TimestampRange]) = None,
-        limit: Optional[int] = 25,
+        limit: Optional[int] = LIST_LIMIT_DEFAULT,
     ) -> SequenceList:
         """`Iterate over sequences <https://docs.cognite.com/api/v1/#operation/advancedListSequences>`_
 
@@ -191,10 +189,10 @@ class SequencesAPI(APIClient):
             external_id_prefix (str): Filter out sequences that do not have this string as the start of the externalId
             metadata (Dict[str, Any]): Filter out sequences that do not match these metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
             asset_ids (SequenceType[int]): Filter out sequences that are not linked to any of these assets.
-            asset_subtree_ids (SequenceType[int]): List of asset subtrees ids to filter on.
-            asset_subtree_external_ids (SequenceType[str]): List of asset subtrees external ids to filter on.
-            data_set_ids (SequenceType[int]): Return only events in the specified data sets with these ids.
-            data_set_external_ids (SequenceType[str]): Return only events in the specified data sets with these external ids.
+            asset_subtree_ids (Union[int, SequenceType[int]]): Asset subtree id or list of asset subtree ids to filter on.
+            asset_subtree_external_ids (Union[str, SequenceType[str]]): Asset subtree external id or list of asset subtree external ids to filter on.
+            data_set_ids (Union[int, SequenceType[int]]): Return only sequences in the specified data set(s) with this id / these ids.
+            data_set_external_ids (SequenceType[str]): Return only sequences in the specified data set(s) with this external id / these external ids.
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             limit (int, optional): Max number of sequences to return. Defaults to 25. Set to -1, float("inf") or None
@@ -225,15 +223,8 @@ class SequencesAPI(APIClient):
                 >>> for seq_list in c.sequences(chunk_size=2500):
                 ...     seq_list # do something with the sequences
         """
-        asset_subtree_ids_processed = None
-        if asset_subtree_ids or asset_subtree_external_ids:
-            asset_subtree_ids_processed = IdentifierSequence.load(
-                asset_subtree_ids, asset_subtree_external_ids
-            ).as_dicts()
-
-        data_set_ids_processed = None
-        if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
+        asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
+        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
         filter = SequenceFilter(
             name=name,
@@ -316,7 +307,7 @@ class SequencesAPI(APIClient):
         sequence.columns = [
             {
                 k: v
-                for k, v in utils._auxiliary.convert_all_keys_to_camel_case(col).items()
+                for k, v in convert_all_keys_to_camel_case(col).items()
                 if k in ["externalId", "valueType", "metadata", "name", "description"]
             }
             for col in cast(List, sequence.columns)
@@ -486,9 +477,8 @@ class SequencesAPI(APIClient):
 class SequencesDataAPI(APIClient):
     _DATA_PATH = "/sequences/data"
 
-    def __init__(self, sequences_api: SequencesAPI, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self._sequences_api = sequences_api
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
         self._SEQ_POST_LIMIT_ROWS = 10000
         self._SEQ_POST_LIMIT_VALUES = 100000
         self._SEQ_RETRIEVE_LIMIT = 10000
@@ -597,7 +587,7 @@ class SequencesDataAPI(APIClient):
                 >>> df = c.sequences.data.retrieve_dataframe(id=123, start=0, end=None)
                 >>> c.sequences.data.insert_dataframe(df*2, id=123)
         """
-        dataframe = dataframe.replace({math.nan: None})
+        dataframe = dataframe.replace({math.nan: None})  # TODO: Optimization required (memory usage)
         data = [(v[0], list(v[1:])) for v in dataframe.itertuples()]
         column_external_ids = [str(s) for s in dataframe.columns]
         self.insert(rows=data, column_external_ids=column_external_ids, id=id, external_id=external_id)
@@ -646,7 +636,7 @@ class SequencesDataAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.sequences.data.delete_range(id=0, start=0, end=None)
         """
-        sequence = self._sequences_api.retrieve(id=id, external_id=external_id)
+        sequence = self._cognite_client.sequences.retrieve(id=id, external_id=external_id)
         assert sequence is not None
         post_obj = Identifier.of_either(id, external_id).as_dict()
         post_obj.update(self._process_columns(column_external_ids=[sequence.column_external_ids[0]]))

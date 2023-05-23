@@ -3,12 +3,10 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Awaitable, Dict, List, Optional, Union, cast
 
-from cognite.client import utils
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteListUpdate,
     CognitePrimitiveUpdate,
-    CognitePropertyClassUtil,
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
@@ -16,11 +14,8 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.iam import ClientCredentials
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.data_classes.transformations.common import (
-    DataModelInstances,
     NonceCredentials,
     OidcCredentials,
-    RawTable,
-    SequenceRows,
     TransformationBlockedInfo,
     TransformationDestination,
     _load_destination_dct,
@@ -28,19 +23,19 @@ from cognite.client.data_classes.transformations.common import (
 from cognite.client.data_classes.transformations.jobs import TransformationJob, TransformationJobList
 from cognite.client.data_classes.transformations.schedules import TransformationSchedule
 from cognite.client.data_classes.transformations.schema import TransformationSchemaColumnList
-from cognite.client.utils._auxiliary import convert_all_keys_to_snake_case
+from cognite.client.utils._text import convert_all_keys_to_camel_case, convert_all_keys_to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
 class SessionDetails:
-    """Details of a session which provid.
+    """Details of a source session which provid.
 
     Args:
-        session_id (int): CDF session ID
-        client_id (str): Idp client ID
-        project_name (str): CDF project name
+        session_id (int): CDF source session ID
+        client_id (str): Idp source client ID
+        project_name (str): CDF source project name
     """
 
     def __init__(
@@ -62,10 +57,10 @@ class SessionDetails:
         Returns:
             Dict[str, Any]: A dictionary representation of the instance.
         """
-        ret = self.__dict__
+        ret = vars(self)
 
         if camel_case:
-            return {utils._auxiliary.to_camel_case(key): value for key, value in ret.items()}
+            return convert_all_keys_to_camel_case(ret)
         return ret
 
 
@@ -81,16 +76,12 @@ class Transformation(CogniteResource):
         conflict_mode (str): What to do in case of id collisions: either "abort", "upsert", "update" or "delete"
         is_public (bool): Indicates if the transformation is visible to all in project or only to the owner.
         ignore_null_fields (bool): Indicates how null values are handled on updates: ignore or set null.
-        source_api_key (str): Configures the transformation to authenticate with the given api key on the source.
-        destination_api_key (str): Configures the transformation to authenticate with the given api key on the destination.
         source_oidc_credentials (Optional[OidcCredentials]): Configures the transformation to authenticate with the given oidc credentials key on the destination.
         destination_oidc_credentials (Optional[OidcCredentials]): Configures the transformation to authenticate with the given oidc credentials on the destination.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         owner (str): Owner of the transformation: requester's identity.
         owner_is_current_user (bool): Indicates if the transformation belongs to the current user.
-        has_source_api_key (bool): Indicates if the transformation is configured with a source api key.
-        has_destination_api_key (bool): Indicates if the transformation is configured with a destination api key.
         has_source_oidc_credentials (bool): Indicates if the transformation is configured with a source oidc credentials set.
         has_destination_oidc_credentials (bool): Indicates if the transformation is configured with a destination oidc credentials set.
         running_job (TransformationJob): Details for the job of this transformation currently running.
@@ -114,16 +105,12 @@ class Transformation(CogniteResource):
         conflict_mode: str = None,
         is_public: bool = True,
         ignore_null_fields: bool = False,
-        source_api_key: str = None,
-        destination_api_key: str = None,
         source_oidc_credentials: Optional[OidcCredentials] = None,
         destination_oidc_credentials: Optional[OidcCredentials] = None,
         created_time: Optional[int] = None,
         last_updated_time: Optional[int] = None,
         owner: str = None,
         owner_is_current_user: bool = True,
-        has_source_api_key: Optional[bool] = None,
-        has_destination_api_key: Optional[bool] = None,
         has_source_oidc_credentials: Optional[bool] = None,
         has_destination_oidc_credentials: Optional[bool] = None,
         running_job: TransformationJob = None,
@@ -146,10 +133,6 @@ class Transformation(CogniteResource):
         self.conflict_mode = conflict_mode
         self.is_public = is_public
         self.ignore_null_fields = ignore_null_fields
-        self.source_api_key = source_api_key
-        self.has_source_api_key = has_source_api_key or source_api_key is not None
-        self.destination_api_key = destination_api_key
-        self.has_destination_api_key = has_destination_api_key or destination_api_key is not None
         self.source_oidc_credentials = source_oidc_credentials
         self.has_source_oidc_credentials = has_source_oidc_credentials or source_oidc_credentials is not None
         self.destination_oidc_credentials = destination_oidc_credentials
@@ -182,16 +165,12 @@ class Transformation(CogniteResource):
             self.conflict_mode,
             self.is_public,
             self.ignore_null_fields,
-            self.source_api_key,
-            self.destination_api_key,
             self.source_oidc_credentials,
             self.destination_oidc_credentials,
             self.created_time,
             self.last_updated_time,
             self.owner,
             self.owner_is_current_user,
-            self.has_source_api_key,
-            self.has_destination_api_key,
             self.has_source_oidc_credentials,
             self.has_destination_oidc_credentials,
             self.running_job,
@@ -211,7 +190,9 @@ class Transformation(CogniteResource):
         if sessions_cache is None:
             sessions_cache = {}
 
-        def try_get_or_create_nonce(oidc_credentials: Optional[OidcCredentials]) -> Optional[NonceCredentials]:
+        def try_get_or_create_nonce(
+            oidc_credentials: Optional[OidcCredentials], project: str
+        ) -> Optional[NonceCredentials]:
             if keep_none and oidc_credentials is None:
                 return None
 
@@ -219,7 +200,7 @@ class Transformation(CogniteResource):
             assert sessions_cache is not None
 
             key = (
-                f"{oidc_credentials.client_id}:{hash(oidc_credentials.client_secret)}"
+                f"{oidc_credentials.client_id}:{hash(oidc_credentials.client_secret)}:{project}"
                 if oidc_credentials
                 else "DEFAULT"
             )
@@ -231,20 +212,22 @@ class Transformation(CogniteResource):
                 else:
                     credentials = None
                 try:
-                    session = self._cognite_client.iam.sessions.create(credentials)
-                    ret = NonceCredentials(session.id, session.nonce, self._cognite_client._config.project)
+                    session = self._cognite_client.iam.sessions.create(credentials, project=project)
+                    ret = NonceCredentials(session.id, session.nonce, project)
                     sessions_cache[key] = ret
                 except Exception:
                     ret = None
             return ret
 
-        if self.source_api_key is None and self.source_nonce is None:
-            self.source_nonce = try_get_or_create_nonce(self.source_oidc_credentials)
+        if self.source_nonce is None and self.source_oidc_credentials:
+            project = self.source_oidc_credentials.cdf_project_name or self._cognite_client.project
+            self.source_nonce = try_get_or_create_nonce(self.source_oidc_credentials, project)
             if self.source_nonce:
                 self.source_oidc_credentials = None
 
-        if self.destination_api_key is None and self.destination_nonce is None:
-            self.destination_nonce = try_get_or_create_nonce(self.destination_oidc_credentials)
+        if self.destination_nonce is None and self.destination_oidc_credentials:
+            project = self.destination_oidc_credentials.cdf_project_name or self._cognite_client.project
+            self.destination_nonce = try_get_or_create_nonce(self.destination_oidc_credentials, project)
             if self.destination_nonce:
                 self.destination_oidc_credentials = None
 
@@ -266,31 +249,31 @@ class Transformation(CogniteResource):
     @classmethod
     def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> Transformation:
         instance = super()._load(resource, cognite_client)
-        if isinstance(instance.destination, Dict):
+        if isinstance(instance.destination, dict):
             instance.destination = _load_destination_dct(instance.destination)
 
-        if isinstance(instance.running_job, Dict):
+        if isinstance(instance.running_job, dict):
             snake_dict = convert_all_keys_to_snake_case(instance.running_job)
             instance.running_job = TransformationJob._load(snake_dict, cognite_client=cognite_client)
 
-        if isinstance(instance.last_finished_job, Dict):
+        if isinstance(instance.last_finished_job, dict):
             snake_dict = convert_all_keys_to_snake_case(instance.last_finished_job)
             instance.last_finished_job = TransformationJob._load(snake_dict, cognite_client=cognite_client)
 
-        if isinstance(instance.blocked, Dict):
+        if isinstance(instance.blocked, dict):
             snake_dict = convert_all_keys_to_snake_case(instance.blocked)
             snake_dict.pop("time")
             instance.blocked = TransformationBlockedInfo(**snake_dict)
 
-        if isinstance(instance.schedule, Dict):
+        if isinstance(instance.schedule, dict):
             snake_dict = convert_all_keys_to_snake_case(instance.schedule)
             instance.schedule = TransformationSchedule._load(snake_dict, cognite_client=cognite_client)
 
-        if isinstance(instance.source_session, Dict):
+        if isinstance(instance.source_session, dict):
             snake_dict = convert_all_keys_to_snake_case(instance.source_session)
             instance.source_session = SessionDetails(**snake_dict)
 
-        if isinstance(instance.destination_session, Dict):
+        if isinstance(instance.destination_session, dict):
             snake_dict = convert_all_keys_to_snake_case(instance.destination_session)
             instance.destination_session = SessionDetails(**snake_dict)
         return instance
@@ -310,7 +293,13 @@ class Transformation(CogniteResource):
         for name, prop in ret.items():
             if isinstance(
                 prop,
-                (OidcCredentials, NonceCredentials, TransformationDestination, SessionDetails, TransformationSchedule),
+                (
+                    OidcCredentials,
+                    NonceCredentials,
+                    TransformationDestination,
+                    SessionDetails,
+                    TransformationSchedule,
+                ),
             ):
                 ret[name] = prop.dump(camel_case=camel_case)
         return ret
@@ -376,14 +365,6 @@ class TransformationUpdate(CogniteUpdate):
     @property
     def destination_nonce(self) -> _PrimitiveTransformationUpdate:
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "destinationNonce")
-
-    @property
-    def source_api_key(self) -> _PrimitiveTransformationUpdate:
-        return TransformationUpdate._PrimitiveTransformationUpdate(self, "sourceApiKey")
-
-    @property
-    def destination_api_key(self) -> _PrimitiveTransformationUpdate:
-        return TransformationUpdate._PrimitiveTransformationUpdate(self, "destinationApiKey")
 
     @property
     def is_public(self) -> _PrimitiveTransformationUpdate:
