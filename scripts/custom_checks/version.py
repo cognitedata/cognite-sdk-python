@@ -1,0 +1,52 @@
+import re
+from datetime import datetime
+from pathlib import Path
+from typing import Iterator, Match, Optional
+
+import toml
+
+from cognite.client import __version__
+
+CWD = Path.cwd()
+
+
+def pyproj_version_matches() -> Optional[str]:
+    with (CWD / "pyproject.toml").open() as fh:
+        version_in_pyproject = toml.load(fh)["tool"]["poetry"]["version"]
+
+    if __version__ != version_in_pyproject:
+        return (
+            f"Version in 'pyproject.toml' ({version_in_pyproject}) does not match the version in "
+            f"cognite/client/_version.py: ({__version__})"
+        )
+    return None
+
+
+def _parse_changelog() -> Iterator[Match[str]]:
+    changelog = (CWD / "CHANGELOG.md").read_text()
+    return re.finditer(r"##\s\[(\d+\.\d+\.\d+)\]\s-\s(\d+-\d+-\d+)", changelog)
+
+
+def changelog_entry_version() -> Optional[str]:
+    match = next(_parse_changelog())
+    version = match.group(1)
+    if version != __version__:
+        return (
+            f"The latest entry in 'CHANGELOG.md' has a different version ({version}) than "
+            f"cognite/client/_version.py: ({__version__}). Did you forgot to add a new entry? "
+            "Or maybe you haven't followed the required format?"
+        )
+    return None
+
+
+def changelog_entry_date() -> Optional[str]:
+    match = next(_parse_changelog())
+    try:
+        datetime.strptime(date := match.group(2), "%Y-%m-%d")
+        return None
+    except Exception:
+        return f"Date given in the newest entry in 'CHANGELOG.md', {date!r}, is not valid/parsable (YYYY-MM-DD)"
+
+
+if __name__ == "__main__":
+    changelog_entry_version()

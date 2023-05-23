@@ -44,9 +44,9 @@ repos:
     repo: local
 
   - hooks:
-      - id: version-match-check
-        name: version-match-check
-        entry: poetry run python scripts/check_version_match.py
+      - id: custom-checks
+        name: custom repo checks
+        entry: poetry run python scripts/run_checks.py
         language: system
         pass_filenames: false
     repo: local
