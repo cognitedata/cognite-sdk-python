@@ -46,7 +46,3 @@ def changelog_entry_date() -> Optional[str]:
         return None
     except Exception:
         return f"Date given in the newest entry in 'CHANGELOG.md', {date!r}, is not valid/parsable (YYYY-MM-DD)"
-
-
-if __name__ == "__main__":
-    changelog_entry_version()
