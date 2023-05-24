@@ -331,7 +331,8 @@ class APIClient:
             if retrieved_items:
                 return resource_cls._load(retrieved_items[0], cognite_client=self._cognite_client)
             else:
-                # Data Models such as spaces to not raise a CogniteNotFoundError
+                # Not all APIs (such as the Data Modeling API) return an error when unknown ids are provided,
+                # so we need to handle the unknown singleton identifier case here as well.
                 return None
         return list_cls._load(retrieved_items, cognite_client=self._cognite_client)
 

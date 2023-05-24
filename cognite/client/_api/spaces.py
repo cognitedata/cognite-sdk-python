@@ -139,7 +139,7 @@ class SpacesAPI(APIClient):
         ...
 
     def apply(self, space: Space | Sequence[Space]) -> Space | SpaceList:
-        """`Create or update one or more spaces. <https://docs.cognite.com/api/v1/#tag/Spaces/operation/ApplySpaces>`_
+        """`Create or patch one or more spaces. <https://docs.cognite.com/api/v1/#tag/Spaces/operation/ApplySpaces>`_
 
         Args:
             space (space: Space | Sequence[Space]): Space or spaces of spacesda to create or update.

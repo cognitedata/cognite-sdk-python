@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [6.2.0] - 2023-05-24
 ### Added
-- Support for the data models spaces API with the implementation `CogniteClient.models.spaces`.
+- Support for the spaces resource in the Data Modeling API with the implementation `CogniteClient.data_modeling.spaces`.
 
 
 ## [6.1.10] - 2023-05-22
