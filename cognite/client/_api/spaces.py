@@ -23,7 +23,7 @@ class SpacesAPI(APIClient):
 
         Args:
             chunk_size (int, optional): Number of spaces to return in each chunk. Defaults to yielding one space a time.
-            limit (int, optional): Maximum number of events to return. Default to return all items.
+            limit (int, optional): Maximum number of spaces to return. Default to return all items.
             partitions (int): Retrieve spaces in parallel using this number of workers. Also requires `limit=None` to be passed.
 
         Yields:
@@ -39,9 +39,9 @@ class SpacesAPI(APIClient):
         )
 
     def __iter__(self) -> Iterator[Space]:
-        """Iterate over events
+        """Iterate over spaces
 
-        Fetches events as they are iterated over, so you keep a limited number of events in memory.
+        Fetches spaces as they are iterated over, so you keep a limited number of spaces in memory.
 
         Yields:
             Space: yields Spaces one by one.
@@ -81,7 +81,7 @@ class SpacesAPI(APIClient):
 
         Examples:
 
-            Get events by id::
+            Get spaces by id::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
@@ -96,36 +96,36 @@ class SpacesAPI(APIClient):
         partitions: int = None,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> SpaceList:
-        """`List events <https://docs.cognite.com/api/v1/#tag/Spaces/operation/listSpacesV3>`_
+        """`List spaces <https://docs.cognite.com/api/v1/#tag/Spaces/operation/listSpacesV3>`_
 
         Args:
-            partitions (int): Retrieve events in parallel using this number of workers. Also requires `limit=None` to be passed.
-            limit (int, optional): Maximum number of events to return. Defaults to 25. Set to -1, float("inf") or None
+            partitions (int): Retrieve spaces in parallel using this number of workers. Also requires `limit=None` to be passed.
+            limit (int, optional): Maximum number of spaces to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
 
         Returns:
-            SpaceList: List of requested events
+            SpaceList: List of requested spaces
 
         Examples:
 
-            List events and filter on max start time::
+            List spaces and filter on max start time::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> event_list = c.models.spaces.list(limit=5)
+                >>> space_list = c.models.spaces.list(limit=5)
 
-            Iterate over events::
+            Iterate over spaces::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> for space in c.models.spaces:
                 ...     space # do something with the space
 
-            Iterate over chunks of events to reduce memory load::
+            Iterate over chunks of spaces to reduce memory load::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> for space_list in c.events(chunk_size=2500):
+                >>> for space_list in c.data_modeling.spaces(chunk_size=2500):
                 ...     space_list # do something with the spaces
         """
         return self._list(
@@ -148,14 +148,14 @@ class SpacesAPI(APIClient):
         """`Create or update one or more spaces. <https://docs.cognite.com/api/v1/#tag/Spaces/operation/ApplySpaces>`_
 
         Args:
-            space (space: Space | Sequence[Space]): Space or spaces of events to create or update.
+            space (space: Space | Sequence[Space]): Space or spaces of spacesda to create or update.
 
         Returns:
             Space | SpaceList: Created space(s)
 
         Examples:
 
-            Create new events::
+            Create new spacesda::
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import Space
@@ -182,7 +182,7 @@ class SpacesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> c.events.delete(space=["mySpace", "myOtherSpace"])
+                >>> c.data_modeling.spaces.delete(space=["mySpace", "myOtherSpace"])
         """
         self._delete_multiple(
             identifiers=DataModelingIdentifierSequence.load_spaces(spaces=space),
