@@ -32,11 +32,11 @@ def all_subclasses(base: type) -> list[type]:
     )
 
 
-def all_mock_children(mock, parent_names=()):
+def all_mock_children(mock, parent_name=()):
     """Returns a dictionary with correct dotted names mapping to mocked classes."""
-    dct = {".".join((*parent_names, k)): v for k, v in mock._mock_children.items()}
+    dct = {".".join((*parent_name, k)): v for k, v in mock._mock_children.items()}
     for name, child in dct.copy().items():
-        dct.update(all_mock_children(child, parent_names=(*parent_names, name)))
+        dct.update(all_mock_children(child, parent_name=(name,)))
     return dct
 
 
