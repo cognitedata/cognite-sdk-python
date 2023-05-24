@@ -7,6 +7,7 @@ from unittest.mock import MagicMock
 from cognite.client import CogniteClient
 from cognite.client._api.annotations import AnnotationsAPI
 from cognite.client._api.assets import AssetsAPI
+from cognite.client._api.data_modeling import DataModelingAPI
 from cognite.client._api.data_sets import DataSetsAPI
 from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.diagrams import DiagramsAPI
@@ -22,7 +23,6 @@ from cognite.client._api.functions import FunctionCallsAPI, FunctionsAPI, Functi
 from cognite.client._api.geospatial import GeospatialAPI
 from cognite.client._api.iam import IAMAPI, GroupsAPI, SecurityCategoriesAPI, SessionsAPI, TokenAPI
 from cognite.client._api.labels import LabelsAPI
-from cognite.client._api.models import ModelsAPI
 from cognite.client._api.raw import RawAPI, RawDatabasesAPI, RawRowsAPI, RawTablesAPI
 from cognite.client._api.relationships import RelationshipsAPI
 from cognite.client._api.sequences import SequencesAPI, SequencesDataAPI
@@ -98,7 +98,7 @@ class CogniteClientMock(MagicMock):
 
         self.labels = MagicMock(spec_set=LabelsAPI)
 
-        self.models = MagicMock(spec=ModelsAPI)
+        self.models = MagicMock(spec=DataModelingAPI)
         self.models.spaces = MagicMock(spec_set=SpacesAPI)
 
         self.raw = MagicMock(spec=RawAPI)

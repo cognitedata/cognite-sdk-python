@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from cognite.client.config import ClientConfig
 
 
-class ModelsAPI(APIClient):
+class DataModelingAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.spaces = SpacesAPI(config, api_version, cognite_client)

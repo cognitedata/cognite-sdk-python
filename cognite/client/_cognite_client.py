@@ -7,6 +7,7 @@ from requests import Response
 from cognite.client import utils
 from cognite.client._api.annotations import AnnotationsAPI
 from cognite.client._api.assets import AssetsAPI
+from cognite.client._api.data_modeling import DataModelingAPI
 from cognite.client._api.data_sets import DataSetsAPI
 from cognite.client._api.diagrams import DiagramsAPI
 from cognite.client._api.entity_matching import EntityMatchingAPI
@@ -17,7 +18,6 @@ from cognite.client._api.functions import FunctionsAPI
 from cognite.client._api.geospatial import GeospatialAPI
 from cognite.client._api.iam import IAMAPI
 from cognite.client._api.labels import LabelsAPI
-from cognite.client._api.models import ModelsAPI
 from cognite.client._api.raw import RawAPI
 from cognite.client._api.relationships import RelationshipsAPI
 from cognite.client._api.sequences import SequencesAPI
@@ -71,7 +71,7 @@ class CogniteClient:
         self.diagrams = DiagramsAPI(self._config, self._API_VERSION, self)
         self.annotations = AnnotationsAPI(self._config, self._API_VERSION, self)
         self.functions = FunctionsAPI(self._config, self._API_VERSION, self)
-        self.models = ModelsAPI(self._config, self._API_VERSION, self)
+        self.data_modeling = DataModelingAPI(self._config, self._API_VERSION, self)
 
         # APIs just using base_url:
         self._api_client = APIClient(self._config, api_version=None, cognite_client=self)

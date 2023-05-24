@@ -10,7 +10,7 @@ from cognite.client.data_classes._base import (
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
-_reserved_space_ids = {"space", "cdf", "dms", "pg3", "shared", "system", "node", "edge"}
+_RESERVED_SPACE_IDS = {"space", "cdf", "dms", "pg3", "shared", "system", "node", "edge"}
 
 
 class Space(CogniteResource):
@@ -33,7 +33,7 @@ class Space(CogniteResource):
         created_time: int = None,
         cognite_client: CogniteClient = None,
     ):
-        if space in _reserved_space_ids:
+        if space in _RESERVED_SPACE_IDS:
             raise ValueError(f"The ID: {space} is reserved. Please use another ID.")
         self.space = space
         self.description = description
