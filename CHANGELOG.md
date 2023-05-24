@@ -438,7 +438,6 @@ Read more below in the removed section or check out the method's updated documen
 ### Added
 - Support `tags` on `transformations`.
 
-## [4.6.0] - 2022-09-26
 ### Changed
 - Change geospatial.aggregate_features to support `aggregate_output`
 
@@ -548,7 +547,6 @@ other OAuth flows.
 ### Fixed
 - Fixed a minor casing error for the geo_location field on files
 
-## [3.6.0] - 2022-08-10
 ### Added
 - Add ignore_unknown_ids parameter to files.retrieve_multiple
 
@@ -610,22 +608,18 @@ other OAuth flows.
 - added the diagrams API
 
 ## [2.55.0] - 2022-06-20
-
 ### Fixed
 - Improve geospatial documentation and implement better parameter resilience for filter and feature type update
 
 ## [2.54.0] - 2022-06-17
-
 ### Added
 - Allow to set the chunk size when creating or updating geospatial features
 
 ## [2.53.1] - 2022-06-17
-
 ### Fixed
 - Fixed destination type decoding of `transformation.destination`
 
 ## [2.53.0] - 2022-06-16
-
 ### Added
 - Annotations implementation, providing access to the corresponding [Annotations API](https://docs.cognite.com/api/v1/#tag/Annotations).
     - Added `Annotation`, `AnnotationFilter`, `AnnotationUpdate` dataclasses to `cognite.client.data_classes`
@@ -638,7 +632,6 @@ other OAuth flows.
     - **Get single** annotation with `client.annotations.retrieve` passing the id
     - **Get multiple** annotations with `client.annotations.retrieve_multiple` passing the ids
 
-## [2.52.0] - 2022-06-10
 ### Changed
 - Reverted the optimizations introduced to datapoints fetching in 2.47.0 due to buggy implementation.
 
@@ -677,9 +670,6 @@ other OAuth flows.
 ## [2.46.1] - 2022-04-22
 ### Changed
 - POST requests to the `sessions/revoke`-endpoint are now automatically retried
-
-## [2.46.0] - 2022-03-29
-### Changed
 - Fix retrieval of empty raster in experimental geospatial api: http 204 as ok status
 
 ## [2.45.0] - 2022-03-25
@@ -706,11 +696,10 @@ other OAuth flows.
 ### Added
 - FeatureList.from_geopandas() improvements
 
-## [2.41.3] - 2022-02-11
 ### Fixed
 - example for templates view.
 
-## [2.41.2] - 2022-02-16
+## [2.41.0] - 2022-02-16
 ### Added
 - support for deleting properties and search specs in GeospatialAPI.update_feature_types(...).
 
@@ -777,12 +766,8 @@ other OAuth flows.
 ## [2.35.0] - 2021-11-29
 ### Added
 - Added support for `columns` update on sequences
-
-## [2.34.0] - 2021-11-5
-### Added
 - Added support for `data_set_id` on template views
 
-## [2.33.0] - 2021-10-27
 ### Security
 - Disallow downloading files to path outside download directory in `files.download()`.
 
@@ -951,10 +936,6 @@ now handled gracefully.
 
 ### Changed
 - Resources are now more lenient on which types they accept in for labels
-
-## [2.11.0] - 2021-02-18
-
-### Changed
 - Entity matching fit will flatten dictionaries and resources to "metadata.subfield" similar to pipelines.
 
 ### Added
