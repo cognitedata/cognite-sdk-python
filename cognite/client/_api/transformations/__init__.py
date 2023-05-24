@@ -95,7 +95,7 @@ class TransformationsAPI(APIClient):
                 >>>      name="transformation7",
                 >>>      data_model = DataModelInfo(space="modelSpace", external_id="modelExternalId",version="modelVersion",destination_type="viewExternalId", destination_relationship_from_type="connectionPropertyName"),
                 >>>      destination=TransformationDestination.instances(data_model,"InstanceSpace")
-                >>>      )
+                >>>      ),
                 >>> ]
                 >>> res = c.transformations.create(transformations)
 
