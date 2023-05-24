@@ -15,7 +15,6 @@ class SpacesAPI(APIClient):
         self,
         chunk_size: int = None,
         limit: int = None,
-        partitions: int = None,
     ) -> Iterator[Space] | Iterator[SpaceList]:
         """Iterate over spaces
 
@@ -24,7 +23,6 @@ class SpacesAPI(APIClient):
         Args:
             chunk_size (int, optional): Number of spaces to return in each chunk. Defaults to yielding one space a time.
             limit (int, optional): Maximum number of spaces to return. Default to return all items.
-            partitions (int): Retrieve spaces in parallel using this number of workers. Also requires `limit=None` to be passed.
 
         Yields:
             Union[Space, SpaceList]: yields Space one by one if chunk_size is not specified, else SpaceList objects.
@@ -35,7 +33,6 @@ class SpacesAPI(APIClient):
             method="GET",
             chunk_size=chunk_size,
             limit=limit,
-            partitions=partitions,
         )
 
     def __iter__(self) -> Iterator[Space]:
@@ -93,13 +90,11 @@ class SpacesAPI(APIClient):
 
     def list(
         self,
-        partitions: int = None,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> SpaceList:
         """`List spaces <https://docs.cognite.com/api/v1/#tag/Spaces/operation/listSpacesV3>`_
 
         Args:
-            partitions (int): Retrieve spaces in parallel using this number of workers. Also requires `limit=None` to be passed.
             limit (int, optional): Maximum number of spaces to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
 
@@ -133,7 +128,6 @@ class SpacesAPI(APIClient):
             resource_cls=Space,
             method="GET",
             limit=limit,
-            partitions=partitions,
         )
 
     @overload
