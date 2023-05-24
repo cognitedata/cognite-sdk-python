@@ -17,7 +17,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [6.1.10] - 2023-05-19
+## [6.1.10] - 2023-05-22
 ### Fixed
 - Data modelling is now GA. Renaming instance_nodes -> nodes and instance_edges -> edges to make the naming in SDK consistent with Transformation API and CLI
 
@@ -57,7 +57,7 @@ Changes are grouped as follows
 - The utility function `cognite.client.utils.datetime_to_ms` now raises an understandable `ValueError` when unable to convert pre-epoch datetimes.
 - Several functions reading and writing to disk now explicitly use UTF-8 encoding
 
-## [6.1.1] - 2023-04-28
+## [6.1.1] - 2023-05-02
 ### Fixed
 - `AttributeError` when passing `pandas.Timestamp`s with different timezones (*of which one was UTC*) to `DatapointsAPI.retrieve_dataframe_in_tz`.
 - A `ValueError` is no longer raised when passing `pandas.Timestamp`s in the same timezone, but with different underlying implementations (e.g. `datetime.timezone.utc` / `pytz.UTC` / `ZoneInfo("UTC")`) to `DatapointsAPI.retrieve_dataframe_in_tz`.
@@ -217,7 +217,7 @@ Changes are grouped as follows
 ### Fixed
 - Fixed JSON dumps serialization error of instances of `ExtractionPipelineConfigRevision` and all subclasses (`ExtractionPipelineConfig`) as they stored a reference to the CogniteClient as a non-private attribute.
 
-## [5.5.1] - 2023-02-10
+## [5.5.1] - 2023-02-14
 ### Changed
 - Change `CredentialProvider` `Token` to be thread safe when given a callable that does token refresh.
 
@@ -253,7 +253,7 @@ Changes are grouped as follows
 ### Changed
 - A file-not-found error has been changed from `TypeError` to `FileNotFoundError` as part of the validation in FunctionsAPI.
 
-## [5.3.5] - 2023-01-25
+## [5.3.5] - 2023-01-27
 ### Fixed
 - Fixed an atexit-exception (`TypeError: '<' not supported between instances of 'tuple' and 'NoneType'`) that could be raised on PY39+ after fetching datapoints (which uses a custom thread pool implementation).
 
@@ -292,7 +292,7 @@ Changes are grouped as follows
 ### Added
 - The diagram detect function can take file reference objects that contain file (external) id as well as a page range. This is an alternative to the lists of file ids or file external ids that are still possible to use. Page ranges were not possible to specify before.
 
-## [5.0.2] - 2022-12-15
+## [5.0.2] - 2022-12-21
 ### Changed
 - The valid time range for datapoints has been increased to support timestamps up to end of the year 2099 in the TimeSeriesAPI. The utility function `ms_to_datetime` has been updated accordingly.
 
@@ -391,7 +391,7 @@ Read more below in the removed section or check out the method's updated documen
 - Custom exception: `CogniteDuplicateColumnsError`. No longer needed as the retrieve endpoints now support duplicated identifiers to be passed (similar to the API).
 - All convenience methods related to plotting and the use of `matplotlib`. Rationale: No usage and low utility value: the SDK should not be a data science library.
 
-## [4.11.3] - 2022-11-02
+## [4.11.3] - 2022-11-17
 ### Fixed
 - Fix FunctionCallsAPI filtering
 
@@ -401,7 +401,7 @@ Read more below in the removed section or check out the method's updated documen
 ### Added
 - `DetectJobBundle` dataclass: A way to manage multiple files and jobs.
 
-## [4.11.1] - 2022-11-08
+## [4.11.1] - 2022-11-15
 ### Changed
 - Update doc for Vision extract method
 - Improve error message in `VisionExtractJob.save_annotations`
@@ -410,7 +410,7 @@ Read more below in the removed section or check out the method's updated documen
 ### Added
 - Add `compute` method to `cognite.client.geospatial`
 
-## [4.10.0] - 2022-10-11
+## [4.10.0] - 2022-10-13
 ### Added
 - Add `retrieve_latest` method to `cognite.client.sequences`
 - Add support for extending the expiration time of download links returned by `cognite.client.files.retrieve_download_urls()`
@@ -438,7 +438,6 @@ Read more below in the removed section or check out the method's updated documen
 ### Added
 - Support `tags` on `transformations`.
 
-## [4.6.0] - 2022-09-26
 ### Changed
 - Change geospatial.aggregate_features to support `aggregate_output`
 
@@ -479,7 +478,7 @@ Read more below in the removed section or check out the method's updated documen
 ### Changed
 - Change geospatial.aggregate_features to support order_by
 
-## [4.3.0] - 2022-09-02
+## [4.3.0] - 2022-09-06
 ### Added
 - Add geospatial.list_features
 
@@ -548,7 +547,6 @@ other OAuth flows.
 ### Fixed
 - Fixed a minor casing error for the geo_location field on files
 
-## [3.6.0] - 2022-08-10
 ### Added
 - Add ignore_unknown_ids parameter to files.retrieve_multiple
 
@@ -560,15 +558,15 @@ other OAuth flows.
 ### Changed
 - Cache result from pypi version check so it's not executed for every client instantiation.
 
-## [3.4.2] - 2022-07-28
+## [3.4.2] - 2022-08-09
 ### Fixed
 - Fix the wrong destination name in transformations.
 
-## [3.4.1] - 2022-07-27
+## [3.4.1] - 2022-08-01
 ### Fixed
 - fixed exception when printing exceptions generated on transformations creation/update.
 
-## [3.4.0] - 2022-07-21
+## [3.4.0] - 2022-07-25
 ### Added
 - added support for nonce authentication on transformations
 
@@ -610,22 +608,18 @@ other OAuth flows.
 - added the diagrams API
 
 ## [2.55.0] - 2022-06-20
-
 ### Fixed
 - Improve geospatial documentation and implement better parameter resilience for filter and feature type update
 
 ## [2.54.0] - 2022-06-17
-
 ### Added
 - Allow to set the chunk size when creating or updating geospatial features
 
 ## [2.53.1] - 2022-06-17
-
 ### Fixed
 - Fixed destination type decoding of `transformation.destination`
 
 ## [2.53.0] - 2022-06-16
-
 ### Added
 - Annotations implementation, providing access to the corresponding [Annotations API](https://docs.cognite.com/api/v1/#tag/Annotations).
     - Added `Annotation`, `AnnotationFilter`, `AnnotationUpdate` dataclasses to `cognite.client.data_classes`
@@ -638,11 +632,10 @@ other OAuth flows.
     - **Get single** annotation with `client.annotations.retrieve` passing the id
     - **Get multiple** annotations with `client.annotations.retrieve_multiple` passing the ids
 
-## [2.52.0] - 2022-06-10
 ### Changed
 - Reverted the optimizations introduced to datapoints fetching in 2.47.0 due to buggy implementation.
 
-## [2.51.0] - 2022-06-10
+## [2.51.0] - 2022-06-13
 ### Added
 - added the new geo_location field to the Asset resource
 
@@ -650,11 +643,11 @@ other OAuth flows.
 ### Fixed
 - Geospatial: fix FeatureList.from_geopandas issue with optional properties
 
-## [2.50.1] - 2022-06-07
+## [2.50.1] - 2022-06-09
 ### Fixed
 - Geospatial: keep feature properties as is
 
-## [2.50.0] - 2022-05-27
+## [2.50.0] - 2022-05-30
 ### Changed
 - Geospatial: deprecate update_feature_types and add patch_feature_types
 
@@ -677,9 +670,6 @@ other OAuth flows.
 ## [2.46.1] - 2022-04-22
 ### Changed
 - POST requests to the `sessions/revoke`-endpoint are now automatically retried
-
-## [2.46.0] - 2022-03-29
-### Changed
 - Fix retrieval of empty raster in experimental geospatial api: http 204 as ok status
 
 ## [2.45.0] - 2022-03-25
@@ -698,19 +688,18 @@ other OAuth flows.
 ### Added
 - update pillow dependency 9.0.0 -> 9.0.1
 
-## [2.43.0] - 2022-03-21
+## [2.43.0] - 2022-03-24
 ### Added
 - new list parameters added to `transformations.list`.
 
-## [2.42.0] - 2022-02-11
+## [2.42.0] - 2022-02-25
 ### Added
 - FeatureList.from_geopandas() improvements
 
-## [2.41.3] - 2022-02-11
 ### Fixed
 - example for templates view.
 
-## [2.41.2] - 2022-02-16
+## [2.41.0] - 2022-02-16
 ### Added
 - support for deleting properties and search specs in GeospatialAPI.update_feature_types(...).
 
@@ -730,7 +719,7 @@ other OAuth flows.
 ### Added
 - geospatial API support
 
-## [2.38.6] - 2021-12-17
+## [2.38.6] - 2022-01-14
 ### Added
 - add the possibility to cancel transformation jobs.
 
@@ -738,7 +727,7 @@ other OAuth flows.
 ### Fixed
 - Bug where creating/updating/deleting more than 5 transformation schedules in a single call would fail.
 
-## [2.38.4] - 2021-12-17
+## [2.38.4] - 2021-12-23
 ### Fixed
 - Bug where list generator helper will return more than chunk_size items.
 
@@ -754,7 +743,7 @@ other OAuth flows.
 ### Fixed
 - Bug where loading `transformations.jobs` from JSON fails for raw destinations.
 
-## [2.38.0] - 2021-11-30
+## [2.38.0] - 2021-12-06
 ### Added
 - `transformations` api client, which allows the creation, deletion, update, run and retrieval of transformations.
 - `transformations.schedules` api client, which allows the schedule, unschedule and retrieval of recurring runs of a transformation.
@@ -777,12 +766,8 @@ other OAuth flows.
 ## [2.35.0] - 2021-11-29
 ### Added
 - Added support for `columns` update on sequences
-
-## [2.34.0] - 2021-11-5
-### Added
 - Added support for `data_set_id` on template views
 
-## [2.33.0] - 2021-10-27
 ### Security
 - Disallow downloading files to path outside download directory in `files.download()`.
 
@@ -790,7 +775,7 @@ other OAuth flows.
 ### Added
  - Support for extraction pipelines
 
-## [2.31.1] - 2021-09-27
+## [2.31.1] - 2021-09-30
 ### Fixed
 - Fixed a bug related to handling of binary response payloads.
 
@@ -798,7 +783,7 @@ other OAuth flows.
 ### Added
 - View resolver for template fields.
 
-## [2.30.0] - 2021-08-18
+## [2.30.0] - 2021-08-25
 ### Added
 - Support for Template Views
 
@@ -806,7 +791,7 @@ other OAuth flows.
 ### Added
 - Raw rows are retrieved using parallel cursors when no limit is set.
 
-## [2.28.2] - 2021-08-10
+## [2.28.2] - 2021-08-12
 ### Added
 - Relationships now supports `partitions` parameter for [parallel retrieval](https://docs.cognite.com/api/v1/#section/Parallel-retrieval)
 
@@ -851,17 +836,17 @@ other OAuth flows.
 ### Changed
 - Refactor contextualization constant representation
 
-## [2.21.0] - 2021-06-18
+## [2.21.0] - 2021-06-21
 
 ### Added
 - Datasets support for labels
 
-## [2.20.0] - 2021-06-04
+## [2.20.0] - 2021-06-18
 
 ### Added
 - rows() in RawRowsAPI support filtering with `columns` and `min/maxLastUpdatedTime`
 
-## [2.19.0] - 2021-05-06
+## [2.19.0] - 2021-05-11
 
 ### Added
 - Support for /token/inspect endpoint
@@ -887,7 +872,7 @@ other OAuth flows.
 - `COGNITE_DISABLE_SSL` now also covers ssl verification on IDP endpoints used for generating tokens.
 
 
-## [2.17.1] - 2021-04-13
+## [2.17.1] - 2021-04-15
 
 ### Added
 - `created_time`, and `last_updated_time` to template data classes.
@@ -911,13 +896,13 @@ now handled gracefully.
 - py.typed file. Will not declare library as typed until we run a typechecker on the codebase.
 
 
-## [2.16.0] - 2021-03-24
+## [2.16.0] - 2021-03-26
 
 ### Added
 - support for templates.
 - date-based `cdf-version` header.
 
-## [2.15.0] - 2021-03-12
+## [2.15.0] - 2021-03-22
 
 ### Added
 - `createdTime` field on raw dbs and tables.
@@ -927,7 +912,7 @@ now handled gracefully.
 ### Added
 - dropna argument to insert_dataframe method in DatapointsAPI
 
-## [2.13.0] - 2021-03-12
+## [2.13.0] - 2021-03-16
 
 ### Added
 - `sortByNodeId` and `partitions` query parameters to `list_nodes` method.
@@ -942,7 +927,7 @@ now handled gracefully.
 ### Fixed
 - CogniteMissingClientError raised when creating relationship with malformed body.
 
-## [2.12.0] - 2021-03-04
+## [2.12.0] - 2021-03-08
 
 ### Changed
 - Move Entity matching API from beta to v1.
@@ -951,10 +936,6 @@ now handled gracefully.
 
 ### Changed
 - Resources are now more lenient on which types they accept in for labels
-
-## [2.11.0] - 2021-02-18
-
-### Changed
 - Entity matching fit will flatten dictionaries and resources to "metadata.subfield" similar to pipelines.
 
 ### Added
@@ -1023,7 +1004,7 @@ allowing the method to take arbitrarily long lists for `source_external_ids` and
 ### Fixed
 - Fixed a bug where 429 was not retried on all endpoints
 
-## [2.6.3] - 2020-11-06
+## [2.6.3] - 2020-11-10
 
 ### Fixed
 - Resource metadata should be able to set empty using `.metadata.set(None)` or `.metadata.set({})`.
@@ -1061,7 +1042,7 @@ allowing the method to take arbitrarily long lists for `source_external_ids` and
 ## [2.5.1] - 2020-10-01
 - Include `py.typed` file in sdk distribution
 
-## [2.5.0] - 2020-09-25
+## [2.5.0] - 2020-09-29
 
 ### Added
 - Relationships beta support.
@@ -1114,7 +1095,7 @@ allowing the method to take arbitrarily long lists for `source_external_ids` and
 ### Added
 - Fixed a bug where `/timeseries/list` was missing from the retryable endpoints.
 
-## [2.2.0] - 2020-08-14
+## [2.2.0] - 2020-08-17
 
 ### Added
 - Files labelling support
@@ -1124,7 +1105,7 @@ allowing the method to take arbitrarily long lists for `source_external_ids` and
 ### Fixed
 - Fixed a bug where only v1 endpoints (not playground) could be added as retryable
 
-## [2.1.1] - 2020-08-04
+## [2.1.1] - 2020-08-13
 
 ### Fixed
 - Calls to datapoints `retrieve_dataframe` with `complete="fill"` would break using Pandas version 1.1.0 because it raises TypeError when calling `.interpolate(...)` on a dataframe with no columns.
@@ -1143,7 +1124,7 @@ allowing the method to take arbitrarily long lists for `source_external_ids` and
   res = c.assets.update(my_update)
   ```
 
-## [2.0.0] - 2020-07-17
+## [2.0.0] - 2020-07-21
 
 ### Changed
 - The interface to interact with labels has changed. A new, improved interface is now in place to make it easier to work with CDF labels. The new interface behaves this way:
@@ -1243,12 +1224,12 @@ allowing the method to take arbitrarily long lists for `source_external_ids` and
 - Fixed a bug where add service account to group expected items in response.
 - Jupyter notebook output and non-camel cased to_pandas uses nullable int fields instead of float for relevant fields.
 
-## [1.4.10] - 2020-01-24
+## [1.4.10] - 2020-01-27
 ### Added
 - Support for the error field for synthetic time series query in the experimental client.
 - Support for retrieving data from multiple sequences at once.
 
-## [1.4.9] - 2019-12-19
+## [1.4.9] - 2020-01-08
 
 ### Fixed
 - Fixed a bug where datapoints `retrieve` could return less than limit even if there were more datapoints.
