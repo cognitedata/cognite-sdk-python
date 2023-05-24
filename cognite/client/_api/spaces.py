@@ -5,7 +5,7 @@ from typing import Iterator, Optional, Sequence, cast, overload
 from cognite.client._api_client import APIClient
 from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import Space, SpaceList
-from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._identifier import DataModelIdentifierSequence
 
 
 class SpacesAPI(APIClient):
@@ -64,7 +64,7 @@ class SpacesAPI(APIClient):
                 >>> res = c.models.spaces.retrieve(space='mySpace')
 
         """
-        identifiers = IdentifierSequence.load(ids=space, external_ids=None).as_singleton()
+        identifiers = DataModelIdentifierSequence.load_spaces(spaces=space).as_singleton()
         return self._retrieve_multiple(list_cls=SpaceList, resource_cls=Space, identifiers=identifiers)
 
     def retrieve_multiple(
@@ -88,7 +88,7 @@ class SpacesAPI(APIClient):
                 >>> res = c.models.spaces.retrieve_multiple(spaces=["MySpace", "MyAwesomeSpace", "MyOtherSpace"])
 
         """
-        identifiers = IdentifierSequence.load(ids=spaces, external_ids=None)
+        identifiers = DataModelIdentifierSequence.load_spaces(spaces=spaces)
         return self._retrieve_multiple(list_cls=SpaceList, resource_cls=Space, identifiers=identifiers)
 
     def list(
@@ -185,6 +185,6 @@ class SpacesAPI(APIClient):
                 >>> c.events.delete(space=["mySpace", "myOtherSpace"])
         """
         self._delete_multiple(
-            identifiers=IdentifierSequence.load(ids=IdentifierSequence.load(space_ids=space), external_ids=None),
+            identifiers=DataModelIdentifierSequence.load_spaces(spaces=space),
             wrap_ids=True,
         )
