@@ -152,6 +152,20 @@ class CogniteResource:
     def _repr_html_(self) -> str:
         return notebook_display_with_fallback(self)
 
+    def __repr__(self) -> str:
+        args = []
+        if hasattr(self, "space"):
+            space = self.space
+            args.append(f"{space=}")
+        if hasattr(self, "external_id"):
+            external_id = self.external_id
+            args.append(f"{external_id=}")
+        elif hasattr(self, "name"):
+            name = self.name
+            args.append(f"{name=}")
+
+        return f"{type(self).__name__}({', '.join(args)}) at 0x{hex(id(self)).upper().zfill(16)}"
+
 
 T_CogniteResource = TypeVar("T_CogniteResource", bound=CogniteResource)
 

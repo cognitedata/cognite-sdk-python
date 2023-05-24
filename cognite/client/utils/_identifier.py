@@ -212,6 +212,14 @@ class DataModelingIdentifierSequence(IdentifierSequenceCore[DataModelingIdentifi
 
         return cls(identifiers=[DataModelingIdentifier(space) for space in spaces], is_singleton=len(spaces) == 1)
 
+    @classmethod
+    def load(cls, external_ids: str | Sequence[str], space: str) -> DataModelingIdentifierSequence:
+        external_ids = [external_ids] if isinstance(external_ids, str) else external_ids
+        return cls(
+            identifiers=[DataModelingIdentifier(space, external_id) for external_id in external_ids],
+            is_singleton=len(external_ids) == 1,
+        )
+
 
 class SingletonIdentifierSequence(IdentifierSequenceCore):
     ...
