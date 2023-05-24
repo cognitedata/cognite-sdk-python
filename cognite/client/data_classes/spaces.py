@@ -42,6 +42,10 @@ class Space(CogniteResource):
         self.created_time = created_time
         self._cognite_client = cast("CogniteClient", cognite_client)
 
+    def __repr__(self):
+        space = self.space
+        return f"{type(self).__name__}({space=})"
+
 
 class SpaceList(CogniteResourceList):
     _RESOURCE = Space

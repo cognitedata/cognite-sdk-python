@@ -328,7 +328,11 @@ class APIClient:
         retrieved_items = tasks_summary.joined_results(lambda res: res.json()["items"])
 
         if identifiers.is_singleton():
-            return resource_cls._load(retrieved_items[0], cognite_client=self._cognite_client)
+            if retrieved_items:
+                return resource_cls._load(retrieved_items[0], cognite_client=self._cognite_client)
+            else:
+                # Data Models such as spaces to not raise a CogniteNotFoundError
+                return None
         return list_cls._load(retrieved_items, cognite_client=self._cognite_client)
 
     def _list_generator(

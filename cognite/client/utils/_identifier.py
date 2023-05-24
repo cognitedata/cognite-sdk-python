@@ -188,7 +188,7 @@ class IdentifierSequence(IdentifierSequenceCore[Identifier]):
 class DataModelIdentifierSequence(IdentifierSequenceCore[DataModelIdentifier]):
     @classmethod
     def load_spaces(cls, spaces: str | Sequence[str]):
-        spaces = spaces if isinstance(spaces, Sequence) else [spaces]
+        spaces = [spaces] if isinstance(spaces, str) else spaces
 
         return cls(identifiers=[DataModelIdentifier(space) for space in spaces], is_singleton=len(spaces) == 1)
 

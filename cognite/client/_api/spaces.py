@@ -32,7 +32,7 @@ class SpacesAPI(APIClient):
         return self._list_generator(
             list_cls=SpaceList,
             resource_cls=Space,
-            method="POST",
+            method="GET",
             chunk_size=chunk_size,
             limit=limit,
             partitions=partitions,
