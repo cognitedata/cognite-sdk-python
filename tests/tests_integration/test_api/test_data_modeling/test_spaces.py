@@ -16,8 +16,7 @@ def cdf_spaces(cognite_client):
 def _dump(list_: models.SpaceList | models.Space) -> list[dict]:
     if isinstance(list_, models.Space):
         output = [list_.dump()]
-    else:
-        output = sorted((s.dump() for s in list_), key=lambda s: s["space"])
+    output = sorted((s.dump() for s in list_), key=lambda s: s["space"])
     for entry in output:
         if "last_updated_time" in entry:
             entry["last_updated_time"] = None
