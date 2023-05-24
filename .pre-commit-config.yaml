@@ -34,19 +34,19 @@ repos:
       - id: debug-statements
       - id: check-docstring-first
 
-#  - hooks:
-#    - id: mypy
-#      name: mypy
-#      entry: dmypy run -- cognite
-#      files: ^.*.(py|pyi)$
-#      language: system
-#      pass_filenames: false
-#    repo: local
+  - hooks:
+    - id: mypy
+      name: mypy
+      entry: dmypy run -- cognite
+      files: ^.*.(py|pyi)$
+      language: system
+      pass_filenames: false
+    repo: local
 
-#  - hooks:
-#      - id: custom-checks
-#        name: custom repo checks
-#        entry: poetry run python scripts/run_checks.py
-#        language: system
-#        pass_filenames: false
-#    repo: local
+  - hooks:
+      - id: custom-checks
+        name: custom repo checks
+        entry: poetry run python scripts/run_checks.py
+        language: system
+        pass_filenames: false
+    repo: local

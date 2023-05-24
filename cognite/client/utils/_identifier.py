@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import numbers
-from typing import Dict, Generic, Iterable, List, Optional, Protocol, Sequence, Tuple, TypeVar, Union, cast, overload
+from typing import Dict, Generic, Iterable, List, Optional, Sequence, Tuple, TypeVar, Union, cast, overload
 
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
 from cognite.client.utils._auxiliary import split_into_chunks
@@ -9,15 +9,15 @@ from cognite.client.utils._auxiliary import split_into_chunks
 T_ID = TypeVar("T_ID", int, str)
 
 
-class IdentifierCore(Protocol):
+class IdentifierCore:
     def as_dict(self, camel_case: bool = True) -> dict:
         ...
 
-    def as_primitive(self) -> tuple:
+    def as_primitive(self) -> tuple[str | int]:
         ...
 
 
-class Identifier(Generic[T_ID]):
+class Identifier(Generic[T_ID], IdentifierCore):
     def __init__(self, value: T_ID) -> None:
         self.__value: T_ID = value
 
@@ -45,7 +45,7 @@ class Identifier(Generic[T_ID]):
             return "id"
         return "externalId" if camel_case else "external_id"
 
-    def as_primitive(self) -> T_ID:
+    def as_primitive(self) -> T_ID:  # type: ignore[override]
         return self.__value
 
     @property
@@ -63,7 +63,7 @@ class Identifier(Generic[T_ID]):
         return self.name(camel_case), self.__value
 
 
-class DataModelIdentifier:
+class DataModelIdentifier(IdentifierCore):
     def __init__(self, space: str, external_id: str | None = None):
         self.space = space
         self.external_id = external_id
@@ -75,7 +75,7 @@ class DataModelIdentifier:
         key = "externalId" if camel_case else "external_id"
         return {**output, key: self.external_id}
 
-    def as_primitive(self):
+    def as_primitive(self) -> None:  # type: ignore [override]
         raise AttributeError(f"Not supported for {type(self).__name__} implementation")
 
 
@@ -123,7 +123,7 @@ class IdentifierSequenceCore(Generic[T_Identifier]):
     def as_dicts(self) -> list[dict[str, int | str]]:
         return [identifier.as_dict() for identifier in self._identifiers]
 
-    def as_primitives(self) -> list[int | str]:
+    def as_primitives(self) -> list[tuple[int | str]]:
         return [identifier.as_primitive() for identifier in self._identifiers]
 
     def are_unique(self) -> bool:
@@ -187,7 +187,7 @@ class IdentifierSequence(IdentifierSequenceCore[Identifier]):
 
 class DataModelIdentifierSequence(IdentifierSequenceCore[DataModelIdentifier]):
     @classmethod
-    def load_spaces(cls, spaces: str | Sequence[str]):
+    def load_spaces(cls, spaces: str | Sequence[str]) -> DataModelIdentifierSequence:
         spaces = [spaces] if isinstance(spaces, str) else spaces
 
         return cls(identifiers=[DataModelIdentifier(space) for space in spaces], is_singleton=len(spaces) == 1)
