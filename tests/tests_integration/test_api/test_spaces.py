@@ -8,7 +8,9 @@ from cognite.client.data_classes import Space, SpaceList
 
 @pytest.fixture(scope="function")
 def cdf_spaces(cognite_client):
-    yield cognite_client.models.spaces.list(limit=-1)
+    spaces = cognite_client.data_modeling.spaces.list(limit=-1)
+    assert len(spaces) > 0, "Please create at least one space in CDF."
+    yield spaces
 
 
 def _dump(list_: SpaceList | Space) -> list[dict]:
@@ -19,7 +21,7 @@ def _dump(list_: SpaceList | Space) -> list[dict]:
 
 class TestSpacesAPI:
     def test_list(self, cognite_client: CogniteClient, cdf_spaces: SpaceList):
-        actual_space_in_cdf = cognite_client.models.spaces.list(limit=-1)
+        actual_space_in_cdf = cognite_client.data_modeling.spaces.list(limit=-1)
 
         assert _dump(actual_space_in_cdf) == _dump(cdf_spaces)
 
@@ -30,8 +32,8 @@ class TestSpacesAPI:
         )
 
         # Act
-        created_space = cognite_client.models.spaces.apply(my_space)
-        retrieved_space = cognite_client.models.spaces.retrieve(my_space.space)
+        created_space = cognite_client.data_modeling.spaces.apply(my_space)
+        retrieved_space = cognite_client.data_modeling.spaces.retrieve(my_space.space)
 
         # Assert
         assert retrieved_space.dump() == created_space.dump()
@@ -41,23 +43,23 @@ class TestSpacesAPI:
         assert my_space.dump() == expected
 
         # Act
-        cognite_client.models.spaces.delete(my_space.space)
+        cognite_client.data_modeling.spaces.delete(my_space.space)
 
         # Assert
-        assert cognite_client.models.spaces.retrieve(space=my_space.space) is None
+        assert cognite_client.data_modeling.spaces.retrieve(space=my_space.space) is None
 
     def test_retrieve_multiple(self, cognite_client: CogniteClient, cdf_spaces: SpaceList):
-        retrieved_spaces = cognite_client.models.spaces.retrieve_multiple([s.space for s in cdf_spaces])
+        retrieved_spaces = cognite_client.data_modeling.spaces.retrieve_multiple([s.space for s in cdf_spaces])
 
         assert _dump(retrieved_spaces) == _dump(cdf_spaces)
 
     def test_iterate_over_spaces(self, cognite_client: CogniteClient):
-        for space in cognite_client.models.spaces(chunk_size=1):
+        for space in cognite_client.data_modeling.spaces(chunk_size=1):
             assert space
 
     def test_retrieve_non_existing_space(self, cognite_client: CogniteClient):
-        actual_retrieved = cognite_client.models.spaces.retrieve("notExistingSpace")
+        actual_retrieved = cognite_client.data_modeling.spaces.retrieve("notExistingSpace")
         assert actual_retrieved is None
 
     def test_delete_non_existing_space(self, cognite_client: CogniteClient):
-        assert cognite_client.models.spaces.delete("notExistingSpace") is None
+        assert cognite_client.data_modeling.spaces.delete("notExistingSpace") is None
