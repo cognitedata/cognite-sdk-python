@@ -1,12 +1,20 @@
 from __future__ import annotations
 
 import numbers
-from typing import Dict, Generic, Iterable, List, Optional, Sequence, Tuple, TypeVar, Union, cast, overload
+from typing import Dict, Generic, Iterable, List, Optional, Protocol, Sequence, Tuple, TypeVar, Union, cast, overload
 
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
 from cognite.client.utils._auxiliary import split_into_chunks
 
 T_ID = TypeVar("T_ID", int, str)
+
+
+class IdentifierCore(Protocol):
+    def as_dict(self, camel_case: bool = True):
+        ...
+
+    def as_primitive(self):
+        ...
 
 
 class Identifier(Generic[T_ID]):
@@ -54,11 +62,21 @@ class Identifier(Generic[T_ID]):
     def as_tuple(self, camel_case: bool = True) -> Tuple[str, T_ID]:
         return self.name(camel_case), self.__value
 
-    def __str__(self) -> str:
-        return repr(self)
 
-    def __repr__(self) -> str:
-        return f"{type(self).__name__}({self.__value!r})"
+class DataModelIdentifier:
+    def __init__(self, space: str, external_id: str | None = None):
+        self.space = space
+        self.external_id = external_id
+
+    def as_dict(self, camel_case: bool = True) -> dict[str, str]:
+        output = {"space": self.space}
+        if self.external_id is None:
+            return output
+        key = "externalId" if camel_case else "external_id"
+        return {**output, key: self.external_id}
+
+    def as_primitive(self):
+        raise AttributeError(f"Not supported for {type(self).__name__} implementation")
 
 
 class ExternalId(Identifier[str]):
@@ -69,9 +87,12 @@ class InternalId(Identifier[int]):
     ...
 
 
-class IdentifierSequence:
-    def __init__(self, identifiers: List[Identifier], is_singleton: bool) -> None:
-        if len(identifiers) == 0:
+T_Identifier = TypeVar("T_Identifier", bound=IdentifierCore)
+
+
+class IdentifierSequenceCore(Generic[T_Identifier]):
+    def __init__(self, identifiers: List[T_Identifier], is_singleton: bool) -> None:
+        if not identifiers:
             raise ValueError("No ids or external_ids specified")
         self._identifiers = identifiers
         self.__is_singleton = is_singleton
@@ -79,7 +100,7 @@ class IdentifierSequence:
     def __len__(self) -> int:
         return len(self._identifiers)
 
-    def __getitem__(self, item: int) -> Identifier:
+    def __getitem__(self, item: int) -> T_Identifier:
         return self._identifiers[item]
 
     def is_singleton(self) -> bool:
@@ -99,15 +120,17 @@ class IdentifierSequence:
             for chunk in split_into_chunks(self._identifiers, chunk_size)
         ]
 
-    def as_dicts(self) -> List[Dict[str, Union[int, str]]]:
+    def as_dicts(self) -> list[dict[str, int | str]]:
         return [identifier.as_dict() for identifier in self._identifiers]
 
-    def as_primitives(self) -> List[Union[int, str]]:
+    def as_primitives(self) -> list[int | str]:
         return [identifier.as_primitive() for identifier in self._identifiers]
 
     def are_unique(self) -> bool:
         return len(self) == len(set(self.as_primitives()))
 
+
+class IdentifierSequence(IdentifierSequenceCore[Identifier]):
     @overload
     @classmethod
     def of(cls, *ids: List[Union[int, str]]) -> IdentifierSequence:
@@ -119,7 +142,7 @@ class IdentifierSequence:
         ...
 
     @classmethod
-    def of(cls, *ids: Union[int, str, Sequence[Union[int, str]]]) -> IdentifierSequence:
+    def of(cls, *ids: Union[int, str, Sequence[int | str]]) -> IdentifierSequence:
         if len(ids) == 1 and isinstance(ids[0], Sequence) and not isinstance(ids[0], str):
             return cls([Identifier(val) for val in ids[0]], is_singleton=False)
         else:
@@ -160,6 +183,14 @@ class IdentifierSequence:
 
         is_singleton = value_passed_as_primitive and len(all_identifiers) == 1
         return cls(identifiers=[Identifier(val) for val in all_identifiers], is_singleton=is_singleton)
+
+
+class DataModelIdentifierSequence(IdentifierSequenceCore[DataModelIdentifier]):
+    @classmethod
+    def load_spaces(cls, spaces: str | Sequence[str]):
+        spaces = spaces if isinstance(spaces, Sequence) else [spaces]
+
+        return cls(identifiers=[DataModelIdentifier(space) for space in spaces], is_singleton=len(spaces) == 1)
 
 
 class SingletonIdentifierSequence(IdentifierSequence):
