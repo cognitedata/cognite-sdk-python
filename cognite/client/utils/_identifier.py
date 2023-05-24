@@ -10,10 +10,10 @@ T_ID = TypeVar("T_ID", int, str)
 
 
 class IdentifierCore(Protocol):
-    def as_dict(self, camel_case: bool = True):
+    def as_dict(self, camel_case: bool = True) -> dict:
         ...
 
-    def as_primitive(self):
+    def as_primitive(self) -> tuple:
         ...
 
 
@@ -193,5 +193,5 @@ class DataModelIdentifierSequence(IdentifierSequenceCore[DataModelIdentifier]):
         return cls(identifiers=[DataModelIdentifier(space) for space in spaces], is_singleton=len(spaces) == 1)
 
 
-class SingletonIdentifierSequence(IdentifierSequence):
+class SingletonIdentifierSequence(IdentifierSequenceCore):
     ...

@@ -44,7 +44,7 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import is_unlimited, split_into_chunks
-from cognite.client.utils._identifier import Identifier, IdentifierSequence, SingletonIdentifierSequence
+from cognite.client.utils._identifier import IdentifierCore, IdentifierSequenceCore, SingletonIdentifierSequence
 from cognite.client.utils._text import convert_all_keys_to_camel_case, shorten, to_snake_case
 
 if TYPE_CHECKING:
@@ -243,7 +243,7 @@ class APIClient:
 
     def _retrieve(
         self,
-        identifier: Identifier,
+        identifier: IdentifierCore,
         cls: Type[T_CogniteResource],
         resource_path: str = None,
         params: Dict = None,
@@ -282,7 +282,7 @@ class APIClient:
         self,
         list_cls: Type[T_CogniteResourceList],
         resource_cls: Type[T_CogniteResource],
-        identifiers: IdentifierSequence,
+        identifiers: IdentifierSequenceCore,
         resource_path: Optional[str] = None,
         ignore_unknown_ids: Optional[bool] = None,
         headers: Optional[Dict[str, Any]] = None,
@@ -294,7 +294,7 @@ class APIClient:
         self,
         list_cls: Type[T_CogniteResourceList],
         resource_cls: Type[T_CogniteResource],
-        identifiers: Union[SingletonIdentifierSequence, IdentifierSequence],
+        identifiers: Union[SingletonIdentifierSequence, IdentifierSequenceCore],
         resource_path: Optional[str] = None,
         ignore_unknown_ids: Optional[bool] = None,
         headers: Optional[Dict[str, Any]] = None,
@@ -659,7 +659,7 @@ class APIClient:
 
     def _delete_multiple(
         self,
-        identifiers: IdentifierSequence,
+        identifiers: IdentifierSequenceCore,
         wrap_ids: bool,
         resource_path: Optional[str] = None,
         params: Optional[Dict[str, Any]] = None,
