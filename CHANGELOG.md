@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.2.0] - 2023-05-24
+### Added
+- Support for the data models spaces API with the implementation `CogniteClient.models.spaces`.
+
+
 ## [6.1.10] - 2023-05-22
 ### Fixed
 - Data modelling is now GA. Renaming instance_nodes -> nodes and instance_edges -> edges to make the naming in SDK consistent with Transformation API and CLI
@@ -401,7 +406,7 @@ Read more below in the removed section or check out the method's updated documen
 ### Added
 - `DetectJobBundle` dataclass: A way to manage multiple files and jobs.
 
-## [4.11.1] - 2022-11-15
+## [4.11.1] - 2022-11-08
 ### Changed
 - Update doc for Vision extract method
 - Improve error message in `VisionExtractJob.save_annotations`
