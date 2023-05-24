@@ -88,12 +88,12 @@ class TransformationsAPI(APIClient):
                 >>>      ),
                 >>>      Transformation(
                 >>>      name="transformation6",
-                >>>      data_model = DataModelInfo(space="TypeSpace", external_id="TypeExtId",version="version",destination_type="viewExternalId"),
+                >>>      data_model = DataModelInfo(space="modelSpace", external_id="modelExternalId",version="modelVersion",destination_type="viewExternalId"),
                 >>>      destination=TransformationDestination.instances(data_model,"InstanceSpace")
                 >>>      ),
                 >>>      Transformation(
                 >>>      name="transformation7",
-                >>>      data_model = DataModelInfo(space="TypeSpace", external_id="TypeExtId",version="version",destination_type="viewExternalId", destination_relationship_from_type="connectionPropertyName"),
+                >>>      data_model = DataModelInfo(space="modelSpace", external_id="modelExternalId",version="modelVersion",destination_type="viewExternalId", destination_relationship_from_type="connectionPropertyName"),
                 >>>      destination=TransformationDestination.instances(data_model,"InstanceSpace")
                 >>>      )
                 >>> ]
