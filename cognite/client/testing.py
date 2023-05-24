@@ -22,9 +22,11 @@ from cognite.client._api.functions import FunctionCallsAPI, FunctionsAPI, Functi
 from cognite.client._api.geospatial import GeospatialAPI
 from cognite.client._api.iam import IAMAPI, GroupsAPI, SecurityCategoriesAPI, SessionsAPI, TokenAPI
 from cognite.client._api.labels import LabelsAPI
+from cognite.client._api.models import ModelsAPI
 from cognite.client._api.raw import RawAPI, RawDatabasesAPI, RawRowsAPI, RawTablesAPI
 from cognite.client._api.relationships import RelationshipsAPI
 from cognite.client._api.sequences import SequencesAPI, SequencesDataAPI
+from cognite.client._api.spaces import SpacesAPI
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api.templates import (
     TemplateGroupsAPI,
@@ -95,6 +97,9 @@ class CogniteClientMock(MagicMock):
         self.iam.token = MagicMock(spec_set=TokenAPI)
 
         self.labels = MagicMock(spec_set=LabelsAPI)
+
+        self.models = MagicMock(spec=ModelsAPI)
+        self.models.spaces = MagicMock(spec_set=SpacesAPI)
 
         self.raw = MagicMock(spec=RawAPI)
         self.raw.databases = MagicMock(spec_set=RawDatabasesAPI)
