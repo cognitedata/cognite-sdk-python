@@ -670,7 +670,9 @@ class APIClient:
         params: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, Any]] = None,
         extra_body_fields: Optional[Dict[str, Any]] = None,
-    ) -> None:
+        return_items: bool = False,
+        list_cls: Optional[Type[T_CogniteResourceList]] = None,
+    ) -> None | Type[T_CogniteResourceList]:
         resource_path = resource_path or self._RESOURCE_PATH
         tasks = [
             {
@@ -689,6 +691,12 @@ class APIClient:
             task_unwrap_fn=lambda task: task["json"]["items"],
             task_list_element_unwrap_fn=utils._auxiliary.unwrap_identifer,
         )
+        if not return_items:
+            return None
+        if list_cls is None:
+            raise ValueError("If you are going to return results, then you need to pass the list_cls")
+        deleted_resources = summary.joined_results(lambda res: res.json()["items"])
+        return list_cls._load(deleted_resources, cognite_client=self._cognite_client)  # type: ignore[return-value]
 
     @overload
     def _update_multiple(

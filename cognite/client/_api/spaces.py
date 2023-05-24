@@ -163,13 +163,13 @@ class SpacesAPI(APIClient):
     def delete(
         self,
         space: str | Sequence[str],
-    ) -> None:
+    ) -> SpaceList | None:
         """`Delete one or more spaces <https://docs.cognite.com/api/v1/#tag/Spaces/operation/deleteSpacesV3>`_
 
         Args:
             space (str | Sequence[str]): ID or ID list ids of spaces.
         Returns:
-            None
+            The space(s) which has been deleted. None if nothing was deleted.
         Examples:
 
             Delete spaces by id::
@@ -178,7 +178,10 @@ class SpacesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.data_modeling.spaces.delete(space=["mySpace", "myOtherSpace"])
         """
-        self._delete_multiple(
+        deleted_spaces = self._delete_multiple(
             identifiers=DataModelingIdentifierSequence.load_spaces(spaces=space),
             wrap_ids=True,
+            return_items=True,
+            list_cls=SpaceList,
         )
+        return deleted_spaces if deleted_spaces else None  # type: ignore[return-value]

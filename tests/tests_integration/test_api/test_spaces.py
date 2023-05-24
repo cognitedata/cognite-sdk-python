@@ -43,9 +43,10 @@ class TestSpacesAPI:
         assert my_space.dump() == expected
 
         # Act
-        cognite_client.data_modeling.spaces.delete(my_space.space)
+        deleted_space = cognite_client.data_modeling.spaces.delete(my_space.space)
 
         # Assert
+        assert deleted_space[0].space == my_space.space
         assert cognite_client.data_modeling.spaces.retrieve(space=my_space.space) is None
 
     def test_retrieve_multiple(self, cognite_client: CogniteClient, cdf_spaces: SpaceList):
@@ -62,4 +63,5 @@ class TestSpacesAPI:
         assert actual_retrieved is None
 
     def test_delete_non_existing_space(self, cognite_client: CogniteClient):
-        assert cognite_client.data_modeling.spaces.delete("notExistingSpace") is None
+        deleted_space = cognite_client.data_modeling.spaces.delete("notExistingSpace")
+        assert deleted_space is None
