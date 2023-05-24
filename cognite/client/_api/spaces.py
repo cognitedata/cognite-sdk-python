@@ -48,11 +48,11 @@ class SpacesAPI(APIClient):
         """
         return cast(Iterator[Space], self())
 
-    def retrieve(self, id: str) -> Optional[Space]:
+    def retrieve(self, space: str) -> Optional[Space]:
         """`Retrieve a single space by id. <https://docs.cognite.com/api/v1/#tag/Spaces/operation/bySpaceIdsSpaces>`_
 
         Args:
-            id (int): ID
+            space (str): Space ID
 
         Returns:
             Optional[Space]: Requested space or None if it does not exist.
@@ -61,20 +61,20 @@ class SpacesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.models.spaces.retrieve(id='mySpace')
+                >>> res = c.models.spaces.retrieve(space='mySpace')
 
         """
-        identifiers = IdentifierSequence.load(ids=id, external_ids=None).as_singleton()
+        identifiers = IdentifierSequence.load(ids=space, external_ids=None).as_singleton()
         return self._retrieve_multiple(list_cls=SpaceList, resource_cls=Space, identifiers=identifiers)
 
     def retrieve_multiple(
         self,
-        ids: Sequence[str],
+        spaces: Sequence[str],
     ) -> SpaceList:
         """`Retrieve multiple spaces by id. <https://docs.cognite.com/api/v1/#tag/Spaces/operation/bySpaceIdsSpaces>`_
 
         Args:
-            ids (Sequence[int]): IDs
+            spaces (Sequence[str]): Space IDs.
 
         Returns:
             SpaceList: The requested spaces.
@@ -85,10 +85,10 @@ class SpacesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.models.spaces.retrieve_multiple(ids=["MySpace", "MyAwesomeSpace", "MyOtherSpace"])
+                >>> res = c.models.spaces.retrieve_multiple(spaces=["MySpace", "MyAwesomeSpace", "MyOtherSpace"])
 
         """
-        identifiers = IdentifierSequence.load(ids=ids, external_ids=None)
+        identifiers = IdentifierSequence.load(ids=spaces, external_ids=None)
         return self._retrieve_multiple(list_cls=SpaceList, resource_cls=Space, identifiers=identifiers)
 
     def list(
@@ -131,17 +131,17 @@ class SpacesAPI(APIClient):
         return self._list(
             list_cls=SpaceList,
             resource_cls=Space,
-            method="POST",
+            method="GET",
             limit=limit,
             partitions=partitions,
         )
 
     @overload
-    def apply(self, event: Sequence[Space]) -> SpaceList:
+    def apply(self, space: Sequence[Space]) -> SpaceList:
         ...
 
     @overload
-    def apply(self, event: Space) -> Space:
+    def apply(self, space: Space) -> Space:
         ...
 
     def apply(self, space: Space | Sequence[Space]) -> Space | SpaceList:
@@ -160,20 +160,20 @@ class SpacesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import Space
                 >>> c = CogniteClient()
-                >>> spaces = [Space(id="mySpace", description="My first space", name="My Space"),
-                ... Space(id="myOtherSpace", description="My second space", name="My Other Space")]
+                >>> spaces = [Space(space="mySpace", description="My first space", name="My Space"),
+                ... Space(space="myOtherSpace", description="My second space", name="My Other Space")]
                 >>> res = c.models.spaces.create(spaces)
         """
         return self._create_multiple(list_cls=SpaceList, resource_cls=Space, items=space)
 
     def delete(
         self,
-        id: str | Sequence[str],
+        space: str | Sequence[str],
     ) -> None:
         """`Delete one or more spaces <https://docs.cognite.com/api/v1/#tag/Spaces/operation/deleteSpacesV3>`_
 
         Args:
-            id (Union[int, Sequence[int]): Id or list of ids
+            space (str | Sequence[str]): ID or ID list ids of spaces.
         Returns:
             None
         Examples:
@@ -182,9 +182,9 @@ class SpacesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> c.events.delete(id=["mySpace", "myOtherSpace"])
+                >>> c.events.delete(space=["mySpace", "myOtherSpace"])
         """
         self._delete_multiple(
-            identifiers=IdentifierSequence.load(ids=id, external_ids=None),
+            identifiers=IdentifierSequence.load(ids=IdentifierSequence.load(space_ids=space), external_ids=None),
             wrap_ids=True,
         )
