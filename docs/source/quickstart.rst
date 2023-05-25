@@ -12,7 +12,7 @@ Use one of the credential providers such as OAuthClientCredentials to authentica
 
 .. note::
     The following example sets a global client configuration which will be used if no config is
-    explicitly passed to `CogniteClient`_.
+    explicitly passed to :ref:`cognite:CogniteClient`.
     All examples in this documentation assume that such a global configuration has been set.
 
 .. code:: python
@@ -44,7 +44,7 @@ Use one of the credential providers such as OAuthClientCredentials to authentica
     global_config.default_client_config = cnf
     c = CogniteClient()
 
-Examples for all OAuth credential providers can be found in the `Credential Providers`_ section.
+Examples for all OAuth credential providers can be found in the :ref:`cognite:Credential Providers` section.
 
 You can also make your own credential provider:
 
