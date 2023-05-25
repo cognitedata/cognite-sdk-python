@@ -17,7 +17,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [6.1.11] - 19-05-25
+## [6.1.11] - 2023-05-25
 - Data model centric support in transformation
 
 ## [6.2.0] - 2023-05-25
