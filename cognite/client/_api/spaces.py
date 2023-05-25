@@ -61,8 +61,8 @@ class SpacesAPI(APIClient):
                 >>> res = c.models.spaces.retrieve(space='mySpace')
 
         """
-        identifiers = DataModelingIdentifierSequence.load_spaces(spaces=space).as_singleton()
-        return self._retrieve_multiple(list_cls=SpaceList, resource_cls=Space, identifiers=identifiers)
+        identifier = DataModelingIdentifierSequence.load_spaces(spaces=space).as_singleton()
+        return self._retrieve_multiple(list_cls=SpaceList, resource_cls=Space, identifiers=identifier)
 
     def retrieve_multiple(
         self,

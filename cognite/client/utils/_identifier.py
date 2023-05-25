@@ -1,7 +1,21 @@
 from __future__ import annotations
 
 import numbers
-from typing import Dict, Generic, Iterable, List, Optional, Protocol, Sequence, Tuple, TypeVar, Union, cast, overload
+from typing import (
+    Dict,
+    Generic,
+    Iterable,
+    List,
+    NoReturn,
+    Optional,
+    Protocol,
+    Sequence,
+    Tuple,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
 from cognite.client.utils._auxiliary import split_into_chunks
@@ -75,7 +89,7 @@ class DataModelingIdentifier:
         key = "externalId" if camel_case else "external_id"
         return {**output, key: self.external_id}
 
-    def as_primitive(self) -> None:  # type: ignore [override]
+    def as_primitive(self) -> NoReturn:
         raise AttributeError(f"Not supported for {type(self).__name__} implementation")
 
 
@@ -185,7 +199,7 @@ class IdentifierSequence(IdentifierSequenceCore[Identifier]):
         return cls(identifiers=[Identifier(val) for val in all_identifiers], is_singleton=is_singleton)
 
 
-class DataModelingIdentifierSequence(IdentifierSequenceCore[DataModelingIdentifier]):  # type: ignore[type-var]
+class DataModelingIdentifierSequence(IdentifierSequenceCore[DataModelingIdentifier]):
     @classmethod
     def load_spaces(cls, spaces: str | Sequence[str]) -> DataModelingIdentifierSequence:
         spaces = [spaces] if isinstance(spaces, str) else spaces
