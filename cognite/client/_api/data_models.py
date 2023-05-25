@@ -4,12 +4,12 @@ from typing import Iterator, Optional, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import LIST_LIMIT_DEFAULT
-from cognite.client.data_classes.data_models import DataModel, DataModelList
+from cognite.client.data_classes.data_modeling import DataModel, DataModelList
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
 
 
 class DataModelsAPI(APIClient):
-    _RESOURCE_PATH = "/models/data_models"
+    _RESOURCE_PATH = "/models/datamodels"
 
     def __call__(
         self,
