@@ -1,0 +1,66 @@
+3D
+==
+
+3D
+--
+Models
+^^^^^^
+Retrieve a model by ID
+~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDModelsAPI.retrieve
+
+List models
+~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDModelsAPI.list
+
+Create models
+~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDModelsAPI.create
+
+Update models
+~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDModelsAPI.update
+
+Delete models
+~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDModelsAPI.delete
+
+
+Revisions
+^^^^^^^^^
+Retrieve a revision by ID
+~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.retrieve
+
+Create a revision
+~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.create
+
+List revisions
+~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.list
+
+Update revisions
+~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.update
+
+Delete revisions
+~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.delete
+
+Update a revision thumbnail
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.update_thumbnail
+
+List nodes
+~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.list_nodes
+
+Filter nodes
+~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.filter_nodes
+
+List ancestor nodes
+~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.list_ancestor_nodes
+
