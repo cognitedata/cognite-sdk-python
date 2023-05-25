@@ -72,6 +72,10 @@ class CogniteClientMock(MagicMock):
         #   - Use `spec_set=MyNestedAPI` for all nested APIs
         self.annotations = MagicMock(spec_set=AnnotationsAPI)
         self.assets = MagicMock(spec_set=AssetsAPI)
+
+        self.data_modeling = MagicMock(spec=DataModelingAPI)
+        self.data_modeling.spaces = MagicMock(spec_set=SpacesAPI)
+
         self.data_sets = MagicMock(spec_set=DataSetsAPI)
 
         self.diagrams = MagicMock(spec_set=DiagramsAPI)
@@ -97,9 +101,6 @@ class CogniteClientMock(MagicMock):
         self.iam.token = MagicMock(spec_set=TokenAPI)
 
         self.labels = MagicMock(spec_set=LabelsAPI)
-
-        self.models = MagicMock(spec=DataModelingAPI)
-        self.models.spaces = MagicMock(spec_set=SpacesAPI)
 
         self.raw = MagicMock(spec=RawAPI)
         self.raw.databases = MagicMock(spec_set=RawDatabasesAPI)

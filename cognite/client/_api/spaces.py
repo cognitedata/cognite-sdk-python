@@ -58,7 +58,7 @@ class SpacesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.models.spaces.retrieve(space='mySpace')
+                >>> res = c.data_modeling.spaces.retrieve(space='mySpace')
 
         """
         identifier = DataModelingIdentifierSequence.load_spaces(spaces=space).as_singleton()
@@ -82,7 +82,7 @@ class SpacesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.models.spaces.retrieve_multiple(spaces=["MySpace", "MyAwesomeSpace", "MyOtherSpace"])
+                >>> res = c.data_modeling.spaces.retrieve_multiple(spaces=["MySpace", "MyAwesomeSpace", "MyOtherSpace"])
 
         """
         identifiers = DataModelingIdentifierSequence.load_spaces(spaces=spaces)
@@ -107,13 +107,13 @@ class SpacesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> space_list = c.models.spaces.list(limit=5)
+                >>> space_list = c.data_modeling.spaces.list(limit=5)
 
             Iterate over spaces::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> for space in c.models.spaces:
+                >>> for space in c.data_modeling.spaces:
                 ...     space # do something with the space
 
             Iterate over chunks of spaces to reduce memory load::
@@ -156,7 +156,7 @@ class SpacesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> spaces = [Space(space="mySpace", description="My first space", name="My Space"),
                 ... Space(space="myOtherSpace", description="My second space", name="My Other Space")]
-                >>> res = c.models.spaces.create(spaces)
+                >>> res = c.data_modeling.spaces.create(spaces)
         """
         return self._create_multiple(list_cls=SpaceList, resource_cls=Space, items=space)
 

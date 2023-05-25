@@ -17,7 +17,7 @@ class Space(CogniteResource):
     """A workspace for data models and instances.
 
     Args:
-        space (str): a unique identifier for space.
+        space (str): a unique identifier for the space.
         description (str): Textual description of the space
         name (str): Human readable name for the space.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -34,7 +34,7 @@ class Space(CogniteResource):
         cognite_client: CogniteClient = None,
     ):
         if space in _RESERVED_SPACE_IDS:
-            raise ValueError(f"The ID: {space} is reserved. Please use another ID.")
+            raise ValueError(f"The space ID: {space} is reserved. Please use another ID.")
         self.space = space
         self.description = description
         self.name = name
