@@ -94,32 +94,32 @@ Delete extraction pipelines
 
 
 Extraction pipeline runs
-^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------
 List runs for an extraction pipeline
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelineRunsAPI.list
 
 Report new runs
-~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelineRunsAPI.create
 
 
 Extraction pipeline configs
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+---------------------------
 Get the latest or a specific config revision
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelineConfigsAPI.retrieve
 
 List configuration revisions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelineConfigsAPI.list
 
 Create a config revision
-~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelineConfigsAPI.create
 
 Revert to an earlier config revision
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelineConfigsAPI.revert
 
 Data classes

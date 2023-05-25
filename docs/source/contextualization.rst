@@ -1,5 +1,8 @@
 Contextualization
 =================
+
+Entity Matching
+---------------
 These APIs will return as soon as possible, deferring a blocking wait until the last moment. Nevertheless, they can block for a long time awaiting results.
 
 Fit Entity Matching Model
@@ -28,6 +31,9 @@ Predict Using an Entity Matching Model
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.predict
 
+Engineering Diagrams
+--------------------
+
 Detect entities in Engineering Diagrams
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.diagrams.DiagramsAPI.detect
@@ -37,9 +43,8 @@ Convert to an interactive SVG where the provided annotations are highlighted
 .. automethod:: cognite.client._api.diagrams.DiagramsAPI.convert
 
 
-
 Vision
-^^^^^^
+------
 
 The Vision API enable extraction of information from imagery data based on
 their visual content. For example, you can can extract features such as text, asset tags or industrial objects from images using this service.
@@ -92,12 +97,12 @@ Tweaking the parameters of a feature extractor:
     )
 
 Extract
-~~~~~~~
+^^^^^^^
 
 .. automethod:: cognite.client._api.vision.VisionAPI.extract
 
 Get vision extract job
-~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^
 
 .. automethod:: cognite.client._api.vision.VisionAPI.get_extract_job
 

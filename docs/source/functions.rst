@@ -1,6 +1,7 @@
 Functions
 =========
-
+Functions
+---------
 Create function
 ^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.functions.FunctionsAPI.create
@@ -27,35 +28,35 @@ Call function
 
 
 Function calls
-^^^^^^^^^^^^^^
+--------------
 List function calls
-~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.functions.FunctionCallsAPI.list
 
 Retrieve function call
-~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.functions.FunctionCallsAPI.retrieve
 
 Retrieve function call response
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.functions.FunctionCallsAPI.get_response
 
 Retrieve function call logs
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.functions.FunctionCallsAPI.get_logs
 
 Function schedules
-^^^^^^^^^^^^^^^^^^
+------------------
 List function schedules
-~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.functions.FunctionSchedulesAPI.list
 
 Create function schedule
-~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.functions.FunctionSchedulesAPI.create
 
 Delete function schedule
-~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.functions.FunctionSchedulesAPI.delete
 
 Data classes

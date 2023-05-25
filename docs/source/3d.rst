@@ -1,8 +1,6 @@
 3D
 ==
 
-3D
---
 Models
 ^^^^^^
 Retrieve a model by ID
@@ -64,3 +62,47 @@ List ancestor nodes
 ~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.list_ancestor_nodes
 
+Files
+^^^^^
+Retrieve a 3D file
+~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDFilesAPI.retrieve
+
+Asset mappings
+^^^^^^^^^^^^^^
+Create an asset mapping
+~~~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDAssetMappingAPI.create
+
+List asset mappings
+~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDAssetMappingAPI.list
+
+Delete asset mappings
+~~~~~~~~~~~~~~~~~~~~~
+.. automethod:: cognite.client._api.three_d.ThreeDAssetMappingAPI.delete
+
+..
+    Reveal
+    ^^^^^^
+    Retrieve a revision by ID
+    ~~~~~~~~~~~~~~~~~~~~~~~~~
+    .. automethod:: cognite.client._api.three_d.ThreeDRevealAPI.retrieve_revision
+
+    List sectors
+    ~~~~~~~~~~~~
+    .. automethod:: cognite.client._api.three_d.ThreeDRevealAPI.list_sectors
+
+    List nodes
+    ~~~~~~~~~~
+    .. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.list_nodes
+
+    List ancestor nodes
+    ~~~~~~~~~~~~~~~~~~~
+    .. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.list_ancestor_nodes
+
+Data classes
+^^^^^^^^^^^^
+.. automodule:: cognite.client.data_classes.three_d
+    :members:
+    :show-inheritance:

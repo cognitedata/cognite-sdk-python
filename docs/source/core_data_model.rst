@@ -147,49 +147,69 @@ Data classes
     :show-inheritance:
 
 Files
-^^^^^
-Retrieve a 3D file
-~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.three_d.ThreeDFilesAPI.retrieve
+-----
+Retrieve file metadata by id
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.files.FilesAPI.retrieve
 
-Asset mappings
-^^^^^^^^^^^^^^
-Create an asset mapping
-~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.three_d.ThreeDAssetMappingAPI.create
+Retrieve multiple files' metadata by id
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.files.FilesAPI.retrieve_multiple
 
-List asset mappings
-~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.three_d.ThreeDAssetMappingAPI.list
+List files metadata
+^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.files.FilesAPI.list
 
-Delete asset mappings
-~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.three_d.ThreeDAssetMappingAPI.delete
+Aggregate files metadata
+^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.files.FilesAPI.aggregate
 
-..
-    Reveal
-    ^^^^^^
-    Retrieve a revision by ID
-    ~~~~~~~~~~~~~~~~~~~~~~~~~
-    .. automethod:: cognite.client._api.three_d.ThreeDRevealAPI.retrieve_revision
+Search for files
+^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.files.FilesAPI.search
 
-    List sectors
-    ~~~~~~~~~~~~
-    .. automethod:: cognite.client._api.three_d.ThreeDRevealAPI.list_sectors
+Create file metadata
+^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.files.FilesAPI.create
 
-    List nodes
-    ~~~~~~~~~~
-    .. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.list_nodes
+Upload a file or directory
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.files.FilesAPI.upload
 
-    List ancestor nodes
-    ~~~~~~~~~~~~~~~~~~~
-    .. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.list_ancestor_nodes
+Upload a string or bytes
+^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.files.FilesAPI.upload_bytes
+
+Retrieve download urls
+^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.files.FilesAPI.retrieve_download_urls
+
+Download files to disk
+^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.files.FilesAPI.download
+
+Download a single file to a specific path
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.files.FilesAPI.download_to_path
+
+Download a file as bytes
+^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.files.FilesAPI.download_bytes
+
+Delete files
+^^^^^^^^^^^^
+.. automethod:: cognite.client._api.files.FilesAPI.delete
+
+Update files metadata
+^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.files.FilesAPI.update
 
 Data classes
 ^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.three_d
+.. automodule:: cognite.client.data_classes.files
     :members:
     :show-inheritance:
+
 
 
 Geospatial
