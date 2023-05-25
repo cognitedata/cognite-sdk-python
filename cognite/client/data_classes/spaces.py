@@ -10,7 +10,7 @@ from cognite.client.data_classes._base import (
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
-_RESERVED_SPACE_IDS = {"space", "cdf", "dms", "pg3", "shared", "system", "node", "edge"}
+_RESERVED_SPACE_IDS = frozenset({"space", "cdf", "dms", "pg3", "shared", "system", "node", "edge"})
 
 
 class Space(CogniteResource):
