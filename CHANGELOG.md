@@ -407,7 +407,7 @@ Read more below in the removed section or check out the method's updated documen
 ### Added
 - `DetectJobBundle` dataclass: A way to manage multiple files and jobs.
 
-## [4.11.1] - 2022-11-08
+## [4.11.1] - 2022-11-15
 ### Changed
 - Update doc for Vision extract method
 - Improve error message in `VisionExtractJob.save_annotations`
