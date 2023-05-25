@@ -46,7 +46,7 @@ class TestSpacesAPI:
         deleted_space = cognite_client.data_modeling.spaces.delete(my_space.space)
 
         # Assert
-        assert deleted_space[0].space == my_space.space
+        assert deleted_space == my_space.space
         assert cognite_client.data_modeling.spaces.retrieve(space=my_space.space) is None
 
     def test_retrieve_multiple(self, cognite_client: CogniteClient, cdf_spaces: SpaceList):

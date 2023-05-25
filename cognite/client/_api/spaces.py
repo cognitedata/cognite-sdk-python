@@ -88,6 +88,37 @@ class SpacesAPI(APIClient):
         identifiers = DataModelingIdentifierSequence.load_spaces(spaces=spaces)
         return self._retrieve_multiple(list_cls=SpaceList, resource_cls=Space, identifiers=identifiers)
 
+    def delete(
+        self,
+        space: str | Sequence[str],
+    ) -> str | list[str] | None:
+        """`Delete one or more spaces <https://docs.cognite.com/api/v1/#tag/Spaces/operation/deleteSpacesV3>`_
+
+        Args:
+            space (str | Sequence[str]): ID or ID list ids of spaces.
+        Returns:
+            The space(s) which has been deleted. None if nothing was deleted.
+        Examples:
+
+            Delete spaces by id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> c.data_modeling.spaces.delete(space=["mySpace", "myOtherSpace"])
+        """
+        deleted_spaces = self._delete_multiple(
+            identifiers=DataModelingIdentifierSequence.load_spaces(spaces=space),
+            wrap_ids=True,
+            return_items=True,
+            list_cls=SpaceList,
+        )
+        if not deleted_spaces:
+            return None
+        elif len(deleted_spaces) == 1:
+            return deleted_spaces[0].space
+        else:
+            return [s.space for s in deleted_spaces]
+
     def list(
         self,
         limit: int = LIST_LIMIT_DEFAULT,
@@ -159,29 +190,3 @@ class SpacesAPI(APIClient):
                 >>> res = c.data_modeling.spaces.create(spaces)
         """
         return self._create_multiple(list_cls=SpaceList, resource_cls=Space, items=space)
-
-    def delete(
-        self,
-        space: str | Sequence[str],
-    ) -> SpaceList | None:
-        """`Delete one or more spaces <https://docs.cognite.com/api/v1/#tag/Spaces/operation/deleteSpacesV3>`_
-
-        Args:
-            space (str | Sequence[str]): ID or ID list ids of spaces.
-        Returns:
-            The space(s) which has been deleted. None if nothing was deleted.
-        Examples:
-
-            Delete spaces by id::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.data_modeling.spaces.delete(space=["mySpace", "myOtherSpace"])
-        """
-        deleted_spaces = self._delete_multiple(
-            identifiers=DataModelingIdentifierSequence.load_spaces(spaces=space),
-            wrap_ids=True,
-            return_items=True,
-            list_cls=SpaceList,
-        )
-        return deleted_spaces if deleted_spaces else None  # type: ignore[return-value]
