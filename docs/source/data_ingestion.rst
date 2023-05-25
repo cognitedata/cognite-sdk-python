@@ -60,8 +60,8 @@ Insert pandas dataframe
 .. automethod:: cognite.client._api.raw.RawRowsAPI.insert_dataframe
 
 
-Data classes
-^^^^^^^^^^^^
+RAW Data classes
+^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.raw
     :members:
     :show-inheritance:
@@ -122,8 +122,8 @@ Revert to an earlier config revision
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelineConfigsAPI.revert
 
-Data classes
-^^^^^^^^^^^^
+Extractor Config Data classes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.extractionpipelines
     :members:
     :show-inheritance:

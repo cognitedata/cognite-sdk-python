@@ -1,7 +1,7 @@
 Functions
 =========
-Functions
----------
+Functions API
+-------------
 Create function
 ^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.functions.FunctionsAPI.create

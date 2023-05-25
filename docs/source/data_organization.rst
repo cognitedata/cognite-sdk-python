@@ -32,8 +32,8 @@ Delete annotations
 ^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.annotations.AnnotationsAPI.delete
 
-Data classes
-^^^^^^^^^^^^
+Annotations Data classes
+^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.annotations
     :members:
     :show-inheritance:
@@ -68,8 +68,8 @@ Update data sets
 ^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.data_sets.DataSetsAPI.update
 
-Data classes
-^^^^^^^^^^^^
+Data Sets Data classes
+^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.data_sets
     :members:
     :show-inheritance:
@@ -89,8 +89,8 @@ Delete labels
 ^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.labels.LabelsAPI.delete
 
-Data classes
-^^^^^^^^^^^^
+Labels Data classes
+^^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.labels
     :members:
     :show-inheritance:
@@ -121,8 +121,8 @@ Delete relationships
 ^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.relationships.RelationshipsAPI.delete
 
-Data classes
-^^^^^^^^^^^^
+Relationship Data classes
+^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.relationships
     :members:
     :show-inheritance:

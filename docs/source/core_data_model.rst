@@ -50,8 +50,8 @@ Update assets
 ^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.update
 
-Data classes
-^^^^^^^^^^^^
+Asset Data classes
+^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.assets
     :members:
     :show-inheritance:
@@ -91,8 +91,8 @@ Update events
 ^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.events.EventsAPI.update
 
-Data classes
-^^^^^^^^^^^^
+Events Data classes
+^^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.events
     :members:
     :show-inheritance:
@@ -140,8 +140,8 @@ Delete ranges of data points
 .. automethod:: cognite.client._api.datapoints.DatapointsAPI.delete_ranges
 
 
-Data classes
-^^^^^^^^^^^^
+Data Points Data classes
+^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.datapoints
     :members:
     :show-inheritance:
@@ -204,8 +204,8 @@ Update files metadata
 ^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.files.FilesAPI.update
 
-Data classes
-^^^^^^^^^^^^
+Files Data classes
+^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.files
     :members:
     :show-inheritance:
@@ -298,8 +298,8 @@ Compute
 ^^^^^^^
 .. automethod:: cognite.client._api.geospatial.GeospatialAPI.compute
 
-Data classes
-^^^^^^^^^^^^
+Geospatial Data classes
+^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.geospatial
     :members:
     :show-inheritance:
@@ -347,8 +347,8 @@ Update time series
 ^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.time_series.TimeSeriesAPI.update
 
-Data classes
-^^^^^^^^^^^^
+Time Series Data classes
+^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.time_series
     :members:
     :show-inheritance:
@@ -413,8 +413,8 @@ Delete a range of rows from a sequence
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.sequences.SequencesDataAPI.delete_range
 
-Data classes
-^^^^^^^^^^^^
+Sequence Data classes
+^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.sequences
     :members:
     :show-inheritance:

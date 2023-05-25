@@ -1,5 +1,5 @@
-CogniteClient
-=============
+Cognite
+=======
 
 CogniteClient
 -------------

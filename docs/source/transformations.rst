@@ -1,8 +1,8 @@
 Transformations
 ===============
 
-Transformations
----------------
+TransformationsAPI
+------------------
 Create transformations
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.transformations.TransformationsAPI.create
