@@ -6,8 +6,8 @@ You can pass configuration arguments directly to the :ref:`cognite:CogniteClient
 to configure the base url of your requests and additional headers. For a list of all configuration arguments,
 see the :ref:`cognite:CogniteClient` class definition.
 
-global configuration
--------------------------
+Global configuration
+--------------------
 You can set global configuration options like this:
 
 .. code:: python

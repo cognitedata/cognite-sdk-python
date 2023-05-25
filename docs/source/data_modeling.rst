@@ -1,9 +1,9 @@
 Data Modeling
 =============
 
-Space
------
-Retrieve an space by id
+Spaces
+------
+Retrieve a space by id
 ^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.spaces.SpacesAPI.retrieve
 
@@ -22,7 +22,6 @@ Apply spaces
 Delete spaces
 ^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.spaces.SpacesAPI.delete
-
 
 Data classes
 ^^^^^^^^^^^^

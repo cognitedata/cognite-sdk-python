@@ -35,8 +35,9 @@ Contents
 .. toctree::
    quickstart
    settings
+   credential_providers
+   cognite_client
    extensions_and_optional_dependencies
-   cognite
    identity_and_access_management
    core_data_model
    3d
@@ -47,4 +48,7 @@ Contents
    functions
    data_modeling
    deprecated
-   sdk
+   base_data_classes
+   exceptions
+   utils
+   testing
