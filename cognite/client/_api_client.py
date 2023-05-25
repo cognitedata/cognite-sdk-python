@@ -44,7 +44,7 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import is_unlimited, split_into_chunks
-from cognite.client.utils._identifier import Identifier, IdentifierSequence, SingletonIdentifierSequence
+from cognite.client.utils._identifier import IdentifierCore, IdentifierSequenceCore, SingletonIdentifierSequence
 from cognite.client.utils._text import convert_all_keys_to_camel_case, shorten, to_snake_case
 
 if TYPE_CHECKING:
@@ -243,7 +243,7 @@ class APIClient:
 
     def _retrieve(
         self,
-        identifier: Identifier,
+        identifier: IdentifierCore,
         cls: Type[T_CogniteResource],
         resource_path: str = None,
         params: Dict = None,
@@ -282,7 +282,7 @@ class APIClient:
         self,
         list_cls: Type[T_CogniteResourceList],
         resource_cls: Type[T_CogniteResource],
-        identifiers: IdentifierSequence,
+        identifiers: IdentifierSequenceCore,
         resource_path: Optional[str] = None,
         ignore_unknown_ids: Optional[bool] = None,
         headers: Optional[Dict[str, Any]] = None,
@@ -294,7 +294,7 @@ class APIClient:
         self,
         list_cls: Type[T_CogniteResourceList],
         resource_cls: Type[T_CogniteResource],
-        identifiers: Union[SingletonIdentifierSequence, IdentifierSequence],
+        identifiers: Union[SingletonIdentifierSequence, IdentifierSequenceCore],
         resource_path: Optional[str] = None,
         ignore_unknown_ids: Optional[bool] = None,
         headers: Optional[Dict[str, Any]] = None,
@@ -328,7 +328,12 @@ class APIClient:
         retrieved_items = tasks_summary.joined_results(lambda res: res.json()["items"])
 
         if identifiers.is_singleton():
-            return resource_cls._load(retrieved_items[0], cognite_client=self._cognite_client)
+            if retrieved_items:
+                return resource_cls._load(retrieved_items[0], cognite_client=self._cognite_client)
+            else:
+                # Not all APIs (such as the Data Modeling API) return an error when unknown ids are provided,
+                # so we need to handle the unknown singleton identifier case here as well.
+                return None
         return list_cls._load(retrieved_items, cognite_client=self._cognite_client)
 
     def _list_generator(
@@ -659,13 +664,14 @@ class APIClient:
 
     def _delete_multiple(
         self,
-        identifiers: IdentifierSequence,
+        identifiers: IdentifierSequenceCore,
         wrap_ids: bool,
         resource_path: Optional[str] = None,
         params: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, Any]] = None,
         extra_body_fields: Optional[Dict[str, Any]] = None,
-    ) -> None:
+        returns_items: bool = False,
+    ) -> list | None:
         resource_path = resource_path or self._RESOURCE_PATH
         tasks = [
             {
@@ -684,6 +690,11 @@ class APIClient:
             task_unwrap_fn=lambda task: task["json"]["items"],
             task_list_element_unwrap_fn=utils._auxiliary.unwrap_identifer,
         )
+        if returns_items:
+            deleted_spaces = summary.joined_results(lambda res: res.json()["items"])
+            return deleted_spaces
+        else:
+            return None
 
     @overload
     def _update_multiple(
