@@ -79,15 +79,15 @@ class Identifier(Generic[T_ID]):
 
 class DataModelingIdentifier:
     def __init__(self, space: str, external_id: str | None = None):
-        self.space = space
-        self.external_id = external_id
+        self.__space = space
+        self.__external_id = external_id
 
     def as_dict(self, camel_case: bool = True) -> dict[str, str]:
-        output = {"space": self.space}
-        if self.external_id is None:
+        output = {"space": self.__space}
+        if self.__external_id is None:
             return output
         key = "externalId" if camel_case else "external_id"
-        return {**output, key: self.external_id}
+        return {**output, key: self.__external_id}
 
     def as_primitive(self) -> NoReturn:
         raise AttributeError(f"Not supported for {type(self).__name__} implementation")
@@ -105,9 +105,11 @@ T_Identifier = TypeVar("T_Identifier", bound=IdentifierCore)
 
 
 class IdentifierSequenceCore(Generic[T_Identifier]):
+    _no_identifiers_error_message: str = ""
+
     def __init__(self, identifiers: List[T_Identifier], is_singleton: bool) -> None:
         if not identifiers:
-            raise ValueError("No ids or external_ids specified")
+            raise ValueError(self._no_identifiers_error_message)
         self._identifiers = identifiers
         self.__is_singleton = is_singleton
 
@@ -145,6 +147,8 @@ class IdentifierSequenceCore(Generic[T_Identifier]):
 
 
 class IdentifierSequence(IdentifierSequenceCore[Identifier]):
+    _no_identifiers_error_message = "No ids or external_ids specified"
+
     @overload
     @classmethod
     def of(cls, *ids: List[Union[int, str]]) -> IdentifierSequence:
@@ -200,6 +204,8 @@ class IdentifierSequence(IdentifierSequenceCore[Identifier]):
 
 
 class DataModelingIdentifierSequence(IdentifierSequenceCore[DataModelingIdentifier]):
+    _no_identifiers_error_message = "No spaces specified."
+
     @classmethod
     def load_spaces(cls, spaces: str | Sequence[str]) -> DataModelingIdentifierSequence:
         spaces = [spaces] if isinstance(spaces, str) else spaces
