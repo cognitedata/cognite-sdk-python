@@ -212,7 +212,6 @@ class DataModelInfo:
         self.destination_type = destination_type
         self.destination_relationship_from_type = destination_relationship_from_type
 
-
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         return basic_obj_dump(self, camel_case)
 
