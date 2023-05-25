@@ -88,16 +88,13 @@ class SpacesAPI(APIClient):
         identifiers = DataModelingIdentifierSequence.load_spaces(spaces=spaces)
         return self._retrieve_multiple(list_cls=SpaceList, resource_cls=Space, identifiers=identifiers)
 
-    def delete(
-        self,
-        space: str | Sequence[str],
-    ) -> str | list[str] | None:
+    def delete(self, space: str | Sequence[str]) -> list[str]:
         """`Delete one or more spaces <https://docs.cognite.com/api/v1/#tag/Spaces/operation/deleteSpacesV3>`_
 
         Args:
             space (str | Sequence[str]): ID or ID list ids of spaces.
         Returns:
-            The space(s) which has been deleted. None if nothing was deleted.
+            list[str]: The space(s) which has been deleted.
         Examples:
 
             Delete spaces by id::
@@ -106,18 +103,13 @@ class SpacesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.data_modeling.spaces.delete(space=["mySpace", "myOtherSpace"])
         """
-        deleted_spaces = self._delete_multiple(
-            identifiers=DataModelingIdentifierSequence.load_spaces(spaces=space),
-            wrap_ids=True,
-            return_items=True,
-            list_cls=SpaceList,
+        deleted_spaces = cast(
+            list,
+            self._delete_multiple(
+                identifiers=DataModelingIdentifierSequence.load_spaces(spaces=space), wrap_ids=True, returns_items=True
+            ),
         )
-        if not deleted_spaces:
-            return None
-        elif len(deleted_spaces) == 1:
-            return deleted_spaces[0].space
-        else:
-            return [s.space for s in deleted_spaces]
+        return [item["space"] for item in deleted_spaces]
 
     def list(
         self,

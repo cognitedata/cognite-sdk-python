@@ -43,7 +43,7 @@ class TestSpacesAPI:
         assert my_space.dump() == expected
 
         # Act
-        deleted_space = cognite_client.data_modeling.spaces.delete(my_space.space)
+        deleted_space = cognite_client.data_modeling.spaces.delete(my_space.space)[0]
 
         # Assert
         assert deleted_space == my_space.space
@@ -64,4 +64,4 @@ class TestSpacesAPI:
 
     def test_delete_non_existing_space(self, cognite_client: CogniteClient):
         deleted_space = cognite_client.data_modeling.spaces.delete("notExistingSpace")
-        assert deleted_space is None
+        assert deleted_space == []
