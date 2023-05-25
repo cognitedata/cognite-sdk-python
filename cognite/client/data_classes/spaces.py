@@ -44,7 +44,7 @@ class Space(CogniteResource):
 
     def __repr__(self) -> str:
         space = self.space
-        return f"{type(self).__name__}({space=})"
+        return f"{type(self).__name__}({space=}) at 0x{hex(id(self)).upper().zfill(16)}"
 
 
 class SpaceList(CogniteResourceList):
