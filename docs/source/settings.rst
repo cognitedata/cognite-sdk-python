@@ -2,9 +2,9 @@ Settings
 ========
 Client configuration
 --------------------
-You can pass configuration arguments directly to the :ref:`cognite:CogniteClient` constructor, for example
+You can pass configuration arguments directly to the :ref:`cognite_client:CogniteClient` constructor, for example
 to configure the base url of your requests and additional headers. For a list of all configuration arguments,
-see the :ref:`cognite:CogniteClient` class definition.
+see the :ref:`cognite_client:CogniteClient` class definition.
 
 Global configuration
 --------------------
@@ -31,8 +31,8 @@ Concurrency and connection pooling
 ----------------------------------
 This library does not expose API limits to the user. If your request exceeds API limits, the SDK splits your
 request into chunks and performs the sub-requests in parallel. To control how many concurrent requests you send
-to the API, you can either pass the :code:`max_workers` attribute when you instantiate the :ref:`cognite:CogniteClient` or set the :code:`max_workers` config option.
+to the API, you can either pass the :code:`max_workers` attribute when you instantiate the :ref:`cognite_client:CogniteClient` or set the :code:`max_workers` config option.
 
-If you are working with multiple instances of :ref:`cognite:CogniteClient`, all instances will share the same connection pool.
+If you are working with multiple instances of :ref:`cognite_client:CogniteClient`, all instances will share the same connection pool.
 If you have several instances, you can increase the max connection pool size to reuse connections if you are performing a large amount of concurrent requests.
 You can increase the max connection pool size by setting the :code:`max_connection_pool_size` config option.
