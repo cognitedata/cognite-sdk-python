@@ -33,4 +33,9 @@ To upgrade the version of this package:
 Contents
 ^^^^^^^^
 .. toctree::
+   quickstart
+   settings
+   extensions_and_optional_dependencies
    cognite
+
+
