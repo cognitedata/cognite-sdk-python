@@ -693,8 +693,7 @@ class APIClient:
         )
         if not return_items:
             return None
-        if list_cls is None:
-            raise ValueError("If you are going to return results, then you need to pass the list_cls")
+        assert list_cls is not None, "If you are going to return results, then you need to pass the list_cls"
         deleted_resources = summary.joined_results(lambda res: res.json()["items"])
         return list_cls._load(deleted_resources, cognite_client=self._cognite_client)
 
