@@ -126,6 +126,10 @@ from cognite.client.data_classes.shared import (
     GeometryFilter,
     TimestampRange,
 )
+from cognite.client.data_classes.spaces import (
+    Space,
+    SpaceList,
+)
 from cognite.client.data_classes.templates import (
     ConstantResolver,
     Source,
@@ -353,4 +357,6 @@ __all__ = [
     "FeatureTypeUpdateList",
     "CoordinateReferenceSystemList",
     "CoordinateReferenceSystem",
+    "Space",
+    "SpaceList",
 ]

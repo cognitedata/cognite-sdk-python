@@ -1,3 +1,5 @@
+from operator import attrgetter
+
 import pytest
 
 from cognite.client import ClientConfig, CogniteClient
@@ -15,6 +17,20 @@ def test_ensure_all_apis_are_available_on_cognite_mock():
     assert not expected.difference(available)
     # Any removed APIs that are still available on CogniteClientMock?
     assert not available.difference(expected)
+
+
+def test_ensure_all_apis_use_equal_attr_paths_on_cognite_mock():
+    client = CogniteClient(ClientConfig(client_name="a", project="b", credentials="c"))
+    mocked_apis = all_mock_children(CogniteClientMock())
+    for attr, api in mocked_apis.items():
+        try:
+            # We use attrgetter because it supports nested attribute lookups (e.g. client.time_series.data.synthetic):
+            assert type(attrgetter(attr)(client)) is api.__class__
+        except AttributeError:
+            pytest.fail(
+                f"Attribute {attr!r} for API (or sub-API): {api.__class__} available on 'CogniteClientMock', was not "
+                f"found on the 'CogniteClient' object, has it been misspelled?",
+            )
 
 
 @pytest.mark.parametrize("api", list(all_mock_children(CogniteClientMock()).values()))

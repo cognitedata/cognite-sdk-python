@@ -114,7 +114,7 @@ class GeospatialAPI(APIClient):
                 >>> c.geospatial.delete_feature_types(external_id=["wells", "cities"])
         """
         extra_body_fields = {"recursive": True} if recursive else {}
-        return self._delete_multiple(
+        self._delete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_id),
             wrap_ids=True,
             resource_path=f"{self._RESOURCE_PATH}/featuretypes",
