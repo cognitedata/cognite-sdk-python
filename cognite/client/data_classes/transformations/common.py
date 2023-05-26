@@ -144,7 +144,7 @@ class TransformationDestination:
     def instances(data_model: Optional[DataModelInfo] = None, instance_space: Optional[str] = None) -> Instances:
         """
         Args:
-            dataModel (DataModelInfo): information of the Data Model.
+            data_model (DataModelInfo): information of the Data Model.
             instance_space (str): space id of the instance.
         Returns:
             Instances: pointing to the target centric data model.
