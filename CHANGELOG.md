@@ -17,9 +17,14 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.2.1] - 2023-05-26
+### Added
+- Data model centric support in transformation
+
 ## [6.2.0] - 2023-05-25
 ### Added
 - Support for the spaces resource in the Data Modeling API with the implementation `client.data_modeling.spaces`.
+
 ### Improved
 - Reorganized documentation to match API documentation.
 
