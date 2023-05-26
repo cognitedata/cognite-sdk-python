@@ -18,6 +18,7 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 ## [6.2.1] - 2023-05-26
+### Added
 - Data model centric support in transformation
 
 ## [6.2.0] - 2023-05-25
