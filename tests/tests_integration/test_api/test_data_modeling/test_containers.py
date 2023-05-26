@@ -68,3 +68,40 @@ class TestContainersAPI:
         # Assert
         assert deleted_id[0] == DataModelingId.from_tuple((new_container.space, new_container.external_id))
         assert retrieved_deleted is None
+
+    def test_delete_non_existent(self, cognite_client: CogniteClient, integration_test_space: Space):
+        space = integration_test_space.space
+        assert (
+            cognite_client.data_modeling.containers.delete(DataModelingId(space=space, external_id="DoesNotExists"))
+            == []
+        )
+
+    def test_retrieve_multiple(self, cognite_client: CogniteClient, cdf_containers: ContainerList):
+        assert len(cdf_containers) >= 2, "Please add at least two containers to the test environment"
+        # Arrange
+        ids = [DataModelingId(c.space, c.external_id) for c in cdf_containers]
+
+        # Act
+        retrieved = cognite_client.data_modeling.containers.retrieve(ids)
+
+        # Assert
+        assert len(retrieved) == len(ids)
+
+    def test_retrieve_multiple_with_missing(self, cognite_client: CogniteClient, cdf_containers: ContainerList):
+        assert len(cdf_containers) >= 2, "Please add at least two containers to the test environment"
+        # Arrange
+        ids = [DataModelingId(c.space, c.external_id) for c in cdf_containers]
+        ids += [DataModelingId("myNonExistingSpace", "myImaginaryContainer")]
+
+        # Act
+        retrieved = cognite_client.data_modeling.containers.retrieve(ids)
+
+        # Assert
+        assert len(retrieved) == len(ids) - 1
+
+    def test_retrieve_non_existent(self, cognite_client: CogniteClient):
+        assert cognite_client.data_modeling.containers.retrieve(("myNonExistingSpace", "myImaginaryContainer")) is None
+
+    def test_iterate_over_containers(self, cognite_client: CogniteClient):
+        for containers in cognite_client.data_modeling.containers(chunk_size=2, limit=-1):
+            assert isinstance(containers, ContainerList)
