@@ -124,11 +124,13 @@ class ContainersAPI(APIClient):
 
     def list(
         self,
+        space: str | None = None,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> ContainerList:
         """`List containers <https://docs.cognite.com/api/v1/#tag/Containers/operation/listContainersV3>`_
 
         Args:
+            space (int, optional): The space to query
             limit (int, optional): Maximum number of containers to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
 
@@ -162,6 +164,7 @@ class ContainersAPI(APIClient):
             resource_cls=Container,
             method="GET",
             limit=limit,
+            filter={"space": space} if space else None,
         )
 
     @overload

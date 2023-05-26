@@ -1,24 +1,26 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, Type, TypeVar, cast
+import json
+from typing import TYPE_CHECKING, Literal, cast
 
 from cognite.client.data_classes._base import (
+    CogniteResource,
     CogniteResourceList,
 )
 from cognite.client.data_classes.data_modeling.core import (
     ConstraintIdentifier,
     ContainerPropertyIdentifier,
-    DataModelingResource,
     IndexIdentifier,
+    load_constraint_identifier,
 )
-from cognite.client.utils._text import to_snake_case
+from cognite.client.utils._text import convert_all_keys_to_snake_case
 from cognite.client.utils._validation import validate_data_modeling_identifier
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class Container(DataModelingResource):
+class Container(CogniteResource):
     """Represent the physical storage of data.
 
     Args:
@@ -27,9 +29,9 @@ class Container(DataModelingResource):
         description (str): Textual description of the view
         name (str): Human readable name for the view.
         used_for (Literal['node', 'edge', 'all']): Should this operation apply to nodes, edges or both.
-        properties (ContainerPropertyIdentifier): We index the property by a local unique identifier.
-        constraints (ConstraintIdentifier): Set of constraints to apply to the container
-        indexes (IndexIdentifier): Set of indexes to apply to the container.
+        properties (dict[str, ContainerPropertyIdentifier]): We index the property by a local unique identifier.
+        constraints (dict[str, ConstraintIdentifier]): Set of constraints to apply to the container
+        indexes (dict[str, IndexIdentifier]): Set of indexes to apply to the container.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
     """
@@ -54,25 +56,24 @@ class Container(DataModelingResource):
         self.description = description
         self.name = name
         self.used_for = used_for
-        self.properties = unwrap_if_dict(properties, ContainerPropertyIdentifier)
-        self.constraints = unwrap_if_dict(constraints, ConstraintIdentifier)
-        self.indexes = unwrap_if_dict(indexes, IndexIdentifier)
+        self.properties = properties
+        self.constraints = constraints
+        self.indexes = indexes
         self.last_updated_time = last_updated_time
         self.created_time = created_time
         self._cognite_client = cast("CogniteClient", cognite_client)
 
+    @classmethod
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient = None) -> Container:
+        data = json.loads(resource) if isinstance(resource, str) else resource
+        if "properties" in data:
+            data["properties"] = {k: ContainerPropertyIdentifier.load(v) for k, v in data["properties"].items()} or None
+        if "constraints" in data:
+            data["constraints"] = {k: load_constraint_identifier(v) for k, v in data["constraints"].items()} or None
+        if "indexes" in data:
+            data["indexes"] = {k: IndexIdentifier.load(v) for k, v in data["indexes"].items()} or None
 
-T_ResourceClass = TypeVar("T_ResourceClass")
-
-
-def unwrap_if_dict(value: dict | T_ResourceClass, resource_class: Type[T_ResourceClass]) -> T_ResourceClass | None:
-    if not value:
-        return None
-    return (
-        {k: resource_class(**{to_snake_case(kk): vv for kk, vv in v.items()}) for k, v in value.items()}
-        if isinstance(value, dict)
-        else value
-    )
+        return cls(**convert_all_keys_to_snake_case(data), cognite_client=cognite_client)
 
 
 class ContainerList(CogniteResourceList):
