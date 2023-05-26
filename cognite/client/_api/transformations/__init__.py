@@ -60,7 +60,7 @@ class TransformationsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import Transformation, TransformationDestination
-                >>> from cognite.client.data_classes.transformations.common import ViewInfo, EdgeType
+                >>> from cognite.client.data_classes.transformations.common import ViewInfo, EdgeType, DataModelInfo
                 >>> c = CogniteClient()
                 >>> transformations = [
                 >>>     Transformation(
