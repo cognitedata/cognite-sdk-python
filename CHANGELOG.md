@@ -24,6 +24,7 @@ Changes are grouped as follows
 ## [6.2.0] - 2023-05-25
 ### Added
 - Support for the spaces resource in the Data Modeling API with the implementation `client.data_modeling.spaces`.
+
 ### Improved
 - Reorganized documentation to match API documentation.
 
