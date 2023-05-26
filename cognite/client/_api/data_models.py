@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from typing import Iterator, Optional, Sequence, cast, overload
+from typing import Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes.data_modeling import DataModel, DataModelList
+from cognite.client.data_classes.data_modeling.ids import DataModelId, VersionedDataModelingId
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
 
 
@@ -45,12 +46,19 @@ class DataModelsAPI(APIClient):
         """
         return cast(Iterator[DataModel], self())
 
-    def retrieve(self, space: str, external_id: str) -> Optional[DataModel]:
+    @overload
+    def retrieve(self, ids: DataModelId) -> DataModel | None:
+        ...
+
+    @overload
+    def retrieve(self, ids: Sequence[DataModelId]) -> DataModelList:
+        ...
+
+    def retrieve(self, ids: DataModelId | Sequence[DataModelId]) -> DataModel | DataModelList | None:
         """`Retrieve a single data_model by id. <https://docs.cognite.com/api/v1/#tag/DataModels/operation/byDataModelIdsDataModels>`_
 
         Args:
-            space (str): Workspace for data_model
-            external_id (str): DataModel ID.
+            ids (DataModelId | Sequence[DataModelId]): Data Model identifier(s).
 
         Returns:
             Optional[DataModel]: Requested data_model or None if it does not exist.
@@ -62,45 +70,14 @@ class DataModelsAPI(APIClient):
                 >>> res = c.data_modeling.data_models.retrieve(data_model='myDataModel')
 
         """
-        identifier = DataModelingIdentifierSequence.load(external_id, space).as_singleton()
+        identifier = DataModelingIdentifierSequence.load(ids)
         return self._retrieve_multiple(list_cls=DataModelList, resource_cls=DataModel, identifiers=identifier)
 
-    def retrieve_multiple(
-        self,
-        space: str,
-        external_ids: Sequence[str],
-    ) -> DataModelList:
-        """`Retrieve multiple data_models by id. <https://docs.cognite.com/api/v1/#tag/DataModels/operation/byDataModelIdsDataModels>`_
-
-        Args:
-            space (str): Workspace for data_models
-            external_ids (Sequence[str]): DataModel IDs.
-
-        Returns:
-            DataModelList: The requested data_models.
-
-        Examples:
-
-            Get data_models by id::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.data_modeling.data_models.retrieve_multiple(data_models=["MyDataModel", "MyAwesomeDataModel", "MyOtherDataModel"])
-
-        """
-        identifiers = DataModelingIdentifierSequence.load(external_ids, space)
-        return self._retrieve_multiple(list_cls=DataModelList, resource_cls=DataModel, identifiers=identifiers)
-
-    def delete(
-        self,
-        space: str,
-        external_id: str | Sequence[str],
-    ) -> str | list[str] | None:
+    def delete(self, ids: DataModelId | Sequence[DataModelId]) -> list[VersionedDataModelingId]:
         """`Delete one or more data_models <https://docs.cognite.com/api/v1/#tag/DataModels/operation/deleteDataModelsV3>`_
 
         Args:
-            space (str): Workspace for data_model
-            external_id (str): DataModel ID or IDs.
+            ids (DataModelId | Sequence[DataModelId]): Data Model identifier(s).
         Returns:
             The data_model(s) which has been deleted. None if nothing was deleted.
         Examples:
@@ -111,16 +88,16 @@ class DataModelsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.data_modeling.data_models.delete(data_model=["myDataModel", "myOtherDataModel"])
         """
-        deleted_data_models = self._delete_multiple(
-            identifiers=DataModelingIdentifierSequence.load(external_id, space),
-            wrap_ids=True,
+        deleted_data_models = cast(
+            list,
+            self._delete_multiple(
+                identifiers=DataModelingIdentifierSequence.load(ids),
+                wrap_ids=True,
+            ),
         )
-        if not deleted_data_models:
-            return None
-        elif len(deleted_data_models) == 1:
-            return deleted_data_models[0].data_model
-        else:
-            return [s.data_model for s in deleted_data_models]
+        return [
+            VersionedDataModelingId(item["space"], item["externalId"], item["version"]) for item in deleted_data_models
+        ]
 
     def list(
         self,

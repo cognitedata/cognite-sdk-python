@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from typing import Iterator, Optional, Sequence, cast, overload
+from typing import Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes.data_modeling import Container, ContainerList
+from cognite.client.data_classes.data_modeling.ids import ContainerId, DataModelingId
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
 
 
@@ -45,12 +46,19 @@ class ContainersAPI(APIClient):
         """
         return cast(Iterator[Container], self())
 
-    def retrieve(self, space: str, external_id: str) -> Optional[Container]:
+    @overload
+    def retrieve(self, ids: ContainerId) -> Container | None:
+        ...
+
+    @overload
+    def retrieve(self, ids: Sequence[ContainerId]) -> ContainerList:
+        ...
+
+    def retrieve(self, ids: ContainerId | Sequence[ContainerId]) -> Container | ContainerList | None:
         """`Retrieve a single container by id. <https://docs.cognite.com/api/v1/#tag/Containers/operation/byContainerIdsContainers>`_
 
         Args:
-            space (str): Workspace for container
-            external_id (str): Container ID.
+            ids (ContainerId | Sequence[ContainerId]): Workspace for container
 
         Returns:
             Optional[Container]: Requested container or None if it does not exist.
@@ -59,48 +67,17 @@ class ContainersAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.data_modeling.containers.retrieve(container='myContainer')
+                >>> res = c.data_modeling.containers.retrieve(('mySpace', 'myContainer'))
 
         """
-        identifier = DataModelingIdentifierSequence.load(external_id, space).as_singleton()
+        identifier = DataModelingIdentifierSequence.load(ids)
         return self._retrieve_multiple(list_cls=ContainerList, resource_cls=Container, identifiers=identifier)
 
-    def retrieve_multiple(
-        self,
-        space: str,
-        external_ids: Sequence[str],
-    ) -> ContainerList:
-        """`Retrieve multiple containers by id. <https://docs.cognite.com/api/v1/#tag/Containers/operation/byContainerIdsContainers>`_
-
-        Args:
-            space (str): Workspace for containers
-            external_ids (Sequence[str]): Container IDs.
-
-        Returns:
-            ContainerList: The requested containers.
-
-        Examples:
-
-            Get containers by id::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.data_modeling.containers.retrieve_multiple(containers=["MyContainer", "MyAwesomeContainer", "MyOtherContainer"])
-
-        """
-        identifiers = DataModelingIdentifierSequence.load(external_ids, space)
-        return self._retrieve_multiple(list_cls=ContainerList, resource_cls=Container, identifiers=identifiers)
-
-    def delete(
-        self,
-        space: str,
-        external_id: str | Sequence[str],
-    ) -> str | list[str] | None:
+    def delete(self, id: ContainerId | Sequence[ContainerId]) -> list[DataModelingId]:
         """`Delete one or more containers <https://docs.cognite.com/api/v1/#tag/Containers/operation/deleteContainersV3>`_
 
         Args:
-            space (str): Workspace for container
-            external_id (str): Container ID or IDs.
+            id (ContainerId | Sequence[ContainerId): The container identifier(s).
         Returns:
             The container(s) which has been deleted. None if nothing was deleted.
         Examples:
@@ -109,18 +86,15 @@ class ContainersAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> c.data_modeling.containers.delete(container=["myContainer", "myOtherContainer"])
+                >>> c.data_modeling.containers.delete(("mySpace", "myContainer"))
         """
-        deleted_containers = self._delete_multiple(
-            identifiers=DataModelingIdentifierSequence.load(external_id, space),
-            wrap_ids=True,
+        deleted_containers = cast(
+            list,
+            self._delete_multiple(
+                identifiers=DataModelingIdentifierSequence.load(id), wrap_ids=True, returns_items=True
+            ),
         )
-        if not deleted_containers:
-            return None
-        elif len(deleted_containers) == 1:
-            return deleted_containers[0].container
-        else:
-            return [s.container for s in deleted_containers]
+        return [DataModelingId(space=item["space"], external_id=item["externalId"]) for item in deleted_containers]
 
     def list(
         self,
@@ -189,10 +163,12 @@ class ContainersAPI(APIClient):
             Create new containersda::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.containers import Container
+                >>> from cognite.client.data_classes.data_modeling import Container
                 >>> c = CogniteClient()
-                >>> containers = [Container(container="myContainer", description="My first container", name="My Container"),
-                ... Container(container="myOtherContainer", description="My second container", name="My Other Container")]
+                >>> containers = [Container(container="myContainer", description="My first container",
+                ... name="My Container", used_for="node"),
+                ... Container(container="myOtherContainer", description="My second container",
+                ... name="My Other Container", used_for="node")]
                 >>> res = c.data_modeling.containers.create(containers)
         """
         return self._create_multiple(list_cls=ContainerList, resource_cls=Container, items=container)

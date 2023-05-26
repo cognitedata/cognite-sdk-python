@@ -4,6 +4,7 @@ import typing
 from dataclasses import dataclass
 from typing import Any, Literal, Optional, Union
 
+from cognite.client.data_classes.data_modeling.ids import DataModelingId
 from cognite.client.utils._text import convert_all_keys_to_snake_case
 
 PrimitiveType = Literal["boolean", "float32", "float64", "int32", "int64", "timestamp", "date", "json"]
@@ -18,9 +19,7 @@ DIRECT_TYPE = set(typing.get_args(DirectType))
 
 
 @dataclass
-class Container:
-    space: str
-    external_id: str
+class Container(DataModelingId):
     type: str = "container"
 
 
@@ -34,7 +33,7 @@ class TextProperty:
 @dataclass
 class PrimitiveProperty:
     type: PrimitiveType
-    list: bool = True
+    list: bool = False
 
 
 @dataclass
@@ -51,10 +50,10 @@ class DirectNodeRelation:
 
 @dataclass
 class ContainerPropertyIdentifier:
-    nullable: bool
-    auto_increment: bool
-    name: str
     type: TextProperty | PrimitiveProperty | CDFExternalIdReference | DirectNodeRelation
+    nullable: bool = True
+    auto_increment: bool = False
+    name: Optional[str] = None
     default_value: str | int | dict | None = None
     description: str | None = None
 

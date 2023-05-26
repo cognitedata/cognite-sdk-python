@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from typing import Iterator, Optional, Sequence, cast, overload
+from typing import Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes.data_modeling import View, ViewList
+from cognite.client.data_classes.data_modeling.ids import ViewId
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
 
 
@@ -45,12 +46,19 @@ class ViewsAPI(APIClient):
         """
         return cast(Iterator[View], self())
 
-    def retrieve(self, space: str, external_id: str) -> Optional[View]:
+    @overload
+    def retrieve(self, ids: ViewId) -> View | None:
+        ...
+
+    @overload
+    def retrieve(self, ids: Sequence[ViewId]) -> ViewList:
+        ...
+
+    def retrieve(self, ids: ViewId | Sequence[ViewId]) -> View | ViewList | None:
         """`Retrieve a single view by id. <https://docs.cognite.com/api/v1/#tag/Views/operation/byViewIdsViews>`_
 
         Args:
-            space (str): Workspace for view
-            external_id (str): View ID.
+            ids (ViewId | Sequence[ViewId]): View dentifier(s)
 
         Returns:
             Optional[View]: Requested view or None if it does not exist.
@@ -62,45 +70,14 @@ class ViewsAPI(APIClient):
                 >>> res = c.data_modeling.views.retrieve(view='myView')
 
         """
-        identifier = DataModelingIdentifierSequence.load(external_id, space).as_singleton()
+        identifier = DataModelingIdentifierSequence.load(ids)
         return self._retrieve_multiple(list_cls=ViewList, resource_cls=View, identifiers=identifier)
 
-    def retrieve_multiple(
-        self,
-        space: str,
-        external_ids: Sequence[str],
-    ) -> ViewList:
-        """`Retrieve multiple views by id. <https://docs.cognite.com/api/v1/#tag/Views/operation/byViewIdsViews>`_
-
-        Args:
-            space (str): Workspace for views
-            external_ids (Sequence[str]): View IDs.
-
-        Returns:
-            ViewList: The requested views.
-
-        Examples:
-
-            Get views by id::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.data_modeling.views.retrieve_multiple(views=["MyView", "MyAwesomeView", "MyOtherView"])
-
-        """
-        identifiers = DataModelingIdentifierSequence.load(external_ids, space)
-        return self._retrieve_multiple(list_cls=ViewList, resource_cls=View, identifiers=identifiers)
-
-    def delete(
-        self,
-        space: str,
-        external_id: str | Sequence[str],
-    ) -> list[tuple[str, str]] | None:
+    def delete(self, ids: ViewId | Sequence[ViewId]) -> list[tuple[str, str]] | None:
         """`Delete one or more views <https://docs.cognite.com/api/v1/#tag/Views/operation/deleteViewsV3>`_
 
         Args:
-            space (str): Workspace for view
-            external_id (str): View ID or IDs.
+            ids (ViewId | Sequence[ViewId]): View dentifier(s)
         Returns:
             The view(s) which has been deleted. None if nothing was deleted.
         Examples:
@@ -112,7 +89,7 @@ class ViewsAPI(APIClient):
                 >>> c.data_modeling.views.delete(view=["myView", "myOtherView"])
         """
         deleted_views = self._delete_multiple(
-            identifiers=DataModelingIdentifierSequence.load(external_id, space),
+            identifiers=DataModelingIdentifierSequence.load(ids),
             wrap_ids=True,
             returns_items=True,
         )

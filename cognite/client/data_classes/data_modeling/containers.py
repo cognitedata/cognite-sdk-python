@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Literal, cast
+from dataclasses import asdict
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from cognite.client.data_classes._base import (
     CogniteResource,
@@ -13,7 +14,7 @@ from cognite.client.data_classes.data_modeling.core import (
     IndexIdentifier,
     load_constraint_identifier,
 )
-from cognite.client.utils._text import convert_all_keys_to_snake_case
+from cognite.client.utils._text import convert_all_keys_to_camel_case_nested
 from cognite.client.utils._validation import validate_data_modeling_identifier
 
 if TYPE_CHECKING:
@@ -42,6 +43,7 @@ class Container(CogniteResource):
         external_id: str = None,
         description: str = None,
         name: str = None,
+        is_global: bool = False,
         used_for: Literal["node", "edge", "all"] = None,
         properties: dict[str, ContainerPropertyIdentifier] = None,
         constraints: dict[str, ConstraintIdentifier] = None,
@@ -56,6 +58,7 @@ class Container(CogniteResource):
         self.description = description
         self.name = name
         self.used_for = used_for
+        self.is_global = is_global
         self.properties = properties
         self.constraints = constraints
         self.indexes = indexes
@@ -73,7 +76,29 @@ class Container(CogniteResource):
         if "indexes" in data:
             data["indexes"] = {k: IndexIdentifier.load(v) for k, v in data["indexes"].items()} or None
 
-        return cls(**convert_all_keys_to_snake_case(data), cognite_client=cognite_client)
+        return super()._load(data, cognite_client)
+
+    def dump(self, camel_case: bool = False, exclude_not_supported_by_apply_endpoint: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        for field in ["properties", "constraints", "indexes"]:
+            if field not in output:
+                continue
+            output[field] = {
+                k: convert_all_keys_to_camel_case_nested(asdict(v)) if camel_case else asdict(v)
+                for k, v in output[field].items()
+            }
+
+        if exclude_not_supported_by_apply_endpoint:
+            for exclude in [
+                "isGlobal",
+                "lastUpdatedTime",
+                "createdTime",
+                "is_global",
+                "last_updated_time",
+                "created_time",
+            ]:
+                output.pop(exclude, None)
+        return output
 
 
 class ContainerList(CogniteResourceList):

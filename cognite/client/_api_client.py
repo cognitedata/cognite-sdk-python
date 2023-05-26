@@ -691,8 +691,7 @@ class APIClient:
             task_list_element_unwrap_fn=utils._auxiliary.unwrap_identifer,
         )
         if returns_items:
-            deleted_spaces = summary.joined_results(lambda res: res.json()["items"])
-            return deleted_spaces
+            return summary.joined_results(lambda res: res.json()["items"])
         else:
             return None
 
