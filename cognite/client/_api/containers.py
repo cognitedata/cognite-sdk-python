@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import CONTAINER_LIST_LIMIT_DEFAULT
 from cognite.client.data_classes.data_modeling.containers import Container, ContainerFilter, ContainerList
 from cognite.client.data_classes.data_modeling.ids import ContainerId, DataModelingId
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
@@ -30,7 +30,7 @@ class ContainersAPI(APIClient):
             limit (int, optional): Maximum number of containers to return. Default to return all items.
 
         Yields:
-            Union[Container, ContainerList]: yields Container one by one if chunk_size is not specified, else ContainerList objects.
+            Container | ContainerList: yields Container one by one if chunk_size is not specified, else ContainerList objects.
         """
         filter = ContainerFilter(space, include_global)
         return self._list_generator(
@@ -61,10 +61,10 @@ class ContainersAPI(APIClient):
         ...
 
     def retrieve(self, ids: ContainerId | Sequence[ContainerId]) -> Container | ContainerList | None:
-        """`Retrieve a single container by id. <https://docs.cognite.com/api/v1/#tag/Containers/operation/byContainerIdsContainers>`_
+        """`Retrieve a single container by id. <https://docs.cognite.com/api/v1/#tag/Containers/operation/byExternalIdsContainers>`_
 
         Args:
-            ids (ContainerId | Sequence[ContainerId]): Workspace for container
+            ids (ContainerId | Sequence[ContainerId]): Identifier for container
 
         Returns:
             Optional[Container]: Requested container or None if it does not exist.
@@ -80,12 +80,12 @@ class ContainersAPI(APIClient):
         return self._retrieve_multiple(list_cls=ContainerList, resource_cls=Container, identifiers=identifier)
 
     def delete(self, id: ContainerId | Sequence[ContainerId]) -> list[DataModelingId]:
-        """`Delete one or more containers <https://docs.cognite.com/api/v1/#tag/Containers/operation/deleteContainersV3>`_
+        """`Delete one or more containers <https://docs.cognite.com/api/v1/#tag/Containers/operation/deleteContainers>`_
 
         Args:
             id (ContainerId | Sequence[ContainerId): The container identifier(s).
         Returns:
-            The container(s) which has been deleted. None if nothing was deleted.
+            The container(s) which has been deleted. Empty list if nothing was deleted.
         Examples:
 
             Delete containers by id::
@@ -103,13 +103,13 @@ class ContainersAPI(APIClient):
         return [DataModelingId(space=item["space"], external_id=item["externalId"]) for item in deleted_containers]
 
     def list(
-        self, space: str | None = None, limit: int = LIST_LIMIT_DEFAULT, include_global: bool = False
+        self, space: str | None = None, limit: int = CONTAINER_LIST_LIMIT_DEFAULT, include_global: bool = False
     ) -> ContainerList:
-        """`List containers <https://docs.cognite.com/api/v1/#tag/Containers/operation/listContainersV3>`_
+        """`List containers <https://docs.cognite.com/api/v1/#tag/Containers/operation/listContainers>`_
 
         Args:
             space (int, optional): The space to query
-            limit (int, optional): Maximum number of containers to return. Defaults to 25. Set to -1, float("inf") or None
+            limit (int, optional): Maximum number of containers to return. Default to 10. Set to -1, float("inf") or None
                 to return all items.
             include_global (bool, optional): Whether the global containers should be returned.
 
@@ -118,7 +118,7 @@ class ContainersAPI(APIClient):
 
         Examples:
 
-            List containers and filter on max start time::
+            List containers and limit to 5:
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
@@ -135,7 +135,7 @@ class ContainersAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> for container_list in c.data_modeling.containers(chunk_size=2500):
+                >>> for container_list in c.data_modeling.containers(chunk_size=10):
                 ...     container_list # do something with the containers
         """
         filter = ContainerFilter(space, include_global)
@@ -157,17 +157,17 @@ class ContainersAPI(APIClient):
         ...
 
     def apply(self, container: Container | Sequence[Container]) -> Container | ContainerList:
-        """`Create or patch one or more containers. <https://docs.cognite.com/api/v1/#tag/Containers/operation/ApplyContainers>`_
+        """`Add or update (upsert) containers. <https://docs.cognite.com/api/v1/#tag/Containers/operation/ApplyContainers>`_
 
         Args:
-            container (container: Container | Sequence[Container]): Container or containers of containersda to create or update.
+            container (container: Container | Sequence[Container]): Container or containers of containers to create or update.
 
         Returns:
             Container | ContainerList: Created container(s)
 
         Examples:
 
-            Create new containersda::
+            Create new containersd:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import Container
