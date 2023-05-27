@@ -14,7 +14,7 @@ from cognite.client.data_classes.data_modeling.core import (
     ViewReference,
     load_view_property_definition,
 )
-from cognite.client.data_classes.data_modeling.dsl_filter import BoolFilter, LeafFilter, load_dsl_filter
+from cognite.client.data_classes.data_modeling.dsl_filter import DSLFilter, dump_dsl_filter, load_dsl_filter
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case,
     convert_all_keys_to_snake_case,
@@ -50,7 +50,7 @@ class View(CogniteResource):
         external_id: str = None,
         description: str = None,
         name: str = None,
-        filter: BoolFilter | LeafFilter | None = None,
+        filter: DSLFilter | None = None,
         implements: list[ViewReference] = None,
         version: str = None,
         writable: bool = False,
@@ -99,7 +99,7 @@ class View(CogniteResource):
                 convert_all_keys_to_camel_case(asdict(v)) if camel_case else asdict(v) for v in output["implements"]
             ]
         if "filter" in output:
-            raise NotImplementedError()
+            output["filter"] = dump_dsl_filter(output["filter"])
 
         if "properties" in output:
             output["properties"] = {

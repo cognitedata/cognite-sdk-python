@@ -24,16 +24,27 @@ class DirectRelationReference:
 
 
 @dataclass
-class ContainerReference:
+class Reference:
     space: str
     external_id: str
-    type: Literal["container"] = "container"
+
+    def dump(self, camel_case: bool = False, *_: Any, **__: Any) -> dict[str, str]:
+        output = asdict(self)
+
+        return convert_all_keys_to_camel_case_nested(output) if camel_case else output
 
 
 @dataclass
-class ViewReference:
-    space: str
-    external_id: str
+class ContainerReference(Reference):
+    type: Literal["container"] = "container"
+
+    @classmethod
+    def load(cls, data: dict) -> ContainerReference:
+        return cls(**convert_all_keys_to_snake_case(data))
+
+
+@dataclass
+class ViewReference(Reference):
     version: str
     type: Literal["view"] = "view"
 
@@ -41,10 +52,15 @@ class ViewReference:
     def load(cls, data: dict) -> ViewReference:
         return cls(**convert_all_keys_to_snake_case(data))
 
-    def dump(self, camel_case: bool = False, *_: Any, **__: Any) -> dict[str, str]:
-        output = asdict(self)
 
-        return convert_all_keys_to_camel_case_nested(output) if camel_case else output
+def load_reference(data: dict) -> ContainerReference | ViewReference:
+    if "type" not in data:
+        raise ValueError("References are required to have a type")
+    if data["type"] == "container":
+        return ContainerReference.load(data)
+    elif data["type"] == "view":
+        return ViewReference.load(data)
+    raise ValueError(f"Type {data['type']} is not supported.zs")
 
 
 @dataclass

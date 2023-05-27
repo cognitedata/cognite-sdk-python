@@ -1,31 +1,24 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import List, Union
+from dataclasses import asdict, dataclass
+from typing import Dict, List, Literal, Union, get_args
 
-from cognite.client.data_classes.data_modeling.core import ContainerReference, ViewReference
-
-
-@dataclass
-class AndFilter:
-    and_: dict
-
-
-@dataclass
-class OrFilter:
-    or_: dict
-
-
-@dataclass
-class NotFilter:
-    not_: dict
-
-
-BoolFilter = Union[AndFilter, OrFilter, NotFilter]
-
+from cognite.client.data_classes.data_modeling.core import load_reference
 
 RawPropertyList = Union[List[float], List[bool], List[str]]
 RawPropertyValue = Union[str, float, bool, dict, RawPropertyList]
+
+
+@dataclass
+class FilterObject:
+    @classmethod
+    def load(cls, data: dict) -> FilterObject:
+        return cls(**data)
+
+
+@dataclass
+class FilterPropertyObject(FilterObject):
+    property: list[str]
 
 
 @dataclass
@@ -34,23 +27,20 @@ class ReferencePropertyValue:
 
 
 @dataclass
-class EqualObject:
-    property: list[str]
+class EqualObject(FilterPropertyObject):
     value: RawPropertyValue | ReferencePropertyValue
 
 
 @dataclass
-class InObject:
-    property: list[str]
-    value: RawPropertyList | ReferencePropertyValue
+class InObject(FilterPropertyObject):
+    values: RawPropertyList | ReferencePropertyValue
 
 
 RangeValue = Union[str, int, float]
 
 
 @dataclass
-class RangeObject:
-    property: list[str]
+class RangeObject(FilterPropertyObject):
     gte: RangeValue | None = None
     gt: RangeValue | None = None
     lte: RangeValue | None = None
@@ -63,86 +53,27 @@ class ParameterizedPropertyValue:
 
 
 @dataclass
-class PrefixObject:
-    property: list[str]
+class PrefixObject(FilterPropertyObject):
     value: str | ParameterizedPropertyValue
 
 
 @dataclass
-class ExistsObject:
-    property: list[str]
+class ExistsObject(FilterPropertyObject):
+    ...
 
 
 @dataclass
-class EqualsFilter:
-    equals: EqualObject
-
-
-@dataclass
-class InFilter:
-    in_: InObject
-
-
-@dataclass
-class RangeFilter:
-    range: RangeObject
-
-
-@dataclass
-class PrefixFilter:
-    prefix: PrefixObject
-
-
-@dataclass
-class ExistsFilter:
-    exists: ExistsObject
-
-
-@dataclass
-class ContainsAnyObject:
-    property: list[str]
+class ContainsAnyObject(FilterPropertyObject):
     values: list[RawPropertyList | ReferencePropertyValue]
 
 
 @dataclass
-class ContainsAnyFilter:
-    contains_any: ContainsAnyObject
-
-
-@dataclass
-class ContainsAllObject:
-    property: list[str]
+class ContainsAllObject(FilterPropertyObject):
     values: list[RawPropertyList | ReferencePropertyValue]
 
 
 @dataclass
-class ContainsAllFilter:
-    contains_all: ContainsAllObject
-
-
-@dataclass
-class MatchAllObject:
-    match: dict
-
-
-@dataclass
-class MatchAllFilter:
-    match_all: MatchAllObject
-
-
-@dataclass
-class NestedObject:
-    scope: list[str]
-    filter: dict
-
-
-@dataclass
-class NestedFilter:
-    nested: NestedObject
-
-
-@dataclass
-class OverlapObject:
+class OverlapObject(FilterObject):
     start_property: list[str]
     end_property: list[str]
     gte: RangeValue | None = None
@@ -151,33 +82,74 @@ class OverlapObject:
     lt: RangeValue | None = None
 
 
-@dataclass
-class OverlapsFilter:
-    overlaps: OverlapObject
+Logical = Literal["and", "or", "not"]
+LOGICAL_SET = set(get_args(Logical))
 
 
-@dataclass
-class HasDataFilter:
-    has_data: list[ViewReference | ContainerReference]
-
-
-LeafFilter = Union[
-    EqualsFilter,
-    InFilter,
-    RangeFilter,
-    PrefixFilter,
-    ExistsFilter,
-    ContainsAnyFilter,
-    ContainsAllFilter,
-    MatchAllFilter,
-    NestedFilter,
-    OverlapsFilter,
-    HasDataFilter,
+PropertyOperation = Literal[
+    "equals",
+    "in",
+    "range",
+    "prefix",
+    "exists",
+    "containsAny",
+    "containsAll",
 ]
 
+ComplexOperation = Literal["matchAll", "nested", "overlaps", "hasData"]
+Operation = Union[PropertyOperation, ComplexOperation]
 
-DMSFilter = Union[BoolFilter, LeafFilter]
+PROPERTY_OPERATION_SET = set(get_args(PropertyOperation))
+
+FilterKey = Union[Logical, Operation]
+
+FILTER_KEY_SET = set(get_args(FilterKey))
 
 
-def load_dsl_filter(data: dict) -> DMSFilter:
-    raise NotImplementedError()
+DSLFilter = Dict[FilterKey, Union[List, Dict]]
+
+
+@dataclass
+class NestedObject(FilterObject):
+    scope: list[str]
+    filter: DSLFilter
+
+
+def load_dsl_filter(data: dict) -> DSLFilter:
+    dsl_filter: DSLFilter = {}
+
+    for key, value in data.items():
+        if key in LOGICAL_SET:
+            parsed = [load_dsl_filter(entry) for entry in value]
+        elif key in PROPERTY_OPERATION_SET or key in {"nested", "overlaps"}:
+            parsed = {  # type: ignore[attr-defined]
+                "equals": EqualObject,
+                "in": InObject,
+                "range": RangeObject,
+                "prefix": PrefixObject,
+                "exists": ExistsObject,
+                "containsAny": ContainsAnyObject,
+                "containsAll": ContainsAllObject,
+                "overlaps": OverlapObject,
+                "nested": NestedObject,
+            }[key].load(value)
+        elif key == "matchAll":
+            parsed = load_dsl_filter(data)  # type: ignore[assignment]
+        elif key == "hasData":
+            parsed = [load_reference(v) for v in data]  # type: ignore[misc]
+        else:
+            raise NotImplementedError()
+        dsl_filter[key] = parsed
+    return dsl_filter
+
+
+def dump_dsl_filter(filter_: DSLFilter) -> dict:
+    dump = {}
+    for key, value in filter_.items():
+        if key in LOGICAL_SET:
+            dump[key] = [dump_dsl_filter(entry) for entry in value]
+        elif key in PROPERTY_OPERATION_SET:
+            dump[key] = asdict(value, dict_factory=lambda x: {k: v for (k, v) in x if v is not None})  # type: ignore[return-value, arg-type]
+        else:
+            raise ValueError(f"Invalid filter key {key}. Supported {FILTER_KEY_SET}")
+    return dump
