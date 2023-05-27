@@ -1,23 +1,19 @@
-from pathlib import Path
-
-import yaml
-
 from cognite.client import CogniteClient
 from cognite.client.data_classes.data_modeling import Space
 
 
 def dump(client: CogniteClient):
-    data_models = client.data_modeling.data_models.list(limit=-1)
-    with (Path.cwd() / "data_models.yml").open("w") as f:
-        yaml.dump(data_models.dump(), f)
+    client.data_modeling.data_models.list(limit=-1)
+    # with (Path.cwd() / "data_models.yml").open("w") as f:
+    #     yaml.dump(data_models.dump(), f)
 
-    views = client.data_modeling.views.list(limit=-1)
-    with (Path.cwd() / "views.yml").open("w") as f:
-        yaml.dump(views.dump(), f)
+    client.data_modeling.views.list(limit=-1)
+    # with (Path.cwd() / "views.yml").open("w") as f:
+    #     yaml.dump(views.dump(), f)
 
-    containers = client.data_modeling.containers.list(limit=-1)
-    with (Path.cwd() / "containers.yml").open("w") as f:
-        yaml.dump(containers.dump(), f)
+    client.data_modeling.containers.list(limit=-1)
+    # with (Path.cwd() / "containers.yml").open("w") as f:
+    #     yaml.dump(containers.dump(), f)
 
 
 def copy_pygen_test_data(pygen: CogniteClient, client: CogniteClient):

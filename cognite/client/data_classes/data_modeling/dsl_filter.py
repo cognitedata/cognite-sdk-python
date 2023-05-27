@@ -177,3 +177,7 @@ LeafFilter = Union[
 
 
 DMSFilter = Union[BoolFilter, LeafFilter]
+
+
+def load_dsl_filter(data: dict) -> DMSFilter:
+    raise NotImplementedError()

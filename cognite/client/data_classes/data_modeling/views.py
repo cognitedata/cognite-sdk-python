@@ -1,13 +1,19 @@
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING, Literal, cast
 
 from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
 )
-from cognite.client.data_classes.data_modeling.core import ViewPropertyDefinition, ViewReference
-from cognite.client.data_classes.data_modeling.dsl_filter import BoolFilter, LeafFilter
+from cognite.client.data_classes.data_modeling.core import (
+    ViewPropertyDefinition,
+    ViewReference,
+    load_view_property_definition,
+)
+from cognite.client.data_classes.data_modeling.dsl_filter import BoolFilter, LeafFilter, load_dsl_filter
+from cognite.client.utils._text import convert_all_keys_to_snake_case
 from cognite.client.utils._validation import validate_data_modeling_identifier
 
 if TYPE_CHECKING:
@@ -65,6 +71,20 @@ class View(CogniteResource):
         self.last_updated_time = last_updated_time
         self.created_time = created_time
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient = None) -> View:
+        data = json.loads(resource) if isinstance(resource, str) else resource
+        if "properties" in data:
+            data["properties"] = {k: load_view_property_definition(v) for k, v in data["properties"].items()} or None
+        if "implements" in data:
+            data["implements"] = [
+                ViewReference(**convert_all_keys_to_snake_case(v)) for v in data["implements"]
+            ] or None
+        if "filter" in data:
+            data["filter"] = load_dsl_filter(data["filter"])
+
+        return super()._load(data, cognite_client)
 
 
 class ViewList(CogniteResourceList):

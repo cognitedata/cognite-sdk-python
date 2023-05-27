@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import typing
 from dataclasses import dataclass
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal, Optional, Union, cast
 
 from cognite.client.utils._text import convert_all_keys_to_snake_case
 
@@ -58,16 +58,33 @@ class CDFExternalIdReference:
 
 
 @dataclass
-class ContainerDirectNodeRelation:
+class DirectNodeRelation:
     type: DirectType = "direct"
     container: Optional[ContainerReference] = None
+
+    @classmethod
+    def load(cls, data: dict) -> DirectNodeRelation:
+        if isinstance(data.get("container"), dict):
+            data["container"] = ContainerReference(**convert_all_keys_to_snake_case(data["container"]))
+        return cls(**data)
 
 
 @dataclass
-class ViewDirectNodeRelation:
-    type: DirectType = "direct"
-    container: Optional[ContainerReference] = None
+class ContainerDirectNodeRelation(DirectNodeRelation):
+    @classmethod
+    def load(cls, data: dict) -> ContainerDirectNodeRelation:
+        return cast(ContainerDirectNodeRelation, super().load(data))
+
+
+@dataclass
+class ViewDirectNodeRelation(DirectNodeRelation):
     source: Optional[ViewReference] = None
+
+    @classmethod
+    def load(cls, data: dict) -> ViewDirectNodeRelation:
+        if isinstance(data.get("source"), dict):
+            data["source"] = ViewReference(**convert_all_keys_to_snake_case(data["source"]))
+        return cast(ViewDirectNodeRelation, super().load(data))
 
 
 @dataclass
@@ -91,7 +108,7 @@ class ContainerPropertyIdentifier:
         elif type_ in CDF_TYPE_SET:
             data["type"] = CDFExternalIdReference(**data["type"])
         elif type_ in DIRECT_TYPE:
-            data["type"] = ContainerDirectNodeRelation(**data["type"])
+            data["type"] = ContainerDirectNodeRelation.load(data["type"])
         else:
             raise ValueError(
                 f"Invalid {cls.__name__}.type {type_}. Must be {PRIMITIVE_TYPE_SET | TEXT_TYPE_SET | CDF_TYPE_SET | DIRECT_TYPE}"
@@ -110,6 +127,27 @@ class ViewCorePropertyDefinition:
     default_value: str | int | dict | None = None
     description: str | None = None
 
+    @classmethod
+    def load(cls, data: dict) -> ViewCorePropertyDefinition:
+        if "type" not in data:
+            raise ValueError("Type not specified")
+        type_ = data["type"]["type"]
+        if type_ in PRIMITIVE_TYPE_SET:
+            data["type"] = PrimitiveProperty(**data["type"])
+        elif type_ in TEXT_TYPE_SET:
+            data["type"] = TextProperty(**data["type"])
+        elif type_ in CDF_TYPE_SET:
+            data["type"] = CDFExternalIdReference(**data["type"])
+        elif type_ in DIRECT_TYPE:
+            data["type"] = ViewDirectNodeRelation.load(data["type"])
+        else:
+            raise ValueError(
+                f"Invalid {cls.__name__}.type {type_}. Must be {PRIMITIVE_TYPE_SET | TEXT_TYPE_SET | CDF_TYPE_SET | DIRECT_TYPE}"
+            )
+        if isinstance(data.get("container"), dict):
+            data["container"] = ContainerReference(**convert_all_keys_to_snake_case(data["container"]))
+        return cls(**convert_all_keys_to_snake_case(data))
+
 
 @dataclass
 class ConnectionDefinition:
@@ -124,8 +162,24 @@ class ConnectionDefinitionRelation(ConnectionDefinition):
     description: str | None = None
     direction: Literal["outwards", "inwards"] = "outwards"
 
+    @classmethod
+    def load(cls, data: dict) -> ConnectionDefinitionRelation:
+        for field_name, Field in [("type", DirectRelationReference), ("source", ViewReference)]:
+            if isinstance(data.get(field_name), dict):
+                data[field_name] = Field(**convert_all_keys_to_snake_case(data[field_name]))
+        return cls(**convert_all_keys_to_snake_case(data))
+
 
 ViewPropertyDefinition = Union[ViewCorePropertyDefinition, ConnectionDefinition]
+
+
+def load_view_property_definition(data: dict[str, Any]) -> ViewPropertyDefinition:
+    if "container" in data:
+        return ViewCorePropertyDefinition.load(data)
+    elif "source" in data:
+        return ConnectionDefinitionRelation.load(data)
+
+    raise ValueError(f"Unknown type of ViewPropertyDefinition: {data.get('type')}")
 
 
 @dataclass
