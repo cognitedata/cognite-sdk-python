@@ -2,6 +2,7 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes.data_modeling import Space, View
+from cognite.client.data_classes.data_modeling import dsl_filter as dsl
 from cognite.client.data_classes.data_modeling.core import ContainerReference, ViewCorePropertyDefinition
 from cognite.client.data_classes.data_modeling.data_models import DataModel, DataModelList
 from cognite.client.data_classes.data_modeling.ids import VersionedDataModelingId
@@ -135,3 +136,14 @@ class TestDataModelsAPI:
 
         # Assert
         assert all(isinstance(v, View) for m in data_models for v in m.views)
+
+    @pytest.mark.skip("Backend not implemented.")
+    def test_filter(self, cognite_client: CogniteClient, cdf_data_models: DataModelList):
+        # Arrange
+        data_model = cdf_data_models[0]
+
+        data_models = cognite_client.data_modeling.data_models.filter(
+            {"equals": dsl.EqualObject(["name"], data_model.name)}
+        )
+
+        assert data_models[0] == data_model

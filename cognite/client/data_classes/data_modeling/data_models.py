@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -116,3 +116,15 @@ class DataModelFilter(CogniteFilter):
         self.inline_views = inline_views
         self.all_versions = all_versions
         self.include_global = include_global
+
+
+class DataModelsSort(CogniteFilter):
+    def __init__(
+        self,
+        property: Literal["space", "externalId", "name", "description", "version", "createdTime", "lastUpdatedTime"],
+        direction: Literal["ascending", "descending"] = "ascending",
+        nulls_first: bool = False,
+    ):
+        self.property = property
+        self.direction = direction
+        self.nulls_first = nulls_first

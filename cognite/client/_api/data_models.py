@@ -4,7 +4,13 @@ from typing import Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DATA_MODEL_LIST_LIMIT_DEFAULT
-from cognite.client.data_classes.data_modeling.data_models import DataModel, DataModelFilter, DataModelList
+from cognite.client.data_classes.data_modeling.data_models import (
+    DataModel,
+    DataModelFilter,
+    DataModelList,
+    DataModelsSort,
+)
+from cognite.client.data_classes.data_modeling.dsl_filter import DSLFilter, dump_dsl_filter
 from cognite.client.data_classes.data_modeling.ids import DataModelId, VersionedDataModelingId
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
 
@@ -108,6 +114,54 @@ class DataModelsAPI(APIClient):
         return [
             VersionedDataModelingId(item["space"], item["externalId"], item["version"]) for item in deleted_data_models
         ]
+
+    def filter(
+        self,
+        filter: dict | DSLFilter,
+        limit: int = DATA_MODEL_LIST_LIMIT_DEFAULT,
+        space: str | None = None,
+        all_versions: bool = False,
+        include_global: bool = False,
+        sort: list[DataModelsSort | dict] | None = None,
+    ) -> DataModelList:
+        """`List data_models <https://docs.cognite.com/api/v1/#tag/DataModels/operation/listDataModelsV3>`_
+
+        Args:
+            filter: A filter Domain Specific Languagu (DSL) used to create advanced filter queries.
+            limit (int, optional): Maximum number of data_models to return. Default to 10. Set to -1, float("inf") or None
+                to return all items.
+            space: (str | None): The space to query.
+            all_versions (bool): Whether to return all versions. If false, only the newest version is returned,
+                                 which is determined based on the 'createdTime' field.
+            include_global (bool): Whether to include global views.
+            sort (list[DataModelsSort | dict] | None): Specifis how you want the data model information ordered.
+
+        Returns:
+            DataModelList: List of requested data_models
+
+        Examples:
+
+            List data_models and filter on max start time::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> data_model_list = c.data_modeling.data_models.filter(limit=5)
+        """
+        other_params = DataModelFilter(space, all_versions=all_versions, include_global=include_global).dump(
+            camel_case=True
+        )
+        other_params.pop("inlineViews", None)
+        if sort:
+            other_params["sort"] = [s.dump(camel_case=True) if isinstance(s, DataModelsSort) else s for s in sort]
+
+        return self._list(
+            list_cls=DataModelList,
+            resource_cls=DataModel,
+            method="POST",
+            limit=limit,
+            filter=dump_dsl_filter(filter),
+            other_params=other_params,
+        )
 
     def list(
         self,
