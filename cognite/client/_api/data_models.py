@@ -102,8 +102,7 @@ class DataModelsAPI(APIClient):
         deleted_data_models = cast(
             list,
             self._delete_multiple(
-                identifiers=DataModelingIdentifierSequence.load(ids),
-                wrap_ids=True,
+                identifiers=DataModelingIdentifierSequence.load(ids), wrap_ids=True, returns_items=True
             ),
         )
         return [

@@ -93,7 +93,7 @@ class TestViewsAPI:
         assert len(cdf_views) >= 2, "Please add at least two views to the test environment"
         # Arrange
         ids = [VersionedDataModelingId(v.space, v.external_id, v.version) for v in cdf_views]
-        ids += [VersionedDataModelingId("myNonExistingSpace", "myImaginaryContainer", "v0")]
+        ids += [VersionedDataModelingId("myNonExistingSpace", "myImaginaryView", "v0")]
 
         # Act
         retrieved = cognite_client.data_modeling.views.retrieve(ids)
@@ -102,9 +102,9 @@ class TestViewsAPI:
         assert len(retrieved) == len(ids) - 1
 
     def test_retrieve_non_existent(self, cognite_client: CogniteClient):
-        assert cognite_client.data_modeling.views.retrieve(("myNonExistingSpace", "myImaginaryContainer", "v0")) is None
+        assert cognite_client.data_modeling.views.retrieve(("myNonExistingSpace", "myImaginaryView", "v0")) is None
 
-    def test_iterate_over_containers(self, cognite_client: CogniteClient, integration_test_space: Space):
+    def test_iterate(self, cognite_client: CogniteClient, integration_test_space: Space):
         for containers in cognite_client.data_modeling.views(
             chunk_size=2, limit=-1, space=integration_test_space.space
         ):
