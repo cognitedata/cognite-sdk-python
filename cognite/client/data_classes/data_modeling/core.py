@@ -4,7 +4,6 @@ import typing
 from dataclasses import dataclass
 from typing import Any, Literal, Optional, Union
 
-from cognite.client.data_classes.data_modeling.ids import DataModelingId
 from cognite.client.utils._text import convert_all_keys_to_snake_case
 
 PrimitiveType = Literal["boolean", "float32", "float64", "int32", "int64", "timestamp", "date", "json"]
@@ -19,8 +18,24 @@ DIRECT_TYPE = set(typing.get_args(DirectType))
 
 
 @dataclass
-class Container(DataModelingId):
-    type: str = "container"
+class DirectRelationReference:
+    space: str
+    external_id: str
+
+
+@dataclass
+class ContainerReference:
+    space: str
+    external_id: str
+    type: Literal["container"] = "container"
+
+
+@dataclass
+class ViewReference:
+    space: str
+    external_id: str
+    version: str
+    type: Literal["view"] = "view"
 
 
 @dataclass
@@ -43,14 +58,21 @@ class CDFExternalIdReference:
 
 
 @dataclass
-class DirectNodeRelation:
+class ContainerDirectNodeRelation:
     type: DirectType = "direct"
-    container: Optional[Container] = None
+    container: Optional[ContainerReference] = None
+
+
+@dataclass
+class ViewDirectNodeRelation:
+    type: DirectType = "direct"
+    container: Optional[ContainerReference] = None
+    source: Optional[ViewReference] = None
 
 
 @dataclass
 class ContainerPropertyIdentifier:
-    type: TextProperty | PrimitiveProperty | CDFExternalIdReference | DirectNodeRelation
+    type: TextProperty | PrimitiveProperty | CDFExternalIdReference | ContainerDirectNodeRelation
     nullable: bool = True
     auto_increment: bool = False
     name: Optional[str] = None
@@ -69,7 +91,7 @@ class ContainerPropertyIdentifier:
         elif type_ in CDF_TYPE_SET:
             data["type"] = CDFExternalIdReference(**data["type"])
         elif type_ in DIRECT_TYPE:
-            data["type"] = DirectNodeRelation(**data["type"])
+            data["type"] = ContainerDirectNodeRelation(**data["type"])
         else:
             raise ValueError(
                 f"Invalid {cls.__name__}.type {type_}. Must be {PRIMITIVE_TYPE_SET | TEXT_TYPE_SET | CDF_TYPE_SET | DIRECT_TYPE}"
@@ -77,7 +99,33 @@ class ContainerPropertyIdentifier:
         return cls(**convert_all_keys_to_snake_case(data))
 
 
-# class ConstraintIdentifier:
+@dataclass
+class ViewCorePropertyDefinition:
+    type: TextProperty | PrimitiveProperty | CDFExternalIdReference | ViewDirectNodeRelation
+    container: ContainerReference
+    container_property_identifier: str
+    nullable: bool = True
+    auto_increment: bool = False
+    name: str | None = None
+    default_value: str | int | dict | None = None
+    description: str | None = None
+
+
+@dataclass
+class ConnectionDefinition:
+    ...
+
+
+@dataclass
+class ConnectionDefinitionRelation(ConnectionDefinition):
+    type: DirectRelationReference
+    source: ViewReference
+    name: str | None = None
+    description: str | None = None
+    direction: Literal["outwards", "inwards"] = "outwards"
+
+
+ViewPropertyDefinition = Union[ViewCorePropertyDefinition, ConnectionDefinition]
 
 
 @dataclass

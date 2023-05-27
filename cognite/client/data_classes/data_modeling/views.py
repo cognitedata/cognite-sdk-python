@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Literal, cast
 
 from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
 )
+from cognite.client.data_classes.data_modeling.core import ViewPropertyDefinition, ViewReference
+from cognite.client.data_classes.data_modeling.dsl_filter import BoolFilter, LeafFilter
 from cognite.client.utils._validation import validate_data_modeling_identifier
 
 if TYPE_CHECKING:
@@ -23,6 +25,9 @@ class View(CogniteResource):
         filter (dict): A filter Domain Specific Language (DSL) used to create advanced filter queries.
         implements (list): References to the views from where this view will inherit properties and edges.
         version (str): DMS version.
+        writable (bool): Whether the view supports write operations.
+        used_for (Literal["node", "edge", "all"]): Does this view apply to nodes, edges or both.
+        is_global (bool): Whether this is a global container, i.e., one of the out-of-the-box models.
         properties (dict): View with included properties and expected edges, indexed by a unique space-local identifier.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -34,10 +39,13 @@ class View(CogniteResource):
         external_id: str = None,
         description: str = None,
         name: str = None,
-        filter: dict[str, Any] = None,
-        implements: list[dict[str, str]] = None,
+        filter: BoolFilter | LeafFilter | None = None,
+        implements: list[ViewReference] = None,
         version: str = None,
-        properties: dict = None,
+        writable: bool = False,
+        used_for: Literal["node", "edge", "all"] = "node",
+        is_global: bool = False,
+        properties: dict[str, ViewPropertyDefinition] = None,
         last_updated_time: int = None,
         created_time: int = None,
         cognite_client: CogniteClient = None,
@@ -50,6 +58,9 @@ class View(CogniteResource):
         self.filter = filter
         self.implements = implements
         self.version = version
+        self.writable = writable
+        self.used_for = used_for
+        self.is_global = is_global
         self.properties = properties
         self.last_updated_time = last_updated_time
         self.created_time = created_time

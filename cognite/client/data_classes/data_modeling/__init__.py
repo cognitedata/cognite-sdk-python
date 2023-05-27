@@ -2,8 +2,8 @@ from cognite.client.data_classes.data_modeling.containers import Container, Cont
 from cognite.client.data_classes.data_modeling.core import (
     CDFExternalIdReference,
     ConstraintIdentifier,
+    ContainerDirectNodeRelation,
     ContainerPropertyIdentifier,
-    DirectNodeRelation,
     IndexIdentifier,
     PrimitiveProperty,
     RequiresConstraintDefinition,
@@ -28,7 +28,7 @@ __all__ = [
     "ContainerPropertyIdentifier",
     "PrimitiveProperty",
     "CDFExternalIdReference",
-    "DirectNodeRelation",
+    "ContainerDirectNodeRelation",
     "RequiresConstraintDefinition",
     "UniquenessConstraintDefinition",
     "TextProperty",
