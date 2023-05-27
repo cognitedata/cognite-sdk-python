@@ -37,6 +37,15 @@ class ViewReference:
     version: str
     type: Literal["view"] = "view"
 
+    @classmethod
+    def load(cls, data: dict) -> ViewReference:
+        return cls(**convert_all_keys_to_snake_case(data))
+
+    def dump(self, camel_case: bool = False, *_: Any, **__: Any) -> dict[str, str]:
+        output = asdict(self)
+
+        return convert_all_keys_to_camel_case_nested(output) if camel_case else output
+
 
 @dataclass
 class TextProperty:
@@ -83,7 +92,7 @@ class ViewDirectNodeRelation(DirectNodeRelation):
     @classmethod
     def load(cls, data: dict) -> ViewDirectNodeRelation:
         if isinstance(data.get("source"), dict):
-            data["source"] = ViewReference(**convert_all_keys_to_snake_case(data["source"]))
+            data["source"] = ViewReference.load(data["source"])
         return cast(ViewDirectNodeRelation, super().load(data))
 
 
@@ -147,7 +156,7 @@ class ViewCorePropertyDefinition:
         if isinstance(data.get("container"), dict):
             data["container"] = ContainerReference(**convert_all_keys_to_snake_case(data["container"]))
         if isinstance(data.get("source"), dict):
-            data["source"] = ViewReference(**convert_all_keys_to_snake_case(data["source"]))
+            data["source"] = ViewReference.load(data["source"])
         return cls(**convert_all_keys_to_snake_case(data))
 
     def dump(self, camel_case: bool = False, exclude_not_supported_by_apply_endpoint: bool = True) -> dict:
@@ -187,7 +196,7 @@ class ConnectionDefinitionRelation(ConnectionDefinition):
                 data[field_name] = Field(**convert_all_keys_to_snake_case(data[field_name]))
         return cls(**convert_all_keys_to_snake_case(data))
 
-    def dump(self, camel_case: bool = False, exclude_not_supported_by_apply_endpoint: bool = True) -> dict:
+    def dump(self, camel_case: bool = False, *_: Any, **__: Any) -> dict:
         output = asdict(self)
 
         return convert_all_keys_to_camel_case_nested(output) if camel_case else output

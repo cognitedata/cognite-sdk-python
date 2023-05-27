@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
-from cognite.client.data_classes.data_modeling import DataModel, DataModelList
+from cognite.client._constants import DATA_MODEL_LIST_LIMIT_DEFAULT
+from cognite.client.data_classes.data_modeling.data_models import DataModel, DataModelFilter, DataModelList
 from cognite.client.data_classes.data_modeling.ids import DataModelId, VersionedDataModelingId
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
 
@@ -16,6 +16,10 @@ class DataModelsAPI(APIClient):
         self,
         chunk_size: int = None,
         limit: int = None,
+        space: str | None = None,
+        inline_views: bool = False,
+        all_versions: bool = False,
+        include_global: bool = False,
     ) -> Iterator[DataModel] | Iterator[DataModelList]:
         """Iterate over data_models
 
@@ -24,10 +28,17 @@ class DataModelsAPI(APIClient):
         Args:
             chunk_size (int, optional): Number of data_models to return in each chunk. Defaults to yielding one data_model a time.
             limit (int, optional): Maximum number of data_models to return. Default to return all items.
+            space: (str | None): The space to query.
+            inline_views (bool): Whether to expand the referenced views inline in the returned result.
+            all_versions (bool): Whether to return all versions. If false, only the newest version is returned,
+                                 which is determined based on the 'createdTime' field.
+            include_global (bool): Whether to include global views.
 
         Yields:
             Union[DataModel, DataModelList]: yields DataModel one by one if chunk_size is not specified, else DataModelList objects.
         """
+        DataModelFilter(space, inline_views, all_versions, include_global)
+
         return self._list_generator(
             list_cls=DataModelList,
             resource_cls=DataModel,
@@ -101,13 +112,22 @@ class DataModelsAPI(APIClient):
 
     def list(
         self,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int = DATA_MODEL_LIST_LIMIT_DEFAULT,
+        space: str | None = None,
+        inline_views: bool = False,
+        all_versions: bool = False,
+        include_global: bool = False,
     ) -> DataModelList:
         """`List data_models <https://docs.cognite.com/api/v1/#tag/DataModels/operation/listDataModelsV3>`_
 
         Args:
-            limit (int, optional): Maximum number of data_models to return. Defaults to 25. Set to -1, float("inf") or None
+            limit (int, optional): Maximum number of data_models to return. Default to 10. Set to -1, float("inf") or None
                 to return all items.
+            space: (str | None): The space to query.
+            inline_views (bool): Whether to expand the referenced views inline in the returned result.
+            all_versions (bool): Whether to return all versions. If false, only the newest version is returned,
+                                 which is determined based on the 'createdTime' field.
+            include_global (bool): Whether to include global views.
 
         Returns:
             DataModelList: List of requested data_models
@@ -134,11 +154,14 @@ class DataModelsAPI(APIClient):
                 >>> for data_model_list in c.data_modeling.data_models(chunk_size=2500):
                 ...     data_model_list # do something with the data_models
         """
+        filter_ = DataModelFilter(space, inline_views, all_versions, include_global)
+
         return self._list(
             list_cls=DataModelList,
             resource_cls=DataModel,
             method="GET",
             limit=limit,
+            filter=filter_.dump(camel_case=True),
         )
 
     @overload
@@ -160,7 +183,7 @@ class DataModelsAPI(APIClient):
 
         Examples:
 
-            Create new data_modelsda::
+            Create new data_models::
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_models import DataModel

@@ -44,7 +44,7 @@ def copy_pygen_test_data(pygen: CogniteClient, client: CogniteClient):
 
     print("Views added")
 
-    data_models = pygen.data_modeling.data_models.list(-1)
+    data_models = pygen.data_modeling.data_models.list(-1, space=immutable_space.space)
     client.data_modeling.data_models.apply(data_models)
     print("Data Models added")
 
@@ -53,5 +53,5 @@ if __name__ == "__main__":
     # # The code for getting a client is not committed, this is to avoid accidental runs.
     from scripts import local_client
 
-    dump(local_client.get_pygen_access())
-    # copy_pygen_test_data(local_client.get_pygen_access(), local_client.get_interactive())
+    # dump(local_client.get_pygen_access())
+    copy_pygen_test_data(local_client.get_pygen_access(), local_client.get_interactive())
