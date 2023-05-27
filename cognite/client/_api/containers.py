@@ -4,7 +4,7 @@ from typing import Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import LIST_LIMIT_DEFAULT
-from cognite.client.data_classes.data_modeling import Container, ContainerList
+from cognite.client.data_classes.data_modeling.containers import Container, ContainerFilter, ContainerList
 from cognite.client.data_classes.data_modeling.ids import ContainerId, DataModelingId
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
 
@@ -14,6 +14,8 @@ class ContainersAPI(APIClient):
 
     def __call__(
         self,
+        space: str | None = None,
+        include_global: bool = False,
         chunk_size: int = None,
         limit: int = None,
     ) -> Iterator[Container] | Iterator[ContainerList]:
@@ -22,18 +24,22 @@ class ContainersAPI(APIClient):
         Fetches containers as they are iterated over, so you keep a limited number of containers in memory.
 
         Args:
+            space (int, optional): The space to query.
+            Whether the global containers should be returned.
             chunk_size (int, optional): Number of containers to return in each chunk. Defaults to yielding one container a time.
             limit (int, optional): Maximum number of containers to return. Default to return all items.
 
         Yields:
             Union[Container, ContainerList]: yields Container one by one if chunk_size is not specified, else ContainerList objects.
         """
+        filter = ContainerFilter(space, include_global)
         return self._list_generator(
             list_cls=ContainerList,
             resource_cls=Container,
             method="GET",
             chunk_size=chunk_size,
             limit=limit,
+            filter=filter.dump(camel_case=True),
         )
 
     def __iter__(self) -> Iterator[Container]:
@@ -97,9 +103,7 @@ class ContainersAPI(APIClient):
         return [DataModelingId(space=item["space"], external_id=item["externalId"]) for item in deleted_containers]
 
     def list(
-        self,
-        space: str | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        self, space: str | None = None, limit: int = LIST_LIMIT_DEFAULT, include_global: bool = False
     ) -> ContainerList:
         """`List containers <https://docs.cognite.com/api/v1/#tag/Containers/operation/listContainersV3>`_
 
@@ -107,6 +111,7 @@ class ContainersAPI(APIClient):
             space (int, optional): The space to query
             limit (int, optional): Maximum number of containers to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
+            include_global (bool, optional): Whether the global containers should be returned.
 
         Returns:
             ContainerList: List of requested containers
@@ -133,12 +138,14 @@ class ContainersAPI(APIClient):
                 >>> for container_list in c.data_modeling.containers(chunk_size=2500):
                 ...     container_list # do something with the containers
         """
+        filter = ContainerFilter(space, include_global)
+
         return self._list(
             list_cls=ContainerList,
             resource_cls=Container,
             method="GET",
             limit=limit,
-            filter={"space": space} if space else None,
+            filter=filter.dump(camel_case=True),
         )
 
     @overload

@@ -5,6 +5,7 @@ from dataclasses import asdict
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 from cognite.client.data_classes._base import (
+    CogniteFilter,
     CogniteResource,
     CogniteResourceList,
 )
@@ -29,6 +30,7 @@ class Container(CogniteResource):
         external_id (str): Combined with the space is the unique identifier of the view.
         description (str): Textual description of the view
         name (str): Human readable name for the view.
+        is_global (bool): Whether this is a global container, i.e., one of the out-of-the-box models.
         used_for (Literal['node', 'edge', 'all']): Should this operation apply to nodes, edges or both.
         properties (dict[str, ContainerPropertyIdentifier]): We index the property by a local unique identifier.
         constraints (dict[str, ConstraintIdentifier]): Set of constraints to apply to the container
@@ -103,3 +105,16 @@ class Container(CogniteResource):
 
 class ContainerList(CogniteResourceList):
     _RESOURCE = Container
+
+
+class ContainerFilter(CogniteFilter):
+    """Represent the filer arguments for the list endpoint.
+
+    Args:
+        space (str): The space to query
+        include_global (bool): Whether the global containers should be included.
+    """
+
+    def __init__(self, space: str = None, include_global: bool = False):
+        self.space = space
+        self.include_global = include_global
