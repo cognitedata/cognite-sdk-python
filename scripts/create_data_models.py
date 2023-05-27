@@ -39,9 +39,10 @@ def copy_pygen_test_data(pygen: CogniteClient, client: CogniteClient):
     # client.data_modeling.containers.apply(containers)
     # print("Containers added")
 
-    views = pygen.data_modeling.views.list(-1)
-    client.data_modeling.views.apply(views)
-    print("Views added")
+    # views = pygen.data_modeling.views.list(-1)
+    # client.data_modeling.views.apply(views)
+    #
+    # print("Views added")
 
     # data_models = pygen.data_modeling.data_models.list(-1)
     # client.data_modeling.data_models.apply(data_models)

@@ -4,7 +4,7 @@ import typing
 from dataclasses import asdict, dataclass
 from typing import Any, Literal, Optional, Union, cast
 
-from cognite.client.utils._text import convert_all_keys_to_snake_case
+from cognite.client.utils._text import convert_all_keys_to_camel_case_nested, convert_all_keys_to_snake_case
 
 PrimitiveType = Literal["boolean", "float32", "float64", "int32", "int64", "timestamp", "date", "json"]
 CDFType = Literal["timeseries", "file", "sequence"]
@@ -157,7 +157,7 @@ class ViewCorePropertyDefinition:
                 output.pop(field, None)
 
         if camel_case:
-            output = convert_all_keys_to_snake_case(output)
+            output = convert_all_keys_to_camel_case_nested(output)
         return output
 
 
@@ -190,9 +190,7 @@ class ConnectionDefinitionRelation(ConnectionDefinition):
     def dump(self, camel_case: bool = False, exclude_not_supported_by_apply_endpoint: bool = True) -> dict:
         output = asdict(self)
 
-        if camel_case:
-            output = convert_all_keys_to_snake_case(output)
-        return output
+        return convert_all_keys_to_camel_case_nested(output) if camel_case else output
 
 
 ViewPropertyDefinition = Union[ViewCorePropertyDefinition, ConnectionDefinition]
