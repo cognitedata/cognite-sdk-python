@@ -78,7 +78,7 @@ class Container(CogniteResource):
         if "indexes" in data:
             data["indexes"] = {k: IndexIdentifier.load(v) for k, v in data["indexes"].items()} or None
 
-        return super()._load(data, cognite_client)
+        return cast(Container, super()._load(data, cognite_client))
 
     def dump(self, camel_case: bool = False, exclude_not_supported_by_apply_endpoint: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)

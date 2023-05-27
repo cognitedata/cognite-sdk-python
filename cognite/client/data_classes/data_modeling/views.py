@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Literal, cast
+from dataclasses import asdict
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from cognite.client.data_classes._base import (
     CogniteResource,
@@ -13,7 +14,10 @@ from cognite.client.data_classes.data_modeling.core import (
     load_view_property_definition,
 )
 from cognite.client.data_classes.data_modeling.dsl_filter import BoolFilter, LeafFilter, load_dsl_filter
-from cognite.client.utils._text import convert_all_keys_to_snake_case
+from cognite.client.utils._text import (
+    convert_all_keys_to_camel_case,
+    convert_all_keys_to_snake_case,
+)
 from cognite.client.utils._validation import validate_data_modeling_identifier
 
 if TYPE_CHECKING:
@@ -84,7 +88,37 @@ class View(CogniteResource):
         if "filter" in data:
             data["filter"] = load_dsl_filter(data["filter"])
 
-        return super()._load(data, cognite_client)
+        return cast(View, super()._load(data, cognite_client))
+
+    def dump(self, camel_case: bool = False, exclude_not_supported_by_apply_endpoint: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+
+        if "implements" in output:
+            output["implements"] = [
+                convert_all_keys_to_camel_case(asdict(v)) if camel_case else asdict(v) for v in output["implements"]
+            ]
+        if "filter" in output:
+            raise NotImplementedError()
+
+        if "properties" in output:
+            output["properties"] = {
+                k: v.dump(camel_case, exclude_not_supported_by_apply_endpoint) for k, v in output["properties"].items()
+            }
+
+        if exclude_not_supported_by_apply_endpoint:
+            for exclude in [
+                "writable",
+                "usedFor",
+                "isGlobal",
+                "lastUpdatedTime",
+                "createdTime",
+                "is_global",
+                "used_for",
+                "last_updated_time",
+                "created_time",
+            ]:
+                output.pop(exclude, None)
+        return output
 
 
 class ViewList(CogniteResourceList):

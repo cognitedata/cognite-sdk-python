@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import typing
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import Any, Literal, Optional, Union, cast
 
 from cognite.client.utils._text import convert_all_keys_to_snake_case
@@ -118,9 +118,10 @@ class ContainerPropertyIdentifier:
 
 @dataclass
 class ViewCorePropertyDefinition:
-    type: TextProperty | PrimitiveProperty | CDFExternalIdReference | ViewDirectNodeRelation
     container: ContainerReference
     container_property_identifier: str
+    source: ViewReference | None = None
+    type: TextProperty | PrimitiveProperty | CDFExternalIdReference | ViewDirectNodeRelation | None = None
     nullable: bool = True
     auto_increment: bool = False
     name: str | None = None
@@ -129,24 +130,35 @@ class ViewCorePropertyDefinition:
 
     @classmethod
     def load(cls, data: dict) -> ViewCorePropertyDefinition:
-        if "type" not in data:
-            raise ValueError("Type not specified")
-        type_ = data["type"]["type"]
-        if type_ in PRIMITIVE_TYPE_SET:
-            data["type"] = PrimitiveProperty(**data["type"])
-        elif type_ in TEXT_TYPE_SET:
-            data["type"] = TextProperty(**data["type"])
-        elif type_ in CDF_TYPE_SET:
-            data["type"] = CDFExternalIdReference(**data["type"])
-        elif type_ in DIRECT_TYPE:
-            data["type"] = ViewDirectNodeRelation.load(data["type"])
-        else:
-            raise ValueError(
-                f"Invalid {cls.__name__}.type {type_}. Must be {PRIMITIVE_TYPE_SET | TEXT_TYPE_SET | CDF_TYPE_SET | DIRECT_TYPE}"
-            )
+        if type_ := data.get("type", {}).get("type"):
+            if type_ in PRIMITIVE_TYPE_SET:
+                data["type"] = PrimitiveProperty(**data["type"])
+            elif type_ in TEXT_TYPE_SET:
+                data["type"] = TextProperty(**data["type"])
+            elif type_ in CDF_TYPE_SET:
+                data["type"] = CDFExternalIdReference(**data["type"])
+            elif type_ in DIRECT_TYPE:
+                data["type"] = ViewDirectNodeRelation.load(data["type"])
+            else:
+                raise ValueError(
+                    f"Invalid {cls.__name__}.type {type_}. Must be {PRIMITIVE_TYPE_SET | TEXT_TYPE_SET | CDF_TYPE_SET | DIRECT_TYPE}"
+                )
+
         if isinstance(data.get("container"), dict):
             data["container"] = ContainerReference(**convert_all_keys_to_snake_case(data["container"]))
+        if isinstance(data.get("source"), dict):
+            data["source"] = ViewReference(**convert_all_keys_to_snake_case(data["source"]))
         return cls(**convert_all_keys_to_snake_case(data))
+
+    def dump(self, camel_case: bool = False, exclude_not_supported_by_apply_endpoint: bool = True) -> dict:
+        output = asdict(self)
+        if exclude_not_supported_by_apply_endpoint:
+            for field in ["type", "nullable", "auto_increment", "default_value"]:
+                output.pop(field, None)
+
+        if camel_case:
+            output = convert_all_keys_to_snake_case(output)
+        return output
 
 
 @dataclass
@@ -160,14 +172,27 @@ class ConnectionDefinitionRelation(ConnectionDefinition):
     source: ViewReference
     name: str | None = None
     description: str | None = None
+    edge_source: ViewReference | None = None
     direction: Literal["outwards", "inwards"] = "outwards"
 
     @classmethod
     def load(cls, data: dict) -> ConnectionDefinitionRelation:
-        for field_name, Field in [("type", DirectRelationReference), ("source", ViewReference)]:
+        for field_name, Field in [
+            ("type", DirectRelationReference),
+            ("source", ViewReference),
+            ("edgeSource", ViewReference),
+            ("edge_source", ViewReference),
+        ]:
             if isinstance(data.get(field_name), dict):
                 data[field_name] = Field(**convert_all_keys_to_snake_case(data[field_name]))
         return cls(**convert_all_keys_to_snake_case(data))
+
+    def dump(self, camel_case: bool = False, exclude_not_supported_by_apply_endpoint: bool = True) -> dict:
+        output = asdict(self)
+
+        if camel_case:
+            output = convert_all_keys_to_snake_case(output)
+        return output
 
 
 ViewPropertyDefinition = Union[ViewCorePropertyDefinition, ConnectionDefinition]
