@@ -5,6 +5,7 @@ from dataclasses import asdict
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 from cognite.client.data_classes._base import (
+    CogniteFilter,
     CogniteResource,
     CogniteResourceList,
 )
@@ -123,3 +124,27 @@ class View(CogniteResource):
 
 class ViewList(CogniteResourceList):
     _RESOURCE = View
+
+
+class ViewFilter(CogniteFilter):
+    """Represent the filer arguments for the list endpoint.
+
+    Args:
+        space (str | None): The space to query
+        include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
+        all_versions (bool): Whether to return all versions. If false, only the newest version is returned,
+                             which is determined based on the 'createdTime' field.
+        include_global (bool): Whether to include global views.
+    """
+
+    def __init__(
+        self,
+        space: str = None,
+        include_inherited_properties: bool = True,
+        all_versions: bool = False,
+        include_global: bool = False,
+    ):
+        self.space = space
+        self.include_inherited_properties = include_inherited_properties
+        self.all_versions = all_versions
+        self.include_global = include_global

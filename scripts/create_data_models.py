@@ -26,32 +26,32 @@ def copy_pygen_test_data(pygen: CogniteClient, client: CogniteClient):
         description="Space used for integration testing in the SDK",
         name="SDK Integration Testing",
     )
-    Space(
+    immutable_space = Space(
         space="IntegrationTestsImmutable",
         description="Space used for integration testing in the SDK",
         name="SDK Integration Testing copy from Pygen",
     )
 
-    # _ = client.data_modeling.spaces.apply(immutable_space)
-    # print("Space added")
-    #
-    # containers = pygen.data_modeling.containers.list(-1)
-    # client.data_modeling.containers.apply(containers)
-    # print("Containers added")
+    _ = client.data_modeling.spaces.apply(immutable_space)
+    print("Space added")
 
-    # views = pygen.data_modeling.views.list(-1)
-    # client.data_modeling.views.apply(views)
-    #
-    # print("Views added")
+    containers = pygen.data_modeling.containers.list(-1)
+    client.data_modeling.containers.apply(containers)
+    print("Containers added")
 
-    # data_models = pygen.data_modeling.data_models.list(-1)
-    # client.data_modeling.data_models.apply(data_models)
-    # print("Data Models added")
+    views = pygen.data_modeling.views.list(-1)
+    client.data_modeling.views.apply(views)
+
+    print("Views added")
+
+    data_models = pygen.data_modeling.data_models.list(-1)
+    client.data_modeling.data_models.apply(data_models)
+    print("Data Models added")
 
 
 if __name__ == "__main__":
     # # The code for getting a client is not committed, this is to avoid accidental runs.
     from scripts import local_client
 
-    # dump(local_client.get_pygen_access())
-    copy_pygen_test_data(local_client.get_pygen_access(), local_client.get_interactive())
+    dump(local_client.get_pygen_access())
+    # copy_pygen_test_data(local_client.get_pygen_access(), local_client.get_interactive())

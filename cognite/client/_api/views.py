@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
-from cognite.client.data_classes.data_modeling import View, ViewList
-from cognite.client.data_classes.data_modeling.ids import ViewId
+from cognite.client._constants import VIEW_LIST_LIMIT_DEFAULT
+from cognite.client.data_classes.data_modeling.ids import VersionedDataModelingId, ViewId
+from cognite.client.data_classes.data_modeling.views import View, ViewFilter, ViewList
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
 
 
@@ -16,6 +16,10 @@ class ViewsAPI(APIClient):
         self,
         chunk_size: int = None,
         limit: int = None,
+        space: str | None = None,
+        include_inherited_properties: bool = True,
+        all_versions: bool = False,
+        include_global: bool = False,
     ) -> Iterator[View] | Iterator[ViewList]:
         """Iterate over views
 
@@ -24,16 +28,23 @@ class ViewsAPI(APIClient):
         Args:
             chunk_size (int, optional): Number of views to return in each chunk. Defaults to yielding one view a time.
             limit (int, optional): Maximum number of views to return. Default to return all items.
+            space: (str | None): The space to query.
+            include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
+            all_versions (bool): Whether to return all versions. If false, only the newest version is returned,
+                                 which is determined based on the 'createdTime' field.
+            include_global (bool): Whether to include global views.
 
         Yields:
             Union[View, ViewList]: yields View one by one if chunk_size is not specified, else ViewList objects.
         """
+        filter_ = ViewFilter(space, include_inherited_properties, all_versions, include_global)
         return self._list_generator(
             list_cls=ViewList,
             resource_cls=View,
             method="GET",
             chunk_size=chunk_size,
             limit=limit,
+            filter=filter_.dump(camel_case=True),
         )
 
     def __iter__(self) -> Iterator[View]:
@@ -73,7 +84,7 @@ class ViewsAPI(APIClient):
         identifier = DataModelingIdentifierSequence.load(ids)
         return self._retrieve_multiple(list_cls=ViewList, resource_cls=View, identifiers=identifier)
 
-    def delete(self, ids: ViewId | Sequence[ViewId]) -> list[tuple[str, str]] | None:
+    def delete(self, ids: ViewId | Sequence[ViewId]) -> list[VersionedDataModelingId] | None:
         """`Delete one or more views <https://docs.cognite.com/api/v1/#tag/Views/operation/deleteViewsV3>`_
 
         Args:
@@ -88,22 +99,34 @@ class ViewsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.data_modeling.views.delete(view=["myView", "myOtherView"])
         """
-        deleted_views = self._delete_multiple(
-            identifiers=DataModelingIdentifierSequence.load(ids),
-            wrap_ids=True,
-            returns_items=True,
+        deleted_views = cast(
+            list,
+            self._delete_multiple(
+                identifiers=DataModelingIdentifierSequence.load(ids),
+                wrap_ids=True,
+                returns_items=True,
+            ),
         )
-        return [(item["space"], item["externalId"]) for item in deleted_views]  # type: ignore[union-attr]
+        return [VersionedDataModelingId(item["space"], item["externalId"], item["version"]) for item in deleted_views]
 
     def list(
         self,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int = VIEW_LIST_LIMIT_DEFAULT,
+        space: str | None = None,
+        include_inherited_properties: bool = True,
+        all_versions: bool = False,
+        include_global: bool = False,
     ) -> ViewList:
-        """`List views <https://docs.cognite.com/api/v1/#tag/Views/operation/listViewsV3>`_
+        """`List views <https://docs.cognite.com/api/v1/#tag/Views/operation/listViews>`_
 
         Args:
             limit (int, optional): Maximum number of views to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
+            space: (str | None): The space to query.
+            include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
+            all_versions (bool): Whether to return all versions. If false, only the newest version is returned,
+                                 which is determined based on the 'createdTime' field.
+            include_global (bool): Whether to include global views.
 
         Returns:
             ViewList: List of requested views
@@ -130,11 +153,10 @@ class ViewsAPI(APIClient):
                 >>> for view_list in c.data_modeling.views(chunk_size=2500):
                 ...     view_list # do something with the views
         """
+        filter_ = ViewFilter(space, include_inherited_properties, all_versions, include_global)
+
         return self._list(
-            list_cls=ViewList,
-            resource_cls=View,
-            method="GET",
-            limit=limit,
+            list_cls=ViewList, resource_cls=View, method="GET", limit=limit, filter=filter_.dump(camel_case=True)
         )
 
     @overload
