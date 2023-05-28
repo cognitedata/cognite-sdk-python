@@ -72,7 +72,7 @@ class DataModelsAPI(APIClient):
         ...
 
     def retrieve(self, ids: DataModelId | Sequence[DataModelId]) -> DataModel | DataModelList | None:
-        """`Retrieve a single data_model by id. <https://docs.cognite.com/api/v1/#tag/DataModels/operation/byDataModelIdsDataModels>`_
+        """`Retrieve data_model(s) by id(s). <https://docs.cognite.com/api/v1/#tag/Data-models/operation/byExternalIdsDataModels>`_
 
         Args:
             ids (DataModelId | Sequence[DataModelId]): Data Model identifier(s).
@@ -84,14 +84,14 @@ class DataModelsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.data_modeling.data_models.retrieve(data_model='myDataModel')
+                >>> res = c.data_modeling.data_models.retrieve(("mySpace", "myDataModel", "v1"))
 
         """
         identifier = DataModelingIdentifierSequence.load(ids)
         return self._retrieve_multiple(list_cls=DataModelList, resource_cls=DataModel, identifiers=identifier)
 
     def delete(self, ids: DataModelId | Sequence[DataModelId]) -> list[VersionedDataModelingId]:
-        """`Delete one or more data_models <https://docs.cognite.com/api/v1/#tag/DataModels/operation/deleteDataModelsV3>`_
+        """`Delete one or more data_models <https://docs.cognite.com/api/v1/#tag/Data-models/operation/deleteDataModels>`_
 
         Args:
             ids (DataModelId | Sequence[DataModelId]): Data Model identifier(s).
@@ -103,7 +103,7 @@ class DataModelsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> c.data_modeling.data_models.delete(data_model=["myDataModel", "myOtherDataModel"])
+                >>> c.data_modeling.data_models.delete(("mySpace", "myDataModel", "v1"))
         """
         deleted_data_models = cast(
             list,
@@ -124,7 +124,7 @@ class DataModelsAPI(APIClient):
         include_global: bool = False,
         sort: list[DataModelsSort | dict] | None = None,
     ) -> DataModelList:
-        """`List data_models <https://docs.cognite.com/api/v1/#tag/DataModels/operation/listDataModelsV3>`_
+        """`List filtered data_models <https://docs.cognite.com/api/v1/#tag/Data-models/operation/advancedListDataModels>`_
 
         Args:
             filter: A filter Domain Specific Languagu (DSL) used to create advanced filter queries.
@@ -145,7 +145,8 @@ class DataModelsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> data_model_list = c.data_modeling.data_models.filter(limit=5)
+                >>> data_model_list = c.data_modeling.data_models.filter(limit=5,
+                ... filter={"equals": {"property": ["name"], "value": "myDataModel"}})
         """
         other_params = DataModelFilter(space, all_versions=all_versions, include_global=include_global).dump(
             camel_case=True
@@ -171,7 +172,7 @@ class DataModelsAPI(APIClient):
         all_versions: bool = False,
         include_global: bool = False,
     ) -> DataModelList:
-        """`List data_models <https://docs.cognite.com/api/v1/#tag/DataModels/operation/listDataModelsV3>`_
+        """`List data_models <https://docs.cognite.com/api/v1/#tag/Data-models/operation/listDataModels>`_
 
         Args:
             limit (int, optional): Maximum number of data_models to return. Default to 10. Set to -1, float("inf") or None
@@ -187,24 +188,24 @@ class DataModelsAPI(APIClient):
 
         Examples:
 
-            List data_models and filter on max start time::
+            List 5 data_models:
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> data_model_list = c.data_modeling.data_models.list(limit=5)
 
-            Iterate over data_models::
+            Iterate over data_models:
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> for data_model in c.data_modeling.data_models:
                 ...     data_model # do something with the data_model
 
-            Iterate over chunks of data_models to reduce memory load::
+            Iterate over chunks of data_models to reduce memory load:
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> for data_model_list in c.data_modeling.data_models(chunk_size=2500):
+                >>> for data_model_list in c.data_modeling.data_models(chunk_size=10):
                 ...     data_model_list # do something with the data_models
         """
         filter_ = DataModelFilter(space, inline_views, all_versions, include_global)
@@ -226,10 +227,10 @@ class DataModelsAPI(APIClient):
         ...
 
     def apply(self, data_model: DataModel | Sequence[DataModel]) -> DataModel | DataModelList:
-        """`Create or patch one or more data_models. <https://docs.cognite.com/api/v1/#tag/DataModels/operation/ApplyDataModels>`_
+        """`Create or update one or more data_models. <https://docs.cognite.com/api/v1/#tag/Data-models/operation/createDataModels>`_
 
         Args:
-            data_model (data_model: DataModel | Sequence[DataModel]): DataModel or data_models of data_modelsda to create or update.
+            data_model (data_model: DataModel | Sequence[DataModel]): DataModel or data_models to create or update (upsert).
 
         Returns:
             DataModel | DataModelList: Created data_model(s)
@@ -241,8 +242,8 @@ class DataModelsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> import cognite.client.data_classes.data_modeling as models
                 >>> c = CogniteClient()
-                >>> data_models = [DataModel(data_model="myDataModel", description="My first data_model", name="My DataModel"),
-                ... DataModel(data_model="myOtherDataModel", description="My second data_model", name="My Other DataModel")]
+                >>> data_models = [models.DataModel(space="mySpace", external_id="myDataModel", version="v1"),
+                ... DataModel(space="mySpace", external_id="myOtherDataModel", version="v1")]
                 >>> res = c.data_modeling.data_models.create(data_models)
         """
         return self._create_multiple(list_cls=DataModelList, resource_cls=DataModel, items=data_model)

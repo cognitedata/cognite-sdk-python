@@ -61,10 +61,10 @@ class ContainersAPI(APIClient):
         ...
 
     def retrieve(self, ids: ContainerId | Sequence[ContainerId]) -> Container | ContainerList | None:
-        """`Retrieve a single container by id. <https://docs.cognite.com/api/v1/#tag/Containers/operation/byExternalIdsContainers>`_
+        """`Retrieve one or more container by id(s). <https://docs.cognite.com/api/v1/#tag/Containers/operation/byExternalIdsContainers>`_
 
         Args:
-            ids (ContainerId | Sequence[ContainerId]): Identifier for container
+            ids (ContainerId | Sequence[ContainerId]): Identifier for container(s).
 
         Returns:
             Optional[Container]: Requested container or None if it does not exist.
@@ -170,12 +170,10 @@ class ContainersAPI(APIClient):
             Create new containersd:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.data_modeling import Container
+                >>> import cognite.client.data_classes.data_modeling as models
                 >>> c = CogniteClient()
-                >>> containers = [Container(container="myContainer", description="My first container",
-                ... name="My Container", used_for="node"),
-                ... Container(container="myOtherContainer", description="My second container",
-                ... name="My Other Container", used_for="node")]
+                >>> containers = [models.Container(space="mySpace", container="myContainer",
+                ... properties={"name": models.ContainerPropertyIdentifier(type=models.TextType, name="name")})]
                 >>> res = c.data_modeling.containers.create(containers)
         """
         return self._create_multiple(list_cls=ContainerList, resource_cls=Container, items=container)

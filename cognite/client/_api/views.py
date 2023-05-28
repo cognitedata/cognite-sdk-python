@@ -66,7 +66,7 @@ class ViewsAPI(APIClient):
         ...
 
     def retrieve(self, ids: ViewId | Sequence[ViewId]) -> View | ViewList | None:
-        """`Retrieve a single view by id. <https://docs.cognite.com/api/v1/#tag/Views/operation/byViewIdsViews>`_
+        """`Retrieve a single view by id. <https://docs.cognite.com/api/v1/#tag/Views/operation/byExternalIdsViews>`_
 
         Args:
             ids (ViewId | Sequence[ViewId]): View dentifier(s)
@@ -78,14 +78,14 @@ class ViewsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.data_modeling.views.retrieve(view='myView')
+                >>> res = c.data_modeling.views.retrieve(('mySpace', 'myView', 'v1'))
 
         """
         identifier = DataModelingIdentifierSequence.load(ids)
         return self._retrieve_multiple(list_cls=ViewList, resource_cls=View, identifiers=identifier)
 
     def delete(self, ids: ViewId | Sequence[ViewId]) -> list[VersionedDataModelingId] | None:
-        """`Delete one or more views <https://docs.cognite.com/api/v1/#tag/Views/operation/deleteViewsV3>`_
+        """`Delete one or more views <https://docs.cognite.com/api/v1/#tag/Views/operation/deleteViews>`_
 
         Args:
             ids (ViewId | Sequence[ViewId]): View dentifier(s)
@@ -97,7 +97,7 @@ class ViewsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> c.data_modeling.views.delete(view=["myView", "myOtherView"])
+                >>> c.data_modeling.views.delete(('mySpace', 'myView', 'v1'))
         """
         deleted_views = cast(
             list,
@@ -133,7 +133,7 @@ class ViewsAPI(APIClient):
 
         Examples:
 
-            List views and filter on max start time::
+            List 5 views::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
@@ -150,7 +150,7 @@ class ViewsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> for view_list in c.data_modeling.views(chunk_size=2500):
+                >>> for view_list in c.data_modeling.views(chunk_size=10):
                 ...     view_list # do something with the views
         """
         filter_ = ViewFilter(space, include_inherited_properties, all_versions, include_global)
@@ -168,10 +168,10 @@ class ViewsAPI(APIClient):
         ...
 
     def apply(self, view: View | Sequence[View]) -> View | ViewList:
-        """`Create or patch one or more views. <https://docs.cognite.com/api/v1/#tag/Views/operation/ApplyViews>`_
+        """`Create or update (upsert) one or more views. <https://docs.cognite.com/api/v1/#tag/Views/operation/ApplyViews>`_
 
         Args:
-            view (view: View | Sequence[View]): View or views of viewsda to create or update.
+            view (view: View | Sequence[View]): View or views of views to create or update.
 
         Returns:
             View | ViewList: Created view(s)
@@ -181,10 +181,10 @@ class ViewsAPI(APIClient):
             Create new viewsda::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import View
+                >>> import cognite.client.data_classes.data_modeling as models
                 >>> c = CogniteClient()
-                >>> views = [View(view="myView", description="My first view", name="My View"),
-                ... View(view="myOtherView", description="My second view", name="My Other View")]
+                >>> views = [View(external_id="myView", space="mySpace", version="v1"),
+                ... View(external_id="myOtherView", space="mySpace", version="v1")]
                 >>> res = c.data_modeling.views.create(views)
         """
         return self._create_multiple(list_cls=ViewList, resource_cls=View, items=view)
