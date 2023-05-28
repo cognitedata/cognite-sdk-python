@@ -17,6 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.3.0] - 2023-05-29
+### Added
+- Support for the container resource in the Data Modeling API with the implementation `client.data_modeling.containers`.
+- Support for the view resource in the Data Modeling API with the implementation `client.data_modeling.views`.
+- Support for the data models resource in the Data Modeling API with the implementation `client.data_modeling.data_models`.
+
 ## [6.2.1] - 2023-05-26
 ### Added
 - Data model centric support in transformation
