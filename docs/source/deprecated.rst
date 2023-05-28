@@ -82,9 +82,3 @@ Resolve Template View
 Delete Template Views
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.templates.TemplateViewsAPI.delete
-
-Data classes
-^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.templates
-    :members:
-    :show-inheritance:
