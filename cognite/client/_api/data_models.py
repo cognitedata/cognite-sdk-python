@@ -239,7 +239,7 @@ class DataModelsAPI(APIClient):
             Create new data_models::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.data_models import DataModel
+                >>> import cognite.client.data_classes.data_modeling as models
                 >>> c = CogniteClient()
                 >>> data_models = [DataModel(data_model="myDataModel", description="My first data_model", name="My DataModel"),
                 ... DataModel(data_model="myOtherDataModel", description="My second data_model", name="My Other DataModel")]

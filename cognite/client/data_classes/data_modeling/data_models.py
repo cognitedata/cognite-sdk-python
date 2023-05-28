@@ -8,7 +8,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
 )
-from cognite.client.data_classes.data_modeling.core import ViewReference
+from cognite.client.data_classes.data_modeling.shared import ViewReference
 from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.utils._validation import validate_data_modeling_identifier
 

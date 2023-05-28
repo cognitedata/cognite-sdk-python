@@ -1,15 +1,7 @@
 import pytest
 
+import cognite.client.data_classes.data_modeling as models
 from cognite.client import CogniteClient
-from cognite.client.data_classes.data_modeling import (
-    Container,
-    ContainerList,
-    ContainerPropertyIdentifier,
-    PrimitiveProperty,
-    Space,
-    TextProperty,
-)
-from cognite.client.data_classes.data_modeling.ids import DataModelingId
 
 
 @pytest.fixture()
@@ -20,9 +12,13 @@ def cdf_containers(cognite_client: CogniteClient):
 
 
 class TestContainersAPI:
-    def test_list(self, cognite_client: CogniteClient, cdf_containers: ContainerList, integration_test_space: Space):
+    def test_list(
+        self, cognite_client: CogniteClient, cdf_containers: models.ContainerList, integration_test_space: models.Space
+    ):
         # Arrange
-        expected_containers = ContainerList([c for c in cdf_containers if c.space == integration_test_space.space])
+        expected_containers = models.ContainerList(
+            [c for c in cdf_containers if c.space == integration_test_space.space]
+        )
 
         # Act
         actual_containers = cognite_client.data_modeling.containers.list(space=integration_test_space.space, limit=-1)
@@ -33,19 +29,19 @@ class TestContainersAPI:
         )
         assert all(c.space == integration_test_space.space for c in actual_containers)
 
-    def test_apply_retrieve_and_delete(self, cognite_client: CogniteClient, integration_test_space: Space):
+    def test_apply_retrieve_and_delete(self, cognite_client: CogniteClient, integration_test_space: models.Space):
         # Arrange
-        new_container = Container(
+        new_container = models.Container(
             space=integration_test_space.space,
             external_id="IntegrationTestContainer",
             description="Integration test, should not persist",
             name="Create and delete container",
             used_for="node",
             properties={
-                "name": ContainerPropertyIdentifier(
-                    type=TextProperty(list=False),
+                "name": models.ContainerPropertyIdentifier(
+                    type=models.TextProperty(list=False),
                 ),
-                "year": ContainerPropertyIdentifier(type=PrimitiveProperty("int32", list=False)),
+                "year": models.ContainerPropertyIdentifier(type=models.PrimitiveProperty("int32", list=False)),
             },
         )
 
@@ -66,20 +62,22 @@ class TestContainersAPI:
         )
 
         # Assert
-        assert deleted_id[0] == DataModelingId.from_tuple((new_container.space, new_container.external_id))
+        assert deleted_id[0] == models.DataModelingId.from_tuple((new_container.space, new_container.external_id))
         assert retrieved_deleted is None
 
-    def test_delete_non_existent(self, cognite_client: CogniteClient, integration_test_space: Space):
+    def test_delete_non_existent(self, cognite_client: CogniteClient, integration_test_space: models.Space):
         space = integration_test_space.space
         assert (
-            cognite_client.data_modeling.containers.delete(DataModelingId(space=space, external_id="DoesNotExists"))
+            cognite_client.data_modeling.containers.delete(
+                models.DataModelingId(space=space, external_id="DoesNotExists")
+            )
             == []
         )
 
-    def test_retrieve_multiple(self, cognite_client: CogniteClient, cdf_containers: ContainerList):
+    def test_retrieve_multiple(self, cognite_client: CogniteClient, cdf_containers: models.ContainerList):
         assert len(cdf_containers) >= 2, "Please add at least two containers to the test environment"
         # Arrange
-        ids = [DataModelingId(c.space, c.external_id) for c in cdf_containers]
+        ids = [models.DataModelingId(c.space, c.external_id) for c in cdf_containers]
 
         # Act
         retrieved = cognite_client.data_modeling.containers.retrieve(ids)
@@ -87,11 +85,11 @@ class TestContainersAPI:
         # Assert
         assert len(retrieved) == len(ids)
 
-    def test_retrieve_multiple_with_missing(self, cognite_client: CogniteClient, cdf_containers: ContainerList):
+    def test_retrieve_multiple_with_missing(self, cognite_client: CogniteClient, cdf_containers: models.ContainerList):
         assert len(cdf_containers) >= 2, "Please add at least two containers to the test environment"
         # Arrange
-        ids = [DataModelingId(c.space, c.external_id) for c in cdf_containers]
-        ids += [DataModelingId("myNonExistingSpace", "myImaginaryContainer")]
+        ids = [models.DataModelingId(c.space, c.external_id) for c in cdf_containers]
+        ids += [models.DataModelingId("myNonExistingSpace", "myImaginaryContainer")]
 
         # Act
         retrieved = cognite_client.data_modeling.containers.retrieve(ids)
@@ -104,4 +102,4 @@ class TestContainersAPI:
 
     def test_iterate_over_containers(self, cognite_client: CogniteClient):
         for containers in cognite_client.data_modeling.containers(chunk_size=2, limit=-1):
-            assert isinstance(containers, ContainerList)
+            assert isinstance(containers, models.ContainerList)

@@ -3,7 +3,32 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from typing import Dict, List, Literal, Union, get_args
 
-from cognite.client.data_classes.data_modeling.core import load_reference
+from cognite.client.data_classes.data_modeling.shared import load_reference
+
+__all__ = [
+    "RawPropertyList",
+    "ReferencePropertyValue",
+    "FilterObject",
+    "FilterPropertyObject",
+    "EqualObject",
+    "InObject",
+    "RangeValue",
+    "RangeObject",
+    "ParameterizedPropertyValue",
+    "PrefixObject",
+    "ExistsObject",
+    "ContainsAnyObject",
+    "ContainsAllObject",
+    "OverlapObject",
+    "Logical",
+    "ComplexOperation",
+    "PropertyOperation",
+    "FilterKey",
+    "DSLFilter",
+    "NestedObject",
+    "load_dsl_filter",
+    "dump_dsl_filter",
+]
 
 RawPropertyList = Union[List[float], List[bool], List[str]]
 RawPropertyValue = Union[str, float, bool, dict, RawPropertyList]

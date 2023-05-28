@@ -1,21 +1,25 @@
 from __future__ import annotations
 
 import json
-from dataclasses import asdict
-from typing import TYPE_CHECKING, Any, Literal, cast
+from dataclasses import asdict, dataclass
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteResource,
     CogniteResourceList,
 )
-from cognite.client.data_classes.data_modeling.core import (
-    ConstraintIdentifier,
-    ContainerPropertyIdentifier,
-    IndexIdentifier,
-    load_constraint_identifier,
+from cognite.client.data_classes.data_modeling.shared import (
+    CDF_TYPE_SET,
+    DIRECT_TYPE,
+    PRIMITIVE_TYPE_SET,
+    TEXT_TYPE_SET,
+    CDFExternalIdReference,
+    DirectNodeRelation,
+    PrimitiveProperty,
+    TextProperty,
 )
-from cognite.client.utils._text import convert_all_keys_to_camel_case_nested
+from cognite.client.utils._text import convert_all_keys_to_camel_case_nested, convert_all_keys_to_snake_case
 from cognite.client.utils._validation import validate_data_modeling_identifier
 
 if TYPE_CHECKING:
@@ -118,3 +122,80 @@ class ContainerFilter(CogniteFilter):
     def __init__(self, space: str = None, include_global: bool = False):
         self.space = space
         self.include_global = include_global
+
+
+@dataclass
+class ContainerDirectNodeRelation(DirectNodeRelation):
+    @classmethod
+    def load(cls, data: dict) -> ContainerDirectNodeRelation:
+        return cast(ContainerDirectNodeRelation, super().load(data))
+
+
+@dataclass
+class ContainerPropertyIdentifier:
+    type: TextProperty | PrimitiveProperty | CDFExternalIdReference | ContainerDirectNodeRelation
+    nullable: bool = True
+    auto_increment: bool = False
+    name: Optional[str] = None
+    default_value: str | int | dict | None = None
+    description: str | None = None
+
+    @classmethod
+    def load(cls, data: dict[str, Any]) -> ContainerPropertyIdentifier:
+        if "type" not in data:
+            raise ValueError("Type not specified")
+        type_ = data["type"]["type"]
+        if type_ in PRIMITIVE_TYPE_SET:
+            data["type"] = PrimitiveProperty(**data["type"])
+        elif type_ in TEXT_TYPE_SET:
+            data["type"] = TextProperty(**data["type"])
+        elif type_ in CDF_TYPE_SET:
+            data["type"] = CDFExternalIdReference(**data["type"])
+        elif type_ in DIRECT_TYPE:
+            data["type"] = ContainerDirectNodeRelation.load(data["type"])
+        else:
+            raise ValueError(
+                f"Invalid {cls.__name__}.type {type_}. Must be {PRIMITIVE_TYPE_SET | TEXT_TYPE_SET | CDF_TYPE_SET | DIRECT_TYPE}"
+            )
+        return cls(**convert_all_keys_to_snake_case(data))
+
+
+@dataclass
+class RequiresConstraintDefinition:
+    space: str
+    external_id: str
+    constraint_type: Literal["requires"] = "requires"
+
+
+@dataclass
+class UniquenessConstraintDefinition:
+    properties: ContainerPropertyIdentifier
+    constraint_type: Literal["uniqueness"] = "uniqueness"
+
+
+@dataclass
+class IndexIdentifier:
+    properties: ContainerPropertyIdentifier
+    index_type: Literal["btree"] | str = "btree"
+
+    @classmethod
+    def load(cls, data: dict[str, Any]) -> IndexIdentifier:
+        if "properties" not in data:
+            raise ValueError(f"{cls.__name__} requires properties.")
+        data["properties"] = ContainerPropertyIdentifier.load(data["properties"])
+        return cls(**convert_all_keys_to_snake_case(data))
+
+
+ConstraintIdentifier = Union[IndexIdentifier, UniquenessConstraintDefinition]
+
+
+def load_constraint_identifier(data: dict[str, Any]) -> ConstraintIdentifier:
+    if "properties" not in data:
+        raise ValueError("ConstraintIdentifier requires properties.")
+    data["properties"] = ContainerPropertyIdentifier.load(data["properties"])
+    if "indexType" in data:
+        return IndexIdentifier(**convert_all_keys_to_snake_case(data))
+    elif "constraintType" in data:
+        return UniquenessConstraintDefinition(**convert_all_keys_to_snake_case(data))
+
+    raise ValueError("Invalid ConstraintIdentifier, needs to specify indexType or constraintType")

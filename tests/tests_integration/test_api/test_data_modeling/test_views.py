@@ -1,13 +1,7 @@
 import pytest
 
+import cognite.client.data_classes.data_modeling as models
 from cognite.client import CogniteClient
-from cognite.client.data_classes.data_modeling import (
-    Space,
-    View,
-    ViewList,
-)
-from cognite.client.data_classes.data_modeling.core import ContainerReference, ViewCorePropertyDefinition
-from cognite.client.data_classes.data_modeling.ids import VersionedDataModelingId
 
 
 @pytest.fixture()
@@ -18,9 +12,11 @@ def cdf_views(cognite_client: CogniteClient):
 
 
 class TestViewsAPI:
-    def test_list(self, cognite_client: CogniteClient, cdf_views: ViewList, integration_test_space: Space):
+    def test_list(
+        self, cognite_client: CogniteClient, cdf_views: models.ViewList, integration_test_space: models.Space
+    ):
         # Arrange
-        expected_views = ViewList([v for v in cdf_views if v.space == integration_test_space.space])
+        expected_views = models.ViewList([v for v in cdf_views if v.space == integration_test_space.space])
 
         # Act
         actual_views = cognite_client.data_modeling.views.list(space=integration_test_space.space, limit=-1)
@@ -29,9 +25,9 @@ class TestViewsAPI:
         assert sorted(actual_views, key=lambda v: v.external_id) == sorted(expected_views, key=lambda v: v.external_id)
         assert all(v.space == integration_test_space.space for v in actual_views)
 
-    def test_apply_retrieve_and_delete(self, cognite_client: CogniteClient, integration_test_space: Space):
+    def test_apply_retrieve_and_delete(self, cognite_client: CogniteClient, integration_test_space: models.Space):
         # Arrange
-        new_view = View(
+        new_view = models.View(
             space=integration_test_space.space,
             external_id="IntegrationTestView",
             description="Integration test, should not persist",
@@ -39,8 +35,8 @@ class TestViewsAPI:
             name="Create and delete view",
             used_for="node",
             properties={
-                "name": ViewCorePropertyDefinition(
-                    container=ContainerReference(
+                "name": models.ViewCorePropertyDefinition(
+                    container=models.ContainerReference(
                         space=integration_test_space.space,
                         external_id="Person",
                     ),
@@ -49,7 +45,7 @@ class TestViewsAPI:
                 ),
             },
         )
-        new_id = VersionedDataModelingId.from_tuple((new_view.space, new_view.external_id, new_view.version))
+        new_id = models.VersionedDataModelingId.from_tuple((new_view.space, new_view.external_id, new_view.version))
 
         # Act
         created = cognite_client.data_modeling.views.apply(new_view)
@@ -69,19 +65,19 @@ class TestViewsAPI:
         assert deleted_id[0] == new_id
         assert retrieved_deleted is None
 
-    def test_delete_non_existent(self, cognite_client: CogniteClient, integration_test_space: Space):
+    def test_delete_non_existent(self, cognite_client: CogniteClient, integration_test_space: models.Space):
         space = integration_test_space.space
         assert (
             cognite_client.data_modeling.views.delete(
-                VersionedDataModelingId(space=space, external_id="DoesNotExists", version="v0")
+                models.VersionedDataModelingId(space=space, external_id="DoesNotExists", version="v0")
             )
             == []
         )
 
-    def test_retrieve_multiple(self, cognite_client: CogniteClient, cdf_views: ViewList):
+    def test_retrieve_multiple(self, cognite_client: CogniteClient, cdf_views: models.ViewList):
         assert len(cdf_views) >= 2, "Please add at least two views to the test environment"
         # Arrange
-        ids = [VersionedDataModelingId(v.space, v.external_id, v.version) for v in cdf_views]
+        ids = [models.VersionedDataModelingId(v.space, v.external_id, v.version) for v in cdf_views]
 
         # Act
         retrieved = cognite_client.data_modeling.views.retrieve(ids)
@@ -89,11 +85,11 @@ class TestViewsAPI:
         # Assert
         assert len(retrieved) == len(ids)
 
-    def test_retrieve_multiple_with_missing(self, cognite_client: CogniteClient, cdf_views: ViewList):
+    def test_retrieve_multiple_with_missing(self, cognite_client: CogniteClient, cdf_views: models.ViewList):
         assert len(cdf_views) >= 2, "Please add at least two views to the test environment"
         # Arrange
-        ids = [VersionedDataModelingId(v.space, v.external_id, v.version) for v in cdf_views]
-        ids += [VersionedDataModelingId("myNonExistingSpace", "myImaginaryView", "v0")]
+        ids = [models.VersionedDataModelingId(v.space, v.external_id, v.version) for v in cdf_views]
+        ids += [models.VersionedDataModelingId("myNonExistingSpace", "myImaginaryView", "v0")]
 
         # Act
         retrieved = cognite_client.data_modeling.views.retrieve(ids)
@@ -104,8 +100,8 @@ class TestViewsAPI:
     def test_retrieve_non_existent(self, cognite_client: CogniteClient):
         assert cognite_client.data_modeling.views.retrieve(("myNonExistingSpace", "myImaginaryView", "v0")) is None
 
-    def test_iterate(self, cognite_client: CogniteClient, integration_test_space: Space):
+    def test_iterate(self, cognite_client: CogniteClient, integration_test_space: models.Space):
         for containers in cognite_client.data_modeling.views(
             chunk_size=2, limit=-1, space=integration_test_space.space
         ):
-            assert isinstance(containers, ViewList)
+            assert isinstance(containers, models.ViewList)

@@ -1,22 +1,89 @@
-from cognite.client.data_classes.data_modeling.containers import Container, ContainerList
-from cognite.client.data_classes.data_modeling.core import (
-    CDFExternalIdReference,
+from cognite.client.data_classes.data_modeling import dsl_filter as dsl
+from cognite.client.data_classes.data_modeling.containers import (
     ConstraintIdentifier,
+    Container,
     ContainerDirectNodeRelation,
+    ContainerFilter,
+    ContainerList,
     ContainerPropertyIdentifier,
     IndexIdentifier,
-    PrimitiveProperty,
     RequiresConstraintDefinition,
-    TextProperty,
     UniquenessConstraintDefinition,
+    load_constraint_identifier,
 )
-from cognite.client.data_classes.data_modeling.data_models import DataModel, DataModelList
-from cognite.client.data_classes.data_modeling.views import View, ViewList
+from cognite.client.data_classes.data_modeling.data_models import (
+    DataModel,
+    DataModelFilter,
+    DataModelList,
+    DataModelsSort,
+)
+from cognite.client.data_classes.data_modeling.dsl_filter import dump_dsl_filter, load_dsl_filter
+from cognite.client.data_classes.data_modeling.ids import (
+    ContainerId,
+    DataModelId,
+    DataModelingId,
+    VersionedDataModelingId,
+    ViewId,
+)
+from cognite.client.data_classes.data_modeling.shared import (
+    CDFExternalIdReference,
+    CDFType,
+    ContainerReference,
+    DirectNodeRelation,
+    DirectRelationReference,
+    DirectType,
+    PrimitiveProperty,
+    PrimitiveType,
+    Reference,
+    TextProperty,
+    TextType,
+    ViewReference,
+    load_reference,
+)
+from cognite.client.data_classes.data_modeling.views import (
+    ConnectionDefinition,
+    ConnectionDefinitionRelation,
+    View,
+    ViewCorePropertyDefinition,
+    ViewFilter,
+    ViewList,
+    ViewPropertyDefinition,
+    load_view_property_definition,
+)
 from cognite.client.data_classes.spaces import Space, SpaceList
 
 __all__ = [
+    "ViewId",
+    "VersionedDataModelingId",
+    "DataModelingId",
+    "ContainerId",
+    "DataModelId",
+    "dsl",
+    "DirectNodeRelation",
+    "load_dsl_filter",
+    "dump_dsl_filter",
+    "Reference",
+    "DirectRelationReference",
+    "PrimitiveType",
+    "CDFType",
+    "TextType",
+    "DirectType",
+    "DirectNodeRelation",
+    "ViewReference",
+    "ContainerReference",
+    "load_reference",
     "DataModel",
     "DataModelList",
+    "DataModelsSort",
+    "DataModelFilter",
+    "ContainerFilter",
+    "load_constraint_identifier",
+    "ViewFilter",
+    "ViewCorePropertyDefinition",
+    "ConnectionDefinition",
+    "ConnectionDefinitionRelation",
+    "ViewPropertyDefinition",
+    "load_view_property_definition",
     "Space",
     "SpaceList",
     "View",
