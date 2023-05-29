@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Optional
 
 from cognite.client._api.containers import ContainersAPI
 from cognite.client._api.data_models import DataModelsAPI
+from cognite.client._api.instances import InstancesAPI
 from cognite.client._api.spaces import SpacesAPI
 from cognite.client._api.views import ViewsAPI
 from cognite.client._api_client import APIClient
@@ -20,3 +21,4 @@ class DataModelingAPI(APIClient):
         self.models = DataModelsAPI(config, api_version, cognite_client)
         self.spaces = SpacesAPI(config, api_version, cognite_client)
         self.views = ViewsAPI(config, api_version, cognite_client)
+        self.instances = InstancesAPI(config, api_version, cognite_client)

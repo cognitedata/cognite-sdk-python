@@ -24,6 +24,7 @@ from cognite.client._api.files import FilesAPI
 from cognite.client._api.functions import FunctionCallsAPI, FunctionsAPI, FunctionSchedulesAPI
 from cognite.client._api.geospatial import GeospatialAPI
 from cognite.client._api.iam import IAMAPI, GroupsAPI, SecurityCategoriesAPI, SessionsAPI, TokenAPI
+from cognite.client._api.instances import InstancesAPI
 from cognite.client._api.labels import LabelsAPI
 from cognite.client._api.raw import RawAPI, RawDatabasesAPI, RawRowsAPI, RawTablesAPI
 from cognite.client._api.relationships import RelationshipsAPI
@@ -81,6 +82,7 @@ class CogniteClientMock(MagicMock):
         self.data_modeling.models = MagicMock(spec_set=DataModelsAPI)
         self.data_modeling.spaces = MagicMock(spec_set=SpacesAPI)
         self.data_modeling.views = MagicMock(spec_set=ViewsAPI)
+        self.data_modeling.instances = MagicMock(spec_set=InstancesAPI)
 
         self.data_sets = MagicMock(spec_set=DataSetsAPI)
 
