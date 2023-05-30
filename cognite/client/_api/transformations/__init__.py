@@ -60,7 +60,7 @@ class TransformationsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import Transformation, TransformationDestination
-                >>> from cognite.client.data_classes.transformations.common import ViewInfo, EdgeType
+                >>> from cognite.client.data_classes.transformations.common import ViewInfo, EdgeType, DataModelInfo
                 >>> c = CogniteClient()
                 >>> transformations = [
                 >>>     Transformation(
@@ -85,6 +85,16 @@ class TransformationsAPI(APIClient):
                 >>>      name="transformation5",
                 >>>      edge_type = EdgeType(space="TypeSpace", external_id="TypeExtId"),
                 >>>      destination=TransformationDestination.edges(edge_type,"InstanceSpace")
+                >>>      ),
+                >>>      Transformation(
+                >>>      name="transformation6",
+                >>>      data_model = DataModelInfo(space="modelSpace", external_id="modelExternalId",version="modelVersion",destination_type="viewExternalId"),
+                >>>      destination=TransformationDestination.instances(data_model,"InstanceSpace")
+                >>>      ),
+                >>>      Transformation(
+                >>>      name="transformation7",
+                >>>      data_model = DataModelInfo(space="modelSpace", external_id="modelExternalId",version="modelVersion",destination_type="viewExternalId", destination_relationship_from_type="connectionPropertyName"),
+                >>>      destination=TransformationDestination.instances(data_model,"InstanceSpace")
                 >>>      ),
                 >>> ]
                 >>> res = c.transformations.create(transformations)
