@@ -138,14 +138,3 @@ class TestDataModelsAPI:
 
         # Assert
         assert all(isinstance(v, models.View) for m in data_models for v in m.views)
-
-    @pytest.mark.skip("Backend not implemented.")
-    def test_filter(self, cognite_client: CogniteClient, cdf_data_models: models.DataModelList):
-        # Arrange
-        data_model = cdf_data_models[0]
-
-        data_models = cognite_client.data_modeling.data_models.filter(
-            {"equals": models.dsl.EqualObject(["name"], data_model.name)}
-        )
-
-        assert data_models[0] == data_model
