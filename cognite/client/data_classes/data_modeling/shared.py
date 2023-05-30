@@ -22,6 +22,10 @@ class DirectRelationReference:
     space: str
     external_id: str
 
+    @classmethod
+    def load(cls, data: dict) -> DirectRelationReference:
+        return cls(**convert_all_keys_to_snake_case(data))
+
 
 @dataclass
 class Reference:
@@ -51,6 +55,10 @@ class ViewReference(Reference):
     @classmethod
     def load(cls, data: dict) -> ViewReference:
         return cls(**convert_all_keys_to_snake_case(data))
+
+    def dump(self, camel_case: bool = False, *_: Any, **__: Any) -> dict[str, str]:
+        dumped = asdict(self)
+        return convert_all_keys_to_camel_case_nested(dumped) if camel_case else dumped
 
 
 def load_reference(data: dict) -> ContainerReference | ViewReference:

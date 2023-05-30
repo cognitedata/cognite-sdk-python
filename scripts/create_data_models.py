@@ -2,8 +2,8 @@ from pathlib import Path
 
 import yaml
 
+import cognite.client.data_classes.data_modeling as m
 from cognite.client import CogniteClient
-from cognite.client.data_classes.data_modeling import Space
 
 
 def dump(client: CogniteClient):
@@ -21,47 +21,44 @@ def dump(client: CogniteClient):
 
 
 def copy_pygen_test_data(pygen: CogniteClient, client: CogniteClient):
-    Space(
-        space="sdkIntegrationTests",
-        description="Space used for integration testing in the SDK",
-        name="SDK Integration Testing",
-    )
-    immutable_space = Space(
+    # sdk_integration = Space(
+    #     space="sdkIntegrationTests",
+    #     description="Space used for integration testing in the SDK",
+    #     name="SDK Integration Testing",
+    # )
+    m.Space(
         space="IntegrationTestsImmutable",
         description="Space used for integration testing in the SDK",
         name="SDK Integration Testing copy from Pygen",
     )
-
-    _ = client.data_modeling.spaces.apply(immutable_space)
-
-    print("Space added")
-    containers = pygen.data_modeling.containers.list(-1)
-    for container in containers:
-        container.last_updated_time = None
-        container.created_time = None
-    client.data_modeling.containers.apply(containers)
-    print("Containers added")
-
-    views = pygen.data_modeling.views.list(-1)
-    for view in views:
-        view.last_updated_time = None
-        view.created_time = None
-    for view in views:
-        client.data_modeling.views.apply(view)
-        print(f"View {view.name} added.")
-    print("Views added")
-
-    data_models = pygen.data_modeling.data_models.list(-1)
-    for data_model in data_models:
-        data_model.last_updated_time = None
-        data_model.created_time = None
-    client.data_modeling.data_models.apply(data_models)
-    print("Data Models added")
+    # empty_data_model = DataModel(space=sdk_integration.space, external_id="integrationTestEmptyModel", version="v0")
+    # client.data_modeling.data_models.apply(empty_data_model)
+    # print("Empty data model added")
+    #
+    # _ = client.data_modeling.spaces.apply(immutable_space)
+    # print("Space added")
+    #
+    # containers = pygen.data_modeling.containers.list(-1)
+    # client.data_modeling.containers.apply(containers)
+    # print("Containers added")
+    #
+    # views = pygen.data_modeling.views.list(-1)
+    # client.data_modeling.views.apply(views)
+    #
+    # print("Views added")
+    #
+    # data_models = pygen.data_modeling.data_models.list(-1, space=immutable_space.space)
+    # client.data_modeling.data_models.apply(data_models)
+    # print("Data Models added")
+    edges = pygen.data_modeling.instances.list(instance_type="edge", limit=-1)
+    print(edges)
+    nodes = pygen.data_modeling.instances.list(instance_type="node", limit=-1)
+    print(nodes)
 
 
 if __name__ == "__main__":
     # # The code for getting a client is not committed, this is to avoid accidental runs.
     from scripts import local_client
 
-    dump(local_client.get_pygen_access())
-    # copy_pygen_test_data(local_client.get_pygen_access(), local_client.get_interactive())
+    # dump(local_client.get_pygen_access())
+    copy_pygen_test_data(local_client.get_pygen_access(), local_client.get_interactive())

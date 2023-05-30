@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, cast
+import json
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -8,6 +9,7 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
 )
 from cognite.client.data_classes.data_modeling.shared import DirectRelationReference, ViewReference
+from cognite.client.utils._text import to_snake_case
 from cognite.client.utils._validation import validate_data_modeling_identifier
 
 if TYPE_CHECKING:
@@ -31,7 +33,7 @@ class Instance(CogniteResource):
 
     def __init__(
         self,
-        instance_type: Literal["node", "edge"],
+        instance_type: Literal["node", "edge"] = "node",
         space: str = None,
         external_id: str = None,
         version: str = None,
@@ -51,6 +53,16 @@ class Instance(CogniteResource):
         self.deleted_time = deleted_time
         self.properties = properties
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient = None) -> Node | Edge:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        if resource["instanceType"] == "node":
+            return Node._load(resource, cognite_client)
+        elif resource["instanceType"] == "edge":
+            return Edge._load(resource, cognite_client)
+        else:
+            raise ValueError(f"Unsupported resource type {resource['type']}")
 
 
 class Node(Instance):
@@ -92,6 +104,16 @@ class Node(Instance):
             cognite_client,
         )
 
+    @classmethod
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient = None) -> Node:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        node = cls()
+        for name, value in resource.items():
+            snake_name = to_snake_case(name)
+            if hasattr(node, snake_name):
+                setattr(node, snake_name, value)
+        return node
+
 
 class Edge(Instance):
     """An Edge
@@ -115,7 +137,7 @@ class Edge(Instance):
         space: str = None,
         external_id: str = None,
         version: str = None,
-        type: dict[str, DirectRelationReference] = None,
+        type: DirectRelationReference = None,
         last_updated_time: int = None,
         created_time: int = None,
         deleted_time: int = None,
@@ -138,6 +160,19 @@ class Edge(Instance):
         self.type = type
         self.start_node = start_node
         self.end_node = end_node
+
+    @classmethod
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient = None) -> Edge:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        for field in ["type", "start_node", "end_node", "startNode", "endNode"]:
+            if field in resource:
+                resource[field] = DirectRelationReference.load(resource[field])
+        edge = cls()
+        for name, value in resource.items():
+            snake_name = to_snake_case(name)
+            if hasattr(edge, snake_name):
+                setattr(edge, snake_name, value)
+        return edge
 
 
 class InstanceList(CogniteResourceList):
@@ -169,7 +204,13 @@ class InstanceFilter(CogniteFilter):
     ):
         self.include_typing = include_typing
         self.sources = sources
-        self.instance_type = (instance_type,)
+        self.instance_type = instance_type
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        dumped = super().dump(camel_case)
+        if "sources" in dumped:
+            dumped["sources"] = [v if isinstance(v, dict) else v.dump(camel_case) for v in dumped["sources"]]
+        return dumped
 
 
 class InstanceSort(CogniteFilter):

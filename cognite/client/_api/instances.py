@@ -6,7 +6,16 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import INSTANCES_LIST_LIMIT_DEFAULT
 from cognite.client.data_classes.data_modeling.dsl_filter import DSLFilter, dump_dsl_filter
 from cognite.client.data_classes.data_modeling.ids import InstanceId, TypedDataModelingId
-from cognite.client.data_classes.data_modeling.instances import Instance, InstanceFilter, InstanceList, InstanceSort
+from cognite.client.data_classes.data_modeling.instances import (
+    Edge,
+    EdgeList,
+    Instance,
+    InstanceFilter,
+    InstanceList,
+    InstanceSort,
+    Node,
+    NodeList,
+)
 from cognite.client.data_classes.data_modeling.shared import ViewReference
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
 
@@ -135,7 +144,7 @@ class InstancesAPI(APIClient):
         limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
         sort: list[InstanceSort | dict] | None = None,
         filter: DSLFilter | dict | None = None,
-    ) -> InstanceList:
+    ) -> NodeList | EdgeList:
         """`List instances <https://docs.cognite.com/api/v1/#tag/Instances/operation/advancedListInstance>`_
 
         Args:
@@ -176,9 +185,16 @@ class InstancesAPI(APIClient):
         if sort:
             other_params["sort"] = [s.dump(camel_case=True) if isinstance(s, InstanceSort) else s for s in sort]
 
+        if instance_type == "node":
+            resource_cls, list_cls = Node, NodeList
+        elif instance_type == "edge":
+            resource_cls, list_cls = Edge, EdgeList  # type: ignore [assignment]
+        else:
+            raise ValueError(f"Unsupported {instance_type=}")
+
         return self._list(
-            list_cls=InstanceList,
-            resource_cls=Instance,
+            list_cls=list_cls,
+            resource_cls=resource_cls,
             method="POST",
             limit=limit,
             filter=dump_dsl_filter(filter),  # type: ignore[arg-type]

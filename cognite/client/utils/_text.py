@@ -56,6 +56,17 @@ def convert_all_keys_to_snake_case(dct: Dict[str, Any]) -> Dict[str, Any]:
     return dict(zip(map(to_snake_case, dct.keys()), dct.values()))
 
 
+def convert_all_keys_to_snake_case_nested(dct: dict[str, Any]) -> dict[str, Any]:
+    """Converts all the dictionary keys from snake to camel cases included nested objects.
+    >>> convert_all_keys_to_snake_case_nested({"myKey": {"myKey": 1}})
+    {'my_key': {'my_key': 1}}
+    """
+    return {
+        to_snake_case(k): (convert_all_keys_to_snake_case_nested(v) if isinstance(v, dict) else v)
+        for k, v in dct.items()
+    }
+
+
 def convert_dict_to_case(dct: Dict[str, Any], camel_case: bool) -> Dict[str, Any]:
     if camel_case:
         return convert_all_keys_to_camel_case(dct)

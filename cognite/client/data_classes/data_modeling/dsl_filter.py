@@ -168,7 +168,9 @@ def load_dsl_filter(data: dict) -> DSLFilter:
     return dsl_filter
 
 
-def dump_dsl_filter(filter_: DSLFilter) -> dict:
+def dump_dsl_filter(filter_: DSLFilter | None) -> dict | None:
+    if filter_ is None:
+        return None
     dump = {}
     for key, value in filter_.items():
         if key in LOGICAL_SET:
