@@ -25,7 +25,7 @@ class TransformationDestination:
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         ret = basic_obj_dump(self, camel_case)
 
-        needs_dump = set(iterable_to_case(("view", "edge_type"), camel_case))
+        needs_dump = set(iterable_to_case(("view", "edge_type", "data_model"), camel_case))
         for k in needs_dump.intersection(ret):
             if ret[k] is not None:
                 ret[k] = ret[k].dump(camel_case=camel_case)
@@ -140,6 +140,17 @@ class TransformationDestination:
         """
         return Edges(view=view, instance_space=instance_space, edge_type=edge_type)
 
+    @staticmethod
+    def instances(data_model: Optional[DataModelInfo] = None, instance_space: Optional[str] = None) -> Instances:
+        """
+        Args:
+            data_model (DataModelInfo): information of the Data Model.
+            instance_space (str): space id of the instance.
+        Returns:
+            Instances: pointing to the target centric data model.
+        """
+        return Instances(data_model=data_model, instance_space=instance_space)
+
 
 class RawTable(TransformationDestination):
     def __init__(self, database: str = None, table: str = None):
@@ -185,6 +196,26 @@ class EdgeType:
         return basic_obj_dump(self, camel_case)
 
 
+class DataModelInfo:
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: str,
+        destination_type: str,
+        destination_relationship_from_type: Optional[str] = None,
+    ):
+
+        self.space = space
+        self.external_id = external_id
+        self.version = version
+        self.destination_type = destination_type
+        self.destination_relationship_from_type = destination_relationship_from_type
+
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        return basic_obj_dump(self, camel_case)
+
+
 class Nodes(TransformationDestination):
     def __init__(
         self,
@@ -224,6 +255,24 @@ class Edges(TransformationDestination):
             inst.view = ViewInfo(**convert_all_keys_to_snake_case(inst.view))
         if isinstance(inst.edge_type, dict):
             inst.edge_type = EdgeType(**convert_all_keys_to_snake_case(inst.edge_type))
+        return inst
+
+
+class Instances(TransformationDestination):
+    def __init__(
+        self,
+        data_model: Optional[DataModelInfo] = None,
+        instance_space: Optional[str] = None,
+    ):
+        super().__init__(type="instances")
+        self.data_model = data_model
+        self.instance_space = instance_space
+
+    @classmethod
+    def _load(cls, resource: Dict[str, Any]) -> Instances:
+        inst = cls(**resource)
+        if isinstance(inst.data_model, dict):
+            inst.data_model = DataModelInfo(**convert_all_keys_to_snake_case(inst.data_model))
         return inst
 
 
@@ -306,9 +355,10 @@ def _load_destination_dct(
     if destination_type in simple:
         return simple[destination_type](**snake_dict)
 
-    nested: Dict[str, Union[type[Nodes], type[Edges]]] = {
+    nested: Dict[str, type[Nodes] | type[Edges] | type[Instances]] = {
         "nodes": Nodes,
         "edges": Edges,
+        "instances": Instances,
     }
     if destination_type in nested:
         return nested[destination_type]._load(snake_dict)

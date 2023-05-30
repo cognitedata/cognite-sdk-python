@@ -213,7 +213,7 @@ class TemplateGroupsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.templates.groups.delete(external_ids=["a", "b"])
         """
-        return self._delete_multiple(
+        self._delete_multiple(
             wrap_ids=True,
             identifiers=IdentifierSequence.load(external_ids=external_ids),
             extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
@@ -552,7 +552,7 @@ class TemplateInstancesAPI(APIClient):
                 >>> c.templates.instances.delete("sdk-test-group", 1, external_ids=["a", "b"])
         """
         resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
-        return self._delete_multiple(
+        self._delete_multiple(
             resource_path=resource_path,
             identifiers=IdentifierSequence.load(external_ids=external_ids),
             wrap_ids=True,
@@ -730,7 +730,7 @@ class TemplateViewsAPI(APIClient):
                 >>> c.templates.views.delete("sdk-test-group", 1, external_id=["a", "b"])
         """
         resource_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, external_id, version)
-        return self._delete_multiple(
+        self._delete_multiple(
             resource_path=resource_path,
             identifiers=IdentifierSequence.load(external_ids=view_external_id),
             wrap_ids=True,
