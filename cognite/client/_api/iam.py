@@ -172,6 +172,14 @@ class TokenAPI(APIClient):
 
         Returns:
             TokenInspection: The object with token inspection details.
+
+        Example:
+
+            Inspect token::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.iam.token.inspect()
         """
         return TokenInspection._load(self._get("/api/v1/token/inspect").json())
 
