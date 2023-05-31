@@ -17,6 +17,6 @@ class DataModelingAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.containers = ContainersAPI(config, api_version, cognite_client)
-        self.data_models = DataModelsAPI(config, api_version, cognite_client)
+        self.models = DataModelsAPI(config, api_version, cognite_client)
         self.spaces = SpacesAPI(config, api_version, cognite_client)
         self.views = ViewsAPI(config, api_version, cognite_client)

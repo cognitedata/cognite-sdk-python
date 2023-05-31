@@ -82,7 +82,7 @@ class DataModelsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.data_modeling.data_models.retrieve(("mySpace", "myDataModel", "v1"))
+                >>> res = c.data_modeling.models.retrieve(("mySpace", "myDataModel", "v1"))
 
         """
         identifier = DataModelingIdentifierSequence.load(ids)
@@ -101,7 +101,7 @@ class DataModelsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> c.data_modeling.data_models.delete(("mySpace", "myDataModel", "v1"))
+                >>> c.data_modeling.models.delete(("mySpace", "myDataModel", "v1"))
         """
         deleted_data_models = cast(
             list,
@@ -141,20 +141,20 @@ class DataModelsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> data_model_list = c.data_modeling.data_models.list(limit=5)
+                >>> data_model_list = c.data_modeling.models.list(limit=5)
 
             Iterate over data_models:
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> for data_model in c.data_modeling.data_models:
+                >>> for data_model in c.data_modeling.models:
                 ...     data_model # do something with the data_model
 
             Iterate over chunks of data_models to reduce memory load:
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> for data_model_list in c.data_modeling.data_models(chunk_size=10):
+                >>> for data_model_list in c.data_modeling.models(chunk_size=10):
                 ...     data_model_list # do something with the data_models
         """
         filter_ = DataModelFilter(space, inline_views, all_versions, include_global)
@@ -193,6 +193,6 @@ class DataModelsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> data_models = [models.DataModel(space="mySpace", external_id="myDataModel", version="v1"),
                 ... DataModel(space="mySpace", external_id="myOtherDataModel", version="v1")]
-                >>> res = c.data_modeling.data_models.create(data_models)
+                >>> res = c.data_modeling.models.create(data_models)
         """
         return self._create_multiple(list_cls=DataModelList, resource_cls=DataModel, items=data_model)
