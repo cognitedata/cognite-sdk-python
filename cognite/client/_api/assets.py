@@ -104,6 +104,9 @@ class AssetsAPI(APIClient):
             aggregated_properties (Sequence[str]): Set of aggregated properties to include.
             limit (int, optional): Maximum number of assets to return. Defaults to return all items.
             partitions (int): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed.
+                To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions.
+                When using more than 10 partitions, actual throughout decreases.
+                In future releases of the APIs, CDF may reject requests with more than 10 partitions.
 
         Yields:
             Union[Asset, AssetList]: yields Asset one by one if chunk_size is not specified, else AssetList objects.
@@ -254,6 +257,10 @@ class AssetsAPI(APIClient):
             external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
             aggregated_properties (Sequence[str]): Set of aggregated properties to include.
             partitions (int): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed.
+                To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions.
+                When using more than 10 partitions, actual throughout decreases.
+                In future releases of the APIs, CDF may reject requests with more than 10 partitions.
+
             limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
 
