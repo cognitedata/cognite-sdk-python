@@ -26,7 +26,7 @@ class ViewsAPI(APIClient):
         Fetches views as they are iterated over, so you keep a limited number of views in memory.
 
         Args:
-            chunk_size (int, optional): Number of views to return in each chunk. Defaults to yielding one view a time.
+            chunk_size (int, optional): Number of views to return in each chunk. Defaults to yielding one view at a time.
             limit (int, optional): Maximum number of views to return. Default to return all items.
             space: (str | None): The space to query.
             include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
@@ -84,13 +84,13 @@ class ViewsAPI(APIClient):
         identifier = DataModelingIdentifierSequence.load(ids)
         return self._retrieve_multiple(list_cls=ViewList, resource_cls=View, identifiers=identifier)
 
-    def delete(self, ids: ViewId | Sequence[ViewId]) -> list[VersionedDataModelingId] | None:
+    def delete(self, ids: ViewId | Sequence[ViewId]) -> list[VersionedDataModelingId]:
         """`Delete one or more views <https://docs.cognite.com/api/v1/#tag/Views/operation/deleteViews>`_
 
         Args:
             ids (ViewId | Sequence[ViewId]): View dentifier(s)
         Returns:
-            The view(s) which has been deleted. None if nothing was deleted.
+            The identifier for the view(s) which has been deleted. Empty list if nothing was deleted.
         Examples:
 
             Delete views by id::
@@ -178,13 +178,13 @@ class ViewsAPI(APIClient):
 
         Examples:
 
-            Create new viewsda::
+            Create new views::
 
                 >>> from cognite.client import CogniteClient
                 >>> import cognite.client.data_classes.data_modeling as models
                 >>> c = CogniteClient()
-                >>> views = [View(external_id="myView", space="mySpace", version="v1"),
-                ... View(external_id="myOtherView", space="mySpace", version="v1")]
+                >>> views = [models.View(external_id="myView", space="mySpace", version="v1"),
+                ... models.View(external_id="myOtherView", space="mySpace", version="v1")]
                 >>> res = c.data_modeling.views.create(views)
         """
         return self._create_multiple(list_cls=ViewList, resource_cls=View, items=view)

@@ -41,7 +41,7 @@ class DataModelsAPI(APIClient):
         Yields:
             Union[DataModel, DataModelList]: yields DataModel one by one if chunk_size is not specified, else DataModelList objects.
         """
-        DataModelFilter(space, inline_views, all_versions, include_global)
+        filter_ = DataModelFilter(space, inline_views, all_versions, include_global)
 
         return self._list_generator(
             list_cls=DataModelList,
@@ -49,6 +49,7 @@ class DataModelsAPI(APIClient):
             method="GET",
             chunk_size=chunk_size,
             limit=limit,
+            filter=filter_.dump(camel_case=True),
         )
 
     def __iter__(self) -> Iterator[DataModel]:
@@ -121,7 +122,7 @@ class DataModelsAPI(APIClient):
         all_versions: bool = False,
         include_global: bool = False,
     ) -> DataModelList:
-        """`List data_models <https://docs.cognite.com/api/v1/#tag/Data-models/operation/listDataModels>`_
+        """`List data models <https://docs.cognite.com/api/v1/#tag/Data-models/operation/listDataModels>`_
 
         Args:
             limit (int, optional): Maximum number of data_models to return. Default to 10. Set to -1, float("inf") or None
@@ -130,7 +131,7 @@ class DataModelsAPI(APIClient):
             inline_views (bool): Whether to expand the referenced views inline in the returned result.
             all_versions (bool): Whether to return all versions. If false, only the newest version is returned,
                                  which is determined based on the 'createdTime' field.
-            include_global (bool): Whether to include global views.
+            include_global (bool): Whether to include global data models.
 
         Returns:
             DataModelList: List of requested data_models
