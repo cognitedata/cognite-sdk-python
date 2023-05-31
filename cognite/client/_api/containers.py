@@ -25,7 +25,7 @@ class ContainersAPI(APIClient):
 
         Args:
             space (int, optional): The space to query.
-            Whether the global containers should be returned.
+            include_global (bool, optional): Whether the global containers should be returned.
             chunk_size (int, optional): Number of containers to return in each chunk. Defaults to yielding one container a time.
             limit (int, optional): Maximum number of containers to return. Default to return all items.
 
@@ -75,6 +75,12 @@ class ContainersAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.data_modeling.containers.retrieve(('mySpace', 'myContainer'))
 
+            Fetch using the DataModelingId::
+
+                >>> from cognite.client import CogniteClient
+                >>> import cognite.client.data_classes.data_modeling as models
+                >>> c = CogniteClient()
+                >>> res = c.data_modeling.containers.retrieve(models.DataModelingId(space='mySpace', external_id='myContainer'))
         """
         identifier = DataModelingIdentifierSequence.load(ids)
         return self._retrieve_multiple(list_cls=ContainerList, resource_cls=Container, identifiers=identifier)
@@ -167,7 +173,7 @@ class ContainersAPI(APIClient):
 
         Examples:
 
-            Create new containersd:
+            Create new containers:
 
                 >>> from cognite.client import CogniteClient
                 >>> import cognite.client.data_classes.data_modeling as models
