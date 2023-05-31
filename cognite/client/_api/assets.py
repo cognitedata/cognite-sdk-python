@@ -104,9 +104,9 @@ class AssetsAPI(APIClient):
             aggregated_properties (Sequence[str]): Set of aggregated properties to include.
             limit (int, optional): Maximum number of assets to return. Defaults to return all items.
             partitions (int): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed.
-                To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 (N <= 10) partitions.
-                When using more than 10 partitions, CDF may reduce the number of partitions silently (only `the first 5 out of N` workers read the items, other `N - 5` workers just get empty response).
-                In future releases of the APIs, Cognite may reject requests if you specify more than 10 partitions. When Cognite enforces this behavior, the requests will result in a 400 Bad Request status.
+                To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions.
+                When using more than 10 partitions, actual throughout decreases.
+                In future releases of the APIs, CDF may reject requests with more than 10 partitions.
 
         Yields:
             Union[Asset, AssetList]: yields Asset one by one if chunk_size is not specified, else AssetList objects.
@@ -258,8 +258,8 @@ class AssetsAPI(APIClient):
             aggregated_properties (Sequence[str]): Set of aggregated properties to include.
             partitions (int): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed.
                 To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions.
-                When using more than 10 partitions, CDF may reduce the number of partitions silently (only `the first 5 out of N` workers read the items, other `N - 5` workers just get empty response).
-                In future releases of the APIs, Cognite may reject requests if you specify more than 10 partitions. When Cognite enforces this behavior, the requests will result in a 400 Bad Request status.
+                When using more than 10 partitions, actual throughout decreases.
+                In future releases of the APIs, CDF may reject requests with more than 10 partitions.
 
             limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
