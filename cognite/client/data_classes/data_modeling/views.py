@@ -6,6 +6,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
 )
+from cognite.client.data_classes.data_modeling.shared import ViewReference
 from cognite.client.utils._validation import validate_data_modeling_identifier
 
 if TYPE_CHECKING:
@@ -54,6 +55,10 @@ class View(CogniteResource):
         self.last_updated_time = last_updated_time
         self.created_time = created_time
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    def to_view_reference(self) -> ViewReference:
+        """Convert to ViewReference."""
+        return ViewReference(self.space, self.external_id, version=self.version)  # type: ignore[arg-type]
 
 
 class ViewList(CogniteResourceList):

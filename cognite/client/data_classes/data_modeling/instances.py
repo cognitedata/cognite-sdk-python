@@ -209,7 +209,9 @@ class InstanceFilter(CogniteFilter):
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         dumped = super().dump(camel_case)
         if "sources" in dumped:
-            dumped["sources"] = [v if isinstance(v, dict) else v.dump(camel_case) for v in dumped["sources"]]
+            dumped["sources"] = [
+                {"source": v if isinstance(v, dict) else v.dump(camel_case)} for v in dumped["sources"]
+            ]
         return dumped
 
 

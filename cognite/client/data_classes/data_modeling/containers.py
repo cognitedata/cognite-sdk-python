@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, Type, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Literal, Type, TypeVar, cast
 
 from cognite.client.data_classes._base import (
     CogniteResourceList,
@@ -27,9 +27,9 @@ class Container(DataModelingResource):
         description (str): Textual description of the view
         name (str): Human readable name for the view.
         used_for (Literal['node', 'edge', 'all']): Should this operation apply to nodes, edges or both.
-        properties (ContainerPropertyIdentifier): We index the property by a local unique identifier.
-        constraints (ConstraintIdentifier): Set of constraints to apply to the container
-        indexes (IndexIdentifier): Set of indexes to apply to the container.
+        properties (dict[str, ContainerPropertyIdentifier]): We index the property by a local unique identifier.
+        constraints (dict[str, ConstraintIdentifier]): Set of constraints to apply to the container
+        indexes (dict[str, IndexIdentifier]): Set of indexes to apply to the container.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
     """
@@ -54,9 +54,9 @@ class Container(DataModelingResource):
         self.description = description
         self.name = name
         self.used_for = used_for
-        self.properties = unwrap_if_dict(properties, ContainerPropertyIdentifier)
-        self.constraints = unwrap_if_dict(constraints, ConstraintIdentifier)
-        self.indexes = unwrap_if_dict(indexes, IndexIdentifier)
+        self.properties = properties
+        self.constraints = constraints
+        self.indexes = indexes
         self.last_updated_time = last_updated_time
         self.created_time = created_time
         self._cognite_client = cast("CogniteClient", cognite_client)
@@ -65,7 +65,7 @@ class Container(DataModelingResource):
 T_ResourceClass = TypeVar("T_ResourceClass")
 
 
-def unwrap_if_dict(value: dict | T_ResourceClass, resource_class: Type[T_ResourceClass]) -> T_ResourceClass | None:
+def unwrap_if_dict(value: dict[str, Any], resource_class: Type[T_ResourceClass]) -> dict[str, T_ResourceClass] | None:
     if not value:
         return None
     return (
