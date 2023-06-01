@@ -16,9 +16,33 @@ from cognite.client.utils._identifier import DataModelingIdentifierSequence
 class DataModelsAPI(APIClient):
     _RESOURCE_PATH = "/models/datamodels"
 
+    @overload
     def __call__(
         self,
-        chunk_size: int = None,
+        chunk_size: None = None,
+        limit: int = None,
+        space: str | None = None,
+        inline_views: bool = False,
+        all_versions: bool = False,
+        include_global: bool = False,
+    ) -> Iterator[DataModel]:
+        ...
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: int,
+        limit: int = None,
+        space: str | None = None,
+        inline_views: bool = False,
+        all_versions: bool = False,
+        include_global: bool = False,
+    ) -> Iterator[DataModelList]:
+        ...
+
+    def __call__(
+        self,
+        chunk_size: int | None = None,
         limit: int = None,
         space: str | None = None,
         inline_views: bool = False,

@@ -12,6 +12,30 @@ from cognite.client.utils._identifier import DataModelingIdentifierSequence
 class ViewsAPI(APIClient):
     _RESOURCE_PATH = "/models/views"
 
+    @overload
+    def __call__(
+        self,
+        chunk_size: None = None,
+        limit: int = None,
+        space: str | None = None,
+        include_inherited_properties: bool = True,
+        all_versions: bool = False,
+        include_global: bool = False,
+    ) -> Iterator[View]:
+        ...
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: int,
+        limit: int = None,
+        space: str | None = None,
+        include_inherited_properties: bool = True,
+        all_versions: bool = False,
+        include_global: bool = False,
+    ) -> Iterator[ViewList]:
+        ...
+
     def __call__(
         self,
         chunk_size: int = None,

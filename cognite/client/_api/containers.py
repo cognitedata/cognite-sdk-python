@@ -12,11 +12,31 @@ from cognite.client.utils._identifier import DataModelingIdentifierSequence
 class ContainersAPI(APIClient):
     _RESOURCE_PATH = "/models/containers"
 
+    @overload
     def __call__(
         self,
+        chunk_size: None = None,
         space: str | None = None,
         include_global: bool = False,
-        chunk_size: int = None,
+        limit: int = None,
+    ) -> Iterator[Container]:
+        ...
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: int,
+        space: str | None = None,
+        include_global: bool = False,
+        limit: int = None,
+    ) -> Iterator[ContainerList]:
+        ...
+
+    def __call__(
+        self,
+        chunk_size: int | None = None,
+        space: str | None = None,
+        include_global: bool = False,
         limit: int = None,
     ) -> Iterator[Container] | Iterator[ContainerList]:
         """Iterate over containers
@@ -24,9 +44,9 @@ class ContainersAPI(APIClient):
         Fetches containers as they are iterated over, so you keep a limited number of containers in memory.
 
         Args:
+            chunk_size (int, optional): Number of containers to return in each chunk. Defaults to yielding one container a time.
             space (int, optional): The space to query.
             include_global (bool, optional): Whether the global containers should be returned.
-            chunk_size (int, optional): Number of containers to return in each chunk. Defaults to yielding one container a time.
             limit (int, optional): Maximum number of containers to return. Default to return all items.
 
         Yields:
