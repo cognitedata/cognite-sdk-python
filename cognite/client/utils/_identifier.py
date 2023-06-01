@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import numbers
-import typing
 from typing import (
     TYPE_CHECKING,
     Dict,
@@ -23,7 +22,7 @@ from cognite.client._constants import MAX_VALID_INTERNAL_ID
 from cognite.client.utils._auxiliary import split_into_chunks
 
 if TYPE_CHECKING:
-    from cognite.client.data_classes.data_modeling.ids import DataModelingId, VersionedDataModelingId
+    pass
 
 T_ID = TypeVar("T_ID", int, str)
 
@@ -219,30 +218,6 @@ class DataModelingIdentifierSequence(IdentifierSequenceCore[DataModelingIdentifi
         spaces = [spaces] if isinstance(spaces, str) else spaces
 
         return cls(identifiers=[DataModelingIdentifier(space) for space in spaces], is_singleton=len(spaces) == 1)
-
-    @classmethod
-    @typing.no_type_check
-    def load(  # type: ignore[no-untyped-def]
-        cls,
-        ids: tuple[str, ...]
-        | DataModelingId
-        | VersionedDataModelingId
-        | Sequence[tuple[str, ...] | DataModelingId | VersionedDataModelingId],
-    ) -> DataModelingIdentifierSequence:
-        is_sequence = isinstance(ids, Sequence) and not (isinstance(ids, tuple) and isinstance(ids[0], str))
-        ids = ids if is_sequence else [ids]
-
-        return cls(
-            identifiers=[
-                DataModelingIdentifier(*id_)
-                if isinstance(id_, tuple)
-                else DataModelingIdentifier(
-                    id_.space, id_.external_id, id_.version if hasattr(id_, "version") else None
-                )
-                for id_ in ids
-            ],
-            is_singleton=len(ids) == 1,
-        )
 
 
 class SingletonIdentifierSequence(IdentifierSequenceCore):

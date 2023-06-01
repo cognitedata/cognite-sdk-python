@@ -4,9 +4,8 @@ from typing import Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DATA_MODELING_LIST_LIMIT_DEFAULT
-from cognite.client.data_classes.data_modeling.ids import VersionedDataModelingId, ViewId
+from cognite.client.data_classes.data_modeling.ids import VersionedDataModelingId, ViewId, load_identifier
 from cognite.client.data_classes.data_modeling.views import View, ViewFilter, ViewList
-from cognite.client.utils._identifier import DataModelingIdentifierSequence
 
 
 class ViewsAPI(APIClient):
@@ -105,7 +104,7 @@ class ViewsAPI(APIClient):
                 >>> res = c.data_modeling.views.retrieve(('mySpace', 'myView', 'v1'))
 
         """
-        identifier = DataModelingIdentifierSequence.load(ids)
+        identifier = load_identifier(ids)
         return self._retrieve_multiple(list_cls=ViewList, resource_cls=View, identifiers=identifier)
 
     def delete(self, ids: ViewId | Sequence[ViewId]) -> list[VersionedDataModelingId]:
@@ -126,7 +125,7 @@ class ViewsAPI(APIClient):
         deleted_views = cast(
             list,
             self._delete_multiple(
-                identifiers=DataModelingIdentifierSequence.load(ids),
+                identifiers=load_identifier(ids),
                 wrap_ids=True,
                 returns_items=True,
             ),

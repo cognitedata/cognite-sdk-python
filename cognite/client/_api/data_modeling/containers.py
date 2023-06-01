@@ -5,8 +5,7 @@ from typing import Iterator, Sequence, cast, overload
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DATA_MODELING_LIST_LIMIT_DEFAULT
 from cognite.client.data_classes.data_modeling.containers import Container, ContainerFilter, ContainerList
-from cognite.client.data_classes.data_modeling.ids import ContainerId, DataModelingId
-from cognite.client.utils._identifier import DataModelingIdentifierSequence
+from cognite.client.data_classes.data_modeling.ids import ContainerId, DataModelingId, load_identifier
 
 
 class ContainersAPI(APIClient):
@@ -102,7 +101,7 @@ class ContainersAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.data_modeling.containers.retrieve(models.DataModelingId(space='mySpace', external_id='myContainer'))
         """
-        identifier = DataModelingIdentifierSequence.load(ids)
+        identifier = load_identifier(ids)
         return self._retrieve_multiple(list_cls=ContainerList, resource_cls=Container, identifiers=identifier)
 
     def delete(self, id: ContainerId | Sequence[ContainerId]) -> list[DataModelingId]:
@@ -122,9 +121,7 @@ class ContainersAPI(APIClient):
         """
         deleted_containers = cast(
             list,
-            self._delete_multiple(
-                identifiers=DataModelingIdentifierSequence.load(id), wrap_ids=True, returns_items=True
-            ),
+            self._delete_multiple(identifiers=load_identifier(id), wrap_ids=True, returns_items=True),
         )
         return [DataModelingId(space=item["space"], external_id=item["externalId"]) for item in deleted_containers]
 
