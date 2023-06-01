@@ -3,16 +3,16 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, cast
 
 from cognite.client.data_classes._base import (
-    CogniteResource,
     CogniteResourceList,
 )
+from cognite.client.data_classes.data_modeling.shared import DataModeling
 from cognite.client.utils._validation import validate_data_modeling_identifier
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class Space(CogniteResource):
+class Space(DataModeling):
     """A workspace for data models and instances.
 
     Args:

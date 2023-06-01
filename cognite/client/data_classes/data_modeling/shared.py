@@ -4,6 +4,7 @@ import typing
 from dataclasses import asdict, dataclass
 from typing import Any, Literal, Optional
 
+from cognite.client.data_classes._base import CogniteResource
 from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive, convert_all_keys_to_snake_case
 
 PrimitiveType = Literal["boolean", "float32", "float64", "int32", "int64", "timestamp", "date", "json"]
@@ -15,6 +16,19 @@ PRIMITIVE_TYPE_SET = set(typing.get_args(PrimitiveType))
 CDF_TYPE_SET = set(typing.get_args(CDFType))
 TEXT_TYPE_SET = set(typing.get_args(TextType))
 DIRECT_TYPE = set(typing.get_args(DirectType))
+
+
+class DataModeling(CogniteResource):
+    def __repr__(self) -> str:
+        args = []
+        if hasattr(self, "space"):
+            space = self.space
+            args.append(f"{space=}")
+        if hasattr(self, "external_id"):
+            external_id = self.external_id
+            args.append(f"{external_id=}")
+
+        return f"{type(self).__name__}({', '.join(args)}) at 0x{hex(id(self)).upper().zfill(16)}"
 
 
 @dataclass

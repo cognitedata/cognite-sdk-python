@@ -5,10 +5,9 @@ from typing import TYPE_CHECKING, Any, Literal, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
-    CogniteResource,
     CogniteResourceList,
 )
-from cognite.client.data_classes.data_modeling.shared import ViewReference
+from cognite.client.data_classes.data_modeling.shared import DataModeling, ViewReference
 from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.utils._validation import validate_data_modeling_identifier
 
@@ -16,7 +15,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class DataModel(CogniteResource):
+class DataModel(DataModeling):
     """A group of properties.
 
     Args:

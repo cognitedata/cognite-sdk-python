@@ -4,7 +4,7 @@ from typing import Iterator, Optional, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import LIST_LIMIT_DEFAULT
-from cognite.client.data_classes.data_modeling import Space, SpaceList
+from cognite.client.data_classes.data_modeling.spaces import Space, SpaceList
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
 
 

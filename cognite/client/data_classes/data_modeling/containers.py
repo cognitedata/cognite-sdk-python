@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
-    CogniteResource,
     CogniteResourceList,
 )
 from cognite.client.data_classes.data_modeling.shared import (
@@ -15,6 +14,7 @@ from cognite.client.data_classes.data_modeling.shared import (
     PRIMITIVE_TYPE_SET,
     TEXT_TYPE_SET,
     CDFExternalIdReference,
+    DataModeling,
     DirectNodeRelation,
     PrimitiveProperty,
     TextProperty,
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class Container(CogniteResource):
+class Container(DataModeling):
     """Represent the physical storage of data.
 
     Args:

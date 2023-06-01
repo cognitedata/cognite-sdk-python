@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
-    CogniteResource,
     CogniteResourceList,
 )
 from cognite.client.data_classes.data_modeling.filters import DSLFilter, dump_dsl_filter, load_dsl_filter
@@ -17,6 +16,7 @@ from cognite.client.data_classes.data_modeling.shared import (
     TEXT_TYPE_SET,
     CDFExternalIdReference,
     ContainerReference,
+    DataModeling,
     DirectNodeRelation,
     DirectRelationReference,
     PrimitiveProperty,
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class View(CogniteResource):
+class View(DataModeling):
     """A group of properties.
 
     Args:
