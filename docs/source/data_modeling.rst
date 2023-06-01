@@ -5,19 +5,19 @@ Data Models
 ------------
 Retrieve data models by id(s)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_models.DataModelsAPI.retrieve
+.. automethod:: cognite.client._api.data_modeling.data_models.DataModelsAPI.retrieve
 
 List data models
 ^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_models.DataModelsAPI.list
+.. automethod:: cognite.client._api.data_modeling.data_models.DataModelsAPI.list
 
 Apply data models
 ^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_models.DataModelsAPI.apply
+.. automethod:: cognite.client._api.data_modeling.data_models.DataModelsAPI.apply
 
 Delete data models
 ^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_models.DataModelsAPI.delete
+.. automethod:: cognite.client._api.data_modeling.data_models.DataModelsAPI.delete
 
 Data model data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -29,27 +29,27 @@ Spaces
 ------
 Retrieve a space by id
 ^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.spaces.SpacesAPI.retrieve
+.. automethod:: cognite.client._api.data_modeling.spaces.SpacesAPI.retrieve
 
 Retrieve multiple spaces by ids
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.spaces.SpacesAPI.retrieve_multiple
+.. automethod:: cognite.client._api.data_modeling.spaces.SpacesAPI.retrieve_multiple
 
 List spaces
 ^^^^^^^^^^^
-.. automethod:: cognite.client._api.spaces.SpacesAPI.list
+.. automethod:: cognite.client._api.data_modeling.spaces.SpacesAPI.list
 
 Apply spaces
 ^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.spaces.SpacesAPI.apply
+.. automethod:: cognite.client._api.data_modeling.spaces.SpacesAPI.apply
 
 Delete spaces
 ^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.spaces.SpacesAPI.delete
+.. automethod:: cognite.client._api.data_modeling.spaces.SpacesAPI.delete
 
 Data classes
 ^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.spaces
+.. automodule:: cognite.client.data_classes.data_modeling.spaces
     :members:
     :show-inheritance:
 
@@ -57,19 +57,19 @@ Views
 ------------
 Retrieve views by id(s)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.views.ViewsAPI.retrieve
+.. automethod:: cognite.client._api.data_modeling.views.ViewsAPI.retrieve
 
 List views
 ^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.views.ViewsAPI.list
+.. automethod:: cognite.client._api.data_modeling.views.ViewsAPI.list
 
 Apply view
 ^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.views.ViewsAPI.apply
+.. automethod:: cognite.client._api.data_modeling.views.ViewsAPI.apply
 
 Delete views
 ^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.views.ViewsAPI.delete
+.. automethod:: cognite.client._api.data_modeling.views.ViewsAPI.delete
 
 View data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -81,19 +81,19 @@ Containers
 ------------
 Retrieve containers by id(s)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.containers.ContainersAPI.retrieve
+.. automethod:: cognite.client._api.data_modeling.containers.ContainersAPI.retrieve
 
 List containers
 ^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.containers.ContainersAPI.list
+.. automethod:: cognite.client._api.data_modeling.containers.ContainersAPI.list
 
 Apply containers
 ^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.containers.ContainersAPI.apply
+.. automethod:: cognite.client._api.data_modeling.containers.ContainersAPI.apply
 
 Delete containers
 ^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.containers.ContainersAPI.delete
+.. automethod:: cognite.client._api.data_modeling.containers.ContainersAPI.delete
 
 Containers data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^
