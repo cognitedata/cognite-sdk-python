@@ -43,7 +43,7 @@ from cognite.client.data_classes.data_modeling.shared import (
 from cognite.client.data_classes.data_modeling.spaces import Space, SpaceList
 from cognite.client.data_classes.data_modeling.views import (
     ConnectionDefinition,
-    ConnectionDefinitionRelation,
+    SingleHopConnectionDefinition,
     View,
     ViewCorePropertyDefinition,
     ViewFilter,
@@ -81,7 +81,7 @@ __all__ = [
     "ViewFilter",
     "ViewCorePropertyDefinition",
     "ConnectionDefinition",
-    "ConnectionDefinitionRelation",
+    "SingleHopConnectionDefinition",
     "ViewPropertyDefinition",
     "load_view_property_definition",
     "Space",

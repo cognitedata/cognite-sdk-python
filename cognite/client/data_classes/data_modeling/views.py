@@ -210,7 +210,7 @@ class ConnectionDefinition:
 
 
 @dataclass
-class ConnectionDefinitionRelation(ConnectionDefinition):
+class SingleHopConnectionDefinition(ConnectionDefinition):
     type: DirectRelationReference
     source: ViewReference
     name: str | None = None
@@ -219,7 +219,7 @@ class ConnectionDefinitionRelation(ConnectionDefinition):
     direction: Literal["outwards", "inwards"] = "outwards"
 
     @classmethod
-    def load(cls, data: dict) -> ConnectionDefinitionRelation:
+    def load(cls, data: dict) -> SingleHopConnectionDefinition:
         for field_name, Field in [
             ("type", DirectRelationReference),
             ("source", ViewReference),
@@ -243,7 +243,7 @@ def load_view_property_definition(data: dict[str, Any]) -> ViewPropertyDefinitio
     if "container" in data:
         return ViewCorePropertyDefinition.load(data)
     elif "source" in data:
-        return ConnectionDefinitionRelation.load(data)
+        return SingleHopConnectionDefinition.load(data)
 
     raise ValueError(f"Unknown type of ViewPropertyDefinition: {data.get('type')}")
 
