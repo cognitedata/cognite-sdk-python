@@ -1,4 +1,4 @@
-from cognite.client.data_classes.data_modeling import dsl_filter as dsl
+from cognite.client.data_classes.data_modeling import filters
 from cognite.client.data_classes.data_modeling.containers import (
     ConstraintIdentifier,
     Container,
@@ -17,7 +17,7 @@ from cognite.client.data_classes.data_modeling.data_models import (
     DataModelList,
     DataModelsSort,
 )
-from cognite.client.data_classes.data_modeling.dsl_filter import dump_dsl_filter, load_dsl_filter
+from cognite.client.data_classes.data_modeling.filters import dump_dsl_filter, load_dsl_filter
 from cognite.client.data_classes.data_modeling.ids import (
     ContainerId,
     DataModelId,
@@ -58,7 +58,7 @@ __all__ = [
     "DataModelingId",
     "ContainerId",
     "DataModelId",
-    "dsl",
+    "filters",
     "DirectNodeRelation",
     "load_dsl_filter",
     "dump_dsl_filter",

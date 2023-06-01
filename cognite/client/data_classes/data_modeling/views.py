@@ -9,7 +9,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
 )
-from cognite.client.data_classes.data_modeling.dsl_filter import DSLFilter, dump_dsl_filter, load_dsl_filter
+from cognite.client.data_classes.data_modeling.filters import DSLFilter, dump_dsl_filter, load_dsl_filter
 from cognite.client.data_classes.data_modeling.shared import (
     CDF_TYPE_SET,
     DIRECT_TYPE,

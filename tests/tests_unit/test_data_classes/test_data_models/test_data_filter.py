@@ -1,7 +1,7 @@
 import pytest
 
-from cognite.client.data_classes.data_modeling import dsl_filter as dsl
-from cognite.client.data_classes.data_modeling.dsl_filter import dump_dsl_filter, load_dsl_filter
+from cognite.client.data_classes.data_modeling import filters
+from cognite.client.data_classes.data_modeling.filters import dump_dsl_filter, load_dsl_filter
 
 
 def load_and_dump_equals_data():
@@ -43,8 +43,8 @@ def test_load_and_dump_equals(raw_data: dict):
 def test_dump_filter():
     filter_ = {
         "or": [
-            {"equals": dsl.EqualObject(["person", "name"], ["Quentin", "Tarantino"])},
-            {"containsAny": dsl.ContainsAnyObject(["person", "name"], [["Quentin", "Tarantino"]])},
+            {"equals": filters.EqualObject(["person", "name"], ["Quentin", "Tarantino"])},
+            {"containsAny": filters.ContainsAnyObject(["person", "name"], [["Quentin", "Tarantino"]])},
         ]
     }
     expected = {
