@@ -40,6 +40,7 @@ from cognite.client.data_classes.data_modeling.shared import (
     ViewReference,
     load_reference,
 )
+from cognite.client.data_classes.data_modeling.spaces import Space, SpaceList
 from cognite.client.data_classes.data_modeling.views import (
     ConnectionDefinition,
     ConnectionDefinitionRelation,
@@ -50,7 +51,6 @@ from cognite.client.data_classes.data_modeling.views import (
     ViewPropertyDefinition,
     load_view_property_definition,
 )
-from cognite.client.data_classes.spaces import Space, SpaceList
 
 __all__ = [
     "ViewId",

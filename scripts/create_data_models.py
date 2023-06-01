@@ -1,3 +1,7 @@
+"""
+This module is used to populate CDF with data modeling components such as data models, views, and containers which is
+used in the integration tests.
+"""
 from pathlib import Path
 
 import yaml

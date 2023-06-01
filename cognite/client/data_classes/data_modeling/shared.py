@@ -4,7 +4,7 @@ import typing
 from dataclasses import asdict, dataclass
 from typing import Any, Literal, Optional
 
-from cognite.client.utils._text import convert_all_keys_to_camel_case_nested, convert_all_keys_to_snake_case
+from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive, convert_all_keys_to_snake_case
 
 PrimitiveType = Literal["boolean", "float32", "float64", "int32", "int64", "timestamp", "date", "json"]
 CDFType = Literal["timeseries", "file", "sequence"]
@@ -31,7 +31,7 @@ class Reference:
     def dump(self, camel_case: bool = False, *_: Any, **__: Any) -> dict[str, str]:
         output = asdict(self)
 
-        return convert_all_keys_to_camel_case_nested(output) if camel_case else output
+        return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
 
 
 @dataclass

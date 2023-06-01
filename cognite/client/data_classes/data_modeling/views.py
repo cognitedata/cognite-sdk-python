@@ -25,7 +25,7 @@ from cognite.client.data_classes.data_modeling.shared import (
 )
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case,
-    convert_all_keys_to_camel_case_nested,
+    convert_all_keys_to_camel_case_recursive,
     convert_all_keys_to_snake_case,
 )
 from cognite.client.utils._validation import validate_data_modeling_identifier
@@ -200,7 +200,7 @@ class ViewCorePropertyDefinition:
                 output.pop(field, None)
 
         if camel_case:
-            output = convert_all_keys_to_camel_case_nested(output)
+            output = convert_all_keys_to_camel_case_recursive(output)
         return output
 
 
@@ -233,7 +233,7 @@ class ConnectionDefinitionRelation(ConnectionDefinition):
     def dump(self, camel_case: bool = False, *_: Any, **__: Any) -> dict:
         output = asdict(self)
 
-        return convert_all_keys_to_camel_case_nested(output) if camel_case else output
+        return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
 
 
 ViewPropertyDefinition = Union[ViewCorePropertyDefinition, ConnectionDefinition]

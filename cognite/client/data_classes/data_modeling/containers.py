@@ -19,7 +19,7 @@ from cognite.client.data_classes.data_modeling.shared import (
     PrimitiveProperty,
     TextProperty,
 )
-from cognite.client.utils._text import convert_all_keys_to_camel_case_nested, convert_all_keys_to_snake_case
+from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive, convert_all_keys_to_snake_case
 from cognite.client.utils._validation import validate_data_modeling_identifier
 
 if TYPE_CHECKING:
@@ -90,7 +90,7 @@ class Container(CogniteResource):
             if field not in output:
                 continue
             output[field] = {
-                k: convert_all_keys_to_camel_case_nested(asdict(v)) if camel_case else asdict(v)
+                k: convert_all_keys_to_camel_case_recursive(asdict(v)) if camel_case else asdict(v)
                 for k, v in output[field].items()
             }
 

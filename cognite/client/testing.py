@@ -7,9 +7,11 @@ from unittest.mock import MagicMock
 from cognite.client import CogniteClient
 from cognite.client._api.annotations import AnnotationsAPI
 from cognite.client._api.assets import AssetsAPI
-from cognite.client._api.containers import ContainersAPI
 from cognite.client._api.data_modeling import DataModelingAPI
-from cognite.client._api.data_models import DataModelsAPI
+from cognite.client._api.data_modeling.containers import ContainersAPI
+from cognite.client._api.data_modeling.data_models import DataModelsAPI
+from cognite.client._api.data_modeling.spaces import SpacesAPI
+from cognite.client._api.data_modeling.views import ViewsAPI
 from cognite.client._api.data_sets import DataSetsAPI
 from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.diagrams import DiagramsAPI
@@ -28,7 +30,6 @@ from cognite.client._api.labels import LabelsAPI
 from cognite.client._api.raw import RawAPI, RawDatabasesAPI, RawRowsAPI, RawTablesAPI
 from cognite.client._api.relationships import RelationshipsAPI
 from cognite.client._api.sequences import SequencesAPI, SequencesDataAPI
-from cognite.client._api.spaces import SpacesAPI
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api.templates import (
     TemplateGroupsAPI,
@@ -52,7 +53,6 @@ from cognite.client._api.transformations import (
     TransformationSchedulesAPI,
     TransformationSchemaAPI,
 )
-from cognite.client._api.views import ViewsAPI
 from cognite.client._api.vision import VisionAPI
 
 
