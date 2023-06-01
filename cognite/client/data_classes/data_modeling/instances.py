@@ -17,7 +17,6 @@ if TYPE_CHECKING:
 
 
 class Instance(CogniteResource):
-
     """A node or edge
     Args:
         instance_type (Literal["node", "edge"]) The type of instance.
