@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import DATA_MODEL_LIST_LIMIT_DEFAULT
+from cognite.client._constants import DATA_MODELING_LIST_LIMIT_DEFAULT
 from cognite.client.data_classes.data_modeling.data_models import (
     DataModel,
     DataModelFilter,
@@ -116,7 +116,7 @@ class DataModelsAPI(APIClient):
 
     def list(
         self,
-        limit: int = DATA_MODEL_LIST_LIMIT_DEFAULT,
+        limit: int = DATA_MODELING_LIST_LIMIT_DEFAULT,
         space: str | None = None,
         inline_views: bool = False,
         all_versions: bool = False,

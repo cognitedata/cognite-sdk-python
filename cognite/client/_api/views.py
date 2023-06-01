@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import VIEW_LIST_LIMIT_DEFAULT
+from cognite.client._constants import DATA_MODELING_LIST_LIMIT_DEFAULT
 from cognite.client.data_classes.data_modeling.ids import VersionedDataModelingId, ViewId
 from cognite.client.data_classes.data_modeling.views import View, ViewFilter, ViewList
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
@@ -111,7 +111,7 @@ class ViewsAPI(APIClient):
 
     def list(
         self,
-        limit: int = VIEW_LIST_LIMIT_DEFAULT,
+        limit: int = DATA_MODELING_LIST_LIMIT_DEFAULT,
         space: str | None = None,
         include_inherited_properties: bool = True,
         all_versions: bool = False,
