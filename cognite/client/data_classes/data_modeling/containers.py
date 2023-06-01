@@ -8,6 +8,7 @@ from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteResourceList,
 )
+from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
 from cognite.client.data_classes.data_modeling.shared import (
     CDF_TYPE_SET,
     DIRECT_TYPE,
@@ -20,7 +21,6 @@ from cognite.client.data_classes.data_modeling.shared import (
     TextProperty,
 )
 from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive, convert_all_keys_to_snake_case
-from cognite.client.utils._validation import validate_data_modeling_identifier
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient

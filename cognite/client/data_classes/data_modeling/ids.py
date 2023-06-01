@@ -17,7 +17,9 @@ class DataModelingId:
 
 
 @dataclass
-class VersionedDataModelingId(DataModelingId):
+class VersionedDataModelingId:
+    space: str
+    external_id: str
     version: Optional[str] = None
 
     @classmethod

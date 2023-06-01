@@ -8,48 +8,6 @@ from cognite.client.utils._identifier import Identifier, IdentifierSequence
 if TYPE_CHECKING:
     from cognite.client.utils._identifier import T_ID
 
-RESERVED_EXTERNAL_IDS = frozenset(
-    {
-        "Query",
-        "Mutation",
-        "Subscription",
-        "String",
-        "Int32",
-        "Int64",
-        "Int",
-        "Float32",
-        "Float64",
-        "Float",
-        "Timestamp",
-        "JSONObject",
-        "Date",
-        "Numeric",
-        "Boolean",
-        "PageInfo",
-        "File",
-        "Sequence",
-        "TimeSerie",
-    }
-)
-RESERVED_SPACE_IDS = frozenset({"space", "cdf", "dms", "pg3", "shared", "system", "node", "edge"})
-
-RESERVED_PROPERTIES = frozenset(
-    {
-        "space",
-        "externalId",
-        "createdTime",
-        "lastUpdatedTime",
-        "deletedTime",
-        "edge_id",
-        "node_id",
-        "project_id",
-        "property_group",
-        "seq",
-        "tg_table_name",
-        "extensions",
-    }
-)
-
 
 def validate_user_input_dict_with_identifier(dct: Mapping, required_keys: set[str]) -> dict[str, T_ID]:
     if not isinstance(dct, Mapping):
@@ -87,10 +45,3 @@ process_data_set_ids: Callable[
 process_asset_subtree_ids: Callable[
     [int | Sequence[int] | None, str | Sequence[str] | None], list[dict[str, int | str]] | None
 ] = functools.partial(_process_identifiers, id_name="asset_subtree")
-
-
-def validate_data_modeling_identifier(space: str | None, external_id: str | None = None) -> None:
-    if space and space in RESERVED_SPACE_IDS:
-        raise ValueError(f"The space ID: {space} is reserved. Please use another ID.")
-    if external_id and external_id in RESERVED_EXTERNAL_IDS:
-        raise ValueError(f"The external ID: {external_id} is reserved. Please use another ID.")

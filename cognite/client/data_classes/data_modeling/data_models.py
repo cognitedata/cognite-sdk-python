@@ -7,9 +7,9 @@ from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteResourceList,
 )
+from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
 from cognite.client.data_classes.data_modeling.shared import DataModeling, ViewReference
 from cognite.client.data_classes.data_modeling.views import View
-from cognite.client.utils._validation import validate_data_modeling_identifier
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
