@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.2.2] - 2023-06-01
+### Fixed
+- Creating function schedules with current user credentials now works (used to fail at runtime with "Could not fetch a valid token (...)" because a session was never created.)
+
 ## [6.2.1] - 2023-05-26
 ### Added
 - Data model centric support in transformation
