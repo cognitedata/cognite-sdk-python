@@ -62,7 +62,9 @@ class Reference(ABC):
         return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
 
     @classmethod
-    def _load(cls, data: dict) -> Any:
+    def _load(cls, data: dict | None) -> Any:
+        if data is None:
+            return None
         return cls(**convert_all_keys_to_snake_case({k: v for k, v in data.items() if k != "type"}))
 
     @classmethod
