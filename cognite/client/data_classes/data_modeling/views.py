@@ -38,6 +38,7 @@ class ViewCore(DataModeling):
         filter: DSLFilter | None = None,
         implements: list[ViewReference] = None,
         version: str = None,
+        cognite_client: CogniteClient = None,
     ):
         validate_data_modeling_identifier(space, external_id)
         self.space = space
@@ -47,6 +48,7 @@ class ViewCore(DataModeling):
         self.filter = filter
         self.implements = implements
         self.version = version
+        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
     def _load(cls, resource: dict | str, cognite_client: CogniteClient = None) -> ViewCore:
@@ -92,8 +94,9 @@ class ViewApply(ViewCore):
         implements: list[ViewReference] = None,
         version: str = None,
         properties: dict[str, MappedApplyPropertyDefinition | ConnectionDefinition] = None,
+        cognite_client: CogniteClient = None,
     ):
-        super().__init__(space, external_id, description, name, filter, implements, version)
+        super().__init__(space, external_id, description, name, filter, implements, version, cognite_client)
         self.properties = properties
 
     @classmethod
@@ -148,14 +151,13 @@ class View(ViewCore):
         created_time: int = None,
         cognite_client: CogniteClient = None,
     ):
-        super().__init__(space, external_id, description, name, filter, implements, version)
+        super().__init__(space, external_id, description, name, filter, implements, version, cognite_client)
         self.writable = writable
         self.used_for = used_for
         self.is_global = is_global
         self.properties = properties
         self.last_updated_time = last_updated_time
         self.created_time = created_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
     def _load(cls, resource: dict | str, cognite_client: CogniteClient = None) -> ViewApply:  # type: ignore[override]
