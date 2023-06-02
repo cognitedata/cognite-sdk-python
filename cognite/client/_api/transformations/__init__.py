@@ -34,7 +34,6 @@ __all__ = [
 
 class TransformationsAPI(APIClient):
     _RESOURCE_PATH = "/transformations"
-    _LIST_CLASS = TransformationList
 
     def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)

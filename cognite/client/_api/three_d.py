@@ -568,7 +568,6 @@ class ThreeDFilesAPI(APIClient):
 
 class ThreeDAssetMappingAPI(APIClient):
     _RESOURCE_PATH = "/3d/models/{}/revisions/{}/mappings"
-    _LIST_CLASS = ThreeDAssetMappingList
 
     def list(
         self,

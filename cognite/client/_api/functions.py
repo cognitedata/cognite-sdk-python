@@ -70,7 +70,6 @@ def _get_function_identifier(function_id: Optional[int], function_external_id: O
 
 class FunctionsAPI(APIClient):
     _RESOURCE_PATH = "/functions"
-    _LIST_CLASS = FunctionList
 
     def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
@@ -283,7 +282,7 @@ class FunctionsAPI(APIClient):
         ).dump(camel_case=True)
         res = self._post(url_path=f"{self._RESOURCE_PATH}/list", json={"filter": filter, "limit": limit})
 
-        return self._LIST_CLASS._load(res.json()["items"], cognite_client=self._cognite_client)
+        return FunctionList._load(res.json()["items"], cognite_client=self._cognite_client)
 
     def retrieve(
         self, id: Optional[int] = None, external_id: Optional[str] = None
@@ -658,7 +657,9 @@ def _sanitize_filename(filename: str) -> str:
 
 
 class FunctionCallsAPI(APIClient):
-    _LIST_CLASS = FunctionCallList
+    _RESOURCE_PATH = "/functions/{}/calls"
+    _RESOURCE_PATH_RESPONSE = "/functions/{}/calls/{}/response"
+    _RESOURCE_PATH_LOGS = "/functions/{}/calls/{}/logs"
 
     def list(
         self,
@@ -705,7 +706,7 @@ class FunctionCallsAPI(APIClient):
         filter = FunctionCallsFilter(
             status=status, schedule_id=schedule_id, start_time=start_time, end_time=end_time
         ).dump(camel_case=True)
-        resource_path = f"/functions/{function_id}/calls"
+        resource_path = self._RESOURCE_PATH.format(function_id)
         return self._list(
             method="POST",
             resource_path=resource_path,
@@ -747,7 +748,7 @@ class FunctionCallsAPI(APIClient):
         identifier = _get_function_identifier(function_id, function_external_id)
         function_id = _get_function_internal_id(self._cognite_client, identifier)
 
-        resource_path = f"/functions/{function_id}/calls"
+        resource_path = self._RESOURCE_PATH.format(function_id)
         identifiers = IdentifierSequence.load(ids=call_id).as_singleton()
 
         return self._retrieve_multiple(
@@ -759,7 +760,7 @@ class FunctionCallsAPI(APIClient):
 
     def get_response(
         self, call_id: int, function_id: Optional[int] = None, function_external_id: Optional[str] = None
-    ) -> Dict:
+    ) -> Optional[Dict]:
         """`Retrieve the response from a function call. <https://docs.cognite.com/api/v1/#operation/getFunctionCallResponse>`_
 
         Args:
@@ -768,7 +769,7 @@ class FunctionCallsAPI(APIClient):
             function_external_id (str, optional): External ID of the function on which the call was made.
 
         Returns:
-            Response from the function call.
+            Dict[str, Any] | None: Response from the function call.
 
         Examples:
 
@@ -788,9 +789,9 @@ class FunctionCallsAPI(APIClient):
         """
         identifier = _get_function_identifier(function_id, function_external_id)
         function_id = _get_function_internal_id(self._cognite_client, identifier)
-        url = f"/functions/{function_id}/calls/{call_id}/response"
-        res = self._get(url)
-        return res.json().get("response")
+
+        resource_path = self._RESOURCE_PATH_RESPONSE.format(function_id, call_id)
+        return self._get(resource_path).json().get("response")
 
     def get_logs(
         self, call_id: int, function_id: Optional[int] = None, function_external_id: Optional[str] = None
@@ -824,14 +825,12 @@ class FunctionCallsAPI(APIClient):
         identifier = _get_function_identifier(function_id, function_external_id)
         function_id = _get_function_internal_id(self._cognite_client, identifier)
 
-        url = f"/functions/{function_id}/calls/{call_id}/logs"
-        res = self._get(url)
-        return FunctionCallLog._load(res.json()["items"])
+        resource_path = self._RESOURCE_PATH_LOGS.format(function_id, call_id)
+        return FunctionCallLog._load(self._get(resource_path).json()["items"])
 
 
 class FunctionSchedulesAPI(APIClient):
     _RESOURCE_PATH = "/functions/schedules"
-    _LIST_CLASS = FunctionSchedulesList
 
     def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
@@ -845,7 +844,6 @@ class FunctionSchedulesAPI(APIClient):
 
         Returns:
             Optional[FunctionSchedule]: Requested function schedule.
-
 
         Examples:
 
@@ -916,7 +914,7 @@ class FunctionSchedulesAPI(APIClient):
         ).dump(camel_case=True)
         res = self._post(url_path=f"{self._RESOURCE_PATH}/list", json={"filter": filter, "limit": limit})
 
-        return self._LIST_CLASS._load(res.json()["items"], cognite_client=self._cognite_client)
+        return FunctionSchedulesList._load(res.json()["items"], cognite_client=self._cognite_client)
 
     def create(
         self,
