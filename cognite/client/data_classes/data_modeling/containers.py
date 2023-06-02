@@ -10,15 +10,13 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
 from cognite.client.data_classes.data_modeling.shared import (
-    CDF_TYPE_SET,
-    DIRECT_TYPE,
-    PRIMITIVE_TYPE_SET,
-    TEXT_TYPE_SET,
     CDFExternalIdReference,
+    ContainerReference,
     DataModeling,
     DirectNodeRelation,
-    PrimitiveProperty,
-    TextProperty,
+    Primitive,
+    PropertyType,
+    Text,
 )
 from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive, convert_all_keys_to_snake_case
 
@@ -126,14 +124,18 @@ class ContainerFilter(CogniteFilter):
 
 @dataclass
 class ContainerDirectNodeRelation(DirectNodeRelation):
-    @classmethod
-    def load(cls, data: dict) -> ContainerDirectNodeRelation:
-        return cast(ContainerDirectNodeRelation, super().load(data))
+    container: Optional[ContainerReference] = None
+
+    def dump(self, camel_case: bool = False, *_: Any, **__: Any) -> dict[str, str | dict]:
+        output = super().dump(camel_case)
+        if "container" in output and isinstance(output["container"], dict):
+            output["container"]["type"] = "container"
+        return output
 
 
 @dataclass
 class ContainerPropertyIdentifier:
-    type: TextProperty | PrimitiveProperty | CDFExternalIdReference | ContainerDirectNodeRelation
+    type: Text | Primitive | CDFExternalIdReference | ContainerDirectNodeRelation
     nullable: bool = True
     auto_increment: bool = False
     name: Optional[str] = None
@@ -144,19 +146,7 @@ class ContainerPropertyIdentifier:
     def load(cls, data: dict[str, Any]) -> ContainerPropertyIdentifier:
         if "type" not in data:
             raise ValueError("Type not specified")
-        type_ = data["type"]["type"]
-        if type_ in PRIMITIVE_TYPE_SET:
-            data["type"] = PrimitiveProperty(**data["type"])
-        elif type_ in TEXT_TYPE_SET:
-            data["type"] = TextProperty(**data["type"])
-        elif type_ in CDF_TYPE_SET:
-            data["type"] = CDFExternalIdReference(**data["type"])
-        elif type_ in DIRECT_TYPE:
-            data["type"] = ContainerDirectNodeRelation.load(data["type"])
-        else:
-            raise ValueError(
-                f"Invalid {cls.__name__}.type {type_}. Must be {PRIMITIVE_TYPE_SET | TEXT_TYPE_SET | CDF_TYPE_SET | DIRECT_TYPE}"
-            )
+        data["type"] = PropertyType.load(data["type"], ContainerDirectNodeRelation)
         return cls(**convert_all_keys_to_snake_case(data))
 
 

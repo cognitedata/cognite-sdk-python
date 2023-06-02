@@ -32,13 +32,12 @@ from cognite.client.data_classes.data_modeling.shared import (
     DirectNodeRelation,
     DirectRelationReference,
     DirectType,
-    PrimitiveProperty,
+    Primitive,
     PrimitiveType,
     Reference,
-    TextProperty,
+    Text,
     TextType,
     ViewReference,
-    load_reference,
 )
 from cognite.client.data_classes.data_modeling.spaces import Space, SpaceList
 from cognite.client.data_classes.data_modeling.views import (
@@ -71,7 +70,6 @@ __all__ = [
     "DirectNodeRelation",
     "ViewReference",
     "ContainerReference",
-    "load_reference",
     "DataModel",
     "DataModelList",
     "DataModelsSort",
@@ -93,10 +91,10 @@ __all__ = [
     "IndexIdentifier",
     "ConstraintIdentifier",
     "ContainerPropertyIdentifier",
-    "PrimitiveProperty",
+    "Primitive",
     "CDFExternalIdReference",
     "ContainerDirectNodeRelation",
     "RequiresConstraintDefinition",
     "UniquenessConstraintDefinition",
-    "TextProperty",
+    "Text",
 ]

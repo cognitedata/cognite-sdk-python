@@ -39,9 +39,9 @@ class TestContainersAPI:
             used_for="node",
             properties={
                 "name": models.ContainerPropertyIdentifier(
-                    type=models.TextProperty(list=False),
+                    type=models.Text(),
                 ),
-                "year": models.ContainerPropertyIdentifier(type=models.PrimitiveProperty("int32", list=False)),
+                "year": models.ContainerPropertyIdentifier(type=models.Primitive("int32")),
             },
         )
 

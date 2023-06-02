@@ -3,8 +3,6 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from typing import Dict, List, Literal, Union, get_args
 
-from cognite.client.data_classes.data_modeling.shared import load_reference
-
 __all__ = [
     "RawPropertyList",
     "ReferencePropertyValue",
@@ -161,7 +159,8 @@ def load_dsl_filter(data: dict) -> DSLFilter:
         elif key == "matchAll":
             parsed = load_dsl_filter(data)  # type: ignore[assignment]
         elif key == "hasData":
-            parsed = [load_reference(v) for v in data]  # type: ignore[misc]
+            raise NotImplementedError()
+            # parsed = [load_reference(v) for v in data]  # type: ignore[misc]
         else:
             raise NotImplementedError()
         dsl_filter[key] = parsed

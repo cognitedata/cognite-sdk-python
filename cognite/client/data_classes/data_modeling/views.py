@@ -11,17 +11,14 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
 from cognite.client.data_classes.data_modeling.filters import DSLFilter, dump_dsl_filter, load_dsl_filter
 from cognite.client.data_classes.data_modeling.shared import (
-    CDF_TYPE_SET,
-    DIRECT_TYPE,
-    PRIMITIVE_TYPE_SET,
-    TEXT_TYPE_SET,
     CDFExternalIdReference,
     ContainerReference,
     DataModeling,
     DirectNodeRelation,
     DirectRelationReference,
-    PrimitiveProperty,
-    TextProperty,
+    Primitive,
+    PropertyType,
+    Text,
     ViewReference,
 )
 from cognite.client.utils._text import (
@@ -164,7 +161,7 @@ class ViewCorePropertyDefinition:
     container: ContainerReference
     container_property_identifier: str
     source: ViewReference | None = None
-    type: TextProperty | PrimitiveProperty | CDFExternalIdReference | ViewDirectNodeRelation | None = None
+    type: Text | Primitive | CDFExternalIdReference | ViewDirectNodeRelation | None = None
     nullable: bool = True
     auto_increment: bool = False
     name: str | None = None
@@ -173,22 +170,11 @@ class ViewCorePropertyDefinition:
 
     @classmethod
     def load(cls, data: dict) -> ViewCorePropertyDefinition:
-        if type_ := data.get("type", {}).get("type"):
-            if type_ in PRIMITIVE_TYPE_SET:
-                data["type"] = PrimitiveProperty(**data["type"])
-            elif type_ in TEXT_TYPE_SET:
-                data["type"] = TextProperty(**data["type"])
-            elif type_ in CDF_TYPE_SET:
-                data["type"] = CDFExternalIdReference(**data["type"])
-            elif type_ in DIRECT_TYPE:
-                data["type"] = ViewDirectNodeRelation.load(data["type"])
-            else:
-                raise ValueError(
-                    f"Invalid {cls.__name__}.type {type_}. Must be {PRIMITIVE_TYPE_SET | TEXT_TYPE_SET | CDF_TYPE_SET | DIRECT_TYPE}"
-                )
+        if "type" in data:
+            data["type"] = PropertyType.load(data["type"], ViewDirectNodeRelation)
 
         if isinstance(data.get("container"), dict):
-            data["container"] = ContainerReference(**convert_all_keys_to_snake_case(data["container"]))
+            data["container"] = ContainerReference.load(data["container"])
         if isinstance(data.get("source"), dict):
             data["source"] = ViewReference.load(data["source"])
         return cls(**convert_all_keys_to_snake_case(data))
@@ -253,7 +239,7 @@ class ViewDirectNodeRelation(DirectNodeRelation):
     source: Optional[ViewReference] = None
 
     @classmethod
-    def load(cls, data: dict) -> ViewDirectNodeRelation:
+    def load(cls, data: dict, *_: Any, **__: Any) -> ViewDirectNodeRelation:
         if isinstance(data.get("source"), dict):
             data["source"] = ViewReference.load(data["source"])
         return cast(ViewDirectNodeRelation, super().load(data))
