@@ -39,7 +39,7 @@ class TestDataModelsAPI:
             name="View of create and delete data model",
             used_for="node",
             properties={
-                "name": models.ViewCorePropertyDefinition(
+                "name": models.MappedPropertyDefinition(
                     container=models.ContainerReference(
                         space=integration_test_space.space,
                         external_id="Person",

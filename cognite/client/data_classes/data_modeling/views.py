@@ -176,9 +176,9 @@ class ViewPropertyDefinition(ABC):
         return cls(**convert_all_keys_to_snake_case(data))
 
     @classmethod
-    def load(cls, data: dict) -> ViewCorePropertyDefinition | ConnectionDefinition:
+    def load(cls, data: dict) -> MappedPropertyDefinition | ConnectionDefinition:
         if "container" in data:
-            return ViewCorePropertyDefinition.load(data)
+            return MappedPropertyDefinition.load(data)
         elif "source" in data:
             return SingleHopConnectionDefinition.load(data)
 
@@ -190,7 +190,7 @@ class ViewPropertyDefinition(ABC):
 
 
 @dataclass
-class ViewCorePropertyDefinition(ViewPropertyDefinition):
+class MappedPropertyDefinition(ViewPropertyDefinition):
     container: ContainerReference
     container_property_identifier: str
     source: ViewReference | None = None
@@ -202,8 +202,8 @@ class ViewCorePropertyDefinition(ViewPropertyDefinition):
     description: str | None = None
 
     @classmethod
-    def load(cls, data: dict) -> ViewCorePropertyDefinition:
-        output = cast(ViewCorePropertyDefinition, super()._load(data))
+    def load(cls, data: dict) -> MappedPropertyDefinition:
+        output = cast(MappedPropertyDefinition, super()._load(data))
         if "type" in data:
             output.type = PropertyType.load(data["type"], ViewDirectNodeRelation)
         if isinstance(data.get("container"), dict):

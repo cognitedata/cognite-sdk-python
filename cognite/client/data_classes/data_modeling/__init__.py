@@ -41,9 +41,9 @@ from cognite.client.data_classes.data_modeling.shared import (
 from cognite.client.data_classes.data_modeling.spaces import Space, SpaceList
 from cognite.client.data_classes.data_modeling.views import (
     ConnectionDefinition,
+    MappedPropertyDefinition,
     SingleHopConnectionDefinition,
     View,
-    ViewCorePropertyDefinition,
     ViewFilter,
     ViewList,
     ViewPropertyDefinition,
@@ -74,7 +74,7 @@ __all__ = [
     "DataModelFilter",
     "ContainerFilter",
     "ViewFilter",
-    "ViewCorePropertyDefinition",
+    "MappedPropertyDefinition",
     "ConnectionDefinition",
     "SingleHopConnectionDefinition",
     "ViewPropertyDefinition",
