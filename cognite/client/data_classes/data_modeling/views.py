@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import json
+from abc import ABC
 from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Literal, Optional, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -11,18 +12,14 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
 from cognite.client.data_classes.data_modeling.filters import DSLFilter, dump_dsl_filter, load_dsl_filter
 from cognite.client.data_classes.data_modeling.shared import (
-    CDFExternalIdReference,
     ContainerReference,
     DataModeling,
     DirectNodeRelation,
     DirectRelationReference,
-    Primitive,
     PropertyType,
-    Text,
     ViewReference,
 )
 from cognite.client.utils._text import (
-    convert_all_keys_to_camel_case,
     convert_all_keys_to_camel_case_recursive,
     convert_all_keys_to_snake_case,
 )
@@ -87,11 +84,9 @@ class View(DataModeling):
     def _load(cls, resource: dict | str, cognite_client: CogniteClient = None) -> View:
         data = json.loads(resource) if isinstance(resource, str) else resource
         if "properties" in data:
-            data["properties"] = {k: load_view_property_definition(v) for k, v in data["properties"].items()} or None
+            data["properties"] = {k: ViewPropertyDefinition.load(v) for k, v in data["properties"].items()} or None
         if "implements" in data:
-            data["implements"] = [
-                ViewReference(**convert_all_keys_to_snake_case(v)) for v in data["implements"]
-            ] or None
+            data["implements"] = [ViewReference.load(v) for v in data["implements"]] or None
         if "filter" in data:
             data["filter"] = load_dsl_filter(data["filter"])
 
@@ -102,7 +97,7 @@ class View(DataModeling):
 
         if "implements" in output:
             output["implements"] = [
-                convert_all_keys_to_camel_case(asdict(v)) if camel_case else asdict(v) for v in output["implements"]
+                v.dump(camel_case, exclude_not_supported_by_apply_endpoint) for v in output["implements"]
             ]
         if "filter" in output:
             output["filter"] = dump_dsl_filter(output["filter"])
@@ -157,11 +152,49 @@ class ViewFilter(CogniteFilter):
 
 
 @dataclass
-class ViewCorePropertyDefinition:
+class ViewDirectNodeRelation(DirectNodeRelation):
+    source: Optional[ViewReference] = None
+
+    @classmethod
+    def load(cls, data: dict, *_: Any, **__: Any) -> ViewDirectNodeRelation:
+        if isinstance(data.get("source"), dict):
+            data["source"] = ViewReference.load(data["source"])
+        return cast(ViewDirectNodeRelation, super().load(data))
+
+    def dump(self, camel_case: bool = False, *_: Any, **__: Any) -> dict[str, str | dict]:
+        output = super().dump(camel_case)
+
+        if "source" in output and self.source:
+            output["source"] = self.source.dump(camel_case)
+        return output
+
+
+@dataclass
+class ViewPropertyDefinition(ABC):
+    @classmethod
+    def _load(cls, data: dict) -> ViewPropertyDefinition:
+        return cls(**convert_all_keys_to_snake_case(data))
+
+    @classmethod
+    def load(cls, data: dict) -> ViewCorePropertyDefinition | ConnectionDefinition:
+        if "container" in data:
+            return ViewCorePropertyDefinition.load(data)
+        elif "source" in data:
+            return SingleHopConnectionDefinition.load(data)
+
+        raise ValueError(f"Unknown type of ViewPropertyDefinition: {data.get('type')}")
+
+    def dump(self, camel_case: bool = False, exclude_not_supported_by_apply_endpoint: bool = True) -> dict:
+        output = asdict(self)
+        return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
+
+
+@dataclass
+class ViewCorePropertyDefinition(ViewPropertyDefinition):
     container: ContainerReference
     container_property_identifier: str
     source: ViewReference | None = None
-    type: Text | Primitive | CDFExternalIdReference | ViewDirectNodeRelation | None = None
+    type: PropertyType | None = None
     nullable: bool = True
     auto_increment: bool = False
     name: str | None = None
@@ -170,14 +203,14 @@ class ViewCorePropertyDefinition:
 
     @classmethod
     def load(cls, data: dict) -> ViewCorePropertyDefinition:
+        output = cast(ViewCorePropertyDefinition, super()._load(data))
         if "type" in data:
-            data["type"] = PropertyType.load(data["type"], ViewDirectNodeRelation)
-
+            output.type = PropertyType.load(data["type"], ViewDirectNodeRelation)
         if isinstance(data.get("container"), dict):
-            data["container"] = ContainerReference.load(data["container"])
+            output.container = ContainerReference.load(data["container"])
         if isinstance(data.get("source"), dict):
-            data["source"] = ViewReference.load(data["source"])
-        return cls(**convert_all_keys_to_snake_case(data))
+            output.source = ViewReference.load(data["source"])
+        return output
 
     def dump(self, camel_case: bool = False, exclude_not_supported_by_apply_endpoint: bool = True) -> dict:
         output = asdict(self)
@@ -185,13 +218,23 @@ class ViewCorePropertyDefinition:
             for field in ["type", "nullable", "auto_increment", "default_value"]:
                 output.pop(field, None)
 
+        if self.container:
+            output["container"] = self.container.dump(camel_case)
+
+        if self.source:
+            output["source"] = self.source.dump(camel_case)
+
+        if self.type:
+            output["type"] = self.type.dump(camel_case)
+
         if camel_case:
             output = convert_all_keys_to_camel_case_recursive(output)
+
         return output
 
 
 @dataclass
-class ConnectionDefinition:
+class ConnectionDefinition(ViewPropertyDefinition):
     ...
 
 
@@ -206,40 +249,25 @@ class SingleHopConnectionDefinition(ConnectionDefinition):
 
     @classmethod
     def load(cls, data: dict) -> SingleHopConnectionDefinition:
-        for field_name, Field in [
-            ("type", DirectRelationReference),
-            ("source", ViewReference),
-            ("edgeSource", ViewReference),
-            ("edge_source", ViewReference),
-        ]:
-            if isinstance(data.get(field_name), dict):
-                data[field_name] = Field(**convert_all_keys_to_snake_case(data[field_name]))
-        return cls(**convert_all_keys_to_snake_case(data))
+        output = cast(SingleHopConnectionDefinition, super()._load(data))
+        if "type" in data:
+            output.type = DirectRelationReference.load(data["type"])
+        if "source" in data:
+            output.source = ViewReference.load(data["source"])
+        if "edgeSource" in data or "edge_source" in data:
+            output.edge_source = ViewReference.load(data.get("edgeSource", data.get("edge_source")))
+        return output
 
     def dump(self, camel_case: bool = False, *_: Any, **__: Any) -> dict:
         output = asdict(self)
 
+        if self.type:
+            output["type"] = self.type.dump(camel_case)
+
+        if self.source:
+            output["source"] = self.source.dump(camel_case)
+
+        if self.edge_source:
+            output["edgeSource"] = self.edge_source.dump(camel_case)
+
         return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
-
-
-ViewPropertyDefinition = Union[ViewCorePropertyDefinition, ConnectionDefinition]
-
-
-def load_view_property_definition(data: dict[str, Any]) -> ViewPropertyDefinition:
-    if "container" in data:
-        return ViewCorePropertyDefinition.load(data)
-    elif "source" in data:
-        return SingleHopConnectionDefinition.load(data)
-
-    raise ValueError(f"Unknown type of ViewPropertyDefinition: {data.get('type')}")
-
-
-@dataclass
-class ViewDirectNodeRelation(DirectNodeRelation):
-    source: Optional[ViewReference] = None
-
-    @classmethod
-    def load(cls, data: dict, *_: Any, **__: Any) -> ViewDirectNodeRelation:
-        if isinstance(data.get("source"), dict):
-            data["source"] = ViewReference.load(data["source"])
-        return cast(ViewDirectNodeRelation, super().load(data))

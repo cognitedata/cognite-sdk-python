@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import json
+from abc import ABC
 from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Literal, Optional, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -18,6 +19,7 @@ from cognite.client.data_classes.data_modeling.shared import (
     PropertyType,
     Text,
 )
+from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive, convert_all_keys_to_snake_case
 
 if TYPE_CHECKING:
@@ -76,7 +78,7 @@ class Container(DataModeling):
         if "properties" in data:
             data["properties"] = {k: ContainerPropertyIdentifier.load(v) for k, v in data["properties"].items()} or None
         if "constraints" in data:
-            data["constraints"] = {k: load_constraint_identifier(v) for k, v in data["constraints"].items()} or None
+            data["constraints"] = {k: ConstraintIdentifier.load(v) for k, v in data["constraints"].items()} or None
         if "indexes" in data:
             data["indexes"] = {k: IndexIdentifier.load(v) for k, v in data["indexes"].items()} or None
 
@@ -87,10 +89,7 @@ class Container(DataModeling):
         for field in ["properties", "constraints", "indexes"]:
             if field not in output:
                 continue
-            output[field] = {
-                k: convert_all_keys_to_camel_case_recursive(asdict(v)) if camel_case else asdict(v)
-                for k, v in output[field].items()
-            }
+            output[field] = {k: v.dump(camel_case) for k, v in output[field].items()}
 
         if exclude_not_supported_by_apply_endpoint:
             for exclude in [
@@ -132,6 +131,12 @@ class ContainerDirectNodeRelation(DirectNodeRelation):
             output["container"]["type"] = "container"
         return output
 
+    @classmethod
+    def load(cls, data: dict, *_: Any, **__: Any) -> ContainerDirectNodeRelation:
+        if isinstance(data.get("container"), dict):
+            data["container"] = ContainerReference.load(data["container"])
+        return cast(ContainerDirectNodeRelation, super().load(data))
+
 
 @dataclass
 class ContainerPropertyIdentifier:
@@ -149,43 +154,80 @@ class ContainerPropertyIdentifier:
         data["type"] = PropertyType.load(data["type"], ContainerDirectNodeRelation)
         return cls(**convert_all_keys_to_snake_case(data))
 
+    def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
+        output = asdict(self)
+        if "type" in output and isinstance(output["type"], dict):
+            output["type"] = self.type.dump(camel_case)
+        return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
+
 
 @dataclass
-class RequiresConstraintDefinition:
-    space: str
-    external_id: str
-    constraint_type: Literal["requires"] = "requires"
+class ConstraintIdentifier(ABC):
+    @classmethod
+    def _load(cls, data: dict) -> ConstraintIdentifier:
+        return cls(**convert_all_keys_to_snake_case(data))
+
+    @classmethod
+    def load(cls, data: dict) -> RequiresConstraintDefinition | UniquenessConstraintDefinition:
+        if data["constraintType"] == "requires":
+            return RequiresConstraintDefinition.load(data)
+        elif data["constraintType"] == "uniqueness":
+            return UniquenessConstraintDefinition.load(data)
+        raise ValueError(f"Invalid constraint type {data['constraintType']}")
+
+    def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
+        output = asdict(self)
+        return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
 
 
 @dataclass
-class UniquenessConstraintDefinition:
-    properties: ContainerPropertyIdentifier
-    constraint_type: Literal["uniqueness"] = "uniqueness"
+class RequiresConstraintDefinition(ConstraintIdentifier):
+    require: ContainerReference
+
+    @classmethod
+    def load(cls, data: dict) -> RequiresConstraintDefinition:
+        output = cast(
+            RequiresConstraintDefinition, super()._load(rename_and_exclude_keys(data, exclude={"constraintType"}))
+        )
+        if "require" in data:
+            output.require = ContainerReference.load(data["require"])
+        return output
+
+    def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
+        output = super().dump(camel_case)
+        if "require" in output and isinstance(output["require"], dict):
+            output["require"] = self.require.dump(camel_case)
+        key = "constraintType" if camel_case else "constraint_type"
+        output[key] = "requires"
+        return output
+
+
+@dataclass
+class UniquenessConstraintDefinition(ConstraintIdentifier):
+    properties: list[str]
+
+    @classmethod
+    def load(cls, data: dict) -> UniquenessConstraintDefinition:
+        return cast(
+            UniquenessConstraintDefinition, super()._load(rename_and_exclude_keys(data, exclude={"constraintType"}))
+        )
+
+    def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
+        output = super().dump()
+        key = "constraintType" if camel_case else "constraint_type"
+        output[key] = "uniqueness"
+        return output
 
 
 @dataclass
 class IndexIdentifier:
-    properties: ContainerPropertyIdentifier
+    properties: list[str]
     index_type: Literal["btree"] | str = "btree"
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> IndexIdentifier:
-        if "properties" not in data:
-            raise ValueError(f"{cls.__name__} requires properties.")
-        data["properties"] = ContainerPropertyIdentifier.load(data["properties"])
         return cls(**convert_all_keys_to_snake_case(data))
 
-
-ConstraintIdentifier = Union[IndexIdentifier, UniquenessConstraintDefinition]
-
-
-def load_constraint_identifier(data: dict[str, Any]) -> ConstraintIdentifier:
-    if "properties" not in data:
-        raise ValueError("ConstraintIdentifier requires properties.")
-    data["properties"] = ContainerPropertyIdentifier.load(data["properties"])
-    if "indexType" in data:
-        return IndexIdentifier(**convert_all_keys_to_snake_case(data))
-    elif "constraintType" in data:
-        return UniquenessConstraintDefinition(**convert_all_keys_to_snake_case(data))
-
-    raise ValueError("Invalid ConstraintIdentifier, needs to specify indexType or constraintType")
+    def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
+        output = asdict(self)
+        return convert_all_keys_to_camel_case_recursive(output) if camel_case else output

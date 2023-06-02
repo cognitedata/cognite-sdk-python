@@ -9,7 +9,6 @@ from cognite.client.data_classes.data_modeling.containers import (
     IndexIdentifier,
     RequiresConstraintDefinition,
     UniquenessConstraintDefinition,
-    load_constraint_identifier,
 )
 from cognite.client.data_classes.data_modeling.data_models import (
     DataModel,
@@ -48,7 +47,6 @@ from cognite.client.data_classes.data_modeling.views import (
     ViewFilter,
     ViewList,
     ViewPropertyDefinition,
-    load_view_property_definition,
 )
 
 __all__ = [
@@ -75,13 +73,11 @@ __all__ = [
     "DataModelsSort",
     "DataModelFilter",
     "ContainerFilter",
-    "load_constraint_identifier",
     "ViewFilter",
     "ViewCorePropertyDefinition",
     "ConnectionDefinition",
     "SingleHopConnectionDefinition",
     "ViewPropertyDefinition",
-    "load_view_property_definition",
     "Space",
     "SpaceList",
     "View",

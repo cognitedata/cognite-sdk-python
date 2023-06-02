@@ -184,8 +184,6 @@ class CDFExternalIdReference(PropertyType):
 class DirectNodeRelation(PropertyType):
     @classmethod
     def load(cls, data: dict, *_: Any, **__: Any) -> DirectNodeRelation:
-        if isinstance(data.get("container"), dict):
-            data["container"] = ContainerReference.load(data["container"])
         return cast(
             DirectNodeRelation, cls._load(rename_and_exclude_keys(data, aliases=_PROPERTY_ALIAS, exclude={"type"}))
         )

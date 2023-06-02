@@ -8,6 +8,7 @@ from cognite.client.data_classes.data_modeling.shared import (
     Reference,
     ViewReference,
 )
+from cognite.client.data_classes.data_modeling.views import ViewDirectNodeRelation
 
 
 class TestDirectRelationReference:
@@ -53,6 +54,13 @@ class TestPropertyType:
             (
                 {"type": "direct", "container": {"space": "mySpace", "externalId": "myId", "type": "container"}},
                 ContainerDirectNodeRelation,
+            ),
+            (
+                {
+                    "type": "direct",
+                    "source": {"space": "mySpace", "externalId": "myId", "version": "myVersion", "type": "view"},
+                },
+                ViewDirectNodeRelation,
             ),
         ],
     )
