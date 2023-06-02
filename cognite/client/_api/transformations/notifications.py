@@ -12,7 +12,6 @@ from cognite.client.utils._identifier import IdentifierSequence
 
 class TransformationNotificationsAPI(APIClient):
     _RESOURCE_PATH = "/transformations/notifications"
-    _LIST_CLASS = TransformationNotificationList
 
     def create(
         self, notification: Union[TransformationNotification, Sequence[TransformationNotification]]

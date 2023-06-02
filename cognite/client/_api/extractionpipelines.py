@@ -219,7 +219,6 @@ class ExtractionPipelinesAPI(APIClient):
 
 class ExtractionPipelineRunsAPI(APIClient):
     _RESOURCE_PATH = "/extpipes/runs"
-    _LIST_CLASS = ExtractionPipelineRunList
 
     def list(
         self,
@@ -317,7 +316,6 @@ class ExtractionPipelineRunsAPI(APIClient):
 
 class ExtractionPipelineConfigsAPI(APIClient):
     _RESOURCE_PATH = "/extpipes/config"
-    _LIST_CLASS = ExtractionPipelineConfigRevisionList
 
     def retrieve(
         self, external_id: str, revision: Optional[int] = None, active_at_time: Optional[int] = None

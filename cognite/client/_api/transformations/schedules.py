@@ -16,7 +16,6 @@ if TYPE_CHECKING:
 
 class TransformationSchedulesAPI(APIClient):
     _RESOURCE_PATH = "/transformations/schedules"
-    _LIST_CLASS = TransformationScheduleList
 
     def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
