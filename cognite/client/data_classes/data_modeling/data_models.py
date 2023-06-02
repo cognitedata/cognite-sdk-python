@@ -9,7 +9,7 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
 from cognite.client.data_classes.data_modeling.shared import DataModeling, ViewReference
-from cognite.client.data_classes.data_modeling.views import View
+from cognite.client.data_classes.data_modeling.views import ViewApply
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -37,7 +37,7 @@ class DataModel(DataModeling):
         description: str = None,
         name: str = None,
         version: str = None,
-        views: list[ViewReference | View] = None,
+        views: list[ViewReference | ViewApply] = None,
         is_global: bool = False,
         last_updated_time: int = None,
         created_time: int = None,
@@ -56,11 +56,11 @@ class DataModel(DataModeling):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load_view(cls, view_data: dict, cognite_client: CogniteClient = None) -> ViewReference | View:
+    def _load_view(cls, view_data: dict, cognite_client: CogniteClient = None) -> ViewReference | ViewApply:
         if "type" in view_data:
             return ViewReference.load(view_data)
         else:
-            return View._load(view_data, cognite_client)
+            return ViewApply._load(view_data, cognite_client)
 
     @classmethod
     def _load(cls, resource: dict | str, cognite_client: CogniteClient = None) -> DataModel:
@@ -74,7 +74,7 @@ class DataModel(DataModeling):
         output = super().dump(camel_case)
 
         if "views" in output:
-            output["views"] = [v.dump(camel_case, exclude_not_supported_by_apply_endpoint) for v in output["views"]]
+            output["views"] = [v.dump(camel_case) for v in output["views"]]
 
         if exclude_not_supported_by_apply_endpoint:
             for exclude in [

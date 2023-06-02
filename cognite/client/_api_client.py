@@ -587,7 +587,7 @@ class APIClient:
     @overload
     def _create_multiple(
         self,
-        items: Union[Sequence[T_CogniteResource], Sequence[Dict[str, Any]]],
+        items: Union[Sequence[CogniteResource], Sequence[Dict[str, Any]]],
         list_cls: Type[T_CogniteResourceList],
         resource_cls: Type[T_CogniteResource],
         resource_path: Optional[str] = None,
@@ -601,7 +601,7 @@ class APIClient:
     @overload
     def _create_multiple(
         self,
-        items: Union[T_CogniteResource, Dict[str, Any]],
+        items: Union[CogniteResource, Dict[str, Any]],
         list_cls: Type[T_CogniteResourceList],
         resource_cls: Type[T_CogniteResource],
         resource_path: Optional[str] = None,
@@ -614,7 +614,7 @@ class APIClient:
 
     def _create_multiple(
         self,
-        items: Union[Sequence[T_CogniteResource], Sequence[Dict[str, Any]], T_CogniteResource, Dict[str, Any]],
+        items: Union[Sequence[CogniteResource], Sequence[Dict[str, Any]], CogniteResource, Dict[str, Any]],
         list_cls: Type[T_CogniteResourceList],
         resource_cls: Type[T_CogniteResource],
         resource_path: Optional[str] = None,

@@ -5,7 +5,7 @@ from typing import Iterator, Sequence, cast, overload
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DATA_MODELING_LIST_LIMIT_DEFAULT
 from cognite.client.data_classes.data_modeling.ids import VersionedDataModelingId, ViewId, load_identifier
-from cognite.client.data_classes.data_modeling.views import View, ViewFilter, ViewList
+from cognite.client.data_classes.data_modeling.views import View, ViewApply, ViewFilter, ViewList
 
 
 class ViewsAPI(APIClient):
@@ -183,18 +183,18 @@ class ViewsAPI(APIClient):
         )
 
     @overload
-    def apply(self, view: Sequence[View]) -> ViewList:
+    def apply(self, view: Sequence[ViewApply]) -> ViewList:
         ...
 
     @overload
-    def apply(self, view: View) -> View:
+    def apply(self, view: ViewApply) -> View:
         ...
 
-    def apply(self, view: View | Sequence[View]) -> View | ViewList:
+    def apply(self, view: ViewApply | Sequence[ViewApply]) -> View | ViewList:
         """`Create or update (upsert) one or more views. <https://docs.cognite.com/api/v1/#tag/Views/operation/ApplyViews>`_
 
         Args:
-            view (view: View | Sequence[View]): View or views of views to create or update.
+            view (view: ViewApply | Sequence[ViewApply]): View or views of views to create or update.
 
         Returns:
             View | ViewList: Created view(s)

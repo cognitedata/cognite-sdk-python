@@ -41,9 +41,12 @@ from cognite.client.data_classes.data_modeling.shared import (
 from cognite.client.data_classes.data_modeling.spaces import Space, SpaceList
 from cognite.client.data_classes.data_modeling.views import (
     ConnectionDefinition,
+    MappedApplyPropertyDefinition,
     MappedPropertyDefinition,
     SingleHopConnectionDefinition,
     View,
+    ViewApply,
+    ViewApplyList,
     ViewFilter,
     ViewList,
     ViewPropertyDefinition,
@@ -51,6 +54,9 @@ from cognite.client.data_classes.data_modeling.views import (
 
 __all__ = [
     "ViewId",
+    "ViewApply",
+    "ViewApplyList",
+    "MappedApplyPropertyDefinition",
     "VersionedDataModelingId",
     "DataModelingId",
     "ContainerId",

@@ -12,8 +12,10 @@ class TestViewPropertyDefinition:
                 "container": {"space": "mySpace", "externalId": "myExternalId", "type": "container"},
                 "containerPropertyIdentifier": "name",
                 "description": None,
-                "source": None,
                 "name": "fullName",
+                "nullable": False,
+                "autoIncrement": False,
+                "defaultValue": None,
             },
             {
                 "type": {"space": "mySpace", "externalId": "myExternalId"},

@@ -31,15 +31,14 @@ class TestDataModelsAPI:
 
     def test_apply_retrieve_and_delete(self, cognite_client: CogniteClient, integration_test_space: models.Space):
         # Arrange
-        new_view = models.View(
+        new_view = models.ViewApply(
             space=integration_test_space.space,
             external_id="IntegrationTestViewDataModel",
             description="Integration test, should not persist",
             version="v1",
             name="View of create and delete data model",
-            used_for="node",
             properties={
-                "name": models.MappedPropertyDefinition(
+                "name": models.MappedApplyPropertyDefinition(
                     container=models.ContainerReference(
                         space=integration_test_space.space,
                         external_id="Person",
