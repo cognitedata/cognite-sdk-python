@@ -135,4 +135,4 @@ class TestDataModelsAPI:
         )
 
         # Assert
-        assert all(isinstance(v, models.View) for m in data_models for v in m.views)
+        assert all(isinstance(v, models.ViewApply) for m in data_models for v in m.views)

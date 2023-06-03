@@ -31,7 +31,7 @@ class TestContainersAPI:
 
     def test_apply_retrieve_and_delete(self, cognite_client: CogniteClient, integration_test_space: models.Space):
         # Arrange
-        new_container = models.Container(
+        new_container = models.ContainerApply(
             space=integration_test_space.space,
             external_id="IntegrationTestContainer",
             description="Integration test, should not persist",

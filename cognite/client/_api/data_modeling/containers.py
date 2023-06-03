@@ -4,7 +4,12 @@ from typing import Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DATA_MODELING_LIST_LIMIT_DEFAULT
-from cognite.client.data_classes.data_modeling.containers import Container, ContainerFilter, ContainerList
+from cognite.client.data_classes.data_modeling.containers import (
+    Container,
+    ContainerApply,
+    ContainerFilter,
+    ContainerList,
+)
 from cognite.client.data_classes.data_modeling.ids import ContainerId, DataModelingId, load_identifier
 
 
@@ -172,18 +177,18 @@ class ContainersAPI(APIClient):
         )
 
     @overload
-    def apply(self, container: Sequence[Container]) -> ContainerList:
+    def apply(self, container: Sequence[ContainerApply]) -> ContainerList:
         ...
 
     @overload
-    def apply(self, container: Container) -> Container:
+    def apply(self, container: ContainerApply) -> Container:
         ...
 
-    def apply(self, container: Container | Sequence[Container]) -> Container | ContainerList:
+    def apply(self, container: ContainerApply | Sequence[ContainerApply]) -> Container | ContainerList:
         """`Add or update (upsert) containers. <https://docs.cognite.com/api/v1/#tag/Containers/operation/ApplyContainers>`_
 
         Args:
-            container (container: Container | Sequence[Container]): Container or containers of containers to create or update.
+            container (container: ContainerApply | Sequence[ContainerApply]): Container or containers of containers to create or update.
 
         Returns:
             Container | ContainerList: Created container(s)

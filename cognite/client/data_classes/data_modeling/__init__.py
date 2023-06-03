@@ -2,6 +2,8 @@ from cognite.client.data_classes.data_modeling import filters
 from cognite.client.data_classes.data_modeling.containers import (
     ConstraintIdentifier,
     Container,
+    ContainerApply,
+    ContainerApplyList,
     ContainerDirectNodeRelation,
     ContainerFilter,
     ContainerList,
@@ -90,6 +92,8 @@ __all__ = [
     "ViewList",
     "Container",
     "ContainerList",
+    "ContainerApply",
+    "ContainerApplyList",
     "IndexIdentifier",
     "ConstraintIdentifier",
     "ContainerPropertyIdentifier",

@@ -26,8 +26,99 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class Container(DataModeling):
-    """Represent the physical storage of data.
+class ContainerCore(DataModeling):
+    """Represent the physical storage of data. This is the base class for the read and write version.
+
+    Args:
+        space (str): The workspace for the view.a unique identifier for the space.
+        external_id (str): Combined with the space is the unique identifier of the view.
+        description (str): Textual description of the view
+        name (str): Human readable name for the view.
+        used_for (Literal['node', 'edge', 'all']): Should this operation apply to nodes, edges or both.
+        properties (dict[str, ContainerPropertyIdentifier]): We index the property by a local unique identifier.
+        constraints (dict[str, ConstraintIdentifier]): Set of constraints to apply to the container
+        indexes (dict[str, IndexIdentifier]): Set of indexes to apply to the container.
+    """
+
+    def __init__(
+        self,
+        space: str = None,
+        external_id: str = None,
+        description: str = None,
+        name: str = None,
+        used_for: Literal["node", "edge", "all"] = None,
+        properties: dict[str, ContainerPropertyIdentifier] = None,
+        constraints: dict[str, ConstraintIdentifier] = None,
+        indexes: dict[str, IndexIdentifier] = None,
+        cognite_client: CogniteClient = None,
+    ):
+        validate_data_modeling_identifier(space, external_id)
+        self.space = space
+        self.external_id = external_id
+        self.description = description
+        self.name = name
+        self.used_for = used_for
+        self.properties = properties
+        self.constraints = constraints
+        self.indexes = indexes
+        self._cognite_client = cast("CogniteClient", cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient = None) -> ContainerCore:
+        data = json.loads(resource) if isinstance(resource, str) else resource
+        if "constraints" in data:
+            data["constraints"] = {k: ConstraintIdentifier.load(v) for k, v in data["constraints"].items()} or None
+        if "indexes" in data:
+            data["indexes"] = {k: IndexIdentifier.load(v) for k, v in data["indexes"].items()} or None
+        if "properties" in data:
+            data["properties"] = {k: ContainerPropertyIdentifier.load(v) for k, v in data["properties"].items()} or None
+        return cast(ContainerCore, super()._load(data, cognite_client))
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        if self.constraints:
+            output["constraints"] = {k: v.dump(camel_case) for k, v in self.constraints.items()}
+        if self.indexes:
+            output["indexes"] = {k: v.dump(camel_case) for k, v in self.indexes.items()}
+        if self.properties:
+            output["properties"] = {k: v.dump(camel_case) for k, v in self.properties.items()}
+
+        return output
+
+
+class ContainerApply(ContainerCore):
+    """Represent the physical storage of data. This is the write format of the container
+
+    Args:
+        space (str): The workspace for the view.a unique identifier for the space.
+        external_id (str): Combined with the space is the unique identifier of the view.
+        description (str): Textual description of the view
+        name (str): Human readable name for the view.
+        used_for (Literal['node', 'edge', 'all']): Should this operation apply to nodes, edges or both.
+        properties (dict[str, ContainerPropertyIdentifier]): We index the property by a local unique identifier.
+        constraints (dict[str, ConstraintIdentifier]): Set of constraints to apply to the container
+        indexes (dict[str, IndexIdentifier]): Set of indexes to apply to the container.
+    """
+
+    def __init__(
+        self,
+        space: str = None,
+        external_id: str = None,
+        description: str = None,
+        name: str = None,
+        used_for: Literal["node", "edge", "all"] = None,
+        properties: dict[str, ContainerPropertyIdentifier] = None,
+        constraints: dict[str, ConstraintIdentifier] = None,
+        indexes: dict[str, IndexIdentifier] = None,
+        cognite_client: CogniteClient = None,
+    ):
+        super().__init__(
+            space, external_id, description, name, used_for, properties, constraints, indexes, cognite_client
+        )
+
+
+class Container(ContainerCore):
+    """Represent the physical storage of data. This is the read format of the container
 
     Args:
         space (str): The workspace for the view.a unique identifier for the space.
@@ -58,54 +149,41 @@ class Container(DataModeling):
         created_time: int = None,
         cognite_client: CogniteClient = None,
     ):
-        validate_data_modeling_identifier(space, external_id)
-        self.space = space
-        self.external_id = external_id
-        self.description = description
-        self.name = name
-        self.used_for = used_for
+        super().__init__(
+            space, external_id, description, name, used_for, properties, constraints, indexes, cognite_client
+        )
         self.is_global = is_global
-        self.properties = properties
-        self.constraints = constraints
-        self.indexes = indexes
         self.last_updated_time = last_updated_time
         self.created_time = created_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
 
-    @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient = None) -> Container:
-        data = json.loads(resource) if isinstance(resource, str) else resource
-        if "properties" in data:
-            data["properties"] = {k: ContainerPropertyIdentifier.load(v) for k, v in data["properties"].items()} or None
-        if "constraints" in data:
-            data["constraints"] = {k: ConstraintIdentifier.load(v) for k, v in data["constraints"].items()} or None
-        if "indexes" in data:
-            data["indexes"] = {k: IndexIdentifier.load(v) for k, v in data["indexes"].items()} or None
-
-        return cast(Container, super()._load(data, cognite_client))
-
-    def dump(self, camel_case: bool = False, exclude_not_supported_by_apply_endpoint: bool = True) -> dict[str, Any]:
-        output = super().dump(camel_case)
-        for field in ["properties", "constraints", "indexes"]:
-            if field not in output:
-                continue
-            output[field] = {k: v.dump(camel_case) for k, v in output[field].items()}
-
-        if exclude_not_supported_by_apply_endpoint:
-            for exclude in [
-                "isGlobal",
-                "lastUpdatedTime",
-                "createdTime",
-                "is_global",
-                "last_updated_time",
-                "created_time",
-            ]:
-                output.pop(exclude, None)
-        return output
+    def to_container_apply(self) -> ContainerApply:
+        return ContainerApply(
+            space=self.space,
+            external_id=self.external_id,
+            description=self.description,
+            name=self.name,
+            used_for=self.used_for,
+            properties=self.properties,
+            constraints=self.constraints,
+            indexes=self.indexes,
+            cognite_client=self._cognite_client,
+        )
 
 
 class ContainerList(CogniteResourceList):
     _RESOURCE = Container
+
+
+class ContainerApplyList(CogniteResourceList):
+    _RESOURCE = ContainerApply
+
+    def to_container_apply(self) -> ContainerApplyList:
+        """Convert to a container an apply list.
+
+        Returns:
+            ContainerApplyList: The container apply list.
+        """
+        return ContainerApplyList(resources=[v.to_container_apply() for v in self.items])
 
 
 class ContainerFilter(CogniteFilter):
