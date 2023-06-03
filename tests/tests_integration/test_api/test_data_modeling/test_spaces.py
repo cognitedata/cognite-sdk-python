@@ -32,7 +32,7 @@ class TestSpacesAPI:
 
     def test_create_retrieve_and_delete(self, cognite_client: CogniteClient):
         # Arrange
-        my_space = models.Space(
+        my_space = models.SpaceApply(
             space="myNewSpace", name="My New Space", description="This is part of the integration testing for the SDK."
         )
 
@@ -42,9 +42,7 @@ class TestSpacesAPI:
 
         # Assert
         assert retrieved_space.dump() == created_space.dump()
-        expected = retrieved_space.dump()
-        expected.pop("created_time")
-        expected.pop("last_updated_time")
+        expected = retrieved_space.to_space_apply().dump()
         assert my_space.dump() == expected
 
         # Act
@@ -55,7 +53,7 @@ class TestSpacesAPI:
         assert cognite_client.data_modeling.spaces.retrieve(space=my_space.space) is None
 
     def test_retrieve_multiple(self, cognite_client: CogniteClient, cdf_spaces: models.SpaceList):
-        retrieved_spaces = cognite_client.data_modeling.spaces.retrieve_multiple([s.space for s in cdf_spaces])
+        retrieved_spaces = cognite_client.data_modeling.spaces.retrieve([s.space for s in cdf_spaces])
 
         assert _dump(retrieved_spaces) == _dump(cdf_spaces)
 

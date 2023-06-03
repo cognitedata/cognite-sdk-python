@@ -42,7 +42,7 @@ from cognite.client.data_classes.data_modeling.shared import (
     TextType,
     ViewReference,
 )
-from cognite.client.data_classes.data_modeling.spaces import Space, SpaceList
+from cognite.client.data_classes.data_modeling.spaces import Space, SpaceApply, SpaceApplyList, SpaceList
 from cognite.client.data_classes.data_modeling.views import (
     ConnectionDefinition,
     MappedApplyPropertyDefinition,
@@ -91,6 +91,8 @@ __all__ = [
     "ViewPropertyDefinition",
     "Space",
     "SpaceList",
+    "SpaceApply",
+    "SpaceApplyList",
     "View",
     "ViewList",
     "Container",
