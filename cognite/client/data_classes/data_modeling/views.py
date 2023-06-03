@@ -10,7 +10,7 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
 )
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
-from cognite.client.data_classes.data_modeling.filters import DSLFilter, dump_dsl_filter, load_dsl_filter
+from cognite.client.data_classes.data_modeling.filters import Filter
 from cognite.client.data_classes.data_modeling.shared import (
     ContainerReference,
     DataModeling,
@@ -35,7 +35,7 @@ class ViewCore(DataModeling):
         external_id: str = None,
         description: str = None,
         name: str = None,
-        filter: DSLFilter | None = None,
+        filter: Filter | None = None,
         implements: list[ViewReference] = None,
         version: str = None,
         cognite_client: CogniteClient = None,
@@ -56,17 +56,17 @@ class ViewCore(DataModeling):
         if "implements" in data:
             data["implements"] = [ViewReference.load(v) for v in data["implements"]] or None
         if "filter" in data:
-            data["filter"] = load_dsl_filter(data["filter"])
+            data["filter"] = Filter.load(data["filter"])
 
         return cast(ViewCore, super()._load(data, cognite_client))
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)
 
-        if "implements" in output:
-            output["implements"] = [v.dump(camel_case) for v in output["implements"]]
-        if "filter" in output:
-            output["filter"] = dump_dsl_filter(output["filter"])
+        if self.implements:
+            output["implements"] = [v.dump(camel_case) for v in self.implements]
+        if self.filter:
+            output["filter"] = self.filter.dump()
 
         return output
 
@@ -90,7 +90,7 @@ class ViewApply(ViewCore):
         external_id: str = None,
         description: str = None,
         name: str = None,
-        filter: DSLFilter | None = None,
+        filter: Filter | None = None,
         implements: list[ViewReference] = None,
         version: str = None,
         properties: dict[str, MappedApplyPropertyDefinition | ConnectionDefinition] = None,
@@ -140,7 +140,7 @@ class View(ViewCore):
         external_id: str = None,
         description: str = None,
         name: str = None,
-        filter: DSLFilter | None = None,
+        filter: Filter | None = None,
         implements: list[ViewReference] = None,
         version: str = None,
         writable: bool = False,

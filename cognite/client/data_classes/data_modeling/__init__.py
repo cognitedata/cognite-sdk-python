@@ -20,7 +20,7 @@ from cognite.client.data_classes.data_modeling.data_models import (
     DataModelList,
     DataModelsSort,
 )
-from cognite.client.data_classes.data_modeling.filters import dump_dsl_filter, load_dsl_filter
+from cognite.client.data_classes.data_modeling.filters import Filter
 from cognite.client.data_classes.data_modeling.ids import (
     ContainerId,
     DataModelId,
@@ -67,8 +67,7 @@ __all__ = [
     "DataModelId",
     "filters",
     "DirectNodeRelation",
-    "load_dsl_filter",
-    "dump_dsl_filter",
+    "Filter",
     "Reference",
     "DirectRelationReference",
     "PrimitiveType",
