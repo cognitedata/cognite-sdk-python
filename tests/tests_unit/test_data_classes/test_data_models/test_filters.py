@@ -9,7 +9,7 @@ def load_and_dump_equals_data():
         {
             "and": [
                 {"in": {"property": ["tag"], "values": ["1001_1", "1001_1"]}},
-                {"range": {"property": ["weight"], "gte": 0}},
+                {"range": {"property": ["weight"], "gte": 0, "lt": 99}},
             ]
         },
         id="In and Range",
@@ -28,6 +28,66 @@ def load_and_dump_equals_data():
             ]
         },
         id="Equals or Prefix or Exists",
+    )
+
+    yield pytest.param(
+        {"not": {"equals": {"property": ["scenario"], "value": "scenario7"}}},
+        id="Not equals",
+    )
+
+    yield pytest.param(
+        {"range": {"property": ["weight"], "lte": 100, "gt": 0}},
+        id="Range, lte and gt",
+    )
+
+    yield pytest.param(
+        {
+            "and": [
+                {
+                    "overlaps": {
+                        "startProperty": ["start_time"],
+                        "endProperty": ["end_time"],
+                        "gt": "2020-01-01T00:00:00Z",
+                        "lte": "2021-01-01T00:00:00Z",
+                    }
+                },
+                {"hasData": {"views": [("space", "viewExternalId", "v1")], "containers": []}},
+            ]
+        },
+        id="And hasData and overlaps",
+    )
+
+    yield pytest.param(
+        {
+            "or": [
+                {
+                    "overlaps": {
+                        "startProperty": ["start_time"],
+                        "endProperty": ["end_time"],
+                        "gte": "2020-01-01T00:00:00Z",
+                    }
+                },
+                {"containsAny": {"property": ["tag"], "values": ["1001_1", "1001_1"]}},
+            ]
+        },
+        id="Or overlaps or containsAny",
+    )
+    yield pytest.param(
+        {
+            "nested": {
+                "scope": ("space", "container", "prop"),
+                "filter": {"matchAll": {}},
+            }
+        },
+        id="Nested match all",
+    )
+
+    yield pytest.param(
+        {"range": {"property": ["weight"], "gte": {"property": ["capacity"]}}}, id="Range with gte another property"
+    )
+
+    yield pytest.param(
+        {"prefix": {"property": ["name"], "value": {"parameter": "param1"}}}, id="prefix with parameters"
     )
 
 
@@ -95,3 +155,8 @@ def test_dump_filter(user_filter: Filter, expected: dict):
     actual = user_filter.dump()
 
     assert actual == expected
+
+
+def test_unknown_filter_type():
+    with pytest.raises(ValueError, match="Unknown filter type: unknown"):
+        Filter.load({"unknown": {}})

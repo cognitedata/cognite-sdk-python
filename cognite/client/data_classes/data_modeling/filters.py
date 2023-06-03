@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from abc import ABC
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, List, Mapping, Optional, Sequence, Tuple, Union, cast, final
 
@@ -107,16 +107,12 @@ class Filter(ABC):
                 property=filter_body["property"],
                 values=cast(FilterValueList, _load_filter_value(filter_body["values"])),
             )
-        elif filter_name == ContainsAny._filter_name:
-            return ContainsAny(
-                property=filter_body["property"],
-                values=cast(FilterValueList, _load_filter_value(filter_body["values"])),
-            )
         else:
             raise ValueError(f"Unknown filter type: {filter_name}")
 
+    @abstractmethod
     def _filter_body(self) -> list | dict:
-        raise NotImplementedError()
+        ...
 
 
 class CompoundFilter(Filter):
