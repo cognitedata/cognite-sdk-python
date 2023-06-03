@@ -14,6 +14,8 @@ from cognite.client.data_classes.data_modeling.containers import (
 )
 from cognite.client.data_classes.data_modeling.data_models import (
     DataModel,
+    DataModelApply,
+    DataModelApplyList,
     DataModelFilter,
     DataModelList,
     DataModelsSort,
@@ -80,6 +82,8 @@ __all__ = [
     "DataModelList",
     "DataModelsSort",
     "DataModelFilter",
+    "DataModelApply",
+    "DataModelApplyList",
     "ContainerFilter",
     "ViewFilter",
     "MappedPropertyDefinition",

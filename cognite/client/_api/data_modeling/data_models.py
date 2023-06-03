@@ -6,6 +6,7 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import DATA_MODELING_LIST_LIMIT_DEFAULT
 from cognite.client.data_classes.data_modeling.data_models import (
     DataModel,
+    DataModelApply,
     DataModelFilter,
     DataModelList,
 )
@@ -190,18 +191,18 @@ class DataModelsAPI(APIClient):
         )
 
     @overload
-    def apply(self, data_model: Sequence[DataModel]) -> DataModelList:
+    def apply(self, data_model: Sequence[DataModelApply]) -> DataModelList:
         ...
 
     @overload
-    def apply(self, data_model: DataModel) -> DataModel:
+    def apply(self, data_model: DataModelApply) -> DataModel:
         ...
 
-    def apply(self, data_model: DataModel | Sequence[DataModel]) -> DataModel | DataModelList:
+    def apply(self, data_model: DataModelApply | Sequence[DataModelApply]) -> DataModel | DataModelList:
         """`Create or update one or more data_models. <https://docs.cognite.com/api/v1/#tag/Data-models/operation/createDataModels>`_
 
         Args:
-            data_model (data_model: DataModel | Sequence[DataModel]): DataModel or data_models to create or update (upsert).
+            data_model (data_model: DataModelApply | Sequence[DataModelApply]): DataModel or data_models to create or update (upsert).
 
         Returns:
             DataModel | DataModelList: Created data_model(s)

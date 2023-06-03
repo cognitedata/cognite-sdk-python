@@ -48,7 +48,7 @@ class TestDataModelsAPI:
                 ),
             },
         )
-        new_data_model = models.DataModel(
+        new_data_model = models.DataModelApply(
             space=integration_test_space.space,
             external_id="IntegrationTestDataModel",
             description="Integration test, should not persist",
@@ -135,4 +135,4 @@ class TestDataModelsAPI:
         )
 
         # Assert
-        assert all(isinstance(v, models.ViewApply) for m in data_models for v in m.views)
+        assert all(isinstance(v, models.View) for m in data_models for v in m.views)

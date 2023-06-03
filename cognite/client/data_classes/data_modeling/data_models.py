@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, List, Literal, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -9,14 +9,92 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
 from cognite.client.data_classes.data_modeling.shared import DataModeling, ViewReference
-from cognite.client.data_classes.data_modeling.views import ViewApply
+from cognite.client.data_classes.data_modeling.views import View, ViewApply
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class DataModel(DataModeling):
+class DataModelCore(DataModeling):
     """A group of properties.
+
+    Args:
+        space (str): The workspace for the view.a unique identifier for the space.
+        external_id (str): Combined with the space is the unique identifier of the view.
+        description (str): Textual description of the view
+        name (str): Human readable name for the view.
+        version (str): DMS version.
+    """
+
+    def __init__(
+        self,
+        space: str = None,
+        external_id: str = None,
+        description: str = None,
+        name: str = None,
+        version: str = None,
+        cognite_client: CogniteClient = None,
+    ):
+        validate_data_modeling_identifier(space, external_id)
+        self.space = space
+        self.external_id = external_id
+        self.description = description
+        self.name = name
+        self.version = version
+        self._cognite_client = cast("CogniteClient", cognite_client)
+
+
+class DataModelApply(DataModelCore):
+    """A group of views. This is the write version of a Data Model.
+
+    Args:
+        space (str): The workspace for the view.a unique identifier for the space.
+        external_id (str): Combined with the space is the unique identifier of the view.
+        description (str): Textual description of the view
+        name (str): Human readable name for the view.
+        version (str): DMS version.
+        views (list[ViewReference | ViewApply]): List of views included in this data model.
+    """
+
+    def __init__(
+        self,
+        space: str = None,
+        external_id: str = None,
+        description: str = None,
+        name: str = None,
+        version: str = None,
+        views: list[ViewReference | ViewApply] = None,
+        cognite_client: CogniteClient = None,
+    ):
+        super().__init__(space, external_id, description, name, version, cognite_client)
+        self.views = views
+
+    @classmethod
+    def _load_view(cls, view_data: dict, cognite_client: CogniteClient = None) -> ViewReference | ViewApply:
+        if "type" in view_data:
+            return ViewReference.load(view_data)
+        else:
+            return ViewApply._load(view_data, cognite_client)
+
+    @classmethod
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient = None) -> DataModelApply:
+        data = json.loads(resource) if isinstance(resource, str) else resource
+        if "views" in data:
+            data["views"] = [cls._load_view(v) for v in data["views"]] or None
+
+        return cast(DataModelApply, super()._load(data, cognite_client))
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        output = super().dump(camel_case)
+
+        if self.views:
+            output["views"] = [v.dump(camel_case) for v in self.views]
+
+        return output
+
+
+class DataModel(DataModelCore):
+    """A group of views. This is the read version of a Data Model
 
     Args:
         space (str): The workspace for the view.a unique identifier for the space.
@@ -37,30 +115,24 @@ class DataModel(DataModeling):
         description: str = None,
         name: str = None,
         version: str = None,
-        views: list[ViewReference | ViewApply] = None,
+        views: list[ViewReference | View] = None,
         is_global: bool = False,
         last_updated_time: int = None,
         created_time: int = None,
         cognite_client: CogniteClient = None,
     ):
-        validate_data_modeling_identifier(space, external_id)
-        self.space = space
-        self.external_id = external_id
-        self.description = description
-        self.name = name
-        self.version = version
+        super().__init__(space, external_id, description, name, version, cognite_client)
         self.views = views
         self.is_global = is_global
         self.last_updated_time = last_updated_time
         self.created_time = created_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
     def _load_view(cls, view_data: dict, cognite_client: CogniteClient = None) -> ViewReference | ViewApply:
         if "type" in view_data:
             return ViewReference.load(view_data)
         else:
-            return ViewApply._load(view_data, cognite_client)
+            return View._load(view_data, cognite_client)
 
     @classmethod
     def _load(cls, resource: dict | str, cognite_client: CogniteClient = None) -> DataModel:
@@ -70,27 +142,42 @@ class DataModel(DataModeling):
 
         return cast(DataModel, super()._load(data, cognite_client))
 
-    def dump(self, camel_case: bool = False, exclude_not_supported_by_apply_endpoint: bool = True) -> dict[str, Any]:
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)
 
-        if "views" in output:
-            output["views"] = [v.dump(camel_case) for v in output["views"]]
+        if self.views:
+            output["views"] = [v.dump(camel_case) for v in self.views]
 
-        if exclude_not_supported_by_apply_endpoint:
-            for exclude in [
-                "isGlobal",
-                "lastUpdatedTime",
-                "createdTime",
-                "is_global",
-                "last_updated_time",
-                "created_time",
-            ]:
-                output.pop(exclude, None)
         return output
+
+    def to_data_model_apply(self) -> DataModelApply:
+        views = None
+        if self.views:
+            views = cast(
+                List[Union[ViewReference, ViewApply]],
+                [v.to_view_apply() if isinstance(v, View) else v for v in self.views],
+            )
+
+        return DataModelApply(
+            space=self.space,
+            external_id=self.external_id,
+            description=self.description,
+            name=self.name,
+            version=self.version,
+            views=views,
+            cognite_client=self._cognite_client,
+        )
+
+
+class DataModelApplyList(CogniteResourceList):
+    _RESOURCE = DataModelApply
 
 
 class DataModelList(CogniteResourceList):
     _RESOURCE = DataModel
+
+    def to_data_model_apply_list(self) -> DataModelApplyList:
+        return DataModelApplyList(resources=[d.to_data_model_apply() for d in self.items])
 
 
 class DataModelFilter(CogniteFilter):
