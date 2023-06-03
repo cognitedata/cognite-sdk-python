@@ -53,8 +53,8 @@ class TestViewsAPI:
         # Assert
         assert created.created_time
         assert created.last_updated_time
-        assert created.external_id == new_view.external_id
-        assert retrieved.external_id == new_view.external_id
+        assert created.to_view_apply().dump() == new_view.dump()
+        assert retrieved.dump() == created.dump()
 
         # Act
         deleted_id = cognite_client.data_modeling.views.delete(new_id)

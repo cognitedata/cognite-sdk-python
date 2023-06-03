@@ -85,6 +85,9 @@ class ContainerCore(DataModeling):
 
         return output
 
+    def to_container_reference(self) -> ContainerReference:
+        return ContainerReference(cast(str, self.space), cast(str, self.external_id))
+
 
 class ContainerApply(ContainerCore):
     """Represent the physical storage of data. This is the write format of the container

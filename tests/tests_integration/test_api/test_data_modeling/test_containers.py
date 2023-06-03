@@ -52,8 +52,7 @@ class TestContainersAPI:
         # Assert
         assert created.created_time
         assert created.last_updated_time
-        assert created.external_id == new_container.external_id
-        assert retrieved.external_id == new_container.external_id
+        assert retrieved.to_container_apply().dump() == new_container.dump()
 
         # Act
         deleted_id = cognite_client.data_modeling.containers.delete((new_container.space, new_container.external_id))

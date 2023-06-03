@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from abc import ABC
 from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Literal, Optional, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -69,6 +69,13 @@ class ViewCore(DataModeling):
             output["filter"] = self.filter.dump()
 
         return output
+
+    def to_view_reference(self) -> ViewReference:
+        return ViewReference(
+            space=cast(str, self.space),
+            external_id=cast(str, self.external_id),
+            version=cast(str, self.version),
+        )
 
 
 class ViewApply(ViewCore):
@@ -183,7 +190,7 @@ class View(ViewCore):
         properties = None
         if self.properties:
             properties = cast(
-                dict[str, Union[MappedApplyPropertyDefinition, ConnectionDefinition]],
+                Dict[str, Union[MappedApplyPropertyDefinition, ConnectionDefinition]],
                 {
                     k: (v.to_mapped_apply() if isinstance(v, MappedPropertyDefinition) else v)
                     for k, v in self.properties.items()

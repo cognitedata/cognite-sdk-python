@@ -66,16 +66,15 @@ class TestDataModelsAPI:
         # Act
         created = cognite_client.data_modeling.models.apply(new_data_model)
         retrieved = cognite_client.data_modeling.models.retrieve(new_id)
-        retrieved_view = cognite_client.data_modeling.views.retrieve(new_view_id)
+        cognite_client.data_modeling.views.retrieve(new_view_id)
 
         # Assert
         assert created.created_time
         assert created.last_updated_time
-        assert created.external_id == new_data_model.external_id
-        assert retrieved.external_id == new_data_model.external_id
-        assert retrieved_view.created_time
-        assert retrieved_view.last_updated_time
-        assert retrieved_view.external_id == new_view.external_id
+        new_data_model_dump = new_data_model.dump()
+        new_data_model_dump["views"] = [v.to_view_reference().dump() for v in new_data_model.views]
+        assert created.to_data_model_apply().dump() == new_data_model_dump
+        assert created.dump() == retrieved.dump()
 
         # Act
         deleted_data_model_id = cognite_client.data_modeling.models.delete(new_id)
