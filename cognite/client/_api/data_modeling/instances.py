@@ -4,8 +4,8 @@ from typing import Iterator, Literal, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import INSTANCES_LIST_LIMIT_DEFAULT
-from cognite.client.data_classes.data_modeling.dsl_filter import DSLFilter, dump_dsl_filter
-from cognite.client.data_classes.data_modeling.ids import InstanceId, TypedDataModelingId
+from cognite.client.data_classes.data_modeling.filters import Filter
+from cognite.client.data_classes.data_modeling.ids import InstanceId, TypedDataModelingId, load_identifier
 from cognite.client.data_classes.data_modeling.instances import (
     Edge,
     EdgeList,
@@ -17,7 +17,6 @@ from cognite.client.data_classes.data_modeling.instances import (
     NodeList,
 )
 from cognite.client.data_classes.data_modeling.shared import ViewReference
-from cognite.client.utils._identifier import DataModelingIdentifierSequence
 
 
 class InstancesAPI(APIClient):
@@ -31,7 +30,7 @@ class InstancesAPI(APIClient):
         sources: list[ViewReference] | None = None,
         instance_type: Literal["node", "edge"] = "node",
         sort: list[InstanceSort | dict] | None = None,
-        filter: DSLFilter | dict | None = None,
+        filter: Filter | dict | None = None,
     ) -> Iterator[Instance] | Iterator[InstanceList]:
         """Iterate over instances
         Fetches instances as they are iterated over, so you keep a limited number of instances in memory.
@@ -42,7 +41,7 @@ class InstancesAPI(APIClient):
             instance_type(Literal["node", "edge"]): Whether to query for nodes or edges.
             limit (int, optional): Maximum number of instances to return. Default to return all items.
             sort (list[InstanceSort]): How you want the listed instances information ordered.
-            filter (dict | DSLFilter): Advanced filtering of instances.
+            filter (dict | Filter): Advanced filtering of instances.
         Yields:
             Instance | InstanceList: yields Instance one by one if chunk_size is not specified, else InstanceList objects.
         """
@@ -55,7 +54,7 @@ class InstancesAPI(APIClient):
             method="POST",
             chunk_size=chunk_size,
             limit=limit,
-            filter=dump_dsl_filter(filter),  # type: ignore[arg-type]
+            filter=filter.dump() if isinstance(filter, Filter) else filter,
             other_params=other_params,
         )
 
@@ -97,7 +96,7 @@ class InstancesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.data_modeling.instances.retrieve(('node', 'myNode', 'mySpace'))
         """
-        identifier = DataModelingIdentifierSequence.load(ids)
+        identifier = load_identifier(ids)
         return self._retrieve_multiple(list_cls=InstanceList, resource_cls=Instance, identifiers=identifier)
 
     def delete(self, id: InstanceId | Sequence[InstanceId]) -> list[TypedDataModelingId]:
@@ -114,9 +113,7 @@ class InstancesAPI(APIClient):
         """
         deleted_instances = cast(
             list,
-            self._delete_multiple(
-                identifiers=DataModelingIdentifierSequence.load(id), wrap_ids=True, returns_items=True
-            ),
+            self._delete_multiple(identifiers=load_identifier(id), wrap_ids=True, returns_items=True),
         )
         return [
             TypedDataModelingId(space=item["space"], external_id=item["externalId"], instance_type=item["instanceType"])
@@ -130,7 +127,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node", "edge"] = "node",
         limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
         sort: list[InstanceSort | dict] | None = None,
-        filter: DSLFilter | dict | None = None,
+        filter: Filter | dict | None = None,
     ) -> NodeList | EdgeList:
         """`List instances <https://docs.cognite.com/api/v1/#tag/Instances/operation/advancedListInstance>`_
         Args:
@@ -140,7 +137,7 @@ class InstancesAPI(APIClient):
             limit (int, optional): Maximum number of instances to return. Default to 1000. Set to -1, float("inf") or None
                 to return all items.
             sort (list[InstanceSost]): How you want the listed instances information ordered.
-            filter (dict | DSLFilter): Advnanced filtering of instances.
+            filter (dict | Filter): Advnanced filtering of instances.
         Returns:
             InstanceList: List of requested instances
         Examples:
@@ -175,7 +172,7 @@ class InstancesAPI(APIClient):
             resource_cls=resource_cls,
             method="POST",
             limit=limit,
-            filter=dump_dsl_filter(filter),  # type: ignore[arg-type]
+            filter=filter.dump() if isinstance(filter, Filter) else filter,
             other_params=other_params,
         )
 

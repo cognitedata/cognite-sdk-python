@@ -8,9 +8,9 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
 )
+from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
 from cognite.client.data_classes.data_modeling.shared import DirectRelationReference, ViewReference
 from cognite.client.utils._text import to_snake_case
-from cognite.client.utils._validation import validate_data_modeling_identifier
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient

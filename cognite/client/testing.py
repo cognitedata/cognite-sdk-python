@@ -10,6 +10,7 @@ from cognite.client._api.assets import AssetsAPI
 from cognite.client._api.data_modeling import DataModelingAPI
 from cognite.client._api.data_modeling.containers import ContainersAPI
 from cognite.client._api.data_modeling.data_models import DataModelsAPI
+from cognite.client._api.data_modeling.instances import InstancesAPI
 from cognite.client._api.data_modeling.spaces import SpacesAPI
 from cognite.client._api.data_modeling.views import ViewsAPI
 from cognite.client._api.data_sets import DataSetsAPI
@@ -26,7 +27,6 @@ from cognite.client._api.files import FilesAPI
 from cognite.client._api.functions import FunctionCallsAPI, FunctionsAPI, FunctionSchedulesAPI
 from cognite.client._api.geospatial import GeospatialAPI
 from cognite.client._api.iam import IAMAPI, GroupsAPI, SecurityCategoriesAPI, SessionsAPI, TokenAPI
-from cognite.client._api.instances import InstancesAPI
 from cognite.client._api.labels import LabelsAPI
 from cognite.client._api.raw import RawAPI, RawDatabasesAPI, RawRowsAPI, RawTablesAPI
 from cognite.client._api.relationships import RelationshipsAPI

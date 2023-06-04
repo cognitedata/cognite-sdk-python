@@ -96,7 +96,7 @@ ContainerIdentifier = Union[ContainerId, Tuple[str, str]]
 ViewIdentifier = Union[ViewId, Tuple[str, str], Tuple[str, str, str]]
 DataModelIdentifier = Union[DataModelId, Tuple[str, str], Tuple[str, str, str]]
 
-Id = Union[Tuple[str, str], Tuple[str, str, str], DataModelingId, VersionedDataModelingId]
+Id = Union[Tuple[str, str], Tuple[str, str, str], DataModelingId, VersionedDataModelingId, TypedDataModelingId]
 
 
 def load_identifier(
