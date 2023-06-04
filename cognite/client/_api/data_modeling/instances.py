@@ -1,19 +1,28 @@
 from __future__ import annotations
 
-from typing import Iterator, Literal, Sequence, cast, overload
+from typing import Iterator, Literal, Sequence, Type, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import INSTANCES_LIST_LIMIT_DEFAULT
 from cognite.client.data_classes.data_modeling.filters import Filter
-from cognite.client.data_classes.data_modeling.ids import InstanceId, TypedDataModelingId, load_identifier
+from cognite.client.data_classes.data_modeling.ids import (
+    EdgeDataModelingId,
+    EdgeId,
+    NodeDataModelingId,
+    NodeId,
+    TypedDataModelingId,
+    load_identifier,
+)
 from cognite.client.data_classes.data_modeling.instances import (
     Edge,
+    EdgeApply,
     EdgeList,
     Instance,
     InstanceFilter,
     InstanceList,
     InstanceSort,
     Node,
+    NodeApply,
     NodeList,
 )
 from cognite.client.data_classes.data_modeling.shared import ViewReference
@@ -21,6 +30,58 @@ from cognite.client.data_classes.data_modeling.shared import ViewReference
 
 class InstancesAPI(APIClient):
     _RESOURCE_PATH = "/models/instances"
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: None = None,
+        limit: int = None,
+        include_typing: bool = False,
+        sources: list[ViewReference] | None = None,
+        instance_type: Literal["node"] = "node",
+        sort: list[InstanceSort | dict] | None = None,
+        filter: Filter | dict | None = None,
+    ) -> Iterator[Node]:
+        ...
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: None = None,
+        limit: int = None,
+        include_typing: bool = False,
+        sources: list[ViewReference] | None = None,
+        instance_type: Literal["edge"] = "edge",
+        sort: list[InstanceSort | dict] | None = None,
+        filter: Filter | dict | None = None,
+    ) -> Iterator[Edge]:
+        ...
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: int,
+        limit: int = None,
+        include_typing: bool = False,
+        sources: list[ViewReference] | None = None,
+        instance_type: Literal["node"] = "node",
+        sort: list[InstanceSort | dict] | None = None,
+        filter: Filter | dict | None = None,
+    ) -> Iterator[NodeList]:
+        ...
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: int,
+        limit: int = None,
+        include_typing: bool = False,
+        sources: list[ViewReference] | None = None,
+        instance_type: Literal["edge"] = "edge",
+        sort: list[InstanceSort | dict] | None = None,
+        filter: Filter | dict | None = None,
+    ) -> Iterator[EdgeList]:
+        ...
 
     def __call__(
         self,
@@ -31,11 +92,12 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node", "edge"] = "node",
         sort: list[InstanceSort | dict] | None = None,
         filter: Filter | dict | None = None,
-    ) -> Iterator[Instance] | Iterator[InstanceList]:
+    ) -> Iterator[Edge] | Iterator[EdgeList] | Iterator[Node] | Iterator[NodeList]:
         """Iterate over instances
         Fetches instances as they are iterated over, so you keep a limited number of instances in memory.
         Args:
-            chunk_size (int, optional): Number of data_models to return in each chunk. Defaults to yielding one data_model a time.
+            chunk_size (int, optional): Number of data_models to return in each chunk. Defaults to yielding
+                                        one instance at a time.
             include_typing (bool): Whether to return property type information as part of the result.
             sources (list[ViewReference]): Views to retrieve properties from.
             instance_type(Literal["node", "edge"]): Whether to query for nodes or edges.
@@ -48,9 +110,12 @@ class InstancesAPI(APIClient):
         other_params = InstanceFilter(include_typing, sources, instance_type).dump(camel_case=True)
         if sort:
             other_params["sort"] = [s.dump(camel_case=True) if isinstance(s, InstanceSort) else s for s in sort]
+
+        list_cls, resource_cls = self._get_classes(instance_type)
+
         return self._list_generator(
-            list_cls=InstanceList,
-            resource_cls=Instance,
+            list_cls=list_cls,
+            resource_cls=resource_cls,
             method="POST",
             chunk_size=chunk_size,
             limit=limit,
@@ -58,29 +123,41 @@ class InstancesAPI(APIClient):
             other_params=other_params,
         )
 
-    def __iter__(self) -> Iterator[Instance]:
+    def __iter__(self) -> Iterator[Node]:
         """Iterate over instances
         Fetches instances as they are iterated over, so you keep a limited number of instances in memory.
         Yields:
             Instance: yields Instances one by one.
         """
-        return cast(Iterator[Instance], self())
+        return cast(Iterator[Node], self())
 
     @overload
     def retrieve(
-        self, ids: InstanceId, sources: list[ViewReference] | None = None, include_typing: bool = False
-    ) -> Instance | None:
+        self, ids: NodeId, sources: list[ViewReference] | None = None, include_typing: bool = False
+    ) -> Node | None:
         ...
 
     @overload
     def retrieve(
-        self, ids: Sequence[InstanceId], sources: list[ViewReference] | None = None, include_typing: bool = False
-    ) -> InstanceList:
+        self, ids: Sequence[NodeId], sources: list[ViewReference] | None = None, include_typing: bool = False
+    ) -> NodeList:
+        ...
+
+    @overload
+    def retrieve(
+        self, ids: EdgeId, sources: list[ViewReference] | None = None, include_typing: bool = False
+    ) -> Edge | None:
+        ...
+
+    @overload
+    def retrieve(
+        self, ids: Sequence[EdgeId], sources: list[ViewReference] | None = None, include_typing: bool = False
+    ) -> EdgeList:
         ...
 
     def retrieve(
         self,
-        ids: InstanceId | Sequence[InstanceId],
+        ids: NodeId | EdgeId | Sequence[NodeId] | Sequence[EdgeId],
         sources: list[ViewReference] | None = None,
         include_typing: bool = False,
     ) -> Instance | InstanceList | None:
@@ -94,12 +171,22 @@ class InstancesAPI(APIClient):
         Examples:
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.data_modeling.instances.retrieve(('node', 'myNode', 'mySpace'))
+                >>> res = c.data_modeling.instances.retrieve(('node', 'mySpace', 'myNode'))
         """
         identifier = load_identifier(ids)
         return self._retrieve_multiple(list_cls=InstanceList, resource_cls=Instance, identifiers=identifier)
 
-    def delete(self, id: InstanceId | Sequence[InstanceId]) -> list[TypedDataModelingId]:
+    @overload
+    def delete(self, id: NodeId | Sequence[NodeId]) -> list[NodeDataModelingId]:
+        ...
+
+    @overload
+    def delete(self, id: EdgeId | Sequence[EdgeId]) -> list[EdgeDataModelingId]:
+        ...
+
+    def delete(
+        self, id: NodeId | EdgeId | Sequence[NodeId] | Sequence[EdgeId]
+    ) -> list[NodeDataModelingId] | list[EdgeDataModelingId]:
         """`Delete one or more instances <https://docs.cognite.com/api/v1/#tag/Instances/operation/deleteBulk>`_
         Args:
             id (InstanceId | Sequence[InstanceId): The instance identifier(s).
@@ -119,6 +206,30 @@ class InstancesAPI(APIClient):
             TypedDataModelingId(space=item["space"], external_id=item["externalId"], instance_type=item["instanceType"])
             for item in deleted_instances
         ]
+
+    @overload
+    def list(
+        self,
+        include_typing: bool = False,
+        sources: list[ViewReference] | None = None,
+        instance_type: Literal["node"] = "node",
+        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
+        sort: list[InstanceSort | dict] | None = None,
+        filter: Filter | dict | None = None,
+    ) -> NodeList:
+        ...
+
+    @overload
+    def list(
+        self,
+        include_typing: bool = False,
+        sources: list[ViewReference] | None = None,
+        instance_type: Literal["edge"] = "edge",
+        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
+        sort: list[InstanceSort | dict] | None = None,
+        filter: Filter | dict | None = None,
+    ) -> EdgeList:
+        ...
 
     def list(
         self,
@@ -160,12 +271,7 @@ class InstancesAPI(APIClient):
         if sort:
             other_params["sort"] = [s.dump(camel_case=True) if isinstance(s, InstanceSort) else s for s in sort]
 
-        if instance_type == "node":
-            resource_cls, list_cls = Node, NodeList
-        elif instance_type == "edge":
-            resource_cls, list_cls = Edge, EdgeList  # type: ignore [assignment]
-        else:
-            raise ValueError(f"Unsupported {instance_type=}")
+        list_cls, resource_cls = self._get_classes(instance_type)
 
         return self._list(
             list_cls=list_cls,
@@ -176,36 +282,68 @@ class InstancesAPI(APIClient):
             other_params=other_params,
         )
 
+    @staticmethod
+    def _get_classes(
+        instance_type: Literal["node", "edge"]
+    ) -> tuple[Type[Node], Type[NodeList]] | tuple[Type[Edge], Type[EdgeList]]:
+        if instance_type == "node":
+            return Node, NodeList
+        elif instance_type == "edge":
+            return Edge, EdgeList
+        raise ValueError(f"Unsupported {instance_type=}")
+
     @overload
     def apply(
         self,
-        instance: Sequence[Instance],
+        instance: Sequence[NodeApply],
         auto_create_start_nodes: bool = False,
         auto_create_end_nodes: bool = False,
         skip_on_version_conflict: bool = False,
         replace: bool = False,
-    ) -> InstanceList:
+    ) -> NodeList:
         ...
 
     @overload
     def apply(
         self,
-        instance: Instance,
+        instance: NodeApply,
         auto_create_start_nodes: bool = False,
         auto_create_end_nodes: bool = False,
         skip_on_version_conflict: bool = False,
         replace: bool = False,
-    ) -> Instance:
+    ) -> Node:
+        ...
+
+    @overload
+    def apply(
+        self,
+        instance: Sequence[EdgeApply],
+        auto_create_start_nodes: bool = False,
+        auto_create_end_nodes: bool = False,
+        skip_on_version_conflict: bool = False,
+        replace: bool = False,
+    ) -> EdgeList:
+        ...
+
+    @overload
+    def apply(
+        self,
+        instance: EdgeApply,
+        auto_create_start_nodes: bool = False,
+        auto_create_end_nodes: bool = False,
+        skip_on_version_conflict: bool = False,
+        replace: bool = False,
+    ) -> Edge:
         ...
 
     def apply(
         self,
-        instance: Instance | Sequence[Instance],
+        instance: NodeApply | EdgeApply | Sequence[NodeApply] | Sequence[EdgeApply],
         auto_create_start_nodes: bool = False,
         auto_create_end_nodes: bool = False,
         skip_on_version_conflict: bool = False,
         replace: bool = False,
-    ) -> Instance | InstanceList:
+    ) -> Node | NodeList | Edge | EdgeList:
         """`Add or update (upsert) instances. <https://docs.cognite.com/api/v1/#tag/Instances/operation/applyNodeAndEdges>`_
         Args:
             instance (instance: Instance | Sequence[Instance]): Instance or instances of instances to create or update.
@@ -238,6 +376,9 @@ class InstancesAPI(APIClient):
             "skipOnVersionConflict": skip_on_version_conflict,
             "replace": replace,
         }
+        list_cls, resource_cls = self._get_classes(
+            instance_type=instance[0].instance_type if isinstance(instance, list) else instance.instance_type
+        )
         return self._create_multiple(
-            list_cls=InstanceList, resource_cls=Instance, items=instance, extra_body_fields=other_parameters
+            list_cls=list_cls, resource_cls=resource_cls, items=instance, extra_body_fields=other_parameters
         )

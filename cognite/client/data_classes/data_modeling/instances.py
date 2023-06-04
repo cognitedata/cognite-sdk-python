@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 from cognite.client.data_classes._base import (
@@ -10,18 +9,69 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
 from cognite.client.data_classes.data_modeling.shared import DirectRelationReference, ViewReference
-from cognite.client.utils._text import to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class Instance(CogniteResource):
+class InstanceCore(CogniteResource):
     """A node or edge
     Args:
         instance_type (Literal["node", "edge"]) The type of instance.
-        space (str): The workspace for the view.a unique identifier for the space.
-        external_id (str): Combined with the space is the unique identifier of the view.
+        space (str): The workspace for the instance.a unique identifier for the space.
+        external_id (str): Combined with the space is the unique identifier of the instance.
+    """
+
+    def __init__(
+        self,
+        instance_type: Literal["node", "edge"] = "node",
+        space: str = None,
+        external_id: str = None,
+        cognite_client: CogniteClient = None,
+    ):
+        validate_data_modeling_identifier(space, external_id)
+        self.instance_type = instance_type
+        self.space = space
+        self.external_id = external_id
+        self._cognite_client = cast("CogniteClient", cognite_client)
+
+
+class InstanceApply(InstanceCore):
+    """A node or edge. This is the write version of the instance.
+    Args:
+        instance_type (Literal["node", "edge"]) The type of instance.
+        space (str): The workspace for the instance.a unique identifier for the space.
+        external_id (str): Combined with the space is the unique identifier of the instance.
+        existing_version (int): Fail the ingestion request if the node's version is greater than or equal to this value.
+                                If no existingVersion is specified, the ingestion will always overwrite any
+                                existing data for the edge (for the specified container or instance). If existingVersion is
+                                sset to 0, the upsert will behave as an insert, so it will fail the bulk if the
+                                item already exists. If skipOnVersionConflict is set on the ingestion request,
+                                then the item will be skipped instead of failing the ingestion request.
+        sources (list): List of source properties to write. The properties are from the instance and/or
+                        container the container(s) making up this node.
+    """
+
+    def __init__(
+        self,
+        instance_type: Literal["node", "edge"] = "node",
+        space: str = None,
+        external_id: str = None,
+        existing_version: int = None,
+        sources: list = None,
+        cognite_client: CogniteClient = None,
+    ):
+        super().__init__(instance_type, space, external_id, cognite_client)
+        self.existing_version = existing_version
+        self.sources = sources
+
+
+class Instance(InstanceCore):
+    """A node or edge. This is the read version of the instance.
+    Args:
+        instance_type (Literal["node", "edge"]) The type of instance.
+        space (str): The workspace for the instance.a unique identifier for the space.
+        external_id (str): Combined with the space is the unique identifier of the instance.
         version (str): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -41,34 +91,52 @@ class Instance(CogniteResource):
         properties: dict = None,
         cognite_client: CogniteClient = None,
     ):
-        validate_data_modeling_identifier(space, external_id)
-        self.instance_type = instance_type
-        self.space = space
-        self.external_id = external_id
+        super().__init__(instance_type, space, external_id, cognite_client)
         self.version = version
         self.last_updated_time = last_updated_time
         self.created_time = created_time
         self.deleted_time = deleted_time
         self.properties = properties
-        self._cognite_client = cast("CogniteClient", cognite_client)
 
-    @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient = None) -> Node | Edge:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
-        if resource["instanceType"] == "node":
-            return Node._load(resource, cognite_client)
-        elif resource["instanceType"] == "edge":
-            return Edge._load(resource, cognite_client)
-        else:
-            raise ValueError(f"Unsupported resource type {resource['type']}")
+
+class NodeApply(InstanceApply):
+    """A node. This is the write version of the node.
+    Args:
+        space (str): The workspace for the node.a unique identifier for the space.
+        external_id (str): Combined with the space is the unique identifier of the node.
+        existing_version (int): Fail the ingestion request if the node's version is greater than or equal to this value.
+                                If no existingVersion is specified, the ingestion will always overwrite any
+                                existing data for the edge (for the specified container or node). If existingVersion is
+                                set to 0, the upsert will behave as an insert, so it will fail the bulk if the
+                                item already exists. If skipOnVersionConflict is set on the ingestion request,
+                                then the item will be skipped instead of failing the ingestion request.
+        sources (list): List of source properties to write. The properties are from the node and/or
+                        container the container(s) making up this node.
+    """
+
+    def __init__(
+        self,
+        space: str = None,
+        external_id: str = None,
+        existing_version: int = None,
+        sources: list = None,
+        cognite_client: CogniteClient = None,
+    ):
+        super().__init__(
+            "node",
+            space,
+            external_id,
+            existing_version,
+            sources,
+            cognite_client,
+        )
 
 
 class Node(Instance):
-    """A node
+    """A node. This is the read version of the node.
     Args:
-        instance_type (Literal["node"]) Must be node.
-        space (str): The workspace for the view.a unique identifier for the space.
-        external_id (str): Combined with the space is the unique identifier of the view.
+        space (str): The workspace for the node.a unique identifier for the space.
+        external_id (str): Combined with the space is the unique identifier of the node.
         version (str): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -79,7 +147,6 @@ class Node(Instance):
 
     def __init__(
         self,
-        instance_type: Literal["node"] = "node",
         space: str = None,
         external_id: str = None,
         version: str = None,
@@ -90,7 +157,7 @@ class Node(Instance):
         cognite_client: CogniteClient = None,
     ):
         super().__init__(
-            instance_type,
+            "node",
             space,
             external_id,
             version,
@@ -101,35 +168,66 @@ class Node(Instance):
             cognite_client,
         )
 
-    @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient = None) -> Node:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
-        node = cls()
-        for name, value in resource.items():
-            snake_name = to_snake_case(name)
-            if hasattr(node, snake_name):
-                setattr(node, snake_name, value)
-        return node
 
-
-class Edge(Instance):
-    """An Edge
+class EdgeApply(InstanceApply):
+    """An Edge. This is the write version of the edge.
     Args:
-        instance_type (Literal["edge"]) Must be edge.
-        space (str): The workspace for the view.a unique identifier for the space.
-        external_id (str): Combined with the space is the unique identifier of the view.
-        version (str): DMS version.
-        type ():
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        deleted_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-                            Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
-        properties
+        space (str): The workspace for the edge.a unique identifier for the space.
+        external_id (str): Combined with the space is the unique identifier of the edge.
+        type (DirectRelationReference): The type of edge.
+        existing_version (int): Fail the ingestion request if the node's version is greater than or equal to this value.
+                                If no existingVersion is specified, the ingestion will always overwrite any
+                                existing data for the edge (for the specified container or edge). If existingVersion is
+                                set to 0, the upsert will behave as an insert, so it will fail the bulk if the
+                                item already exists. If skipOnVersionConflict is set on the ingestion request,
+                                then the item will be skipped instead of failing the ingestion request.
+        sources (list): List of source properties to write. The properties are from the edge and/or
+                        container the container(s) making up this node.
+        start_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
+        end_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
     """
 
     def __init__(
         self,
-        instance_type: Literal["edge"] = "edge",
+        space: str = None,
+        external_id: str = None,
+        type: DirectRelationReference = None,
+        existing_version: int = None,
+        sources: list = None,
+        start_node: DirectRelationReference = None,
+        end_node: DirectRelationReference = None,
+        cognite_client: CogniteClient = None,
+    ):
+        super().__init__(
+            "edge",
+            space,
+            external_id,
+            existing_version,
+            sources,
+            cognite_client,
+        )
+        self.type = type
+        self.start_node = start_node
+        self.end_node = end_node
+
+
+class Edge(Instance):
+    """An Edge.  This is the read version of the edge.
+    Args:
+        space (str): The workspace for the edge an unique identifier for the space.
+        external_id (str): Combined with the space is the unique identifier of the edge.
+        version (str): DMS version.
+        type (DirectRelationReference): The type of edge.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        deleted_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+                            Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        start_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
+        end_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
+    """
+
+    def __init__(
+        self,
         space: str = None,
         external_id: str = None,
         version: str = None,
@@ -143,7 +241,7 @@ class Edge(Instance):
         cognite_client: CogniteClient = None,
     ):
         super().__init__(
-            instance_type,
+            "edge",
             space,
             external_id,
             version,
@@ -157,26 +255,21 @@ class Edge(Instance):
         self.start_node = start_node
         self.end_node = end_node
 
-    @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient = None) -> Edge:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
-        for field in ["type", "start_node", "end_node", "startNode", "endNode"]:
-            if field in resource:
-                resource[field] = DirectRelationReference.load(resource[field])
-        edge = cls()
-        for name, value in resource.items():
-            snake_name = to_snake_case(name)
-            if hasattr(edge, snake_name):
-                setattr(edge, snake_name, value)
-        return edge
-
 
 class InstanceList(CogniteResourceList):
     _RESOURCE = Instance
 
 
+class NodeApplyList(CogniteResourceList):
+    _RESOURCE = NodeApply
+
+
 class NodeList(CogniteResourceList):
     _RESOURCE = Node
+
+
+class EdgeApplyList(CogniteResourceList):
+    _RESOURCE = EdgeApply
 
 
 class EdgeList(CogniteResourceList):
