@@ -16,7 +16,7 @@ class SpaceCore(DataModeling):
     """A workspace for data models and instances.
 
     Args:
-        space (str): a unique identifier for space.
+        space (str): A unique identifier for space.
         description (str): Textual description of the space
         name (str): Human readable name for the space.
     """
@@ -36,22 +36,9 @@ class SpaceCore(DataModeling):
 
 
 class SpaceApply(SpaceCore):
-    """A workspace for data models and instances. This is the write version
+    """A workspace for data models and instances. This is the write version"""
 
-    Args:
-        space (str): a unique identifier for space.
-        description (str): Textual description of the space
-        name (str): Human readable name for the space.
-    """
-
-    def __init__(
-        self,
-        space: str = None,
-        description: str = None,
-        name: str = None,
-        cognite_client: CogniteClient = None,
-    ):
-        super().__init__(space, description, name, cognite_client)
+    ...
 
 
 class Space(SpaceCore):
@@ -81,7 +68,7 @@ class Space(SpaceCore):
         self.last_updated_time = last_updated_time
         self.created_time = created_time
 
-    def to_space_apply(self) -> SpaceApply:
+    def as_apply(self) -> SpaceApply:
         return SpaceApply(
             space=self.space,
             description=self.description,
@@ -99,6 +86,6 @@ class SpaceList(CogniteResourceList):
 
     def to_space_apply_list(self) -> SpaceApplyList:
         return SpaceApplyList(
-            resources=[item.to_space_apply() for item in self.items],
+            resources=[item.as_apply() for item in self.items],
             cognite_client=self._cognite_client,
         )

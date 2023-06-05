@@ -49,13 +49,13 @@ class DataModelsAPI(APIClient):
         all_versions: bool = False,
         include_global: bool = False,
     ) -> Iterator[DataModel] | Iterator[DataModelList]:
-        """Iterate over data_models
+        """Iterate over data model
 
-        Fetches data_models as they are iterated over, so you keep a limited number of data_models in memory.
+        Fetches data model as they are iterated over, so you keep a limited number of data model in memory.
 
         Args:
-            chunk_size (int, optional): Number of data_models to return in each chunk. Defaults to yielding one data_model a time.
-            limit (int, optional): Maximum number of data_models to return. Default to return all items.
+            chunk_size (int, optional): Number of data model to return in each chunk. Defaults to yielding one data_model a time.
+            limit (int, optional): Maximum number of data model to return. Default to return all items.
             space: (str | None): The space to query.
             inline_views (bool): Whether to expand the referenced views inline in the returned result.
             all_versions (bool): Whether to return all versions. If false, only the newest version is returned,
@@ -65,7 +65,7 @@ class DataModelsAPI(APIClient):
         Yields:
             Union[DataModel, DataModelList]: yields DataModel one by one if chunk_size is not specified, else DataModelList objects.
         """
-        filter_ = DataModelFilter(space, inline_views, all_versions, include_global)
+        filter = DataModelFilter(space, inline_views, all_versions, include_global)
 
         return self._list_generator(
             list_cls=DataModelList,
@@ -73,13 +73,13 @@ class DataModelsAPI(APIClient):
             method="GET",
             chunk_size=chunk_size,
             limit=limit,
-            filter=filter_.dump(camel_case=True),
+            filter=filter.dump(camel_case=True),
         )
 
     def __iter__(self) -> Iterator[DataModel]:
-        """Iterate over data_models
+        """Iterate over data model
 
-        Fetches data_models as they are iterated over, so you keep a limited number of data_models in memory.
+        Fetches data model as they are iterated over, so you keep a limited number of data model in memory.
 
         Yields:
             DataModel: yields DataModels one by one.
@@ -114,7 +114,7 @@ class DataModelsAPI(APIClient):
         return self._retrieve_multiple(list_cls=DataModelList, resource_cls=DataModel, identifiers=identifier)
 
     def delete(self, ids: DataModelId | Sequence[DataModelId]) -> list[VersionedDataModelingId]:
-        """`Delete one or more data_models <https://docs.cognite.com/api/v1/#tag/Data-models/operation/deleteDataModels>`_
+        """`Delete one or more data model <https://docs.cognite.com/api/v1/#tag/Data-models/operation/deleteDataModels>`_
 
         Args:
             ids (DataModelId | Sequence[DataModelId]): Data Model identifier(s).
@@ -122,7 +122,7 @@ class DataModelsAPI(APIClient):
             The data_model(s) which has been deleted. None if nothing was deleted.
         Examples:
 
-            Delete data_models by id::
+            Delete data model by id::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
@@ -147,7 +147,7 @@ class DataModelsAPI(APIClient):
         """`List data models <https://docs.cognite.com/api/v1/#tag/Data-models/operation/listDataModels>`_
 
         Args:
-            limit (int, optional): Maximum number of data_models to return. Default to 10. Set to -1, float("inf") or None
+            limit (int, optional): Maximum number of data model to return. Default to 10. Set to -1, float("inf") or None
                 to return all items.
             space: (str | None): The space to query.
             inline_views (bool): Whether to expand the referenced views inline in the returned result.
@@ -156,38 +156,38 @@ class DataModelsAPI(APIClient):
             include_global (bool): Whether to include global data models.
 
         Returns:
-            DataModelList: List of requested data_models
+            DataModelList: List of requested data model
 
         Examples:
 
-            List 5 data_models:
+            List 5 data model:
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> data_model_list = c.data_modeling.models.list(limit=5)
 
-            Iterate over data_models:
+            Iterate over data model:
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> for data_model in c.data_modeling.models:
                 ...     data_model # do something with the data_model
 
-            Iterate over chunks of data_models to reduce memory load:
+            Iterate over chunks of data model to reduce memory load:
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> for data_model_list in c.data_modeling.models(chunk_size=10):
-                ...     data_model_list # do something with the data_models
+                ...     data_model_list # do something with the data model
         """
-        filter_ = DataModelFilter(space, inline_views, all_versions, include_global)
+        filter = DataModelFilter(space, inline_views, all_versions, include_global)
 
         return self._list(
             list_cls=DataModelList,
             resource_cls=DataModel,
             method="GET",
             limit=limit,
-            filter=filter_.dump(camel_case=True),
+            filter=filter.dump(camel_case=True),
         )
 
     @overload
@@ -199,17 +199,17 @@ class DataModelsAPI(APIClient):
         ...
 
     def apply(self, data_model: DataModelApply | Sequence[DataModelApply]) -> DataModel | DataModelList:
-        """`Create or update one or more data_models. <https://docs.cognite.com/api/v1/#tag/Data-models/operation/createDataModels>`_
+        """`Create or update one or more data model. <https://docs.cognite.com/api/v1/#tag/Data-models/operation/createDataModels>`_
 
         Args:
-            data_model (data_model: DataModelApply | Sequence[DataModelApply]): DataModel or data_models to create or update (upsert).
+            data_model (data_model: DataModelApply | Sequence[DataModelApply]): DataModel or data model to create or update (upsert).
 
         Returns:
             DataModel | DataModelList: Created data_model(s)
 
         Examples:
 
-            Create new data_models::
+            Create new data model::
 
                 >>> from cognite.client import CogniteClient
                 >>> import cognite.client.data_classes.data_modeling as models

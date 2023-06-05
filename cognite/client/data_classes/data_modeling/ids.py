@@ -11,20 +11,12 @@ class DataModelingId:
     space: str
     external_id: str
 
-    @classmethod
-    def from_tuple(cls, tup: tuple[str, str] | tuple[str, str, str]) -> DataModelingId:
-        return DataModelingId(*tup)
-
 
 @dataclass
 class VersionedDataModelingId:
     space: str
     external_id: str
     version: Optional[str] = None
-
-    @classmethod
-    def from_tuple(cls, tup: tuple[str, str] | tuple[str, str, str]) -> VersionedDataModelingId:
-        return VersionedDataModelingId(*tup)
 
 
 ContainerId = Union[DataModelingId, Tuple[str, str]]
@@ -42,9 +34,9 @@ def load_identifier(ids: Id | Sequence[Id]) -> DataModelingIdentifierSequence:
 
     return DataModelingIdentifierSequence(
         identifiers=[
-            DataModelingIdentifier(*id_)
-            if isinstance(id_, tuple)
-            else DataModelingIdentifier(id_.space, id_.external_id, id_.version if hasattr(id_, "version") else None)
+            DataModelingIdentifier(
+                *id_ if isinstance(id_, tuple) else (id_.space, id_.external_id, getattr(id_, "version", None))
+            )
             for id_ in id_list
         ],
         is_singleton=len(id_list) == 1,

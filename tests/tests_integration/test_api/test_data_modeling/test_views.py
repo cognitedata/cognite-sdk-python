@@ -44,7 +44,7 @@ class TestViewsAPI:
                 ),
             },
         )
-        new_id = models.VersionedDataModelingId.from_tuple((new_view.space, new_view.external_id, new_view.version))
+        new_id = models.VersionedDataModelingId(new_view.space, new_view.external_id, new_view.version)
 
         # Act
         created = cognite_client.data_modeling.views.apply(new_view)

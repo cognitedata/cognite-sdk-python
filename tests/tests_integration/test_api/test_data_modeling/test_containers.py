@@ -61,7 +61,7 @@ class TestContainersAPI:
         )
 
         # Assert
-        assert deleted_id[0] == models.DataModelingId.from_tuple((new_container.space, new_container.external_id))
+        assert deleted_id[0] == models.DataModelingId(new_container.space, new_container.external_id)
         assert retrieved_deleted is None
 
     def test_delete_non_existent(self, cognite_client: CogniteClient, integration_test_space: models.Space):

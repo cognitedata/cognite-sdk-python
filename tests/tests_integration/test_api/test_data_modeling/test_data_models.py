@@ -56,11 +56,9 @@ class TestDataModelsAPI:
             name="Create and delete data model with view",
             views=[new_view],
         )
-        new_view_id = models.VersionedDataModelingId.from_tuple(
-            (new_view.space, new_view.external_id, new_view.version)
-        )
-        new_id = models.VersionedDataModelingId.from_tuple(
-            (new_data_model.space, new_data_model.external_id, new_data_model.version)
+        new_view_id = models.VersionedDataModelingId(new_view.space, new_view.external_id, new_view.version)
+        new_id = models.VersionedDataModelingId(
+            new_data_model.space, new_data_model.external_id, new_data_model.version
         )
 
         # Act

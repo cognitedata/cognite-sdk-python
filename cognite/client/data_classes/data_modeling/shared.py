@@ -33,7 +33,7 @@ class DataModeling(CogniteResource):
             external_id = self.external_id
             args.append(f"{external_id=}")
 
-        return f"{type(self).__name__}({', '.join(args)}) at 0x{hex(id(self)).upper().zfill(16)}"
+        return f"{type(self).__name__}({', '.join(args)}) at {id(self):#x}"
 
 
 @dataclass
@@ -76,7 +76,7 @@ class Reference(ABC):
             return ContainerReference.load(data)
         elif data["type"] == "view":
             return ViewReference.load(data)
-        raise ValueError(f"Type {data['type']} is not supported.zs")
+        raise ValueError(f"Type {data['type']} is not supported.")
 
 
 @dataclass
@@ -119,6 +119,9 @@ class PropertyType(ABC):
     def load(
         cls, data: dict, direct_type_cls: typing.Type[DirectNodeRelation] = None
     ) -> Text | Primitive | CDFExternalIdReference | DirectNodeRelation:
+        if "type" not in data:
+            raise ValueError("Property types are required to have a type")
+
         type_ = data["type"]
 
         if type_ in PRIMITIVE_TYPE_SET:
@@ -129,7 +132,7 @@ class PropertyType(ABC):
             return CDFExternalIdReference.load(data)
         elif type_ in DIRECT_TYPE:
             if direct_type_cls is None:
-                raise NotImplementedError()
+                raise NotImplementedError
             return direct_type_cls.load(rename_and_exclude_keys(data, exclude={"type"}))
         else:
             raise ValueError(

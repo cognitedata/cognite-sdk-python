@@ -42,7 +42,7 @@ class TestSpacesAPI:
 
         # Assert
         assert retrieved_space.dump() == created_space.dump()
-        expected = retrieved_space.to_space_apply().dump()
+        expected = retrieved_space.as_apply().dump()
         assert my_space.dump() == expected
 
         # Act
