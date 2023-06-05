@@ -1,20 +1,45 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Literal, cast
+from dataclasses import asdict, dataclass
+from typing import TYPE_CHECKING, Any, List, Literal, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
-    CogniteResource,
     CogniteResourceList,
 )
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
-from cognite.client.data_classes.data_modeling.shared import DirectRelationReference, ViewReference
+from cognite.client.data_classes.data_modeling.shared import (
+    ContainerReference,
+    DataModeling,
+    DirectRelationReference,
+    ViewReference,
+)
+from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive, convert_all_keys_to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class InstanceCore(CogniteResource):
+PropertyType = Union[str, int, float, bool, dict, List[str], List[int], List[float], List[bool], List[dict]]
+
+
+@dataclass
+class NodeOrNodeData:
+    source: ViewReference | ContainerReference
+    properties: dict[str, PropertyType]
+
+    @classmethod
+    def load(cls, data: dict) -> NodeOrNodeData:
+        return cls(**convert_all_keys_to_snake_case(data))
+
+    def dump(self, camel_case: bool = False) -> dict:
+        output = asdict(self)
+        if self.source:
+            output["source"] = self.source.dump(camel_case)
+        return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
+
+
+class InstanceCore(DataModeling):
     """A node or edge
     Args:
         instance_type (Literal["node", "edge"]) The type of instance.
@@ -119,7 +144,7 @@ class NodeApply(InstanceApply):
         space: str = None,
         external_id: str = None,
         existing_version: int = None,
-        sources: list = None,
+        sources: list[NodeOrNodeData] = None,
         cognite_client: CogniteClient = None,
     ):
         super().__init__(
@@ -130,6 +155,12 @@ class NodeApply(InstanceApply):
             sources,
             cognite_client,
         )
+
+    # def _load(cls, resource: dict | str, cognite_client: CogniteClient = None) -> NodeApply:
+    #     ...
+    #
+    # def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    #     ...
 
 
 class Node(Instance):
