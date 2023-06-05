@@ -54,7 +54,7 @@ class ViewCore(DataModeling):
     def _load(cls, resource: dict | str, cognite_client: CogniteClient = None) -> ViewCore:
         data = json.loads(resource) if isinstance(resource, str) else resource
         if "implements" in data:
-            data["implements"] = [ViewReference.load(v) for v in data["implements"]]
+            data["implements"] = [ViewReference.load(v) for v in data["implements"]] or None
         if "filter" in data:
             data["filter"] = Filter.load(data["filter"])
 
