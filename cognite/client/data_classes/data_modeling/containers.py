@@ -30,7 +30,7 @@ class ContainerCore(DataModeling):
     """Represent the physical storage of data. This is the base class for the read and write version.
 
     Args:
-        space (str): The workspace for the view.a unique identifier for the space.
+        space (str): The workspace for the view, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the view.
         description (str): Textual description of the view
         name (str): Human readable name for the view.
@@ -93,7 +93,7 @@ class ContainerApply(ContainerCore):
     """Represent the physical storage of data. This is the write format of the container
 
     Args:
-        space (str): The workspace for the view.a unique identifier for the space.
+        space (str): The workspace for the view, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the view.
         description (str): Textual description of the view
         name (str): Human readable name for the view.
@@ -124,7 +124,7 @@ class Container(ContainerCore):
     """Represent the physical storage of data. This is the read format of the container
 
     Args:
-        space (str): The workspace for the view.a unique identifier for the space.
+        space (str): The workspace for the view, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the view.
         description (str): Textual description of the view
         name (str): Human readable name for the view.
@@ -190,7 +190,7 @@ class ContainerApplyList(CogniteResourceList):
 
 
 class ContainerFilter(CogniteFilter):
-    """Represent the filer arguments for the list endpoint.
+    """Represent the filter arguments for the list endpoint.
 
     Args:
         space (str): The space to query

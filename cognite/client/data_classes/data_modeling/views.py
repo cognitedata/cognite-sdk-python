@@ -54,7 +54,7 @@ class ViewCore(DataModeling):
     def _load(cls, resource: dict | str, cognite_client: CogniteClient = None) -> ViewCore:
         data = json.loads(resource) if isinstance(resource, str) else resource
         if "implements" in data:
-            data["implements"] = [ViewReference.load(v) for v in data["implements"]] or None
+            data["implements"] = [ViewReference.load(v) for v in data["implements"]]
         if "filter" in data:
             data["filter"] = Filter.load(data["filter"])
 
@@ -70,7 +70,7 @@ class ViewCore(DataModeling):
 
         return output
 
-    def to_view_reference(self) -> ViewReference:
+    def as_reference(self) -> ViewReference:
         return ViewReference(
             space=cast(str, self.space),
             external_id=cast(str, self.external_id),
@@ -82,7 +82,7 @@ class ViewApply(ViewCore):
     """A group of properties. Write only version.
 
     Args:
-        space (str): The workspace for the view.a unique identifier for the space.
+        space (str): The workspace for the view, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the view.
         description (str): Textual description of the view
         name (str): Human readable name for the view.
@@ -126,7 +126,7 @@ class View(ViewCore):
     """A group of properties. Read only version.
 
     Args:
-        space (str): The workspace for the view.a unique identifier for the space.
+        space (str): The workspace for the view, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the view.
         description (str): Textual description of the view
         name (str): Human readable name for the view.
@@ -395,6 +395,6 @@ class SingleHopConnectionDefinition(ConnectionDefinition):
             output["source"] = self.source.dump(camel_case)
 
         if self.edge_source:
-            output["edgeSource"] = self.edge_source.dump(camel_case)
+            output["edgeSource" if camel_case else "edge_source"] = self.edge_source.dump(camel_case)
 
         return convert_all_keys_to_camel_case_recursive(output) if camel_case else output

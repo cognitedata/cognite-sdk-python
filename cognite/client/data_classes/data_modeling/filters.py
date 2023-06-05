@@ -37,7 +37,7 @@ def _dump_filter_value(filter_value: FilterValueList | FilterValue) -> Any:
 
 def _load_filter_value(value: Any) -> FilterValue | FilterValueList:
     if isinstance(value, Mapping) and len(value.keys()) == 1:
-        value_key = next(iter(value.keys()))
+        (value_key,) = value
         if value_key == "property":
             return PropertyReferenceValue(value[value_key])
         if value_key == "parameter":
@@ -53,7 +53,7 @@ class Filter(ABC):
 
     @classmethod
     def load(cls, filter_: dict[str, Any]) -> Filter:
-        filter_name = next(iter(filter_.keys()))
+        (filter_name,) = filter_
         filter_body = filter_[filter_name]
 
         if filter_name == And._filter_name:

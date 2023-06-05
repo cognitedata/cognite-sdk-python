@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import numbers
 from typing import (
-    TYPE_CHECKING,
     Dict,
     Generic,
     Iterable,
@@ -20,9 +19,6 @@ from typing import (
 
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
 from cognite.client.utils._auxiliary import split_into_chunks
-
-if TYPE_CHECKING:
-    pass
 
 T_ID = TypeVar("T_ID", int, str)
 

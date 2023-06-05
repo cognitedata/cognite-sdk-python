@@ -16,13 +16,13 @@ if TYPE_CHECKING:
 
 
 class DataModelCore(DataModeling):
-    """A group of properties.
+    """A group of views.
 
     Args:
-        space (str): The workspace for the view.a unique identifier for the space.
-        external_id (str): Combined with the space is the unique identifier of the view.
-        description (str): Textual description of the view
-        name (str): Human readable name for the view.
+        space (str): The workspace for the data model, a unique identifier for the space.
+        external_id (str): Combined with the space is the unique identifier of the data model.
+        description (str): Textual description of the data model
+        name (str): Human readable name for the data model.
         version (str): DMS version.
     """
 
@@ -48,10 +48,10 @@ class DataModelApply(DataModelCore):
     """A group of views. This is the write version of a Data Model.
 
     Args:
-        space (str): The workspace for the view.a unique identifier for the space.
-        external_id (str): Combined with the space is the unique identifier of the view.
-        description (str): Textual description of the view
-        name (str): Human readable name for the view.
+        space (str): The workspace for the data model, a unique identifier for the space.
+        external_id (str): Combined with the space is the unique identifier of the data model.
+        description (str): Textual description of the data model
+        name (str): Human readable name for the data model.
         version (str): DMS version.
         views (list[ViewReference | ViewApply]): List of views included in this data model.
     """
@@ -97,10 +97,10 @@ class DataModel(DataModelCore):
     """A group of views. This is the read version of a Data Model
 
     Args:
-        space (str): The workspace for the view.a unique identifier for the space.
-        external_id (str): Combined with the space is the unique identifier of the view.
-        description (str): Textual description of the view
-        name (str): Human readable name for the view.
+        space (str): The workspace for the data model, a unique identifier for the space.
+        external_id (str): Combined with the space is the unique identifier of the data model.
+        description (str): Textual description of the data model
+        name (str): Human readable name for the data model.
         version (str): DMS version.
         views (list): List of views included in this data model.
         is_global (bool): Whether this is a global data model.

@@ -74,7 +74,6 @@ __all__ = [
     "CDFType",
     "TextType",
     "DirectType",
-    "DirectNodeRelation",
     "ViewReference",
     "ContainerReference",
     "DataModel",

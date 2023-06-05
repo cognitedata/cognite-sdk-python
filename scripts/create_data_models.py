@@ -58,7 +58,7 @@ def copy_pygen_test_data(pygen: CogniteClient, client: CogniteClient):
 
 
 if __name__ == "__main__":
-    # # The code for getting a client is not committed, this is to avoid accidental runs.
+    # The code for getting a client is not committed, this is to avoid accidental runs.
     from scripts import local_client
 
     # dump(local_client.get_pygen_access())
