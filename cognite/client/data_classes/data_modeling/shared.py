@@ -7,7 +7,7 @@ from typing import Any, Literal, cast
 
 from cognite.client.data_classes._base import CogniteResource
 from cognite.client.utils._auxiliary import rename_and_exclude_keys
-from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive, convert_all_keys_to_snake_case
+from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_snake_case
 
 PrimitiveType = Literal["boolean", "float32", "float64", "int32", "int64", "timestamp", "date", "json"]
 CDFType = Literal["timeseries", "file", "sequence"]
@@ -44,7 +44,7 @@ class DirectRelationReference:
     def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
         output = asdict(self)
 
-        return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
+        return convert_all_keys_recursive(output, camel_case)
 
     @classmethod
     def load(cls, data: dict) -> DirectRelationReference:
@@ -59,13 +59,13 @@ class Reference(ABC):
     def dump(self, camel_case: bool = False, *_: Any, **__: Any) -> dict[str, str]:
         output = asdict(self)
 
-        return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
+        return convert_all_keys_recursive(output, camel_case)
 
     @classmethod
     def _load(cls, data: dict | None) -> Any:
         if data is None:
             return None
-        return cls(**convert_all_keys_to_snake_case({k: v for k, v in data.items() if k != "type"}))
+        return cls(**convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"type"})))
 
     @classmethod
     def load(cls, data: dict) -> ContainerReference | ViewReference:
@@ -109,7 +109,7 @@ class ViewReference(Reference):
 class PropertyType(ABC):
     def dump(self, camel_case: bool = False, *_: Any, **__: Any) -> dict[str, str | dict]:
         output = asdict(self)
-        return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
+        return convert_all_keys_recursive(output, camel_case)
 
     @classmethod
     def _load(cls, data: dict) -> PropertyType:

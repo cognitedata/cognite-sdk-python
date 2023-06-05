@@ -85,7 +85,7 @@ class ContainerCore(DataModeling):
 
         return output
 
-    def to_container_reference(self) -> ContainerReference:
+    def as_reference(self) -> ContainerReference:
         return ContainerReference(cast(str, self.space), cast(str, self.external_id))
 
 
@@ -159,7 +159,7 @@ class Container(ContainerCore):
         self.last_updated_time = last_updated_time
         self.created_time = created_time
 
-    def to_container_apply(self) -> ContainerApply:
+    def as_apply(self) -> ContainerApply:
         return ContainerApply(
             space=self.space,
             external_id=self.external_id,
@@ -180,13 +180,13 @@ class ContainerList(CogniteResourceList):
 class ContainerApplyList(CogniteResourceList):
     _RESOURCE = ContainerApply
 
-    def to_container_apply(self) -> ContainerApplyList:
+    def as_apply(self) -> ContainerApplyList:
         """Convert to a container an apply list.
 
         Returns:
             ContainerApplyList: The container apply list.
         """
-        return ContainerApplyList(resources=[v.to_container_apply() for v in self.items])
+        return ContainerApplyList(resources=[v.as_apply() for v in self.items])
 
 
 class ContainerFilter(CogniteFilter):

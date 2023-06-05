@@ -207,7 +207,9 @@ class DataModelFilter(CogniteFilter):
 class DataModelsSort(CogniteFilter):
     def __init__(
         self,
-        property: Literal["space", "externalId", "name", "description", "version", "createdTime", "lastUpdatedTime"],
+        property: Literal[
+            "space", "external_id", "name", "description", "version", "created_time", "last_updated_time"
+        ],
         direction: Literal["ascending", "descending"] = "ascending",
         nulls_first: bool = False,
     ):
