@@ -916,6 +916,7 @@ class FunctionSchedulesAPI(APIClient):
 
         return FunctionSchedulesList._load(res.json()["items"], cognite_client=self._cognite_client)
 
+    # TODO: Major version 7, remove 'function_external_id' which only worked when using API-keys.
     def create(
         self,
         name: str,
@@ -931,41 +932,53 @@ class FunctionSchedulesAPI(APIClient):
         Args:
             name (str): Name of the schedule.
             function_id (optional, int): Id of the function. This is required if the schedule is created with client_credentials.
-            function_external_id (optional, str): External id of the function. This is deprecated and cannot be used together with client_credentials.
+            function_external_id (optional, str): External id of the function. **NOTE**: This is deprecated and will be removed in a future major version.
             description (str): Description of the schedule.
             cron_expression (str): Cron expression.
             client_credentials: (optional, ClientCredentials, Dict): Instance of ClientCredentials or a dictionary containing client credentials:
                 client_id
                 client_secret
-            data (optional, Dict): Data to be passed to the scheduled run. **WARNING:** Secrets or other confidential information should not be passed via this argument. There is a dedicated `secrets` argument in FunctionsAPI.create() for this purpose.
+            data (optional, Dict): Data to be passed to the scheduled run.
 
         Returns:
             FunctionSchedule: Created function schedule.
 
+        Warning:
+            Do not pass secrets or other confidential information via the ``data`` argument. There is a dedicated
+            ``secrets`` argument in FunctionsAPI.create() for this purpose.
+
         Examples:
 
-            Create function schedule::
+            Create a function schedule that runs using specified client credentials (**recommended**)::
 
+                >>> import os
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ClientCredentials
                 >>> c = CogniteClient()
                 >>> schedule = c.functions.schedules.create(
-                ...     name= "My schedule",
+                ...     name="My schedule",
                 ...     function_id=123,
                 ...     cron_expression="*/5 * * * *",
-                ...     client_credentials=ClientCredentials("my-client-id", "my-client-secret"),
-                ...     description="This schedule does magic stuff."
+                ...     client_credentials=ClientCredentials("my-client-id", os.environ["MY_CLIENT_SECRET"]),
+                ...     description="This schedule does magic stuff.",
+                ...     data={"magic": "stuff"},
+                ... )
+
+            You may also create a schedule that runs with your -current- credentials, i.e. the same credentials you used
+            to instantiate the ``CogniteClient`` (that you're using right now). **Note**: Unless you happen to already use
+            client credentials, *this is not a recommended way to create schedules*, as it will create an explicit dependency
+            on your user account, which it will run the function "on behalf of" (until the schedule is eventually removed)::
+
+                >>> schedule = c.functions.schedules.create(
+                ...     name="My schedule",
+                ...     function_id=456,
+                ...     cron_expression="*/5 * * * *",
+                ...     description="A schedule just used for some temporary testing.",
                 ... )
 
         """
         _get_function_identifier(function_id, function_external_id)
-
-        nonce = None
-        if client_credentials is not None:
-            if function_id is None:
-                raise ValueError("When passing 'client_credentials', 'function_id' must be set")
-            nonce = _create_session_and_return_nonce(self._cognite_client, client_credentials)
-
+        nonce = _create_session_and_return_nonce(self._cognite_client, client_credentials)
         body: Dict[str, List[Dict[str, Union[str, int, None, Dict]]]] = {
             "items": [
                 {
