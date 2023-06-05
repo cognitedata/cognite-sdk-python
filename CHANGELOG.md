@@ -26,6 +26,10 @@ Changes are grouped as follows
 ### Changed
 - Removed `retrieve_multiple` from the `SpacesAPI` to have a consistent API with the `views`, `containers`, and `models`.
 
+## [6.2.2] - 2023-06-05
+### Fixed
+- Creating function schedules with current user credentials now works (used to fail at runtime with "Could not fetch a valid token (...)" because a session was never created.)
+
 ## [6.2.1] - 2023-05-26
 ### Added
 - Data model centric support in transformation

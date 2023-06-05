@@ -70,8 +70,8 @@ class TestEvents:
         assert mock_events_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
     def test_list_partitions(self, cognite_client, mock_events_response):
-        cognite_client.events.list(partitions=13, limit=float("inf"))
-        assert 13 == len(mock_events_response.calls)
+        cognite_client.events.list(partitions=10, limit=float("inf"))
+        assert 10 == len(mock_events_response.calls)
 
     def test_list_with_dataset_ids(self, cognite_client, mock_events_response):
         cognite_client.events.list(source="bla", data_set_ids=[1], data_set_external_ids=["x"])

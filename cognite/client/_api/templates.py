@@ -332,7 +332,6 @@ class TemplateGroupVersionsAPI(APIClient):
 
 class TemplateInstancesAPI(APIClient):
     _RESOURCE_PATH = "/templategroups/{}/versions/{}/instances"
-    _LIST_CLASS = TemplateInstanceList
 
     def create(
         self, external_id: str, version: int, instances: Union[TemplateInstance, Sequence[TemplateInstance]]

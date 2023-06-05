@@ -172,12 +172,19 @@ class TokenAPI(APIClient):
 
         Returns:
             TokenInspection: The object with token inspection details.
+
+        Example:
+
+            Inspect token::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.iam.token.inspect()
         """
         return TokenInspection._load(self._get("/api/v1/token/inspect").json())
 
 
 class SessionsAPI(APIClient):
-    _LIST_CLASS = SessionList
     _RESOURCE_PATH = "/sessions"
 
     def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
@@ -215,7 +222,7 @@ class SessionsAPI(APIClient):
         identifiers = IdentifierSequence.load(ids=id, external_ids=None)
         items = {"items": identifiers.as_dicts()}
 
-        return self._LIST_CLASS._load(self._post(self._RESOURCE_PATH + "/revoke", items).json()["items"])
+        return SessionList._load(self._post(self._RESOURCE_PATH + "/revoke", items).json()["items"])
 
     def list(self, status: Optional[str] = None) -> SessionList:
         """`List all sessions in the current project. <https://docs.cognite.com/api/v1/#operation/listSessions>`_
@@ -226,5 +233,5 @@ class SessionsAPI(APIClient):
         Returns:
             SessionList: a list of sessions in the current project.
         """
-        filter = {"status": status} if status else None
-        return self._list(list_cls=self._LIST_CLASS, resource_cls=Session, method="GET", filter=filter)
+        filter = {"status": status} if status is not None else None
+        return self._list(list_cls=SessionList, resource_cls=Session, method="GET", filter=filter)
