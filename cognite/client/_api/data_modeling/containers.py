@@ -102,9 +102,9 @@ class ContainersAPI(APIClient):
             Fetch using the DataModelingId::
 
                 >>> from cognite.client import CogniteClient
-                >>> import cognite.client.data_classes.data_modeling as models
+                >>> from cognite.client.data_modeling import DataModelingId
                 >>> c = CogniteClient()
-                >>> res = c.data_modeling.containers.retrieve(models.DataModelingId(space='mySpace', external_id='myContainer'))
+                >>> res = c.data_modeling.containers.retrieve(DataModelingId(space='mySpace', external_id='myContainer'))
         """
         identifier = load_identifier(ids)
         return self._retrieve_multiple(list_cls=ContainerList, resource_cls=Container, identifiers=identifier)
