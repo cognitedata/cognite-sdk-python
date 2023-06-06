@@ -13,7 +13,7 @@ from cognite.client.data_classes.data_modeling._validation import validate_data_
 from cognite.client.data_classes.data_modeling.shared import (
     CDFExternalIdReference,
     ContainerReference,
-    DataModeling,
+    DataModelingResource,
     DirectNodeRelation,
     Primitive,
     PropertyType,
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class ContainerCore(DataModeling):
+class ContainerCore(DataModelingResource):
     """Represent the physical storage of data. This is the base class for the read and write version.
 
     Args:

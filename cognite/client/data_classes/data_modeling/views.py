@@ -13,7 +13,7 @@ from cognite.client.data_classes.data_modeling._validation import validate_data_
 from cognite.client.data_classes.data_modeling.filters import Filter
 from cognite.client.data_classes.data_modeling.shared import (
     ContainerReference,
-    DataModeling,
+    DataModelingResource,
     DirectNodeRelation,
     DirectRelationReference,
     PropertyType,
@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class ViewCore(DataModeling):
+class ViewCore(DataModelingResource):
     def __init__(
         self,
         space: str = None,

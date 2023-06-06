@@ -23,7 +23,7 @@ _PROPERTY_ALIAS = {"list": "isList"}
 _PROPERTY_ALIAS_INV = {"isList": "list", "is_list": "list"}
 
 
-class DataModeling(CogniteResource):
+class DataModelingResource(CogniteResource):
     def __repr__(self) -> str:
         args = []
         if hasattr(self, "space"):
