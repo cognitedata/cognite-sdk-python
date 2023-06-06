@@ -20,16 +20,18 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-PropertyType = Union[str, int, float, bool, dict, List[str], List[int], List[float], List[bool], List[dict]]
+PropertyValue = Union[str, int, float, bool, dict, List[str], List[int], List[float], List[bool], List[dict]]
+Space = str
+PropertyIdentifier = str
 
 
 @dataclass
-class NodeOrNodeData:
+class NodeOrEdgeData:
     source: ViewReference | ContainerReference
-    properties: dict[str, PropertyType]
+    properties: dict[str, PropertyValue]
 
     @classmethod
-    def load(cls, data: dict) -> NodeOrNodeData:
+    def load(cls, data: dict) -> NodeOrEdgeData:
         return cls(**convert_all_keys_to_snake_case(data))
 
     def dump(self, camel_case: bool = False) -> dict:
@@ -70,10 +72,10 @@ class InstanceApply(InstanceCore):
         existing_version (int): Fail the ingestion request if the node's version is greater than or equal to this value.
                                 If no existingVersion is specified, the ingestion will always overwrite any
                                 existing data for the edge (for the specified container or instance). If existingVersion is
-                                sset to 0, the upsert will behave as an insert, so it will fail the bulk if the
+                                set to 0, the upsert will behave as an insert, so it will fail the bulk if the
                                 item already exists. If skipOnVersionConflict is set on the ingestion request,
                                 then the item will be skipped instead of failing the ingestion request.
-        sources (list): List of source properties to write. The properties are from the instance and/or
+        sources (list[NodeOrEdgeData]): List of source properties to write. The properties are from the instance and/or
                         container the container(s) making up this node.
     """
 
@@ -83,12 +85,18 @@ class InstanceApply(InstanceCore):
         space: str = None,
         external_id: str = None,
         existing_version: int = None,
-        sources: list = None,
+        sources: list[NodeOrEdgeData] = None,
         cognite_client: CogniteClient = None,
     ):
         super().__init__(instance_type, space, external_id, cognite_client)
         self.existing_version = existing_version
         self.sources = sources
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        if self.sources:
+            output["sources"] = [source.dump(camel_case) for source in self.sources]
+        return output
 
 
 class Instance(InstanceCore):
@@ -113,7 +121,7 @@ class Instance(InstanceCore):
         last_updated_time: int = None,
         created_time: int = None,
         deleted_time: int = None,
-        properties: dict = None,
+        properties: dict[Space, dict[PropertyIdentifier, PropertyValue]] = None,
         cognite_client: CogniteClient = None,
     ):
         super().__init__(instance_type, space, external_id, cognite_client)
@@ -122,6 +130,21 @@ class Instance(InstanceCore):
         self.created_time = created_time
         self.deleted_time = deleted_time
         self.properties = properties
+
+    def as_apply(self, source: ViewReference | ContainerReference, existing_version: int) -> InstanceApply:
+        return InstanceApply(
+            instance_type=self.instance_type,
+            space=self.space,
+            external_id=self.external_id,
+            existing_version=existing_version,
+            sources=[
+                NodeOrEdgeData(source=source, properties=space_properties)
+                for space_properties in self.properties.values()
+            ]
+            if self.properties
+            else None,
+            cognite_client=getattr(self, "_cognite_client", None),
+        )
 
 
 class NodeApply(InstanceApply):
@@ -135,27 +158,11 @@ class NodeApply(InstanceApply):
                                 set to 0, the upsert will behave as an insert, so it will fail the bulk if the
                                 item already exists. If skipOnVersionConflict is set on the ingestion request,
                                 then the item will be skipped instead of failing the ingestion request.
-        sources (list): List of source properties to write. The properties are from the node and/or
+        sources (list[NodeOrEdgeData]): List of source properties to write. The properties are from the node and/or
                         container the container(s) making up this node.
     """
 
-    def __init__(
-        self,
-        space: str = None,
-        external_id: str = None,
-        existing_version: int = None,
-        sources: list[NodeOrNodeData] = None,
-        cognite_client: CogniteClient = None,
-    ):
-        super().__init__(
-            "node",
-            space,
-            external_id,
-            existing_version,
-            sources,
-            cognite_client,
-        )
-
+    ...
     # def _load(cls, resource: dict | str, cognite_client: CogniteClient = None) -> NodeApply:
     #     ...
     #
@@ -199,6 +206,9 @@ class Node(Instance):
             cognite_client,
         )
 
+    def as_apply(self, source: ViewReference | ContainerReference, existing_version: int) -> InstanceApply:
+        return cast(NodeApply, super().as_apply(source, existing_version))
+
 
 class EdgeApply(InstanceApply):
     """An Edge. This is the write version of the edge.
@@ -212,7 +222,7 @@ class EdgeApply(InstanceApply):
                                 set to 0, the upsert will behave as an insert, so it will fail the bulk if the
                                 item already exists. If skipOnVersionConflict is set on the ingestion request,
                                 then the item will be skipped instead of failing the ingestion request.
-        sources (list): List of source properties to write. The properties are from the edge and/or
+        sources (list[NodeOrEdgeData]): List of source properties to write. The properties are from the edge and/or
                         container the container(s) making up this node.
         start_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
         end_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
@@ -224,7 +234,7 @@ class EdgeApply(InstanceApply):
         external_id: str = None,
         type: DirectRelationReference = None,
         existing_version: int = None,
-        sources: list = None,
+        sources: list[NodeOrEdgeData] = None,
         start_node: DirectRelationReference = None,
         end_node: DirectRelationReference = None,
         cognite_client: CogniteClient = None,
