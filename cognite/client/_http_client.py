@@ -96,8 +96,8 @@ class HTTPClient:
         self,
         config: HTTPClientConfig,
         session: requests.Session,
-        refresh_auth_header: Callable[[MutableMapping[str, Any]], None],
         retry_tracker_factory: Callable[[HTTPClientConfig], _RetryTracker] = _RetryTracker,
+        refresh_auth_header: Callable[[MutableMapping[str, Any]], None] | None = None,
     ):
         self.session = session
         self.config = config
@@ -128,7 +128,7 @@ class HTTPClient:
 
             # During a backoff loop, our credentials might expire, so we check and maybe refresh:
             time.sleep(retry_tracker.get_backoff_time())
-            if headers is not None:
+            if self.refresh_auth_header is not None and headers is not None:
                 # TODO: Refactoring needed to make this "prettier"
                 self.refresh_auth_header(headers)
 
