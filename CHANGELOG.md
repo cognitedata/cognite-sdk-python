@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [6.3.2] - 2023-06-07
 ### Fixed
-- Requests being retried around a token refresh cycle, no longer gets stuck with an outdated token.
+- Requests being retried around a token refresh cycle, no longer risk getting stuck with an outdated token.
 
 ## [6.3.1] - 2023-06-07
 ### Fixed
