@@ -42,12 +42,13 @@ class DirectRelationReference:
 
 @dataclass
 class Reference(ABC):
+    _type: ClassVar[str]
     space: str
     external_id: str
 
     def dump(self, camel_case: bool = False) -> dict[str, str]:
         output = asdict(self)
-
+        output["type"] = self._type
         return convert_all_keys_recursive(output, camel_case)
 
     @classmethod
@@ -70,28 +71,21 @@ class Reference(ABC):
 
 @dataclass
 class ContainerReference(Reference):
+    _type = "container"
+
     @classmethod
     def load(cls, data: dict) -> ContainerReference:
         return cast(ContainerReference, super()._load(data))
 
-    def dump(self, camel_case: bool = False) -> dict[str, str]:
-        output = super().dump(camel_case)
-        output["type"] = "container"
-        return output
-
 
 @dataclass
 class ViewReference(Reference):
+    _type = "view"
     version: str
 
     @classmethod
     def load(cls, data: dict) -> ViewReference:
         return cast(ViewReference, super()._load(data))
-
-    def dump(self, camel_case: bool = False) -> dict[str, str]:
-        output = super().dump(camel_case)
-        output["type"] = "view"
-        return output
 
 
 class PropertyType(ABC):
