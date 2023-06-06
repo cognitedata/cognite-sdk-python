@@ -1,6 +1,6 @@
 import pytest
 
-from cognite.client.data_classes.data_modeling.containers import ContainerDirectNodeRelation
+from cognite.client.data_classes.data_modeling.containers import ContainerDirectRelation
 from cognite.client.data_classes.data_modeling.shared import (
     ContainerReference,
     DirectRelationReference,
@@ -8,7 +8,7 @@ from cognite.client.data_classes.data_modeling.shared import (
     Reference,
     ViewReference,
 )
-from cognite.client.data_classes.data_modeling.views import ViewDirectNodeRelation
+from cognite.client.data_classes.data_modeling.views import ViewDirectRelation
 
 
 class TestDirectRelationReference:
@@ -46,25 +46,29 @@ class TestReference:
 
 class TestPropertyType:
     @pytest.mark.parametrize(
-        "data, direct_cls",
+        "data",
         [
-            ({"type": "text", "collation": "ucs_basic", "list": False}, None),
-            ({"type": "int32", "list": True}, None),
-            ({"type": "timeseries", "list": False}, None),
-            (
-                {"type": "direct", "container": {"space": "mySpace", "externalId": "myId", "type": "container"}},
-                ContainerDirectNodeRelation,
-            ),
-            (
-                {
-                    "type": "direct",
-                    "source": {"space": "mySpace", "externalId": "myId", "version": "myVersion", "type": "view"},
-                },
-                ViewDirectNodeRelation,
-            ),
+            {"type": "text", "collation": "ucs_basic", "list": False},
+            {"type": "int32", "list": True},
+            {"type": "timeseries", "list": False},
         ],
     )
-    def test_load_dump(self, data: dict, direct_cls):
-        actual = PropertyType.load(data, direct_type_cls=direct_cls).dump(camel_case=True)
+    def test_load_dump(self, data: dict):
+        actual = PropertyType.load(data).dump(camel_case=True)
 
         assert data == actual
+
+
+class TestDirectRelation:
+    def test_load_dump_container_direct_relation(self):
+        data = {"type": "direct", "container": {"space": "mySpace", "externalId": "myId", "type": "container"}}
+
+        assert data == ContainerDirectRelation.load(data).dump(camel_case=True)
+
+    def test_load_dump_view_direct_relation(self):
+        data = {
+            "type": "direct",
+            "source": {"space": "mySpace", "externalId": "myId", "version": "myVersion", "type": "view"},
+        }
+
+        assert data == ViewDirectRelation.load(data).dump(camel_case=True)

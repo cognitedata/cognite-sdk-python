@@ -1,23 +1,12 @@
 from __future__ import annotations
 
-import typing
 from abc import ABC
 from dataclasses import asdict, dataclass
-from typing import Any, Literal, cast
+from typing import Any, ClassVar, cast
 
 from cognite.client.data_classes._base import CogniteResource
 from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_snake_case
-
-PrimitiveType = Literal["boolean", "float32", "float64", "int32", "int64", "timestamp", "date", "json"]
-CDFType = Literal["timeseries", "file", "sequence"]
-TextType = Literal["text"]
-DirectType = Literal["direct"]
-
-PRIMITIVE_TYPE_SET = set(typing.get_args(PrimitiveType))
-CDF_TYPE_SET = set(typing.get_args(CDFType))
-TEXT_TYPE_SET = set(typing.get_args(TextType))
-DIRECT_TYPE = set(typing.get_args(DirectType))
 
 _PROPERTY_ALIAS = {"list": "isList"}
 _PROPERTY_ALIAS_INV = {"isList": "list", "is_list": "list"}
@@ -56,7 +45,7 @@ class Reference(ABC):
     space: str
     external_id: str
 
-    def dump(self, camel_case: bool = False, *_: Any, **__: Any) -> dict[str, str]:
+    def dump(self, camel_case: bool = False) -> dict[str, str]:
         output = asdict(self)
 
         return convert_all_keys_recursive(output, camel_case)
@@ -85,7 +74,7 @@ class ContainerReference(Reference):
     def load(cls, data: dict) -> ContainerReference:
         return cast(ContainerReference, super()._load(data))
 
-    def dump(self, camel_case: bool = False, *_: Any, **__: Any) -> dict[str, str]:
+    def dump(self, camel_case: bool = False) -> dict[str, str]:
         output = super().dump(camel_case)
         output["type"] = "container"
         return output
@@ -99,101 +88,135 @@ class ViewReference(Reference):
     def load(cls, data: dict) -> ViewReference:
         return cast(ViewReference, super()._load(data))
 
-    def dump(self, camel_case: bool = False, *_: Any, **__: Any) -> dict[str, str]:
+    def dump(self, camel_case: bool = False) -> dict[str, str]:
         output = super().dump(camel_case)
         output["type"] = "view"
         return output
 
 
-@dataclass
 class PropertyType(ABC):
-    def dump(self, camel_case: bool = False, *_: Any, **__: Any) -> dict[str, str | dict]:
+    _type: ClassVar[str]
+
+    def dump(self, camel_case: bool = False) -> dict:
         output = asdict(self)
+        output["type"] = self._type
+        output = rename_and_exclude_keys(output, aliases=_PROPERTY_ALIAS_INV)
         return convert_all_keys_recursive(output, camel_case)
 
     @classmethod
-    def _load(cls, data: dict) -> PropertyType:
-        return cls(**convert_all_keys_to_snake_case(data))
-
-    @classmethod
-    def load(
-        cls, data: dict, direct_type_cls: typing.Type[DirectNodeRelation] = None
-    ) -> Text | Primitive | CDFExternalIdReference | DirectNodeRelation:
+    def load(cls, data: dict) -> PropertyType:
         if "type" not in data:
             raise ValueError("Property types are required to have a type")
-
         type_ = data["type"]
+        data = convert_all_keys_to_snake_case(rename_and_exclude_keys(data, aliases=_PROPERTY_ALIAS, exclude={"type"}))
 
-        if type_ in PRIMITIVE_TYPE_SET:
-            return Primitive.load(data)
-        elif type_ in TEXT_TYPE_SET:
-            return Text.load(data)
-        elif type_ in CDF_TYPE_SET:
-            return CDFExternalIdReference.load(data)
-        elif type_ in DIRECT_TYPE:
-            if direct_type_cls is None:
-                raise NotImplementedError
-            return direct_type_cls.load(rename_and_exclude_keys(data, exclude={"type"}))
-        else:
-            raise ValueError(
-                f"Invalid type {type_}. Must be {PRIMITIVE_TYPE_SET | TEXT_TYPE_SET | CDF_TYPE_SET | DIRECT_TYPE}"
-            )
+        if type_ == "text":
+            return Text(**data)
+        elif type_ == "boolean":
+            return Boolean(**data)
+        elif type_ == "float32":
+            return Float32(**data)
+        elif type_ == "float64":
+            return Float64(**data)
+        elif type_ == "int32":
+            return Int32(**data)
+        elif type_ == "int64":
+            return Int64(**data)
+        elif type_ == "timestamp":
+            return Timestamp(**data)
+        elif type_ == "date":
+            return Date(**data)
+        elif type_ == "json":
+            return Json(**data)
+        elif type_ == "timeseries":
+            return TimeSeriesReference(**data)
+        elif type_ == "file":
+            return FileReference(**data)
+        elif type_ == "sequence":
+            return SequenceReference(**data)
+        elif type_ == "direct":
+            return DirectRelation(**data)
+
+        raise ValueError(f"Invalid type {type_}.")
 
 
 @dataclass
 class ListablePropertyType(PropertyType):
+    _type = "listable"
     is_list: bool = False
 
 
 @dataclass
 class Text(ListablePropertyType):
+    _type = "text"
     collation: str = "ucs_basic"
 
-    @classmethod
-    def load(cls, data: dict, *_: Any, **__: Any) -> Text:
-        return cast(Text, cls._load(rename_and_exclude_keys(data, aliases=_PROPERTY_ALIAS, exclude={"type"})))
 
-    def dump(self, camel_case: bool = False, *_: Any, **__: Any) -> dict[str, str | dict]:
-        output = rename_and_exclude_keys(super().dump(camel_case), aliases=_PROPERTY_ALIAS_INV)
-        output["type"] = "text"
-        return output
+@dataclass
+class Primitive(ListablePropertyType):
+    _type = "primitive"
 
 
 @dataclass
-class Primitive(PropertyType):
-    type: PrimitiveType
-    is_list: bool = False
-
-    @classmethod
-    def load(cls, data: dict, *_: Any, **__: Any) -> Primitive:
-        return cast(Primitive, cls._load(rename_and_exclude_keys(data, aliases=_PROPERTY_ALIAS)))
-
-    def dump(self, camel_case: bool = False, *_: Any, **__: Any) -> dict[str, str | dict]:
-        return rename_and_exclude_keys(super().dump(camel_case), aliases=_PROPERTY_ALIAS_INV)
+class Boolean(ListablePropertyType):
+    _type = "boolean"
 
 
 @dataclass
-class CDFExternalIdReference(PropertyType):
-    type: CDFType
-    is_list: bool = False
-
-    @classmethod
-    def load(cls, data: dict, *_: Any, **__: Any) -> CDFExternalIdReference:
-        return cast(CDFExternalIdReference, cls._load(rename_and_exclude_keys(data, aliases=_PROPERTY_ALIAS)))
-
-    def dump(self, camel_case: bool = False, *_: Any, **__: Any) -> dict[str, str | dict]:
-        return rename_and_exclude_keys(super().dump(camel_case), aliases=_PROPERTY_ALIAS_INV)
+class Float32(ListablePropertyType):
+    _type = "float32"
 
 
 @dataclass
-class DirectNodeRelation(PropertyType):
-    @classmethod
-    def load(cls, data: dict, *_: Any, **__: Any) -> DirectNodeRelation:
-        return cast(
-            DirectNodeRelation, cls._load(rename_and_exclude_keys(data, aliases=_PROPERTY_ALIAS, exclude={"type"}))
-        )
+class Float64(ListablePropertyType):
+    _type = "float64"
 
-    def dump(self, camel_case: bool = False, *_: Any, **__: Any) -> dict[str, str | dict]:
-        output = rename_and_exclude_keys(super().dump(camel_case), aliases=_PROPERTY_ALIAS_INV)
-        output["type"] = "direct"
-        return output
+
+@dataclass
+class Int32(ListablePropertyType):
+    _type = "int32"
+
+
+@dataclass
+class Int64(ListablePropertyType):
+    _type = "int64"
+
+
+@dataclass
+class Timestamp(ListablePropertyType):
+    _type = "timestamp"
+
+
+@dataclass
+class Date(ListablePropertyType):
+    _type = "date"
+
+
+@dataclass
+class Json(ListablePropertyType):
+    _type = "json"
+
+
+@dataclass
+class CDFExternalIdReference(ListablePropertyType):
+    _type = "cdf_external_reference"
+
+
+@dataclass
+class TimeSeriesReference(CDFExternalIdReference):
+    _type = "timeseries"
+
+
+@dataclass
+class FileReference(CDFExternalIdReference):
+    _type = "file"
+
+
+@dataclass
+class SequenceReference(CDFExternalIdReference):
+    _type = "sequence"
+
+
+@dataclass
+class DirectRelation(PropertyType):
+    _type = "direct"

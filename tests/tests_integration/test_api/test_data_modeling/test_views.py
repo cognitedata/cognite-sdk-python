@@ -53,7 +53,7 @@ class TestViewsAPI:
         # Assert
         assert created.created_time
         assert created.last_updated_time
-        assert created.to_view_apply().dump() == new_view.dump()
+        assert created.as_apply().dump() == new_view.dump()
         assert retrieved.dump() == created.dump()
 
         # Act

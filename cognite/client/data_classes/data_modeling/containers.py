@@ -11,13 +11,10 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
 from cognite.client.data_classes.data_modeling.shared import (
-    CDFExternalIdReference,
     ContainerReference,
     DataModelingResource,
-    DirectNodeRelation,
-    Primitive,
+    DirectRelation,
     PropertyType,
-    Text,
 )
 from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive, convert_all_keys_to_snake_case
@@ -203,25 +200,26 @@ class ContainerFilter(CogniteFilter):
 
 
 @dataclass
-class ContainerDirectNodeRelation(DirectNodeRelation):
+class ContainerDirectRelation(DirectRelation):
     container: Optional[ContainerReference] = None
 
-    def dump(self, camel_case: bool = False, *_: Any, **__: Any) -> dict[str, str | dict]:
+    def dump(self, camel_case: bool = False) -> dict:
         output = super().dump(camel_case)
         if "container" in output and isinstance(output["container"], dict):
             output["container"]["type"] = "container"
         return output
 
     @classmethod
-    def load(cls, data: dict, *_: Any, **__: Any) -> ContainerDirectNodeRelation:
+    def load(cls, data: dict) -> ContainerDirectRelation:
+        output = cls(**convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"type"})))
         if isinstance(data.get("container"), dict):
-            data["container"] = ContainerReference.load(data["container"])
-        return cast(ContainerDirectNodeRelation, super().load(data))
+            output.container = ContainerReference.load(data["container"])
+        return output
 
 
 @dataclass
 class ContainerPropertyIdentifier:
-    type: Text | Primitive | CDFExternalIdReference | ContainerDirectNodeRelation
+    type: PropertyType | ContainerDirectRelation
     nullable: bool = True
     auto_increment: bool = False
     name: Optional[str] = None
@@ -232,7 +230,10 @@ class ContainerPropertyIdentifier:
     def load(cls, data: dict[str, Any]) -> ContainerPropertyIdentifier:
         if "type" not in data:
             raise ValueError("Type not specified")
-        data["type"] = PropertyType.load(data["type"], ContainerDirectNodeRelation)
+        if data["type"].get("type") == "direct":
+            data["type"] = ContainerDirectRelation.load(data["type"])
+        else:
+            data["type"] = PropertyType.load(data["type"])
         return cls(**convert_all_keys_to_snake_case(data))
 
     def dump(self, camel_case: bool = False) -> dict[str, str | dict]:

@@ -14,11 +14,12 @@ from cognite.client.data_classes.data_modeling.filters import Filter
 from cognite.client.data_classes.data_modeling.shared import (
     ContainerReference,
     DataModelingResource,
-    DirectNodeRelation,
+    DirectRelation,
     DirectRelationReference,
     PropertyType,
     ViewReference,
 )
+from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case_recursive,
     convert_all_keys_to_snake_case,
@@ -181,7 +182,7 @@ class View(ViewCore):
 
         return output
 
-    def to_view_apply(self) -> ViewApply:
+    def as_apply(self) -> ViewApply:
         """Convert to a view applies.
 
         Returns:
@@ -217,7 +218,7 @@ class ViewList(CogniteResourceList):
         Returns:
             ViewApplyList: The view apply list.
         """
-        return ViewApplyList(resources=[v.to_view_apply() for v in self.items])
+        return ViewApplyList(resources=[v.as_apply() for v in self.items])
 
 
 class ViewApplyList(CogniteResourceList):
@@ -249,19 +250,20 @@ class ViewFilter(CogniteFilter):
 
 
 @dataclass
-class ViewDirectNodeRelation(DirectNodeRelation):
+class ViewDirectRelation(DirectRelation):
     source: Optional[ViewReference] = None
 
     @classmethod
-    def load(cls, data: dict, *_: Any, **__: Any) -> ViewDirectNodeRelation:
+    def load(cls, data: dict) -> ViewDirectRelation:
+        output = cls(**convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"type"})))
         if isinstance(data.get("source"), dict):
-            data["source"] = ViewReference.load(data["source"])
-        return cast(ViewDirectNodeRelation, super().load(data))
+            output.source = ViewReference.load(data["source"])
+        return output
 
-    def dump(self, camel_case: bool = False, *_: Any, **__: Any) -> dict[str, str | dict]:
+    def dump(self, camel_case: bool = False) -> dict:
         output = super().dump(camel_case)
 
-        if "source" in output and self.source:
+        if self.source:
             output["source"] = self.source.dump(camel_case)
         return output
 
@@ -342,13 +344,19 @@ class MappedPropertyDefinition(MappedCorePropertyDefinition):
     def load(cls, data: dict) -> MappedPropertyDefinition:
         output = cast(MappedPropertyDefinition, super().load(data))
         if "type" in data:
-            output.type = PropertyType.load(data["type"], ViewDirectNodeRelation)
+            if data["type"].get("type") == "direct":
+                output.type = ViewDirectRelation.load(data["type"])
+            else:
+                output.type = PropertyType.load(data["type"])
         return output
 
     def dump(self, camel_case: bool = False) -> dict:
         output = super().dump(camel_case)
         if self.type:
-            output["type"] = self.type.dump(camel_case)
+            try:
+                output["type"] = self.type.dump(camel_case)
+            except AttributeError:
+                raise
         return output
 
     def to_mapped_apply(self) -> MappedApplyPropertyDefinition:
@@ -385,7 +393,7 @@ class SingleHopConnectionDefinition(ConnectionDefinition):
             output.edge_source = ViewReference.load(data.get("edgeSource", data.get("edge_source")))
         return output
 
-    def dump(self, camel_case: bool = False, *_: Any, **__: Any) -> dict:
+    def dump(self, camel_case: bool = False) -> dict:
         output = asdict(self)
 
         if self.type:

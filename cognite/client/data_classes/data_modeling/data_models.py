@@ -155,7 +155,7 @@ class DataModel(DataModelCore):
         if self.views:
             views = cast(
                 List[Union[ViewReference, ViewApply]],
-                [v.to_view_apply() if isinstance(v, View) else v for v in self.views],
+                [v.as_apply() if isinstance(v, View) else v for v in self.views],
             )
 
         return DataModelApply(

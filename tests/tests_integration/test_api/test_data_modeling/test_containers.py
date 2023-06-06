@@ -41,7 +41,7 @@ class TestContainersAPI:
                 "name": models.ContainerPropertyIdentifier(
                     type=models.Text(),
                 ),
-                "year": models.ContainerPropertyIdentifier(type=models.Primitive("int32")),
+                "year": models.ContainerPropertyIdentifier(type=models.Int32()),
             },
         )
 
