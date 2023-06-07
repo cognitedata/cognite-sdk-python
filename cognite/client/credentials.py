@@ -60,9 +60,6 @@ class Token(CredentialProvider):
 
 
 class _OAuthCredentialProviderWithTokenRefresh(CredentialProvider):
-    # This ensures we don't return a token which expires immediately, but within minimum 3 seconds.
-    __TOKEN_EXPIRY_LEEWAY_SECONDS = 3
-
     def __init__(self) -> None:
         self.__token_refresh_lock = threading.Lock()
         self.__access_token: Optional[str] = None
@@ -87,7 +84,7 @@ class _OAuthCredentialProviderWithTokenRefresh(CredentialProvider):
     @classmethod
     def __should_refresh_token(cls, token: Optional[str], expires_at: Optional[float]) -> bool:
         no_token = token is None
-        token_is_expired = expires_at is None or time.time() > expires_at - cls.__TOKEN_EXPIRY_LEEWAY_SECONDS
+        token_is_expired = expires_at is None or time.time() > expires_at
         return no_token or token_is_expired
 
     @staticmethod
