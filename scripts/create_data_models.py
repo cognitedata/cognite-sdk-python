@@ -12,7 +12,7 @@ from cognite.client.data_classes.data_modeling.data_models import DataModelApply
 
 
 def dump(client: CogniteClient):
-    data_models = client.data_modeling.models.list(limit=-1)
+    data_models = client.data_modeling.data_models.list(limit=-1)
     with (Path.cwd() / "data_models.yml").open("w") as f:
         yaml.dump(data_models.dump(), f)
 
@@ -39,7 +39,7 @@ def copy_pygen_test_data(pygen: CogniteClient, client: CogniteClient):
     empty_data_model = DataModelApply(
         space=sdk_integration.space, external_id="integrationTestEmptyModel", version="v0"
     )
-    client.data_modeling.models.apply(empty_data_model)
+    client.data_modeling.data_models.apply(empty_data_model)
     print("Empty data model added")
 
     _ = client.data_modeling.spaces.apply(immutable_space)
@@ -54,8 +54,8 @@ def copy_pygen_test_data(pygen: CogniteClient, client: CogniteClient):
 
     print("Views added")
 
-    data_models = pygen.data_modeling.models.list(-1, space=immutable_space.space)
-    client.data_modeling.models.apply(data_models)
+    data_models = pygen.data_modeling.data_models.list(-1, space=immutable_space.space)
+    client.data_modeling.data_models.apply(data_models)
     print("Data Models added")
 
 
