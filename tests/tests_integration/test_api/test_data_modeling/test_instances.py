@@ -1,27 +1,34 @@
 import pytest
 
-import cognite.client.data_classes.data_modeling as models
 from cognite.client import CogniteClient
-from cognite.client.data_classes.data_modeling.instances import InstanceList
+from cognite.client.data_classes.data_modeling.instances import EdgeList, NodeList
 
 
 @pytest.fixture()
-def cdf_nodes(cognite_client: CogniteClient):
-    views = cognite_client.data_modeling.views.list(-1)
-    source = views[0].as_reference()
-    nodes = cognite_client.data_modeling.instances.list(limit=-1, sources=[source], instance_type="node")
+def cdf_nodes(cognite_client: CogniteClient) -> NodeList:
+    nodes = cognite_client.data_modeling.instances.list(limit=-1, instance_type="node")
     assert len(nodes) > 0, "Add at least one node to CDF"
     return nodes
 
 
-class TestInstancesAPI:
-    def test_list(self, cognite_client: CogniteClient, cdf_nodes: InstanceList, integration_test_space: models.Space):
-        # Arrange
-        expected_nodes = models.ViewList([n for n in cdf_nodes if n.space == integration_test_space.space])
+@pytest.fixture()
+def cdf_edges(cognite_client: CogniteClient) -> EdgeList:
+    edges = cognite_client.data_modeling.instances.list(limit=-1, instance_type="edge")
+    assert len(edges) > 0, "Add at least one edge to CDF"
+    return edges
 
+
+class TestInstancesAPI:
+    def test_list_nodes(self, cognite_client: CogniteClient, cdf_nodes: NodeList):
         # Act
-        actual_nodes = cognite_client.data_modeling.instances.list(space=integration_test_space.space, limit=-1)
+        actual_nodes = cognite_client.data_modeling.instances.list(limit=-1)
 
         # Assert
-        assert sorted(actual_nodes, key=lambda v: v.external_id) == sorted(expected_nodes, key=lambda v: v.external_id)
-        assert all(v.space == integration_test_space.space for v in actual_nodes)
+        assert sorted(actual_nodes, key=lambda v: v.external_id) == sorted(cdf_nodes, key=lambda v: v.external_id)
+
+    def test_list_edges(self, cognite_client: CogniteClient, cdf_edges: EdgeList):
+        # Act
+        actual_edges = cognite_client.data_modeling.instances.list(limit=-1, instance_type="edge")
+
+        # Assert
+        assert sorted(actual_edges, key=lambda v: v.external_id) == sorted(cdf_edges, key=lambda v: v.external_id)

@@ -50,6 +50,20 @@ from cognite.client.data_classes.data_modeling.ids import (
     ViewId,
     ViewIdentifier,
 )
+from cognite.client.data_classes.data_modeling.instances import (
+    Edge,
+    EdgeApply,
+    EdgeApplyList,
+    EdgeList,
+    EdgeUpdate,
+    EdgeUpdateList,
+    Node,
+    NodeApply,
+    NodeApplyList,
+    NodeList,
+    NodeUpdate,
+    NodeUpdateList,
+)
 from cognite.client.data_classes.data_modeling.spaces import Space, SpaceApply, SpaceApplyList, SpaceList
 from cognite.client.data_classes.data_modeling.views import (
     ConnectionDefinition,
@@ -123,4 +137,16 @@ __all__ = [
     "FileReference",
     "SequenceReference",
     "PropertyType",
+    "Node",
+    "NodeList",
+    "NodeApply",
+    "NodeApplyList",
+    "NodeUpdate",
+    "NodeUpdateList",
+    "Edge",
+    "EdgeList",
+    "EdgeApply",
+    "EdgeApplyList",
+    "EdgeUpdate",
+    "EdgeUpdateList",
 ]
