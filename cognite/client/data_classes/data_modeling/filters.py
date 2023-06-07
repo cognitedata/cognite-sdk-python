@@ -4,8 +4,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, List, Mapping, Optional, Sequence, Tuple, Union, cast, final
 
-ContainerReference = Tuple[str, str]
-ViewReference = Union[Tuple[str, str], Tuple[str, str, str]]
+from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
 
 PropertyReference = Union[Tuple[str, ...], List[str]]
 
@@ -204,14 +203,17 @@ class HasData(Filter):
 
     def __init__(
         self,
-        containers: Optional[Sequence[ContainerReference]] = None,
-        views: Optional[Sequence[ViewReference]] = None,
+        containers: Optional[Sequence[tuple[str, str] | ContainerId]] = None,
+        views: Optional[Sequence[tuple[str, str, str] | ViewId]] = None,
     ):
-        self.__containers = containers
-        self.__views = views
+        self.__containers: List[ContainerId] = [ContainerId.from_tuple(container) for container in (containers or [])]
+        self.__views: List[ViewId] = [ViewId.from_tuple(view) for view in (views or [])]
 
     def _filter_body(self) -> dict:
-        return {"views": self.__views or [], "containers": self.__containers or []}
+        return {
+            "views": [view.as_tuple() for view in self.__views],
+            "containers": [container.as_tuple() for container in self.__containers],
+        }
 
 
 @final

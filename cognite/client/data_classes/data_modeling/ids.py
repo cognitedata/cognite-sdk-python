@@ -14,6 +14,9 @@ class DataModelingId:
     space: str
     external_id: str
 
+    def as_tuple(self) -> tuple[str, str]:
+        return self.space, self.external_id
+
     def dump(self, camel_case: bool = False, include_type: bool = True) -> dict[str, str]:
         output = asdict(self)
         if include_type:
@@ -35,6 +38,9 @@ class VersionedDataModelingId:
     external_id: str
     version: Optional[str] = None
 
+    def as_tuple(self) -> tuple[str, str, Optional[str]]:
+        return self.space, self.external_id, self.version
+
     def dump(self, camel_case: bool = False, include_type: bool = True) -> dict[str, str]:
         output = asdict(self)
         if include_type:
@@ -53,10 +59,18 @@ T_Versioned_DataModeling_Id = TypeVar("T_Versioned_DataModeling_Id", bound=Versi
 class ContainerId(DataModelingId):
     _type = "container"
 
+    @classmethod
+    def from_tuple(cls, data: tuple[str, str] | ContainerId) -> ContainerId:
+        return cls(*data) if isinstance(data, tuple) else data
+
 
 @dataclass
 class ViewId(VersionedDataModelingId):
     _type = "view"
+
+    @classmethod
+    def from_tuple(cls, data: tuple[str, str, str] | ViewId) -> ViewId:
+        return cls(*data) if isinstance(data, tuple) else data
 
 
 @dataclass
