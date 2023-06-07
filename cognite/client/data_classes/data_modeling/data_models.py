@@ -28,11 +28,11 @@ class DataModelCore(DataModelingResource):
 
     def __init__(
         self,
-        space: str = None,
-        external_id: str = None,
+        space: str,
+        external_id: str,
+        version: str,
         description: str = None,
         name: str = None,
-        version: str = None,
         cognite_client: CogniteClient = None,
     ):
         validate_data_modeling_identifier(space, external_id)
@@ -58,15 +58,15 @@ class DataModelApply(DataModelCore):
 
     def __init__(
         self,
-        space: str = None,
-        external_id: str = None,
+        space: str,
+        external_id: str,
+        version: str,
         description: str = None,
         name: str = None,
-        version: str = None,
         views: list[ViewReference | ViewApply] = None,
         cognite_client: CogniteClient = None,
     ):
-        super().__init__(space, external_id, description, name, version, cognite_client)
+        super().__init__(space, external_id, version, description, name, cognite_client)
         self.views = views
 
     @classmethod
@@ -110,18 +110,18 @@ class DataModel(DataModelCore):
 
     def __init__(
         self,
-        space: str = None,
-        external_id: str = None,
+        space: str,
+        external_id: str,
+        version: str,
+        is_global: bool,
+        last_updated_time: int,
+        created_time: int,
         description: str = None,
         name: str = None,
-        version: str = None,
         views: list[ViewReference | View] = None,
-        is_global: bool = False,
-        last_updated_time: int = None,
-        created_time: int = None,
         cognite_client: CogniteClient = None,
     ):
-        super().__init__(space, external_id, description, name, version, cognite_client)
+        super().__init__(space, external_id, version, description, name, cognite_client)
         self.views = views
         self.is_global = is_global
         self.last_updated_time = last_updated_time
@@ -161,9 +161,9 @@ class DataModel(DataModelCore):
         return DataModelApply(
             space=self.space,
             external_id=self.external_id,
+            version=self.version,
             description=self.description,
             name=self.name,
-            version=self.version,
             views=views,
         )
 

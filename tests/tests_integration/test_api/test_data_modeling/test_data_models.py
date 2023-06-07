@@ -34,8 +34,8 @@ class TestDataModelsAPI:
         new_view = models.ViewApply(
             space=integration_test_space.space,
             external_id="IntegrationTestViewDataModel",
-            description="Integration test, should not persist",
             version="v1",
+            description="Integration test, should not persist",
             name="View of create and delete data model",
             properties={
                 "name": models.MappedApplyPropertyDefinition(
@@ -51,8 +51,8 @@ class TestDataModelsAPI:
         new_data_model = models.DataModelApply(
             space=integration_test_space.space,
             external_id="IntegrationTestDataModel",
-            description="Integration test, should not persist",
             version="v1",
+            description="Integration test, should not persist",
             name="Create and delete data model with view",
             views=[new_view],
         )

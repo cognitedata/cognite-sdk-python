@@ -214,8 +214,8 @@ class DataModelsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> import cognite.client.data_classes.data_modeling as models
                 >>> c = CogniteClient()
-                >>> data_models = [models.DataModel(space="mySpace", external_id="myDataModel", version="v1"),
-                ... DataModel(space="mySpace", external_id="myOtherDataModel", version="v1")]
+                >>> data_models = [models.DataModel(space="mySpace",external_id="myDataModel",version="v1",is_global=,last_updated_time=),
+                ... DataModel(space="mySpace",external_id="myOtherDataModel",version="v1",is_global=,last_updated_time=)]
                 >>> res = c.data_modeling.models.create(data_models)
         """
         return self._create_multiple(list_cls=DataModelList, resource_cls=DataModel, items=data_model)

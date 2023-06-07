@@ -23,7 +23,7 @@ class SpaceCore(DataModelingResource):
 
     def __init__(
         self,
-        space: str = None,
+        space: str,
         description: str = None,
         name: str = None,
         cognite_client: CogniteClient = None,
@@ -55,12 +55,12 @@ class Space(SpaceCore):
 
     def __init__(
         self,
-        space: str = None,
+        space: str,
+        is_global: bool,
+        last_updated_time: int,
+        created_time: int,
         description: str = None,
         name: str = None,
-        is_global: bool = False,
-        last_updated_time: int = None,
-        created_time: int = None,
         cognite_client: CogniteClient = None,
     ):
         super().__init__(space, description, name, cognite_client)

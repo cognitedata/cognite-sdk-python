@@ -34,15 +34,15 @@ class TestContainersAPI:
         new_container = models.ContainerApply(
             space=integration_test_space.space,
             external_id="IntegrationTestContainer",
-            description="Integration test, should not persist",
-            name="Create and delete container",
-            used_for="node",
             properties={
                 "name": models.ContainerPropertyIdentifier(
                     type=models.Text(),
                 ),
                 "year": models.ContainerPropertyIdentifier(type=models.Int32()),
             },
+            description="Integration test, should not persist",
+            name="Create and delete container",
+            used_for="node",
         )
 
         # Act

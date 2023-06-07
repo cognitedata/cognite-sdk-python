@@ -32,13 +32,13 @@ if TYPE_CHECKING:
 class ViewCore(DataModelingResource):
     def __init__(
         self,
-        space: str = None,
-        external_id: str = None,
+        space: str,
+        external_id: str,
+        version: str,
         description: str = None,
         name: str = None,
         filter: Filter | None = None,
         implements: list[ViewReference] = None,
-        version: str = None,
         cognite_client: CogniteClient = None,
     ):
         validate_data_modeling_identifier(space, external_id)
@@ -94,17 +94,17 @@ class ViewApply(ViewCore):
 
     def __init__(
         self,
-        space: str = None,
-        external_id: str = None,
+        space: str,
+        external_id: str,
+        version: str,
         description: str = None,
         name: str = None,
         filter: Filter | None = None,
         implements: list[ViewReference] = None,
-        version: str = None,
         properties: dict[str, MappedApplyPropertyDefinition | ConnectionDefinition] = None,
         cognite_client: CogniteClient = None,
     ):
-        super().__init__(space, external_id, description, name, filter, implements, version, cognite_client)
+        super().__init__(space, external_id, version, description, name, filter, implements, cognite_client)
         self.properties = properties
 
     @classmethod
@@ -144,22 +144,22 @@ class View(ViewCore):
 
     def __init__(
         self,
-        space: str = None,
-        external_id: str = None,
+        space: str,
+        external_id: str,
+        version: str,
+        properties: dict[str, MappedPropertyDefinition | ConnectionDefinition],
+        last_updated_time: int,
+        created_time: int,
         description: str = None,
         name: str = None,
         filter: Filter | None = None,
         implements: list[ViewReference] = None,
-        version: str = None,
         writable: bool = False,
         used_for: Literal["node", "edge", "all"] = "node",
         is_global: bool = False,
-        properties: dict[str, MappedPropertyDefinition | ConnectionDefinition] = None,
-        last_updated_time: int = None,
-        created_time: int = None,
         cognite_client: CogniteClient = None,
     ):
-        super().__init__(space, external_id, description, name, filter, implements, version, cognite_client)
+        super().__init__(space, external_id, version, description, name, filter, implements, cognite_client)
         self.writable = writable
         self.used_for = used_for
         self.is_global = is_global
@@ -200,11 +200,11 @@ class View(ViewCore):
         return ViewApply(
             space=self.space,
             external_id=self.external_id,
+            version=self.version,
             description=self.description,
             name=self.name,
             filter=self.filter,
             implements=self.implements,
-            version=self.version,
             properties=properties,
         )
 

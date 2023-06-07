@@ -30,8 +30,8 @@ class TestViewsAPI:
         new_view = models.ViewApply(
             space=integration_test_space.space,
             external_id="IntegrationTestView",
-            description="Integration test, should not persist",
             version="v1",
+            description="Integration test, should not persist",
             name="Create and delete view",
             properties={
                 "name": models.MappedApplyPropertyDefinition(

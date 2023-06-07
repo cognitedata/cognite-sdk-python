@@ -8,7 +8,7 @@ import yaml
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes.data_modeling import Space
-from cognite.client.data_classes.data_modeling.data_models import DataModel
+from cognite.client.data_classes.data_modeling.data_models import DataModelApply
 
 
 def dump(client: CogniteClient):
@@ -36,7 +36,9 @@ def copy_pygen_test_data(pygen: CogniteClient, client: CogniteClient):
         description="Space used for integration testing in the SDK",
         name="SDK Integration Testing copy from Pygen",
     )
-    empty_data_model = DataModel(space=sdk_integration.space, external_id="integrationTestEmptyModel", version="v0")
+    empty_data_model = DataModelApply(
+        space=sdk_integration.space, external_id="integrationTestEmptyModel", version="v0"
+    )
     client.data_modeling.models.apply(empty_data_model)
     print("Empty data model added")
 

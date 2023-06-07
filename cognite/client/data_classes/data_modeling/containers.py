@@ -39,12 +39,12 @@ class ContainerCore(DataModelingResource):
 
     def __init__(
         self,
-        space: str = None,
-        external_id: str = None,
+        space: str,
+        external_id: str,
+        properties: dict[str, ContainerPropertyIdentifier],
         description: str = None,
         name: str = None,
         used_for: Literal["node", "edge", "all"] = None,
-        properties: dict[str, ContainerPropertyIdentifier] = None,
         constraints: dict[str, ConstraintIdentifier] = None,
         indexes: dict[str, IndexIdentifier] = None,
         cognite_client: CogniteClient = None,
@@ -102,18 +102,18 @@ class ContainerApply(ContainerCore):
 
     def __init__(
         self,
-        space: str = None,
-        external_id: str = None,
+        space: str,
+        external_id: str,
+        properties: dict[str, ContainerPropertyIdentifier],
         description: str = None,
         name: str = None,
         used_for: Literal["node", "edge", "all"] = None,
-        properties: dict[str, ContainerPropertyIdentifier] = None,
         constraints: dict[str, ConstraintIdentifier] = None,
         indexes: dict[str, IndexIdentifier] = None,
         cognite_client: CogniteClient = None,
     ):
         super().__init__(
-            space, external_id, description, name, used_for, properties, constraints, indexes, cognite_client
+            space, external_id, properties, description, name, used_for, constraints, indexes, cognite_client
         )
 
 
@@ -136,21 +136,21 @@ class Container(ContainerCore):
 
     def __init__(
         self,
-        space: str = None,
-        external_id: str = None,
+        space: str,
+        external_id: str,
+        properties: dict[str, ContainerPropertyIdentifier],
+        is_global: bool,
+        last_updated_time: int,
+        created_time: int,
         description: str = None,
         name: str = None,
-        is_global: bool = False,
-        used_for: Literal["node", "edge", "all"] = None,
-        properties: dict[str, ContainerPropertyIdentifier] = None,
+        used_for: Literal["node", "edge", "all"] = "node",
         constraints: dict[str, ConstraintIdentifier] = None,
         indexes: dict[str, IndexIdentifier] = None,
-        last_updated_time: int = None,
-        created_time: int = None,
         cognite_client: CogniteClient = None,
     ):
         super().__init__(
-            space, external_id, description, name, used_for, properties, constraints, indexes, cognite_client
+            space, external_id, properties, description, name, used_for, constraints, indexes, cognite_client
         )
         self.is_global = is_global
         self.last_updated_time = last_updated_time
@@ -160,10 +160,10 @@ class Container(ContainerCore):
         return ContainerApply(
             space=self.space,
             external_id=self.external_id,
+            properties=self.properties,
             description=self.description,
             name=self.name,
             used_for=self.used_for,
-            properties=self.properties,
             constraints=self.constraints,
             indexes=self.indexes,
         )
