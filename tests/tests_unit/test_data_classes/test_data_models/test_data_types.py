@@ -1,7 +1,7 @@
 import pytest
 
 from cognite.client.data_classes.data_modeling.containers import ContainerDirectRelation
-from cognite.client.data_classes.data_modeling.shared import (
+from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelationReference,
     PropertyType,
 )
