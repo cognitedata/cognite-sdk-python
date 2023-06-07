@@ -189,7 +189,7 @@ class InstancesAPI(APIClient):
                 >>> res = c.data_modeling.instances.retrieve(('node', 'mySpace', 'myNode'))
         """
         instance_type = self._get_instance_type(ids)
-        identifier = load_identifier(ids)
+        identifier = load_identifier(ids, "instance")
 
         resource_cls, list_cls = self._get_classes(instance_type)
         return cast(
@@ -231,7 +231,7 @@ class InstancesAPI(APIClient):
         """
         deleted_instances = cast(
             List,
-            self._delete_multiple(identifiers=load_identifier(id), wrap_ids=True, returns_items=True),
+            self._delete_multiple(identifiers=load_identifier(id, "instance"), wrap_ids=True, returns_items=True),
         )
         instance_type = self._get_instance_type(id)
         if instance_type == "node":

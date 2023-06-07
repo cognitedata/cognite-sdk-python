@@ -79,7 +79,7 @@ class CogniteClientMock(MagicMock):
 
         self.data_modeling = MagicMock(spec=DataModelingAPI)
         self.data_modeling.containers = MagicMock(spec_set=ContainersAPI)
-        self.data_modeling.models = MagicMock(spec_set=DataModelsAPI)
+        self.data_modeling.data_models = MagicMock(spec_set=DataModelsAPI)
         self.data_modeling.spaces = MagicMock(spec_set=SpacesAPI)
         self.data_modeling.views = MagicMock(spec_set=ViewsAPI)
         self.data_modeling.instances = MagicMock(spec_set=InstancesAPI)

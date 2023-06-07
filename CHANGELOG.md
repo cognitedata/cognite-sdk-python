@@ -35,10 +35,7 @@ Changes are grouped as follows
 ### Added
 - Support for the container resource in the Data Modeling API with the implementation `client.data_modeling.containers`.
 - Support for the view resource in the Data Modeling API with the implementation `client.data_modeling.views`.
-- Support for the data models resource in the Data Modeling API with the implementation `client.data_modeling.models`.
-
-### Changed
-- Removed `retrieve_multiple` from the `SpacesAPI` to have a consistent API with the `views`, `containers`, and `models`.
+- Support for the data models resource in the Data Modeling API with the implementation `client.data_modeling.data_models`.
 
 ### Removed
 - Removed `retrieve_multiple` from the `SpacesAPI` to have a consistent API with the `views`, `containers`, and `data_models`.
