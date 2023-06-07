@@ -50,7 +50,6 @@ from cognite.client.data_classes.data_modeling.shared import (
     Text,
     TimeSeriesReference,
     Timestamp,
-    ViewReference,
 )
 from cognite.client.data_classes.data_modeling.spaces import Space, SpaceApply, SpaceApplyList, SpaceList
 from cognite.client.data_classes.data_modeling.views import (
@@ -80,8 +79,6 @@ __all__ = [
     "Filter",
     "Reference",
     "DirectRelationReference",
-    "ViewReference",
-    "ContainerReference",
     "DataModel",
     "DataModelList",
     "DataModelsSort",

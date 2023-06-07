@@ -11,13 +11,12 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
 from cognite.client.data_classes.data_modeling.filters import Filter
-from cognite.client.data_classes.data_modeling.ids import ContainerId
+from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
 from cognite.client.data_classes.data_modeling.shared import (
     DataModelingResource,
     DirectRelation,
     DirectRelationReference,
     PropertyType,
-    ViewReference,
 )
 from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._text import (
@@ -35,7 +34,7 @@ class ViewCore(DataModelingResource):
         description: str = None,
         name: str = None,
         filter: Filter | None = None,
-        implements: list[ViewReference] = None,
+        implements: list[ViewId] = None,
         **_: dict,
     ):
         validate_data_modeling_identifier(space, external_id)
@@ -51,7 +50,7 @@ class ViewCore(DataModelingResource):
     def load(cls, resource: dict | str) -> ViewCore:
         data = json.loads(resource) if isinstance(resource, str) else resource
         if "implements" in data:
-            data["implements"] = [ViewReference.load(v) for v in data["implements"]] or None
+            data["implements"] = [ViewId.load(v) for v in data["implements"]] or None
         if "filter" in data:
             data["filter"] = Filter.load(data["filter"])
 
@@ -67,11 +66,11 @@ class ViewCore(DataModelingResource):
 
         return output
 
-    def as_reference(self) -> ViewReference:
-        return ViewReference(
-            space=cast(str, self.space),
-            external_id=cast(str, self.external_id),
-            version=cast(str, self.version),
+    def as_reference(self) -> ViewId:
+        return ViewId(
+            space=self.space,
+            external_id=self.external_id,
+            version=self.version,
         )
 
 
@@ -96,7 +95,7 @@ class ViewApply(ViewCore):
         description: str = None,
         name: str = None,
         filter: Filter | None = None,
-        implements: list[ViewReference] = None,
+        implements: list[ViewId] = None,
         properties: dict[str, MappedApplyPropertyDefinition | ConnectionDefinition] = None,
         **_: dict,
     ):
@@ -149,7 +148,7 @@ class View(ViewCore):
         description: str = None,
         name: str = None,
         filter: Filter | None = None,
-        implements: list[ViewReference] = None,
+        implements: list[ViewId] = None,
         writable: bool = False,
         used_for: Literal["node", "edge", "all"] = "node",
         is_global: bool = False,
@@ -192,15 +191,12 @@ class View(ViewCore):
         Returns:
             ViewApply: The view apply.
         """
-        properties = None
+        properties: Optional[Dict[str, Union[MappedApplyPropertyDefinition, ConnectionDefinition]]] = None
         if self.properties:
-            properties = cast(
-                Dict[str, Union[MappedApplyPropertyDefinition, ConnectionDefinition]],
-                {
-                    k: (v.to_mapped_apply() if isinstance(v, MappedPropertyDefinition) else v)
-                    for k, v in self.properties.items()
-                },
-            )
+            properties = {
+                k: (v.as_apply() if isinstance(v, MappedPropertyDefinition) else v) for k, v in self.properties.items()
+            }
+
         return ViewApply(
             space=self.space,
             external_id=self.external_id,
@@ -255,13 +251,13 @@ class ViewFilter(CogniteFilter):
 
 @dataclass
 class ViewDirectRelation(DirectRelation):
-    source: Optional[ViewReference] = None
+    source: Optional[ViewId] = None
 
     @classmethod
     def load(cls, data: dict) -> ViewDirectRelation:
         output = cls(**convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"type"})))
         if isinstance(data.get("source"), dict):
-            output.source = ViewReference.load(data["source"])
+            output.source = ViewId.load(data["source"])
         return output
 
     def dump(self, camel_case: bool = False) -> dict:
@@ -321,13 +317,13 @@ class MappedCorePropertyDefinition(ViewPropertyDefinition):
 
 @dataclass
 class MappedApplyPropertyDefinition(MappedCorePropertyDefinition):
-    source: ViewReference | None = None
+    source: ViewId | None = None
 
     @classmethod
     def load(cls, data: dict) -> MappedApplyPropertyDefinition:
         output = cast(MappedApplyPropertyDefinition, super().load(data))
         if isinstance(data.get("source"), dict):
-            output.source = ViewReference.load(data["source"])
+            output.source = ViewId.load(data["source"])
         return output
 
     def dump(self, camel_case: bool = False) -> dict:
@@ -363,7 +359,7 @@ class MappedPropertyDefinition(MappedCorePropertyDefinition):
                 raise
         return output
 
-    def to_mapped_apply(self) -> MappedApplyPropertyDefinition:
+    def as_apply(self) -> MappedApplyPropertyDefinition:
         return MappedApplyPropertyDefinition(
             container=self.container,
             container_property_identifier=self.container_property_identifier,
@@ -380,10 +376,10 @@ class ConnectionDefinition(ViewPropertyDefinition):
 @dataclass
 class SingleHopConnectionDefinition(ConnectionDefinition):
     type: DirectRelationReference
-    source: ViewReference
+    source: ViewId
     name: str | None = None
     description: str | None = None
-    edge_source: ViewReference | None = None
+    edge_source: ViewId | None = None
     direction: Literal["outwards", "inwards"] = "outwards"
 
     @classmethod
@@ -392,9 +388,9 @@ class SingleHopConnectionDefinition(ConnectionDefinition):
         if "type" in data:
             output.type = DirectRelationReference.load(data["type"])
         if "source" in data:
-            output.source = ViewReference.load(data["source"])
+            output.source = ViewId.load(data["source"])
         if "edgeSource" in data or "edge_source" in data:
-            output.edge_source = ViewReference.load(data.get("edgeSource", data.get("edge_source")))
+            output.edge_source = ViewId.load(data.get("edgeSource", data.get("edge_source")))
         return output
 
     def dump(self, camel_case: bool = False) -> dict:

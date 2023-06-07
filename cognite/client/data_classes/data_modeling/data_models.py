@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 import json
-from typing import Any, List, Literal, Union, cast
+from typing import Any, List, Literal, Optional, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteResourceList,
 )
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
-from cognite.client.data_classes.data_modeling.shared import DataModelingResource, ViewReference
+from cognite.client.data_classes.data_modeling.ids import ViewId
+from cognite.client.data_classes.data_modeling.shared import DataModelingResource
 from cognite.client.data_classes.data_modeling.views import View, ViewApply
 
 
@@ -59,16 +60,16 @@ class DataModelApply(DataModelCore):
         version: str,
         description: str = None,
         name: str = None,
-        views: list[ViewReference | ViewApply] = None,
+        views: list[ViewId | ViewApply] = None,
         **_: dict,
     ):
         super().__init__(space, external_id, version, description, name)
         self.views = views
 
     @classmethod
-    def _load_view(cls, view_data: dict) -> ViewReference | ViewApply:
+    def _load_view(cls, view_data: dict) -> ViewId | ViewApply:
         if "type" in view_data:
-            return ViewReference.load(view_data)
+            return ViewId.load(view_data)
         else:
             return ViewApply.load(view_data)
 
@@ -114,7 +115,7 @@ class DataModel(DataModelCore):
         created_time: int,
         description: str = None,
         name: str = None,
-        views: list[ViewReference | View] = None,
+        views: list[ViewId | View] = None,
         **_: dict,
     ):
         super().__init__(space, external_id, version, description, name)
@@ -124,9 +125,9 @@ class DataModel(DataModelCore):
         self.created_time = created_time
 
     @classmethod
-    def _load_view(cls, view_data: dict) -> ViewReference | View:
+    def _load_view(cls, view_data: dict) -> ViewId | View:
         if "type" in view_data:
-            return ViewReference.load(view_data)
+            return ViewId.load(view_data)
         else:
             return View.load(view_data)
 
@@ -147,12 +148,9 @@ class DataModel(DataModelCore):
         return output
 
     def as_apply(self) -> DataModelApply:
-        views = None
+        views: Optional[List[Union[ViewId, ViewApply]]] = None
         if self.views:
-            views = cast(
-                List[Union[ViewReference, ViewApply]],
-                [v.as_apply() if isinstance(v, View) else v for v in self.views],
-            )
+            views = [v.as_apply() if isinstance(v, View) else v for v in self.views]
 
         return DataModelApply(
             space=self.space,
