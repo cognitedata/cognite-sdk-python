@@ -102,7 +102,7 @@ class DataModelsAPI(APIClient):
                 >>> res = c.data_modeling.data_models.retrieve(("mySpace", "myDataModel", "v1"))
 
         """
-        identifier = load_identifier(ids)
+        identifier = load_identifier(ids, "data_model")
         return self._retrieve_multiple(list_cls=DataModelList, resource_cls=DataModel, identifiers=identifier)
 
     def delete(self, ids: DataModelIdentifier | Sequence[DataModelIdentifier]) -> list[VersionedDataModelingId]:
@@ -122,7 +122,7 @@ class DataModelsAPI(APIClient):
         """
         deleted_data_models = cast(
             list,
-            self._delete_multiple(identifiers=load_identifier(ids), wrap_ids=True, returns_items=True),
+            self._delete_multiple(identifiers=load_identifier(ids, "data_model"), wrap_ids=True, returns_items=True),
         )
         return [
             VersionedDataModelingId(item["space"], item["externalId"], item["version"]) for item in deleted_data_models

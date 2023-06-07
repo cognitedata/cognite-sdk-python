@@ -96,7 +96,7 @@ class ViewsAPI(APIClient):
                 >>> res = c.data_modeling.views.retrieve(('mySpace', 'myView', 'v1'))
 
         """
-        identifier = load_identifier(ids)
+        identifier = load_identifier(ids, "view")
         return self._retrieve_multiple(list_cls=ViewList, resource_cls=View, identifiers=identifier)
 
     def delete(self, ids: ViewIdentifier | Sequence[ViewIdentifier]) -> list[VersionedDataModelingId]:
@@ -117,7 +117,7 @@ class ViewsAPI(APIClient):
         deleted_views = cast(
             list,
             self._delete_multiple(
-                identifiers=load_identifier(ids),
+                identifiers=load_identifier(ids, "view"),
                 wrap_ids=True,
                 returns_items=True,
             ),
