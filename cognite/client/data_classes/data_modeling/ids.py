@@ -70,6 +70,38 @@ T_Versioned_DataModeling_Id = TypeVar("T_Versioned_DataModeling_Id", bound=Versi
 
 
 @dataclass
+class InstanceId:
+    _instance_type: ClassVar[str]
+    space: str
+    external_id: str
+
+    def dump(self, camel_case: bool = False, include_instance_type: bool = True) -> dict[str, str]:
+        output = asdict(self)
+        if include_instance_type:
+            output["instanceType" if camel_case else "instance_type"] = self._instance_type
+        return convert_all_keys_recursive(output, camel_case)
+
+    @classmethod
+    def load(cls: Type[T_InstanceId], data: dict) -> T_InstanceId:
+        return cls(
+            **convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"instanceType", "instance_type"}))
+        )
+
+
+T_InstanceId = TypeVar("T_InstanceId", bound=InstanceId)
+
+
+@dataclass
+class NodeId(InstanceId):
+    _instance_type = "node"
+
+
+@dataclass
+class EdgeId(InstanceId):
+    _instance_type = "edge"
+
+
+@dataclass
 class ContainerId(DataModelingId):
     _type = "container"
 
@@ -95,8 +127,10 @@ class DataModelId(VersionedDataModelingId):
 ContainerIdentifier = Union[ContainerId, Tuple[str, str]]
 ViewIdentifier = Union[ViewId, Tuple[str, str], Tuple[str, str, str]]
 DataModelIdentifier = Union[DataModelId, Tuple[str, str], Tuple[str, str, str]]
+NodeIdentifier = Union[NodeId, Tuple[str, str, str]]
+EdgeIdentifier = Union[EdgeId, Tuple[str, str, str]]
 
-Id = Union[Tuple[str, str], Tuple[str, str, str], DataModelingId, VersionedDataModelingId, TypedDataModelingId]
+Id = Union[Tuple[str, str], Tuple[str, str, str], DataModelingId, VersionedDataModelingId, NodeId, EdgeId]
 
 
 def load_identifier(

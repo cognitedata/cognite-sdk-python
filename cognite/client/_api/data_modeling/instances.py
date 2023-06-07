@@ -6,10 +6,9 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import INSTANCES_LIST_LIMIT_DEFAULT
 from cognite.client.data_classes.data_modeling.filters import Filter
 from cognite.client.data_classes.data_modeling.ids import (
-    EdgeDataModelingId,
     EdgeId,
-    NodeDataModelingId,
     NodeId,
+    ViewId,
     load_identifier,
 )
 from cognite.client.data_classes.data_modeling.instances import (
@@ -22,7 +21,6 @@ from cognite.client.data_classes.data_modeling.instances import (
     NodeApply,
     NodeList,
 )
-from cognite.client.data_classes.data_modeling.shared import ViewReference
 
 
 class InstancesAPI(APIClient):
@@ -35,7 +33,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node"],
         limit: int | None = None,
         include_typing: bool = False,
-        sources: list[ViewReference] | None = None,
+        sources: list[ViewId] | None = None,
         sort: list[InstanceSort | dict] | None = None,
         filter: Filter | dict | None = None,
     ) -> Iterator[Node]:
@@ -48,7 +46,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["edge"],
         limit: int | None = None,
         include_typing: bool = False,
-        sources: list[ViewReference] | None = None,
+        sources: list[ViewId] | None = None,
         sort: list[InstanceSort | dict] | None = None,
         filter: Filter | dict | None = None,
     ) -> Iterator[Edge]:
@@ -61,7 +59,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node"],
         limit: int | None = None,
         include_typing: bool = False,
-        sources: list[ViewReference] | None = None,
+        sources: list[ViewId] | None = None,
         sort: list[InstanceSort | dict] | None = None,
         filter: Filter | dict | None = None,
     ) -> Iterator[NodeList]:
@@ -74,7 +72,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["edge"],
         limit: int | None = None,
         include_typing: bool = False,
-        sources: list[ViewReference] | None = None,
+        sources: list[ViewId] | None = None,
         sort: list[InstanceSort | dict] | None = None,
         filter: Filter | dict | None = None,
     ) -> Iterator[EdgeList]:
@@ -86,7 +84,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node", "edge"] = "node",
         limit: int | None = None,
         include_typing: bool = False,
-        sources: list[ViewReference] | None = None,
+        sources: list[ViewId] | None = None,
         sort: list[InstanceSort | dict] | None = None,
         filter: Filter | dict | None = None,
     ) -> Iterator[Edge] | Iterator[EdgeList] | Iterator[Node] | Iterator[NodeList]:
@@ -98,7 +96,7 @@ class InstancesAPI(APIClient):
             instance_type(Literal["node", "edge"]): Whether to query for nodes or edges.
             limit (int, optional): Maximum number of instances to return. Default to return all items.
             include_typing (bool): Whether to return property type information as part of the result.
-            sources (list[ViewReference]): Views to retrieve properties from.
+            sources (list[ViewId]): Views to retrieve properties from.
             sort (list[InstanceSort]): How you want the listed instances information ordered.
             filter (dict | Filter): Advanced filtering of instances.
         Yields:
@@ -132,39 +130,52 @@ class InstancesAPI(APIClient):
         return cast(Iterator[Node], self(None, "node"))
 
     @overload
-    def retrieve(
-        self, ids: NodeId, sources: list[ViewReference] | None = None, include_typing: bool = False
-    ) -> Node | None:
+    def retrieve(self, ids: NodeId, sources: list[ViewId] | None = None, include_typing: bool = False) -> Node | None:
         ...
 
     @overload
     def retrieve(
-        self, ids: Sequence[NodeId], sources: list[ViewReference] | None = None, include_typing: bool = False
+        self, ids: Sequence[NodeId], sources: list[ViewId] | None = None, include_typing: bool = False
     ) -> NodeList:
         ...
 
     @overload
-    def retrieve(
-        self, ids: EdgeId, sources: list[ViewReference] | None = None, include_typing: bool = False
-    ) -> Edge | None:
+    def retrieve(self, ids: EdgeId, sources: list[ViewId] | None = None, include_typing: bool = False) -> Edge | None:
         ...
 
     @overload
     def retrieve(
-        self, ids: Sequence[EdgeId], sources: list[ViewReference] | None = None, include_typing: bool = False
+        self, ids: Sequence[EdgeId], sources: list[ViewId] | None = None, include_typing: bool = False
     ) -> EdgeList:
+        ...
+
+    @overload
+    def retrieve(
+        self, ids: tuple[str, str, str], sources: list[ViewId] | None = None, include_typing: bool = False
+    ) -> Node | Edge:
+        ...
+
+    @overload
+    def retrieve(
+        self, ids: Sequence[tuple[str, str, str]], sources: list[ViewId] | None = None, include_typing: bool = False
+    ) -> NodeList | EdgeList:
         ...
 
     def retrieve(
         self,
-        ids: NodeId | EdgeId | Sequence[NodeId] | Sequence[EdgeId],
-        sources: list[ViewReference] | None = None,
+        ids: NodeId
+        | EdgeId
+        | Sequence[NodeId]
+        | Sequence[EdgeId]
+        | tuple[str, str, str]
+        | Sequence[tuple[str, str, str]],
+        sources: list[ViewId] | None = None,
         include_typing: bool = False,
     ) -> Node | Edge | NodeList | EdgeList | None:
         """`Retrieve one or more instance by id(s). <https://docs.cognite.com/api/v1/#tag/Instances/operation/byExternalIdsInstances>`_
         Args:
             ids (InstanceId | Sequence[InstanceId]): Identifier for instance(s).
-            sources (list[ViewReference] | None): Retrieve properties from the listed - by reference - views.
+            sources (list[ViewId] | None): Retrieve properties from the listed - by reference - views.
             include_typing (bool): Whether to return property type information as part of the result.
         Returns:
             Optional[Instance]: Requested instance or None if it does not exist.
@@ -183,16 +194,26 @@ class InstancesAPI(APIClient):
         )
 
     @overload
-    def delete(self, id: NodeId | Sequence[NodeId]) -> list[NodeDataModelingId]:
+    def delete(self, id: NodeId | Sequence[NodeId]) -> list[NodeId]:
         ...
 
     @overload
-    def delete(self, id: EdgeId | Sequence[EdgeId]) -> list[EdgeDataModelingId]:
+    def delete(self, id: EdgeId | Sequence[EdgeId]) -> list[EdgeId]:
+        ...
+
+    @overload
+    def delete(self, id: tuple[str, str, str] | Sequence[tuple[str, str, str]]) -> list[NodeId] | list[EdgeId]:
         ...
 
     def delete(
-        self, id: NodeId | EdgeId | Sequence[NodeId] | Sequence[EdgeId]
-    ) -> list[NodeDataModelingId] | list[EdgeDataModelingId]:
+        self,
+        id: NodeId
+        | EdgeId
+        | Sequence[NodeId]
+        | Sequence[EdgeId]
+        | tuple[str, str, str]
+        | Sequence[tuple[str, str, str]],
+    ) -> list[NodeId] | list[EdgeId]:
         """`Delete one or more instances <https://docs.cognite.com/api/v1/#tag/Instances/operation/deleteBulk>`_
         Args:
             id (InstanceId | Sequence[InstanceId): The instance identifier(s).
@@ -210,13 +231,9 @@ class InstancesAPI(APIClient):
         )
         instance_type = self._get_instance_type(id)
         if instance_type == "node":
-            return [
-                NodeDataModelingId(space=item["space"], external_id=item["externalId"]) for item in deleted_instances
-            ]
+            return [NodeId(space=item["space"], external_id=item["externalId"]) for item in deleted_instances]
         elif instance_type == "edge":
-            return [
-                EdgeDataModelingId(space=item["space"], external_id=item["externalId"]) for item in deleted_instances
-            ]
+            return [EdgeId(space=item["space"], external_id=item["externalId"]) for item in deleted_instances]
 
         raise ValueError(f"Invalid instance type {instance_type}")
 
@@ -225,7 +242,7 @@ class InstancesAPI(APIClient):
         self,
         instance_type: Literal["node"],
         include_typing: bool = False,
-        sources: list[ViewReference] | None = None,
+        sources: list[ViewId] | None = None,
         limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
         sort: list[InstanceSort | dict] | None = None,
         filter: Filter | dict | None = None,
@@ -237,7 +254,7 @@ class InstancesAPI(APIClient):
         self,
         instance_type: Literal["edge"],
         include_typing: bool = False,
-        sources: list[ViewReference] | None = None,
+        sources: list[ViewId] | None = None,
         limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
         sort: list[InstanceSort | dict] | None = None,
         filter: Filter | dict | None = None,
@@ -248,7 +265,7 @@ class InstancesAPI(APIClient):
         self,
         instance_type: Literal["node", "edge"] = "node",
         include_typing: bool = False,
-        sources: list[ViewReference] | None = None,
+        sources: list[ViewId] | None = None,
         limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
         sort: list[InstanceSort | dict] | None = None,
         filter: Filter | dict | None = None,
@@ -257,7 +274,7 @@ class InstancesAPI(APIClient):
         Args:
             instance_type(Literal["node", "edge"]): Whether to query for nodes or edges.
             include_typing (bool): Whether to return property type information as part of the result.
-            sources (list[ViewReference]): Views to retrieve properties from.
+            sources (list[ViewId]): Views to retrieve properties from.
             limit (int, optional): Maximum number of instances to return. Default to 1000. Set to -1, float("inf") or None
                 to return all items.
             sort (list[InstanceSost]): How you want the listed instances information ordered.
@@ -417,7 +434,9 @@ class InstancesAPI(APIClient):
         | NodeId
         | EdgeId
         | Sequence[NodeId]
-        | Sequence[EdgeId],
+        | Sequence[EdgeId]
+        | tuple[str, str, str]
+        | Sequence[tuple[str, str, str]],
     ) -> Literal["node", "edge"]:
         if isinstance(instance, (NodeApply, NodeId)):
             return "node"
@@ -427,4 +446,8 @@ class InstancesAPI(APIClient):
             return "node"
         elif isinstance(instance, Sequence) and len(instance) > 0 and isinstance(instance[0], (EdgeApply, EdgeId)):
             return "edge"
+        elif isinstance(instance, tuple) and len(instance) > 0 and isinstance(instance[0], str):
+            return cast(Literal["node", "edge"], instance[0])
+        elif isinstance(instance, tuple) and len(instance) > 0 and isinstance(instance[0], tuple):
+            return cast(Literal["node", "edge"], instance[0][0])
         raise ValueError(f"Unsupported {instance=}")

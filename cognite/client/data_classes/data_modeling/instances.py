@@ -7,13 +7,12 @@ from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteResourceList,
 )
+from cognite.client.data_classes.data_modeling._core import DataModelingResource
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
-from cognite.client.data_classes.data_modeling.shared import (
-    ContainerReference,
-    DataModeling,
+from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelationReference,
-    ViewReference,
 )
+from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
 from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive, convert_all_keys_to_snake_case
 
 if TYPE_CHECKING:
@@ -27,7 +26,7 @@ PropertyIdentifier = str
 
 @dataclass
 class NodeOrEdgeData:
-    source: ViewReference | ContainerReference
+    source: ContainerId | ViewId
     properties: dict[str, PropertyValue]
 
     @classmethod
@@ -41,7 +40,7 @@ class NodeOrEdgeData:
         return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
 
 
-class InstanceCore(DataModeling):
+class InstanceCore(DataModelingResource):
     """A node or edge
     Args:
         instance_type (Literal["node", "edge"]) The type of instance.
@@ -54,13 +53,12 @@ class InstanceCore(DataModeling):
         instance_type: Literal["node", "edge"] = "node",
         space: str = None,
         external_id: str = None,
-        cognite_client: CogniteClient = None,
+        **_: dict,
     ):
         validate_data_modeling_identifier(space, external_id)
         self.instance_type = instance_type
         self.space = space
         self.external_id = external_id
-        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class InstanceApply(InstanceCore):
@@ -86,9 +84,9 @@ class InstanceApply(InstanceCore):
         external_id: str = None,
         existing_version: int = None,
         sources: list[NodeOrEdgeData] = None,
-        cognite_client: CogniteClient = None,
+        **_: dict,
     ):
-        super().__init__(instance_type, space, external_id, cognite_client)
+        super().__init__(instance_type, space, external_id)
         self.existing_version = existing_version
         self.sources = sources
 
@@ -122,16 +120,16 @@ class Instance(InstanceCore):
         created_time: int = None,
         deleted_time: int = None,
         properties: dict[Space, dict[PropertyIdentifier, PropertyValue]] = None,
-        cognite_client: CogniteClient = None,
+        **_: dict,
     ):
-        super().__init__(instance_type, space, external_id, cognite_client)
+        super().__init__(instance_type, space, external_id)
         self.version = version
         self.last_updated_time = last_updated_time
         self.created_time = created_time
         self.deleted_time = deleted_time
         self.properties = properties
 
-    def as_apply(self, source: ViewReference | ContainerReference, existing_version: int) -> InstanceApply:
+    def as_apply(self, source: ViewId | ContainerId, existing_version: int) -> InstanceApply:
         return InstanceApply(
             instance_type=self.instance_type,
             space=self.space,
@@ -206,7 +204,7 @@ class Node(Instance):
             cognite_client,
         )
 
-    def as_apply(self, source: ViewReference | ContainerReference, existing_version: int) -> InstanceApply:
+    def as_apply(self, source: ViewId | ContainerId, existing_version: int) -> InstanceApply:
         return cast(NodeApply, super().as_apply(source, existing_version))
 
 
@@ -237,7 +235,7 @@ class EdgeApply(InstanceApply):
         sources: list[NodeOrEdgeData] = None,
         start_node: DirectRelationReference = None,
         end_node: DirectRelationReference = None,
-        cognite_client: CogniteClient = None,
+        **_: dict,
     ):
         super().__init__(
             "edge",
@@ -245,7 +243,6 @@ class EdgeApply(InstanceApply):
             external_id,
             existing_version,
             sources,
-            cognite_client,
         )
         self.type = type
         self.start_node = start_node
@@ -279,7 +276,7 @@ class Edge(Instance):
         properties: dict[str, dict] = None,
         start_node: DirectRelationReference = None,
         end_node: DirectRelationReference = None,
-        cognite_client: CogniteClient = None,
+        **_: dict,
     ):
         super().__init__(
             "edge",
@@ -290,7 +287,6 @@ class Edge(Instance):
             created_time,
             deleted_time,
             properties,
-            cognite_client,
         )
         self.type = type
         self.start_node = start_node
@@ -328,7 +324,7 @@ class InstanceFilter(CogniteFilter):
     def __init__(
         self,
         include_typing: bool = False,
-        sources: list[ViewReference] = None,
+        sources: list[ViewId] = None,
         instance_type: Literal["node", "edge"] = "node",
     ):
         self.include_typing = include_typing
