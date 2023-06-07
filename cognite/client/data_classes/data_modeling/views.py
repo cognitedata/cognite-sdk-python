@@ -390,7 +390,8 @@ class SingleHopConnectionDefinition(ConnectionDefinition):
         if "source" in data:
             output.source = ViewId.load(data["source"])
         if "edgeSource" in data or "edge_source" in data:
-            output.edge_source = ViewId.load(data.get("edgeSource", data.get("edge_source")))
+            edge_source = data.get("edgeSource", data.get("edge_source"))
+            output.edge_source = ViewId.load(edge_source) if edge_source else None
         return output
 
     def dump(self, camel_case: bool = False) -> dict:
