@@ -86,15 +86,7 @@ class DataModelsAPI(APIClient):
         """
         return cast(Iterator[DataModel], self())
 
-    @overload
-    def retrieve(self, ids: DataModelIdentifier) -> DataModel | None:
-        ...
-
-    @overload
-    def retrieve(self, ids: Sequence[DataModelIdentifier]) -> DataModelList:
-        ...
-
-    def retrieve(self, ids: DataModelIdentifier | Sequence[DataModelIdentifier]) -> DataModel | DataModelList | None:
+    def retrieve(self, ids: DataModelIdentifier | Sequence[DataModelIdentifier]) -> DataModelList:
         """`Retrieve data_model(s) by id(s). <https://docs.cognite.com/api/v1/#tag/Data-models/operation/byExternalIdsDataModels>`_
 
         Args:

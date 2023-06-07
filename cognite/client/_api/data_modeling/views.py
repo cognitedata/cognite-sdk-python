@@ -80,15 +80,7 @@ class ViewsAPI(APIClient):
         """
         return cast(Iterator[View], self())
 
-    @overload
-    def retrieve(self, ids: ViewIdentifier) -> View | None:
-        ...
-
-    @overload
-    def retrieve(self, ids: Sequence[ViewIdentifier]) -> ViewList:
-        ...
-
-    def retrieve(self, ids: ViewIdentifier | Sequence[ViewIdentifier]) -> View | ViewList | None:
+    def retrieve(self, ids: ViewIdentifier | Sequence[ViewIdentifier]) -> ViewList:
         """`Retrieve a single view by id. <https://docs.cognite.com/api/v1/#tag/Views/operation/byExternalIdsViews>`_
 
         Args:
