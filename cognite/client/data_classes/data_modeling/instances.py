@@ -335,6 +335,21 @@ class Edge(Instance):
         self.start_node = start_node
         self.end_node = end_node
 
+    def as_apply(self, source: ViewId | ContainerId, existing_version: int = None) -> InstanceApply:
+        return EdgeApply(
+            space=self.space,
+            external_id=self.external_id,
+            type=self.type,
+            start_node=self.start_node,
+            end_node=self.end_node,
+            existing_version=existing_version or None,
+            sources=[
+                NodeOrEdgeData(source=source, properties=space_properties[source.identifier])  # type: ignore[arg-type]
+                for space_properties in self.properties.values()  # type: ignore[union-attr]
+            ]
+            or None,
+        )
+
 
 class EdgeUpdate(InstanceUpdate):
     """An Edge. This represents the update on the edge.
