@@ -105,6 +105,10 @@ class EdgeId(InstanceId):
 class ContainerId(DataModelingId):
     _type = "container"
 
+    @property
+    def identifier(self) -> str:
+        raise NotImplementedError
+
     @classmethod
     def from_tuple(cls, data: tuple[str, str] | ContainerId) -> ContainerId:
         return cls(*data) if isinstance(data, tuple) else data
@@ -113,6 +117,10 @@ class ContainerId(DataModelingId):
 @dataclass
 class ViewId(VersionedDataModelingId):
     _type = "view"
+
+    @property
+    def identifier(self) -> str:
+        return f"{self.external_id}/{self.version}"
 
     @classmethod
     def from_tuple(cls, data: tuple[str, str, str] | ViewId) -> ViewId:
