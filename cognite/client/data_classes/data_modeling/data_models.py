@@ -146,7 +146,7 @@ class DataModel(DataModelCore):
 
         return output
 
-    def to_data_model_apply(self) -> DataModelApply:
+    def as_apply(self) -> DataModelApply:
         views = None
         if self.views:
             views = cast(
@@ -172,7 +172,7 @@ class DataModelList(CogniteResourceList):
     _RESOURCE = DataModel
 
     def to_data_model_apply_list(self) -> DataModelApplyList:
-        return DataModelApplyList(resources=[d.to_data_model_apply() for d in self.items])
+        return DataModelApplyList(resources=[d.as_apply() for d in self.items])
 
 
 class DataModelFilter(CogniteFilter):
