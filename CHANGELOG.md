@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.2.3] - 2023-06-07
+### Added
+- Transformation schema for nodes, edges in both view centric and model centric
+
 ## [6.2.2] - 2023-06-05
 ### Fixed
 - Creating function schedules with current user credentials now works (used to fail at runtime with "Could not fetch a valid token (...)" because a session was never created.)
