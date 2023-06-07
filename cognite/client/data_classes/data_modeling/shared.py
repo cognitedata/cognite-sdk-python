@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import json
 from abc import ABC
 from dataclasses import asdict, dataclass
-from typing import Any, ClassVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Type, TypeVar, cast
 
 from cognite.client.data_classes._base import CogniteResource
 from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_snake_case
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 _PROPERTY_ALIAS = {"list": "isList"}
 _PROPERTY_ALIAS_INV = {"isList": "list", "is_list": "list"}
@@ -23,6 +27,20 @@ class DataModelingResource(CogniteResource):
             args.append(f"{external_id=}")
 
         return f"{type(self).__name__}({', '.join(args)}) at {id(self):#x}"
+
+    @classmethod
+    def load(cls: Type[T_DataModelingResource], data: dict | str) -> T_DataModelingResource:
+        data = json.loads(data) if isinstance(data, str) else data
+        return cls(**convert_all_keys_to_snake_case(data))
+
+    @classmethod
+    def _load(
+        cls: Type[T_DataModelingResource], resource: dict | str, cognite_client: CogniteClient = None
+    ) -> T_DataModelingResource:
+        return cls.load(resource)
+
+
+T_DataModelingResource = TypeVar("T_DataModelingResource", bound=DataModelingResource)
 
 
 @dataclass

@@ -73,7 +73,6 @@ class Space(SpaceCore):
             space=self.space,
             description=self.description,
             name=self.name,
-            cognite_client=self._cognite_client,
         )
 
 

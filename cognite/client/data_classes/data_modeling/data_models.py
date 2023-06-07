@@ -165,7 +165,6 @@ class DataModel(DataModelCore):
             name=self.name,
             version=self.version,
             views=views,
-            cognite_client=self._cognite_client,
         )
 
 

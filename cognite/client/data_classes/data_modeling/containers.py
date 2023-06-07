@@ -166,7 +166,6 @@ class Container(ContainerCore):
             properties=self.properties,
             constraints=self.constraints,
             indexes=self.indexes,
-            cognite_client=self._cognite_client,
         )
 
 
