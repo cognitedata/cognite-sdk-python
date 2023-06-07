@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from abc import ABC
 from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, Any, ClassVar, Type, TypeVar, cast
+from typing import TYPE_CHECKING, ClassVar, Type, TypeVar
 
 from cognite.client.data_classes._base import CogniteResource
 from cognite.client.utils._auxiliary import rename_and_exclude_keys
@@ -58,54 +58,6 @@ class DirectRelationReference:
         return cls(**convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"type"})))
 
 
-@dataclass
-class Reference(ABC):
-    _type: ClassVar[str]
-    space: str
-    external_id: str
-
-    def dump(self, camel_case: bool = False) -> dict[str, str]:
-        output = asdict(self)
-        output["type"] = self._type
-        return convert_all_keys_recursive(output, camel_case)
-
-    @classmethod
-    def _load(cls, data: dict | None) -> Any:
-        if data is None:
-            return None
-        return cls(**convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"type"})))
-
-    @classmethod
-    def load(cls, data: dict) -> ContainerReference | ViewReference:
-        if "type" not in data:
-            raise ValueError("References are required to have a type")
-
-        if data["type"] == "container":
-            return ContainerReference.load(data)
-        elif data["type"] == "view":
-            return ViewReference.load(data)
-        raise ValueError(f"Type {data['type']} is not supported.")
-
-
-@dataclass
-class ContainerReference(Reference):
-    _type = "container"
-
-    @classmethod
-    def load(cls, data: dict) -> ContainerReference:
-        return cast(ContainerReference, super()._load(data))
-
-
-@dataclass
-class ViewReference(Reference):
-    _type = "view"
-    version: str
-
-    @classmethod
-    def load(cls, data: dict) -> ViewReference:
-        return cast(ViewReference, super()._load(data))
-
-
 class PropertyType(ABC):
     _type: ClassVar[str]
 
@@ -147,7 +99,7 @@ class PropertyType(ABC):
         elif type_ == "sequence":
             return SequenceReference(**data)
         elif type_ == "direct":
-            return DirectRelation(**data)
+            return DirectRelation()
 
         raise ValueError(f"Invalid type {type_}.")
 

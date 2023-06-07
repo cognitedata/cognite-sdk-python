@@ -4,7 +4,6 @@ from cognite.client.data_classes.data_modeling.containers import ContainerDirect
 from cognite.client.data_classes.data_modeling.shared import (
     DirectRelationReference,
     PropertyType,
-    Reference,
 )
 from cognite.client.data_classes.data_modeling.views import ViewDirectRelation
 
@@ -14,18 +13,6 @@ class TestDirectRelationReference:
         data = {"space": "mySpace", "externalId": "myId"}
 
         assert data == DirectRelationReference.load(data).dump(camel_case=True)
-
-
-class TestReference:
-    @pytest.mark.parametrize(
-        "data",
-        [
-            {"space": "mySpace", "externalId": "myId", "type": "container"},
-            {"space": "mySpace", "externalId": "myId", "version": "myVersion", "type": "view"},
-        ],
-    )
-    def test_load_dump(self, data):
-        assert data == Reference.load(data).dump(camel_case=True)
 
 
 class TestPropertyType:

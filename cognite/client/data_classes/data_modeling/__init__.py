@@ -45,7 +45,6 @@ from cognite.client.data_classes.data_modeling.shared import (
     Json,
     Primitive,
     PropertyType,
-    Reference,
     SequenceReference,
     Text,
     TimeSeriesReference,
