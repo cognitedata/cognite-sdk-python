@@ -234,6 +234,38 @@ class Node(Instance):
         )
 
 
+class NodeUpdate(InstanceUpdate):
+    """A node. This represents the update on the node.
+    Args:
+        space (str): The workspace for the node a unique identifier for the space.
+        external_id (str): Combined with the space is the unique identifier of the node.
+        version (str): DMS version of the node.
+        was_modified (bool): Whether the node was modified by the ingestion.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: str,
+        was_modified: bool,
+        last_updated_time: int = None,
+        created_time: int = None,
+        **_: dict,
+    ):
+        super().__init__(
+            instance_type="node",
+            space=space,
+            external_id=external_id,
+            version=version,
+            was_modified=was_modified,
+            last_updated_time=last_updated_time,
+            created_time=created_time,
+        )
+
+
 class EdgeApply(InstanceApply):
     """An Edge. This is the write version of the edge.
     Args:
@@ -304,6 +336,38 @@ class Edge(Instance):
         self.end_node = end_node
 
 
+class EdgeUpdate(InstanceUpdate):
+    """An Edge. This represents the update on the edge.
+    Args:
+        space (str): The workspace for the edge a unique identifier for the space.
+        external_id (str): Combined with the space is the unique identifier of the edge.
+        version (str): DMS version.
+        was_modified (bool): Whether the edge was modified by the ingestion.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: str,
+        was_modified: bool,
+        last_updated_time: int = None,
+        created_time: int = None,
+        **_: dict,
+    ):
+        super().__init__(
+            instance_type="edge",
+            space=space,
+            external_id=external_id,
+            version=version,
+            was_modified=was_modified,
+            last_updated_time=last_updated_time,
+            created_time=created_time,
+        )
+
+
 class InstanceList(CogniteResourceList):
     _RESOURCE = Instance
 
@@ -312,12 +376,20 @@ class NodeApplyList(CogniteResourceList):
     _RESOURCE = NodeApply
 
 
+class NodeUpdateList(CogniteResourceList):
+    _RESOURCE = NodeUpdate
+
+
 class NodeList(CogniteResourceList):
     _RESOURCE = Node
 
 
 class EdgeApplyList(CogniteResourceList):
     _RESOURCE = EdgeApply
+
+
+class EdgeUpdateList(CogniteResourceList):
+    _RESOURCE = EdgeUpdate
 
 
 class EdgeList(CogniteResourceList):
