@@ -98,5 +98,5 @@ def load_identifier(ids: Id | Sequence[Id]) -> DataModelingIdentifierSequence:
             )
             for id_ in id_list
         ],
-        is_singleton=len(id_list) == 1,
+        is_singleton=not is_sequence,
     )
