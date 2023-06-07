@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, Any, List, Literal, Union, cast
+from typing import Any, List, Literal, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -14,10 +14,6 @@ from cognite.client.data_classes.data_modeling.data_types import (
 )
 from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
 from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive, convert_all_keys_to_snake_case
-
-if TYPE_CHECKING:
-    from cognite.client import CogniteClient
-
 
 PropertyValue = Union[str, int, float, bool, dict, List[str], List[int], List[float], List[bool], List[dict]]
 Space = str
@@ -48,13 +44,7 @@ class InstanceCore(DataModelingResource):
         external_id (str): Combined with the space is the unique identifier of the instance.
     """
 
-    def __init__(
-        self,
-        instance_type: Literal["node", "edge"] = "node",
-        space: str = None,
-        external_id: str = None,
-        **_: dict,
-    ):
+    def __init__(self, space: str, external_id: str, instance_type: Literal["node", "edge"] = "node", **_: dict):
         validate_data_modeling_identifier(space, external_id)
         self.instance_type = instance_type
         self.space = space
@@ -79,14 +69,14 @@ class InstanceApply(InstanceCore):
 
     def __init__(
         self,
+        space: str,
+        external_id: str,
         instance_type: Literal["node", "edge"] = "node",
-        space: str = None,
-        external_id: str = None,
         existing_version: int = None,
         sources: list[NodeOrEdgeData] = None,
         **_: dict,
     ):
-        super().__init__(instance_type, space, external_id)
+        super().__init__(space, external_id, instance_type)
         self.existing_version = existing_version
         self.sources = sources
 
@@ -112,17 +102,17 @@ class Instance(InstanceCore):
 
     def __init__(
         self,
+        space: str,
+        external_id: str,
+        version: str,
+        last_updated_time: int,
+        created_time: int,
         instance_type: Literal["node", "edge"] = "node",
-        space: str = None,
-        external_id: str = None,
-        version: str = None,
-        last_updated_time: int = None,
-        created_time: int = None,
         deleted_time: int = None,
         properties: dict[Space, dict[PropertyIdentifier, PropertyValue]] = None,
         **_: dict,
     ):
-        super().__init__(instance_type, space, external_id)
+        super().__init__(space, external_id, instance_type)
         self.version = version
         self.last_updated_time = last_updated_time
         self.created_time = created_time
@@ -131,9 +121,9 @@ class Instance(InstanceCore):
 
     def as_apply(self, source: ViewId | ContainerId, existing_version: int) -> InstanceApply:
         return InstanceApply(
-            instance_type=self.instance_type,
             space=self.space,
             external_id=self.external_id,
+            instance_type=self.instance_type,
             existing_version=existing_version,
             sources=[
                 NodeOrEdgeData(source=source, properties=space_properties)
@@ -141,7 +131,6 @@ class Instance(InstanceCore):
             ]
             if self.properties
             else None,
-            cognite_client=getattr(self, "_cognite_client", None),
         )
 
 
@@ -161,11 +150,6 @@ class NodeApply(InstanceApply):
     """
 
     ...
-    # def _load(cls, resource: dict | str, cognite_client: CogniteClient = None) -> NodeApply:
-    #     ...
-    #
-    # def dump(self, camel_case: bool = False) -> dict[str, Any]:
-    #     ...
 
 
 class Node(Instance):
@@ -183,26 +167,16 @@ class Node(Instance):
 
     def __init__(
         self,
-        space: str = None,
-        external_id: str = None,
-        version: str = None,
-        last_updated_time: int = None,
-        created_time: int = None,
+        space: str,
+        external_id: str,
+        version: str,
+        last_updated_time: int,
+        created_time: int,
         deleted_time: int = None,
         properties: dict[str, dict] = None,
-        cognite_client: CogniteClient = None,
+        **_: dict,
     ):
-        super().__init__(
-            "node",
-            space,
-            external_id,
-            version,
-            last_updated_time,
-            created_time,
-            deleted_time,
-            properties,
-            cognite_client,
-        )
+        super().__init__(space, external_id, version, last_updated_time, created_time, "node", deleted_time, properties)
 
     def as_apply(self, source: ViewId | ContainerId, existing_version: int) -> InstanceApply:
         return cast(NodeApply, super().as_apply(source, existing_version))
@@ -228,22 +202,16 @@ class EdgeApply(InstanceApply):
 
     def __init__(
         self,
-        space: str = None,
-        external_id: str = None,
-        type: DirectRelationReference = None,
+        space: str,
+        external_id: str,
+        type: DirectRelationReference,
+        start_node: DirectRelationReference,
+        end_node: DirectRelationReference,
         existing_version: int = None,
         sources: list[NodeOrEdgeData] = None,
-        start_node: DirectRelationReference = None,
-        end_node: DirectRelationReference = None,
         **_: dict,
     ):
-        super().__init__(
-            "edge",
-            space,
-            external_id,
-            existing_version,
-            sources,
-        )
+        super().__init__(space, external_id, "edge", existing_version, sources)
         self.type = type
         self.start_node = start_node
         self.end_node = end_node
@@ -266,28 +234,19 @@ class Edge(Instance):
 
     def __init__(
         self,
-        space: str = None,
-        external_id: str = None,
-        version: str = None,
-        type: DirectRelationReference = None,
-        last_updated_time: int = None,
-        created_time: int = None,
+        space: str,
+        external_id: str,
+        version: str,
+        type: DirectRelationReference,
+        last_updated_time: int,
+        created_time: int,
+        start_node: DirectRelationReference,
+        end_node: DirectRelationReference,
         deleted_time: int = None,
         properties: dict[str, dict] = None,
-        start_node: DirectRelationReference = None,
-        end_node: DirectRelationReference = None,
         **_: dict,
     ):
-        super().__init__(
-            "edge",
-            space,
-            external_id,
-            version,
-            last_updated_time,
-            created_time,
-            deleted_time,
-            properties,
-        )
+        super().__init__(space, external_id, version, last_updated_time, created_time, "edge", deleted_time, properties)
         self.type = type
         self.start_node = start_node
         self.end_node = end_node
