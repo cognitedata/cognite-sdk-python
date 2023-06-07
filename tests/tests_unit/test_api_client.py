@@ -1214,9 +1214,7 @@ def test_worker_in_backoff_loop_gets_new_token(rsps):
         if call_count < 1:
             call_count += 1
             return "outdated-token"
-
-        while True:
-            return "valid-token"
+        return "valid-token"
 
     client = CogniteClient(ClientConfig(client_name="a", credentials=Token(token_callable), project="c"))
     assert client.assets.retrieve(id=1).id == 123
