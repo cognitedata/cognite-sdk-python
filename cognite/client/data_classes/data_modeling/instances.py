@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import json
 from dataclasses import asdict, dataclass
-from typing import Any, List, Literal, Union, cast
+from typing import Any, List, Literal, Type, TypeVar, Union
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -86,6 +87,17 @@ class InstanceApply(InstanceCore):
             output["sources"] = [source.dump(camel_case) for source in self.sources]
         return output
 
+    @classmethod
+    def load(cls: Type[T_Instance_Apply], data: dict | str) -> T_Instance_Apply:
+        data = data if isinstance(data, dict) else json.loads(data)
+        instance = cls(**convert_all_keys_to_snake_case(data))
+        if "source" in data:
+            instance.sources = [NodeOrEdgeData.load(source) for source in data["source"]]
+        return instance
+
+
+T_Instance_Apply = TypeVar("T_Instance_Apply", bound=InstanceApply)
+
 
 class Instance(InstanceCore):
     """A node or edge. This is the read version of the instance.
@@ -109,7 +121,7 @@ class Instance(InstanceCore):
         created_time: int,
         instance_type: Literal["node", "edge"] = "node",
         deleted_time: int = None,
-        properties: dict[Space, dict[PropertyIdentifier, PropertyValue]] = None,
+        properties: dict[Space, dict[PropertyIdentifier, dict[str, PropertyValue]]] = None,
         **_: dict,
     ):
         super().__init__(space, external_id, instance_type)
@@ -126,12 +138,42 @@ class Instance(InstanceCore):
             instance_type=self.instance_type,
             existing_version=existing_version,
             sources=[
-                NodeOrEdgeData(source=source, properties=space_properties)
+                NodeOrEdgeData(source=source, properties=space_properties)  # type: ignore[arg-type]
                 for space_properties in self.properties.values()
             ]
             if self.properties
             else None,
         )
+
+
+class InstanceUpdate(InstanceCore):
+    """A node or edge. This represents the update on the instance.
+    Args:
+        instance_type (Literal["node", "edge"]) The type of instance.
+        space (str): The workspace for the instance.a unique identifier for the space.
+        external_id (str): Combined with the space is the unique identifier of the instance.
+        version (str): DMS version of the instance.
+        was_modified (bool): Whether the instance was modified by the ingestion.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+    """
+
+    def __init__(
+        self,
+        instance_type: Literal["node", "edge"],
+        space: str,
+        external_id: str,
+        version: str,
+        was_modified: bool,
+        last_updated_time: int = None,
+        created_time: int = None,
+        **_: dict,
+    ):
+        super().__init__(space, external_id, instance_type)
+        self.version = version
+        self.was_modified = was_modified
+        self.last_updated_time = last_updated_time
+        self.created_time = created_time
 
 
 class NodeApply(InstanceApply):
@@ -173,13 +215,23 @@ class Node(Instance):
         last_updated_time: int,
         created_time: int,
         deleted_time: int = None,
-        properties: dict[str, dict] = None,
+        properties: dict[str, dict[str, dict[str, PropertyValue]]] = None,
         **_: dict,
     ):
         super().__init__(space, external_id, version, last_updated_time, created_time, "node", deleted_time, properties)
 
-    def as_apply(self, source: ViewId | ContainerId, existing_version: int) -> InstanceApply:
-        return cast(NodeApply, super().as_apply(source, existing_version))
+    def as_apply(self, source: ViewId | ContainerId, existing_version: int) -> NodeApply:
+        return NodeApply(
+            space=self.space,
+            external_id=self.external_id,
+            existing_version=existing_version,
+            sources=[
+                NodeOrEdgeData(source=source, properties=space_properties[source.identifier])  # type: ignore[arg-type]
+                for space_properties in self.properties.values()
+            ]
+            if self.properties
+            else None,
+        )
 
 
 class EdgeApply(InstanceApply):

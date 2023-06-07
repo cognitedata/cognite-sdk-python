@@ -7,7 +7,9 @@ from cognite.client.data_classes.data_modeling.instances import InstanceList
 
 @pytest.fixture()
 def cdf_nodes(cognite_client: CogniteClient):
-    nodes = cognite_client.data_modeling.instances.list()
+    views = cognite_client.data_modeling.views.list(-1)
+    source = views[0].as_reference()
+    nodes = cognite_client.data_modeling.instances.list(limit=-1, sources=[source], instance_type="node")
     assert len(nodes) > 0, "Add at least one node to CDF"
     return nodes
 
