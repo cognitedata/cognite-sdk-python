@@ -24,8 +24,14 @@ class DataModelingId:
         return convert_all_keys_recursive(output, camel_case)
 
     @classmethod
-    def load(cls: Type[T_DataModelingId], data: dict) -> T_DataModelingId:
-        return cls(**convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"type"})))
+    def load(cls: Type[T_DataModelingId], data: dict | T_DataModelingId | tuple[str, str]) -> T_DataModelingId:
+        if isinstance(data, cls):
+            return data
+        elif isinstance(data, tuple):
+            return cls(*data)
+        elif isinstance(data, dict):
+            return cls(**convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"type"})))
+        raise ValueError(f"Cannot load {data} into {cls}, invalid type={type(data)}")
 
 
 T_DataModelingId = TypeVar("T_DataModelingId", bound=DataModelingId)
@@ -48,8 +54,16 @@ class VersionedDataModelingId:
         return convert_all_keys_recursive(output, camel_case)
 
     @classmethod
-    def load(cls: Type[T_Versioned_DataModeling_Id], data: dict) -> T_Versioned_DataModeling_Id:
-        return cls(**convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"type"})))
+    def load(
+        cls: Type[T_Versioned_DataModeling_Id], data: dict | T_Versioned_DataModeling_Id | tuple[str, str, str]
+    ) -> T_Versioned_DataModeling_Id:
+        if isinstance(data, cls):
+            return data
+        elif isinstance(data, tuple):
+            return cls(*data)
+        elif isinstance(data, dict):
+            return cls(**convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"type"})))
+        raise ValueError(f"Cannot load {data} into {cls}, invalid type={type(data)}")
 
 
 T_Versioned_DataModeling_Id = TypeVar("T_Versioned_DataModeling_Id", bound=VersionedDataModelingId)
@@ -59,18 +73,10 @@ T_Versioned_DataModeling_Id = TypeVar("T_Versioned_DataModeling_Id", bound=Versi
 class ContainerId(DataModelingId):
     _type = "container"
 
-    @classmethod
-    def from_tuple(cls, data: tuple[str, str] | ContainerId) -> ContainerId:
-        return cls(*data) if isinstance(data, tuple) else data
-
 
 @dataclass
 class ViewId(VersionedDataModelingId):
     _type = "view"
-
-    @classmethod
-    def from_tuple(cls, data: tuple[str, str, str] | ViewId) -> ViewId:
-        return cls(*data) if isinstance(data, tuple) else data
 
 
 @dataclass

@@ -206,8 +206,8 @@ class HasData(Filter):
         containers: Optional[Sequence[tuple[str, str] | ContainerId]] = None,
         views: Optional[Sequence[tuple[str, str, str] | ViewId]] = None,
     ):
-        self.__containers: List[ContainerId] = [ContainerId.from_tuple(container) for container in (containers or [])]
-        self.__views: List[ViewId] = [ViewId.from_tuple(view) for view in (views or [])]
+        self.__containers: List[ContainerId] = [ContainerId.load(container) for container in (containers or [])]
+        self.__views: List[ViewId] = [ViewId.load(view) for view in (views or [])]
 
     def _filter_body(self) -> dict:
         return {
