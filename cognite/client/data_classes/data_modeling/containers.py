@@ -9,13 +9,13 @@ from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteResourceList,
 )
+from cognite.client.data_classes.data_modeling._core import DataModelingResource
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
-from cognite.client.data_classes.data_modeling.ids import ContainerId
-from cognite.client.data_classes.data_modeling.shared import (
-    DataModelingResource,
+from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelation,
     PropertyType,
 )
+from cognite.client.data_classes.data_modeling.ids import ContainerId
 from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive, convert_all_keys_to_snake_case
 

@@ -20,18 +20,7 @@ from cognite.client.data_classes.data_modeling.data_models import (
     DataModelList,
     DataModelsSort,
 )
-from cognite.client.data_classes.data_modeling.filters import Filter
-from cognite.client.data_classes.data_modeling.ids import (
-    ContainerId,
-    ContainerIdentifier,
-    DataModelId,
-    DataModelIdentifier,
-    DataModelingId,
-    VersionedDataModelingId,
-    ViewId,
-    ViewIdentifier,
-)
-from cognite.client.data_classes.data_modeling.shared import (
+from cognite.client.data_classes.data_modeling.data_types import (
     Boolean,
     CDFExternalIdReference,
     Date,
@@ -49,6 +38,17 @@ from cognite.client.data_classes.data_modeling.shared import (
     Text,
     TimeSeriesReference,
     Timestamp,
+)
+from cognite.client.data_classes.data_modeling.filters import Filter
+from cognite.client.data_classes.data_modeling.ids import (
+    ContainerId,
+    ContainerIdentifier,
+    DataModelId,
+    DataModelIdentifier,
+    DataModelingId,
+    VersionedDataModelingId,
+    ViewId,
+    ViewIdentifier,
 )
 from cognite.client.data_classes.data_modeling.spaces import Space, SpaceApply, SpaceApplyList, SpaceList
 from cognite.client.data_classes.data_modeling.views import (
@@ -76,7 +76,6 @@ __all__ = [
     "filters",
     "DirectRelation",
     "Filter",
-    "Reference",
     "DirectRelationReference",
     "DataModel",
     "DataModelList",

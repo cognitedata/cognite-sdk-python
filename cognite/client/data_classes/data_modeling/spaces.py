@@ -3,8 +3,8 @@ from __future__ import annotations
 from cognite.client.data_classes._base import (
     CogniteResourceList,
 )
+from cognite.client.data_classes.data_modeling._core import DataModelingResource
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
-from cognite.client.data_classes.data_modeling.shared import DataModelingResource
 
 
 class SpaceCore(DataModelingResource):
