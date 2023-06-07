@@ -17,7 +17,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [6.3.0] - 2023-06-05
+## [6.3.1] - 2023-06-07
+### Fixed
+- Signature of `client.data_modeling.views.retrieve` and `client.data_modeling.data_models.retrieve` to always return
+  a list. 
+
+
+## [6.3.0] - 2023-06-07
 ### Added
 - Support for the container resource in the Data Modeling API with the implementation `client.data_modeling.containers`.
 - Support for the view resource in the Data Modeling API with the implementation `client.data_modeling.views`.
