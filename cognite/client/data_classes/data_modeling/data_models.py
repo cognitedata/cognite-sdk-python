@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any, List, Literal, Union, cast
+from typing import Any, List, Literal, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -10,9 +10,6 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
 from cognite.client.data_classes.data_modeling.shared import DataModelingResource, ViewReference
 from cognite.client.data_classes.data_modeling.views import View, ViewApply
-
-if TYPE_CHECKING:
-    from cognite.client import CogniteClient
 
 
 class DataModelCore(DataModelingResource):
@@ -33,7 +30,7 @@ class DataModelCore(DataModelingResource):
         version: str,
         description: str = None,
         name: str = None,
-        cognite_client: CogniteClient = None,
+        **_: dict,
     ):
         validate_data_modeling_identifier(space, external_id)
         self.space = space
@@ -41,7 +38,6 @@ class DataModelCore(DataModelingResource):
         self.description = description
         self.name = name
         self.version = version
-        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class DataModelApply(DataModelCore):
@@ -64,25 +60,25 @@ class DataModelApply(DataModelCore):
         description: str = None,
         name: str = None,
         views: list[ViewReference | ViewApply] = None,
-        cognite_client: CogniteClient = None,
+        **_: dict,
     ):
-        super().__init__(space, external_id, version, description, name, cognite_client)
+        super().__init__(space, external_id, version, description, name)
         self.views = views
 
     @classmethod
-    def _load_view(cls, view_data: dict, cognite_client: CogniteClient = None) -> ViewReference | ViewApply:
+    def _load_view(cls, view_data: dict) -> ViewReference | ViewApply:
         if "type" in view_data:
             return ViewReference.load(view_data)
         else:
-            return ViewApply._load(view_data, cognite_client)
+            return ViewApply.load(view_data)
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient = None) -> DataModelApply:
+    def load(cls, resource: dict | str) -> DataModelApply:
         data = json.loads(resource) if isinstance(resource, str) else resource
         if "views" in data:
             data["views"] = [cls._load_view(v) for v in data["views"]] or None
 
-        return cast(DataModelApply, super()._load(data, cognite_client))
+        return cast(DataModelApply, super().load(data))
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -119,28 +115,28 @@ class DataModel(DataModelCore):
         description: str = None,
         name: str = None,
         views: list[ViewReference | View] = None,
-        cognite_client: CogniteClient = None,
+        **_: dict,
     ):
-        super().__init__(space, external_id, version, description, name, cognite_client)
+        super().__init__(space, external_id, version, description, name)
         self.views = views
         self.is_global = is_global
         self.last_updated_time = last_updated_time
         self.created_time = created_time
 
     @classmethod
-    def _load_view(cls, view_data: dict, cognite_client: CogniteClient = None) -> ViewReference | ViewApply:
+    def _load_view(cls, view_data: dict) -> ViewReference | View:
         if "type" in view_data:
             return ViewReference.load(view_data)
         else:
-            return View._load(view_data, cognite_client)
+            return View.load(view_data)
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient = None) -> DataModel:
+    def load(cls, resource: dict | str) -> DataModel:
         data = json.loads(resource) if isinstance(resource, str) else resource
         if "views" in data:
             data["views"] = [cls._load_view(v) for v in data["views"]] or None
 
-        return cast(DataModel, super()._load(data, cognite_client))
+        return cast(DataModel, super().load(data))
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)

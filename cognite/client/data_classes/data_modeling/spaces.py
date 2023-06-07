@@ -1,15 +1,10 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast
-
 from cognite.client.data_classes._base import (
     CogniteResourceList,
 )
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
 from cognite.client.data_classes.data_modeling.shared import DataModelingResource
-
-if TYPE_CHECKING:
-    from cognite.client import CogniteClient
 
 
 class SpaceCore(DataModelingResource):
@@ -26,13 +21,12 @@ class SpaceCore(DataModelingResource):
         space: str,
         description: str = None,
         name: str = None,
-        cognite_client: CogniteClient = None,
+        **_: dict,
     ):
         validate_data_modeling_identifier(space)
         self.space = space
         self.description = description
         self.name = name
-        self._cognite_client = cast("CogniteClient", cognite_client)
 
 
 class SpaceApply(SpaceCore):
@@ -61,9 +55,8 @@ class Space(SpaceCore):
         created_time: int,
         description: str = None,
         name: str = None,
-        cognite_client: CogniteClient = None,
     ):
-        super().__init__(space, description, name, cognite_client)
+        super().__init__(space, description, name)
         self.is_global = is_global
         self.last_updated_time = last_updated_time
         self.created_time = created_time

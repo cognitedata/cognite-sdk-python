@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from abc import ABC
 from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, Any, Dict, Literal, Optional, Union, cast
+from typing import Any, Dict, Literal, Optional, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -25,9 +25,6 @@ from cognite.client.utils._text import (
     convert_all_keys_to_snake_case,
 )
 
-if TYPE_CHECKING:
-    from cognite.client import CogniteClient
-
 
 class ViewCore(DataModelingResource):
     def __init__(
@@ -39,7 +36,7 @@ class ViewCore(DataModelingResource):
         name: str = None,
         filter: Filter | None = None,
         implements: list[ViewReference] = None,
-        cognite_client: CogniteClient = None,
+        **_: dict,
     ):
         validate_data_modeling_identifier(space, external_id)
         self.space = space
@@ -49,17 +46,16 @@ class ViewCore(DataModelingResource):
         self.filter = filter
         self.implements = implements
         self.version = version
-        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient = None) -> ViewCore:
+    def load(cls, resource: dict | str) -> ViewCore:
         data = json.loads(resource) if isinstance(resource, str) else resource
         if "implements" in data:
             data["implements"] = [ViewReference.load(v) for v in data["implements"]] or None
         if "filter" in data:
             data["filter"] = Filter.load(data["filter"])
 
-        return cast(ViewCore, super()._load(data, cognite_client))
+        return cast(ViewCore, super().load(data))
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -102,18 +98,18 @@ class ViewApply(ViewCore):
         filter: Filter | None = None,
         implements: list[ViewReference] = None,
         properties: dict[str, MappedApplyPropertyDefinition | ConnectionDefinition] = None,
-        cognite_client: CogniteClient = None,
+        **_: dict,
     ):
-        super().__init__(space, external_id, version, description, name, filter, implements, cognite_client)
+        super().__init__(space, external_id, version, description, name, filter, implements)
         self.properties = properties
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient = None) -> ViewApply:
+    def load(cls, resource: dict | str) -> ViewApply:
         data = json.loads(resource) if isinstance(resource, str) else resource
         if "properties" in data and isinstance(data["properties"], dict):
             data["properties"] = {k: ViewPropertyDefinition.load(v) for k, v in data["properties"].items()} or None
 
-        return cast(ViewApply, super()._load(data, cognite_client))
+        return cast(ViewApply, super().load(data))
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -157,9 +153,17 @@ class View(ViewCore):
         writable: bool = False,
         used_for: Literal["node", "edge", "all"] = "node",
         is_global: bool = False,
-        cognite_client: CogniteClient = None,
+        **_: dict,
     ):
-        super().__init__(space, external_id, version, description, name, filter, implements, cognite_client)
+        super().__init__(
+            space,
+            external_id,
+            version,
+            description,
+            name,
+            filter,
+            implements,
+        )
         self.writable = writable
         self.used_for = used_for
         self.is_global = is_global
@@ -168,12 +172,12 @@ class View(ViewCore):
         self.created_time = created_time
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient = None) -> ViewApply:  # type: ignore[override]
+    def load(cls, resource: dict | str) -> View:
         data = json.loads(resource) if isinstance(resource, str) else resource
         if "properties" in data and isinstance(data["properties"], dict):
             data["properties"] = {k: ViewPropertyDefinition.load(v) for k, v in data["properties"].items()} or None
 
-        return cast(ViewApply, super()._load(data, cognite_client))
+        return cast(View, super().load(data))
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)

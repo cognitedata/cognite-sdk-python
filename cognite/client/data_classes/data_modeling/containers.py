@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from abc import ABC
 from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, Any, Literal, Optional, cast
+from typing import Any, Literal, Optional, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -18,9 +18,6 @@ from cognite.client.data_classes.data_modeling.shared import (
 )
 from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive, convert_all_keys_to_snake_case
-
-if TYPE_CHECKING:
-    from cognite.client import CogniteClient
 
 
 class ContainerCore(DataModelingResource):
@@ -47,7 +44,7 @@ class ContainerCore(DataModelingResource):
         used_for: Literal["node", "edge", "all"] = None,
         constraints: dict[str, ConstraintIdentifier] = None,
         indexes: dict[str, IndexIdentifier] = None,
-        cognite_client: CogniteClient = None,
+        **_: dict,
     ):
         validate_data_modeling_identifier(space, external_id)
         self.space = space
@@ -58,10 +55,9 @@ class ContainerCore(DataModelingResource):
         self.properties = properties
         self.constraints = constraints
         self.indexes = indexes
-        self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient = None) -> ContainerCore:
+    def load(cls, resource: dict | str) -> ContainerCore:
         data = json.loads(resource) if isinstance(resource, str) else resource
         if "constraints" in data:
             data["constraints"] = {k: ConstraintIdentifier.load(v) for k, v in data["constraints"].items()} or None
@@ -69,7 +65,7 @@ class ContainerCore(DataModelingResource):
             data["indexes"] = {k: IndexIdentifier.load(v) for k, v in data["indexes"].items()} or None
         if "properties" in data:
             data["properties"] = {k: ContainerPropertyIdentifier.load(v) for k, v in data["properties"].items()} or None
-        return cast(ContainerCore, super()._load(data, cognite_client))
+        return cast(ContainerCore, super().load(data))
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -110,11 +106,9 @@ class ContainerApply(ContainerCore):
         used_for: Literal["node", "edge", "all"] = None,
         constraints: dict[str, ConstraintIdentifier] = None,
         indexes: dict[str, IndexIdentifier] = None,
-        cognite_client: CogniteClient = None,
+        **_: dict,
     ):
-        super().__init__(
-            space, external_id, properties, description, name, used_for, constraints, indexes, cognite_client
-        )
+        super().__init__(space, external_id, properties, description, name, used_for, constraints, indexes)
 
 
 class Container(ContainerCore):
@@ -147,11 +141,8 @@ class Container(ContainerCore):
         used_for: Literal["node", "edge", "all"] = "node",
         constraints: dict[str, ConstraintIdentifier] = None,
         indexes: dict[str, IndexIdentifier] = None,
-        cognite_client: CogniteClient = None,
     ):
-        super().__init__(
-            space, external_id, properties, description, name, used_for, constraints, indexes, cognite_client
-        )
+        super().__init__(space, external_id, properties, description, name, used_for, constraints, indexes)
         self.is_global = is_global
         self.last_updated_time = last_updated_time
         self.created_time = created_time
