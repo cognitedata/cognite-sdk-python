@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from typing import ClassVar, Optional, Sequence, Tuple, Type, TypeVar, Union, cast
+from typing import ClassVar, Literal, Optional, Sequence, Tuple, Type, TypeVar, Union, cast
 
 from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._identifier import DataModelingIdentifier, DataModelingIdentifierSequence
@@ -91,8 +91,12 @@ DataModelIdentifier = Union[DataModelId, Tuple[str, str], Tuple[str, str, str]]
 Id = Union[Tuple[str, str], Tuple[str, str, str], DataModelingId, VersionedDataModelingId]
 
 
-def load_identifier(ids: Id | Sequence[Id]) -> DataModelingIdentifierSequence:
+def load_identifier(
+    ids: Id | Sequence[Id], id_type: Literal["container", "view", "data_model"]
+) -> DataModelingIdentifierSequence:
     is_sequence = isinstance(ids, Sequence) and not (isinstance(ids, tuple) and isinstance(ids[0], str))
+    is_view_or_data_model = id_type in {"view", "data_model"}
+
     id_list = cast(Sequence, ids)
     if not is_sequence:
         id_list = [ids]
@@ -104,5 +108,5 @@ def load_identifier(ids: Id | Sequence[Id]) -> DataModelingIdentifierSequence:
             )
             for id_ in id_list
         ],
-        is_singleton=not is_sequence,
+        is_singleton=not is_sequence and not is_view_or_data_model,
     )

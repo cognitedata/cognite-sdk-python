@@ -48,7 +48,7 @@ class TestViewsAPI:
 
         # Act
         created = cognite_client.data_modeling.views.apply(new_view)
-        retrieved = cognite_client.data_modeling.views.retrieve(new_id)
+        retrieved = cognite_client.data_modeling.views.retrieve(new_id)[0]
 
         # Assert
         assert created.created_time
@@ -62,7 +62,7 @@ class TestViewsAPI:
 
         # Assert
         assert deleted_id[0] == new_id
-        assert retrieved_deleted is None
+        assert not retrieved_deleted
 
     def test_delete_non_existent(self, cognite_client: CogniteClient, integration_test_space: models.Space):
         space = integration_test_space.space
@@ -97,7 +97,7 @@ class TestViewsAPI:
         assert len(retrieved) == len(ids) - 1
 
     def test_retrieve_non_existent(self, cognite_client: CogniteClient):
-        assert cognite_client.data_modeling.views.retrieve(("myNonExistingSpace", "myImaginaryView", "v0")) is None
+        assert not cognite_client.data_modeling.views.retrieve(("myNonExistingSpace", "myImaginaryView", "v0"))
 
     def test_iterate(self, cognite_client: CogniteClient, integration_test_space: models.Space):
         for containers in cognite_client.data_modeling.views(
