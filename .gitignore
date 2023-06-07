@@ -56,3 +56,4 @@ test-report.xml
 # Local development
 scripts/local_client.py
 playground.py
+scripts/tmp/

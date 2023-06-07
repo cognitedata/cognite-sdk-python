@@ -17,6 +17,15 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.3.0] - 2023-06-05
+### Added
+- Support for the container resource in the Data Modeling API with the implementation `client.data_modeling.containers`.
+- Support for the view resource in the Data Modeling API with the implementation `client.data_modeling.views`.
+- Support for the data models resource in the Data Modeling API with the implementation `client.data_modeling.data_models`.
+
+### Changed
+- Removed `retrieve_multiple` from the `SpacesAPI` to have a consistent API with the `views`, `containers`, and `data_models`.
+
 ## [6.2.2] - 2023-06-05
 ### Fixed
 - Creating function schedules with current user credentials now works (used to fail at runtime with "Could not fetch a valid token (...)" because a session was never created.)

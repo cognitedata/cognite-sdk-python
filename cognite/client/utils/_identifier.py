@@ -78,16 +78,19 @@ class Identifier(Generic[T_ID]):
 
 
 class DataModelingIdentifier:
-    def __init__(self, space: str, external_id: str | None = None):
+    def __init__(self, space: str, external_id: str | None = None, version: str | None = None):
         self.__space = space
         self.__external_id = external_id
+        self.__version = version
 
     def as_dict(self, camel_case: bool = True) -> dict[str, str]:
         output = {"space": self.__space}
-        if self.__external_id is None:
-            return output
-        key = "externalId" if camel_case else "external_id"
-        return {**output, key: self.__external_id}
+        if self.__external_id is not None:
+            key = "externalId" if camel_case else "external_id"
+            output[key] = self.__external_id
+        if self.__version is not None:
+            output["version"] = self.__version
+        return output
 
     def as_primitive(self) -> NoReturn:
         raise AttributeError(f"Not supported for {type(self).__name__} implementation")
