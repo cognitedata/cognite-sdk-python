@@ -11,8 +11,8 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
 from cognite.client.data_classes.data_modeling.filters import Filter
+from cognite.client.data_classes.data_modeling.ids import ContainerId
 from cognite.client.data_classes.data_modeling.shared import (
-    ContainerReference,
     DataModelingResource,
     DirectRelation,
     DirectRelationReference,
@@ -296,7 +296,7 @@ class ViewPropertyDefinition(ABC):
 
 @dataclass
 class MappedCorePropertyDefinition(ViewPropertyDefinition):
-    container: ContainerReference
+    container: ContainerId
     container_property_identifier: str
     name: str | None = None
     description: str | None = None
@@ -305,7 +305,7 @@ class MappedCorePropertyDefinition(ViewPropertyDefinition):
     def load(cls, data: dict) -> MappedCorePropertyDefinition:  # type: ignore[override]
         output = cast(MappedCorePropertyDefinition, super()._load(data))
         if isinstance(data.get("container"), dict):
-            output.container = ContainerReference.load(data["container"])
+            output.container = ContainerId.load(data["container"])
         return output
 
     def dump(self, camel_case: bool = False) -> dict:

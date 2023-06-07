@@ -23,15 +23,17 @@ from cognite.client.data_classes.data_modeling.data_models import (
 from cognite.client.data_classes.data_modeling.filters import Filter
 from cognite.client.data_classes.data_modeling.ids import (
     ContainerId,
+    ContainerIdentifier,
     DataModelId,
+    DataModelIdentifier,
     DataModelingId,
     VersionedDataModelingId,
     ViewId,
+    ViewIdentifier,
 )
 from cognite.client.data_classes.data_modeling.shared import (
     Boolean,
     CDFExternalIdReference,
-    ContainerReference,
     Date,
     DirectRelation,
     DirectRelationReference,
@@ -65,14 +67,14 @@ from cognite.client.data_classes.data_modeling.views import (
 )
 
 __all__ = [
-    "ViewId",
+    "ViewIdentifier",
     "ViewApply",
     "ViewApplyList",
     "MappedApplyPropertyDefinition",
     "VersionedDataModelingId",
     "DataModelingId",
-    "ContainerId",
-    "DataModelId",
+    "ContainerIdentifier",
+    "DataModelIdentifier",
     "filters",
     "DirectRelation",
     "Filter",
@@ -110,6 +112,9 @@ __all__ = [
     "ContainerDirectRelation",
     "RequiresConstraintDefinition",
     "UniquenessConstraintDefinition",
+    "ContainerId",
+    "ViewId",
+    "DataModelId",
     "Text",
     "Boolean",
     "Float32",

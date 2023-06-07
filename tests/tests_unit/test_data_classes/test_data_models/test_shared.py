@@ -2,11 +2,9 @@ import pytest
 
 from cognite.client.data_classes.data_modeling.containers import ContainerDirectRelation
 from cognite.client.data_classes.data_modeling.shared import (
-    ContainerReference,
     DirectRelationReference,
     PropertyType,
     Reference,
-    ViewReference,
 )
 from cognite.client.data_classes.data_modeling.views import ViewDirectRelation
 
@@ -16,20 +14,6 @@ class TestDirectRelationReference:
         data = {"space": "mySpace", "externalId": "myId"}
 
         assert data == DirectRelationReference.load(data).dump(camel_case=True)
-
-
-class TestContainerReference:
-    def test_load_dump(self):
-        data = {"space": "mySpace", "externalId": "myId", "type": "container"}
-
-        assert data == ContainerReference.load(data).dump(camel_case=True)
-
-
-class TestViewReference:
-    def test_load_dump(self):
-        data = {"space": "mySpace", "externalId": "myId", "version": "myVersion", "type": "view"}
-
-        assert data == ViewReference.load(data).dump(camel_case=True)
 
 
 class TestReference:

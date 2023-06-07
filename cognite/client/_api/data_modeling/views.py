@@ -4,7 +4,7 @@ from typing import Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DATA_MODELING_LIST_LIMIT_DEFAULT
-from cognite.client.data_classes.data_modeling.ids import VersionedDataModelingId, ViewId, load_identifier
+from cognite.client.data_classes.data_modeling.ids import VersionedDataModelingId, ViewIdentifier, load_identifier
 from cognite.client.data_classes.data_modeling.views import View, ViewApply, ViewFilter, ViewList
 
 
@@ -81,14 +81,14 @@ class ViewsAPI(APIClient):
         return cast(Iterator[View], self())
 
     @overload
-    def retrieve(self, ids: ViewId) -> View | None:
+    def retrieve(self, ids: ViewIdentifier) -> View | None:
         ...
 
     @overload
-    def retrieve(self, ids: Sequence[ViewId]) -> ViewList:
+    def retrieve(self, ids: Sequence[ViewIdentifier]) -> ViewList:
         ...
 
-    def retrieve(self, ids: ViewId | Sequence[ViewId]) -> View | ViewList | None:
+    def retrieve(self, ids: ViewIdentifier | Sequence[ViewIdentifier]) -> View | ViewList | None:
         """`Retrieve a single view by id. <https://docs.cognite.com/api/v1/#tag/Views/operation/byExternalIdsViews>`_
 
         Args:
@@ -107,7 +107,7 @@ class ViewsAPI(APIClient):
         identifier = load_identifier(ids)
         return self._retrieve_multiple(list_cls=ViewList, resource_cls=View, identifiers=identifier)
 
-    def delete(self, ids: ViewId | Sequence[ViewId]) -> list[VersionedDataModelingId]:
+    def delete(self, ids: ViewIdentifier | Sequence[ViewIdentifier]) -> list[VersionedDataModelingId]:
         """`Delete one or more views <https://docs.cognite.com/api/v1/#tag/Views/operation/deleteViews>`_
 
         Args:

@@ -10,7 +10,7 @@ from cognite.client.data_classes.data_modeling.containers import (
     ContainerFilter,
     ContainerList,
 )
-from cognite.client.data_classes.data_modeling.ids import ContainerId, DataModelingId, load_identifier
+from cognite.client.data_classes.data_modeling.ids import ContainerIdentifier, DataModelingId, load_identifier
 
 
 class ContainersAPI(APIClient):
@@ -77,14 +77,14 @@ class ContainersAPI(APIClient):
         return cast(Iterator[Container], self())
 
     @overload
-    def retrieve(self, ids: ContainerId) -> Container | None:
+    def retrieve(self, ids: ContainerIdentifier) -> Container | None:
         ...
 
     @overload
-    def retrieve(self, ids: Sequence[ContainerId]) -> ContainerList:
+    def retrieve(self, ids: Sequence[ContainerIdentifier]) -> ContainerList:
         ...
 
-    def retrieve(self, ids: ContainerId | Sequence[ContainerId]) -> Container | ContainerList | None:
+    def retrieve(self, ids: ContainerIdentifier | Sequence[ContainerIdentifier]) -> Container | ContainerList | None:
         """`Retrieve one or more container by id(s). <https://docs.cognite.com/api/v1/#tag/Containers/operation/byExternalIdsContainers>`_
 
         Args:
@@ -109,7 +109,7 @@ class ContainersAPI(APIClient):
         identifier = load_identifier(ids)
         return self._retrieve_multiple(list_cls=ContainerList, resource_cls=Container, identifiers=identifier)
 
-    def delete(self, id: ContainerId | Sequence[ContainerId]) -> list[DataModelingId]:
+    def delete(self, id: ContainerIdentifier | Sequence[ContainerIdentifier]) -> list[DataModelingId]:
         """`Delete one or more containers <https://docs.cognite.com/api/v1/#tag/Containers/operation/deleteContainers>`_
 
         Args:

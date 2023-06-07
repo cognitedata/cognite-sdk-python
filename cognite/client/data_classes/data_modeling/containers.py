@@ -10,8 +10,8 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
 )
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
+from cognite.client.data_classes.data_modeling.ids import ContainerId
 from cognite.client.data_classes.data_modeling.shared import (
-    ContainerReference,
     DataModelingResource,
     DirectRelation,
     PropertyType,
@@ -78,8 +78,8 @@ class ContainerCore(DataModelingResource):
 
         return output
 
-    def as_reference(self) -> ContainerReference:
-        return ContainerReference(cast(str, self.space), cast(str, self.external_id))
+    def as_reference(self) -> ContainerId:
+        return ContainerId(self.space, self.external_id)
 
 
 class ContainerApply(ContainerCore):
@@ -191,7 +191,7 @@ class ContainerFilter(CogniteFilter):
 
 @dataclass
 class ContainerDirectRelation(DirectRelation):
-    container: Optional[ContainerReference] = None
+    container: Optional[ContainerId] = None
 
     def dump(self, camel_case: bool = False) -> dict:
         output = super().dump(camel_case)
@@ -203,7 +203,7 @@ class ContainerDirectRelation(DirectRelation):
     def load(cls, data: dict) -> ContainerDirectRelation:
         output = cls(**convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"type"})))
         if isinstance(data.get("container"), dict):
-            output.container = ContainerReference.load(data["container"])
+            output.container = ContainerId.load(data["container"])
         return output
 
 
@@ -254,7 +254,7 @@ class ConstraintIdentifier(ABC):
 
 @dataclass
 class RequiresConstraintDefinition(ConstraintIdentifier):
-    require: ContainerReference
+    require: ContainerId
 
     @classmethod
     def load(cls, data: dict) -> RequiresConstraintDefinition:
@@ -262,7 +262,7 @@ class RequiresConstraintDefinition(ConstraintIdentifier):
             RequiresConstraintDefinition, super()._load(rename_and_exclude_keys(data, exclude={"constraintType"}))
         )
         if "require" in data:
-            output.require = ContainerReference.load(data["require"])
+            output.require = ContainerId.load(data["require"])
         return output
 
     def dump(self, camel_case: bool = False) -> dict[str, str | dict]:

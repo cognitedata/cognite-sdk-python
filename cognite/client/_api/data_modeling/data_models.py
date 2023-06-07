@@ -10,7 +10,7 @@ from cognite.client.data_classes.data_modeling.data_models import (
     DataModelFilter,
     DataModelList,
 )
-from cognite.client.data_classes.data_modeling.ids import DataModelId, VersionedDataModelingId, load_identifier
+from cognite.client.data_classes.data_modeling.ids import DataModelIdentifier, VersionedDataModelingId, load_identifier
 
 
 class DataModelsAPI(APIClient):
@@ -87,14 +87,14 @@ class DataModelsAPI(APIClient):
         return cast(Iterator[DataModel], self())
 
     @overload
-    def retrieve(self, ids: DataModelId) -> DataModel | None:
+    def retrieve(self, ids: DataModelIdentifier) -> DataModel | None:
         ...
 
     @overload
-    def retrieve(self, ids: Sequence[DataModelId]) -> DataModelList:
+    def retrieve(self, ids: Sequence[DataModelIdentifier]) -> DataModelList:
         ...
 
-    def retrieve(self, ids: DataModelId | Sequence[DataModelId]) -> DataModel | DataModelList | None:
+    def retrieve(self, ids: DataModelIdentifier | Sequence[DataModelIdentifier]) -> DataModel | DataModelList | None:
         """`Retrieve data_model(s) by id(s). <https://docs.cognite.com/api/v1/#tag/Data-models/operation/byExternalIdsDataModels>`_
 
         Args:
@@ -113,7 +113,7 @@ class DataModelsAPI(APIClient):
         identifier = load_identifier(ids)
         return self._retrieve_multiple(list_cls=DataModelList, resource_cls=DataModel, identifiers=identifier)
 
-    def delete(self, ids: DataModelId | Sequence[DataModelId]) -> list[VersionedDataModelingId]:
+    def delete(self, ids: DataModelIdentifier | Sequence[DataModelIdentifier]) -> list[VersionedDataModelingId]:
         """`Delete one or more data model <https://docs.cognite.com/api/v1/#tag/Data-models/operation/deleteDataModels>`_
 
         Args:
