@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from dataclasses import asdict, dataclass
 from typing import Any, List, Literal, Type, TypeVar, Union
 
@@ -415,14 +416,14 @@ class InstanceFilter(CogniteFilter):
     """Represent the filer arguments for the list endpoint.
     Args:
         include_typing (bool): Whether to return property type information as part of the result.
-        sources (list[ViewReference]): Views to retrieve properties from.
+        sources (Sequence[ViewReference]): Views to retrieve properties from.
         instance_type(Literal["node", "edge"]): Whether to query for nodes or edges.
     """
 
     def __init__(
         self,
         include_typing: bool = False,
-        sources: list[ViewId] = None,
+        sources: Sequence[ViewId] | None = None,
         instance_type: Literal["node", "edge"] = "node",
     ):
         self.include_typing = include_typing

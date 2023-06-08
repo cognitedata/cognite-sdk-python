@@ -42,7 +42,7 @@ class TestInstancesAPI:
     def test_list_nodes_with_properties(self, cognite_client: CogniteClient, person_view: models.View):
         # Act
         person_nodes = cognite_client.data_modeling.instances.list(
-            limit=-1, instance_type="node", sources=[person_view.as_reference()]
+            limit=-1, instance_type="node", sources=person_view.as_reference()
         )
 
         # Assert
@@ -55,8 +55,8 @@ class TestInstancesAPI:
         person_nodes = cognite_client.data_modeling.instances.list(
             limit=-1,
             instance_type="node",
-            sources=[view_id],
-            sort=[models.InstanceSort([view_id.space, view_id.identifier, "name"])],
+            sources=view_id,
+            sort=models.InstanceSort([view_id.space, view_id.identifier, "name"]),
         )
 
         # Assert
@@ -70,7 +70,7 @@ class TestInstancesAPI:
         f = models.filters
         born_before_1950 = f.Range([view_id.space, view_id.identifier, "birthYear"], lt=1950)
         person_nodes = cognite_client.data_modeling.instances.list(
-            limit=-1, instance_type="node", sources=[view_id], filter=born_before_1950
+            limit=-1, instance_type="node", sources=view_id, filter=born_before_1950
         )
 
         assert all(person.properties[view_id.space][view_id.identifier]["birthYear"] < 1950 for person in person_nodes)

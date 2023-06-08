@@ -37,8 +37,8 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node"],
         limit: int | None = None,
         include_typing: bool = False,
-        sources: list[ViewId] | None = None,
-        sort: list[InstanceSort | dict] | None = None,
+        sources: list[ViewId] | ViewId | None = None,
+        sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> Iterator[Node]:
         ...
@@ -50,8 +50,8 @@ class InstancesAPI(APIClient):
         instance_type: Literal["edge"],
         limit: int | None = None,
         include_typing: bool = False,
-        sources: list[ViewId] | None = None,
-        sort: list[InstanceSort | dict] | None = None,
+        sources: list[ViewId] | ViewId | None = None,
+        sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> Iterator[Edge]:
         ...
@@ -63,8 +63,8 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node"],
         limit: int | None = None,
         include_typing: bool = False,
-        sources: list[ViewId] | None = None,
-        sort: list[InstanceSort | dict] | None = None,
+        sources: list[ViewId] | ViewId | None = None,
+        sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> Iterator[NodeList]:
         ...
@@ -76,8 +76,8 @@ class InstancesAPI(APIClient):
         instance_type: Literal["edge"],
         limit: int | None = None,
         include_typing: bool = False,
-        sources: list[ViewId] | None = None,
-        sort: list[InstanceSort | dict] | None = None,
+        sources: list[ViewId] | ViewId | None = None,
+        sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> Iterator[EdgeList]:
         ...
@@ -88,8 +88,8 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node", "edge"] = "node",
         limit: int | None = None,
         include_typing: bool = False,
-        sources: list[ViewId] | None = None,
-        sort: list[InstanceSort | dict] | None = None,
+        sources: list[ViewId] | ViewId | None = None,
+        sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> Iterator[Edge] | Iterator[EdgeList] | Iterator[Node] | Iterator[NodeList]:
         """Iterate over nodes or edges.
@@ -100,15 +100,13 @@ class InstancesAPI(APIClient):
             instance_type(Literal["node", "edge"]): Whether to query for nodes or edges.
             limit (int, optional): Maximum number of instances to return. Default to return all items.
             include_typing (bool): Whether to return property type information as part of the result.
-            sources (list[ViewId]): Views to retrieve properties from.
-            sort (list[InstanceSort]): How you want the listed instances information ordered.
+            sources (list[ViewId] | ViewId): Views to retrieve properties from.
+            sort (list[InstanceSort | dict] | InstanceSort | dict): How you want the listed instances information ordered.
             filter (dict | Filter): Advanced filtering of instances.
         Yields:
             Instance | InstanceList: yields Instance one by one if chunk_size is not specified, else InstanceList objects.
         """
-        other_params = InstanceFilter(include_typing, sources, instance_type).dump(camel_case=True)
-        if sort:
-            other_params["sort"] = [s.dump(camel_case=True) if isinstance(s, InstanceSort) else s for s in sort]
+        other_params = self._create_other_params(include_typing, instance_type, sort, sources)
 
         resource_cls, list_cls = self._get_classes(instance_type)
 
@@ -134,34 +132,41 @@ class InstancesAPI(APIClient):
         return cast(Iterator[Node], self(None, "node"))
 
     @overload
-    def retrieve(self, ids: NodeId, sources: list[ViewId] | None = None, include_typing: bool = False) -> Node | None:
+    def retrieve(
+        self, ids: NodeId, sources: list[ViewId] | ViewId | None = None, include_typing: bool = False
+    ) -> Node | None:
         ...
 
     @overload
     def retrieve(
-        self, ids: Sequence[NodeId], sources: list[ViewId] | None = None, include_typing: bool = False
+        self, ids: Sequence[NodeId], sources: list[ViewId] | ViewId | None = None, include_typing: bool = False
     ) -> NodeList:
         ...
 
     @overload
-    def retrieve(self, ids: EdgeId, sources: list[ViewId] | None = None, include_typing: bool = False) -> Edge | None:
+    def retrieve(
+        self, ids: EdgeId, sources: list[ViewId] | ViewId | None = None, include_typing: bool = False
+    ) -> Edge | None:
         ...
 
     @overload
     def retrieve(
-        self, ids: Sequence[EdgeId], sources: list[ViewId] | None = None, include_typing: bool = False
+        self, ids: Sequence[EdgeId], sources: list[ViewId] | ViewId | None = None, include_typing: bool = False
     ) -> EdgeList:
         ...
 
     @overload
     def retrieve(
-        self, ids: tuple[str, str, str], sources: list[ViewId] | None = None, include_typing: bool = False
+        self, ids: tuple[str, str, str], sources: list[ViewId] | ViewId | None = None, include_typing: bool = False
     ) -> Node | Edge:
         ...
 
     @overload
     def retrieve(
-        self, ids: Sequence[tuple[str, str, str]], sources: list[ViewId] | None = None, include_typing: bool = False
+        self,
+        ids: Sequence[tuple[str, str, str]],
+        sources: list[ViewId] | ViewId | None = None,
+        include_typing: bool = False,
     ) -> NodeList | EdgeList:
         ...
 
@@ -173,7 +178,7 @@ class InstancesAPI(APIClient):
         | Sequence[EdgeId]
         | tuple[str, str, str]
         | Sequence[tuple[str, str, str]],
-        sources: list[ViewId] | None = None,
+        sources: list[ViewId] | ViewId | None = None,
         include_typing: bool = False,
     ) -> Node | Edge | NodeList | EdgeList | None:
         """`Retrieve one or more instance by id(s). <https://docs.cognite.com/api/v1/#tag/Instances/operation/byExternalIdsInstances>`_
@@ -241,83 +246,29 @@ class InstancesAPI(APIClient):
 
         raise ValueError(f"Invalid instance type {instance_type}")
 
-    @overload
-    def list(
-        self,
-        instance_type: Literal["node"],
-        include_typing: bool = False,
-        sources: list[ViewId] | None = None,
-        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
-        sort: list[InstanceSort | dict] | None = None,
-        filter: Filter | dict | None = None,
-    ) -> NodeList:
-        ...
+    @classmethod
+    def _create_other_params(
+        cls,
+        include_typing: bool,
+        instance_type: Literal["node", "edge"],
+        sort: list[InstanceSort | dict] | InstanceSort | dict | None,
+        sources: ViewId | Sequence[ViewId] | None,
+    ) -> dict:
+        if isinstance(sources, Sequence) or sources is None:
+            other_params = InstanceFilter(include_typing, sources, instance_type).dump(camel_case=True)
+        else:
+            other_params = InstanceFilter(include_typing, [sources], instance_type).dump(camel_case=True)
 
-    @overload
-    def list(
-        self,
-        instance_type: Literal["edge"],
-        include_typing: bool = False,
-        sources: list[ViewId] | None = None,
-        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
-        sort: list[InstanceSort | dict] | None = None,
-        filter: Filter | dict | None = None,
-    ) -> EdgeList:
-        ...
-
-    def list(
-        self,
-        instance_type: Literal["node", "edge"] = "node",
-        include_typing: bool = False,
-        sources: list[ViewId] | None = None,
-        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
-        sort: list[InstanceSort | dict] | None = None,
-        filter: Filter | dict | None = None,
-    ) -> NodeList | EdgeList:
-        """`List instances <https://docs.cognite.com/api/v1/#tag/Instances/operation/advancedListInstance>`_
-        Args:
-            instance_type(Literal["node", "edge"]): Whether to query for nodes or edges.
-            include_typing (bool): Whether to return property type information as part of the result.
-            sources (list[ViewId]): Views to retrieve properties from.
-            limit (int, optional): Maximum number of instances to return. Default to 1000. Set to -1, float("inf") or None
-                to return all items.
-            sort (list[InstanceSost]): How you want the listed instances information ordered.
-            filter (dict | Filter): Advnanced filtering of instances.
-        Returns:
-            InstanceList: List of requested instances
-        Examples:
-            List instances and limit to 5:
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> instance_list = c.data_modeling.instances.list(limit=5)
-            Iterate over instances:
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for instance in c.data_modeling.instances:
-                ...     instance # do something with the instance
-            Iterate over chunks of instances to reduce memory load:
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for instance_list in c.data_modeling.instances(chunk_size=100):
-                ...     instance_list # do something with the instances
-        """
-        other_params = InstanceFilter(include_typing, sources, instance_type).dump(camel_case=True)
         if sort:
-            other_params["sort"] = [s.dump(camel_case=True) if isinstance(s, InstanceSort) else s for s in sort]
+            if isinstance(sort, (InstanceSort, dict)):
+                other_params["sort"] = [cls._dump_instance_sort(sort)]
+            else:
+                other_params["sort"] = [cls._dump_instance_sort(s) for s in sort]
+        return other_params
 
-        resource_cls, list_cls = self._get_classes(instance_type)
-
-        return cast(
-            Union[NodeList, EdgeList],
-            self._list(
-                list_cls=list_cls,
-                resource_cls=resource_cls,
-                method="POST",
-                limit=limit,
-                filter=filter.dump() if isinstance(filter, Filter) else filter,
-                other_params=other_params,
-            ),
-        )
+    @classmethod
+    def _dump_instance_sort(cls, sort: InstanceSort | dict) -> dict:
+        return sort.dump(camel_case=True) if isinstance(sort, InstanceSort) else sort
 
     @overload
     def _get_classes(self, instance_type: Literal["node"]) -> tuple[Type[Node], Type[NodeList]]:
@@ -472,3 +423,79 @@ class InstancesAPI(APIClient):
         elif isinstance(instance, tuple) and len(instance) > 0 and isinstance(instance[0], tuple):
             return cast(Literal["node", "edge"], instance[0][0])
         raise ValueError(f"Unsupported {instance=}")
+
+    @overload
+    def list(
+        self,
+        instance_type: Literal["node"],
+        include_typing: bool = False,
+        sources: list[ViewId] | ViewId | None = None,
+        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
+        sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
+        filter: Filter | dict | None = None,
+    ) -> NodeList:
+        ...
+
+    @overload
+    def list(
+        self,
+        instance_type: Literal["edge"],
+        include_typing: bool = False,
+        sources: list[ViewId] | ViewId | None = None,
+        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
+        sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
+        filter: Filter | dict | None = None,
+    ) -> EdgeList:
+        ...
+
+    def list(
+        self,
+        instance_type: Literal["node", "edge"] = "node",
+        include_typing: bool = False,
+        sources: list[ViewId] | ViewId | None = None,
+        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
+        sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
+        filter: Filter | dict | None = None,
+    ) -> NodeList | EdgeList:
+        """`List instances <https://docs.cognite.com/api/v1/#tag/Instances/operation/advancedListInstance>`_
+        Args:
+            instance_type(Literal["node", "edge"]): Whether to query for nodes or edges.
+            include_typing (bool): Whether to return property type information as part of the result.
+            sources (list[ViewId] | ViewId): Views to retrieve properties from.
+            limit (int, optional): Maximum number of instances to return. Default to 1000. Set to -1, float("inf") or None
+                to return all items.
+            sort (list[InstanceSost] | InstanceSort | dict): How you want the listed instances information ordered.
+            filter (dict | Filter): Advnanced filtering of instances.
+        Returns:
+            InstanceList: List of requested instances
+        Examples:
+            List instances and limit to 5:
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> instance_list = c.data_modeling.instances.list(limit=5)
+            Iterate over instances:
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> for instance in c.data_modeling.instances:
+                ...     instance # do something with the instance
+            Iterate over chunks of instances to reduce memory load:
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> for instance_list in c.data_modeling.instances(chunk_size=100):
+                ...     instance_list # do something with the instances
+        """
+        other_params = self._create_other_params(include_typing, instance_type, sort, sources)
+
+        resource_cls, list_cls = self._get_classes(instance_type)
+
+        return cast(
+            Union[NodeList, EdgeList],
+            self._list(
+                list_cls=list_cls,
+                resource_cls=resource_cls,
+                method="POST",
+                limit=limit,
+                filter=filter.dump() if isinstance(filter, Filter) else filter,
+                other_params=other_params,
+            ),
+        )
