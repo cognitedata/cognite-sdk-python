@@ -357,6 +357,7 @@ class InstancesAPI(APIClient):
         replace: bool = False,
     ) -> NodeUpdate | NodeUpdateList | EdgeUpdate | EdgeUpdateList:
         """`Add or update (upsert) instances. <https://docs.cognite.com/api/v1/#tag/Instances/operation/applyNodeAndEdges>`_
+
         Args:
             instance (instance: Instance | Sequence[Instance]): Instance or instances of instances to create or update.
             auto_create_start_nodes (bool): Whether to create missing start nodes for edges when ingesting. By default,
@@ -374,13 +375,16 @@ class InstancesAPI(APIClient):
                             edges specified in the ingestion call.
         Returns:
             Node | NodeList | Edge | EdgeList: Created instance(s)
+
         Examples:
-            Create new instances:
+
+            Create new node:
+
                 >>> from cognite.client import CogniteClient
-                >>> import cognite.client.data_classes.data_modeling as models
+                >>> import cognite.client.data_modeling as dm
                 >>> c = CogniteClient()
-                >>> instances = []
-                >>> res = c.data_modeling.instances.create(instances)
+                >>> nodes = [dm.ApplyNode("mySpace", "myNodeId")]
+                >>> res = c.data_modeling.instances.apply(nodes)
         """
         other_parameters = {
             "autoCreateStartNodes": auto_create_start_nodes,
@@ -458,6 +462,7 @@ class InstancesAPI(APIClient):
         filter: Filter | dict | None = None,
     ) -> NodeList | EdgeList:
         """`List instances <https://docs.cognite.com/api/v1/#tag/Instances/operation/advancedListInstance>`_
+
         Args:
             instance_type(Literal["node", "edge"]): Whether to query for nodes or edges.
             include_typing (bool): Whether to return property type information as part of the result.
@@ -466,19 +471,27 @@ class InstancesAPI(APIClient):
                 to return all items.
             sort (list[InstanceSost] | InstanceSort | dict): How you want the listed instances information ordered.
             filter (dict | Filter): Advnanced filtering of instances.
+
         Returns:
             InstanceList: List of requested instances
+
         Examples:
+
             List instances and limit to 5:
+
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> instance_list = c.data_modeling.instances.list(limit=5)
+
             Iterate over instances:
+
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> for instance in c.data_modeling.instances:
                 ...     instance # do something with the instance
+
             Iterate over chunks of instances to reduce memory load:
+
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> for instance_list in c.data_modeling.instances(chunk_size=100):

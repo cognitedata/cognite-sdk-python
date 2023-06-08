@@ -55,6 +55,7 @@ class InstanceCore(DataModelingResource):
 
 class InstanceApply(InstanceCore):
     """A node or edge. This is the write version of the instance.
+
     Args:
         instance_type (Literal["node", "edge"]) The type of instance.
         space (str): The workspace for the instance.a unique identifier for the space.
@@ -102,6 +103,7 @@ T_Instance_Apply = TypeVar("T_Instance_Apply", bound=InstanceApply)
 
 class Instance(InstanceCore):
     """A node or edge. This is the read version of the instance.
+
     Args:
         instance_type (Literal["node", "edge"]) The type of instance.
         space (str): The workspace for the instance.a unique identifier for the space.
@@ -149,6 +151,7 @@ class Instance(InstanceCore):
 
 class InstanceUpdate(InstanceCore):
     """A node or edge. This represents the update on the instance.
+
     Args:
         instance_type (Literal["node", "edge"]) The type of instance.
         space (str): The workspace for the instance.a unique identifier for the space.
@@ -179,6 +182,7 @@ class InstanceUpdate(InstanceCore):
 
 class NodeApply(InstanceApply):
     """A node. This is the write version of the node.
+
     Args:
         space (str): The workspace for the node.a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the node.
@@ -197,6 +201,7 @@ class NodeApply(InstanceApply):
 
 class Node(Instance):
     """A node. This is the read version of the node.
+
     Args:
         space (str): The workspace for the node.a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the node.
@@ -237,6 +242,7 @@ class Node(Instance):
 
 class NodeUpdate(InstanceUpdate):
     """A node. This represents the update on the node.
+
     Args:
         space (str): The workspace for the node a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the node.
@@ -269,6 +275,7 @@ class NodeUpdate(InstanceUpdate):
 
 class EdgeApply(InstanceApply):
     """An Edge. This is the write version of the edge.
+
     Args:
         space (str): The workspace for the edge.a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the edge.
@@ -304,6 +311,7 @@ class EdgeApply(InstanceApply):
 
 class Edge(Instance):
     """An Edge.  This is the read version of the edge.
+
     Args:
         space (str): The workspace for the edge an unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the edge.
@@ -354,6 +362,7 @@ class Edge(Instance):
 
 class EdgeUpdate(InstanceUpdate):
     """An Edge. This represents the update on the edge.
+
     Args:
         space (str): The workspace for the edge a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the edge.
