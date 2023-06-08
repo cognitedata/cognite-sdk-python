@@ -15,7 +15,7 @@ from requests_oauthlib import OAuth2Session
 
 from cognite.client.exceptions import CogniteAuthError
 
-_TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT = 15
+_TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT = 15  # Do not change without also updating all the docstrings using it
 
 
 class CredentialProvider(Protocol):
@@ -62,7 +62,7 @@ class Token(CredentialProvider):
 
 
 class _OAuthCredentialProviderWithTokenRefresh(CredentialProvider):
-    def __init__(self, token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS) -> None:
+    def __init__(self, token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT) -> None:
         # This ensures we don't return a token which expires immediately:
         self.token_expiry_leeway_seconds = token_expiry_leeway_seconds
 
@@ -155,7 +155,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         client_id (str): Your application's client id.
         scopes (List[str]): A list of scopes.
         token_cache_path (Path): Location to store token cache, defaults to os temp directory/cognitetokencache.{client_id}.bin.
-        token_expiry_leeway_seconds: (int): The token is refreshed at the earliest when this number of seconds is left before expiry.
+        token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 15 sec
 
     Examples:
 
@@ -173,7 +173,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         client_id: str,
         scopes: List[str],
         token_cache_path: Path = None,
-        token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS,
+        token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT,
     ) -> None:
         super().__init__(token_expiry_leeway_seconds)
         self.__authority_url = authority_url
@@ -232,7 +232,7 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         scopes (List[str]): A list of scopes.
         redirect_port (List[str]): Redirect port defaults to 53000.
         token_cache_path (Path): Location to store token cache, defaults to os temp directory/cognitetokencache.{client_id}.bin.
-        token_expiry_leeway_seconds: (int): The token is refreshed at the earliest when this number of seconds is left before expiry.
+        token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 15 sec
 
     Examples:
 
@@ -251,7 +251,7 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         scopes: List[str],
         redirect_port: int = 53000,
         token_cache_path: Path = None,
-        token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS,
+        token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT,
     ) -> None:
 
         super().__init__(token_expiry_leeway_seconds)
@@ -306,7 +306,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         client_id (str): Your application's client id.
         client_secret (str): Your application's client secret
         scopes (List[str]): A list of scopes.
-        token_expiry_leeway_seconds: (int): The token is refreshed at the earliest when this number of seconds is left before expiry.
+        token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 15 sec
         **token_custom_args (Any): Optional additional arguments to pass as query parameters to the token fetch request.
 
     Examples:
@@ -329,7 +329,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         client_id: str,
         client_secret: str,
         scopes: List[str],
-        token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS,
+        token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT,
         **token_custom_args: Any,
     ):
         super().__init__(token_expiry_leeway_seconds)
@@ -411,7 +411,7 @@ class OAuthClientCertificate(_OAuthCredentialProviderWithTokenRefresh):
         cert_thumbprint (str): Your certificate's thumbprint. You get it when you upload your certificate to Azure AD.
         certificate (str): Your private certificate, typically read from a .pem file
         scopes (List[str]): A list of scopes.
-        token_expiry_leeway_seconds: (int): The token is refreshed at the earliest when this number of seconds is left before expiry.
+        token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 15 sec
 
     Examples:
 
@@ -433,7 +433,7 @@ class OAuthClientCertificate(_OAuthCredentialProviderWithTokenRefresh):
         cert_thumbprint: str,
         certificate: str,
         scopes: List[str],
-        token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS,
+        token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT,
     ):
         super().__init__(token_expiry_leeway_seconds)
         self.__authority_url = authority_url
