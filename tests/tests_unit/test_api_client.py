@@ -1200,3 +1200,24 @@ class TestConnectionPooling:
             == c1._api_client._http_client_with_retry.session
             == c2._api_client._http_client_with_retry.session
         )
+
+
+def test_worker_in_backoff_loop_gets_new_token(rsps):
+    url = "https://api.cognitedata.com/api/v1/projects/c/assets/byids"
+    rsps.add(rsps.POST, url, status=429, json={"error": "Backoff plz"})
+    rsps.add(rsps.POST, url, status=200, json={"items": [{"id": 123}]})
+
+    call_count = 0
+
+    def token_callable():
+        nonlocal call_count
+        if call_count < 1:
+            call_count += 1
+            return "outdated-token"
+        return "valid-token"
+
+    client = CogniteClient(ClientConfig(client_name="a", credentials=Token(token_callable), project="c"))
+    assert client.assets.retrieve(id=1).id == 123
+    assert call_count > 0
+    assert rsps.calls[0].request.headers["Authorization"] == "Bearer outdated-token"
+    assert rsps.calls[1].request.headers["Authorization"] == "Bearer valid-token"

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import warnings
-from typing import TYPE_CHECKING, Callable, Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Dict, MutableMapping, Optional, Tuple
 
 import cognite.client as cc
 from cognite.client._http_client import _RetryTracker
@@ -62,11 +62,12 @@ def http_client__init__(
     self: HTTPClient,
     config: HTTPClientConfig,
     session: Session,
+    refresh_auth_header: Callable[[MutableMapping[str, Any]], None],
     retry_tracker_factory: Callable[[HTTPClientConfig], _RetryTracker] = _RetryTracker,
 ) -> None:
     import pyodide_http  # type: ignore [import]
 
-    self._old__init__(config, session, retry_tracker_factory)  # type: ignore [attr-defined]
+    self._old__init__(config, session, refresh_auth_header, retry_tracker_factory)  # type: ignore [attr-defined]
     self.session.mount("https://", pyodide_http._requests.PyodideHTTPAdapter())
     self.session.mount("http://", pyodide_http._requests.PyodideHTTPAdapter())
 

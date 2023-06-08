@@ -100,6 +100,7 @@ class APIClient:
                 max_retries_status=global_config.max_retries,
             ),
             session=session,
+            refresh_auth_header=self._refresh_auth_header,
         )
         self._http_client_with_retry = HTTPClient(
             config=HTTPClientConfig(
@@ -112,6 +113,7 @@ class APIClient:
                 max_retries_status=global_config.max_retries,
             ),
             session=session,
+            refresh_auth_header=self._refresh_auth_header,
         )
 
     def _delete(
@@ -186,8 +188,7 @@ class APIClient:
     def _configure_headers(self, accept: str, additional_headers: Dict[str, str]) -> MutableMapping[str, Any]:
         headers: MutableMapping[str, Any] = CaseInsensitiveDict()
         headers.update(requests.utils.default_headers())
-        auth_header_name, auth_header_value = self._config.credentials.authorization_header()
-        headers[auth_header_name] = auth_header_value
+        self._refresh_auth_header(headers)
         headers["content-type"] = "application/json"
         headers["accept"] = accept
         headers["x-cdp-sdk"] = f"CognitePythonSDK:{utils._auxiliary.get_current_sdk_version()}"
@@ -199,6 +200,10 @@ class APIClient:
             headers["User-Agent"] = utils._auxiliary.get_user_agent()
         headers.update(additional_headers)
         return headers
+
+    def _refresh_auth_header(self, headers: MutableMapping[str, Any]) -> None:
+        auth_header_name, auth_header_value = self._config.credentials.authorization_header()
+        headers[auth_header_name] = auth_header_value
 
     def _resolve_url(self, method: str, url_path: str) -> Tuple[bool, str]:
         if not url_path.startswith("/"):
