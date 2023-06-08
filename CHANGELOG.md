@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.4.0] - 2023-06-07
+### Added
+- Partial support for the instance resource in the Data Modeling API with the implementation 
+  `client.data_modeling.instances`, the endpoints `list`, `delete`, `retrieve`, and `apply`
+
 ## [6.3.2] - 2023-06-08
 ### Fixed
 - Requests being retried around a token refresh cycle, no longer risk getting stuck with an outdated token.
