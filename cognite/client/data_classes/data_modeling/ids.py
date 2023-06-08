@@ -109,10 +109,6 @@ class ContainerId(DataModelingId):
     def identifier(self) -> str:
         raise NotImplementedError
 
-    @classmethod
-    def from_tuple(cls, data: tuple[str, str] | ContainerId) -> ContainerId:
-        return cls(*data) if isinstance(data, tuple) else data
-
 
 @dataclass
 class ViewId(VersionedDataModelingId):
@@ -121,10 +117,6 @@ class ViewId(VersionedDataModelingId):
     @property
     def identifier(self) -> str:
         return f"{self.external_id}/{self.version}"
-
-    @classmethod
-    def from_tuple(cls, data: tuple[str, str, str] | ViewId) -> ViewId:
-        return cls(*data) if isinstance(data, tuple) else data
 
 
 @dataclass
