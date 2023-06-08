@@ -17,9 +17,27 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [6.2.3] - 2023-06-07
+
+## [6.3.2] - 2023-06-08
 ### Added
 - Transformation schema for nodes, edges in both view centric and model centric
+
+
+## [6.3.1] - 2023-06-07
+### Fixed
+- Signature of `client.data_modeling.views.retrieve` and `client.data_modeling.data_models.retrieve` to always return
+  a list. 
+
+
+## [6.3.0] - 2023-06-07
+### Added
+- Support for the container resource in the Data Modeling API with the implementation `client.data_modeling.containers`.
+- Support for the view resource in the Data Modeling API with the implementation `client.data_modeling.views`.
+- Support for the data models resource in the Data Modeling API with the implementation `client.data_modeling.data_models`.
+
+### Changed
+- Removed `retrieve_multiple` from the `SpacesAPI` to have a consistent API with the `views`, `containers`, and `data_models`.
+
 
 ## [6.2.2] - 2023-06-05
 ### Fixed

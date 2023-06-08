@@ -246,3 +246,11 @@ def find_duplicates(seq: Iterable[THashable]) -> Set[THashable]:
 
 def exactly_one_is_not_none(*args: Any) -> bool:
     return sum(1 if a is not None else 0 for a in args) == 1
+
+
+def rename_and_exclude_keys(
+    dct: dict[str, Any], aliases: dict[str, str] = None, exclude: set[str] = None
+) -> dict[str, Any]:
+    aliases = aliases or {}
+    exclude = exclude or set()
+    return {aliases.get(k, k): v for k, v in dct.items() if k not in exclude}

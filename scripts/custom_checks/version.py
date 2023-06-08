@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Iterator, Match, Optional
 
 import toml
+from packaging.version import Version
 
 from cognite.client import __version__
 
@@ -27,7 +28,7 @@ def _parse_changelog() -> Iterator[Match[str]]:
     return re.finditer(r"##\s\[(\d+\.\d+\.\d+)\]\s-\s(\d+-\d+-\d+)", changelog)
 
 
-def changelog_entry_version() -> Optional[str]:
+def changelog_entry_version_matches() -> Optional[str]:
     match = next(_parse_changelog())
     version = match.group(1)
     if version != __version__:
@@ -46,3 +47,11 @@ def changelog_entry_date() -> Optional[str]:
         return None
     except Exception:
         return f"Date given in the newest entry in 'CHANGELOG.md', {date!r}, is not valid/parsable (YYYY-MM-DD)"
+
+
+def version_number_is_increasing() -> Optional[str]:
+    versions = [Version(match.group(1)) for match in _parse_changelog()]
+    for new, old in zip(versions[:-1], versions[1:]):
+        if new < old:
+            return f"Versions must be strictly increasing: {new} is not higher than the previous, {old}."
+    return None
