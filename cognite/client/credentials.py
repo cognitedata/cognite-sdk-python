@@ -15,7 +15,7 @@ from requests_oauthlib import OAuth2Session
 
 from cognite.client.exceptions import CogniteAuthError
 
-_TOKEN_EXPIRY_LEEWAY_SECONDS = 15
+_TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT = 15
 
 
 class CredentialProvider(Protocol):
