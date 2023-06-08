@@ -46,6 +46,8 @@ from cognite.client.data_classes.data_modeling.ids import (
     DataModelId,
     DataModelIdentifier,
     DataModelingId,
+    EdgeId,
+    NodeId,
     VersionedDataModelingId,
     ViewId,
     ViewIdentifier,
@@ -63,6 +65,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     NodeApply,
     NodeApplyList,
     NodeList,
+    NodeOrEdgeData,
     NodeUpdate,
     NodeUpdateList,
 )
@@ -153,4 +156,7 @@ __all__ = [
     "EdgeUpdateList",
     "InstanceSort",
     "InstanceFilter",
+    "NodeOrEdgeData",
+    "NodeId",
+    "EdgeId",
 ]

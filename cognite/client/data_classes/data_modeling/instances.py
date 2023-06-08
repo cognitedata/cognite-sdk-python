@@ -14,7 +14,7 @@ from cognite.client.data_classes.data_modeling._validation import validate_data_
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelationReference,
 )
-from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
+from cognite.client.data_classes.data_modeling.ids import ContainerId, EdgeId, NodeId, ViewId
 from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive, convert_all_keys_to_snake_case
 
 PropertyValue = Union[str, int, float, bool, dict, List[str], List[int], List[float], List[bool], List[dict]]
@@ -196,7 +196,18 @@ class NodeApply(InstanceApply):
                         container the container(s) making up this node.
     """
 
-    ...
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        existing_version: int = None,
+        sources: list[NodeOrEdgeData] = None,
+        **_: dict,
+    ):
+        super().__init__(space, external_id, "node", existing_version, sources)
+
+    def as_id(self) -> NodeId:
+        return NodeId(space=self.space, external_id=self.external_id)
 
 
 class Node(Instance):
@@ -239,6 +250,9 @@ class Node(Instance):
             else None,
         )
 
+    def as_id(self) -> NodeId:
+        return NodeId(space=self.space, external_id=self.external_id)
+
 
 class NodeUpdate(InstanceUpdate):
     """A node. This represents the update on the node.
@@ -271,6 +285,9 @@ class NodeUpdate(InstanceUpdate):
             last_updated_time=last_updated_time,
             created_time=created_time,
         )
+
+    def as_id(self) -> NodeId:
+        return NodeId(space=self.space, external_id=self.external_id)
 
 
 class EdgeApply(InstanceApply):
@@ -307,6 +324,9 @@ class EdgeApply(InstanceApply):
         self.type = type
         self.start_node = start_node
         self.end_node = end_node
+
+    def as_id(self) -> EdgeId:
+        return EdgeId(space=self.space, external_id=self.external_id)
 
 
 class Edge(Instance):
@@ -359,6 +379,9 @@ class Edge(Instance):
             or None,
         )
 
+    def as_id(self) -> EdgeId:
+        return EdgeId(space=self.space, external_id=self.external_id)
+
 
 class EdgeUpdate(InstanceUpdate):
     """An Edge. This represents the update on the edge.
@@ -391,6 +414,9 @@ class EdgeUpdate(InstanceUpdate):
             last_updated_time=last_updated_time,
             created_time=created_time,
         )
+
+    def as_id(self) -> EdgeId:
+        return EdgeId(space=self.space, external_id=self.external_id)
 
 
 class InstanceList(CogniteResourceList):

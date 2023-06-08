@@ -194,12 +194,17 @@ class InstancesAPI(APIClient):
                 >>> res = c.data_modeling.instances.retrieve(('node', 'mySpace', 'myNode'))
         """
         instance_type = self._get_instance_type(ids)
-        identifier = load_identifier(ids, "instance")
+        identifier = load_identifier(ids, instance_type)
+        other_params = self._create_other_params(include_typing, instance_type, sources=sources, sort=None)
+        # The byids endpoint does not have instance_type
+        other_params.pop("instanceType", None)
 
         resource_cls, list_cls = self._get_classes(instance_type)
         return cast(
             Union[Node, Edge, NodeList, EdgeList, None],
-            self._retrieve_multiple(list_cls=list_cls, resource_cls=resource_cls, identifiers=identifier),
+            self._retrieve_multiple(
+                list_cls=list_cls, resource_cls=resource_cls, identifiers=identifier, other_params=other_params
+            ),
         )
 
     @overload
@@ -234,11 +239,12 @@ class InstancesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.data_modeling.instances.delete(("node", "myNode", "mySpace"))
         """
+        instance_type = self._get_instance_type(id)
         deleted_instances = cast(
             List,
-            self._delete_multiple(identifiers=load_identifier(id, "instance"), wrap_ids=True, returns_items=True),
+            self._delete_multiple(identifiers=load_identifier(id, instance_type), wrap_ids=True, returns_items=True),
         )
-        instance_type = self._get_instance_type(id)
+
         if instance_type == "node":
             return [NodeId(space=item["space"], external_id=item["externalId"]) for item in deleted_instances]
         elif instance_type == "edge":
@@ -287,16 +293,19 @@ class InstancesAPI(APIClient):
             return Edge, EdgeList
         raise ValueError(f"Unsupported {instance_type=}")
 
+    @classmethod
     @overload
-    def _get_update_classes(self, instance_type: Literal["node"]) -> tuple[Type[NodeUpdate], Type[NodeUpdateList]]:
+    def _get_update_classes(cls, instance_type: Literal["node"]) -> tuple[Type[NodeUpdate], Type[NodeUpdateList]]:
         ...
 
+    @classmethod
     @overload
-    def _get_update_classes(self, instance_type: Literal["edge"]) -> tuple[Type[EdgeUpdate], Type[EdgeUpdateList]]:
+    def _get_update_classes(cls, instance_type: Literal["edge"]) -> tuple[Type[EdgeUpdate], Type[EdgeUpdateList]]:
         ...
 
+    @classmethod
     def _get_update_classes(
-        self, instance_type: Literal["node", "edge"]
+        cls, instance_type: Literal["node", "edge"]
     ) -> tuple[Type[NodeUpdate], Type[NodeUpdateList]] | tuple[Type[EdgeUpdate], Type[EdgeUpdateList]]:
         if instance_type == "node":
             return NodeUpdate, NodeUpdateList

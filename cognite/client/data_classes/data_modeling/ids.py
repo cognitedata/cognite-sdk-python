@@ -134,11 +134,11 @@ Id = Union[Tuple[str, str], Tuple[str, str, str], DataModelingId, VersionedDataM
 
 
 def load_identifier(
-    ids: Id | Sequence[Id], id_type: Literal["container", "view", "data_model", "instance"]
+    ids: Id | Sequence[Id], id_type: Literal["container", "view", "data_model", "node", "edge"]
 ) -> DataModelingIdentifierSequence:
     is_sequence = isinstance(ids, Sequence) and not (isinstance(ids, tuple) and isinstance(ids[0], str))
     is_view_or_data_model = id_type in {"view", "data_model"}
-
+    is_instance = id_type in {"node", "edge"}
     id_list = cast(Sequence, ids)
     if not is_sequence:
         id_list = [ids]
@@ -146,7 +146,9 @@ def load_identifier(
     return DataModelingIdentifierSequence(
         identifiers=[
             DataModelingIdentifier(
-                *id_ if isinstance(id_, tuple) else (id_.space, id_.external_id, getattr(id_, "version", None))
+                *id_
+                if isinstance(id_, tuple)
+                else (id_.space, id_.external_id, getattr(id_, "version", None), (id_type if is_instance else None))
             )
             for id_ in id_list
         ],
