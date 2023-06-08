@@ -143,14 +143,16 @@ def load_identifier(
     if not is_sequence:
         id_list = [ids]
 
+    def create_args(id_: Id) -> tuple[str, str, Optional[str], Optional[Literal["node", "edge"]]]:
+        if isinstance(id_, tuple) and is_instance:
+            if len(id_) == 3:
+                return id_[1], id_[2], None, id_type  # type: ignore[misc, return-value]
+            raise ValueError("Instance given as a tuple must have three elements, (instanceType, space, externalId)")
+        if isinstance(id_, tuple):
+            return id_[0], id_[1], id_[2] if len(id_) == 3 else None, None  # type: ignore[misc]
+        return id_.space, id_.external_id, getattr(id_, "version", None), (id_type if is_instance else None)  # type: ignore[return-value]
+
     return DataModelingIdentifierSequence(
-        identifiers=[
-            DataModelingIdentifier(
-                *id_
-                if isinstance(id_, tuple)
-                else (id_.space, id_.external_id, getattr(id_, "version", None), (id_type if is_instance else None))
-            )
-            for id_ in id_list
-        ],
+        identifiers=[DataModelingIdentifier(*create_args(id_)) for id_ in id_list],
         is_singleton=not is_sequence and not is_view_or_data_model,
     )

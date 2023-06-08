@@ -434,6 +434,9 @@ class NodeUpdateList(CogniteResourceList):
 class NodeList(CogniteResourceList):
     _RESOURCE = Node
 
+    def as_ids(self) -> list[NodeId]:
+        return [node.as_id() for node in self]
+
 
 class EdgeApplyList(CogniteResourceList):
     _RESOURCE = EdgeApply

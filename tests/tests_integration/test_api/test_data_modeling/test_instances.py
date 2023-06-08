@@ -106,3 +106,37 @@ class TestInstancesAPI:
         # Assert
         assert deleted_id[0] == new_node.as_id()
         assert retrieved_deleted is None
+
+    def test_delete_non_existent(self, cognite_client: CogniteClient, integration_test_space: dm.Space):
+        space = integration_test_space.space
+        assert cognite_client.data_modeling.instances.delete(dm.NodeId(space=space, external_id="DoesNotExists")) == []
+
+    def test_retrieve_multiple(self, cognite_client: CogniteClient, cdf_nodes: dm.NodeList):
+        assert len(cdf_nodes) >= 2, "Please add at least two nodes to the test environment"
+        # Act
+        retrieved = cognite_client.data_modeling.instances.retrieve(cdf_nodes.as_ids())
+
+        # Assert
+        assert len(retrieved) == len(cdf_nodes)
+
+    def test_retrieve_multiple_with_missing(self, cognite_client: CogniteClient, cdf_nodes: dm.NodeList):
+        assert len(cdf_nodes) >= 2, "Please add at least two nodes to the test environment"
+        # Arrange
+        ids = cdf_nodes.as_ids()
+        ids += [dm.NodeId("myNonExistingSpace", "myImaginaryContainer")]
+
+        # Act
+        retrieved = cognite_client.data_modeling.instances.retrieve(ids)
+
+        # Assert
+        assert len(retrieved) == len(ids) - 1
+
+    def test_retrieve_non_existent(self, cognite_client: CogniteClient):
+        assert (
+            cognite_client.data_modeling.instances.retrieve(("node", "myNonExistingSpace", "myImaginaryNode")) is None
+        )
+
+    def test_iterate_over_containers(self, cognite_client: CogniteClient):
+        for nodes in cognite_client.data_modeling.instances(chunk_size=2, limit=-1):
+            assert isinstance(nodes, dm.NodeList)
+            assert len(nodes) <= 2
