@@ -17,9 +17,15 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [6.3.2] - 2023-06-07
+## [6.3.2] - 2023-06-08
 ### Fixed
 - Requests being retried around a token refresh cycle, no longer risk getting stuck with an outdated token.
+
+### Added
+- `CredentialProviders` subclassing `_OAuthCredentialProviderWithTokenRefresh`, now accepts a new parameter, `token_expiry_leeway_seconds`, controlling how early a token refresh request should be initiated (before it expires).
+
+### Changed
+- `CredentialProviders` subclassing `_OAuthCredentialProviderWithTokenRefresh` now uses a safer default of 15 seconds (up from 3 sec) to control how early a token refresh request should be initiated (before it expires).
 
 ## [6.3.1] - 2023-06-07
 ### Fixed
