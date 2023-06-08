@@ -15,6 +15,8 @@ from requests_oauthlib import OAuth2Session
 
 from cognite.client.exceptions import CogniteAuthError
 
+_TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT = 15  # Do not change without also updating all the docstrings using it
+
 
 class CredentialProvider(Protocol):
     @abstractmethod
@@ -60,10 +62,10 @@ class Token(CredentialProvider):
 
 
 class _OAuthCredentialProviderWithTokenRefresh(CredentialProvider):
-    # This ensures we don't return a token which expires immediately, but within minimum 3 seconds.
-    __TOKEN_EXPIRY_LEEWAY_SECONDS = 3
+    def __init__(self, token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT) -> None:
+        # This ensures we don't return a token which expires immediately:
+        self.token_expiry_leeway_seconds = token_expiry_leeway_seconds
 
-    def __init__(self) -> None:
         self.__token_refresh_lock = threading.Lock()
         self.__access_token: Optional[str] = None
         self.__access_token_expires_at: Optional[float] = None
@@ -84,10 +86,9 @@ class _OAuthCredentialProviderWithTokenRefresh(CredentialProvider):
         """This method should return the access_token and expiry time"""
         raise NotImplementedError
 
-    @classmethod
-    def __should_refresh_token(cls, token: Optional[str], expires_at: Optional[float]) -> bool:
+    def __should_refresh_token(self, token: Optional[str], expires_at: Optional[float]) -> bool:
         no_token = token is None
-        token_is_expired = expires_at is None or time.time() > expires_at - cls.__TOKEN_EXPIRY_LEEWAY_SECONDS
+        token_is_expired = expires_at is None or time.time() > expires_at - self.token_expiry_leeway_seconds
         return no_token or token_is_expired
 
     @staticmethod
@@ -153,8 +154,8 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         authority_url (str): OAuth authority url
         client_id (str): Your application's client id.
         scopes (List[str]): A list of scopes.
-        token_cache_path (Path): Location to store token cache, defaults to
-                                 os temp directory/cognitetokencache.{client_id}.bin.
+        token_cache_path (Path): Location to store token cache, defaults to os temp directory/cognitetokencache.{client_id}.bin.
+        token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 15 sec
 
     Examples:
 
@@ -172,8 +173,9 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         client_id: str,
         scopes: List[str],
         token_cache_path: Path = None,
+        token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT,
     ) -> None:
-        super().__init__()
+        super().__init__(token_expiry_leeway_seconds)
         self.__authority_url = authority_url
         self.__client_id = client_id
         self.__scopes = scopes
@@ -229,8 +231,8 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         client_id (str): Your application's client id.
         scopes (List[str]): A list of scopes.
         redirect_port (List[str]): Redirect port defaults to 53000.
-        token_cache_path (Path): Location to store token cache, defaults to
-                                 os temp directory/cognitetokencache.{client_id}.bin.
+        token_cache_path (Path): Location to store token cache, defaults to os temp directory/cognitetokencache.{client_id}.bin.
+        token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 15 sec
 
     Examples:
 
@@ -249,9 +251,10 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         scopes: List[str],
         redirect_port: int = 53000,
         token_cache_path: Path = None,
+        token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT,
     ) -> None:
 
-        super().__init__()
+        super().__init__(token_expiry_leeway_seconds)
         self.__authority_url = authority_url
         self.__client_id = client_id
         self.__scopes = scopes
@@ -303,6 +306,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         client_id (str): Your application's client id.
         client_secret (str): Your application's client secret
         scopes (List[str]): A list of scopes.
+        token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 15 sec
         **token_custom_args (Any): Optional additional arguments to pass as query parameters to the token fetch request.
 
     Examples:
@@ -325,9 +329,10 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         client_id: str,
         client_secret: str,
         scopes: List[str],
+        token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT,
         **token_custom_args: Any,
     ):
-        super().__init__()
+        super().__init__(token_expiry_leeway_seconds)
         self.__token_url = token_url
         self.__client_id = client_id
         self.__client_secret = client_secret
@@ -406,6 +411,7 @@ class OAuthClientCertificate(_OAuthCredentialProviderWithTokenRefresh):
         cert_thumbprint (str): Your certificate's thumbprint. You get it when you upload your certificate to Azure AD.
         certificate (str): Your private certificate, typically read from a .pem file
         scopes (List[str]): A list of scopes.
+        token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 15 sec
 
     Examples:
 
@@ -420,8 +426,16 @@ class OAuthClientCertificate(_OAuthCredentialProviderWithTokenRefresh):
             ... )
     """
 
-    def __init__(self, authority_url: str, client_id: str, cert_thumbprint: str, certificate: str, scopes: List[str]):
-        super().__init__()
+    def __init__(
+        self,
+        authority_url: str,
+        client_id: str,
+        cert_thumbprint: str,
+        certificate: str,
+        scopes: List[str],
+        token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT,
+    ):
+        super().__init__(token_expiry_leeway_seconds)
         self.__authority_url = authority_url
         self.__client_id = client_id
         self.__cert_thumbprint = cert_thumbprint

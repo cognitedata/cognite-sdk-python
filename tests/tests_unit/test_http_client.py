@@ -81,6 +81,7 @@ class TestHTTPClient:
         retry_tracker = _RetryTracker(cnf)
         c = HTTPClient(
             config=cnf,
+            refresh_auth_header=lambda headers: None,
             retry_tracker_factory=lambda _: retry_tracker,
             session=MagicMock(
                 request=MagicMock(
@@ -104,6 +105,7 @@ class TestHTTPClient:
         retry_tracker = _RetryTracker(cnf)
         c = HTTPClient(
             config=cnf,
+            refresh_auth_header=lambda headers: None,
             retry_tracker_factory=lambda _: retry_tracker,
             session=MagicMock(
                 request=MagicMock(
@@ -126,6 +128,7 @@ class TestHTTPClient:
         retry_tracker = _RetryTracker(cnf)
         c = HTTPClient(
             config=cnf,
+            refresh_auth_header=lambda headers: None,
             retry_tracker_factory=lambda _: retry_tracker,
             session=MagicMock(
                 request=MagicMock(
@@ -147,6 +150,7 @@ class TestHTTPClient:
         retry_tracker = _RetryTracker(cnf)
         c = HTTPClient(
             config=cnf,
+            refresh_auth_header=lambda headers: None,
             retry_tracker_factory=lambda _: retry_tracker,
             session=MagicMock(request=MagicMock(return_value=MagicMock(status_code=429))),
         )

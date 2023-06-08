@@ -17,11 +17,19 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.3.2] - 2023-06-08
+### Fixed
+- Requests being retried around a token refresh cycle, no longer risk getting stuck with an outdated token.
+
+### Added
+- `CredentialProviders` subclassing `_OAuthCredentialProviderWithTokenRefresh`, now accepts a new parameter, `token_expiry_leeway_seconds`, controlling how early a token refresh request should be initiated (before it expires).
+
+### Changed
+- `CredentialProviders` subclassing `_OAuthCredentialProviderWithTokenRefresh` now uses a safer default of 15 seconds (up from 3 sec) to control how early a token refresh request should be initiated (before it expires).
+
 ## [6.3.1] - 2023-06-07
 ### Fixed
-- Signature of `client.data_modeling.views.retrieve` and `client.data_modeling.data_models.retrieve` to always return
-  a list. 
-
+- Signature of `client.data_modeling.views.retrieve` and `client.data_modeling.data_models.retrieve` to always return a list.
 
 ## [6.3.0] - 2023-06-07
 ### Added
@@ -29,7 +37,7 @@ Changes are grouped as follows
 - Support for the view resource in the Data Modeling API with the implementation `client.data_modeling.views`.
 - Support for the data models resource in the Data Modeling API with the implementation `client.data_modeling.data_models`.
 
-### Changed
+### Removed
 - Removed `retrieve_multiple` from the `SpacesAPI` to have a consistent API with the `views`, `containers`, and `data_models`.
 
 ## [6.2.2] - 2023-06-05
