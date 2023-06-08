@@ -149,7 +149,7 @@ class Instance(InstanceCore):
         )
 
 
-class InstanceUpdate(InstanceCore):
+class InstanceApplyResult(InstanceCore):
     """A node or edge. This represents the update on the instance.
 
     Args:
@@ -254,7 +254,7 @@ class Node(Instance):
         return NodeId(space=self.space, external_id=self.external_id)
 
 
-class NodeUpdate(InstanceUpdate):
+class NodeApplyResult(InstanceApplyResult):
     """A node. This represents the update on the node.
 
     Args:
@@ -383,7 +383,7 @@ class Edge(Instance):
         return EdgeId(space=self.space, external_id=self.external_id)
 
 
-class EdgeUpdate(InstanceUpdate):
+class EdgeApplyResult(InstanceApplyResult):
     """An Edge. This represents the update on the edge.
 
     Args:
@@ -419,16 +419,12 @@ class EdgeUpdate(InstanceUpdate):
         return EdgeId(space=self.space, external_id=self.external_id)
 
 
-class InstanceList(CogniteResourceList):
-    _RESOURCE = Instance
-
-
 class NodeApplyList(CogniteResourceList):
     _RESOURCE = NodeApply
 
 
-class NodeUpdateList(CogniteResourceList):
-    _RESOURCE = NodeUpdate
+class NodeApplyResultList(CogniteResourceList):
+    _RESOURCE = NodeApplyResult
 
 
 class NodeList(CogniteResourceList):
@@ -442,8 +438,8 @@ class EdgeApplyList(CogniteResourceList):
     _RESOURCE = EdgeApply
 
 
-class EdgeUpdateList(CogniteResourceList):
-    _RESOURCE = EdgeUpdate
+class EdgeApplyResultList(CogniteResourceList):
+    _RESOURCE = EdgeApplyResult
 
 
 class EdgeList(CogniteResourceList):
