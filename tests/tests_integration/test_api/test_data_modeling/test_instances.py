@@ -28,11 +28,6 @@ def actor_view(cognite_client: CogniteClient, integration_test_space: dm.Space) 
     return cognite_client.data_modeling.views.retrieve((integration_test_space.space, "Actor", "2"))[0]
 
 
-@pytest.fixture()
-def person_actor_view(cognite_client: CogniteClient, person_view: dm.View, actor_view: dm.View):
-    return cognite_client.data_modeling.views.list(limit=-1)
-
-
 class TestInstancesAPI:
     def test_list_nodes(self, cognite_client: CogniteClient, cdf_nodes: dm.NodeList):
         # Act
@@ -117,9 +112,7 @@ class TestInstancesAPI:
         assert deleted_id[0] == new_node.as_id()
         assert retrieved_deleted is None
 
-    def test_apply_nodes_and_edges(
-        self, cognite_client: CogniteClient, person_view: dm.View, actor_view: dm.View, person_actor_view
-    ):
+    def test_apply_nodes_and_edges(self, cognite_client: CogniteClient, person_view: dm.View, actor_view: dm.View):
         # Arrange
         space = person_view.space
         person = dm.NodeApply(
@@ -151,7 +144,7 @@ class TestInstancesAPI:
         person_to_actor = dm.EdgeApply(
             space=space,
             external_id="relation:arnold_schwarzenegger:actor",
-            type=dm.DirectRelationReference(space, person_view.properties["roles"].type),
+            type=dm.DirectRelationReference(space, person_view.properties["roles"].type.external_id),
             start_node=dm.DirectRelationReference(space, person.external_id),
             end_node=dm.DirectRelationReference(space, actor.external_id),
         )
@@ -162,7 +155,7 @@ class TestInstancesAPI:
         created = cognite_client.data_modeling.instances.apply(new_instances, replace=True)
 
         # Assert
-        assert isinstance(created, dm.NodeEdgeApplyLists)
+        assert isinstance(created, dm.NodeEdgeApplyResultList)
         assert len(created.nodes) == 2
         assert len(created.edges) == 1
 

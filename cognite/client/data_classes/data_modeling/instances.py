@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from collections.abc import Sequence
 from dataclasses import asdict, dataclass
-from typing import Any, List, Literal, Type, TypeVar, Union
+from typing import TYPE_CHECKING, Any, List, Literal, Type, TypeVar, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -17,6 +17,9 @@ from cognite.client.data_classes.data_modeling.data_types import (
 from cognite.client.data_classes.data_modeling.ids import ContainerId, EdgeId, NodeId, ViewId
 from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive, convert_all_keys_to_snake_case
 
+if TYPE_CHECKING:
+
+    from cognite.client import CogniteClient
 PropertyValue = Union[str, int, float, bool, dict, List[str], List[int], List[float], List[bool], List[dict]]
 Space = str
 PropertyIdentifier = str
@@ -328,6 +331,26 @@ class EdgeApply(InstanceApply):
     def as_id(self) -> EdgeId:
         return EdgeId(space=self.space, external_id=self.external_id)
 
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        if self.type:
+            output["type"] = self.type.dump(camel_case)
+        if self.start_node:
+            output["startNode" if camel_case else "start_node"] = self.start_node.dump(camel_case)
+        if self.end_node:
+            output["endNode" if camel_case else "end_node"] = self.end_node.dump(camel_case)
+        return output
+
+    @classmethod
+    def load(cls, data: dict | str) -> EdgeApply:
+        data = json.loads(data) if isinstance(data, str) else data
+        instance = cast(EdgeApply, super().load(data))
+
+        instance.type = DirectRelationReference.load(data["type"])
+        instance.start_node = DirectRelationReference.load(data["startNode"])
+        instance.end_node = DirectRelationReference.load(data["endNode"])
+        return instance
+
 
 class Edge(Instance):
     """An Edge.  This is the read version of the edge.
@@ -419,6 +442,19 @@ class EdgeApplyResult(InstanceApplyResult):
         return EdgeId(space=self.space, external_id=self.external_id)
 
 
+class NodeEdgeApplyResult:
+    @classmethod
+    def _load(cls, data: str | dict, cognite_client: CogniteClient = None) -> NodeApplyResult | EdgeApplyResult:
+        return cls.load(data)
+
+    @classmethod
+    def load(cls, data: str | dict) -> NodeApplyResult | EdgeApplyResult:
+        data = json.loads(data) if isinstance(data, str) else data
+        if data["instanceType"] == "node":
+            return NodeApplyResult.load(data)
+        return EdgeApplyResult.load(data)
+
+
 class NodeApplyList(CogniteResourceList):
     _RESOURCE = NodeApply
 
@@ -452,10 +488,24 @@ class NodeEdgeApplyLists:
         self.edges = edges
 
 
-class NodeEdgeApplyResultLists:
-    def __init__(self, nodes: NodeApplyResultList, edges: EdgeApplyResultList):
-        self.nodes = nodes
-        self.edges = edges
+class NodeEdgeApplyResultList(CogniteResourceList):
+    _RESOURCE = (NodeApplyResult, EdgeApplyResult)  # type: ignore[assignment]
+
+    def __init__(self, resources: Sequence[NodeApplyResult | EdgeApplyResult], cognite_client: CogniteClient = None):
+        super().__init__(resources, cognite_client)
+        self.nodes = NodeApplyResultList([i for i in resources if isinstance(i, NodeApplyResult)])
+        self.edges = EdgeApplyResultList([i for i in resources if isinstance(i, EdgeApplyResult)])
+
+    @classmethod
+    def _load(
+        cls, resource_list: list[dict[str, Any]] | str, cognite_client: CogniteClient = None
+    ) -> NodeEdgeApplyResultList:
+        resource_list = json.loads(resource_list) if isinstance(resource_list, str) else resource_list
+        resources: list[NodeApplyResult | EdgeApplyResult] = [
+            NodeApplyResult.load(data) if data["instanceType"] == "node" else EdgeApplyResult.load(data)
+            for data in resource_list
+        ]
+        return cls(resources, None)
 
 
 class InstanceFilter(CogniteFilter):
