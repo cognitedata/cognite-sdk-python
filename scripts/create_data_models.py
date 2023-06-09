@@ -30,7 +30,7 @@ def copy_pygen_test_data(pygen: CogniteClient, client: CogniteClient):
     #     description="Space used for integration testing in the SDK",
     #     name="SDK Integration Testing",
     # )
-    m.SpaceApply(
+    space = m.SpaceApply(
         space="IntegrationTestsImmutable",
         description="Space used for integration testing in the SDK",
         name="SDK Integration Testing copy from Pygen",
@@ -65,8 +65,10 @@ def copy_pygen_test_data(pygen: CogniteClient, client: CogniteClient):
     #     created_nodes = client.data_modeling.instances.apply(apply_nodes)
     #     print(source)
     #     print(created_nodes)
-
-    ingested_edges = client.data_modeling.instances.list(instance_type="edge", limit=-1)
+    actor_view = pygen.data_modeling.views.retrieve((space.space, "Actor"))
+    ingested_edges = pygen.data_modeling.instances.list(
+        instance_type="node", limit=-1, sources=actor_view[0].as_reference()
+    )
     if len(ingested_edges) > 0:
         print("Skipping edges")
         return

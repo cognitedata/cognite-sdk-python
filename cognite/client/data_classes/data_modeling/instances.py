@@ -446,6 +446,18 @@ class EdgeList(CogniteResourceList):
     _RESOURCE = Edge
 
 
+class NodeEdgeApplyLists:
+    def __init__(self, nodes: NodeApplyList, edges: EdgeApplyList):
+        self.nodes = nodes
+        self.edges = edges
+
+
+class NodeEdgeApplyResultLists:
+    def __init__(self, nodes: NodeApplyResultList, edges: EdgeApplyResultList):
+        self.nodes = nodes
+        self.edges = edges
+
+
 class InstanceFilter(CogniteFilter):
     """Represent the filer arguments for the list endpoint.
     Args:

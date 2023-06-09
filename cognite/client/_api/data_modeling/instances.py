@@ -23,6 +23,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     NodeApply,
     NodeApplyResult,
     NodeApplyResultList,
+    NodeEdgeApplyResultLists,
     NodeList,
 )
 
@@ -309,7 +310,7 @@ class InstancesAPI(APIClient):
 
     @classmethod
     def _get_update_classes(
-        cls, instance_type: Literal["node", "edge"]
+        cls, instance_type: Literal["node", "edge", "both"]
     ) -> tuple[Type[NodeApplyResult], Type[NodeApplyResultList]] | tuple[
         Type[EdgeApplyResult], Type[EdgeApplyResultList]
     ]:
@@ -317,18 +318,9 @@ class InstancesAPI(APIClient):
             return NodeApplyResult, NodeApplyResultList
         elif instance_type == "edge":
             return EdgeApplyResult, EdgeApplyResultList
+        elif instance_type == "both":
+            raise NotImplementedError
         raise ValueError(f"Unsupported {instance_type=}")
-
-    @overload
-    def apply(
-        self,
-        instance: Sequence[NodeApply],
-        auto_create_start_nodes: bool = False,
-        auto_create_end_nodes: bool = False,
-        skip_on_version_conflict: bool = False,
-        replace: bool = False,
-    ) -> NodeApplyResultList:
-        ...
 
     @overload
     def apply(
@@ -344,17 +336,6 @@ class InstancesAPI(APIClient):
     @overload
     def apply(
         self,
-        instance: Sequence[EdgeApply],
-        auto_create_start_nodes: bool = False,
-        auto_create_end_nodes: bool = False,
-        skip_on_version_conflict: bool = False,
-        replace: bool = False,
-    ) -> EdgeApplyResultList:
-        ...
-
-    @overload
-    def apply(
-        self,
         instance: EdgeApply,
         auto_create_start_nodes: bool = False,
         auto_create_end_nodes: bool = False,
@@ -363,14 +344,25 @@ class InstancesAPI(APIClient):
     ) -> EdgeApplyResult:
         ...
 
+    @overload
     def apply(
         self,
-        instance: NodeApply | EdgeApply | Sequence[NodeApply] | Sequence[EdgeApply],
+        instance: Sequence[NodeApply | EdgeApply],
         auto_create_start_nodes: bool = False,
         auto_create_end_nodes: bool = False,
         skip_on_version_conflict: bool = False,
         replace: bool = False,
-    ) -> NodeApplyResult | NodeApplyResultList | EdgeApplyResult | EdgeApplyResultList:
+    ) -> NodeEdgeApplyResultLists:
+        ...
+
+    def apply(
+        self,
+        instance: NodeApply | EdgeApply | Sequence[NodeApply | EdgeApply],
+        auto_create_start_nodes: bool = False,
+        auto_create_end_nodes: bool = False,
+        skip_on_version_conflict: bool = False,
+        replace: bool = False,
+    ) -> NodeApplyResult | EdgeApplyResult | NodeEdgeApplyResultLists:
         """`Add or update (upsert) instances. <https://docs.cognite.com/api/v1/#tag/Instances/operation/applyNodeAndEdges>`_
 
         Args:
@@ -409,8 +401,9 @@ class InstancesAPI(APIClient):
         }
         instance_type = self._get_instance_type(instance)
         resource_cls, list_cls = self._get_update_classes(instance_type)
+
         return cast(
-            Union[NodeApplyResult, NodeApplyResultList, EdgeApplyResult, EdgeApplyResultList],
+            Union[NodeApplyResult, EdgeApplyResult, NodeEdgeApplyResultLists],
             self._create_multiple(
                 list_cls=list_cls, resource_cls=resource_cls, items=instance, extra_body_fields=other_parameters
             ),
@@ -422,6 +415,7 @@ class InstancesAPI(APIClient):
         | EdgeApply
         | Sequence[NodeApply]
         | Sequence[EdgeApply]
+        | Sequence[NodeApply | EdgeApply]
         | NodeId
         | EdgeId
         | Sequence[NodeId]
