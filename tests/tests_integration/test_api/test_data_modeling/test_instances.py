@@ -161,8 +161,37 @@ class TestInstancesAPI:
         assert sum(isinstance(item, dm.NodeApplyResult) for item in created) == 2
         assert sum(isinstance(item, dm.EdgeApplyResult) for item in created) == 1
 
-        # cleanup
+        # Cleanup
         cognite_client.data_modeling.instances.delete(created.as_ids())
+
+    def test_apply_auto_create_nodes(self, cognite_client: CogniteClient, person_view: dm.View):
+        # Arrange
+        space = person_view.space
+        person_to_actor = dm.EdgeApply(
+            space=space,
+            external_id="relation:sylvester_stallone:actor",
+            type=dm.DirectRelationReference(space, person_view.properties["roles"].type.external_id),
+            start_node=dm.DirectRelationReference(space, "person:sylvester_stallone"),
+            end_node=dm.DirectRelationReference(space, "actor:sylvester_stallone"),
+        )
+
+        # Act
+        created = cognite_client.data_modeling.instances.apply(
+            person_to_actor, auto_create_start_nodes=True, auto_create_end_nodes=True, replace=True
+        )
+        created_nodes = cognite_client.data_modeling.instances.retrieve(
+            [("node", *person_to_actor.start_node.as_tuple()), ("node", *person_to_actor.end_node.as_tuple())]
+        )
+
+        # Assert
+        assert created.created_time
+        assert created.last_updated_time
+        assert len(created_nodes) == 2
+        assert created_nodes[0].external_id == "person:sylvester_stallone"
+        assert created_nodes[1].external_id == "actor:sylvester_stallone"
+
+        # Cleanup
+        cognite_client.data_modeling.instances.delete(created_nodes.as_ids())
 
     def test_delete_non_existent(self, cognite_client: CogniteClient, integration_test_space: dm.Space):
         space = integration_test_space.space
@@ -204,7 +233,7 @@ class TestInstancesAPI:
             cognite_client.data_modeling.instances.retrieve(("node", "myNonExistingSpace", "myImaginaryNode")) is None
         )
 
-    def test_iterate_over_containers(self, cognite_client: CogniteClient):
+    def test_iterate_over_instances(self, cognite_client: CogniteClient):
         for nodes in cognite_client.data_modeling.instances(chunk_size=2, limit=-1):
             assert isinstance(nodes, dm.NodeList)
             assert len(nodes) <= 2
