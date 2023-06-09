@@ -320,7 +320,7 @@ class ExtractionPipelineConfigsAPI(APIClient):
     def retrieve(
         self, external_id: str, revision: Optional[int] = None, active_at_time: Optional[int] = None
     ) -> ExtractionPipelineConfig:
-        """`Retrieve a specific configuration revision, or the latest by default <https://docs.cognite.com/api/v1/#tag/Extraction-Pipelines-Config/operation/getExtPipeConfigRevision>`
+        """`Retrieve a specific configuration revision, or the latest by default <https://docs.cognite.com/api/v1/#operation/getExtPipeConfigRevision>`
 
         By default the latest configuration revision is retrieved, or you can specify a timestamp or a revision number.
 
@@ -346,7 +346,7 @@ class ExtractionPipelineConfigsAPI(APIClient):
         return ExtractionPipelineConfig._load(response.json(), cognite_client=self._cognite_client)
 
     def list(self, external_id: str) -> ExtractionPipelineConfigRevisionList:
-        """`Retrieve all configuration revisions from an extraction pipeline <https://docs.cognite.com/api/v1/#tag/Extraction-Pipelines-Config/operation/listExtPipeConfigRevisions>`
+        """`Retrieve all configuration revisions from an extraction pipeline <https://docs.cognite.com/api/v1/#operation/listExtPipeConfigRevisions>`
 
         Args:
             external_id (str): External id of the extraction pipeline to retrieve config from.
@@ -366,7 +366,7 @@ class ExtractionPipelineConfigsAPI(APIClient):
         return ExtractionPipelineConfigRevisionList._load(response.json()["items"], cognite_client=self._cognite_client)
 
     def create(self, config: ExtractionPipelineConfig) -> ExtractionPipelineConfig:
-        """`Create a new configuration revision <https://docs.cognite.com/api/v1/#tag/Extraction-Pipelines-Config/operation/createExtPipeConfig>`
+        """`Create a new configuration revision <https://docs.cognite.com/api/v1/#operation/createExtPipeConfig>`
 
         Args:
             config (ExtractionPipelineConfig): Configuration revision to create.
@@ -387,7 +387,7 @@ class ExtractionPipelineConfigsAPI(APIClient):
         return ExtractionPipelineConfig._load(response.json(), cognite_client=self._cognite_client)
 
     def revert(self, external_id: str, revision: int) -> ExtractionPipelineConfig:
-        """`Revert to a previous configuration revision <https://docs.cognite.com/api/v1/#tag/Extraction-Pipelines-Config/operation/createExtPipeConfig>`
+        """`Revert to a previous configuration revision <https://docs.cognite.com/api/v1/#operation/createExtPipeConfig>`
 
         Args:
             external_id (str): External id of the extraction pipeline to revert revision for.

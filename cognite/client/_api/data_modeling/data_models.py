@@ -87,7 +87,7 @@ class DataModelsAPI(APIClient):
         return cast(Iterator[DataModel], self())
 
     def retrieve(self, ids: DataModelIdentifier | Sequence[DataModelIdentifier]) -> DataModelList:
-        """`Retrieve data_model(s) by id(s). <https://docs.cognite.com/api/v1/#tag/Data-models/operation/byExternalIdsDataModels>`_
+        """`Retrieve data_model(s) by id(s). <https://docs.cognite.com/api/v1/#operation/byExternalIdsDataModels>`_
 
         Args:
             ids (DataModelId | Sequence[DataModelId]): Data Model identifier(s).
@@ -106,7 +106,7 @@ class DataModelsAPI(APIClient):
         return self._retrieve_multiple(list_cls=DataModelList, resource_cls=DataModel, identifiers=identifier)
 
     def delete(self, ids: DataModelIdentifier | Sequence[DataModelIdentifier]) -> list[VersionedDataModelingId]:
-        """`Delete one or more data model <https://docs.cognite.com/api/v1/#tag/Data-models/operation/deleteDataModels>`_
+        """`Delete one or more data model <https://docs.cognite.com/api/v1/#operation/deleteDataModels>`_
 
         Args:
             ids (DataModelId | Sequence[DataModelId]): Data Model identifier(s).
@@ -136,7 +136,7 @@ class DataModelsAPI(APIClient):
         all_versions: bool = False,
         include_global: bool = False,
     ) -> DataModelList:
-        """`List data models <https://docs.cognite.com/api/v1/#tag/Data-models/operation/listDataModels>`_
+        """`List data models <https://docs.cognite.com/api/v1/#operation/listDataModels>`_
 
         Args:
             limit (int, optional): Maximum number of data model to return. Default to 10. Set to -1, float("inf") or None
@@ -191,7 +191,7 @@ class DataModelsAPI(APIClient):
         ...
 
     def apply(self, data_model: DataModelApply | Sequence[DataModelApply]) -> DataModel | DataModelList:
-        """`Create or update one or more data model. <https://docs.cognite.com/api/v1/#tag/Data-models/operation/createDataModels>`_
+        """`Create or update one or more data model. <https://docs.cognite.com/api/v1/#operation/createDataModels>`_
 
         Args:
             data_model (data_model: DataModelApply | Sequence[DataModelApply]): DataModel or data model to create or update (upsert).
