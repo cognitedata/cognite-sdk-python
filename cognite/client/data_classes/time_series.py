@@ -287,5 +287,5 @@ class TimeSeriesAggregate(dict):
     count = CognitePropertyClassUtil.declare_property("count")
 
 
-class TimeSeriesList(CogniteResourceList):
+class TimeSeriesList(CogniteResourceList[TimeSeries]):
     _RESOURCE = TimeSeries

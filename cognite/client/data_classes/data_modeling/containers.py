@@ -160,11 +160,11 @@ class Container(ContainerCore):
         )
 
 
-class ContainerList(CogniteResourceList):
+class ContainerList(CogniteResourceList[Container]):
     _RESOURCE = Container
 
 
-class ContainerApplyList(CogniteResourceList):
+class ContainerApplyList(CogniteResourceList[ContainerApply]):
     _RESOURCE = ContainerApply
 
     def as_apply(self) -> ContainerApplyList:

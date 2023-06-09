@@ -290,7 +290,7 @@ class SequenceAggregate(dict):
     count = CognitePropertyClassUtil.declare_property("count")
 
 
-class SequenceList(CogniteResourceList):
+class SequenceList(CogniteResourceList[Sequence]):
     _RESOURCE = Sequence
 
 
@@ -438,7 +438,7 @@ class SequenceData(CogniteResource):
         return [cast(str, c.get("valueType")) for c in self.columns]
 
 
-class SequenceDataList(CogniteResourceList):
+class SequenceDataList(CogniteResourceList[SequenceData]):
     _RESOURCE = SequenceData
 
     def __str__(self) -> str:

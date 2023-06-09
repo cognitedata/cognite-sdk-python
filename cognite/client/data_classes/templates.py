@@ -51,7 +51,7 @@ class TemplateGroup(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
 
-class TemplateGroupList(CogniteResourceList):
+class TemplateGroupList(CogniteResourceList[TemplateGroup]):
     _RESOURCE = TemplateGroup
 
 
@@ -87,7 +87,7 @@ class TemplateGroupVersion(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
 
-class TemplateGroupVersionList(CogniteResourceList):
+class TemplateGroupVersionList(CogniteResourceList[TemplateGroupVersion]):
     _RESOURCE = TemplateGroupVersion
 
 
@@ -433,13 +433,13 @@ class GraphQlResponse(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
 
-class TemplateInstanceList(CogniteResourceList):
+class TemplateInstanceList(CogniteResourceList[TemplateInstance]):
     _RESOURCE = TemplateInstance
 
 
-class ViewList(CogniteResourceList):
+class ViewList(CogniteResourceList[View]):
     _RESOURCE = View
 
 
-class ViewResolveList(CogniteResourceList):
+class ViewResolveList(CogniteResourceList[ViewResolveItem]):
     _RESOURCE = ViewResolveItem

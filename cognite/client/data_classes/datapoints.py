@@ -641,7 +641,7 @@ class Datapoints(CogniteResource):
         return notebook_display_with_fallback(self, include_errors=is_synthetic_dps)
 
 
-class DatapointsArrayList(CogniteResourceList):
+class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
     _RESOURCE = DatapointsArray
 
     def __init__(self, resources: Collection[Any], cognite_client: CogniteClient = None):
@@ -760,7 +760,7 @@ class DatapointsArrayList(CogniteResourceList):
         return [dps.dump(camel_case, convert_timestamps) for dps in self]
 
 
-class DatapointsList(CogniteResourceList):
+class DatapointsList(CogniteResourceList[Datapoints]):
     _RESOURCE = Datapoints
 
     def __init__(self, resources: Collection[Any], cognite_client: CogniteClient = None):

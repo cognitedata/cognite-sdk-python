@@ -209,7 +209,7 @@ class View(ViewCore):
         )
 
 
-class ViewList(CogniteResourceList):
+class ViewList(CogniteResourceList[View]):
     _RESOURCE = View
 
     def to_view_apply(self) -> ViewApplyList:
@@ -221,7 +221,7 @@ class ViewList(CogniteResourceList):
         return ViewApplyList(resources=[v.as_apply() for v in self.items])
 
 
-class ViewApplyList(CogniteResourceList):
+class ViewApplyList(CogniteResourceList[ViewApply]):
     _RESOURCE = ViewApply
 
 
