@@ -49,7 +49,7 @@ class InstanceCore(DataModelingResource):
         external_id (str): Combined with the space is the unique identifier of the instance.
     """
 
-    def __init__(self, space: str, external_id: str, instance_type: Literal["node", "edge"] = "node", **_: dict):
+    def __init__(self, space: str, external_id: str, instance_type: Literal["node", "edge"] = "node"):
         validate_data_modeling_identifier(space, external_id)
         self.instance_type = instance_type
         self.space = space
@@ -80,7 +80,6 @@ class InstanceApply(InstanceCore):
         instance_type: Literal["node", "edge"] = "node",
         existing_version: int = None,
         sources: list[NodeOrEdgeData] = None,
-        **_: dict,
     ):
         super().__init__(space, external_id, instance_type)
         self.existing_version = existing_version
@@ -205,7 +204,6 @@ class NodeApply(InstanceApply):
         external_id: str,
         existing_version: int = None,
         sources: list[NodeOrEdgeData] = None,
-        **_: dict,
     ):
         super().__init__(space, external_id, "node", existing_version, sources)
 
@@ -321,7 +319,6 @@ class EdgeApply(InstanceApply):
         end_node: DirectRelationReference,
         existing_version: int = None,
         sources: list[NodeOrEdgeData] = None,
-        **_: dict,
     ):
         super().__init__(space, external_id, "edge", existing_version, sources)
         self.type = type
