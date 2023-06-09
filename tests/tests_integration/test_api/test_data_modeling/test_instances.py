@@ -176,6 +176,17 @@ class TestInstancesAPI:
         # Assert
         assert len(retrieved) == len(cdf_nodes)
 
+    def test_retrieve_nodes_and_edges(
+        self, cognite_client: CogniteClient, cdf_nodes: dm.NodeList, cdf_edges: dm.EdgeList
+    ):
+        assert len(cdf_nodes) >= 2, "Please add at least two nodes to the test environment"
+        assert len(cdf_edges) >= 2, "Please add at least two edges to the test environment"
+        # Act
+        retrieved = cognite_client.data_modeling.instances.retrieve(cdf_nodes.as_ids() + cdf_edges.as_ids())
+
+        # Assert
+        assert len(retrieved) == len(cdf_nodes) + len(cdf_edges)
+
     def test_retrieve_multiple_with_missing(self, cognite_client: CogniteClient, cdf_nodes: dm.NodeList):
         assert len(cdf_nodes) >= 2, "Please add at least two nodes to the test environment"
         # Arrange

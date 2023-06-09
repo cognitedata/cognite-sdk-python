@@ -504,6 +504,9 @@ class EdgeApplyResultList(CogniteResourceList):
 class EdgeList(CogniteResourceList):
     _RESOURCE = Edge
 
+    def as_ids(self) -> list[EdgeId]:
+        return [edge.as_id() for edge in self]
+
 
 class InstanceApplyResultList(CogniteResourceList):
     _RESOURCE = (NodeApplyResult, EdgeApplyResult)  # type: ignore[assignment]
