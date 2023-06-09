@@ -21,11 +21,13 @@ from cognite.client.data_classes.data_modeling.instances import (
     InstanceApply,
     InstanceApplyResultList,
     InstanceFilter,
+    InstanceList,
     InstanceSort,
     Node,
     NodeApply,
     NodeApplyResult,
     NodeApplyResultList,
+    NodeEdge,
     NodeEdgeApplyResult,
     NodeList,
 )
@@ -180,11 +182,12 @@ class InstancesAPI(APIClient):
         | EdgeId
         | Sequence[NodeId]
         | Sequence[EdgeId]
+        | Sequence[InstanceId]
         | tuple[str, str, str]
         | Sequence[tuple[str, str, str]],
         sources: list[ViewId] | ViewId | None = None,
         include_typing: bool = False,
-    ) -> Node | Edge | NodeList | EdgeList | None:
+    ) -> Node | Edge | NodeList | EdgeList | InstanceList | None:
         """`Retrieve one or more instance by id(s). <https://docs.cognite.com/api/v1/#tag/Instances/operation/byExternalIdsInstances>`_
         Args:
             ids (InstanceId | Sequence[InstanceId]): Identifier for instance(s).
@@ -198,22 +201,19 @@ class InstancesAPI(APIClient):
                 >>> res = c.data_modeling.instances.retrieve(('node', 'mySpace', 'myNode'))
         """
         instance_type = self._get_instance_type(ids)
-        if instance_type in ["node", "edge"]:
-            instance_type = cast(Literal["node", "edge"], instance_type)
-            identifier = load_identifier(ids, instance_type)
-            other_params = self._create_other_params(include_typing, instance_type, sources=sources, sort=None)
-            # The byids endpoint does not have instance_type
-            other_params.pop("instanceType", None)
+        identifier = load_identifier(ids, instance_type)
+        other_params = self._create_other_params(include_typing, instance_type, sources=sources, sort=None)  # type: ignore[arg-type]
+        # The byids endpoint does not have instance_type
+        other_params.pop("instanceType", None)
 
-            resource_cls, list_cls = self._get_classes(instance_type)
-            return cast(
-                Union[Node, Edge, NodeList, EdgeList, None],
-                self._retrieve_multiple(
-                    list_cls=list_cls, resource_cls=resource_cls, identifiers=identifier, other_params=other_params
-                ),
-            )
-        else:
-            raise NotImplementedError
+        resource_cls, list_cls = self._get_classes(instance_type)
+
+        return cast(
+            Union[Node, Edge, NodeList, EdgeList, InstanceList, None],
+            self._retrieve_multiple(  # type: ignore[type-var]
+                list_cls=list_cls, resource_cls=resource_cls, identifiers=identifier, other_params=other_params
+            ),
+        )
 
     @overload
     def delete(self, id: NodeId | Sequence[NodeId]) -> list[NodeId]:
@@ -300,15 +300,22 @@ class InstancesAPI(APIClient):
         ...
 
     @classmethod
+    @overload
+    def _get_classes(cls, instance_type: Literal["all"]) -> tuple[Type[NodeEdge], Type[InstanceList]]:
+        ...
+
+    @classmethod
     def _get_classes(
-        cls, instance_type: Literal["node", "edge", "mix"]
-    ) -> tuple[Type[Node], Type[NodeList]] | tuple[Type[Edge], Type[EdgeList]] | tuple[None, None]:
+        cls, instance_type: Literal["node", "edge", "all"]
+    ) -> tuple[Type[Node], Type[NodeList]] | tuple[Type[Edge], Type[EdgeList]] | tuple[
+        Type[NodeEdge], Type[InstanceList]
+    ]:
         if instance_type == "node":
             return Node, NodeList
         elif instance_type == "edge":
             return Edge, EdgeList
-        elif instance_type == "mix":
-            return None, None
+        elif instance_type == "all":
+            return NodeEdge, InstanceList
         raise ValueError(f"Unsupported {instance_type=}")
 
     @classmethod
