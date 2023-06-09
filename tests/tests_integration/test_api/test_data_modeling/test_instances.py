@@ -155,9 +155,9 @@ class TestInstancesAPI:
         created = cognite_client.data_modeling.instances.apply(new_instances, replace=True)
 
         # Assert
-        assert isinstance(created, dm.NodeEdgeApplyResultList)
-        assert len(created.nodes) == 2
-        assert len(created.edges) == 1
+        assert isinstance(created, dm.InstanceApplyResultList)
+        assert sum(isinstance(item, dm.NodeApplyResult) for item in created) == 2
+        assert sum(isinstance(item, dm.EdgeApplyResult) for item in created) == 1
 
     def test_delete_non_existent(self, cognite_client: CogniteClient, integration_test_space: dm.Space):
         space = integration_test_space.space

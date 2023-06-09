@@ -7,6 +7,7 @@ from cognite.client._constants import INSTANCES_LIST_LIMIT_DEFAULT
 from cognite.client.data_classes.data_modeling.filters import Filter
 from cognite.client.data_classes.data_modeling.ids import (
     EdgeId,
+    InstanceId,
     NodeId,
     ViewId,
     load_identifier,
@@ -17,6 +18,8 @@ from cognite.client.data_classes.data_modeling.instances import (
     EdgeApplyResult,
     EdgeApplyResultList,
     EdgeList,
+    InstanceApply,
+    InstanceApplyResultList,
     InstanceFilter,
     InstanceSort,
     Node,
@@ -24,7 +27,6 @@ from cognite.client.data_classes.data_modeling.instances import (
     NodeApplyResult,
     NodeApplyResultList,
     NodeEdgeApplyResult,
-    NodeEdgeApplyResultList,
     NodeList,
 )
 
@@ -328,22 +330,22 @@ class InstancesAPI(APIClient):
     @classmethod
     @overload
     def _get_apply_result_classes(
-        cls, instance_type: Literal["mix"]
-    ) -> tuple[Type[NodeEdgeApplyResult], Type[NodeEdgeApplyResultList]]:
+        cls, instance_type: Literal["all"]
+    ) -> tuple[Type[NodeEdgeApplyResult], Type[InstanceApplyResultList]]:
         ...
 
     @classmethod
     def _get_apply_result_classes(
-        cls, instance_type: Literal["node", "edge", "mix"]
+        cls, instance_type: Literal["node", "edge", "all"]
     ) -> tuple[Type[NodeApplyResult], Type[NodeApplyResultList]] | tuple[
         Type[EdgeApplyResult], Type[EdgeApplyResultList]
-    ] | tuple[Type[NodeEdgeApplyResult], Type[NodeEdgeApplyResultList]]:
+    ] | tuple[Type[NodeEdgeApplyResult], Type[InstanceApplyResultList]]:
         if instance_type == "node":
             return NodeApplyResult, NodeApplyResultList
         elif instance_type == "edge":
             return EdgeApplyResult, EdgeApplyResultList
-        elif instance_type == "mix":
-            return NodeEdgeApplyResult, NodeEdgeApplyResultList
+        elif instance_type == "all":
+            return NodeEdgeApplyResult, InstanceApplyResultList
         raise ValueError(f"Unsupported {instance_type=}")
 
     @overload
@@ -368,25 +370,47 @@ class InstancesAPI(APIClient):
     ) -> EdgeApplyResult:
         ...
 
+    # @overload
+    # def apply(
+    #     self,
+    #     instance: Sequence[NodeApply],
+    #     auto_create_start_nodes: bool = False,
+    #     auto_create_end_nodes: bool = False,
+    #     skip_on_version_conflict: bool = False,
+    #     replace: bool = False,
+    # ) -> NodeApplyResultList:
+    #     ...
+    #
+    # @overload
+    # def apply(
+    #     self,
+    #     instance: Sequence[EdgeApply],
+    #     auto_create_start_nodes: bool = False,
+    #     auto_create_end_nodes: bool = False,
+    #     skip_on_version_conflict: bool = False,
+    #     replace: bool = False,
+    # ) -> EdgeApplyResultList:
+    #     ...
+
     @overload
     def apply(
         self,
-        instance: Sequence[NodeApply | EdgeApply],
+        instance: Sequence[InstanceApply],
         auto_create_start_nodes: bool = False,
         auto_create_end_nodes: bool = False,
         skip_on_version_conflict: bool = False,
         replace: bool = False,
-    ) -> NodeEdgeApplyResultList:
+    ) -> InstanceApplyResultList | NodeApplyResultList | EdgeApplyResultList:
         ...
 
     def apply(
         self,
-        instance: NodeApply | EdgeApply | Sequence[NodeApply | EdgeApply],
+        instance: NodeApply | EdgeApply | Sequence[InstanceApply] | Sequence[NodeApply],
         auto_create_start_nodes: bool = False,
         auto_create_end_nodes: bool = False,
         skip_on_version_conflict: bool = False,
         replace: bool = False,
-    ) -> NodeApplyResult | EdgeApplyResult | NodeEdgeApplyResultList:
+    ) -> NodeApplyResult | EdgeApplyResult | InstanceApplyResultList | NodeApplyResultList | EdgeApplyResultList:
         """`Add or update (upsert) instances. <https://docs.cognite.com/api/v1/#tag/Instances/operation/applyNodeAndEdges>`_
 
         Args:
@@ -427,7 +451,7 @@ class InstancesAPI(APIClient):
         resource_cls, list_cls = self._get_apply_result_classes(instance_type)
 
         return cast(
-            Union[NodeApplyResult, EdgeApplyResult, NodeEdgeApplyResultList],
+            Union[NodeApplyResult, EdgeApplyResult, InstanceApplyResultList, NodeApplyResultList, EdgeApplyResultList],
             self._create_multiple(  # type: ignore[type-var]
                 list_cls=list_cls, resource_cls=resource_cls, items=instance, extra_body_fields=other_parameters  # type: ignore[arg-type]
             ),
@@ -438,27 +462,44 @@ class InstancesAPI(APIClient):
         cls,
         instance: NodeApply
         | EdgeApply
-        | Sequence
+        | Sequence[NodeApply]
+        | Sequence[EdgeApply]
+        | Sequence[InstanceApply]
         | NodeId
         | EdgeId
+        | Sequence[NodeId]
+        | Sequence[EdgeId]
+        | Sequence[InstanceId]
         | tuple[str, str, str]
         | Sequence[tuple[str, str, str]],
-    ) -> Literal["node", "edge", "mix"]:
+    ) -> Literal["node", "edge", "all"]:
         if isinstance(instance, (NodeApply, NodeId)):
             return "node"
         elif isinstance(instance, (EdgeApply, EdgeId)):
             return "edge"
-        elif (
-            isinstance(instance, Sequence)
-            and len(instance) > 0
-            and isinstance(instance[0], (NodeApply, NodeId, EdgeApply, EdgeId))
-        ):
-            return "mix"
         elif isinstance(instance, tuple) and len(instance) > 0 and isinstance(instance[0], str):
             return cast(Literal["node", "edge"], instance[0])
-        elif isinstance(instance, tuple) and len(instance) > 0 and isinstance(instance[0], tuple):
-            return "mix"
-        raise ValueError(f"Unsupported {instance=}")
+
+        if not isinstance(instance, Sequence):
+            raise ValueError(f"Unsupported {instance=}")
+
+        is_node = False
+        is_edge = False
+        for item in instance:
+            if isinstance(item, (NodeApply, NodeId)):
+                is_node = True
+            elif isinstance(item, (EdgeApply, EdgeId)):
+                is_edge = True
+            elif isinstance(item, tuple) and len(item) > 0 and isinstance(item[0], str):
+                if item[0] == "node":
+                    is_node = True
+                elif item[0] == "edge":
+                    is_edge = True
+            else:
+                raise ValueError(f"Unsupported {item=}")
+            if is_node and is_edge:
+                return "all"
+        return cast(Literal["node", "edge"], "node" if is_node else "edge")
 
     @overload
     def list(

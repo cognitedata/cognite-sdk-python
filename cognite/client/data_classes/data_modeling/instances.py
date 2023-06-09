@@ -488,8 +488,23 @@ class NodeEdgeApplyLists:
         self.edges = edges
 
 
-class NodeEdgeApplyResultList(CogniteResourceList):
+class InstanceApplyResultList(CogniteResourceList):
     _RESOURCE = (NodeApplyResult, EdgeApplyResult)  # type: ignore[assignment]
+
+    @classmethod
+    def _load(
+        cls, resource_list: list[dict[str, Any]] | str, cognite_client: CogniteClient = None
+    ) -> InstanceApplyResultList:
+        resource_list = json.loads(resource_list) if isinstance(resource_list, str) else resource_list
+        resources: list[NodeApplyResult | EdgeApplyResult] = [
+            NodeApplyResult.load(data) if data["instanceType"] == "node" else EdgeApplyResult.load(data)
+            for data in resource_list
+        ]
+        return cls(resources, None)
+
+
+class NodeEdgeApplyResultList(CogniteResourceList):
+    _RESOURCE = Union[NodeApplyResult, EdgeApplyResult]  # type: ignore[assignment]
 
     def __init__(self, resources: Sequence[NodeApplyResult | EdgeApplyResult], cognite_client: CogniteClient = None):
         super().__init__(resources, cognite_client)
