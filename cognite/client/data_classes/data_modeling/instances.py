@@ -459,6 +459,9 @@ class NodeApplyList(CogniteResourceList):
 class NodeApplyResultList(CogniteResourceList):
     _RESOURCE = NodeApplyResult
 
+    def as_ids(self) -> list[NodeId]:
+        return [result.as_id() for result in self]
+
 
 class NodeList(CogniteResourceList):
     _RESOURCE = Node
@@ -473,6 +476,9 @@ class EdgeApplyList(CogniteResourceList):
 
 class EdgeApplyResultList(CogniteResourceList):
     _RESOURCE = EdgeApplyResult
+
+    def as_ids(self) -> list[EdgeId]:
+        return [edge.as_id() for edge in self]
 
 
 class EdgeList(CogniteResourceList):
@@ -498,6 +504,9 @@ class InstanceApplyResultList(CogniteResourceList):
             for data in resource_list
         ]
         return cls(resources, None)
+
+    def as_ids(self) -> list[NodeId | EdgeId]:
+        return [result.as_id() for result in self]
 
 
 class InstanceFilter(CogniteFilter):

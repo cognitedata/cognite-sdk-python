@@ -65,7 +65,7 @@ def copy_pygen_test_data(pygen: CogniteClient, client: CogniteClient):
     #     created_nodes = client.data_modeling.instances.apply(apply_nodes)
     #     print(source)
     #     print(created_nodes)
-    actor_view = pygen.data_modeling.views.retrieve((space.space, "Actor"))
+    actor_view = pygen.data_modeling.views.retrieve((space.space, "Person"))
     ingested_edges = pygen.data_modeling.instances.list(
         instance_type="node", limit=-1, sources=actor_view[0].as_reference()
     )

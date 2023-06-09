@@ -59,6 +59,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     EdgeApplyResult,
     EdgeApplyResultList,
     EdgeList,
+    InstanceApply,
     InstanceApplyResultList,
     InstanceFilter,
     InstanceSort,
@@ -163,4 +164,5 @@ __all__ = [
     "EdgeId",
     "InstanceApplyResultList",
     "NodeEdgeApplyResult",
+    "InstanceApply",
 ]

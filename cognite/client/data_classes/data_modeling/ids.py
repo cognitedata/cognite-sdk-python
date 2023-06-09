@@ -130,15 +130,15 @@ DataModelIdentifier = Union[DataModelId, Tuple[str, str], Tuple[str, str, str]]
 NodeIdentifier = Union[NodeId, Tuple[str, str, str]]
 EdgeIdentifier = Union[EdgeId, Tuple[str, str, str]]
 
-Id = Union[Tuple[str, str], Tuple[str, str, str], DataModelingId, VersionedDataModelingId, NodeId, EdgeId]
+Id = Union[Tuple[str, str], Tuple[str, str, str], DataModelingId, VersionedDataModelingId, NodeId, EdgeId, InstanceId]
 
 
 def load_identifier(
-    ids: Id | Sequence[Id], id_type: Literal["container", "view", "data_model", "node", "edge"]
+    ids: Id | Sequence[Id], id_type: Literal["container", "view", "data_model", "node", "edge", "all"]
 ) -> DataModelingIdentifierSequence:
     is_sequence = isinstance(ids, Sequence) and not (isinstance(ids, tuple) and isinstance(ids[0], str))
     is_view_or_data_model = id_type in {"view", "data_model"}
-    is_instance = id_type in {"node", "edge"}
+    is_instance = id_type in {"node", "edge", "all"}
     id_list = cast(Sequence, ids)
     if not is_sequence:
         id_list = [ids]
@@ -150,7 +150,10 @@ def load_identifier(
             raise ValueError("Instance given as a tuple must have three elements, (instanceType, space, externalId)")
         if isinstance(id_, tuple):
             return id_[0], id_[1], id_[2] if len(id_) == 3 else None, None  # type: ignore[misc]
-        return id_.space, id_.external_id, getattr(id_, "version", None), (id_type if is_instance else None)  # type: ignore[return-value]
+        instance_type = None
+        if is_instance:
+            instance_type = "node" if isinstance(id_, NodeId) else "edge"
+        return id_.space, id_.external_id, getattr(id_, "version", None), instance_type  # type: ignore[return-value]
 
     return DataModelingIdentifierSequence(
         identifiers=[DataModelingIdentifier(*create_args(id_)) for id_ in id_list],

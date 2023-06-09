@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 
 from cognite.client import CogniteClient
@@ -149,7 +151,7 @@ class TestInstancesAPI:
             end_node=dm.DirectRelationReference(space, actor.external_id),
         )
 
-        new_instances = [person, actor, person_to_actor]
+        new_instances: list[dm.InstanceApply] = [person, actor, person_to_actor]
 
         # Act
         created = cognite_client.data_modeling.instances.apply(new_instances, replace=True)
@@ -158,6 +160,9 @@ class TestInstancesAPI:
         assert isinstance(created, dm.InstanceApplyResultList)
         assert sum(isinstance(item, dm.NodeApplyResult) for item in created) == 2
         assert sum(isinstance(item, dm.EdgeApplyResult) for item in created) == 1
+
+        # cleanup
+        cognite_client.data_modeling.instances.delete(created.as_ids())
 
     def test_delete_non_existent(self, cognite_client: CogniteClient, integration_test_space: dm.Space):
         space = integration_test_space.space

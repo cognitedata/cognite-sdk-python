@@ -224,7 +224,7 @@ class InstancesAPI(APIClient):
         ...
 
     @overload
-    def delete(self, id: tuple[str, str, str] | Sequence[tuple[str, str, str]]) -> list[NodeId] | list[EdgeId]:
+    def delete(self, id: tuple[str, str, str] | Sequence[tuple[str, str, str]]) -> list[InstanceId]:
         ...
 
     def delete(
@@ -233,9 +233,10 @@ class InstancesAPI(APIClient):
         | EdgeId
         | Sequence[NodeId]
         | Sequence[EdgeId]
+        | Sequence[InstanceId]
         | tuple[str, str, str]
         | Sequence[tuple[str, str, str]],
-    ) -> list[NodeId] | list[EdgeId]:
+    ) -> list[NodeId] | list[EdgeId] | list[InstanceId]:
         """`Delete one or more instances <https://docs.cognite.com/api/v1/#tag/Instances/operation/deleteBulk>`_
         Args:
             id (InstanceId | Sequence[InstanceId): The instance identifier(s).
@@ -248,24 +249,21 @@ class InstancesAPI(APIClient):
                 >>> c.data_modeling.instances.delete(("node", "myNode", "mySpace"))
         """
         instance_type = self._get_instance_type(id)
-        if instance_type in {"node", "edge"}:
-            instance_type = cast(Literal["node", "edge"], instance_type)
 
-            deleted_instances = cast(
-                List,
-                self._delete_multiple(
-                    identifiers=load_identifier(id, instance_type), wrap_ids=True, returns_items=True
-                ),
-            )
+        deleted_instances = cast(
+            List,
+            self._delete_multiple(identifiers=load_identifier(id, instance_type), wrap_ids=True, returns_items=True),
+        )
 
-            if instance_type == "node":
-                return [NodeId(space=item["space"], external_id=item["externalId"]) for item in deleted_instances]
-            elif instance_type == "edge":
-                return [EdgeId(space=item["space"], external_id=item["externalId"]) for item in deleted_instances]
-
-            raise ValueError(f"Invalid instance type {instance_type}")
-        else:
-            raise NotImplementedError
+        if instance_type == "node":
+            return [NodeId.load(item) for item in deleted_instances]
+        elif instance_type == "edge":
+            return [EdgeId.load(item) for item in deleted_instances]
+        elif instance_type == "all":
+            return [
+                NodeId.load(item) if item["instanceType"] == "node" else EdgeId.load(item) for item in deleted_instances
+            ]
+        raise ValueError(f"Invalid instance type {instance_type}")
 
     @classmethod
     def _create_other_params(
@@ -370,27 +368,27 @@ class InstancesAPI(APIClient):
     ) -> EdgeApplyResult:
         ...
 
-    # @overload
-    # def apply(
-    #     self,
-    #     instance: Sequence[NodeApply],
-    #     auto_create_start_nodes: bool = False,
-    #     auto_create_end_nodes: bool = False,
-    #     skip_on_version_conflict: bool = False,
-    #     replace: bool = False,
-    # ) -> NodeApplyResultList:
-    #     ...
-    #
-    # @overload
-    # def apply(
-    #     self,
-    #     instance: Sequence[EdgeApply],
-    #     auto_create_start_nodes: bool = False,
-    #     auto_create_end_nodes: bool = False,
-    #     skip_on_version_conflict: bool = False,
-    #     replace: bool = False,
-    # ) -> EdgeApplyResultList:
-    #     ...
+    @overload
+    def apply(
+        self,
+        instance: Sequence[NodeApply],
+        auto_create_start_nodes: bool = False,
+        auto_create_end_nodes: bool = False,
+        skip_on_version_conflict: bool = False,
+        replace: bool = False,
+    ) -> NodeApplyResultList:
+        ...
+
+    @overload
+    def apply(
+        self,
+        instance: Sequence[EdgeApply],
+        auto_create_start_nodes: bool = False,
+        auto_create_end_nodes: bool = False,
+        skip_on_version_conflict: bool = False,
+        replace: bool = False,
+    ) -> EdgeApplyResultList:
+        ...
 
     @overload
     def apply(
@@ -405,7 +403,7 @@ class InstancesAPI(APIClient):
 
     def apply(
         self,
-        instance: NodeApply | EdgeApply | Sequence[InstanceApply] | Sequence[NodeApply],
+        instance: NodeApply | EdgeApply | Sequence[NodeApply] | Sequence[EdgeApply] | Sequence[InstanceApply],
         auto_create_start_nodes: bool = False,
         auto_create_end_nodes: bool = False,
         skip_on_version_conflict: bool = False,
