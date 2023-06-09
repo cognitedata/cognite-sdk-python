@@ -821,7 +821,7 @@ class VisionExtractJob(VisionJob):
     ) -> Union[Annotation, AnnotationList]:
         """
         Saves all predictions made by the feature extractors in CDF using the Annotations API.
-        See https://docs.cognite.com/api/v1/#tag/Annotations/operation/annotationsSuggest
+        See https://docs.cognite.com/api/v1/#operation/annotationsSuggest
 
         Args:
             creating_app (str, optional): The name of the app from which this annotation was created. Defaults to 'cognite-sdk-python'.

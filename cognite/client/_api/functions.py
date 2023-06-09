@@ -478,7 +478,7 @@ class FunctionsAPI(APIClient):
             )
 
     def activate(self) -> FunctionsStatus:
-        """`Activate functions for the Project. <https://docs.cognite.com/api/v1/#tag/Functions/operation/postFunctionsStatus>`_.
+        """`Activate functions for the Project. <https://docs.cognite.com/api/v1/#operation/postFunctionsStatus>`_.
 
         Returns:
             FunctionsStatus: A function activation status.
@@ -495,7 +495,7 @@ class FunctionsAPI(APIClient):
         return FunctionsStatus._load(res.json())
 
     def status(self) -> FunctionsStatus:
-        """`Functions activation status for the Project. <https://docs.cognite.com/api/v1/#tag/Functions/operation/getFunctionsStatus>`_.
+        """`Functions activation status for the Project. <https://docs.cognite.com/api/v1/#operation/getFunctionsStatus>`_.
 
         Returns:
             FunctionsStatus: A function activation status.
