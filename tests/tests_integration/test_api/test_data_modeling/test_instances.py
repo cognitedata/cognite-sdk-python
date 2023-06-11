@@ -62,24 +62,28 @@ class TestInstancesAPI:
             limit=-1,
             instance_type="node",
             sources=view_id,
-            sort=dm.InstanceSort([view_id.space, view_id.identifier, "name"]),
+            sort=dm.InstanceSort([view_id.space, view_id.as_property_identifier(), "name"]),
         )
 
         # Assert
         assert (
-            sorted(person_nodes, key=lambda v: v.properties[view_id.space][view_id.identifier]["name"]) == person_nodes
+            sorted(person_nodes, key=lambda v: v.properties[view_id.space][view_id.as_property_identifier()]["name"])
+            == person_nodes
         )
 
     def test_list_person_filtering(self, cognite_client: CogniteClient, person_view: dm.View):
         # Act
         view_id = person_view.as_reference()
         f = dm.filters
-        born_before_1950 = f.Range([view_id.space, view_id.identifier, "birthYear"], lt=1950)
+        born_before_1950 = f.Range([view_id.space, view_id.as_property_identifier(), "birthYear"], lt=1950)
         person_nodes = cognite_client.data_modeling.instances.list(
             limit=-1, instance_type="node", sources=view_id, filter=born_before_1950
         )
 
-        assert all(person.properties[view_id.space][view_id.identifier]["birthYear"] < 1950 for person in person_nodes)
+        assert all(
+            person.properties[view_id.space][view_id.as_property_identifier()]["birthYear"] < 1950
+            for person in person_nodes
+        )
 
     def test_apply_retrieve_and_delete(self, cognite_client: CogniteClient, person_view: dm.View):
         # Arrange

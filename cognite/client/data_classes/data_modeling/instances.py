@@ -244,7 +244,7 @@ class Node(Instance):
             external_id=self.external_id,
             existing_version=existing_version,
             sources=[
-                NodeOrEdgeData(source=source, properties=space_properties[source.identifier])  # type: ignore[arg-type]
+                NodeOrEdgeData(source=source, properties=space_properties[source.as_property_identifier()])  # type: ignore[arg-type]
                 for space_properties in self.properties.values()
             ]
             if self.properties
@@ -437,7 +437,7 @@ class Edge(Instance):
             end_node=self.end_node,
             existing_version=existing_version or None,
             sources=[
-                NodeOrEdgeData(source=source, properties=space_properties[source.identifier])  # type: ignore[arg-type]
+                NodeOrEdgeData(source=source, properties=space_properties[source.as_property_identifier()])  # type: ignore[arg-type]
                 for space_properties in self.properties.values()  # type: ignore[union-attr]
             ]
             or None,

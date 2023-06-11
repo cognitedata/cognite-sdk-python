@@ -105,17 +105,15 @@ class EdgeId(InstanceId):
 class ContainerId(DataModelingId):
     _type = "container"
 
-    @property
-    def identifier(self) -> str:
-        raise NotImplementedError
+    def as_property_identifier(self) -> str:
+        return self.external_id
 
 
 @dataclass
 class ViewId(VersionedDataModelingId):
     _type = "view"
 
-    @property
-    def identifier(self) -> str:
+    def as_property_identifier(self) -> str:
         return f"{self.external_id}/{self.version}"
 
 
