@@ -295,9 +295,11 @@ class EdgeApply(InstanceApply):
     """An Edge. This is the write version of the edge.
 
     Args:
-        space (str): The workspace for the edge.a unique identifier for the space.
+        space (str): The workspace for the edge, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the edge.
         type (DirectRelationReference): The type of edge.
+        start_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
+        end_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
         existing_version (int): Fail the ingestion request if the node's version is greater than or equal to this value.
                                 If no existingVersion is specified, the ingestion will always overwrite any
                                 existing data for the edge (for the specified container or edge). If existingVersion is
@@ -306,8 +308,6 @@ class EdgeApply(InstanceApply):
                                 then the item will be skipped instead of failing the ingestion request.
         sources (list[NodeOrEdgeData]): List of source properties to write. The properties are from the edge and/or
                         container the container(s) making up this node.
-        start_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
-        end_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
     """
 
     def __init__(
@@ -347,6 +347,50 @@ class EdgeApply(InstanceApply):
         instance.start_node = DirectRelationReference.load(data["startNode"])
         instance.end_node = DirectRelationReference.load(data["endNode"])
         return instance
+
+    @classmethod
+    def create(
+        cls,
+        space: str,
+        external_id: str,
+        type: str,
+        start_node: str,
+        end_node: str,
+        existing_version: int = None,
+        sources: list[NodeOrEdgeData] = None,
+    ) -> EdgeApply:
+        """
+        This is a convenience factory method for creating an edge for writing. It assumes that the edge and its
+        nodes are from the same space.
+
+
+        Args:
+            space (str): The workspace for the edge, a unique identifier for the space. This is also used for the start, end, and type.
+            external_id (str): Combined with the space is the unique identifier of the edge.
+            type (str): The external id of the type, typically on the format 'TypeName.typeField'. For example, Person.roles.
+            start_node (str): The external id of the start node. Space is assumed to be equal to the edge.
+            end_node (str): The external id of the end node. Space is assumed to be equal to the edge.
+            existing_version (int): Fail the ingestion request if the node's version is greater than or equal to this value.
+                                    If no existingVersion is specified, the ingestion will always overwrite any
+                                    existing data for the edge (for the specified container or edge). If existingVersion is
+                                    set to 0, the upsert will behave as an insert, so it will fail the bulk if the
+                                    item already exists. If skipOnVersionConflict is set on the ingestion request,
+                                    then the item will be skipped instead of failing the ingestion request.
+            sources (list[NodeOrEdgeData]): List of source properties to write. The properties are from the edge and/or
+                            container the container(s) making up this node.
+
+        Returns:
+            An ApplyEdge
+        """
+        return cls(
+            space,
+            external_id,
+            DirectRelationReference(space, type),
+            DirectRelationReference(space, start_node),
+            DirectRelationReference(space, end_node),
+            existing_version,
+            sources,
+        )
 
 
 class Edge(Instance):
