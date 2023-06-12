@@ -11,7 +11,7 @@ from cognite.client.data_classes.data_modeling.ids import (
     EdgeId,
     NodeId,
     ViewId,
-    load_identifier,
+    _load_identifier,
 )
 from cognite.client.data_classes.data_modeling.instances import (
     Edge,
@@ -264,10 +264,10 @@ class InstancesAPI(APIClient):
 
         identifiers = []
         if nodes_seq:
-            node_ids = load_identifier(nodes_seq, "node")
+            node_ids = _load_identifier(nodes_seq, "node")
             identifiers.extend(node_ids._identifiers)
         if edges_seq:
-            edge_ids = load_identifier(edges_seq, "node")
+            edge_ids = _load_identifier(edges_seq, "node")
             identifiers.extend(edge_ids._identifiers)
 
         return DataModelingIdentifierSequence(identifiers, is_singleton=False)

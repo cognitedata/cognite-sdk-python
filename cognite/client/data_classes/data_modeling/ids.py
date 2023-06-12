@@ -135,7 +135,7 @@ EdgeIdentifier = Union[EdgeId, Tuple[str, str, str]]
 Id = Union[Tuple[str, str], Tuple[str, str, str], DataModelingId, VersionedDataModelingId, NodeId, EdgeId, InstanceId]
 
 
-def load_identifier(
+def _load_identifier(
     ids: Id | Sequence[Id], id_type: Literal["container", "view", "data_model", "node", "edge", "all"]
 ) -> DataModelingIdentifierSequence:
     is_sequence = isinstance(ids, Sequence) and not (isinstance(ids, tuple) and isinstance(ids[0], str))
