@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Iterator, List, Literal, Sequence, Union,
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import INSTANCES_LIST_LIMIT_DEFAULT
+from cognite.client.data_classes._base import CogniteResourceList
 from cognite.client.data_classes.data_modeling.filters import Filter
 from cognite.client.data_classes.data_modeling.ids import (
     EdgeId,
@@ -18,8 +19,6 @@ from cognite.client.data_classes.data_modeling.instances import (
     EdgeApplyResult,
     EdgeApplyResultList,
     EdgeList,
-    InstanceApplyResultList,
-    InstanceList,
     InstancesApplyResult,
     InstancesDeleteResult,
     InstanceSort,
@@ -36,6 +35,21 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
+class _NodeOrEdgeList(CogniteResourceList):
+    _RESOURCE = (Node, Edge)  # type: ignore[assignment]
+
+    @classmethod
+    def _load(cls, resource_list: list[dict[str, Any]] | str, cognite_client: CogniteClient = None) -> _NodeOrEdgeList:
+        resource_list = json.loads(resource_list) if isinstance(resource_list, str) else resource_list
+        resources: list[Node | Edge] = [
+            Node.load(data) if data["instanceType"] == "node" else Edge.load(data) for data in resource_list
+        ]
+        return cls(resources, None)
+
+    def as_ids(self) -> list[NodeId | EdgeId]:
+        return [instance.as_id() for instance in self]
+
+
 class _NodeOrEdgeResourceAdapter:
     @classmethod
     def _load(cls, data: str | dict, cognite_client: CogniteClient = None) -> Node | Edge:
@@ -43,6 +57,24 @@ class _NodeOrEdgeResourceAdapter:
         if data["instanceType"] == "node":
             return Node.load(data)
         return Edge.load(data)
+
+
+class _NodeOrEdgeApplyResultList(CogniteResourceList):
+    _RESOURCE = (NodeApplyResult, EdgeApplyResult)  # type: ignore[assignment]
+
+    @classmethod
+    def _load(
+        cls, resource_list: list[dict[str, Any]] | str, cognite_client: CogniteClient = None
+    ) -> _NodeOrEdgeApplyResultList:
+        resource_list = json.loads(resource_list) if isinstance(resource_list, str) else resource_list
+        resources: list[NodeApplyResult | EdgeApplyResult] = [
+            NodeApplyResult.load(data) if data["instanceType"] == "node" else EdgeApplyResult.load(data)
+            for data in resource_list
+        ]
+        return cls(resources, None)
+
+    def as_ids(self) -> list[NodeId | EdgeId]:
+        return [result.as_id() for result in self]
 
 
 class _NodeOrEdgeApplyResultAdapter:
@@ -140,7 +172,7 @@ class InstancesAPI(APIClient):
             sort (list[InstanceSort | dict] | InstanceSort | dict): How you want the listed instances information ordered.
             filter (dict | Filter): Advanced filtering of instances.
         Yields:
-            Instance | InstanceList: yields Instance one by one if chunk_size is not specified, else InstanceList objects.
+            Edge | Node | EdgeList | NodeList: yields Instance one by one if chunk_size is not specified, else NodeList/EdgeList objects.
         """
         other_params = self._create_other_params(
             include_typing=include_typing, instance_type=instance_type, sort=sort, sources=sources
@@ -204,7 +236,7 @@ class InstancesAPI(APIClient):
         )
 
         res = self._retrieve_multiple(
-            list_cls=InstanceList,
+            list_cls=_NodeOrEdgeList,
             resource_cls=_NodeOrEdgeResourceAdapter,  # type: ignore[type-var]
             identifiers=identifiers,
             other_params=other_params,
@@ -349,7 +381,7 @@ class InstancesAPI(APIClient):
 
         res = self._create_multiple(
             items=(*nodes, *edges),
-            list_cls=InstanceApplyResultList,
+            list_cls=_NodeOrEdgeApplyResultList,
             resource_cls=_NodeOrEdgeApplyResultAdapter,  # type: ignore[type-var]
             extra_body_fields=other_parameters,
             input_resource_cls=_NodeOrEdgeApplyAdapter,  # type: ignore[arg-type]
@@ -404,7 +436,7 @@ class InstancesAPI(APIClient):
             filter (dict | Filter): Advnanced filtering of instances.
 
         Returns:
-            InstanceList: List of requested instances
+            Union[EdgeList, NodeList]: List of requested instances
 
         Examples:
 

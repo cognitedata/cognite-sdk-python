@@ -18,7 +18,7 @@ from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive,
 
 if TYPE_CHECKING:
 
-    from cognite.client import CogniteClient
+    pass
 PropertyValue = Union[str, int, float, bool, dict, List[str], List[int], List[float], List[bool], List[dict]]
 Space = str
 PropertyIdentifier = str
@@ -506,73 +506,32 @@ class EdgeApplyResult(InstanceApplyResult):
         return EdgeId(space=self.space, external_id=self.external_id)
 
 
-class NodeApplyList(CogniteResourceList):
-    _RESOURCE = NodeApply
-
-
-class NodeApplyResultList(CogniteResourceList):
+class NodeApplyResultList(CogniteResourceList[NodeApplyResult]):
     _RESOURCE = NodeApplyResult
 
     def as_ids(self) -> list[NodeId]:
         return [result.as_id() for result in self]
 
 
-class NodeList(CogniteResourceList):
+class NodeList(CogniteResourceList[Node]):
     _RESOURCE = Node
 
     def as_ids(self) -> list[NodeId]:
         return [node.as_id() for node in self]
 
 
-class EdgeApplyList(CogniteResourceList):
-    _RESOURCE = EdgeApply
-
-
-class EdgeApplyResultList(CogniteResourceList):
+class EdgeApplyResultList(CogniteResourceList[EdgeApplyResult]):
     _RESOURCE = EdgeApplyResult
 
     def as_ids(self) -> list[EdgeId]:
         return [edge.as_id() for edge in self]
 
 
-class EdgeList(CogniteResourceList):
+class EdgeList(CogniteResourceList[Edge]):
     _RESOURCE = Edge
 
     def as_ids(self) -> list[EdgeId]:
         return [edge.as_id() for edge in self]
-
-
-class InstanceApplyResultList(CogniteResourceList):
-    _RESOURCE = (NodeApplyResult, EdgeApplyResult)  # type: ignore[assignment]
-
-    @classmethod
-    def _load(
-        cls, resource_list: list[dict[str, Any]] | str, cognite_client: CogniteClient = None
-    ) -> InstanceApplyResultList:
-        resource_list = json.loads(resource_list) if isinstance(resource_list, str) else resource_list
-        resources: list[NodeApplyResult | EdgeApplyResult] = [
-            NodeApplyResult.load(data) if data["instanceType"] == "node" else EdgeApplyResult.load(data)
-            for data in resource_list
-        ]
-        return cls(resources, None)
-
-    def as_ids(self) -> list[NodeId | EdgeId]:
-        return [result.as_id() for result in self]
-
-
-class InstanceList(CogniteResourceList):
-    _RESOURCE = (Node, Edge)  # type: ignore[assignment]
-
-    @classmethod
-    def _load(cls, resource_list: list[dict[str, Any]] | str, cognite_client: CogniteClient = None) -> InstanceList:
-        resource_list = json.loads(resource_list) if isinstance(resource_list, str) else resource_list
-        resources: list[Node | Edge] = [
-            Node.load(data) if data["instanceType"] == "node" else Edge.load(data) for data in resource_list
-        ]
-        return cls(resources, None)
-
-    def as_ids(self) -> list[NodeId | EdgeId]:
-        return [instance.as_id() for instance in self]
 
 
 class InstanceSort(CogniteFilter):
