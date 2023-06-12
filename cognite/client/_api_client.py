@@ -398,11 +398,11 @@ class APIClient:
                         params["sort"] = sort
                     res = self._get(url_path=url_path or resource_path, params=params, headers=headers)
                 elif method == "POST":
-                    body = {"limit": current_limit, "cursor": next_cursor, **(other_params or {})}
+                    body: dict[str, Any] = {"limit": current_limit, "cursor": next_cursor, **(other_params or {})}
                     if filter:
-                        body["filter"] = filter  # type: ignore[assignment]
+                        body["filter"] = filter
                     if sort is not None:
-                        body["sort"] = sort  # type: ignore[assignment]
+                        body["sort"] = sort
                     res = self._post(url_path=url_path or resource_path + "/list", json=body, headers=headers)
                 else:
                     raise ValueError(f"_list_generator parameter `method` must be GET or POST, not {method}")
