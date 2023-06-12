@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Iterator, List, Literal, Sequence, Union,
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import INSTANCES_LIST_LIMIT_DEFAULT
+from cognite.client.data_classes._base import CogniteResourceList
 from cognite.client.data_classes.data_modeling.filters import Filter
 from cognite.client.data_classes.data_modeling.ids import (
     EdgeId,
@@ -18,7 +19,6 @@ from cognite.client.data_classes.data_modeling.instances import (
     EdgeApplyResult,
     EdgeApplyResultList,
     EdgeList,
-    InstanceApplyResultList,
     InstanceList,
     InstancesApplyResult,
     InstancesDeleteResult,
@@ -43,6 +43,24 @@ class _NodeOrEdgeResourceAdapter:
         if data["instanceType"] == "node":
             return Node.load(data)
         return Edge.load(data)
+
+
+class _NodeOrEdgeApplyResultList(CogniteResourceList):
+    _RESOURCE = (NodeApplyResult, EdgeApplyResult)  # type: ignore[assignment]
+
+    @classmethod
+    def _load(
+        cls, resource_list: list[dict[str, Any]] | str, cognite_client: CogniteClient = None
+    ) -> _NodeOrEdgeApplyResultList:
+        resource_list = json.loads(resource_list) if isinstance(resource_list, str) else resource_list
+        resources: list[NodeApplyResult | EdgeApplyResult] = [
+            NodeApplyResult.load(data) if data["instanceType"] == "node" else EdgeApplyResult.load(data)
+            for data in resource_list
+        ]
+        return cls(resources, None)
+
+    def as_ids(self) -> list[NodeId | EdgeId]:
+        return [result.as_id() for result in self]
 
 
 class _NodeOrEdgeApplyResultAdapter:
@@ -340,7 +358,7 @@ class InstancesAPI(APIClient):
 
         res = self._create_multiple(
             items=(*nodes, *edges),
-            list_cls=InstanceApplyResultList,
+            list_cls=_NodeOrEdgeApplyResultList,
             resource_cls=_NodeOrEdgeApplyResultAdapter,  # type: ignore[type-var]
             extra_body_fields=other_parameters,
         )

@@ -538,24 +538,6 @@ class EdgeList(CogniteResourceList):
         return [edge.as_id() for edge in self]
 
 
-class InstanceApplyResultList(CogniteResourceList):
-    _RESOURCE = (NodeApplyResult, EdgeApplyResult)  # type: ignore[assignment]
-
-    @classmethod
-    def _load(
-        cls, resource_list: list[dict[str, Any]] | str, cognite_client: CogniteClient = None
-    ) -> InstanceApplyResultList:
-        resource_list = json.loads(resource_list) if isinstance(resource_list, str) else resource_list
-        resources: list[NodeApplyResult | EdgeApplyResult] = [
-            NodeApplyResult.load(data) if data["instanceType"] == "node" else EdgeApplyResult.load(data)
-            for data in resource_list
-        ]
-        return cls(resources, None)
-
-    def as_ids(self) -> list[NodeId | EdgeId]:
-        return [result.as_id() for result in self]
-
-
 class InstanceList(CogniteResourceList):
     _RESOURCE = (Node, Edge)  # type: ignore[assignment]
 
