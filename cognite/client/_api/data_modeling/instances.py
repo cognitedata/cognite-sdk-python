@@ -19,7 +19,6 @@ from cognite.client.data_classes.data_modeling.instances import (
     EdgeApplyResult,
     EdgeApplyResultList,
     EdgeList,
-    InstanceList,
     InstancesApplyResult,
     InstancesDeleteResult,
     InstanceSort,
@@ -34,6 +33,21 @@ from cognite.client.utils._identifier import DataModelingIdentifierSequence
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
+
+
+class _NodeOrEdgeList(CogniteResourceList):
+    _RESOURCE = (Node, Edge)  # type: ignore[assignment]
+
+    @classmethod
+    def _load(cls, resource_list: list[dict[str, Any]] | str, cognite_client: CogniteClient = None) -> _NodeOrEdgeList:
+        resource_list = json.loads(resource_list) if isinstance(resource_list, str) else resource_list
+        resources: list[Node | Edge] = [
+            Node.load(data) if data["instanceType"] == "node" else Edge.load(data) for data in resource_list
+        ]
+        return cls(resources, None)
+
+    def as_ids(self) -> list[NodeId | EdgeId]:
+        return [instance.as_id() for instance in self]
 
 
 class _NodeOrEdgeResourceAdapter:
@@ -149,7 +163,7 @@ class InstancesAPI(APIClient):
             sort (list[InstanceSort | dict] | InstanceSort | dict): How you want the listed instances information ordered.
             filter (dict | Filter): Advanced filtering of instances.
         Yields:
-            Instance | InstanceList: yields Instance one by one if chunk_size is not specified, else InstanceList objects.
+            Edge | Node | EdgeList | NodeList: yields Instance one by one if chunk_size is not specified, else NodeList/EdgeList objects.
         """
         other_params = self._create_other_params(
             include_typing=include_typing, instance_type=instance_type, sort=sort, sources=sources
@@ -213,7 +227,7 @@ class InstancesAPI(APIClient):
         )
 
         res = self._retrieve_multiple(
-            list_cls=InstanceList,
+            list_cls=_NodeOrEdgeList,
             resource_cls=_NodeOrEdgeResourceAdapter,  # type: ignore[type-var]
             identifiers=identifiers,
             other_params=other_params,

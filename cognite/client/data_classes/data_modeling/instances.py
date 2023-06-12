@@ -18,7 +18,7 @@ from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive,
 
 if TYPE_CHECKING:
 
-    from cognite.client import CogniteClient
+    pass
 PropertyValue = Union[str, int, float, bool, dict, List[str], List[int], List[float], List[bool], List[dict]]
 Space = str
 PropertyIdentifier = str
@@ -528,21 +528,6 @@ class EdgeList(CogniteResourceList[Edge]):
 
     def as_ids(self) -> list[EdgeId]:
         return [edge.as_id() for edge in self]
-
-
-class InstanceList(CogniteResourceList[Instance]):
-    _RESOURCE = (Node, Edge)  # type: ignore[assignment]
-
-    @classmethod
-    def _load(cls, resource_list: list[dict[str, Any]] | str, cognite_client: CogniteClient = None) -> InstanceList:
-        resource_list = json.loads(resource_list) if isinstance(resource_list, str) else resource_list
-        resources: list[Node | Edge] = [
-            Node.load(data) if data["instanceType"] == "node" else Edge.load(data) for data in resource_list
-        ]
-        return cls(resources, None)
-
-    def as_ids(self) -> list[NodeId | EdgeId]:
-        return [instance.as_id() for instance in self]
 
 
 class InstanceSort(CogniteFilter):
