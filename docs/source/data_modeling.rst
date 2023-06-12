@@ -111,6 +111,16 @@ Apply instances
 ^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.apply
 
+
+Search instances
+^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.search
+
+Aggregate instances
+^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.aggregate
+
+
 Delete instances
 ^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.delete

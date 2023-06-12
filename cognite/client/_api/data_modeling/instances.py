@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any, Iterator, List, Literal, Sequence, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Literal, Sequence, Type, Union, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import INSTANCES_LIST_LIMIT_DEFAULT
 from cognite.client.data_classes._base import CogniteResourceList
+from cognite.client.data_classes.data_modeling.aggregations import Aggregation
 from cognite.client.data_classes.data_modeling.filters import Filter
 from cognite.client.data_classes.data_modeling.ids import (
     EdgeId,
@@ -16,6 +17,7 @@ from cognite.client.data_classes.data_modeling.ids import (
 )
 from cognite.client.data_classes.data_modeling.instances import (
     Edge,
+    EdgeAggregationResultList,
     EdgeApply,
     EdgeApplyResult,
     EdgeApplyResultList,
@@ -25,6 +27,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     InstanceSort,
     InstancesResult,
     Node,
+    NodeAggregationResultList,
     NodeApply,
     NodeApplyResult,
     NodeApplyResultList,
@@ -484,6 +487,200 @@ class InstancesAPI(APIClient):
             nodes=NodeApplyResultList([item for item in res if isinstance(item, NodeApplyResult)]),
             edges=EdgeApplyResultList([item for item in res if isinstance(item, EdgeApplyResult)]),
         )
+
+    @overload
+    def search(
+        self,
+        view: ViewId,
+        query: str,
+        instance_type: Literal["node"] = "node",
+        properties: list[str] | None = None,
+        filter: Filter | dict | None = None,
+        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
+    ) -> NodeList:
+        ...
+
+    @overload
+    def search(
+        self,
+        view: ViewId,
+        query: str,
+        instance_type: Literal["edge"],
+        properties: list[str] | None = None,
+        filter: Filter | dict | None = None,
+        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
+    ) -> EdgeList:
+        ...
+
+    def search(
+        self,
+        view: ViewId,
+        query: str,
+        instance_type: Literal["node", "edge"] = "node",
+        properties: list[str] | None = None,
+        filter: Filter | dict | None = None,
+        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
+    ) -> NodeList | EdgeList:
+        """`Search instances <https://developer.cognite.com/api/v1/#tag/Instances/operation/searchInstances>`_
+
+        Args:
+            view (ViewId): View to search in.
+            query (str): Query string that will be parsed and used for search.
+            instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
+            properties (list[str]): Optional array of properties you want to search through.
+                                    If you do not specify one or more properties, the service will
+                                    search all text fields within the view.
+            filter (dict | Filter): Advnanced filtering of instances.
+            limit (int, optional): Maximum number of instances to return. Default to 1000. Set to -1, float("inf") or None
+                to return all items.
+
+        Returns:
+            EdgeList | NodeList: Search result with matching nodes or edges.
+
+        Examples:
+
+            Search for Arnold in the person view in the name property:
+
+                >>> from cognite.client import CogniteClient
+                >>> import cognite.client.data_classes.data_modeling as dm
+                >>> c = CogniteClient()
+                >>> res = c.data_modeling.instances.search(dm.ViewId("mySpace", "PersonView", "v1"), query="Arnold", properties=["name"])
+
+            Search for Quentin in the person view in the name property, but only born before 1970:
+
+                >>> from cognite.client import CogniteClient
+                >>> import cognite.client.data_classes.data_modeling as dm
+                >>> c = CogniteClient()
+                >>> f = dm.filters
+                >>>> born_after_1970 = f.Range(["mySpace", "PersonView/v1", "birthYear"], gt=1970)
+                >>> res = c.data_modeling.instances.search(dm.ViewId("mySpace", "PersonView", "v1"),
+                ... query="Quentin", properties=["name"], filter=born_after_1970)
+
+        """
+        list_cls: Union[Type[NodeList], Type[EdgeList]] = NodeList
+        if instance_type == "node":
+            list_cls = NodeList
+        elif instance_type == "edge":
+            list_cls = EdgeList
+        else:
+            raise ValueError(f"Invalid instance type: {instance_type}")
+
+        body = {"view": view.dump(camel_case=True), "query": query, "instanceType": instance_type, "limit": limit}
+        if properties:
+            body["properties"] = properties
+        if filter:
+            body["filter"] = filter.dump() if isinstance(filter, Filter) else filter
+
+        res = self._post(url_path=self._RESOURCE_PATH + "/search", json=body)
+        return list_cls._load(res.json()["items"], cognite_client=None)
+
+    @overload
+    def aggregate(
+        self,
+        view: ViewId,
+        instance_type: Literal["node"] = "node",
+        query: str | None = None,
+        aggregates: Aggregation | dict | list[Aggregation | dict] | None = None,
+        group_by: list[str] | None = None,
+        properties: list[str] | None = None,
+        filter: Filter | dict | None = None,
+        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
+    ) -> NodeAggregationResultList:
+        ...
+
+    @overload
+    def aggregate(
+        self,
+        view: ViewId,
+        instance_type: Literal["edge"],
+        query: str | None = None,
+        aggregates: Aggregation | dict | list[Aggregation | dict] | None = None,
+        group_by: list[str] | None = None,
+        properties: list[str] | None = None,
+        filter: Filter | dict | None = None,
+        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
+    ) -> EdgeAggregationResultList:
+        ...
+
+    def aggregate(
+        self,
+        view: ViewId,
+        instance_type: Literal["node", "edge"] = "node",
+        query: str | None = None,
+        aggregates: Aggregation | dict | list[Aggregation | dict] | None = None,
+        group_by: list[str] | None = None,
+        properties: list[str] | None = None,
+        filter: Filter | dict | None = None,
+        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
+    ) -> NodeAggregationResultList | EdgeAggregationResultList:
+        """`Aggregate data across nodes/edges <https://developer.cognite.com/api/v1/#tag/Instances/operation/aggregateInstances>`_
+
+        Args:
+            view (ViewId): View to to aggregate over.
+            query (str): Query string that will be parsed and used for search.
+            instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
+            aggregates (Aggregation | list[Aggregation]):  The properties to aggregate over.
+            group_by (list[str]): The selection of fields to group the results by when doing aggregations.
+                                  You can specify up to 5 items to group by. When you do not specify any aggregates,
+                                  the fields listed in the groupBy clause will return
+                                  the unique values stored for each field
+            properties (list[str]): Optional array of properties you want to search through.
+                                    If you do not specify one or more properties, the service will
+                                    search all text fields within the view.
+            filter (dict | Filter): Advnanced filtering of instances.
+            limit (int, optional): Maximum number of instances to return. Default to 1000. Set to -1, float("inf") or None
+                to return all items.
+
+        Returns:
+            NodeAggregationResultList | EdgeAggregationResultList: Node or edge aggregation results.
+
+        Examples:
+
+            Find the number of people born per decade:
+
+                >>> from cognite.client import CogniteClient
+                >>> import cognite.client.data_classes.data_modeling as dm
+                >>> c = CogniteClient()
+                >>> a = dm.aggregations
+                >>> birth_by_decade = a.Histogram("birthYear", interval=10.0)
+                >>> res = c.data_modeling.instances.aggregate(view_id, aggregates=[birth_by_decade])
+
+            Get the average run time in minutes for movies grouped by release year:
+
+                >>> from cognite.client import CogniteClient
+                >>> import cognite.client.data_classes.data_modeling as dm
+                >>> c = CogniteClient()
+                >>> a = dm.aggregations
+                >>> avg_run_time = a.Avg("runTimeMinutes")
+                >>> res = c.data_modeling.instances.aggregate(view_id, aggregates=[avg_run_time], group_by=["releaseYear"])
+
+        """
+        list_cls: Union[Type[NodeAggregationResultList], Type[EdgeAggregationResultList]] = NodeAggregationResultList
+        if instance_type == "node":
+            list_cls = NodeAggregationResultList
+        elif instance_type == "edge":
+            list_cls = EdgeAggregationResultList
+        else:
+            raise ValueError(f"Invalid instance type: {instance_type}")
+        body: Dict[str, Any] = {"view": view.dump(camel_case=True), "instanceType": instance_type, "limit": limit}
+        if query:
+            body["query"] = query
+        if aggregates:
+            if isinstance(aggregates, (Aggregation, dict)):
+                body["aggregates"] = [
+                    aggregates.dump(camel_case=True) if isinstance(aggregates, Aggregation) else aggregates
+                ]
+            else:
+                body["aggregates"] = [
+                    agg.dump(camel_case=True) if isinstance(agg, Aggregation) else agg for agg in aggregates
+                ]
+        if group_by:
+            body["groupBy"] = group_by
+        if filter:
+            body["filter"] = filter.dump() if isinstance(filter, Filter) else filter
+
+        res = self._post(url_path=self._RESOURCE_PATH + "/aggregate", json=body)
+        return list_cls._load(res.json()["items"], cognite_client=None)
 
     @overload
     def list(

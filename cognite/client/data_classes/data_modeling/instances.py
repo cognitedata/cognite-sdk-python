@@ -30,6 +30,7 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.data_modeling._core import DataModelingResource
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
+from cognite.client.data_classes.data_modeling.aggregations import AggregatedValue
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelationReference,
 )
@@ -303,6 +304,91 @@ class InstanceApplyResult(InstanceCore):
         self.was_modified = was_modified
         self.last_updated_time = last_updated_time
         self.created_time = created_time
+
+
+class InstanceAggregationResult(DataModelingResource):
+    """A node or edge. This represents the update on the instance.
+
+    Args:
+        aggregates (list[AggregatedValue]) : List of aggregated values.
+        group (dict[str, str | int | float | bool]) : The grouping used for the aggregation.
+        instance_type (Literal["node", "edge"]) : The type of instance.
+    """
+
+    def __init__(
+        self,
+        aggregates: list[AggregatedValue],
+        group: dict[str, str | int | float | bool],
+        instance_type: Literal["node", "edge"],
+    ):
+        self.aggregates = aggregates
+        self.group = group
+        self.instance_type = instance_type
+
+    @classmethod
+    def load(cls: Type[T_Instance_Aggregation_Result], data: dict | str) -> T_Instance_Aggregation_Result:
+        """
+        Loads an instance from a json string or dictionary.
+
+        Args:
+            data (dict | str): The json string or dictionary.
+
+        Returns:
+            An instance.
+
+        """
+        data = json.loads(data) if isinstance(data, str) else data
+
+        return cls(  # type: ignore[call-arg]
+            aggregates=[AggregatedValue.load(agg) for agg in data["aggregates"]],
+            group=cast(Dict[str, Union[str, int, float, bool]], data.get("group")),
+        )
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        """
+        Dumps the instance to a dictionary.
+
+        Args:
+            camel_case (bool): Whether to convert the keys to camel case.
+
+        Returns:
+            A dictionary.
+
+        """
+        return {
+            "aggregates": [agg.dump(camel_case) for agg in self.aggregates],
+            "group": self.group,
+            ("instanceType" if camel_case else "instance_type"): self.instance_type,
+        }
+
+
+T_Instance_Aggregation_Result = TypeVar("T_Instance_Aggregation_Result", bound=InstanceAggregationResult)
+
+
+class NodeAggregationResult(InstanceAggregationResult):
+    """A node. This represents the aggregation on the node.
+
+    Args:
+        aggregates (list[AggregatedValue]): List of aggregated values.
+        group (dict[str, str | int | float | bool]): The grouping used for the aggregation.
+
+    """
+
+    def __init__(self, aggregates: list[AggregatedValue], group: dict[str, str | int | float | bool]):
+        super().__init__(aggregates, group, "node")
+
+
+class EdgeAggregationResult(InstanceAggregationResult):
+    """This represents the aggregation on the edge.
+
+    Args:
+        aggregates (list[AggregatedValue]): List of aggregated values.
+        group (dict[str, str | int | float | bool]): The grouping used for the aggregation.
+
+    """
+
+    def __init__(self, aggregates: list[AggregatedValue], group: dict[str, str | int | float | bool]):
+        super().__init__(aggregates, group, "edge")
 
 
 class NodeApply(InstanceApply):
@@ -635,6 +721,10 @@ class NodeList(CogniteResourceList[Node]):
         return [node.as_id() for node in self]
 
 
+class NodeAggregationResultList(CogniteResourceList[NodeAggregationResult]):
+    _RESOURCE = NodeAggregationResult
+
+
 class EdgeApplyResultList(CogniteResourceList[EdgeApplyResult]):
     _RESOURCE = EdgeApplyResult
 
@@ -647,6 +737,10 @@ class EdgeList(CogniteResourceList[Edge]):
 
     def as_ids(self) -> list[EdgeId]:
         return [edge.as_id() for edge in self]
+
+
+class EdgeAggregationResultList(CogniteResourceList[EdgeAggregationResult]):
+    _RESOURCE = EdgeAggregationResult
 
 
 class InstanceSort(CogniteFilter):

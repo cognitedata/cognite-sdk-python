@@ -20,6 +20,7 @@ from cognite.client.data_classes.data_modeling import (
     SingleHopConnectionDefinition,
     Space,
     View,
+    aggregations,
     filters,
 )
 from cognite.client.data_classes.data_modeling.filters import Equals
@@ -52,6 +53,11 @@ def person_view(cognite_client: CogniteClient, integration_test_space: Space) ->
 @pytest.fixture()
 def actor_view(cognite_client: CogniteClient, integration_test_space: Space) -> View:
     return cognite_client.data_modeling.views.retrieve((integration_test_space.space, "Actor", "2"))[0]
+
+
+@pytest.fixture()
+def movie_view(cognite_client: CogniteClient, integration_test_space: Space) -> View:
+    return cognite_client.data_modeling.views.retrieve((integration_test_space.space, "Movie", "2"))[0]
 
 
 class TestInstancesAPI:
@@ -349,3 +355,61 @@ class TestInstancesAPI:
         finally:
             # Cleanup
             cognite_client.data_modeling.instances.delete(valid_person.as_id())
+
+    def test_search_node_data(self, cognite_client: CogniteClient, person_view: View) -> None:
+        # Act
+        search_result = cognite_client.data_modeling.instances.search(
+            person_view.as_id(), query="Quentin", properties=["name"]
+        )
+
+        # Assert
+        assert len(search_result) == 1
+        assert search_result[0].external_id == "person:quentin_tarantino"
+
+    def test_search_node_data_with_invalid_property(self, cognite_client: CogniteClient, person_view: View) -> None:
+        # Act
+        with pytest.raises(CogniteAPIError) as error:
+            cognite_client.data_modeling.instances.search(
+                person_view.as_id(), query="Quentin", properties=["invalidProperty"]
+            )
+
+        # Assert
+        assert "Unknown property" in error.value.message
+
+    def test_search_node_data_with_filtering(self, cognite_client: CogniteClient, person_view: View) -> None:
+        # Act
+        view_id = person_view.as_id()
+        f = filters
+        born_after_2000 = f.Range([view_id.space, view_id.as_source_identifier(), "birthYear"], gt=2000)
+
+        # Act
+        search_result = cognite_client.data_modeling.instances.search(
+            view_id, query="Quentin", properties=["name"], filter=born_after_2000
+        )
+
+        # Assert
+        assert len(search_result) == 0
+
+    def test_aggregate_histogram_across_nodes(self, cognite_client: CogniteClient, person_view: View) -> None:
+        # Arrange
+        view_id = person_view.as_id()
+        birth_by_decade = aggregations.Histogram("birthYear", interval=10.0)
+
+        # Act
+        histogram = cognite_client.data_modeling.instances.aggregate(view_id, aggregates=[birth_by_decade])
+
+        # Assert
+        assert len(histogram) == 1
+
+    def test_aggregate_with_grouping(self, cognite_client: CogniteClient, movie_view: View) -> None:
+        # Arrange
+        view_id = movie_view.as_id()
+        count_movies = aggregations.Avg("runTimeMinutes")
+
+        # Act
+        counts = cognite_client.data_modeling.instances.aggregate(
+            view_id, aggregates=[count_movies], group_by=["releaseYear"]
+        )
+
+        # Assert
+        assert len(counts)
