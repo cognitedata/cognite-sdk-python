@@ -502,10 +502,6 @@ class EdgeApplyResult(InstanceApplyResult):
         return EdgeId(space=self.space, external_id=self.external_id)
 
 
-class NodeApplyList(CogniteResourceList):
-    _RESOURCE = NodeApply
-
-
 class NodeApplyResultList(CogniteResourceList):
     _RESOURCE = NodeApplyResult
 
@@ -518,10 +514,6 @@ class NodeList(CogniteResourceList):
 
     def as_ids(self) -> list[NodeId]:
         return [node.as_id() for node in self]
-
-
-class EdgeApplyList(CogniteResourceList):
-    _RESOURCE = EdgeApply
 
 
 class EdgeApplyResultList(CogniteResourceList):
