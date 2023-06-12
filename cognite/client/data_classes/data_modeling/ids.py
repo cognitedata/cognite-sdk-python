@@ -109,7 +109,7 @@ class EdgeId(InstanceId):
 class ContainerId(DataModelingId):
     _type = "container"
 
-    def as_property_identifier(self) -> str:
+    def as_source_identifier(self) -> str:
         return self.external_id
 
 
@@ -117,7 +117,7 @@ class ContainerId(DataModelingId):
 class ViewId(VersionedDataModelingId):
     _type = "view"
 
-    def as_property_identifier(self) -> str:
+    def as_source_identifier(self) -> str:
         return f"{self.external_id}/{self.version}"
 
 
