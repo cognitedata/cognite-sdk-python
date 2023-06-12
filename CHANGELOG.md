@@ -17,7 +17,7 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [6.4.0] - 2023-06-07
+## [6.4.0] - 2023-06-12
 ### Added
 - Partial support for the instance resource in the Data Modeling API with the implementation 
   `client.data_modeling.instances`, the endpoints `list`, `delete`, `retrieve`, and `apply`

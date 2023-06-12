@@ -418,7 +418,7 @@ class InstancesAPI(APIClient):
                 ... )
                 >>> res = c.data_modeling.instances.apply([person, actor], [person_to_actor])
 
-            Create new edge an automatically create
+            Create new edge an automatically create end nodes.
 
                 >>> from cognite.client import CogniteClient
                 >>> import cognite.client.data_modeling as dm
