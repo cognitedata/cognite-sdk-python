@@ -224,9 +224,20 @@ class InstancesAPI(APIClient):
             InstancesResult: Requested instances.
 
         Examples:
+
+            Delete instances by id:
+
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.data_modeling.instances.retrieve(('node', 'mySpace', 'myNode'))
+
+            Delete nodes an edger using the built in data class
+
+                >>> from cognite.client import CogniteClient
+                >>> import cognite.client.data_modeling as dm
+                >>> c = CogniteClient()
+                >>> c.data_modeling.instances.retrieve(dm.NodeId("mySpace", "myNode"),
+                ...                                    dm.EdgeId("mySpace", "myEdge"))
         """
         identifiers = self._load_node_and_edge_ids(nodes, edges)
         other_params = self._create_other_params(
@@ -294,6 +305,13 @@ class InstancesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> c.data_modeling.instances.delete(("node", "myNode", "mySpace"))
+
+            Delete nodes an edger using the built in data class
+
+                >>> from cognite.client import CogniteClient
+                >>> import cognite.client.data_modeling as dm
+                >>> c = CogniteClient()
+                >>> c.data_modeling.instances.delete(dm.NodeId('mySpace', 'myNode'), dm.EdgeId('mySpace', 'myEdge'))
         """
         identifiers = self._load_node_and_edge_ids(nodes, edges)
         deleted_instances = cast(List, self._delete_multiple(identifiers, wrap_ids=True, returns_items=True))
@@ -366,13 +384,53 @@ class InstancesAPI(APIClient):
 
         Examples:
 
-            Create new node:
+            Create new node without data:
 
                 >>> from cognite.client import CogniteClient
                 >>> import cognite.client.data_modeling as dm
                 >>> c = CogniteClient()
                 >>> nodes = [dm.ApplyNode("mySpace", "myNodeId")]
                 >>> res = c.data_modeling.instances.apply(nodes)
+
+            Create two nodes with data with an one to many edge, and a one to one edge
+
+                >>> from cognite.client import CogniteClient
+                >>> import cognite.client.data_modeling as dm
+                >>> person = dm.NodeApply("mySpace", "person:arnold_schwarzenegger", sources=[
+                ...                        dm.NodeOrEdgeData(
+                ...                               dm.ViewId("mySpace", "PersonView", "v1"),
+                ...                               {"name": "Arnold Schwarzenegger", "birthYear": 1947})
+                ... ])
+                >>> actor = dm.NodeApply("mySpace", "actor:arnold_schwarzenegger", sources=[
+                ...                        dm.NodeOrEdgeData(
+                ...                               dm.ViewId("mySpace", "ActorView", "v1"),
+                ...                               {"wonOscar": False,
+                ...                               # This is a one-to-one edge from actor to person
+                ...                                "person": {"space": "mySpace", "externalId": "person:arnold_schwarzenegger"}})
+                ... ])
+                >>> # This is one to many edge, in this case from Person to role
+                >>> # (a person can have multiple roles, in this model for example Actor and Director)
+                >>> person_to_actor = dm.EdgeApply.create(space="mySpace",
+                ...                                       external_id="relation:arnold_schwarzenegger:actor",
+                ...                                       type="Person.roles",
+                ...                                       start_node="person:arnold_schwarzenegger",
+                ...                                       end_node="actor:arnold_schwarzenegger",
+                ... )
+                >>> res = c.data_modeling.instances.apply([person, actor], [person_to_actor])
+
+            Create new edge an automatically create
+
+                >>> from cognite.client import CogniteClient
+                >>> import cognite.client.data_modeling as dm
+                >>> c = CogniteClient()
+                >>> edge = dm.EdgeApply.create(space="mySpace",
+                ...                            external_id="relation:sylvester_stallone:actor",
+                ...                            type="Person.roles",
+                ...                            start_node="person:sylvester_stallone",
+                ...                            end_node="actor:sylvester_stallone",
+                ... )
+                >>> res = c.data_modeling.instances.apply(edges=edge, auto_create_start_nodes=True, auto_create_end_nodes=True)
+
         """
         other_parameters = {
             "autoCreateStartNodes": auto_create_start_nodes,

@@ -155,8 +155,7 @@ class TestInstancesAPI:
             start_node=dm.DirectRelationReference(space, person.external_id),
             end_node=dm.DirectRelationReference(space, actor.external_id),
         )
-
-        new_nodes: list[dm.InstanceApply] = [person, actor]
+        new_nodes = [person, actor]
         new_edges = [person_to_actor]
 
         # Act
