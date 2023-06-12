@@ -412,7 +412,7 @@ class InstancesAPI(APIClient):
             filter (dict | Filter): Advnanced filtering of instances.
 
         Returns:
-            InstanceList: List of requested instances
+            Union[EdgeList, NodeList]: List of requested instances
 
         Examples:
 

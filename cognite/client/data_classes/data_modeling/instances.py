@@ -502,35 +502,35 @@ class EdgeApplyResult(InstanceApplyResult):
         return EdgeId(space=self.space, external_id=self.external_id)
 
 
-class NodeApplyResultList(CogniteResourceList):
+class NodeApplyResultList(CogniteResourceList[NodeApplyResult]):
     _RESOURCE = NodeApplyResult
 
     def as_ids(self) -> list[NodeId]:
         return [result.as_id() for result in self]
 
 
-class NodeList(CogniteResourceList):
+class NodeList(CogniteResourceList[Node]):
     _RESOURCE = Node
 
     def as_ids(self) -> list[NodeId]:
         return [node.as_id() for node in self]
 
 
-class EdgeApplyResultList(CogniteResourceList):
+class EdgeApplyResultList(CogniteResourceList[EdgeApplyResult]):
     _RESOURCE = EdgeApplyResult
 
     def as_ids(self) -> list[EdgeId]:
         return [edge.as_id() for edge in self]
 
 
-class EdgeList(CogniteResourceList):
+class EdgeList(CogniteResourceList[Edge]):
     _RESOURCE = Edge
 
     def as_ids(self) -> list[EdgeId]:
         return [edge.as_id() for edge in self]
 
 
-class InstanceList(CogniteResourceList):
+class InstanceList(CogniteResourceList[Instance]):
     _RESOURCE = (Node, Edge)  # type: ignore[assignment]
 
     @classmethod
