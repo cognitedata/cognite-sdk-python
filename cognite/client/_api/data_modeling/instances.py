@@ -222,6 +222,7 @@ class InstancesAPI(APIClient):
             include_typing (bool): Whether to return property type information as part of the result.
         Returns:
             InstancesResult: Requested instances.
+
         Examples:
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
@@ -278,12 +279,18 @@ class InstancesAPI(APIClient):
         edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
     ) -> InstancesDeleteResult:
         """`Delete one or more instances <https://docs.cognite.com/api/v1/#tag/Instances/operation/deleteBulk>`_
+
         Args:
-            id (InstanceId | Sequence[InstanceId): The instance identifier(s).
+            nodes (NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Node ids
+            edges (EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Edge ids
+
         Returns:
             The instance(s) which has been deleted. Empty list if nothing was deleted.
+
         Examples:
-            Delete instances by id::
+
+            Delete instances by id:
+
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> c.data_modeling.instances.delete(("node", "myNode", "mySpace"))
