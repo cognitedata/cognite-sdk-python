@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, Any, List, Literal, Type, TypeVar, Union, cast
+from typing import Any, List, Literal, Type, TypeVar, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -16,9 +16,6 @@ from cognite.client.data_classes.data_modeling.data_types import (
 from cognite.client.data_classes.data_modeling.ids import ContainerId, EdgeId, NodeId, ViewId
 from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive, convert_all_keys_to_snake_case
 
-if TYPE_CHECKING:
-
-    pass
 PropertyValue = Union[str, int, float, bool, dict, List[str], List[int], List[float], List[bool], List[dict]]
 Space = str
 PropertyIdentifier = str
@@ -59,9 +56,9 @@ class InstanceApply(InstanceCore):
     """A node or edge. This is the write version of the instance.
 
     Args:
-        instance_type (Literal["node", "edge"]) The type of instance.
         space (str): The workspace for the instance.a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the instance.
+        instance_type (Literal["node", "edge"]) The type of instance.
         existing_version (int): Fail the ingestion request if the node's version is greater than or equal to this value.
                                 If no existingVersion is specified, the ingestion will always overwrite any
                                 existing data for the edge (for the specified container or instance). If existingVersion is
@@ -110,7 +107,6 @@ class Instance(InstanceCore):
     """A node or edge. This is the read version of the instance.
 
     Args:
-        instance_type (Literal["node", "edge"]) The type of instance.
         space (str): The workspace for the instance.a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the instance.
         version (str): DMS version.
@@ -118,6 +114,8 @@ class Instance(InstanceCore):
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         deleted_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
                             Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        instance_type (Literal["node", "edge"]) The type of instance.
+        properties (dict[Space, dict[PropertyIdentifier, dict[str, PropertyValue]]]): Properties of the instance.
     """
 
     def __init__(
@@ -140,6 +138,25 @@ class Instance(InstanceCore):
         self.properties = properties
 
     def as_apply(self, source: ViewId | ContainerId, existing_version: int) -> InstanceApply:
+        """
+        This is a convenience function for converting the instance to an apply instance.
+
+        It makes the simplifying assumption that all properties are from the same view. Note that this
+        is not true in general.
+
+        Args:
+            source (ViewId | ContainerId): The view or container to with all the properties.
+            existing_version (int): Fail the ingestion request if the node's version is greater than or equal to this value.
+                                    If no existingVersion is specified, the ingestion will always overwrite any
+                                    existing data for the edge (for the specified container or instance). If existingVersion is
+                                    set to 0, the upsert will behave as an insert, so it will fail the bulk if the
+                                    item already exists. If skipOnVersionConflict is set on the ingestion request,
+                                    then the item will be skipped instead of failing the ingestion request.
+
+        Returns:
+            An InstanceApply.
+
+        """
         return InstanceApply(
             space=self.space,
             external_id=self.external_id,
@@ -225,7 +242,7 @@ class Node(Instance):
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         deleted_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
                             Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
-        properties
+        properties (dict[Space, dict[PropertyIdentifier, dict[str, PropertyValue]]]): Properties of the node.
     """
 
     def __init__(
@@ -236,12 +253,31 @@ class Node(Instance):
         last_updated_time: int,
         created_time: int,
         deleted_time: int = None,
-        properties: dict[str, dict[str, dict[str, PropertyValue]]] = None,
+        properties: dict[Space, dict[PropertyIdentifier, dict[str, PropertyValue]]] = None,
         **_: dict,
     ):
         super().__init__(space, external_id, version, last_updated_time, created_time, "node", deleted_time, properties)
 
     def as_apply(self, source: ViewId | ContainerId, existing_version: int) -> NodeApply:
+        """
+        This is a convenience function for converting the read to a write node.
+
+        It makes the simplifying assumption that all properties are from the same view. Note that this
+        is not true in general.
+
+        Args:
+            source (ViewId | ContainerId): The view or container to with all the properties.
+            existing_version (int): Fail the ingestion request if the node's version is greater than or equal to this value.
+                                    If no existingVersion is specified, the ingestion will always overwrite any
+                                    existing data for the edge (for the specified container or instance). If existingVersion is
+                                    set to 0, the upsert will behave as an insert, so it will fail the bulk if the
+                                    item already exists. If skipOnVersionConflict is set on the ingestion request,
+                                    then the item will be skipped instead of failing the ingestion request.
+
+        Returns:
+            A write node, NodeApply
+
+        """
         return NodeApply(
             space=self.space,
             external_id=self.external_id,
@@ -406,10 +442,10 @@ class Edge(Instance):
         type (DirectRelationReference): The type of edge.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        deleted_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-                            Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
         start_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
         end_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
+        deleted_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+                            Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
     """
 
     def __init__(
@@ -431,7 +467,26 @@ class Edge(Instance):
         self.start_node = start_node
         self.end_node = end_node
 
-    def as_apply(self, source: ViewId | ContainerId, existing_version: int = None) -> InstanceApply:
+    def as_apply(self, source: ViewId | ContainerId, existing_version: int = None) -> EdgeApply:
+        """
+        This is a convenience function for converting the read to a write edge.
+
+        It makes the simplifying assumption that all properties are from the same view. Note that this
+        is not true in general.
+
+        Args:
+            source (ViewId | ContainerId): The view or container to with all the properties.
+            existing_version (int): Fail the ingestion request if the node's version is greater than or equal to this value.
+                                    If no existingVersion is specified, the ingestion will always overwrite any
+                                    existing data for the edge (for the specified container or instance). If existingVersion is
+                                    set to 0, the upsert will behave as an insert, so it will fail the bulk if the
+                                    item already exists. If skipOnVersionConflict is set on the ingestion request,
+                                    then the item will be skipped instead of failing the ingestion request.
+
+        Returns:
+            A write edge, EdgeApply
+
+        """
         return EdgeApply(
             space=self.space,
             external_id=self.external_id,
