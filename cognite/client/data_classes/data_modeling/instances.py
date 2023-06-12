@@ -502,19 +502,6 @@ class EdgeApplyResult(InstanceApplyResult):
         return EdgeId(space=self.space, external_id=self.external_id)
 
 
-class NodeEdgeApplyResult:
-    @classmethod
-    def _load(cls, data: str | dict, cognite_client: CogniteClient = None) -> NodeApplyResult | EdgeApplyResult:
-        return cls.load(data)
-
-    @classmethod
-    def load(cls, data: str | dict) -> NodeApplyResult | EdgeApplyResult:
-        data = json.loads(data) if isinstance(data, str) else data
-        if data["instanceType"] == "node":
-            return NodeApplyResult.load(data)
-        return EdgeApplyResult.load(data)
-
-
 class NodeApplyList(CogniteResourceList):
     _RESOURCE = NodeApply
 
@@ -567,19 +554,6 @@ class InstanceApplyResultList(CogniteResourceList):
 
     def as_ids(self) -> list[NodeId | EdgeId]:
         return [result.as_id() for result in self]
-
-
-class NodeEdge:
-    @classmethod
-    def _load(cls, data: str | dict, cognite_client: CogniteClient = None) -> Node | Edge:
-        return cls.load(data)
-
-    @classmethod
-    def load(cls, data: str | dict) -> Node | Edge:
-        data = json.loads(data) if isinstance(data, str) else data
-        if data["instanceType"] == "node":
-            return Node.load(data)
-        return Edge.load(data)
 
 
 class InstanceList(CogniteResourceList):

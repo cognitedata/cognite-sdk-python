@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Iterator, List, Literal, Sequence, Type, Union, cast, overload
+import json
+from typing import TYPE_CHECKING, Any, Iterator, List, Literal, Sequence, Union, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import INSTANCES_LIST_LIMIT_DEFAULT
@@ -27,11 +28,30 @@ from cognite.client.data_classes.data_modeling.instances import (
     NodeApply,
     NodeApplyResult,
     NodeApplyResultList,
-    NodeEdge,
-    NodeEdgeApplyResult,
     NodeList,
 )
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
+
+
+class _NodeOrEdgeResourceAdapter:
+    @classmethod
+    def _load(cls, data: str | dict, cognite_client: CogniteClient = None) -> Node | Edge:
+        data = json.loads(data) if isinstance(data, str) else data
+        if data["instanceType"] == "node":
+            return Node.load(data)
+        return Edge.load(data)
+
+
+class _NodeOrEdgeApplyResultAdapter:
+    @classmethod
+    def _load(cls, data: str | dict, cognite_client: CogniteClient = None) -> NodeApplyResult | EdgeApplyResult:
+        data = json.loads(data) if isinstance(data, str) else data
+        if data["instanceType"] == "node":
+            return NodeApplyResult.load(data)
+        return EdgeApplyResult.load(data)
 
 
 class InstancesAPI(APIClient):
@@ -117,7 +137,13 @@ class InstancesAPI(APIClient):
             include_typing=include_typing, instance_type=instance_type, sort=sort, sources=sources
         )
 
-        resource_cls, list_cls = self._get_classes(instance_type)
+        if instance_type == "node":
+            resource_cls: type = _NodeOrEdgeResourceAdapter
+            list_cls: type = NodeList
+        elif instance_type == "edge":
+            resource_cls, list_cls = _NodeOrEdgeResourceAdapter, EdgeList
+        else:
+            raise ValueError(f"Invalid instance type: {instance_type}")
 
         return cast(
             Union[Iterator[Edge], Iterator[EdgeList], Iterator[Node], Iterator[NodeList]],
@@ -169,7 +195,10 @@ class InstancesAPI(APIClient):
         )
 
         res = self._retrieve_multiple(
-            list_cls=InstanceList, resource_cls=None, identifiers=identifiers, other_params=other_params  # type: ignore
+            list_cls=InstanceList,
+            resource_cls=_NodeOrEdgeResourceAdapter,  # type: ignore[type-var]
+            identifiers=identifiers,
+            other_params=other_params,
         )
 
         return InstancesResult(
@@ -257,35 +286,6 @@ class InstancesAPI(APIClient):
     def _dump_instance_sort(cls, sort: InstanceSort | dict) -> dict:
         return sort.dump(camel_case=True) if isinstance(sort, InstanceSort) else sort
 
-    @classmethod
-    @overload
-    def _get_classes(cls, instance_type: Literal["node"]) -> tuple[Type[Node], Type[NodeList]]:
-        ...
-
-    @classmethod
-    @overload
-    def _get_classes(cls, instance_type: Literal["edge"]) -> tuple[Type[Edge], Type[EdgeList]]:
-        ...
-
-    @classmethod
-    @overload
-    def _get_classes(cls, instance_type: Literal["all"]) -> tuple[Type[NodeEdge], Type[InstanceList]]:
-        ...
-
-    @classmethod
-    def _get_classes(
-        cls, instance_type: Literal["node", "edge", "all"]
-    ) -> tuple[Type[Node], Type[NodeList]] | tuple[Type[Edge], Type[EdgeList]] | tuple[
-        Type[NodeEdge], Type[InstanceList]
-    ]:
-        if instance_type == "node":
-            return Node, NodeList
-        elif instance_type == "edge":
-            return Edge, EdgeList
-        elif instance_type == "all":
-            return NodeEdge, InstanceList
-        raise ValueError(f"Unsupported {instance_type=}")
-
     def apply(
         self,
         nodes: NodeApply | Sequence[NodeApply] | None = None,
@@ -341,7 +341,7 @@ class InstancesAPI(APIClient):
         res = self._create_multiple(
             items=(*nodes, *edges),
             list_cls=InstanceApplyResultList,
-            resource_cls=NodeEdgeApplyResult,  # type: ignore[type-var]
+            resource_cls=_NodeOrEdgeApplyResultAdapter,  # type: ignore[type-var]
             extra_body_fields=other_parameters,
         )
         return InstancesApplyResult(
@@ -422,7 +422,13 @@ class InstancesAPI(APIClient):
             include_typing=include_typing, instance_type=instance_type, sort=sort, sources=sources
         )
 
-        resource_cls, list_cls = self._get_classes(instance_type)
+        if instance_type == "node":
+            resource_cls: type = _NodeOrEdgeResourceAdapter
+            list_cls: type = NodeList
+        elif instance_type == "edge":
+            resource_cls, list_cls = _NodeOrEdgeResourceAdapter, EdgeList
+        else:
+            raise ValueError(f"Invalid instance type: {instance_type}")
 
         return cast(
             Union[NodeList, EdgeList],
