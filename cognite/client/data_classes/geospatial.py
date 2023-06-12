@@ -49,7 +49,7 @@ class FeatureType(CogniteResource):
         return instance
 
 
-class FeatureTypeList(CogniteResourceList):
+class FeatureTypeList(CogniteResourceList[FeatureType]):
     _RESOURCE = FeatureType
 
 
@@ -173,7 +173,7 @@ def _to_feature_property_name(property_name: str) -> str:
     return to_snake_case(property_name) if property_name in RESERVED_PROPERTIES else property_name
 
 
-class FeatureList(CogniteResourceList):
+class FeatureList(CogniteResourceList[Feature]):
     _RESOURCE = Feature
 
     def to_geopandas(self, geometry: str, camel_case: bool = False) -> geopandas.GeoDataFrame:
@@ -301,7 +301,7 @@ class FeatureAggregate(CogniteResource):
         return instance
 
 
-class FeatureAggregateList(CogniteResourceList):
+class FeatureAggregateList(CogniteResourceList[FeatureAggregate]):
     _RESOURCE = FeatureAggregate
 
 
@@ -329,7 +329,7 @@ class CoordinateReferenceSystem(CogniteResource):
         return instance
 
 
-class CoordinateReferenceSystemList(CogniteResourceList):
+class CoordinateReferenceSystemList(CogniteResourceList[CoordinateReferenceSystem]):
     _RESOURCE = CoordinateReferenceSystem
 
 
@@ -416,7 +416,7 @@ class GeospatialComputedItem(CogniteResource):
         return instance
 
 
-class GeospatialComputedItemList(CogniteResourceList):
+class GeospatialComputedItemList(CogniteResourceList[GeospatialComputedItem]):
     "A list of items computed from geospatial."
     _RESOURCE = GeospatialComputedItem
 

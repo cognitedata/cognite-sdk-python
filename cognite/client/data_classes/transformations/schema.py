@@ -69,5 +69,5 @@ class TransformationSchemaColumn(CogniteResource):
         return instance
 
 
-class TransformationSchemaColumnList(CogniteResourceList):
+class TransformationSchemaColumnList(CogniteResourceList[TransformationSchemaColumn]):
     _RESOURCE = TransformationSchemaColumn

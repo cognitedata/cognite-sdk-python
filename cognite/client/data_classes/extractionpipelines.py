@@ -193,7 +193,7 @@ class ExtractionPipelineUpdate(CogniteUpdate):
         return ExtractionPipelineUpdate._ListExtractionPipelineUpdate(self, "contacts")
 
 
-class ExtractionPipelineList(CogniteResourceList):
+class ExtractionPipelineList(CogniteResourceList[ExtractionPipeline]):
     _RESOURCE = ExtractionPipeline
 
 
@@ -248,7 +248,7 @@ class ExtractionPipelineRun(CogniteResource):
         return dct
 
 
-class ExtractionPipelineRunList(CogniteResourceList):
+class ExtractionPipelineRunList(CogniteResourceList[ExtractionPipelineRun]):
     _RESOURCE = ExtractionPipelineRun
 
 
@@ -354,5 +354,5 @@ class ExtractionPipelineConfig(ExtractionPipelineConfigRevision):
         self.config = config
 
 
-class ExtractionPipelineConfigRevisionList(CogniteResourceList):
+class ExtractionPipelineConfigRevisionList(CogniteResourceList[ExtractionPipelineConfigRevision]):
     _RESOURCE = ExtractionPipelineConfigRevision

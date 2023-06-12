@@ -66,7 +66,7 @@ class LabelDefinitionFilter(CogniteFilter):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
 
-class LabelDefinitionList(CogniteResourceList):
+class LabelDefinitionList(CogniteResourceList[LabelDefinition]):
     _RESOURCE = LabelDefinition
 
 

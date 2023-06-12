@@ -69,5 +69,5 @@ class TransformationScheduleUpdate(CogniteUpdate):
         return TransformationScheduleUpdate._PrimitiveTransformationScheduleUpdate(self, "isPaused")
 
 
-class TransformationScheduleList(CogniteResourceList):
+class TransformationScheduleList(CogniteResourceList[TransformationSchedule]):
     _RESOURCE = TransformationSchedule
