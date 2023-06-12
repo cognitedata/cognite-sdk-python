@@ -602,6 +602,7 @@ class APIClient:
         headers: Optional[Dict] = None,
         extra_body_fields: Optional[Dict] = None,
         limit: Optional[int] = None,
+        input_resource_cls: Optional[Type[CogniteResource]] = None,
     ) -> T_CogniteResourceList:
         ...
 
@@ -616,6 +617,7 @@ class APIClient:
         headers: Optional[Dict] = None,
         extra_body_fields: Optional[Dict] = None,
         limit: Optional[int] = None,
+        input_resource_cls: Optional[Type[CogniteResource]] = None,
     ) -> T_CogniteResource:
         ...
 
@@ -629,8 +631,10 @@ class APIClient:
         headers: Optional[Dict] = None,
         extra_body_fields: Optional[Dict] = None,
         limit: Optional[int] = None,
+        input_resource_cls: Optional[Type[CogniteResource]] = None,
     ) -> Union[T_CogniteResourceList, T_CogniteResource]:
         resource_path = resource_path or self._RESOURCE_PATH
+        input_resource_cls = input_resource_cls or resource_cls
         limit = limit or self._CREATE_LIMIT
         single_item = not isinstance(items, Sequence)
         if single_item:
@@ -646,7 +650,7 @@ class APIClient:
 
         def unwrap_element(el: T) -> Union[CogniteResource, T]:
             if isinstance(el, dict):
-                return resource_cls._load(el, cognite_client=self._cognite_client)
+                return input_resource_cls._load(el, cognite_client=self._cognite_client)  # type: ignore[union-attr]
             else:
                 return el
 

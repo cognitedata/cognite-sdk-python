@@ -4,6 +4,7 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client import data_modeling as dm
+from cognite.client.exceptions import CogniteAPIError
 
 
 @pytest.fixture()
@@ -245,3 +246,28 @@ class TestInstancesAPI:
         for nodes in cognite_client.data_modeling.instances(chunk_size=2, limit=-1):
             assert isinstance(nodes, dm.NodeList)
             assert len(nodes) <= 2
+
+    def test_invalid_node_data(self, cognite_client: CogniteClient, person_view: dm.View):
+        # Arrange
+        space = person_view.space
+        person = dm.NodeApply(
+            space=space,
+            external_id="person:arnold_schwarzenegger",
+            sources=[
+                dm.NodeOrEdgeData(
+                    person_view.as_reference(),
+                    {
+                        "birthYear": 1947,
+                        "name": "Arnold Schwarzenegger",
+                        "invalidProperty": "invalidValue",
+                    },
+                )
+            ],
+        )
+
+        # Act
+        with pytest.raises(CogniteAPIError) as error:
+            cognite_client.data_modeling.instances.apply(nodes=person)
+
+        # Assert
+        assert "invalidProperty" in error.value.message

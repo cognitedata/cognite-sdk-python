@@ -93,9 +93,13 @@ class InstanceApply(InstanceCore):
     @classmethod
     def load(cls: Type[T_Instance_Apply], data: dict | str) -> T_Instance_Apply:
         data = data if isinstance(data, dict) else json.loads(data)
+        data = convert_all_keys_to_snake_case(data)
+        if cls is not InstanceApply:
+            # NodeApply and EdgeApply does not support instance type
+            data.pop("instance_type", None)
         instance = cls(**convert_all_keys_to_snake_case(data))
-        if "source" in data:
-            instance.sources = [NodeOrEdgeData.load(source) for source in data["source"]]
+        if "sources" in data:
+            instance.sources = [NodeOrEdgeData.load(source) for source in data["sources"]]
         return instance
 
 

@@ -54,6 +54,15 @@ class _NodeOrEdgeApplyResultAdapter:
         return EdgeApplyResult.load(data)
 
 
+class _NodeOrEdgeApplyAdapter:
+    @classmethod
+    def _load(cls, data: str | dict, cognite_client: CogniteClient = None) -> NodeApply | EdgeApply:
+        data = json.loads(data) if isinstance(data, str) else data
+        if data["instanceType"] == "node":
+            return NodeApply.load(data)
+        return EdgeApply.load(data)
+
+
 class InstancesAPI(APIClient):
     _RESOURCE_PATH = "/models/instances"
 
@@ -343,6 +352,7 @@ class InstancesAPI(APIClient):
             list_cls=InstanceApplyResultList,
             resource_cls=_NodeOrEdgeApplyResultAdapter,  # type: ignore[type-var]
             extra_body_fields=other_parameters,
+            input_resource_cls=_NodeOrEdgeApplyAdapter,  # type: ignore[arg-type]
         )
         return InstancesApplyResult(
             nodes=NodeApplyResultList([item for item in res if isinstance(item, NodeApplyResult)]),
