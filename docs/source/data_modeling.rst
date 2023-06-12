@@ -96,3 +96,27 @@ Containers data classes
 .. automodule:: cognite.client.data_classes.data_modeling.containers
     :members:
     :show-inheritance:
+
+Instances
+------------
+Retrieve instances by id(s)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.retrieve
+
+List instances
+^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.list
+
+Apply instances
+^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.apply
+
+Delete instances
+^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.delete
+
+Instances data classes
+^^^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: cognite.client.data_classes.data_modeling.instances
+    :members:
+    :show-inheritance:
