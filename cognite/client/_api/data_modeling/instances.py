@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from typing import Iterator, List, Literal, Sequence, Type, Union, cast, overload
+from typing import Any, Iterator, List, Literal, Sequence, Type, Union, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import INSTANCES_LIST_LIMIT_DEFAULT
 from cognite.client.data_classes.data_modeling.filters import Filter
 from cognite.client.data_classes.data_modeling.ids import (
     EdgeId,
-    InstanceId,
     NodeId,
     ViewId,
     load_identifier,
@@ -18,11 +17,12 @@ from cognite.client.data_classes.data_modeling.instances import (
     EdgeApplyResult,
     EdgeApplyResultList,
     EdgeList,
-    InstanceApply,
     InstanceApplyResultList,
-    InstanceFilter,
     InstanceList,
+    InstancesApplyResult,
+    InstancesDeleteResult,
     InstanceSort,
+    InstancesResult,
     Node,
     NodeApply,
     NodeApplyResult,
@@ -31,6 +31,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     NodeEdgeApplyResult,
     NodeList,
 )
+from cognite.client.utils._identifier import DataModelingIdentifierSequence
 
 
 class InstancesAPI(APIClient):
@@ -112,7 +113,9 @@ class InstancesAPI(APIClient):
         Yields:
             Instance | InstanceList: yields Instance one by one if chunk_size is not specified, else InstanceList objects.
         """
-        other_params = self._create_other_params(include_typing, instance_type, sort, sources)
+        other_params = self._create_other_params(
+            include_typing=include_typing, instance_type=instance_type, sort=sort, sources=sources
+        )
 
         resource_cls, list_cls = self._get_classes(instance_type)
 
@@ -137,106 +140,73 @@ class InstancesAPI(APIClient):
         """
         return cast(Iterator[Node], self(None, "node"))
 
-    @overload
-    def retrieve(
-        self, ids: NodeId, sources: list[ViewId] | ViewId | None = None, include_typing: bool = False
-    ) -> Node | None:
-        ...
-
-    @overload
-    def retrieve(
-        self, ids: Sequence[NodeId], sources: list[ViewId] | ViewId | None = None, include_typing: bool = False
-    ) -> NodeList:
-        ...
-
-    @overload
-    def retrieve(
-        self, ids: EdgeId, sources: list[ViewId] | ViewId | None = None, include_typing: bool = False
-    ) -> Edge | None:
-        ...
-
-    @overload
-    def retrieve(
-        self, ids: Sequence[EdgeId], sources: list[ViewId] | ViewId | None = None, include_typing: bool = False
-    ) -> EdgeList:
-        ...
-
-    @overload
-    def retrieve(
-        self, ids: tuple[str, str, str], sources: list[ViewId] | ViewId | None = None, include_typing: bool = False
-    ) -> Node | Edge:
-        ...
-
-    @overload
     def retrieve(
         self,
-        ids: Sequence[tuple[str, str, str]],
+        nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
+        edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
         sources: list[ViewId] | ViewId | None = None,
         include_typing: bool = False,
-    ) -> NodeList | EdgeList:
-        ...
-
-    def retrieve(
-        self,
-        ids: NodeId
-        | EdgeId
-        | Sequence[NodeId]
-        | Sequence[EdgeId]
-        | Sequence[InstanceId]
-        | tuple[str, str, str]
-        | Sequence[tuple[str, str, str]],
-        sources: list[ViewId] | ViewId | None = None,
-        include_typing: bool = False,
-    ) -> Node | Edge | NodeList | EdgeList | InstanceList | None:
+    ) -> InstancesResult:
         """`Retrieve one or more instance by id(s). <https://docs.cognite.com/api/v1/#tag/Instances/operation/byExternalIdsInstances>`_
         Args:
-            ids (InstanceId | Sequence[InstanceId]): Identifier for instance(s).
+            nodes (NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Node ids
+            edges (EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Edge ids
             sources (list[ViewId] | None): Retrieve properties from the listed - by reference - views.
             include_typing (bool): Whether to return property type information as part of the result.
         Returns:
-            Optional[Instance]: Requested instance or None if it does not exist.
+            InstancesResult: Requested instances.
         Examples:
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.data_modeling.instances.retrieve(('node', 'mySpace', 'myNode'))
         """
-        instance_type = self._get_instance_type(ids)
-        identifier = load_identifier(ids, instance_type)
-        other_params = self._create_other_params(include_typing, instance_type, sources=sources, sort=None)  # type: ignore[arg-type]
-        # The byids endpoint does not have instance_type
-        other_params.pop("instanceType", None)
-
-        resource_cls, list_cls = self._get_classes(instance_type)
-
-        return cast(
-            Union[Node, Edge, NodeList, EdgeList, InstanceList, None],
-            self._retrieve_multiple(  # type: ignore[type-var]
-                list_cls=list_cls, resource_cls=resource_cls, identifiers=identifier, other_params=other_params
-            ),
+        identifiers = self._load_node_and_edge_ids(nodes, edges)
+        other_params = self._create_other_params(
+            include_typing=include_typing,
+            sources=sources,
+            sort=None,
+            instance_type=None,
         )
 
-    @overload
-    def delete(self, id: NodeId | Sequence[NodeId]) -> list[NodeId]:
-        ...
+        res = self._retrieve_multiple(
+            list_cls=InstanceList, resource_cls=None, identifiers=identifiers, other_params=other_params  # type: ignore
+        )
 
-    @overload
-    def delete(self, id: EdgeId | Sequence[EdgeId]) -> list[EdgeId]:
-        ...
+        return InstancesResult(
+            nodes=NodeList([node for node in res if isinstance(node, Node)]),
+            edges=EdgeList([edge for edge in res if isinstance(edge, Edge)]),
+        )
 
-    @overload
-    def delete(self, id: tuple[str, str, str] | Sequence[tuple[str, str, str]]) -> list[InstanceId]:
-        ...
+    def _load_node_and_edge_ids(
+        self,
+        nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None,
+        edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None,
+    ) -> DataModelingIdentifierSequence:
+        if isinstance(nodes, NodeId) or (isinstance(nodes, tuple) and isinstance(nodes[0], str)):
+            nodes_seq: Sequence[NodeId | tuple[str, str]] = [nodes]  # type: ignore[list-item]
+        else:
+            nodes_seq = nodes  # type: ignore[assignment]
+
+        if isinstance(edges, EdgeId) or (isinstance(edges, tuple) and isinstance(edges[0], str)):
+            edges_seq: Sequence[EdgeId | tuple[str, str]] = [edges]  # type: ignore[list-item]
+        else:
+            edges_seq = edges  # type: ignore[assignment]
+
+        identifiers = []
+        if nodes_seq:
+            node_ids = load_identifier(nodes_seq, "node")
+            identifiers.extend(node_ids._identifiers)
+        if edges_seq:
+            edge_ids = load_identifier(edges_seq, "node")
+            identifiers.extend(edge_ids._identifiers)
+
+        return DataModelingIdentifierSequence(identifiers, is_singleton=False)
 
     def delete(
         self,
-        id: NodeId
-        | EdgeId
-        | Sequence[NodeId]
-        | Sequence[EdgeId]
-        | Sequence[InstanceId]
-        | tuple[str, str, str]
-        | Sequence[tuple[str, str, str]],
-    ) -> list[NodeId] | list[EdgeId] | list[InstanceId]:
+        nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
+        edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
+    ) -> InstancesDeleteResult:
         """`Delete one or more instances <https://docs.cognite.com/api/v1/#tag/Instances/operation/deleteBulk>`_
         Args:
             id (InstanceId | Sequence[InstanceId): The instance identifier(s).
@@ -248,42 +218,40 @@ class InstancesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.data_modeling.instances.delete(("node", "myNode", "mySpace"))
         """
-        instance_type = self._get_instance_type(id)
-
-        deleted_instances = cast(
-            List,
-            self._delete_multiple(identifiers=load_identifier(id, instance_type), wrap_ids=True, returns_items=True),
-        )
-
-        if instance_type == "node":
-            return [NodeId.load(item) for item in deleted_instances]
-        elif instance_type == "edge":
-            return [EdgeId.load(item) for item in deleted_instances]
-        elif instance_type == "all":
-            return [
-                NodeId.load(item) if item["instanceType"] == "node" else EdgeId.load(item) for item in deleted_instances
-            ]
-        raise ValueError(f"Invalid instance type {instance_type}")
+        identifiers = self._load_node_and_edge_ids(nodes, edges)
+        deleted_instances = cast(List, self._delete_multiple(identifiers, wrap_ids=True, returns_items=True))
+        node_ids = [NodeId.load(item) for item in deleted_instances if item["instanceType"] == "node"]
+        edge_ids = [EdgeId.load(item) for item in deleted_instances if item["instanceType"] == "edge"]
+        return InstancesDeleteResult(node_ids, edge_ids)
 
     @classmethod
     def _create_other_params(
         cls,
+        *,
         include_typing: bool,
-        instance_type: Literal["node", "edge"],
         sort: list[InstanceSort | dict] | InstanceSort | dict | None,
         sources: ViewId | Sequence[ViewId] | None,
-    ) -> dict:
-        if isinstance(sources, Sequence) or sources is None:
-            other_params = InstanceFilter(include_typing, sources, instance_type).dump(camel_case=True)
-        else:
-            other_params = InstanceFilter(include_typing, [sources], instance_type).dump(camel_case=True)
-
+        instance_type: Literal["node", "edge"] | None,
+    ) -> dict[str, Any]:
+        other_params: dict[str, Any] = {"includeTyping": include_typing}
+        if sources:
+            other_params["sources"] = (
+                [cls._dump_instance_source(source) for source in sources]
+                if isinstance(sources, Sequence)
+                else [cls._dump_instance_source(sources)]
+            )
         if sort:
             if isinstance(sort, (InstanceSort, dict)):
                 other_params["sort"] = [cls._dump_instance_sort(sort)]
             else:
                 other_params["sort"] = [cls._dump_instance_sort(s) for s in sort]
+        if instance_type:
+            other_params["instanceType"] = instance_type
         return other_params
+
+    @classmethod
+    def _dump_instance_source(cls, source: ViewId) -> dict:
+        return {"source": source.dump(camel_case=True)}
 
     @classmethod
     def _dump_instance_sort(cls, sort: InstanceSort | dict) -> dict:
@@ -318,108 +286,20 @@ class InstancesAPI(APIClient):
             return NodeEdge, InstanceList
         raise ValueError(f"Unsupported {instance_type=}")
 
-    @classmethod
-    @overload
-    def _get_apply_result_classes(
-        cls, instance_type: Literal["node"]
-    ) -> tuple[Type[NodeApplyResult], Type[NodeApplyResultList]]:
-        ...
-
-    @classmethod
-    @overload
-    def _get_apply_result_classes(
-        cls, instance_type: Literal["edge"]
-    ) -> tuple[Type[EdgeApplyResult], Type[EdgeApplyResultList]]:
-        ...
-
-    @classmethod
-    @overload
-    def _get_apply_result_classes(
-        cls, instance_type: Literal["all"]
-    ) -> tuple[Type[NodeEdgeApplyResult], Type[InstanceApplyResultList]]:
-        ...
-
-    @classmethod
-    def _get_apply_result_classes(
-        cls, instance_type: Literal["node", "edge", "all"]
-    ) -> tuple[Type[NodeApplyResult], Type[NodeApplyResultList]] | tuple[
-        Type[EdgeApplyResult], Type[EdgeApplyResultList]
-    ] | tuple[Type[NodeEdgeApplyResult], Type[InstanceApplyResultList]]:
-        if instance_type == "node":
-            return NodeApplyResult, NodeApplyResultList
-        elif instance_type == "edge":
-            return EdgeApplyResult, EdgeApplyResultList
-        elif instance_type == "all":
-            return NodeEdgeApplyResult, InstanceApplyResultList
-        raise ValueError(f"Unsupported {instance_type=}")
-
-    @overload
     def apply(
         self,
-        instance: NodeApply,
+        nodes: NodeApply | Sequence[NodeApply] | None = None,
+        edges: EdgeApply | Sequence[EdgeApply] | None = None,
         auto_create_start_nodes: bool = False,
         auto_create_end_nodes: bool = False,
         skip_on_version_conflict: bool = False,
         replace: bool = False,
-    ) -> NodeApplyResult:
-        ...
-
-    @overload
-    def apply(
-        self,
-        instance: EdgeApply,
-        auto_create_start_nodes: bool = False,
-        auto_create_end_nodes: bool = False,
-        skip_on_version_conflict: bool = False,
-        replace: bool = False,
-    ) -> EdgeApplyResult:
-        ...
-
-    @overload
-    def apply(
-        self,
-        instance: Sequence[NodeApply],
-        auto_create_start_nodes: bool = False,
-        auto_create_end_nodes: bool = False,
-        skip_on_version_conflict: bool = False,
-        replace: bool = False,
-    ) -> NodeApplyResultList:
-        ...
-
-    @overload
-    def apply(
-        self,
-        instance: Sequence[EdgeApply],
-        auto_create_start_nodes: bool = False,
-        auto_create_end_nodes: bool = False,
-        skip_on_version_conflict: bool = False,
-        replace: bool = False,
-    ) -> EdgeApplyResultList:
-        ...
-
-    @overload
-    def apply(
-        self,
-        instance: Sequence[InstanceApply],
-        auto_create_start_nodes: bool = False,
-        auto_create_end_nodes: bool = False,
-        skip_on_version_conflict: bool = False,
-        replace: bool = False,
-    ) -> InstanceApplyResultList | NodeApplyResultList | EdgeApplyResultList:
-        ...
-
-    def apply(
-        self,
-        instance: NodeApply | EdgeApply | Sequence[NodeApply] | Sequence[EdgeApply] | Sequence[InstanceApply],
-        auto_create_start_nodes: bool = False,
-        auto_create_end_nodes: bool = False,
-        skip_on_version_conflict: bool = False,
-        replace: bool = False,
-    ) -> NodeApplyResult | EdgeApplyResult | InstanceApplyResultList | NodeApplyResultList | EdgeApplyResultList:
+    ) -> InstancesApplyResult:
         """`Add or update (upsert) instances. <https://docs.cognite.com/api/v1/#tag/Instances/operation/applyNodeAndEdges>`_
 
         Args:
-            instance (instance: Instance | Sequence[Instance]): Instance or instances of instances to create or update.
+            nodes (NodeApply | Sequence[NodeApply] | None = None): Nodes to apply
+            edges (EdgeApply | Sequence[EdgeApply] | None = None): Edges to apply
             auto_create_start_nodes (bool): Whether to create missing start nodes for edges when ingesting. By default,
                                             the start node of an edge must exist before it can be ingestested.
             auto_create_end_nodes (bool): Whether to create missing end nodes for edges when ingesting. By default,
@@ -434,7 +314,7 @@ class InstancesAPI(APIClient):
                             together with the existing values (false)? Note: This setting applies for all nodes or
                             edges specified in the ingestion call.
         Returns:
-            Node | NodeList | Edge | EdgeList: Created instance(s)
+            InstancesApplyResult: Created instance(s)
 
         Examples:
 
@@ -452,64 +332,27 @@ class InstancesAPI(APIClient):
             "skipOnVersionConflict": skip_on_version_conflict,
             "replace": replace,
         }
-        instance_type = self._get_instance_type(instance)
-        resource_cls, list_cls = self._get_apply_result_classes(instance_type)
+        nodes = nodes or []
+        nodes = nodes if isinstance(nodes, Sequence) else [nodes]
 
-        return cast(
-            Union[NodeApplyResult, EdgeApplyResult, InstanceApplyResultList, NodeApplyResultList, EdgeApplyResultList],
-            self._create_multiple(  # type: ignore[type-var]
-                list_cls=list_cls, resource_cls=resource_cls, items=instance, extra_body_fields=other_parameters  # type: ignore[arg-type]
-            ),
+        edges = edges or []
+        edges = edges if isinstance(edges, Sequence) else [edges]
+
+        res = self._create_multiple(
+            items=(*nodes, *edges),
+            list_cls=InstanceApplyResultList,
+            resource_cls=NodeEdgeApplyResult,  # type: ignore[type-var]
+            extra_body_fields=other_parameters,
         )
-
-    @classmethod
-    def _get_instance_type(
-        cls,
-        instance: NodeApply
-        | EdgeApply
-        | Sequence[NodeApply]
-        | Sequence[EdgeApply]
-        | Sequence[InstanceApply]
-        | NodeId
-        | EdgeId
-        | Sequence[NodeId]
-        | Sequence[EdgeId]
-        | Sequence[InstanceId]
-        | tuple[str, str, str]
-        | Sequence[tuple[str, str, str]],
-    ) -> Literal["node", "edge", "all"]:
-        if isinstance(instance, (NodeApply, NodeId)):
-            return "node"
-        elif isinstance(instance, (EdgeApply, EdgeId)):
-            return "edge"
-        elif isinstance(instance, tuple) and len(instance) > 0 and isinstance(instance[0], str):
-            return cast(Literal["node", "edge"], instance[0])
-
-        if not isinstance(instance, Sequence):
-            raise ValueError(f"Unsupported {instance=}")
-
-        is_node = False
-        is_edge = False
-        for item in instance:
-            if isinstance(item, (NodeApply, NodeId)):
-                is_node = True
-            elif isinstance(item, (EdgeApply, EdgeId)):
-                is_edge = True
-            elif isinstance(item, tuple) and len(item) > 0 and isinstance(item[0], str):
-                if item[0] == "node":
-                    is_node = True
-                elif item[0] == "edge":
-                    is_edge = True
-            else:
-                raise ValueError(f"Unsupported {item=}")
-            if is_node and is_edge:
-                return "all"
-        return cast(Literal["node", "edge"], "node" if is_node else "edge")
+        return InstancesApplyResult(
+            nodes=NodeApplyResultList([item for item in res if isinstance(item, NodeApplyResult)]),
+            edges=EdgeApplyResultList([item for item in res if isinstance(item, EdgeApplyResult)]),
+        )
 
     @overload
     def list(
         self,
-        instance_type: Literal["node"],
+        instance_type: Literal["node"] = "node",
         include_typing: bool = False,
         sources: list[ViewId] | ViewId | None = None,
         limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
@@ -575,7 +418,9 @@ class InstancesAPI(APIClient):
                 >>> for instance_list in c.data_modeling.instances(chunk_size=100):
                 ...     instance_list # do something with the instances
         """
-        other_params = self._create_other_params(include_typing, instance_type, sort, sources)
+        other_params = self._create_other_params(
+            include_typing=include_typing, instance_type=instance_type, sort=sort, sources=sources
+        )
 
         resource_cls, list_cls = self._get_classes(instance_type)
 

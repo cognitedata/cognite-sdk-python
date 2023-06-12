@@ -71,7 +71,7 @@ T_Versioned_DataModeling_Id = TypeVar("T_Versioned_DataModeling_Id", bound=Versi
 
 @dataclass
 class InstanceId:
-    _instance_type: ClassVar[str]
+    _instance_type: ClassVar[Literal["node", "edge"]]
     space: str
     external_id: str
 
@@ -87,18 +87,22 @@ class InstanceId:
             **convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"instanceType", "instance_type"}))
         )
 
+    @property
+    def instance_type(self) -> Literal["node", "edge"]:
+        return self._instance_type
+
 
 T_InstanceId = TypeVar("T_InstanceId", bound=InstanceId)
 
 
 @dataclass
 class NodeId(InstanceId):
-    _instance_type = "node"
+    _instance_type = "node"  # type: ignore[assignment]
 
 
 @dataclass
 class EdgeId(InstanceId):
-    _instance_type = "edge"
+    _instance_type = "edge"  # type: ignore[assignment]
 
 
 @dataclass

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Sequence
 from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, Any, List, Literal, Type, TypeVar, Union, cast
 
@@ -598,33 +597,6 @@ class InstanceList(CogniteResourceList):
         return [instance.as_id() for instance in self]
 
 
-class InstanceFilter(CogniteFilter):
-    """Represent the filer arguments for the list endpoint.
-    Args:
-        include_typing (bool): Whether to return property type information as part of the result.
-        sources (Sequence[ViewReference]): Views to retrieve properties from.
-        instance_type(Literal["node", "edge"]): Whether to query for nodes or edges.
-    """
-
-    def __init__(
-        self,
-        include_typing: bool = False,
-        sources: Sequence[ViewId] | None = None,
-        instance_type: Literal["node", "edge"] = "node",
-    ):
-        self.include_typing = include_typing
-        self.sources = sources
-        self.instance_type = instance_type
-
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        dumped = super().dump(camel_case)
-        if "sources" in dumped:
-            dumped["sources"] = [
-                {"source": v if isinstance(v, dict) else v.dump(camel_case)} for v in dumped["sources"]
-            ]
-        return dumped
-
-
 class InstanceSort(CogniteFilter):
     def __init__(
         self,
@@ -635,3 +607,21 @@ class InstanceSort(CogniteFilter):
         self.property = property
         self.direction = direction
         self.nulls_first = nulls_first
+
+
+@dataclass
+class InstancesResult:
+    nodes: NodeList
+    edges: EdgeList
+
+
+@dataclass
+class InstancesApplyResult:
+    nodes: NodeApplyResultList
+    edges: EdgeApplyResultList
+
+
+@dataclass
+class InstancesDeleteResult:
+    nodes: list[NodeId]
+    edges: list[EdgeId]
