@@ -23,6 +23,13 @@ PropertyIdentifier = str
 
 @dataclass
 class NodeOrEdgeData:
+    """This represents the data values of a node or edge.
+
+    Args:
+        source (ContainerId | ViewId): The container or view the node or edge property is in
+        properties (dict[str, PropertyValue]): The properties of the node or edge.
+    """
+
     source: ContainerId | ViewId
     properties: dict[str, PropertyValue]
 
@@ -603,17 +610,41 @@ class InstanceSort(CogniteFilter):
 
 @dataclass
 class InstancesResult:
+    """This represents the read result of an instance query
+
+    Args:
+        nodes (NodeList): A list of nodes.
+        edges (EdgeList): A list of edges.
+
+    """
+
     nodes: NodeList
     edges: EdgeList
 
 
 @dataclass
 class InstancesApplyResult:
+    """This represents the write result of an instance query
+
+    Args:
+        nodes (NodeApplyResultList): A list of nodes.
+        edges (EdgeApplyResultList): A list of edges.
+
+    """
+
     nodes: NodeApplyResultList
     edges: EdgeApplyResultList
 
 
 @dataclass
 class InstancesDeleteResult:
+    """This represents the delete result of an instance query
+
+    Args:
+        nodes (list[NodeId]): A list of node ids.
+        edges (list[EdgeId]): A list of edge ids.
+
+    """
+
     nodes: list[NodeId]
     edges: list[EdgeId]

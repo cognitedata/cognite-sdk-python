@@ -162,6 +162,7 @@ class InstancesAPI(APIClient):
     ) -> Iterator[Edge] | Iterator[EdgeList] | Iterator[Node] | Iterator[NodeList]:
         """Iterate over nodes or edges.
         Fetches instances as they are iterated over, so you keep a limited number of instances in memory.
+
         Args:
             chunk_size (int, optional): Number of data_models to return in each chunk. Defaults to yielding
                                         one instance at a time.
@@ -171,6 +172,7 @@ class InstancesAPI(APIClient):
             sources (list[ViewId] | ViewId): Views to retrieve properties from.
             sort (list[InstanceSort | dict] | InstanceSort | dict): How you want the listed instances information ordered.
             filter (dict | Filter): Advanced filtering of instances.
+
         Yields:
             Edge | Node | EdgeList | NodeList: yields Instance one by one if chunk_size is not specified, else NodeList/EdgeList objects.
         """
@@ -215,11 +217,13 @@ class InstancesAPI(APIClient):
         include_typing: bool = False,
     ) -> InstancesResult:
         """`Retrieve one or more instance by id(s). <https://docs.cognite.com/api/v1/#tag/Instances/operation/byExternalIdsInstances>`_
+
         Args:
             nodes (NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Node ids
             edges (EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Edge ids
             sources (list[ViewId] | None): Retrieve properties from the listed - by reference - views.
             include_typing (bool): Whether to return property type information as part of the result.
+
         Returns:
             InstancesResult: Requested instances.
 
