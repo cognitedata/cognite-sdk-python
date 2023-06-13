@@ -2,7 +2,23 @@ from __future__ import annotations
 
 import json
 from collections import UserList
-from typing import TYPE_CHECKING, Any, Collection, Dict, Generic, List, Optional, Sequence, Type, TypeVar, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Collection,
+    Dict,
+    Generic,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    SupportsIndex,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
 from cognite.client import utils
 from cognite.client.exceptions import CogniteMissingClientError
@@ -173,7 +189,7 @@ class CognitePropertyClassUtil:
             self[schema_name] = value
 
 
-class CogniteResourceList(UserList):
+class CogniteResourceList(UserList, Generic[T_CogniteResource]):
     _RESOURCE: Type[CogniteResource]
 
     def __init__(self, resources: Collection[Any], cognite_client: CogniteClient = None):
@@ -199,6 +215,20 @@ class CogniteResourceList(UserList):
         if item == "_cognite_client" and attr is None:
             raise CogniteMissingClientError
         return attr
+
+    def pop(self, i: int = -1) -> T_CogniteResource:
+        return super().pop(i)
+
+    def __iter__(self) -> Iterator[T_CogniteResource]:
+        return super().__iter__()
+
+    @overload
+    def __getitem__(self, item: SupportsIndex) -> T_CogniteResource:
+        ...
+
+    @overload
+    def __getitem__(self, item: slice) -> CogniteResourceList[T_CogniteResource]:
+        ...
 
     def __getitem__(self, item: Any) -> Any:
         value = super().__getitem__(item)
@@ -234,7 +264,7 @@ class CogniteResourceList(UserList):
         """
         return [resource.dump(camel_case) for resource in self.data]
 
-    def get(self, id: int = None, external_id: str = None) -> Optional[CogniteResource]:
+    def get(self, id: int = None, external_id: str = None) -> Optional[T_CogniteResource]:
         """Get an item from this list by id or exernal_id.
 
         Args:

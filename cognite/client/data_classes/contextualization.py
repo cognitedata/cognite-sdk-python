@@ -164,7 +164,7 @@ class ContextualizationJob(CogniteResource):
 T_ContextualizationJob = TypeVar("T_ContextualizationJob", bound=ContextualizationJob)
 
 
-class ContextualizationJobList(CogniteResourceList):
+class ContextualizationJobList(CogniteResourceList[ContextualizationJob]):
     _RESOURCE = ContextualizationJob
 
 
@@ -326,7 +326,7 @@ class EntityMatchingModelUpdate(CogniteUpdate):
         return EntityMatchingModelUpdate._PrimitiveUpdate(self, "description")
 
 
-class EntityMatchingModelList(CogniteResourceList):
+class EntityMatchingModelList(CogniteResourceList[EntityMatchingModel]):
     _RESOURCE = EntityMatchingModel
 
 
@@ -368,7 +368,7 @@ class DiagramConvertPage(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
 
-class DiagramConvertPageList(CogniteResourceList):
+class DiagramConvertPageList(CogniteResourceList[DiagramConvertPage]):
     _RESOURCE = DiagramConvertPage
 
 
@@ -821,7 +821,7 @@ class VisionExtractJob(VisionJob):
     ) -> Union[Annotation, AnnotationList]:
         """
         Saves all predictions made by the feature extractors in CDF using the Annotations API.
-        See https://docs.cognite.com/api/v1/#tag/Annotations/operation/annotationsSuggest
+        See https://docs.cognite.com/api/v1/#operation/annotationsSuggest
 
         Args:
             creating_app (str, optional): The name of the app from which this annotation was created. Defaults to 'cognite-sdk-python'.

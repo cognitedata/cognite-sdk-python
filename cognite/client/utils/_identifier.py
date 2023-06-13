@@ -6,6 +6,7 @@ from typing import (
     Generic,
     Iterable,
     List,
+    Literal,
     NoReturn,
     Optional,
     Protocol,
@@ -78,10 +79,17 @@ class Identifier(Generic[T_ID]):
 
 
 class DataModelingIdentifier:
-    def __init__(self, space: str, external_id: str | None = None, version: str | None = None):
+    def __init__(
+        self,
+        space: str,
+        external_id: str | None = None,
+        version: str | None = None,
+        instance_type: Literal["node", "edge"] | None = None,
+    ):
         self.__space = space
         self.__external_id = external_id
         self.__version = version
+        self.__instance_type = instance_type
 
     def as_dict(self, camel_case: bool = True) -> dict[str, str]:
         output = {"space": self.__space}
@@ -90,6 +98,8 @@ class DataModelingIdentifier:
             output[key] = self.__external_id
         if self.__version is not None:
             output["version"] = self.__version
+        if self.__instance_type is not None:
+            output["instanceType"] = self.__instance_type
         return output
 
     def as_primitive(self) -> NoReturn:

@@ -106,7 +106,6 @@ class TestFunctionCall:
         assert {
             "cursor": None,
             "limit": 25,
-            "filter": {},
         } == jsgz_load(calls[0].request.body)
 
     def test_get_function_call_with_filter(self, cognite_client, mock_function_call_resp):

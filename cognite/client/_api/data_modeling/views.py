@@ -4,7 +4,7 @@ from typing import Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DATA_MODELING_LIST_LIMIT_DEFAULT
-from cognite.client.data_classes.data_modeling.ids import VersionedDataModelingId, ViewIdentifier, load_identifier
+from cognite.client.data_classes.data_modeling.ids import VersionedDataModelingId, ViewIdentifier, _load_identifier
 from cognite.client.data_classes.data_modeling.views import View, ViewApply, ViewFilter, ViewList
 
 
@@ -81,7 +81,7 @@ class ViewsAPI(APIClient):
         return cast(Iterator[View], self())
 
     def retrieve(self, ids: ViewIdentifier | Sequence[ViewIdentifier]) -> ViewList:
-        """`Retrieve a single view by id. <https://docs.cognite.com/api/v1/#tag/Views/operation/byExternalIdsViews>`_
+        """`Retrieve a single view by id. <https://docs.cognite.com/api/v1/#operation/byExternalIdsViews>`_
 
         Args:
             ids (ViewId | Sequence[ViewId]): View dentifier(s)
@@ -96,11 +96,11 @@ class ViewsAPI(APIClient):
                 >>> res = c.data_modeling.views.retrieve(('mySpace', 'myView', 'v1'))
 
         """
-        identifier = load_identifier(ids, "view")
+        identifier = _load_identifier(ids, "view")
         return self._retrieve_multiple(list_cls=ViewList, resource_cls=View, identifiers=identifier)
 
     def delete(self, ids: ViewIdentifier | Sequence[ViewIdentifier]) -> list[VersionedDataModelingId]:
-        """`Delete one or more views <https://docs.cognite.com/api/v1/#tag/Views/operation/deleteViews>`_
+        """`Delete one or more views <https://docs.cognite.com/api/v1/#operation/deleteViews>`_
 
         Args:
             ids (ViewId | Sequence[ViewId]): View dentifier(s)
@@ -117,7 +117,7 @@ class ViewsAPI(APIClient):
         deleted_views = cast(
             list,
             self._delete_multiple(
-                identifiers=load_identifier(ids, "view"),
+                identifiers=_load_identifier(ids, "view"),
                 wrap_ids=True,
                 returns_items=True,
             ),
@@ -132,7 +132,7 @@ class ViewsAPI(APIClient):
         all_versions: bool = False,
         include_global: bool = False,
     ) -> ViewList:
-        """`List views <https://docs.cognite.com/api/v1/#tag/Views/operation/listViews>`_
+        """`List views <https://docs.cognite.com/api/v1/#operation/listViews>`_
 
         Args:
             limit (int, optional): Maximum number of views to return. Defaults to 25. Set to -1, float("inf") or None
@@ -183,7 +183,7 @@ class ViewsAPI(APIClient):
         ...
 
     def apply(self, view: ViewApply | Sequence[ViewApply]) -> View | ViewList:
-        """`Create or update (upsert) one or more views. <https://docs.cognite.com/api/v1/#tag/Views/operation/ApplyViews>`_
+        """`Create or update (upsert) one or more views. <https://docs.cognite.com/api/v1/#operation/ApplyViews>`_
 
         Args:
             view (view: ViewApply | Sequence[ViewApply]): View or views of views to create or update.

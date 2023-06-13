@@ -18,10 +18,14 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 
-
-## [6.3.3] - 2023-06-08
+## [6.4.1] - 2023-06-13
 ### Added
 - Transformation schema for nodes, edges in both view centric and model centric
+
+## [6.4.0] - 2023-06-12
+### Added
+- Partial support for the instance resource in the Data Modeling API with the implementation 
+  `client.data_modeling.instances`, the endpoints `list`, `delete`, `retrieve`, and `apply`
 
 ## [6.3.2] - 2023-06-08
 

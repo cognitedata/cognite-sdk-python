@@ -25,6 +25,9 @@ class DirectRelationReference:
     def load(cls, data: dict) -> DirectRelationReference:
         return cls(**convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"type"})))
 
+    def as_tuple(self) -> tuple[str, str]:
+        return self.space, self.external_id
+
 
 class PropertyType(ABC):
     _type: ClassVar[str]

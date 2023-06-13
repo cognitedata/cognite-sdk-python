@@ -244,5 +244,5 @@ class EventUpdate(CogniteUpdate):
         return EventUpdate._PrimitiveEventUpdate(self, "subtype")
 
 
-class EventList(CogniteResourceList):
+class EventList(CogniteResourceList[Event]):
     _RESOURCE = Event

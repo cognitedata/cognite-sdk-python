@@ -124,7 +124,7 @@ class ThreeDModelUpdate(CogniteUpdate):
         return ThreeDModelUpdate._ObjectThreeDModelUpdate(self, "metadata")
 
 
-class ThreeDModelList(CogniteResourceList):
+class ThreeDModelList(CogniteResourceList[ThreeDModel]):
     _RESOURCE = ThreeDModel
 
 
@@ -238,7 +238,7 @@ class ThreeDModelRevisionUpdate(CogniteUpdate):
         return ThreeDModelRevisionUpdate._ObjectThreeDModelRevisionUpdate(self, "metadata")
 
 
-class ThreeDModelRevisionList(CogniteResourceList):
+class ThreeDModelRevisionList(CogniteResourceList[ThreeDModelRevision]):
     _RESOURCE = ThreeDModelRevision
 
 
@@ -288,7 +288,7 @@ class ThreeDNode(CogniteResource):
         return instance
 
 
-class ThreeDNodeList(CogniteResourceList):
+class ThreeDNodeList(CogniteResourceList[ThreeDNode]):
     _RESOURCE = ThreeDNode
 
 
@@ -318,5 +318,5 @@ class ThreeDAssetMapping(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
 
-class ThreeDAssetMappingList(CogniteResourceList):
+class ThreeDAssetMappingList(CogniteResourceList[ThreeDAssetMapping]):
     _RESOURCE = ThreeDAssetMapping

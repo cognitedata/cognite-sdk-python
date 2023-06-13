@@ -70,7 +70,7 @@ class SpacesAPI(APIClient):
         ...
 
     def retrieve(self, space: str | Sequence[str]) -> Space | SpaceList | None:
-        """`Retrieve space by id. <https://docs.cognite.com/api/v1/#tag/Spaces/operation/bySpaceIdsSpaces>`_
+        """`Retrieve space by id. <https://docs.cognite.com/api/v1/#operation/bySpaceIdsSpaces>`_
 
         Args:
             space (str): Space ID
@@ -95,7 +95,7 @@ class SpacesAPI(APIClient):
         return self._retrieve_multiple(list_cls=SpaceList, resource_cls=Space, identifiers=identifier)
 
     def delete(self, space: str | Sequence[str]) -> list[str]:
-        """`Delete one or more spaces <https://docs.cognite.com/api/v1/#tag/Spaces/operation/deleteSpacesV3>`_
+        """`Delete one or more spaces <https://docs.cognite.com/api/v1/#operation/deleteSpacesV3>`_
 
         Args:
             space (str | Sequence[str]): ID or ID list ids of spaces.
@@ -121,7 +121,7 @@ class SpacesAPI(APIClient):
         self,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> SpaceList:
-        """`List spaces <https://docs.cognite.com/api/v1/#tag/Spaces/operation/listSpacesV3>`_
+        """`List spaces <https://docs.cognite.com/api/v1/#operation/listSpacesV3>`_
 
         Args:
             limit (int, optional): Maximum number of spaces to return. Defaults to 25. Set to -1, float("inf") or None
@@ -168,7 +168,7 @@ class SpacesAPI(APIClient):
         ...
 
     def apply(self, space: SpaceApply | Sequence[SpaceApply]) -> Space | SpaceList:
-        """`Create or patch one or more spaces. <https://docs.cognite.com/api/v1/#tag/Spaces/operation/ApplySpaces>`_
+        """`Create or patch one or more spaces. <https://docs.cognite.com/api/v1/#operation/ApplySpaces>`_
 
         Args:
             space (space: Space | Sequence[Space]): Space or spaces of spacesda to create or update.

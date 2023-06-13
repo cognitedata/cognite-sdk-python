@@ -295,5 +295,5 @@ class FileAggregate(dict):
     count = CognitePropertyClassUtil.declare_property("count")
 
 
-class FileMetadataList(CogniteResourceList):
+class FileMetadataList(CogniteResourceList[FileMetadata]):
     _RESOURCE = FileMetadata
