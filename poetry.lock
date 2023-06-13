@@ -2208,4 +2208,4 @@ sympy = ["sympy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "d0c1ff98665f095ffea0b4cd6cee32b8e97ee4730bda1a7c92df1e99618c79bc"
+content-hash = "562469cbfa9e138fa050a66c3eb7fff691ec128cb48845c35696946ac22f3275"

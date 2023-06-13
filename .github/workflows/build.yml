@@ -43,15 +43,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
+      - name: Install poetry
+        run: pipx install poetry
       - uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'poetry'
 
       - name: Install core dependencies
-        run: |
-          python3 -m pip install --upgrade pip poetry
-          poetry config virtualenvs.create false
-          poetry install
+        run: poetry install --with docs
 
       - name: Build docs
         run: cd docs && make html SPHINXOPTS="-W --keep-going"

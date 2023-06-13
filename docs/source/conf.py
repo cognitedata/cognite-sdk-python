@@ -22,7 +22,7 @@ import pathlib
 import re
 
 import sphinx_autosummary_accessors
-import tomli
+import toml
 
 # -- General configuration ------------------------------------------------
 
@@ -193,8 +193,7 @@ texinfo_documents = [
 ]
 
 pyproject = pathlib.Path.cwd().parent.parent / "pyproject.toml"
-with open(pyproject, "rb") as f:
-    python_version = tomli.load(f)["tool"]["poetry"]["dependencies"]["python"]
+python_version = toml.load(pyproject)["tool"]["poetry"]["dependencies"]["python"]
 
 rst_epilog = """
 .. |PythonVersion| replace:: {versionnum}
