@@ -17,7 +17,12 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+import datetime
+import pathlib
 import re
+
+import sphinx_autosummary_accessors
+import tomli
 
 # -- General configuration ------------------------------------------------
 
@@ -28,12 +33,18 @@ import re
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ["sphinx.ext.autodoc", "sphinx.ext.napoleon", "sphinx.ext.autosectionlabel"]
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.autosectionlabel",
+    "sphinx_autosummary_accessors",
+    "sphinx.ext.autosummary",
+]
 
 autosectionlabel_prefix_document = True
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ["_templates"]
+templates_path = ["_templates", sphinx_autosummary_accessors.templates_path]
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
@@ -46,7 +57,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "cognite-sdk"
-copyright = "2019, Cognite AS"
+copyright = str(datetime.datetime.now().year) + ", Cognite AS"
 author = "Erlend Vollset"
 
 # The version info for the project you're documenting, acts as replacement for
@@ -82,13 +93,35 @@ todo_include_todos = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "sphinx_rtd_theme"
+html_theme = "sphinx_book_theme"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-# html_theme_options = {}
+html_theme_options = {
+    "logo": {
+        "image_light": "_static/cognite_logo_black.png",
+        "image_dark": "_static/cognite_logo_white.png",
+        "text": "cognite-sdk",
+    },
+    "article_header_start": ["cognite_hub.html"],
+    "icon_links": [
+        {
+            "name": "GitHub",
+            "url": "https://github.com/cognitedata/cognite-sdk-python",
+            "icon": "fa-brands fa-square-github",
+            "type": "fontawesome",
+        },
+        {
+            "name": "PyPI",
+            "url": "https://pypi.org/project/cognite-sdk/",
+            "icon": "https://img.shields.io/pypi/dw/cognite-sdk",
+            "type": "url",
+        },
+    ],
+}
+
 
 # Add any paths that contain custom _static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin _static files,
@@ -100,12 +133,11 @@ html_static_path = ["_static"]
 #
 # This is required for the alabaster theme
 # refs: http://alabaster.readthedocs.io/en/latest/installation.html#sidebars
-html_sidebars = {
-    "**": ["relations.html", "searchbox.html", "globaltoc.html"]  # needs 'show_related': True theme option to display
-}
+# html_sidebars = {
+#     "**": ["relations.html", "searchbox.html", "globaltoc.html"]  # needs 'show_related': True theme option to display
+# }
 
-html_favicon = "img/cognite_logo_black.png"
-html_logo = "img/cognite_logo_white.png"
+html_favicon = "_static/cognite_logo_black.png"
 
 # -- Options for HTMLHelp output ------------------------------------------
 
@@ -159,3 +191,13 @@ texinfo_documents = [
         "Miscellaneous",
     )
 ]
+
+pyproject = pathlib.Path.cwd().parent.parent / "pyproject.toml"
+with open(pyproject, "rb") as f:
+    python_version = tomli.load(f)["tool"]["poetry"]["dependencies"]["python"]
+
+rst_epilog = """
+.. |PythonVersion| replace:: {versionnum}
+""".format(
+    versionnum=python_version,
+)

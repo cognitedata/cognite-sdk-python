@@ -155,7 +155,7 @@ class AssetsAPI(APIClient):
         return cast(Iterator[Asset], self())
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Asset]:
-        """`Retrieve a single asset by id. <https://docs.cognite.com/api/v1/#operation/getAsset>`_
+        """`Retrieve a single asset by id <https://docs.cognite.com/api/v1/#operation/getAsset>`_
 
         Args:
             id (int, optional): ID
@@ -187,7 +187,7 @@ class AssetsAPI(APIClient):
         external_ids: Optional[Sequence[str]] = None,
         ignore_unknown_ids: bool = False,
     ) -> AssetList:
-        """`Retrieve multiple assets by id. <https://docs.cognite.com/api/v1/#operation/byIdsAssets>`_
+        """`Retrieve multiple assets by id <https://docs.cognite.com/api/v1/#operation/byIdsAssets>`_
 
         Args:
             ids (Sequence[int], optional): IDs
@@ -348,7 +348,7 @@ class AssetsAPI(APIClient):
         return self._aggregate(filter=filter, cls=AssetAggregate)
 
     def aggregate_metadata_keys(self, filter: Union[AssetFilter, dict] = None) -> Sequence[AggregateBucketResult]:
-        """`Aggregate assets <https://docs.cognite.com/api/v1/#operation/aggregateAssets>`_
+        """`Aggregate asset metadata keys <https://docs.cognite.com/api/v1/#operation/aggregateAssets>`_
 
         Note:
             In the case of text fields, the values are aggregated in a case-insensitive manner
@@ -372,7 +372,7 @@ class AssetsAPI(APIClient):
     def aggregate_metadata_values(
         self, keys: Sequence[str], filter: Union[AssetFilter, dict] = None
     ) -> Sequence[AggregateBucketResult]:
-        """`Aggregate assets <https://docs.cognite.com/api/v1/#operation/aggregateAssets>`_
+        """`Aggregate asset metadata values <https://docs.cognite.com/api/v1/#operation/aggregateAssets>`_
 
         Note:
             In the case of text fields, the values are aggregated in a case-insensitive manner
@@ -406,7 +406,7 @@ class AssetsAPI(APIClient):
         ...
 
     def create(self, asset: Union[Asset, Sequence[Asset]]) -> Union[Asset, AssetList]:
-        """`Create one or more assets. <https://docs.cognite.com/api/v1/#operation/createAssets>`_
+        """`Create one or more assets <https://docs.cognite.com/api/v1/#operation/createAssets>`_
 
         You can create an arbitrary number of assets, and the SDK will split the request into multiple requests.
         When specifying parent-child relation between assets using `parentExternalId` the link will be resvoled into an internal ID and stored as `parentId`.

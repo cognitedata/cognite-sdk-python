@@ -111,3 +111,6 @@ class CogniteClient:
             ClientConfig: The configuration object.
         """
         return self._config
+
+
+CogniteClient.assets = AssetsAPI  # type: ignore

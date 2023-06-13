@@ -8,12 +8,10 @@ Cognite Python SDK Documentation
 
 This is the Cognite Python SDK for developers and data scientists working with Cognite Data Fusion (CDF). The package is tightly integrated with pandas, and helps you work easily and efficiently with data in Cognite Data Fusion (CDF).
 
-.. contents::
-   :local:
 
 Installation
 ^^^^^^^^^^^^
-To install this package:
+This package supports Python |PythonVersion|. To install this package:
 
 .. code-block:: bash
 
@@ -33,11 +31,21 @@ To upgrade the version of this package:
 Contents
 ^^^^^^^^
 .. toctree::
+   :caption: Getting started
+
    quickstart
    settings
+   extensions_and_optional_dependencies
+
+.. toctree::
+   :caption: Connecting to CDF
+
    credential_providers
    cognite_client
-   extensions_and_optional_dependencies
+
+.. toctree::
+   :caption: Interacting with CDF
+
    identity_and_access_management
    core_data_model
    3d
@@ -47,6 +55,10 @@ Contents
    transformations
    functions
    data_modeling
+
+.. toctree::
+   :caption: Other
+
    deprecated
    base_data_classes
    exceptions

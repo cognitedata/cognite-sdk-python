@@ -2,53 +2,24 @@ Core Data Model
 ===============
 Assets
 ------
-Retrieve an asset by id
-^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.retrieve
+.. currentmodule:: cognite.client
 
-Retrieve multiple assets by id
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.retrieve_multiple
-
-Retrieve an asset subtree
-^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.retrieve_subtree
-
-List assets
-^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.list
-
-Aggregate assets
-^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.aggregate
-
-Aggregate asset metadata keys
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.aggregate_metadata_keys
-
-Aggregate asset metadata values
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.aggregate_metadata_values
-
-Search for assets
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.search
-
-Create assets
-^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.create
-
-Create asset hierarchy
-^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.create_hierarchy
-
-Delete assets
-^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.delete
-
-Update assets
-^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.update
+.. autosummary:: 
+   :toctree: generated/
+   :template: autosummary/accessor_method.rst
+   
+   CogniteClient.assets.retrieve
+   CogniteClient.assets.retrieve_multiple
+   CogniteClient.assets.retrieve_subtree
+   CogniteClient.assets.list
+   CogniteClient.assets.aggregate
+   CogniteClient.assets.aggregate_metadata_keys
+   CogniteClient.assets.aggregate_metadata_values
+   CogniteClient.assets.search
+   CogniteClient.assets.create
+   CogniteClient.assets.create_hierarchy
+   CogniteClient.assets.delete
+   CogniteClient.assets.update
 
 Asset Data classes
 ^^^^^^^^^^^^^^^^^^
