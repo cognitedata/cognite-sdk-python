@@ -178,7 +178,7 @@ class FilesAPI(APIClient):
         return (file_metadata, upload_url)
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[FileMetadata]:
-        """`Retrieve a single file metadata by id. <https://docs.cognite.com/api/v1/#operation/getFileByInternalId>`_
+        """`Retrieve a single file metadata by id <https://docs.cognite.com/api/v1/#operation/getFileByInternalId>`_
 
         Args:
             id (int, optional): ID
@@ -210,7 +210,7 @@ class FilesAPI(APIClient):
         external_ids: Optional[Sequence[str]] = None,
         ignore_unknown_ids: bool = False,
     ) -> FileMetadataList:
-        """`Retrieve multiple file metadatas by id. <https://docs.cognite.com/api/v1/#operation/byIdsFiles>`_
+        """`Retrieve multiple file metadatas by id <https://docs.cognite.com/api/v1/#operation/byIdsFiles>`_
 
         Args:
             ids (Sequence[int], optional): IDs
@@ -413,6 +413,7 @@ class FilesAPI(APIClient):
         self, item: Union[FileMetadata, FileMetadataUpdate, Sequence[Union[FileMetadata, FileMetadataUpdate]]]
     ) -> Union[FileMetadata, FileMetadataList]:
         """`Update files <https://docs.cognite.com/api/v1/#operation/updateFiles>`_
+
         Currently, a full replacement of labels on a file is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.
 
         Args:
@@ -466,7 +467,8 @@ class FilesAPI(APIClient):
     def search(
         self, name: str = None, filter: Optional[Union[FileMetadataFilter, dict]] = None, limit: int = 100
     ) -> FileMetadataList:
-        """`Search for files. <https://docs.cognite.com/api/v1/#operation/searchFiles>`_
+        """`Search for files <https://docs.cognite.com/api/v1/#operation/searchFiles>`_
+
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:
@@ -743,7 +745,7 @@ class FilesAPI(APIClient):
         id: Union[int, Sequence[int]] = None,
         external_id: Union[str, Sequence[str]] = None,
     ) -> None:
-        """`Download files by id or external id. <https://docs.cognite.com/api/v1/#operation/downloadLinks>`_
+        """`Download files by id or external id <https://docs.cognite.com/api/v1/#operation/downloadLinks>`_
 
         This method will stream all files to disk, never keeping more than 2MB in memory per worker.
         The files will be stored in the provided directory using the name retrieved from the file metadata in CDF.

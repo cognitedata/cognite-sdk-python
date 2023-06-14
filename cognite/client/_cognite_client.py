@@ -9,6 +9,7 @@ from cognite.client._api.annotations import AnnotationsAPI
 from cognite.client._api.assets import AssetsAPI
 from cognite.client._api.data_modeling import DataModelingAPI
 from cognite.client._api.data_sets import DataSetsAPI
+from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.diagrams import DiagramsAPI
 from cognite.client._api.entity_matching import EntityMatchingAPI
 from cognite.client._api.events import EventsAPI
@@ -20,7 +21,8 @@ from cognite.client._api.iam import IAMAPI
 from cognite.client._api.labels import LabelsAPI
 from cognite.client._api.raw import RawAPI
 from cognite.client._api.relationships import RelationshipsAPI
-from cognite.client._api.sequences import SequencesAPI
+from cognite.client._api.sequences import SequencesAPI, SequencesDataAPI
+from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api.templates import TemplatesAPI
 from cognite.client._api.three_d import ThreeDAPI
 from cognite.client._api.time_series import TimeSeriesAPI
@@ -114,3 +116,11 @@ class CogniteClient:
 
 
 CogniteClient.assets = AssetsAPI  # type: ignore
+CogniteClient.events = EventsAPI  # type: ignore
+CogniteClient.files = FilesAPI  # type: ignore
+CogniteClient.sequences = SequencesAPI  # type: ignore
+CogniteClient.sequences.data = SequencesDataAPI  # type: ignore
+CogniteClient.time_series = TimeSeriesAPI  # type: ignore
+CogniteClient.time_series.data = DatapointsAPI  # type: ignore
+CogniteClient.time_series.data.synthetic = SyntheticDatapointsAPI  # type: ignore
+CogniteClient.geospatial = GeospatialAPI  # type: ignore

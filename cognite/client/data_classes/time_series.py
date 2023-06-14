@@ -1,3 +1,4 @@
+"""Classes to work with time series"""
 from __future__ import annotations
 
 from datetime import datetime
@@ -288,4 +289,10 @@ class TimeSeriesAggregate(dict):
 
 
 class TimeSeriesList(CogniteResourceList):
+    """No description
+
+    Args:
+        CogniteResourceList (_type_): _description_
+    """
+
     _RESOURCE = TimeSeries

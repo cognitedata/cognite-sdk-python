@@ -611,7 +611,7 @@ class DatapointsAPI(APIClient):
         include_outside_points: bool = False,
         ignore_unknown_ids: bool = False,
     ) -> None | Datapoints | DatapointsList:
-        """`Retrieve datapoints for one or more time series. <https://docs.cognite.com/api/v1/#operation/getMultiTimeSeriesDatapoints>`_
+        """`Retrieve datapoints for one or more time series <https://docs.cognite.com/api/v1/#operation/getMultiTimeSeriesDatapoints>`_
 
         **Performance guide**:
             In order to retrieve millions of datapoints as efficiently as possible, here are a few guidelines:
@@ -797,7 +797,7 @@ class DatapointsAPI(APIClient):
         include_outside_points: bool = False,
         ignore_unknown_ids: bool = False,
     ) -> None | DatapointsArray | DatapointsArrayList:
-        """`Retrieve datapoints for one or more time series. <https://docs.cognite.com/api/v1/#operation/getMultiTimeSeriesDatapoints>`_
+        """`Retrieve datapoints for one or more time series <https://docs.cognite.com/api/v1/#operation/getMultiTimeSeriesDatapoints>`_
 
         **Note**: This method requires `numpy` to be installed.
 
@@ -1377,7 +1377,7 @@ class DatapointsAPI(APIClient):
         self._delete_datapoints_ranges([delete_dps_object])
 
     def delete_ranges(self, ranges: list[dict[str, Any]]) -> None:
-        """`Delete a range of datapoints from multiple time series. <https://docs.cognite.com/api/v1/#operation/deleteDatapoints>`_
+        """`Delete a range of datapoints from multiple time series <https://docs.cognite.com/api/v1/#operation/deleteDatapoints>`_
 
         Args:
             ranges (List[Dict[str, Any]]): The list of datapoint ids along with time range to delete. See examples below.

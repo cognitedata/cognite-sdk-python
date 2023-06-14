@@ -117,7 +117,7 @@ class EventsAPI(APIClient):
         return cast(Iterator[Event], self())
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Event]:
-        """`Retrieve a single event by id. <https://docs.cognite.com/api/v1/#operation/getEventByInternalId>`_
+        """`Retrieve a single event by id <https://docs.cognite.com/api/v1/#operation/getEventByInternalId>`_
 
         Args:
             id (int, optional): ID
@@ -149,7 +149,7 @@ class EventsAPI(APIClient):
         external_ids: Optional[Sequence[str]] = None,
         ignore_unknown_ids: bool = False,
     ) -> EventList:
-        """`Retrieve multiple events by id. <https://docs.cognite.com/api/v1/#operation/byIdsEvents>`_
+        """`Retrieve multiple events by id <https://docs.cognite.com/api/v1/#operation/byIdsEvents>`_
 
         Args:
             ids (Sequence[int], optional): IDs
@@ -336,7 +336,7 @@ class EventsAPI(APIClient):
         ...
 
     def create(self, event: Union[Event, Sequence[Event]]) -> Union[Event, EventList]:
-        """`Create one or more events. <https://docs.cognite.com/api/v1/#operation/createEvents>`_
+        """`Create one or more events <https://docs.cognite.com/api/v1/#operation/createEvents>`_
 
         Args:
             event (Union[Event, Sequence[Event]]): Event or list of events to create.
@@ -424,6 +424,7 @@ class EventsAPI(APIClient):
 
     def search(self, description: str = None, filter: Union[EventFilter, Dict] = None, limit: int = 100) -> EventList:
         """`Search for events <https://docs.cognite.com/api/v1/#operation/searchEvents>`_
+
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:

@@ -111,7 +111,7 @@ class TimeSeriesAPI(APIClient):
         return cast(Iterator[TimeSeries], self())
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[TimeSeries]:
-        """`Retrieve a single time series by id. <https://docs.cognite.com/api/v1/#operation/getTimeSeriesByIds>`_
+        """`Retrieve a single time series by id <https://docs.cognite.com/api/v1/#operation/getTimeSeriesByIds>`_
 
         Args:
             id (int, optional): ID
@@ -143,7 +143,7 @@ class TimeSeriesAPI(APIClient):
         external_ids: Optional[Sequence[str]] = None,
         ignore_unknown_ids: bool = False,
     ) -> TimeSeriesList:
-        """`Retrieve multiple time series by id. <https://docs.cognite.com/api/v1/#operation/getTimeSeriesByIds>`_
+        """`Retrieve multiple time series by id <https://docs.cognite.com/api/v1/#operation/getTimeSeriesByIds>`_
 
         Args:
             ids (Sequence[int], optional): IDs
@@ -297,7 +297,7 @@ class TimeSeriesAPI(APIClient):
         ...
 
     def create(self, time_series: Union[TimeSeries, Sequence[TimeSeries]]) -> Union[TimeSeries, TimeSeriesList]:
-        """`Create one or more time series. <https://docs.cognite.com/api/v1/#operation/postTimeSeries>`_
+        """`Create one or more time series <https://docs.cognite.com/api/v1/#operation/postTimeSeries>`_
 
         Args:
             time_series (Union[TimeSeries, Sequence[TimeSeries]]): TimeSeries or list of TimeSeries to create.
@@ -322,7 +322,7 @@ class TimeSeriesAPI(APIClient):
         external_id: Union[str, Sequence[str]] = None,
         ignore_unknown_ids: bool = False,
     ) -> None:
-        """`Delete one or more time series. <https://docs.cognite.com/api/v1/#operation/deleteTimeSeries>`_
+        """`Delete one or more time series <https://docs.cognite.com/api/v1/#operation/deleteTimeSeries>`_
 
         Args:
             id (Union[int, Sequence[int]): Id or list of ids
@@ -357,7 +357,7 @@ class TimeSeriesAPI(APIClient):
     def update(
         self, item: Union[TimeSeries, TimeSeriesUpdate, Sequence[Union[TimeSeries, TimeSeriesUpdate]]]
     ) -> Union[TimeSeries, TimeSeriesList]:
-        """`Update one or more time series. <https://docs.cognite.com/api/v1/#operation/alterTimeSeries>`_
+        """`Update one or more time series <https://docs.cognite.com/api/v1/#operation/alterTimeSeries>`_
 
         Args:
             item (Union[TimeSeries, TimeSeriesUpdate, Sequence[Union[TimeSeries, TimeSeriesUpdate]]]): Time series to update
@@ -395,7 +395,8 @@ class TimeSeriesAPI(APIClient):
         filter: Union[TimeSeriesFilter, Dict] = None,
         limit: int = 100,
     ) -> TimeSeriesList:
-        """`Search for time series. <https://docs.cognite.com/api/v1/#operation/searchTimeSeries>`_
+        """`Search for time series <https://docs.cognite.com/api/v1/#operation/searchTimeSeries>`_
+
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:
