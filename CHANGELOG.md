@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.4.1] - 2023-06-14
+### Fixed
+- Add the missing page_count field for diagram detect items.
+
 ## [6.4.0] - 2023-06-12
 ### Added
 - Partial support for the instance resource in the Data Modeling API with the implementation 

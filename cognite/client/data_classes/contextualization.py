@@ -451,6 +451,7 @@ class DiagramDetectItem(CogniteResource):
         error_message: str = None,
         cognite_client: CogniteClient = None,
         page_range: Optional[Dict[str, int]] = None,
+        page_count: Optional[int] = None,
     ):
         self.file_id = file_id
         self.file_external_id = file_external_id
@@ -458,6 +459,7 @@ class DiagramDetectItem(CogniteResource):
         self.error_message = error_message
         self._cognite_client = cast("CogniteClient", cognite_client)
         self.page_range = page_range
+        self.page_count = page_count
 
     def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:  # type: ignore[override]
         """Convert the instance into a pandas DataFrame.
