@@ -18,9 +18,15 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 
-## [6.4.1] - 2023-06-13
+
+## [6.4.2] - 2023-06-14
 ### Added
 - Transformation schema for nodes, edges in both view centric and model centric
+
+## [6.4.1] - 2023-06-14
+### Fixed
+- Add the missing page_count field for diagram detect items.
+
 
 ## [6.4.0] - 2023-06-12
 ### Added
