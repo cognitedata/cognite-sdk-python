@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 import warnings
+from copy import deepcopy
 from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast
@@ -21,8 +22,6 @@ from cognite.client.data_classes.annotations import AnnotationList
 from cognite.client.exceptions import CogniteAPIError, CogniteException, ModelFailedException
 from cognite.client.utils._auxiliary import convert_true_match, exactly_one_is_not_none
 from cognite.client.utils._text import to_snake_case
-
-from copy import deepcopy
 
 if TYPE_CHECKING:
     import pandas
@@ -617,14 +616,15 @@ class DetectJobBundle:
         self._result: List[Dict[str, Any]] = []
 
     def __str__(self) -> str:
-        return f"DetectJobBundle({self.job_ids=}, {self.jobs=}, {self._result=}, {self._remaining_job_ids=} {self.error=})"
+        return (
+            f"DetectJobBundle({self.job_ids=}, {self.jobs=}, {self._result=}, {self._remaining_job_ids=} {self.error=})"
+        )
 
     def _back_off(self) -> None:
         """
         Linear back off, in order to limit load on our API.
         Starts at _WAIT_TIME and goes to 10 seconds.
         """
-        print(f"DEBUG BACKING OFF {self._WAIT_TIME}")
         time.sleep(self._WAIT_TIME)
         if self._WAIT_TIME < 10:
             self._WAIT_TIME += 2
@@ -639,11 +639,15 @@ class DetectJobBundle:
         while timeout is None or time.time() < start + timeout:
             self._back_off()
             try:
-                res_json = self._cognite_client.diagrams._post(self._STATUS_PATH, json={"items": self._remaining_job_ids}).json()
+                res_json = self._cognite_client.diagrams._post(
+                    self._STATUS_PATH, json={"items": self._remaining_job_ids}
+                ).json()
                 self.error = res_json.get("error")
                 if self.error is None:
                     self.jobs = res_json["items"]
-                    self._remaining_job_ids = [j["jobId"] for j in self.jobs if JobStatus(j["status"]).is_not_finished()]
+                    self._remaining_job_ids = [
+                        j["jobId"] for j in self.jobs if JobStatus(j["status"]).is_not_finished()
+                    ]
                 return self.jobs
             except CogniteAPIError:
                 pass

@@ -218,9 +218,11 @@ class DiagramsAPI(APIClient):
                 except CogniteAPIError as exc:
                     unposted_files.append({"error": str(exc), "files": batch})
 
-                bundle = None 
+                bundle = None
                 if jobs:
-                    bundle = DetectJobBundle(cognite_client=self._cognite_client, job_ids=[j.job_id for j in jobs if j.job_id])
+                    bundle = DetectJobBundle(
+                        cognite_client=self._cognite_client, job_ids=[j.job_id for j in jobs if j.job_id]
+                    )
                     bundle.update_status(timeout=10)
 
             return bundle, unposted_files
