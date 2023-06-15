@@ -136,20 +136,20 @@ Id = Union[Tuple[str, str], Tuple[str, str, str], DataModelingId, VersionedDataM
 
 
 def _load_identifier(
-    ids: Id | Sequence[Id], id_type: Literal["container", "view", "data_model", "node", "edge", "all"]
+    ids: Id | Sequence[Id], id_type: Literal["container", "view", "data_model", "node", "edge"]
 ) -> DataModelingIdentifierSequence:
     is_sequence = isinstance(ids, Sequence) and not (isinstance(ids, tuple) and isinstance(ids[0], str))
     is_view_or_data_model = id_type in {"view", "data_model"}
-    is_instance = id_type in {"node", "edge", "all"}
+    is_instance = id_type in {"node", "edge"}
     id_list = cast(Sequence, ids)
     if not is_sequence:
         id_list = [ids]
 
     def create_args(id_: Id) -> tuple[str, str, Optional[str], Optional[Literal["node", "edge"]]]:
         if isinstance(id_, tuple) and is_instance:
-            if len(id_) == 3:
-                return id_[1], id_[2], None, id_type  # type: ignore[misc, return-value]
-            raise ValueError("Instance given as a tuple must have three elements, (instanceType, space, externalId)")
+            if len(id_) == 2:
+                return id_[0], id_[1], None, id_type  # type: ignore[misc, return-value]
+            raise ValueError("Instance given as a tuple must have two elements (space, externalId)")
         if isinstance(id_, tuple):
             return id_[0], id_[1], id_[2] if len(id_) == 3 else None, None  # type: ignore[misc]
         instance_type = None

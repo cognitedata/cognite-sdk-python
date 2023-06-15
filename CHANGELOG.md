@@ -17,6 +17,14 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.4.2] - 2023-06-15
+### Changed
+- When providing ids as tuples in `instances.retrieve` and `instances.delete` you should not 
+have to specify the instance type in each tuple
+
+### Fixed
+- Bug where edges and nodes would get mixed up on `instances.retrieve`
+
 ## [6.4.1] - 2023-06-14
 ### Fixed
 - Add the missing page_count field for diagram detect items.

@@ -233,7 +233,7 @@ class InstancesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.data_modeling.instances.retrieve(('node', 'mySpace', 'myNode'))
+                >>> res = c.data_modeling.instances.retrieve(('mySpace', 'myNode'))
 
             Delete nodes an edger using the built in data class
 
@@ -283,7 +283,7 @@ class InstancesAPI(APIClient):
             node_ids = _load_identifier(nodes_seq, "node")
             identifiers.extend(node_ids._identifiers)
         if edges_seq:
-            edge_ids = _load_identifier(edges_seq, "node")
+            edge_ids = _load_identifier(edges_seq, "edge")
             identifiers.extend(edge_ids._identifiers)
 
         return DataModelingIdentifierSequence(identifiers, is_singleton=False)
@@ -308,9 +308,9 @@ class InstancesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> c.data_modeling.instances.delete(("node", "myNode", "mySpace"))
+                >>> c.data_modeling.instances.delete(nodes=("myNode", "mySpace"))
 
-            Delete nodes an edger using the built in data class
+            Delete nodes and edges using the built in data class
 
                 >>> from cognite.client import CogniteClient
                 >>> import cognite.client.data_modeling as dm

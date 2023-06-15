@@ -185,7 +185,7 @@ class TestInstancesAPI:
             edges=person_to_actor, auto_create_start_nodes=True, auto_create_end_nodes=True, replace=True
         ).edges[0]
         created_nodes = cognite_client.data_modeling.instances.retrieve(
-            [("node", *person_to_actor.start_node.as_tuple()), ("node", *person_to_actor.end_node.as_tuple())]
+            [person_to_actor.start_node.as_tuple(), person_to_actor.end_node.as_tuple()]
         ).nodes
 
         # Assert
@@ -212,6 +212,21 @@ class TestInstancesAPI:
         # Assert
         assert len(retrieved) == len(cdf_nodes)
 
+    def test_retrieve_nodes_and_edges_using_id_tuples(
+        self, cognite_client: CogniteClient, cdf_nodes: dm.NodeList, cdf_edges: dm.EdgeList
+    ):
+        assert len(cdf_nodes) >= 2, "Please add at least two nodes to the test environment"
+        assert len(cdf_edges) >= 2, "Please add at least two edges to the test environment"
+        # Act
+        retrieved = cognite_client.data_modeling.instances.retrieve(
+            nodes=[(id.space, id.external_id) for id in cdf_nodes.as_ids()],
+            edges=[(id.space, id.external_id) for id in cdf_edges.as_ids()],
+        )
+
+        # Assert
+        assert [node.as_id() for node in retrieved.nodes] == [node.as_id() for node in cdf_nodes]
+        assert [edge.as_id() for edge in retrieved.edges] == [edge.as_id() for edge in cdf_edges]
+
     def test_retrieve_nodes_and_edges(
         self, cognite_client: CogniteClient, cdf_nodes: dm.NodeList, cdf_edges: dm.EdgeList
     ):
@@ -221,7 +236,8 @@ class TestInstancesAPI:
         retrieved = cognite_client.data_modeling.instances.retrieve(nodes=cdf_nodes.as_ids(), edges=cdf_edges.as_ids())
 
         # Assert
-        assert len(retrieved.nodes) + len(retrieved.edges) == len(cdf_nodes) + len(cdf_edges)
+        assert [node.as_id() for node in retrieved.nodes] == [node.as_id() for node in cdf_nodes]
+        assert [edge.as_id() for edge in retrieved.edges] == [edge.as_id() for edge in cdf_edges]
 
     def test_retrieve_multiple_with_missing(self, cognite_client: CogniteClient, cdf_nodes: dm.NodeList):
         assert len(cdf_nodes) >= 2, "Please add at least two nodes to the test environment"
@@ -236,10 +252,7 @@ class TestInstancesAPI:
         assert len(retrieved.nodes) == len(ids) - 1
 
     def test_retrieve_non_existent(self, cognite_client: CogniteClient):
-        assert (
-            cognite_client.data_modeling.instances.retrieve(("node", "myNonExistingSpace", "myImaginaryNode")).nodes
-            == []
-        )
+        assert cognite_client.data_modeling.instances.retrieve(("myNonExistingSpace", "myImaginaryNode")).nodes == []
 
     def test_iterate_over_instances(self, cognite_client: CogniteClient):
         for nodes in cognite_client.data_modeling.instances(chunk_size=2, limit=-1):
