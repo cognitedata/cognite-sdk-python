@@ -162,11 +162,11 @@ class DataModel(DataModelCore):
         )
 
 
-class DataModelApplyList(CogniteResourceList):
+class DataModelApplyList(CogniteResourceList[DataModelApply]):
     _RESOURCE = DataModelApply
 
 
-class DataModelList(CogniteResourceList):
+class DataModelList(CogniteResourceList[DataModel]):
     _RESOURCE = DataModel
 
     def to_data_model_apply_list(self) -> DataModelApplyList:

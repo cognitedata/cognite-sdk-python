@@ -165,7 +165,7 @@ class ContextualizationJob(CogniteResource):
 T_ContextualizationJob = TypeVar("T_ContextualizationJob", bound=ContextualizationJob)
 
 
-class ContextualizationJobList(CogniteResourceList):
+class ContextualizationJobList(CogniteResourceList[ContextualizationJob]):
     _RESOURCE = ContextualizationJob
 
 
@@ -327,7 +327,7 @@ class EntityMatchingModelUpdate(CogniteUpdate):
         return EntityMatchingModelUpdate._PrimitiveUpdate(self, "description")
 
 
-class EntityMatchingModelList(CogniteResourceList):
+class EntityMatchingModelList(CogniteResourceList[EntityMatchingModel]):
     _RESOURCE = EntityMatchingModel
 
 
@@ -369,7 +369,7 @@ class DiagramConvertPage(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
 
-class DiagramConvertPageList(CogniteResourceList):
+class DiagramConvertPageList(CogniteResourceList[DiagramConvertPage]):
     _RESOURCE = DiagramConvertPage
 
 
@@ -452,6 +452,7 @@ class DiagramDetectItem(CogniteResource):
         error_message: str = None,
         cognite_client: CogniteClient = None,
         page_range: Optional[Dict[str, int]] = None,
+        page_count: Optional[int] = None,
     ):
         self.file_id = file_id
         self.file_external_id = file_external_id
@@ -459,6 +460,7 @@ class DiagramDetectItem(CogniteResource):
         self.error_message = error_message
         self._cognite_client = cast("CogniteClient", cognite_client)
         self.page_range = page_range
+        self.page_count = page_count
 
     def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:  # type: ignore[override]
         """Convert the instance into a pandas DataFrame.
@@ -831,7 +833,7 @@ class VisionExtractJob(VisionJob):
     ) -> Union[Annotation, AnnotationList]:
         """
         Saves all predictions made by the feature extractors in CDF using the Annotations API.
-        See https://docs.cognite.com/api/v1/#tag/Annotations/operation/annotationsSuggest
+        See https://docs.cognite.com/api/v1/#operation/annotationsSuggest
 
         Args:
             creating_app (str, optional): The name of the app from which this annotation was created. Defaults to 'cognite-sdk-python'.
