@@ -34,6 +34,18 @@ class TestLoadIdentifier:
                 [{"space": "space", "externalId": "myDataModel", "version": "v1"}],
                 False,
             ),
+            (
+                ("space", "externalId"),
+                "node",
+                [{"externalId": "externalId", "instanceType": "node", "space": "space"}],
+                True,
+            ),
+            (
+                ("space", "externalId"),
+                "edge",
+                [{"externalId": "externalId", "instanceType": "edge", "space": "space"}],
+                True,
+            ),
         ],
     )
     def test_load(
