@@ -22,8 +22,13 @@ class DirectRelationReference:
         return convert_all_keys_recursive(output, camel_case)
 
     @classmethod
-    def load(cls, data: dict) -> DirectRelationReference:
-        return cls(**convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"type"})))
+    def load(cls, data: dict | tuple[str, str]) -> DirectRelationReference:
+        if isinstance(data, dict):
+            return cls(**convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"type"})))
+        elif isinstance(data, tuple) and len(data) == 2:
+            return cls(data[0], data[1])
+        else:
+            raise ValueError("Invalid data provided to load method. Must be dict or tuple with two elements.")
 
     def as_tuple(self) -> tuple[str, str]:
         return self.space, self.external_id

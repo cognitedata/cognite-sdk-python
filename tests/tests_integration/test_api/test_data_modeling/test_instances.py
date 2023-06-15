@@ -152,7 +152,7 @@ class TestInstancesAPI:
             space=space,
             external_id="relation:arnold_schwarzenegger:actor",
             type=dm.DirectRelationReference(space, person_view.properties["roles"].type.external_id),
-            start_node=dm.DirectRelationReference(space, person.external_id),
+            start_node=(space, person.external_id),
             end_node=dm.DirectRelationReference(space, actor.external_id),
         )
         new_nodes = [person, actor]

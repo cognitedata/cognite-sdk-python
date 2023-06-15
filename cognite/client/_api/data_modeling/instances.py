@@ -362,6 +362,7 @@ class InstancesAPI(APIClient):
         edges: EdgeApply | Sequence[EdgeApply] | None = None,
         auto_create_start_nodes: bool = False,
         auto_create_end_nodes: bool = False,
+        auto_create_direct_relations: bool = True,
         skip_on_version_conflict: bool = False,
         replace: bool = False,
     ) -> InstancesApplyResult:
@@ -374,6 +375,7 @@ class InstancesAPI(APIClient):
                                             the start node of an edge must exist before it can be ingestested.
             auto_create_end_nodes (bool): Whether to create missing end nodes for edges when ingesting. By default,
                                           the end node of an edge must exist before it can be ingestested.
+            auto_create_direct_relations (bool): Whether to create missing direct relation targets when ingesting.
             skip_on_version_conflict (bool): If existingVersion is specified on any of the nodes/edges in the input,
                                              the default behaviour is that the entire ingestion will fail when version
                                              conflicts occur. If skipOnVersionConflict is set to true, items with
@@ -439,6 +441,7 @@ class InstancesAPI(APIClient):
         other_parameters = {
             "autoCreateStartNodes": auto_create_start_nodes,
             "autoCreateEndNodes": auto_create_end_nodes,
+            "autoCreateDirectRelations": auto_create_direct_relations,
             "skipOnVersionConflict": skip_on_version_conflict,
             "replace": replace,
         }
