@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.4.3] - 2023-06-15
+### Added
+- Accept direct relation values as tuples in `EdgeApply`
+
 ## [6.4.2] - 2023-06-15
 ### Changed
 - When providing ids as tuples in `instances.retrieve` and `instances.delete` you should not 
