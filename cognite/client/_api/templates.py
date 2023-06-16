@@ -35,8 +35,8 @@ class TemplatesAPI(APIClient):
         self.views = TemplateViewsAPI(config, api_version, cognite_client)
 
     def graphql_query(self, external_id: str, version: int, query: str) -> GraphQlResponse:
-        """
-        `Run a GraphQL Query.`
+        """`Run a GraphQL Query.`
+
         To learn more, see https://graphql.org/learn/
 
         Args:
@@ -107,6 +107,7 @@ class TemplateGroupsAPI(APIClient):
         self, template_groups: Union[TemplateGroup, Sequence[TemplateGroup]]
     ) -> Union[TemplateGroup, TemplateGroupList]:
         """`Upsert one or more template groups.`
+
         Will overwrite existing template group(s) with the same external id(s).
 
         Args:
@@ -140,7 +141,7 @@ class TemplateGroupsAPI(APIClient):
         return res
 
     def retrieve_multiple(self, external_ids: Sequence[str], ignore_unknown_ids: bool = False) -> TemplateGroupList:
-        """`Retrieve multiple template groups by external id.`
+        """`Retrieve multiple template groups by external ID.`
 
         Args:
             external_ids (Sequence[str]): External IDs
@@ -166,6 +167,7 @@ class TemplateGroupsAPI(APIClient):
 
     def list(self, limit: int = LIST_LIMIT_DEFAULT, owners: Sequence[str] = None) -> TemplateGroupList:
         """`Lists template groups stored in the project based on a query filter given in the payload of this request.`
+
         Up to 1000 template groups can be retrieved in one operation.
 
         Args:
@@ -225,6 +227,7 @@ class TemplateGroupVersionsAPI(APIClient):
 
     def upsert(self, external_id: str, version: TemplateGroupVersion) -> TemplateGroupVersion:
         """`Upsert a template group version.`
+
         A Template Group update supports specifying different conflict modes, which is used when an existing schema already exists.
 
         Patch -> It diffs the new schema with the old schema and fails if there are breaking changes.
@@ -275,6 +278,7 @@ class TemplateGroupVersionsAPI(APIClient):
         max_version: Optional[int] = None,
     ) -> TemplateGroupVersionList:
         """`Lists versions of a specified template group.`
+
         Up to 1000 template group version can be retrieved in one operation.
 
         Args:
@@ -379,6 +383,7 @@ class TemplateInstancesAPI(APIClient):
         self, external_id: str, version: int, instances: Union[TemplateInstance, Sequence[TemplateInstance]]
     ) -> Union[TemplateInstance, TemplateInstanceList]:
         """`Upsert one or more template instances.`
+
         Will overwrite existing instances.
 
         Args:
@@ -430,6 +435,7 @@ class TemplateInstancesAPI(APIClient):
         self, external_id: str, version: int, item: Union[TemplateInstanceUpdate, Sequence[TemplateInstanceUpdate]]
     ) -> Union[TemplateInstance, TemplateInstanceList]:
         """`Update one or more template instances`
+
         Args:
             item (Union[TemplateInstanceUpdate, Sequence[TemplateInstanceUpdate]]): Templates instance(s) to update
 
@@ -457,7 +463,7 @@ class TemplateInstancesAPI(APIClient):
     def retrieve_multiple(
         self, external_id: str, version: int, external_ids: Sequence[str], ignore_unknown_ids: bool = False
     ) -> TemplateInstanceList:
-        """`Retrieve multiple template instances by external id.`
+        """`Retrieve multiple template instances by external ID.`
 
         Args:
             external_id (str): The template group to retrieve instances from.
@@ -494,6 +500,7 @@ class TemplateInstancesAPI(APIClient):
         template_names: Optional[Sequence[str]] = None,
     ) -> TemplateInstanceList:
         """`Lists instances in a template group.`
+
         Up to 1000 template instances can be retrieved in one operation.
 
         Args:
@@ -651,6 +658,7 @@ class TemplateViewsAPI(APIClient):
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> ViewResolveList:
         """`Resolves a View.`
+
         It resolves the source specified in a View with the provided input and applies the mapping rules to the response.
 
         Args:
@@ -682,6 +690,7 @@ class TemplateViewsAPI(APIClient):
 
     def list(self, external_id: str, version: int, limit: int = LIST_LIMIT_DEFAULT) -> ViewList:
         """`Lists view in a template group.`
+
         Up to 1000 views can be retrieved in one operation.
 
         Args:

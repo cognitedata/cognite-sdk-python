@@ -3,126 +3,121 @@ Data Organization
 
 Annotations
 -----------
+.. currentmodule:: cognite.client
 
-Retrieve an annotation by id
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.annotations.AnnotationsAPI.retrieve
+.. autosummary:: 
+   :toctree: generated/
+   :template: autosummary/accessor_method.rst
 
-Retrieve multiple annotations by id
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.annotations.AnnotationsAPI.retrieve_multiple
+   CogniteClient.annotations.retrieve
+   CogniteClient.annotations.retrieve_multiple
+   CogniteClient.annotations.list
+   CogniteClient.annotations.create
+   CogniteClient.annotations.suggest
+   CogniteClient.annotations.update
+   CogniteClient.annotations.delete
 
-List annotation
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.annotations.AnnotationsAPI.list
-
-Create an annotation
-^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.annotations.AnnotationsAPI.create
-
-Suggest an annotation
-^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.annotations.AnnotationsAPI.suggest
-
-Update annotations
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.annotations.AnnotationsAPI.update
-
-Delete annotations
-^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.annotations.AnnotationsAPI.delete
 
 Annotations Data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.annotations
-    :members:
-    :show-inheritance:
+.. currentmodule:: cognite.client.data_classes
+
+.. autosummary:: 
+   :toctree: generated/
+   :template: custom-class-template.rst
+
+    Annotation
+    AnnotationFilter
+    AnnotationUpdate
+    AnnotationList
+
 
 Data sets
 ---------
-Retrieve an data set by id
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_sets.DataSetsAPI.retrieve
+.. currentmodule:: cognite.client
 
-Retrieve multiple data sets by id
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_sets.DataSetsAPI.retrieve_multiple
+.. autosummary:: 
+   :toctree: generated/
+   :template: autosummary/accessor_method.rst
 
-List data sets
-^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_sets.DataSetsAPI.list
-
-Aggregate data sets
-^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_sets.DataSetsAPI.aggregate
-
-Create data sets
-^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_sets.DataSetsAPI.create
+   CogniteClient.data_sets.retrieve
+   CogniteClient.data_sets.retrieve_multiple
+   CogniteClient.data_sets.list
+   CogniteClient.data_sets.aggregate
+   CogniteClient.data_sets.create
+   CogniteClient.data_sets.update
 
 Delete data sets
 ^^^^^^^^^^^^^^^^
 This functionality is not yet available in the API.
 
-Update data sets
-^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_sets.DataSetsAPI.update
 
 Data Sets Data classes
 ^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.data_sets
-    :members:
-    :show-inheritance:
+.. currentmodule:: cognite.client.data_classes
+
+.. autosummary:: 
+   :toctree: generated/
+   :template: custom-class-template.rst
+
+    DataSet
+    DataSetFilter
+    DataSetUpdate
+    DataSetAggregate
+    DataSetList
 
 Labels
 ------
+.. currentmodule:: cognite.client
 
-List labels
-^^^^^^^^^^^
-.. automethod:: cognite.client._api.labels.LabelsAPI.list
+.. autosummary:: 
+   :toctree: generated/
+   :template: autosummary/accessor_method.rst
 
-Create a label
-^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.labels.LabelsAPI.create
+   CogniteClient.labels.list
+   CogniteClient.labels.create
+   CogniteClient.labels.delete
 
-Delete labels
-^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.labels.LabelsAPI.delete
 
 Labels Data classes
 ^^^^^^^^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.labels
-    :members:
-    :show-inheritance:
+.. currentmodule:: cognite.client.data_classes
+
+.. autosummary:: 
+   :toctree: generated/
+   :template: custom-class-template.rst
+   
+   LabelDefinition
+   LabelDefinitionFilter
+   LabelDefinitionList
+   Label
+   LabelFilter
 
 Relationships
 -------------
-Retrieve a relationship by external id
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.relationships.RelationshipsAPI.retrieve
+.. currentmodule:: cognite.client
 
-Retrieve multiple relationships by external id
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.relationships.RelationshipsAPI.retrieve_multiple
+.. autosummary:: 
+   :toctree: generated/
+   :template: autosummary/accessor_method.rst
 
-List relationships
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.relationships.RelationshipsAPI.list
+   CogniteClient.relationships.retrieve
+   CogniteClient.relationships.retrieve_multiple
+   CogniteClient.relationships.list
+   CogniteClient.relationships.create
+   CogniteClient.relationships.update
+   CogniteClient.relationships.delete
 
-Create a relationship
-^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.relationships.RelationshipsAPI.create
-
-Update relationships
-^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.relationships.RelationshipsAPI.update
-
-Delete relationships
-^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.relationships.RelationshipsAPI.delete
 
 Relationship Data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.relationships
-    :members:
-    :show-inheritance:
+.. currentmodule:: cognite.client.data_classes
+
+.. autosummary:: 
+   :toctree: generated/
+   :template: custom-class-template.rst
+   
+   Relationship
+   relationships.RelationshipFilter
+   RelationshipUpdate
+   RelationshipList

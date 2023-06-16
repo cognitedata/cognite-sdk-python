@@ -25,7 +25,7 @@ class CredentialProvider(Protocol):
 
 
 class Token(CredentialProvider):
-    """Token credential provider
+    """Token credential provider.
 
     Args:
         token (Union[str, Callable[[], str]): A token or a token factory.

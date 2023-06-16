@@ -40,7 +40,7 @@ class EntityMatchingAPI(APIClient):
         )
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[EntityMatchingModel]:
-        """Retrieve model
+        """Retrieve entity matching model.
 
         Args:
             id (int): id of the model to retrieve.
@@ -56,7 +56,7 @@ class EntityMatchingAPI(APIClient):
     def retrieve_multiple(
         self, ids: Optional[Sequence[int]] = None, external_ids: Optional[Sequence[str]] = None
     ) -> EntityMatchingModelList:
-        """Retrieve models
+        """Retrieve entity matching models.
 
         Args:
             ids (Sequence[int]): ids of the model to retrieve.
@@ -77,7 +77,7 @@ class EntityMatchingAPI(APIClient):
             Sequence[Union[EntityMatchingModel, EntityMatchingModelUpdate]],
         ],
     ) -> Union[EntityMatchingModelList, EntityMatchingModel]:
-        """Update model
+        """Update entity matching model.
 
         Args:
             item (Union[EntityMatchingModel,EntityMatchingModelUpdate, Sequence[Union[EntityMatchingModel,EntityMatchingModelUpdate]]) : Model(s) to update
@@ -98,7 +98,7 @@ class EntityMatchingAPI(APIClient):
         classifier: str = None,
         limit: int = 100,
     ) -> EntityMatchingModelList:
-        """List models
+        """List entity matching models.
 
         Args:
             name (str): Optional user-defined name of model.
@@ -136,7 +136,7 @@ class EntityMatchingAPI(APIClient):
         )
 
     def delete(self, id: Union[int, Sequence[int]] = None, external_id: Union[str, Sequence[str]] = None) -> None:
-        """Delete models
+        """Delete one or more entity matching models.
 
         Args:
             id (Union[int, Sequence[int]): Id or list of ids
@@ -212,7 +212,7 @@ class EntityMatchingAPI(APIClient):
         id: Optional[int] = None,
         external_id: Optional[str] = None,
     ) -> ContextualizationJob:
-        """Predict entity matching.
+        """Predict using an entity matching model.
 
         Warning:
             Blocks and waits for the model to be ready if it has been recently created.

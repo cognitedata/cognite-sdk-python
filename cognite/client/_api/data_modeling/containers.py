@@ -85,7 +85,7 @@ class ContainersAPI(APIClient):
         ...
 
     def retrieve(self, ids: ContainerIdentifier | Sequence[ContainerIdentifier]) -> Container | ContainerList | None:
-        """`Retrieve one or more container by id(s). <https://docs.cognite.com/api/v1/#tag/Containers/operation/byExternalIdsContainers>`_
+        """`Retrieve one or more containers by ID <https://docs.cognite.com/api/v1/#tag/Containers/operation/byExternalIdsContainers>`_.
 
         Args:
             ids (ContainerId | Sequence[ContainerId]): Identifier for container(s).
@@ -110,7 +110,7 @@ class ContainersAPI(APIClient):
         return self._retrieve_multiple(list_cls=ContainerList, resource_cls=Container, identifiers=identifier)
 
     def delete(self, id: ContainerIdentifier | Sequence[ContainerIdentifier]) -> list[DataModelingId]:
-        """`Delete one or more containers <https://docs.cognite.com/api/v1/#tag/Containers/operation/deleteContainers>`_
+        """`Delete one or more containers <https://docs.cognite.com/api/v1/#tag/Containers/operation/deleteContainers>`_.
 
         Args:
             id (ContainerId | Sequence[ContainerId): The container identifier(s).
@@ -133,7 +133,7 @@ class ContainersAPI(APIClient):
     def list(
         self, space: str | None = None, limit: int = DATA_MODELING_LIST_LIMIT_DEFAULT, include_global: bool = False
     ) -> ContainerList:
-        """`List containers <https://docs.cognite.com/api/v1/#tag/Containers/operation/listContainers>`_
+        """`List containers <https://docs.cognite.com/api/v1/#tag/Containers/operation/listContainers>`_.
 
         Args:
             space (int, optional): The space to query
@@ -185,7 +185,7 @@ class ContainersAPI(APIClient):
         ...
 
     def apply(self, container: ContainerApply | Sequence[ContainerApply]) -> Container | ContainerList:
-        """`Add or update (upsert) containers. <https://docs.cognite.com/api/v1/#tag/Containers/operation/ApplyContainers>`_
+        """`Add or update (upsert) containers <https://docs.cognite.com/api/v1/#tag/Containers/operation/ApplyContainers>`_.
 
         Args:
             container (container: ContainerApply | Sequence[ContainerApply]): Container or containers of containers to create or update.

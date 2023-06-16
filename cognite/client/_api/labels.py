@@ -53,7 +53,7 @@ class LabelsAPI(APIClient):
         data_set_external_ids: Union[str, Sequence[str]] = None,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> LabelDefinitionList:
-        """`List Labels <https://docs.cognite.com/api/v1/#operation/listLabels>`_
+        """`List Labels <https://docs.cognite.com/api/v1/#operation/listLabels>`_.
 
         Args:
             name (str): returns the label definitions matching that name
@@ -99,7 +99,7 @@ class LabelsAPI(APIClient):
     def create(
         self, label: Union[LabelDefinition, Sequence[LabelDefinition]]
     ) -> Union[LabelDefinition, LabelDefinitionList]:
-        """`Create one or more label definitions. <https://docs.cognite.com/api/v1/#operation/createLabelDefinitions>`_
+        """`Create one or more label definitions <https://docs.cognite.com/api/v1/#operation/createLabelDefinitions>`_.
 
         Args:
             Label (Union[LabelDefinition, Sequence[LabelDefinition]]): label definition or a list of label definitions to create.
@@ -125,7 +125,7 @@ class LabelsAPI(APIClient):
         return self._create_multiple(list_cls=LabelDefinitionList, resource_cls=LabelDefinition, items=label)
 
     def delete(self, external_id: Union[str, Sequence[str]] = None) -> None:
-        """`Delete one or more label definitions <https://docs.cognite.com/api/v1/#operation/deleteLabels>`_
+        """`Delete one or more label definitions <https://docs.cognite.com/api/v1/#operation/deleteLabels>`_.
 
         Args:
             external_id (Union[str, Sequence[str]]): One or more label external ids

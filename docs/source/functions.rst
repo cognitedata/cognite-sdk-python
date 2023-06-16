@@ -2,65 +2,69 @@ Functions
 =========
 Functions API
 -------------
-Create function
-^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.functions.FunctionsAPI.create
+.. currentmodule:: cognite.client
 
-Delete function
-^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.functions.FunctionsAPI.delete
+.. autosummary:: 
+   :toctree: generated/
+   :template: autosummary/accessor_method.rst
 
-List functions
-^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.functions.FunctionsAPI.list
-
-Retrieve function
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.functions.FunctionsAPI.retrieve
-
-Retrieve multiple functions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.functions.FunctionsAPI.retrieve_multiple
-
-Call function
-^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.functions.FunctionsAPI.call
-
+   CogniteClient.functions.create
+   CogniteClient.functions.delete
+   CogniteClient.functions.list
+   CogniteClient.functions.retrieve
+   CogniteClient.functions.retrieve_multiple
+   CogniteClient.functions.call
+   CogniteClient.functions.limits
+   CogniteClient.functions.activate
+   CogniteClient.functions.status
 
 Function calls
 --------------
-List function calls
-^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.functions.FunctionCallsAPI.list
+.. currentmodule:: cognite.client
 
-Retrieve function call
-^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.functions.FunctionCallsAPI.retrieve
+.. autosummary:: 
+   :toctree: generated/
+   :template: autosummary/accessor_method.rst
 
-Retrieve function call response
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.functions.FunctionCallsAPI.get_response
-
-Retrieve function call logs
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.functions.FunctionCallsAPI.get_logs
+   CogniteClient.functions.calls.list
+   CogniteClient.functions.calls.retrieve
+   CogniteClient.functions.calls.get_response
+   CogniteClient.functions.calls.get_logs
+   CogniteClient.functions.calls.list
 
 Function schedules
 ------------------
-List function schedules
-^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.functions.FunctionSchedulesAPI.list
+.. currentmodule:: cognite.client
 
-Create function schedule
-^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.functions.FunctionSchedulesAPI.create
+.. autosummary:: 
+   :toctree: generated/
+   :template: autosummary/accessor_method.rst
 
-Delete function schedule
-^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.functions.FunctionSchedulesAPI.delete
+
+   CogniteClient.functions.schedules.list
+   CogniteClient.functions.schedules.create
+   CogniteClient.functions.schedules.delete
+   CogniteClient.functions.schedules.retrieve
+   CogniteClient.functions.schedules.get_input_data
 
 Data classes
 ^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.functions
-    :members:
-    :show-inheritance:
+.. currentmodule:: cognite.client.data_classes
+
+.. autosummary:: 
+   :toctree: generated/
+   :template: custom-class-template.rst
+   
+   Function
+   functions.FunctionFilter
+   functions.FunctionCallsFilter
+   FunctionSchedule
+   functions.FunctionSchedulesFilter
+   FunctionSchedulesList
+   FunctionList
+   FunctionCall
+   FunctionCallList
+   FunctionCallLogEntry
+   FunctionCallLog
+   FunctionsLimits
+   FunctionsStatus

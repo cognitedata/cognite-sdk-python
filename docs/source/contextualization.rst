@@ -5,42 +5,34 @@ Entity Matching
 ---------------
 These APIs will return as soon as possible, deferring a blocking wait until the last moment. Nevertheless, they can block for a long time awaiting results.
 
-Fit Entity Matching Model
-^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.fit
+.. currentmodule:: cognite.client
 
-Re-fit Entity Matching Model
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.refit
+.. autosummary:: 
+   :toctree: generated/
+   :template: autosummary/accessor_method.rst
 
-Retrieve Entity Matching Models
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.retrieve
-.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.retrieve_multiple
-.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.list
+   CogniteClient.entity_matching.fit
+   CogniteClient.entity_matching.refit
+   CogniteClient.entity_matching.retrieve
+   CogniteClient.entity_matching.retrieve_multiple
+   CogniteClient.entity_matching.list
+   CogniteClient.entity_matching.list_jobs
+   CogniteClient.entity_matching.delete
+   CogniteClient.entity_matching.update
+   CogniteClient.entity_matching.predict
 
-Delete Entity Matching Models
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.delete
-
-Update Entity Matching Models
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.update
-
-Predict Using an Entity Matching Model
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.entity_matching.EntityMatchingAPI.predict
 
 Engineering Diagrams
 --------------------
 
-Detect entities in Engineering Diagrams
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.diagrams.DiagramsAPI.detect
+.. currentmodule:: cognite.client
 
-Convert to an interactive SVG where the provided annotations are highlighted
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.diagrams.DiagramsAPI.convert
+.. autosummary:: 
+   :toctree: generated/
+   :template: autosummary/accessor_method.rst
+
+   CogniteClient.diagrams.detect
+   CogniteClient.diagrams.convert
 
 
 Vision
@@ -96,35 +88,54 @@ Tweaking the parameters of a feature extractor:
         parameters=FeatureParameters(text_detection_parameters=TextDetectionParameters(threshold=0.9))
     )
 
-Extract
-^^^^^^^
+.. currentmodule:: cognite.client
 
-.. automethod:: cognite.client._api.vision.VisionAPI.extract
+.. autosummary:: 
+   :toctree: generated/
+   :template: autosummary/accessor_method.rst
 
-Get vision extract job
-^^^^^^^^^^^^^^^^^^^^^^
-
-.. automethod:: cognite.client._api.vision.VisionAPI.get_extract_job
+   CogniteClient.vision.extract
+   CogniteClient.vision.get_extract_job
 
 
 Contextualization Data Classes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.contextualization
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    :inherited-members:
+.. currentmodule:: cognite.client.data_classes
+
+.. autosummary:: 
+   :toctree: generated/
+   :template: custom-class-template.rst
+
+   contextualization.JobStatus
+   contextualization.ContextualizationJobType
+   ContextualizationJob
+   ContextualizationJobList
+   EntityMatchingModel
+   EntityMatchingModelUpdate
+   EntityMatchingModelList
+   FileReference
+   DiagramConvertPage
+   DiagramConvertPageList
+   DiagramConvertItem
+   DiagramConvertResults
+   DiagramDetectItem
+   DiagramDetectResults
+   contextualization.VisionJob
+   VisionExtractItem
+   VisionExtractJob
 
 
-.. automodule:: cognite.client.data_classes.annotation_types.images
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    :inherited-members:
+.. autosummary:: 
+   :toctree: generated/
+   :template: custom-module-template.rst
+   :recursive:
+
+   cognite.client.data_classes.annotation_types.images
 
 
-.. automodule:: cognite.client.data_classes.annotation_types.primitives
-    :members:
-    :undoc-members:
-    :show-inheritance:
-    :inherited-members:
+.. autosummary:: 
+   :toctree: generated/
+   :template: custom-module-template.rst
+   :recursive:
+
+    cognite.client.data_classes.annotation_types.primitives 

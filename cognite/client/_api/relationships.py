@@ -144,7 +144,7 @@ class RelationshipsAPI(APIClient):
         return cast(Iterator[Relationship], self())
 
     def retrieve(self, external_id: str, fetch_resources: bool = False) -> Optional[Relationship]:
-        """Retrieve a single relationship by external id.
+        """Retrieve a single relationship by external ID.
 
         Args:
             external_id (str): External ID
@@ -171,7 +171,7 @@ class RelationshipsAPI(APIClient):
         )
 
     def retrieve_multiple(self, external_ids: Sequence[str], fetch_resources: bool = False) -> RelationshipList:
-        """`Retrieve multiple relationships by external id.  <https://docs.cognite.com/api/v1/#operation/byidsRelationships>`_
+        """`Retrieve multiple relationships by external ID <https://docs.cognite.com/api/v1/#operation/byidsRelationships>`_.
 
         Args:
             external_ids (Sequence[str]): External IDs
@@ -216,7 +216,9 @@ class RelationshipsAPI(APIClient):
         partitions: int = None,
         fetch_resources: bool = False,
     ) -> RelationshipList:
-        """`Lists relationships stored in the project based on a query filter given in the payload of this request. Up to 1000 relationships can be retrieved in one operation.  <https://docs.cognite.com/api/v1/#operation/listRelationships>`_
+        """`Lists relationships stored in the project based on a query filter given in the payload of this request  <https://docs.cognite.com/api/v1/#operation/listRelationships>`_.
+
+        Up to 1000 relationships can be retrieved in one operation
 
         Args:
             source_external_ids (Sequence[str]): Include relationships that have any of these values in their source External Id field
@@ -322,7 +324,7 @@ class RelationshipsAPI(APIClient):
     def create(
         self, relationship: Union[Relationship, Sequence[Relationship]]
     ) -> Union[Relationship, RelationshipList]:
-        """`Create one or more relationships. <https://docs.cognite.com/api/v1/#operation/createRelationships>`_
+        """`Create one or more relationships <https://docs.cognite.com/api/v1/#operation/createRelationships>`_.
 
         Args:
             relationship (Union[Relationship, Sequence[Relationship]]): Relationship or list of relationships to create.
@@ -372,7 +374,8 @@ class RelationshipsAPI(APIClient):
     def update(
         self, item: Union[Relationship, RelationshipUpdate, Sequence[Union[Relationship, RelationshipUpdate]]]
     ) -> Union[Relationship, RelationshipList]:
-        """`Update one or more relationships <https://docs.cognite.com/api/v1/#operation/updateRelationships>`_
+        """`Update one or more relationships <https://docs.cognite.com/api/v1/#operation/updateRelationships>`_.
+
         Currently, a full replacement of labels on a relationship is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.
 
         Args:
@@ -422,7 +425,7 @@ class RelationshipsAPI(APIClient):
         )
 
     def delete(self, external_id: Union[str, Sequence[str]], ignore_unknown_ids: bool = False) -> None:
-        """`Delete one or more relationships. <https://docs.cognite.com/api/v1/#operation/deleteRelationships>`_
+        """`Delete one or more relationships <https://docs.cognite.com/api/v1/#operation/deleteRelationships>`_.
 
         Args:
             external_id (Union[str, Sequence[str]]): External ID or list of external ids

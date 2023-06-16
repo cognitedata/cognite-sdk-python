@@ -74,7 +74,7 @@ class DataSetsAPI(APIClient):
         return cast(Iterator[DataSet], self())
 
     def create(self, data_set: Union[DataSet, Sequence[DataSet]]) -> Union[DataSet, DataSetList]:
-        """`Create one or more data sets. <https://docs.cognite.com/api/v1/#operation/createDataSets>`_
+        """`Create one or more data sets <https://docs.cognite.com/api/v1/#operation/createDataSets>`_.
 
         Args:
             data_set: Union[DataSet, Sequence[DataSet]]: Data set or list of data sets to create.
@@ -95,7 +95,7 @@ class DataSetsAPI(APIClient):
         return self._create_multiple(list_cls=DataSetList, resource_cls=DataSet, items=data_set)
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[DataSet]:
-        """`Retrieve a single data set by id. <https://docs.cognite.com/api/v1/#operation/getDataSets>`_
+        """`Retrieve a single data set by ID <https://docs.cognite.com/api/v1/#operation/getDataSets>`_.
 
         Args:
             id (int, optional): ID
@@ -127,7 +127,7 @@ class DataSetsAPI(APIClient):
         external_ids: Optional[Sequence[str]] = None,
         ignore_unknown_ids: bool = False,
     ) -> DataSetList:
-        """`Retrieve multiple data sets by id. <https://docs.cognite.com/api/v1/#operation/getDataSets>`_
+        """`Retrieve multiple data sets by ID <https://docs.cognite.com/api/v1/#operation/getDataSets>`_.
 
         Args:
             ids (Sequence[int], optional): IDs
@@ -165,7 +165,7 @@ class DataSetsAPI(APIClient):
         write_protected: bool = None,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> DataSetList:
-        """`List data sets <https://docs.cognite.com/api/v1/#operation/listDataSets>`_
+        """`List data sets <https://docs.cognite.com/api/v1/#operation/listDataSets>`_.
 
         Args:
             metadata (Dict[str, str]): Custom, application-specific metadata. String key -> String value.
@@ -212,7 +212,7 @@ class DataSetsAPI(APIClient):
         return self._list(list_cls=DataSetList, resource_cls=DataSet, method="POST", limit=limit, filter=filter)
 
     def aggregate(self, filter: Union[DataSetFilter, Dict] = None) -> List[DataSetAggregate]:
-        """`Aggregate data sets <https://docs.cognite.com/api/v1/#operation/aggregateDataSets>`_
+        """`Aggregate data sets <https://docs.cognite.com/api/v1/#operation/aggregateDataSets>`_.
 
         Args:
             filter (Union[DataSetFilter, Dict]): Filter on data set filter with exact match
@@ -234,7 +234,7 @@ class DataSetsAPI(APIClient):
     def update(
         self, item: Union[DataSet, DataSetUpdate, Sequence[Union[DataSet, DataSetUpdate]]]
     ) -> Union[DataSet, DataSetList]:
-        """`Update one or more data sets <https://docs.cognite.com/api/v1/#operation/updateDataSets>`_
+        """`Update one or more data sets <https://docs.cognite.com/api/v1/#operation/updateDataSets>`_.
 
         Args:
             item: Union[DataSet, DataSetUpdate, Sequence[Union[DataSet, DataSetUpdate]]]: Data set(s) to update

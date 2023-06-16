@@ -3,96 +3,125 @@ Data Modeling
 
 Data Models
 ------------
-Retrieve data models by id(s)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.data_models.DataModelsAPI.retrieve
+.. currentmodule:: cognite.client
 
-List data models
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.data_models.DataModelsAPI.list
+.. autosummary::
+   :toctree: generated/
+   :template: autosummary/accessor_method.rst
 
-Apply data models
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.data_models.DataModelsAPI.apply
-
-Delete data models
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.data_models.DataModelsAPI.delete
+   CogniteClient.data_modeling.data_models.retrieve
+   CogniteClient.data_modeling.data_models.list
+   CogniteClient.data_modeling.data_models.apply
+   CogniteClient.data_modeling.data_models.delete
 
 Data model data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.data_modeling.data_models
-    :members:
-    :show-inheritance:
+.. currentmodule:: cognite.client.data_classes.data_modeling
+
+.. autosummary:: 
+   :toctree: generated/
+   :template: custom-class-template.rst
+
+   data_models.DataModelCore
+   DataModelApply
+   DataModel
+   DataModelApplyList
+   DataModelList
+   data_models.DataModelFilter
+   data_models.DataModelsSort
 
 Spaces
 ------
-Retrieve a space by id
-^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.spaces.SpacesAPI.retrieve
+.. currentmodule:: cognite.client
 
-List spaces
-^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.spaces.SpacesAPI.list
+.. autosummary::
+   :toctree: generated/
+   :template: autosummary/accessor_method.rst
 
-Apply spaces
-^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.spaces.SpacesAPI.apply
+   CogniteClient.data_modeling.spaces.retrieve
+   CogniteClient.data_modeling.spaces.list
+   CogniteClient.data_modeling.spaces.apply
+   CogniteClient.data_modeling.spaces.delete
 
-Delete spaces
-^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.spaces.SpacesAPI.delete
+Spaces data classes
+^^^^^^^^^^^^^^^^^^^
+.. currentmodule:: cognite.client.data_classes.data_modeling
 
-Data classes
-^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.data_modeling.spaces
-    :members:
-    :show-inheritance:
+.. autosummary:: 
+   :toctree: generated/
+   :template: custom-class-template.rst
+
+   spaces.SpaceCore
+   SpaceApply
+   Space
+   SpaceApplyList
+   SpaceList
 
 Views
 ------------
-Retrieve views by id(s)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.views.ViewsAPI.retrieve
+.. currentmodule:: cognite.client
 
-List views
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.views.ViewsAPI.list
+.. autosummary::
+   :toctree: generated/
+   :template: autosummary/accessor_method.rst
 
-Apply view
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.views.ViewsAPI.apply
-
-Delete views
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.views.ViewsAPI.delete
+   CogniteClient.data_modeling.views.retrieve
+   CogniteClient.data_modeling.views.list
+   CogniteClient.data_modeling.views.apply
+   CogniteClient.data_modeling.views.delete
 
 View data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.data_modeling.views
-    :members:
-    :show-inheritance:
+.. currentmodule:: cognite.client.data_classes.data_modeling
+
+.. autosummary:: 
+   :toctree: generated/
+   :template: custom-class-template.rst
+
+    views.ViewCore
+    ViewApply
+    View
+    ViewApplyList
+    ViewList
+    views.ViewFilter
+    views.ViewDirectRelation
+    ViewPropertyDefinition
+    views.MappedCorePropertyDefinition
+    MappedApplyPropertyDefinition
+    MappedPropertyDefinition
+    ConnectionDefinition
+    SingleHopConnectionDefinition
 
 Containers
 ------------
-Retrieve containers by id(s)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.containers.ContainersAPI.retrieve
+.. currentmodule:: cognite.client
 
-List containers
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.containers.ContainersAPI.list
+.. autosummary::
+   :toctree: generated/
+   :template: autosummary/accessor_method.rst
 
-Apply containers
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.containers.ContainersAPI.apply
-
-Delete containers
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.containers.ContainersAPI.delete
+   CogniteClient.data_modeling.containers.retrieve
+   CogniteClient.data_modeling.containers.list
+   CogniteClient.data_modeling.containers.apply
+   CogniteClient.data_modeling.containers.delete
 
 Containers data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.data_modeling.containers
-    :members:
-    :show-inheritance:
+.. currentmodule:: cognite.client.data_classes.data_modeling
+
+.. autosummary:: 
+   :toctree: generated/
+   :template: custom-class-template.rst
+
+   containers.ContainerCore
+   ContainerApply
+   Container
+   ContainerApplyList
+   ContainerList
+   containers.ContainerFilter
+   ContainerDirectRelation
+   ContainerPropertyIdentifier
+   ConstraintIdentifier
+   RequiresConstraintDefinition
+   UniquenessConstraintDefinition
+   IndexIdentifier

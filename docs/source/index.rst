@@ -23,6 +23,8 @@ To upgrade the version of this package:
 
    pip install cognite-sdk --upgrade
 
+To install optional dependencies:
+
 .. code-block:: bash
 
    pip install "cognite-sdk[pandas, geo]"
@@ -32,6 +34,7 @@ Contents
 ^^^^^^^^
 .. toctree::
    :caption: Getting started
+   :maxdepth: 2
 
    quickstart
    settings
@@ -39,12 +42,14 @@ Contents
 
 .. toctree::
    :caption: Connecting to CDF
+   :maxdepth: 2
 
    credential_providers
    cognite_client
 
 .. toctree::
    :caption: Interacting with CDF
+   :maxdepth: 2
 
    identity_and_access_management
    core_data_model
@@ -57,7 +62,8 @@ Contents
    data_modeling
 
 .. toctree::
-   :caption: Other
+   :caption: Miscellaneous
+   :maxdepth: 2
 
    deprecated
    base_data_classes

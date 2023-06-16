@@ -1,21 +1,13 @@
 Exceptions
 ==========
-CogniteAPIError
-^^^^^^^^^^^^^^^
-.. autoexception:: cognite.client.exceptions.CogniteAPIError
+.. currentmodule:: cognite.client.exceptions
 
-CogniteNotFoundError
-^^^^^^^^^^^^^^^^^^^^
-.. autoexception:: cognite.client.exceptions.CogniteNotFoundError
+.. autosummary:: 
+   :toctree: generated/
+   :template: custom-class-template.rst
 
-CogniteDuplicatedError
-^^^^^^^^^^^^^^^^^^^^^^
-.. autoexception:: cognite.client.exceptions.CogniteDuplicatedError
-
-CogniteImportError
-^^^^^^^^^^^^^^^^^^
-.. autoexception:: cognite.client.exceptions.CogniteImportError
-
-CogniteMissingClientError
-^^^^^^^^^^^^^^^^^^^^^^^^^
-.. autoexception:: cognite.client.exceptions.CogniteMissingClientError
+   CogniteAPIError
+   CogniteNotFoundError
+   CogniteDuplicatedError
+   CogniteImportError
+   CogniteMissingClientError

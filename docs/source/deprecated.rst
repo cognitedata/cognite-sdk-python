@@ -3,82 +3,29 @@ Deprecated
 
 Templates
 ---------
-Create Template groups
-^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.templates.TemplateGroupsAPI.create
+.. currentmodule:: cognite.client
 
-Upsert Template groups
-^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.templates.TemplateGroupsAPI.upsert
+.. autosummary:: 
+   :toctree: generated/
+   :template: autosummary/accessor_method.rst
 
-Retrieve Template groups
-^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.templates.TemplateGroupsAPI.retrieve_multiple
-
-List Template groups
-^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.templates.TemplateGroupsAPI.list
-
-Delete Template groups
-^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.templates.TemplateGroupsAPI.delete
-
-Upsert a Template group version
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.templates.TemplateGroupVersionsAPI.upsert
-
-List Temple Group versions
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.templates.TemplateGroupVersionsAPI.list
-
-Delete a Temple Group version
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.templates.TemplateGroupVersionsAPI.delete
-
-Run a GraphQL query
-^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.templates.TemplatesAPI.graphql_query
-
-Create Template instances
-^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.templates.TemplateInstancesAPI.create
-
-Upsert Template instances
-^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.templates.TemplateInstancesAPI.upsert
-
-Update Template instances
-^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.templates.TemplateInstancesAPI.update
-
-Retrieve Template instances
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.templates.TemplateInstancesAPI.retrieve_multiple
-
-List Template instances
-^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.templates.TemplateInstancesAPI.list
-
-Delete Template instances
-^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.templates.TemplateInstancesAPI.delete
-
-Create Template Views
-^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.templates.TemplateViewsAPI.create
-
-Upsert Template Views
-^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.templates.TemplateViewsAPI.upsert
-
-List Template Views
-^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.templates.TemplateViewsAPI.list
-
-Resolve Template View
-^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.templates.TemplateViewsAPI.resolve
-
-Delete Template Views
-^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.templates.TemplateViewsAPI.delete
+   CogniteClient.templates.groups.create
+   CogniteClient.templates.groups.upsert
+   CogniteClient.templates.groups.retrieve_multiple
+   CogniteClient.templates.groups.list
+   CogniteClient.templates.groups.delete
+   CogniteClient.templates.versions.upsert
+   CogniteClient.templates.versions.list
+   CogniteClient.templates.versions.delete
+   CogniteClient.templates.graphql_query
+   CogniteClient.templates.instances.create
+   CogniteClient.templates.instances.upsert
+   CogniteClient.templates.instances.update
+   CogniteClient.templates.instances.retrieve_multiple
+   CogniteClient.templates.instances.list
+   CogniteClient.templates.instances.delete
+   CogniteClient.templates.views.create
+   CogniteClient.templates.views.upsert
+   CogniteClient.templates.views.list
+   CogniteClient.templates.views.resolve
+   CogniteClient.templates.views.delete

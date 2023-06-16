@@ -1,6 +1,8 @@
 # Minimal makefile for Sphinx documentation
 #
 
+export BUILD_COGNITE_SDK_DOCS=true
+
 # You can set these variables from the command line.
 SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build

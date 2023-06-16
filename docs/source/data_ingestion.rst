@@ -5,125 +5,119 @@ Raw
 ---
 Databases
 ^^^^^^^^^
-List databases
-~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.raw.RawDatabasesAPI.list
+.. currentmodule:: cognite.client
 
-Create new databases
-~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.raw.RawDatabasesAPI.create
+.. autosummary:: 
+   :toctree: generated/
+   :template: autosummary/accessor_method.rst
 
-Delete databases
-~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.raw.RawDatabasesAPI.delete
+   CogniteClient.raw.databases.list
+   CogniteClient.raw.databases.create
+   CogniteClient.raw.databases.delete
 
 
 Tables
 ^^^^^^
-List tables in a database
-~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.raw.RawTablesAPI.list
+.. currentmodule:: cognite.client
 
-Create new tables in a database
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.raw.RawTablesAPI.create
+.. autosummary:: 
+   :toctree: generated/
+   :template: autosummary/accessor_method.rst
 
-Delete tables from a database
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.raw.RawTablesAPI.delete
+   CogniteClient.raw.tables.list
+   CogniteClient.raw.tables.create
+   CogniteClient.raw.tables.delete
 
 
 Rows
 ^^^^
-Get a row from a table
-~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.raw.RawRowsAPI.retrieve
+.. currentmodule:: cognite.client
 
-List rows in a table
-~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.raw.RawRowsAPI.list
+.. autosummary:: 
+   :toctree: generated/
+   :template: autosummary/accessor_method.rst
 
-Insert rows into a table
-~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.raw.RawRowsAPI.insert
-
-Delete rows from a table
-~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.raw.RawRowsAPI.delete
-
-Retrieve pandas dataframe
-~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.raw.RawRowsAPI.retrieve_dataframe
-
-Insert pandas dataframe
-~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.raw.RawRowsAPI.insert_dataframe
+   CogniteClient.raw.rows.retrieve
+   CogniteClient.raw.rows.list
+   CogniteClient.raw.rows.insert
+   CogniteClient.raw.rows.delete
+   CogniteClient.raw.rows.retrieve_dataframe
+   CogniteClient.raw.rows.insert_dataframe
 
 
 RAW Data classes
 ^^^^^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.raw
-    :members:
-    :show-inheritance:
+.. currentmodule:: cognite.client.data_classes
+
+.. autosummary:: 
+   :toctree: generated/
+   :template: custom-class-template.rst
+
+   Database
+   DatabaseList
+   Row 
+   RowList
+   Table
+   TableList
+
 
 Extraction pipelines
 --------------------
-List extraction pipelines
-^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelinesAPI.list
+.. currentmodule:: cognite.client
 
-Create extraction pipeline
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelinesAPI.create
+.. autosummary:: 
+   :toctree: generated/
+   :template: autosummary/accessor_method.rst
 
-Retrieve an extraction pipeline by ID
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelinesAPI.retrieve
-
-Retrieve multiple extraction pipelines by ID
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelinesAPI.retrieve_multiple
-
-Update extraction pipelines
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelinesAPI.update
-
-Delete extraction pipelines
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelinesAPI.delete
+   CogniteClient.extraction_pipelines.list
+   CogniteClient.extraction_pipelines.create
+   CogniteClient.extraction_pipelines.retrieve
+   CogniteClient.extraction_pipelines.retrieve_multiple
+   CogniteClient.extraction_pipelines.update
+   CogniteClient.extraction_pipelines.delete
 
 
 Extraction pipeline runs
 ------------------------
-List runs for an extraction pipeline
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelineRunsAPI.list
+.. currentmodule:: cognite.client
 
-Report new runs
-^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelineRunsAPI.create
+.. autosummary:: 
+   :toctree: generated/
+   :template: autosummary/accessor_method.rst
+
+   CogniteClient.extraction_pipelines.runs.list
+   CogniteClient.extraction_pipelines.runs.create
 
 
 Extraction pipeline configs
 ---------------------------
-Get the latest or a specific config revision
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelineConfigsAPI.retrieve
+.. currentmodule:: cognite.client
 
-List configuration revisions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelineConfigsAPI.list
+.. autosummary:: 
+   :toctree: generated/
+   :template: autosummary/accessor_method.rst
 
-Create a config revision
-^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelineConfigsAPI.create
-
-Revert to an earlier config revision
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.extractionpipelines.ExtractionPipelineConfigsAPI.revert
+   CogniteClient.extraction_pipelines.config.retrieve
+   CogniteClient.extraction_pipelines.config.list
+   CogniteClient.extraction_pipelines.config.create
+   CogniteClient.extraction_pipelines.config.revert
 
 Extractor Config Data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.extractionpipelines
-    :members:
-    :show-inheritance:
+.. currentmodule:: cognite.client.data_classes
+
+.. autosummary:: 
+   :toctree: generated/
+   :template: custom-class-template.rst
+
+   ExtractionPipelineContact
+   ExtractionPipeline
+   ExtractionPipelineUpdate
+   ExtractionPipelineList
+   ExtractionPipelineRun
+   ExtractionPipelineRunList
+   extractionpipelines.StringFilter
+   extractionpipelines.ExtractionPipelineRunFilter
+   ExtractionPipelineConfigRevision
+   ExtractionPipelineConfig
+   ExtractionPipelineConfigRevisionList

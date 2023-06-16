@@ -2,57 +2,68 @@ Identity and access management
 ==============================
 Tokens
 ^^^^^^
-Inspect the token currently used by the client
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.TokenAPI.inspect
+.. currentmodule:: cognite.client
+
+.. autosummary:: 
+   :toctree: generated/
+   :template: autosummary/accessor_method.rst
+
+   CogniteClient.iam.token.inspect
 
 Groups
 ^^^^^^
-List groups
-~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.GroupsAPI.list
+.. currentmodule:: cognite.client
 
-Create groups
-~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.GroupsAPI.create
+.. autosummary:: 
+   :toctree: generated/
+   :template: autosummary/accessor_method.rst
 
-Delete groups
-~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.GroupsAPI.delete
+   CogniteClient.iam.groups.list
+   CogniteClient.iam.groups.create
+   CogniteClient.iam.groups.delete
 
 
 Security categories
 ^^^^^^^^^^^^^^^^^^^
-List security categories
-~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.SecurityCategoriesAPI.list
+.. currentmodule:: cognite.client
 
-Create security categories
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.SecurityCategoriesAPI.create
+.. autosummary:: 
+   :toctree: generated/
+   :template: autosummary/accessor_method.rst
 
-Delete security categories
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.SecurityCategoriesAPI.delete
+   CogniteClient.iam.security_categories.list
+   CogniteClient.iam.security_categories.create
+   CogniteClient.iam.security_categories.delete
 
 
 Sessions
 ^^^^^^^^^^^^^^^^^^^
-List sessions
-~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.SessionsAPI.list
+.. currentmodule:: cognite.client
 
-Create a session
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.SessionsAPI.create
+.. autosummary:: 
+   :toctree: generated/
+   :template: autosummary/accessor_method.rst
 
-Revoke a session
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.SessionsAPI.revoke
+   CogniteClient.iam.sessions.list
+   CogniteClient.iam.sessions.create
+   CogniteClient.iam.sessions.revoke
 
 
 Data classes
 ^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.iam
-    :members:
-    :show-inheritance:
+.. currentmodule:: cognite.client.data_classes
+
+.. autosummary:: 
+   :toctree: generated/
+   :template: custom-class-template.rst
+
+   Group
+   GroupList
+   SecurityCategory
+   SecurityCategoryList
+   ProjectSpec
+   TokenInspection
+   CreatedSession
+   Session
+   SessionList
+   ClientCredentials

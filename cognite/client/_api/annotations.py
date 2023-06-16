@@ -24,7 +24,7 @@ class AnnotationsAPI(APIClient):
         ...
 
     def create(self, annotations: Union[Annotation, Sequence[Annotation]]) -> Union[Annotation, AnnotationList]:
-        """Create annotations
+        """Create one or more annotations.
 
         Args:
             annotations (Union[Annotation, Sequence[Annotation]]): annotation(s) to create
@@ -46,7 +46,7 @@ class AnnotationsAPI(APIClient):
         ...
 
     def suggest(self, annotations: Union[Annotation, Sequence[Annotation]]) -> Union[Annotation, AnnotationList]:
-        """Suggest annotations
+        """Suggest one or more annotations, i.e. create them view status 'suggested'.
 
         Args:
             annotations (Union[Annotation, Sequence[Annotation]]): annotation(s) to suggest. They must have status set to "suggested".
@@ -129,7 +129,7 @@ class AnnotationsAPI(APIClient):
     def update(
         self, item: Union[Annotation, AnnotationUpdate, Sequence[Union[Annotation, AnnotationUpdate]]]
     ) -> Union[Annotation, AnnotationList]:
-        """Update annotations
+        """Update one or more annotations.
 
         Args:
             item (Union[Annotation, AnnotationUpdate, Sequence[Union[Annotation, AnnotationUpdate]]]): Annotation or list of annotations to update (or patch or list of patches to apply)
@@ -139,7 +139,7 @@ class AnnotationsAPI(APIClient):
         )
 
     def delete(self, id: Union[int, Sequence[int]]) -> None:
-        """Delete annotations
+        """Delete one or more annotations.
 
         Args:
             id (Union[int, Sequence[int]]): ID or list of IDs to be deleted
@@ -147,7 +147,7 @@ class AnnotationsAPI(APIClient):
         self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=True)
 
     def retrieve_multiple(self, ids: Sequence[int]) -> AnnotationList:
-        """Retrieve annotations by IDs
+        """Retrieve annotations by IDs.
 
         Args:
             ids (Sequence[int]]: list of IDs to be retrieved
@@ -159,7 +159,7 @@ class AnnotationsAPI(APIClient):
         return self._retrieve_multiple(list_cls=AnnotationList, resource_cls=Annotation, identifiers=identifiers)
 
     def retrieve(self, id: int) -> Optional[Annotation]:
-        """Retrieve an annotation by id
+        """Retrieve an annotation by ID.
 
         Args:
             id (int): id of the annotation to be retrieved
