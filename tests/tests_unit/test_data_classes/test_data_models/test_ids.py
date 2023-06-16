@@ -4,7 +4,7 @@ from typing import Literal
 
 import pytest
 
-from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId, load_identifier
+from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId, _load_identifier
 
 
 class TestContainerReference:
@@ -34,6 +34,18 @@ class TestLoadIdentifier:
                 [{"space": "space", "externalId": "myDataModel", "version": "v1"}],
                 False,
             ),
+            (
+                ("space", "externalId"),
+                "node",
+                [{"externalId": "externalId", "instanceType": "node", "space": "space"}],
+                True,
+            ),
+            (
+                ("space", "externalId"),
+                "edge",
+                [{"externalId": "externalId", "instanceType": "edge", "space": "space"}],
+                True,
+            ),
         ],
     )
     def test_load(
@@ -43,7 +55,7 @@ class TestLoadIdentifier:
         expected_dict: list | dict,
         expected_is_singleton: bool,
     ):
-        identifier = load_identifier(ids, id_type)
+        identifier = _load_identifier(ids, id_type)
 
         assert identifier.as_dicts() == expected_dict
         assert (

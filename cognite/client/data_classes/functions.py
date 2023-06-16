@@ -265,11 +265,11 @@ class FunctionSchedulesFilter(CogniteFilter):
         self.cron_expression = cron_expression
 
 
-class FunctionSchedulesList(CogniteResourceList):
+class FunctionSchedulesList(CogniteResourceList[FunctionSchedule]):
     _RESOURCE = FunctionSchedule
 
 
-class FunctionList(CogniteResourceList):
+class FunctionList(CogniteResourceList[Function]):
     _RESOURCE = Function
 
 
@@ -342,7 +342,7 @@ class FunctionCall(CogniteResource):
             time.sleep(1.0)
 
 
-class FunctionCallList(CogniteResourceList):
+class FunctionCallList(CogniteResourceList[FunctionCall]):
     _RESOURCE = FunctionCall
 
 
@@ -365,7 +365,7 @@ class FunctionCallLogEntry(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
 
-class FunctionCallLog(CogniteResourceList):
+class FunctionCallLog(CogniteResourceList[FunctionCallLogEntry]):
     _RESOURCE = FunctionCallLogEntry
 
 

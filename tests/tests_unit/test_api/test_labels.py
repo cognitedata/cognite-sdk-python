@@ -39,7 +39,7 @@ class TestLabels:
         list(cognite_client.labels(limit=10))
         calls = mock_labels_response.calls
         assert 1 == len(calls)
-        assert {"cursor": None, "limit": 10, "filter": {}} == jsgz_load(calls[0].request.body)
+        assert {"cursor": None, "limit": 10} == jsgz_load(calls[0].request.body)
 
     def test_create_single(self, cognite_client, mock_labels_response):
         res = cognite_client.labels.create(LabelDefinition(external_id="1", name="my_label", description="text"))

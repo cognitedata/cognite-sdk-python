@@ -69,11 +69,11 @@ class Space(SpaceCore):
         )
 
 
-class SpaceApplyList(CogniteResourceList):
+class SpaceApplyList(CogniteResourceList[SpaceApply]):
     _RESOURCE = SpaceApply
 
 
-class SpaceList(CogniteResourceList):
+class SpaceList(CogniteResourceList[Space]):
     _RESOURCE = Space
 
     def to_space_apply_list(self) -> SpaceApplyList:

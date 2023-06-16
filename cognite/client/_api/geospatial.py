@@ -1004,8 +1004,7 @@ class GeospatialAPI(APIClient):
         raster_scale_x: Optional[float] = None,
         raster_scale_y: Optional[float] = None,
     ) -> RasterMetadata:
-        """`Put raster`
-        <https://docs.cognite.com/api/v1/#tag/Geospatial/operation/putRaster>
+        """`Put raster <https://docs.cognite.com/api/v1/#operation/putRaster>`.
 
         Args:
             feature_type_external_id : Feature type definition for the features to create.
@@ -1060,8 +1059,7 @@ class GeospatialAPI(APIClient):
         feature_external_id: str,
         raster_property_name: str,
     ) -> None:
-        """`Delete raster`
-        <https://docs.cognite.com/api/v1/#tag/Geospatial/operation/deleteRaster>
+        """`Delete raster <https://docs.cognite.com/api/v1/#operation/deleteRaster>`
 
         Args:
             feature_type_external_id : Feature type definition for the features to create.
@@ -1103,8 +1101,7 @@ class GeospatialAPI(APIClient):
         raster_scale_y: Optional[float] = None,
         allow_crs_transformation: bool = False,
     ) -> bytes:
-        """`Get raster`
-        <https://docs.cognite.com/api/v1/#tag/Geospatial/operation/getRaster>
+        """`Get raster <https://docs.cognite.com/api/v1/#operation/getRaster>`
 
         Args:
             feature_type_external_id: Feature type definition for the features to create.
@@ -1153,8 +1150,7 @@ class GeospatialAPI(APIClient):
         self,
         output: Dict[str, GeospatialComputeFunction],
     ) -> GeospatialComputedResponse:
-        """`Compute`
-        <https://docs.cognite.com/api/v1/#tag/Geospatial/operation/compute>
+        """`Compute <https://docs.cognite.com/api/v1/#operation/compute>`
 
         Args:
             output : Mapping of keys to compute functions.

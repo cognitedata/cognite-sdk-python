@@ -233,5 +233,5 @@ class RelationshipUpdate(CogniteUpdate):
         return RelationshipUpdate._LabelRelationshipUpdate(self, "labels")
 
 
-class RelationshipList(CogniteResourceList):
+class RelationshipList(CogniteResourceList[Relationship]):
     _RESOURCE = Relationship

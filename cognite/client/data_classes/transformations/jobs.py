@@ -48,7 +48,7 @@ class TransformationJobMetric(CogniteResource):
         return instance
 
 
-class TransformationJobMetricList(CogniteResourceList):
+class TransformationJobMetricList(CogniteResourceList[TransformationJobMetric]):
     _RESOURCE = TransformationJobMetric
 
 
@@ -256,7 +256,7 @@ class TransformationJob(CogniteResource):
         return hash(self.id)
 
 
-class TransformationJobList(CogniteResourceList):
+class TransformationJobList(CogniteResourceList[TransformationJob]):
     _RESOURCE = TransformationJob
 
 

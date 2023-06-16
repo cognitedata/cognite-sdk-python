@@ -288,11 +288,11 @@ class TimeSeriesAggregate(dict):
     count = CognitePropertyClassUtil.declare_property("count")
 
 
-class TimeSeriesList(CogniteResourceList):
+class TimeSeriesList(CogniteResourceList[TimeSeries]):
     """No description
 
     Args:
-        CogniteResourceList (_type_): _description_
+        CogniteResourceList: _description_
     """
 
     _RESOURCE = TimeSeries

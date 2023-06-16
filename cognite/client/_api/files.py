@@ -780,10 +780,11 @@ class FilesAPI(APIClient):
 
         files_metadata = self.retrieve_multiple(ids=ids, external_ids=external_ids)
 
-        id_to_metadata = {}
+        id_to_metadata: dict[str | int, FileMetadata] = {}
         for f in files_metadata:
-            id_to_metadata[f.id] = f
-            id_to_metadata[f.external_id] = f
+            id_to_metadata[cast(int, f.id)] = f
+            if f.external_id is not None:
+                id_to_metadata[f.external_id] = f
 
         return id_to_metadata
 

@@ -398,7 +398,9 @@ class APIClient:
                         params["sort"] = sort
                     res = self._get(url_path=url_path or resource_path, params=params, headers=headers)
                 elif method == "POST":
-                    body = {"filter": filter, "limit": current_limit, "cursor": next_cursor, **(other_params or {})}
+                    body: dict[str, Any] = {"limit": current_limit, "cursor": next_cursor, **(other_params or {})}
+                    if filter:
+                        body["filter"] = filter
                     if sort is not None:
                         body["sort"] = sort
                     res = self._post(url_path=url_path or resource_path + "/list", json=body, headers=headers)
@@ -592,7 +594,7 @@ class APIClient:
     @overload
     def _create_multiple(
         self,
-        items: Union[Sequence[T_CogniteResource], Sequence[Dict[str, Any]]],
+        items: Union[Sequence[CogniteResource], Sequence[Dict[str, Any]]],
         list_cls: Type[T_CogniteResourceList],
         resource_cls: Type[T_CogniteResource],
         resource_path: Optional[str] = None,
@@ -600,6 +602,7 @@ class APIClient:
         headers: Optional[Dict] = None,
         extra_body_fields: Optional[Dict] = None,
         limit: Optional[int] = None,
+        input_resource_cls: Optional[Type[CogniteResource]] = None,
     ) -> T_CogniteResourceList:
         ...
 
@@ -614,6 +617,7 @@ class APIClient:
         headers: Optional[Dict] = None,
         extra_body_fields: Optional[Dict] = None,
         limit: Optional[int] = None,
+        input_resource_cls: Optional[Type[CogniteResource]] = None,
     ) -> T_CogniteResource:
         ...
 
@@ -627,8 +631,10 @@ class APIClient:
         headers: Optional[Dict] = None,
         extra_body_fields: Optional[Dict] = None,
         limit: Optional[int] = None,
+        input_resource_cls: Optional[Type[CogniteResource]] = None,
     ) -> Union[T_CogniteResourceList, T_CogniteResource]:
         resource_path = resource_path or self._RESOURCE_PATH
+        input_resource_cls = input_resource_cls or resource_cls
         limit = limit or self._CREATE_LIMIT
         single_item = not isinstance(items, Sequence)
         if single_item:
@@ -644,7 +650,7 @@ class APIClient:
 
         def unwrap_element(el: T) -> Union[CogniteResource, T]:
             if isinstance(el, dict):
-                return resource_cls._load(el, cognite_client=self._cognite_client)
+                return input_resource_cls._load(el, cognite_client=self._cognite_client)  # type: ignore[union-attr]
             else:
                 return el
 

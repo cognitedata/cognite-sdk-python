@@ -125,3 +125,45 @@ Containers data classes
    RequiresConstraintDefinition
    UniquenessConstraintDefinition
    IndexIdentifier
+
+Instances
+------------
+.. currentmodule:: cognite.client
+
+.. autosummary::
+   :toctree: generated/
+   :template: autosummary/accessor_method.rst
+
+   CogniteClient.data_modeling.instances.retrieve
+   CogniteClient.data_modeling.instances.list
+   CogniteClient.data_modeling.instances.apply
+   CogniteClient.data_modeling.instances.delete
+
+Instances data classes
+^^^^^^^^^^^^^^^^^^^^^^^^
+.. currentmodule:: cognite.client.data_classes.data_modeling
+
+.. autosummary:: 
+   :toctree: generated/
+   :template: custom-class-template.rst
+
+   NodeOrEdgeData
+   instances.InstanceCore
+   InstanceApply
+   instances.Instance
+   instances.InstanceApplyResult
+   NodeApply
+   Node
+   NodeApplyResult
+   EdgeApply
+   Edge
+   EdgeApplyResult
+   NodeApplyResultList
+   NodeList
+   EdgeApplyResultList
+   EdgeList
+   InstanceSort
+   InstancesResult
+   InstancesApplyResult
+   InstancesDeleteResult
+

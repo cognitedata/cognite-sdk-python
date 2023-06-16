@@ -11,6 +11,7 @@ from cognite.client._api.assets import AssetsAPI
 from cognite.client._api.data_modeling import DataModelingAPI
 from cognite.client._api.data_modeling.containers import ContainersAPI
 from cognite.client._api.data_modeling.data_models import DataModelsAPI
+from cognite.client._api.data_modeling.instances import InstancesAPI
 from cognite.client._api.data_modeling.spaces import SpacesAPI
 from cognite.client._api.data_modeling.views import ViewsAPI
 from cognite.client._api.data_sets import DataSetsAPI
@@ -196,6 +197,7 @@ def make_accessors_for_building_docs() -> None:
     CogniteClient.data_modeling.spaces = SpacesAPI  # type: ignore
     CogniteClient.data_modeling.views = ViewsAPI  # type: ignore
     CogniteClient.data_modeling.containers = ContainersAPI  # type: ignore
+    CogniteClient.data_modeling.instances = InstancesAPI  # type: ignore
 
 
 if build_docs == "true":

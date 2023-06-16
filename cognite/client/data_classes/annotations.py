@@ -194,5 +194,5 @@ class AnnotationUpdate(CogniteUpdate):
         return AnnotationUpdate._StrUpdate(self, "annotationType")
 
 
-class AnnotationList(CogniteResourceList):
+class AnnotationList(CogniteResourceList[Annotation]):
     _RESOURCE = Annotation

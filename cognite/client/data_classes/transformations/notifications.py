@@ -43,7 +43,7 @@ class TransformationNotification(CogniteResource):
         return hash(self.id)
 
 
-class TransformationNotificationList(CogniteResourceList):
+class TransformationNotificationList(CogniteResourceList[TransformationNotification]):
     _RESOURCE = TransformationNotification
 
 

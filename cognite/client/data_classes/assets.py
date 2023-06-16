@@ -332,7 +332,7 @@ class AssetUpdate(CogniteUpdate):
         return AssetUpdate._PrimitiveAssetUpdate(self, "geoLocation")
 
 
-class AssetList(CogniteResourceList):
+class AssetList(CogniteResourceList[Asset]):
     _RESOURCE = Asset
 
     def __init__(self, resources: Collection[Any], cognite_client: CogniteClient = None):

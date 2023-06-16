@@ -41,7 +41,7 @@ class Group(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
 
-class GroupList(CogniteResourceList):
+class GroupList(CogniteResourceList[Group]):
     _RESOURCE = Group
 
 
@@ -60,7 +60,7 @@ class SecurityCategory(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
 
-class SecurityCategoryList(CogniteResourceList):
+class SecurityCategoryList(CogniteResourceList[SecurityCategory]):
     _RESOURCE = SecurityCategory
 
 
@@ -171,7 +171,7 @@ class Session(CogniteResource):
         self.client_id = client_id
 
 
-class SessionList(CogniteResourceList):
+class SessionList(CogniteResourceList[Session]):
     _RESOURCE = Session
 
 
