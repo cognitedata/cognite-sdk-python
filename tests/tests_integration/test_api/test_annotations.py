@@ -9,6 +9,7 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import Annotation, AnnotationFilter, AnnotationList, AnnotationUpdate, FileMetadata
+from cognite.client.data_classes.annotations import AnnotationReverseLookupFilter
 from cognite.client.exceptions import CogniteAPIError
 
 
@@ -74,6 +75,32 @@ def file_id(cognite_client: CogniteClient) -> int:
 
 
 @pytest.fixture
+def permanent_file_id(cognite_client: CogniteClient) -> int:
+    # Create a test file
+    external_id = "annotation_unit_test_file_permanent"
+
+    name = "annotation_unit_test_file_permanent.txt"
+
+    file = cognite_client.files.retrieve(external_id=external_id)
+    if file is None:
+        file = cognite_client.files.create(
+            FileMetadata(external_id=external_id, name=name),
+            overwrite=True,
+        )[0]
+        cognite_client.files.upload_bytes(
+            content="This is a nice test file", name=name, external_id=external_id, overwrite=True
+        )
+    # Teardown all annotations to the file
+    filter = AnnotationFilter(
+        annotated_resource_type="file", annotated_resource_ids=[{"id": file.id}], creating_app="UnitTest"
+    )
+    annotation_ids = [a.id for a in cognite_client.annotations.list(filter=filter)]
+    if annotation_ids:
+        delete_with_check(cognite_client, annotation_ids)
+    return file.id
+
+
+@pytest.fixture
 def base_annotation(annotation: Annotation, file_id: int) -> Annotation:
     annotation.annotated_resource_id = file_id
     return annotation
@@ -84,6 +111,28 @@ def base_suggest_annotation(base_annotation: Annotation) -> Annotation:
     ann = deepcopy(base_annotation)
     ann.status = "suggested"
     return ann
+
+
+@pytest.fixture
+def asset_link_annotation(permanent_file_id: int, cognite_client: CogniteClient) -> Annotation:
+    annotation = Annotation(
+        annotation_type="diagrams.AssetLink",
+        data={
+            "pageNumber": 1,
+            "assetRef": {"id": 1, "externalId": None},
+            "textRegion": {"xMin": 0.5, "xMax": 1.0, "yMin": 0.5, "yMax": 1.0, "confidence": None},
+            "text": "AB-CX-DE",
+            "symbolRegion": {"xMin": 0.0, "xMax": 0.5, "yMin": 0.5, "yMax": 1.0, "confidence": None},
+            "symbol": "pump",
+        },
+        status="approved",
+        creating_app="UnitTest",
+        creating_app_version="0.2.3",
+        annotated_resource_id=permanent_file_id,
+        annotated_resource_type="file",
+        creating_user=None,
+    )
+    return cognite_client.annotations.create(annotation)
 
 
 def assert_payload_dict(local: Dict[str, Any], remote: Dict[str, Any]) -> None:
@@ -281,3 +330,17 @@ class TestAnnotationsIntegration:
             sorted(retrieved_annotations, key=lambda a: a.id), sorted(created_annotations, key=lambda a: a.id)
         ):
             assert ret.dump() == new.dump()
+
+    def test_annotations_reverse_lookup(
+        self, asset_link_annotation: Annotation, cognite_client: CogniteClient, permanent_file_id: int
+    ) -> None:
+        result = cognite_client.annotations.reverse_lookup(
+            filter=AnnotationReverseLookupFilter(
+                data={"assetRef": {"id": asset_link_annotation.data["assetRef"]["id"]}},
+                annotated_resource_type="file",
+                creating_user=None,
+                annotation_type="diagrams.AssetLink",
+                status="approved",
+            )
+        )
+        assert result[0].id == permanent_file_id

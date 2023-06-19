@@ -7,6 +7,8 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import Annotation, AnnotationFilter, AnnotationList, AnnotationUpdate
 from cognite.client.data_classes._base import CogniteResource
+from cognite.client.data_classes.annotations import AnnotationReverseLookupFilter
+from cognite.client.data_classes.contextualization import ResourceReference, ResourceReferenceList
 from cognite.client.utils._auxiliary import assert_type
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._text import to_camel_case
@@ -169,3 +171,25 @@ class AnnotationsAPI(APIClient):
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=None).as_singleton()
         return self._retrieve_multiple(list_cls=AnnotationList, resource_cls=Annotation, identifiers=identifiers)
+
+    def reverse_lookup(self, filter: AnnotationReverseLookupFilter, limit: int | None = None) -> ResourceReferenceList:
+        """Reverse lookup annotations
+
+        Args:
+            filter (AnnotationReverseLookupFilter): Filter to apply
+            limit (int, optional): Maximum number of results to return. Defaults to None.
+
+        Returns:
+            ResourceReferenceList: List of resource references
+        """
+        assert_type(filter, "filter", types=[AnnotationReverseLookupFilter], allow_none=False)
+        assert_type(limit, "limit", [int, type(None)], allow_none=True)
+
+        return self._list(
+            list_cls=ResourceReferenceList,
+            resource_cls=ResourceReference,
+            method="POST",
+            limit=limit,
+            filter=filter.dump(camel_case=True),
+            url_path=self._RESOURCE_PATH + "/reverselookup",
+        )
