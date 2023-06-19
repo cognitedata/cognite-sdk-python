@@ -173,7 +173,7 @@ class AnnotationsAPI(APIClient):
         return self._retrieve_multiple(list_cls=AnnotationList, resource_cls=Annotation, identifiers=identifiers)
 
     def reverse_lookup(self, filter: AnnotationReverseLookupFilter, limit: int | None = None) -> ResourceReferenceList:
-        """Reverse lookup annotations
+        """Reverse lookup annotated resources based on having annotations matching the filter.
 
         Args:
             filter (AnnotationReverseLookupFilter): Filter to apply

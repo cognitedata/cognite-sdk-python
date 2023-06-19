@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.8.0] - 2023-07-07
+### Added
+- Support for annotations reverse lookup.
+
 ## [6.7.1] - 2023-07-07
 ### Fixed
 - Needless function "as_id" on View as it was already inherited
