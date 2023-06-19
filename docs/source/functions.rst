@@ -6,7 +6,7 @@ Functions API
 
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.functions.create
    CogniteClient.functions.delete
@@ -24,7 +24,7 @@ Function calls
 
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.functions.calls.list
    CogniteClient.functions.calls.retrieve
@@ -38,7 +38,7 @@ Function schedules
 
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
 
    CogniteClient.functions.schedules.list

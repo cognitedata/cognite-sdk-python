@@ -7,7 +7,7 @@ Templates
 
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.templates.groups.create
    CogniteClient.templates.groups.upsert

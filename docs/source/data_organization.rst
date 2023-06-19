@@ -7,7 +7,7 @@ Annotations
 
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.annotations.retrieve
    CogniteClient.annotations.retrieve_multiple
@@ -38,7 +38,7 @@ Data sets
 
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.data_sets.retrieve
    CogniteClient.data_sets.retrieve_multiple
@@ -72,7 +72,7 @@ Labels
 
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.labels.list
    CogniteClient.labels.create
@@ -99,7 +99,7 @@ Relationships
 
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.relationships.retrieve
    CogniteClient.relationships.retrieve_multiple

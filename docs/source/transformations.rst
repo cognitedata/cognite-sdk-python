@@ -7,7 +7,7 @@ TransformationsAPI
 
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.transformations.create
    CogniteClient.transformations.retrieve
@@ -27,7 +27,7 @@ Transformation Schedules
 
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.transformations.schedules.create
    CogniteClient.transformations.schedules.retrieve
@@ -43,7 +43,7 @@ Transformation Notifications
 
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.transformations.notifications.create
    CogniteClient.transformations.notifications.list
@@ -56,7 +56,7 @@ Transformation Jobs
 
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
    
    CogniteClient.transformations.jobs.retrieve
    CogniteClient.transformations.jobs.retrieve_multiple
@@ -69,7 +69,7 @@ Transformation Schema
 
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
    
    CogniteClient.transformations.schema.retrieve
 

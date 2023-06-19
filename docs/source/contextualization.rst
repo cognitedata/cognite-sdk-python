@@ -9,7 +9,7 @@ These APIs will return as soon as possible, deferring a blocking wait until the 
 
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.entity_matching.fit
    CogniteClient.entity_matching.refit
@@ -29,7 +29,7 @@ Engineering Diagrams
 
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.diagrams.detect
    CogniteClient.diagrams.convert
@@ -92,7 +92,7 @@ Tweaking the parameters of a feature extractor:
 
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.vision.extract
    CogniteClient.vision.get_extract_job

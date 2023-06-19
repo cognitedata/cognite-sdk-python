@@ -6,7 +6,7 @@ Assets
 
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.assets.retrieve
    CogniteClient.assets.retrieve_multiple
@@ -36,7 +36,7 @@ Events
 
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.events.retrieve
    CogniteClient.events.retrieve_multiple
@@ -64,7 +64,7 @@ Data points
 
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.time_series.data.retrieve
    CogniteClient.time_series.data.retrieve_arrays
@@ -93,7 +93,7 @@ Files
 
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
     CogniteClient.files.retrieve
     CogniteClient.files.retrieve_multiple
@@ -127,7 +127,7 @@ Geospatial
 .. currentmodule:: cognite.client
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.geospatial.create_feature_types
    CogniteClient.geospatial.delete_feature_types
@@ -166,7 +166,7 @@ Synthetic time series
 .. currentmodule:: cognite.client
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.time_series.data.synthetic.query
 
@@ -176,7 +176,7 @@ Time series
 .. currentmodule:: cognite.client
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.time_series.retrieve
    CogniteClient.time_series.retrieve_multiple
@@ -201,7 +201,7 @@ Sequences
 .. currentmodule:: cognite.client
 .. autosummary::
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.sequences.retrieve
    CogniteClient.sequences.retrieve_multiple

@@ -9,7 +9,7 @@ Databases
 
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.raw.databases.list
    CogniteClient.raw.databases.create
@@ -22,7 +22,7 @@ Tables
 
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.raw.tables.list
    CogniteClient.raw.tables.create
@@ -35,7 +35,7 @@ Rows
 
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.raw.rows.retrieve
    CogniteClient.raw.rows.list
@@ -67,7 +67,7 @@ Extraction pipelines
 
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.extraction_pipelines.list
    CogniteClient.extraction_pipelines.create
@@ -83,7 +83,7 @@ Extraction pipeline runs
 
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.extraction_pipelines.runs.list
    CogniteClient.extraction_pipelines.runs.create
@@ -95,7 +95,7 @@ Extraction pipeline configs
 
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.extraction_pipelines.config.retrieve
    CogniteClient.extraction_pipelines.config.list

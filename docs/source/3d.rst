@@ -7,7 +7,7 @@ Models
 
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.three_d.models.retrieve
    CogniteClient.three_d.models.list
@@ -22,7 +22,7 @@ Revisions
 
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.three_d.revisions.retrieve
    CogniteClient.three_d.revisions.create
@@ -43,7 +43,7 @@ Retrieve a 3D file
 
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.three_d.files.retrieve
 
@@ -54,7 +54,7 @@ Asset mappings
 
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.three_d.asset_mappings.create
    CogniteClient.three_d.asset_mappings.list

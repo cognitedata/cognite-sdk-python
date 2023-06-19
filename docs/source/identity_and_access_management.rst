@@ -6,7 +6,7 @@ Tokens
 
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.iam.token.inspect
 
@@ -16,7 +16,7 @@ Groups
 
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.iam.groups.list
    CogniteClient.iam.groups.create
@@ -29,7 +29,7 @@ Security categories
 
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.iam.security_categories.list
    CogniteClient.iam.security_categories.create
@@ -42,7 +42,7 @@ Sessions
 
 .. autosummary:: 
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.iam.sessions.list
    CogniteClient.iam.sessions.create

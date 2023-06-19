@@ -7,7 +7,7 @@ Data Models
 
 .. autosummary::
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-method-template.rst
 
    CogniteClient.data_modeling.data_models.retrieve
    CogniteClient.data_modeling.data_models.list
