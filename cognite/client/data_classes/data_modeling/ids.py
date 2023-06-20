@@ -114,7 +114,7 @@ class ContainerId(DataModelingId):
         return self.external_id
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class ViewId(VersionedDataModelingId):
     _type = "view"
 
