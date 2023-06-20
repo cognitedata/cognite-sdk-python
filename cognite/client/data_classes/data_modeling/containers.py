@@ -78,7 +78,7 @@ class ContainerCore(DataModelingResource):
 
         return output
 
-    def as_reference(self) -> ContainerId:
+    def as_id(self) -> ContainerId:
         return ContainerId(self.space, self.external_id)
 
 

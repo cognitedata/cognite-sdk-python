@@ -49,7 +49,7 @@ class TestInstancesAPI:
     def test_list_nodes_with_properties(self, cognite_client: CogniteClient, person_view: dm.View):
         # Act
         person_nodes = cognite_client.data_modeling.instances.list(
-            limit=-1, instance_type="node", sources=person_view.as_reference()
+            limit=-1, instance_type="node", sources=person_view.as_id()
         )
 
         # Assert
@@ -57,7 +57,7 @@ class TestInstancesAPI:
         assert all(person.properties for person in person_nodes)
 
     def test_list_person_nodes_sorted_by_name(self, cognite_client: CogniteClient, person_view: dm.View):
-        view_id = person_view.as_reference()
+        view_id = person_view.as_id()
         person_nodes = cognite_client.data_modeling.instances.list(
             limit=-1,
             instance_type="node",
@@ -68,7 +68,7 @@ class TestInstancesAPI:
 
     def test_list_person_filtering(self, cognite_client: CogniteClient, person_view: dm.View):
         # Act
-        view_id = person_view.as_reference()
+        view_id = person_view.as_id()
         f = dm.filters
         born_before_1950 = f.Range([view_id.space, view_id.as_source_identifier(), "birthYear"], lt=1950)
         person_nodes = cognite_client.data_modeling.instances.list(
@@ -84,7 +84,7 @@ class TestInstancesAPI:
             external_id="person:arnold_schwarzenegger",
             sources=[
                 dm.NodeOrEdgeData(
-                    person_view.as_reference(),
+                    person_view.as_id(),
                     {
                         "birthYear": 1947,
                         "name": "Arnold Schwarzenegger",
@@ -118,7 +118,7 @@ class TestInstancesAPI:
             external_id="person:arnold_schwarzenegger",
             sources=[
                 dm.NodeOrEdgeData(
-                    person_view.as_reference(),
+                    person_view.as_id(),
                     {
                         "birthYear": 1947,
                         "name": "Arnold Schwarzenegger",
@@ -131,7 +131,7 @@ class TestInstancesAPI:
             external_id="actor:arnold_schwarzenegger",
             sources=[
                 dm.NodeOrEdgeData(
-                    actor_view.as_reference(),
+                    actor_view.as_id(),
                     {
                         "wonOscar": False,
                         "person": {"space": space, "externalId": person.external_id},
@@ -258,7 +258,7 @@ class TestInstancesAPI:
             external_id="person:arnold_schwarzenegger",
             sources=[
                 dm.NodeOrEdgeData(
-                    person_view.as_reference(),
+                    person_view.as_id(),
                     {
                         "birthYear": 1947,
                         "name": "Arnold Schwarzenegger",

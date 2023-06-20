@@ -70,7 +70,7 @@ class TestDataModelsAPI:
         assert created.created_time
         assert created.last_updated_time
         new_data_model_dump = new_data_model.dump()
-        new_data_model_dump["views"] = [v.as_reference().dump() for v in new_data_model.views]
+        new_data_model_dump["views"] = [v.as_id().dump() for v in new_data_model.views]
         assert created.as_apply().dump() == new_data_model_dump
         assert created.dump() == retrieved.dump()
 
