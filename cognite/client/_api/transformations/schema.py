@@ -15,13 +15,10 @@ class TransformationSchemaAPI(APIClient):
     _RESOURCE_PATH = "/transformations/schema"
 
     def retrieve(
-        self,
-        destination: TransformationDestination,
-        conflict_mode: Optional[str] = None,
-        with_instance_space: Optional[bool] = None,
-        is_connection_definition: Optional[bool] = None,
-        instance_type: Optional[str] = None,
+        self, destination: TransformationDestination, conflict_mode: Optional[str] = None
     ) -> TransformationSchemaColumnList:
+        # Implementation for other transformation destinations
+
         """`Get expected schema for a transformation destination. <https://docs.cognite.com/api/v1/#operation/getTransformationSchema>`_
 
         Args:
@@ -84,38 +81,39 @@ class TransformationSchemaAPI(APIClient):
 
         """
 
-        if destination.type == "nodes" or destination.type == "edges" or destination.type == "instances":
+        other_params = {"conflictMode": conflict_mode} if conflict_mode else None
+        return self._retrieve(destination, other_params)
+
+    def retrieve(
+        self,
+        destination: TransformationDestination,
+        conflict_mode: Optional[str] = None,
+        with_instance_space: Optional[bool] = None,
+        is_connection_definition: Optional[bool] = None,
+        instance_type: Optional[str] = None,
+    ) -> TransformationSchemaColumnList:
+        # Implementation for Instances transformation destination
+
+        other_params = {
+            "conflictMode": conflict_mode,
+            "withInstanceSpace": with_instance_space,
+            "isConnectionDefinition": is_connection_definition,
+            "instanceType": instance_type,
+        }
+        return self._retrieve(destination, other_params)
+
+    def _retrieve(
+        self, destination: TransformationDestination, other_params: Optional[dict]
+    ) -> TransformationSchemaColumnList:
+        if destination.type in ["nodes", "edges", "instances"]:
             url_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}", "instances")
-            filter = destination.dump(True)
-            other_params = (
-                {
-                    "conflictMode": conflict_mode,
-                    "withInstanceSpace": with_instance_space,
-                    "isConnectionDefinition": is_connection_definition,
-                    "instanceType": instance_type,
-                }
-                if conflict_mode or with_instance_space or is_connection_definition or instance_type
-                else None
-            )
-
-            return self._list(
-                list_cls=TransformationSchemaColumnList,
-                resource_cls=TransformationSchemaColumn,
-                method="GET",
-                resource_path=url_path,
-                filter=other_params,
-            )
-
         else:
             url_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}", str(destination.type))
-            filter = destination.dump(True)
-            filter.pop("type")
-            other_params = {"conflictMode": conflict_mode} if conflict_mode else None
 
-            return self._list(
-                list_cls=TransformationSchemaColumnList,
-                resource_cls=TransformationSchemaColumn,
-                method="GET",
-                resource_path=url_path,
-                filter=other_params,
-            )
+        return self._list(
+            list_cls=TransformationSchemaColumnList,
+            resource_cls=TransformationSchemaColumn,
+            method="GET",
+            resource_path=url_path,
+            filter=other_params,
+        )
