@@ -416,7 +416,7 @@ class InstancesAPI(APIClient):
                 ... ])
                 >>> # This is one to many edge, in this case from Person to role
                 >>> # (a person can have multiple roles, in this model for example Actor and Director)
-                >>> person_to_actor = dm.EdgeApply.create(space="mySpace",
+                >>> person_to_actor = dm.EdgeApply(space="mySpace",
                 ...                                       external_id="relation:arnold_schwarzenegger:actor",
                 ...                                       type="Person.roles",
                 ...                                       start_node="person:arnold_schwarzenegger",
@@ -429,7 +429,7 @@ class InstancesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> import cognite.client.data_modeling as dm
                 >>> c = CogniteClient()
-                >>> edge = dm.EdgeApply.create(space="mySpace",
+                >>> edge = dm.EdgeApply(space="mySpace",
                 ...                            external_id="relation:sylvester_stallone:actor",
                 ...                            type="Person.roles",
                 ...                            start_node="person:sylvester_stallone",

@@ -151,7 +151,7 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
         for space, view_properties in data.items():
             for view_id_str, properties in view_properties.items():
                 view_tuple = tuple(view_id_str.split("/", 1))
-                if not len(view_tuple) == 2:
+                if len(view_tuple) != 2:
                     raise ValueError("View id must be in the format <external_id>/<version>")
                 view_id = ViewId.load(cast(Tuple[str, str, str], (space, *view_tuple)))
                 props[view_id] = properties
