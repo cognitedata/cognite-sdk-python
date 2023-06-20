@@ -37,7 +37,7 @@ class TestTransformationSchemaAPI:
         assert len([col for col in asset_columns if col.name == "externalId"]) > 0
 
     def test_nodes_with_view(self, cognite_client):
-        nodes_columns = cognite_client.transformations.schema.retrieve(
+        nodes_columns = cognite_client.transformations.schema.retrieve_instances(
             destination=TransformationDestination.nodes(
                 view=ViewInfo(
                     space="test-space", external_id="testInstanceViewExternalId", version="testInstanceViewVersion"
@@ -53,7 +53,7 @@ class TestTransformationSchemaAPI:
         assert [col for col in nodes_columns if col.name == "externalId"][0].type.type == "string"
 
     def test_edges_with_view(self, cognite_client):
-        edges_columns = cognite_client.transformations.schema.retrieve(
+        edges_columns = cognite_client.transformations.schema.retrieve_instances(
             destination=TransformationDestination.edges(
                 view=ViewInfo(
                     space="test-space", external_id="testInstanceViewExternalId", version="testInstanceViewVersion"
@@ -69,7 +69,7 @@ class TestTransformationSchemaAPI:
         assert [col for col in edges_columns if col.name == "externalId"][0].type.type == "string"
 
     def test_instance_type_data_model(self, cognite_client):
-        type_columns = cognite_client.transformations.schema.retrieve(
+        type_columns = cognite_client.transformations.schema.retrieve_instances(
             destination=TransformationDestination.instances(
                 data_model=DataModelInfo(
                     space="authorBook",
@@ -89,7 +89,7 @@ class TestTransformationSchemaAPI:
         assert [col for col in type_columns if col.name == "externalId"][0].type.type == "string"
 
     def test_instance_relationship_data_model(self, cognite_client):
-        type_columns = cognite_client.transformations.schema.retrieve(
+        type_columns = cognite_client.transformations.schema.retrieve_instances(
             destination=TransformationDestination.instances(
                 data_model=DataModelInfo(
                     space="authorBook",
