@@ -29,21 +29,21 @@ class ContainerCore(DataModelingResource):
         description (str): Textual description of the view
         name (str): Human readable name for the view.
         used_for (Literal['node', 'edge', 'all']): Should this operation apply to nodes, edges or both.
-        properties (dict[str, ContainerPropertyIdentifier]): We index the property by a local unique identifier.
-        constraints (dict[str, ConstraintIdentifier]): Set of constraints to apply to the container
-        indexes (dict[str, IndexIdentifier]): Set of indexes to apply to the container.
+        properties (dict[str, ContainerProperty]): We index the property by a local unique identifier.
+        constraints (dict[str, Constraint]): Set of constraints to apply to the container
+        indexes (dict[str, Index]): Set of indexes to apply to the container.
     """
 
     def __init__(
         self,
         space: str,
         external_id: str,
-        properties: dict[str, ContainerPropertyIdentifier],
+        properties: dict[str, ContainerProperty],
         description: str = None,
         name: str = None,
         used_for: Literal["node", "edge", "all"] = None,
-        constraints: dict[str, ConstraintIdentifier] = None,
-        indexes: dict[str, IndexIdentifier] = None,
+        constraints: dict[str, Constraint] = None,
+        indexes: dict[str, Index] = None,
         **_: dict,
     ):
         validate_data_modeling_identifier(space, external_id)
@@ -60,11 +60,11 @@ class ContainerCore(DataModelingResource):
     def load(cls, resource: dict | str) -> ContainerCore:
         data = json.loads(resource) if isinstance(resource, str) else resource
         if "constraints" in data:
-            data["constraints"] = {k: ConstraintIdentifier.load(v) for k, v in data["constraints"].items()} or None
+            data["constraints"] = {k: Constraint.load(v) for k, v in data["constraints"].items()} or None
         if "indexes" in data:
-            data["indexes"] = {k: IndexIdentifier.load(v) for k, v in data["indexes"].items()} or None
+            data["indexes"] = {k: Index.load(v) for k, v in data["indexes"].items()} or None
         if "properties" in data:
-            data["properties"] = {k: ContainerPropertyIdentifier.load(v) for k, v in data["properties"].items()} or None
+            data["properties"] = {k: ContainerProperty.load(v) for k, v in data["properties"].items()} or None
         return cast(ContainerCore, super().load(data))
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -91,21 +91,21 @@ class ContainerApply(ContainerCore):
         description (str): Textual description of the view
         name (str): Human readable name for the view.
         used_for (Literal['node', 'edge', 'all']): Should this operation apply to nodes, edges or both.
-        properties (dict[str, ContainerPropertyIdentifier]): We index the property by a local unique identifier.
-        constraints (dict[str, ConstraintIdentifier]): Set of constraints to apply to the container
-        indexes (dict[str, IndexIdentifier]): Set of indexes to apply to the container.
+        properties (dict[str, ContainerProperty]): We index the property by a local unique identifier.
+        constraints (dict[str, Constraint]): Set of constraints to apply to the container
+        indexes (dict[str, Index]): Set of indexes to apply to the container.
     """
 
     def __init__(
         self,
         space: str,
         external_id: str,
-        properties: dict[str, ContainerPropertyIdentifier],
+        properties: dict[str, ContainerProperty],
         description: str = None,
         name: str = None,
         used_for: Literal["node", "edge", "all"] = None,
-        constraints: dict[str, ConstraintIdentifier] = None,
-        indexes: dict[str, IndexIdentifier] = None,
+        constraints: dict[str, Constraint] = None,
+        indexes: dict[str, Index] = None,
         **_: dict,
     ):
         super().__init__(space, external_id, properties, description, name, used_for, constraints, indexes)
@@ -121,9 +121,9 @@ class Container(ContainerCore):
         name (str): Human readable name for the view.
         is_global (bool): Whether this is a global container, i.e., one of the out-of-the-box models.
         used_for (Literal['node', 'edge', 'all']): Should this operation apply to nodes, edges or both.
-        properties (dict[str, ContainerPropertyIdentifier]): We index the property by a local unique identifier.
-        constraints (dict[str, ConstraintIdentifier]): Set of constraints to apply to the container
-        indexes (dict[str, IndexIdentifier]): Set of indexes to apply to the container.
+        properties (dict[str, ContainerProperty]): We index the property by a local unique identifier.
+        constraints (dict[str, Constraint]): Set of constraints to apply to the container
+        indexes (dict[str, Index]): Set of indexes to apply to the container.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
     """
@@ -132,15 +132,15 @@ class Container(ContainerCore):
         self,
         space: str,
         external_id: str,
-        properties: dict[str, ContainerPropertyIdentifier],
+        properties: dict[str, ContainerProperty],
         is_global: bool,
         last_updated_time: int,
         created_time: int,
         description: str = None,
         name: str = None,
         used_for: Literal["node", "edge", "all"] = "node",
-        constraints: dict[str, ConstraintIdentifier] = None,
-        indexes: dict[str, IndexIdentifier] = None,
+        constraints: dict[str, Constraint] = None,
+        indexes: dict[str, Index] = None,
     ):
         super().__init__(space, external_id, properties, description, name, used_for, constraints, indexes)
         self.is_global = is_global
@@ -208,7 +208,7 @@ class ContainerDirectRelation(DirectRelation):
 
 
 @dataclass
-class ContainerPropertyIdentifier:
+class ContainerProperty:
     type: PropertyType | ContainerDirectRelation
     nullable: bool = True
     auto_increment: bool = False
@@ -217,7 +217,7 @@ class ContainerPropertyIdentifier:
     description: str | None = None
 
     @classmethod
-    def load(cls, data: dict[str, Any]) -> ContainerPropertyIdentifier:
+    def load(cls, data: dict[str, Any]) -> ContainerProperty:
         if "type" not in data:
             raise ValueError("Type not specified")
         if data["type"].get("type") == "direct":
@@ -234,9 +234,9 @@ class ContainerPropertyIdentifier:
 
 
 @dataclass
-class ConstraintIdentifier(ABC):
+class Constraint(ABC):
     @classmethod
-    def _load(cls, data: dict) -> ConstraintIdentifier:
+    def _load(cls, data: dict) -> Constraint:
         return cls(**convert_all_keys_to_snake_case(data))
 
     @classmethod
@@ -253,7 +253,7 @@ class ConstraintIdentifier(ABC):
 
 
 @dataclass
-class RequiresConstraintDefinition(ConstraintIdentifier):
+class RequiresConstraintDefinition(Constraint):
     require: ContainerId
 
     @classmethod
@@ -275,7 +275,7 @@ class RequiresConstraintDefinition(ConstraintIdentifier):
 
 
 @dataclass
-class UniquenessConstraintDefinition(ConstraintIdentifier):
+class UniquenessConstraintDefinition(Constraint):
     properties: list[str]
 
     @classmethod
@@ -292,12 +292,12 @@ class UniquenessConstraintDefinition(ConstraintIdentifier):
 
 
 @dataclass
-class IndexIdentifier:
+class Index:
     properties: list[str]
     index_type: Literal["btree"] | str = "btree"
 
     @classmethod
-    def load(cls, data: dict[str, Any]) -> IndexIdentifier:
+    def load(cls, data: dict[str, Any]) -> Index:
         return cls(**convert_all_keys_to_snake_case(data))
 
     def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
