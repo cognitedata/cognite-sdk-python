@@ -53,8 +53,8 @@ jobs:
 
       - name: Install core dependencies
         run: |
+          poetry config virtualenvs.create false
           poetry install --with docs
-          poetry shell
 
       - name: Build docs
         run: cd docs && make html SPHINXOPTS="-W --keep-going"
