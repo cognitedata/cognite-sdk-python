@@ -200,3 +200,5 @@ rst_epilog = """
 """.format(
     versionnum=python_version,
 )
+
+python_display_short_literal_types = True

@@ -7,7 +7,11 @@ CogniteClient
    :recursive:
 
    cognite.client.CogniteClient
-   cognite.client.config.ClientConfig
-   cognite.client.config.GlobalConfig
+   cognite.client.ClientConfig
 
+.. autosummary::
+   :toctree: generated/
+   :template: custom-data-template.rst
+   :recursive:
 
+   cognite.client.global_config

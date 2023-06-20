@@ -23,12 +23,20 @@ Assets
 
 Asset Data classes
 ^^^^^^^^^^^^^^^^^^
+.. currentmodule:: cognite.client.data_classes
+
 .. autosummary:: 
    :toctree: generated/
-   :template: custom-module-template.rst
+   :template: custom-class-template.rst
    :recursive:
    
-   cognite.client.data_classes.assets
+   AssetAggregate
+   AggregateResultItem
+   Asset
+   AssetUpdate
+   AssetList
+   AssetFilter
+   AssetHierarchy
 
 Events
 ------
@@ -51,12 +59,18 @@ Events
 
 Events Data classes
 ^^^^^^^^^^^^^^^^^^^
+.. currentmodule:: cognite.client.data_classes
+
 .. autosummary:: 
    :toctree: generated/
-   :template: custom-module-template.rst
+   :template: custom-class-template.rst
    :recursive:
    
-   cognite.client.data_classes.events
+   EndTimeFilter
+   Event
+   EventFilter
+   EventUpdate
+   EventList
 
 Data points
 -----------
@@ -80,12 +94,19 @@ Data points
 
 Data Points Data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^
+.. currentmodule:: cognite.client.data_classes
+
 .. autosummary:: 
    :toctree: generated/
-   :template: custom-module-template.rst
+   :template: custom-class-template.rst
    :recursive:
-   
-   cognite.client.data_classes.datapoints
+
+   LatestDatapointQuery
+   Datapoint
+   DatapointsArray
+   Datapoints
+   DatapointsArrayList
+   DatapointsList
 
 Files
 -----
@@ -112,13 +133,18 @@ Files
 
 Files Data classes
 ^^^^^^^^^^^^^^^^^^
+.. currentmodule:: cognite.client.data_classes
+
 .. autosummary:: 
    :toctree: generated/
-   :template: custom-module-template.rst
+   :template: custom-class-template.rst
    :recursive:
-   
-   cognite.client.data_classes.files
 
+   FileMetadata
+   FileMetadataFilter
+   FileMetadataUpdate
+   FileAggregate
+   FileMetadataList
 
 Geospatial
 ----------
@@ -153,13 +179,35 @@ Geospatial
 
 Geospatial Data classes
 ^^^^^^^^^^^^^^^^^^^^^^^
+.. currentmodule:: cognite.client.data_classes
+
 .. autosummary:: 
    :toctree: generated/
-   :template: custom-module-template.rst
+   :template: custom-class-template.rst
    :recursive:
-   
-   cognite.client.data_classes.geospatial
 
+   FeatureType
+   FeatureTypeList
+   geospatial.PropertyAndSearchSpec
+   FeatureTypeUpdate
+   geospatial.Patches
+   FeatureTypePatch
+   FeatureTypeUpdateList
+   Feature
+   FeatureList
+   FeatureAggregate
+   FeatureAggregateList
+   CoordinateReferenceSystem
+   CoordinateReferenceSystemList
+   geospatial.OrderSpec
+   geospatial.RasterMetadata
+   geospatial.GeospatialComputeFunction
+   geospatial.GeospatialGeometryTransformComputeFunction
+   geospatial.GeospatialGeometryComputeFunction
+   geospatial.GeospatialGeometryValueComputeFunction
+   geospatial.GeospatialComputedItem
+   geospatial.GeospatialComputedItemList
+   geospatial.GeospatialComputedResponse
 
 Synthetic time series
 ---------------------
@@ -189,12 +237,18 @@ Time series
 
 Time Series Data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^
+.. currentmodule:: cognite.client.data_classes
+
 .. autosummary:: 
    :toctree: generated/
-   :template: custom-module-template.rst
+   :template: custom-class-template.rst
    :recursive:
 
-   cognite.client.data_classes.time_series
+   TimeSeries
+   TimeSeriesFilter
+   TimeSeriesUpdate
+   TimeSeriesAggregate
+   TimeSeriesList
 
 Sequences
 ---------
@@ -221,10 +275,18 @@ Sequences
 
 Sequence Data classes
 ^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.sequences
-    :members:
-    :show-inheritance:
-    :exclude-members: Sequence
+.. currentmodule:: cognite.client.data_classes
 
-    .. autoclass:: Sequence
-        :noindex:
+.. autosummary:: 
+   :toctree: generated/
+   :template: custom-class-template.rst
+   :recursive:
+
+   Sequence
+   SequenceFilter
+   SequenceColumnUpdate
+   SequenceUpdate
+   SequenceAggregate
+   SequenceList
+   SequenceData
+   SequenceDataList
