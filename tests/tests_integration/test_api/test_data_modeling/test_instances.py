@@ -4,19 +4,24 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client import data_modeling as dm
+from cognite.client.data_classes.data_modeling.filters import Equals
 from cognite.client.exceptions import CogniteAPIError
 
 
 @pytest.fixture()
-def cdf_nodes(cognite_client: CogniteClient) -> dm.NodeList:
-    nodes = cognite_client.data_modeling.instances.list(limit=-1, instance_type="node")
+def cdf_nodes(cognite_client: CogniteClient, integration_test_space: dm.Space) -> dm.NodeList:
+    nodes = cognite_client.data_modeling.instances.list(
+        limit=-1, instance_type="node", filter=Equals(("node", "space"), integration_test_space.space)
+    )
     assert len(nodes) > 0, "Add at least one node to CDF"
     return nodes
 
 
 @pytest.fixture()
-def cdf_edges(cognite_client: CogniteClient) -> dm.EdgeList:
-    edges = cognite_client.data_modeling.instances.list(limit=-1, instance_type="edge")
+def cdf_edges(cognite_client: CogniteClient, integration_test_space: dm.Space) -> dm.EdgeList:
+    edges = cognite_client.data_modeling.instances.list(
+        limit=-1, instance_type="edge", filter=Equals(("edge", "space"), integration_test_space.space)
+    )
     assert len(edges) > 0, "Add at least one edge to CDF"
     return edges
 

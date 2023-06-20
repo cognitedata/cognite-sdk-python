@@ -161,7 +161,7 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
         props: dict[Space, dict[str, dict[PropertyIdentifier, PropertyValue]]] = defaultdict(dict)
         for view_id, properties in self.data.items():
             view_id_str = f"{view_id.external_id}/{view_id.version}"
-            props[view_id.space][view_id_str] = cast(dict[PropertyIdentifier, PropertyValue], properties)
+            props[view_id.space][view_id_str] = cast(Dict[PropertyIdentifier, PropertyValue], properties)
         return props
 
     def items(self) -> ItemsView[ViewId, MutableMapping[PropertyIdentifier, PropertyValue]]:
