@@ -542,7 +542,6 @@ class Edge(Instance):
 
         Returns:
             A write edge, EdgeApply
-
         """
         return EdgeApply(
             space=self.space,
