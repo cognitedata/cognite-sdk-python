@@ -39,6 +39,7 @@ extensions = [
     "sphinx.ext.autosectionlabel",
     "sphinx_autosummary_accessors",
     "sphinx.ext.autosummary",
+    "sphinx_copybutton",
 ]
 
 autosectionlabel_prefix_document = True
@@ -81,9 +82,6 @@ language = "en"
 # This patterns also effect to html_static_path and html_extra_path
 exclude_patterns = []
 
-# The name of the Pygments (syntax highlighting) style to use.
-pygments_style = "sphinx"
-
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
 
@@ -105,7 +103,12 @@ html_theme_options = {
         "image_dark": "_static/cognite_logo_white.png",
         "text": "cognite-sdk",
     },
-    "article_header_start": ["cognite_hub.html"],
+    "article_header_start": [
+        "cognite_developer_documentation.html",
+        "cognite_hub.html",
+        "cognite_academy.html",
+        "version.html",
+    ],
     "icon_links": [
         {
             "name": "GitHub",
@@ -120,6 +123,8 @@ html_theme_options = {
             "type": "url",
         },
     ],
+    "pygment_light_style": "default",
+    "pygment_dark_style": "monokai",
 }
 
 

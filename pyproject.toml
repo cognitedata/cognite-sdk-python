@@ -72,6 +72,7 @@ sphinx = "^6.0.0"
 sphinx-book-theme = ">=1"
 sphinx-autosummary-accessors = ">=2023.4.0"
 toml = "^0.10.2"
+sphinx-copybutton = "^0.5.2"
 
 [build-system]
 requires = ["poetry>=1.0"]
