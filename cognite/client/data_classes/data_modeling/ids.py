@@ -8,7 +8,7 @@ from cognite.client.utils._identifier import DataModelingIdentifier, DataModelin
 from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_snake_case
 
 
-@dataclass
+@dataclass(frozen=True)
 class DataModelingId:
     _type: ClassVar[str] = field(init=False)
     space: str
@@ -37,7 +37,7 @@ class DataModelingId:
 T_DataModelingId = TypeVar("T_DataModelingId", bound=DataModelingId)
 
 
-@dataclass
+@dataclass(frozen=True)
 class VersionedDataModelingId:
     _type: ClassVar[str] = field(init=False)
     space: str
@@ -106,7 +106,7 @@ class EdgeId(InstanceId):
     _instance_type = "edge"  # type: ignore[assignment]
 
 
-@dataclass
+@dataclass(frozen=True)
 class ContainerId(DataModelingId):
     _type = "container"
 
@@ -117,7 +117,7 @@ class ContainerId(DataModelingId):
         return (self.space, self.as_source_identifier(), property)
 
 
-@dataclass(unsafe_hash=True)
+@dataclass(frozen=True)
 class ViewId(VersionedDataModelingId):
     _type = "view"
 
@@ -128,7 +128,7 @@ class ViewId(VersionedDataModelingId):
         return (self.space, self.as_source_identifier(), property)
 
 
-@dataclass
+@dataclass(frozen=True)
 class DataModelId(VersionedDataModelingId):
     _type = "datamodel"
 
