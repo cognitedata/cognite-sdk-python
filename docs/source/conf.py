@@ -103,12 +103,7 @@ html_theme_options = {
         "image_dark": "_static/cognite_logo_white.png",
         "text": "cognite-sdk",
     },
-    "article_header_start": [
-        "cognite_developer_documentation.html",
-        "cognite_hub.html",
-        "cognite_academy.html",
-        "version.html",
-    ],
+    "article_header_start": ["cognite_developer_documentation.html", "cognite_hub.html", "cognite_academy.html"],
     "icon_links": [
         {
             "name": "GitHub",
@@ -117,7 +112,7 @@ html_theme_options = {
             "type": "fontawesome",
         },
         {
-            "name": "PyPI",
+            "name": "PyPI downloads",
             "url": "https://pypi.org/project/cognite-sdk/",
             "icon": "https://img.shields.io/pypi/dw/cognite-sdk",
             "type": "url",

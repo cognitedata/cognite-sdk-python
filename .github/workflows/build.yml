@@ -52,7 +52,9 @@ jobs:
           cache: 'poetry'
 
       - name: Install core dependencies
-        run: poetry install --with docs
+        run: |
+          poetry install --with docs
+          poetry shell
 
       - name: Build docs
         run: cd docs && make html SPHINXOPTS="-W --keep-going"
