@@ -7,7 +7,7 @@ Data Models
 
 .. autosummary::
    :toctree: generated/
-   :template: custom-method-template.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.data_modeling.data_models.retrieve
    CogniteClient.data_modeling.data_models.list
@@ -36,7 +36,7 @@ Spaces
 
 .. autosummary::
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.data_modeling.spaces.retrieve
    CogniteClient.data_modeling.spaces.list
@@ -63,7 +63,7 @@ Views
 
 .. autosummary::
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.data_modeling.views.retrieve
    CogniteClient.data_modeling.views.list
@@ -98,7 +98,7 @@ Containers
 
 .. autosummary::
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.data_modeling.containers.retrieve
    CogniteClient.data_modeling.containers.list
@@ -132,7 +132,7 @@ Instances
 
 .. autosummary::
    :toctree: generated/
-   :template: autosummary/accessor_method.rst
+   :template: custom-accessor-template.rst
 
    CogniteClient.data_modeling.instances.retrieve
    CogniteClient.data_modeling.instances.list

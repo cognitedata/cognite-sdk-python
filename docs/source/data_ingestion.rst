@@ -117,7 +117,7 @@ Extractor Config Data classes
    ExtractionPipelineRun
    ExtractionPipelineRunList
    extractionpipelines.StringFilter
-   extractionpipelines.ExtractionPipelineRunFilter
+   ExtractionPipelineRunFilter
    ExtractionPipelineConfigRevision
    ExtractionPipelineConfig
    ExtractionPipelineConfigRevisionList

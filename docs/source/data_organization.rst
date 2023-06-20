@@ -26,10 +26,10 @@ Annotations Data classes
    :toctree: generated/
    :template: custom-class-template.rst
 
-    Annotation
-    AnnotationFilter
-    AnnotationUpdate
-    AnnotationList
+   Annotation
+   AnnotationFilter
+   AnnotationUpdate
+   AnnotationList
 
 
 Data sets

@@ -82,12 +82,12 @@ Data classes
    :toctree: generated/
    :template: custom-class-template.rst
 
-   SessionDetails
+   transformations.SessionDetails
    Transformation
    TransformationUpdate
    TransformationList
-   TagsFilter
-   ContainsAny
+   transformations.TagsFilter
+   transformations.ContainsAny
    transformations.TransformationFilter
    TransformationPreviewResult
    TransformationSchedule
@@ -101,21 +101,21 @@ Data classes
    TransformationJobMetricList
    TransformationJob
    TransformationJobList
-   transformations.jobs.TransformationJobFilter
-   TransformationSchemaType
-   TransformationSchemaArrayType
-   TransformationSchemaMapType
+   TransformationJobFilter
+   transformations.schema.TransformationSchemaType
+   transformations.schema.TransformationSchemaArrayType
+   transformations.schema.TransformationSchemaMapType
    TransformationSchemaColumn
    TransformationSchemaColumnList
    TransformationDestination
    RawTable
-   SequenceRows
-   ViewInfo
-   EdgeType
-   DataModelInfo
-   Nodes
-   Edges
-   Instances
+   transformations.common.SequenceRows
+   transformations.common.ViewInfo
+   transformations.common.EdgeType
+   transformations.common.DataModelInfo
+   transformations.common.Nodes
+   transformations.common.Edges
+   transformations.common.Instances
    OidcCredentials
-   NonceCredentials
+   transformations.common.NonceCredentials
    TransformationBlockedInfo

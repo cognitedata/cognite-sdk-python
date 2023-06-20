@@ -15,8 +15,8 @@ from cognite.client.data_classes import (
     SecurityCategoryList,
     Session,
     SessionList,
-    TokenInspection,
 )
+from cognite.client.data_classes.iam import TokenInspection
 from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:

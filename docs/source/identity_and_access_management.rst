@@ -61,8 +61,8 @@ Data classes
    GroupList
    SecurityCategory
    SecurityCategoryList
-   ProjectSpec
-   TokenInspection
+   iam.ProjectSpec
+   iam.TokenInspection
    CreatedSession
    Session
    SessionList

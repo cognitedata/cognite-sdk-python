@@ -56,10 +56,10 @@ Data classes
    :template: custom-class-template.rst
    
    Function
-   functions.FunctionFilter
+   FunctionFilter
    functions.FunctionCallsFilter
    FunctionSchedule
-   functions.FunctionSchedulesFilter
+   FunctionSchedulesFilter
    FunctionSchedulesList
    FunctionList
    FunctionCall
@@ -67,4 +67,4 @@ Data classes
    FunctionCallLogEntry
    FunctionCallLog
    FunctionsLimits
-   FunctionsStatus
+   functions.FunctionsStatus

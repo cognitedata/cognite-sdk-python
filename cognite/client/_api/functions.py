@@ -23,14 +23,15 @@ from cognite.client.data_classes import (
     FunctionCall,
     FunctionCallList,
     FunctionCallLog,
+    FunctionFilter,
     FunctionList,
     FunctionSchedule,
+    FunctionSchedulesFilter,
     FunctionSchedulesList,
     FunctionsLimits,
-    FunctionsStatus,
     TimestampRange,
 )
-from cognite.client.data_classes.functions import FunctionCallsFilter, FunctionFilter, FunctionSchedulesFilter
+from cognite.client.data_classes.functions import FunctionCallsFilter, FunctionsStatus
 from cognite.client.exceptions import CogniteAuthError
 from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._identifier import Identifier, IdentifierSequence

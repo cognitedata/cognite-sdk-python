@@ -106,23 +106,23 @@ Contextualization Data Classes
    :toctree: generated/
    :template: custom-class-template.rst
 
-   contextualization.JobStatus
-   contextualization.ContextualizationJobType
+   JobStatus
+   ContextualizationJobType
    ContextualizationJob
    ContextualizationJobList
    EntityMatchingModel
    EntityMatchingModelUpdate
    EntityMatchingModelList
-   FileReference
-   DiagramConvertPage
-   DiagramConvertPageList
-   DiagramConvertItem
-   DiagramConvertResults
-   DiagramDetectItem
-   DiagramDetectResults
+   contextualization.FileReference
+   contextualization.DiagramConvertPage
+   contextualization.DiagramConvertPageList
+   contextualization.DiagramConvertItem
+   contextualization.DiagramConvertResults
+   contextualization.DiagramDetectItem
+   contextualization.DiagramDetectResults
    contextualization.VisionJob
-   VisionExtractItem
-   VisionExtractJob
+   contextualization.VisionExtractItem
+   contextualization.VisionExtractJob
 
 
 .. autosummary:: 
