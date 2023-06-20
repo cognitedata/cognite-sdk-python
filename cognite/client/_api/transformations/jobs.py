@@ -7,11 +7,11 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import (
     TransformationJob,
+    TransformationJobFilter,
     TransformationJobList,
     TransformationJobMetric,
     TransformationJobMetricList,
 )
-from cognite.client.data_classes.transformations.jobs import TransformationJobFilter
 from cognite.client.utils._identifier import IdentifierSequence
 
 

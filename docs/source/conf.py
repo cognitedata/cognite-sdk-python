@@ -193,12 +193,12 @@ texinfo_documents = [
 ]
 
 pyproject = pathlib.Path.cwd().parent.parent / "pyproject.toml"
-python_version = toml.load(pyproject)["tool"]["poetry"]["dependencies"]["python"]
+required_python_version = toml.load(pyproject)["tool"]["poetry"]["dependencies"]["python"]
 
 rst_epilog = """
 .. |PythonVersion| replace:: {versionnum}
 """.format(
-    versionnum=python_version,
+    versionnum=required_python_version,
 )
 
 python_display_short_literal_types = True

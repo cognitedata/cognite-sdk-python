@@ -9,57 +9,62 @@ from cognite.client import utils
 from cognite.client._api.annotations import AnnotationsAPI
 from cognite.client._api.assets import AssetsAPI
 from cognite.client._api.data_modeling import DataModelingAPI
-from cognite.client._api.data_modeling.containers import ContainersAPI
-from cognite.client._api.data_modeling.data_models import DataModelsAPI
-from cognite.client._api.data_modeling.instances import InstancesAPI
-from cognite.client._api.data_modeling.spaces import SpacesAPI
-from cognite.client._api.data_modeling.views import ViewsAPI
 from cognite.client._api.data_sets import DataSetsAPI
-from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.diagrams import DiagramsAPI
 from cognite.client._api.entity_matching import EntityMatchingAPI
 from cognite.client._api.events import EventsAPI
-from cognite.client._api.extractionpipelines import (
-    ExtractionPipelineConfigsAPI,
-    ExtractionPipelineRunsAPI,
-    ExtractionPipelinesAPI,
-)
+from cognite.client._api.extractionpipelines import ExtractionPipelinesAPI
 from cognite.client._api.files import FilesAPI
-from cognite.client._api.functions import FunctionCallsAPI, FunctionsAPI, FunctionSchedulesAPI
+from cognite.client._api.functions import FunctionsAPI
 from cognite.client._api.geospatial import GeospatialAPI
-from cognite.client._api.iam import IAMAPI, GroupsAPI, SecurityCategoriesAPI, SessionsAPI, TokenAPI
+from cognite.client._api.iam import IAMAPI
 from cognite.client._api.labels import LabelsAPI
-from cognite.client._api.raw import RawAPI, RawDatabasesAPI, RawRowsAPI, RawTablesAPI
+from cognite.client._api.raw import RawAPI
 from cognite.client._api.relationships import RelationshipsAPI
-from cognite.client._api.sequences import SequencesAPI, SequencesDataAPI
-from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
-from cognite.client._api.templates import (
-    TemplateGroupsAPI,
-    TemplateGroupVersionsAPI,
-    TemplateInstancesAPI,
-    TemplatesAPI,
-    TemplateViewsAPI,
-)
-from cognite.client._api.three_d import (
-    ThreeDAPI,
-    ThreeDAssetMappingAPI,
-    ThreeDFilesAPI,
-    ThreeDModelsAPI,
-    ThreeDRevisionsAPI,
-)
+from cognite.client._api.sequences import SequencesAPI
+from cognite.client._api.templates import TemplatesAPI
+from cognite.client._api.three_d import ThreeDAPI
 from cognite.client._api.time_series import TimeSeriesAPI
-from cognite.client._api.transformations import (
-    TransformationJobsAPI,
-    TransformationNotificationsAPI,
-    TransformationsAPI,
-    TransformationSchedulesAPI,
-    TransformationSchemaAPI,
-)
+from cognite.client._api.transformations import TransformationsAPI
 from cognite.client._api.vision import VisionAPI
 from cognite.client._api_client import APIClient
 from cognite.client.config import ClientConfig, global_config
 
-build_docs = os.getenv("BUILD_COGNITE_SDK_DOCS")
+_build_docs = os.getenv("BUILD_COGNITE_SDK_DOCS")
+if _build_docs:
+    from cognite.client._api.data_modeling.containers import ContainersAPI
+    from cognite.client._api.data_modeling.data_models import DataModelsAPI
+    from cognite.client._api.data_modeling.instances import InstancesAPI
+    from cognite.client._api.data_modeling.spaces import SpacesAPI
+    from cognite.client._api.data_modeling.views import ViewsAPI
+    from cognite.client._api.datapoints import DatapointsAPI
+    from cognite.client._api.extractionpipelines import (
+        ExtractionPipelineConfigsAPI,
+        ExtractionPipelineRunsAPI,
+    )
+    from cognite.client._api.functions import FunctionCallsAPI, FunctionSchedulesAPI
+    from cognite.client._api.iam import GroupsAPI, SecurityCategoriesAPI, SessionsAPI, TokenAPI
+    from cognite.client._api.raw import RawDatabasesAPI, RawRowsAPI, RawTablesAPI
+    from cognite.client._api.sequences import SequencesDataAPI
+    from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
+    from cognite.client._api.templates import (
+        TemplateGroupsAPI,
+        TemplateGroupVersionsAPI,
+        TemplateInstancesAPI,
+        TemplateViewsAPI,
+    )
+    from cognite.client._api.three_d import (
+        ThreeDAssetMappingAPI,
+        ThreeDFilesAPI,
+        ThreeDModelsAPI,
+        ThreeDRevisionsAPI,
+    )
+    from cognite.client._api.transformations import (
+        TransformationJobsAPI,
+        TransformationNotificationsAPI,
+        TransformationSchedulesAPI,
+        TransformationSchemaAPI,
+    )
 
 
 class CogniteClient:
@@ -145,7 +150,7 @@ class CogniteClient:
         return self._config
 
 
-def make_accessors_for_building_docs() -> None:
+def _make_accessors_for_building_docs() -> None:
     CogniteClient.assets = AssetsAPI  # type: ignore
     CogniteClient.events = EventsAPI  # type: ignore
     CogniteClient.files = FilesAPI  # type: ignore
@@ -200,5 +205,5 @@ def make_accessors_for_building_docs() -> None:
     CogniteClient.data_modeling.instances = InstancesAPI  # type: ignore
 
 
-if build_docs == "true":
-    make_accessors_for_building_docs()
+if _build_docs == "true":
+    _make_accessors_for_building_docs()
