@@ -24,9 +24,6 @@ class TransformationSchemaAPI(APIClient):
         Args:
             destination (TransformationDestination): destination for which the schema is requested.
             conflict_mode (Optional[str]): conflict mode for which the schema is requested.
-            with_instance_space (Optional[bool]): Is instance space set at the transformation config or not
-            is_connection_definition (Optional[bool]): If the edge is a connection definition or not
-            instance_type (Optional[str]): Instance type to deal with, Enum: "nodes" "edges"
 
         Returns:
             TransformationSchemaColumnList: List of column descriptions
@@ -40,51 +37,12 @@ class TransformationSchemaAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> columns = c.transformations.schema.retrieve(destination = TransformationDestination.assets())
 
-            Get the schema for a transformation producing nodes::
-
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import TransformationDestination
-                >>> from cognite.client.data_classes.transformations.common import ViewInfo
-                >>> c = CogniteClient()
-                >>> view = ViewInfo(space="viewSpace", external_id="viewExternalId", version="viewVersion")
-                >>> columns = c.transformations.schema.retrieve(destination=TransformationDestination.nodes(view, "InstanceSpace")
-
-
-            Get the schema for a transformation producing edges::
-
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import TransformationDestination
-                >>> from cognite.client.data_classes.transformations.common import ViewInfo
-                >>> c = CogniteClient()
-                >>> view = ViewInfo(space="viewSpace", external_id="viewExternalId", version="viewVersion")
-                >>> columns = c.transformations.schema.retrieve(destination=TransformationDestination.edges(view, "InstanceSpace")
-
-
-            Get the schema for a transformation producing instance type data model::
-
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import TransformationDestination
-                >>> from cognite.client.data_classes.transformations.common import DataModelInfo
-                >>> c = CogniteClient()
-                >>> data_model = DataModelInfo(space="dataModelSpace", external_id="dataModelExternalId",version="dataModelVersion",destination_type="type")
-                >>> columns = c.transformations.schema.retrieve(destination=TransformationDestination.instances(data_model, "InstanceSpace")
-
-
-            Get the schema for a transformation producing instance relationship data model::
-
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import TransformationDestination
-                >>> from cognite.client.data_classes.transformations.common import DataModelInfo
-                >>> c = CogniteClient()
-                >>> data_model = DataModelInfo(space="dataModelSpace", external_id="dataModelExternalId",version="dataModelVersion",destination_type="type", destination_relationship_from_type="relationshipFromType")
-                >>> columns = c.transformations.schema.retrieve(destination=TransformationDestination.instances(data_model, "InstanceSpace")
-
         """
 
         other_params = {"conflictMode": conflict_mode} if conflict_mode else None
         return self._retrieve(destination, other_params)
 
-    def retrieve(
+    def retrieve_instances(
         self,
         destination: TransformationDestination,
         conflict_mode: Optional[str] = None,
@@ -100,6 +58,62 @@ class TransformationSchemaAPI(APIClient):
             "isConnectionDefinition": is_connection_definition,
             "instanceType": instance_type,
         }
+
+        """`Get expected schema for a transformation destination. <https://docs.cognite.com/api/v1/#operation/getFlexibleDataModelInstanceSchema>`_
+
+            Args:
+                destination (TransformationDestination): destination for which the schema is requested.
+                conflict_mode (Optional[str]): conflict mode for which the schema is requested.
+                with_instance_space (Optional[bool]): Is instance space set at the transformation config or not
+                is_connection_definition (Optional[bool]): If the edge is a connection definition or not
+                instance_type (Optional[str]): Instance type to deal with, Enum: "nodes" "edges"
+
+            Returns:
+                TransformationSchemaColumnList: List of column descriptions
+
+            Example:
+
+                Get the schema for a transformation producing nodes::
+
+                    >>> from cognite.client import CogniteClient
+                    >>> from cognite.client.data_classes import TransformationDestination
+                    >>> from cognite.client.data_classes.transformations.common import ViewInfo
+                    >>> c = CogniteClient()
+                    >>> view = ViewInfo(space="viewSpace", external_id="viewExternalId", version="viewVersion")
+                    >>> columns = c.transformations.schema.retrieve_instances(destination=TransformationDestination.nodes(view, "InstanceSpace")
+
+
+                Get the schema for a transformation producing edges::
+
+                    >>> from cognite.client import CogniteClient
+                    >>> from cognite.client.data_classes import TransformationDestination
+                    >>> from cognite.client.data_classes.transformations.common import ViewInfo
+                    >>> c = CogniteClient()
+                    >>> view = ViewInfo(space="viewSpace", external_id="viewExternalId", version="viewVersion")
+                    >>> columns = c.transformations.schema.retrieve_instances(destination=TransformationDestination.edges(view, "InstanceSpace")
+
+
+                Get the schema for a transformation producing instance type data model::
+
+                    >>> from cognite.client import CogniteClient
+                    >>> from cognite.client.data_classes import TransformationDestination
+                    >>> from cognite.client.data_classes.transformations.common import DataModelInfo
+                    >>> c = CogniteClient()
+                    >>> data_model = DataModelInfo(space="dataModelSpace", external_id="dataModelExternalId",version="dataModelVersion",destination_type="type")
+                    >>> columns = c.transformations.schema.retrieve_instances(destination=TransformationDestination.instances(data_model, "InstanceSpace")
+
+
+                Get the schema for a transformation producing instance relationship data model::
+
+                    >>> from cognite.client import CogniteClient
+                    >>> from cognite.client.data_classes import TransformationDestination
+                    >>> from cognite.client.data_classes.transformations.common import DataModelInfo
+                    >>> c = CogniteClient()
+                    >>> data_model = DataModelInfo(space="dataModelSpace", external_id="dataModelExternalId",version="dataModelVersion",destination_type="type", destination_relationship_from_type="relationshipFromType")
+                    >>> columns = c.transformations.schema.retrieve_instances(destination=TransformationDestination.instances(data_model, "InstanceSpace")
+
+            """
+
         return self._retrieve(destination, other_params)
 
     def _retrieve(
