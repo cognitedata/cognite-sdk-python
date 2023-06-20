@@ -360,16 +360,20 @@ class EdgeApply(InstanceApply):
         self,
         space: str,
         external_id: str,
-        type: DirectRelationReference,
-        start_node: DirectRelationReference,
-        end_node: DirectRelationReference,
+        type: DirectRelationReference | tuple[str, str],
+        start_node: DirectRelationReference | tuple[str, str],
+        end_node: DirectRelationReference | tuple[str, str],
         existing_version: int = None,
         sources: list[NodeOrEdgeData] = None,
     ):
         super().__init__(space, external_id, "edge", existing_version, sources)
-        self.type = type
-        self.start_node = start_node
-        self.end_node = end_node
+        self.type = type if isinstance(type, DirectRelationReference) else DirectRelationReference.load(type)
+        self.start_node = (
+            start_node if isinstance(start_node, DirectRelationReference) else DirectRelationReference.load(start_node)
+        )
+        self.end_node = (
+            end_node if isinstance(end_node, DirectRelationReference) else DirectRelationReference.load(end_node)
+        )
 
     def as_id(self) -> EdgeId:
         return EdgeId(space=self.space, external_id=self.external_id)

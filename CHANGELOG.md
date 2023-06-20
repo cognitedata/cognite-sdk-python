@@ -19,9 +19,23 @@ Changes are grouped as follows
 
 
 
-## [6.4.2] - 2023-06-14
+
+## [6.4.4] - 2023-06-20
 ### Added
 - Transformation schema for nodes, edges in both view centric and model centric
+
+## [6.4.3] - 2023-06-15
+### Added
+- Accept direct relation values as tuples in `EdgeApply`
+
+## [6.4.2] - 2023-06-15
+### Changed
+- When providing ids as tuples in `instances.retrieve` and `instances.delete` you should not 
+have to specify the instance type in each tuple
+
+### Fixed
+- Bug where edges and nodes would get mixed up on `instances.retrieve`
+
 
 ## [6.4.1] - 2023-06-14
 ### Fixed

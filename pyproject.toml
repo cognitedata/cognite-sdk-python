@@ -2,7 +2,9 @@
 name = "cognite-sdk"
 
 
-version = "6.4.2"
+
+version = "6.4.4"
+
 
 
 description = "Cognite Python SDK"
