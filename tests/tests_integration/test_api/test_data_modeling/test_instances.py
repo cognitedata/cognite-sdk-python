@@ -62,7 +62,7 @@ class TestInstancesAPI:
             limit=-1,
             instance_type="node",
             sources=view_id,
-            sort=dm.InstanceSort([view_id.space, view_id.as_source_identifier(), "name"]),
+            sort=dm.InstanceSort(view_id.as_property_ref("name")),
         )
         assert sorted(person_nodes, key=lambda v: v.properties[view_id]["name"]) == person_nodes
 
@@ -70,7 +70,7 @@ class TestInstancesAPI:
         # Act
         view_id = person_view.as_id()
         f = dm.filters
-        born_before_1950 = f.Range([view_id.space, view_id.as_source_identifier(), "birthYear"], lt=1950)
+        born_before_1950 = f.Range(view_id.as_property_ref("birthYear"), lt=1950)
         person_nodes = cognite_client.data_modeling.instances.list(
             limit=-1, instance_type="node", sources=view_id, filter=born_before_1950
         )

@@ -113,6 +113,9 @@ class ContainerId(DataModelingId):
     def as_source_identifier(self) -> str:
         return self.external_id
 
+    def as_property_ref(self, property: str) -> tuple[str, ...]:
+        return (self.space, self.as_source_identifier(), property)
+
 
 @dataclass(unsafe_hash=True)
 class ViewId(VersionedDataModelingId):
@@ -120,6 +123,9 @@ class ViewId(VersionedDataModelingId):
 
     def as_source_identifier(self) -> str:
         return f"{self.external_id}/{self.version}"
+
+    def as_property_ref(self, property: str) -> tuple[str, ...]:
+        return (self.space, self.as_source_identifier(), property)
 
 
 @dataclass

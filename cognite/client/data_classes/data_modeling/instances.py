@@ -647,7 +647,7 @@ class EdgeList(CogniteResourceList[Edge]):
 class InstanceSort(CogniteFilter):
     def __init__(
         self,
-        property: list[str],
+        property: list[str] | tuple[str, ...],
         direction: Literal["ascending", "descending"] = "ascending",
         nulls_first: bool = False,
     ):

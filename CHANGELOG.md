@@ -20,6 +20,9 @@ Changes are grouped as follows
 ## [6.4.4] - 2023-06-15
 Some breaking changes to the datamodeling client. We don't expect any more breaking changes,
 but we accept the cost of breaking a few consumers now early on the really nail the user experience.
+### Added
+- ViewId:as_property_ref and ContainerId:as_property_ref to make it easier to create property references.
+
 ### Changed
 - Renamed ViewCore:as_reference and ContainerCore:as_reference to :as_id() for consistency with other resources.
 - Change Instance:properties to be a `MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifier, PropertyValue]]`, in order to make it easier to consume
