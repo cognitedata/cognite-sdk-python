@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from abc import abstractmethod
 from dataclasses import asdict, dataclass
 from typing import Any, List, Literal, Type, TypeVar, Union, cast
 
@@ -144,38 +145,10 @@ class Instance(InstanceCore):
         self.deleted_time = deleted_time
         self.properties = properties
 
+    @abstractmethod
     def as_apply(self, source: ViewId | ContainerId, existing_version: int) -> InstanceApply:
-        """
-        This is a convenience function for converting the instance to an apply instance.
-
-        It makes the simplifying assumption that all properties are from the same view. Note that this
-        is not true in general.
-
-        Args:
-            source (ViewId | ContainerId): The view or container to with all the properties.
-            existing_version (int): Fail the ingestion request if the node's version is greater than or equal to this value.
-                                    If no existingVersion is specified, the ingestion will always overwrite any
-                                    existing data for the edge (for the specified container or instance). If existingVersion is
-                                    set to 0, the upsert will behave as an insert, so it will fail the bulk if the
-                                    item already exists. If skipOnVersionConflict is set on the ingestion request,
-                                    then the item will be skipped instead of failing the ingestion request.
-
-        Returns:
-            An InstanceApply.
-
-        """
-        return InstanceApply(
-            space=self.space,
-            external_id=self.external_id,
-            instance_type=self.instance_type,
-            existing_version=existing_version,
-            sources=[
-                NodeOrEdgeData(source=source, properties=space_properties)  # type: ignore[arg-type]
-                for space_properties in self.properties.values()
-            ]
-            if self.properties
-            else None,
-        )
+        """Convert the instance to an apply instance."""
+        raise NotImplementedError()
 
 
 class InstanceApplyResult(InstanceCore):
