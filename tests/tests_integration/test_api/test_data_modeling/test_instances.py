@@ -320,3 +320,6 @@ class TestInstancesAPI:
         assert "invalidProperty" in error.value.message
         assert len(error.value.successful) == 1
         assert len(error.value.failed) == 1
+
+        # cleanup
+        cognite_client.data_modeling.instances.delete(valid_person.as_id())
