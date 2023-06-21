@@ -713,7 +713,7 @@ class SequencesDataAPI(APIClient):
         column_external_ids: Optional[SequenceType[str]] = None,
         before: int = None,
     ) -> SequenceData:
-        """`Retrieves the last row (i.e. the row with the highest row number) in a sequence <https://docs.cognite.com/api/v1/#operation/getLatestSequenceRow>`_.
+        """`Retrieves the last row (the row with the highest row number) in a sequence <https://docs.cognite.com/api/v1/#operation/getLatestSequenceRow>`_.
 
         Args:
             id (optional, int): Id or list of ids.

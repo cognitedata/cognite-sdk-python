@@ -7,7 +7,7 @@ repos:
             - --fix
             - --exit-non-zero-on-fix
             - --line-length=120
-            - --ignore=E731,E501,W605,RUF002
+            - --ignore=E731,E501,W605
             # See https://beta.ruff.rs/docs/rules for an overview of ruff rules
             - --select=E,W,F,I,T,RUF,TID,UP
             - --fixable=E,W,F,I,T,RUF,TID,UP
