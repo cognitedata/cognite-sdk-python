@@ -8,7 +8,7 @@ from cognite.client.utils._identifier import DataModelingIdentifier, DataModelin
 from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_snake_case
 
 
-@dataclass
+@dataclass(frozen=True)
 class DataModelingId:
     _type: ClassVar[str] = field(init=False)
     space: str
@@ -37,7 +37,7 @@ class DataModelingId:
 T_DataModelingId = TypeVar("T_DataModelingId", bound=DataModelingId)
 
 
-@dataclass
+@dataclass(frozen=True)
 class VersionedDataModelingId:
     _type: ClassVar[str] = field(init=False)
     space: str
@@ -55,7 +55,8 @@ class VersionedDataModelingId:
 
     @classmethod
     def load(
-        cls: Type[T_Versioned_DataModeling_Id], data: dict | T_Versioned_DataModeling_Id | tuple[str, str, str]
+        cls: Type[T_Versioned_DataModeling_Id],
+        data: dict | T_Versioned_DataModeling_Id | tuple[str, str, str] | tuple[str, str],
     ) -> T_Versioned_DataModeling_Id:
         if isinstance(data, cls):
             return data
@@ -105,23 +106,29 @@ class EdgeId(InstanceId):
     _instance_type = "edge"  # type: ignore[assignment]
 
 
-@dataclass
+@dataclass(frozen=True)
 class ContainerId(DataModelingId):
     _type = "container"
 
     def as_source_identifier(self) -> str:
         return self.external_id
 
+    def as_property_ref(self, property: str) -> tuple[str, ...]:
+        return (self.space, self.as_source_identifier(), property)
 
-@dataclass
+
+@dataclass(frozen=True)
 class ViewId(VersionedDataModelingId):
     _type = "view"
 
     def as_source_identifier(self) -> str:
         return f"{self.external_id}/{self.version}"
 
+    def as_property_ref(self, property: str) -> tuple[str, ...]:
+        return (self.space, self.as_source_identifier(), property)
 
-@dataclass
+
+@dataclass(frozen=True)
 class DataModelId(VersionedDataModelingId):
     _type = "datamodel"
 

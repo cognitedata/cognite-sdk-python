@@ -66,7 +66,7 @@ class ViewCore(DataModelingResource):
 
         return output
 
-    def as_reference(self) -> ViewId:
+    def as_id(self) -> ViewId:
         return ViewId(
             space=self.space,
             external_id=self.external_id,

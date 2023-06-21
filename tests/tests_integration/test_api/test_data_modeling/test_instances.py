@@ -4,19 +4,24 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client import data_modeling as dm
+from cognite.client.data_classes.data_modeling.filters import Equals
 from cognite.client.exceptions import CogniteAPIError
 
 
 @pytest.fixture()
-def cdf_nodes(cognite_client: CogniteClient) -> dm.NodeList:
-    nodes = cognite_client.data_modeling.instances.list(limit=-1, instance_type="node")
+def cdf_nodes(cognite_client: CogniteClient, integration_test_space: dm.Space) -> dm.NodeList:
+    nodes = cognite_client.data_modeling.instances.list(
+        limit=-1, instance_type="node", filter=Equals(("node", "space"), integration_test_space.space)
+    )
     assert len(nodes) > 0, "Add at least one node to CDF"
     return nodes
 
 
 @pytest.fixture()
-def cdf_edges(cognite_client: CogniteClient) -> dm.EdgeList:
-    edges = cognite_client.data_modeling.instances.list(limit=-1, instance_type="edge")
+def cdf_edges(cognite_client: CogniteClient, integration_test_space: dm.Space) -> dm.EdgeList:
+    edges = cognite_client.data_modeling.instances.list(
+        limit=-1, instance_type="edge", filter=Equals(("edge", "space"), integration_test_space.space)
+    )
     assert len(edges) > 0, "Add at least one edge to CDF"
     return edges
 
@@ -49,7 +54,7 @@ class TestInstancesAPI:
     def test_list_nodes_with_properties(self, cognite_client: CogniteClient, person_view: dm.View):
         # Act
         person_nodes = cognite_client.data_modeling.instances.list(
-            limit=-1, instance_type="node", sources=person_view.as_reference()
+            limit=-1, instance_type="node", sources=person_view.as_id()
         )
 
         # Assert
@@ -57,34 +62,25 @@ class TestInstancesAPI:
         assert all(person.properties for person in person_nodes)
 
     def test_list_person_nodes_sorted_by_name(self, cognite_client: CogniteClient, person_view: dm.View):
-        # Act
-        view_id = person_view.as_reference()
+        view_id = person_view.as_id()
         person_nodes = cognite_client.data_modeling.instances.list(
             limit=-1,
             instance_type="node",
             sources=view_id,
-            sort=dm.InstanceSort([view_id.space, view_id.as_source_identifier(), "name"]),
+            sort=dm.InstanceSort(view_id.as_property_ref("name")),
         )
-
-        # Assert
-        assert (
-            sorted(person_nodes, key=lambda v: v.properties[view_id.space][view_id.as_source_identifier()]["name"])
-            == person_nodes
-        )
+        assert sorted(person_nodes, key=lambda v: v.properties[view_id]["name"]) == person_nodes
 
     def test_list_person_filtering(self, cognite_client: CogniteClient, person_view: dm.View):
         # Act
-        view_id = person_view.as_reference()
+        view_id = person_view.as_id()
         f = dm.filters
-        born_before_1950 = f.Range([view_id.space, view_id.as_source_identifier(), "birthYear"], lt=1950)
+        born_before_1950 = f.Range(view_id.as_property_ref("birthYear"), lt=1950)
         person_nodes = cognite_client.data_modeling.instances.list(
             limit=-1, instance_type="node", sources=view_id, filter=born_before_1950
         )
 
-        assert all(
-            person.properties[view_id.space][view_id.as_source_identifier()]["birthYear"] < 1950
-            for person in person_nodes
-        )
+        assert all(person.properties[view_id]["birthYear"] < 1950 for person in person_nodes)
 
     def test_apply_retrieve_and_delete(self, cognite_client: CogniteClient, person_view: dm.View):
         # Arrange
@@ -93,7 +89,7 @@ class TestInstancesAPI:
             external_id="person:arnold_schwarzenegger",
             sources=[
                 dm.NodeOrEdgeData(
-                    person_view.as_reference(),
+                    person_view.as_id(),
                     {
                         "birthYear": 1947,
                         "name": "Arnold Schwarzenegger",
@@ -127,7 +123,7 @@ class TestInstancesAPI:
             external_id="person:arnold_schwarzenegger",
             sources=[
                 dm.NodeOrEdgeData(
-                    person_view.as_reference(),
+                    person_view.as_id(),
                     {
                         "birthYear": 1947,
                         "name": "Arnold Schwarzenegger",
@@ -140,7 +136,7 @@ class TestInstancesAPI:
             external_id="actor:arnold_schwarzenegger",
             sources=[
                 dm.NodeOrEdgeData(
-                    actor_view.as_reference(),
+                    actor_view.as_id(),
                     {
                         "wonOscar": False,
                         "person": {"space": space, "externalId": person.external_id},
@@ -267,7 +263,7 @@ class TestInstancesAPI:
             external_id="person:arnold_schwarzenegger",
             sources=[
                 dm.NodeOrEdgeData(
-                    person_view.as_reference(),
+                    person_view.as_id(),
                     {
                         "birthYear": 1947,
                         "name": "Arnold Schwarzenegger",

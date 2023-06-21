@@ -1,6 +1,6 @@
 import pytest
 
-from cognite.client.data_classes.data_modeling.containers import ConstraintIdentifier, IndexIdentifier
+from cognite.client.data_classes.data_modeling.containers import Constraint, Index
 
 
 class TestConstraintIdentifier:
@@ -15,12 +15,12 @@ class TestConstraintIdentifier:
         ],
     )
     def test_load_dump(self, data: dict):
-        actual = ConstraintIdentifier.load(data).dump(camel_case=True)
+        actual = Constraint.load(data).dump(camel_case=True)
         assert data == actual
 
 
 class TestIndexIdentifier:
     @pytest.mark.parametrize("data", [{"properties": ["name", "fullName"], "indexType": "btree"}])
     def test_load_dump(self, data: dict):
-        actual = IndexIdentifier.load(data).dump(camel_case=True)
+        actual = Index.load(data).dump(camel_case=True)
         assert data == actual
