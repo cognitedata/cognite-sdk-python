@@ -57,3 +57,6 @@ test-report.xml
 scripts/local_client.py
 playground.py
 scripts/tmp/
+
+# docs
+docs/source/generated/
