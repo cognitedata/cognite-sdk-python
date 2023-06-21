@@ -100,6 +100,8 @@ Get transformation schema
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.transformations.schema.TransformationSchemaAPI.retrieve
 
+.. automethod:: cognite.client._api.transformations.schema.TransformationSchemaAPI.retrieve_instances
+
 Data classes
 ------------
 .. automodule:: cognite.client.data_classes.transformations

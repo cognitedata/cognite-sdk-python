@@ -17,6 +17,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+
+
+
+## [6.4.4] - 2023-06-20
+### Added
+- Transformation schema for nodes, edges in both view centric and model centric
+
 ## [6.4.3] - 2023-06-15
 ### Added
 - Accept direct relation values as tuples in `EdgeApply`
@@ -29,9 +36,11 @@ have to specify the instance type in each tuple
 ### Fixed
 - Bug where edges and nodes would get mixed up on `instances.retrieve`
 
+
 ## [6.4.1] - 2023-06-14
 ### Fixed
 - Add the missing page_count field for diagram detect items.
+
 
 ## [6.4.0] - 2023-06-12
 ### Added
@@ -39,6 +48,7 @@ have to specify the instance type in each tuple
   `client.data_modeling.instances`, the endpoints `list`, `delete`, `retrieve`, and `apply`
 
 ## [6.3.2] - 2023-06-08
+
 ### Fixed
 - Requests being retried around a token refresh cycle, no longer risk getting stuck with an outdated token.
 
@@ -60,6 +70,7 @@ have to specify the instance type in each tuple
 
 ### Removed
 - Removed `retrieve_multiple` from the `SpacesAPI` to have a consistent API with the `views`, `containers`, and `data_models`.
+
 
 ## [6.2.2] - 2023-06-05
 ### Fixed
