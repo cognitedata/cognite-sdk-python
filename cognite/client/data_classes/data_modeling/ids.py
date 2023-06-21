@@ -56,7 +56,7 @@ class VersionedDataModelingId:
     @classmethod
     def load(
         cls: Type[T_Versioned_DataModeling_Id],
-        data: dict | T_Versioned_DataModeling_Id | tuple[str, str, str] | tuple[str, str],
+        data: dict | T_Versioned_DataModeling_Id | tuple[str, str] | tuple[str, str, str],
     ) -> T_Versioned_DataModeling_Id:
         if isinstance(data, cls):
             return data
