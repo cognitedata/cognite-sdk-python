@@ -200,7 +200,7 @@ class ContainersAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> import cognite.client.data_classes.data_modeling as models
                 >>> c = CogniteClient()
-                >>> containers = [models.Container(space="mySpace",properties={"name": models.ContainerPropertyIdentifier(type=models.TextType, name="name")})]
+                >>> containers = [models.Container(space="mySpace",properties={"name": models.ContainerProperty(type=models.TextType, name="name")})]
                 >>> res = c.data_modeling.containers.create(containers)
         """
         return self._create_multiple(list_cls=ContainerList, resource_cls=Container, items=container)

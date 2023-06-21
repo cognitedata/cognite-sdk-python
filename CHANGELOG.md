@@ -17,6 +17,31 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.4.5] - 2023-06-21
+### Added
+- Included tuple-notation when retrieving or listing data model instances
+
+### Improved
+- Fixed docstring for retrieving data model instances and extended the examples.
+
+## [6.4.4] - 2023-06-21
+Some breaking changes to the datamodeling client. We don't expect any more breaking changes,
+but we accept the cost of breaking a few consumers now early on the really nail the user experience.
+### Added
+- ViewId:as_property_ref and ContainerId:as_property_ref to make it easier to create property references.
+
+### Changed
+- Renamed ViewCore:as_reference and ContainerCore:as_reference to :as_id() for consistency with other resources.
+- Change Instance:properties to be a `MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifier, PropertyValue]]`, in order to make it easier to consume
+- Make VersionedDataModelingId:load accept `tuple[str, str]`
+- Rename ConstraintIdentifier to Constraint - it was not an id but the definition itself
+- Rename IndexIdentifier to Index - it was not an id but the definition itself
+- Rename ContainerPropertyIdentifier to ContaienrProperty - it was not an id but the definition itself
+
+### Removed
+- Redundant EdgeApply:create method. It simply mirrored the EdgeApply constructor.
+
+
 ## [6.4.3] - 2023-06-15
 ### Added
 - Accept direct relation values as tuples in `EdgeApply`

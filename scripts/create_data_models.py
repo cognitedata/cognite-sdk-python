@@ -66,9 +66,7 @@ def copy_pygen_test_data(pygen: CogniteClient, client: CogniteClient):
     #     print(source)
     #     print(created_nodes)
     actor_view = pygen.data_modeling.views.retrieve((space.space, "Person"))
-    ingested_edges = pygen.data_modeling.instances.list(
-        instance_type="node", limit=-1, sources=actor_view[0].as_reference()
-    )
+    ingested_edges = pygen.data_modeling.instances.list(instance_type="node", limit=-1, sources=actor_view[0].as_id())
     if len(ingested_edges) > 0:
         print("Skipping edges")
         return

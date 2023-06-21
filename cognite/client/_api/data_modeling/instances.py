@@ -11,6 +11,7 @@ from cognite.client.data_classes.data_modeling.ids import (
     EdgeId,
     NodeId,
     ViewId,
+    ViewIdentifier,
     _load_identifier,
 )
 from cognite.client.data_classes.data_modeling.instances import (
@@ -29,6 +30,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     NodeApplyResultList,
     NodeList,
 )
+from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
 
 if TYPE_CHECKING:
@@ -213,7 +215,7 @@ class InstancesAPI(APIClient):
         self,
         nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
         edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
-        sources: list[ViewId] | ViewId | None = None,
+        sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None = None,
         include_typing: bool = False,
     ) -> InstancesResult:
         """`Retrieve one or more instance by ID <https://docs.cognite.com/api/v1/#tag/Instances/operation/byExternalIdsInstances>`_.
@@ -221,7 +223,7 @@ class InstancesAPI(APIClient):
         Args:
             nodes (NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Node ids
             edges (EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Edge ids
-            sources (list[ViewId] | None): Retrieve properties from the listed - by reference - views.
+            sources (ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence(View) None): Retrieve properties from the listed - by reference - views.
             include_typing (bool): Whether to return property type information as part of the result.
 
         Returns:
@@ -229,19 +231,34 @@ class InstancesAPI(APIClient):
 
         Examples:
 
-            Delete instances by id:
+            Retrieve instances by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.data_modeling.instances.retrieve(('mySpace', 'myNode'))
+                >>> res = c.data_modeling.instances.retrieve(nodes=("mySpace", "myNodeExternalId"),
+                ...                                          edges=("mySpace", "myEdgeExternalId"),
+                ...                                          sources=("mySpace", "myViewExternalId", "myViewVersion")
+                ...                                         )
 
-            Delete nodes an edger using the built in data class
+            Retrieve nodes an edges using the built in data class
 
                 >>> from cognite.client import CogniteClient
                 >>> import cognite.client.data_modeling as dm
                 >>> c = CogniteClient()
-                >>> c.data_modeling.instances.retrieve(dm.NodeId("mySpace", "myNode"),
-                ...                                    dm.EdgeId("mySpace", "myEdge"))
+                >>> res = c.data_modeling.instances.retrieve(dm.NodeId("mySpace", "myNode"),
+                ...                                          dm.EdgeId("mySpace", "myEdge"),
+                ...                                          dm.ViewId("mySpace", "myViewExternalId", "myViewVersion")
+                ...                                         )
+
+            Retrieve nodes an edges using the the view object as source
+
+                >>> from cognite.client import CogniteClient
+                >>> import cognite.client.data_modeling as dm
+                >>> c = CogniteClient()
+                >>> res = c.data_modeling.instances.retrieve(dm.NodeId("mySpace", "myNode"),
+                ...                                          dm.EdgeId("mySpace", "myEdge"),
+                ...                                          sources='myView')
+                ...                                         )
         """
         identifiers = self._load_node_and_edge_ids(nodes, edges)
         other_params = self._create_other_params(
@@ -329,7 +346,7 @@ class InstancesAPI(APIClient):
         *,
         include_typing: bool,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None,
-        sources: ViewId | Sequence[ViewId] | None,
+        sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None,
         instance_type: Literal["node", "edge"] | None,
     ) -> dict[str, Any]:
         other_params: dict[str, Any] = {"includeTyping": include_typing}
@@ -349,8 +366,13 @@ class InstancesAPI(APIClient):
         return other_params
 
     @classmethod
-    def _dump_instance_source(cls, source: ViewId) -> dict:
-        return {"source": source.dump(camel_case=True)}
+    def _dump_instance_source(cls, source: ViewIdentifier | View) -> dict:
+        instance_source: ViewIdentifier
+        if isinstance(source, View):
+            instance_source = source.as_id()
+        else:
+            instance_source = source
+        return {"source": ViewId.load(instance_source).dump(camel_case=True)}
 
     @classmethod
     def _dump_instance_sort(cls, sort: InstanceSort | dict) -> dict:
@@ -416,7 +438,7 @@ class InstancesAPI(APIClient):
                 ... ])
                 >>> # This is one to many edge, in this case from Person to role
                 >>> # (a person can have multiple roles, in this model for example Actor and Director)
-                >>> person_to_actor = dm.EdgeApply.create(space="mySpace",
+                >>> person_to_actor = dm.EdgeApply(space="mySpace",
                 ...                                       external_id="relation:arnold_schwarzenegger:actor",
                 ...                                       type="Person.roles",
                 ...                                       start_node="person:arnold_schwarzenegger",
@@ -429,7 +451,7 @@ class InstancesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> import cognite.client.data_modeling as dm
                 >>> c = CogniteClient()
-                >>> edge = dm.EdgeApply.create(space="mySpace",
+                >>> edge = dm.EdgeApply(space="mySpace",
                 ...                            external_id="relation:sylvester_stallone:actor",
                 ...                            type="Person.roles",
                 ...                            start_node="person:sylvester_stallone",
@@ -468,7 +490,7 @@ class InstancesAPI(APIClient):
         self,
         instance_type: Literal["node"] = "node",
         include_typing: bool = False,
-        sources: list[ViewId] | ViewId | None = None,
+        sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None = None,
         limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
@@ -480,7 +502,7 @@ class InstancesAPI(APIClient):
         self,
         instance_type: Literal["edge"],
         include_typing: bool = False,
-        sources: list[ViewId] | ViewId | None = None,
+        sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None = None,
         limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
@@ -491,7 +513,7 @@ class InstancesAPI(APIClient):
         self,
         instance_type: Literal["node", "edge"] = "node",
         include_typing: bool = False,
-        sources: list[ViewId] | ViewId | None = None,
+        sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None = None,
         limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
@@ -501,11 +523,11 @@ class InstancesAPI(APIClient):
         Args:
             instance_type(Literal["node", "edge"]): Whether to query for nodes or edges.
             include_typing (bool): Whether to return property type information as part of the result.
-            sources (list[ViewId] | ViewId): Views to retrieve properties from.
+            sources (ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence(View) | None): Views to retrieve properties from.
             limit (int, optional): Maximum number of instances to return. Default to 1000. Set to -1, float("inf") or None
                 to return all items.
             sort (list[InstanceSost] | InstanceSort | dict): How you want the listed instances information ordered.
-            filter (dict | Filter): Advnanced filtering of instances.
+            filter (dict | Filter): Advanced filtering of instances.
 
         Returns:
             Union[EdgeList, NodeList]: List of requested instances

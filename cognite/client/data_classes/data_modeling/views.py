@@ -66,7 +66,7 @@ class ViewCore(DataModelingResource):
 
         return output
 
-    def as_reference(self) -> ViewId:
+    def as_id(self) -> ViewId:
         return ViewId(
             space=self.space,
             external_id=self.external_id,
@@ -207,6 +207,14 @@ class View(ViewCore):
             implements=self.implements,
             properties=properties,
         )
+
+    def as_id(self) -> ViewId:
+        """Convert to a view id.
+
+        Returns:
+            ViewId: The view id.
+        """
+        return ViewId(space=self.space, external_id=self.external_id, version=self.version)
 
 
 class ViewList(CogniteResourceList[View]):
