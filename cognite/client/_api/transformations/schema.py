@@ -40,7 +40,7 @@ class TransformationSchemaAPI(APIClient):
         """
 
         other_params = {"conflictMode": conflict_mode} if conflict_mode else None
-        return self._retrieve(destination, other_params)
+        return self._retrieve_schema(destination, other_params)
 
     def retrieve_instances(
         self,
@@ -114,9 +114,9 @@ class TransformationSchemaAPI(APIClient):
 
             """
 
-        return self._retrieve(destination, other_params)
+        return self._retrieve_schema(destination, other_params)
 
-    def _retrieve(
+    def _retrieve_schema(
         self, destination: TransformationDestination, other_params: Optional[dict]
     ) -> TransformationSchemaColumnList:
         if destination.type in ["nodes", "edges", "instances"]:
