@@ -279,3 +279,44 @@ class TestInstancesAPI:
 
         # Assert
         assert "invalidProperty" in error.value.message
+
+    def test_apply_failed_and_successful_task(self, cognite_client: CogniteClient, person_view: dm.View, monkeypatch):
+        # Arrange
+        space = person_view.space
+        valid_person = dm.NodeApply(
+            space=space,
+            external_id="person:arnold_schwarzenegger",
+            sources=[
+                dm.NodeOrEdgeData(
+                    person_view.as_id(),
+                    {
+                        "birthYear": 1947,
+                        "name": "Arnold Schwarzenegger",
+                    },
+                ),
+            ],
+        )
+        invalid_person = dm.NodeApply(
+            space=space,
+            external_id="person:sylvester_stallone",
+            sources=[
+                dm.NodeOrEdgeData(
+                    person_view.as_id(),
+                    {
+                        "birthYear": 1946,
+                        "name": "Sylvester Stallone",
+                        "invalidProperty": "invalidValue",
+                    },
+                ),
+            ],
+        )
+        monkeypatch.setattr(cognite_client.data_modeling.instances, "_CREATE_LIMIT", 1)
+
+        # Act
+        with pytest.raises(CogniteAPIError) as error:
+            cognite_client.data_modeling.instances.apply(nodes=[valid_person, invalid_person])
+
+        # Assert
+        assert "invalidProperty" in error.value.message
+        assert len(error.value.successful) == 1
+        assert len(error.value.failed) == 1
