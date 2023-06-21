@@ -103,7 +103,12 @@ html_theme_options = {
         "image_dark": "_static/cognite_logo_white.png",
         "text": "cognite-sdk",
     },
-    "article_header_start": ["cognite_developer_documentation.html", "cognite_hub.html", "cognite_academy.html"],
+    "article_header_start": [
+        "toggle-primary-sidebar.html",
+        "cognite_developer_documentation.html",
+        "cognite_hub.html",
+        "cognite_academy.html",
+    ],
     "icon_links": [
         {
             "name": "GitHub",
