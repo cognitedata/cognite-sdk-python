@@ -120,11 +120,11 @@ Containers data classes
    ContainerList
    containers.ContainerFilter
    ContainerDirectRelation
-   ContainerPropertyIdentifier
-   ConstraintIdentifier
+   ContainerProperty
+   Constraint
    RequiresConstraintDefinition
    UniquenessConstraintDefinition
-   IndexIdentifier
+   Index
 
 Instances
 ------------
