@@ -66,7 +66,7 @@ class NodeOrEdgeData:
 
     def dump(self, camel_case: bool = False) -> dict:
         output = asdict(self)
-        if self.source:
+        if self.source and isinstance(self.source, (ContainerId, ViewId)):
             output["source"] = self.source.dump(camel_case)
         return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
 
