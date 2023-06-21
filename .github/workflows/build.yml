@@ -71,7 +71,7 @@ jobs:
         run: |
           python3 -m pip install --upgrade pip poetry
           poetry config virtualenvs.create false
-          poetry install
+          poetry install --without docs
 
       - name: Test core
         env:
@@ -95,7 +95,7 @@ jobs:
         run: |
           python3 -m pip install --upgrade pip poetry
           poetry config virtualenvs.create false
-          poetry install -E all
+          poetry install -E all --without docs
 
       - name: Test full
         env:
