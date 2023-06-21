@@ -52,12 +52,12 @@ jobs:
           cache: 'poetry'
 
       - name: Install core dependencies
-        run: |
-          poetry config virtualenvs.create false
-          poetry install --with docs
+        run: poetry install --with docs
 
       - name: Build docs
-        run: cd docs && make html SPHINXOPTS="-W --keep-going"
+        run: |
+          source $(poetry env info --path)/bin/activate
+          cd docs && make html SPHINXOPTS="-W --keep-going"
 
   test_core:
     runs-on: ubuntu-latest
