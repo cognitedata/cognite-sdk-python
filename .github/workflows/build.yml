@@ -52,7 +52,7 @@ jobs:
           cache: 'poetry'
 
       - name: Install core dependencies
-        run: poetry install --with docs
+        run: poetry install --with docs --without dev
 
       - name: Build docs
         run: |
@@ -71,7 +71,7 @@ jobs:
         run: |
           python3 -m pip install --upgrade pip poetry
           poetry config virtualenvs.create false
-          poetry install --without docs
+          poetry install
 
       - name: Test core
         env:
@@ -95,7 +95,7 @@ jobs:
         run: |
           python3 -m pip install --upgrade pip poetry
           poetry config virtualenvs.create false
-          poetry install -E all --without docs
+          poetry install -E all
 
       - name: Test full
         env:
