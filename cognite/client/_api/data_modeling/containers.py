@@ -13,7 +13,6 @@ from cognite.client.data_classes.data_modeling.containers import (
 from cognite.client.data_classes.data_modeling.ids import (
     ContainerId,
     ContainerIdentifier,
-    DataModelingId,
     _load_identifier,
 )
 
@@ -104,17 +103,17 @@ class ContainersAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.data_modeling.containers.retrieve(('mySpace', 'myContainer'))
 
-            Fetch using the DataModelingId::
+            Fetch using the ContainerId::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_modeling import DataModelingId
+                >>> from cognite.client.data_modeling import ContainerId
                 >>> c = CogniteClient()
-                >>> res = c.data_modeling.containers.retrieve(DataModelingId(space='mySpace', external_id='myContainer'))
+                >>> res = c.data_modeling.containers.retrieve(ContainerId(space='mySpace', external_id='myContainer'))
         """
         identifier = _load_identifier(ids, "container")
         return self._retrieve_multiple(list_cls=ContainerList, resource_cls=Container, identifiers=identifier)
 
-    def delete(self, id: ContainerIdentifier | Sequence[ContainerIdentifier]) -> list[DataModelingId]:
+    def delete(self, id: ContainerIdentifier | Sequence[ContainerIdentifier]) -> list[ContainerId]:
         """`Delete one or more containers <https://docs.cognite.com/api/v1/#operation/deleteContainers>`_
 
         Args:

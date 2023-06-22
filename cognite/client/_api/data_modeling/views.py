@@ -5,7 +5,6 @@ from typing import Iterator, Sequence, cast, overload
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DATA_MODELING_LIST_LIMIT_DEFAULT
 from cognite.client.data_classes.data_modeling.ids import (
-    VersionedDataModelingId,
     ViewId,
     ViewIdentifier,
     _load_identifier,
@@ -104,7 +103,7 @@ class ViewsAPI(APIClient):
         identifier = _load_identifier(ids, "view")
         return self._retrieve_multiple(list_cls=ViewList, resource_cls=View, identifiers=identifier)
 
-    def delete(self, ids: ViewIdentifier | Sequence[ViewIdentifier]) -> list[VersionedDataModelingId]:
+    def delete(self, ids: ViewIdentifier | Sequence[ViewIdentifier]) -> list[ViewId]:
         """`Delete one or more views <https://docs.cognite.com/api/v1/#operation/deleteViews>`_
 
         Args:
