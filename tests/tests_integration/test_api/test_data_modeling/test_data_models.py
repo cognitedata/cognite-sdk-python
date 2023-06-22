@@ -100,19 +100,22 @@ class TestDataModelsAPI:
         retrieved = cognite_client.data_modeling.data_models.retrieve(ids)
 
         # Assert
-        assert len(retrieved) == len(ids)
+        assert [dm.as_id() for dm in retrieved] == ids
 
     def test_retrieve_multiple_with_missing(self, cognite_client: CogniteClient, cdf_data_models: models.DataModelList):
         assert len(cdf_data_models) >= 2, "Please add at least two data models to the test environment"
         # Arrange
-        ids = [models.DataModelId(v.space, v.external_id, v.version) for v in cdf_data_models]
-        ids += [models.DataModelId("myNonExistingSpace", "myImaginaryDataModel", "v0")]
+        ids_without_missing = [models.DataModelId(v.space, v.external_id, v.version) for v in cdf_data_models]
+        ids_with_missing = [
+            *ids_without_missing,
+            models.DataModelId("myNonExistingSpace", "myImaginaryDataModel", "v0"),
+        ]
 
         # Act
-        retrieved = cognite_client.data_modeling.data_models.retrieve(ids)
+        retrieved = cognite_client.data_modeling.data_models.retrieve(ids_with_missing)
 
         # Assert
-        assert len(retrieved) == len(ids) - 1
+        assert [data_model.as_id() for data_model in retrieved] == ids_without_missing
 
     def test_retrieve_non_existent(self, cognite_client: CogniteClient):
         assert not cognite_client.data_modeling.data_models.retrieve(

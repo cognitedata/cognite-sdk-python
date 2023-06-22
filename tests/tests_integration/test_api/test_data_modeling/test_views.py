@@ -82,19 +82,19 @@ class TestViewsAPI:
         retrieved = cognite_client.data_modeling.views.retrieve(ids)
 
         # Assert
-        assert len(retrieved) == len(ids)
+        assert [view.as_id() for view in retrieved] == ids
 
     def test_retrieve_multiple_with_missing(self, cognite_client: CogniteClient, cdf_views: models.ViewList):
         assert len(cdf_views) >= 2, "Please add at least two views to the test environment"
         # Arrange
-        ids = [v.as_id() for v in cdf_views]
-        ids += [models.ViewId("myNonExistingSpace", "myImaginaryView", "v0")]
+        ids_without_missing = [v.as_id() for v in cdf_views]
+        ids_with_missing = [*ids_without_missing, models.ViewId("myNonExistingSpace", "myImaginaryView", "v0")]
 
         # Act
-        retrieved = cognite_client.data_modeling.views.retrieve(ids)
+        retrieved = cognite_client.data_modeling.views.retrieve(ids_with_missing)
 
         # Assert
-        assert len(retrieved) == len(ids) - 1
+        assert [view.as_id() for view in retrieved] == ids_without_missing
 
     def test_retrieve_non_existent(self, cognite_client: CogniteClient):
         assert not cognite_client.data_modeling.views.retrieve(("myNonExistingSpace", "myImaginaryView", "v0"))
