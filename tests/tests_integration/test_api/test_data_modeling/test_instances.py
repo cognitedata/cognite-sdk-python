@@ -206,7 +206,7 @@ class TestInstancesAPI:
         retrieved = cognite_client.data_modeling.instances.retrieve(cdf_nodes.as_ids()).nodes
 
         # Assert
-        assert len(retrieved) == len(cdf_nodes)
+        assert retrieved == cdf_nodes
 
     def test_retrieve_nodes_and_edges_using_id_tuples(
         self, cognite_client: CogniteClient, cdf_nodes: dm.NodeList, cdf_edges: dm.EdgeList
@@ -238,14 +238,14 @@ class TestInstancesAPI:
     def test_retrieve_multiple_with_missing(self, cognite_client: CogniteClient, cdf_nodes: dm.NodeList):
         assert len(cdf_nodes) >= 2, "Please add at least two nodes to the test environment"
         # Arrange
-        ids = cdf_nodes.as_ids()
-        ids += [dm.NodeId("myNonExistingSpace", "myImaginaryContainer")]
+        ids_without_missing = cdf_nodes.as_ids()
+        ids_with_missing = [*ids_without_missing, dm.NodeId("myNonExistingSpace", "myImaginaryContainer")]
 
         # Act
-        retrieved = cognite_client.data_modeling.instances.retrieve(ids)
+        retrieved = cognite_client.data_modeling.instances.retrieve(ids_with_missing)
 
         # Assert
-        assert len(retrieved.nodes) == len(ids) - 1
+        assert retrieved.nodes.as_ids() == ids_without_missing
 
     def test_retrieve_non_existent(self, cognite_client: CogniteClient):
         assert cognite_client.data_modeling.instances.retrieve(("myNonExistingSpace", "myImaginaryNode")).nodes == []

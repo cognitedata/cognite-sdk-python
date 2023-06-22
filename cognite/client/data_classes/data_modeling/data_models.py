@@ -9,7 +9,7 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.data_modeling._core import DataModelingResource
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
-from cognite.client.data_classes.data_modeling.ids import ViewId
+from cognite.client.data_classes.data_modeling.ids import DataModelId, ViewId
 from cognite.client.data_classes.data_modeling.views import View, ViewApply
 
 
@@ -159,6 +159,9 @@ class DataModel(DataModelCore):
             name=self.name,
             views=views,
         )
+
+    def as_id(self) -> DataModelId:
+        return DataModelId(space=self.space, external_id=self.external_id, version=self.version)
 
 
 class DataModelApplyList(CogniteResourceList[DataModelApply]):

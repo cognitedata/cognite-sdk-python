@@ -4,7 +4,11 @@ from typing import Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DATA_MODELING_LIST_LIMIT_DEFAULT
-from cognite.client.data_classes.data_modeling.ids import VersionedDataModelingId, ViewIdentifier, _load_identifier
+from cognite.client.data_classes.data_modeling.ids import (
+    ViewId,
+    ViewIdentifier,
+    _load_identifier,
+)
 from cognite.client.data_classes.data_modeling.views import View, ViewApply, ViewFilter, ViewList
 
 
@@ -99,7 +103,7 @@ class ViewsAPI(APIClient):
         identifier = _load_identifier(ids, "view")
         return self._retrieve_multiple(list_cls=ViewList, resource_cls=View, identifiers=identifier)
 
-    def delete(self, ids: ViewIdentifier | Sequence[ViewIdentifier]) -> list[VersionedDataModelingId]:
+    def delete(self, ids: ViewIdentifier | Sequence[ViewIdentifier]) -> list[ViewId]:
         """`Delete one or more views <https://docs.cognite.com/api/v1/#operation/deleteViews>`_
 
         Args:
@@ -122,7 +126,7 @@ class ViewsAPI(APIClient):
                 returns_items=True,
             ),
         )
-        return [VersionedDataModelingId(item["space"], item["externalId"], item["version"]) for item in deleted_views]
+        return [ViewId(item["space"], item["externalId"], item["version"]) for item in deleted_views]
 
     def list(
         self,
@@ -198,8 +202,8 @@ class ViewsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> import cognite.client.data_classes.data_modeling as models
                 >>> c = CogniteClient()
-                >>> views = [models.View(space="mySpace",external_id="myView",version="v1"),
-                ... models.View(space="mySpace",external_id="myOtherView",version="v1")]
-                >>> res = c.data_modeling.views.create(views)
+                >>> views = [models.ViewApply(space="mySpace",external_id="myView",version="v1"),
+                ... models.ViewApply(space="mySpace",external_id="myOtherView",version="v1")]
+                >>> res = c.data_modeling.views.apply(views)
         """
         return self._create_multiple(list_cls=ViewList, resource_cls=View, items=view)
