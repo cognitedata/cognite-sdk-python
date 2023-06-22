@@ -202,8 +202,8 @@ class ViewsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> import cognite.client.data_classes.data_modeling as models
                 >>> c = CogniteClient()
-                >>> views = [models.View(space="mySpace",external_id="myView",version="v1"),
-                ... models.View(space="mySpace",external_id="myOtherView",version="v1")]
-                >>> res = c.data_modeling.views.create(views)
+                >>> views = [models.ViewApply(space="mySpace",external_id="myView",version="v1"),
+                ... models.ViewApply(space="mySpace",external_id="myOtherView",version="v1")]
+                >>> res = c.data_modeling.views.apply(views)
         """
         return self._create_multiple(list_cls=ViewList, resource_cls=View, items=view)
