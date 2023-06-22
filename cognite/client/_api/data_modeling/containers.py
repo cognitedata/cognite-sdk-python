@@ -10,7 +10,12 @@ from cognite.client.data_classes.data_modeling.containers import (
     ContainerFilter,
     ContainerList,
 )
-from cognite.client.data_classes.data_modeling.ids import ContainerIdentifier, DataModelingId, _load_identifier
+from cognite.client.data_classes.data_modeling.ids import (
+    ContainerId,
+    ContainerIdentifier,
+    DataModelingId,
+    _load_identifier,
+)
 
 
 class ContainersAPI(APIClient):
@@ -128,7 +133,7 @@ class ContainersAPI(APIClient):
             list,
             self._delete_multiple(identifiers=_load_identifier(id, "container"), wrap_ids=True, returns_items=True),
         )
-        return [DataModelingId(space=item["space"], external_id=item["externalId"]) for item in deleted_containers]
+        return [ContainerId(space=item["space"], external_id=item["externalId"]) for item in deleted_containers]
 
     def list(
         self, space: str | None = None, limit: int = DATA_MODELING_LIST_LIMIT_DEFAULT, include_global: bool = False

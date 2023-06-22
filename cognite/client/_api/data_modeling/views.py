@@ -4,7 +4,12 @@ from typing import Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DATA_MODELING_LIST_LIMIT_DEFAULT
-from cognite.client.data_classes.data_modeling.ids import VersionedDataModelingId, ViewIdentifier, _load_identifier
+from cognite.client.data_classes.data_modeling.ids import (
+    VersionedDataModelingId,
+    ViewId,
+    ViewIdentifier,
+    _load_identifier,
+)
 from cognite.client.data_classes.data_modeling.views import View, ViewApply, ViewFilter, ViewList
 
 
@@ -122,7 +127,7 @@ class ViewsAPI(APIClient):
                 returns_items=True,
             ),
         )
-        return [VersionedDataModelingId(item["space"], item["externalId"], item["version"]) for item in deleted_views]
+        return [ViewId(item["space"], item["externalId"], item["version"]) for item in deleted_views]
 
     def list(
         self,

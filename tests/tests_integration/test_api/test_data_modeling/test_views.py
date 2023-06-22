@@ -44,7 +44,7 @@ class TestViewsAPI:
                 ),
             },
         )
-        new_id = models.VersionedDataModelingId(new_view.space, new_view.external_id, new_view.version)
+        new_id = models.ViewId(new_view.space, new_view.external_id, new_view.version)
 
         # Act
         created = cognite_client.data_modeling.views.apply(new_view)
@@ -68,7 +68,7 @@ class TestViewsAPI:
         space = integration_test_space.space
         assert (
             cognite_client.data_modeling.views.delete(
-                models.VersionedDataModelingId(space=space, external_id="DoesNotExists", version="v0")
+                models.ViewId(space=space, external_id="DoesNotExists", version="v0")
             )
             == []
         )
@@ -76,7 +76,7 @@ class TestViewsAPI:
     def test_retrieve_multiple(self, cognite_client: CogniteClient, cdf_views: models.ViewList):
         assert len(cdf_views) >= 2, "Please add at least two views to the test environment"
         # Arrange
-        ids = [models.VersionedDataModelingId(v.space, v.external_id, v.version) for v in cdf_views]
+        ids = [models.ViewId(v.space, v.external_id, v.version) for v in cdf_views]
 
         # Act
         retrieved = cognite_client.data_modeling.views.retrieve(ids)
@@ -87,8 +87,8 @@ class TestViewsAPI:
     def test_retrieve_multiple_with_missing(self, cognite_client: CogniteClient, cdf_views: models.ViewList):
         assert len(cdf_views) >= 2, "Please add at least two views to the test environment"
         # Arrange
-        ids = [models.VersionedDataModelingId(v.space, v.external_id, v.version) for v in cdf_views]
-        ids += [models.VersionedDataModelingId("myNonExistingSpace", "myImaginaryView", "v0")]
+        ids = [v.as_id() for v in cdf_views]
+        ids += [models.ViewId("myNonExistingSpace", "myImaginaryView", "v0")]
 
         # Act
         retrieved = cognite_client.data_modeling.views.retrieve(ids)

@@ -56,10 +56,8 @@ class TestDataModelsAPI:
             name="Create and delete data model with view",
             views=[new_view],
         )
-        new_view_id = models.VersionedDataModelingId(new_view.space, new_view.external_id, new_view.version)
-        new_id = models.VersionedDataModelingId(
-            new_data_model.space, new_data_model.external_id, new_data_model.version
-        )
+        new_view_id = models.ViewId(new_view.space, new_view.external_id, new_view.version)
+        new_id = models.DataModelId(new_data_model.space, new_data_model.external_id, new_data_model.version)
 
         # Act
         created = cognite_client.data_modeling.data_models.apply(new_data_model)
@@ -88,7 +86,7 @@ class TestDataModelsAPI:
         space = integration_test_space.space
         assert (
             cognite_client.data_modeling.data_models.delete(
-                models.VersionedDataModelingId(space=space, external_id="DoesNotExists", version="v0")
+                models.DataModelId(space=space, external_id="DoesNotExists", version="v0")
             )
             == []
         )
@@ -96,7 +94,7 @@ class TestDataModelsAPI:
     def test_retrieve_multiple(self, cognite_client: CogniteClient, cdf_data_models: models.DataModelList):
         assert len(cdf_data_models) >= 2, "Please add at least two data models to the test environment"
         # Arrange
-        ids = [models.VersionedDataModelingId(v.space, v.external_id, v.version) for v in cdf_data_models]
+        ids = [models.DataModelId(v.space, v.external_id, v.version) for v in cdf_data_models]
 
         # Act
         retrieved = cognite_client.data_modeling.data_models.retrieve(ids)
@@ -107,8 +105,8 @@ class TestDataModelsAPI:
     def test_retrieve_multiple_with_missing(self, cognite_client: CogniteClient, cdf_data_models: models.DataModelList):
         assert len(cdf_data_models) >= 2, "Please add at least two data models to the test environment"
         # Arrange
-        ids = [models.VersionedDataModelingId(v.space, v.external_id, v.version) for v in cdf_data_models]
-        ids += [models.VersionedDataModelingId("myNonExistingSpace", "myImaginaryDataModel", "v0")]
+        ids = [models.DataModelId(v.space, v.external_id, v.version) for v in cdf_data_models]
+        ids += [models.DataModelId("myNonExistingSpace", "myImaginaryDataModel", "v0")]
 
         # Act
         retrieved = cognite_client.data_modeling.data_models.retrieve(ids)

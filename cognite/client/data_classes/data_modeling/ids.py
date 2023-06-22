@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from abc import ABC
 from dataclasses import asdict, dataclass, field
 from typing import ClassVar, Literal, Optional, Sequence, Tuple, Type, TypeVar, Union, cast
 
@@ -9,7 +10,15 @@ from cognite.client.utils._text import convert_all_keys_recursive, convert_all_k
 
 
 @dataclass(frozen=True)
-class DataModelingId:
+class AbstractDataclass(ABC):
+    def __new__(cls, *args, **kwargs):
+        if cls == AbstractDataclass or cls.__bases__[0] == AbstractDataclass:
+            raise TypeError("Cannot instantiate abstract class.")
+        return super().__new__(cls)
+
+
+@dataclass(frozen=True)
+class DataModelingId(AbstractDataclass):
     _type: ClassVar[str] = field(init=False)
     space: str
     external_id: str
@@ -38,7 +47,7 @@ T_DataModelingId = TypeVar("T_DataModelingId", bound=DataModelingId)
 
 
 @dataclass(frozen=True)
-class VersionedDataModelingId:
+class VersionedDataModelingId(AbstractDataclass):
     _type: ClassVar[str] = field(init=False)
     space: str
     external_id: str

@@ -10,7 +10,11 @@ from cognite.client.data_classes.data_modeling.data_models import (
     DataModelFilter,
     DataModelList,
 )
-from cognite.client.data_classes.data_modeling.ids import DataModelIdentifier, VersionedDataModelingId, _load_identifier
+from cognite.client.data_classes.data_modeling.ids import (
+    DataModelId,
+    DataModelIdentifier,
+    _load_identifier,
+)
 
 
 class DataModelsAPI(APIClient):
@@ -105,7 +109,7 @@ class DataModelsAPI(APIClient):
         identifier = _load_identifier(ids, "data_model")
         return self._retrieve_multiple(list_cls=DataModelList, resource_cls=DataModel, identifiers=identifier)
 
-    def delete(self, ids: DataModelIdentifier | Sequence[DataModelIdentifier]) -> list[VersionedDataModelingId]:
+    def delete(self, ids: DataModelIdentifier | Sequence[DataModelIdentifier]) -> list[DataModelId]:
         """`Delete one or more data model <https://docs.cognite.com/api/v1/#operation/deleteDataModels>`_
 
         Args:
@@ -124,9 +128,7 @@ class DataModelsAPI(APIClient):
             list,
             self._delete_multiple(identifiers=_load_identifier(ids, "data_model"), wrap_ids=True, returns_items=True),
         )
-        return [
-            VersionedDataModelingId(item["space"], item["externalId"], item["version"]) for item in deleted_data_models
-        ]
+        return [DataModelId(item["space"], item["externalId"], item["version"]) for item in deleted_data_models]
 
     def list(
         self,
