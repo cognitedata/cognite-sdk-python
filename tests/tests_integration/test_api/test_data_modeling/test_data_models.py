@@ -153,13 +153,13 @@ class TestDataModelsAPI:
     ):
         # Arrange
         valid_data_model = dm.DataModelApply(
-            space="nonExistingSpace",
-            external_id="IntegrationTestDataModel",
+            space=integration_test_space.space,
+            external_id="IntegrationTestDataModel1",
             version="v1",
         )
         invalid_data_model = dm.DataModelApply(
             space="nonExistingSpace",
-            external_id="IntegrationTestDataModel",
+            external_id="IntegrationTestDataModel2",
             version="v1",
         )
         monkeypatch.setattr(cognite_client.data_modeling.data_models, "_CREATE_LIMIT", 1)

@@ -40,6 +40,9 @@ class DataModelCore(DataModelingResource):
         self.name = name
         self.version = version
 
+    def as_id(self) -> DataModelId:
+        return DataModelId(space=self.space, external_id=self.external_id, version=self.version)
+
 
 class DataModelApply(DataModelCore):
     """A group of views. This is the write version of a Data Model.
@@ -159,9 +162,6 @@ class DataModel(DataModelCore):
             name=self.name,
             views=views,
         )
-
-    def as_id(self) -> DataModelId:
-        return DataModelId(space=self.space, external_id=self.external_id, version=self.version)
 
 
 class DataModelApplyList(CogniteResourceList[DataModelApply]):
