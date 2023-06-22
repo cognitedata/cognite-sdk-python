@@ -61,7 +61,6 @@ class DataModelApply(DataModelCore):
         description: str = None,
         name: str = None,
         views: list[ViewId | ViewApply] = None,
-        **_: dict,
     ):
         super().__init__(space, external_id, version, description, name)
         self.views = views

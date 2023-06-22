@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.4.6] - 2023-06-22
+### Fixed
+- Don't swallow keyword args on Apply classes in Data Modeling client
+
 ## [6.4.5] - 2023-06-21
 ### Added
 - Included tuple-notation when retrieving or listing data model instances
