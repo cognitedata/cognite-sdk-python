@@ -97,7 +97,6 @@ class ViewApply(ViewCore):
         filter: Filter | None = None,
         implements: list[ViewId] = None,
         properties: dict[str, MappedApplyPropertyDefinition | ConnectionDefinition] = None,
-        **_: dict,
     ):
         super().__init__(space, external_id, version, description, name, filter, implements)
         self.properties = properties

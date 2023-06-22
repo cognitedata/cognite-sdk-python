@@ -106,7 +106,6 @@ class ContainerApply(ContainerCore):
         used_for: Literal["node", "edge", "all"] = None,
         constraints: dict[str, Constraint] = None,
         indexes: dict[str, Index] = None,
-        **_: dict,
     ):
         super().__init__(space, external_id, properties, description, name, used_for, constraints, indexes)
 
