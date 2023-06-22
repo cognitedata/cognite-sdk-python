@@ -1,7 +1,8 @@
 import pytest
 
-import cognite.client.data_classes.data_modeling as models
+import cognite.client.data_classes.data_modeling as dm
 from cognite.client import CogniteClient
+from cognite.client.exceptions import CogniteAPIError
 
 
 @pytest.fixture(scope="function")
@@ -13,12 +14,10 @@ def cdf_data_models(cognite_client: CogniteClient):
 
 class TestDataModelsAPI:
     def test_list(
-        self, cognite_client: CogniteClient, cdf_data_models: models.DataModelList, integration_test_space: models.Space
+        self, cognite_client: CogniteClient, cdf_data_models: dm.DataModelList, integration_test_space: dm.Space
     ):
         # Arrange
-        expected_data_models = models.DataModelList(
-            [m for m in cdf_data_models if m.space == integration_test_space.space]
-        )
+        expected_data_models = dm.DataModelList([m for m in cdf_data_models if m.space == integration_test_space.space])
 
         # Act
         actual_data_models = cognite_client.data_modeling.data_models.list(space=integration_test_space.space, limit=-1)
@@ -29,17 +28,17 @@ class TestDataModelsAPI:
         )
         assert all(v.space == integration_test_space.space for v in actual_data_models)
 
-    def test_apply_retrieve_and_delete(self, cognite_client: CogniteClient, integration_test_space: models.Space):
+    def test_apply_retrieve_and_delete(self, cognite_client: CogniteClient, integration_test_space: dm.Space):
         # Arrange
-        new_view = models.ViewApply(
+        new_view = dm.ViewApply(
             space=integration_test_space.space,
             external_id="IntegrationTestViewDataModel",
             version="v1",
             description="Integration test, should not persist",
             name="View of create and delete data model",
             properties={
-                "name": models.MappedApplyPropertyDefinition(
-                    container=models.ContainerId(
+                "name": dm.MappedApplyPropertyDefinition(
+                    container=dm.ContainerId(
                         space=integration_test_space.space,
                         external_id="Person",
                     ),
@@ -48,7 +47,7 @@ class TestDataModelsAPI:
                 ),
             },
         )
-        new_data_model = models.DataModelApply(
+        new_data_model = dm.DataModelApply(
             space=integration_test_space.space,
             external_id="IntegrationTestDataModel",
             version="v1",
@@ -56,8 +55,8 @@ class TestDataModelsAPI:
             name="Create and delete data model with view",
             views=[new_view],
         )
-        new_view_id = models.ViewId(new_view.space, new_view.external_id, new_view.version)
-        new_id = models.DataModelId(new_data_model.space, new_data_model.external_id, new_data_model.version)
+        new_view_id = dm.ViewId(new_view.space, new_view.external_id, new_view.version)
+        new_id = dm.DataModelId(new_data_model.space, new_data_model.external_id, new_data_model.version)
 
         # Act
         created = cognite_client.data_modeling.data_models.apply(new_data_model)
@@ -82,19 +81,19 @@ class TestDataModelsAPI:
         assert deleted_view_id[0] == new_view_id
         assert not retrieved_deleted
 
-    def test_delete_non_existent(self, cognite_client: CogniteClient, integration_test_space: models.Space):
+    def test_delete_non_existent(self, cognite_client: CogniteClient, integration_test_space: dm.Space):
         space = integration_test_space.space
         assert (
             cognite_client.data_modeling.data_models.delete(
-                models.DataModelId(space=space, external_id="DoesNotExists", version="v0")
+                dm.DataModelId(space=space, external_id="DoesNotExists", version="v0")
             )
             == []
         )
 
-    def test_retrieve_multiple(self, cognite_client: CogniteClient, cdf_data_models: models.DataModelList):
+    def test_retrieve_multiple(self, cognite_client: CogniteClient, cdf_data_models: dm.DataModelList):
         assert len(cdf_data_models) >= 2, "Please add at least two data models to the test environment"
         # Arrange
-        ids = [models.DataModelId(v.space, v.external_id, v.version) for v in cdf_data_models]
+        ids = [dm.DataModelId(v.space, v.external_id, v.version) for v in cdf_data_models]
 
         # Act
         retrieved = cognite_client.data_modeling.data_models.retrieve(ids)
@@ -102,13 +101,13 @@ class TestDataModelsAPI:
         # Assert
         assert [dm.as_id() for dm in retrieved] == ids
 
-    def test_retrieve_multiple_with_missing(self, cognite_client: CogniteClient, cdf_data_models: models.DataModelList):
+    def test_retrieve_multiple_with_missing(self, cognite_client: CogniteClient, cdf_data_models: dm.DataModelList):
         assert len(cdf_data_models) >= 2, "Please add at least two data models to the test environment"
         # Arrange
-        ids_without_missing = [models.DataModelId(v.space, v.external_id, v.version) for v in cdf_data_models]
+        ids_without_missing = [dm.DataModelId(v.space, v.external_id, v.version) for v in cdf_data_models]
         ids_with_missing = [
             *ids_without_missing,
-            models.DataModelId("myNonExistingSpace", "myImaginaryDataModel", "v0"),
+            dm.DataModelId("myNonExistingSpace", "myImaginaryDataModel", "v0"),
         ]
 
         # Act
@@ -122,15 +121,60 @@ class TestDataModelsAPI:
             ("myNonExistingSpace", "myImaginaryDataModel", "v0")
         )
 
-    def test_iterate(self, cognite_client: CogniteClient, integration_test_space: models.Space):
+    def test_iterate(self, cognite_client: CogniteClient, integration_test_space: dm.Space):
         for containers in cognite_client.data_modeling.data_models(chunk_size=2, limit=-1):
-            assert isinstance(containers, models.DataModelList)
+            assert isinstance(containers, dm.DataModelList)
 
-    def test_list_expand_inline_views(self, cognite_client: CogniteClient, integration_test_space: models.Space):
+    def test_list_expand_inline_views(self, cognite_client: CogniteClient, integration_test_space: dm.Space):
         # Act
         data_models = cognite_client.data_modeling.data_models.list(
             space=integration_test_space.space, limit=-1, inline_views=True
         )
 
         # Assert
-        assert all(isinstance(v, models.View) for m in data_models for v in m.views)
+        assert all(isinstance(v, dm.View) for m in data_models for v in m.views)
+
+    def test_apply_invalid_data_model(self, cognite_client: CogniteClient):
+        with pytest.raises(CogniteAPIError) as error:
+            cognite_client.data_modeling.data_models.apply(
+                dm.DataModelApply(
+                    space="nonExistingSpace",
+                    external_id="IntegrationTestDataModel",
+                    version="v1",
+                )
+            )
+
+        # Assert
+        assert error.value.code == 400
+        assert "One or more spaces do not exist" in error.value.message
+
+    def test_apply_failed_and_successful_task(
+        self, cognite_client: CogniteClient, integration_test_space: dm.Space, monkeypatch
+    ):
+        # Arrange
+        valid_data_model = dm.DataModelApply(
+            space="nonExistingSpace",
+            external_id="IntegrationTestDataModel",
+            version="v1",
+        )
+        invalid_data_model = dm.DataModelApply(
+            space="nonExistingSpace",
+            external_id="IntegrationTestDataModel",
+            version="v1",
+        )
+        monkeypatch.setattr(cognite_client.data_modeling.data_models, "_CREATE_LIMIT", 1)
+
+        try:
+            # Act
+            with pytest.raises(CogniteAPIError) as error:
+                cognite_client.data_modeling.data_models.apply([valid_data_model, invalid_data_model])
+
+            # Assert
+            assert "One or more spaces do not exist" in error.value.message
+            assert error.value.code == 400
+            assert len(error.value.successful) == 1
+            assert len(error.value.failed) == 1
+
+        finally:
+            # Cleanup
+            cognite_client.data_modeling.data_models.delete(valid_data_model.as_id())

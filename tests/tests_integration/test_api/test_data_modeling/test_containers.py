@@ -137,14 +137,17 @@ class TestContainersAPI:
         )
         monkeypatch.setattr(cognite_client.data_modeling.containers, "_CREATE_LIMIT", 1)
 
-        with pytest.raises(CogniteAPIError) as error:
-            cognite_client.data_modeling.containers.apply([valid_container, invalid_container])
+        try:
+            # Act
+            with pytest.raises(CogniteAPIError) as error:
+                cognite_client.data_modeling.containers.apply([valid_container, invalid_container])
 
-        # Assert
-        assert "One or more spaces do not exist" in error.value.message
-        assert error.value.code == 400
-        assert len(error.value.successful) == 1
-        assert len(error.value.failed) == 1
+            # Assert
+            assert "One or more spaces do not exist" in error.value.message
+            assert error.value.code == 400
+            assert len(error.value.successful) == 1
+            assert len(error.value.failed) == 1
 
-        # Cleanup
-        cognite_client.data_modeling.instances.delete(valid_container.as_id())
+        finally:
+            # Cleanup
+            cognite_client.data_modeling.instances.delete(valid_container.as_id())

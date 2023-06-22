@@ -313,15 +313,16 @@ class TestInstancesAPI:
         )
         monkeypatch.setattr(cognite_client.data_modeling.instances, "_CREATE_LIMIT", 1)
 
-        # Act
-        with pytest.raises(CogniteAPIError) as error:
-            cognite_client.data_modeling.instances.apply(nodes=[valid_person, invalid_person])
+        try:
+            # Act
+            with pytest.raises(CogniteAPIError) as error:
+                cognite_client.data_modeling.instances.apply(nodes=[valid_person, invalid_person])
 
-        # Assert
-        assert "invalidProperty" in error.value.message
-        assert error.value.code == 400
-        assert len(error.value.successful) == 1
-        assert len(error.value.failed) == 1
-
-        # cleanup
-        cognite_client.data_modeling.instances.delete(valid_person.as_id())
+            # Assert
+            assert "invalidProperty" in error.value.message
+            assert error.value.code == 400
+            assert len(error.value.successful) == 1
+            assert len(error.value.failed) == 1
+        finally:
+            # Cleanup
+            cognite_client.data_modeling.instances.delete(valid_person.as_id())
