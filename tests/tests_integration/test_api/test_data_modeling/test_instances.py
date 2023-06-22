@@ -255,7 +255,7 @@ class TestInstancesAPI:
             assert isinstance(nodes, dm.NodeList)
             assert len(nodes) <= 2
 
-    def test_invalid_node_data(self, cognite_client: CogniteClient, person_view: dm.View):
+    def test_apply_invalid_node_data(self, cognite_client: CogniteClient, person_view: dm.View):
         # Arrange
         space = person_view.space
         person = dm.NodeApply(
@@ -278,6 +278,7 @@ class TestInstancesAPI:
             cognite_client.data_modeling.instances.apply(nodes=person)
 
         # Assert
+        assert error.value.code == 400
         assert "invalidProperty" in error.value.message
 
     def test_apply_failed_and_successful_task(self, cognite_client: CogniteClient, person_view: dm.View, monkeypatch):
@@ -318,6 +319,7 @@ class TestInstancesAPI:
 
         # Assert
         assert "invalidProperty" in error.value.message
+        assert error.value.code == 400
         assert len(error.value.successful) == 1
         assert len(error.value.failed) == 1
 
