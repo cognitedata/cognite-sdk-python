@@ -187,4 +187,4 @@ class SpacesAPI(APIClient):
                 ... SpaceApply(space="myOtherSpace", description="My second space", name="My Other Space")]
                 >>> res = c.data_modeling.spaces.apply(spaces)
         """
-        return self._create_multiple(list_cls=SpaceList, resource_cls=Space, items=space)
+        return self._create_multiple(list_cls=SpaceList, resource_cls=Space, items=space, input_resource_cls=SpaceApply)
