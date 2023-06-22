@@ -207,4 +207,6 @@ class ContainersAPI(APIClient):
                 >>> containers = [models.ContainerApply(space="mySpace",properties={"name": models.ContainerProperty(type=models.TextType, name="name")})]
                 >>> res = c.data_modeling.containers.apply(containers)
         """
-        return self._create_multiple(list_cls=ContainerList, resource_cls=Container, items=container)
+        return self._create_multiple(
+            list_cls=ContainerList, resource_cls=Container, items=container, input_resource_cls=ContainerApply
+        )

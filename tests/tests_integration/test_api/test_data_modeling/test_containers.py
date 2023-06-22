@@ -114,3 +114,37 @@ class TestContainersAPI:
         # Assert
         assert error.value.code == 400
         assert "One or more spaces do not exist" in error.value.message
+
+    def test_apply_failed_and_successful_task(
+        self, cognite_client: CogniteClient, integration_test_space: dm.Space, monkeypatch
+    ):
+        # Arrange
+        valid_container = dm.ContainerApply(
+            space=integration_test_space.space,
+            external_id="IntegrationTestContainer",
+            properties={
+                "name": dm.ContainerProperty(
+                    type=dm.Text(),
+                ),
+            },
+            used_for="node",
+        )
+        invalid_container = dm.ContainerApply(
+            space="nonExistingSpace",
+            external_id="myContainer",
+            properties={"name": dm.ContainerProperty(type=dm.Text())},
+            used_for="node",
+        )
+        monkeypatch.setattr(cognite_client.data_modeling.containers, "_CREATE_LIMIT", 1)
+
+        with pytest.raises(CogniteAPIError) as error:
+            cognite_client.data_modeling.containers.apply([valid_container, invalid_container])
+
+        # Assert
+        assert "One or more spaces do not exist" in error.value.message
+        assert error.value.code == 400
+        assert len(error.value.successful) == 1
+        assert len(error.value.failed) == 1
+
+        # Cleanup
+        cognite_client.data_modeling.instances.delete(valid_container.as_id())
