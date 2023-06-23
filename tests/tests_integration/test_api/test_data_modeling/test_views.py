@@ -66,9 +66,7 @@ class TestViewsAPI:
     def test_delete_non_existent(self, cognite_client: CogniteClient, integration_test_space: dm.Space):
         space = integration_test_space.space
         assert (
-            cognite_client.data_modeling.views.delete(
-                dm.ViewId(space=space, external_id="DoesNotExists", version="v0")
-            )
+            cognite_client.data_modeling.views.delete(dm.ViewId(space=space, external_id="DoesNotExists", version="v0"))
             == []
         )
 
