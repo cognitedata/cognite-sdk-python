@@ -255,7 +255,7 @@ class TestInstancesAPI:
             assert isinstance(nodes, dm.NodeList)
             assert len(nodes) <= 2
 
-    def test_invalid_node_data(self, cognite_client: CogniteClient, person_view: dm.View):
+    def test_apply_invalid_node_data(self, cognite_client: CogniteClient, person_view: dm.View):
         # Arrange
         space = person_view.space
         person = dm.NodeApply(
@@ -278,4 +278,51 @@ class TestInstancesAPI:
             cognite_client.data_modeling.instances.apply(nodes=person)
 
         # Assert
+        assert error.value.code == 400
         assert "invalidProperty" in error.value.message
+
+    def test_apply_failed_and_successful_task(self, cognite_client: CogniteClient, person_view: dm.View, monkeypatch):
+        # Arrange
+        space = person_view.space
+        valid_person = dm.NodeApply(
+            space=space,
+            external_id="person:arnold_schwarzenegger",
+            sources=[
+                dm.NodeOrEdgeData(
+                    person_view.as_id(),
+                    {
+                        "birthYear": 1947,
+                        "name": "Arnold Schwarzenegger",
+                    },
+                ),
+            ],
+        )
+        invalid_person = dm.NodeApply(
+            space=space,
+            external_id="person:sylvester_stallone",
+            sources=[
+                dm.NodeOrEdgeData(
+                    person_view.as_id(),
+                    {
+                        "birthYear": 1946,
+                        "name": "Sylvester Stallone",
+                        "invalidProperty": "invalidValue",
+                    },
+                ),
+            ],
+        )
+        monkeypatch.setattr(cognite_client.data_modeling.instances, "_CREATE_LIMIT", 1)
+
+        try:
+            # Act
+            with pytest.raises(CogniteAPIError) as error:
+                cognite_client.data_modeling.instances.apply(nodes=[valid_person, invalid_person])
+
+            # Assert
+            assert "invalidProperty" in error.value.message
+            assert error.value.code == 400
+            assert len(error.value.successful) == 1
+            assert len(error.value.failed) == 1
+        finally:
+            # Cleanup
+            cognite_client.data_modeling.instances.delete(valid_person.as_id())

@@ -212,4 +212,6 @@ class DataModelsAPI(APIClient):
                 ... DataModelApply(space="mySpace",external_id="myOtherDataModel",version="v1",is_global=,last_updated_time=)]
                 >>> res = c.data_modeling.data_models.apply(data_models)
         """
-        return self._create_multiple(list_cls=DataModelList, resource_cls=DataModel, items=data_model)
+        return self._create_multiple(
+            list_cls=DataModelList, resource_cls=DataModel, items=data_model, input_resource_cls=DataModelApply
+        )

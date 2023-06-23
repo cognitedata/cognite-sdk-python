@@ -24,6 +24,9 @@ class SpaceCore(DataModelingResource):
         self.description = description
         self.name = name
 
+    def as_id(self) -> str:
+        return self.space
+
 
 class SpaceApply(SpaceCore):
     """A workspace for data models and instances. This is the write version"""

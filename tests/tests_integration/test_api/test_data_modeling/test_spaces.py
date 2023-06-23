@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import pytest
 
-import cognite.client.data_classes.data_modeling as models
+import cognite.client.data_classes.data_modeling as dm
 from cognite.client import CogniteClient
+from cognite.client.exceptions import CogniteAPIError
 
 
 @pytest.fixture(scope="function")
@@ -13,8 +14,8 @@ def cdf_spaces(cognite_client):
     return spaces
 
 
-def _dump(list_: models.SpaceList | models.Space) -> list[dict]:
-    if isinstance(list_, models.Space):
+def _dump(list_: dm.SpaceList | dm.Space) -> list[dict]:
+    if isinstance(list_, dm.Space):
         output = [list_.dump()]
     else:
         output = sorted((s.dump() for s in list_), key=lambda s: s["space"])
@@ -25,14 +26,14 @@ def _dump(list_: models.SpaceList | models.Space) -> list[dict]:
 
 
 class TestSpacesAPI:
-    def test_list(self, cognite_client: CogniteClient, cdf_spaces: models.SpaceList):
+    def test_list(self, cognite_client: CogniteClient, cdf_spaces: dm.SpaceList):
         actual_space_in_cdf = cognite_client.data_modeling.spaces.list(limit=-1)
 
         assert _dump(actual_space_in_cdf) == _dump(cdf_spaces)
 
     def test_create_retrieve_and_delete(self, cognite_client: CogniteClient):
         # Arrange
-        my_space = models.SpaceApply(
+        my_space = dm.SpaceApply(
             space="myNewSpace", name="My New Space", description="This is part of the integration testing for the SDK."
         )
 
@@ -52,7 +53,7 @@ class TestSpacesAPI:
         assert deleted_space == my_space.space
         assert cognite_client.data_modeling.spaces.retrieve(space=my_space.space) is None
 
-    def test_retrieve_multiple(self, cognite_client: CogniteClient, cdf_spaces: models.SpaceList):
+    def test_retrieve_multiple(self, cognite_client: CogniteClient, cdf_spaces: dm.SpaceList):
         retrieved_spaces = cognite_client.data_modeling.spaces.retrieve([s.space for s in cdf_spaces])
 
         assert _dump(retrieved_spaces) == _dump(cdf_spaces)
@@ -68,3 +69,36 @@ class TestSpacesAPI:
     def test_delete_non_existing_space(self, cognite_client: CogniteClient):
         deleted_space = cognite_client.data_modeling.spaces.delete("notExistingSpace")
         assert deleted_space == []
+
+    def test_apply_invalid_space(self, cognite_client: CogniteClient):
+        with pytest.raises(CogniteAPIError) as error:
+            cognite_client.data_modeling.spaces.apply(dm.SpaceApply(space="myInvalidSpace", name="wayTooLong" * 255))
+
+        # Assert
+        assert error.value.code == 400
+        assert "name size must be between 0 and 255" in error.value.message
+
+    def test_apply_failed_and_successful_task(
+        self, cognite_client: CogniteClient, integration_test_space: dm.Space, monkeypatch
+    ):
+        # Arrange
+        valid_space = dm.SpaceApply(
+            space="myNewValidSpace",
+        )
+        invalid_space = dm.SpaceApply(space="myInvalidSpace", name="wayTooLong" * 255)
+        monkeypatch.setattr(cognite_client.data_modeling.spaces, "_CREATE_LIMIT", 1)
+
+        try:
+            # Act
+            with pytest.raises(CogniteAPIError) as error:
+                cognite_client.data_modeling.spaces.apply([valid_space, invalid_space])
+
+            # Assert
+            assert "name size must be between 0 and 255" in error.value.message
+            assert error.value.code == 400
+            assert len(error.value.successful) == 1
+            assert len(error.value.failed) == 1
+
+        finally:
+            # Cleanup
+            cognite_client.data_modeling.spaces.delete(valid_space.as_id())
