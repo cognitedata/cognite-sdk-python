@@ -202,7 +202,7 @@ class ContainersAPI(APIClient):
             Create new containers:
 
                 >>> from cognite.client import CogniteClient
-                >>> import cognite.client.data_classes.data_modeling as models
+                >>> from cognite.client import data_modeling as models
                 >>> c = CogniteClient()
                 >>> containers = [models.ContainerApply(space="mySpace",properties={"name": models.ContainerProperty(type=models.TextType, name="name")})]
                 >>> res = c.data_modeling.containers.apply(containers)

@@ -200,7 +200,7 @@ class ViewsAPI(APIClient):
             Create new views::
 
                 >>> from cognite.client import CogniteClient
-                >>> import cognite.client.data_classes.data_modeling as models
+                >>> from cognite.client import data_modeling as models
                 >>> c = CogniteClient()
                 >>> views = [models.ViewApply(space="mySpace",external_id="myView",version="v1"),
                 ... models.ViewApply(space="mySpace",external_id="myOtherView",version="v1")]
