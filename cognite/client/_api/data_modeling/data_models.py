@@ -206,7 +206,7 @@ class DataModelsAPI(APIClient):
             Create new data model::
 
                 >>> from cognite.client import CogniteClient
-                >>> import cognite.client.data_classes.data_modeling as models
+                >>> from cognite.client import data_modeling as models
                 >>> c = CogniteClient()
                 >>> data_models = [models.DataModelApply(space="mySpace",external_id="myDataModel",version="v1",is_global=,last_updated_time=),
                 ... DataModelApply(space="mySpace",external_id="myOtherDataModel",version="v1",is_global=,last_updated_time=)]

@@ -243,7 +243,7 @@ class InstancesAPI(APIClient):
             Retrieve nodes an edges using the built in data class
 
                 >>> from cognite.client import CogniteClient
-                >>> import cognite.client.data_modeling as dm
+                >>> from cognite.client import data_modeling as dm
                 >>> c = CogniteClient()
                 >>> res = c.data_modeling.instances.retrieve(dm.NodeId("mySpace", "myNode"),
                 ...                                          dm.EdgeId("mySpace", "myEdge"),
@@ -253,7 +253,7 @@ class InstancesAPI(APIClient):
             Retrieve nodes an edges using the the view object as source
 
                 >>> from cognite.client import CogniteClient
-                >>> import cognite.client.data_modeling as dm
+                >>> from cognite.client import data_modeling as dm
                 >>> c = CogniteClient()
                 >>> res = c.data_modeling.instances.retrieve(dm.NodeId("mySpace", "myNode"),
                 ...                                          dm.EdgeId("mySpace", "myEdge"),
@@ -330,7 +330,7 @@ class InstancesAPI(APIClient):
             Delete nodes and edges using the built in data class
 
                 >>> from cognite.client import CogniteClient
-                >>> import cognite.client.data_modeling as dm
+                >>> from cognite.client import data_modeling as dm
                 >>> c = CogniteClient()
                 >>> c.data_modeling.instances.delete(dm.NodeId('mySpace', 'myNode'), dm.EdgeId('mySpace', 'myEdge'))
         """
@@ -415,7 +415,7 @@ class InstancesAPI(APIClient):
             Create new node without data:
 
                 >>> from cognite.client import CogniteClient
-                >>> import cognite.client.data_modeling as dm
+                >>> from cognite.client import data_modeling as dm
                 >>> c = CogniteClient()
                 >>> nodes = [dm.ApplyNode("mySpace", "myNodeId")]
                 >>> res = c.data_modeling.instances.apply(nodes)
@@ -423,7 +423,7 @@ class InstancesAPI(APIClient):
             Create two nodes with data with an one to many edge, and a one to one edge
 
                 >>> from cognite.client import CogniteClient
-                >>> import cognite.client.data_modeling as dm
+                >>> from cognite.client import data_modeling as dm
                 >>> person = dm.NodeApply("mySpace", "person:arnold_schwarzenegger", sources=[
                 ...                        dm.NodeOrEdgeData(
                 ...                               dm.ViewId("mySpace", "PersonView", "v1"),
@@ -449,7 +449,7 @@ class InstancesAPI(APIClient):
             Create new edge an automatically create end nodes.
 
                 >>> from cognite.client import CogniteClient
-                >>> import cognite.client.data_modeling as dm
+                >>> from cognite.client import data_modeling as dm
                 >>> c = CogniteClient()
                 >>> edge = dm.EdgeApply(space="mySpace",
                 ...                            external_id="relation:sylvester_stallone:actor",
