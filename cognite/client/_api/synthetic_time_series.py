@@ -33,7 +33,7 @@ class SyntheticDatapointsAPI(APIClient):
         aggregate: str = None,
         granularity: str = None,
     ) -> Union[Datapoints, DatapointsList]:
-        """`Calculate the result of a function on time series. <https://api-docs.cognite.com/v1/tag/Synthetic-Time-Series/operation/querySyntheticTimeseries>`_
+        """`Calculate the result of a function on time series. <https://developer.cognite.com/api#tag/Synthetic-Time-Series/operation/querySyntheticTimeseries>`_
 
         Args:
             expressions (Union[str, sympy.Expr, Sequence[Union[str, sympy.Expr]]]): Functions to be calculated. Supports both strings and sympy expressions. Strings can have either the API `ts{}` syntax, or contain variable names to be replaced using the `variables` parameter.

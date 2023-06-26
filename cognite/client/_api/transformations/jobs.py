@@ -24,7 +24,7 @@ class TransformationJobsAPI(APIClient):
         transformation_id: Optional[int] = None,
         transformation_external_id: Optional[str] = None,
     ) -> TransformationJobList:
-        """`List all running transformation jobs. <https://api-docs.cognite.com/v1/tag/Transformation-Jobs/operation/getTransformationJobs>`_
+        """`List all running transformation jobs. <https://developer.cognite.com/api#tag/Transformation-Jobs/operation/getTransformationJobs>`_
 
         Args:
             limit (int): Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
@@ -58,7 +58,7 @@ class TransformationJobsAPI(APIClient):
         )
 
     def retrieve(self, id: int) -> Optional[TransformationJob]:
-        """`Retrieve a single transformation job by id. <https://api-docs.cognite.com/v1/tag/Transformation-Jobs/operation/getTransformationJobsByIds>`_
+        """`Retrieve a single transformation job by id. <https://developer.cognite.com/api#tag/Transformation-Jobs/operation/getTransformationJobsByIds>`_
 
         Args:
             id (int): Job internal Id
@@ -80,7 +80,7 @@ class TransformationJobsAPI(APIClient):
         )
 
     def list_metrics(self, id: int) -> TransformationJobMetricList:
-        """`List the metrics of a single transformation job. <https://api-docs.cognite.com/v1/tag/Transformation-Jobs/operation/getTransformationJobsMetrics>`_
+        """`List the metrics of a single transformation job. <https://developer.cognite.com/api#tag/Transformation-Jobs/operation/getTransformationJobsMetrics>`_
 
         Args:
             id (int): Job internal Id
@@ -107,7 +107,7 @@ class TransformationJobsAPI(APIClient):
         )
 
     def retrieve_multiple(self, ids: Sequence[int], ignore_unknown_ids: bool = False) -> TransformationJobList:
-        """`Retrieve multiple transformation jobs by id. <https://api-docs.cognite.com/v1/tag/Transformation-Jobs/operation/getTransformationJobsByIds>`_
+        """`Retrieve multiple transformation jobs by id. <https://developer.cognite.com/api#tag/Transformation-Jobs/operation/getTransformationJobsByIds>`_
 
         Args:
             ids (Sequence[int]): Job internal Ids
