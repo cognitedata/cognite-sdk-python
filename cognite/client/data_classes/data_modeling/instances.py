@@ -306,6 +306,9 @@ class InstanceApplyResult(InstanceCore):
         self.created_time = created_time
 
 
+T_Instance_Aggregation_Result = TypeVar("T_Instance_Aggregation_Result", bound="InstanceAggregationResult")
+
+
 class InstanceAggregationResult(DataModelingResource):
     """A node or edge. This represents the update on the instance.
 
@@ -315,15 +318,9 @@ class InstanceAggregationResult(DataModelingResource):
         instance_type (Literal["node", "edge"]) : The type of instance.
     """
 
-    def __init__(
-        self,
-        aggregates: list[AggregatedValue],
-        group: dict[str, str | int | float | bool],
-        instance_type: Literal["node", "edge"],
-    ):
+    def __init__(self, aggregates: list[AggregatedValue], group: dict[str, str | int | float | bool]):
         self.aggregates = aggregates
         self.group = group
-        self.instance_type = instance_type
 
     @classmethod
     def load(cls: Type[T_Instance_Aggregation_Result], data: dict | str) -> T_Instance_Aggregation_Result:
@@ -339,7 +336,7 @@ class InstanceAggregationResult(DataModelingResource):
         """
         data = json.loads(data) if isinstance(data, str) else data
 
-        return cls(  # type: ignore[call-arg]
+        return cls(
             aggregates=[AggregatedValue.load(agg) for agg in data["aggregates"]],
             group=cast(Dict[str, Union[str, int, float, bool]], data.get("group")),
         )
@@ -362,33 +359,8 @@ class InstanceAggregationResult(DataModelingResource):
         }
 
 
-T_Instance_Aggregation_Result = TypeVar("T_Instance_Aggregation_Result", bound=InstanceAggregationResult)
-
-
-class NodeAggregationResult(InstanceAggregationResult):
-    """A node. This represents the aggregation on the node.
-
-    Args:
-        aggregates (list[AggregatedValue]): List of aggregated values.
-        group (dict[str, str | int | float | bool]): The grouping used for the aggregation.
-
-    """
-
-    def __init__(self, aggregates: list[AggregatedValue], group: dict[str, str | int | float | bool]):
-        super().__init__(aggregates, group, "node")
-
-
-class EdgeAggregationResult(InstanceAggregationResult):
-    """This represents the aggregation on the edge.
-
-    Args:
-        aggregates (list[AggregatedValue]): List of aggregated values.
-        group (dict[str, str | int | float | bool]): The grouping used for the aggregation.
-
-    """
-
-    def __init__(self, aggregates: list[AggregatedValue], group: dict[str, str | int | float | bool]):
-        super().__init__(aggregates, group, "edge")
+class InstanceAggregationResultList(CogniteResourceList[InstanceAggregationResult]):
+    _RESOURCE = InstanceAggregationResult
 
 
 class NodeApply(InstanceApply):
@@ -721,10 +693,6 @@ class NodeList(CogniteResourceList[Node]):
         return [node.as_id() for node in self]
 
 
-class NodeAggregationResultList(CogniteResourceList[NodeAggregationResult]):
-    _RESOURCE = NodeAggregationResult
-
-
 class EdgeApplyResultList(CogniteResourceList[EdgeApplyResult]):
     _RESOURCE = EdgeApplyResult
 
@@ -737,10 +705,6 @@ class EdgeList(CogniteResourceList[Edge]):
 
     def as_ids(self) -> list[EdgeId]:
         return [edge.as_id() for edge in self]
-
-
-class EdgeAggregationResultList(CogniteResourceList[EdgeAggregationResult]):
-    _RESOURCE = EdgeAggregationResult
 
 
 class InstanceSort(CogniteFilter):

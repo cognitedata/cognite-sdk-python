@@ -17,17 +17,16 @@ from cognite.client.data_classes.data_modeling.ids import (
 )
 from cognite.client.data_classes.data_modeling.instances import (
     Edge,
-    EdgeAggregationResultList,
     EdgeApply,
     EdgeApplyResult,
     EdgeApplyResultList,
     EdgeList,
+    InstanceAggregationResultList,
     InstancesApplyResult,
     InstancesDeleteResult,
     InstanceSort,
     InstancesResult,
     Node,
-    NodeAggregationResultList,
     NodeApply,
     NodeApplyResult,
     NodeApplyResultList,
@@ -574,45 +573,17 @@ class InstancesAPI(APIClient):
         res = self._post(url_path=self._RESOURCE_PATH + "/search", json=body)
         return list_cls._load(res.json()["items"], cognite_client=None)
 
-    @overload
-    def aggregate(
-        self,
-        view: ViewId,
-        instance_type: Literal["node"] = "node",
-        query: str | None = None,
-        aggregates: Aggregation | dict | list[Aggregation | dict] | None = None,
-        group_by: list[str] | None = None,
-        properties: list[str] | None = None,
-        filter: Filter | dict | None = None,
-        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
-    ) -> NodeAggregationResultList:
-        ...
-
-    @overload
-    def aggregate(
-        self,
-        view: ViewId,
-        instance_type: Literal["edge"],
-        query: str | None = None,
-        aggregates: Aggregation | dict | list[Aggregation | dict] | None = None,
-        group_by: list[str] | None = None,
-        properties: list[str] | None = None,
-        filter: Filter | dict | None = None,
-        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
-    ) -> EdgeAggregationResultList:
-        ...
-
     def aggregate(
         self,
         view: ViewId,
         instance_type: Literal["node", "edge"] = "node",
         query: str | None = None,
-        aggregates: Aggregation | dict | list[Aggregation | dict] | None = None,
+        aggregates: Aggregation | Sequence[Aggregation] | None = None,
         group_by: list[str] | None = None,
         properties: list[str] | None = None,
         filter: Filter | dict | None = None,
         limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
-    ) -> NodeAggregationResultList | EdgeAggregationResultList:
+    ) -> InstanceAggregationResultList:
         """`Aggregate data across nodes/edges <https://developer.cognite.com/api/v1/#tag/Instances/operation/aggregateInstances>`_
 
         Args:
@@ -632,7 +603,7 @@ class InstancesAPI(APIClient):
                 to return all items.
 
         Returns:
-            NodeAggregationResultList | EdgeAggregationResultList: Node or edge aggregation results.
+            InstanceAggregationResultList: Node or edge aggregation results.
 
         Examples:
 
@@ -655,13 +626,7 @@ class InstancesAPI(APIClient):
                 >>> res = c.data_modeling.instances.aggregate(view_id, aggregates=[avg_run_time], group_by=["releaseYear"])
 
         """
-        if instance_type == "node":
-            list_cls: Union[
-                Type[NodeAggregationResultList], Type[EdgeAggregationResultList]
-            ] = NodeAggregationResultList
-        elif instance_type == "edge":
-            list_cls = EdgeAggregationResultList
-        else:
+        if instance_type not in ("node", "edge"):
             raise ValueError(f"Invalid instance type: {instance_type}")
         body: Dict[str, Any] = {"view": view.dump(camel_case=True), "instanceType": instance_type, "limit": limit}
         if query:
@@ -684,7 +649,7 @@ class InstancesAPI(APIClient):
             body["properties"] = properties
 
         res = self._post(url_path=self._RESOURCE_PATH + "/aggregate", json=body)
-        return list_cls._load(res.json()["items"], cognite_client=None)
+        return InstanceAggregationResultList._load(res.json()["items"], cognite_client=None)
 
     @overload
     def list(
