@@ -178,7 +178,7 @@ class FilesAPI(APIClient):
         return (file_metadata, upload_url)
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[FileMetadata]:
-        """`Retrieve a single file metadata by id. <https://api-docs.cognite.com/v1/tag/Files/operation/getFileByInternalId>`_
+        """`Retrieve a single file metadata by id. <https://developer.cognite.com/api#tag/Files/operation/getFileByInternalId>`_
 
         Args:
             id (int, optional): ID
@@ -210,7 +210,7 @@ class FilesAPI(APIClient):
         external_ids: Optional[Sequence[str]] = None,
         ignore_unknown_ids: bool = False,
     ) -> FileMetadataList:
-        """`Retrieve multiple file metadatas by id. <https://api-docs.cognite.com/v1/tag/Files/operation/byIdsFiles>`_
+        """`Retrieve multiple file metadatas by id. <https://developer.cognite.com/api#tag/Files/operation/byIdsFiles>`_
 
         Args:
             ids (Sequence[int], optional): IDs
@@ -266,7 +266,7 @@ class FilesAPI(APIClient):
         uploaded: bool = None,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> FileMetadataList:
-        """`List files <https://api-docs.cognite.com/v1/tag/Files/operation/advancedListFiles>`_
+        """`List files <https://developer.cognite.com/api#tag/Files/operation/advancedListFiles>`_
 
         Args:
             name (str): Name of the file.
@@ -362,7 +362,7 @@ class FilesAPI(APIClient):
         )
 
     def aggregate(self, filter: Union[FileMetadataFilter, Dict] = None) -> List[FileAggregate]:
-        """`Aggregate files <https://api-docs.cognite.com/v1/tag/Files/operation/aggregateFiles>`_
+        """`Aggregate files <https://developer.cognite.com/api#tag/Files/operation/aggregateFiles>`_
 
         Args:
             filter (Union[FileMetadataFilter, Dict]): Filter on file metadata filter with exact match
@@ -382,7 +382,7 @@ class FilesAPI(APIClient):
         return self._aggregate(filter=filter, cls=FileAggregate)
 
     def delete(self, id: Union[int, Sequence[int]] = None, external_id: Union[str, Sequence[str]] = None) -> None:
-        """`Delete files <https://api-docs.cognite.com/v1/tag/Files/operation/deleteFiles>`_
+        """`Delete files <https://developer.cognite.com/api#tag/Files/operation/deleteFiles>`_
 
         Args:
             id (Union[int, Sequence[int]]): Id or list of ids
@@ -412,7 +412,7 @@ class FilesAPI(APIClient):
     def update(
         self, item: Union[FileMetadata, FileMetadataUpdate, Sequence[Union[FileMetadata, FileMetadataUpdate]]]
     ) -> Union[FileMetadata, FileMetadataList]:
-        """`Update files <https://api-docs.cognite.com/v1/tag/Files/operation/updateFiles>`_
+        """`Update files <https://developer.cognite.com/api#tag/Files/operation/updateFiles>`_
         Currently, a full replacement of labels on a file is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.
 
         Args:
@@ -466,7 +466,7 @@ class FilesAPI(APIClient):
     def search(
         self, name: str = None, filter: Optional[Union[FileMetadataFilter, dict]] = None, limit: int = 100
     ) -> FileMetadataList:
-        """`Search for files. <https://api-docs.cognite.com/v1/tag/Files/operation/searchFiles>`_
+        """`Search for files. <https://developer.cognite.com/api#tag/Files/operation/searchFiles>`_
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:
@@ -513,7 +513,7 @@ class FilesAPI(APIClient):
         recursive: bool = False,
         overwrite: bool = False,
     ) -> Union[FileMetadata, FileMetadataList]:
-        """`Upload a file <https://api-docs.cognite.com/v1/tag/Files/operation/initFileUpload>`_
+        """`Upload a file <https://developer.cognite.com/api#tag/Files/operation/initFileUpload>`_
 
         Args:
             path (str): Path to the file you wish to upload. If path is a directory, this method will upload all files in that directory.
@@ -743,7 +743,7 @@ class FilesAPI(APIClient):
         id: Union[int, Sequence[int]] = None,
         external_id: Union[str, Sequence[str]] = None,
     ) -> None:
-        """`Download files by id or external id. <https://api-docs.cognite.com/v1/tag/Files/operation/downloadLinks>`_
+        """`Download files by id or external id. <https://developer.cognite.com/api#tag/Files/operation/downloadLinks>`_
 
         This method will stream all files to disk, never keeping more than 2MB in memory per worker.
         The files will be stored in the provided directory using the name retrieved from the file metadata in CDF.

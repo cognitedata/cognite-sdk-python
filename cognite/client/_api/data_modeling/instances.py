@@ -218,7 +218,7 @@ class InstancesAPI(APIClient):
         sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None = None,
         include_typing: bool = False,
     ) -> InstancesResult:
-        """`Retrieve one or more instance by id(s). <https://api-docs.cognite.com/v1/tag/Instances/tag/Instances/operation/byExternalIdsInstances>`_
+        """`Retrieve one or more instance by id(s). <https://developer.cognite.com/api#tag/Instances/tag/Instances/operation/byExternalIdsInstances>`_
 
         Args:
             nodes (NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Node ids
@@ -310,7 +310,7 @@ class InstancesAPI(APIClient):
         nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
         edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
     ) -> InstancesDeleteResult:
-        """`Delete one or more instances <https://api-docs.cognite.com/v1/tag/Instances/tag/Instances/operation/deleteBulk>`_
+        """`Delete one or more instances <https://developer.cognite.com/api#tag/Instances/tag/Instances/operation/deleteBulk>`_
 
         Args:
             nodes (NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Node ids
@@ -388,7 +388,7 @@ class InstancesAPI(APIClient):
         skip_on_version_conflict: bool = False,
         replace: bool = False,
     ) -> InstancesApplyResult:
-        """`Add or update (upsert) instances. <https://api-docs.cognite.com/v1/tag/Instances/tag/Instances/operation/applyNodeAndEdges>`_
+        """`Add or update (upsert) instances. <https://developer.cognite.com/api#tag/Instances/tag/Instances/operation/applyNodeAndEdges>`_
 
         Args:
             nodes (NodeApply | Sequence[NodeApply] | None = None): Nodes to apply
@@ -518,7 +518,7 @@ class InstancesAPI(APIClient):
         sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> NodeList | EdgeList:
-        """`List instances <https://api-docs.cognite.com/v1/tag/Instances/tag/Instances/operation/advancedListInstance>`_
+        """`List instances <https://developer.cognite.com/api#tag/Instances/tag/Instances/operation/advancedListInstance>`_
 
         Args:
             instance_type(Literal["node", "edge"]): Whether to query for nodes or edges.
