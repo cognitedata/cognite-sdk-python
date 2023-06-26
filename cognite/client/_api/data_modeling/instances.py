@@ -576,11 +576,11 @@ class InstancesAPI(APIClient):
     def aggregate(
         self,
         view: ViewId,
+        aggregates: Aggregation | Sequence[Aggregation],
         instance_type: Literal["node", "edge"] = "node",
+        group_by: Sequence[str] | None = None,
         query: str | None = None,
-        aggregates: Aggregation | Sequence[Aggregation] | None = None,
-        group_by: list[str] | None = None,
-        properties: list[str] | None = None,
+        properties: Sequence[str] | None = None,
         filter: Filter | dict | None = None,
         limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
     ) -> InstanceAggregationResultList:
@@ -588,13 +588,11 @@ class InstancesAPI(APIClient):
 
         Args:
             view (ViewId): View to to aggregate over.
-            query (str): Query string that will be parsed and used for search.
-            instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
             aggregates (Aggregation | list[Aggregation]):  The properties to aggregate over.
+            instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
             group_by (list[str]): The selection of fields to group the results by when doing aggregations.
-                                  You can specify up to 5 items to group by. When you do not specify any aggregates,
-                                  the fields listed in the groupBy clause will return
-                                  the unique values stored for each field
+                                  You can specify up to 5 items to group by.
+            query (str): Query string that will be parsed and used for search.
             properties (list[str]): Optional array of properties you want to search through.
                                     If you do not specify one or more properties, the service will
                                     search all text fields within the view.
@@ -629,22 +627,20 @@ class InstancesAPI(APIClient):
         if instance_type not in ("node", "edge"):
             raise ValueError(f"Invalid instance type: {instance_type}")
         body: Dict[str, Any] = {"view": view.dump(camel_case=True), "instanceType": instance_type, "limit": limit}
-        if query:
-            body["query"] = query
-        if aggregates:
-            if isinstance(aggregates, (Aggregation, dict)):
-                body["aggregates"] = [
-                    aggregates.dump(camel_case=True) if isinstance(aggregates, Aggregation) else aggregates
-                ]
-            else:
-                body["aggregates"] = [
-                    agg.dump(camel_case=True) if isinstance(agg, Aggregation) else agg for agg in aggregates
-                ]
+        if isinstance(aggregates, (Aggregation, dict)):
+            body["aggregates"] = [
+                aggregates.dump(camel_case=True) if isinstance(aggregates, Aggregation) else aggregates
+            ]
+        else:
+            body["aggregates"] = [
+                agg.dump(camel_case=True) if isinstance(agg, Aggregation) else agg for agg in aggregates
+            ]
         if group_by:
             body["groupBy"] = group_by
         if filter:
             body["filter"] = filter.dump() if isinstance(filter, Filter) else filter
-
+        if query:
+            body["query"] = query
         if properties:
             body["properties"] = properties
 
