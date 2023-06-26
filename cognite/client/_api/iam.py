@@ -37,7 +37,7 @@ class GroupsAPI(APIClient):
     _RESOURCE_PATH = "/groups"
 
     def list(self, all: bool = False) -> GroupList:
-        """`List groups. <https://docs.cognite.com/api/v1/#operation/getGroups>`_
+        """`List groups. <https://api-docs.cognite.com/v1/tag/Groups/operation/getGroups>`_
 
         Args:
             all (bool): Whether to get all groups, only available with the groups:list acl.
@@ -57,7 +57,7 @@ class GroupsAPI(APIClient):
         return GroupList._load(res.json()["items"])
 
     def create(self, group: Union[Group, Sequence[Group]]) -> Union[Group, GroupList]:
-        """`Create one or more groups. <https://docs.cognite.com/api/v1/#operation/createGroups>`_
+        """`Create one or more groups. <https://api-docs.cognite.com/v1/tag/Groups/operation/createGroups>`_
 
         Args:
             group (Union[Group, Sequence[Group]]): Group or list of groups to create.
@@ -78,7 +78,7 @@ class GroupsAPI(APIClient):
         return self._create_multiple(list_cls=GroupList, resource_cls=Group, items=group)
 
     def delete(self, id: Union[int, Sequence[int]]) -> None:
-        """`Delete one or more groups. <https://docs.cognite.com/api/v1/#operation/deleteGroups>`_
+        """`Delete one or more groups. <https://api-docs.cognite.com/v1/tag/Groups/operation/deleteGroups>`_
 
         Args:
             id (Union[int, Sequence[int]]): ID or list of IDs of groups to delete.
@@ -101,7 +101,7 @@ class SecurityCategoriesAPI(APIClient):
     _RESOURCE_PATH = "/securitycategories"
 
     def list(self, limit: int = LIST_LIMIT_DEFAULT) -> SecurityCategoryList:
-        """`List security categories. <https://docs.cognite.com/api/v1/#operation/getSecurityCategories>`_
+        """`List security categories. <https://api-docs.cognite.com/v1/tag/Security-categories/operation/getSecurityCategories>`_
 
         Args:
             limit (int): Max number of security categories to return. Defaults to 25.
@@ -122,7 +122,7 @@ class SecurityCategoriesAPI(APIClient):
     def create(
         self, security_category: Union[SecurityCategory, Sequence[SecurityCategory]]
     ) -> Union[SecurityCategory, SecurityCategoryList]:
-        """`Create one or more security categories. <https://docs.cognite.com/api/v1/#operation/createSecurityCategories>`_
+        """`Create one or more security categories. <https://api-docs.cognite.com/v1/tag/Security-categories/operation/createSecurityCategories>`_
 
         Args:
             security_category (Union[SecurityCategory, Sequence[SecurityCategory]]): Security category or list of categories to create.
@@ -145,7 +145,7 @@ class SecurityCategoriesAPI(APIClient):
         )
 
     def delete(self, id: Union[int, Sequence[int]]) -> None:
-        """`Delete one or more security categories. <https://docs.cognite.com/api/v1/#operation/deleteSecurityCategories>`_
+        """`Delete one or more security categories. <https://api-docs.cognite.com/v1/tag/Security-categories/operation/deleteSecurityCategories>`_
 
         Args:
             id (Union[int, Sequence[int]]): ID or list of IDs of security categories to delete.
@@ -192,7 +192,7 @@ class SessionsAPI(APIClient):
         self._LIST_LIMIT = 100
 
     def create(self, client_credentials: Optional[ClientCredentials] = None) -> CreatedSession:
-        """`Create a session. <https://docs.cognite.com/api/v1/#operation/createSessions>`_
+        """`Create a session. <https://api-docs.cognite.com/v1/tag/Sessions/operation/createSessions>`_
 
         Args:
             client_credentials (Optional[ClientCredentials]): The client credentials to create the session. If set to None,
@@ -211,7 +211,7 @@ class SessionsAPI(APIClient):
         return CreatedSession._load(self._post(self._RESOURCE_PATH, {"items": [items]}).json()["items"][0])
 
     def revoke(self, id: Union[int, Sequence[int]]) -> SessionList:
-        """`Revoke access to a session. Revocation of a session may in some cases take up to 1 hour to take effect. <https://docs.cognite.com/api/v1/#operation/revokeSessions>`_
+        """`Revoke access to a session. Revocation of a session may in some cases take up to 1 hour to take effect. <https://api-docs.cognite.com/v1/tag/Sessions/operation/revokeSessions>`_
 
         Args:
             id (Union[int, Sequence[int]): Id or list of session ids
@@ -225,7 +225,7 @@ class SessionsAPI(APIClient):
         return SessionList._load(self._post(self._RESOURCE_PATH + "/revoke", items).json()["items"])
 
     def list(self, status: Optional[str] = None) -> SessionList:
-        """`List all sessions in the current project. <https://docs.cognite.com/api/v1/#operation/listSessions>`_
+        """`List all sessions in the current project. <https://api-docs.cognite.com/v1/tag/Sessions/operation/listSessions>`_
 
         Args:
             status (Optional[str]): If given, only sessions with the given status are returned.

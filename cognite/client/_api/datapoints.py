@@ -611,7 +611,7 @@ class DatapointsAPI(APIClient):
         include_outside_points: bool = False,
         ignore_unknown_ids: bool = False,
     ) -> None | Datapoints | DatapointsList:
-        """`Retrieve datapoints for one or more time series. <https://docs.cognite.com/api/v1/#operation/getMultiTimeSeriesDatapoints>`_
+        """`Retrieve datapoints for one or more time series. <https://api-docs.cognite.com/v1/tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_
 
         **Performance guide**:
             In order to retrieve millions of datapoints as efficiently as possible, here are a few guidelines:
@@ -797,7 +797,7 @@ class DatapointsAPI(APIClient):
         include_outside_points: bool = False,
         ignore_unknown_ids: bool = False,
     ) -> None | DatapointsArray | DatapointsArrayList:
-        """`Retrieve datapoints for one or more time series. <https://docs.cognite.com/api/v1/#operation/getMultiTimeSeriesDatapoints>`_
+        """`Retrieve datapoints for one or more time series. <https://api-docs.cognite.com/v1/tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_
 
         **Note**: This method requires `numpy` to be installed.
 
@@ -1178,7 +1178,7 @@ class DatapointsAPI(APIClient):
         before: None | int | str | datetime = None,
         ignore_unknown_ids: bool = False,
     ) -> Datapoints | DatapointsList | None:
-        """`Get the latest datapoint for one or more time series <https://docs.cognite.com/api/v1/#operation/getLatest>`_
+        """`Get the latest datapoint for one or more time series <https://api-docs.cognite.com/v1/tag/Time-series/operation/getLatest>`_
 
         Args:
             id (Union[int, LatestDatapointQuery, List[Union[int, LatestDatapointQuery]]]): Id or list of ids.
@@ -1305,7 +1305,7 @@ class DatapointsAPI(APIClient):
         dps_poster.insert([post_dps_object])
 
     def insert_multiple(self, datapoints: list[dict[str, str | int | list | Datapoints | DatapointsArray]]) -> None:
-        """`Insert datapoints into multiple time series <https://docs.cognite.com/api/v1/#operation/postMultiTimeSeriesDatapoints>`_
+        """`Insert datapoints into multiple time series <https://api-docs.cognite.com/v1/tag/Time-series/operation/postMultiTimeSeriesDatapoints>`_
 
         Args:
             datapoints (List[Dict]): The datapoints you wish to insert along with the ids of the time series. See examples below.
@@ -1377,7 +1377,7 @@ class DatapointsAPI(APIClient):
         self._delete_datapoints_ranges([delete_dps_object])
 
     def delete_ranges(self, ranges: list[dict[str, Any]]) -> None:
-        """`Delete a range of datapoints from multiple time series. <https://docs.cognite.com/api/v1/#operation/deleteDatapoints>`_
+        """`Delete a range of datapoints from multiple time series. <https://api-docs.cognite.com/v1/tag/Time-series/operation/deleteDatapoints>`_
 
         Args:
             ranges (List[Dict[str, Any]]): The list of datapoint ids along with time range to delete. See examples below.
