@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Literal, Sequence, 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import INSTANCES_LIST_LIMIT_DEFAULT
 from cognite.client.data_classes._base import CogniteResourceList
-from cognite.client.data_classes.data_modeling.aggregations import Aggregation
+from cognite.client.data_classes.data_modeling.aggregations import Aggregation, Histogram, HistogramValue
 from cognite.client.data_classes.data_modeling.filters import Filter
 from cognite.client.data_classes.data_modeling.ids import (
     EdgeId,
@@ -347,7 +347,7 @@ class InstancesAPI(APIClient):
         cls,
         *,
         include_typing: bool,
-        sort: list[InstanceSort | dict] | InstanceSort | dict | None,
+        sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None,
         sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None,
         instance_type: Literal["node", "edge"] | None,
     ) -> dict[str, Any]:
@@ -581,22 +581,22 @@ class InstancesAPI(APIClient):
         group_by: Sequence[str] | None = None,
         query: str | None = None,
         properties: Sequence[str] | None = None,
-        filter: Filter | dict | None = None,
+        filter: Filter | None = None,
         limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
     ) -> InstanceAggregationResultList:
         """`Aggregate data across nodes/edges <https://developer.cognite.com/api/v1/#tag/Instances/operation/aggregateInstances>`_
 
         Args:
             view (ViewId): View to to aggregate over.
-            aggregates (Aggregation | list[Aggregation]):  The properties to aggregate over.
+            aggregates (Aggregation | Sequence[Aggregation]):  The properties to aggregate over.
             instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
-            group_by (list[str]): The selection of fields to group the results by when doing aggregations.
+            group_by (Optional[Sequence[str]]): The selection of fields to group the results by when doing aggregations.
                                   You can specify up to 5 items to group by.
-            query (str): Query string that will be parsed and used for search.
-            properties (list[str]): Optional array of properties you want to search through.
+            query (Optional[str]): Query string that will be parsed and used for search.
+            properties (Optional[Sequence[str]]): Optional array of properties you want to search through.
                                     If you do not specify one or more properties, the service will
                                     search all text fields within the view.
-            filter (dict | Filter): Advnanced filtering of instances.
+            filter (Optional[Filter]): Advnanced filtering of instances.
             limit (int, optional): Maximum number of instances to return. Default to 1000. Set to -1, float("inf") or None
                 to return all items.
 
@@ -605,15 +605,6 @@ class InstancesAPI(APIClient):
 
         Examples:
 
-            Find the number of people born per decade:
-
-                >>> from cognite.client import CogniteClient
-                >>> import cognite.client.data_classes.data_modeling as dm
-                >>> c = CogniteClient()
-                >>> a = dm.aggregations
-                >>> birth_by_decade = a.Histogram("birthYear", interval=10.0)
-                >>> res = c.data_modeling.instances.aggregate(view_id, aggregates=[birth_by_decade])
-
             Get the average run time in minutes for movies grouped by release year:
 
                 >>> from cognite.client import CogniteClient
@@ -621,20 +612,14 @@ class InstancesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> a = dm.aggregations
                 >>> avg_run_time = a.Avg("runTimeMinutes")
-                >>> res = c.data_modeling.instances.aggregate(view_id, aggregates=[avg_run_time], group_by=["releaseYear"])
+                >>> res = c.data_modeling.instances.aggregate(view_id, [avg_run_time], group_by=["releaseYear"])
 
         """
         if instance_type not in ("node", "edge"):
             raise ValueError(f"Invalid instance type: {instance_type}")
         body: Dict[str, Any] = {"view": view.dump(camel_case=True), "instanceType": instance_type, "limit": limit}
-        if isinstance(aggregates, (Aggregation, dict)):
-            body["aggregates"] = [
-                aggregates.dump(camel_case=True) if isinstance(aggregates, Aggregation) else aggregates
-            ]
-        else:
-            body["aggregates"] = [
-                agg.dump(camel_case=True) if isinstance(agg, Aggregation) else agg for agg in aggregates
-            ]
+        aggregate_seq: Sequence[Aggregation] = aggregates if isinstance(aggregates, Sequence) else [aggregates]
+        body["aggregates"] = [agg.dump(camel_case=True) for agg in aggregate_seq]
         if group_by:
             body["groupBy"] = group_by
         if filter:
@@ -648,13 +633,108 @@ class InstancesAPI(APIClient):
         return InstanceAggregationResultList._load(res.json()["items"], cognite_client=None)
 
     @overload
+    def histogram(
+        self,
+        view: ViewId,
+        histograms: Histogram,
+        instance_type: Literal["node", "edge"] = "node",
+        query: str | None = None,
+        properties: Sequence[str] | None = None,
+        filter: Filter | None = None,
+        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
+    ) -> HistogramValue:
+        ...
+
+    @overload
+    def histogram(
+        self,
+        view: ViewId,
+        histograms: Sequence[Histogram],
+        instance_type: Literal["node", "edge"] = "node",
+        query: str | None = None,
+        properties: Sequence[str] | None = None,
+        filter: Filter | None = None,
+        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
+    ) -> list[HistogramValue]:
+        ...
+
+    def histogram(
+        self,
+        view: ViewId,
+        histograms: Histogram | Sequence[Histogram],
+        instance_type: Literal["node", "edge"] = "node",
+        query: str | None = None,
+        properties: Sequence[str] | None = None,
+        filter: Filter | None = None,
+        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
+    ) -> HistogramValue | list[HistogramValue]:
+        """`Produces histograms for nodes/edges <https://developer.cognite.com/api/v1/#tag/Instances/operation/aggregateInstances>`_
+
+        Args:
+            view (ViewId): View to to aggregate over.
+            histograms (Histogram | Sequence[Histogram]):  The properties to aggregate over.
+            instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
+            query (Optional[str]): Query string that will be parsed and used for search.
+            properties (Optional[Sequence[str]]): Optional array of properties you want to search through.
+                                    If you do not specify one or more properties, the service will
+                                    search all text fields within the view.
+            filter (Optional[Filter]): Advnanced filtering of instances.
+            limit (int, optional): Maximum number of instances to return. Default to 1000. Set to -1, float("inf") or None
+                to return all items.
+
+        Returns:
+            list[HistogramValue]: Node or edge aggregation results.
+
+        Examples:
+
+            Find the number of people born per decade:
+
+                >>> from cognite.client import CogniteClient
+                >>> import cognite.client.data_classes.data_modeling as dm
+                >>> c = CogniteClient()
+                >>> a = dm.aggregations
+                >>> birth_by_decade = a.Histogram("birthYear", interval=10.0)
+                >>> res = c.data_modeling.instances.histogram(view_id, birth_by_decade)
+        """
+        if instance_type not in ("node", "edge"):
+            raise ValueError(f"Invalid instance type: {instance_type}")
+        body: Dict[str, Any] = {"view": view.dump(camel_case=True), "instanceType": instance_type, "limit": limit}
+
+        if isinstance(histograms, Sequence):
+            histogram_seq: Sequence[Histogram] = histograms
+            is_singleton = False
+        elif isinstance(histograms, Histogram):
+            histogram_seq = [histograms]
+            is_singleton = True
+        else:
+            raise TypeError(f"Expected Histogram or sequence of Histograms, got {type(histograms)}")
+
+        for histogram in histogram_seq:
+            if not isinstance(histogram, Histogram):
+                raise ValueError(f"Not a histogram: {histogram}")
+
+        body["aggregates"] = [histogram.dump(camel_case=True) for histogram in histogram_seq]
+        if filter:
+            body["filter"] = filter.dump() if isinstance(filter, Filter) else filter
+        if query:
+            body["query"] = query
+        if properties:
+            body["properties"] = properties
+
+        res = self._post(url_path=self._RESOURCE_PATH + "/aggregate", json=body)
+        if is_singleton:
+            return HistogramValue.load(res.json()["items"][0]["aggregates"][0])
+        else:
+            return [HistogramValue.load(item["aggregates"][0]) for item in res.json()["items"]]
+
+    @overload
     def list(
         self,
         instance_type: Literal["node"] = "node",
         include_typing: bool = False,
         sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None = None,
         limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
-        sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
+        sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> NodeList:
         ...
@@ -666,7 +746,7 @@ class InstancesAPI(APIClient):
         include_typing: bool = False,
         sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None = None,
         limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
-        sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
+        sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> EdgeList:
         ...
@@ -677,7 +757,7 @@ class InstancesAPI(APIClient):
         include_typing: bool = False,
         sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None = None,
         limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
-        sort: list[InstanceSort | dict] | InstanceSort | dict | None = None,
+        sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> NodeList | EdgeList:
         """`List instances <https://developer.cognite.com/api#tag/Instances/tag/Instances/operation/advancedListInstance>`_
@@ -688,7 +768,7 @@ class InstancesAPI(APIClient):
             sources (ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence(View) | None): Views to retrieve properties from.
             limit (int, optional): Maximum number of instances to return. Default to 1000. Set to -1, float("inf") or None
                 to return all items.
-            sort (list[InstanceSost] | InstanceSort | dict): How you want the listed instances information ordered.
+            sort (Sequence[InstanceSost] | InstanceSort | dict): How you want the listed instances information ordered.
             filter (dict | Filter): Advanced filtering of instances.
 
         Returns:

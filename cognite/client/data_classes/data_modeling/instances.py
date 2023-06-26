@@ -30,7 +30,7 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.data_modeling._core import DataModelingResource
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
-from cognite.client.data_classes.data_modeling.aggregations import AggregatedValue
+from cognite.client.data_classes.data_modeling.aggregations import AggregatedNumberedValue
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelationReference,
 )
@@ -306,24 +306,20 @@ class InstanceApplyResult(InstanceCore):
         self.created_time = created_time
 
 
-T_Instance_Aggregation_Result = TypeVar("T_Instance_Aggregation_Result", bound="InstanceAggregationResult")
-
-
 class InstanceAggregationResult(DataModelingResource):
     """A node or edge. This represents the update on the instance.
 
     Args:
-        aggregates (list[AggregatedValue]) : List of aggregated values.
+        aggregates (list[AggregatedNumberedValue]) : List of aggregated values.
         group (dict[str, str | int | float | bool]) : The grouping used for the aggregation.
-        instance_type (Literal["node", "edge"]) : The type of instance.
     """
 
-    def __init__(self, aggregates: list[AggregatedValue], group: dict[str, str | int | float | bool]):
+    def __init__(self, aggregates: list[AggregatedNumberedValue], group: dict[str, str | int | float | bool]):
         self.aggregates = aggregates
         self.group = group
 
     @classmethod
-    def load(cls: Type[T_Instance_Aggregation_Result], data: dict | str) -> T_Instance_Aggregation_Result:
+    def load(cls, data: dict | str) -> InstanceAggregationResult:
         """
         Loads an instance from a json string or dictionary.
 
@@ -337,7 +333,7 @@ class InstanceAggregationResult(DataModelingResource):
         data = json.loads(data) if isinstance(data, str) else data
 
         return cls(
-            aggregates=[AggregatedValue.load(agg) for agg in data["aggregates"]],
+            aggregates=[AggregatedNumberedValue.load(agg) for agg in data["aggregates"]],
             group=cast(Dict[str, Union[str, int, float, bool]], data.get("group")),
         )
 

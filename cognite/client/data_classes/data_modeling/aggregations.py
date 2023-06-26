@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import dataclass, field
-from typing import Any, ClassVar, final
+from typing import Any, ClassVar, Type, TypeVar, cast, final
 
 from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_snake_case
@@ -82,6 +82,9 @@ class Histogram(Aggregation):
         return output
 
 
+T_AggregatedValue = TypeVar("T_AggregatedValue", bound="AggregatedValue")
+
+
 @dataclass
 class AggregatedValue(ABC):
     _aggregate: ClassVar[str] = field(init=False)
@@ -89,25 +92,28 @@ class AggregatedValue(ABC):
     property: str
 
     @classmethod
-    def load(cls, aggregated_value: dict[str, Any]) -> AggregatedValue:
+    def load(cls: Type[T_AggregatedValue], aggregated_value: dict[str, Any]) -> T_AggregatedValue:
         if "aggregate" not in aggregated_value:
             raise ValueError("Missing aggregate, this is required")
         aggregate = aggregated_value["aggregate"]
         aggregated_value = rename_and_exclude_keys(aggregated_value, exclude={"aggregate"})
         body = convert_all_keys_to_snake_case(aggregated_value)
+
         if aggregate == "avg":
-            return AvgValue(**body)
+            deserialized: AggregatedValue = AvgValue(**body)
         elif aggregate == "count":
-            return CountValue(**body)
+            deserialized = CountValue(**body)
         elif aggregate == "max":
-            return MaxValue(**body)
+            deserialized = MaxValue(**body)
         elif aggregate == "min":
-            return MinValue(**body)
+            deserialized = MinValue(**body)
         elif aggregate == "sum":
-            return SumValue(**body)
+            deserialized = SumValue(**body)
         elif aggregate == "histogram":
-            return HistogramValue(**body)
-        raise ValueError(f"Unknown aggregation: {aggregate}")
+            deserialized = HistogramValue(**body)
+        else:
+            raise ValueError(f"Unknown aggregation: {aggregate}")
+        return cast(T_AggregatedValue, deserialized)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = {"aggregate": self._aggregate, "property": self.property}

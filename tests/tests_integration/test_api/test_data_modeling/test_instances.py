@@ -23,6 +23,7 @@ from cognite.client.data_classes.data_modeling import (
     aggregations,
     filters,
 )
+from cognite.client.data_classes.data_modeling.aggregations import HistogramValue
 from cognite.client.data_classes.data_modeling.filters import Equals
 from cognite.client.exceptions import CogniteAPIError
 
@@ -391,24 +392,26 @@ class TestInstancesAPI:
         assert len(search_result) == 0
 
     def test_aggregate_histogram_across_nodes(self, cognite_client: CogniteClient, person_view: View) -> None:
-        # Arrange
         view_id = person_view.as_id()
         birth_by_decade = aggregations.Histogram("birthYear", interval=10.0)
 
-        # Act
-        histogram = cognite_client.data_modeling.instances.aggregate(view_id, aggregates=[birth_by_decade])
+        histogram = cognite_client.data_modeling.instances.histogram(view_id, birth_by_decade)
+        assert isinstance(histogram, HistogramValue)
 
-        # Assert
-        assert len(histogram) == 1
+        histogram_seq = cognite_client.data_modeling.instances.histogram(view_id, [birth_by_decade])
+        assert len(histogram_seq) == 1 and isinstance(histogram_seq[0], HistogramValue)
 
     def test_aggregate_with_grouping(self, cognite_client: CogniteClient, movie_view: View) -> None:
         # Arrange
         view_id = movie_view.as_id()
-        count_movies = aggregations.Avg("runTimeMinutes")
+        avg_agg = aggregations.Avg("runTimeMinutes")
+        max_agg = aggregations.Max("runTimeMinutes")
 
         # Act
         counts = cognite_client.data_modeling.instances.aggregate(
-            view_id, aggregates=[count_movies], group_by=["releaseYear"]
+            view_id,
+            aggregates=[avg_agg, max_agg],
+            group_by=["releaseYear"],
         )
 
         # Assert
