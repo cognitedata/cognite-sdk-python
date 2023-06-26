@@ -655,9 +655,10 @@ class InstancesAPI(APIClient):
                 >>> res = c.data_modeling.instances.aggregate(view_id, aggregates=[avg_run_time], group_by=["releaseYear"])
 
         """
-        list_cls: Union[Type[NodeAggregationResultList], Type[EdgeAggregationResultList]] = NodeAggregationResultList
         if instance_type == "node":
-            list_cls = NodeAggregationResultList
+            list_cls: Union[
+                Type[NodeAggregationResultList], Type[EdgeAggregationResultList]
+            ] = NodeAggregationResultList
         elif instance_type == "edge":
             list_cls = EdgeAggregationResultList
         else:
@@ -678,6 +679,9 @@ class InstancesAPI(APIClient):
             body["groupBy"] = group_by
         if filter:
             body["filter"] = filter.dump() if isinstance(filter, Filter) else filter
+
+        if properties:
+            body["properties"] = properties
 
         res = self._post(url_path=self._RESOURCE_PATH + "/aggregate", json=body)
         return list_cls._load(res.json()["items"], cognite_client=None)
