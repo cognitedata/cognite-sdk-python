@@ -1,15 +1,14 @@
 import pytest
 
-from cognite.client.data_classes.data_modeling.containers import ContainerDirectRelation
 from cognite.client.data_classes.data_modeling.data_types import (
+    DirectRelation,
     DirectRelationReference,
     PropertyType,
 )
-from cognite.client.data_classes.data_modeling.views import ViewDirectRelation
 
 
 class TestDirectRelationReference:
-    def test_load_dump(self):
+    def test_load_dump(self) -> None:
         data = {"space": "mySpace", "externalId": "myId"}
 
         assert data == DirectRelationReference.load(data).dump(camel_case=True)
@@ -24,22 +23,14 @@ class TestPropertyType:
             {"type": "timeseries", "list": False},
         ],
     )
-    def test_load_dump(self, data: dict):
+    def test_load_dump(self, data: dict) -> None:
         actual = PropertyType.load(data).dump(camel_case=True)
 
         assert data == actual
 
 
 class TestDirectRelation:
-    def test_load_dump_container_direct_relation(self):
+    def test_load_dump_container_direct_relation(self) -> None:
         data = {"type": "direct", "container": {"space": "mySpace", "externalId": "myId", "type": "container"}}
 
-        assert data == ContainerDirectRelation.load(data).dump(camel_case=True)
-
-    def test_load_dump_view_direct_relation(self):
-        data = {
-            "type": "direct",
-            "source": {"space": "mySpace", "externalId": "myId", "version": "myVersion", "type": "view"},
-        }
-
-        assert data == ViewDirectRelation.load(data).dump(camel_case=True)
+        assert data == DirectRelation.load(data).dump(camel_case=True)

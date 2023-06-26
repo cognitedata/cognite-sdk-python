@@ -2,7 +2,7 @@ from cognite.client import data_modeling as dm
 
 
 class TestEdgeApply:
-    def test_dump(self):
+    def test_dump(self) -> None:
         edge = dm.EdgeApply(
             space="mySpace",
             external_id="relation:arnold_schwarzenegger:actor",

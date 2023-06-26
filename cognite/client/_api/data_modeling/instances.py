@@ -103,8 +103,8 @@ class InstancesAPI(APIClient):
     @overload
     def __call__(
         self,
-        chunk_size: None,
-        instance_type: Literal["node"],
+        chunk_size: None = None,
+        instance_type: Literal["node"] = "node",
         limit: int | None = None,
         include_typing: bool = False,
         sources: list[ViewId] | ViewId | None = None,
@@ -130,7 +130,7 @@ class InstancesAPI(APIClient):
     def __call__(
         self,
         chunk_size: int,
-        instance_type: Literal["node"],
+        instance_type: Literal["node"] = "node",
         limit: int | None = None,
         include_typing: bool = False,
         sources: list[ViewId] | ViewId | None = None,

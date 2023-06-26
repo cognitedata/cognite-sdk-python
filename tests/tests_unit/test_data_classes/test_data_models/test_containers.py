@@ -14,13 +14,13 @@ class TestConstraintIdentifier:
             {"properties": ["name", "fullName"], "constraintType": "uniqueness"},
         ],
     )
-    def test_load_dump(self, data: dict):
+    def test_load_dump(self, data: dict) -> None:
         actual = Constraint.load(data).dump(camel_case=True)
         assert data == actual
 
 
 class TestIndexIdentifier:
     @pytest.mark.parametrize("data", [{"properties": ["name", "fullName"], "indexType": "btree"}])
-    def test_load_dump(self, data: dict):
+    def test_load_dump(self, data: dict) -> None:
         actual = Index.load(data).dump(camel_case=True)
         assert data == actual

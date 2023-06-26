@@ -4,7 +4,6 @@ from cognite.client.data_classes.data_modeling.containers import (
     Container,
     ContainerApply,
     ContainerApplyList,
-    ContainerDirectRelation,
     ContainerFilter,
     ContainerList,
     ContainerProperty,
@@ -81,7 +80,6 @@ from cognite.client.data_classes.data_modeling.views import (
     ViewApplyList,
     ViewFilter,
     ViewList,
-    ViewPropertyDefinition,
 )
 
 __all__ = [
@@ -108,7 +106,6 @@ __all__ = [
     "MappedPropertyDefinition",
     "ConnectionDefinition",
     "SingleHopConnectionDefinition",
-    "ViewPropertyDefinition",
     "Space",
     "SpaceList",
     "SpaceApply",
@@ -124,7 +121,6 @@ __all__ = [
     "ContainerProperty",
     "Primitive",
     "CDFExternalIdReference",
-    "ContainerDirectRelation",
     "RequiresConstraintDefinition",
     "UniquenessConstraintDefinition",
     "ContainerId",
