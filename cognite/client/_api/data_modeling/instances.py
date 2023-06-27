@@ -6,7 +6,12 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Literal, Sequence, 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import INSTANCES_LIST_LIMIT_DEFAULT
 from cognite.client.data_classes._base import CogniteResourceList
-from cognite.client.data_classes.data_modeling.aggregations import Aggregation, Histogram, HistogramValue
+from cognite.client.data_classes.data_modeling.aggregations import (
+    Aggregation,
+    Histogram,
+    HistogramValue,
+    MetricAggregation,
+)
 from cognite.client.data_classes.data_modeling.filters import Filter
 from cognite.client.data_classes.data_modeling.ids import (
     EdgeId,
@@ -575,7 +580,7 @@ class InstancesAPI(APIClient):
     def aggregate(
         self,
         view: ViewId,
-        aggregates: Aggregation | dict | Sequence[Aggregation | dict],
+        aggregates: MetricAggregation | dict | Sequence[MetricAggregation | dict],
         instance_type: Literal["node", "edge"] = "node",
         group_by: Sequence[str] | None = None,
         query: str | None = None,
@@ -587,7 +592,7 @@ class InstancesAPI(APIClient):
 
         Args:
             view (ViewId): View to to aggregate over.
-            aggregates (Aggregation | dict | Sequence[Aggregation | dict]):  The properties to aggregate over.
+            aggregates (MetricAggregation | dict | Sequence[MetricAggregation | dict]):  The properties to aggregate over.
             instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
             group_by (Optional[Sequence[str]]): The selection of fields to group the results by when doing aggregations.
                                   You can specify up to 5 items to group by.

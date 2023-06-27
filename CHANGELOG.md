@@ -17,7 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [6.5.0] - 2023-06-13
+## [6.5.1] - 2023-06-27
+### Fixed
+- Fix typehints on `data_modeling.instances.aggregate()` to not allow Histogram aggregate.
+
+## [6.5.0] - 2023-06-27
 ### Added
 - Support for searching and aggregating across instances in the Data Modeling API with the implementation 
   `client.data_modeling.instances`, the methods `search`, `histogram` and `aggregate`.
