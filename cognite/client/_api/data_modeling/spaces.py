@@ -120,12 +120,14 @@ class SpacesAPI(APIClient):
     def list(
         self,
         limit: int = LIST_LIMIT_DEFAULT,
+        include_global: bool = False,
     ) -> SpaceList:
         """`List spaces <https://developer.cognite.com/api#tag/Spaces/operation/listSpacesV3>`_
 
         Args:
             limit (int, optional): Maximum number of spaces to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
+            include_global (bool, optional): Whether to include global spaces. Defaults to False.
 
         Returns:
             SpaceList: List of requested spaces
@@ -157,6 +159,7 @@ class SpacesAPI(APIClient):
             resource_cls=Space,
             method="GET",
             limit=limit,
+            other_params={"includeGlobal": include_global},
         )
 
     @overload

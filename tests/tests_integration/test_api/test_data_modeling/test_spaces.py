@@ -33,6 +33,11 @@ class TestSpacesAPI:
 
         assert _dump(actual_space_in_cdf) == _dump(cdf_spaces)
 
+    def test_list_include_global(self, cognite_client: CogniteClient, cdf_spaces: SpaceList) -> None:
+        spaces = cognite_client.data_modeling.spaces.list(include_global=True)
+
+        assert len(spaces) > len(cdf_spaces)
+
     def test_create_retrieve_and_delete(self, cognite_client: CogniteClient) -> None:
         # Arrange
         my_space = SpaceApply(

@@ -400,6 +400,7 @@ class APIClient:
                     params["cursor"] = next_cursor
                     if sort is not None:
                         params["sort"] = sort
+                    params.update(other_params or {})
                     res = self._get(url_path=url_path or resource_path, params=params, headers=headers)
                 elif method == "POST":
                     body: dict[str, Any] = {"limit": current_limit, "cursor": next_cursor, **(other_params or {})}
