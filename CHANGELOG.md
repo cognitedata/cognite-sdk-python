@@ -17,9 +17,14 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.5.2] - 2023-06-27
+### Fixed
+- Added missing `metadata` attribute to `iam.Group`
+
 ## [6.5.1] - 2023-06-27
 ### Fixed
 - Fix typehints on `data_modeling.instances.aggregate()` to not allow Histogram aggregate.
+- Moved `ViewDirectRelation.source` property to `MappedProperty.source` where it belongs.
 
 ## [6.5.0] - 2023-06-27
 ### Added

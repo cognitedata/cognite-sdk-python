@@ -12,10 +12,14 @@ class TestGroupsAPI:
         assert len(res) > 0
 
     def test_create(self, cognite_client):
+        metadata = {"haha": "blabla"}
         group = cognite_client.iam.groups.create(
-            Group(name="bla", capabilities=[{"eventsAcl": {"actions": ["READ"], "scope": {"all": {}}}}])
+            Group(
+                name="bla", capabilities=[{"eventsAcl": {"actions": ["READ"], "scope": {"all": {}}}}], metadata=metadata
+            )
         )
         assert "bla" == group.name
+        assert metadata == group.metadata
         cognite_client.iam.groups.delete(group.id)
 
 
