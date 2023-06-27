@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Dict, Union, cast
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
-from cognite.client.utils._auxiliary import convert_all_keys_to_snake_case
+from cognite.client.utils._text import convert_all_keys_to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -69,5 +69,5 @@ class TransformationSchemaColumn(CogniteResource):
         return instance
 
 
-class TransformationSchemaColumnList(CogniteResourceList):
+class TransformationSchemaColumnList(CogniteResourceList[TransformationSchemaColumn]):
     _RESOURCE = TransformationSchemaColumn

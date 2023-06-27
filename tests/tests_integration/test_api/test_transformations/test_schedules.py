@@ -1,3 +1,4 @@
+import os
 import string
 
 import pytest
@@ -10,7 +11,7 @@ from cognite.client.data_classes import (
     TransformationSchedule,
     TransformationScheduleUpdate,
 )
-from cognite.client.utils._auxiliary import random_string
+from cognite.client.utils._text import random_string
 
 
 @pytest.fixture
@@ -70,6 +71,9 @@ def other_schedule(cognite_client, other_transformation):
     yield from schedule_from_transformation(cognite_client, other_transformation)
 
 
+@pytest.mark.skipif(
+    os.environ.get("LOGIN_FLOW") != "client_credentials", reason="This test requires client_credentials auth"
+)
 class TestTransformationSchedulesAPI:
     def test_create(self, new_schedule: TransformationSchedule):
         assert (

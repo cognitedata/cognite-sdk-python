@@ -7,6 +7,12 @@ from unittest.mock import MagicMock
 from cognite.client import CogniteClient
 from cognite.client._api.annotations import AnnotationsAPI
 from cognite.client._api.assets import AssetsAPI
+from cognite.client._api.data_modeling import DataModelingAPI
+from cognite.client._api.data_modeling.containers import ContainersAPI
+from cognite.client._api.data_modeling.data_models import DataModelsAPI
+from cognite.client._api.data_modeling.instances import InstancesAPI
+from cognite.client._api.data_modeling.spaces import SpacesAPI
+from cognite.client._api.data_modeling.views import ViewsAPI
 from cognite.client._api.data_sets import DataSetsAPI
 from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.diagrams import DiagramsAPI
@@ -20,17 +26,8 @@ from cognite.client._api.extractionpipelines import (
 from cognite.client._api.files import FilesAPI
 from cognite.client._api.functions import FunctionCallsAPI, FunctionsAPI, FunctionSchedulesAPI
 from cognite.client._api.geospatial import GeospatialAPI
-from cognite.client._api.iam import (
-    IAMAPI,
-    APIKeysAPI,
-    GroupsAPI,
-    SecurityCategoriesAPI,
-    ServiceAccountsAPI,
-    SessionsAPI,
-    TokenAPI,
-)
+from cognite.client._api.iam import IAMAPI, GroupsAPI, SecurityCategoriesAPI, SessionsAPI, TokenAPI
 from cognite.client._api.labels import LabelsAPI
-from cognite.client._api.login import LoginAPI
 from cognite.client._api.raw import RawAPI, RawDatabasesAPI, RawRowsAPI, RawTablesAPI
 from cognite.client._api.relationships import RelationshipsAPI
 from cognite.client._api.sequences import SequencesAPI, SequencesDataAPI
@@ -79,10 +76,15 @@ class CogniteClientMock(MagicMock):
         #   - Use `spec_set=MyNestedAPI` for all nested APIs
         self.annotations = MagicMock(spec_set=AnnotationsAPI)
         self.assets = MagicMock(spec_set=AssetsAPI)
-        self.data_sets = MagicMock(spec_set=DataSetsAPI)
 
-        self.datapoints = MagicMock(spec=DatapointsAPI)  # TODO: In v6, remove and move to time_series.data
-        self.datapoints.synthetic = MagicMock(spec_set=SyntheticDatapointsAPI)
+        self.data_modeling = MagicMock(spec=DataModelingAPI)
+        self.data_modeling.containers = MagicMock(spec_set=ContainersAPI)
+        self.data_modeling.data_models = MagicMock(spec_set=DataModelsAPI)
+        self.data_modeling.spaces = MagicMock(spec_set=SpacesAPI)
+        self.data_modeling.views = MagicMock(spec_set=ViewsAPI)
+        self.data_modeling.instances = MagicMock(spec_set=InstancesAPI)
+
+        self.data_sets = MagicMock(spec_set=DataSetsAPI)
 
         self.diagrams = MagicMock(spec_set=DiagramsAPI)
         self.entity_matching = MagicMock(spec_set=EntityMatchingAPI)
@@ -101,15 +103,12 @@ class CogniteClientMock(MagicMock):
         self.geospatial = MagicMock(spec_set=GeospatialAPI)
 
         self.iam = MagicMock(spec=IAMAPI)
-        self.iam.api_keys = MagicMock(spec_set=APIKeysAPI)
         self.iam.groups = MagicMock(spec_set=GroupsAPI)
         self.iam.security_categories = MagicMock(spec_set=SecurityCategoriesAPI)
-        self.iam.service_accounts = MagicMock(spec_set=ServiceAccountsAPI)
         self.iam.sessions = MagicMock(spec_set=SessionsAPI)
         self.iam.token = MagicMock(spec_set=TokenAPI)
 
         self.labels = MagicMock(spec_set=LabelsAPI)
-        self.login = MagicMock(spec_set=LoginAPI)
 
         self.raw = MagicMock(spec=RawAPI)
         self.raw.databases = MagicMock(spec_set=RawDatabasesAPI)
@@ -134,7 +133,8 @@ class CogniteClientMock(MagicMock):
         self.three_d.revisions = MagicMock(spec_set=ThreeDRevisionsAPI)
 
         self.time_series = MagicMock(spec=TimeSeriesAPI)
-        self.time_series.data = self.datapoints
+        self.time_series.data = MagicMock(spec=DatapointsAPI)
+        self.time_series.data.synthetic = MagicMock(spec_set=SyntheticDatapointsAPI)
 
         self.transformations = MagicMock(spec=TransformationsAPI)
         self.transformations.jobs = MagicMock(spec_set=TransformationJobsAPI)
@@ -169,17 +169,16 @@ def monkeypatch_cognite_client() -> Iterator[CogniteClientMock]:
         This example shows how to set the return value of a given method::
 
             >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes import TimeSeries
-            >>> from cognite.client.data_classes import LoginStatus
+            >>> from cognite.client.data_classes.iam import TokenInspection
             >>> from cognite.client.testing import monkeypatch_cognite_client
             >>>
             >>> with monkeypatch_cognite_client() as c_mock:
-            >>>     c_mock.login.status.return_value = LoginStatus(
-            >>>         user="user", project="dummy", project_id=1, logged_in=True, api_key_id=1
+            >>>     c_mock.iam.token.inspect.return_value = TokenInspection(
+            >>>         subject="subject", projects=[], capabilities=[]
             >>>     )
             >>>     c = CogniteClient()
-            >>>     res = c.login.status()
-            >>>     assert "user" == res.user
+            >>>     res = c.iam.token.inspect()
+            >>>     assert "subject" == res.subject
 
         Here you can see how to have a given method raise an exception::
 
@@ -188,10 +187,10 @@ def monkeypatch_cognite_client() -> Iterator[CogniteClientMock]:
             >>> from cognite.client.testing import monkeypatch_cognite_client
             >>>
             >>> with monkeypatch_cognite_client() as c_mock:
-            >>>     c_mock.login.status.side_effect = CogniteAPIError(message="Something went wrong", code=400)
+            >>>     c_mock.iam.token.inspect.side_effect = CogniteAPIError(message="Something went wrong", code=400)
             >>>     c = CogniteClient()
             >>>     try:
-            >>>         res = c.login.status()
+            >>>         res = c.iam.token.inspect()
             >>>     except CogniteAPIError as e:
             >>>         assert 400 == e.code
             >>>         assert "Something went wrong" == e.message

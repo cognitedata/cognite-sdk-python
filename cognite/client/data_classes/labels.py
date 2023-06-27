@@ -8,7 +8,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
 )
-from cognite.client.utils._auxiliary import convert_all_keys_to_camel_case, to_camel_case
+from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -66,7 +66,7 @@ class LabelDefinitionFilter(CogniteFilter):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
 
-class LabelDefinitionList(CogniteResourceList):
+class LabelDefinitionList(CogniteResourceList[LabelDefinition]):
     _RESOURCE = LabelDefinition
 
 
@@ -102,8 +102,8 @@ class Label(dict):
         return [convert_label(label) for label in labels]
 
     @classmethod
-    def _load(self, raw_label: Dict[str, Any]) -> Label:
-        return Label(external_id=raw_label["externalId"])
+    def _load(cls, raw_label: Dict[str, Any]) -> Label:
+        return cls(external_id=raw_label["externalId"])
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         return convert_all_keys_to_camel_case(self) if camel_case else dict(self)

@@ -48,7 +48,7 @@ class TransformationJobMetric(CogniteResource):
         return instance
 
 
-class TransformationJobMetricList(CogniteResourceList):
+class TransformationJobMetricList(CogniteResourceList[TransformationJobMetric]):
     _RESOURCE = TransformationJobMetric
 
 
@@ -177,8 +177,8 @@ class TransformationJob(CogniteResource):
             TransformationJobStatus.FAILED,
             TransformationJobStatus.COMPLETED,
         ]:
-            toWait = min(timeout - waited, polling_interval)
-            time.sleep(toWait)
+            to_wait = min(timeout - waited, polling_interval)
+            time.sleep(to_wait)
             self.update()
             waited += polling_interval
 
@@ -238,8 +238,8 @@ class TransformationJob(CogniteResource):
             TransformationJobStatus.FAILED,
             TransformationJobStatus.COMPLETED,
         ]:
-            toWait = min(timeout - waited, polling_interval)
-            await asyncio.sleep(toWait)
+            to_wait = min(timeout - waited, polling_interval)
+            await asyncio.sleep(to_wait)
             self.update()
             waited += polling_interval
 
@@ -256,7 +256,7 @@ class TransformationJob(CogniteResource):
         return hash(self.id)
 
 
-class TransformationJobList(CogniteResourceList):
+class TransformationJobList(CogniteResourceList[TransformationJob]):
     _RESOURCE = TransformationJob
 
 

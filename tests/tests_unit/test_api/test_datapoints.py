@@ -1,16 +1,18 @@
+from __future__ import annotations
+
 import json
 import math
 import re
 from datetime import datetime, timezone
 from random import random
-from unittest.mock import patch
 
 import pytest
 
+from cognite.client import CogniteClient
 from cognite.client._api.datapoints import DatapointsBin
 from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, LatestDatapointQuery
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
-from cognite.client.utils._time import granularity_to_ms
+from cognite.client.utils._time import granularity_to_ms, import_zoneinfo
 from tests.utils import jsgz_load
 
 DATAPOINTS_API = "cognite.client._api.datapoints.{}"
@@ -141,11 +143,11 @@ class TestGetLatest:
         for res in res_list:
             assert 0 == len(res)
 
-    def test_retrieve_latest_concurrent_fails(self, cognite_client, mock_retrieve_latest_with_failure):
-        with patch(DATAPOINTS_API.format("RETRIEVE_LATEST_LIMIT"), 2):
-            with pytest.raises(CogniteAPIError) as e:
-                cognite_client.time_series.data.retrieve_latest(id=[1, 2, 3])
-            assert e.value.code == 500
+    def test_retrieve_latest_concurrent_fails(self, cognite_client, mock_retrieve_latest_with_failure, monkeypatch):
+        monkeypatch.setattr(cognite_client.time_series.data, "_RETRIEVE_LATEST_LIMIT", 2)
+        with pytest.raises(CogniteAPIError) as e:
+            cognite_client.time_series.data.retrieve_latest(id=[1, 2, 3])
+        assert e.value.code == 500
 
     @pytest.mark.parametrize(
         "id, external_id, pass_as, err_msg",
@@ -225,11 +227,11 @@ class TestInsertDatapoints:
         with pytest.raises(AssertionError, match="is missing the"):
             cognite_client.time_series.data.insert(dps, id=1)
 
-    def test_insert_datapoints_over_limit(self, cognite_client, mock_post_datapoints):
+    def test_insert_datapoints_over_limit(self, cognite_client, mock_post_datapoints, monkeypatch):
+        monkeypatch.setattr(cognite_client.time_series.data, "_DPS_INSERT_LIMIT", 5)
+        monkeypatch.setattr(cognite_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 5)
         dps = [(i * 1e11, i) for i in range(1, 11)]
-        with patch(DATAPOINTS_API.format("DPS_LIMIT"), 5):
-            with patch(DATAPOINTS_API.format("POST_DPS_OBJECTS_LIMIT"), 5):
-                res = cognite_client.time_series.data.insert(dps, id=1)
+        res = cognite_client.time_series.data.insert(dps, id=1)
         assert res is None
         request_bodies = [jsgz_load(call.request.body) for call in mock_post_datapoints.calls]
         assert {
@@ -259,7 +261,7 @@ class TestInsertDatapoints:
     def test_insert_datapoints_in_multiple_time_series_invalid_key(self, cognite_client):
         dps = [{"timestamp": i * 1e11, "value": i} for i in range(1, 11)]
         dps_objects = [{"extId": "1", "datapoints": dps}]
-        with pytest.raises(ValueError, match="Invalid key 'extId'"):
+        with pytest.raises(ValueError, match="Exactly one of id or external id must be specified, got neither"):
             cognite_client.time_series.data.insert_multiple(dps_objects)
 
     def test_insert_datapoints_ts_does_not_exist(self, cognite_client, mock_post_datapoints_400):
@@ -268,23 +270,25 @@ class TestInsertDatapoints:
 
     def test_insert_multiple_ts__below_ts_and_dps_limit(self, cognite_client, mock_post_datapoints):
         dps = [{"timestamp": i * 1e11, "value": i} for i in range(1, 2)]
-        dps_objects = [{"id": i, "datapoints": dps} for i in range(100)]
+        dps_objects = [{"id": i, "datapoints": dps} for i in range(1, 101)]
         cognite_client.time_series.data.insert_multiple(dps_objects)
         assert 1 == len(mock_post_datapoints.calls)
         request_body = jsgz_load(mock_post_datapoints.calls[0].request.body)
-        for i, dps in enumerate(request_body["items"]):
+        for i, dps in enumerate(request_body["items"], 1):
             assert i == dps["id"]
 
-    def test_insert_multiple_ts_single_call__below_dps_limit_above_ts_limit(self, cognite_client, mock_post_datapoints):
-        with patch(DATAPOINTS_API.format("POST_DPS_OBJECTS_LIMIT"), 100):
-            dps = [{"timestamp": i * 1e11, "value": i} for i in range(1, 2)]
-            dps_objects = [{"id": i, "datapoints": dps} for i in range(101)]
-            cognite_client.time_series.data.insert_multiple(dps_objects)
-            assert 2 == len(mock_post_datapoints.calls)
+    def test_insert_multiple_ts_single_call__below_dps_limit_above_ts_limit(
+        self, cognite_client, mock_post_datapoints, monkeypatch
+    ):
+        monkeypatch.setattr(cognite_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", 100)
+        dps = [{"timestamp": i * 1e11, "value": i} for i in range(1, 2)]
+        dps_objects = [{"id": i, "datapoints": dps} for i in range(1, 102)]
+        cognite_client.time_series.data.insert_multiple(dps_objects)
+        assert 2 == len(mock_post_datapoints.calls)
 
     def test_insert_multiple_ts_single_call__above_dps_limit_below_ts_limit(self, cognite_client, mock_post_datapoints):
         dps = [{"timestamp": i * 1e11, "value": i} for i in range(1, 1002)]
-        dps_objects = [{"id": i, "datapoints": dps} for i in range(10)]
+        dps_objects = [{"id": i, "datapoints": dps} for i in range(1, 11)]
         cognite_client.time_series.data.insert_multiple(dps_objects)
         assert 2 == len(mock_post_datapoints.calls)
 
@@ -332,12 +336,17 @@ class TestDeleteDatapoints:
             ]
         } == jsgz_load(mock_delete_datapoints.calls[0].request.body)
 
-    def test_delete_ranges_invalid_ids(self, cognite_client):
-        ranges = [{"idz": 1, "start": 0, "end": 1}]
-        with pytest.raises(AssertionError, match="Invalid key 'idz'"):
-            cognite_client.time_series.data.delete_ranges(ranges)
-        ranges = [{"start": 0, "end": 1}]
-        with pytest.raises(ValueError, match="Exactly one of id or external id must be specified"):
+    @pytest.mark.parametrize(
+        "input_dct, err_suffix",
+        (
+            ({}, "neither"),
+            ({"id": 1, "external_id": "a"}, "both"),
+            ({"id": 1, "externalId": "a"}, "both"),
+        ),
+    )
+    def test_delete_ranges_invalid_ids(self, input_dct, err_suffix, cognite_client):
+        ranges = [{"start": 0, "end": 1, **input_dct}]
+        with pytest.raises(ValueError, match=f"Exactly one of id or external id must be specified, got {err_suffix}"):
             cognite_client.time_series.data.delete_ranges(ranges)
 
 
@@ -427,7 +436,7 @@ class TestDatapointsObject:
         res = Datapoints(id=1, timestamp=[1, 2, 3])._slice(slice(None, 1))
         assert [1] == res.timestamp
 
-    def test_extend(self, cognite_client):
+    def test__extend(self, cognite_client):  # test _extend, not extend
         d0 = Datapoints()
         d1 = Datapoints(id=1, external_id="1", timestamp=[1, 2, 3], value=[1, 2, 3])
         d2 = Datapoints(id=1, external_id="1", timestamp=[4, 5, 6], value=[4, 5, 6])
@@ -701,3 +710,138 @@ class TestDataPoster:
         dps_object = {"id": 100, "datapoints": [{"timestamp": 1, "value": 1}]}
         bin.add(dps_object)
         assert not bin.will_fit(1)
+
+
+class TestRetrieveDataPointsInTz:
+    """
+    This test only the error raising functionality, actual retrieval functionality is tested in the integration tests.
+    """
+
+    @staticmethod
+    @pytest.mark.dsl
+    @pytest.mark.parametrize(
+        "args, start_tz, end_tz, expected_error_message",
+        [
+            pytest.param(
+                {"external_id": "123", "start": datetime(2023, 1, 1), "end": datetime(2023, 1, 2)},
+                None,
+                None,
+                "All times must be timezone aware, start and end do not have timezones.",
+                id="Naive timezones",
+            ),
+            pytest.param(
+                {"external_id": "123", "start": datetime(2023, 1, 1), "end": datetime(2023, 1, 2)},
+                "Europe/Oslo",
+                "America/Los_Angeles",
+                "'start' and 'end' represent different timezones: 'Europe/Oslo' and 'America/Los_Angeles'.",
+                id="Mismatch timezone",
+            ),
+            pytest.param(
+                {"external_id": "123", "start": datetime(2023, 1, 1), "end": datetime(2023, 1, 2)},
+                "Europe/Oslo",
+                None,
+                "All times must be timezone aware, end does not have a timezone.",
+                id="Missing end timezone",
+            ),
+            pytest.param(
+                {"external_id": "123", "start": datetime(2023, 1, 1), "end": datetime(2023, 1, 2)},
+                None,
+                "America/Los_Angeles",
+                "All times must be timezone aware, start does not have a timezone.",
+                id="Missing start timezone",
+            ),
+            pytest.param(
+                {"start": datetime(2023, 1, 1), "end": datetime(2023, 1, 2)},
+                "Europe/Oslo",
+                "Europe/Oslo",
+                re.escape("Either input id(s) or external_id(s)"),
+                id="Neither id or external id",
+            ),
+            pytest.param(
+                {"external_id": "123", "id": 123, "start": datetime(2023, 1, 1), "end": datetime(2023, 1, 2)},
+                "Europe/Oslo",
+                "Europe/Oslo",
+                re.escape("Either input id(s) or external_id(s)"),
+                id="Passed both id and external id",
+            ),
+            pytest.param(
+                {
+                    "external_id": "123",
+                    "start": datetime(2023, 1, 1),
+                    "end": datetime(2023, 1, 2),
+                    "aggregates": "average",
+                    "granularity": "12years",
+                },
+                "Europe/Oslo",
+                "Europe/Oslo",
+                "Granularity above the maximum limit, 11 years.",
+                id="Granularity above maximum aggregation limit in hours",
+            ),
+            pytest.param(
+                {
+                    "external_id": "123",
+                    "start": datetime(2023, 1, 1),
+                    "end": datetime(2023, 1, 2),
+                    "aggregates": "average",
+                    "granularity": "48quarters",
+                },
+                "Europe/Oslo",
+                "Europe/Oslo",
+                "Granularity above the maximum limit, 45 quarters.",
+                id="Granularity above maximum aggregation limit in quarters",
+            ),
+            pytest.param(
+                {
+                    "external_id": ["123", "123"],
+                    "start": datetime(2023, 1, 1),
+                    "end": datetime(2023, 1, 2),
+                    "aggregates": "average",
+                    "granularity": "1year",
+                },
+                "Europe/Oslo",
+                "Europe/Oslo",
+                re.escape("The following identifiers were not unique: {'123'}"),
+                id="Duplicated external ids",
+            ),
+            pytest.param(
+                {
+                    "id": [123, 123],
+                    "start": datetime(2023, 1, 1),
+                    "end": datetime(2023, 1, 2),
+                    "aggregates": "average",
+                    "granularity": "1year",
+                },
+                "Europe/Oslo",
+                "Europe/Oslo",
+                re.escape("The following identifiers were not unique: {123}"),
+                id="Duplicated ids",
+            ),
+            pytest.param(
+                {"id": 123, "start": datetime(2023, 1, 1), "end": datetime(2023, 1, 2), "aggregates": "average"},
+                "Europe/Oslo",
+                "Europe/Oslo",
+                "Got only one of 'aggregates' and 'granularity'.Pass both to get aggregates, or neither to get raw data",
+                id="Missing granularity",
+            ),
+            pytest.param(
+                {"id": 123, "start": datetime(2023, 1, 1), "end": datetime(2023, 1, 2), "granularity": "1year"},
+                "Europe/Oslo",
+                "Europe/Oslo",
+                "Got only one of 'aggregates' and 'granularity'.Pass both to get aggregates, or neither to get raw data",
+                id="Missing aggregates",
+            ),
+        ],
+    )
+    def test_retrieve_data_points_in_tz_invalid_user_input(
+        args: dict, expected_error_message: str, start_tz: str | None, end_tz: str | None, cognite_client: CogniteClient
+    ):
+        # Arrange
+        ZoneInfo = import_zoneinfo()
+        if start_tz is not None:
+            args["start"] = args["start"].astimezone(ZoneInfo(start_tz))
+        if end_tz is not None:
+            args["end"] = args["end"].astimezone(ZoneInfo(end_tz))
+
+        # Act and Assert
+        with pytest.raises(ValueError, match=expected_error_message):
+            cognite_client.time_series.data.retrieve_dataframe_in_tz(**args)

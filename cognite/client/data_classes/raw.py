@@ -44,7 +44,7 @@ class Row(CogniteResource):
         return pd.DataFrame([self.columns], [self.key])
 
 
-class RowList(CogniteResourceList):
+class RowList(CogniteResourceList[Row]):
     _RESOURCE = Row
 
     def to_pandas(self) -> pandas.DataFrame:  # type: ignore[override]
@@ -54,7 +54,7 @@ class RowList(CogniteResourceList):
             pandas.DataFrame: The pandas DataFrame representing this instance.
         """
         pd = cast(Any, utils._auxiliary.local_import("pandas"))
-        return pd.DataFrame.from_dict(OrderedDict(((d.key, d.columns) for d in self.data)), orient="index")
+        return pd.DataFrame.from_dict(OrderedDict((d.key, d.columns) for d in self.data), orient="index")
 
 
 class Table(CogniteResource):
@@ -88,7 +88,7 @@ class Table(CogniteResource):
         return self._cognite_client.raw.rows.list(db_name=self._db_name, table_name=self.name, limit=limit)
 
 
-class TableList(CogniteResourceList):
+class TableList(CogniteResourceList[Table]):
     _RESOURCE = Table
 
 
@@ -118,5 +118,5 @@ class Database(CogniteResource):
         return self._cognite_client.raw.tables.list(db_name=self.name, limit=limit)
 
 
-class DatabaseList(CogniteResourceList):
+class DatabaseList(CogniteResourceList[Database]):
     _RESOURCE = Database

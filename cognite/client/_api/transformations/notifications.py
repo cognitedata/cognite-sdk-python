@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Optional, Sequence, Union
+from typing import Optional, Sequence, Union
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import TransformationNotification, TransformationNotificationList
 from cognite.client.data_classes.transformations.notifications import TransformationNotificationFilter
 from cognite.client.utils._identifier import IdentifierSequence
@@ -11,15 +12,11 @@ from cognite.client.utils._identifier import IdentifierSequence
 
 class TransformationNotificationsAPI(APIClient):
     _RESOURCE_PATH = "/transformations/notifications"
-    _LIST_CLASS = TransformationNotificationList
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
 
     def create(
         self, notification: Union[TransformationNotification, Sequence[TransformationNotification]]
     ) -> Union[TransformationNotification, TransformationNotificationList]:
-        """`Subscribe for notifications on the transformation errors. <https://docs.cognite.com/api/v1/#operation/createTransformationNotifications>`_
+        """`Subscribe for notifications on the transformation errors. <https://developer.cognite.com/api#tag/Transformation-Notifications/operation/createTransformationNotifications>`_
 
         Args:
             notification (Union[TransformationNotification, Sequence[TransformationNotification]]): Notification or list of notifications to create.
@@ -47,9 +44,9 @@ class TransformationNotificationsAPI(APIClient):
         transformation_id: Optional[int] = None,
         transformation_external_id: str = None,
         destination: str = None,
-        limit: Optional[int] = 25,
+        limit: Optional[int] = LIST_LIMIT_DEFAULT,
     ) -> TransformationNotificationList:
-        """`List notification subscriptions. <https://docs.cognite.com/api/v1/#operation/getTransformationNotifications>`_
+        """`List notification subscriptions. <https://developer.cognite.com/api#tag/Transformation-Notifications/operation/getTransformationNotifications>`_
 
         Args:
             transformation_id (Optional[int]): Filter by transformation internal numeric ID.
@@ -89,7 +86,7 @@ class TransformationNotificationsAPI(APIClient):
         )
 
     def delete(self, id: Union[int, Sequence[int]] = None) -> None:
-        """`Deletes the specified notification subscriptions on the transformation. Does nothing when the subscriptions already don't exist <https://docs.cognite.com/api/v1/#operation/deleteTransformationNotifications>`_
+        """`Deletes the specified notification subscriptions on the transformation. Does nothing when the subscriptions already don't exist <https://developer.cognite.com/api#tag/Transformation-Notifications/operation/deleteTransformationNotifications>`_
 
         Args:
             id (Union[int, Sequence[int]): Id or list of transformation notification ids

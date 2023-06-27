@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import warnings
 from typing import Any, Dict, Optional, Union
 
-from cognite.client.utils._auxiliary import basic_obj_dump, convert_all_keys_to_snake_case
+from cognite.client.utils._auxiliary import basic_obj_dump
+from cognite.client.utils._text import convert_all_keys_to_snake_case, iterable_to_case
 
 
 class TransformationDestination:
@@ -23,7 +23,13 @@ class TransformationDestination:
         return isinstance(other, type(self)) and hash(other) == hash(self)
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        return basic_obj_dump(self, camel_case)
+        ret = basic_obj_dump(self, camel_case)
+
+        needs_dump = set(iterable_to_case(("view", "edge_type", "data_model"), camel_case))
+        for k in needs_dump.intersection(ret):
+            if ret[k] is not None:
+                ret[k] = ret[k].dump(camel_case=camel_case)
+        return ret
 
     @staticmethod
     def assets() -> TransformationDestination:
@@ -106,24 +112,44 @@ class TransformationDestination:
         return SequenceRows(external_id=external_id)
 
     @staticmethod
-    def data_model_instances(
-        model_external_id: str = "", space_external_id: str = "", instance_space_external_id: str = ""
-    ) -> DataModelInstances:
-        """To be used when the transformation is meant to produce data model instances.
-            Flexible Data Models resource type is on `beta` version currently.
+    def nodes(view: Optional[ViewInfo] = None, instance_space: Optional[str] = None) -> Nodes:
+        """
 
         Args:
-            model_external_id (str): external_id of the flexible data model.
-            space_external_id (str): space external_id of the flexible data model.
-            instance_space_external_id (str): space external_id of the flexible data model instance.
+            view (ViewInfo): information of the view.
+            instance_space (str): space id of the instance.
         Returns:
-            TransformationDestination pointing to the target flexible data model.
+            Nodes: pointing to the target flexible data model.
         """
-        return DataModelInstances(
-            model_external_id=model_external_id,
-            space_external_id=space_external_id,
-            instance_space_external_id=instance_space_external_id,
-        )
+        return Nodes(view=view, instance_space=instance_space)
+
+    @staticmethod
+    def edges(
+        view: Optional[ViewInfo] = None,
+        instance_space: Optional[str] = None,
+        edge_type: Optional[EdgeType] = None,
+    ) -> Edges:
+        """
+
+        Args:
+            view (ViewInfo): information of the view.
+            instance_space (str): space id of the instance.
+            edge_type (EdgeType): information about the type of the edge
+        Returns:
+            Edges: pointing to the target flexible data model.
+        """
+        return Edges(view=view, instance_space=instance_space, edge_type=edge_type)
+
+    @staticmethod
+    def instances(data_model: Optional[DataModelInfo] = None, instance_space: Optional[str] = None) -> Instances:
+        """
+        Args:
+            data_model (DataModelInfo): information of the Data Model.
+            instance_space (str): space id of the instance.
+        Returns:
+            Instances: pointing to the target centric data model.
+        """
+        return Instances(data_model=data_model, instance_space=instance_space)
 
 
 class RawTable(TransformationDestination):
@@ -145,22 +171,109 @@ class SequenceRows(TransformationDestination):
         return hash((self.type, self.external_id))
 
 
-class DataModelInstances(TransformationDestination):
-    def __init__(
-        self, model_external_id: str = None, space_external_id: str = None, instance_space_external_id: str = None
-    ):
-        warnings.warn(
-            "Feature DataModelStorage is in beta and still in development. "
-            "Breaking changes can happen in between patch versions.",
-            stacklevel=2,
-        )
-        super().__init__(type="data_model_instances")
-        self.model_external_id = model_external_id
-        self.space_external_id = space_external_id
-        self.instance_space_external_id = instance_space_external_id
+class ViewInfo:
+    def __init__(self, space: str, external_id: str, version: str):
+        self.space = space
+        self.external_id = external_id
+        self.version = version
 
     def __hash__(self) -> int:
-        return hash((self.type, self.model_external_id, self.space_external_id, self.instance_space_external_id))
+        return hash((self.space, self.external_id, self.version))
+
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        return basic_obj_dump(self, camel_case)
+
+
+class EdgeType:
+    def __init__(self, space: str, external_id: str):
+        self.space = space
+        self.external_id = external_id
+
+    def __hash__(self) -> int:
+        return hash((self.space, self.external_id))
+
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        return basic_obj_dump(self, camel_case)
+
+
+class DataModelInfo:
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: str,
+        destination_type: str,
+        destination_relationship_from_type: Optional[str] = None,
+    ):
+
+        self.space = space
+        self.external_id = external_id
+        self.version = version
+        self.destination_type = destination_type
+        self.destination_relationship_from_type = destination_relationship_from_type
+
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        return basic_obj_dump(self, camel_case)
+
+
+class Nodes(TransformationDestination):
+    def __init__(
+        self,
+        view: Optional[ViewInfo] = None,
+        instance_space: Optional[str] = None,
+    ):
+
+        super().__init__(type="nodes")
+        self.view = view
+        self.instance_space = instance_space
+
+    @classmethod
+    def _load(cls, resource: Dict[str, Any]) -> Nodes:
+        inst = cls(**resource)
+        if isinstance(inst.view, dict):
+            inst.view = ViewInfo(**convert_all_keys_to_snake_case(inst.view))
+        return inst
+
+
+class Edges(TransformationDestination):
+    def __init__(
+        self,
+        view: Optional[ViewInfo] = None,
+        instance_space: Optional[str] = None,
+        edge_type: Optional[EdgeType] = None,
+    ):
+
+        super().__init__(type="edges")
+        self.view = view
+        self.instance_space = instance_space
+        self.edge_type = edge_type
+
+    @classmethod
+    def _load(cls, resource: Dict[str, Any]) -> Edges:
+        inst = cls(**resource)
+        if isinstance(inst.view, dict):
+            inst.view = ViewInfo(**convert_all_keys_to_snake_case(inst.view))
+        if isinstance(inst.edge_type, dict):
+            inst.edge_type = EdgeType(**convert_all_keys_to_snake_case(inst.edge_type))
+        return inst
+
+
+class Instances(TransformationDestination):
+    def __init__(
+        self,
+        data_model: Optional[DataModelInfo] = None,
+        instance_space: Optional[str] = None,
+    ):
+        super().__init__(type="instances")
+        self.data_model = data_model
+        self.instance_space = instance_space
+
+    @classmethod
+    def _load(cls, resource: Dict[str, Any]) -> Instances:
+        inst = cls(**resource)
+        if isinstance(inst.data_model, dict):
+            inst.data_model = DataModelInfo(**convert_all_keys_to_snake_case(inst.data_model))
+        return inst
 
 
 class OidcCredentials:
@@ -217,6 +330,13 @@ class NonceCredentials:
 
 
 class TransformationBlockedInfo:
+    """Information about the reason why and when a transformation is blocked.
+
+    Args:
+        reason (str): Reason why the transformation is blocked.
+        created_time (Optional[int]): Timestamp when the transformation was blocked.
+    """
+
     def __init__(self, reason: str = None, created_time: Optional[int] = None):
         self.reason = reason
         self.created_time = created_time
@@ -224,12 +344,23 @@ class TransformationBlockedInfo:
 
 def _load_destination_dct(
     dct: Dict[str, Any]
-) -> Union[RawTable, DataModelInstances, SequenceRows, TransformationDestination]:
+) -> Union[RawTable, Nodes, Edges, SequenceRows, TransformationDestination]:
     """Helper function to load destination from dictionary"""
     snake_dict = convert_all_keys_to_snake_case(dct)
     destination_type = snake_dict.pop("type")
-    try:
-        dest_dct = {"raw": RawTable, "data_model_instances": DataModelInstances, "sequence_rows": SequenceRows}
-        return dest_dct[destination_type](**snake_dict)
-    except KeyError:
-        return TransformationDestination(destination_type)
+    simple = {
+        "raw": RawTable,
+        "sequence_rows": SequenceRows,
+    }
+    if destination_type in simple:
+        return simple[destination_type](**snake_dict)
+
+    nested: Dict[str, type[Nodes] | type[Edges] | type[Instances]] = {
+        "nodes": Nodes,
+        "edges": Edges,
+        "instances": Instances,
+    }
+    if destination_type in nested:
+        return nested[destination_type]._load(snake_dict)
+
+    return TransformationDestination(destination_type)

@@ -4,6 +4,7 @@ from typing import Optional, Sequence
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import (
     TransformationJob,
     TransformationJobFilter,
@@ -19,11 +20,11 @@ class TransformationJobsAPI(APIClient):
 
     def list(
         self,
-        limit: Optional[int] = 25,
+        limit: Optional[int] = LIST_LIMIT_DEFAULT,
         transformation_id: Optional[int] = None,
         transformation_external_id: Optional[str] = None,
     ) -> TransformationJobList:
-        """`List all running transformation jobs. <https://docs.cognite.com/api/v1/#operation/getTransformationJobs>`_
+        """`List all running transformation jobs. <https://developer.cognite.com/api#tag/Transformation-Jobs/operation/getTransformationJobs>`_
 
         Args:
             limit (int): Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
@@ -57,7 +58,7 @@ class TransformationJobsAPI(APIClient):
         )
 
     def retrieve(self, id: int) -> Optional[TransformationJob]:
-        """`Retrieve a single transformation job by id. <https://docs.cognite.com/api/v1/#operation/getTransformationJobsByIds>`_
+        """`Retrieve a single transformation job by id. <https://developer.cognite.com/api#tag/Transformation-Jobs/operation/getTransformationJobsByIds>`_
 
         Args:
             id (int): Job internal Id
@@ -79,7 +80,7 @@ class TransformationJobsAPI(APIClient):
         )
 
     def list_metrics(self, id: int) -> TransformationJobMetricList:
-        """`List the metrics of a single transformation job. <https://docs.cognite.com/api/v1/#operation/getTransformationJobsMetrics>`_
+        """`List the metrics of a single transformation job. <https://developer.cognite.com/api#tag/Transformation-Jobs/operation/getTransformationJobsMetrics>`_
 
         Args:
             id (int): Job internal Id
@@ -106,7 +107,7 @@ class TransformationJobsAPI(APIClient):
         )
 
     def retrieve_multiple(self, ids: Sequence[int], ignore_unknown_ids: bool = False) -> TransformationJobList:
-        """`Retrieve multiple transformation jobs by id. <https://docs.cognite.com/api/v1/#operation/getTransformationJobsByIds>`_
+        """`Retrieve multiple transformation jobs by id. <https://developer.cognite.com/api#tag/Transformation-Jobs/operation/getTransformationJobsByIds>`_
 
         Args:
             ids (Sequence[int]): Job internal Ids

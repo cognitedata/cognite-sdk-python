@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast
 
+from requests.utils import CaseInsensitiveDict
+
 from cognite.client.data_classes import Annotation
 from cognite.client.data_classes._base import (
     CognitePrimitiveUpdate,
@@ -17,7 +19,8 @@ from cognite.client.data_classes.annotation_types.images import AssetLink, Objec
 from cognite.client.data_classes.annotation_types.primitives import VisionResource
 from cognite.client.data_classes.annotations import AnnotationList
 from cognite.client.exceptions import CogniteAPIError, CogniteException, ModelFailedException
-from cognite.client.utils._auxiliary import convert_true_match, exactly_one_is_not_none, to_snake_case
+from cognite.client.utils._auxiliary import convert_true_match, exactly_one_is_not_none
+from cognite.client.utils._text import to_snake_case
 
 if TYPE_CHECKING:
     import pandas
@@ -26,7 +29,7 @@ if TYPE_CHECKING:
 
 
 class JobStatus(Enum):
-    _NOT_STARTED = None
+    _NOT_STARTED: None = None
     QUEUED = "Queued"
     RUNNING = "Running"
     COMPLETED = "Completed"
@@ -66,6 +69,7 @@ class ContextualizationJob(CogniteResource):
             "createdTime",
             "startTime",
             "statusTime",
+            "jobToken",
         }
     )
     _JOB_TYPE = ContextualizationJobType.ENTITY_MATCHING
@@ -80,6 +84,7 @@ class ContextualizationJob(CogniteResource):
         start_time: int = None,
         status_time: int = None,
         status_path: str = None,
+        job_token: str = None,
         cognite_client: CogniteClient = None,
     ):
         """Data class for the result of a contextualization job."""
@@ -90,13 +95,19 @@ class ContextualizationJob(CogniteResource):
         self.start_time = start_time
         self.status_time = status_time
         self.error_message = error_message
+        self.job_token = job_token
         self._cognite_client = cast("CogniteClient", cognite_client)
         self._result: Optional[Dict[str, Any]] = None
         self._status_path = status_path
 
     def update_status(self) -> str:
         """Updates the model status and returns it"""
-        data = getattr(self._cognite_client, self._JOB_TYPE.value)._get(f"{self._status_path}{self.job_id}").json()
+        headers = {"X-Job-Token": self.job_token} if self.job_token else {}
+        data = (
+            getattr(self._cognite_client, self._JOB_TYPE.value)
+            ._get(f"{self._status_path}{self.job_id}", headers=headers)
+            .json()
+        )
         self.status = data["status"]
         self.status_time = data.get("statusTime")
         self.start_time = data.get("startTime")
@@ -138,9 +149,14 @@ class ContextualizationJob(CogniteResource):
 
     @classmethod
     def _load_with_status(
-        cls: Type[T_ContextualizationJob], data: Dict[str, Any], status_path: str, cognite_client: Any
+        cls: Type[T_ContextualizationJob],
+        *,
+        data: Dict[str, Any],
+        headers: CaseInsensitiveDict[str],
+        status_path: str,
+        cognite_client: Any,
     ) -> T_ContextualizationJob:
-        obj = cls._load(data, cognite_client=cognite_client)
+        obj = cls._load({**data, "jobToken": headers.get("X-Job-Token")}, cognite_client=cognite_client)
         obj._status_path = status_path
         return obj
 
@@ -148,7 +164,7 @@ class ContextualizationJob(CogniteResource):
 T_ContextualizationJob = TypeVar("T_ContextualizationJob", bound=ContextualizationJob)
 
 
-class ContextualizationJobList(CogniteResourceList):
+class ContextualizationJobList(CogniteResourceList[ContextualizationJob]):
     _RESOURCE = ContextualizationJob
 
 
@@ -310,7 +326,7 @@ class EntityMatchingModelUpdate(CogniteUpdate):
         return EntityMatchingModelUpdate._PrimitiveUpdate(self, "description")
 
 
-class EntityMatchingModelList(CogniteResourceList):
+class EntityMatchingModelList(CogniteResourceList[EntityMatchingModel]):
     _RESOURCE = EntityMatchingModel
 
 
@@ -352,7 +368,7 @@ class DiagramConvertPage(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
 
-class DiagramConvertPageList(CogniteResourceList):
+class DiagramConvertPageList(CogniteResourceList[DiagramConvertPage]):
     _RESOURCE = DiagramConvertPage
 
 
@@ -435,6 +451,7 @@ class DiagramDetectItem(CogniteResource):
         error_message: str = None,
         cognite_client: CogniteClient = None,
         page_range: Optional[Dict[str, int]] = None,
+        page_count: Optional[int] = None,
     ):
         self.file_id = file_id
         self.file_external_id = file_external_id
@@ -442,6 +459,7 @@ class DiagramDetectItem(CogniteResource):
         self.error_message = error_message
         self._cognite_client = cast("CogniteClient", cognite_client)
         self.page_range = page_range
+        self.page_count = page_count
 
     def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:  # type: ignore[override]
         """Convert the instance into a pandas DataFrame.
@@ -780,12 +798,11 @@ class VisionExtractJob(VisionJob):
         creating_app: Optional[str] = None,
         creating_app_version: Optional[str] = None,
     ) -> List[Annotation]:
-
         return [
             Annotation(
                 annotated_resource_id=item.file_id,
                 annotation_type=VISION_ANNOTATION_TYPE_MAP[prediction_type],
-                data=data.dump(),
+                data=data,
                 annotated_resource_type="file",
                 status="suggested",
                 creating_app=creating_app or "cognite-sdk-python",
@@ -806,10 +823,10 @@ class VisionExtractJob(VisionJob):
     ) -> Union[Annotation, AnnotationList]:
         """
         Saves all predictions made by the feature extractors in CDF using the Annotations API.
-        See https://docs.cognite.com/api/v1/#tag/Annotations/operation/annotationsSuggest
+        See https://docs.cognite.com/api/v1/#operation/annotationsSuggest
 
         Args:
-            creating_app (str, optional): The name of the app from which this annotation was created. Defaults to 'cognite-sdk-experimental'.
+            creating_app (str, optional): The name of the app from which this annotation was created. Defaults to 'cognite-sdk-python'.
             creating_app_version (str, optional): The version of the app that created this annotation. Must be a valid semantic versioning (SemVer) string. Defaults to client version.
             creating_user: (str, optional): A username, or email, or name. This is not checked nor enforced. If the value is None, it means the annotation was created by a service.
         Returns:

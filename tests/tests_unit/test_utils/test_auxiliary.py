@@ -1,5 +1,7 @@
 import json
 import math
+import re
+import warnings
 from decimal import Decimal
 from itertools import zip_longest
 
@@ -10,26 +12,61 @@ from cognite.client.utils._auxiliary import (
     assert_type,
     exactly_one_is_not_none,
     find_duplicates,
+    handle_deprecated_camel_case_argument,
     interpolate_and_url_encode,
     json_dump_default,
     local_import,
     split_into_chunks,
     split_into_n_parts,
-    to_camel_case,
-    to_snake_case,
 )
 
 
-class TestCaseConversion:
-    def test_to_camel_case(self):
-        assert "camelCase" == to_camel_case("camel_case")
-        assert "camelCase" == to_camel_case("camelCase")
-        assert "a" == to_camel_case("a")
+@pytest.mark.parametrize(
+    "new_arg, old_arg_name, fn_name, kw_dct, expected",
+    (
+        ("Ceci n'est pas une pipe", "extractionPipeline", "f", {}, "Ceci n'est pas une pipe"),
+        (None, "extractionPipeline", "f", {"extractionPipeline": "Ceci n'est pas une pipe"}, "Ceci n'est pas une pipe"),
+        (42, "raw_geoLocation", "f", {}, 42),
+        (None, "raw_geoLocation", "f", {"raw_geoLocation": 42}, 42),
+    ),
+)
+def test_handle_deprecated_camel_case_argument__expected(new_arg, old_arg_name, fn_name, kw_dct, expected):
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        value = handle_deprecated_camel_case_argument(new_arg, old_arg_name, fn_name, kw_dct)
+    assert value == expected
 
-    def test_to_snake_case(self):
-        assert "snake_case" == to_snake_case("snakeCase")
-        assert "snake_case" == to_snake_case("snake_case")
-        assert "a" == to_snake_case("a")
+
+@pytest.mark.parametrize(
+    "new_arg, old_arg_name, fn_name, kw_dct, err_msg",
+    (
+        (
+            "Ceci n'est pas une pipe",
+            "extractionPipeline",
+            "f",
+            {"owner": "René Magritte"},
+            "Got unexpected keyword argument(s): ['owner']",
+        ),
+        (
+            None,
+            "extractionPipeline",
+            "fun_func",
+            {"extractionPipeline": None},
+            "fun_func() missing 1 required positional argument: 'extraction_pipeline'",
+        ),
+        (
+            "what",
+            "extractionPipeline",
+            "f",
+            {"extractionPipeline": "what"},
+            "Pass either 'extraction_pipeline' or 'extractionPipeline' (deprecated), not both",
+        ),
+    ),
+)
+def test_handle_deprecated_camel_case_argument__raises(new_arg, old_arg_name, fn_name, kw_dct, err_msg):
+    with pytest.raises(TypeError, match=re.escape(err_msg)), warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        handle_deprecated_camel_case_argument(new_arg, old_arg_name, fn_name, kw_dct)
 
 
 class TestLocalImport:
@@ -146,7 +183,7 @@ class TestAssertions:
 
 
 class TestFindDuplicates:
-    @pytest.mark.parametrize("inp", ("abc", (1, 2, 3), [1.0, 1.1, 2], range(3), {1: 2, 2: 3}, set([1, 1, 1])))
+    @pytest.mark.parametrize("inp", ("abc", (1, 2, 3), [1.0, 1.1, 2], range(3), {1: 2, 2: 3}, {1, 1, 1}))
     def test_no_duplicates(self, inp):
         assert set() == find_duplicates(inp)
 
@@ -169,7 +206,7 @@ class TestFindDuplicates:
         "inp",
         (
             ([1], [1], [1, 2]),
-            [set((1,)), set((1,)), set((1, 3))],
+            [{1}, {1}, {1, 3}],
             [{1: 2}, {1: 2}, {1: 2, 2: 3}],
         ),
     )
@@ -192,7 +229,7 @@ class TestSplitIntoNParts:
     )
     def test_normal_split(self, inp, n, exp_out):
         exp_type = type(inp)
-        res = split_into_n_parts(inp, n)
+        res = split_into_n_parts(inp, n=n)
         for r, res_exp in zip_longest(res, exp_out, fillvalue=math.nan):
             assert type(r) is exp_type
             assert r == res_exp
@@ -208,7 +245,7 @@ class TestSplitIntoNParts:
     )
     def test_split_into_too_many_pieces(self, inp, n, exp_out):
         exp_type = type(inp)
-        res = split_into_n_parts(inp, n)
+        res = split_into_n_parts(inp, n=n)
         for r, res_exp in zip_longest(res, exp_out, fillvalue=math.nan):
             assert type(r) is exp_type
             assert r == res_exp

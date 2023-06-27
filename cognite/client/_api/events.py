@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Union, cast, overload
 
 from cognite.client._api_client import APIClient
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import (
     AggregateResult,
     AggregateUniqueValuesResult,
@@ -14,6 +15,7 @@ from cognite.client.data_classes import (
     TimestampRange,
 )
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 
 
 class EventsAPI(APIClient):
@@ -30,10 +32,10 @@ class EventsAPI(APIClient):
         metadata: Dict[str, str] = None,
         asset_ids: Sequence[int] = None,
         asset_external_ids: Sequence[str] = None,
-        asset_subtree_ids: Sequence[int] = None,
-        asset_subtree_external_ids: Sequence[str] = None,
-        data_set_ids: Sequence[int] = None,
-        data_set_external_ids: Sequence[str] = None,
+        asset_subtree_ids: Union[int, Sequence[int]] = None,
+        asset_subtree_external_ids: Union[str, Sequence[str]] = None,
+        data_set_ids: Union[int, Sequence[int]] = None,
+        data_set_external_ids: Union[str, Sequence[str]] = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
@@ -56,10 +58,10 @@ class EventsAPI(APIClient):
             metadata (Dict[str, str]): Customizable extra data about the event. String key -> String value.
             asset_ids (Sequence[int]): Asset IDs of related equipments that this event relates to.
             asset_external_ids (Sequence[str]): Asset External IDs of related equipment that this event relates to.
-            asset_subtree_ids (Sequence[int]): List of asset subtrees ids to filter on.
-            asset_subtree_external_ids (Sequence[str]): List of asset subtrees external ids to filter on.
-            data_set_ids (Sequence[int]): Return only events in the specified data sets with these ids.
-            data_set_external_ids (Sequence[str]): Return only events in the specified data sets with these external ids.
+            asset_subtree_ids (Union[int, Sequence[int]]): Asset subtree id or list of asset subtree ids to filter on.
+            asset_subtree_external_ids (Union[str, Sequence[str]]): Asset subtree external id or list of asset subtree external ids to filter on.
+            data_set_ids (Union[int, Sequence[int]]): Return only events in the specified data set(s) with this id / these ids.
+            data_set_external_ids (Sequence[str]): Return only events in the specified data set(s) with this external id / these external ids.
             source (str): The source of this event.
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
@@ -67,19 +69,15 @@ class EventsAPI(APIClient):
             sort (Sequence[str]): Sort by array of selected fields. Ex: ["startTime:desc']. Default sort order is asc when ommitted. Filter accepts following field names: startTime, endTime, createdTime, lastUpdatedTime. We only support 1 field for now.
             limit (int, optional): Maximum number of events to return. Defaults to return all items.
             partitions (int): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed.
+                To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions.
+                When using more than 10 partitions, actual throughout decreases.
+                In future releases of the APIs, CDF may reject requests with more than 10 partitions.
 
         Yields:
-            Union[Event, EventList]: yields Event one by one if chunk is not specified, else EventList objects.
+            Union[Event, EventList]: yields Event one by one if chunk_size is not specified, else EventList objects.
         """
-        asset_subtree_ids_processed = None
-        if asset_subtree_ids or asset_subtree_external_ids:
-            asset_subtree_ids_processed = IdentifierSequence.load(
-                asset_subtree_ids, asset_subtree_external_ids
-            ).as_dicts()
-
-        data_set_ids_processed = None
-        if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
+        asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
+        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
         filter = EventFilter(
             start_time=start_time,
@@ -119,7 +117,7 @@ class EventsAPI(APIClient):
         return cast(Iterator[Event], self())
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Event]:
-        """`Retrieve a single event by id. <https://docs.cognite.com/api/v1/#operation/getEventByInternalId>`_
+        """`Retrieve a single event by id. <https://developer.cognite.com/api#tag/Events/operation/getEventByInternalId>`_
 
         Args:
             id (int, optional): ID
@@ -151,7 +149,7 @@ class EventsAPI(APIClient):
         external_ids: Optional[Sequence[str]] = None,
         ignore_unknown_ids: bool = False,
     ) -> EventList:
-        """`Retrieve multiple events by id. <https://docs.cognite.com/api/v1/#operation/byIdsEvents>`_
+        """`Retrieve multiple events by id. <https://developer.cognite.com/api#tag/Events/operation/byIdsEvents>`_
 
         Args:
             ids (Sequence[int], optional): IDs
@@ -190,19 +188,19 @@ class EventsAPI(APIClient):
         metadata: Dict[str, str] = None,
         asset_ids: Sequence[int] = None,
         asset_external_ids: Sequence[str] = None,
-        asset_subtree_ids: Sequence[int] = None,
-        asset_subtree_external_ids: Sequence[str] = None,
-        data_set_ids: Sequence[int] = None,
-        data_set_external_ids: Sequence[str] = None,
+        asset_subtree_ids: Union[int, Sequence[int]] = None,
+        asset_subtree_external_ids: Union[str, Sequence[str]] = None,
+        data_set_ids: Union[int, Sequence[int]] = None,
+        data_set_external_ids: Union[str, Sequence[str]] = None,
         source: str = None,
         created_time: Union[Dict[str, Any], TimestampRange] = None,
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
         external_id_prefix: str = None,
         sort: Sequence[str] = None,
         partitions: int = None,
-        limit: int = 25,
+        limit: int = LIST_LIMIT_DEFAULT,
     ) -> EventList:
-        """`List events <https://docs.cognite.com/api/v1/#operation/advancedListEvents>`_
+        """`List events <https://developer.cognite.com/api#tag/Events/operation/advancedListEvents>`_
 
         Args:
             start_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
@@ -213,16 +211,19 @@ class EventsAPI(APIClient):
             metadata (Dict[str, str]): Customizable extra data about the event. String key -> String value.
             asset_ids (Sequence[int]): Asset IDs of related equipments that this event relates to.
             asset_external_ids (Sequence[str]): Asset External IDs of related equipment that this event relates to.
-            asset_subtree_ids (Sequence[int]): List of asset subtrees ids to filter on.
-            asset_subtree_external_ids (Sequence[str]): List of asset subtrees external ids to filter on.
-            data_set_ids (Sequence[int]): Return only events in the specified data sets with these ids.
-            data_set_external_ids (Sequence[str]): Return only events in the specified data sets with these external ids.
+            asset_subtree_ids (Union[int, Sequence[int]]): Asset subtree id or list of asset subtree ids to filter on.
+            asset_subtree_external_ids (Union[str, Sequence[str]]): Asset subtree external id or list of asset subtree external ids to filter on.
+            data_set_ids (Union[int, Sequence[int]]): Return only events in the specified data set(s) with this id / these ids.
+            data_set_external_ids (Sequence[str]): Return only events in the specified data set(s) with this external id / these external ids.
             source (str): The source of this event.
             created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             external_id_prefix (str): External Id provided by client. Should be unique within the project.
             sort (Sequence[str]): Sort by array of selected fields. Ex: ["startTime:desc']. Default sort order is asc when ommitted. Filter accepts following field names: startTime, endTime, createdTime, lastUpdatedTime. We only support 1 field for now.
             partitions (int): Retrieve events in parallel using this number of workers. Also requires `limit=None` to be passed.
+                To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions.
+                When using more than 10 partitions, actual throughout decreases.
+                In future releases of the APIs, CDF may reject requests with more than 10 partitions.
             limit (int, optional): Maximum number of events to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
 
@@ -251,15 +252,8 @@ class EventsAPI(APIClient):
                 >>> for event_list in c.events(chunk_size=2500):
                 ...     event_list # do something with the events
         """
-        asset_subtree_ids_processed = None
-        if asset_subtree_ids or asset_subtree_external_ids:
-            asset_subtree_ids_processed = IdentifierSequence.load(
-                asset_subtree_ids, asset_subtree_external_ids
-            ).as_dicts()
-
-        data_set_ids_processed = None
-        if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
+        asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
+        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
         if end_time and ("max" in end_time or "min" in end_time) and "isNull" in end_time:
             raise ValueError("isNull cannot be used with min or max values")
@@ -291,7 +285,7 @@ class EventsAPI(APIClient):
         )
 
     def aggregate(self, filter: Union[EventFilter, Dict] = None) -> List[AggregateResult]:
-        """`Aggregate events <https://docs.cognite.com/api/v1/#operation/aggregateEvents>`_
+        """`Aggregate events <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
 
         Args:
             filter (Union[EventFilter, Dict]): Filter on events filter with exact match
@@ -313,7 +307,7 @@ class EventsAPI(APIClient):
     def aggregate_unique_values(
         self, filter: Union[EventFilter, Dict] = None, fields: Sequence[str] = None
     ) -> List[AggregateUniqueValuesResult]:
-        """`Aggregate unique values for events <https://docs.cognite.com/api/v1/#operation/aggregateEvents>`_
+        """`Aggregate unique values for events <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
 
         Args:
             filter (Union[EventFilter, Dict]): Filter on events filter with exact match
@@ -342,7 +336,7 @@ class EventsAPI(APIClient):
         ...
 
     def create(self, event: Union[Event, Sequence[Event]]) -> Union[Event, EventList]:
-        """`Create one or more events. <https://docs.cognite.com/api/v1/#operation/createEvents>`_
+        """`Create one or more events. <https://developer.cognite.com/api#tag/Events/operation/createEvents>`_
 
         Args:
             event (Union[Event, Sequence[Event]]): Event or list of events to create.
@@ -368,7 +362,7 @@ class EventsAPI(APIClient):
         external_id: Union[str, Sequence[str]] = None,
         ignore_unknown_ids: bool = False,
     ) -> None:
-        """`Delete one or more events <https://docs.cognite.com/api/v1/#operation/deleteEvents>`_
+        """`Delete one or more events <https://developer.cognite.com/api#tag/Events/operation/deleteEvents>`_
 
         Args:
             id (Union[int, Sequence[int]): Id or list of ids
@@ -400,7 +394,7 @@ class EventsAPI(APIClient):
         ...
 
     def update(self, item: Union[Event, EventUpdate, Sequence[Union[Event, EventUpdate]]]) -> Union[Event, EventList]:
-        """`Update one or more events <https://docs.cognite.com/api/v1/#operation/updateEvents>`_
+        """`Update one or more events <https://developer.cognite.com/api#tag/Events/operation/updateEvents>`_
 
         Args:
             item (Union[Event, EventUpdate, Sequence[Union[Event, EventUpdate]]]): Event(s) to update
@@ -429,7 +423,7 @@ class EventsAPI(APIClient):
         return self._update_multiple(list_cls=EventList, resource_cls=Event, update_cls=EventUpdate, items=item)
 
     def search(self, description: str = None, filter: Union[EventFilter, Dict] = None, limit: int = 100) -> EventList:
-        """`Search for events <https://docs.cognite.com/api/v1/#operation/searchEvents>`_
+        """`Search for events <https://developer.cognite.com/api#tag/Events/operation/searchEvents>`_
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:

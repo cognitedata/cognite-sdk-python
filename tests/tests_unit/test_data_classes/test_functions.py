@@ -81,6 +81,7 @@ class TestFunction:
 
     @pytest.mark.parametrize("limit", [2, None, -1, float("inf")])
     def test_list_schedules(self, function, function_schedules, limit):
+        function._cognite_client.functions.schedules._LIST_LIMIT_CEILING = 10
         function._cognite_client.functions.schedules.list.side_effect = [
             [function_schedules[0]],
             [function_schedules[1]],
@@ -105,7 +106,6 @@ class TestFunctionCall:
         assert {
             "cursor": None,
             "limit": 25,
-            "filter": {},
         } == jsgz_load(calls[0].request.body)
 
     def test_get_function_call_with_filter(self, cognite_client, mock_function_call_resp):

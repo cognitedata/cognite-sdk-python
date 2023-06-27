@@ -1,10 +1,32 @@
 from __future__ import annotations
 
+import functools
+import inspect
 from collections import UserList
-from concurrent.futures.thread import ThreadPoolExecutor
-from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union
+from concurrent.futures import CancelledError, ThreadPoolExecutor
+from copy import copy
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Literal,
+    Optional,
+    Protocol,
+    Sequence,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, CogniteNotFoundError
+from cognite.client.utils._priority_tpe import PriorityThreadPoolExecutor
+
+if TYPE_CHECKING:
+    from types import TracebackType
 
 
 class TasksSummary:
@@ -109,38 +131,156 @@ def collect_exc_info_and_raise(
         ) from dup_exc
 
 
-def execute_tasks_concurrently(
-    func: Callable, tasks: Union[Sequence[Tuple], List[Dict]], max_workers: int
-) -> TasksSummary:
+T_Result = TypeVar("T_Result", covariant=True)
+
+
+class TaskExecutor(Protocol):
+    def submit(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any) -> TaskFuture[T_Result]:
+        ...
+
+
+class TaskFuture(Protocol[T_Result]):
+    def result(self) -> T_Result:
+        ...
+
+
+class SyncFuture(TaskFuture[T_Result]):
+    def __init__(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any):
+        self._task = functools.partial(fn, *args, **kwargs)
+        self._result: Optional[T_Result] = None
+        self._is_cancelled = False
+
+    def result(self) -> T_Result:
+        if self._is_cancelled:
+            raise CancelledError
+        if self._result is None:
+            self._result = self._task()
+        return self._result
+
+    def cancel(self) -> None:
+        self._is_cancelled = True
+
+
+class MainThreadExecutor(TaskExecutor):
+    """
+    In order to support executing sdk methods in the browser using pyodide (a port of CPython to webassembly),
+    we need to be able to turn off the usage of threading. So we have this executor which implements the Executor
+    protocol but just executes everything serially in the main thread.
+    """
+
+    def __init__(self) -> None:
+        # This "queue" is not used, but currently needed because of the datapoints logic that
+        # decides when to add new tasks to the task executor task pool.
+        class AlwaysEmpty:
+            def empty(self) -> Literal[True]:
+                return True
+
+        self._work_queue = AlwaysEmpty()
+
+    def submit(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any) -> SyncFuture:
+        if "priority" in inspect.signature(fn).parameters:
+            raise TypeError(f"Given function {fn} cannot accept reserved parameter name `priority`")
+        kwargs.pop("priority", None)
+        return SyncFuture(fn, *args, **kwargs)
+
+    def shutdown(self, wait: bool = False) -> None:
+        return None
+
+    @staticmethod
+    def as_completed(it: Iterable[SyncFuture]) -> Iterator[SyncFuture]:
+        return iter(copy(it))
+
+    def __enter__(self) -> MainThreadExecutor:
+        return self
+
+    def __exit__(
+        self,
+        type: Optional[type[BaseException]],
+        value: Optional[BaseException],
+        traceback: Optional[TracebackType],
+    ) -> None:
+        self.shutdown()
+
+
+_THREAD_POOL_EXECUTOR_SINGLETON: ThreadPoolExecutor
+_MAIN_THREAD_EXECUTOR_SINGLETON = MainThreadExecutor()
+
+
+class ConcurrencySettings:
+    executor_type: Literal["threadpool", "mainthread"] = "threadpool"
+    priority_executor_type: Literal["priority_threadpool", "mainthread"] = "priority_threadpool"
+
+
+def get_executor(max_workers: int) -> TaskExecutor:
+    global _THREAD_POOL_EXECUTOR_SINGLETON
+
     if max_workers < 1:
         raise RuntimeError(f"Number of workers should be >= 1, was {max_workers}")
 
-    with ThreadPoolExecutor(max_workers) as p:
-        futures = []
-        for task in tasks:
-            if isinstance(task, dict):
-                futures.append(p.submit(func, **task))
-            elif isinstance(task, tuple):
-                futures.append(p.submit(func, *task))
+    if ConcurrencySettings.executor_type == "threadpool":
+        try:
+            executor: TaskExecutor = _THREAD_POOL_EXECUTOR_SINGLETON
+        except NameError:
+            # TPE has not been initialized
+            executor = _THREAD_POOL_EXECUTOR_SINGLETON = ThreadPoolExecutor(max_workers)
+    elif ConcurrencySettings.executor_type == "mainthread":
+        executor = _MAIN_THREAD_EXECUTOR_SINGLETON
+    else:
+        raise RuntimeError(f"Invalid executor type '{ConcurrencySettings.executor_type}'")
+    return executor
 
-        successful_tasks = []
-        failed_tasks = []
-        unknown_result_tasks = []
-        results = []
-        exceptions = []
-        for i, f in enumerate(futures):
-            try:
-                res = f.result()
-                successful_tasks.append(tasks[i])
-                results.append(res)
-            except Exception as e:
-                exceptions.append(e)
-                if isinstance(e, CogniteAPIError):
-                    if e.code < 500:
-                        failed_tasks.append(tasks[i])
-                    else:
-                        unknown_result_tasks.append(tasks[i])
-                else:
-                    failed_tasks.append(tasks[i])
 
-        return TasksSummary(successful_tasks, unknown_result_tasks, failed_tasks, results, exceptions)
+def get_priority_executor(max_workers: int) -> PriorityThreadPoolExecutor:
+    if max_workers < 1:
+        raise RuntimeError(f"Number of workers should be >= 1, was {max_workers}")
+
+    if ConcurrencySettings.priority_executor_type == "priority_threadpool":
+        return PriorityThreadPoolExecutor(max_workers)
+    elif ConcurrencySettings.priority_executor_type == "mainthread":
+        return MainThreadExecutor()  # type: ignore [return-value]
+
+    raise RuntimeError(f"Invalid priority-queue executor type '{ConcurrencySettings.priority_executor_type}'")
+
+
+def execute_tasks(
+    func: Callable[..., T_Result],
+    tasks: Union[Sequence[Tuple], List[Dict]],
+    max_workers: int,
+    executor: Optional[TaskExecutor] = None,
+) -> TasksSummary:
+    """
+    Will use a default executor if one is not passed explicitly. The default executor type uses a thread pool but can
+    be changed using ExecutorSettings.executor_type.
+    """
+    executor = executor or get_executor(max_workers)
+    futures = []
+    for task in tasks:
+        if isinstance(task, dict):
+            futures.append(executor.submit(func, **task))
+        elif isinstance(task, tuple):
+            futures.append(executor.submit(func, *task))
+
+    successful_tasks = []
+    failed_tasks = []
+    unknown_result_tasks = []
+    results = []
+    exceptions = []
+    for i, f in enumerate(futures):
+        try:
+            res = f.result()
+            successful_tasks.append(tasks[i])
+            results.append(res)
+        except Exception as e:
+            exceptions.append(e)
+            if classify_error(e) == "failed":
+                failed_tasks.append(tasks[i])
+            else:
+                unknown_result_tasks.append(tasks[i])
+
+    return TasksSummary(successful_tasks, unknown_result_tasks, failed_tasks, results, exceptions)
+
+
+def classify_error(err: Exception) -> Literal["failed", "unknown"]:
+    if isinstance(err, CogniteAPIError) and err.code >= 500:
+        return "unknown"
+    return "failed"

@@ -4,9 +4,10 @@ import time
 from numbers import Number
 from typing import TYPE_CHECKING, Dict, List, Optional, Union, cast
 
-from cognite.client._constants import LIST_LIMIT_CEILING, LIST_LIMIT_DEFAULT
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList, CogniteResponse
 from cognite.client.data_classes.shared import TimestampRange
+from cognite.client.utils._auxiliary import is_unlimited
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -25,7 +26,6 @@ class Function(CogniteResource):
         file_id (int): File id of the code represented by this object.
         function_path (str): Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on posix path format.
         created_time (int): Created time in UNIX.
-        api_key (str): Api key attached to the function.
         secrets (Dict[str, str]): Secrets attached to the function ((key, value) pairs).
         env_vars (Dict[str, str]): User specified environment variables on the function ((key, value) pairs).
         cpu (Number): Number of CPU cores per function. Defaults to 0.25. Allowed values are in the range [0.1, 0.6].
@@ -48,7 +48,6 @@ class Function(CogniteResource):
         file_id: int = None,
         function_path: str = None,
         created_time: int = None,
-        api_key: str = None,
         secrets: Dict = None,
         env_vars: Dict = None,
         cpu: Number = None,
@@ -68,7 +67,6 @@ class Function(CogniteResource):
         self.file_id = file_id
         self.function_path = function_path
         self.created_time = created_time
-        self.api_key = api_key
         self.secrets = secrets
         self.env_vars = env_vars
         self.cpu = cpu
@@ -134,8 +132,8 @@ class Function(CogniteResource):
         )
         schedules_by_id = self._cognite_client.functions.schedules.list(function_id=self.id, limit=limit)
 
-        if limit in [float("inf"), -1, None]:
-            limit = LIST_LIMIT_CEILING
+        if is_unlimited(limit):
+            limit = self._cognite_client.functions.schedules._LIST_LIMIT_CEILING
 
         return (schedules_by_external_id + schedules_by_id)[:limit]
 
@@ -211,6 +209,7 @@ class FunctionSchedule(CogniteResource):
         cron_expression (str): Cron expression
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         session_id (int): ID of the session running with the schedule.
+        when (str): When the schedule will trigger, in human readable text (server generated from cron_expression).
         cognite_client (CogniteClient): An optional CogniteClient to associate with this data class.
     """
 
@@ -224,6 +223,7 @@ class FunctionSchedule(CogniteResource):
         created_time: int = None,
         cron_expression: str = None,
         session_id: int = None,
+        when: str = None,
         cognite_client: CogniteClient = None,
     ) -> None:
         self.id = id
@@ -234,14 +234,15 @@ class FunctionSchedule(CogniteResource):
         self.cron_expression = cron_expression
         self.created_time = created_time
         self.session_id = session_id
+        self.when = when
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def get_input_data(self) -> dict:
+    def get_input_data(self) -> Optional[dict]:
         """
         Retrieve the input data to the associated function.
 
         Returns:
-            Input data to the associated function. This data is passed
+            Optional[Dict]: Input data to the associated function or None if not set. This data is passed
             deserialized into the function through the data argument.
         """
         return self._cognite_client.functions.schedules.get_input_data(id=self.id)
@@ -263,11 +264,11 @@ class FunctionSchedulesFilter(CogniteFilter):
         self.cron_expression = cron_expression
 
 
-class FunctionSchedulesList(CogniteResourceList):
+class FunctionSchedulesList(CogniteResourceList[FunctionSchedule]):
     _RESOURCE = FunctionSchedule
 
 
-class FunctionList(CogniteResourceList):
+class FunctionList(CogniteResourceList[Function]):
     _RESOURCE = Function
 
 
@@ -340,7 +341,7 @@ class FunctionCall(CogniteResource):
             time.sleep(1.0)
 
 
-class FunctionCallList(CogniteResourceList):
+class FunctionCallList(CogniteResourceList[FunctionCall]):
     _RESOURCE = FunctionCall
 
 
@@ -363,7 +364,7 @@ class FunctionCallLogEntry(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
 
-class FunctionCallLog(CogniteResourceList):
+class FunctionCallLog(CogniteResourceList[FunctionCallLogEntry]):
     _RESOURCE = FunctionCallLogEntry
 
 

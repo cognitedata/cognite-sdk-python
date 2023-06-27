@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterator, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence, Union, cast
 
 from cognite.client._api_client import APIClient
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import (
     DataSet,
     DataSetAggregate,
@@ -13,12 +14,16 @@ from cognite.client.data_classes import (
 )
 from cognite.client.utils._identifier import IdentifierSequence
 
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
+
 
 class DataSetsAPI(APIClient):
     _RESOURCE_PATH = "/datasets"
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
         self._CREATE_LIMIT = 10
 
     def __call__(
@@ -69,7 +74,7 @@ class DataSetsAPI(APIClient):
         return cast(Iterator[DataSet], self())
 
     def create(self, data_set: Union[DataSet, Sequence[DataSet]]) -> Union[DataSet, DataSetList]:
-        """`Create one or more data sets. <https://docs.cognite.com/api/v1/#operation/createDataSets>`_
+        """`Create one or more data sets. <https://developer.cognite.com/api#tag/Data-sets/operation/createDataSets>`_
 
         Args:
             data_set: Union[DataSet, Sequence[DataSet]]: Data set or list of data sets to create.
@@ -90,7 +95,7 @@ class DataSetsAPI(APIClient):
         return self._create_multiple(list_cls=DataSetList, resource_cls=DataSet, items=data_set)
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[DataSet]:
-        """`Retrieve a single data set by id. <https://docs.cognite.com/api/v1/#operation/getDataSets>`_
+        """`Retrieve a single data set by id. <https://developer.cognite.com/api#tag/Data-sets/operation/getDataSets>`_
 
         Args:
             id (int, optional): ID
@@ -122,7 +127,7 @@ class DataSetsAPI(APIClient):
         external_ids: Optional[Sequence[str]] = None,
         ignore_unknown_ids: bool = False,
     ) -> DataSetList:
-        """`Retrieve multiple data sets by id. <https://docs.cognite.com/api/v1/#operation/getDataSets>`_
+        """`Retrieve multiple data sets by id. <https://developer.cognite.com/api#tag/Data-sets/operation/getDataSets>`_
 
         Args:
             ids (Sequence[int], optional): IDs
@@ -158,9 +163,9 @@ class DataSetsAPI(APIClient):
         last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
         external_id_prefix: str = None,
         write_protected: bool = None,
-        limit: int = 25,
+        limit: int = LIST_LIMIT_DEFAULT,
     ) -> DataSetList:
-        """`List data sets <https://docs.cognite.com/api/v1/#operation/listDataSets>`_
+        """`List data sets <https://developer.cognite.com/api#tag/Data-sets/operation/listDataSets>`_
 
         Args:
             metadata (Dict[str, str]): Custom, application-specific metadata. String key -> String value.
@@ -207,7 +212,7 @@ class DataSetsAPI(APIClient):
         return self._list(list_cls=DataSetList, resource_cls=DataSet, method="POST", limit=limit, filter=filter)
 
     def aggregate(self, filter: Union[DataSetFilter, Dict] = None) -> List[DataSetAggregate]:
-        """`Aggregate data sets <https://docs.cognite.com/api/v1/#operation/aggregateDataSets>`_
+        """`Aggregate data sets <https://developer.cognite.com/api#tag/Data-sets/operation/aggregateDataSets>`_
 
         Args:
             filter (Union[DataSetFilter, Dict]): Filter on data set filter with exact match
@@ -229,7 +234,7 @@ class DataSetsAPI(APIClient):
     def update(
         self, item: Union[DataSet, DataSetUpdate, Sequence[Union[DataSet, DataSetUpdate]]]
     ) -> Union[DataSet, DataSetList]:
-        """`Update one or more data sets <https://docs.cognite.com/api/v1/#operation/updateDataSets>`_
+        """`Update one or more data sets <https://developer.cognite.com/api#tag/Data-sets/operation/updateDataSets>`_
 
         Args:
             item: Union[DataSet, DataSetUpdate, Sequence[Union[DataSet, DataSetUpdate]]]: Data set(s) to update

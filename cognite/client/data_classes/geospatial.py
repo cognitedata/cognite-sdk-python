@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 
 from cognite.client import utils
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
-from cognite.client.utils._auxiliary import to_snake_case
+from cognite.client.utils._text import to_camel_case, to_snake_case
 
 if TYPE_CHECKING:
     import geopandas
@@ -49,7 +49,7 @@ class FeatureType(CogniteResource):
         return instance
 
 
-class FeatureTypeList(CogniteResourceList):
+class FeatureTypeList(CogniteResourceList[FeatureType]):
     _RESOURCE = FeatureType
 
 
@@ -119,14 +119,14 @@ class Feature(CogniteResource):
         return instance
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        def to_camel_case(key: str) -> str:
+        def handle_case(key: str) -> str:
             # Keep properties defined in Feature Type as is
             if camel_case and key in self.PRE_DEFINED_SNAKE_CASE_NAMES:
-                return utils._auxiliary.to_camel_case(key)
+                return to_camel_case(key)
             return key
 
         return {
-            to_camel_case(key): value
+            handle_case(key): value
             for key, value in self.__dict__.items()
             if value is not None and not key.startswith("_")
         }
@@ -169,15 +169,11 @@ def _is_geometry_type(property_type: str) -> bool:
     }
 
 
-def _is_reserved_property(property_name: str) -> bool:
-    return property_name.startswith("_") or property_name in RESERVED_PROPERTIES
-
-
 def _to_feature_property_name(property_name: str) -> str:
     return to_snake_case(property_name) if property_name in RESERVED_PROPERTIES else property_name
 
 
-class FeatureList(CogniteResourceList):
+class FeatureList(CogniteResourceList[Feature]):
     _RESOURCE = Feature
 
     def to_geopandas(self, geometry: str, camel_case: bool = False) -> geopandas.GeoDataFrame:
@@ -305,7 +301,7 @@ class FeatureAggregate(CogniteResource):
         return instance
 
 
-class FeatureAggregateList(CogniteResourceList):
+class FeatureAggregateList(CogniteResourceList[FeatureAggregate]):
     _RESOURCE = FeatureAggregate
 
 
@@ -333,7 +329,7 @@ class CoordinateReferenceSystem(CogniteResource):
         return instance
 
 
-class CoordinateReferenceSystemList(CogniteResourceList):
+class CoordinateReferenceSystemList(CogniteResourceList[CoordinateReferenceSystem]):
     _RESOURCE = CoordinateReferenceSystem
 
 
@@ -420,7 +416,7 @@ class GeospatialComputedItem(CogniteResource):
         return instance
 
 
-class GeospatialComputedItemList(CogniteResourceList):
+class GeospatialComputedItemList(CogniteResourceList[GeospatialComputedItem]):
     "A list of items computed from geospatial."
     _RESOURCE = GeospatialComputedItem
 

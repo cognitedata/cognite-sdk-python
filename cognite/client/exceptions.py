@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import json
 import reprlib
-from typing import Callable, Dict, List, Sequence
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Sequence
+
+if TYPE_CHECKING:
+    from cognite.client.data_classes import AssetHierarchy
 
 
 class CogniteException(Exception):
@@ -14,7 +17,8 @@ class CogniteConnectionError(CogniteException):
 
 
 class CogniteConnectionRefused(CogniteConnectionError):
-    pass
+    def __str__(self) -> str:
+        return "Cognite API connection refused. Please try again later."
 
 
 class CogniteReadTimeout(CogniteException):
@@ -52,13 +56,16 @@ class CogniteAPIError(CogniteMultiException):
     failed to be processed (4xx).
 
     Args:
-        message (str): The error message produced by the API
-        code (int): The error code produced by the failure
+        message (str): The error message produced by the API.
+        code (int): The error code produced by the failure.
         x_request_id (str): The request-id generated for the failed request.
-        extra (Dict): A dict of any additional information.
+        missing: (List) List of missing identifiers.
+        duplicated: (List) List of duplicated identifiers.
         successful (List): List of items which were successfully processed.
         failed (List): List of items which failed.
         unknown (List): List of items which may or may not have been successfully processed.
+        unwrap_fn: (Callable): Function to extract identifier from the Cognite resource.
+        extra (Dict): A dict of any additional information.
 
     Examples:
         Catching an API-error and handling it based on the error code::
@@ -69,7 +76,7 @@ class CogniteAPIError(CogniteMultiException):
             c = CogniteClient()
 
             try:
-                c.login.status()
+                c.iam.token.inspect()
             except CogniteAPIError as e:
                 if e.code == 401:
                     print("You are not authorized")
@@ -149,10 +156,11 @@ class CogniteDuplicatedError(CogniteMultiException):
     Raised if one or more of the referenced ids/external ids have been duplicated in the request.
 
     Args:
-        duplicated (list): The duplicated ids.
+        duplicated (List): The duplicated ids.
         successful (List): List of items which were successfully processed.
         failed (List): List of items which failed.
         unknown (List): List of items which may or may not have been successfully processed.
+        unwrap_fn: (Callable): Function to extract identifier from the Cognite resource.
     """
 
     def __init__(
@@ -204,11 +212,46 @@ class CogniteAuthError(CogniteException):
     ...
 
 
-class CogniteAPIKeyError(CogniteAuthError):
-    """Cognite API Key Error.
+class CogniteAssetHierarchyError(CogniteException, AssertionError):
+    """Cognite Asset Hierarchy validation Error.
 
-    Raised if the API key is missing or invalid.
+    Raised if the given assets form an invalid hierarchy (by CDF standards).
+
+    Note:
+        For historical reasons, we make the error catchable as an AssertionError.
+
+    Args:
+        message (str): The error message to output.
+        hierarchy (AssetHierarchy): An instance of AssetHierarchy that holds various groups
+            of assets that failed validation.
     """
+
+    def __init__(self, message: str, hierarchy: AssetHierarchy) -> None:
+        self.message = message
+        self._hierarchy = hierarchy
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({str(self)})"
+
+    def __str__(self) -> str:
+        msg = self.message.strip() + " Issue(s): "
+        causes = ["duplicates", "invalid", "unsure_parents"]
+        if not self._hierarchy._ignore_orphans:
+            causes.append("orphans")
+
+        # We count the number of issues (duplicates need to be counted separately):
+        n_issues = [sum(map(len, self.duplicates.values())), *(len(getattr(self, cause)) for cause in causes[1:])]
+        if sum(n_issues):
+            return msg + ", ".join(f"{n} {cause}" for cause, n in zip(causes, n_issues) if n)
+        return msg + f"{len(self.cycles)} cycles"
+
+    def __getattr__(self, attr: str) -> Any:
+        try:
+            # We try to delegate failed attribute lookups to the underlying hierarchy:
+            return getattr(self._hierarchy, attr)
+        except AttributeError:
+            # It is confusing if the error mentions 'AssetHierarchy':
+            raise AttributeError(f"{type(self).__name__!r} object has no attribute {attr!r}") from None
 
 
 class ModelFailedException(Exception):

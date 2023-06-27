@@ -4,10 +4,12 @@ from copy import deepcopy
 from typing import Any, Collection, Dict, List, Optional, Sequence, Union, overload
 
 from cognite.client._api_client import APIClient
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import Annotation, AnnotationFilter, AnnotationList, AnnotationUpdate
 from cognite.client.data_classes._base import CogniteResource
-from cognite.client.utils._auxiliary import assert_type, to_camel_case
+from cognite.client.utils._auxiliary import assert_type
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._text import to_camel_case
 
 
 class AnnotationsAPI(APIClient):
@@ -22,7 +24,7 @@ class AnnotationsAPI(APIClient):
         ...
 
     def create(self, annotations: Union[Annotation, Sequence[Annotation]]) -> Union[Annotation, AnnotationList]:
-        """Create annotations
+        """`Create annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsCreate>`_
 
         Args:
             annotations (Union[Annotation, Sequence[Annotation]]): annotation(s) to create
@@ -44,7 +46,7 @@ class AnnotationsAPI(APIClient):
         ...
 
     def suggest(self, annotations: Union[Annotation, Sequence[Annotation]]) -> Union[Annotation, AnnotationList]:
-        """Suggest annotations
+        """`Suggest annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsSuggest>`_
 
         Args:
             annotations (Union[Annotation, Sequence[Annotation]]): annotation(s) to suggest. They must have status set to "suggested".
@@ -76,8 +78,8 @@ class AnnotationsAPI(APIClient):
             del item["status"]
         return item
 
-    def list(self, filter: Union[AnnotationFilter, Dict], limit: int = 25) -> AnnotationList:
-        """List annotations.
+    def list(self, filter: Union[AnnotationFilter, Dict], limit: int = LIST_LIMIT_DEFAULT) -> AnnotationList:
+        """`List annotations. <https://developer.cognite.com/api#tag/Annotations/operation/annotationsFilter>`_
 
         Args:
             limit (int): Maximum number of annotations to return. Defaults to 25.
@@ -127,17 +129,17 @@ class AnnotationsAPI(APIClient):
     def update(
         self, item: Union[Annotation, AnnotationUpdate, Sequence[Union[Annotation, AnnotationUpdate]]]
     ) -> Union[Annotation, AnnotationList]:
-        """Update annotations
+        """`Update annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsUpdate>`_
 
         Args:
-            id (Union[int, Sequence[int]]): ID or list of IDs to be deleted
+            item (Union[Annotation, AnnotationUpdate, Sequence[Union[Annotation, AnnotationUpdate]]]): Annotation or list of annotations to update (or patch or list of patches to apply)
         """
         return self._update_multiple(
             list_cls=AnnotationList, resource_cls=Annotation, update_cls=AnnotationUpdate, items=item
         )
 
     def delete(self, id: Union[int, Sequence[int]]) -> None:
-        """Delete annotations
+        """`Delete annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsDelete>`_
 
         Args:
             id (Union[int, Sequence[int]]): ID or list of IDs to be deleted
@@ -145,7 +147,7 @@ class AnnotationsAPI(APIClient):
         self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=True)
 
     def retrieve_multiple(self, ids: Sequence[int]) -> AnnotationList:
-        """Retrieve annotations by IDs
+        """`Retrieve annotations by IDs <https://developer.cognite.com/api#tag/Annotations/operation/annotationsByids>`_`
 
         Args:
             ids (Sequence[int]]: list of IDs to be retrieved
@@ -157,7 +159,7 @@ class AnnotationsAPI(APIClient):
         return self._retrieve_multiple(list_cls=AnnotationList, resource_cls=Annotation, identifiers=identifiers)
 
     def retrieve(self, id: int) -> Optional[Annotation]:
-        """Retrieve an annotation by id
+        """`Retrieve an annotation by id <https://developer.cognite.com/api#tag/Annotations/operation/annotationsGet>`_
 
         Args:
             id (int): id of the annotation to be retrieved

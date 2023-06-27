@@ -1,8 +1,9 @@
+import os
 import string
 
 import pytest
 
-from cognite.client.credentials import OAuthClientCredentials
+from cognite.client.credentials import OAuthClientCertificate, OAuthClientCredentials
 from cognite.client.data_classes import (
     DataSet,
     Transformation,
@@ -11,8 +12,18 @@ from cognite.client.data_classes import (
     TransformationUpdate,
 )
 from cognite.client.data_classes.transformations import ContainsAny
-from cognite.client.data_classes.transformations.common import NonceCredentials, OidcCredentials, SequenceRows
-from cognite.client.utils._auxiliary import random_string
+from cognite.client.data_classes.transformations.common import (
+    DataModelInfo,
+    Edges,
+    EdgeType,
+    Instances,
+    Nodes,
+    NonceCredentials,
+    OidcCredentials,
+    SequenceRows,
+    ViewInfo,
+)
+from cognite.client.utils._text import random_string
 
 
 @pytest.fixture
@@ -34,7 +45,8 @@ def new_datasets(cognite_client):
 def new_transformation(cognite_client, new_datasets):
     prefix = random_string(6, string.ascii_letters)
     creds = cognite_client.config.credentials
-    assert isinstance(creds, OAuthClientCredentials)
+    if not isinstance(creds, (OAuthClientCredentials, OAuthClientCertificate)):
+        pytest.skip("Only run in CI environment")
     transform = Transformation(
         name="any",
         query="select 1",
@@ -45,14 +57,14 @@ def new_transformation(cognite_client, new_datasets):
             client_id="invalidClientId",
             client_secret="InvalidClientSecret",
             scopes=",".join(creds.scopes),
-            token_uri=creds.token_url,
+            token_uri="InvalidTokenUrl",
             cdf_project_name=cognite_client.config.project,
         ),
         destination_oidc_credentials=OidcCredentials(
             client_id="invalidClientId",
             client_secret="InvalidClientSecret",
             scopes=",".join(creds.scopes),
-            token_uri=creds.token_url,
+            token_uri="InvalidTokenUrl",
             cdf_project_name=cognite_client.config.project,
         ),
     )
@@ -86,6 +98,31 @@ class TestTransformationsAPI:
         prefix = random_string(6, string.ascii_letters)
         transform = Transformation(
             name="any", external_id=f"{prefix}-transformation", destination=TransformationDestination.assets()
+        )
+        ts = cognite_client.transformations.create(transform)
+        cognite_client.transformations.delete(id=ts.id)
+
+    def test_create_asset_with_source_destination_oidc_transformation(self, cognite_client):
+        prefix = random_string(6, string.ascii_letters)
+        transform = Transformation(
+            name="any",
+            external_id=f"{prefix}-transformation",
+            destination=TransformationDestination.assets(),
+            query="select * from _cdf.assets",
+            source_oidc_credentials=OidcCredentials(
+                client_id=cognite_client._config.credentials.client_id,
+                client_secret=cognite_client._config.credentials.client_secret,
+                scopes="https://bluefield.cognitedata.com/.default",
+                token_uri="https://login.microsoftonline.com/b86328db-09aa-4f0e-9a03-0136f604d20a/oauth2/v2.0/token",
+                cdf_project_name="extractor-bluefield-testing",
+            ),
+            destination_oidc_credentials=OidcCredentials(
+                client_id=cognite_client._config.credentials.client_id,
+                client_secret=cognite_client._config.credentials.client_secret,
+                scopes="https://bluefield.cognitedata.com/.default",
+                token_uri="https://login.microsoftonline.com/b86328db-09aa-4f0e-9a03-0136f604d20a/oauth2/v2.0/token",
+                cdf_project_name="extractor-bluefield-testing2",
+            ),
         )
         ts = cognite_client.transformations.create(transform)
         cognite_client.transformations.delete(id=ts.id)
@@ -128,28 +165,156 @@ class TestTransformationsAPI:
             tags=["vu", "hai"],
         )
         ts = cognite_client.transformations.create(transform)
-        assert set(["vu", "hai"]) == set(ts.tags)
+        assert {"vu", "hai"} == set(ts.tags)
         cognite_client.transformations.delete(id=ts.id)
 
-    @pytest.mark.skip
-    def test_create_dmi_transformation(self, cognite_client):
+    def test_create_instance_nodes_transformation(self, cognite_client):
         prefix = random_string(6, string.ascii_letters)
+        nodes = TransformationDestination.nodes(
+            view=ViewInfo(
+                space="test-space", external_id="testInstanceViewExternalId", version="testInstanceViewVersion"
+            ),
+            instance_space="test-space",
+        )
         transform = Transformation(
             name="any",
             external_id=f"{prefix}-transformation",
-            destination=TransformationDestination.data_model_instances(
-                model_external_id="testInstance",
-                space_external_id="test-space",
-                instance_space_external_id="test-space",
-            ),
+            destination=nodes,
         )
         ts = cognite_client.transformations.create(transform)
-        assert (
-            ts.destination.type == "data_model_instances"
-            and ts.destination.model_external_id == "testInstance"
-            and ts.destination.space_external_id == "test-space"
-            and ts.destination.instance_space_external_id == "test-space"
+        assert isinstance(ts.destination, Nodes)
+        assert ts.destination.type == "nodes"
+
+        assert isinstance(ts.destination.view, ViewInfo)
+        assert ts.destination.view.space == "test-space"
+        assert ts.destination.view.external_id == "testInstanceViewExternalId"
+        assert ts.destination.view.version == "testInstanceViewVersion"
+
+        assert ts.destination.instance_space == "test-space"
+
+        cognite_client.transformations.delete(id=ts.id)
+
+    def test_create_instance_edges_view_transformation(self, cognite_client):
+        prefix = random_string(6, string.ascii_letters)
+        edges = TransformationDestination.edges(
+            view=ViewInfo(
+                external_id="view-testInstanceViewExternalId",
+                version="view-testInstanceViewVersion",
+                space="view-test-space",
+            ),
+            instance_space="test-instance-space",
+            edge_type=None,
         )
+
+        transform = Transformation(
+            name="any",
+            external_id=f"{prefix}-transformation",
+            destination=edges,
+        )
+        ts = cognite_client.transformations.create(transform)
+        assert ts.destination.type == "edges"
+        assert isinstance(ts.destination, Edges)
+        assert isinstance(ts.destination.view, ViewInfo)
+
+        assert ts.destination.view.external_id == "view-testInstanceViewExternalId"
+        assert ts.destination.view.version == "view-testInstanceViewVersion"
+        assert ts.destination.view.space == "view-test-space"
+
+        assert ts.destination.instance_space == "test-instance-space"
+        assert ts.destination.edge_type is None
+
+        cognite_client.transformations.delete(id=ts.id)
+
+    def test_create_instance_edges_type_transformation(self, cognite_client):
+        prefix = random_string(6, string.ascii_letters)
+        edges = TransformationDestination.edges(
+            view=None,
+            instance_space="test-instance-space",
+            edge_type=EdgeType(
+                space="edge_type-space",
+                external_id="edge_type-edge",
+            ),
+        )
+
+        transform = Transformation(
+            name="any",
+            external_id=f"{prefix}-transformation",
+            destination=edges,
+        )
+        ts = cognite_client.transformations.create(transform)
+        assert ts.destination.type == "edges"
+        assert isinstance(ts.destination, Edges)
+
+        assert ts.destination.view is None
+
+        assert ts.destination.instance_space == "test-instance-space"
+        assert isinstance(ts.destination.edge_type, EdgeType)
+        assert ts.destination.edge_type.space == "edge_type-space"
+        assert ts.destination.edge_type.external_id == "edge_type-edge"
+
+        cognite_client.transformations.delete(id=ts.id)
+
+    def test_create_instance_type_data_model_transformation(self, cognite_client):
+        prefix = random_string(6, string.ascii_letters)
+        instances = TransformationDestination.instances(
+            data_model=DataModelInfo(
+                space="authorBook",
+                external_id="author_book",
+                version="2",
+                destination_type="AuthorBook_relation",
+                destination_relationship_from_type=None,
+            ),
+            instance_space="test-instanceSpace",
+        )
+        transform = Transformation(
+            name="any",
+            external_id=f"{prefix}-transformation",
+            query="SELECT * FROM my_source_table",
+            destination=instances,
+        )
+        ts = cognite_client.transformations.create(transform)
+        assert isinstance(ts.destination, Instances)
+        assert ts.destination.type == "instances"
+
+        assert isinstance(ts.destination.data_model, DataModelInfo)
+        assert ts.destination.data_model.space == "authorBook"
+        assert ts.destination.data_model.external_id == "author_book"
+        assert ts.destination.data_model.version == "2"
+        assert ts.destination.data_model.destination_type == "AuthorBook_relation"
+        assert ts.destination.instance_space == "test-instanceSpace"
+
+        cognite_client.transformations.delete(id=ts.id)
+
+    def test_create_instance_relationship_data_model_transformation(self, cognite_client):
+        prefix = random_string(6, string.ascii_letters)
+        instances = TransformationDestination.instances(
+            data_model=DataModelInfo(
+                space="authorBook",
+                external_id="author_book",
+                version="2",
+                destination_type="AuthorBook_relation",
+                destination_relationship_from_type="author_book",
+            ),
+            instance_space="test-instanceSpace",
+        )
+        transform = Transformation(
+            name="any",
+            external_id=f"{prefix}-transformation",
+            query="SELECT * FROM my_source_table",
+            destination=instances,
+        )
+        ts = cognite_client.transformations.create(transform)
+        assert isinstance(ts.destination, Instances)
+        assert ts.destination.type == "instances"
+
+        assert isinstance(ts.destination.data_model, DataModelInfo)
+        assert ts.destination.data_model.space == "authorBook"
+        assert ts.destination.data_model.external_id == "author_book"
+        assert ts.destination.data_model.version == "2"
+        assert ts.destination.data_model.destination_type == "AuthorBook_relation"
+        assert ts.destination.data_model.destination_relationship_from_type == "author_book"
+        assert ts.destination.instance_space == "test-instanceSpace"
+
         cognite_client.transformations.delete(id=ts.id)
 
     def test_create_sequence_rows_transformation(self, cognite_client):
@@ -220,6 +385,9 @@ class TestTransformationsAPI:
             and updated_transformation.query == retrieved_transformation.query == "SELECT * from _cdf.assets"
         )
 
+    @pytest.mark.skipif(
+        os.getenv("LOGIN_FLOW") == "client_certificate", reason="Sessions do not work with client_certificate"
+    )
     def test_update_nonce(self, cognite_client, new_transformation):
         session = cognite_client.iam.sessions.create()
         update_transformation = (
@@ -237,6 +405,9 @@ class TestTransformationsAPI:
             and retrieved_transformation.destination_session.session_id == session.id
         )
 
+    @pytest.mark.skipif(
+        os.getenv("LOGIN_FLOW") == "client_certificate", reason="Sessions do not work with client_certificate"
+    )
     def test_update_nonce_full(self, cognite_client, new_transformation):
         session = cognite_client.iam.sessions.create()
         new_transformation.source_nonce = NonceCredentials(session.id, session.nonce, cognite_client._config.project)
@@ -279,20 +450,60 @@ class TestTransformationsAPI:
         # just make sure it doesnt raise exceptions
         str(query_result)
 
-    def test_update_dmi(self, cognite_client, new_transformation):
-        new_transformation.destination = TransformationDestination.data_model_instances(
-            "myTest", "test-space", "test-space"
+    def test_update_instance_nodes(self, cognite_client, new_transformation):
+        new_transformation.destination = TransformationDestination.nodes(
+            ViewInfo("myViewExternalId", "myViewVersion", "test-space"), "test-space"
         )
         partial_update = TransformationUpdate(id=new_transformation.id).destination.set(
-            TransformationDestination.data_model_instances("myTest2", "test-space", "test-space")
+            TransformationDestination.nodes(ViewInfo("myViewExternalId", "myViewVersion2", "test-space"), "test-space")
         )
         updated_transformation = cognite_client.transformations.update(new_transformation)
-        assert updated_transformation.destination == TransformationDestination.data_model_instances(
-            "myTest", "test-space", "test-space"
+        assert updated_transformation.destination == TransformationDestination.nodes(
+            ViewInfo("myViewExternalId", "myViewVersion", "test-space"), "test-space"
         )
         partial_updated = cognite_client.transformations.update(partial_update)
-        assert partial_updated.destination == TransformationDestination.data_model_instances(
-            "myTest2", "test-space", "test-space"
+        assert partial_updated.destination == TransformationDestination.nodes(
+            ViewInfo("myViewExternalId", "myViewVersion2", "test-space"), "test-space"
+        )
+
+    def test_update_instance_edges(self, cognite_client, new_transformation):
+        new_transformation.destination = TransformationDestination.edges(
+            instance_space="test-space", edge_type=EdgeType("edge-space", "myEdge")
+        )
+        partial_update = TransformationUpdate(id=new_transformation.id).destination.set(
+            TransformationDestination.edges(
+                instance_space="test-space",
+                edge_type=EdgeType("edge-space2", "myEdge2"),
+            )
+        )
+        updated_transformation = cognite_client.transformations.update(new_transformation)
+        assert updated_transformation.destination == TransformationDestination.edges(
+            None, "test-space", EdgeType("edge-space", "myEdge")
+        )
+        partial_updated = cognite_client.transformations.update(partial_update)
+        assert partial_updated.destination == TransformationDestination.edges(
+            None,
+            "test-space",
+            EdgeType("edge-space2", "myEdge2"),
+        )
+
+    def test_update_instance_data_model(self, cognite_client, new_transformation):
+        new_transformation.destination = TransformationDestination.instances(
+            DataModelInfo("authorBook", "author_book", "2", "AuthorBook_relation", None), "test-instanceSpace"
+        )
+        partial_update = TransformationUpdate(id=new_transformation.id).destination.set(
+            TransformationDestination.instances(
+                DataModelInfo("authorBook", "author_book", "2", "AuthorBook_relation", "author_book"),
+                "test-instanceSpace",
+            )
+        )
+        updated_transformation = cognite_client.transformations.update(new_transformation)
+        assert updated_transformation.destination == TransformationDestination.instances(
+            DataModelInfo("authorBook", "author_book", "2", "AuthorBook_relation", None), "test-instanceSpace"
+        )
+        partial_updated = cognite_client.transformations.update(partial_update)
+        assert partial_updated.destination == TransformationDestination.instances(
+            DataModelInfo("authorBook", "author_book", "2", "AuthorBook_relation", "author_book"), "test-instanceSpace"
         )
 
     def test_update_sequence_rows_update(self, cognite_client, new_transformation):
@@ -307,7 +518,7 @@ class TestTransformationsAPI:
     def test_update_transformations_with_tags(self, cognite_client, new_transformation):
         new_transformation.tags = ["emel", "OPs"]
         updated_transformation = cognite_client.transformations.update(new_transformation)
-        assert set(["emel", "OPs"]) == set(updated_transformation.tags)
+        assert {"emel", "OPs"} == set(updated_transformation.tags)
 
     def test_update_transformations_with_tags_partial(self, cognite_client, new_transformation):
         partial_update = TransformationUpdate(id=new_transformation.id).tags.set(["jaime"])
@@ -315,12 +526,12 @@ class TestTransformationsAPI:
         assert partial_updated.tags == ["jaime"]
         partial_update2 = TransformationUpdate(id=new_transformation.id).tags.add(["andres", "silva"])
         partial_updated2 = cognite_client.transformations.update(partial_update2)
-        assert set(partial_updated2.tags) == set(["jaime", "andres", "silva"])
+        assert set(partial_updated2.tags) == {"jaime", "andres", "silva"}
         partial_update3 = (
             TransformationUpdate(id=new_transformation.id).tags.add(["tharindu"]).tags.remove(["andres", "silva"])
         )
         partial_updated3 = cognite_client.transformations.update(partial_update3)
-        assert set(partial_updated3.tags) == set(["jaime", "tharindu"])
+        assert set(partial_updated3.tags) == {"jaime", "tharindu"}
 
     def test_filter_transformations_by_tags(self, cognite_client, new_transformation, other_transformation):
         new_transformation.tags = ["hello"]
@@ -329,7 +540,7 @@ class TestTransformationsAPI:
         ts = cognite_client.transformations.list(tags=ContainsAny(["hello"]))
         assert ts[0].id == new_transformation.id and ts[0].tags == ["hello"]
         ts3 = cognite_client.transformations.list(tags=ContainsAny(["hello", "kiki"]))
-        assert len(ts3) == 2 and set([i.id for i in ts3]) == set([new_transformation.id, other_transformation.id])
+        assert len(ts3) == 2 and {i.id for i in ts3} == {new_transformation.id, other_transformation.id}
 
     def test_transformation_str_function(self, cognite_client, new_transformation, new_datasets):
         cognite_client.transformations.schedules.create(
@@ -354,8 +565,6 @@ class TestTransformationsAPI:
             "conflict_mode": "upsert",
             "is_public": True,
             "ignore_null_fields": False,
-            "has_source_api_key": False,
-            "has_destination_api_key": False,
             "has_source_oidc_credentials": True,
             "has_destination_oidc_credentials": True,
             "created_time": None,

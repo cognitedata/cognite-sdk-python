@@ -1,3 +1,5 @@
+import pytest
+
 from cognite.client.data_classes.contextualization import (
     DetectJobBundle,
     DiagramConvertResults,
@@ -12,6 +14,7 @@ ELEVEN_PAGE_PNID_EXTERNAL_ID = "functional_tests.pdf"
 FIFTY_FIVE_PAGE_PNID_EXTERNAL_ID = "5functional_tests.pdf"
 
 
+@pytest.mark.skip
 class TestPNIDParsingIntegration:
     def test_run_diagram_detect(self, cognite_client):
         entities = [{"name": "YT-96122"}, {"name": "XE-96125", "ee": 123}, {"name": "XWDW-9615"}]

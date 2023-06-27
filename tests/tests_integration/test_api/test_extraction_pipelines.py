@@ -1,9 +1,10 @@
 import pytest
 
+from cognite.client import CogniteClient
 from cognite.client.data_classes import ExtractionPipeline, ExtractionPipelineRun, ExtractionPipelineUpdate
 from cognite.client.data_classes.extractionpipelines import ExtractionPipelineContact
 from cognite.client.exceptions import CogniteNotFoundError
-from cognite.client.utils._auxiliary import random_string
+from cognite.client.utils._text import random_string
 
 
 @pytest.fixture
@@ -68,38 +69,50 @@ class TestExtractionPipelinesAPI:
         intial_message = cognite_client.extraction_pipelines.retrieve(new_extpipe.id).last_message
         assert intial_message is None
 
-        cognite_client.extraction_pipeline_runs.create(
-            ExtractionPipelineRun(external_id=new_extpipe.external_id, status="failure", message="Oh no!")
+        cognite_client.extraction_pipelines.runs.create(
+            ExtractionPipelineRun(status="failure", message="Oh no!", extpipe_external_id=new_extpipe.external_id)
         )
         new_message = cognite_client.extraction_pipelines.retrieve(new_extpipe.id).last_message
         assert new_message == "Oh no!"
 
     def test_last_run_times(self, cognite_client, new_extpipe: ExtractionPipeline):
-        extpipe = cognite_client.extraction_pipelines.retrieve(external_id=new_extpipe.external_id)
+        retrieve = cognite_client.extraction_pipelines.retrieve
+        extpipe = retrieve(external_id=new_extpipe.external_id)
         assert extpipe.last_failure == 0
         assert extpipe.last_success == 0
         assert extpipe.last_seen == 0
 
-        cognite_client.extraction_pipeline_runs.create(
-            ExtractionPipelineRun(external_id=new_extpipe.external_id, status="seen")
-        )
-        extpipe = cognite_client.extraction_pipelines.retrieve(external_id=new_extpipe.external_id)
+        # IDEA: Add convenience method to update an ext.pipe? (inspiration, see: FunctionsAPI)
+        new_run = cognite_client.extraction_pipelines.runs.create
+        new_run(ExtractionPipelineRun(extpipe_external_id=new_extpipe.external_id, status="seen"))
+        extpipe = retrieve(external_id=new_extpipe.external_id)
         assert extpipe.last_failure == 0
         assert extpipe.last_success == 0
         assert extpipe.last_seen != 0
 
-        cognite_client.extraction_pipeline_runs.create(
-            ExtractionPipelineRun(external_id=new_extpipe.external_id, status="success")
-        )
-        extpipe = cognite_client.extraction_pipelines.retrieve(external_id=new_extpipe.external_id)
+        new_run(ExtractionPipelineRun(extpipe_external_id=new_extpipe.external_id, status="success"))
+        extpipe = retrieve(external_id=new_extpipe.external_id)
         assert extpipe.last_failure == 0
         assert extpipe.last_success != 0
         assert extpipe.last_seen != 0
 
-        cognite_client.extraction_pipeline_runs.create(
-            ExtractionPipelineRun(external_id=new_extpipe.external_id, status="failure")
-        )
-        extpipe = cognite_client.extraction_pipelines.retrieve(external_id=new_extpipe.external_id)
+        new_run(ExtractionPipelineRun(extpipe_external_id=new_extpipe.external_id, status="failure"))
+        extpipe = retrieve(external_id=new_extpipe.external_id)
         assert extpipe.last_failure != 0
         assert extpipe.last_success != 0
         assert extpipe.last_seen != 0
+
+    def test_list_extraction_pipeline_runs(
+        self, cognite_client: CogniteClient, new_extpipe: ExtractionPipeline
+    ) -> None:
+        cognite_client.extraction_pipelines.runs.create(
+            ExtractionPipelineRun(extpipe_external_id=new_extpipe.external_id, status="seen")
+        )
+        res = cognite_client.extraction_pipelines.runs.list(new_extpipe.external_id)
+        for run in res:
+            assert run.extpipe_external_id == new_extpipe.external_id
+
+        # Make sure we can dump it without errors
+        dumped = res.dump()
+        for run in dumped:
+            assert run["external_id"] == new_extpipe.external_id

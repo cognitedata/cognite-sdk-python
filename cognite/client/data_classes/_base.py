@@ -2,13 +2,29 @@ from __future__ import annotations
 
 import json
 from collections import UserList
-from typing import TYPE_CHECKING, Any, Collection, Dict, Generic, List, Optional, Sequence, Type, TypeVar, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Collection,
+    Dict,
+    Generic,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    SupportsIndex,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
 from cognite.client import utils
 from cognite.client.exceptions import CogniteMissingClientError
-from cognite.client.utils._auxiliary import convert_all_keys_to_camel_case, to_camel_case, to_snake_case
 from cognite.client.utils._identifier import IdentifierSequence
-from cognite.client.utils._pandas_helpers import notebook_display_with_fallback
+from cognite.client.utils._pandas_helpers import convert_nullable_int_cols, notebook_display_with_fallback
+from cognite.client.utils._text import convert_all_keys_to_camel_case, to_snake_case
 from cognite.client.utils._time import convert_time_attributes_to_datetime
 
 if TYPE_CHECKING:
@@ -173,7 +189,7 @@ class CognitePropertyClassUtil:
             self[schema_name] = value
 
 
-class CogniteResourceList(UserList):
+class CogniteResourceList(UserList, Generic[T_CogniteResource]):
     _RESOURCE: Type[CogniteResource]
 
     def __init__(self, resources: Collection[Any], cognite_client: CogniteClient = None):
@@ -200,6 +216,20 @@ class CogniteResourceList(UserList):
             raise CogniteMissingClientError
         return attr
 
+    def pop(self, i: int = -1) -> T_CogniteResource:
+        return super().pop(i)
+
+    def __iter__(self) -> Iterator[T_CogniteResource]:
+        return super().__iter__()
+
+    @overload
+    def __getitem__(self, item: SupportsIndex) -> T_CogniteResource:
+        ...
+
+    @overload
+    def __getitem__(self, item: slice) -> CogniteResourceList[T_CogniteResource]:
+        ...
+
     def __getitem__(self, item: Any) -> Any:
         value = super().__getitem__(item)
         if isinstance(item, slice):
@@ -213,6 +243,16 @@ class CogniteResourceList(UserList):
         item = convert_time_attributes_to_datetime(self.dump())
         return json.dumps(item, default=utils._auxiliary.json_dump_default, indent=4)
 
+    # TODO: We inherit a lot from UserList that we don't actually support...
+    def extend(self, other: Collection[Any]) -> None:  # type: ignore [override]
+        other_res_list = type(self)(other)  # See if we can accept the types
+        if set(self._id_to_item).isdisjoint(other_res_list._id_to_item):
+            super().extend(other)
+            self._external_id_to_item.update(other_res_list._external_id_to_item)
+            self._id_to_item.update(other_res_list._id_to_item)
+        else:
+            raise ValueError("Unable to extend as this would introduce duplicates")
+
     def dump(self, camel_case: bool = False) -> List[Dict[str, Any]]:
         """Dump the instance into a json serializable Python data type.
 
@@ -224,7 +264,7 @@ class CogniteResourceList(UserList):
         """
         return [resource.dump(camel_case) for resource in self.data]
 
-    def get(self, id: int = None, external_id: str = None) -> Optional[CogniteResource]:
+    def get(self, id: int = None, external_id: str = None) -> Optional[T_CogniteResource]:
         """Get an item from this list by id or exernal_id.
 
         Args:
@@ -247,13 +287,7 @@ class CogniteResourceList(UserList):
         """
         pd = cast(Any, utils._auxiliary.local_import("pandas"))
         df = pd.DataFrame(self.dump(camel_case=camel_case))
-        nullable_int_cols = ["start_time", "end_time", "asset_id", "parent_id", "data_set_id"]
-        if camel_case:
-            nullable_int_cols = list(map(to_camel_case, nullable_int_cols))
-
-        to_convert = df.columns.intersection(nullable_int_cols)
-        df[to_convert] = df[to_convert].astype("Int64")
-        return df
+        return convert_nullable_int_cols(df, camel_case)
 
     def _repr_html_(self) -> str:
         return notebook_display_with_fallback(self)
@@ -324,12 +358,13 @@ class CogniteUpdate:
         update_obj["modify"] = value
         self._update_object[name] = update_obj
 
-    def dump(self) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> Dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Returns:
             Dict[str, Any]: A dictionary representation of the instance.
         """
+        assert camel_case is True, "snake_case is currently unsupported"  # TODO maybe (when unifying classes)
         dumped: Dict[str, Any] = {"update": self._update_object}
         if self._id is not None:
             dumped["id"] = self._id
@@ -339,7 +374,7 @@ class CogniteUpdate:
 
     @classmethod
     def _get_update_properties(cls) -> List[str]:
-        return [key for key in cls.__dict__.keys() if (not key.startswith("_")) and (key not in ["labels", "columns"])]
+        return [key for key in cls.__dict__ if not (key.startswith("_") or key == "columns")]
 
 
 T_CogniteUpdate = TypeVar("T_CogniteUpdate", bound=CogniteUpdate)

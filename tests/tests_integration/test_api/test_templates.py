@@ -18,7 +18,7 @@ from cognite.client.exceptions import CogniteNotFoundError
 
 @pytest.fixture
 def new_template_group(cognite_client):
-    external_id = uuid.uuid4().hex[0:20]
+    external_id = uuid.uuid4().hex[:20]
     username = cognite_client.iam.token.inspect().subject
     template_group = cognite_client.templates.groups.create(
         TemplateGroup(
@@ -101,7 +101,7 @@ def new_view(cognite_client, new_template_group_version):
         None
 
 
-class TestTemplatescognite_client:
+class TestTemplatesCogniteClient:
     def test_groups_get_single(self, cognite_client, new_template_group):
         new_group, ext_id = new_template_group
         res = cognite_client.templates.groups.retrieve_multiple(external_ids=[new_group.external_id])

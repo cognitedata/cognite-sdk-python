@@ -9,7 +9,6 @@ from cognite.client.data_classes import (
     TransformationSchemaColumn,
     TransformationSchemaColumnList,
 )
-from cognite.client.data_classes.transformations.common import DataModelInstances
 
 
 class TransformationSchemaAPI(APIClient):
@@ -18,7 +17,7 @@ class TransformationSchemaAPI(APIClient):
     def retrieve(
         self, destination: TransformationDestination, conflict_mode: Optional[str] = None
     ) -> TransformationSchemaColumnList:
-        """`Get expected schema for a transformation destination. <https://docs.cognite.com/api/v1/#operation/getTransformationSchema>`_
+        """`Get expected schema for a transformation destination. <https://developer.cognite.com/api#tag/Schema/operation/getTransformationSchema>`_
 
         Args:
             destination (TransformationDestination): destination for which the schema is requested.
@@ -40,16 +39,12 @@ class TransformationSchemaAPI(APIClient):
         url_path = utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH + "/{}", str(destination.type))
         filter = destination.dump(True)
         filter.pop("type")
+        other_params = {"conflictMode": conflict_mode} if conflict_mode else None
 
-        if isinstance(destination, DataModelInstances):
-            filter["externalId"] = filter.pop("modelExternalId")
-            filter.pop("instanceSpaceExternalId")
-        if conflict_mode:
-            filter["conflictMode"] = conflict_mode
         return self._list(
             list_cls=TransformationSchemaColumnList,
             resource_cls=TransformationSchemaColumn,
             method="GET",
             resource_path=url_path,
-            filter=filter,
+            filter=other_params,
         )

@@ -33,4 +33,22 @@ To upgrade the version of this package:
 Contents
 ^^^^^^^^
 .. toctree::
-   cognite
+   quickstart
+   settings
+   credential_providers
+   cognite_client
+   extensions_and_optional_dependencies
+   identity_and_access_management
+   core_data_model
+   3d
+   contextualization
+   data_ingestion
+   data_organization
+   transformations
+   functions
+   data_modeling
+   deprecated
+   base_data_classes
+   exceptions
+   utils
+   testing

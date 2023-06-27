@@ -1,6 +1,33 @@
 import pytest
 
-from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client._constants import MAX_VALID_INTERNAL_ID
+from cognite.client.utils._identifier import DataModelingIdentifierSequence, Identifier, IdentifierSequence
+
+
+class TestIdentifier:
+    @pytest.mark.parametrize(
+        "id, external_id, exp_tpl",
+        (
+            (1, None, ("id", 1)),
+            (MAX_VALID_INTERNAL_ID, None, ("id", MAX_VALID_INTERNAL_ID)),
+            (None, "foo", ("external_id", "foo")),
+        ),
+    )
+    def test_of_either__normal_input(self, id, external_id, exp_tpl):
+        assert exp_tpl == Identifier.of_either(id, external_id).as_tuple(camel_case=False)
+
+    @pytest.mark.parametrize(
+        "id, external_id, err_msg",
+        (
+            (None, None, "Exactly one of id or external id must be specified, got neither"),
+            (123, "foo", "Exactly one of id or external id must be specified, got both"),
+            (0, None, f"Invalid id, must satisfy: 1 <= id <= {MAX_VALID_INTERNAL_ID}"),
+            (MAX_VALID_INTERNAL_ID + 1, None, f"Invalid id, must satisfy: 1 <= id <= {MAX_VALID_INTERNAL_ID}"),
+        ),
+    )
+    def test_of_either__bad_input(self, id, external_id, err_msg):
+        with pytest.raises(ValueError, match=err_msg):
+            Identifier.of_either(id, external_id)
 
 
 class TestIdentifierSequence:
@@ -56,3 +83,9 @@ class TestIdentifierSequence:
 
         seq = IdentifierSequence.of(external_ids)
         assert seq.is_singleton() is is_singleton
+
+
+class TestDataModelingIdentifierSequence:
+    def test_load_spaces_bad_input(self):
+        with pytest.raises(ValueError, match="No spaces specified."):
+            DataModelingIdentifierSequence.load_spaces([])

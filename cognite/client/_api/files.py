@@ -3,10 +3,25 @@ from __future__ import annotations
 import copy
 import os
 from pathlib import Path
-from typing import Any, BinaryIO, Dict, Iterator, List, Optional, Sequence, TextIO, Tuple, Union, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    BinaryIO,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    TextIO,
+    Tuple,
+    Union,
+    cast,
+    overload,
+)
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import (
     FileAggregate,
     FileMetadata,
@@ -20,6 +35,10 @@ from cognite.client.data_classes import (
     TimestampRange,
 )
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
+from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
+
+if TYPE_CHECKING:
+    from requests import Response
 
 
 class FilesAPI(APIClient):
@@ -33,10 +52,10 @@ class FilesAPI(APIClient):
         metadata: Dict[str, str] = None,
         asset_ids: Sequence[int] = None,
         asset_external_ids: Sequence[str] = None,
-        asset_subtree_ids: Sequence[int] = None,
-        asset_subtree_external_ids: Sequence[str] = None,
-        data_set_ids: Sequence[int] = None,
-        data_set_external_ids: Sequence[str] = None,
+        asset_subtree_ids: Union[int, Sequence[int]] = None,
+        asset_subtree_external_ids: Union[str, Sequence[str]] = None,
+        data_set_ids: Union[int, Sequence[int]] = None,
+        data_set_external_ids: Union[str, Sequence[str]] = None,
         labels: LabelFilter = None,
         geo_location: GeoLocationFilter = None,
         source: str = None,
@@ -62,10 +81,10 @@ class FilesAPI(APIClient):
             asset_ids (Sequence[int]): Only include files that reference these specific asset IDs.
             asset_subtree_external_ids (Sequence[str]): Only include files that reference these specific asset external IDs.
             root_asset_external_ids (Sequence[str]): The external IDs of the root assets that the related assets should be children of.
-            asset_subtree_ids (Sequence[int]): List of asset subtrees ids to filter on.
-            asset_subtree_external_ids (Sequence[str]): List of asset subtrees external ids to filter on.
-            data_set_ids (Sequence[int]): Return only files in the specified data sets with these ids.
-            data_set_external_ids (Sequence[str]): Return only files in the specified data sets with these external ids.
+            asset_subtree_ids (Union[int, Sequence[int]]): Asset subtree id or list of asset subtree ids to filter on.
+            asset_subtree_external_ids (Union[str, Sequence[str]]): Asset subtree external id or list of asset subtree external ids to filter on.
+            data_set_ids (Union[int, Sequence[int]]): Return only files in the specified data set(s) with this id / these ids.
+            data_set_external_ids (Sequence[str]): Return only files in the specified data set(s) with this external id / these external ids.
             labels (LabelFilter): Return only the files matching the specified label(s).
             geo_location (GeoLocationFilter): Only include files matching the specified geographic relation.
             source (str): The source of this event.
@@ -80,17 +99,10 @@ class FilesAPI(APIClient):
             limit (int, optional): Maximum number of files to return. Defaults to return all items.
 
         Yields:
-            Union[FileMetadata, FileMetadataList]: yields FileMetadata one by one if chunk is not specified, else FileMetadataList objects.
+            Union[FileMetadata, FileMetadataList]: yields FileMetadata one by one if chunk_size is not specified, else FileMetadataList objects.
         """
-        asset_subtree_ids_processed = None
-        if asset_subtree_ids or asset_subtree_external_ids:
-            asset_subtree_ids_processed = IdentifierSequence.load(
-                asset_subtree_ids, asset_subtree_external_ids
-            ).as_dicts()
-
-        data_set_ids_processed = None
-        if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
+        asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
+        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
         filter = FileMetadataFilter(
             name=name,
@@ -166,7 +178,7 @@ class FilesAPI(APIClient):
         return (file_metadata, upload_url)
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[FileMetadata]:
-        """`Retrieve a single file metadata by id. <https://docs.cognite.com/api/v1/#operation/getFileByInternalId>`_
+        """`Retrieve a single file metadata by id. <https://developer.cognite.com/api#tag/Files/operation/getFileByInternalId>`_
 
         Args:
             id (int, optional): ID
@@ -198,7 +210,7 @@ class FilesAPI(APIClient):
         external_ids: Optional[Sequence[str]] = None,
         ignore_unknown_ids: bool = False,
     ) -> FileMetadataList:
-        """`Retrieve multiple file metadatas by id. <https://docs.cognite.com/api/v1/#operation/byIdsFiles>`_
+        """`Retrieve multiple file metadatas by id. <https://developer.cognite.com/api#tag/Files/operation/byIdsFiles>`_
 
         Args:
             ids (Sequence[int], optional): IDs
@@ -237,10 +249,10 @@ class FilesAPI(APIClient):
         metadata: Dict[str, str] = None,
         asset_ids: Sequence[int] = None,
         asset_external_ids: Sequence[str] = None,
-        asset_subtree_ids: Sequence[int] = None,
-        asset_subtree_external_ids: Sequence[str] = None,
-        data_set_ids: Sequence[int] = None,
-        data_set_external_ids: Sequence[str] = None,
+        asset_subtree_ids: Union[int, Sequence[int]] = None,
+        asset_subtree_external_ids: Union[str, Sequence[str]] = None,
+        data_set_ids: Union[int, Sequence[int]] = None,
+        data_set_external_ids: Union[str, Sequence[str]] = None,
         labels: LabelFilter = None,
         geo_location: GeoLocationFilter = None,
         source: str = None,
@@ -252,9 +264,9 @@ class FilesAPI(APIClient):
         external_id_prefix: str = None,
         directory_prefix: str = None,
         uploaded: bool = None,
-        limit: int = 25,
+        limit: int = LIST_LIMIT_DEFAULT,
     ) -> FileMetadataList:
-        """`List files <https://docs.cognite.com/api/v1/#operation/advancedListFiles>`_
+        """`List files <https://developer.cognite.com/api#tag/Files/operation/advancedListFiles>`_
 
         Args:
             name (str): Name of the file.
@@ -262,10 +274,10 @@ class FilesAPI(APIClient):
             metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value
             asset_ids (Sequence[int]): Only include files that reference these specific asset IDs.
             asset_subtree_external_ids (Sequence[str]): Only include files that reference these specific asset external IDs.
-            asset_subtree_ids (Sequence[int]): List of asset subtrees ids to filter on.
-            asset_subtree_external_ids (Sequence[str]): List of asset subtrees external ids to filter on.
-            data_set_ids (Sequence[int]): Return only files in the specified data sets with these ids.
-            data_set_external_ids (Sequence[str]): Return only files in the specified data sets with these external ids.
+            asset_subtree_ids (Union[int, Sequence[int]]): Asset subtree id or list of asset subtree ids to filter on.
+            asset_subtree_external_ids (Union[str, Sequence[str]]): Asset subtree external id or list of asset subtree external ids to filter on.
+            data_set_ids (Union[int, Sequence[int]]): Return only files in the specified data set(s) with this id / these ids.
+            data_set_external_ids (Sequence[str]): Return only files in the specified data set(s) with this external id / these external ids.
             labels (LabelFilter): Return only the files matching the specified label filter(s).
             geo_location (GeoLocationFilter): Only include files matching the specified geographic relation.
             source (str): The source of this event.
@@ -321,15 +333,8 @@ class FilesAPI(APIClient):
                 >>> my_geo_location_filter = GeoLocationFilter(relation="intersects", shape=GeometryFilter(type="Point", coordinates=[35,10]))
                 >>> file_list = c.files.list(geo_location=my_geo_location_filter)
         """
-        asset_subtree_ids_processed = None
-        if asset_subtree_ids or asset_subtree_external_ids:
-            asset_subtree_ids_processed = IdentifierSequence.load(
-                asset_subtree_ids, asset_subtree_external_ids
-            ).as_dicts()
-
-        data_set_ids_processed = None
-        if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
+        asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
+        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
         filter = FileMetadataFilter(
             name=name,
@@ -357,7 +362,7 @@ class FilesAPI(APIClient):
         )
 
     def aggregate(self, filter: Union[FileMetadataFilter, Dict] = None) -> List[FileAggregate]:
-        """`Aggregate files <https://docs.cognite.com/api/v1/#operation/aggregateFiles>`_
+        """`Aggregate files <https://developer.cognite.com/api#tag/Files/operation/aggregateFiles>`_
 
         Args:
             filter (Union[FileMetadataFilter, Dict]): Filter on file metadata filter with exact match
@@ -377,7 +382,7 @@ class FilesAPI(APIClient):
         return self._aggregate(filter=filter, cls=FileAggregate)
 
     def delete(self, id: Union[int, Sequence[int]] = None, external_id: Union[str, Sequence[str]] = None) -> None:
-        """`Delete files <https://docs.cognite.com/api/v1/#operation/deleteFiles>`_
+        """`Delete files <https://developer.cognite.com/api#tag/Files/operation/deleteFiles>`_
 
         Args:
             id (Union[int, Sequence[int]]): Id or list of ids
@@ -407,7 +412,7 @@ class FilesAPI(APIClient):
     def update(
         self, item: Union[FileMetadata, FileMetadataUpdate, Sequence[Union[FileMetadata, FileMetadataUpdate]]]
     ) -> Union[FileMetadata, FileMetadataList]:
-        """`Update files <https://docs.cognite.com/api/v1/#operation/updateFiles>`_
+        """`Update files <https://developer.cognite.com/api#tag/Files/operation/updateFiles>`_
         Currently, a full replacement of labels on a file is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.
 
         Args:
@@ -461,7 +466,7 @@ class FilesAPI(APIClient):
     def search(
         self, name: str = None, filter: Optional[Union[FileMetadataFilter, dict]] = None, limit: int = 100
     ) -> FileMetadataList:
-        """`Search for files. <https://docs.cognite.com/api/v1/#operation/searchFiles>`_
+        """`Search for files. <https://developer.cognite.com/api#tag/Files/operation/searchFiles>`_
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:
@@ -508,7 +513,7 @@ class FilesAPI(APIClient):
         recursive: bool = False,
         overwrite: bool = False,
     ) -> Union[FileMetadata, FileMetadataList]:
-        """`Upload a file <https://docs.cognite.com/api/v1/#operation/initFileUpload>`_
+        """`Upload a file <https://developer.cognite.com/api#tag/Files/operation/initFileUpload>`_
 
         Args:
             path (str): Path to the file you wish to upload. If path is a directory, this method will upload all files in that directory.
@@ -609,7 +614,7 @@ class FilesAPI(APIClient):
                         file_metadata = copy.copy(file_metadata)
                         file_metadata.name = file_name
                         tasks.append((file_metadata, file_path, overwrite))
-            tasks_summary = utils._concurrency.execute_tasks_concurrently(
+            tasks_summary = utils._concurrency.execute_tasks(
                 self._upload_file_from_path, tasks, self._config.max_workers
             )
             tasks_summary.raise_compound_exception_if_failed_tasks(task_unwrap_fn=lambda x: x[0].name)
@@ -696,7 +701,7 @@ class FilesAPI(APIClient):
         )
         returned_file_metadata = res.json()
         upload_url = returned_file_metadata["uploadUrl"]
-        headers = {"X-Upload-Content-Type": file_metadata.mime_type}
+        headers = {"Content-Type": file_metadata.mime_type}
         self._http_client_with_retry.request(
             "PUT", upload_url, data=content, timeout=self._config.file_transfer_timeout, headers=headers
         )
@@ -727,9 +732,7 @@ class FilesAPI(APIClient):
             dict(url_path="/files/downloadlink", json={"items": id_batch}, params=query_params)
             for id_batch in id_batches
         ]
-        tasks_summary = utils._concurrency.execute_tasks_concurrently(
-            self._post, tasks, max_workers=self._config.max_workers
-        )
+        tasks_summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
         tasks_summary.raise_compound_exception_if_failed_tasks()
         results = tasks_summary.joined_results(unwrap_fn=lambda res: res.json()["items"])
         return {result.get("id") or result["externalId"]: result["downloadUrl"] for result in results}
@@ -740,7 +743,7 @@ class FilesAPI(APIClient):
         id: Union[int, Sequence[int]] = None,
         external_id: Union[str, Sequence[str]] = None,
     ) -> None:
-        """`Download files by id or external id. <https://docs.cognite.com/api/v1/#operation/downloadLinks>`_
+        """`Download files by id or external id. <https://developer.cognite.com/api#tag/Files/operation/downloadLinks>`_
 
         This method will stream all files to disk, never keeping more than 2MB in memory per worker.
         The files will be stored in the provided directory using the name retrieved from the file metadata in CDF.
@@ -775,10 +778,11 @@ class FilesAPI(APIClient):
 
         files_metadata = self.retrieve_multiple(ids=ids, external_ids=external_ids)
 
-        id_to_metadata = {}
+        id_to_metadata: dict[str | int, FileMetadata] = {}
         for f in files_metadata:
-            id_to_metadata[f.id] = f
-            id_to_metadata[f.external_id] = f
+            id_to_metadata[cast(int, f.id)] = f
+            if f.external_id is not None:
+                id_to_metadata[f.external_id] = f
 
         return id_to_metadata
 
@@ -789,7 +793,7 @@ class FilesAPI(APIClient):
         id_to_metadata: Dict[Union[str, int], FileMetadata],
     ) -> None:
         tasks = [(directory, id, id_to_metadata) for id in all_ids]
-        tasks_summary = utils._concurrency.execute_tasks_concurrently(
+        tasks_summary = utils._concurrency.execute_tasks(
             self._process_file_download, tasks, max_workers=self._config.max_workers
         )
         tasks_summary.raise_compound_exception_if_failed_tasks(
@@ -821,6 +825,7 @@ class FilesAPI(APIClient):
         with self._http_client_with_retry.request(
             "GET", download_link, stream=True, timeout=self._config.file_transfer_timeout
         ) as r:
+            r = cast("Response", r)
             with path.open("wb") as f:
                 for chunk in r.iter_content(chunk_size=chunk_size):
                     if chunk:  # filter out keep-alive new chunks

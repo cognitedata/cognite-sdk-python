@@ -4,23 +4,24 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence,
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client.config import ClientConfig
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import Database, DatabaseList, Row, RowList, Table, TableList
-from cognite.client.utils._auxiliary import local_import
+from cognite.client.utils._auxiliary import is_unlimited, local_import
 from cognite.client.utils._identifier import Identifier
 
 if TYPE_CHECKING:
     import pandas
 
     from cognite.client import CogniteClient
+    from cognite.client.config import ClientConfig
 
 
 class RawAPI(APIClient):
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.databases = RawDatabasesAPI(*args, **kwargs)
-        self.tables = RawTablesAPI(*args, **kwargs)
-        self.rows = RawRowsAPI(*args, **kwargs)
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self.databases = RawDatabasesAPI(config, api_version, cognite_client)
+        self.tables = RawTablesAPI(config, api_version, cognite_client)
+        self.rows = RawRowsAPI(config, api_version, cognite_client)
 
 
 class RawDatabasesAPI(APIClient):
@@ -51,7 +52,7 @@ class RawDatabasesAPI(APIClient):
         ...
 
     def create(self, name: Union[str, List[str]]) -> Union[Database, DatabaseList]:
-        """`Create one or more databases. <https://docs.cognite.com/api/v1/#operation/createDBs>`_
+        """`Create one or more databases. <https://developer.cognite.com/api#tag/Raw/operation/createDBs>`_
 
         Args:
             name (Union[str, List[str]]): A db name or list of db names to create.
@@ -75,7 +76,7 @@ class RawDatabasesAPI(APIClient):
         return self._create_multiple(list_cls=DatabaseList, resource_cls=Database, items=items)
 
     def delete(self, name: Union[str, Sequence[str]], recursive: bool = False) -> None:
-        """`Delete one or more databases. <https://docs.cognite.com/api/v1/#operation/deleteDBs>`_
+        """`Delete one or more databases. <https://developer.cognite.com/api#tag/Raw/operation/deleteDBs>`_
 
         Args:
             name (Union[str, Sequence[str]]): A db name or list of db names to delete.
@@ -101,13 +102,13 @@ class RawDatabasesAPI(APIClient):
             {"url_path": self._RESOURCE_PATH + "/delete", "json": {"items": chunk, "recursive": recursive}}
             for chunk in chunks
         ]
-        summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._config.max_workers)
+        summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda el: el["name"]
         )
 
-    def list(self, limit: int = 25) -> DatabaseList:
-        """`List databases <https://docs.cognite.com/api/v1/#operation/getDBs>`_
+    def list(self, limit: int = LIST_LIMIT_DEFAULT) -> DatabaseList:
+        """`List databases <https://developer.cognite.com/api#tag/Raw/operation/getDBs>`_
 
         Args:
             limit (int, optional): Maximum number of databases to return. Defaults to 25. Set to -1, float("inf") or None
@@ -175,7 +176,7 @@ class RawTablesAPI(APIClient):
         ...
 
     def create(self, db_name: str, name: Union[str, List[str]]) -> Union[Table, TableList]:
-        """`Create one or more tables. <https://docs.cognite.com/api/v1/#operation/createTables>`_
+        """`Create one or more tables. <https://developer.cognite.com/api#tag/Raw/operation/createTables>`_
 
         Args:
             db_name (str): Database to create the tables in.
@@ -206,7 +207,7 @@ class RawTablesAPI(APIClient):
         return self._set_db_name_on_tables(tb, db_name)
 
     def delete(self, db_name: str, name: Union[str, Sequence[str]]) -> None:
-        """`Delete one or more tables. <https://docs.cognite.com/api/v1/#operation/deleteTables>`_
+        """`Delete one or more tables. <https://developer.cognite.com/api#tag/Raw/operation/deleteTables>`_
 
         Args:
             db_name (str): Database to delete tables from.
@@ -235,13 +236,13 @@ class RawTablesAPI(APIClient):
             }
             for chunk in chunks
         ]
-        summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._config.max_workers)
+        summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda el: el["name"]
         )
 
-    def list(self, db_name: str, limit: int = 25) -> TableList:
-        """`List tables <https://docs.cognite.com/api/v1/#operation/getTables>`_
+    def list(self, db_name: str, limit: int = LIST_LIMIT_DEFAULT) -> TableList:
+        """`List tables <https://developer.cognite.com/api#tag/Raw/operation/getTables>`_
 
         Args:
             db_name (str): The database to list tables from.
@@ -296,12 +297,7 @@ class RawTablesAPI(APIClient):
 class RawRowsAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs/{}/tables/{}/rows"
 
-    def __init__(
-        self,
-        config: ClientConfig,
-        api_version: Optional[str] = None,
-        cognite_client: CogniteClient = None,
-    ) -> None:
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._CREATE_LIMIT = 5000
         self._LIST_LIMIT = 10000
@@ -325,8 +321,8 @@ class RawRowsAPI(APIClient):
             table_name (str): Name of the table to iterate over rows for
             chunk_size (int, optional): Number of rows to return in each chunk. Defaults to yielding one row a time.
             limit (int, optional): Maximum number of rows to return. Defaults to return all items.
-            min_last_updated_time (int): Rows must have been last updated after this time. ms since epoch.
-            max_last_updated_time (int): Rows must have been last updated before this time. ms since epoch.
+            min_last_updated_time (int): Rows must have been last updated after this time (exclusive). ms since epoch.
+            max_last_updated_time (int): Rows must have been last updated before this time (inclusive). ms since epoch.
             columns (List[str]): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
         """
         return self._list_generator(
@@ -346,7 +342,7 @@ class RawRowsAPI(APIClient):
     def insert(
         self, db_name: str, table_name: str, row: Union[Sequence[Row], Row, Dict], ensure_parent: bool = False
     ) -> None:
-        """`Insert one or more rows into a table. <https://docs.cognite.com/api/v1/#operation/postRows>`_
+        """`Insert one or more rows into a table. <https://developer.cognite.com/api#tag/Raw/operation/postRows>`_
 
         Args:
             db_name (str): Name of the database.
@@ -376,13 +372,13 @@ class RawRowsAPI(APIClient):
             }
             for chunk in chunks
         ]
-        summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._config.max_workers)
+        summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda row: row.get("key")
         )
 
     def insert_dataframe(self, db_name: str, table_name: str, dataframe: Any, ensure_parent: bool = False) -> None:
-        """`Insert pandas dataframe into a table <https://docs.cognite.com/api/v1/#operation/postRows>`_
+        """`Insert pandas dataframe into a table <https://developer.cognite.com/api#tag/Raw/operation/postRows>`_
 
         Use index as rowkeys.
 
@@ -410,7 +406,7 @@ class RawRowsAPI(APIClient):
         rows = [Row(key=key, columns=cols) for key, cols in df_dict.items()]
         self.insert(db_name=db_name, table_name=table_name, row=rows, ensure_parent=ensure_parent)
 
-    def _process_row_input(self, row: Union[Sequence[Row], Row, Dict]) -> List[Union[List, Dict]]:
+    def _process_row_input(self, row: Union[Sequence[Row], Row, Dict]) -> List[List[Dict]]:
         utils._auxiliary.assert_type(row, "row", [Sequence, dict, Row])
         rows = []
         if isinstance(row, dict):
@@ -427,7 +423,7 @@ class RawRowsAPI(APIClient):
         return utils._auxiliary.split_into_chunks(rows, self._CREATE_LIMIT)
 
     def delete(self, db_name: str, table_name: str, key: Union[str, Sequence[str]]) -> None:
-        """`Delete rows from a table. <https://docs.cognite.com/api/v1/#operation/deleteRows>`_
+        """`Delete rows from a table. <https://developer.cognite.com/api#tag/Raw/operation/deleteRows>`_
 
         Args:
             db_name (str): Name of the database.
@@ -461,13 +457,13 @@ class RawRowsAPI(APIClient):
             )
             for chunk in chunks
         ]
-        summary = utils._concurrency.execute_tasks_concurrently(self._post, tasks, max_workers=self._config.max_workers)
+        summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda el: el["key"]
         )
 
     def retrieve(self, db_name: str, table_name: str, key: str) -> Optional[Row]:
-        """`Retrieve a single row by key. <https://docs.cognite.com/api/v1/#operation/getRow>`_
+        """`Retrieve a single row by key. <https://developer.cognite.com/api#tag/Raw/operation/getRow>`_
 
         Args:
             db_name (str): Name of the database.
@@ -498,15 +494,15 @@ class RawRowsAPI(APIClient):
         min_last_updated_time: int = None,
         max_last_updated_time: int = None,
         columns: List[str] = None,
-        limit: int = 25,
+        limit: int = LIST_LIMIT_DEFAULT,
     ) -> RowList:
-        """`List rows in a table. <https://docs.cognite.com/api/v1/#operation/getRows>`_
+        """`List rows in a table. <https://developer.cognite.com/api#tag/Raw/operation/getRows>`_
 
         Args:
             db_name (str): Name of the database.
             table_name (str): Name of the table.
-            min_last_updated_time (int): Rows must have been last updated after this time. ms since epoch.
-            max_last_updated_time (int): Rows must have been last updated before this time. ms since epoch.
+            min_last_updated_time (int): Rows must have been last updated after this time (exclusive). ms since epoch.
+            max_last_updated_time (int): Rows must have been last updated before this time (inclusive). ms since epoch.
             columns (List[str]): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
             limit (int): The number of rows to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
@@ -535,7 +531,7 @@ class RawRowsAPI(APIClient):
                 >>> for row_list in c.raw.rows(db_name="db1", table_name="t1", chunk_size=2500):
                 ...     row_list # do something with the rows
         """
-        if limit in {None, -1, float("inf")}:
+        if is_unlimited(limit):
             cursors = self._get(
                 url_path=utils._auxiliary.interpolate_and_url_encode(
                     "/raw/dbs/{}/tables/{}/cursors", db_name, table_name
@@ -564,7 +560,7 @@ class RawRowsAPI(APIClient):
             )
             for cursor in cursors
         ]
-        summary = utils._concurrency.execute_tasks_concurrently(self._list, tasks, max_workers=self._config.max_workers)
+        summary = utils._concurrency.execute_tasks(self._list, tasks, max_workers=self._config.max_workers)
         if summary.exceptions:
             raise summary.exceptions[0]
         return RowList(summary.joined_results())
@@ -586,9 +582,9 @@ class RawRowsAPI(APIClient):
         min_last_updated_time: int = None,
         max_last_updated_time: int = None,
         columns: List[str] = None,
-        limit: int = 25,
+        limit: int = LIST_LIMIT_DEFAULT,
     ) -> pandas.DataFrame:
-        """`Retrieve rows in a table as a pandas dataframe. <https://docs.cognite.com/api/v1/#operation/getRows>`_
+        """`Retrieve rows in a table as a pandas dataframe. <https://developer.cognite.com/api#tag/Raw/operation/getRows>`_
 
         Rowkeys are used as the index.
 

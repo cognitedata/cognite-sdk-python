@@ -1,7 +1,9 @@
+import math
 import random
 import re
 import time
 import uuid
+from pathlib import Path
 
 import pytest
 
@@ -24,6 +26,8 @@ from cognite.client.exceptions import CogniteAPIError
 from tests.utils import set_request_limit
 
 FIXED_SRID = 121111 + random.randint(0, 1_000)
+
+GEOSPATIAL_TEST_RESOURCES = Path(__file__).parent / "geospatial_test_resources"
 
 
 @pytest.fixture()
@@ -192,7 +196,6 @@ def clean_old_feature_types(cognite_client):
             feature_type_age_in_milliseconds = time.time() * 1000 - ft.last_updated_time
             one_hour_in_milliseconds = 3600 * 1000
             if feature_type_age_in_milliseconds > one_hour_in_milliseconds:
-                print(f"Deleting old feature type {ft.external_id}")
                 cognite_client.geospatial.delete_feature_types(external_id=ft.external_id, recursive=True)
     except Exception:
         pass
@@ -641,10 +644,8 @@ class TestGeospatialAPI:
             raster_property_name="raster",
             raster_format="XYZ",
         )
-        raster_content = open(
-            "tests/tests_integration/test_api/geospatial_test_resources/raster-grid-example.xyz", "rb"
-        ).read()
-        assert res == raster_content
+        raster_content = (GEOSPATIAL_TEST_RESOURCES / "raster-grid-example.xyz").read_text()
+        assert res.decode(encoding="utf-8") == raster_content
 
         res = cognite_client.geospatial.get_raster(
             feature_type_external_id=test_feature_type.external_id,
@@ -653,10 +654,8 @@ class TestGeospatialAPI:
             raster_format="XYZ",
             raster_options={"DECIMAL_PRECISION": 5},
         )
-        raster_content = open(
-            "tests/tests_integration/test_api/geospatial_test_resources/raster-grid-5-decimal.xyz", "rb"
-        ).read()
-        assert res == raster_content
+        raster_content = (GEOSPATIAL_TEST_RESOURCES / "raster-grid-5-decimal.xyz").read_text()
+        assert res.decode(encoding="utf-8") == raster_content
 
     def test_get_raster_with_transformation(self, cognite_client, test_feature_type, test_feature_with_raster):
         res = cognite_client.geospatial.get_raster(
@@ -667,10 +666,8 @@ class TestGeospatialAPI:
             raster_srid=54030,
             allow_crs_transformation=True,
         )
-        raster_content = open(
-            "tests/tests_integration/test_api/geospatial_test_resources/raster-grid-54030-example.xyz", "rb"
-        ).read()
-        assert res == raster_content
+        raster_content = (GEOSPATIAL_TEST_RESOURCES / "raster-grid-54030-example.xyz").read_text()
+        assert res.decode(encoding="utf-8") == raster_content
 
     def test_retrieve_features_with_raster_property(self, cognite_client, test_feature_type, test_feature_with_raster):
         res = cognite_client.geospatial.retrieve_features(
@@ -710,8 +707,8 @@ class TestGeospatialAPI:
         assert res.skew_x == 0.0
         assert res.skew_y == 0.0
         assert res.srid == 3857
-        assert res.upper_left_x == -0.5891363261459447
-        assert res.upper_left_y == -0.31623471547260973
+        assert math.isclose(res.upper_left_x, -0.5891363261459447)
+        assert math.isclose(res.upper_left_y, -0.316234582133065)
 
     def test_delete_raster(self, cognite_client, test_feature_type, test_feature_with_raster):
         res = cognite_client.geospatial.delete_raster(

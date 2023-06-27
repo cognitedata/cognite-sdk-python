@@ -14,7 +14,7 @@ DEFAULT_CONFIG = HTTPClientConfig(
     max_backoff_seconds=30,
     max_retries_total=10,
     max_retries_read=5,
-    max_retries_connect=5,
+    max_retries_connect=4,
     max_retries_status=10,
 )
 
@@ -81,6 +81,7 @@ class TestHTTPClient:
         retry_tracker = _RetryTracker(cnf)
         c = HTTPClient(
             config=cnf,
+            refresh_auth_header=lambda headers: None,
             retry_tracker_factory=lambda _: retry_tracker,
             session=MagicMock(
                 request=MagicMock(
@@ -104,6 +105,7 @@ class TestHTTPClient:
         retry_tracker = _RetryTracker(cnf)
         c = HTTPClient(
             config=cnf,
+            refresh_auth_header=lambda headers: None,
             retry_tracker_factory=lambda _: retry_tracker,
             session=MagicMock(
                 request=MagicMock(
@@ -120,12 +122,13 @@ class TestHTTPClient:
         assert retry_tracker.connect == DEFAULT_CONFIG.max_retries_connect
         assert retry_tracker.status == 0
 
-    def test_connection_refused_not_retried(self):
+    def test_connection_refused_retried(self):
         cnf = DEFAULT_CONFIG
         cnf.max_backoff_seconds = 0
         retry_tracker = _RetryTracker(cnf)
         c = HTTPClient(
             config=cnf,
+            refresh_auth_header=lambda headers: None,
             retry_tracker_factory=lambda _: retry_tracker,
             session=MagicMock(
                 request=MagicMock(
@@ -139,10 +142,7 @@ class TestHTTPClient:
         with pytest.raises(CogniteConnectionRefused):
             c.request("GET", "bla")
 
-        assert retry_tracker.total == 1
-        assert retry_tracker.read == 0
-        assert retry_tracker.connect == 1
-        assert retry_tracker.status == 0
+        assert retry_tracker.total == DEFAULT_CONFIG.max_retries_connect
 
     def test_status_errors(self):
         cnf = DEFAULT_CONFIG
@@ -150,6 +150,7 @@ class TestHTTPClient:
         retry_tracker = _RetryTracker(cnf)
         c = HTTPClient(
             config=cnf,
+            refresh_auth_header=lambda headers: None,
             retry_tracker_factory=lambda _: retry_tracker,
             session=MagicMock(request=MagicMock(return_value=MagicMock(status_code=429))),
         )

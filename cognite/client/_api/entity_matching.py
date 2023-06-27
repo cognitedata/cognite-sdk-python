@@ -11,7 +11,7 @@ from cognite.client.data_classes.contextualization import (
     EntityMatchingModelList,
     EntityMatchingModelUpdate,
 )
-from cognite.client.utils._auxiliary import convert_true_match
+from cognite.client.utils._auxiliary import convert_true_match, is_unlimited
 from cognite.client.utils._identifier import IdentifierSequence
 
 T_ContextualizationJob = TypeVar("T_ContextualizationJob", bound=ContextualizationJob)
@@ -30,8 +30,11 @@ class EntityMatchingAPI(APIClient):
     ) -> T_ContextualizationJob:
         if status_path is None:
             status_path = job_path + "/"
+        response = self._post(self._RESOURCE_PATH + job_path, json=json, headers=headers)
+
         return job_cls._load_with_status(
-            self._post(self._RESOURCE_PATH + job_path, json=json, headers=headers).json(),
+            data=response.json(),
+            headers=response.headers,
             status_path=self._RESOURCE_PATH + status_path,
             cognite_client=self._cognite_client,
         )
@@ -130,7 +133,7 @@ class EntityMatchingAPI(APIClient):
         Examples:
                 >>> client.entity_matching.list(limit=1, name="test")
         """
-        if limit in [None, -1, float("inf")]:
+        if is_unlimited(limit):
             limit = 1_000_000_000  # currently no pagination
         filter = {
             "originalId": original_id,

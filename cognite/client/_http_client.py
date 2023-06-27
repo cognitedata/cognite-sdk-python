@@ -5,7 +5,7 @@ import random
 import socket
 import time
 from http import cookiejar
-from typing import Any, Callable, Optional, Set, Tuple, Type, Union
+from typing import Any, Callable, MutableMapping, Optional, Set, Tuple, Type, Union
 
 import requests
 import requests.adapters
@@ -96,14 +96,17 @@ class HTTPClient:
         self,
         config: HTTPClientConfig,
         session: requests.Session,
+        refresh_auth_header: Callable[[MutableMapping[str, Any]], None],
         retry_tracker_factory: Callable[[HTTPClientConfig], _RetryTracker] = _RetryTracker,
     ):
         self.session = session
         self.config = config
+        self.refresh_auth_header = refresh_auth_header
         self.retry_tracker_factory = retry_tracker_factory  # needed for tests
 
     def request(self, method: str, url: str, **kwargs: Any) -> requests.Response:
         retry_tracker = self.retry_tracker_factory(self.config)
+        headers = kwargs.get("headers")
         last_status = None
         while True:
             try:
@@ -120,9 +123,14 @@ class HTTPClient:
                     raise e
             except CogniteConnectionError as e:
                 retry_tracker.connect += 1
-                if isinstance(e, CogniteConnectionRefused) or not retry_tracker.should_retry(status_code=last_status):
+                if not retry_tracker.should_retry(status_code=last_status):
                     raise e
+
+            # During a backoff loop, our credentials might expire, so we check and maybe refresh:
             time.sleep(retry_tracker.get_backoff_time())
+            if headers is not None:
+                # TODO: Refactoring needed to make this "prettier"
+                self.refresh_auth_header(headers)
 
     def _do_request(self, method: str, url: str, **kwargs: Any) -> requests.Response:
         """requests/urllib3 adds 2 or 3 layers of exceptions on top of built-in networking exceptions.
@@ -155,13 +163,13 @@ class HTTPClient:
 
     @classmethod
     def _any_exception_in_context_isinstance(
-        cls, exc: BaseException, T: Union[Tuple[Type[BaseException], ...], Type[BaseException]]
+        cls, exc: BaseException, exc_types: Union[Tuple[Type[BaseException], ...], Type[BaseException]]
     ) -> bool:
         """requests does not use the "raise ... from ..." syntax, so we need to access the underlying exceptions using
         the __context__ attribute.
         """
-        if isinstance(exc, T):
+        if isinstance(exc, exc_types):
             return True
         if exc.__context__ is None:
             return False
-        return cls._any_exception_in_context_isinstance(exc.__context__, T)
+        return cls._any_exception_in_context_isinstance(exc.__context__, exc_types)

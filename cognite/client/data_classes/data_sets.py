@@ -170,5 +170,5 @@ class DataSetAggregate(dict):
     count = CognitePropertyClassUtil.declare_property("count")
 
 
-class DataSetList(CogniteResourceList):
+class DataSetList(CogniteResourceList[DataSet]):
     _RESOURCE = DataSet

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import cProfile
 import functools
 import gzip
@@ -6,9 +8,36 @@ import math
 import os
 import random
 from contextlib import contextmanager
+from typing import TYPE_CHECKING, Any, Literal, cast
 
+from cognite.client._constants import MAX_VALID_INTERNAL_ID
 from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS
-from cognite.client.utils._auxiliary import random_string
+from cognite.client.utils._auxiliary import local_import
+from cognite.client.utils._text import random_string
+
+if TYPE_CHECKING:
+    import pandas
+
+
+def all_subclasses(base: type) -> list[type]:
+    """Returns a list (without duplicates) of all subclasses of a given class, sorted on import-path-name.
+    Ignores classes not part of the main library, e.g. subclasses part of tests.
+    """
+    return sorted(
+        filter(
+            lambda sub: str(sub).startswith("<class 'cognite.client"),
+            set(base.__subclasses__()).union(s for c in base.__subclasses__() for s in all_subclasses(c)),
+        ),
+        key=str,
+    )
+
+
+def all_mock_children(mock, parent_name=()):
+    """Returns a dictionary with correct dotted names mapping to mocked classes."""
+    dct = {".".join((*parent_name, k)): v for k, v in mock._mock_children.items()}
+    for name, child in dct.copy().items():
+        dct.update(all_mock_children(child, parent_name=(name,)))
+    return dct
 
 
 @contextmanager
@@ -27,7 +56,7 @@ def rng_context(seed: int):
 
 def random_cognite_ids(n):
     # Returns list of random, valid Cognite internal IDs:
-    return random.choices(range(1, 9007199254740992), k=n)
+    return random.choices(range(1, MAX_VALID_INTERNAL_ID + 1), k=n)
 
 
 def random_cognite_external_ids(n, str_len=50):
@@ -111,7 +140,6 @@ def set_request_limit(client, limit):
         "_RETRIEVE_LIMIT",
         "_UPDATE_LIMIT",
         "_DELETE_LIMIT",
-        "_DPS_LIMIT",
     ]
 
     tmp = {lim: 0 for lim in limits}
@@ -123,3 +151,73 @@ def set_request_limit(client, limit):
     for limit_name, limit_val in tmp.items():
         if hasattr(client, limit_name):
             setattr(client, limit_name, limit_val)
+
+
+def cdf_aggregate(
+    raw_df: pandas.DataFrame,
+    aggregate: Literal["average", "sum", "count"],
+    granularity: str,
+    is_step: bool = False,
+    raw_freq: str = None,
+) -> pandas.DataFrame:
+    """Aggregates the dataframe as CDF is doing it on the database layer.
+
+    **Motivation**: This is used in testing to verify that the correct aggregation is done with
+    on the client side when aggregating in given time zone.
+
+    Current assumptions:
+        * No step timeseries
+        * Uniform index.
+        * Known frequency of raw data.
+
+    Args:
+        raw_df (pd.DataFrame): Dataframe with the raw datapoints.
+        aggregate (str): Single aggregate to calculate, supported average, sum.
+        granularity (str): The granularity to aggregates at. e.g. '15s', '2h', '10d'.
+        is_step (bool): Whether to use stepwise or continuous interpolation.
+        raw_freq (str): The frequency of the raw data. If it is not given, it is attempted inferred from raw_df.
+    """
+    if is_step:
+        raise NotImplementedError()
+
+    pd = cast(Any, local_import("pandas"))
+    granularity_pd = granularity.replace("m", "T")
+    grouping = raw_df.groupby(pd.Grouper(freq=granularity_pd))
+    if aggregate == "sum":
+        return grouping.sum()
+    elif aggregate == "count":
+        return grouping.count().astype("Int64")
+
+    # The average is calculated by the formula '1/(b-a) int_a^b f(t) dt' where f(t) is the continuous function
+    # This is weighted average of the sampled version of f(t)
+    np = cast(Any, local_import("numpy"))
+
+    def integrate_average(values: pandas.DataFrame) -> pandas.Series:
+        inner = (values.iloc[1:].values + values.iloc[:-1].values) / 2.0
+        res = inner.mean() if inner.shape[0] else np.nan
+        return pd.Series(res, index=values.columns)
+
+    freq = raw_freq or raw_df.index.inferred_freq
+    if freq is None:
+        raise ValueError("Failed to infer frequency raw data.")
+    if not freq[0].isdigit():
+        freq = f"1{freq}"
+
+    # When the frequency of the data is 1 hour and above, the end point is excluded.
+    freq = pd.Timedelta(freq)
+    if freq >= pd.Timedelta("1hour"):
+        return grouping.apply(integrate_average)
+
+    def integrate_average_end_points(values: pandas.Series) -> float:
+        dt = values.index[-1] - values.index[0]
+        scale = np.diff(values.index) / 2.0 / dt
+        return (scale * (values.values[1:] + values.values[:-1])).sum()
+
+    step = pd.Timedelta(granularity_pd) // freq
+
+    return (
+        raw_df.rolling(window=pd.Timedelta(granularity_pd), closed="both")
+        .apply(integrate_average_end_points)
+        .shift(-step)
+        .iloc[::step]
+    )

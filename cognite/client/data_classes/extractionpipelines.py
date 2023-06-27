@@ -13,7 +13,7 @@ from cognite.client.data_classes._base import (
     CogniteUpdate,
 )
 from cognite.client.data_classes.shared import TimestampRange
-from cognite.client.utils._auxiliary import convert_all_keys_to_camel_case
+from cognite.client.utils._text import convert_all_keys_to_camel_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -193,7 +193,7 @@ class ExtractionPipelineUpdate(CogniteUpdate):
         return ExtractionPipelineUpdate._ListExtractionPipelineUpdate(self, "contacts")
 
 
-class ExtractionPipelineList(CogniteResourceList):
+class ExtractionPipelineList(CogniteResourceList[ExtractionPipeline]):
     _RESOURCE = ExtractionPipeline
 
 
@@ -201,7 +201,8 @@ class ExtractionPipelineRun(CogniteResource):
     """A representation of an extraction pipeline run.
 
     Args:
-        external_id (str): The external ID of the extraction pipeline.
+        id (int): A server-generated ID for the object.
+        extpipe_external_id (str): The external ID of the extraction pipeline.
         status (str): success/failure/seen.
         message (str): Optional status message.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
@@ -210,26 +211,44 @@ class ExtractionPipelineRun(CogniteResource):
 
     def __init__(
         self,
-        external_id: str = None,
+        extpipe_external_id: str = None,
         status: str = None,
         message: str = None,
         created_time: int = None,
         cognite_client: CogniteClient = None,
+        id: int = None,
     ):
-        self.external_id = external_id
+        self.id = id
+        self.extpipe_external_id = extpipe_external_id
         self.status = status
         self.message = message
         self.created_time = created_time
         self._cognite_client = cast("CogniteClient", cognite_client)
 
+    @classmethod
+    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> ExtractionPipelineRun:
+        obj = super()._load(resource, cognite_client)
+        # Note: The API ONLY returns IDs, but if they chose to change this, we're ready:
+        if isinstance(resource, dict):
+            obj.extpipe_external_id = resource.get("externalId")
+        return obj
 
-class ExtractionPipelineRunUpdate(CogniteUpdate):
-    class _PrimitiveExtractionPipelineRunUpdate(CognitePrimitiveUpdate):
-        def set(self, value: Any) -> ExtractionPipelineRunUpdate:
-            return self._set(value)
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        dct = super().dump(camel_case=camel_case)
+        # Note: No way to make this id/xid API mixup completely correct. Either:
+        # 1. We use id / external_id for respecively "self id" / "ext.pipe external id"
+        #   - Problem: Only dataclass in the SDK where id and external_id does not point to same object...
+        # 2. We rename external_id to extpipe_external_id in the SDK only
+        #   - Problem: This dump method might be surprising to the user - if used (its public)...
+        # ...and 2 was chosen:
+        if camel_case:
+            dct["externalId"] = dct.pop("extpipeExternalId", None)
+        else:
+            dct["external_id"] = dct.pop("extpipe_external_id", None)
+        return dct
 
 
-class ExtractionPipelineRunList(CogniteResourceList):
+class ExtractionPipelineRunList(CogniteResourceList[ExtractionPipelineRun]):
     _RESOURCE = ExtractionPipelineRun
 
 
@@ -301,11 +320,11 @@ class ExtractionPipelineConfigRevision(CogniteResource):
         self.revision = revision
         self.description = description
         self.created_time = created_time
-        self.cognite_client = cognite_client
+        self._cognite_client = cognite_client
 
 
 class ExtractionPipelineConfig(ExtractionPipelineConfigRevision):
-    """An extraction pipeline config revision
+    """An extraction pipeline config
 
     Args:
         external_id (str): The external ID of the associated extraction pipeline.
@@ -335,5 +354,5 @@ class ExtractionPipelineConfig(ExtractionPipelineConfigRevision):
         self.config = config
 
 
-class ExtractionPipelineConfigRevisionList(CogniteResourceList):
+class ExtractionPipelineConfigRevisionList(CogniteResourceList[ExtractionPipelineConfigRevision]):
     _RESOURCE = ExtractionPipelineConfigRevision

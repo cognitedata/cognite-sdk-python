@@ -3,8 +3,10 @@ from __future__ import annotations
 from typing import Iterator, Sequence, Union, cast
 
 from cognite.client._api_client import APIClient
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import LabelDefinition, LabelDefinitionFilter, LabelDefinitionList
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._validation import process_data_set_ids
 
 
 class LabelsAPI(APIClient):
@@ -16,7 +18,7 @@ class LabelsAPI(APIClient):
         Fetches Labels as they are iterated over, so you keep a limited number of Labels in memory.
 
         Yields:
-            Type: yields Labels one by one.
+            LabelDefinition: yields Labels one by one.
         """
         return cast(Iterator[LabelDefinition], self())
 
@@ -26,12 +28,11 @@ class LabelsAPI(APIClient):
         external_id_prefix: str = None,
         limit: int = None,
         chunk_size: int = None,
-        data_set_ids: Sequence[int] = None,
-        data_set_external_ids: Sequence[str] = None,
+        data_set_ids: Union[int, Sequence[int]] = None,
+        data_set_external_ids: Union[str, Sequence[str]] = None,
     ) -> Union[Iterator[LabelDefinition], Iterator[LabelDefinitionList]]:
-        data_set_ids_processed = None
-        if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
+        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
+
         filter = LabelDefinitionFilter(
             name=name, external_id_prefix=external_id_prefix, data_set_ids=data_set_ids_processed
         ).dump(camel_case=True)
@@ -48,16 +49,16 @@ class LabelsAPI(APIClient):
         self,
         name: str = None,
         external_id_prefix: str = None,
-        data_set_ids: Sequence[int] = None,
-        data_set_external_ids: Sequence[str] = None,
-        limit: int = 25,
+        data_set_ids: Union[int, Sequence[int]] = None,
+        data_set_external_ids: Union[str, Sequence[str]] = None,
+        limit: int = LIST_LIMIT_DEFAULT,
     ) -> LabelDefinitionList:
-        """`List Labels <https://docs.cognite.com/api/v1/#operation/listLabels>`_
+        """`List Labels <https://developer.cognite.com/api#tag/Labels/operation/listLabels>`_
 
         Args:
             name (str): returns the label definitions matching that name
-            data_set_ids (Sequence[int]): return only labels in the data sets with these ids.
-            data_set_external_ids (Sequence[str]): return only labels in the data sets with these external ids.
+            data_set_ids (Union[int, Sequence[int]]): return only labels in the data sets with this id / these ids.
+            data_set_external_ids (Union[str, Sequence[str]]): return only labels in the data sets with this external id / these external ids.
             external_id_prefix (str): filter label definitions with external ids starting with the prefix specified
             limit (int, optional): Maximum number of label definitions to return.
 
@@ -86,9 +87,8 @@ class LabelsAPI(APIClient):
                 >>> for label_list in c.labels(chunk_size=2500):
                 ...     label_list # do something with the type definitions
         """
-        data_set_ids_processed = None
-        if data_set_ids or data_set_external_ids:
-            data_set_ids_processed = IdentifierSequence.load(data_set_ids, data_set_external_ids).as_dicts()
+        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
+
         filter = LabelDefinitionFilter(
             name=name, external_id_prefix=external_id_prefix, data_set_ids=data_set_ids_processed
         ).dump(camel_case=True)
@@ -99,7 +99,7 @@ class LabelsAPI(APIClient):
     def create(
         self, label: Union[LabelDefinition, Sequence[LabelDefinition]]
     ) -> Union[LabelDefinition, LabelDefinitionList]:
-        """`Create one or more label definitions. <https://docs.cognite.com/api/v1/#operation/createLabelDefinitions>`_
+        """`Create one or more label definitions. <https://developer.cognite.com/api#tag/Labels/operation/createLabelDefinitions>`_
 
         Args:
             Label (Union[LabelDefinition, Sequence[LabelDefinition]]): label definition or a list of label definitions to create.
@@ -125,7 +125,7 @@ class LabelsAPI(APIClient):
         return self._create_multiple(list_cls=LabelDefinitionList, resource_cls=LabelDefinition, items=label)
 
     def delete(self, external_id: Union[str, Sequence[str]] = None) -> None:
-        """`Delete one or more label definitions <https://docs.cognite.com/api/v1/#operation/deleteLabels>`_
+        """`Delete one or more label definitions <https://developer.cognite.com/api#tag/Labels/operation/deleteLabels>`_
 
         Args:
             external_id (Union[str, Sequence[str]]): One or more label external ids
