@@ -90,11 +90,14 @@ class DataModelsAPI(APIClient):
         """
         return cast(Iterator[DataModel], self())
 
-    def retrieve(self, ids: DataModelIdentifier | Sequence[DataModelIdentifier]) -> DataModelList:
+    def retrieve(
+        self, ids: DataModelIdentifier | Sequence[DataModelIdentifier], inline_views: bool = False
+    ) -> DataModelList:
         """`Retrieve data_model(s) by id(s). <https://developer.cognite.com/api#tag/Data-models/operation/byExternalIdsDataModels>`_
 
         Args:
             ids (DataModelId | Sequence[DataModelId]): Data Model identifier(s).
+            inline_views (bool): Whether to expand the referenced views inline in the returned result.
 
         Returns:
             Optional[DataModel]: Requested data_model or None if it does not exist.
@@ -107,7 +110,9 @@ class DataModelsAPI(APIClient):
 
         """
         identifier = _load_identifier(ids, "data_model")
-        return self._retrieve_multiple(list_cls=DataModelList, resource_cls=DataModel, identifiers=identifier)
+        return self._retrieve_multiple(
+            list_cls=DataModelList, resource_cls=DataModel, identifiers=identifier, params={"inlineViews": inline_views}
+        )
 
     def delete(self, ids: DataModelIdentifier | Sequence[DataModelIdentifier]) -> list[DataModelId]:
         """`Delete one or more data model <https://developer.cognite.com/api#tag/Data-models/operation/deleteDataModels>`_

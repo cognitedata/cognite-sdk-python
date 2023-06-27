@@ -5,6 +5,7 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.data_classes.data_modeling import (
     ContainerId,
+    DataModel,
     DataModelApply,
     DataModelId,
     DataModelList,
@@ -22,6 +23,13 @@ def cdf_data_models(cognite_client: CogniteClient) -> DataModelList:
     data_models = cognite_client.data_modeling.data_models.list(limit=-1)
     assert len(data_models) > 0, "Please create at least one data model in CDF."
     return data_models
+
+
+@pytest.fixture(scope="function")
+def movie_model(cdf_data_models: DataModelList) -> DataModel:
+    movie_model = next(m for m in cdf_data_models if m.external_id == "Movie")
+    assert movie_model is not None, "Please create a data model with external_id 'Movie' in CDF."
+    return movie_model
 
 
 class TestDataModelsAPI:
@@ -114,6 +122,14 @@ class TestDataModelsAPI:
 
         # Assert
         assert [dm.as_id() for dm in retrieved] == ids
+
+    def test_retrieve_with_inline_views(self, cognite_client: CogniteClient, movie_model: DataModel) -> None:
+        # Act
+        retrieved = cognite_client.data_modeling.data_models.retrieve(movie_model.as_id(), inline_views=True)[0]
+
+        # Assert
+        assert retrieved.views is not None
+        assert all(isinstance(v, View) for v in retrieved.views)
 
     def test_retrieve_multiple_with_missing(
         self, cognite_client: CogniteClient, cdf_data_models: DataModelList
