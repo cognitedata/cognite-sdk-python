@@ -10,7 +10,6 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
 )
 from cognite.client.data_classes.data_modeling._core import DataModelingResource
-from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelation,
     PropertyType,
@@ -46,7 +45,7 @@ class ContainerCore(DataModelingResource):
         indexes: dict[str, Index] = None,
         **_: dict,
     ):
-        validate_data_modeling_identifier(space, external_id)
+        # validate_data_modeling_identifier(space, external_id)
         self.space = space
         self.external_id = external_id
         self.description = description
