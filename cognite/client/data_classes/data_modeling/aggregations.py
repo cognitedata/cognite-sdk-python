@@ -39,33 +39,38 @@ class Aggregation(ABC):
         return output
 
 
+@dataclass
+class MetricAggregation(Aggregation):
+    ...
+
+
 @final
 @dataclass
-class Avg(Aggregation):
+class Avg(MetricAggregation):
     _aggregation_name = "avg"
 
 
 @final
 @dataclass
-class Count(Aggregation):
+class Count(MetricAggregation):
     _aggregation_name = "count"
 
 
 @final
 @dataclass
-class Max(Aggregation):
+class Max(MetricAggregation):
     _aggregation_name = "max"
 
 
 @final
 @dataclass
-class Min(Aggregation):
+class Min(MetricAggregation):
     _aggregation_name = "min"
 
 
 @final
 @dataclass
-class Sum(Aggregation):
+class Sum(MetricAggregation):
     _aggregation_name = "sum"
 
 
