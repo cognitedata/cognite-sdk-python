@@ -95,7 +95,7 @@ class ViewApply(ViewCore):
         name: str = None,
         filter: Filter | None = None,
         implements: list[ViewId] = None,
-        properties: dict[str, MappedApplyPropertyDefinition | ConnectionDefinition] = None,
+        properties: dict[str, MappedPropertyApply | ConnectionDefinition] = None,
     ):
         super().__init__(space, external_id, version, description, name, filter, implements)
         self.properties = properties
@@ -140,7 +140,7 @@ class View(ViewCore):
         space: str,
         external_id: str,
         version: str,
-        properties: dict[str, MappedPropertyDefinition | ConnectionDefinition],
+        properties: dict[str, MappedProperty | ConnectionDefinition],
         last_updated_time: int,
         created_time: int,
         description: str = None,
@@ -189,11 +189,9 @@ class View(ViewCore):
         Returns:
             ViewApply: The view apply.
         """
-        properties: Optional[Dict[str, Union[MappedApplyPropertyDefinition, ConnectionDefinition]]] = None
+        properties: Optional[Dict[str, Union[MappedPropertyApply, ConnectionDefinition]]] = None
         if self.properties:
-            properties = {
-                k: (v.as_apply() if isinstance(v, MappedPropertyDefinition) else v) for k, v in self.properties.items()
-            }
+            properties = {k: (v.as_apply() if isinstance(v, MappedProperty) else v) for k, v in self.properties.items()}
 
         return ViewApply(
             space=self.space,
@@ -261,7 +259,7 @@ class ViewProperty(ABC):
         if "direction" in data:
             return SingleHopConnectionDefinition.load(data)
         else:
-            return MappedPropertyDefinition.load(data)
+            return MappedProperty.load(data)
 
     @abstractmethod
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -274,7 +272,7 @@ class ViewPropertyApply(ABC):
         if "direction" in data:
             return SingleHopConnectionDefinitionApply.load(data)
         else:
-            return MappedApplyPropertyDefinition.load(data)
+            return MappedPropertyApply.load(data)
 
     @abstractmethod
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -282,7 +280,7 @@ class ViewPropertyApply(ABC):
 
 
 @dataclass
-class MappedApplyPropertyDefinition(ViewPropertyApply):
+class MappedPropertyApply(ViewPropertyApply):
     container: ContainerId
     container_property_identifier: str
     name: str | None = None
@@ -290,7 +288,7 @@ class MappedApplyPropertyDefinition(ViewPropertyApply):
     source: ViewId | None = None
 
     @classmethod
-    def load(cls, data: dict) -> MappedApplyPropertyDefinition:
+    def load(cls, data: dict) -> MappedPropertyApply:
         output = cls(**convert_all_keys_to_snake_case(data))
         if isinstance(data.get("container"), dict):
             output.container = ContainerId.load(data["container"])
@@ -307,7 +305,7 @@ class MappedApplyPropertyDefinition(ViewPropertyApply):
 
 
 @dataclass
-class MappedPropertyDefinition(ViewProperty):
+class MappedProperty(ViewProperty):
     container: ContainerId
     container_property_identifier: str
     type: PropertyType
@@ -319,7 +317,7 @@ class MappedPropertyDefinition(ViewProperty):
     description: str | None = None
 
     @classmethod
-    def load(cls, data: dict[str, Any]) -> MappedPropertyDefinition:
+    def load(cls, data: dict[str, Any]) -> MappedProperty:
         output = cls(**convert_all_keys_to_snake_case(data))
         if isinstance(data.get("container"), dict):
             output.container = ContainerId.load(data["container"])
@@ -341,8 +339,8 @@ class MappedPropertyDefinition(ViewProperty):
             return convert_all_keys_to_camel_case_recursive(output)
         return output
 
-    def as_apply(self) -> MappedApplyPropertyDefinition:
-        return MappedApplyPropertyDefinition(
+    def as_apply(self) -> MappedPropertyApply:
+        return MappedPropertyApply(
             container=self.container,
             container_property_identifier=self.container_property_identifier,
             name=self.name,

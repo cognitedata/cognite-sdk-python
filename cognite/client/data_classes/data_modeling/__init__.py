@@ -72,8 +72,8 @@ from cognite.client.data_classes.data_modeling.instances import (
 from cognite.client.data_classes.data_modeling.spaces import Space, SpaceApply, SpaceApplyList, SpaceList
 from cognite.client.data_classes.data_modeling.views import (
     ConnectionDefinition,
-    MappedApplyPropertyDefinition,
-    MappedPropertyDefinition,
+    MappedProperty,
+    MappedPropertyApply,
     SingleHopConnectionDefinition,
     View,
     ViewApply,
@@ -82,10 +82,18 @@ from cognite.client.data_classes.data_modeling.views import (
     ViewList,
 )
 
+# TODO: Remove these in next major version, there just here to ensure backwards compatibility after renaming and
+#  removing some data classes.
+ViewDirectRelation = DirectRelation
+ContainerDirectRelation = DirectRelation
+MapppedPropertyDefinition = MappedProperty
+MappedApplyPropertyDefinition = MappedPropertyApply
+
 __all__ = [
     "ViewIdentifier",
     "ViewApply",
     "ViewApplyList",
+    "MappedPropertyApply",
     "MappedApplyPropertyDefinition",
     "VersionedDataModelingId",
     "DataModelingId",
@@ -93,6 +101,8 @@ __all__ = [
     "DataModelIdentifier",
     "filters",
     "DirectRelation",
+    "ViewDirectRelation",
+    "ContainerDirectRelation",
     "Filter",
     "DirectRelationReference",
     "DataModel",
@@ -103,7 +113,8 @@ __all__ = [
     "DataModelApplyList",
     "ContainerFilter",
     "ViewFilter",
-    "MappedPropertyDefinition",
+    "MappedProperty",
+    "MapppedPropertyDefinition",
     "ConnectionDefinition",
     "SingleHopConnectionDefinition",
     "Space",

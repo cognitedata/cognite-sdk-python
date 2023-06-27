@@ -1,5 +1,5 @@
 from cognite.client.data_classes.data_modeling import ViewId
-from cognite.client.data_classes.data_modeling.views import MappedPropertyDefinition, ViewProperty, ViewPropertyApply
+from cognite.client.data_classes.data_modeling.views import MappedProperty, ViewProperty, ViewPropertyApply
 
 
 class TestViewPropertyDefinition:
@@ -18,7 +18,7 @@ class TestViewPropertyDefinition:
             "defaultValue": None,
         }
         actual = ViewProperty.load(input)
-        assert isinstance(actual, MappedPropertyDefinition)
+        assert isinstance(actual, MappedProperty)
         assert actual.source == ViewId(space="mySpace", external_id="myExternalId", version="myVersion")
 
         assert actual.dump() == {

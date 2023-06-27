@@ -5,7 +5,7 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.data_classes.data_modeling import (
     ContainerId,
-    MappedApplyPropertyDefinition,
+    MappedPropertyApply,
     Space,
     ViewApply,
     ViewId,
@@ -42,7 +42,7 @@ class TestViewsAPI:
             description="Integration test, should not persist",
             name="Create and delete view",
             properties={
-                "name": MappedApplyPropertyDefinition(
+                "name": MappedPropertyApply(
                     container=ContainerId(
                         space=integration_test_space.space,
                         external_id="Person",
@@ -119,7 +119,7 @@ class TestViewsAPI:
                     external_id="myView",
                     version="v1",
                     properties={
-                        "name": MappedApplyPropertyDefinition(
+                        "name": MappedPropertyApply(
                             container=ContainerId(
                                 space=integration_test_space.space,
                                 external_id="Person",
@@ -144,7 +144,7 @@ class TestViewsAPI:
             external_id="myView",
             version="v1",
             properties={
-                "name": MappedApplyPropertyDefinition(
+                "name": MappedPropertyApply(
                     container=ContainerId(
                         space=integration_test_space.space,
                         external_id="Person",
@@ -159,7 +159,7 @@ class TestViewsAPI:
             external_id="myView",
             version="v1",
             properties={
-                "name": MappedApplyPropertyDefinition(
+                "name": MappedPropertyApply(
                     container=ContainerId(
                         space=integration_test_space.space,
                         external_id="Person",

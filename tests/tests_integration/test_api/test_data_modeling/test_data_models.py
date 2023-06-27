@@ -8,7 +8,7 @@ from cognite.client.data_classes.data_modeling import (
     DataModelApply,
     DataModelId,
     DataModelList,
-    MappedApplyPropertyDefinition,
+    MappedPropertyApply,
     Space,
     View,
     ViewApply,
@@ -49,7 +49,7 @@ class TestDataModelsAPI:
             description="Integration test, should not persist",
             name="View of create and delete data model",
             properties={
-                "name": MappedApplyPropertyDefinition(
+                "name": MappedPropertyApply(
                     container=ContainerId(
                         space=integration_test_space.space,
                         external_id="Person",
