@@ -19,7 +19,6 @@ class SpaceCore(DataModelingResource):
     """
 
     def __init__(self, space: str, description: str = None, name: str = None):
-        validate_data_modeling_identifier(space)
         self.space = space
         self.description = description
         self.name = name
@@ -29,9 +28,23 @@ class SpaceCore(DataModelingResource):
 
 
 class SpaceApply(SpaceCore):
-    """A workspace for data models and instances. This is the write version"""
+    """A workspace for data models and instances. This is the write version
 
-    ...
+    Args:
+        space (str): A unique identifier for space.
+        description (str): Textual description of the space
+        name (str): Human readable name for the space.
+    """
+
+    def __init__(
+        self,
+        space: str,
+        description: str = None,
+        name: str = None,
+        **_: Any,
+    ):
+        validate_data_modeling_identifier(space)
+        super().__init__(space, description, name)
 
 
 class Space(SpaceCore):

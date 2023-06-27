@@ -36,7 +36,6 @@ class ViewCore(DataModelingResource):
         implements: list[ViewId] = None,
         **_: dict,
     ):
-        validate_data_modeling_identifier(space, external_id)
         self.space = space
         self.external_id = external_id
         self.description = description
@@ -97,6 +96,7 @@ class ViewApply(ViewCore):
         implements: list[ViewId] = None,
         properties: dict[str, MappedPropertyApply | ConnectionDefinition] = None,
     ):
+        validate_data_modeling_identifier(space, external_id)
         super().__init__(space, external_id, version, description, name, filter, implements)
         self.properties = properties
 

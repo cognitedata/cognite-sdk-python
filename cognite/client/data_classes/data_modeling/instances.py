@@ -86,7 +86,6 @@ class InstanceCore(DataModelingResource):
     """
 
     def __init__(self, space: str, external_id: str, instance_type: Literal["node", "edge"] = "node"):
-        validate_data_modeling_identifier(space, external_id)
         self.instance_type = instance_type
         self.space = space
         self.external_id = external_id
@@ -117,6 +116,7 @@ class InstanceApply(InstanceCore):
         existing_version: int = None,
         sources: list[NodeOrEdgeData] = None,
     ):
+        validate_data_modeling_identifier(space, external_id)
         super().__init__(space, external_id, instance_type)
         self.existing_version = existing_version
         self.sources = sources
