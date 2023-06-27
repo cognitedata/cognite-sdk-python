@@ -79,6 +79,17 @@ class TestViewsAPI:
             == []
         )
 
+    def test_retrieve_without_inherited_properties(self, cognite_client: CogniteClient, cdf_views: ViewList) -> None:
+        assert len(cdf_views) >= 1, "Please add at least one view to the test environment"
+        # Arrange
+        view = cdf_views[0]
+
+        # Act
+        retrieved = cognite_client.data_modeling.views.retrieve(view.as_id(), include_inherited_properties=False)[0]
+
+        # Assert
+        assert retrieved is not None
+
     def test_retrieve_multiple(self, cognite_client: CogniteClient, cdf_views: ViewList) -> None:
         assert len(cdf_views) >= 2, "Please add at least two views to the test environment"
         # Arrange
