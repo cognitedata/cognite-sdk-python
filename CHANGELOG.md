@@ -19,15 +19,13 @@ Changes are grouped as follows
 
 ## [6.5.0] - 2023-06-13
 ### Added
-- Support for searching and aggregating across instanceces in the Data Modeling API with the implementation 
-  `client.data_modeling.instances`, the methods `search` and `aggregate`.
-
+- Support for searching and aggregating across instances in the Data Modeling API with the implementation 
+  `client.data_modeling.instances`, the methods `search`, `histogram` and `aggregate`.
 
 ## [6.4.8] - 2023-06-23
 ### Fixed
 - Handling non 200 responses in `data_modeling.spaces.apply`, `data_modeling.data_models.apply`, 
   `data_modeling.views.apply` and `data_modeling.containers.apply`
-
 
 ## [6.4.7] - 2023-06-22
 ### Fixed

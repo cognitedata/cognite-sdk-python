@@ -541,24 +541,23 @@ class InstancesAPI(APIClient):
             Search for Arnold in the person view in the name property:
 
                 >>> from cognite.client import CogniteClient
-                >>> import cognite.client.data_classes.data_modeling as dm
+                >>> from cognite.client.data_classes.data_modeling import ViewId
                 >>> c = CogniteClient()
-                >>> res = c.data_modeling.instances.search(dm.ViewId("mySpace", "PersonView", "v1"), query="Arnold", properties=["name"])
+                >>> res = c.data_modeling.instances.search(ViewId("mySpace", "PersonView", "v1"), query="Arnold", properties=["name"])
 
             Search for Quentin in the person view in the name property, but only born before 1970:
 
                 >>> from cognite.client import CogniteClient
-                >>> import cognite.client.data_classes.data_modeling as dm
+                >>> from cognite.client.data_classes.data_modeling import ViewId
+                >>> import cognite.client.data_classes.data_modeling.filters as filters
                 >>> c = CogniteClient()
-                >>> f = dm.filters
-                >>>> born_after_1970 = f.Range(["mySpace", "PersonView/v1", "birthYear"], gt=1970)
-                >>> res = c.data_modeling.instances.search(dm.ViewId("mySpace", "PersonView", "v1"),
+                >>> born_after_1970 = filters.Range(["mySpace", "PersonView/v1", "birthYear"], gt=1970)
+                >>> res = c.data_modeling.instances.search(ViewId("mySpace", "PersonView", "v1"),
                 ... query="Quentin", properties=["name"], filter=born_after_1970)
 
         """
-        list_cls: Union[Type[NodeList], Type[EdgeList]] = NodeList
         if instance_type == "node":
-            list_cls = NodeList
+            list_cls: Union[Type[NodeList], Type[EdgeList]] = NodeList
         elif instance_type == "edge":
             list_cls = EdgeList
         else:
@@ -608,10 +607,10 @@ class InstancesAPI(APIClient):
             Get the average run time in minutes for movies grouped by release year:
 
                 >>> from cognite.client import CogniteClient
-                >>> import cognite.client.data_classes.data_modeling as dm
+                >>> from cognite.client.data_classes.data_modeling import ViewId, aggregations as aggs
                 >>> c = CogniteClient()
-                >>> a = dm.aggregations
-                >>> avg_run_time = a.Avg("runTimeMinutes")
+                >>> avg_run_time = aggs.Avg("runTimeMinutes")
+                >>> view_id = ViewId("mySpace", "PersonView", "v1")
                 >>> res = c.data_modeling.instances.aggregate(view_id, [avg_run_time], group_by=["releaseYear"])
 
         """
@@ -692,10 +691,10 @@ class InstancesAPI(APIClient):
             Find the number of people born per decade:
 
                 >>> from cognite.client import CogniteClient
-                >>> import cognite.client.data_classes.data_modeling as dm
+                >>> from cognite.client.data_classes.data_modeling import aggregations as aggs, ViewId
                 >>> c = CogniteClient()
-                >>> a = dm.aggregations
-                >>> birth_by_decade = a.Histogram("birthYear", interval=10.0)
+                >>> birth_by_decade = aggs.Histogram("birthYear", interval=10.0)
+                >>> view_id = ViewId("mySpace", "PersonView", "v1")
                 >>> res = c.data_modeling.instances.histogram(view_id, birth_by_decade)
         """
         if instance_type not in ("node", "edge"):
