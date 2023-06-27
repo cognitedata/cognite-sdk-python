@@ -1,4 +1,5 @@
-from cognite.client.data_classes.data_modeling import filters
+from cognite.client.data_classes.data_modeling import aggregations, filters
+from cognite.client.data_classes.data_modeling.aggregations import AggregatedValue, Aggregation
 from cognite.client.data_classes.data_modeling.containers import (
     Constraint,
     Container,
@@ -90,6 +91,9 @@ MapppedPropertyDefinition = MappedProperty
 MappedApplyPropertyDefinition = MappedPropertyApply
 
 __all__ = [
+    "Aggregation",
+    "AggregatedValue",
+    "aggregations",
     "ViewIdentifier",
     "ViewApply",
     "ViewApplyList",
