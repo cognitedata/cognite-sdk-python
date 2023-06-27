@@ -8,14 +8,14 @@ from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId, _
 
 
 class TestContainerReference:
-    def test_load_dump(self):
+    def test_load_dump(self) -> None:
         data = {"space": "mySpace", "externalId": "myId", "type": "container"}
 
         assert data == ContainerId.load(data).dump(camel_case=True)
 
 
 class TestViewReference:
-    def test_load_dump(self):
+    def test_load_dump(self) -> None:
         data = {"space": "mySpace", "externalId": "myId", "version": "myVersion", "type": "view"}
 
         assert data == ViewId.load(data).dump(camel_case=True)
@@ -50,11 +50,11 @@ class TestLoadIdentifier:
     )
     def test_load(
         self,
-        ids,
+        ids: tuple[str, str] | tuple[str, str, str],
         id_type: Literal["container", "view", "data_model"],
         expected_dict: list | dict,
         expected_is_singleton: bool,
-    ):
+    ) -> None:
         identifier = _load_identifier(ids, id_type)
 
         assert identifier.as_dicts() == expected_dict

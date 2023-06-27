@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import asdict, dataclass
-from typing import ClassVar
+from typing import ClassVar, Optional
 
+from cognite.client.data_classes.data_modeling.ids import ContainerId
 from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_snake_case
 
@@ -75,7 +76,7 @@ class PropertyType(ABC):
         elif type_ == "sequence":
             return SequenceReference(**data)
         elif type_ == "direct":
-            return DirectRelation()
+            return DirectRelation(**data)
 
         raise ValueError(f"Invalid type {type_}.")
 
@@ -160,3 +161,17 @@ class SequenceReference(CDFExternalIdReference):
 @dataclass
 class DirectRelation(PropertyType):
     _type = "direct"
+    container: Optional[ContainerId] = None
+
+    def dump(self, camel_case: bool = False) -> dict:
+        output = super().dump(camel_case)
+        if "container" in output and isinstance(output["container"], dict):
+            output["container"]["type"] = "container"
+        return output
+
+    @classmethod
+    def load(cls, data: dict) -> DirectRelation:
+        output = cls(**convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"type"})))
+        if isinstance(data.get("container"), dict):
+            output.container = ContainerId.load(data["container"])
+        return output

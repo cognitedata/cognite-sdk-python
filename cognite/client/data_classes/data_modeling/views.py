@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from abc import ABC
+from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
 from typing import Any, Dict, Literal, Optional, Union, cast
 
@@ -18,7 +18,6 @@ from cognite.client.data_classes.data_modeling.data_types import (
 )
 from cognite.client.data_classes.data_modeling.filters import Filter
 from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
-from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case_recursive,
     convert_all_keys_to_snake_case,
@@ -96,7 +95,7 @@ class ViewApply(ViewCore):
         name: str = None,
         filter: Filter | None = None,
         implements: list[ViewId] = None,
-        properties: dict[str, MappedApplyPropertyDefinition | ConnectionDefinition] = None,
+        properties: dict[str, MappedPropertyApply | ConnectionDefinition] = None,
     ):
         super().__init__(space, external_id, version, description, name, filter, implements)
         self.properties = properties
@@ -105,7 +104,7 @@ class ViewApply(ViewCore):
     def load(cls, resource: dict | str) -> ViewApply:
         data = json.loads(resource) if isinstance(resource, str) else resource
         if "properties" in data and isinstance(data["properties"], dict):
-            data["properties"] = {k: ViewPropertyDefinition.load(v) for k, v in data["properties"].items()} or None
+            data["properties"] = {k: ViewPropertyApply.load(v) for k, v in data["properties"].items()} or None
 
         return cast(ViewApply, super().load(data))
 
@@ -141,7 +140,7 @@ class View(ViewCore):
         space: str,
         external_id: str,
         version: str,
-        properties: dict[str, MappedPropertyDefinition | ConnectionDefinition],
+        properties: dict[str, MappedProperty | ConnectionDefinition],
         last_updated_time: int,
         created_time: int,
         description: str = None,
@@ -173,7 +172,7 @@ class View(ViewCore):
     def load(cls, resource: dict | str) -> View:
         data = json.loads(resource) if isinstance(resource, str) else resource
         if "properties" in data and isinstance(data["properties"], dict):
-            data["properties"] = {k: ViewPropertyDefinition.load(v) for k, v in data["properties"].items()} or None
+            data["properties"] = {k: ViewProperty.load(v) for k, v in data["properties"].items()} or None
 
         return cast(View, super().load(data))
 
@@ -190,11 +189,9 @@ class View(ViewCore):
         Returns:
             ViewApply: The view apply.
         """
-        properties: Optional[Dict[str, Union[MappedApplyPropertyDefinition, ConnectionDefinition]]] = None
+        properties: Optional[Dict[str, Union[MappedPropertyApply, ConnectionDefinition]]] = None
         if self.properties:
-            properties = {
-                k: (v.as_apply() if isinstance(v, MappedPropertyDefinition) else v) for k, v in self.properties.items()
-            }
+            properties = {k: (v.as_apply() if isinstance(v, MappedProperty) else v) for k, v in self.properties.items()}
 
         return ViewApply(
             space=self.space,
@@ -256,118 +253,94 @@ class ViewFilter(CogniteFilter):
         self.include_global = include_global
 
 
-@dataclass
-class ViewDirectRelation(DirectRelation):
-    source: Optional[ViewId] = None
-
+class ViewProperty(ABC):
     @classmethod
-    def load(cls, data: dict) -> ViewDirectRelation:
-        output = cls(**convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"type"})))
-        if isinstance(data.get("source"), dict):
-            output.source = ViewId.load(data["source"])
-        return output
-
-    def dump(self, camel_case: bool = False) -> dict:
-        output = super().dump(camel_case)
-
-        if self.source:
-            output["source"] = self.source.dump(camel_case)
-        return output
-
-
-@dataclass
-class ViewPropertyDefinition(ABC):
-    @classmethod
-    def _load(cls, data: dict) -> ViewPropertyDefinition:
-        return cls(**convert_all_keys_to_snake_case(data))
-
-    @classmethod
-    def load(cls, data: dict) -> MappedPropertyDefinition | ConnectionDefinition | MappedApplyPropertyDefinition:
-        if "container" in data and "source" in data:
-            return MappedApplyPropertyDefinition.load(data)
-        elif "container" in data:
-            return MappedPropertyDefinition.load(data)
-        elif "type" in data:
+    def load(cls, data: dict[str, Any]) -> ViewProperty:
+        if "direction" in data:
             return SingleHopConnectionDefinition.load(data)
+        else:
+            return MappedProperty.load(data)
 
-        raise ValueError(f"Unknown type of ViewPropertyDefinition: {data.get('type')}")
+    @abstractmethod
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        raise NotImplementedError
 
-    def dump(self, camel_case: bool = False) -> dict:
-        output = asdict(self)
-        return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
+
+class ViewPropertyApply(ABC):
+    @classmethod
+    def load(cls, data: dict[str, Any]) -> ViewPropertyApply:
+        if "direction" in data:
+            return SingleHopConnectionDefinitionApply.load(data)
+        else:
+            return MappedPropertyApply.load(data)
+
+    @abstractmethod
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        raise NotImplementedError
 
 
 @dataclass
-class MappedCorePropertyDefinition(ViewPropertyDefinition):
+class MappedPropertyApply(ViewPropertyApply):
     container: ContainerId
     container_property_identifier: str
     name: str | None = None
     description: str | None = None
-
-    @classmethod
-    def load(cls, data: dict) -> MappedCorePropertyDefinition:  # type: ignore[override]
-        output = cast(MappedCorePropertyDefinition, super()._load(data))
-        if isinstance(data.get("container"), dict):
-            output.container = ContainerId.load(data["container"])
-        return output
-
-    def dump(self, camel_case: bool = False) -> dict:
-        output = asdict(self)
-        if self.container:
-            output["container"] = self.container.dump(camel_case)
-
-        if camel_case:
-            output = convert_all_keys_to_camel_case_recursive(output)
-
-        return output
-
-
-@dataclass
-class MappedApplyPropertyDefinition(MappedCorePropertyDefinition):
     source: ViewId | None = None
 
     @classmethod
-    def load(cls, data: dict) -> MappedApplyPropertyDefinition:
-        output = cast(MappedApplyPropertyDefinition, super().load(data))
+    def load(cls, data: dict) -> MappedPropertyApply:
+        output = cls(**convert_all_keys_to_snake_case(data))
+        if isinstance(data.get("container"), dict):
+            output.container = ContainerId.load(data["container"])
         if isinstance(data.get("source"), dict):
             output.source = ViewId.load(data["source"])
         return output
 
-    def dump(self, camel_case: bool = False) -> dict:
-        output = super().dump(camel_case)
-        if self.source:
-            output["source"] = self.source.dump(camel_case)
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        output = asdict(self)
+        output["container"] = self.container.dump(camel_case)
+        if camel_case:
+            return convert_all_keys_to_camel_case_recursive(output)
         return output
 
 
 @dataclass
-class MappedPropertyDefinition(MappedCorePropertyDefinition):
-    type: PropertyType | None = None
-    nullable: bool = True
-    auto_increment: bool = False
+class MappedProperty(ViewProperty):
+    container: ContainerId
+    container_property_identifier: str
+    type: PropertyType
+    nullable: bool
+    auto_increment: bool
+    source: ViewId | None = None
     default_value: str | int | dict | None = None
+    name: str | None = None
+    description: str | None = None
 
     @classmethod
-    def load(cls, data: dict) -> MappedPropertyDefinition:
-        output = cast(MappedPropertyDefinition, super().load(data))
+    def load(cls, data: dict[str, Any]) -> MappedProperty:
+        output = cls(**convert_all_keys_to_snake_case(data))
+        if isinstance(data.get("container"), dict):
+            output.container = ContainerId.load(data["container"])
         if "type" in data:
             if data["type"].get("type") == "direct":
-                output.type = ViewDirectRelation.load(data["type"])
+                type_data = data["type"]
+                source = type_data.pop("source", None)
+                output.type = DirectRelation.load(type_data)
+                output.source = ViewId.load(source) if source else None
             else:
                 output.type = PropertyType.load(data["type"])
         return output
 
-    def dump(self, camel_case: bool = False) -> dict:
-        output = super().dump(camel_case)
-        if self.type:
-            try:
-                output["type"] = self.type.dump(camel_case)
-            except AttributeError:
-                raise
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        output = asdict(self)
+        output["type"] = self.type.dump(camel_case)
+        output["type"]["source"] = output.pop("source", None)
+        if camel_case:
+            return convert_all_keys_to_camel_case_recursive(output)
         return output
 
-    def as_apply(self) -> MappedApplyPropertyDefinition:
-        return MappedApplyPropertyDefinition(
+    def as_apply(self) -> MappedPropertyApply:
+        return MappedPropertyApply(
             container=self.container,
             container_property_identifier=self.container_property_identifier,
             name=self.name,
@@ -376,7 +349,7 @@ class MappedPropertyDefinition(MappedCorePropertyDefinition):
 
 
 @dataclass
-class ConnectionDefinition(ViewPropertyDefinition):
+class ConnectionDefinition(ViewProperty):
     ...
 
 
@@ -390,15 +363,54 @@ class SingleHopConnectionDefinition(ConnectionDefinition):
     direction: Literal["outwards", "inwards"] = "outwards"
 
     @classmethod
-    def load(cls, data: dict) -> SingleHopConnectionDefinition:
-        output = cast(SingleHopConnectionDefinition, super()._load(data))
-        if "type" in data:
-            output.type = DirectRelationReference.load(data["type"])
-        if "source" in data:
-            output.source = ViewId.load(data["source"])
-        if "edgeSource" in data or "edge_source" in data:
-            edge_source = data.get("edgeSource", data.get("edge_source"))
-            output.edge_source = ViewId.load(edge_source) if edge_source else None
+    def load(cls, data: dict[str, Any]) -> SingleHopConnectionDefinition:
+        output = cls(**convert_all_keys_to_snake_case(data))
+        if (type_ := data.get("type")) is not None:
+            output.type = DirectRelationReference.load(type_)
+        if (source := data.get("source")) is not None:
+            output.source = ViewId.load(source)
+        if (edge_source := data.get("edgeSource")) is not None:
+            output.edge_source = ViewId.load(edge_source)
+        return output
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        output = asdict(self)
+
+        if self.type:
+            output["type"] = self.type.dump(camel_case)
+
+        if self.source:
+            output["source"] = self.source.dump(camel_case)
+
+        if self.edge_source:
+            output["edge_source"] = self.edge_source.dump(camel_case)
+
+        return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
+
+
+@dataclass
+class ConnectionDefinitionApply(ViewPropertyApply):
+    ...
+
+
+@dataclass
+class SingleHopConnectionDefinitionApply(ConnectionDefinitionApply):
+    type: DirectRelationReference
+    source: ViewId
+    name: str | None = None
+    description: str | None = None
+    edge_source: ViewId | None = None
+    direction: Literal["outwards", "inwards"] = "outwards"
+
+    @classmethod
+    def load(cls, data: dict) -> SingleHopConnectionDefinitionApply:
+        output = cls(**convert_all_keys_to_snake_case(data))
+        if (type_ := data.get("type")) is not None:
+            output.type = DirectRelationReference.load(type_)
+        if (source := data.get("source")) is not None:
+            output.source = ViewId.load(source)
+        if (edge_source := data.get("edgeSource")) is not None:
+            output.edge_source = ViewId.load(edge_source)
         return output
 
     def dump(self, camel_case: bool = False) -> dict:
@@ -411,6 +423,6 @@ class SingleHopConnectionDefinition(ConnectionDefinition):
             output["source"] = self.source.dump(camel_case)
 
         if self.edge_source:
-            output["edgeSource" if camel_case else "edge_source"] = self.edge_source.dump(camel_case)
+            output["edge_source"] = self.edge_source.dump(camel_case)
 
         return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
