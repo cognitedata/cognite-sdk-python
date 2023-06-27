@@ -19,6 +19,8 @@ class Group(CogniteResource):
         id (int): No description.
         is_deleted (bool): No description.
         deleted_time (int): No description.
+        metadata (Dict[str, Any]): Custom, immutable application specific metadata. String key -> String value. Limits:
+        Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
@@ -30,6 +32,7 @@ class Group(CogniteResource):
         id: int = None,
         is_deleted: bool = None,
         deleted_time: int = None,
+        metadata: Dict[str, Any] = None,
         cognite_client: CogniteClient = None,
     ):
         self.name = name
@@ -38,6 +41,7 @@ class Group(CogniteResource):
         self.id = id
         self.is_deleted = is_deleted
         self.deleted_time = deleted_time
+        self.metadata = metadata
         self._cognite_client = cast("CogniteClient", cognite_client)
 
 
