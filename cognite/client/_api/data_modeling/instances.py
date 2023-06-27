@@ -243,21 +243,21 @@ class InstancesAPI(APIClient):
             Retrieve nodes an edges using the built in data class
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client import data_modeling as dm
+                >>> from cognite.client.data_classes.data_modeling import NodeId, EdgeId, ViewId
                 >>> c = CogniteClient()
-                >>> res = c.data_modeling.instances.retrieve(dm.NodeId("mySpace", "myNode"),
-                ...                                          dm.EdgeId("mySpace", "myEdge"),
-                ...                                          dm.ViewId("mySpace", "myViewExternalId", "myViewVersion")
+                >>> res = c.data_modeling.instances.retrieve(NodeId("mySpace", "myNode"),
+                ...                                          EdgeId("mySpace", "myEdge"),
+                ...                                          ViewId("mySpace", "myViewExternalId", "myViewVersion")
                 ...                                         )
 
             Retrieve nodes an edges using the the view object as source
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client import data_modeling as dm
+                >>> from cognite.client.data_classes.data_modeling import NodeId, EdgeId
                 >>> c = CogniteClient()
-                >>> res = c.data_modeling.instances.retrieve(dm.NodeId("mySpace", "myNode"),
-                ...                                          dm.EdgeId("mySpace", "myEdge"),
-                ...                                          sources='myView')
+                >>> res = c.data_modeling.instances.retrieve(NodeId("mySpace", "myNode"),
+                ...                                          EdgeId("mySpace", "myEdge"),
+                ...                                          sources=("myspace", "myView")
                 ...                                         )
         """
         identifiers = self._load_node_and_edge_ids(nodes, edges)
@@ -330,9 +330,9 @@ class InstancesAPI(APIClient):
             Delete nodes and edges using the built in data class
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client import data_modeling as dm
+                >>> from cognite.client.data_classes.data_modeling import NodeId, EdgeId
                 >>> c = CogniteClient()
-                >>> c.data_modeling.instances.delete(dm.NodeId('mySpace', 'myNode'), dm.EdgeId('mySpace', 'myEdge'))
+                >>> c.data_modeling.instances.delete(NodeId('mySpace', 'myNode'), EdgeId('mySpace', 'myEdge'))
         """
         identifiers = self._load_node_and_edge_ids(nodes, edges)
         deleted_instances = cast(List, self._delete_multiple(identifiers, wrap_ids=True, returns_items=True))
@@ -415,47 +415,47 @@ class InstancesAPI(APIClient):
             Create new node without data:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client import data_modeling as dm
+                >>> from cognite.client.data_classes.data_modeling import EdgeApply, NodeOrEdgeData, NodeApply
                 >>> c = CogniteClient()
-                >>> nodes = [dm.ApplyNode("mySpace", "myNodeId")]
+                >>> nodes = [NodeApply("mySpace", "myNodeId")]
                 >>> res = c.data_modeling.instances.apply(nodes)
 
             Create two nodes with data with an one to many edge, and a one to one edge
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client import data_modeling as dm
-                >>> person = dm.NodeApply("mySpace", "person:arnold_schwarzenegger", sources=[
-                ...                        dm.NodeOrEdgeData(
-                ...                               dm.ViewId("mySpace", "PersonView", "v1"),
+                >>> from cognite.client.data_classes.data_modeling import EdgeApply, NodeOrEdgeData, NodeApply, ViewId
+                >>> person = NodeApply("mySpace", "person:arnold_schwarzenegger", sources=[
+                ...                        NodeOrEdgeData(
+                ...                               ViewId("mySpace", "PersonView", "v1"),
                 ...                               {"name": "Arnold Schwarzenegger", "birthYear": 1947})
                 ... ])
-                >>> actor = dm.NodeApply("mySpace", "actor:arnold_schwarzenegger", sources=[
-                ...                        dm.NodeOrEdgeData(
-                ...                               dm.ViewId("mySpace", "ActorView", "v1"),
+                >>> actor = NodeApply("mySpace", "actor:arnold_schwarzenegger", sources=[
+                ...                        NodeOrEdgeData(
+                ...                               ViewId("mySpace", "ActorView", "v1"),
                 ...                               {"wonOscar": False,
                 ...                               # This is a one-to-one edge from actor to person
                 ...                                "person": {"space": "mySpace", "externalId": "person:arnold_schwarzenegger"}})
                 ... ])
                 >>> # This is one to many edge, in this case from Person to role
                 >>> # (a person can have multiple roles, in this model for example Actor and Director)
-                >>> person_to_actor = dm.EdgeApply(space="mySpace",
+                >>> person_to_actor = EdgeApply(space="mySpace",
                 ...                                       external_id="relation:arnold_schwarzenegger:actor",
-                ...                                       type="Person.roles",
-                ...                                       start_node="person:arnold_schwarzenegger",
-                ...                                       end_node="actor:arnold_schwarzenegger",
+                ...                                       type=("Person", "roles"),
+                ...                                       start_node=("person", "arnold_schwarzenegger"),
+                ...                                       end_node=("actor", "arnold_schwarzenegger"),
                 ... )
                 >>> res = c.data_modeling.instances.apply([person, actor], [person_to_actor])
 
             Create new edge an automatically create end nodes.
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client import data_modeling as dm
+                >>> from cognite.client.data_classes.data_modeling import EdgeApply
                 >>> c = CogniteClient()
-                >>> edge = dm.EdgeApply(space="mySpace",
+                >>> edge = EdgeApply(space="mySpace",
                 ...                            external_id="relation:sylvester_stallone:actor",
-                ...                            type="Person.roles",
-                ...                            start_node="person:sylvester_stallone",
-                ...                            end_node="actor:sylvester_stallone",
+                ...                            type=("Person", "roles"),
+                ...                            start_node=("person", "sylvester_stallone"),
+                ...                            end_node=("actor", "sylvester_stallone"),
                 ... )
                 >>> res = c.data_modeling.instances.apply(edges=edge, auto_create_start_nodes=True, auto_create_end_nodes=True)
 
