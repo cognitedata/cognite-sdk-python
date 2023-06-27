@@ -576,7 +576,7 @@ class InstancesAPI(APIClient):
     def aggregate(
         self,
         view: ViewId,
-        aggregates: Aggregation | Sequence[Aggregation],
+        aggregates: Aggregation | dict | Sequence[Aggregation | dict],
         instance_type: Literal["node", "edge"] = "node",
         group_by: Sequence[str] | None = None,
         query: str | None = None,
@@ -588,7 +588,7 @@ class InstancesAPI(APIClient):
 
         Args:
             view (ViewId): View to to aggregate over.
-            aggregates (Aggregation | Sequence[Aggregation]):  The properties to aggregate over.
+            aggregates (Aggregation | dict | Sequence[Aggregation | dict]):  The properties to aggregate over.
             instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
             group_by (Optional[Sequence[str]]): The selection of fields to group the results by when doing aggregations.
                                   You can specify up to 5 items to group by.
@@ -618,8 +618,10 @@ class InstancesAPI(APIClient):
         if instance_type not in ("node", "edge"):
             raise ValueError(f"Invalid instance type: {instance_type}")
         body: Dict[str, Any] = {"view": view.dump(camel_case=True), "instanceType": instance_type, "limit": limit}
-        aggregate_seq: Sequence[Aggregation] = aggregates if isinstance(aggregates, Sequence) else [aggregates]
-        body["aggregates"] = [agg.dump(camel_case=True) for agg in aggregate_seq]
+        aggregate_seq: Sequence[Aggregation | dict] = aggregates if isinstance(aggregates, Sequence) else [aggregates]
+        body["aggregates"] = [
+            agg.dump(camel_case=True) if isinstance(agg, Aggregation) else agg for agg in aggregate_seq
+        ]
         if group_by:
             body["groupBy"] = group_by
         if filter:
