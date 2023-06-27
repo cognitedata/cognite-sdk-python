@@ -1,14 +1,14 @@
-from cognite.client import data_modeling as dm
+from cognite.client.data_classes.data_modeling import DirectRelationReference, EdgeApply
 
 
 class TestEdgeApply:
     def test_dump(self) -> None:
-        edge = dm.EdgeApply(
+        edge = EdgeApply(
             space="mySpace",
             external_id="relation:arnold_schwarzenegger:actor",
-            type=dm.DirectRelationReference("mySpace", "Person.role"),
-            start_node=dm.DirectRelationReference("mySpace", "person.external_id"),
-            end_node=dm.DirectRelationReference("mySpace", "actor.external_id"),
+            type=DirectRelationReference("mySpace", "Person.role"),
+            start_node=DirectRelationReference("mySpace", "person.external_id"),
+            end_node=DirectRelationReference("mySpace", "actor.external_id"),
         )
 
         assert edge.dump(camel_case=True) == {

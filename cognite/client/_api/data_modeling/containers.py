@@ -106,7 +106,7 @@ class ContainersAPI(APIClient):
             Fetch using the ContainerId::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_modeling import ContainerId
+                >>> from cognite.client.data_classes.data_modeling import ContainerId
                 >>> c = CogniteClient()
                 >>> res = c.data_modeling.containers.retrieve(ContainerId(space='mySpace', external_id='myContainer'))
         """
@@ -202,10 +202,11 @@ class ContainersAPI(APIClient):
             Create new containers:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client import data_modeling as models
+                >>> from cognite.client.data_classes.data_modeling import ContainerApply, ContainerProperty, Text
                 >>> c = CogniteClient()
-                >>> containers = [models.ContainerApply(space="mySpace",properties={"name": models.ContainerProperty(type=models.TextType, name="name")})]
-                >>> res = c.data_modeling.containers.apply(containers)
+                >>> container = [ContainerApply(space="mySpace", external_id="myContainer",
+                ...     properties={"name": ContainerProperty(type=Text(), name="name")})]
+                >>> res = c.data_modeling.containers.apply(container)
         """
         return self._create_multiple(
             list_cls=ContainerList, resource_cls=Container, items=container, input_resource_cls=ContainerApply
