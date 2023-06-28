@@ -97,10 +97,10 @@ class TestViewsAPI:
         view = movie_views[0]
 
         # Act
-        retrieved = cognite_client.data_modeling.views.retrieve(view.as_id(), include_inherited_properties=False)[0]
+        retrieved = cognite_client.data_modeling.views.retrieve(view.as_id(), include_inherited_properties=False)
 
         # Assert
-        assert retrieved is not None
+        assert len(retrieved) == 1
 
     def test_retrieve_multiple(self, cognite_client: CogniteClient, movie_views: ViewList) -> None:
         # Arrange

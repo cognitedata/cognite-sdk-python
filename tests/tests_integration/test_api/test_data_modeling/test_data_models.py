@@ -127,11 +127,11 @@ class TestDataModelsAPI:
 
     def test_retrieve_with_inline_views(self, cognite_client: CogniteClient, movie_model: DataModel) -> None:
         # Act
-        retrieved = cognite_client.data_modeling.data_models.retrieve(movie_model.as_id(), inline_views=True)[0]
+        retrieved = cognite_client.data_modeling.data_models.retrieve(movie_model.as_id(), inline_views=True)
 
         # Assert
-        assert retrieved.views is not None
-        assert all(isinstance(v, View) for v in retrieved.views)
+        assert len(retrieved) == 1
+        assert all(isinstance(v, View) for v in retrieved[0].views)
 
     def test_retrieve_multiple_with_missing(
         self, cognite_client: CogniteClient, cdf_data_models: DataModelList[ViewId]

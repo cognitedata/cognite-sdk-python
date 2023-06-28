@@ -118,9 +118,9 @@ class DataModel(DataModelCore, Generic[T_View]):
         is_global: bool,
         last_updated_time: int,
         created_time: int,
+        views: list[T_View],
         description: str = None,
         name: str = None,
-        views: list[T_View] = None,
         **_: dict,
     ):
         super().__init__(space, external_id, version, description, name)
