@@ -84,11 +84,16 @@ class ViewsAPI(APIClient):
         """
         return cast(Iterator[View], self())
 
-    def retrieve(self, ids: ViewIdentifier | Sequence[ViewIdentifier]) -> ViewList:
+    def retrieve(
+        self,
+        ids: ViewIdentifier | Sequence[ViewIdentifier],
+        include_inherited_properties: bool = True,
+    ) -> ViewList:
         """`Retrieve a single view by id. <https://developer.cognite.com/api#tag/Views/operation/byExternalIdsViews>`_
 
         Args:
             ids (ViewId | Sequence[ViewId]): View dentifier(s)
+            include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
 
         Returns:
             Optional[View]: Requested view or None if it does not exist.
@@ -101,7 +106,12 @@ class ViewsAPI(APIClient):
 
         """
         identifier = _load_identifier(ids, "view")
-        return self._retrieve_multiple(list_cls=ViewList, resource_cls=View, identifiers=identifier)
+        return self._retrieve_multiple(
+            list_cls=ViewList,
+            resource_cls=View,
+            identifiers=identifier,
+            params={"includeInheritedProperties": include_inherited_properties},
+        )
 
     def delete(self, ids: ViewIdentifier | Sequence[ViewIdentifier]) -> list[ViewId]:
         """`Delete one or more views <https://developer.cognite.com/api#tag/Views/operation/deleteViews>`_

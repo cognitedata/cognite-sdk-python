@@ -17,6 +17,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.5.4] - 2023-06-28
+### Added
+- Missing query parameters: 
+     * `inline_views` in `data_modeling.data_models.retrieve()`.
+     * `include_global` in `data_modeling.spaces.list()`.
+     * `include_inherited_properties` in `data_modeling.views.retrieve()`.
+
 ## [6.5.3] - 2023-06-28
 ### Fixed
 - Only validate `space` and `external_id` for `data_modeling` write classes.

@@ -279,6 +279,7 @@ class APIClient:
         ignore_unknown_ids: Optional[bool] = None,
         headers: Optional[Dict[str, Any]] = None,
         other_params: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
     ) -> Optional[T_CogniteResource]:
         ...
 
@@ -292,6 +293,7 @@ class APIClient:
         ignore_unknown_ids: Optional[bool] = None,
         headers: Optional[Dict[str, Any]] = None,
         other_params: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
     ) -> T_CogniteResourceList:
         ...
 
@@ -304,6 +306,7 @@ class APIClient:
         ignore_unknown_ids: Optional[bool] = None,
         headers: Optional[Dict[str, Any]] = None,
         other_params: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
     ) -> Union[T_CogniteResourceList, Optional[T_CogniteResource]]:
         resource_path = resource_path or self._RESOURCE_PATH
 
@@ -317,6 +320,7 @@ class APIClient:
                     **(other_params or {}),
                 },
                 "headers": headers,
+                "params": params,
             }
             for id_chunk in identifiers.chunked(self._RETRIEVE_LIMIT)
         ]
@@ -396,6 +400,7 @@ class APIClient:
                     params["cursor"] = next_cursor
                     if sort is not None:
                         params["sort"] = sort
+                    params.update(other_params or {})
                     res = self._get(url_path=url_path or resource_path, params=params, headers=headers)
                 elif method == "POST":
                     body: dict[str, Any] = {"limit": current_limit, "cursor": next_cursor, **(other_params or {})}
