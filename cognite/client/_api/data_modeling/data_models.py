@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterator, Sequence, cast, overload
+from typing import Iterator, Literal, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DATA_MODELING_LIST_LIMIT_DEFAULT
@@ -10,11 +10,8 @@ from cognite.client.data_classes.data_modeling.data_models import (
     DataModelFilter,
     DataModelList,
 )
-from cognite.client.data_classes.data_modeling.ids import (
-    DataModelId,
-    DataModelIdentifier,
-    _load_identifier,
-)
+from cognite.client.data_classes.data_modeling.ids import DataModelId, DataModelIdentifier, ViewId, _load_identifier
+from cognite.client.data_classes.data_modeling.views import View
 
 
 class DataModelsAPI(APIClient):
@@ -90,9 +87,21 @@ class DataModelsAPI(APIClient):
         """
         return cast(Iterator[DataModel], self())
 
+    @overload
+    def retrieve(
+        self, ids: DataModelIdentifier | Sequence[DataModelIdentifier], inline_views: Literal[True]
+    ) -> DataModelList[View]:
+        ...
+
+    @overload
+    def retrieve(
+        self, ids: DataModelIdentifier | Sequence[DataModelIdentifier], inline_views: Literal[False] = False
+    ) -> DataModelList[ViewId]:
+        ...
+
     def retrieve(
         self, ids: DataModelIdentifier | Sequence[DataModelIdentifier], inline_views: bool = False
-    ) -> DataModelList:
+    ) -> DataModelList[ViewId] | DataModelList[View]:
         """`Retrieve data_model(s) by id(s). <https://developer.cognite.com/api#tag/Data-models/operation/byExternalIdsDataModels>`_
 
         Args:
@@ -135,27 +144,49 @@ class DataModelsAPI(APIClient):
         )
         return [DataModelId(item["space"], item["externalId"], item["version"]) for item in deleted_data_models]
 
+    @overload
     def list(
         self,
+        inline_views: Literal[True],
         limit: int = DATA_MODELING_LIST_LIMIT_DEFAULT,
         space: str | None = None,
-        inline_views: bool = False,
         all_versions: bool = False,
         include_global: bool = False,
-    ) -> DataModelList:
+    ) -> DataModelList[View]:
+        ...
+
+    @overload
+    def list(
+        self,
+        inline_views: Literal[False] = False,
+        limit: int = DATA_MODELING_LIST_LIMIT_DEFAULT,
+        space: str | None = None,
+        all_versions: bool = False,
+        include_global: bool = False,
+    ) -> DataModelList[ViewId]:
+        ...
+
+    def list(
+        self,
+        inline_views: bool = False,
+        limit: int = DATA_MODELING_LIST_LIMIT_DEFAULT,
+        space: str | None = None,
+        all_versions: bool = False,
+        include_global: bool = False,
+    ) -> DataModelList[View] | DataModelList[ViewId]:
         """`List data models <https://developer.cognite.com/api#tag/Data-models/operation/listDataModels>`_
 
         Args:
+            inline_views (bool): Whether to expand the referenced views inline in the returned result.
             limit (int, optional): Maximum number of data model to return. Default to 10. Set to -1, float("inf") or None
                 to return all items.
             space: (str | None): The space to query.
-            inline_views (bool): Whether to expand the referenced views inline in the returned result.
             all_versions (bool): Whether to return all versions. If false, only the newest version is returned,
                                  which is determined based on the 'createdTime' field.
             include_global (bool): Whether to include global data models.
 
         Returns:
-            DataModelList: List of requested data model
+            DataModelList: List of requested data models
 
         Examples:
 

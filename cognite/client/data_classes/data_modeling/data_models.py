@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, List, Literal, Optional, Union, cast
+from typing import Any, Generic, List, Literal, Optional, TypeVar, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -92,7 +92,10 @@ class DataModelApply(DataModelCore):
         return output
 
 
-class DataModel(DataModelCore):
+T_View = TypeVar("T_View", bound=Union[ViewId, View])
+
+
+class DataModel(DataModelCore, Generic[T_View]):
     """A group of views. This is the read version of a Data Model
 
     Args:
@@ -117,7 +120,7 @@ class DataModel(DataModelCore):
         created_time: int,
         description: str = None,
         name: str = None,
-        views: list[ViewId | View] = None,
+        views: list[T_View] = None,
         **_: dict,
     ):
         super().__init__(space, external_id, version, description, name)
@@ -152,7 +155,14 @@ class DataModel(DataModelCore):
     def as_apply(self) -> DataModelApply:
         views: Optional[List[Union[ViewId, ViewApply]]] = None
         if self.views:
-            views = [v.as_apply() if isinstance(v, View) else v for v in self.views]
+            views = []
+            for view in self.views:
+                if isinstance(view, View):
+                    views.append(view.as_apply())
+                elif isinstance(view, ViewId):
+                    views.append(view)
+                else:
+                    raise ValueError(f"Unexpected type {type(view)}")
 
         return DataModelApply(
             space=self.space,
@@ -168,7 +178,7 @@ class DataModelApplyList(CogniteResourceList[DataModelApply]):
     _RESOURCE = DataModelApply
 
 
-class DataModelList(CogniteResourceList[DataModel]):
+class DataModelList(Generic[T_View], CogniteResourceList[DataModel[T_View]]):
     _RESOURCE = DataModel
 
     def to_data_model_apply_list(self) -> DataModelApplyList:

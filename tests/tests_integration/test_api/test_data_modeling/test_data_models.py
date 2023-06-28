@@ -19,14 +19,14 @@ from cognite.client.exceptions import CogniteAPIError
 
 
 @pytest.fixture(scope="function")
-def cdf_data_models(cognite_client: CogniteClient) -> DataModelList:
+def cdf_data_models(cognite_client: CogniteClient) -> DataModelList[ViewId]:
     data_models = cognite_client.data_modeling.data_models.list(limit=-1)
     assert len(data_models) > 0, "Please create at least one data model in CDF."
     return data_models
 
 
 @pytest.fixture(scope="function")
-def movie_model(cdf_data_models: DataModelList) -> DataModel:
+def movie_model(cdf_data_models: DataModelList[ViewId]) -> DataModel:
     movie_model = next(m for m in cdf_data_models if m.external_id == "Movie")
     assert movie_model is not None, "Please create a data model with external_id 'Movie' in CDF."
     return movie_model
@@ -34,10 +34,12 @@ def movie_model(cdf_data_models: DataModelList) -> DataModel:
 
 class TestDataModelsAPI:
     def test_list(
-        self, cognite_client: CogniteClient, cdf_data_models: DataModelList, integration_test_space: Space
+        self, cognite_client: CogniteClient, cdf_data_models: DataModelList[ViewId], integration_test_space: Space
     ) -> None:
         # Arrange
-        expected_data_models = DataModelList([m for m in cdf_data_models if m.space == integration_test_space.space])
+        expected_data_models = DataModelList[ViewId](
+            [m for m in cdf_data_models if m.space == integration_test_space.space]
+        )
 
         # Act
         actual_data_models = cognite_client.data_modeling.data_models.list(space=integration_test_space.space, limit=-1)
@@ -112,7 +114,7 @@ class TestDataModelsAPI:
             == []
         )
 
-    def test_retrieve_multiple(self, cognite_client: CogniteClient, cdf_data_models: DataModelList) -> None:
+    def test_retrieve_multiple(self, cognite_client: CogniteClient, cdf_data_models: DataModelList[ViewId]) -> None:
         assert len(cdf_data_models) >= 2, "Please add at least two data models to the test environment"
         # Arrange
         ids = [DataModelId(v.space, v.external_id, v.version) for v in cdf_data_models]
@@ -132,7 +134,7 @@ class TestDataModelsAPI:
         assert all(isinstance(v, View) for v in retrieved.views)
 
     def test_retrieve_multiple_with_missing(
-        self, cognite_client: CogniteClient, cdf_data_models: DataModelList
+        self, cognite_client: CogniteClient, cdf_data_models: DataModelList[ViewId]
     ) -> None:
         assert len(cdf_data_models) >= 2, "Please add at least two data models to the test environment"
         # Arrange
