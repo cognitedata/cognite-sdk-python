@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.5.3] - 2023-06-28
+### Fixed
+- Only validate `space` and `external_id` for `data_modeling` write classes.
+
+
 ## [6.5.2] - 2023-06-27
 ### Fixed
 - Added missing `metadata` attribute to `iam.Group`
