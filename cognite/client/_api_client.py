@@ -704,7 +704,7 @@ class APIClient:
         summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"],
-            task_list_element_unwrap_fn=utils._auxiliary.unwrap_identifer,
+            task_list_element_unwrap_fn=identifiers.unwrap_identifier,
         )
         if returns_items:
             return summary.joined_results(lambda res: res.json()["items"])
@@ -775,7 +775,7 @@ class APIClient:
         tasks_summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
         tasks_summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"],
-            task_list_element_unwrap_fn=lambda el: utils._auxiliary.unwrap_identifer(el),
+            task_list_element_unwrap_fn=lambda el: IdentifierSequenceCore.unwrap_identifier(el),
         )
         updated_items = tasks_summary.joined_results(lambda res: res.json()["items"])
 

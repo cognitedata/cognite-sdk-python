@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numbers
+from abc import ABC
 from typing import (
     Dict,
     Generic,
@@ -117,7 +118,7 @@ class InternalId(Identifier[int]):
 T_Identifier = TypeVar("T_Identifier", bound=IdentifierCore)
 
 
-class IdentifierSequenceCore(Generic[T_Identifier]):
+class IdentifierSequenceCore(Generic[T_Identifier], ABC):
     def __init__(self, identifiers: List[T_Identifier], is_singleton: bool) -> None:
         if not identifiers:
             raise ValueError("No identifiers specified")
@@ -155,6 +156,18 @@ class IdentifierSequenceCore(Generic[T_Identifier]):
 
     def are_unique(self) -> bool:
         return len(self) == len(set(self.as_primitives()))
+
+    @staticmethod
+    def unwrap_identifier(identifier: Union[str, int, Dict]) -> Union[str, int]:
+        if isinstance(identifier, (str, int)):
+            return identifier
+        if "externalId" in identifier:
+            return identifier["externalId"]
+        if "id" in identifier:
+            return identifier["id"]
+        if "space" in identifier:
+            return identifier["space"]
+        raise ValueError(f"{identifier} does not contain 'id' or 'externalId' or 'space'")
 
 
 class IdentifierSequence(IdentifierSequenceCore[Identifier]):
@@ -212,9 +225,9 @@ class IdentifierSequence(IdentifierSequenceCore[Identifier]):
         return cls(identifiers=[Identifier(val) for val in all_identifiers], is_singleton=is_singleton)
 
 
-class DataModelingIdentifierSequence(IdentifierSequenceCore[DataModelingIdentifier]):
+class SingletonIdentifierSequence(IdentifierSequenceCore[Identifier]):
     ...
 
 
-class SingletonIdentifierSequence(IdentifierSequenceCore):
+class DataModelingIdentifierSequence(IdentifierSequenceCore[DataModelingIdentifier]):
     ...
