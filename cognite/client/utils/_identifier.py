@@ -118,11 +118,9 @@ T_Identifier = TypeVar("T_Identifier", bound=IdentifierCore)
 
 
 class IdentifierSequenceCore(Generic[T_Identifier]):
-    _no_identifiers_error_message: str = ""
-
     def __init__(self, identifiers: List[T_Identifier], is_singleton: bool) -> None:
         if not identifiers:
-            raise ValueError(self._no_identifiers_error_message)
+            raise ValueError("No identifiers specified")
         self._identifiers = identifiers
         self.__is_singleton = is_singleton
 
@@ -160,8 +158,6 @@ class IdentifierSequenceCore(Generic[T_Identifier]):
 
 
 class IdentifierSequence(IdentifierSequenceCore[Identifier]):
-    _no_identifiers_error_message = "No ids or external_ids specified"
-
     @overload
     @classmethod
     def of(cls, *ids: List[Union[int, str]]) -> IdentifierSequence:
@@ -217,13 +213,7 @@ class IdentifierSequence(IdentifierSequenceCore[Identifier]):
 
 
 class DataModelingIdentifierSequence(IdentifierSequenceCore[DataModelingIdentifier]):
-    _no_identifiers_error_message = "No spaces specified."
-
-    @classmethod
-    def load_spaces(cls, spaces: str | Sequence[str]) -> DataModelingIdentifierSequence:
-        spaces = [spaces] if isinstance(spaces, str) else spaces
-
-        return cls(identifiers=[DataModelingIdentifier(space) for space in spaces], is_singleton=len(spaces) == 1)
+    ...
 
 
 class SingletonIdentifierSequence(IdentifierSequenceCore):
