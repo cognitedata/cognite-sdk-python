@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.5.5] - 2023-06-28
+### Fixed
+- A bug where we would raise the wrong exception when errors on occured on `data_modeling.spaces.delete`
+- A bug causing incosistent MRO in DataModelList
+
 ## [6.5.4] - 2023-06-28
 ### Added
 - Missing query parameters: 

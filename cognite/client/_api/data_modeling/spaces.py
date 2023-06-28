@@ -4,8 +4,8 @@ from typing import Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client.data_classes.data_modeling.ids import _load_space_identifier
 from cognite.client.data_classes.data_modeling.spaces import Space, SpaceApply, SpaceList
-from cognite.client.utils._identifier import DataModelingIdentifierSequence
 
 
 class SpacesAPI(APIClient):
@@ -91,7 +91,7 @@ class SpacesAPI(APIClient):
                 >>> res = c.data_modeling.spaces.retrieve(spaces=["MySpace", "MyAwesomeSpace", "MyOtherSpace"])
 
         """
-        identifier = DataModelingIdentifierSequence.load_spaces(spaces=space)
+        identifier = _load_space_identifier(space)
         return self._retrieve_multiple(list_cls=SpaceList, resource_cls=Space, identifiers=identifier)
 
     def delete(self, space: str | Sequence[str]) -> list[str]:
@@ -111,9 +111,7 @@ class SpacesAPI(APIClient):
         """
         deleted_spaces = cast(
             list,
-            self._delete_multiple(
-                identifiers=DataModelingIdentifierSequence.load_spaces(spaces=space), wrap_ids=True, returns_items=True
-            ),
+            self._delete_multiple(identifiers=_load_space_identifier(space), wrap_ids=True, returns_items=True),
         )
         return [item["space"] for item in deleted_spaces]
 

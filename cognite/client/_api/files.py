@@ -797,7 +797,7 @@ class FilesAPI(APIClient):
             self._process_file_download, tasks, max_workers=self._config.max_workers
         )
         tasks_summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=lambda task: id_to_metadata[utils._auxiliary.unwrap_identifer(task[1])],
+            task_unwrap_fn=lambda task: id_to_metadata[IdentifierSequence.unwrap_identifier(task[1])],
             str_format_element_fn=lambda metadata: metadata.id,
         )
 
@@ -812,7 +812,7 @@ class FilesAPI(APIClient):
         identifier: Dict[str, Union[int, str]],
         id_to_metadata: Dict[Union[str, int], FileMetadata],
     ) -> None:
-        id = utils._auxiliary.unwrap_identifer(identifier)
+        id = IdentifierSequence.unwrap_identifier(identifier)
         file_metadata = id_to_metadata[id]
         file_path = (directory / cast(str, file_metadata.name)).resolve()
         file_is_in_download_directory = directory.resolve() in file_path.parents

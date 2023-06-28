@@ -4,7 +4,7 @@ from typing import Literal
 
 import pytest
 
-from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId, _load_identifier
+from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId, _load_identifier, _load_space_identifier
 
 
 class TestContainerReference:
@@ -28,6 +28,7 @@ class TestLoadIdentifier:
             (("space", "container"), "container", [{"space": "space", "externalId": "container"}], True),
             ([("space", "container")], "container", [{"space": "space", "externalId": "container"}], False),
             (("space", "view", "v1"), "view", [{"space": "space", "externalId": "view", "version": "v1"}], False),
+            ([("space", "view", "v1")], "view", [{"space": "space", "externalId": "view", "version": "v1"}], False),
             (
                 ("space", "myDataModel", "v1"),
                 "data_model",
@@ -56,6 +57,23 @@ class TestLoadIdentifier:
         expected_is_singleton: bool,
     ) -> None:
         identifier = _load_identifier(ids, id_type)
+
+        assert identifier.as_dicts() == expected_dict
+        assert (
+            identifier.is_singleton() == expected_is_singleton
+        ), f"Expected {expected_is_singleton} but got {identifier.is_singleton()}"
+
+    @pytest.mark.parametrize(
+        "ids, expected_dict, expected_is_singleton",
+        [("spaceId", [{"space": "spaceId"}], True), (["spaceId"], [{"space": "spaceId"}], False)],
+    )
+    def test_load_space_identifier(
+        self,
+        ids: tuple[str, str] | tuple[str, str, str],
+        expected_dict: list | dict,
+        expected_is_singleton: bool,
+    ) -> None:
+        identifier = _load_space_identifier(ids)
 
         assert identifier.as_dicts() == expected_dict
         assert (

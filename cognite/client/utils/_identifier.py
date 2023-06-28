@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numbers
+from abc import ABC
 from typing import (
     Dict,
     Generic,
@@ -117,12 +118,10 @@ class InternalId(Identifier[int]):
 T_Identifier = TypeVar("T_Identifier", bound=IdentifierCore)
 
 
-class IdentifierSequenceCore(Generic[T_Identifier]):
-    _no_identifiers_error_message: str = ""
-
+class IdentifierSequenceCore(Generic[T_Identifier], ABC):
     def __init__(self, identifiers: List[T_Identifier], is_singleton: bool) -> None:
         if not identifiers:
-            raise ValueError(self._no_identifiers_error_message)
+            raise ValueError("No identifiers specified")
         self._identifiers = identifiers
         self.__is_singleton = is_singleton
 
@@ -158,10 +157,20 @@ class IdentifierSequenceCore(Generic[T_Identifier]):
     def are_unique(self) -> bool:
         return len(self) == len(set(self.as_primitives()))
 
+    @staticmethod
+    def unwrap_identifier(identifier: Union[str, int, Dict]) -> Union[str, int]:
+        if isinstance(identifier, (str, int)):
+            return identifier
+        if "externalId" in identifier:
+            return identifier["externalId"]
+        if "id" in identifier:
+            return identifier["id"]
+        if "space" in identifier:
+            return identifier["space"]
+        raise ValueError(f"{identifier} does not contain 'id' or 'externalId' or 'space'")
+
 
 class IdentifierSequence(IdentifierSequenceCore[Identifier]):
-    _no_identifiers_error_message = "No ids or external_ids specified"
-
     @overload
     @classmethod
     def of(cls, *ids: List[Union[int, str]]) -> IdentifierSequence:
@@ -216,15 +225,9 @@ class IdentifierSequence(IdentifierSequenceCore[Identifier]):
         return cls(identifiers=[Identifier(val) for val in all_identifiers], is_singleton=is_singleton)
 
 
+class SingletonIdentifierSequence(IdentifierSequenceCore[Identifier]):
+    ...
+
+
 class DataModelingIdentifierSequence(IdentifierSequenceCore[DataModelingIdentifier]):
-    _no_identifiers_error_message = "No spaces specified."
-
-    @classmethod
-    def load_spaces(cls, spaces: str | Sequence[str]) -> DataModelingIdentifierSequence:
-        spaces = [spaces] if isinstance(spaces, str) else spaces
-
-        return cls(identifiers=[DataModelingIdentifier(space) for space in spaces], is_singleton=len(spaces) == 1)
-
-
-class SingletonIdentifierSequence(IdentifierSequenceCore):
     ...
