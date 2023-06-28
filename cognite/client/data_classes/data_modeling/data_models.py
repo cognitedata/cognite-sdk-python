@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Generic, List, Literal, Optional, TypeVar, Union, cast
+from typing import Any, Generic, List, Literal, TypeVar, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -153,16 +153,14 @@ class DataModel(DataModelCore, Generic[T_View]):
         return output
 
     def as_apply(self) -> DataModelApply:
-        views: Optional[List[Union[ViewId, ViewApply]]] = None
-        if self.views:
-            views = []
-            for view in self.views:
-                if isinstance(view, View):
-                    views.append(view.as_apply())
-                elif isinstance(view, ViewId):
-                    views.append(view)
-                else:
-                    raise ValueError(f"Unexpected type {type(view)}")
+        views: List[ViewId | ViewApply] = []
+        for view in self.views:
+            if isinstance(view, View):
+                views.append(view.as_apply())
+            elif isinstance(view, ViewId):
+                views.append(view)
+            else:
+                raise ValueError(f"Unexpected type {type(view)}")
 
         return DataModelApply(
             space=self.space,
