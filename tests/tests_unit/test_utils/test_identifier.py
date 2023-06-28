@@ -56,7 +56,7 @@ class TestIdentifierSequence:
 
     @pytest.mark.parametrize(
         "ids, external_ids, exception, match",
-        [(None, None, ValueError, "No ids or external_ids specified")],
+        [(None, None, ValueError, "No identifiers specified")],
     )
     def test_process_ids_fail(self, ids, external_ids, exception, match) -> None:
         with pytest.raises(exception, match=match):

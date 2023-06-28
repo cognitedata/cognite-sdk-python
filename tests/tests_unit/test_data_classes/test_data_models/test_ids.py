@@ -65,7 +65,7 @@ class TestLoadIdentifier:
 
     @pytest.mark.parametrize(
         "ids, expected_dict, expected_is_singleton",
-        [("spaceId", [{"space": "spaceId"}], False), (["spaceId"], [{"space": "spaceId"}], False)],
+        [("spaceId", [{"space": "spaceId"}], True), (["spaceId"], [{"space": "spaceId"}], False)],
     )
     def test_load_space_identifier(
         self,

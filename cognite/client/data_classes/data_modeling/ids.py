@@ -152,9 +152,10 @@ Id = Union[Tuple[str, str], Tuple[str, str, str], DataModelingId, VersionedDataM
 
 
 def _load_space_identifier(ids: str | Sequence[str]) -> DataModelingIdentifierSequence:
+    is_sequence = isinstance(ids, Sequence) and not isinstance(ids, str)
     spaces = [ids] if isinstance(ids, str) else ids
     return DataModelingIdentifierSequence(
-        identifiers=[DataModelingIdentifier(space) for space in spaces], is_singleton=False
+        identifiers=[DataModelingIdentifier(space) for space in spaces], is_singleton=not is_sequence
     )
 
 
