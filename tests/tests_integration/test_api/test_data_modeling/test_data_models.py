@@ -27,7 +27,7 @@ def cdf_data_models(cognite_client: CogniteClient) -> DataModelList[ViewId]:
 
 @pytest.fixture(scope="function")
 def movie_model(cdf_data_models: DataModelList[ViewId]) -> DataModel:
-    movie_model = next(m for m in cdf_data_models if m.external_id == "Movie")
+    movie_model = cdf_data_models.get(external_id="Movie")
     assert movie_model is not None, "Please create a data model with external_id 'Movie' in CDF."
     return movie_model
 
