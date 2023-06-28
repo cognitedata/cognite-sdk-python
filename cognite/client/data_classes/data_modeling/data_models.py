@@ -176,7 +176,7 @@ class DataModelApplyList(CogniteResourceList[DataModelApply]):
     _RESOURCE = DataModelApply
 
 
-class DataModelList(Generic[T_View], CogniteResourceList[DataModel[T_View]]):
+class DataModelList(CogniteResourceList[DataModel[T_View]]):
     _RESOURCE = DataModel
 
     def to_data_model_apply_list(self) -> DataModelApplyList:
