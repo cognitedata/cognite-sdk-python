@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Generic, List, Literal, TypeVar, Union, cast
+from typing import Any, Generic, List, Literal, Optional, TypeVar, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -118,13 +118,13 @@ class DataModel(DataModelCore, Generic[T_View]):
         is_global: bool,
         last_updated_time: int,
         created_time: int,
-        views: list[T_View],
         description: str = None,
         name: str = None,
+        views: Optional[list[T_View]] = None,
         **_: dict,
     ):
         super().__init__(space, external_id, version, description, name)
-        self.views = views
+        self.views: list[T_View] = views or []
         self.is_global = is_global
         self.last_updated_time = last_updated_time
         self.created_time = created_time
