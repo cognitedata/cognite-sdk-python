@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [6.5.3] - 2023-06-28
 ### Fixed
-- Only validate `space` and `external_id` for write methods in `data_modeling` classes.
+- Only validate `space` and `external_id` for `data_modeling` write classes.
 
 
 ## [6.5.2] - 2023-06-27
