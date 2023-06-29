@@ -4,7 +4,6 @@ import pprint
 from contextlib import suppress
 from typing import Dict, Optional, Set
 
-from cognite.client import utils
 from cognite.client._version import __api_subversion__
 from cognite.client.credentials import CredentialProvider
 
@@ -87,11 +86,15 @@ class ClientConfig:
         self.debug = debug
 
         if debug:
-            utils._logging._configure_logger_for_debug_mode()
+            from cognite.client.utils._logging import _configure_logger_for_debug_mode
+
+            _configure_logger_for_debug_mode()
 
         if not global_config.disable_pypi_version_check:
             with suppress(Exception):  # PyPI might be unreachable, if so, skip version check
-                utils._auxiliary._check_client_has_newest_major_version()
+                from cognite.client.utils._auxiliary import _check_client_has_newest_major_version
+
+                _check_client_has_newest_major_version()
 
     def __str__(self) -> str:
         return pprint.pformat(self.__dict__, indent=4)
