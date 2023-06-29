@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from abc import abstractmethod
 from collections import defaultdict
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from typing import (
     Any,
     Dict,
@@ -42,7 +42,7 @@ from cognite.client.data_classes.data_modeling.ids import (
     ViewId,
     ViewIdentifier,
 )
-from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive, convert_all_keys_to_snake_case
+from cognite.client.utils._text import convert_all_keys_to_snake_case
 
 PropertyValue = Union[str, int, float, bool, dict, List[str], List[int], List[float], List[bool], List[dict]]
 Space = str
@@ -66,7 +66,7 @@ class NodeOrEdgeData:
         return cls(**convert_all_keys_to_snake_case(data))
 
     def dump(self, camel_case: bool = False) -> dict:
-        output = asdict(self)
+        output: Dict[str, Any] = {"properties": dict(self.properties.items())}
         if self.source:
             if isinstance(self.source, (ContainerId, ViewId)):
                 output["source"] = self.source.dump(camel_case)
@@ -74,7 +74,7 @@ class NodeOrEdgeData:
                 output["source"] = self.source
             else:
                 raise TypeError(f"source must be ContainerId, ViewId or a dict, but was {type(self.source)}")
-        return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
+        return output
 
 
 class InstanceCore(DataModelingResource):

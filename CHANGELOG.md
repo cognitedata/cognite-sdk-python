@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.5.7] - 2023-06-29
+### Fixed
+- A bug caused by use of snake case in field types causing `NodeApply.dump(camel_case=True)` 
+  trigger a 400 response from the API. 
+
 ## [6.5.6] - 2023-06-29
 ### Fixed
 - A bug causing `ClientConfig(debug=True)` to raise an AttributeError 
