@@ -66,10 +66,10 @@ class NodeOrEdgeData:
         return cls(**convert_all_keys_to_snake_case(data))
 
     def dump(self, camel_case: bool = False) -> dict:
-        output = {"properties": dict(self.properties.items())}
+        output: Dict[str, Any] = {"properties": dict(self.properties.items())}
         if self.source:
             if isinstance(self.source, (ContainerId, ViewId)):
-                output["source"] = self.source.dump(camel_case)  # type: ignore[assignment]
+                output["source"] = self.source.dump(camel_case)
             elif isinstance(self.source, dict):
                 output["source"] = self.source
             else:
