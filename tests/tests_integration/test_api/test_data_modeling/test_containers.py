@@ -1,9 +1,11 @@
+import json
 from typing import Any
 
 import pytest
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes.data_modeling import (
+    Container,
     ContainerApply,
     ContainerId,
     ContainerList,
@@ -161,3 +163,16 @@ class TestContainersAPI:
         finally:
             # Cleanup
             cognite_client.data_modeling.containers.delete(valid_container.as_id())
+
+    def test_dump_json_serialize_load(self, cdf_containers: ContainerList) -> None:
+        # Arrange
+        container = cdf_containers.get(external_id="Movie")
+        assert container is not None, "Movie container is missing from test environment"
+
+        # Act
+        container_dump = container.dump(camel_case=True)
+        container_json = json.dumps(container_dump)
+        container_loaded = Container.load(container_json)
+
+        # Assert
+        assert container == container_loaded
