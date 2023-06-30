@@ -17,8 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.19.0] - 2023-09-04
+## Added
+- Now possible to retrieve and update translation and scale of 3D model revisions.
 
-## [6.18.0] - 2023-09-02
+## [6.18.0] - 2023-09-04
 ### Added
 - Added parameter `keep_directory_structure` to `client.files.download` to allow downloading files to a folder structure matching the one in CDF.
 
