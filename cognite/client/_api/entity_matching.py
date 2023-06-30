@@ -216,10 +216,10 @@ class EntityMatchingAPI(APIClient):
             >>> targets = [{'id': 1, 'name': 'ParentAsset1', 'description': 'Parent to ChildAsset1'}]
             >>> true_matches = [(1, 101)]
             >>> model = client.entity_matching.fit(
-                    sources = sources,
-                    targets = targets,
-                    true_matches = true_matches,
-                    description="AssetMatchingJob1")
+            >>>     sources = sources,
+            >>>     targets = targets,
+            >>>     true_matches = true_matches,
+            >>>     description="AssetMatchingJob1")
         """
 
         if match_fields:
@@ -284,12 +284,13 @@ class EntityMatchingAPI(APIClient):
             >>> targets = {'id': 1, 'name': 'ParentAsset1', 'description': 'Parent to ChildAsset1'}
             >>> true_matches = [(1, 101)]
             >>> model = client.entity_matching.predict(
-                    sources = sources,
-                    targets = targets,
-                    num_matches = 1,
-                    score_threshold = 0.6,
-                    id=1)
+            >>>     sources = sources,
+            >>>     targets = targets,
+            >>>     num_matches = 1,
+            >>>     score_threshold = 0.6,
+            >>>     id=1)
         """
+
         model = self.retrieve(id=id, external_id=external_id)
         assert model
         return model.predict(  # could call predict directly but this is friendlier
@@ -327,9 +328,9 @@ class EntityMatchingAPI(APIClient):
             >>> targets = [{'id': 1, 'name': 'ParentAsset1', 'description': 'Parent to ChildAsset1'}]
             >>> true_matches = [(1, 101)]
             >>> model = client.entity_matching.refit(
-                    true_matches = true_matches,
-                    description="AssetMatchingJob1,
-                    id=1)
+            >>>     true_matches = true_matches,
+            >>>     description="AssetMatchingJob1,
+            >>>     id=1)
         """
         model = self.retrieve(id=id, external_id=external_id)
         assert model
