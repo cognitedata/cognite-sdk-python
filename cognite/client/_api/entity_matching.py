@@ -50,9 +50,9 @@ class EntityMatchingAPI(APIClient):
             EntityMatchingModel: Model requested.
 
         Examples:
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
-                >>> retrieved_model = client.entity_matching.retrieve(id=1)
+            >>> from cognite.client import CogniteClient
+            >>> client = CogniteClient()
+            >>> retrieved_model = client.entity_matching.retrieve(id=1)
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
         return self._retrieve_multiple(
@@ -72,9 +72,9 @@ class EntityMatchingAPI(APIClient):
             EntityMatchingModelList: Models requested.
 
         Examples:
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
-                >>> retrieved_models = client.entity_matching.retrieve_multiple([1,2,3])
+            >>> from cognite.client import CogniteClient
+            >>> client = CogniteClient()
+            >>> retrieved_models = client.entity_matching.retrieve_multiple([1,2,3])
 
         """
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
@@ -96,10 +96,10 @@ class EntityMatchingAPI(APIClient):
             item (Union[EntityMatchingModel,EntityMatchingModelUpdate, Sequence[Union[EntityMatchingModel,EntityMatchingModelUpdate]]) : Model(s) to updated
 
         Examples:
-                >>> from cognite.client.data_classes.contextualization import EntityMatchingModelUpdate
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
-                >>> client.entity_matching.update(EntityMatchingModelUpdate(id=1).name.set("New name"))
+            >>> from cognite.client.data_classes.contextualization import EntityMatchingModelUpdate
+            >>> from cognite.client import CogniteClient
+            >>> client = CogniteClient()
+            >>> client.entity_matching.update(EntityMatchingModelUpdate(id=1).name.set("New name"))
         """
         return self._update_multiple(
             list_cls=EntityMatchingModelList,
@@ -169,7 +169,7 @@ class EntityMatchingAPI(APIClient):
         Returns: None
 
         Examples:
-                >>> client.entity_matching.delete(id=1)
+            >>> client.entity_matching.delete(id=1)
         """
 
         self._delete_multiple(identifiers=IdentifierSequence.load(ids=id, external_ids=external_id), wrap_ids=True)
@@ -210,16 +210,16 @@ class EntityMatchingAPI(APIClient):
             EntityMatchingModel: Resulting queued model.
 
         Example:
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
-                >>> sources = [{'id': 101, 'name': 'ChildAsset1', 'description': 'Child of ParentAsset1', ...}]
-                >>> targets = [{'id': 1, 'name': 'ParentAsset1', 'description': 'Parent to ChildAsset1', ...}]
-                >>> true_matches = [(1, 101)]
-                >>> model = client.entity_matching.fit(
-                        sources = sources,
-                        targets = targets,
-                        true_matches = true_matches,
-                        description="AssetMatchingJob1")
+            >>> from cognite.client import CogniteClient
+            >>> client = CogniteClient()
+            >>> sources = [{'id': 101, 'name': 'ChildAsset1', 'description': 'Child of ParentAsset1'}]
+            >>> targets = [{'id': 1, 'name': 'ParentAsset1', 'description': 'Parent to ChildAsset1'}]
+            >>> true_matches = [(1, 101)]
+            >>> model = client.entity_matching.fit(
+                    sources = sources,
+                    targets = targets,
+                    true_matches = true_matches,
+                    description="AssetMatchingJob1")
         """
 
         if match_fields:
@@ -278,17 +278,17 @@ class EntityMatchingAPI(APIClient):
             ContextualizationJob: object which can be used to wait for and retrieve results.
 
         Examples:
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
-                >>> sources = {'id': 101, 'name': 'ChildAsset1', 'description': 'Child of ParentAsset1', ...}
-                >>> targets = {'id': 1, 'name': 'ParentAsset1', 'description': 'Parent to ChildAsset1', ...}
-                >>> true_matches = [(1, 101)]
-                >>> model = client.entity_matching.predict(
-                        sources = sources,
-                        targets = targets,
-                        num_matches = 1,
-                        score_threshold = 0.6,
-                        id=1)
+            >>> from cognite.client import CogniteClient
+            >>> client = CogniteClient()
+            >>> sources = {'id': 101, 'name': 'ChildAsset1', 'description': 'Child of ParentAsset1'}
+            >>> targets = {'id': 1, 'name': 'ParentAsset1', 'description': 'Parent to ChildAsset1'}
+            >>> true_matches = [(1, 101)]
+            >>> model = client.entity_matching.predict(
+                    sources = sources,
+                    targets = targets,
+                    num_matches = 1,
+                    score_threshold = 0.6,
+                    id=1)
         """
         model = self.retrieve(id=id, external_id=external_id)
         assert model
@@ -321,15 +321,15 @@ class EntityMatchingAPI(APIClient):
             EntityMatchingModel: new model refitted to true_matches.
 
         Examples:
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
-                >>> sources = [{'id': 101, 'name': 'ChildAsset1', 'description': 'Child of ParentAsset1', ...}]
-                >>> targets = [{'id': 1, 'name': 'ParentAsset1', 'description': 'Parent to ChildAsset1', ...}]
-                >>> true_matches = [(1, 101)]
-                >>> model = client.entity_matching.refit(
-                        true_matches = true_matches,
-                        description="AssetMatchingJob1,
-                        id=1)
+            >>> from cognite.client import CogniteClient
+            >>> client = CogniteClient()
+            >>> sources = [{'id': 101, 'name': 'ChildAsset1', 'description': 'Child of ParentAsset1'}]
+            >>> targets = [{'id': 1, 'name': 'ParentAsset1', 'description': 'Parent to ChildAsset1'}]
+            >>> true_matches = [(1, 101)]
+            >>> model = client.entity_matching.refit(
+                    true_matches = true_matches,
+                    description="AssetMatchingJob1,
+                    id=1)
         """
         model = self.retrieve(id=id, external_id=external_id)
         assert model
