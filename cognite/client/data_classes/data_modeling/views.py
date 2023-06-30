@@ -334,7 +334,8 @@ class MappedProperty(ViewProperty):
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = asdict(self)
         output["type"] = self.type.dump(camel_case)
-        output["type"]["source"] = output.pop("source", None)
+        if self.source:
+            output["type"]["source"] = self.source.dump(camel_case)
         if camel_case:
             return convert_all_keys_to_camel_case_recursive(output)
         return output
