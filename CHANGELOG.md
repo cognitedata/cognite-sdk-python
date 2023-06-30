@@ -16,9 +16,41 @@ Changes are grouped as follows
 - `Removed` for now removed features.
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
-## [6.5.3] - 2023-06-28
+
+## [6.5.9] - 2023-06-28
 ### Improved
 - Documentation for entity matching
+
+## [6.5.8] - 2023-06-30
+### Fixed
+- Serialization of `DataModel`. The bug caused `DataModel.load(data_model.dump(camel_case=True))` to fail with
+  a `TypeError`. This is now fixed.
+
+## [6.5.7] - 2023-06-29
+### Fixed
+- A bug caused by use of snake case in field types causing `NodeApply.dump(camel_case=True)` 
+  trigger a 400 response from the API. 
+
+## [6.5.6] - 2023-06-29
+### Fixed
+- A bug causing `ClientConfig(debug=True)` to raise an AttributeError 
+
+## [6.5.5] - 2023-06-28
+### Fixed
+- A bug where we would raise the wrong exception when errors on occured on `data_modeling.spaces.delete`
+- A bug causing incosistent MRO in DataModelList
+
+## [6.5.4] - 2023-06-28
+### Added
+- Missing query parameters: 
+     * `inline_views` in `data_modeling.data_models.retrieve()`.
+     * `include_global` in `data_modeling.spaces.list()`.
+     * `include_inherited_properties` in `data_modeling.views.retrieve()`.
+
+## [6.5.3] - 2023-06-28
+### Fixed
+- Only validate `space` and `external_id` for `data_modeling` write classes.
+
 
 ## [6.5.2] - 2023-06-27
 ### Fixed

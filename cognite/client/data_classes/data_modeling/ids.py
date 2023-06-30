@@ -151,8 +151,16 @@ EdgeIdentifier = Union[EdgeId, Tuple[str, str, str]]
 Id = Union[Tuple[str, str], Tuple[str, str, str], DataModelingId, VersionedDataModelingId, NodeId, EdgeId, InstanceId]
 
 
+def _load_space_identifier(ids: str | Sequence[str]) -> DataModelingIdentifierSequence:
+    is_sequence = isinstance(ids, Sequence) and not isinstance(ids, str)
+    spaces = [ids] if isinstance(ids, str) else ids
+    return DataModelingIdentifierSequence(
+        identifiers=[DataModelingIdentifier(space) for space in spaces], is_singleton=not is_sequence
+    )
+
+
 def _load_identifier(
-    ids: Id | Sequence[Id], id_type: Literal["container", "view", "data_model", "node", "edge"]
+    ids: Id | Sequence[Id], id_type: Literal["container", "view", "data_model", "space", "node", "edge"]
 ) -> DataModelingIdentifierSequence:
     is_sequence = isinstance(ids, Sequence) and not (isinstance(ids, tuple) and isinstance(ids[0], str))
     is_view_or_data_model = id_type in {"view", "data_model"}

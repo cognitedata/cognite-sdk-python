@@ -1,3 +1,4 @@
+import json
 from typing import Any
 
 import pytest
@@ -5,6 +6,7 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.data_classes.data_modeling import (
     ContainerId,
+    DataModel,
     DataModelApply,
     DataModelId,
     DataModelList,
@@ -18,18 +20,27 @@ from cognite.client.exceptions import CogniteAPIError
 
 
 @pytest.fixture(scope="function")
-def cdf_data_models(cognite_client: CogniteClient) -> DataModelList:
+def cdf_data_models(cognite_client: CogniteClient) -> DataModelList[ViewId]:
     data_models = cognite_client.data_modeling.data_models.list(limit=-1)
     assert len(data_models) > 0, "Please create at least one data model in CDF."
     return data_models
 
 
+@pytest.fixture(scope="function")
+def movie_model(cdf_data_models: DataModelList[ViewId]) -> DataModel:
+    movie_model = cdf_data_models.get(external_id="Movie")
+    assert movie_model is not None, "Please create a data model with external_id 'Movie' in CDF."
+    return movie_model
+
+
 class TestDataModelsAPI:
     def test_list(
-        self, cognite_client: CogniteClient, cdf_data_models: DataModelList, integration_test_space: Space
+        self, cognite_client: CogniteClient, cdf_data_models: DataModelList[ViewId], integration_test_space: Space
     ) -> None:
         # Arrange
-        expected_data_models = DataModelList([m for m in cdf_data_models if m.space == integration_test_space.space])
+        expected_data_models = DataModelList[ViewId](
+            [m for m in cdf_data_models if m.space == integration_test_space.space]
+        )
 
         # Act
         actual_data_models = cognite_client.data_modeling.data_models.list(space=integration_test_space.space, limit=-1)
@@ -104,7 +115,7 @@ class TestDataModelsAPI:
             == []
         )
 
-    def test_retrieve_multiple(self, cognite_client: CogniteClient, cdf_data_models: DataModelList) -> None:
+    def test_retrieve_multiple(self, cognite_client: CogniteClient, cdf_data_models: DataModelList[ViewId]) -> None:
         assert len(cdf_data_models) >= 2, "Please add at least two data models to the test environment"
         # Arrange
         ids = [DataModelId(v.space, v.external_id, v.version) for v in cdf_data_models]
@@ -115,8 +126,24 @@ class TestDataModelsAPI:
         # Assert
         assert [dm.as_id() for dm in retrieved] == ids
 
+    def test_retrieve_with_inline_views(self, cognite_client: CogniteClient, movie_model: DataModel) -> None:
+        # Act
+        retrieved = cognite_client.data_modeling.data_models.retrieve(movie_model.as_id(), inline_views=True)
+
+        # Assert
+        assert len(retrieved) == 1
+        assert all(isinstance(v, View) for v in retrieved[0].views)
+
+    def test_retrieve_without_inline_views(self, cognite_client: CogniteClient, movie_model: DataModel) -> None:
+        # Act
+        retrieved = cognite_client.data_modeling.data_models.retrieve(movie_model.as_id(), inline_views=False)
+
+        # Assert
+        assert len(retrieved) == 1
+        assert all(isinstance(v, ViewId) for v in retrieved[0].views)
+
     def test_retrieve_multiple_with_missing(
-        self, cognite_client: CogniteClient, cdf_data_models: DataModelList
+        self, cognite_client: CogniteClient, cdf_data_models: DataModelList[ViewId]
     ) -> None:
         assert len(cdf_data_models) >= 2, "Please add at least two data models to the test environment"
         # Arrange
@@ -196,3 +223,17 @@ class TestDataModelsAPI:
         finally:
             # Cleanup
             cognite_client.data_modeling.data_models.delete(valid_data_model.as_id())
+
+    def test_dump_json_serialize_load(self, cognite_client: CogniteClient, movie_model: DataModel) -> None:
+        # Arrange
+        models = cognite_client.data_modeling.data_models.retrieve(movie_model.as_id(), inline_views=True)
+        assert len(models) == 1, "Please the movie data model to the test environment"
+        model = models[0]
+
+        # Act
+        model_dumped = model.dump(camel_case=True)
+        model_json = json.dumps(model_dumped)
+        model_loaded = DataModel.load(model_json)
+
+        # Assert
+        assert model == model_loaded

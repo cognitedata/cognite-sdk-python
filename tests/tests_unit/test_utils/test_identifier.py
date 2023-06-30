@@ -1,7 +1,7 @@
 import pytest
 
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
-from cognite.client.utils._identifier import DataModelingIdentifierSequence, Identifier, IdentifierSequence
+from cognite.client.utils._identifier import Identifier, IdentifierSequence
 
 
 class TestIdentifier:
@@ -56,7 +56,7 @@ class TestIdentifierSequence:
 
     @pytest.mark.parametrize(
         "ids, external_ids, exception, match",
-        [(None, None, ValueError, "No ids or external_ids specified")],
+        [(None, None, ValueError, "No identifiers specified")],
     )
     def test_process_ids_fail(self, ids, external_ids, exception, match) -> None:
         with pytest.raises(exception, match=match):
@@ -83,9 +83,3 @@ class TestIdentifierSequence:
 
         seq = IdentifierSequence.of(external_ids)
         assert seq.is_singleton() is is_singleton
-
-
-class TestDataModelingIdentifierSequence:
-    def test_load_spaces_bad_input(self):
-        with pytest.raises(ValueError, match="No spaces specified."):
-            DataModelingIdentifierSequence.load_spaces([])

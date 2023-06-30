@@ -279,6 +279,7 @@ class APIClient:
         ignore_unknown_ids: Optional[bool] = None,
         headers: Optional[Dict[str, Any]] = None,
         other_params: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
     ) -> Optional[T_CogniteResource]:
         ...
 
@@ -292,6 +293,7 @@ class APIClient:
         ignore_unknown_ids: Optional[bool] = None,
         headers: Optional[Dict[str, Any]] = None,
         other_params: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
     ) -> T_CogniteResourceList:
         ...
 
@@ -304,6 +306,7 @@ class APIClient:
         ignore_unknown_ids: Optional[bool] = None,
         headers: Optional[Dict[str, Any]] = None,
         other_params: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
     ) -> Union[T_CogniteResourceList, Optional[T_CogniteResource]]:
         resource_path = resource_path or self._RESOURCE_PATH
 
@@ -317,6 +320,7 @@ class APIClient:
                     **(other_params or {}),
                 },
                 "headers": headers,
+                "params": params,
             }
             for id_chunk in identifiers.chunked(self._RETRIEVE_LIMIT)
         ]
@@ -396,6 +400,7 @@ class APIClient:
                     params["cursor"] = next_cursor
                     if sort is not None:
                         params["sort"] = sort
+                    params.update(other_params or {})
                     res = self._get(url_path=url_path or resource_path, params=params, headers=headers)
                 elif method == "POST":
                     body: dict[str, Any] = {"limit": current_limit, "cursor": next_cursor, **(other_params or {})}
@@ -699,7 +704,7 @@ class APIClient:
         summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"],
-            task_list_element_unwrap_fn=utils._auxiliary.unwrap_identifer,
+            task_list_element_unwrap_fn=identifiers.unwrap_identifier,
         )
         if returns_items:
             return summary.joined_results(lambda res: res.json()["items"])
@@ -770,7 +775,7 @@ class APIClient:
         tasks_summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
         tasks_summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"],
-            task_list_element_unwrap_fn=lambda el: utils._auxiliary.unwrap_identifer(el),
+            task_list_element_unwrap_fn=lambda el: IdentifierSequenceCore.unwrap_identifier(el),
         )
         updated_items = tasks_summary.joined_results(lambda res: res.json()["items"])
 

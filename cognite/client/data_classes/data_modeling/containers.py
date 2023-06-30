@@ -46,7 +46,6 @@ class ContainerCore(DataModelingResource):
         indexes: dict[str, Index] = None,
         **_: dict,
     ):
-        validate_data_modeling_identifier(space, external_id)
         self.space = space
         self.external_id = external_id
         self.description = description
@@ -107,6 +106,7 @@ class ContainerApply(ContainerCore):
         constraints: dict[str, Constraint] = None,
         indexes: dict[str, Index] = None,
     ):
+        validate_data_modeling_identifier(space, external_id)
         super().__init__(space, external_id, properties, description, name, used_for, constraints, indexes)
 
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Any
 
 import pytest
@@ -32,6 +33,13 @@ class TestSpacesAPI:
         actual_space_in_cdf = cognite_client.data_modeling.spaces.list(limit=-1)
 
         assert _dump(actual_space_in_cdf) == _dump(cdf_spaces)
+
+    def test_list_include_global(self, cognite_client: CogniteClient) -> None:
+        spaces_with_global = cognite_client.data_modeling.spaces.list(include_global=True, limit=-1)
+        assert any(s.is_global for s in spaces_with_global), "Add at least one global space to CDF for testing."
+        spaces_without_global = cognite_client.data_modeling.spaces.list(include_global=False, limit=-1)
+
+        assert all(s.is_global is False for s in spaces_without_global)
 
     def test_create_retrieve_and_delete(self, cognite_client: CogniteClient) -> None:
         # Arrange
@@ -105,3 +113,15 @@ class TestSpacesAPI:
         finally:
             # Cleanup
             cognite_client.data_modeling.spaces.delete(valid_space.as_id())
+
+    def test_dump_json_serialize_load(self, cdf_spaces: SpaceList) -> None:
+        # Arrange
+        space = cdf_spaces[0]
+
+        # Act
+        space_dump = space.dump(camel_case=True)
+        space_json = json.dumps(space_dump)
+        space_loaded = Space.load(space_json)
+
+        # Assert
+        assert space == space_loaded

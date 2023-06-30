@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Any, cast
 
 import pytest
@@ -7,11 +8,13 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.data_classes.data_modeling import (
     DirectRelationReference,
+    Edge,
     EdgeApply,
     EdgeApplyResult,
     EdgeList,
     InstancesApplyResult,
     InstanceSort,
+    Node,
     NodeApply,
     NodeApplyResult,
     NodeId,
@@ -416,3 +419,29 @@ class TestInstancesAPI:
 
         # Assert
         assert len(counts)
+
+    def test_dump_json_serialize_load_node(self, cdf_nodes: NodeList) -> None:
+        # Arrange
+        node = cdf_nodes.get(external_id="movie:pulp_fiction")
+        assert node is not None, "Pulp fiction movie not found, please recreate it"
+
+        # Act
+        node_dumped = node.dump(camel_case=True)
+        node_json = json.dumps(node_dumped)
+        node_loaded = Node.load(node_json)
+
+        # Assert
+        assert node == node_loaded
+
+    def test_dump_json_serialize_load_edge(self, cdf_edges: EdgeList) -> None:
+        # Arrange
+        edge = cdf_edges.get(external_id="relation:quentin_tarantino:director")
+        assert edge is not None, "Relation between Quentin Tarantino person and director not found, please recreate it"
+
+        # Act
+        edge_dumped = edge.dump(camel_case=True)
+        edge_json = json.dumps(edge_dumped)
+        edge_loaded = Edge.load(edge_json)
+
+        # Assert
+        assert edge == edge_loaded
