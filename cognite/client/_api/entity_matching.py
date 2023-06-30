@@ -40,7 +40,7 @@ class EntityMatchingAPI(APIClient):
         )
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[EntityMatchingModel]:
-        """Retrieve model
+        """`Retrieve model  <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingRetrieve>`_
 
         Args:
             id (int): id of the model to retrieve.
@@ -62,7 +62,7 @@ class EntityMatchingAPI(APIClient):
     def retrieve_multiple(
         self, ids: Optional[Sequence[int]] = None, external_ids: Optional[Sequence[str]] = None
     ) -> EntityMatchingModelList:
-        """Retrieve models
+        """`Retrieve models  <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingRetrieve>`_
 
         Args:
             ids (Sequence[int]): ids of the model to retrieve.
@@ -90,7 +90,7 @@ class EntityMatchingAPI(APIClient):
             Sequence[Union[EntityMatchingModel, EntityMatchingModelUpdate]],
         ],
     ) -> Union[EntityMatchingModelList, EntityMatchingModel]:
-        """Update model
+        """`Update model  <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingUpdate>`_
 
         Args:
             item (Union[EntityMatchingModel,EntityMatchingModelUpdate, Sequence[Union[EntityMatchingModel,EntityMatchingModelUpdate]]) : Model(s) to updated
@@ -117,7 +117,7 @@ class EntityMatchingAPI(APIClient):
         classifier: str = None,
         limit: int = 100,
     ) -> EntityMatchingModelList:
-        """List models
+        """`List models  <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingModels>`_
 
         Args:
             name (str): Optional user-defined name of model.
@@ -150,6 +150,7 @@ class EntityMatchingAPI(APIClient):
         )
 
     def list_jobs(self) -> ContextualizationJobList:
+        # TODO: Not in service contract
         """List jobs, typically model fit and predict runs.
         Args: None
 
@@ -160,7 +161,9 @@ class EntityMatchingAPI(APIClient):
         )
 
     def delete(self, id: Union[int, Sequence[int]] = None, external_id: Union[str, Sequence[str]] = None) -> None:
-        """Delete models
+        """`Delete models  <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingDelete>`_
+
+        https://api-docs.cognite.com/20230101/tag/Entity-matching/operation/entityMatchingDelete
 
         Args:
             id (Union[int, Sequence[int]): Id or list of ids
@@ -187,6 +190,8 @@ class EntityMatchingAPI(APIClient):
         description: str = None,
         external_id: str = None,
     ) -> EntityMatchingModel:
+        # TODO: Not in service contract
+
         """Fit entity matching model.
 
         Note:
@@ -256,7 +261,7 @@ class EntityMatchingAPI(APIClient):
         id: Optional[int] = None,
         external_id: Optional[str] = None,
     ) -> ContextualizationJob:
-        """Predict entity matching.
+        """`Predict entity matching.  <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingPredict>`_
 
         Warning:
             Blocks and waits for the model to be ready if it has been recently created.
@@ -306,7 +311,7 @@ class EntityMatchingAPI(APIClient):
         id: Optional[int] = None,
         external_id: Optional[str] = None,
     ) -> EntityMatchingModel:
-        """Re-fits an entity matching model, using the combination of the old and new true matches.
+        """`Re-fits an entity matching model, using the combination of the old and new true matches.  <https://developer.cognite.com/api#tag/Entity-matching/operation/entityMatchingReFit>`_
 
         Note:
             All users on this CDF subscription with assets read-all and entitymatching read-all and write-all
