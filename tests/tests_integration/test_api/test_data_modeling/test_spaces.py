@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Any
 
 import pytest
@@ -112,3 +113,15 @@ class TestSpacesAPI:
         finally:
             # Cleanup
             cognite_client.data_modeling.spaces.delete(valid_space.as_id())
+
+    def test_dump_json_serialize_load(self, cdf_spaces: SpaceList) -> None:
+        # Arrange
+        space = cdf_spaces[0]
+
+        # Act
+        space_dump = space.dump(camel_case=True)
+        space_json = json.dumps(space_dump)
+        space_loaded = Space.load(space_json)
+
+        # Assert
+        assert space == space_loaded

@@ -1,3 +1,4 @@
+import json
 from typing import Any
 
 import pytest
@@ -7,6 +8,7 @@ from cognite.client.data_classes.data_modeling import (
     ContainerId,
     MappedPropertyApply,
     Space,
+    View,
     ViewApply,
     ViewId,
     ViewList,
@@ -205,3 +207,16 @@ class TestViewsAPI:
         finally:
             # Cleanup
             cognite_client.data_modeling.views.delete(valid_view.as_id())
+
+    def test_dump_json_serialize_load(self, movie_views: ViewList) -> None:
+        # Arrange
+        view = movie_views.get(external_id="Movie")
+        assert view is not None, "Movie view not found in test environment"
+
+        # Act
+        view_dumped = view.dump(camel_case=True)
+        view_json = json.dumps(view_dumped)
+        view_loaded = View.load(view_json)
+
+        # Assert
+        assert view == view_loaded

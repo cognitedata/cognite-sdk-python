@@ -1,3 +1,4 @@
+import json
 from typing import Any
 
 import pytest
@@ -222,3 +223,17 @@ class TestDataModelsAPI:
         finally:
             # Cleanup
             cognite_client.data_modeling.data_models.delete(valid_data_model.as_id())
+
+    def test_dump_json_serialize_load(self, cognite_client: CogniteClient, movie_model: DataModel) -> None:
+        # Arrange
+        models = cognite_client.data_modeling.data_models.retrieve(movie_model.as_id(), inline_views=True)
+        assert len(models) == 1, "Please the movie data model to the test environment"
+        model = models[0]
+
+        # Act
+        model_dumped = model.dump(camel_case=True)
+        model_json = json.dumps(model_dumped)
+        model_loaded = DataModel.load(model_json)
+
+        # Assert
+        assert model == model_loaded
