@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.5.8] - 2023-06-30
+### Fixed
+- Serialization of `DataModel`. The bug caused `DataModel.load(data_model.dump(camel_case=True))` to fail with
+  a `TypeError`. This is now fixed.
+
 ## [6.5.7] - 2023-06-29
 ### Fixed
 - A bug caused by use of snake case in field types causing `NodeApply.dump(camel_case=True)` 
