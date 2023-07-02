@@ -733,6 +733,39 @@ class InstancesAPI(APIClient):
         else:
             return [HistogramValue.load(item["aggregates"][0]) for item in res.json()["items"]]
 
+    def query(self, with_: dict, select: dict, parameters: dict) -> InstancesResult:
+        """`Advanced query interface for nodes/edges. <https://developer.cognite.com/api/v1/#tag/Instances/operation/queryContent>`_
+
+        The Data Modelling API exposes an advanced query interface. The query interface supports parameterization,
+        recursive edge traversal, chaining of result sets, and granular property selection.
+
+        Args:
+            with_:
+            select:
+            parameters: Values in filters can be parameterised. Parameters are provided as part of the query object,
+             and referenced in the filter itself.
+
+        Returns:
+            InstancesResult: Node or edge results.
+        """
+        ...
+
+    def sync(self, with_: dict, select: dict, parameters: dict) -> InstancesResult:
+        """`Subscription to changes for nodes/edges. <https://developer.cognite.com/api/v1/#tag/Instances/operation/syncContent>`_
+
+        Subscribe to changes for nodes and edges in a project, matching a supplied filter.
+
+        Args:
+            with_:
+            select:
+            parameters: Values in filters can be parameterised. Parameters are provided as part of the query object,
+             and referenced in the filter itself.
+
+        Returns:
+            InstancesResult: Node or edge results.
+        """
+        ...
+
     @overload
     def list(
         self,
