@@ -737,7 +737,10 @@ class InstancesAPI(APIClient):
             return [HistogramValue.load(item["aggregates"][0]) for item in res.json()["items"]]
 
     def query(
-        self, with_: dict[str, Query], select: dict[str, Select], parameters: dict[str, PropertyValue]
+        self,
+        with_: dict[str, Query],
+        select: dict[str, Select],
+        parameters: dict[str, PropertyValue] | None = None,
     ) -> InstancesResult:
         """`Advanced query interface for nodes/edges. <https://developer.cognite.com/api/v1/#tag/Instances/operation/queryContent>`_
 
@@ -756,7 +759,10 @@ class InstancesAPI(APIClient):
         ...
 
     def sync(
-        self, with_: dict[str, Query], select: dict[str, Select], parameters: dict[str, PropertyValue]
+        self,
+        with_: dict[str, Query],
+        select: dict[str, Select],
+        parameters: dict[str, PropertyValue] | None = None,
     ) -> InstancesResult:
         """`Subscription to changes for nodes/edges. <https://developer.cognite.com/api/v1/#tag/Instances/operation/syncContent>`_
 
