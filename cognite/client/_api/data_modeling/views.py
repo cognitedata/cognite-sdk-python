@@ -149,7 +149,7 @@ class ViewsAPI(APIClient):
         """`List views <https://developer.cognite.com/api#tag/Views/operation/listViews>`_
 
         Args:
-            limit (int, optional): Maximum number of views to return. Defaults to 25. Set to -1, float("inf") or None
+            limit (int, optional): Maximum number of views to return. Defaults to 10. Set to -1, float("inf") or None
                 to return all items.
             space: (str | None): The space to query.
             include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
