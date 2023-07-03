@@ -716,6 +716,19 @@ class InstanceSort(CogniteFilter):
 
 
 @dataclass
+class SourceSelector:
+    source: ViewId
+    properties: list[str]
+
+
+@dataclass
+class Select:
+    sources: list[SourceSelector]
+    sort: list[InstanceSort]
+    limit: int
+
+
+@dataclass
 class InstancesResult:
     """This represents the read result of an instance query
 

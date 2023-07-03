@@ -36,7 +36,10 @@ from cognite.client.data_classes.data_modeling.instances import (
     NodeApplyResult,
     NodeApplyResultList,
     NodeList,
+    PropertyValue,
+    Select,
 )
+from cognite.client.data_classes.data_modeling.queries import Query
 from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
 
@@ -733,7 +736,9 @@ class InstancesAPI(APIClient):
         else:
             return [HistogramValue.load(item["aggregates"][0]) for item in res.json()["items"]]
 
-    def query(self, with_: dict, select: dict, parameters: dict) -> InstancesResult:
+    def query(
+        self, with_: dict[str, Query], select: dict[str, Select], parameters: dict[str, PropertyValue]
+    ) -> InstancesResult:
         """`Advanced query interface for nodes/edges. <https://developer.cognite.com/api/v1/#tag/Instances/operation/queryContent>`_
 
         The Data Modelling API exposes an advanced query interface. The query interface supports parameterization,
@@ -750,7 +755,9 @@ class InstancesAPI(APIClient):
         """
         ...
 
-    def sync(self, with_: dict, select: dict, parameters: dict) -> InstancesResult:
+    def sync(
+        self, with_: dict[str, Query], select: dict[str, Select], parameters: dict[str, PropertyValue]
+    ) -> InstancesResult:
         """`Subscription to changes for nodes/edges. <https://developer.cognite.com/api/v1/#tag/Instances/operation/syncContent>`_
 
         Subscribe to changes for nodes and edges in a project, matching a supplied filter.
