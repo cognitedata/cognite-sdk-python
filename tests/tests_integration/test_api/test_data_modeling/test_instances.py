@@ -25,9 +25,11 @@ from cognite.client.data_classes.data_modeling import (
     View,
     aggregations,
     filters,
+    queries,
 )
 from cognite.client.data_classes.data_modeling.aggregations import HistogramValue
 from cognite.client.data_classes.data_modeling.filters import Equals
+from cognite.client.data_classes.data_modeling.instances import Select, SourceSelector
 from cognite.client.exceptions import CogniteAPIError
 
 
@@ -445,3 +447,33 @@ class TestInstancesAPI:
 
         # Assert
         assert edge == edge_loaded
+
+    def test_query_movie_persons(
+        self, cognite_client: CogniteClient, movie_view: View, person_view: View, actor_view: View
+    ) -> None:
+        # Arrange
+        view_id = movie_view.as_id()
+        q = queries
+        f = filters
+        released_before_2000 = f.Range([view_id.space, view_id.as_source_identifier(), "releaseYear"], lt=2000)
+        movies_before_2000 = q.QueryNode(filter=released_before_2000)
+        actors_in_movie = q.QueryEdge(
+            from_="movies", filter=f.Equals(["edge", "type"], {"space": movie_view.space, "externalId": "Movie.actors"})
+        )
+        actor = q.QueryNode(from_="actors_in_movie")
+        query = {
+            "movies": q.QueryNodeTableExpression(movies_before_2000),
+            "actors_in_movie": q.QueryEdgeTableExpression(actors_in_movie),
+            "actors": q.QueryNodeTableExpression(actor),
+        }
+
+        select = {
+            "movies": Select([SourceSelector(movie_view.as_id(), ["title"])]),
+            "actors": Select([SourceSelector(actor_view.as_id(), ["wonOscar"])]),
+        }
+
+        # Act
+        result = cognite_client.data_modeling.instances.query(query, select)
+
+        # Assert
+        assert result.nodes

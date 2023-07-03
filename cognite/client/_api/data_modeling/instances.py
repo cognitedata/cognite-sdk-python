@@ -756,7 +756,16 @@ class InstancesAPI(APIClient):
         Returns:
             InstancesResult: Node or edge results.
         """
-        ...
+        body: Dict[str, Any] = {
+            "with": {k: q.dump(camel_case=True) for k, q in with_.items()},
+            "select": {k: s.dump(camel_case=True) for k, s in select.items()},
+        }
+        if parameters:
+            body["parameters"] = parameters
+
+        result = self._post(url_path=self._RESOURCE_PATH + "/query", json=body)
+
+        return InstancesResult.load(result.json()["items"])
 
     def sync(
         self,

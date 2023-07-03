@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from abc import abstractmethod
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import (
     Any,
     Dict,
@@ -720,12 +720,47 @@ class SourceSelector:
     source: ViewId
     properties: list[str]
 
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        return {
+            "source": self.source.dump(camel_case),
+            "properties": self.properties,
+        }
+
+    @classmethod
+    def load(cls, data: dict | str) -> SourceSelector:
+        data = json.loads(data) if isinstance(data, str) else data
+        return cls(
+            source=ViewId.load(data["source"]),
+            properties=data["properties"],
+        )
+
 
 @dataclass
 class Select:
-    sources: list[SourceSelector]
-    sort: list[InstanceSort]
-    limit: int
+    sources: list[SourceSelector] = field(default_factory=lambda: [])
+    sort: list[InstanceSort] = field(default_factory=lambda: [])
+    limit: Optional[int] = None
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        output: Dict[str, Any] = {}
+        if self.sources:
+            output["sources"] = [
+                {"source": source.source.dump(camel_case), "properties": source.properties} for source in self.sources
+            ]
+        if self.sort:
+            output["sort"] = [s.dump(camel_case) for s in self.sort]
+        if self.limit:
+            output["limit"] = self.limit
+        return output
+
+    @classmethod
+    def load(cls, data: dict | str) -> Select:
+        data = json.loads(data) if isinstance(data, str) else data
+        return cls(
+            sources=[SourceSelector.load(source) for source in data.get("sources", [])],
+            sort=[InstanceSort._load(s) for s in data.get("sort", [])],
+            limit=data.get("limit"),
+        )
 
 
 @dataclass
@@ -740,6 +775,10 @@ class InstancesResult:
 
     nodes: NodeList
     edges: EdgeList
+
+    @classmethod
+    def load(cls, data: str | dict) -> InstancesResult:
+        raise NotImplementedError()
 
 
 @dataclass
