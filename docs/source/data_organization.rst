@@ -5,47 +5,33 @@ Annotations
 -----------
 .. currentmodule:: cognite.client
 
-.. autosummary:: 
+.. autosummary::
+   :methods:
    :toctree: generated/
-   :template: custom-accessor-template.rst
+   :template: custom-automethods-template.rst
 
-   CogniteClient.annotations.retrieve
-   CogniteClient.annotations.retrieve_multiple
-   CogniteClient.annotations.list
-   CogniteClient.annotations.create
-   CogniteClient.annotations.suggest
-   CogniteClient.annotations.update
-   CogniteClient.annotations.delete
+   CogniteClient.annotations
 
 
 Annotations Data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^
-.. currentmodule:: cognite.client.data_classes
-
-.. autosummary:: 
+.. autosummary::
+   :classes:
    :toctree: generated/
-   :template: custom-class-template.rst
+   :template: custom-automodule-template.rst
 
-   Annotation
-   AnnotationFilter
-   AnnotationUpdate
-   AnnotationList
+   data_classes.annotations
 
 
 Data sets
 ---------
-.. currentmodule:: cognite.client
-
-.. autosummary:: 
+.. autosummary::
+   :methods:
    :toctree: generated/
-   :template: custom-accessor-template.rst
+   :template: custom-automethods-template.rst
 
-   CogniteClient.data_sets.retrieve
-   CogniteClient.data_sets.retrieve_multiple
-   CogniteClient.data_sets.list
-   CogniteClient.data_sets.aggregate
-   CogniteClient.data_sets.create
-   CogniteClient.data_sets.update
+   CogniteClient.data_sets
+
 
 Delete data sets
 ^^^^^^^^^^^^^^^^
@@ -54,70 +40,47 @@ This functionality is not yet available in the API.
 
 Data Sets Data classes
 ^^^^^^^^^^^^^^^^^^^^^^
-.. currentmodule:: cognite.client.data_classes
-
-.. autosummary:: 
+.. autosummary::
+   :classes:
    :toctree: generated/
-   :template: custom-class-template.rst
+   :template: custom-automodule-template.rst
 
-    DataSet
-    DataSetFilter
-    DataSetUpdate
-    DataSetAggregate
-    DataSetList
+   data_classes.data_sets
 
 Labels
 ------
-.. currentmodule:: cognite.client
-
-.. autosummary:: 
+.. autosummary::
+   :methods:
    :toctree: generated/
-   :template: custom-accessor-template.rst
+   :template: custom-automethods-template.rst
 
-   CogniteClient.labels.list
-   CogniteClient.labels.create
-   CogniteClient.labels.delete
+   CogniteClient.labels
 
 
 Labels Data classes
 ^^^^^^^^^^^^^^^^^^^
-.. currentmodule:: cognite.client.data_classes
-
-.. autosummary:: 
+.. autosummary::
+   :classes:
    :toctree: generated/
-   :template: custom-class-template.rst
-   
-   LabelDefinition
-   LabelDefinitionFilter
-   LabelDefinitionList
-   Label
-   LabelFilter
+   :template: custom-automodule-template.rst
+
+   data_classes.labels
 
 Relationships
 -------------
-.. currentmodule:: cognite.client
-
-.. autosummary:: 
+.. autosummary::
+   :methods:
    :toctree: generated/
-   :template: custom-accessor-template.rst
+   :template: custom-automethods-template.rst
 
-   CogniteClient.relationships.retrieve
-   CogniteClient.relationships.retrieve_multiple
-   CogniteClient.relationships.list
-   CogniteClient.relationships.create
-   CogniteClient.relationships.update
-   CogniteClient.relationships.delete
+   CogniteClient.relationships
 
 
 Relationship Data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-.. currentmodule:: cognite.client.data_classes
-
-.. autosummary:: 
+.. autosummary::
+   :classes:
    :toctree: generated/
-   :template: custom-class-template.rst
-   
-   Relationship
-   relationships.RelationshipFilter
-   RelationshipUpdate
-   RelationshipList
+   :template: custom-automodule-template.rst
+
+   data_classes.relationships

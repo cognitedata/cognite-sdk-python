@@ -1,64 +1,48 @@
 3D
 ==
+.. currentmodule:: cognite.client
+
 
 Models
 ^^^^^^
-.. currentmodule:: cognite.client
-
-.. autosummary:: 
+.. autosummary::
+   :methods:
    :toctree: generated/
-   :template: custom-accessor-template.rst
+   :template: custom-automethods-template.rst
 
-   CogniteClient.three_d.models.retrieve
-   CogniteClient.three_d.models.list
-   CogniteClient.three_d.models.create
-   CogniteClient.three_d.models.update
-   CogniteClient.three_d.models.delete
+   CogniteClient.three_d.models
 
 
 Revisions
 ^^^^^^^^^
-.. currentmodule:: cognite.client
-
-.. autosummary:: 
+.. autosummary::
+   :methods:
    :toctree: generated/
-   :template: custom-accessor-template.rst
+   :template: custom-automethods-template.rst
 
-   CogniteClient.three_d.revisions.retrieve
-   CogniteClient.three_d.revisions.create
-   CogniteClient.three_d.revisions.list
-   CogniteClient.three_d.revisions.update
-   CogniteClient.three_d.revisions.delete
-   CogniteClient.three_d.revisions.update_thumbnail
-   CogniteClient.three_d.revisions.list_nodes
-   CogniteClient.three_d.revisions.filter_nodes
-   CogniteClient.three_d.revisions.list_ancestor_nodes
+   CogniteClient.three_d.revisions
 
 
 Files
 ^^^^^
 Retrieve a 3D file
 ~~~~~~~~~~~~~~~~~~
-.. currentmodule:: cognite.client
-
-.. autosummary:: 
+.. autosummary::
+   :methods:
    :toctree: generated/
-   :template: custom-accessor-template.rst
+   :template: custom-automethods-template.rst
 
-   CogniteClient.three_d.files.retrieve
+   CogniteClient.three_d.files
 
 
 Asset mappings
 ^^^^^^^^^^^^^^
-.. currentmodule:: cognite.client
-
-.. autosummary:: 
+.. autosummary::
+   :methods:
    :toctree: generated/
-   :template: custom-accessor-template.rst
+   :template: custom-automethods-template.rst
 
-   CogniteClient.three_d.asset_mappings.create
-   CogniteClient.three_d.asset_mappings.list
-   CogniteClient.three_d.asset_mappings.delete
+   CogniteClient.three_d.asset_mappings
 
 ..
     Reveal
@@ -81,21 +65,10 @@ Asset mappings
 
 Data classes
 ^^^^^^^^^^^^
-.. currentmodule:: cognite.client.data_classes
-
-.. autosummary:: 
+.. autosummary::
+   :classes:
    :toctree: generated/
-   :template: custom-class-template.rst
+   :template: custom-automodule-template.rst
 
-   RevisionCameraProperties
-   BoundingBox3D
-   ThreeDModel
-   ThreeDModelUpdate
-   ThreeDModelList
-   ThreeDModelRevision
-   ThreeDModelRevisionUpdate
-   ThreeDModelRevisionList
-   ThreeDNode
-   ThreeDNodeList
-   ThreeDAssetMapping
-   ThreeDAssetMappingList
+   data_classes.three_d
+

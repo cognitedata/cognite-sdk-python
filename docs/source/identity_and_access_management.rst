@@ -4,66 +4,47 @@ Tokens
 ^^^^^^
 .. currentmodule:: cognite.client
 
-.. autosummary:: 
+.. autosummary::
+   :methods:
    :toctree: generated/
-   :template: custom-accessor-template.rst
+   :template: custom-automethods-template.rst
 
-   CogniteClient.iam.token.inspect
+   CogniteClient.iam.token
 
 Groups
 ^^^^^^
-.. currentmodule:: cognite.client
-
-.. autosummary:: 
+.. autosummary::
+   :methods:
    :toctree: generated/
-   :template: custom-accessor-template.rst
+   :template: custom-automethods-template.rst
 
-   CogniteClient.iam.groups.list
-   CogniteClient.iam.groups.create
-   CogniteClient.iam.groups.delete
-
+   CogniteClient.iam.groups
 
 Security categories
 ^^^^^^^^^^^^^^^^^^^
-.. currentmodule:: cognite.client
-
-.. autosummary:: 
+.. autosummary::
+   :methods:
    :toctree: generated/
-   :template: custom-accessor-template.rst
+   :template: custom-automethods-template.rst
 
-   CogniteClient.iam.security_categories.list
-   CogniteClient.iam.security_categories.create
-   CogniteClient.iam.security_categories.delete
+   CogniteClient.iam.security_categories
 
 
 Sessions
 ^^^^^^^^^^^^^^^^^^^
-.. currentmodule:: cognite.client
-
-.. autosummary:: 
+.. autosummary::
+   :methods:
    :toctree: generated/
-   :template: custom-accessor-template.rst
+   :template: custom-automethods-template.rst
 
-   CogniteClient.iam.sessions.list
-   CogniteClient.iam.sessions.create
-   CogniteClient.iam.sessions.revoke
+   CogniteClient.iam.sessions
 
 
 Data classes
 ^^^^^^^^^^^^
-.. currentmodule:: cognite.client.data_classes
-
-.. autosummary:: 
+.. autosummary::
+   :classes:
    :toctree: generated/
-   :template: custom-class-template.rst
+   :template: custom-automodule-template.rst
 
-   Group
-   GroupList
-   SecurityCategory
-   SecurityCategoryList
-   iam.ProjectSpec
-   iam.TokenInspection
-   CreatedSession
-   Session
-   SessionList
-   ClientCredentials
+   data_classes.iam

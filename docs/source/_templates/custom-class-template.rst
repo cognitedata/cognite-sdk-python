@@ -15,9 +15,10 @@
 
    .. autosummary::
       :toctree:
+      :template: custom-accessor-template.rst
    {% for item in methods %}
    {%- if item != "__init__" %}
-      {{ name }}.{{ item }}
+      ~{{ name }}.{{ item }}
    {%- endif %}
    {%- endfor %}
    {% endif %}

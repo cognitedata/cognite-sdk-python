@@ -1,39 +1,27 @@
 Contextualization
 =================
+.. currentmodule:: cognite.client
 
 Entity Matching
 ---------------
 These APIs will return as soon as possible, deferring a blocking wait until the last moment. Nevertheless, they can block for a long time awaiting results.
 
-.. currentmodule:: cognite.client
-
-.. autosummary:: 
+.. autosummary::
+   :methods:
    :toctree: generated/
-   :template: custom-accessor-template.rst
+   :template: custom-automethods-template.rst
 
-   CogniteClient.entity_matching.fit
-   CogniteClient.entity_matching.refit
-   CogniteClient.entity_matching.retrieve
-   CogniteClient.entity_matching.retrieve_multiple
-   CogniteClient.entity_matching.list
-   CogniteClient.entity_matching.list_jobs
-   CogniteClient.entity_matching.delete
-   CogniteClient.entity_matching.update
-   CogniteClient.entity_matching.predict
+   CogniteClient.entity_matching
 
 
 Engineering Diagrams
 --------------------
-
-.. currentmodule:: cognite.client
-
-.. autosummary:: 
+.. autosummary::
+   :methods:
    :toctree: generated/
-   :template: custom-accessor-template.rst
+   :template: custom-automethods-template.rst
 
-   CogniteClient.diagrams.detect
-   CogniteClient.diagrams.convert
-
+   CogniteClient.diagrams
 
 Vision
 ------
@@ -88,54 +76,21 @@ Tweaking the parameters of a feature extractor:
         parameters=FeatureParameters(text_detection_parameters=TextDetectionParameters(threshold=0.9))
     )
 
-.. currentmodule:: cognite.client
-
-.. autosummary:: 
+.. autosummary::
+   :methods:
    :toctree: generated/
-   :template: custom-accessor-template.rst
-
-   CogniteClient.vision.extract
-   CogniteClient.vision.get_extract_job
+   :template: custom-automethods-template.rst
+   
+   CogniteClient.vision
 
 
 Contextualization Data Classes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. currentmodule:: cognite.client.data_classes
-
-.. autosummary:: 
+.. autosummary::
+   :classes:
    :toctree: generated/
-   :template: custom-class-template.rst
+   :template: custom-automodule-template.rst
 
-   JobStatus
-   ContextualizationJobType
-   ContextualizationJob
-   ContextualizationJobList
-   EntityMatchingModel
-   EntityMatchingModelUpdate
-   EntityMatchingModelList
-   contextualization.FileReference
-   contextualization.DiagramConvertPage
-   contextualization.DiagramConvertPageList
-   contextualization.DiagramConvertItem
-   contextualization.DiagramConvertResults
-   contextualization.DiagramDetectItem
-   contextualization.DiagramDetectResults
-   contextualization.VisionJob
-   contextualization.VisionExtractItem
-   contextualization.VisionExtractJob
-
-
-.. autosummary:: 
-   :toctree: generated/
-   :template: custom-module-template.rst
-   :recursive:
-
-   cognite.client.data_classes.annotation_types.images
-
-
-.. autosummary:: 
-   :toctree: generated/
-   :template: custom-module-template.rst
-   :recursive:
-
-    cognite.client.data_classes.annotation_types.primitives 
+   data_classes.contextualization
+   data_classes.annotation_types.images
+   data_classes.annotation_types.primitives

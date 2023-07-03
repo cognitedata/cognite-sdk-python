@@ -1,169 +1,102 @@
 Data Modeling
 =============
+.. currentmodule:: cognite.client
 
 Data Models
 ------------
-.. currentmodule:: cognite.client
-
 .. autosummary::
+   :methods:
    :toctree: generated/
-   :template: custom-accessor-template.rst
+   :template: custom-automethods-template.rst
 
-   CogniteClient.data_modeling.data_models.retrieve
-   CogniteClient.data_modeling.data_models.list
-   CogniteClient.data_modeling.data_models.apply
-   CogniteClient.data_modeling.data_models.delete
+   CogniteClient.data_modeling.data_models
 
 Data model data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^
-.. currentmodule:: cognite.client.data_classes.data_modeling
-
-.. autosummary:: 
+.. autosummary::
+   :classes:
    :toctree: generated/
-   :template: custom-class-template.rst
+   :template: custom-automodule-template.rst
 
-   data_models.DataModelCore
-   DataModelApply
-   DataModel
-   DataModelApplyList
-   DataModelList
-   data_models.DataModelFilter
-   data_models.DataModelsSort
+   data_classes.data_modeling.data_models
 
 Spaces
 ------
-.. currentmodule:: cognite.client
-
 .. autosummary::
+   :methods:
    :toctree: generated/
-   :template: custom-accessor-template.rst
+   :template: custom-automethods-template.rst
 
-   CogniteClient.data_modeling.spaces.retrieve
-   CogniteClient.data_modeling.spaces.list
-   CogniteClient.data_modeling.spaces.apply
-   CogniteClient.data_modeling.spaces.delete
+   CogniteClient.data_modeling.spaces
 
 Spaces data classes
 ^^^^^^^^^^^^^^^^^^^
-.. currentmodule:: cognite.client.data_classes.data_modeling
-
-.. autosummary:: 
+.. autosummary::
+   :classes:
    :toctree: generated/
-   :template: custom-class-template.rst
+   :template: custom-automodule-template.rst
 
-   spaces.SpaceCore
-   SpaceApply
-   Space
-   SpaceApplyList
-   SpaceList
+   data_classes.data_modeling.spaces
 
 Views
 ------------
-.. currentmodule:: cognite.client
-
 .. autosummary::
+   :methods:
    :toctree: generated/
-   :template: custom-accessor-template.rst
+   :template: custom-automethods-template.rst
 
-   CogniteClient.data_modeling.views.retrieve
-   CogniteClient.data_modeling.views.list
-   CogniteClient.data_modeling.views.apply
-   CogniteClient.data_modeling.views.delete
+   CogniteClient.data_modeling.views
 
 View data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^
-.. currentmodule:: cognite.client.data_classes.data_modeling
-
-.. autosummary:: 
+.. autosummary::
+   :classes:
    :toctree: generated/
-   :template: custom-class-template.rst
+   :template: custom-automodule-template.rst
 
-    views.ViewCore
-    ViewApply
-    View
-    ViewApplyList
-    ViewList
-    views.ViewFilter
-    views.ViewDirectRelation
-    ViewPropertyDefinition
-    views.MappedCorePropertyDefinition
-    MappedApplyPropertyDefinition
-    MappedPropertyDefinition
-    ConnectionDefinition
-    SingleHopConnectionDefinition
+   data_classes.data_modeling.views
 
 Containers
 ------------
-.. currentmodule:: cognite.client
-
 .. autosummary::
+   :methods:
    :toctree: generated/
-   :template: custom-accessor-template.rst
+   :template: custom-automethods-template.rst
 
-   CogniteClient.data_modeling.containers.retrieve
-   CogniteClient.data_modeling.containers.list
-   CogniteClient.data_modeling.containers.apply
-   CogniteClient.data_modeling.containers.delete
+   CogniteClient.data_modeling.containers
 
 Containers data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^
-.. currentmodule:: cognite.client.data_classes.data_modeling
-
-.. autosummary:: 
+.. autosummary::
+   :classes:
    :toctree: generated/
-   :template: custom-class-template.rst
+   :template: custom-automodule-template.rst
 
-   containers.ContainerCore
-   ContainerApply
-   Container
-   ContainerApplyList
-   ContainerList
-   containers.ContainerFilter
-   ContainerDirectRelation
-   ContainerProperty
-   Constraint
-   RequiresConstraintDefinition
-   UniquenessConstraintDefinition
-   Index
+   data_classes.data_modeling.containers
 
 Instances
 ------------
-.. currentmodule:: cognite.client
-
 .. autosummary::
+   :methods:
    :toctree: generated/
-   :template: custom-accessor-template.rst
+   :template: custom-automethods-template.rst
 
-   CogniteClient.data_modeling.instances.retrieve
-   CogniteClient.data_modeling.instances.list
-   CogniteClient.data_modeling.instances.apply
-   CogniteClient.data_modeling.instances.delete
+   CogniteClient.data_modeling.instances
 
 Instances data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^
-.. currentmodule:: cognite.client.data_classes.data_modeling
-
-.. autosummary:: 
+.. autosummary::
+   :classes:
    :toctree: generated/
-   :template: custom-class-template.rst
+   :template: custom-automodule-template.rst
 
-   NodeOrEdgeData
-   instances.InstanceCore
-   InstanceApply
-   instances.Instance
-   instances.InstanceApplyResult
-   NodeApply
-   Node
-   NodeApplyResult
-   EdgeApply
-   Edge
-   EdgeApplyResult
-   NodeApplyResultList
-   NodeList
-   EdgeApplyResultList
-   EdgeList
-   InstanceSort
-   InstancesResult
-   InstancesApplyResult
-   InstancesDeleteResult
+   data_classes.data_modeling.instances
 
+IDs data classes
+^^^^^^^^^^^^^^^^
+.. autosummary::
+   :classes:
+   :toctree: generated/
+   :template: custom-automodule-template.rst
+
+   data_classes.data_modeling.ids

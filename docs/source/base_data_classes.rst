@@ -1,12 +1,8 @@
 Base data classes
 ==================
-.. autosummary:: 
+.. autosummary::
+   :classes:
    :toctree: generated/
-   :template: custom-class-template.rst
-   :recursive:
+   :template: custom-automodule-template.rst
 
-   cognite.client.data_classes._base.CogniteResource
-   cognite.client.data_classes._base.CogniteResourceList
-   cognite.client.data_classes._base.CogniteResponse
-   cognite.client.data_classes._base.CogniteFilter
-   cognite.client.data_classes._base.CogniteUpdate
+   cognite.client.data_classes._base

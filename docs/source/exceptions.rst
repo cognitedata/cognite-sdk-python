@@ -1,13 +1,8 @@
 Exceptions
 ==========
-.. currentmodule:: cognite.client.exceptions
-
-.. autosummary:: 
+.. autosummary::
+   :classes:
    :toctree: generated/
-   :template: custom-class-template.rst
+   :template: custom-automodule-template.rst
 
-   CogniteAPIError
-   CogniteNotFoundError
-   CogniteDuplicatedError
-   CogniteImportError
-   CogniteMissingClientError
+   cognite.client.exceptions

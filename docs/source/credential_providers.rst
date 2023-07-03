@@ -1,13 +1,9 @@
 Credential Providers
 ====================
 
-.. autosummary:: 
+.. autosummary::
+   :classes:
    :toctree: generated/
-   :template: custom-class-template.rst
-   :recursive:
+   :template: custom-automodule-template.rst
 
-   cognite.client.credentials.Token
-   cognite.client.credentials.OAuthClientCredentials
-   cognite.client.credentials.OAuthInteractive
-   cognite.client.credentials.OAuthDeviceCode
-   cognite.client.credentials.OAuthClientCertificate
+   cognite.client.credentials

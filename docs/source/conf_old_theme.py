@@ -43,7 +43,6 @@ extensions = [
     "sphinx.ext.autosectionlabel",
     "sphinx_autosummary_accessors",
     "sphinx.ext.autosummary",
-    "sphinx_copybutton",
     "autosummary",
 ]
 
@@ -87,6 +86,9 @@ language = "en"
 # This patterns also effect to html_static_path and html_extra_path
 exclude_patterns = []
 
+# The name of the Pygments (syntax highlighting) style to use.
+pygments_style = "sphinx"
+
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
 
@@ -96,42 +98,13 @@ todo_include_todos = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "sphinx_book_theme"
+html_theme = "sphinx_rtd_theme"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-html_theme_options = {
-    "logo": {
-        "image_light": "_static/cognite_logo_black.png",
-        "image_dark": "_static/cognite_logo_white.png",
-        "text": "cognite-sdk",
-    },
-    "article_header_start": [
-        "toggle-primary-sidebar.html",
-        "cognite_developer_documentation.html",
-        "cognite_hub.html",
-        "cognite_academy.html",
-    ],
-    "icon_links": [
-        {
-            "name": "GitHub",
-            "url": "https://github.com/cognitedata/cognite-sdk-python",
-            "icon": "fa-brands fa-square-github",
-            "type": "fontawesome",
-        },
-        {
-            "name": "PyPI downloads",
-            "url": "https://pypi.org/project/cognite-sdk/",
-            "icon": "https://img.shields.io/pypi/dw/cognite-sdk",
-            "type": "url",
-        },
-    ],
-    "pygment_light_style": "default",
-    "pygment_dark_style": "monokai",
-}
-
+# html_theme_options = {}
 
 # Add any paths that contain custom _static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin _static files,
@@ -143,11 +116,12 @@ html_static_path = ["_static"]
 #
 # This is required for the alabaster theme
 # refs: http://alabaster.readthedocs.io/en/latest/installation.html#sidebars
-# html_sidebars = {
-#     "**": ["relations.html", "searchbox.html", "globaltoc.html"]  # needs 'show_related': True theme option to display
-# }
+html_sidebars = {
+    "**": ["relations.html", "searchbox.html", "globaltoc.html"]  # needs 'show_related': True theme option to display
+}
 
 html_favicon = "_static/cognite_logo_black.png"
+html_logo = "_static/cognite_logo_white.png"
 
 # -- Options for HTMLHelp output ------------------------------------------
 
