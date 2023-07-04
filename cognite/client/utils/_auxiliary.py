@@ -93,32 +93,6 @@ def json_dump_default(x: Any) -> Any:
     raise TypeError(f"Object {x} of type {x.__class__} can't be serialized by the JSON encoder")
 
 
-@overload
-def unwrap_identifer(identifier: str) -> str:
-    ...
-
-
-@overload
-def unwrap_identifer(identifier: int) -> int:
-    ...
-
-
-@overload
-def unwrap_identifer(identifier: Dict) -> Union[str, int]:
-    ...
-
-
-def unwrap_identifer(identifier: Union[str, int, Dict]) -> Union[str, int]:
-    # TODO: Move to Identifier class?
-    if isinstance(identifier, (str, int)):
-        return identifier
-    if "externalId" in identifier:
-        return identifier["externalId"]
-    if "id" in identifier:
-        return identifier["id"]
-    raise ValueError(f"{identifier} does not contain 'id' or 'externalId'")
-
-
 def assert_type(var: Any, var_name: str, types: List[type], allow_none: bool = False) -> None:
     if var is None:
         if not allow_none:

@@ -10,7 +10,11 @@ from cognite.client.data_classes.data_modeling.containers import (
     ContainerFilter,
     ContainerList,
 )
-from cognite.client.data_classes.data_modeling.ids import ContainerIdentifier, DataModelingId, _load_identifier
+from cognite.client.data_classes.data_modeling.ids import (
+    ContainerId,
+    ContainerIdentifier,
+    _load_identifier,
+)
 
 
 class ContainersAPI(APIClient):
@@ -85,7 +89,7 @@ class ContainersAPI(APIClient):
         ...
 
     def retrieve(self, ids: ContainerIdentifier | Sequence[ContainerIdentifier]) -> Container | ContainerList | None:
-        """`Retrieve one or more containers by ID <https://docs.cognite.com/api/v1/#operation/byExternalIdsContainers>`_.
+        """`Retrieve one or more containers by ID <https://developer.cognite.com/api#tag/Containers/operation/byExternalIdsContainers>`_.
 
         Args:
             ids (ContainerId | Sequence[ContainerId]): Identifier for container(s).
@@ -99,18 +103,18 @@ class ContainersAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.data_modeling.containers.retrieve(('mySpace', 'myContainer'))
 
-            Fetch using the DataModelingId::
+            Fetch using the ContainerId::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_modeling import DataModelingId
+                >>> from cognite.client.data_classes.data_modeling import ContainerId
                 >>> c = CogniteClient()
-                >>> res = c.data_modeling.containers.retrieve(DataModelingId(space='mySpace', external_id='myContainer'))
+                >>> res = c.data_modeling.containers.retrieve(ContainerId(space='mySpace', external_id='myContainer'))
         """
         identifier = _load_identifier(ids, "container")
         return self._retrieve_multiple(list_cls=ContainerList, resource_cls=Container, identifiers=identifier)
 
-    def delete(self, id: ContainerIdentifier | Sequence[ContainerIdentifier]) -> list[DataModelingId]:
-        """`Delete one or more containers <https://docs.cognite.com/api/v1/#operation/deleteContainers>`_.
+    def delete(self, id: ContainerIdentifier | Sequence[ContainerIdentifier]) -> list[ContainerId]:
+        """`Delete one or more containers <https://developer.cognite.com/api#tag/Containers/operation/deleteContainers>`_.
 
         Args:
             id (ContainerId | Sequence[ContainerId): The container identifier(s).
@@ -128,12 +132,12 @@ class ContainersAPI(APIClient):
             list,
             self._delete_multiple(identifiers=_load_identifier(id, "container"), wrap_ids=True, returns_items=True),
         )
-        return [DataModelingId(space=item["space"], external_id=item["externalId"]) for item in deleted_containers]
+        return [ContainerId(space=item["space"], external_id=item["externalId"]) for item in deleted_containers]
 
     def list(
         self, space: str | None = None, limit: int = DATA_MODELING_LIST_LIMIT_DEFAULT, include_global: bool = False
     ) -> ContainerList:
-        """`List containers <https://docs.cognite.com/api/v1/#operation/listContainers>`_.
+        """`List containers <https://developer.cognite.com/api#tag/Containers/operation/listContainers>`_.
 
         Args:
             space (int, optional): The space to query
@@ -185,7 +189,7 @@ class ContainersAPI(APIClient):
         ...
 
     def apply(self, container: ContainerApply | Sequence[ContainerApply]) -> Container | ContainerList:
-        """`Add or update (upsert) containers <https://docs.cognite.com/api/v1/#operation/ApplyContainers>`_.
+        """`Add or update (upsert) containers <https://developer.cognite.com/api#tag/Containers/operation/ApplyContainers>`_.
 
         Args:
             container (container: ContainerApply | Sequence[ContainerApply]): Container or containers of containers to create or update.
@@ -198,9 +202,12 @@ class ContainersAPI(APIClient):
             Create new containers:
 
                 >>> from cognite.client import CogniteClient
-                >>> import cognite.client.data_classes.data_modeling as models
+                >>> from cognite.client.data_classes.data_modeling import ContainerApply, ContainerProperty, Text
                 >>> c = CogniteClient()
-                >>> containers = [models.Container(space="mySpace",properties={"name": models.ContainerProperty(type=models.TextType, name="name")})]
-                >>> res = c.data_modeling.containers.create(containers)
+                >>> container = [ContainerApply(space="mySpace", external_id="myContainer",
+                ...     properties={"name": ContainerProperty(type=Text(), name="name")})]
+                >>> res = c.data_modeling.containers.apply(container)
         """
-        return self._create_multiple(list_cls=ContainerList, resource_cls=Container, items=container)
+        return self._create_multiple(
+            list_cls=ContainerList, resource_cls=Container, items=container, input_resource_cls=ContainerApply
+        )

@@ -4,8 +4,8 @@ from typing import Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client.data_classes.data_modeling.ids import _load_space_identifier
 from cognite.client.data_classes.data_modeling.spaces import Space, SpaceApply, SpaceList
-from cognite.client.utils._identifier import DataModelingIdentifierSequence
 
 
 class SpacesAPI(APIClient):
@@ -70,7 +70,7 @@ class SpacesAPI(APIClient):
         ...
 
     def retrieve(self, space: str | Sequence[str]) -> Space | SpaceList | None:
-        """`Retrieve a space by ID <https://docs.cognite.com/api/v1/#operation/bySpaceIdsSpaces>`_.
+        """`Retrieve a space by ID <https://developer.cognite.com/api#tag/Spaces/operation/bySpaceIdsSpaces>`_.
 
         Args:
             space (str): Space ID
@@ -91,11 +91,11 @@ class SpacesAPI(APIClient):
                 >>> res = c.data_modeling.spaces.retrieve(spaces=["MySpace", "MyAwesomeSpace", "MyOtherSpace"])
 
         """
-        identifier = DataModelingIdentifierSequence.load_spaces(spaces=space)
+        identifier = _load_space_identifier(space)
         return self._retrieve_multiple(list_cls=SpaceList, resource_cls=Space, identifiers=identifier)
 
     def delete(self, space: str | Sequence[str]) -> list[str]:
-        """`Delete one or more spaces <https://docs.cognite.com/api/v1/#operation/deleteSpacesV3>`_.
+        """`Delete one or more spaces <https://developer.cognite.com/api#tag/Spaces/operation/deleteSpacesV3>`_.
 
         Args:
             space (str | Sequence[str]): ID or ID list ids of spaces.
@@ -111,21 +111,21 @@ class SpacesAPI(APIClient):
         """
         deleted_spaces = cast(
             list,
-            self._delete_multiple(
-                identifiers=DataModelingIdentifierSequence.load_spaces(spaces=space), wrap_ids=True, returns_items=True
-            ),
+            self._delete_multiple(identifiers=_load_space_identifier(space), wrap_ids=True, returns_items=True),
         )
         return [item["space"] for item in deleted_spaces]
 
     def list(
         self,
         limit: int = LIST_LIMIT_DEFAULT,
+        include_global: bool = False,
     ) -> SpaceList:
-        """`List spaces <https://docs.cognite.com/api/v1/#operation/listSpacesV3>`_.
+        """`List spaces <https://developer.cognite.com/api#tag/Spaces/operation/listSpacesV3>`_.
 
         Args:
-            limit (int, optional): Maximum number of spaces to return. Defaults to 25. Set to -1, float("inf") or None
+            limit (int, optional): Maximum number of spaces to return. Defaults to 10. Set to -1, float("inf") or None
                 to return all items.
+            include_global (bool, optional): Whether to include global spaces. Defaults to False.
 
         Returns:
             SpaceList: List of requested spaces
@@ -157,6 +157,7 @@ class SpacesAPI(APIClient):
             resource_cls=Space,
             method="GET",
             limit=limit,
+            other_params={"includeGlobal": include_global},
         )
 
     @overload
@@ -168,7 +169,7 @@ class SpacesAPI(APIClient):
         ...
 
     def apply(self, space: SpaceApply | Sequence[SpaceApply]) -> Space | SpaceList:
-        """`Create or patch one or more spaces <https://docs.cognite.com/api/v1/#operation/ApplySpaces>`_.
+        """`Create or patch one or more spaces <https://developer.cognite.com/api#tag/Spaces/operation/ApplySpaces>`_.
 
         Args:
             space (space: Space | Sequence[Space]): Space or spaces of spacesda to create or update.
@@ -187,4 +188,4 @@ class SpacesAPI(APIClient):
                 ... SpaceApply(space="myOtherSpace", description="My second space", name="My Other Space")]
                 >>> res = c.data_modeling.spaces.apply(spaces)
         """
-        return self._create_multiple(list_cls=SpaceList, resource_cls=Space, items=space)
+        return self._create_multiple(list_cls=SpaceList, resource_cls=Space, items=space, input_resource_cls=SpaceApply)

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterator, Sequence, cast, overload
+from typing import Iterator, Literal, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DATA_MODELING_LIST_LIMIT_DEFAULT
@@ -10,7 +10,8 @@ from cognite.client.data_classes.data_modeling.data_models import (
     DataModelFilter,
     DataModelList,
 )
-from cognite.client.data_classes.data_modeling.ids import DataModelIdentifier, VersionedDataModelingId, _load_identifier
+from cognite.client.data_classes.data_modeling.ids import DataModelId, DataModelIdentifier, ViewId, _load_identifier
+from cognite.client.data_classes.data_modeling.views import View
 
 
 class DataModelsAPI(APIClient):
@@ -86,11 +87,26 @@ class DataModelsAPI(APIClient):
         """
         return cast(Iterator[DataModel], self())
 
-    def retrieve(self, ids: DataModelIdentifier | Sequence[DataModelIdentifier]) -> DataModelList:
-        """`Retrieve one or more data models by ID <https://docs.cognite.com/api/v1/#operation/byExternalIdsDataModels>`_.
+    @overload
+    def retrieve(
+        self, ids: DataModelIdentifier | Sequence[DataModelIdentifier], inline_views: Literal[True]
+    ) -> DataModelList[View]:
+        ...
+
+    @overload
+    def retrieve(
+        self, ids: DataModelIdentifier | Sequence[DataModelIdentifier], inline_views: Literal[False] = False
+    ) -> DataModelList[ViewId]:
+        ...
+
+    def retrieve(
+        self, ids: DataModelIdentifier | Sequence[DataModelIdentifier], inline_views: bool = False
+    ) -> DataModelList[ViewId] | DataModelList[View]:
+        """`Retrieve one or more data models by ID <https://developer.cognite.com/api#tag/Data-models/operation/byExternalIdsDataModels>`_
 
         Args:
             ids (DataModelId | Sequence[DataModelId]): Data Model identifier(s).
+            inline_views (bool): Whether to expand the referenced views inline in the returned result.
 
         Returns:
             Optional[DataModel]: Requested data_model or None if it does not exist.
@@ -103,10 +119,12 @@ class DataModelsAPI(APIClient):
 
         """
         identifier = _load_identifier(ids, "data_model")
-        return self._retrieve_multiple(list_cls=DataModelList, resource_cls=DataModel, identifiers=identifier)
+        return self._retrieve_multiple(
+            list_cls=DataModelList, resource_cls=DataModel, identifiers=identifier, params={"inlineViews": inline_views}
+        )
 
-    def delete(self, ids: DataModelIdentifier | Sequence[DataModelIdentifier]) -> list[VersionedDataModelingId]:
-        """`Delete one or more data models <https://docs.cognite.com/api/v1/#operation/deleteDataModels>`_.
+    def delete(self, ids: DataModelIdentifier | Sequence[DataModelIdentifier]) -> list[DataModelId]:
+        """`Delete one or more data models <https://developer.cognite.com/api#tag/Data-models/operation/deleteDataModels>`_.
 
         Args:
             ids (DataModelId | Sequence[DataModelId]): Data Model identifier(s).
@@ -124,31 +142,51 @@ class DataModelsAPI(APIClient):
             list,
             self._delete_multiple(identifiers=_load_identifier(ids, "data_model"), wrap_ids=True, returns_items=True),
         )
-        return [
-            VersionedDataModelingId(item["space"], item["externalId"], item["version"]) for item in deleted_data_models
-        ]
+        return [DataModelId(item["space"], item["externalId"], item["version"]) for item in deleted_data_models]
+
+    @overload
+    def list(
+        self,
+        inline_views: Literal[True],
+        limit: int = DATA_MODELING_LIST_LIMIT_DEFAULT,
+        space: str | None = None,
+        all_versions: bool = False,
+        include_global: bool = False,
+    ) -> DataModelList[View]:
+        ...
+
+    @overload
+    def list(
+        self,
+        inline_views: Literal[False] = False,
+        limit: int = DATA_MODELING_LIST_LIMIT_DEFAULT,
+        space: str | None = None,
+        all_versions: bool = False,
+        include_global: bool = False,
+    ) -> DataModelList[ViewId]:
+        ...
 
     def list(
         self,
+        inline_views: bool = False,
         limit: int = DATA_MODELING_LIST_LIMIT_DEFAULT,
         space: str | None = None,
-        inline_views: bool = False,
         all_versions: bool = False,
         include_global: bool = False,
-    ) -> DataModelList:
-        """`List data models <https://docs.cognite.com/api/v1/#operation/listDataModels>`_.
+    ) -> DataModelList[View] | DataModelList[ViewId]:
+        """`List data models <https://developer.cognite.com/api#tag/Data-models/operation/listDataModels>`_.
 
         Args:
+            inline_views (bool): Whether to expand the referenced views inline in the returned result.
             limit (int, optional): Maximum number of data model to return. Default to 10. Set to -1, float("inf") or None
                 to return all items.
             space: (str | None): The space to query.
-            inline_views (bool): Whether to expand the referenced views inline in the returned result.
             all_versions (bool): Whether to return all versions. If false, only the newest version is returned,
                                  which is determined based on the 'createdTime' field.
             include_global (bool): Whether to include global data models.
 
         Returns:
-            DataModelList: List of requested data model
+            DataModelList: List of requested data models
 
         Examples:
 
@@ -191,7 +229,7 @@ class DataModelsAPI(APIClient):
         ...
 
     def apply(self, data_model: DataModelApply | Sequence[DataModelApply]) -> DataModel | DataModelList:
-        """`Create or update one or more data models <https://docs.cognite.com/api/v1/#operation/createDataModels>`_.
+        """`Create or update one or more data models <https://developer.cognite.com/api#tag/Data-models/operation/createDataModels>`_.
 
         Args:
             data_model (data_model: DataModelApply | Sequence[DataModelApply]): DataModel or data model to create or update (upsert).
@@ -204,10 +242,12 @@ class DataModelsAPI(APIClient):
             Create new data model::
 
                 >>> from cognite.client import CogniteClient
-                >>> import cognite.client.data_classes.data_modeling as models
+                >>> from cognite.client.data_classes.data_modeling import DataModelApply
                 >>> c = CogniteClient()
-                >>> data_models = [models.DataModel(space="mySpace",external_id="myDataModel",version="v1",is_global=,last_updated_time=),
-                ... DataModel(space="mySpace",external_id="myOtherDataModel",version="v1",is_global=,last_updated_time=)]
-                >>> res = c.data_modeling.data_models.create(data_models)
+                >>> data_models = [DataModelApply(space="mySpace",external_id="myDataModel",version="v1"),
+                ... DataModelApply(space="mySpace",external_id="myOtherDataModel",version="v1")]
+                >>> res = c.data_modeling.data_models.apply(data_models)
         """
-        return self._create_multiple(list_cls=DataModelList, resource_cls=DataModel, items=data_model)
+        return self._create_multiple(
+            list_cls=DataModelList, resource_cls=DataModel, items=data_model, input_resource_cls=DataModelApply
+        )

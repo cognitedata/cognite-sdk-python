@@ -46,7 +46,6 @@ class ContainerCore(DataModelingResource):
         indexes: dict[str, Index] = None,
         **_: dict,
     ):
-        validate_data_modeling_identifier(space, external_id)
         self.space = space
         self.external_id = external_id
         self.description = description
@@ -106,8 +105,8 @@ class ContainerApply(ContainerCore):
         used_for: Literal["node", "edge", "all"] = None,
         constraints: dict[str, Constraint] = None,
         indexes: dict[str, Index] = None,
-        **_: dict,
     ):
+        validate_data_modeling_identifier(space, external_id)
         super().__init__(space, external_id, properties, description, name, used_for, constraints, indexes)
 
 
@@ -190,26 +189,8 @@ class ContainerFilter(CogniteFilter):
 
 
 @dataclass
-class ContainerDirectRelation(DirectRelation):
-    container: Optional[ContainerId] = None
-
-    def dump(self, camel_case: bool = False) -> dict:
-        output = super().dump(camel_case)
-        if "container" in output and isinstance(output["container"], dict):
-            output["container"]["type"] = "container"
-        return output
-
-    @classmethod
-    def load(cls, data: dict) -> ContainerDirectRelation:
-        output = cls(**convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"type"})))
-        if isinstance(data.get("container"), dict):
-            output.container = ContainerId.load(data["container"])
-        return output
-
-
-@dataclass
 class ContainerProperty:
-    type: PropertyType | ContainerDirectRelation
+    type: PropertyType
     nullable: bool = True
     auto_increment: bool = False
     name: Optional[str] = None
@@ -221,7 +202,7 @@ class ContainerProperty:
         if "type" not in data:
             raise ValueError("Type not specified")
         if data["type"].get("type") == "direct":
-            data["type"] = ContainerDirectRelation.load(data["type"])
+            data["type"] = DirectRelation.load(data["type"])
         else:
             data["type"] = PropertyType.load(data["type"])
         return cls(**convert_all_keys_to_snake_case(data))

@@ -97,9 +97,9 @@ class FunctionsAPI(APIClient):
         index_url: Optional[str] = None,
         extra_index_urls: Optional[List[str]] = None,
     ) -> Function:
-        """Create a function.
+        """'Create a function <https://developer.cognite.com/api#tag/Functions/operation/postFunctions>`_.
 
-        `When creating a function, <https://docs.cognite.com/api/v1/#operation/postFunctions>`_
+        When creating a function,
         the source code can be specified in one of three ways:\n
         - Via the `folder` argument, which is the path to the folder where the source code is located. `function_path` must point to a python file in the folder within which a function named `handle` must be defined.\n
         - Via the `file_id` argument, which is the ID of a zip-file uploaded to the files API. `function_path` must point to a python file in the zipped folder within which a function named `handle` must be defined.\n
@@ -220,7 +220,7 @@ class FunctionsAPI(APIClient):
         return Function._load(res.json()["items"][0], cognite_client=self._cognite_client)
 
     def delete(self, id: Union[int, Sequence[int]] = None, external_id: Union[str, Sequence[str]] = None) -> None:
-        """`Delete one or more functions <https://docs.cognite.com/api/v1/#operation/deleteFunctions>`_.
+        """`Delete one or more functions <https://developer.cognite.com/api#tag/Functions/operation/deleteFunctions>`_.
 
         Args:
             id (Union[int, Sequence[int]): Id or list of ids.
@@ -249,7 +249,7 @@ class FunctionsAPI(APIClient):
         created_time: Union[Dict[str, int], TimestampRange] = None,
         limit: Optional[int] = LIST_LIMIT_DEFAULT,
     ) -> FunctionList:
-        """`List all functions <https://docs.cognite.com/api/v1/#operation/listFunctions>`_.
+        """`List all functions <https://developer.cognite.com/api#tag/Functions/operation/listFunctions>`_.
 
         Args:
             name (str): The name of the function.
@@ -289,7 +289,7 @@ class FunctionsAPI(APIClient):
     def retrieve(
         self, id: Optional[int] = None, external_id: Optional[str] = None
     ) -> Union[FunctionList, Function, None]:
-        """`Retrieve a single function by ID <https://docs.cognite.com/api/v1/#operation/byIdsFunctions>`_.
+        """`Retrieve a single function by ID <https://developer.cognite.com/api#tag/Functions/operation/byIdsFunctions>`_.
 
         Args:
             id (int, optional): ID
@@ -318,7 +318,7 @@ class FunctionsAPI(APIClient):
     def retrieve_multiple(
         self, ids: Optional[Sequence[int]] = None, external_ids: Optional[Sequence[str]] = None
     ) -> Union[FunctionList, Function, None]:
-        """`Retrieve multiple functions by ID <https://docs.cognite.com/api/v1/#operation/byIdsFunctions>`_.
+        """`Retrieve multiple functions by ID <https://developer.cognite.com/api#tag/Functions/operation/byIdsFunctions>`_.
 
         Args:
             ids (Sequence[int], optional): IDs
@@ -356,7 +356,7 @@ class FunctionsAPI(APIClient):
         data: Optional[Dict] = None,
         wait: bool = True,
     ) -> FunctionCall:
-        """`Call a function by its ID or external ID <https://docs.cognite.com/api/v1/#operation/postFunctionsCall>`_.
+        """`Call a function by its ID or external ID <https://developer.cognite.com/api#tag/Functions/operation/postFunctionsCall>`_.
 
         Args:
             id (int, optional): ID
@@ -399,7 +399,7 @@ class FunctionsAPI(APIClient):
         return function_call
 
     def limits(self) -> FunctionsLimits:
-        """`Get service limits <https://docs.cognite.com/api/v1/#operation/functionsLimits>`_.
+        """`Get service limits <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_.
 
         Returns:
             FunctionsLimits: A function limits object.
@@ -480,7 +480,7 @@ class FunctionsAPI(APIClient):
             )
 
     def activate(self) -> FunctionsStatus:
-        """`Activate functions for the Project <https://docs.cognite.com/api/v1/#operation/postFunctionsStatus>`_.
+        """`Activate functions for the Project <https://developer.cognite.com/api#tag/Functions/operation/postFunctionsStatus>`_.
 
         Returns:
             FunctionsStatus: A function activation status.
@@ -497,7 +497,7 @@ class FunctionsAPI(APIClient):
         return FunctionsStatus._load(res.json())
 
     def status(self) -> FunctionsStatus:
-        """`Functions activation status for the Project <https://docs.cognite.com/api/v1/#operation/getFunctionsStatus>`_.
+        """`Functions activation status for the Project <https://developer.cognite.com/api#tag/Functions/operation/getFunctionsStatus>`_.
 
         Returns:
             FunctionsStatus: A function activation status.
@@ -673,7 +673,7 @@ class FunctionCallsAPI(APIClient):
         end_time: Optional[Dict[str, int]] = None,
         limit: Optional[int] = LIST_LIMIT_DEFAULT,
     ) -> FunctionCallList:
-        """`List all calls associated with a specific function ID <https://docs.cognite.com/api/v1/#operation/listFunctionCalls>`_.
+        """`List all calls associated with a specific function ID <https://developer.cognite.com/api#tag/Function-calls/operation/listFunctionCalls>`_.
 
         Either function_id or function_external_id must be specified.
 
@@ -723,7 +723,7 @@ class FunctionCallsAPI(APIClient):
     def retrieve(
         self, call_id: int, function_id: Optional[int] = None, function_external_id: Optional[str] = None
     ) -> Union[FunctionCallList, FunctionCall, None]:
-        """`Retrieve a single function call by ID <https://docs.cognite.com/api/v1/#operation/byIdsFunctionCalls>`_.
+        """`Retrieve a single function call by ID <https://developer.cognite.com/api#tag/Function-calls/operation/byIdsFunctionCalls>`_.
 
         Args:
             call_id (int): ID of the call.
@@ -765,7 +765,7 @@ class FunctionCallsAPI(APIClient):
     def get_response(
         self, call_id: int, function_id: Optional[int] = None, function_external_id: Optional[str] = None
     ) -> Optional[Dict]:
-        """`Retrieve the response from a function call <https://docs.cognite.com/api/v1/#operation/getFunctionCallResponse>`_.
+        """`Retrieve the response from a function call <https://developer.cognite.com/api#tag/Function-calls/operation/getFunctionCallResponse>`_.
 
         Args:
             call_id (int): ID of the call.
@@ -800,7 +800,7 @@ class FunctionCallsAPI(APIClient):
     def get_logs(
         self, call_id: int, function_id: Optional[int] = None, function_external_id: Optional[str] = None
     ) -> FunctionCallLog:
-        """`Retrieve logs for a function call <https://docs.cognite.com/api/v1/#operation/getFunctionCalls>`_.
+        """`Retrieve logs for a function call <https://developer.cognite.com/api#tag/Function-calls/operation/getFunctionCalls>`_.
 
         Args:
             call_id (int): ID of the call.
@@ -841,7 +841,7 @@ class FunctionSchedulesAPI(APIClient):
         self._LIST_LIMIT_CEILING = 10_000
 
     def retrieve(self, id: int) -> Union[FunctionSchedule, FunctionSchedulesList, None]:
-        """`Retrieve a single function schedule by ID <https://docs.cognite.com/api/v1/#operation/byIdsFunctionSchedules>`_.
+        """`Retrieve a single function schedule by ID <https://developer.cognite.com/api#tag/Function-schedules/operation/byIdsFunctionSchedules>`_.
 
         Args:
             id (int): ID
@@ -871,7 +871,7 @@ class FunctionSchedulesAPI(APIClient):
         cron_expression: str = None,
         limit: Optional[int] = LIST_LIMIT_DEFAULT,
     ) -> FunctionSchedulesList:
-        """`List all schedules associated with a specific project <https://docs.cognite.com/api/v1/#operation/listFunctionSchedules>`_.
+        """`List all schedules associated with a specific project <https://developer.cognite.com/api#tag/Function-schedules/operation/listFunctionSchedules>`_.
 
         Args:
             name (str): Name of the function schedule.
@@ -931,7 +931,7 @@ class FunctionSchedulesAPI(APIClient):
         description: str = "",
         data: Optional[Dict] = None,
     ) -> FunctionSchedule:
-        """`Create a function schedule <https://docs.cognite.com/api/v1/#operation/postFunctionSchedules>`_.
+        """`Create a function schedule <https://developer.cognite.com/api#tag/Function-schedules/operation/postFunctionSchedules>`_.
 
         Args:
             name (str): Name of the schedule.
@@ -1003,7 +1003,7 @@ class FunctionSchedulesAPI(APIClient):
         return FunctionSchedule._load(res.json()["items"][0], cognite_client=self._cognite_client)
 
     def delete(self, id: int) -> None:
-        """`Delete a function schedule <https://docs.cognite.com/api/v1/#operation/deleteFunctionSchedules>`_.
+        """`Delete a function schedule <https://developer.cognite.com/api#tag/Function-schedules/operation/deleteFunctionSchedules>`_.
 
         Args:
             id (int): Id of the schedule
@@ -1025,7 +1025,7 @@ class FunctionSchedulesAPI(APIClient):
         self._post(url, json=body)
 
     def get_input_data(self, id: int) -> Optional[Dict]:
-        """`Retrieve the input data to the associated function <https://docs.cognite.com/api/v1/#operation/getFunctionScheduleInputData>`_.
+        """`Retrieve the input data to the associated function <https://developer.cognite.com/api#tag/Function-schedules/operation/getFunctionScheduleInputData>`_.
 
         Args:
             id (int): Id of the schedule

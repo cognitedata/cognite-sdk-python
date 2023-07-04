@@ -1,10 +1,10 @@
-from cognite.client.data_classes.data_modeling import filters
+from cognite.client.data_classes.data_modeling import aggregations, filters
+from cognite.client.data_classes.data_modeling.aggregations import AggregatedValue, Aggregation
 from cognite.client.data_classes.data_modeling.containers import (
     Constraint,
     Container,
     ContainerApply,
     ContainerApplyList,
-    ContainerDirectRelation,
     ContainerFilter,
     ContainerList,
     ContainerProperty,
@@ -73,21 +73,31 @@ from cognite.client.data_classes.data_modeling.instances import (
 from cognite.client.data_classes.data_modeling.spaces import Space, SpaceApply, SpaceApplyList, SpaceList
 from cognite.client.data_classes.data_modeling.views import (
     ConnectionDefinition,
-    MappedApplyPropertyDefinition,
-    MappedPropertyDefinition,
+    MappedProperty,
+    MappedPropertyApply,
     SingleHopConnectionDefinition,
     View,
     ViewApply,
     ViewApplyList,
     ViewFilter,
     ViewList,
-    ViewPropertyDefinition,
 )
 
+# TODO: Remove these in next major version, there just here to ensure backwards compatibility after renaming and
+#  removing some data classes.
+ViewDirectRelation = DirectRelation
+ContainerDirectRelation = DirectRelation
+MapppedPropertyDefinition = MappedProperty
+MappedApplyPropertyDefinition = MappedPropertyApply
+
 __all__ = [
+    "Aggregation",
+    "AggregatedValue",
+    "aggregations",
     "ViewIdentifier",
     "ViewApply",
     "ViewApplyList",
+    "MappedPropertyApply",
     "MappedApplyPropertyDefinition",
     "VersionedDataModelingId",
     "DataModelingId",
@@ -95,6 +105,8 @@ __all__ = [
     "DataModelIdentifier",
     "filters",
     "DirectRelation",
+    "ViewDirectRelation",
+    "ContainerDirectRelation",
     "Filter",
     "DirectRelationReference",
     "DataModel",
@@ -105,10 +117,10 @@ __all__ = [
     "DataModelApplyList",
     "ContainerFilter",
     "ViewFilter",
-    "MappedPropertyDefinition",
+    "MappedProperty",
+    "MapppedPropertyDefinition",
     "ConnectionDefinition",
     "SingleHopConnectionDefinition",
-    "ViewPropertyDefinition",
     "Space",
     "SpaceList",
     "SpaceApply",
@@ -124,7 +136,6 @@ __all__ = [
     "ContainerProperty",
     "Primitive",
     "CDFExternalIdReference",
-    "ContainerDirectRelation",
     "RequiresConstraintDefinition",
     "UniquenessConstraintDefinition",
     "ContainerId",

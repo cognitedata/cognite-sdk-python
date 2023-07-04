@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, List, Literal, Optional, Union, cast
+from typing import Any, Generic, List, Literal, Optional, TypeVar, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -9,7 +9,7 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.data_modeling._core import DataModelingResource
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
-from cognite.client.data_classes.data_modeling.ids import ViewId
+from cognite.client.data_classes.data_modeling.ids import DataModelId, ViewId
 from cognite.client.data_classes.data_modeling.views import View, ViewApply
 
 
@@ -33,12 +33,14 @@ class DataModelCore(DataModelingResource):
         name: str = None,
         **_: dict,
     ):
-        validate_data_modeling_identifier(space, external_id)
         self.space = space
         self.external_id = external_id
         self.description = description
         self.name = name
         self.version = version
+
+    def as_id(self) -> DataModelId:
+        return DataModelId(space=self.space, external_id=self.external_id, version=self.version)
 
 
 class DataModelApply(DataModelCore):
@@ -61,8 +63,8 @@ class DataModelApply(DataModelCore):
         description: str = None,
         name: str = None,
         views: list[ViewId | ViewApply] = None,
-        **_: dict,
     ):
+        validate_data_modeling_identifier(space, external_id)
         super().__init__(space, external_id, version, description, name)
         self.views = views
 
@@ -90,7 +92,10 @@ class DataModelApply(DataModelCore):
         return output
 
 
-class DataModel(DataModelCore):
+T_View = TypeVar("T_View", bound=Union[ViewId, View])
+
+
+class DataModel(DataModelCore, Generic[T_View]):
     """A group of views. This is the read version of a Data Model
 
     Args:
@@ -115,11 +120,11 @@ class DataModel(DataModelCore):
         created_time: int,
         description: str = None,
         name: str = None,
-        views: list[ViewId | View] = None,
+        views: Optional[list[T_View]] = None,
         **_: dict,
     ):
         super().__init__(space, external_id, version, description, name)
-        self.views = views
+        self.views: list[T_View] = views or []
         self.is_global = is_global
         self.last_updated_time = last_updated_time
         self.created_time = created_time
@@ -148,9 +153,14 @@ class DataModel(DataModelCore):
         return output
 
     def as_apply(self) -> DataModelApply:
-        views: Optional[List[Union[ViewId, ViewApply]]] = None
-        if self.views:
-            views = [v.as_apply() if isinstance(v, View) else v for v in self.views]
+        views: List[ViewId | ViewApply] = []
+        for view in self.views:
+            if isinstance(view, View):
+                views.append(view.as_apply())
+            elif isinstance(view, ViewId):
+                views.append(view)
+            else:
+                raise ValueError(f"Unexpected type {type(view)}")
 
         return DataModelApply(
             space=self.space,
@@ -166,7 +176,7 @@ class DataModelApplyList(CogniteResourceList[DataModelApply]):
     _RESOURCE = DataModelApply
 
 
-class DataModelList(CogniteResourceList[DataModel]):
+class DataModelList(CogniteResourceList[DataModel[T_View]]):
     _RESOURCE = DataModel
 
     def to_data_model_apply_list(self) -> DataModelApplyList:

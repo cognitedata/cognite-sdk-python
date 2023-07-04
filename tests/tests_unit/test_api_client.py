@@ -337,7 +337,7 @@ class TestStandardRetrieveMultiple:
         assert 400 == e.value.code
 
     def test_ids_all_None(self, api_client_with_token):
-        with pytest.raises(ValueError, match="No ids or external_ids specified"):
+        with pytest.raises(ValueError, match="No identifiers specified"):
             api_client_with_token._retrieve_multiple(
                 list_cls=SomeResourceList,
                 resource_cls=SomeResource,

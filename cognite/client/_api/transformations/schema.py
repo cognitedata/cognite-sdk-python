@@ -17,7 +17,7 @@ class TransformationSchemaAPI(APIClient):
     def retrieve(
         self, destination: TransformationDestination, conflict_mode: Optional[str] = None
     ) -> TransformationSchemaColumnList:
-        """`Get expected schema for a transformation destination <https://docs.cognite.com/api/v1/#operation/getTransformationSchema>`_.
+        """`Get expected schema for a transformation destination <https://developer.cognite.com/api#tag/Schema/operation/getTransformationSchema>`_.
 
         Args:
             destination (TransformationDestination): destination for which the schema is requested.

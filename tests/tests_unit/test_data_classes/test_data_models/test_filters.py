@@ -1,10 +1,13 @@
+from typing import Iterator
+
 import pytest
+from _pytest.mark import ParameterSet
 
 import cognite.client.data_classes.data_modeling.filters as f
 from cognite.client.data_classes.data_modeling.filters import Filter
 
 
-def load_and_dump_equals_data():
+def load_and_dump_equals_data() -> Iterator[ParameterSet]:
     yield pytest.param(
         {
             "and": [
@@ -92,7 +95,7 @@ def load_and_dump_equals_data():
 
 
 @pytest.mark.parametrize("raw_data", list(load_and_dump_equals_data()))
-def test_load_and_dump_equals(raw_data: dict):
+def test_load_and_dump_equals(raw_data: dict) -> None:
     parsed = Filter.load(raw_data)
 
     dumped = parsed.dump()
@@ -100,7 +103,7 @@ def test_load_and_dump_equals(raw_data: dict):
     assert dumped == raw_data
 
 
-def dump_filter_test_data():
+def dump_filter_test_data() -> Iterator[ParameterSet]:
     user_filter = f.Or(
         f.Equals(property=["person", "name"], value=["Quentin", "Tarantino"]),
         f.ContainsAny(property=["person", "name"], values=[["Quentin", "Tarantino"]]),
@@ -151,12 +154,12 @@ def dump_filter_test_data():
 
 
 @pytest.mark.parametrize("user_filter, expected", list(dump_filter_test_data()))
-def test_dump_filter(user_filter: Filter, expected: dict):
+def test_dump_filter(user_filter: Filter, expected: dict) -> None:
     actual = user_filter.dump()
 
     assert actual == expected
 
 
-def test_unknown_filter_type():
+def test_unknown_filter_type() -> None:
     with pytest.raises(ValueError, match="Unknown filter type: unknown"):
         Filter.load({"unknown": {}})

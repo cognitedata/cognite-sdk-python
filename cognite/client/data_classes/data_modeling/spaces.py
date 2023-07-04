@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from cognite.client.data_classes._base import (
     CogniteResourceList,
 )
@@ -16,23 +18,33 @@ class SpaceCore(DataModelingResource):
         name (str): Human readable name for the space.
     """
 
+    def __init__(self, space: str, description: str = None, name: str = None):
+        self.space = space
+        self.description = description
+        self.name = name
+
+    def as_id(self) -> str:
+        return self.space
+
+
+class SpaceApply(SpaceCore):
+    """A workspace for data models and instances. This is the write version
+
+    Args:
+        space (str): A unique identifier for space.
+        description (str): Textual description of the space
+        name (str): Human readable name for the space.
+    """
+
     def __init__(
         self,
         space: str,
         description: str = None,
         name: str = None,
-        **_: dict,
+        **_: Any,
     ):
         validate_data_modeling_identifier(space)
-        self.space = space
-        self.description = description
-        self.name = name
-
-
-class SpaceApply(SpaceCore):
-    """A workspace for data models and instances. This is the write version"""
-
-    ...
+        super().__init__(space, description, name)
 
 
 class Space(SpaceCore):
@@ -55,6 +67,7 @@ class Space(SpaceCore):
         created_time: int,
         description: str = None,
         name: str = None,
+        **_: Any,
     ):
         super().__init__(space, description, name)
         self.is_global = is_global

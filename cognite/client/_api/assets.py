@@ -155,7 +155,7 @@ class AssetsAPI(APIClient):
         return cast(Iterator[Asset], self())
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Asset]:
-        """`Retrieve a single asset by ID <https://docs.cognite.com/api/v1/#operation/getAsset>`_.
+        """`Retrieve a single asset by ID <https://developer.cognite.com/api#tag/Assets/operation/getAsset>`_.
 
         Args:
             id (int, optional): ID
@@ -187,7 +187,7 @@ class AssetsAPI(APIClient):
         external_ids: Optional[Sequence[str]] = None,
         ignore_unknown_ids: bool = False,
     ) -> AssetList:
-        """`Retrieve multiple assets by ID <https://docs.cognite.com/api/v1/#operation/byIdsAssets>`_.
+        """`Retrieve multiple assets by ID <https://developer.cognite.com/api#tag/Assets/operation/byIdsAssets>`_.
 
         Args:
             ids (Sequence[int], optional): IDs
@@ -237,7 +237,7 @@ class AssetsAPI(APIClient):
         partitions: int = None,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> AssetList:
-        """`List assets <https://docs.cognite.com/api/v1/#operation/listAssets>`_.
+        """`List assets <https://developer.cognite.com/api#tag/Assets/operation/listAssets>`_.
 
         Args:
             name (str): Name of asset. Often referred to as tag.
@@ -329,7 +329,7 @@ class AssetsAPI(APIClient):
         )
 
     def aggregate(self, filter: Union[AssetFilter, dict] = None) -> List[AssetAggregate]:
-        """`Aggregate assets <https://docs.cognite.com/api/v1/#operation/aggregateAssets>`_.
+        """`Aggregate assets <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_.
 
         Args:
             filter (Union[AssetFilter, Dict]): Filter on assets filter with exact match
@@ -348,7 +348,7 @@ class AssetsAPI(APIClient):
         return self._aggregate(filter=filter, cls=AssetAggregate)
 
     def aggregate_metadata_keys(self, filter: Union[AssetFilter, dict] = None) -> Sequence[AggregateBucketResult]:
-        """`Aggregate asset metadata keys <https://docs.cognite.com/api/v1/#operation/aggregateAssets>`_.
+        """`Aggregate asset metadata keys <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_.
 
         Note:
             In the case of text fields, the values are aggregated in a case-insensitive manner
@@ -372,7 +372,7 @@ class AssetsAPI(APIClient):
     def aggregate_metadata_values(
         self, keys: Sequence[str], filter: Union[AssetFilter, dict] = None
     ) -> Sequence[AggregateBucketResult]:
-        """`Aggregate asset metadata values <https://docs.cognite.com/api/v1/#operation/aggregateAssets>`_.
+        """`Aggregate asset metadata values <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_.
 
         Note:
             In the case of text fields, the values are aggregated in a case-insensitive manner
@@ -406,7 +406,7 @@ class AssetsAPI(APIClient):
         ...
 
     def create(self, asset: Union[Asset, Sequence[Asset]]) -> Union[Asset, AssetList]:
-        """`Create one or more assets <https://docs.cognite.com/api/v1/#operation/createAssets>`_.
+        """`Create one or more assets <https://developer.cognite.com/api#tag/Assets/operation/createAssets>`_.
 
         You can create an arbitrary number of assets, and the SDK will split the request into multiple requests.
         When specifying parent-child relation between assets using `parentExternalId` the link will be resvoled into an internal ID and stored as `parentId`.
@@ -577,7 +577,7 @@ class AssetsAPI(APIClient):
         recursive: bool = False,
         ignore_unknown_ids: bool = False,
     ) -> None:
-        """`Delete one or more assets <https://doc.cognitedata.com/api/v1/#operation/deleteAssets>`_.
+        """`Delete one or more assets <https://developer.cognite.com/api#tag/Assets/operation/deleteAssets>`_.
 
         Args:
             id (Union[int, Sequence[int]): Id or list of ids
@@ -611,7 +611,7 @@ class AssetsAPI(APIClient):
         ...
 
     def update(self, item: Union[Asset, AssetUpdate, Sequence[Union[Asset, AssetUpdate]]]) -> Union[Asset, AssetList]:
-        """`Update one or more assets <https://docs.cognite.com/api/v1/#operation/updateAssets>`_.
+        """`Update one or more assets <https://developer.cognite.com/api#tag/Assets/operation/updateAssets>`_.
 
         Labels can be added, removed or replaced (set). Note that set operation deletes all the existing labels and adds the new specified labels.
 
@@ -679,7 +679,7 @@ class AssetsAPI(APIClient):
         filter: Union[AssetFilter, Dict] = None,
         limit: int = 100,
     ) -> AssetList:
-        """`Search for assets <https://docs.cognite.com/api/v1/#operation/searchAssets>`_.
+        """`Search for assets <https://developer.cognite.com/api#tag/Assets/operation/searchAssets>`_.
 
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
@@ -945,7 +945,9 @@ class _AssetHierarchyCreator:
                 dct_update["metadata"]["add"] = dct_update["metadata"].pop("set")
             if "labels" in dumped:
                 dct_update["labels"]["add"] = dct_update["labels"].pop("set")
-        (upd := AssetUpdate(external_id=dumped["externalId"]))._update_object = dct_update
+
+        upd = AssetUpdate(external_id=dumped["externalId"])
+        upd._update_object = dct_update
         return upd
 
     @cached_property

@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from abc import abstractmethod
 from collections import defaultdict
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from typing import (
     Any,
     Dict,
@@ -30,6 +30,7 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.data_modeling._core import DataModelingResource
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
+from cognite.client.data_classes.data_modeling.aggregations import AggregatedNumberedValue
 from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelationReference,
 )
@@ -41,7 +42,7 @@ from cognite.client.data_classes.data_modeling.ids import (
     ViewId,
     ViewIdentifier,
 )
-from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive, convert_all_keys_to_snake_case
+from cognite.client.utils._text import convert_all_keys_to_snake_case
 
 PropertyValue = Union[str, int, float, bool, dict, List[str], List[int], List[float], List[bool], List[dict]]
 Space = str
@@ -65,10 +66,15 @@ class NodeOrEdgeData:
         return cls(**convert_all_keys_to_snake_case(data))
 
     def dump(self, camel_case: bool = False) -> dict:
-        output = asdict(self)
+        output: Dict[str, Any] = {"properties": dict(self.properties.items())}
         if self.source:
-            output["source"] = self.source.dump(camel_case)
-        return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
+            if isinstance(self.source, (ContainerId, ViewId)):
+                output["source"] = self.source.dump(camel_case)
+            elif isinstance(self.source, dict):
+                output["source"] = self.source
+            else:
+                raise TypeError(f"source must be ContainerId, ViewId or a dict, but was {type(self.source)}")
+        return output
 
 
 class InstanceCore(DataModelingResource):
@@ -81,7 +87,6 @@ class InstanceCore(DataModelingResource):
     """
 
     def __init__(self, space: str, external_id: str, instance_type: Literal["node", "edge"] = "node"):
-        validate_data_modeling_identifier(space, external_id)
         self.instance_type = instance_type
         self.space = space
         self.external_id = external_id
@@ -112,6 +117,7 @@ class InstanceApply(InstanceCore):
         existing_version: int = None,
         sources: list[NodeOrEdgeData] = None,
     ):
+        validate_data_modeling_identifier(space, external_id)
         super().__init__(space, external_id, instance_type)
         self.existing_version = existing_version
         self.sources = sources
@@ -299,6 +305,59 @@ class InstanceApplyResult(InstanceCore):
         self.was_modified = was_modified
         self.last_updated_time = last_updated_time
         self.created_time = created_time
+
+
+class InstanceAggregationResult(DataModelingResource):
+    """A node or edge. This represents the update on the instance.
+
+    Args:
+        aggregates (list[AggregatedNumberedValue]) : List of aggregated values.
+        group (dict[str, str | int | float | bool]) : The grouping used for the aggregation.
+    """
+
+    def __init__(self, aggregates: list[AggregatedNumberedValue], group: dict[str, str | int | float | bool]):
+        self.aggregates = aggregates
+        self.group = group
+
+    @classmethod
+    def load(cls, data: dict | str) -> InstanceAggregationResult:
+        """
+        Loads an instance from a json string or dictionary.
+
+        Args:
+            data (dict | str): The json string or dictionary.
+
+        Returns:
+            An instance.
+
+        """
+        data = json.loads(data) if isinstance(data, str) else data
+
+        return cls(
+            aggregates=[AggregatedNumberedValue.load(agg) for agg in data["aggregates"]],
+            group=cast(Dict[str, Union[str, int, float, bool]], data.get("group")),
+        )
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        """
+        Dumps the instance to a dictionary.
+
+        Args:
+            camel_case (bool): Whether to convert the keys to camel case.
+
+        Returns:
+            A dictionary.
+
+        """
+        return {
+            "aggregates": [agg.dump(camel_case) for agg in self.aggregates],
+            "group": self.group,
+            ("instanceType" if camel_case else "instance_type"): self.instance_type,
+        }
+
+
+class InstanceAggregationResultList(CogniteResourceList[InstanceAggregationResult]):
+    _RESOURCE = InstanceAggregationResult
 
 
 class NodeApply(InstanceApply):

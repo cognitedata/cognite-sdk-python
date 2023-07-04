@@ -4,7 +4,11 @@ from typing import Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DATA_MODELING_LIST_LIMIT_DEFAULT
-from cognite.client.data_classes.data_modeling.ids import VersionedDataModelingId, ViewIdentifier, _load_identifier
+from cognite.client.data_classes.data_modeling.ids import (
+    ViewId,
+    ViewIdentifier,
+    _load_identifier,
+)
 from cognite.client.data_classes.data_modeling.views import View, ViewApply, ViewFilter, ViewList
 
 
@@ -80,11 +84,16 @@ class ViewsAPI(APIClient):
         """
         return cast(Iterator[View], self())
 
-    def retrieve(self, ids: ViewIdentifier | Sequence[ViewIdentifier]) -> ViewList:
-        """`Retrieve one or more views by ID <https://docs.cognite.com/api/v1/#operation/byExternalIdsViews>`_.
+    def retrieve(
+        self,
+        ids: ViewIdentifier | Sequence[ViewIdentifier],
+        include_inherited_properties: bool = True,
+    ) -> ViewList:
+        """`Retrieve one or more views by ID <https://developer.cognite.com/api#tag/Views/operation/byExternalIdsViews>`_.
 
         Args:
             ids (ViewId | Sequence[ViewId]): View dentifier(s)
+            include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
 
         Returns:
             Optional[View]: Requested view or None if it does not exist.
@@ -97,10 +106,15 @@ class ViewsAPI(APIClient):
 
         """
         identifier = _load_identifier(ids, "view")
-        return self._retrieve_multiple(list_cls=ViewList, resource_cls=View, identifiers=identifier)
+        return self._retrieve_multiple(
+            list_cls=ViewList,
+            resource_cls=View,
+            identifiers=identifier,
+            params={"includeInheritedProperties": include_inherited_properties},
+        )
 
-    def delete(self, ids: ViewIdentifier | Sequence[ViewIdentifier]) -> list[VersionedDataModelingId]:
-        """`Delete one or more views <https://docs.cognite.com/api/v1/#operation/deleteViews>`_.
+    def delete(self, ids: ViewIdentifier | Sequence[ViewIdentifier]) -> list[ViewId]:
+        """`Delete one or more views <https://developer.cognite.com/api#tag/Views/operation/deleteViews>`_.
 
         Args:
             ids (ViewId | Sequence[ViewId]): View dentifier(s)
@@ -122,7 +136,7 @@ class ViewsAPI(APIClient):
                 returns_items=True,
             ),
         )
-        return [VersionedDataModelingId(item["space"], item["externalId"], item["version"]) for item in deleted_views]
+        return [ViewId(item["space"], item["externalId"], item["version"]) for item in deleted_views]
 
     def list(
         self,
@@ -132,10 +146,10 @@ class ViewsAPI(APIClient):
         all_versions: bool = False,
         include_global: bool = False,
     ) -> ViewList:
-        """`List views <https://docs.cognite.com/api/v1/#operation/listViews>`_.
+        """`List views <https://developer.cognite.com/api#tag/Views/operation/listViews>`_.
 
         Args:
-            limit (int, optional): Maximum number of views to return. Defaults to 25. Set to -1, float("inf") or None
+            limit (int, optional): Maximum number of views to return. Defaults to 10. Set to -1, float("inf") or None
                 to return all items.
             space: (str | None): The space to query.
             include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
@@ -183,7 +197,7 @@ class ViewsAPI(APIClient):
         ...
 
     def apply(self, view: ViewApply | Sequence[ViewApply]) -> View | ViewList:
-        """`Create or update (upsert) one or more views <https://docs.cognite.com/api/v1/#operation/ApplyViews>`_.
+        """`Create or update (upsert) one or more views <https://developer.cognite.com/api#tag/Views/operation/ApplyViews>`_.
 
         Args:
             view (view: ViewApply | Sequence[ViewApply]): View or views of views to create or update.
@@ -196,10 +210,10 @@ class ViewsAPI(APIClient):
             Create new views::
 
                 >>> from cognite.client import CogniteClient
-                >>> import cognite.client.data_classes.data_modeling as models
+                >>> from cognite.client.data_classes.data_modeling import ViewApply
                 >>> c = CogniteClient()
-                >>> views = [models.View(space="mySpace",external_id="myView",version="v1"),
-                ... models.View(space="mySpace",external_id="myOtherView",version="v1")]
-                >>> res = c.data_modeling.views.create(views)
+                >>> views = [ViewApply(space="mySpace",external_id="myView",version="v1"),
+                ... ViewApply(space="mySpace",external_id="myOtherView",version="v1")]
+                >>> res = c.data_modeling.views.apply(views)
         """
-        return self._create_multiple(list_cls=ViewList, resource_cls=View, items=view)
+        return self._create_multiple(list_cls=ViewList, resource_cls=View, items=view, input_resource_cls=ViewApply)
