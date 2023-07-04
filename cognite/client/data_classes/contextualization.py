@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 import warnings
+from copy import deepcopy
 from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast
@@ -597,7 +598,7 @@ class PersonalProtectiveEquipmentDetectionParameters(VisionResource, ThresholdPa
 class DetectJobBundle:
     _RESOURCE_PATH = "/context/diagram/detect/"
     _STATUS_PATH = "/context/diagram/detect/status"
-    _WAIT_TIME = 2
+    _WAIT_TIME = 0
 
     def __init__(self, job_ids: List[int], cognite_client: CogniteClient = None):
         warnings.warn(
@@ -608,15 +609,18 @@ class DetectJobBundle:
         self._cognite_client = cast("CogniteClient", cognite_client)
         if not job_ids:
             raise ValueError("You need to specify job_ids")
-        self.job_ids = job_ids
-        self._remaining_job_ids: List[int] = []
+        self.job_ids = deepcopy(job_ids)
+        self._remaining_job_ids: List[int] = deepcopy(job_ids)
 
         self.jobs: List[Dict[str, Any]] = []
+        self.error: Optional[Dict[str, Any]] = None
 
         self._result: List[Dict[str, Any]] = []
 
     def __str__(self) -> str:
-        return f"DetectJobBundle({self.job_ids=}, {self.jobs=}, {self._result=}, {self._remaining_job_ids=})"
+        return (
+            f"DetectJobBundle({self.job_ids=}, {self.jobs=}, {self._result=}, {self._remaining_job_ids=} {self.error=})"
+        )
 
     def _back_off(self) -> None:
         """
@@ -627,33 +631,39 @@ class DetectJobBundle:
         if self._WAIT_TIME < 10:
             self._WAIT_TIME += 2
 
+    def update_status(self, timeout: int = None) -> List[Dict[str, Any]]:
+        """Fetches the status for all jobs in the bundle. Blocks until the status is updated.
+
+        Args:
+            timeout (int): Time out after this many seconds. (None means wait indefinitely)
+        """
+        start = time.time()
+        while timeout is None or time.time() < start + timeout:
+            self._back_off()
+            try:
+                res_json = self._cognite_client.diagrams._post(
+                    self._STATUS_PATH, json={"items": self._remaining_job_ids}
+                ).json()
+                self.error = res_json.get("error")
+                if self.error is None:
+                    self.jobs = res_json["items"]
+                    self._remaining_job_ids = [
+                        j["jobId"] for j in self.jobs if JobStatus(j["status"]).is_not_finished()
+                    ]
+                return self.jobs
+            except CogniteAPIError:
+                pass
+        self.error = {"message": f"DetectJobBundle timed out after {timeout} seconds"}
+        return self.jobs
+
     def wait_for_completion(self, timeout: int = None) -> None:
         """Waits for all jobs to complete, generally not needed to call as it is called by result.
 
         Args:
             timeout (int): Time out after this many seconds. (None means wait indefinitely)
-            interval (int): Poll status every this many seconds.
         """
-        start = time.time()
-        self._remaining_job_ids = self.job_ids
-        while timeout is None or time.time() < start + timeout:
-            try:
-                res = self._cognite_client.diagrams._post(self._STATUS_PATH, json={"items": self._remaining_job_ids})
-            except CogniteAPIError:
-                self._back_off()
-                continue
-            if res.json().get("error"):
-                break
-            self.jobs = res.json()["items"]
-
-            # Assign the jobs that aren't finished
-            self._remaining_job_ids = [j["jobId"] for j in self.jobs if JobStatus(j["status"]).is_not_finished()]
-
-            if self._remaining_job_ids:
-                self._back_off()
-            else:
-                self._WAIT_TIME = 2
-                break
+        while self.error is None and self._remaining_job_ids:
+            self.update_status(timeout=timeout)
 
     def fetch_results(self) -> List[Dict[str, Any]]:
         return [self._cognite_client.diagrams._get(f"{self._RESOURCE_PATH}{j}").json() for j in self.job_ids]
