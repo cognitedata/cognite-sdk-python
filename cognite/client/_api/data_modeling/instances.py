@@ -39,7 +39,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     PropertyValue,
     Select,
 )
-from cognite.client.data_classes.data_modeling.queries import Query
+from cognite.client.data_classes.data_modeling.queries import Query, QueryEdgeTableExpression, QueryNodeTableExpression
 from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
 
@@ -741,7 +741,7 @@ class InstancesAPI(APIClient):
         with_: dict[str, Query],
         select: dict[str, Select],
         parameters: dict[str, PropertyValue] | None = None,
-    ) -> InstancesResult:
+    ) -> dict[str, NodeList | EdgeList]:
         """`Advanced query interface for nodes/edges. <https://developer.cognite.com/api/v1/#tag/Instances/operation/queryContent>`_
 
         The Data Modelling API exposes an advanced query interface. The query interface supports parameterization,
@@ -764,15 +764,32 @@ class InstancesAPI(APIClient):
             body["parameters"] = parameters
 
         result = self._post(url_path=self._RESOURCE_PATH + "/query", json=body)
+        items = result.json()["items"]
+        output: Dict[str, NodeList | EdgeList] = {}
+        for key, values in items.items():
+            if not values:
+                if isinstance(with_[key], QueryNodeTableExpression):
+                    output[key] = NodeList([])
+                elif isinstance(with_[key], QueryEdgeTableExpression):
+                    output[key] = EdgeList([])
+                else:
+                    raise NotImplementedError(f"Unexpected query type: {with_[key]}")
+                continue
+            if values[0].get("instanceType") == "node":
+                output[key] = NodeList._load(values)
+            elif values[0].get("instanceType") == "edge":
+                output[key] = EdgeList._load(values)
+            else:
+                raise ValueError(f"Unexpected instance type: {values[0].get('instanceType')}")
 
-        return InstancesResult.load(result.json()["items"])
+        return output
 
     def sync(
         self,
         with_: dict[str, Query],
         select: dict[str, Select],
         parameters: dict[str, PropertyValue] | None = None,
-    ) -> InstancesResult:
+    ) -> dict[str, NodeList | EdgeList]:
         """`Subscription to changes for nodes/edges. <https://developer.cognite.com/api/v1/#tag/Instances/operation/syncContent>`_
 
         Subscribe to changes for nodes and edges in a project, matching a supplied filter.

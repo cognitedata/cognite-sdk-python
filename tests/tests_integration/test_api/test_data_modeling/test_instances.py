@@ -448,32 +448,45 @@ class TestInstancesAPI:
         # Assert
         assert edge == edge_loaded
 
-    def test_query_movie_persons(
-        self, cognite_client: CogniteClient, movie_view: View, person_view: View, actor_view: View
+    def test_query_oscar_winning_actors_before_2000(
+        self, cognite_client: CogniteClient, movie_view: View, actor_view: View
     ) -> None:
         # Arrange
-        view_id = movie_view.as_id()
+        # Create a query that finds all actors that won Oscars in a movies released before 2000 sorted by external id.
+        movie_id = movie_view.as_id()
+        actor_id = actor_view.as_id()
         q = queries
         f = filters
-        released_before_2000 = f.Range([view_id.space, view_id.as_source_identifier(), "releaseYear"], lt=2000)
-        movies_before_2000 = q.QueryNode(filter=released_before_2000)
+        movies_before_2000 = q.QueryNode(
+            filter=f.Range([movie_id.space, movie_id.as_source_identifier(), "releaseYear"], lt=2000)
+        )
         actors_in_movie = q.QueryEdge(
             from_="movies", filter=f.Equals(["edge", "type"], {"space": movie_view.space, "externalId": "Movie.actors"})
         )
-        actor = q.QueryNode(from_="actors_in_movie")
+        actor = q.QueryNode(from_="actors_in_movie", filter=f.Equals(actor_id.as_property_ref("wonOscar"), True))
+
         query = {
             "movies": q.QueryNodeTableExpression(movies_before_2000),
             "actors_in_movie": q.QueryEdgeTableExpression(actors_in_movie),
             "actors": q.QueryNodeTableExpression(actor),
         }
-
         select = {
-            "movies": Select([SourceSelector(movie_view.as_id(), ["title"])]),
-            "actors": Select([SourceSelector(actor_view.as_id(), ["wonOscar"])]),
+            "movies": Select(
+                [SourceSelector(movie_id, ["title", "releaseYear"])],
+                sort=[InstanceSort(movie_id.as_property_ref("title"))],
+            ),
+            "actors": Select([SourceSelector(actor_id, ["wonOscar"])], sort=[InstanceSort(["node", "externalId"])]),
         }
 
         # Act
         result = cognite_client.data_modeling.instances.query(query, select)
 
         # Assert
-        assert result.nodes
+        assert len(result["movies"]) > 0, "Add at least one movie withe release year before 2000"
+        assert all(
+            cast(int, movie.properties.get(movie_id, {}).get("releaseYear")) < 2000 for movie in result["movies"]
+        )
+        assert result["movies"] == sorted(result["movies"], key=lambda x: x.properties.get(movie_id, {}).get("title"))
+        assert len(result["actors"]) > 0, "Add at leas one actor that acted in the movies released before 2000"
+        assert all(actor.properties.get(actor_id, {}).get("wonOscar") for actor in result["actors"])
+        assert result["actors"] == sorted(result["actors"], key=lambda x: x.external_id)
