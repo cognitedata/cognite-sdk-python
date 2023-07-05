@@ -1,37 +1,112 @@
 from __future__ import annotations
 
 import json
-from abc import ABC
-from dataclasses import dataclass
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 from typing import Any, Dict, Literal, Optional
 
 from cognite.client.data_classes.data_modeling.filters import Filter
 from cognite.client.data_classes.data_modeling.ids import ViewId
-from cognite.client.data_classes.data_modeling.instances import InstanceSort
+from cognite.client.data_classes.data_modeling.instances import InstanceSort, PropertyValue
 
 
-class Query(ABC):
+@dataclass
+class SourceSelector:
+    source: ViewId
+    properties: list[str]
+
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        raise NotImplementedError
+        return {
+            "source": self.source.dump(camel_case),
+            "properties": self.properties,
+        }
 
     @classmethod
-    def load(cls, query: dict[str, Any]) -> Query:
-        if "sort" in query:
-            sort = [InstanceSort(**sort) for sort in query["sort"]]
+    def load(cls, data: dict | str) -> SourceSelector:
+        data = json.loads(data) if isinstance(data, str) else data
+        return cls(
+            source=ViewId.load(data["source"]),
+            properties=data["properties"],
+        )
+
+
+@dataclass
+class Select:
+    sources: list[SourceSelector] = field(default_factory=lambda: [])
+    sort: list[InstanceSort] = field(default_factory=lambda: [])
+    limit: Optional[int] = None
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        output: Dict[str, Any] = {}
+        if self.sources:
+            output["sources"] = [
+                {"source": source.source.dump(camel_case), "properties": source.properties} for source in self.sources
+            ]
+        if self.sort:
+            output["sort"] = [s.dump(camel_case) for s in self.sort]
+        if self.limit:
+            output["limit"] = self.limit
+        return output
+
+    @classmethod
+    def load(cls, data: dict | str) -> Select:
+        data = json.loads(data) if isinstance(data, str) else data
+        return cls(
+            sources=[SourceSelector.load(source) for source in data.get("sources", [])],
+            sort=[InstanceSort._load(s) for s in data.get("sort", [])],
+            limit=data.get("limit"),
+        )
+
+
+class Query:
+    def __init__(
+        self,
+        with_: dict[str, ResultSetExpression],
+        select: dict[str, Select],
+        parameters: Optional[dict[str, PropertyValue]] = None,
+        cursors: Optional[dict[str, str]] = None,
+    ) -> None:
+        with_keys = set(with_)
+        if not_matching := set(select) - with_keys:
+            raise ValueError(
+                f"The select keys must match the with keys, the following are not matching: {not_matching}"
+            )
+        if parameters and (not_matching := set(parameters) - with_keys):
+            raise ValueError(
+                f"The parameters keys must match the with keys, the following are not matching: {not_matching}"
+            )
+
+        self.with_ = with_
+        self.select = select
+        self.parameters = parameters
+        self.cursors = cursors
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        output: Dict[str, Any] = {
+            "with": {k: v.dump(camel_case) for k, v in self.with_.items()},
+            "select": {k: v.dump(camel_case) for k, v in self.select.items()},
+        }
+        if self.parameters:
+            output["parameters"] = dict(self.parameters.items())
+        if self.cursors:
+            output["cursors"] = dict(self.cursors.items())
+        return output
+
+    @classmethod
+    def load(cls, result_set_expression: dict[str, Any]) -> ResultSetExpression:
+        if "sort" in result_set_expression:
+            sort = [InstanceSort(**sort) for sort in result_set_expression["sort"]]
         else:
             sort = []
 
-        if "nodes" in query:
-            node = QueryNode.load(query["nodes"])
-            return QueryNodeTableExpression(node, sort, query.get("limit"))
-        elif "edges" in query:
-            edge = QueryEdge.load(query["edges"])
-            return QueryEdgeTableExpression(edge, sort, query.get("limit"))
+        if "nodes" in result_set_expression:
+            node = QueryNode.load(result_set_expression["nodes"])
+            return NodeResultSetExpression(node, sort, result_set_expression.get("limit"))
+        elif "edges" in result_set_expression:
+            edge = QueryEdge.load(result_set_expression["edges"])
+            return EdgeSetExpression(edge, sort, result_set_expression.get("limit"))
         else:
-            raise NotImplementedError(f"Unknown query type: {query}")
-
-    def __eq__(self, other: Any) -> bool:
-        return type(self) == type(other) and self.dump() == other.dump()
+            raise NotImplementedError(f"Unknown query type: {result_set_expression}")
 
 
 @dataclass
@@ -121,7 +196,32 @@ class QueryEdge:
         return output
 
 
-class QueryNodeTableExpression(Query):
+class ResultSetExpression(ABC):
+    @abstractmethod
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        ...
+
+    @classmethod
+    def load(cls, query: dict[str, Any]) -> ResultSetExpression:
+        if "sort" in query:
+            sort = [InstanceSort(**sort) for sort in query["sort"]]
+        else:
+            sort = []
+
+        if "nodes" in query:
+            node = QueryNode.load(query["nodes"])
+            return NodeResultSetExpression(node, sort, query.get("limit"))
+        elif "edges" in query:
+            edge = QueryEdge.load(query["edges"])
+            return EdgeSetExpression(edge, sort, query.get("limit"))
+        else:
+            raise NotImplementedError(f"Unknown query type: {query}")
+
+    def __eq__(self, other: Any) -> bool:
+        return type(other) == type(self) and self.dump() == other.dump()
+
+
+class NodeResultSetExpression(ResultSetExpression):
     def __init__(self, nodes: QueryNode, sort: list[InstanceSort] = None, limit: int = None):
         self.nodes = nodes
         self.sort = sort
@@ -137,7 +237,7 @@ class QueryNodeTableExpression(Query):
         return output
 
 
-class QueryEdgeTableExpression(Query):
+class EdgeSetExpression(ResultSetExpression):
     def __init__(
         self,
         edges: QueryEdge,
@@ -162,32 +262,32 @@ class QueryEdgeTableExpression(Query):
         return output
 
 
-class QuerySetOperationTableExpression(Query):
-    ...
-
-
-class QueryUnionAllTableExpression(QuerySetOperationTableExpression):
-    def __init__(
-        self, union_all: list[QuerySetOperationTableExpression | str], except_: list[str] = None, limit: int = None
-    ):
-        self.union_all = union_all
-        self.except_ = except_
-        self.limit = limit
-
-
-class QueryUnionTableExpression(QuerySetOperationTableExpression):
-    def __init__(
-        self, union: list[QuerySetOperationTableExpression | str], except_: list[str] = None, limit: int = None
-    ):
-        self.union = union
-        self.except_ = except_
-        self.limit = limit
-
-
-class QueryIntersectTableExpression(QuerySetOperationTableExpression):
-    def __init__(
-        self, intersection: list[QuerySetOperationTableExpression | str], except_: list[str] = None, limit: int = None
-    ):
-        self.intersect = intersection
-        self.except_ = except_
-        self.limit = limit
+# class SetOperationResultSetExpression(ResultSetExpression):
+#     ...
+#
+#
+# class UnionAllTableExpression(SetOperationResultSetExpression):
+#     def __init__(
+#         self, union_all: list[QuerySetOperationTableExpression | str], except_: list[str] = None, limit: int = None
+#     ):
+#         self.union_all = union_all
+#         self.except_ = except_
+#         self.limit = limit
+#
+#
+# class UnionTableExpression(SetOperationResultSetExpression):
+#     def __init__(
+#         self, union: list[QuerySetOperationTableExpression | str], except_: list[str] = None, limit: int = None
+#     ):
+#         self.union = union
+#         self.except_ = except_
+#         self.limit = limit
+#
+#
+# class IntersectTableExpression(SetOperationResultSetExpression):
+#     def __init__(
+#         self, intersection: list[QuerySetOperationTableExpression | str], except_: list[str] = None, limit: int = None
+#     ):
+#         self.intersect = intersection
+#         self.except_ = except_
+#         self.limit = limit

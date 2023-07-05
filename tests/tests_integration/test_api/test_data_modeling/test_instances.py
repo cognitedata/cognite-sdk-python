@@ -29,7 +29,6 @@ from cognite.client.data_classes.data_modeling import (
 )
 from cognite.client.data_classes.data_modeling.aggregations import HistogramValue
 from cognite.client.data_classes.data_modeling.filters import Equals
-from cognite.client.data_classes.data_modeling.instances import Select, SourceSelector
 from cognite.client.exceptions import CogniteAPIError
 
 
@@ -465,21 +464,25 @@ class TestInstancesAPI:
         )
         actor = q.QueryNode(from_="actors_in_movie", filter=f.Equals(actor_id.as_property_ref("wonOscar"), True))
 
-        query = {
-            "movies": q.QueryNodeTableExpression(movies_before_2000),
-            "actors_in_movie": q.QueryEdgeTableExpression(actors_in_movie),
-            "actors": q.QueryNodeTableExpression(actor),
-        }
-        select = {
-            "movies": Select(
-                [SourceSelector(movie_id, ["title", "releaseYear"])],
-                sort=[InstanceSort(movie_id.as_property_ref("title"))],
-            ),
-            "actors": Select([SourceSelector(actor_id, ["wonOscar"])], sort=[InstanceSort(["node", "externalId"])]),
-        }
+        query = q.Query(
+            {
+                "movies": q.NodeResultSetExpression(movies_before_2000),
+                "actors_in_movie": q.EdgeSetExpression(actors_in_movie),
+                "actors": q.NodeResultSetExpression(actor),
+            },
+            select={
+                "movies": q.Select(
+                    [q.SourceSelector(movie_id, ["title", "releaseYear"])],
+                    sort=[InstanceSort(movie_id.as_property_ref("title"))],
+                ),
+                "actors": q.Select(
+                    [q.SourceSelector(actor_id, ["wonOscar"])], sort=[InstanceSort(["node", "externalId"])]
+                ),
+            },
+        )
 
         # Act
-        result = cognite_client.data_modeling.instances.query(query, select)
+        result = cognite_client.data_modeling.instances.query(query)
 
         # Assert
         assert len(result["movies"]) > 0, "Add at least one movie withe release year before 2000"

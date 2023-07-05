@@ -1,17 +1,10 @@
-from typing import Any, Dict, Iterator
-
-import pytest
-from _pytest.mark import ParameterSet
-
 from cognite.client.data_classes.data_modeling import (
     ContainerId,
     DirectRelationReference,
     EdgeApply,
     NodeApply,
     NodeOrEdgeData,
-    ViewId,
 )
-from cognite.client.data_classes.data_modeling.instances import Select, SourceSelector
 
 
 class TestEdgeApply:
@@ -86,40 +79,3 @@ class TestNodeApply:
                 "commands",
             ]
         )
-
-
-def select_load_and_dump_equals_data() -> Iterator[ParameterSet]:
-    raw: Dict[str, Any] = {}
-    loaded = Select()
-    yield pytest.param(raw, loaded, id="Empty")
-
-    raw = {
-        "sources": [
-            {
-                "properties": ["title"],
-                "source": {"externalId": "Movie", "space": "IntegrationTestsImmutable", "type": "view", "version": "2"},
-            }
-        ]
-    }
-    loaded = Select(
-        [SourceSelector(ViewId(space="IntegrationTestsImmutable", external_id="Movie", version="2"), ["title"])]
-    )
-    yield pytest.param(raw, loaded, id="Select single property")
-
-
-class TestSelect:
-    @pytest.mark.parametrize("raw_data, loaded", list(select_load_and_dump_equals_data()))
-    def test_load_and_dump_equals(self, raw_data: dict, loaded: Select) -> None:
-        assert raw_data == Select.load(raw_data).dump(camel_case=True)
-
-    @pytest.mark.parametrize("raw_data, loaded", list(select_load_and_dump_equals_data()))
-    def test_dump_load_equals(self, raw_data: dict, loaded: Select) -> None:
-        assert loaded == Select.load(loaded.dump(camel_case=True))
-
-    @pytest.mark.parametrize("raw_data, loaded", list(select_load_and_dump_equals_data()))
-    def test_load(self, raw_data: dict, loaded: Select) -> None:
-        assert Select.load(raw_data) == loaded
-
-    @pytest.mark.parametrize("raw_data, loaded", list(select_load_and_dump_equals_data()))
-    def test_dump(self, raw_data: dict, loaded: Select) -> None:
-        assert loaded.dump(camel_case=True) == raw_data

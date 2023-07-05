@@ -37,10 +37,13 @@ from cognite.client.data_classes.data_modeling.instances import (
     NodeApplyResult,
     NodeApplyResultList,
     NodeList,
-    PropertyValue,
-    Select,
 )
-from cognite.client.data_classes.data_modeling.queries import Query, QueryEdgeTableExpression, QueryNodeTableExpression
+from cognite.client.data_classes.data_modeling.queries import (
+    EdgeSetExpression,
+    NodeResultSetExpression,
+    Query,
+    ResultSetExpression,
+)
 from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
 
@@ -737,76 +740,59 @@ class InstancesAPI(APIClient):
         else:
             return [HistogramValue.load(item["aggregates"][0]) for item in res.json()["items"]]
 
-    def query(
-        self,
-        with_: dict[str, Query],
-        select: dict[str, Select],
-        parameters: dict[str, PropertyValue] | None = None,
-    ) -> dict[str, NodeList | EdgeList]:
+    def query(self, query: Query) -> dict[str, NodeList | EdgeList]:
         """`Advanced query interface for nodes/edges. <https://developer.cognite.com/api/v1/#tag/Instances/operation/queryContent>`_
 
         The Data Modelling API exposes an advanced query interface. The query interface supports parameterization,
         recursive edge traversal, chaining of result sets, and granular property selection.
 
         Args:
-            with_:
-            select:
-            parameters: Values in filters can be parameterised. Parameters are provided as part of the query object,
-             and referenced in the filter itself.
+            query:
 
         Returns:
             InstancesResult: Node or edge results.
         """
-        body = self._prepare_query_body(parameters, with_, select)
+        body = query.dump(camel_case=True)
 
-        last_cursors = {key: None for key in select}
-        all_items: Dict[str, NodeList | EdgeList] = defaultdict(list)
+        last_cursors = {key: None for key in query.select}
+        all_items: Dict[str, List[Node] | List[Edge]] = defaultdict(list)
         while True:
+            body["cursors"] = last_cursors
+
             result = self._post(url_path=self._RESOURCE_PATH + "/query", json=body)
 
             json_payload = result.json()
 
-            parsed = self._parse_query_response(json_payload["items"], with_)
-            for last_cursor, (key, value) in zip(last_cursors.values(), parsed.items()):
+            parsed = self._parse_query_response(json_payload["items"], query.with_)
+            for key, value in parsed.items():
                 all_items[key].extend(value)
 
             last_cursors = {key: cursor for key, cursor in json_payload["nextCursor"].items()}
-            if not any(last_cursors.values()):
+            if not last_cursors:
                 break
 
-            break
-        return self._combine_items(all_items, with_)
-
-    @staticmethod
-    def _prepare_query_body(
-        self, with_: dict[str, Query], select: dict[str, Select], parameters: dict[str, PropertyValue] | None = None
-    ) -> dict[str, Any]:
-        body: Dict[str, Any] = {
-            "with": {k: q.dump(camel_case=True) for k, q in with_.items()},
-            "select": {k: s.dump(camel_case=True) for k, s in select.items()},
-        }
-        if parameters:
-            body["parameters"] = parameters
-        return body
+        return self._combine_items(all_items, query.with_)
 
     @classmethod
     def _combine_items(
-        cls, all_items: dict[str, Node | Edge], with_: dict[str, Query]
+        cls, all_items: dict[str, list[Node] | list[Edge]], query: dict[str, ResultSetExpression]
     ) -> dict[str, NodeList | EdgeList]:
         output = {}
         for key, values in all_items.items():
             if not values:
-                output[key] = cls._empty_result(with_[key])
+                output[key] = cls._empty_result(query[key])
                 continue
             elif isinstance(values[0], Node):
                 output[key] = NodeList(values)
             elif isinstance(values[0], Edge):
                 output[key] = EdgeList(values)
             else:
-                raise ValueError(f"Unexpected instance type: {type(values[0])}")
+                raise ValueError("Unexpected instance type")
         return output
 
-    def _parse_query_response(self, items: dict[str, Any], with_: dict[str, Query]) -> dict[str, NodeList | EdgeList]:
+    def _parse_query_response(
+        self, items: dict[str, Any], with_: dict[str, ResultSetExpression]
+    ) -> dict[str, NodeList | EdgeList]:
         output: Dict[str, NodeList | EdgeList] = {}
         for key, values in items.items():
             if not values:
@@ -821,20 +807,15 @@ class InstancesAPI(APIClient):
         return output
 
     @staticmethod
-    def _empty_result(input_query: Query) -> NodeList | EdgeList:
-        if isinstance(input_query, QueryNodeTableExpression):
+    def _empty_result(input_query: ResultSetExpression) -> NodeList | EdgeList:
+        if isinstance(input_query, NodeResultSetExpression):
             return NodeList([])
-        elif isinstance(input_query, QueryEdgeTableExpression):
+        elif isinstance(input_query, EdgeSetExpression):
             return EdgeList([])
         else:
             raise NotImplementedError(f"Unexpected query type: {input_query}")
 
-    def sync(
-        self,
-        with_: dict[str, Query],
-        select: dict[str, Select],
-        parameters: dict[str, PropertyValue] | None = None,
-    ) -> dict[str, NodeList | EdgeList]:
+    def sync(self, query: Query) -> dict[str, NodeList | EdgeList]:
         """`Subscription to changes for nodes/edges. <https://developer.cognite.com/api/v1/#tag/Instances/operation/syncContent>`_
 
         Subscribe to changes for nodes and edges in a project, matching a supplied filter.
