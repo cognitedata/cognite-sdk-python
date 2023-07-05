@@ -465,7 +465,7 @@ class TestInstancesAPI:
         query = q.Query(
             {
                 "movies": q.NodeResultSetExpression(movies_before_2000),
-                "actors_in_movie": q.EdgeSetExpression(actors_in_movie),
+                "actors_in_movie": q.EdgeResultSetExpression(actors_in_movie),
                 "actors": q.NodeResultSetExpression(actor),
             },
             select={

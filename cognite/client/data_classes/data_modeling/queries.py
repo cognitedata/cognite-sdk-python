@@ -131,7 +131,7 @@ class Query:
             return NodeResultSetExpression(node, sort, result_set_expression.get("limit"))
         elif "edges" in result_set_expression:
             edge = QueryEdge.load(result_set_expression["edges"])
-            return EdgeSetExpression(edge, sort, result_set_expression.get("limit"))
+            return EdgeResultSetExpression(edge, sort, result_set_expression.get("limit"))
         else:
             raise NotImplementedError(f"Unknown query type: {result_set_expression}")
 
@@ -240,7 +240,7 @@ class ResultSetExpression(ABC):
             return NodeResultSetExpression(node, sort, query.get("limit"))
         elif "edges" in query:
             edge = QueryEdge.load(query["edges"])
-            return EdgeSetExpression(edge, sort, query.get("limit"))
+            return EdgeResultSetExpression(edge, sort, query.get("limit"))
         else:
             raise NotImplementedError(f"Unknown query type: {query}")
 
@@ -264,7 +264,7 @@ class NodeResultSetExpression(ResultSetExpression):
         return output
 
 
-class EdgeSetExpression(ResultSetExpression):
+class EdgeResultSetExpression(ResultSetExpression):
     def __init__(
         self,
         edges: QueryEdge,
