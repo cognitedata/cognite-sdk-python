@@ -749,28 +749,9 @@ class InstancesAPI(APIClient):
         Returns:
             InstancesResult: Node or edge results.
         """
-        body = query.dump(camel_case=True)
+        return self._query_or_sync(query, paging, "query")
 
-        last_cursors = {key: None for key in query.select}
-        results = QueryResult()
-        default_by_reference = query.default_instance_list_by_reference()
-        while True:
-            body["cursors"] = last_cursors
-
-            result = self._post(url_path=self._RESOURCE_PATH + "/query", json=body)
-
-            json_payload = result.json()
-
-            results.update_json(json_payload["items"], default_by_reference)
-
-            last_cursors = {key: cursor for key, cursor in json_payload["nextCursor"].items()}
-            if not paging or not last_cursors or all(not items for items in json_payload["items"].values()):
-                break
-
-        results.update_cursors(last_cursors)
-        return results
-
-    def sync(self, query: Query) -> dict[str, NodeList | EdgeList]:
+    def sync(self, query: Query, paging: bool = False) -> QueryResult:
         """`Subscription to changes for nodes/edges. <https://developer.cognite.com/api/v1/#tag/Instances/operation/syncContent>`_
 
         Subscribe to changes for nodes and edges in a project, matching a supplied filter.
@@ -784,7 +765,28 @@ class InstancesAPI(APIClient):
         Returns:
             InstancesResult: Node or edge results.
         """
-        ...
+        return self._query_or_sync(query, paging, "sync")
+
+    def _query_or_sync(self, query: Query, paging: bool, endpoint: Literal["query", "sync"]) -> QueryResult:
+        body = query.dump(camel_case=True)
+        last_cursors = body["cursors"]
+        results = QueryResult()
+        default_by_reference = query.default_instance_list_by_reference()
+        while True:
+            body["cursors"] = last_cursors
+
+            result = self._post(url_path=self._RESOURCE_PATH + f"/{endpoint}", json=body)
+
+            json_payload = result.json()
+
+            results.update_json(json_payload["items"], default_by_reference)
+
+            last_cursors = {key: cursor for key, cursor in json_payload["nextCursor"].items()}
+            results.update_cursors(last_cursors)
+            if not paging or not last_cursors or all(not items for items in json_payload["items"].values()):
+                break
+
+        return results
 
     @overload
     def list(

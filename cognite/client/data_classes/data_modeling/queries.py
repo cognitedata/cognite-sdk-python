@@ -4,7 +4,7 @@ import json
 from abc import ABC, abstractmethod
 from collections import UserDict
 from dataclasses import dataclass, field
-from typing import Any, Dict, Literal, Optional, Type
+from typing import Any, Dict, Literal, Mapping, Optional, Type
 
 from cognite.client.data_classes.data_modeling.filters import Filter
 from cognite.client.data_classes.data_modeling.ids import ViewId
@@ -72,7 +72,7 @@ class Query:
         with_: dict[str, ResultSetExpression],
         select: dict[str, Select],
         parameters: Optional[dict[str, PropertyValue]] = None,
-        cursors: Optional[dict[str, str]] = None,
+        cursors: Optional[Mapping[str, Optional[str]]] = None,
     ) -> None:
         with_keys = set(with_)
         if not_matching := set(select) - with_keys:
@@ -87,7 +87,7 @@ class Query:
         self.with_ = with_
         self.select = select
         self.parameters = parameters
-        self.cursors = cursors
+        self.cursors = cursors or {k: None for k in select}
 
     def default_instance_list_by_reference(self) -> dict[str, Type[NodeList] | Type[EdgeList]]:
         return {k: NodeList if isinstance(v, NodeResultSetExpression) else EdgeList for k, v in self.with_.items()}
@@ -277,6 +277,10 @@ class QueryResult(UserDict):
     def __getitem__(self, item: str) -> NodeList | EdgeList:
         return super().__getitem__(item)
 
+    @property
+    def cursors(self) -> dict[str, str]:
+        return {key: value.cursor for key, value in self.items()}
+
     @classmethod
     def load(
         cls, data: dict[str, Any] | str, default_by_reference: dict[str, Type[ResultSetExpression]]
@@ -311,7 +315,8 @@ class QueryResult(UserDict):
     def update_cursors(self, cursors: dict[str, Any] | None) -> None:
         cursors = cursors or {}
         for key, value in self.items():
-            value.cursor = cursors.get(key)
+            # The sync endpoint eventually returns None, so for that case we keep the last cursor.
+            value.cursor = cursors.get(key, value.cursor)
 
 
 # class SetOperationResultSetExpression(ResultSetExpression):
