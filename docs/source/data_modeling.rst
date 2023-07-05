@@ -111,7 +111,6 @@ Apply instances
 ^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.apply
 
-
 Search instances
 ^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.search
@@ -120,13 +119,38 @@ Aggregate instances
 ^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.aggregate
 
+Query instances
+^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.query
+
+Sync instances
+^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.sync
 
 Delete instances
 ^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.delete
 
-Instances data classes
-^^^^^^^^^^^^^^^^^^^^^^^^
+Instances core data classes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.data_modeling.instances
+    :members:
+    :show-inheritance:
+
+Instances query data classes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: cognite.client.data_classes.data_modeling.queries
+    :members:
+    :show-inheritance:
+
+Data Modeling Filtering data classes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: cognite.client.data_classes.data_modeling.filters
+    :members:
+    :show-inheritance:
+
+Data Modeling ID data classes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: cognite.client.data_classes.data_modeling.ids
     :members:
     :show-inheritance:
