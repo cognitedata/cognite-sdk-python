@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Literal, Sequence, Type, Union, cast, overload
 
 from cognite.client._api_client import APIClient
@@ -756,33 +757,77 @@ class InstancesAPI(APIClient):
         Returns:
             InstancesResult: Node or edge results.
         """
+        body = self._prepare_query_body(parameters, with_, select)
+
+        last_cursors = {key: None for key in select}
+        all_items: Dict[str, NodeList | EdgeList] = defaultdict(list)
+        while True:
+            result = self._post(url_path=self._RESOURCE_PATH + "/query", json=body)
+
+            json_payload = result.json()
+
+            parsed = self._parse_query_response(json_payload["items"], with_)
+            for last_cursor, (key, value) in zip(last_cursors.values(), parsed.items()):
+                all_items[key].extend(value)
+
+            last_cursors = {key: cursor for key, cursor in json_payload["nextCursor"].items()}
+            if not any(last_cursors.values()):
+                break
+
+            break
+        return self._combine_items(all_items, with_)
+
+    @staticmethod
+    def _prepare_query_body(
+        self, with_: dict[str, Query], select: dict[str, Select], parameters: dict[str, PropertyValue] | None = None
+    ) -> dict[str, Any]:
         body: Dict[str, Any] = {
             "with": {k: q.dump(camel_case=True) for k, q in with_.items()},
             "select": {k: s.dump(camel_case=True) for k, s in select.items()},
         }
         if parameters:
             body["parameters"] = parameters
+        return body
 
-        result = self._post(url_path=self._RESOURCE_PATH + "/query", json=body)
-        items = result.json()["items"]
+    @classmethod
+    def _combine_items(
+        cls, all_items: dict[str, Node | Edge], with_: dict[str, Query]
+    ) -> dict[str, NodeList | EdgeList]:
+        output = {}
+        for key, values in all_items.items():
+            if not values:
+                output[key] = cls._empty_result(with_[key])
+                continue
+            elif isinstance(values[0], Node):
+                output[key] = NodeList(values)
+            elif isinstance(values[0], Edge):
+                output[key] = EdgeList(values)
+            else:
+                raise ValueError(f"Unexpected instance type: {type(values[0])}")
+        return output
+
+    def _parse_query_response(self, items: dict[str, Any], with_: dict[str, Query]) -> dict[str, NodeList | EdgeList]:
         output: Dict[str, NodeList | EdgeList] = {}
         for key, values in items.items():
             if not values:
-                if isinstance(with_[key], QueryNodeTableExpression):
-                    output[key] = NodeList([])
-                elif isinstance(with_[key], QueryEdgeTableExpression):
-                    output[key] = EdgeList([])
-                else:
-                    raise NotImplementedError(f"Unexpected query type: {with_[key]}")
+                output[key] = self._empty_result(with_[key])
                 continue
-            if values[0].get("instanceType") == "node":
+            elif values[0].get("instanceType") == "node":
                 output[key] = NodeList._load(values)
             elif values[0].get("instanceType") == "edge":
                 output[key] = EdgeList._load(values)
             else:
                 raise ValueError(f"Unexpected instance type: {values[0].get('instanceType')}")
-
         return output
+
+    @staticmethod
+    def _empty_result(input_query: Query) -> NodeList | EdgeList:
+        if isinstance(input_query, QueryNodeTableExpression):
+            return NodeList([])
+        elif isinstance(input_query, QueryEdgeTableExpression):
+            return EdgeList([])
+        else:
+            raise NotImplementedError(f"Unexpected query type: {input_query}")
 
     def sync(
         self,
