@@ -772,7 +772,7 @@ class InstancesAPI(APIClient):
                 ...                            [SourceSelector(actor_id, ["name"])], sort=[actor_id.as_property_ref("name")]),
                 ...         },
                 ... )
-                ... res = c.data_modeling.instances.query(query)
+                >>> res = c.data_modeling.instances.query(query)
         """
         return self._query_or_sync(query, paging, "query")
 
@@ -787,6 +787,35 @@ class InstancesAPI(APIClient):
 
         Returns:
             QueryResult: The resulting nodes and/or edges from the query.
+
+        Examples:
+
+            Find actors in movies released before 2000 sorted by actor name:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling.queries import Query, Select, NodeResultSetExpression, EdgeResultSetExpression, QueryNode, SourceSelector, QueryEdge
+                >>> from cognite.client.data_classes.data_modeling.filters import Range, Equals
+                >>> from cognite.client.data_classes.data_modeling.ids import ViewId
+                >>> c = CogniteClient()
+                >>> movie_id = ViewId("mySpace", "MovieView", "v1")
+                >>> actor_id = ViewId("mySpace", "ActorView", "v1")
+                >>> query = Query(
+                ...         with_ = {
+                ...             "movies": NodeResultSetExpression(QueryNode(filter=Range(movie_id.as_property_ref("releaseYear"), lt=2000))),
+                ...             "actors_in_movie": EdgeResultSetExpression(QueryEdge(from_="movies", filter=Equals(["edge", "type"], {"space": movie_id.space, "externalId": "Movie.actors"}))),
+                ...             "actors": NodeResultSetExpression(QueryEdge(from_="actors_in_movie")),
+                ...         },
+                ...         select = {
+                ...             "actors": Select(
+                ...                            [SourceSelector(actor_id, ["name"])], sort=[actor_id.as_property_ref("name")]),
+                ...         },
+                ... )
+                >>> res = c.data_modeling.instances.sync(query)
+                >>> # Added a new movie with actors released before 2000
+                >>> query.cursors = res.cursors
+                >>> res_new = c.data_modeling.instances.sync(query)
+
+            In the last example, the res_new will only contain the actors that have been added with the new movie.
         """
         return self._query_or_sync(query, paging, "sync")
 
