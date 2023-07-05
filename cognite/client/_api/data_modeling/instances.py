@@ -744,10 +744,11 @@ class InstancesAPI(APIClient):
         recursive edge traversal, chaining of result sets, and granular property selection.
 
         Args:
-            query:
+            query: Query.
+            paging: Whether to page through results or not.
 
         Returns:
-            InstancesResult: Node or edge results.
+            QueryResult: The resulting nodes and/or edges from the query.
         """
         return self._query_or_sync(query, paging, "query")
 
@@ -757,13 +758,11 @@ class InstancesAPI(APIClient):
         Subscribe to changes for nodes and edges in a project, matching a supplied filter.
 
         Args:
-            with_:
-            select:
-            parameters: Values in filters can be parameterised. Parameters are provided as part of the query object,
-             and referenced in the filter itself.
+            query: Query.
+            paging: Whether to page through results or not.
 
         Returns:
-            InstancesResult: Node or edge results.
+            QueryResult: The resulting nodes and/or edges from the query.
         """
         return self._query_or_sync(query, paging, "sync")
 
