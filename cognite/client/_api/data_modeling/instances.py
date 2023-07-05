@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Literal, Sequence, Type, Union, cast, overload
 
 from cognite.client._api_client import APIClient
@@ -39,10 +38,8 @@ from cognite.client.data_classes.data_modeling.instances import (
     NodeList,
 )
 from cognite.client.data_classes.data_modeling.queries import (
-    EdgeSetExpression,
-    NodeResultSetExpression,
     Query,
-    ResultSetExpression,
+    QueryResult,
 )
 from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
@@ -740,7 +737,7 @@ class InstancesAPI(APIClient):
         else:
             return [HistogramValue.load(item["aggregates"][0]) for item in res.json()["items"]]
 
-    def query(self, query: Query) -> dict[str, NodeList | EdgeList]:
+    def query(self, query: Query, paging: bool = False) -> QueryResult:
         """`Advanced query interface for nodes/edges. <https://developer.cognite.com/api/v1/#tag/Instances/operation/queryContent>`_
 
         The Data Modelling API exposes an advanced query interface. The query interface supports parameterization,
@@ -755,7 +752,8 @@ class InstancesAPI(APIClient):
         body = query.dump(camel_case=True)
 
         last_cursors = {key: None for key in query.select}
-        all_items: Dict[str, List[Node] | List[Edge]] = defaultdict(list)
+        results = QueryResult()
+        default_by_reference = query.default_instance_list_by_reference()
         while True:
             body["cursors"] = last_cursors
 
@@ -763,57 +761,14 @@ class InstancesAPI(APIClient):
 
             json_payload = result.json()
 
-            parsed = self._parse_query_response(json_payload["items"], query.with_)
-            for key, value in parsed.items():
-                all_items[key].extend(value)
+            results.update_json(json_payload["items"], default_by_reference)
 
             last_cursors = {key: cursor for key, cursor in json_payload["nextCursor"].items()}
-            if not last_cursors:
+            if not paging or not last_cursors or all(not items for items in json_payload["items"].values()):
                 break
 
-        return self._combine_items(all_items, query.with_)
-
-    @classmethod
-    def _combine_items(
-        cls, all_items: dict[str, list[Node] | list[Edge]], query: dict[str, ResultSetExpression]
-    ) -> dict[str, NodeList | EdgeList]:
-        output = {}
-        for key, values in all_items.items():
-            if not values:
-                output[key] = cls._empty_result(query[key])
-                continue
-            elif isinstance(values[0], Node):
-                output[key] = NodeList(values)
-            elif isinstance(values[0], Edge):
-                output[key] = EdgeList(values)
-            else:
-                raise ValueError("Unexpected instance type")
-        return output
-
-    def _parse_query_response(
-        self, items: dict[str, Any], with_: dict[str, ResultSetExpression]
-    ) -> dict[str, NodeList | EdgeList]:
-        output: Dict[str, NodeList | EdgeList] = {}
-        for key, values in items.items():
-            if not values:
-                output[key] = self._empty_result(with_[key])
-                continue
-            elif values[0].get("instanceType") == "node":
-                output[key] = NodeList._load(values)
-            elif values[0].get("instanceType") == "edge":
-                output[key] = EdgeList._load(values)
-            else:
-                raise ValueError(f"Unexpected instance type: {values[0].get('instanceType')}")
-        return output
-
-    @staticmethod
-    def _empty_result(input_query: ResultSetExpression) -> NodeList | EdgeList:
-        if isinstance(input_query, NodeResultSetExpression):
-            return NodeList([])
-        elif isinstance(input_query, EdgeSetExpression):
-            return EdgeList([])
-        else:
-            raise NotImplementedError(f"Unexpected query type: {input_query}")
+        results.update_cursors(last_cursors)
+        return results
 
     def sync(self, query: Query) -> dict[str, NodeList | EdgeList]:
         """`Subscription to changes for nodes/edges. <https://developer.cognite.com/api/v1/#tag/Instances/operation/syncContent>`_

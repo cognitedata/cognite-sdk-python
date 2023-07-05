@@ -2,12 +2,20 @@ from __future__ import annotations
 
 import json
 from abc import ABC, abstractmethod
+from collections import UserDict
 from dataclasses import dataclass, field
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Dict, Literal, Optional, Type
 
 from cognite.client.data_classes.data_modeling.filters import Filter
 from cognite.client.data_classes.data_modeling.ids import ViewId
-from cognite.client.data_classes.data_modeling.instances import InstanceSort, PropertyValue
+from cognite.client.data_classes.data_modeling.instances import (
+    Edge,
+    EdgeList,
+    InstanceSort,
+    Node,
+    NodeList,
+    PropertyValue,
+)
 
 
 @dataclass
@@ -80,6 +88,9 @@ class Query:
         self.select = select
         self.parameters = parameters
         self.cursors = cursors
+
+    def default_instance_list_by_reference(self) -> dict[str, Type[NodeList] | Type[EdgeList]]:
+        return {k: NodeList if isinstance(v, NodeResultSetExpression) else EdgeList for k, v in self.with_.items()}
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output: Dict[str, Any] = {
@@ -260,6 +271,47 @@ class EdgeSetExpression(ResultSetExpression):
             output["limit"] = self.limit
 
         return output
+
+
+class QueryResult(UserDict):
+    def __getitem__(self, item: str) -> NodeList | EdgeList:
+        return super().__getitem__(item)
+
+    @classmethod
+    def load(
+        cls, data: dict[str, Any] | str, default_by_reference: dict[str, Type[ResultSetExpression]]
+    ) -> QueryResult:
+        data = json.loads(data) if isinstance(data, str) else data
+        instance = cls()
+        for key, values in data.items():
+            if not values:
+                instance[key] = default_by_reference[key]()
+            elif values[0].get("instanceType") == "node":
+                instance[key] = NodeList._load(values)
+            elif values[0].get("instanceType") == "edge":
+                instance[key] = EdgeList._load(values)
+            else:
+                raise ValueError(f"Unexpected instance type {values[0].get('instanceType')}")
+        return instance
+
+    def update_json(
+        self, data: dict[str, Any] | str, default_by_reference: dict[str, Type[NodeList] | Type[EdgeList]]
+    ) -> None:
+        data = json.loads(data) if isinstance(data, str) else data
+        for key, values in data.items():
+            if key not in self:
+                self[key] = default_by_reference[key]([])
+            if isinstance(self[key], NodeList):
+                self[key].extend([Node.load(v) for v in values])
+            elif isinstance(self[key], EdgeList):
+                self[key].extend([Edge.load(v) for v in values])
+            else:
+                raise ValueError(f"Unexpected instance type {type(self[key])}")
+
+    def update_cursors(self, cursors: dict[str, Any] | None) -> None:
+        cursors = cursors or {}
+        for key, value in self.items():
+            value.cursor = cursors.get(key)
 
 
 # class SetOperationResultSetExpression(ResultSetExpression):
