@@ -41,8 +41,8 @@ class SourceSelector:
 
 @dataclass
 class Select:
-    sources: list[SourceSelector] = field(default_factory=lambda: [])
-    sort: list[InstanceSort] = field(default_factory=lambda: [])
+    sources: list[SourceSelector] = field(default_factory=list)
+    sort: list[InstanceSort] = field(default_factory=list)
     limit: Optional[int] = None
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
