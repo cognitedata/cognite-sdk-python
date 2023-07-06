@@ -823,7 +823,7 @@ class InstancesAPI(APIClient):
         result = self._post(url_path=self._RESOURCE_PATH + f"/{endpoint}", json=body)
 
         json_payload = result.json()
-        default_by_reference = query.default_instance_list_by_reference()
+        default_by_reference = query.instance_type_by_result_expression()
         results = QueryResult.load(json_payload["items"], default_by_reference, json_payload["nextCursor"])
 
         return results

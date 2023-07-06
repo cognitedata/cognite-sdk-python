@@ -102,7 +102,7 @@ class Query:
         self.parameters = parameters
         self.cursors = cursors or {k: None for k in select}
 
-    def default_instance_list_by_reference(self) -> dict[str, Type[NodeList] | Type[EdgeList]]:
+    def instance_type_by_result_expression(self) -> dict[str, Type[NodeList] | Type[EdgeList]]:
         return {k: NodeList if isinstance(v, NodeResultSetExpression) else EdgeList for k, v in self.with_.items()}
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
