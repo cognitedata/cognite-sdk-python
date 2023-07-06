@@ -276,13 +276,13 @@ class QueryResult(UserDict):
 
     @classmethod
     def load(
-        cls, data: dict[str, Any] | str, default_by_reference: dict[str, Type[ResultSetExpression]]
+        cls, data: dict[str, Any] | str, default_by_reference: dict[str, Type[NodeList] | Type[EdgeList]]
     ) -> QueryResult:
         data = json.loads(data) if isinstance(data, str) else data
         instance = cls()
         for key, values in data.items():
             if not values:
-                instance[key] = default_by_reference[key]()
+                instance[key] = default_by_reference[key]([])
             elif values[0].get("instanceType") == "node":
                 instance[key] = NodeList._load(values)
             elif values[0].get("instanceType") == "edge":

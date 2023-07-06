@@ -737,7 +737,7 @@ class InstancesAPI(APIClient):
         else:
             return [HistogramValue.load(item["aggregates"][0]) for item in res.json()["items"]]
 
-    def query(self, query: Query, paging: bool = False) -> QueryResult:
+    def query(self, query: Query) -> QueryResult:
         """`Advanced query interface for nodes/edges. <https://developer.cognite.com/api/v1/#tag/Instances/operation/queryContent>`_
 
         The Data Modelling API exposes an advanced query interface. The query interface supports parameterization,
@@ -745,7 +745,6 @@ class InstancesAPI(APIClient):
 
         Args:
             query: Query.
-            paging: Whether to page through results or not.
 
         Returns:
             QueryResult: The resulting nodes and/or edges from the query.
@@ -774,16 +773,15 @@ class InstancesAPI(APIClient):
                 ... )
                 >>> res = c.data_modeling.instances.query(query)
         """
-        return self._query_or_sync(query, paging, "query")
+        return self._query_or_sync(query, "query")
 
-    def sync(self, query: Query, paging: bool = False) -> QueryResult:
+    def sync(self, query: Query) -> QueryResult:
         """`Subscription to changes for nodes/edges. <https://developer.cognite.com/api/v1/#tag/Instances/operation/syncContent>`_
 
         Subscribe to changes for nodes and edges in a project, matching a supplied filter.
 
         Args:
             query: Query.
-            paging: Whether to page through results or not.
 
         Returns:
             QueryResult: The resulting nodes and/or edges from the query.
@@ -817,27 +815,18 @@ class InstancesAPI(APIClient):
 
             In the last example, the res_new will only contain the actors that have been added with the new movie.
         """
-        return self._query_or_sync(query, paging, "sync")
+        return self._query_or_sync(query, "sync")
 
-    def _query_or_sync(self, query: Query, paging: bool, endpoint: Literal["query", "sync"]) -> QueryResult:
+    def _query_or_sync(self, query: Query, endpoint: Literal["query", "sync"]) -> QueryResult:
         body = query.dump(camel_case=True)
-        last_cursors = body["cursors"]
-        results = QueryResult()
+
+        result = self._post(url_path=self._RESOURCE_PATH + f"/{endpoint}", json=body)
+
+        json_payload = result.json()
         default_by_reference = query.default_instance_list_by_reference()
-        while True:
-            body["cursors"] = last_cursors
-
-            result = self._post(url_path=self._RESOURCE_PATH + f"/{endpoint}", json=body)
-
-            json_payload = result.json()
-
-            results.update_json(json_payload["items"], default_by_reference)
-
-            last_cursors = {key: cursor for key, cursor in json_payload["nextCursor"].items()}
-            results.update_cursors(last_cursors)
-            if not paging or not last_cursors or all(not items for items in json_payload["items"].values()):
-                break
-
+        results = QueryResult.load(json_payload["items"], default_by_reference)
+        cursors = {key: cursor for key, cursor in json_payload["nextCursor"].items()}
+        results.update_cursors(cursors)
         return results
 
     @overload

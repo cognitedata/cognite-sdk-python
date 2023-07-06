@@ -482,7 +482,7 @@ class TestInstancesAPI:
         )
 
         # Act
-        result = cognite_client.data_modeling.instances.query(query, paging=True)
+        result = cognite_client.data_modeling.instances.query(query)
 
         # Assert
         assert len(result["movies"]) > 0, "Add at least one movie withe release year before 2000"
