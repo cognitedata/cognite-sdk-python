@@ -9,11 +9,11 @@ from typing import Any, Dict, Literal, Mapping, Optional, Type, cast
 from cognite.client.data_classes.data_modeling.filters import Filter
 from cognite.client.data_classes.data_modeling.ids import ViewId
 from cognite.client.data_classes.data_modeling.instances import (
-    Edge,
     EdgeList,
+    EdgeListWithCursor,
     InstanceSort,
-    Node,
     NodeList,
+    NodeListWithCursor,
     PropertyValue,
 )
 from cognite.client.utils._auxiliary import local_import
@@ -260,7 +260,7 @@ class EdgeResultSetExpression(ResultSetExpression):
 
 
 class QueryResult(UserDict):
-    def __getitem__(self, item: str) -> NodeList | EdgeList:
+    def __getitem__(self, item: str) -> NodeListWithCursor | EdgeListWithCursor:
         return super().__getitem__(item)
 
     @property
@@ -269,7 +269,10 @@ class QueryResult(UserDict):
 
     @classmethod
     def load(
-        cls, data: dict[str, Any] | str, default_by_reference: dict[str, Type[NodeList] | Type[EdgeList]]
+        cls,
+        data: dict[str, Any] | str,
+        default_by_reference: dict[str, Type[NodeList] | Type[EdgeList]],
+        cursors: dict[str, Any] | None = None,
     ) -> QueryResult:
         data = json.loads(data) if isinstance(data, str) else data
         instance = cls()
@@ -277,32 +280,17 @@ class QueryResult(UserDict):
             if not values:
                 instance[key] = default_by_reference[key]([])
             elif values[0].get("instanceType") == "node":
-                instance[key] = NodeList._load(values)
+                instance[key] = NodeListWithCursor._load(values)
+                if cursors:
+                    instance[key].cursor = cursors.get(key)
             elif values[0].get("instanceType") == "edge":
-                instance[key] = EdgeList._load(values)
+                instance[key] = EdgeListWithCursor._load(values)
+                if cursors:
+                    instance[key].cursor = cursors.get(key)
             else:
                 raise ValueError(f"Unexpected instance type {values[0].get('instanceType')}")
+
         return instance
-
-    def update_json(
-        self, data: dict[str, Any] | str, default_by_reference: dict[str, Type[NodeList] | Type[EdgeList]]
-    ) -> None:
-        data = json.loads(data) if isinstance(data, str) else data
-        for key, values in data.items():
-            if key not in self:
-                self[key] = default_by_reference[key]([])
-            if isinstance(self[key], NodeList):
-                self[key].extend([Node.load(v) for v in values])
-            elif isinstance(self[key], EdgeList):
-                self[key].extend([Edge.load(v) for v in values])
-            else:
-                raise ValueError(f"Unexpected instance type {type(self[key])}")
-
-    def update_cursors(self, cursors: dict[str, Any] | None) -> None:
-        cursors = cursors or {}
-        for key, value in self.items():
-            # The sync endpoint eventually returns None, so for that case we keep the last cursor.
-            value.cursor = cursors.get(key, value.cursor)
 
 
 # class SetOperationResultSetExpression(ResultSetExpression):

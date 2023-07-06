@@ -689,12 +689,14 @@ class NodeApplyResultList(CogniteResourceList[NodeApplyResult]):
 class NodeList(CogniteResourceList[Node]):
     _RESOURCE = Node
 
+    def as_ids(self) -> list[NodeId]:
+        return [node.as_id() for node in self]
+
+
+class NodeListWithCursor(NodeList):
     def __init__(self, resources: Collection[Any], cognite_client: CogniteClient = None):
         super().__init__(resources, cognite_client)
         self.cursor: str | None = None
-
-    def as_ids(self) -> list[NodeId]:
-        return [node.as_id() for node in self]
 
 
 class EdgeApplyResultList(CogniteResourceList[EdgeApplyResult]):
@@ -707,12 +709,14 @@ class EdgeApplyResultList(CogniteResourceList[EdgeApplyResult]):
 class EdgeList(CogniteResourceList[Edge]):
     _RESOURCE = Edge
 
+    def as_ids(self) -> list[EdgeId]:
+        return [edge.as_id() for edge in self]
+
+
+class EdgeListWithCursor(EdgeList):
     def __init__(self, resources: Collection[Any], cognite_client: CogniteClient = None):
         super().__init__(resources, cognite_client)
         self.cursor: str | None = None
-
-    def as_ids(self) -> list[EdgeId]:
-        return [edge.as_id() for edge in self]
 
 
 class InstanceSort(CogniteFilter):

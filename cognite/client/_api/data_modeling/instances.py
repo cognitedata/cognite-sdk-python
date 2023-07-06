@@ -824,9 +824,8 @@ class InstancesAPI(APIClient):
 
         json_payload = result.json()
         default_by_reference = query.default_instance_list_by_reference()
-        results = QueryResult.load(json_payload["items"], default_by_reference)
-        cursors = {key: cursor for key, cursor in json_payload["nextCursor"].items()}
-        results.update_cursors(cursors)
+        results = QueryResult.load(json_payload["items"], default_by_reference, json_payload["nextCursor"])
+
         return results
 
     @overload
