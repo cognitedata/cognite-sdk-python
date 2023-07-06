@@ -1,4 +1,4 @@
-from cognite.client.data_classes.data_modeling import aggregations, filters
+from cognite.client.data_classes.data_modeling import aggregations, filters, query
 from cognite.client.data_classes.data_modeling.aggregations import AggregatedValue, Aggregation
 from cognite.client.data_classes.data_modeling.containers import (
     Constraint,
@@ -58,6 +58,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     EdgeApplyResult,
     EdgeApplyResultList,
     EdgeList,
+    EdgeListWithCursor,
     InstanceApply,
     InstancesApplyResult,
     InstancesDeleteResult,
@@ -68,6 +69,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     NodeApplyResult,
     NodeApplyResultList,
     NodeList,
+    NodeListWithCursor,
     NodeOrEdgeData,
 )
 from cognite.client.data_classes.data_modeling.spaces import Space, SpaceApply, SpaceApplyList, SpaceList
@@ -156,11 +158,13 @@ __all__ = [
     "PropertyType",
     "Node",
     "NodeList",
+    "NodeListWithCursor",
     "NodeApply",
     "NodeApplyResult",
     "NodeApplyResultList",
     "Edge",
     "EdgeList",
+    "EdgeListWithCursor",
     "EdgeApply",
     "EdgeApplyResult",
     "EdgeApplyResultList",
@@ -172,4 +176,5 @@ __all__ = [
     "InstancesDeleteResult",
     "InstancesResult",
     "InstanceApply",
+    "query",
 ]

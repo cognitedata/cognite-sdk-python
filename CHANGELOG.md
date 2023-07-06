@@ -17,6 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.6.0] - 2023-07-06
+### Fixed
+- Support for query and sync endpoints across instances in the Data Modeling API with the implementation 
+  `client.data_modeling.instances`, the methods `query` and `sync`.
+
+
 ## [6.5.8] - 2023-06-30
 ### Fixed
 - Serialization of `DataModel`. The bug caused `DataModel.load(data_model.dump(camel_case=True))` to fail with

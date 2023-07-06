@@ -25,6 +25,7 @@ from cognite.client.data_classes.data_modeling import (
     View,
     aggregations,
     filters,
+    query,
 )
 from cognite.client.data_classes.data_modeling.aggregations import HistogramValue
 from cognite.client.data_classes.data_modeling.filters import Equals
@@ -445,3 +446,91 @@ class TestInstancesAPI:
 
         # Assert
         assert edge == edge_loaded
+
+    def test_query_oscar_winning_actors_before_2000(
+        self, cognite_client: CogniteClient, movie_view: View, actor_view: View
+    ) -> None:
+        # Arrange
+        # Create a query that finds all actors that won Oscars in a movies released before 2000 sorted by external id.
+        movie_id = movie_view.as_id()
+        actor_id = actor_view.as_id()
+        f = filters
+        q = query
+        movies_before_2000 = q.NodeResultSetExpression(filter=f.Range(movie_id.as_property_ref("releaseYear"), lt=2000))
+        actors_in_movie = q.EdgeResultSetExpression(
+            from_="movies", filter=f.Equals(["edge", "type"], {"space": movie_view.space, "externalId": "Movie.actors"})
+        )
+        actor = q.NodeResultSetExpression(
+            from_="actors_in_movie", filter=f.Equals(actor_id.as_property_ref("wonOscar"), True)
+        )
+
+        my_query = q.Query(
+            {
+                "movies": movies_before_2000,
+                "actors_in_movie": actors_in_movie,
+                "actors": actor,
+            },
+            select={
+                "movies": q.Select(
+                    [q.SourceSelector(movie_id, ["title", "releaseYear"])],
+                    sort=[InstanceSort(movie_id.as_property_ref("title"))],
+                ),
+                "actors": q.Select(
+                    [q.SourceSelector(actor_id, ["wonOscar"])], sort=[InstanceSort(["node", "externalId"])]
+                ),
+            },
+        )
+
+        # Act
+        result = cognite_client.data_modeling.instances.query(my_query)
+
+        # Assert
+        assert len(result["movies"]) > 0, "Add at least one movie withe release year before 2000"
+        assert all(
+            cast(int, movie.properties.get(movie_id, {}).get("releaseYear")) < 2000 for movie in result["movies"]
+        )
+        assert result["movies"] == sorted(result["movies"], key=lambda x: x.properties.get(movie_id, {}).get("title"))
+        assert len(result["actors"]) > 0, "Add at leas one actor that acted in the movies released before 2000"
+        assert all(actor.properties.get(actor_id, {}).get("wonOscar") for actor in result["actors"])
+        assert result["actors"] == sorted(result["actors"], key=lambda x: x.external_id)
+
+    def test_sync_movies_released_in_1994(self, cognite_client: CogniteClient, movie_view: View) -> None:
+        # Arrange
+        movie_id = movie_view.as_id()
+        q = query
+        f = filters
+        movies_released_1994 = q.NodeResultSetExpression(filter=f.Equals(movie_id.as_property_ref("releaseYear"), 1994))
+        my_query = q.Query(
+            with_={"movies": movies_released_1994},
+            select={"movies": q.Select([q.SourceSelector(movie_id, ["title", "releaseYear"])])},
+        )
+
+        # Act
+        result = cognite_client.data_modeling.instances.sync(my_query)
+        assert len(result["movies"]) > 0, "Add at least one movie released in 1994"
+
+        new_1994_movie = NodeApply(
+            space=movie_view.space,
+            external_id="movie:forrest_gump",
+            sources=[
+                NodeOrEdgeData(
+                    source=movie_id,
+                    properties={
+                        "title": "Forrest Gump",
+                        "releaseYear": 1994,
+                        "runTimeMinutes": 142,
+                    },
+                )
+            ],
+        )
+
+        try:
+            cognite_client.data_modeling.instances.apply(nodes=new_1994_movie)
+            my_query.cursors = result.cursors
+            new_result = cognite_client.data_modeling.instances.sync(my_query)
+
+            # Assert
+            assert len(new_result["movies"]) == 1, "Only the new movie should be returned"
+            assert new_result["movies"][0].external_id == new_1994_movie.external_id
+        finally:
+            cognite_client.data_modeling.instances.delete(new_1994_movie.as_id())

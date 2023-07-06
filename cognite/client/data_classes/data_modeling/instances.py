@@ -5,7 +5,9 @@ from abc import abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import (
+    TYPE_CHECKING,
     Any,
+    Collection,
     Dict,
     ItemsView,
     Iterator,
@@ -44,6 +46,8 @@ from cognite.client.data_classes.data_modeling.ids import (
 )
 from cognite.client.utils._text import convert_all_keys_to_snake_case
 
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 PropertyValue = Union[str, int, float, bool, dict, List[str], List[int], List[float], List[bool], List[dict]]
 Space = str
 PropertyIdentifier = str
@@ -689,6 +693,12 @@ class NodeList(CogniteResourceList[Node]):
         return [node.as_id() for node in self]
 
 
+class NodeListWithCursor(NodeList):
+    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient = None):
+        super().__init__(resources, cognite_client)
+        self.cursor: str | None = None
+
+
 class EdgeApplyResultList(CogniteResourceList[EdgeApplyResult]):
     _RESOURCE = EdgeApplyResult
 
@@ -701,6 +711,12 @@ class EdgeList(CogniteResourceList[Edge]):
 
     def as_ids(self) -> list[EdgeId]:
         return [edge.as_id() for edge in self]
+
+
+class EdgeListWithCursor(EdgeList):
+    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient = None):
+        super().__init__(resources, cognite_client)
+        self.cursor: str | None = None
 
 
 class InstanceSort(CogniteFilter):
@@ -727,6 +743,10 @@ class InstancesResult:
 
     nodes: NodeList
     edges: EdgeList
+
+    @classmethod
+    def load(cls, data: str | dict) -> InstancesResult:
+        raise NotImplementedError()
 
 
 @dataclass
