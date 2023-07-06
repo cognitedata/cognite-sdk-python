@@ -4,7 +4,7 @@ import json
 from abc import ABC, abstractmethod
 from collections import UserDict
 from dataclasses import dataclass, field
-from typing import Any, Dict, Literal, Mapping, Optional, Type
+from typing import Any, Dict, Literal, Mapping, Optional, Type, cast
 
 from cognite.client.data_classes.data_modeling.filters import Filter
 from cognite.client.data_classes.data_modeling.ids import ViewId
@@ -16,6 +16,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     NodeList,
     PropertyValue,
 )
+from cognite.client.utils._auxiliary import local_import
 
 
 @dataclass
@@ -95,10 +96,6 @@ class Query:
             raise ValueError(
                 f"The select keys must match the with keys, the following are not matching: {not_matching}"
             )
-        if parameters and (not_matching := set(parameters) - with_keys):
-            raise ValueError(
-                f"The parameters keys must match the with keys, the following are not matching: {not_matching}"
-            )
 
         self.with_ = with_
         self.select = select
@@ -118,6 +115,32 @@ class Query:
         if self.cursors:
             output["cursors"] = dict(self.cursors.items())
         return output
+
+    @classmethod
+    def load_yaml(cls, data: str) -> Query:
+        yaml = cast(Any, local_import("yaml"))
+        return cls.load(yaml.safe_load(data))
+
+    @classmethod
+    def load(cls, data: str | dict[str, Any]) -> Query:
+        data = json.loads(data) if isinstance(data, str) else data
+
+        if not (with_ := data.get("with")):
+            raise ValueError("The query must contain a with key")
+
+        loaded: Dict[str, Any] = {"with_": {k: ResultSetExpression.load(v) for k, v in with_.items()}}
+        if not (select := data.get("select")):
+            raise ValueError("The query must contain a select key")
+        loaded["select"] = {k: Select.load(v) for k, v in select.items()}
+
+        if parameters := data.get("parameters"):
+            loaded["parameters"] = dict(parameters.items())
+        if cursors := data.get("cursors"):
+            loaded["cursors"] = dict(cursors.items())
+        return cls(**loaded)
+
+    def __eq__(self, other: Any) -> bool:
+        return type(other) == type(self) and self.dump() == other.dump()
 
 
 class ResultSetExpression(ABC):

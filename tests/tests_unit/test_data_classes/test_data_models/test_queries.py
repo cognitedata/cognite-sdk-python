@@ -110,3 +110,94 @@ class TestSelect:
     @pytest.mark.parametrize("raw_data, loaded", list(select_load_and_dump_equals_data()))
     def test_dump(self, raw_data: dict, loaded: q.Select) -> None:
         assert loaded.dump(camel_case=True) == raw_data
+
+
+def query_load_yaml_data() -> Iterator[ParameterSet]:
+    raw_yaml = """with:
+    airplanes:
+        nodes:
+            filter:
+                equals:
+                    property: ["node", "externalId"]
+                    value: {"parameter": "airplaneExternalId"}
+        limit: 1
+    lands_in_airports:
+        edges:
+            from: airplanes
+            maxDistance: 1
+            direction: outwards
+            filter:
+                equals:
+                    property: ["edge", "type"]
+                    value: ["aviation", "lands-in"]
+    airports:
+        nodes:
+            from: lands_in_airports
+parameters:
+    airplaneExternalId: myFavouriteAirplane
+select:
+    airplanes: {}
+    airports: {}
+"""
+    expected = q.Query(
+        with_={
+            "airplanes": q.NodeResultSetExpression(
+                filter=f.Equals(property=["node", "externalId"], value={"parameter": "airplaneExternalId"}), limit=1
+            ),
+            "lands_in_airports": q.EdgeResultSetExpression(
+                from_="airplanes",
+                max_distance=1,
+                direction="outwards",
+                filter=f.Equals(property=["edge", "type"], value=["aviation", "lands-in"]),
+            ),
+            "airports": q.NodeResultSetExpression(from_="lands_in_airports"),
+        },
+        parameters={"airplaneExternalId": "myFavouriteAirplane"},
+        select={"airplanes": q.Select(), "airports": q.Select()},
+    )
+    yield pytest.param(raw_yaml, expected, id="Documentation Example")
+
+    raw_yaml = """with:
+  movies:
+    nodes:
+      filter:
+        equals:
+          property:
+          - IntegrationTestsImmutable
+          - Movie/2
+          - releaseYear
+          value: 1994
+select:
+  movies:
+    sources:
+    - source:
+        space: IntegrationTestsImmutable
+        externalId: Movie
+        version: '2'
+        type: view
+      properties:
+      - title
+      - releaseYear
+cursors:
+  movies: Z0FBQUFBQmtwc0RxQmducHpsWFd6VnZFdWwyWnFJbmxWS1BlT
+"""
+    movie_id = ViewId(space="IntegrationTestsImmutable", external_id="Movie", version="2")
+    movies_released_1994 = q.NodeResultSetExpression(
+        filter=f.Equals(list(movie_id.as_property_ref("releaseYear")), 1994)
+    )
+    expected = q.Query(
+        with_={"movies": movies_released_1994},
+        select={"movies": q.Select([q.SourceSelector(movie_id, ["title", "releaseYear"])])},
+        cursors={"movies": "Z0FBQUFBQmtwc0RxQmducHpsWFd6VnZFdWwyWnFJbmxWS1BlT"},
+    )
+    yield pytest.param(raw_yaml, expected, id="Example with cursors")
+
+
+class TestQuery:
+    @pytest.mark.parametrize("raw_data, expected", list(query_load_yaml_data()))
+    def test_load_yaml(self, raw_data: str, expected: q.Query) -> None:
+        # Act
+        actual = q.Query.load_yaml(raw_data)
+
+        # Assert
+        assert actual.dump(camel_case=True) == expected.dump(camel_case=True)
