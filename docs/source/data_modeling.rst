@@ -139,7 +139,7 @@ Instances core data classes
 
 Instances query data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.data_modeling.queries
+.. automodule:: cognite.client.data_classes.data_modeling.query
     :members:
     :show-inheritance:
 
