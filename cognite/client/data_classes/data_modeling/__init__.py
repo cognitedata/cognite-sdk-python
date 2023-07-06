@@ -1,4 +1,4 @@
-from cognite.client.data_classes.data_modeling import aggregations, filters
+from cognite.client.data_classes.data_modeling import aggregations, filters, query
 from cognite.client.data_classes.data_modeling.aggregations import AggregatedValue, Aggregation
 from cognite.client.data_classes.data_modeling.containers import (
     Constraint,
@@ -172,4 +172,5 @@ __all__ = [
     "InstancesDeleteResult",
     "InstancesResult",
     "InstanceApply",
+    "query",
 ]

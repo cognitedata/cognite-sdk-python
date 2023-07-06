@@ -5,7 +5,7 @@ from _pytest.mark import ParameterSet
 
 from cognite.client.data_classes.data_modeling import ViewId
 from cognite.client.data_classes.data_modeling import filters as f
-from cognite.client.data_classes.data_modeling import queries as q
+from cognite.client.data_classes.data_modeling import query as q
 
 
 def result_set_expression_load_and_dump_equals_data() -> Iterator[ParameterSet]:
@@ -16,8 +16,7 @@ def result_set_expression_load_and_dump_equals_data() -> Iterator[ParameterSet]:
         "limit": 1,
     }
     loaded_node = q.NodeResultSetExpression(
-        filter=f.Equals(property=["node", "externalId"], value={"parameter": "airplaneExternalId"}),
-        limit=1,
+        filter=f.Equals(property=["node", "externalId"], value={"parameter": "airplaneExternalId"}), limit=1
     )
     yield pytest.param(
         raw,

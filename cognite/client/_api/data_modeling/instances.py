@@ -37,7 +37,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     NodeApplyResultList,
     NodeList,
 )
-from cognite.client.data_classes.data_modeling.queries import (
+from cognite.client.data_classes.data_modeling.query import (
     Query,
     QueryResult,
 )
@@ -754,7 +754,7 @@ class InstancesAPI(APIClient):
             Find actors in movies released before 2000 sorted by actor name:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.data_modeling.queries import Query, Select, NodeResultSetExpression, EdgeResultSetExpression, SourceSelector
+                >>> from cognite.client.data_classes.data_modeling.query import Query, Select, NodeResultSetExpression, EdgeResultSetExpression, SourceSelector
                 >>> from cognite.client.data_classes.data_modeling.filters import Range, Equals
                 >>> from cognite.client.data_classes.data_modeling.ids import ViewId
                 >>> c = CogniteClient()
@@ -791,7 +791,7 @@ class InstancesAPI(APIClient):
             Find actors in movies released before 2000 sorted by actor name:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.data_modeling.queries import Query, Select, NodeResultSetExpression, EdgeResultSetExpression, SourceSelector
+                >>> from cognite.client.data_classes.data_modeling.query import Query, Select, NodeResultSetExpression, EdgeResultSetExpression, SourceSelector
                 >>> from cognite.client.data_classes.data_modeling.filters import Range, Equals
                 >>> from cognite.client.data_classes.data_modeling.ids import ViewId
                 >>> c = CogniteClient()

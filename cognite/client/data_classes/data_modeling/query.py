@@ -120,25 +120,6 @@ class Query:
         return output
 
 
-@dataclass
-class ViewPropertyReference:
-    view: ViewId
-    identifier: str
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {
-            "view": self.view.dump(camel_case, include_type=True),
-            "identifier": self.identifier,
-        }
-
-    @classmethod
-    def load(cls, data: dict[str, Any]) -> ViewPropertyReference:
-        return cls(
-            view=ViewId.load(data["view"]),
-            identifier=data["identifier"],
-        )
-
-
 class ResultSetExpression(ABC):
     @abstractmethod
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -155,10 +136,9 @@ class ResultSetExpression(ABC):
             query_node = query["nodes"]
             node = {
                 "from_": query_node.get("from"),
-                "through": ViewPropertyReference.load(query_node["through"]) if "through" in query_node else None,
                 "filter": Filter.load(query_node["filter"]) if "filter" in query_node else None,
             }
-            return NodeResultSetExpression(**node, sort=sort, limit=query.get("limit"))
+            return NodeResultSetExpression(sort=sort, limit=query.get("limit"), **node)
         elif "edges" in query:
             query_edge = query["edges"]
             edge = {
@@ -181,16 +161,8 @@ class ResultSetExpression(ABC):
 
 
 class NodeResultSetExpression(ResultSetExpression):
-    def __init__(
-        self,
-        from_: str = None,
-        through: ViewPropertyReference = None,
-        filter: Filter = None,
-        sort: list[InstanceSort] = None,
-        limit: int = None,
-    ):
+    def __init__(self, from_: str = None, filter: Filter = None, sort: list[InstanceSort] = None, limit: int = None):
         self.from_ = from_
-        self.through = through
         self.filter = filter
         self.sort = sort
         self.limit = limit
@@ -200,8 +172,6 @@ class NodeResultSetExpression(ResultSetExpression):
         nodes = output["nodes"]
         if self.from_:
             nodes["from"] = self.from_
-        if self.through:
-            nodes["through"] = self.through.dump(camel_case=camel_case)
         if self.filter:
             nodes["filter"] = self.filter.dump()
 
