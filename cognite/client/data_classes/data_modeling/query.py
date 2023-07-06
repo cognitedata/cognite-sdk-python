@@ -292,6 +292,22 @@ class QueryResult(UserDict):
 
         return instance
 
+    def get_nodes(self, result_expression: str) -> NodeListWithCursor:
+        result = super().__getitem__(result_expression)
+        if isinstance(result, NodeListWithCursor):
+            return result
+        raise RuntimeError(
+            f"{result_expression} is not a {NodeListWithCursor.__name__}. Try {self.get_edges.__name__} instead."
+        )
+
+    def get_edges(self, result_expression: str) -> EdgeListWithCursor:
+        result = super().__getitem__(result_expression)
+        if isinstance(result, EdgeListWithCursor):
+            return result
+        raise RuntimeError(
+            f"{result_expression} is not a {EdgeListWithCursor.__name__}. Try {self.get_nodes.__name__} instead."
+        )
+
 
 # class SetOperationResultSetExpression(ResultSetExpression):
 #     ...
