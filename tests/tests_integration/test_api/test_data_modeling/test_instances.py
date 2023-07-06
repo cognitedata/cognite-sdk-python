@@ -456,17 +456,19 @@ class TestInstancesAPI:
         actor_id = actor_view.as_id()
         q = queries
         f = filters
-        movies_before_2000 = q.QueryNode(filter=f.Range(movie_id.as_property_ref("releaseYear"), lt=2000))
-        actors_in_movie = q.QueryEdge(
+        movies_before_2000 = q.NodeResultSetExpression(filter=f.Range(movie_id.as_property_ref("releaseYear"), lt=2000))
+        actors_in_movie = q.EdgeResultSetExpression(
             from_="movies", filter=f.Equals(["edge", "type"], {"space": movie_view.space, "externalId": "Movie.actors"})
         )
-        actor = q.QueryNode(from_="actors_in_movie", filter=f.Equals(actor_id.as_property_ref("wonOscar"), True))
+        actor = q.NodeResultSetExpression(
+            from_="actors_in_movie", filter=f.Equals(actor_id.as_property_ref("wonOscar"), True)
+        )
 
         query = q.Query(
             {
-                "movies": q.NodeResultSetExpression(movies_before_2000),
-                "actors_in_movie": q.EdgeResultSetExpression(actors_in_movie),
-                "actors": q.NodeResultSetExpression(actor),
+                "movies": movies_before_2000,
+                "actors_in_movie": actors_in_movie,
+                "actors": actor,
             },
             select={
                 "movies": q.Select(
@@ -497,14 +499,14 @@ class TestInstancesAPI:
         movie_id = movie_view.as_id()
         q = queries
         f = filters
-        movies_released_1994 = q.QueryNode(filter=f.Equals(movie_id.as_property_ref("releaseYear"), 1994))
+        movies_released_1994 = q.NodeResultSetExpression(filter=f.Equals(movie_id.as_property_ref("releaseYear"), 1994))
         query = q.Query(
-            with_={"movies": q.NodeResultSetExpression(movies_released_1994)},
+            with_={"movies": movies_released_1994},
             select={"movies": q.Select([q.SourceSelector(movie_id, ["title", "releaseYear"])])},
         )
 
         # Act
-        result = cognite_client.data_modeling.instances.sync(query, paging=True)
+        result = cognite_client.data_modeling.instances.sync(query)
         assert len(result["movies"]) > 0, "Add at least one movie released in 1994"
 
         new_1994_movie = NodeApply(
@@ -525,7 +527,7 @@ class TestInstancesAPI:
         try:
             cognite_client.data_modeling.instances.apply(nodes=new_1994_movie)
             query.cursors = result.cursors
-            new_result = cognite_client.data_modeling.instances.sync(query, paging=True)
+            new_result = cognite_client.data_modeling.instances.sync(query)
 
             # Assert
             assert len(new_result["movies"]) == 1, "Only the new movie should be returned"

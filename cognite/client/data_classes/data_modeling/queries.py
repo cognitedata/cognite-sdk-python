@@ -119,22 +119,6 @@ class Query:
             output["cursors"] = dict(self.cursors.items())
         return output
 
-    @classmethod
-    def load(cls, result_set_expression: dict[str, Any]) -> ResultSetExpression:
-        if "sort" in result_set_expression:
-            sort = [InstanceSort(**sort) for sort in result_set_expression["sort"]]
-        else:
-            sort = []
-
-        if "nodes" in result_set_expression:
-            node = QueryNode.load(result_set_expression["nodes"])
-            return NodeResultSetExpression(node, sort, result_set_expression.get("limit"))
-        elif "edges" in result_set_expression:
-            edge = QueryEdge.load(result_set_expression["edges"])
-            return EdgeResultSetExpression(edge, sort, result_set_expression.get("limit"))
-        else:
-            raise NotImplementedError(f"Unknown query type: {result_set_expression}")
-
 
 @dataclass
 class ViewPropertyReference:
@@ -155,74 +139,6 @@ class ViewPropertyReference:
         )
 
 
-@dataclass
-class QueryNode:
-    from_: Optional[str] = None
-    through: Optional[ViewPropertyReference] = None
-    filter: Optional[Filter] = None
-
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        output: Dict[str, Any] = {}
-        if self.from_:
-            output["from"] = self.from_
-        if self.through:
-            output["through"] = self.through.dump(camel_case=camel_case)
-        if self.filter:
-            output["filter"] = self.filter.dump()
-        return output
-
-    @classmethod
-    def load(cls, data: str | dict[str, Any]) -> QueryNode:
-        data = json.loads(data) if isinstance(data, str) else data
-        return cls(
-            from_=data.get("from"),
-            through=ViewPropertyReference.load(data["through"]) if "through" in data else None,
-            filter=Filter.load(data["filter"]) if "filter" in data else None,
-        )
-
-
-@dataclass
-class QueryEdge:
-    from_: Optional[str] = None
-    max_distance: Optional[int] = None
-    direction: Literal["outwards", "inwards"] = "outwards"
-    filter: Optional[Filter] = None
-    node_filter: Optional[Filter] = None
-    termination_filter: Optional[Filter] = None
-    limit_each: Optional[int] = None
-
-    @classmethod
-    def load(cls, data: str | dict) -> QueryEdge:
-        data = json.loads(data) if isinstance(data, str) else data
-        return cls(
-            from_=data["from"],
-            max_distance=data["maxDistance"],
-            direction=data["direction"],
-            filter=Filter.load(data["filter"]) if data["filter"] else None,
-            node_filter=Filter.load(data["nodeFilter"]) if data["nodeFilter"] else None,
-            termination_filter=Filter.load(data["terminationFilter"]) if data["terminationFilter"] else None,
-            limit_each=data["limitEach"],
-        )
-
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        output: Dict[str, Any] = {}
-        if self.from_:
-            output["from"] = self.from_
-        if self.max_distance:
-            output["maxDistance" if camel_case else "max_distance"] = self.max_distance
-        if self.direction:
-            output["direction"] = self.direction
-        if self.filter:
-            output["filter"] = self.filter.dump()
-        if self.node_filter:
-            output["nodeFilter" if camel_case else "node_filter"] = self.node_filter.dump()
-        if self.termination_filter:
-            output["terminationFilter" if camel_case else "termination_filter"] = self.termination_filter.dump()
-        if self.limit_each:
-            output["limitEach" if camel_case else "limit_each"] = self.limit_each
-        return output
-
-
 class ResultSetExpression(ABC):
     @abstractmethod
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -236,11 +152,27 @@ class ResultSetExpression(ABC):
             sort = []
 
         if "nodes" in query:
-            node = QueryNode.load(query["nodes"])
-            return NodeResultSetExpression(node, sort, query.get("limit"))
+            query_node = query["nodes"]
+            node = {
+                "from_": query_node.get("from"),
+                "through": ViewPropertyReference.load(query_node["through"]) if "through" in query_node else None,
+                "filter": Filter.load(query_node["filter"]) if "filter" in query_node else None,
+            }
+            return NodeResultSetExpression(**node, sort=sort, limit=query.get("limit"))
         elif "edges" in query:
-            edge = QueryEdge.load(query["edges"])
-            return EdgeResultSetExpression(edge, sort, query.get("limit"))
+            query_edge = query["edges"]
+            edge = {
+                "from_": query_edge.get("from"),
+                "max_distance": query_edge.get("maxDistance"),
+                "direction": query_edge.get("direction"),
+                "filter": Filter.load(query_edge["filter"]) if "filter" in query_edge else None,
+                "node_filter": Filter.load(query_edge["nodeFilter"]) if "nodeFilter" in query_edge else None,
+                "termination_filter": Filter.load(query_edge["terminationFilter"])
+                if "terminationFilter" in query_edge
+                else None,
+                "limit_each": query_edge.get("limitEach"),
+            }
+            return EdgeResultSetExpression(**edge, sort=sort, limit=query.get("limit"))
         else:
             raise NotImplementedError(f"Unknown query type: {query}")
 
@@ -249,13 +181,30 @@ class ResultSetExpression(ABC):
 
 
 class NodeResultSetExpression(ResultSetExpression):
-    def __init__(self, nodes: QueryNode, sort: list[InstanceSort] = None, limit: int = None):
-        self.nodes = nodes
+    def __init__(
+        self,
+        from_: str = None,
+        through: ViewPropertyReference = None,
+        filter: Filter = None,
+        sort: list[InstanceSort] = None,
+        limit: int = None,
+    ):
+        self.from_ = from_
+        self.through = through
+        self.filter = filter
         self.sort = sort
         self.limit = limit
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        output: Dict[str, Any] = {"nodes": self.nodes.dump(camel_case=camel_case)}
+        output: Dict[str, Any] = {"nodes": {}}
+        nodes = output["nodes"]
+        if self.from_:
+            nodes["from"] = self.from_
+        if self.through:
+            nodes["through"] = self.through.dump(camel_case=camel_case)
+        if self.filter:
+            nodes["filter"] = self.filter.dump()
+
         if self.sort:
             output["sort"] = [s.dump(camel_case=camel_case) for s in self.sort]
         if self.limit:
@@ -267,18 +216,46 @@ class NodeResultSetExpression(ResultSetExpression):
 class EdgeResultSetExpression(ResultSetExpression):
     def __init__(
         self,
-        edges: QueryEdge,
+        from_: Optional[str] = None,
+        max_distance: Optional[int] = None,
+        direction: Literal["outwards", "inwards"] = "outwards",
+        filter: Optional[Filter] = None,
+        node_filter: Optional[Filter] = None,
+        termination_filter: Optional[Filter] = None,
+        limit_each: Optional[int] = None,
         sort: list[InstanceSort] = None,
         post_sort: list[InstanceSort] = None,
         limit: int = None,
     ):
+        self.from_ = from_
+        self.max_distance = max_distance
+        self.direction = direction
+        self.filter = filter
+        self.node_filter = node_filter
+        self.termination_filter = termination_filter
+        self.limit_each = limit_each
         self.sort = sort
         self.post_sort = post_sort
         self.limit = limit
-        self.edges = edges
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        output: Dict[str, Any] = {"edges": self.edges.dump(camel_case=camel_case)}
+        output: Dict[str, Any] = {"edges": {}}
+        edges = output["edges"]
+        if self.from_:
+            edges["from"] = self.from_
+        if self.max_distance:
+            edges["maxDistance" if camel_case else "max_distance"] = self.max_distance
+        if self.direction:
+            edges["direction"] = self.direction
+        if self.filter:
+            edges["filter"] = self.filter.dump()
+        if self.node_filter:
+            edges["nodeFilter" if camel_case else "node_filter"] = self.node_filter.dump()
+        if self.termination_filter:
+            edges["terminationFilter" if camel_case else "termination_filter"] = self.termination_filter.dump()
+        if self.limit_each:
+            edges["limitEach" if camel_case else "limit_each"] = self.limit_each
+
         if self.sort:
             output["sort"] = [s.dump(camel_case=camel_case) for s in self.sort]
         if self.post_sort:

@@ -755,7 +755,7 @@ class InstancesAPI(APIClient):
             Find actors in movies released before 2000 sorted by actor name:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.data_modeling.queries import Query, Select, NodeResultSetExpression, EdgeResultSetExpression, QueryNode, SourceSelector, QueryEdge
+                >>> from cognite.client.data_classes.data_modeling.queries import Query, Select, NodeResultSetExpression, EdgeResultSetExpression, SourceSelector
                 >>> from cognite.client.data_classes.data_modeling.filters import Range, Equals
                 >>> from cognite.client.data_classes.data_modeling.ids import ViewId
                 >>> c = CogniteClient()
@@ -763,9 +763,9 @@ class InstancesAPI(APIClient):
                 >>> actor_id = ViewId("mySpace", "ActorView", "v1")
                 >>> query = Query(
                 ...         with_ = {
-                ...             "movies": NodeResultSetExpression(QueryNode(filter=Range(movie_id.as_property_ref("releaseYear"), lt=2000))),
-                ...             "actors_in_movie": EdgeResultSetExpression(QueryEdge(from_="movies", filter=Equals(["edge", "type"], {"space": movie_id.space, "externalId": "Movie.actors"}))),
-                ...             "actors": NodeResultSetExpression(QueryEdge(from_="actors_in_movie")),
+                ...             "movies": NodeResultSetExpression(filter=Range(movie_id.as_property_ref("releaseYear"), lt=2000)),
+                ...             "actors_in_movie": EdgeResultSetExpression(from_="movies", filter=Equals(["edge", "type"], {"space": movie_id.space, "externalId": "Movie.actors"})),
+                ...             "actors": NodeResultSetExpression(from_="actors_in_movie"),
                 ...         },
                 ...         select = {
                 ...             "actors": Select(
@@ -793,7 +793,7 @@ class InstancesAPI(APIClient):
             Find actors in movies released before 2000 sorted by actor name:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.data_modeling.queries import Query, Select, NodeResultSetExpression, EdgeResultSetExpression, QueryNode, SourceSelector, QueryEdge
+                >>> from cognite.client.data_classes.data_modeling.queries import Query, Select, NodeResultSetExpression, EdgeResultSetExpression, SourceSelector
                 >>> from cognite.client.data_classes.data_modeling.filters import Range, Equals
                 >>> from cognite.client.data_classes.data_modeling.ids import ViewId
                 >>> c = CogniteClient()
@@ -801,9 +801,9 @@ class InstancesAPI(APIClient):
                 >>> actor_id = ViewId("mySpace", "ActorView", "v1")
                 >>> query = Query(
                 ...         with_ = {
-                ...             "movies": NodeResultSetExpression(QueryNode(filter=Range(movie_id.as_property_ref("releaseYear"), lt=2000))),
-                ...             "actors_in_movie": EdgeResultSetExpression(QueryEdge(from_="movies", filter=Equals(["edge", "type"], {"space": movie_id.space, "externalId": "Movie.actors"}))),
-                ...             "actors": NodeResultSetExpression(QueryEdge(from_="actors_in_movie")),
+                ...             "movies": NodeResultSetExpression(filter=Range(movie_id.as_property_ref("releaseYear"), lt=2000)),
+                ...             "actors_in_movie": EdgeResultSetExpression(from_="movies", filter=Equals(["edge", "type"], {"space": movie_id.space, "externalId": "Movie.actors"})),
+                ...             "actors": NodeResultSetExpression(from_="actors_in_movie"),
                 ...         },
                 ...         select = {
                 ...             "actors": Select(

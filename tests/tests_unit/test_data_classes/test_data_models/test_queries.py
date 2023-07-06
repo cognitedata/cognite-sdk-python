@@ -15,14 +15,14 @@ def result_set_expression_load_and_dump_equals_data() -> Iterator[ParameterSet]:
         },
         "limit": 1,
     }
-    loaded = q.NodeResultSetExpression(
-        q.QueryNode(filter=f.Equals(property=["node", "externalId"], value={"parameter": "airplaneExternalId"})),
+    loaded_node = q.NodeResultSetExpression(
+        filter=f.Equals(property=["node", "externalId"], value={"parameter": "airplaneExternalId"}),
         limit=1,
     )
     yield pytest.param(
         raw,
-        loaded,
-        id="Documetation Example",
+        loaded_node,
+        id="Documentation Example",
     )
 
     raw = {
@@ -30,14 +30,31 @@ def result_set_expression_load_and_dump_equals_data() -> Iterator[ParameterSet]:
             "filter": {"range": {"lt": 2000, "property": ["IntegrationTestsImmutable", "Movie/2", "releaseYear"]}}
         }
     }
-    loaded = q.NodeResultSetExpression(
-        q.QueryNode(filter=f.Range(lt=2000, property=["IntegrationTestsImmutable", "Movie/2", "releaseYear"]))
+    loaded_node = q.NodeResultSetExpression(
+        filter=f.Range(lt=2000, property=["IntegrationTestsImmutable", "Movie/2", "releaseYear"])
     )
 
     yield pytest.param(
         raw,
-        loaded,
-        id="Simple node filter",
+        loaded_node,
+        id="Filter Node on Range",
+    )
+
+    raw = {
+        "edges": {
+            "direction": "outwards",
+            "filter": {
+                "equals": {"property": ["edge", "type"], "value": {"space": "MovieSpace", "externalId": "Movie.actors"}}
+            },
+        }
+    }
+    loaded_edge = q.EdgeResultSetExpression(
+        filter=f.Equals(property=["edge", "type"], value={"space": "MovieSpace", "externalId": "Movie.actors"})
+    )
+    yield pytest.param(
+        raw,
+        loaded_edge,
+        id="Filter Edge on Type",
     )
 
 
