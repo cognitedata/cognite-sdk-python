@@ -309,6 +309,11 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         """
         Create an OAuthClientCredentials instance for Azure with default token URL and scopes.
 
+        The default configuration creates the URLs based on the tenant id and cluster:
+
+        * Authority URL: "https://login.microsoftonline.com/{tenant_id}"
+        * Scopes: [f"https://{cdf_cluster}.cognitedata.com/.default"]
+
         Args:
             tenant_id: The Azure tenant id
             cdf_cluster: The CDF cluster where the CDF project is located.
@@ -443,6 +448,11 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
     ) -> OAuthClientCredentials:
         """
         Create an OAuthClientCredentials instance for Azure with default token URL and scopes.
+
+        The default configuration creates the URLs based on the tenant id and cluster/oauth2/v2.0/token:
+
+        * Token URL: "https://login.microsoftonline.com/{tenant_id}"
+        * Scopes: [f"https://{cdf_cluster}.cognitedata.com/.default"]
 
         Args:
             tenant_id: The Azure tenant id

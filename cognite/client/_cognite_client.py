@@ -118,9 +118,7 @@ class CogniteClient:
         cls,
         project: str,
         cdf_cluster: str,
-        tenant_id: str,
-        client_id: str,
-        client_secret: str | None = None,
+        credentials: CredentialProvider,
         client_name: str | None = None,
     ) -> CogniteClient:
         """
@@ -129,17 +127,11 @@ class CogniteClient:
         The default configuration creates the URLs based on the project and cluster:
 
         * Base URL: "https://{cdf_cluster}.cognitedata.com/
-        * Token URL: "https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
-        * Scopes: [f"https://{cdf_cluster}.cognitedata.com/.default"]
 
         Args:
             project (str):
             cdf_cluster: The CDF cluster where the CDF project is located.
-            tenant_id: The Azure tenant id
-            client_id: Your application's client id.
-            client_secret (str, optional): Your application's client secret. If this is passed, OAuthClientCredentials
-                                           is used for the credentials, if this is skipped, OAuthInteractive is used
-                                           instead. Default to using OAuthInteractive.
+            credentials: Credentials. e.g. Token, ClientCredentials.
             client_name (str, optional): A user-defined name for the client. Used to identify the number of unique applications/scripts
                                          running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning
                                          the username you are logged in with is used.
@@ -147,10 +139,74 @@ class CogniteClient:
         Returns:
             A CogniteClient instance with default configurations.
         """
-        credentials: CredentialProvider
-        if client_secret is None:
-            credentials = OAuthInteractive.default_azure_project(tenant_id, client_id, cdf_cluster)
-        else:
-            credentials = OAuthClientCredentials.default_azure_project(tenant_id, client_id, client_secret, cdf_cluster)
+        return cls(ClientConfig.default(project, cdf_cluster, credentials, client_name=client_name))
 
-        return cls(ClientConfig.create_default(project, cdf_cluster, credentials, client_name=client_name))
+    @classmethod
+    def default_oauth_client_credentials(
+        cls,
+        project: str,
+        cdf_cluster: str,
+        tenant_id: str,
+        client_id: str,
+        client_secret: str,
+        client_name: str | None = None,
+    ) -> CogniteClient:
+        """
+        Create a CogniteClient with default configuration using a client credentials flow.
+
+        The default configuration creates the URLs based on the project and cluster:
+
+        * Base URL: "https://{cdf_cluster}.cognitedata.com/
+        * Token URL: "https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
+        * Scopes: [f"https://{cdf_cluster}.cognitedata.com/.default"]
+
+        Args:
+            project (str):  The CDF project.
+            cdf_cluster: The CDF cluster where the CDF project is located.
+            tenant_id: The Azure tenant ID.
+            client_id: The Azure client ID.
+            client_secret: The Azure client secret.
+            client_name (str, optional): A user-defined name for the client. Used to identify the number of unique applications/scripts
+                                         running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning
+                                         the username you are logged in with is used.
+
+        Returns:
+            A CogniteClient instance with default configurations.
+        """
+
+        credentials = OAuthClientCredentials.default_azure_project(tenant_id, client_id, client_secret, cdf_cluster)
+
+        return cls.default(project, cdf_cluster, credentials, client_name)
+
+    @classmethod
+    def default_oauth_interactive(
+        cls,
+        project: str,
+        cdf_cluster: str,
+        tenant_id: str,
+        client_id: str,
+        client_name: str | None = None,
+    ) -> CogniteClient:
+        """
+        Create a CogniteClient with default configuration using the interactive flow.
+
+        The default configuration creates the URLs based on the tenant_id and cluster:
+
+        * Base URL: "https://{cdf_cluster}.cognitedata.com/
+        * Authority URL: "https://login.microsoftonline.com/{tenant_id}"
+        * Scopes: [f"https://{cdf_cluster}.cognitedata.com/.default"]
+
+        Args:
+            project (str): The CDF project.
+            cdf_cluster: The CDF cluster where the CDF project is located.
+            tenant_id: The Azure tenant ID.
+            client_id: The Azure client ID.
+            client_name (str, optional): A user-defined name for the client. Used to identify the number of unique applications/scripts
+                                         running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning
+                                         the username you are logged in with is used.
+
+        Returns:
+            A CogniteClient instance with default configurations.
+        """
+        credentials = OAuthInteractive.default_azure_project(tenant_id, client_id, cdf_cluster)
+        return cls.default(project, cdf_cluster, credentials, client_name)

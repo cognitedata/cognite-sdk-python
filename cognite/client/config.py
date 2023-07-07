@@ -104,7 +104,7 @@ class ClientConfig:
         return str(self)
 
     @classmethod
-    def create_default(
+    def default(
         cls, project: str, cdf_cluster: str, credentials: CredentialProvider, client_name: str = None
     ) -> ClientConfig:
         """
