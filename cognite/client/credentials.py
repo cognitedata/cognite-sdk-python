@@ -297,6 +297,36 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         self._verify_credentials(credentials)
         return credentials["access_token"], time.time() + credentials["expires_in"]
 
+    @classmethod
+    def default_azure_project(
+        cls,
+        tenant_id: str,
+        client_id: str,
+        cdf_cluster: str,
+        token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT,
+        **token_custom_args: Any,
+    ) -> OAuthInteractive:
+        """
+        Create an OAuthClientCredentials instance for Azure with default token URL and scopes.
+
+        Args:
+            tenant_id: The Azure tenant id
+            cdf_cluster: The CDF cluster where the CDF project is located.
+            client_id: Your application's client id.
+            token_expiry_leeway_seconds: The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 15 sec
+            **token_custom_args: Optional additional arguments to pass as query parameters to the token fetch request.
+
+        Returns:
+            An OAuthInteractive instance
+        """
+        return cls(
+            authority_url=f"https://login.microsoftonline.com/{tenant_id}",
+            client_id=client_id,
+            scopes=[f"https://{cdf_cluster}.cognitedata.com/.default"],
+            token_expiry_leeway_seconds=token_expiry_leeway_seconds,
+            **token_custom_args,
+        )
+
 
 class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
     """OAuth credential provider for the "Client Credentials" flow.

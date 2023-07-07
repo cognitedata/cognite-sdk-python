@@ -28,6 +28,7 @@ from cognite.client._api.transformations import TransformationsAPI
 from cognite.client._api.vision import VisionAPI
 from cognite.client._api_client import APIClient
 from cognite.client.config import ClientConfig, global_config
+from cognite.client.credentials import CredentialProvider, OAuthClientCredentials, OAuthInteractive
 
 
 class CogniteClient:
@@ -111,3 +112,45 @@ class CogniteClient:
             ClientConfig: The configuration object.
         """
         return self._config
+
+    @classmethod
+    def default(
+        cls,
+        project: str,
+        cdf_cluster: str,
+        tenant_id: str,
+        client_id: str,
+        client_secret: str | None = None,
+        client_name: str | None = None,
+    ) -> CogniteClient:
+        """
+        Create a CogniteClient with default configuration.
+
+        The default configuration creates the URLs based on the project and cluster:
+
+        * Base URL: "https://{cdf_cluster}.cognitedata.com/
+        * Token URL: "https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
+        * Scopes: [f"https://{cdf_cluster}.cognitedata.com/.default"]
+
+        Args:
+            project (str):
+            cdf_cluster: The CDF cluster where the CDF project is located.
+            tenant_id: The Azure tenant id
+            client_id: Your application's client id.
+            client_secret (str, optional): Your application's client secret. If this is passed, OAuthClientCredentials
+                                           is used for the credentials, if this is skipped, OAuthInteractive is used
+                                           instead. Default to using OAuthInteractive.
+            client_name (str, optional): A user-defined name for the client. Used to identify the number of unique applications/scripts
+                                         running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning
+                                         the username you are logged in with is used.
+
+        Returns:
+            A CogniteClient instance with default configurations.
+        """
+        credentials: CredentialProvider
+        if client_secret is None:
+            credentials = OAuthInteractive.default_azure_project(tenant_id, client_id, cdf_cluster)
+        else:
+            credentials = OAuthClientCredentials.default_azure_project(tenant_id, client_id, client_secret, cdf_cluster)
+
+        return cls(ClientConfig.create_default(project, cdf_cluster, credentials, client_name=client_name))

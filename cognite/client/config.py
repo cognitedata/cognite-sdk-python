@@ -114,8 +114,9 @@ class ClientConfig:
             project: CDF Project name.
             cdf_cluster: The CDF cluster where the CDF project is located.
             credentials: Credentials. e.g. Token, ClientCredentials.
-            client_name: A user-defined name for the client. Used to identify number of unique applications/scripts
-            running on top of CDF. Defaults to the current user.
+            client_name: A user-defined name for the client. Used to identify the number of unique applications/scripts
+                         running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning
+                         the username you are logged in with is used.
 
         Returns:
             ClientConfig: A default client config object.
