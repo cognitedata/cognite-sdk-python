@@ -691,12 +691,20 @@ class AssetHierarchy:
             if xid_count[xid] > 1:
                 duplicates[xid].append(asset)
 
-            if (pxid := asset.parent_external_id) is (pid := asset.parent_id) is None:
+            has_parent_id = asset.parent_id is not None
+            has_parent_xid = (pxid := asset.parent_external_id) is not None
+
+            if not has_parent_xid and not has_parent_id:
                 roots.append(asset)
-            elif pxid is not None and pid is not None:
-                unsure_parents.append(asset)  # Both parent links are given
-            elif pxid not in xid_count:
-                orphans.append(asset)  # Only parent XID given, but not part of assets given
+
+            elif has_parent_xid:
+                if has_parent_id:  # Both parent links are given
+                    unsure_parents.append(asset)
+
+                elif pxid not in xid_count:  # Only parent XID given, but not part of assets given
+                    orphans.append(asset)
+
+            # Only case left is when parent is only given by ID, which we assume is valid
 
         return roots, orphans, invalid, unsure_parents, dict(duplicates)
 
