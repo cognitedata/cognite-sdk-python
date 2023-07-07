@@ -401,6 +401,39 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
                 f"Error generating access token: {oauth_err.error}, {oauth_err.status_code}, {oauth_err.description}"
             ) from oauth_err
 
+    @classmethod
+    def default_azure_project(
+        cls,
+        tenant_id: str,
+        client_id: str,
+        client_secret: str,
+        cdf_cluster: str,
+        token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT,
+        **token_custom_args: Any,
+    ) -> OAuthClientCredentials:
+        """
+        Create an OAuthClientCredentials instance for Azure with default token URL and scopes.
+
+        Args:
+            tenant_id: The Azure tenant id
+            cdf_cluster: The CDF cluster where the CDF project is located.
+            client_id: Your application's client id.
+            client_secret: Your application's client secret.
+            token_expiry_leeway_seconds: The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 15 sec
+            **token_custom_args: Optional additional arguments to pass as query parameters to the token fetch request.
+
+        Returns:
+            An OAuthClientCredentials instance
+        """
+        return cls(
+            token_url=f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token",
+            client_id=client_id,
+            client_secret=client_secret,
+            scopes=[f"https://{cdf_cluster}.cognitedata.com/.default"],
+            token_expiry_leeway_seconds=token_expiry_leeway_seconds,
+            **token_custom_args,
+        )
+
 
 class OAuthClientCertificate(_OAuthCredentialProviderWithTokenRefresh):
     """OAuth credential provider for authenticating with a client certificate.
