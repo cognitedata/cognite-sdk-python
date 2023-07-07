@@ -1,4 +1,6 @@
-from typing import Optional
+from __future__ import annotations
+
+from typing import Any, Optional
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.data_modeling import DataModelIdentifier
@@ -7,10 +9,12 @@ from cognite.client.exceptions import CogniteGraphQLError, GraphQLErrorSpec
 
 
 class DataModelingGraphQLAPI(APIClient):
-    def _post_graphql(self, url_path: str, query: str) -> None:
+    def _post_graphql(self, url_path: str, query: str) -> dict[str, Any]:
         res = self._post(url_path=url_path, json={"query": query})
-        if (errors := res.json().get("errors")) is not None:
+        json_res = res.json()
+        if (errors := json_res.get("errors")) is not None:
             raise CogniteGraphQLError([GraphQLErrorSpec.load(error) for error in errors])
+        return json_res["data"]
 
     def apply_dml(
         self,
@@ -19,7 +23,7 @@ class DataModelingGraphQLAPI(APIClient):
         name: Optional[str] = None,
         description: Optional[str] = None,
         previous_version: Optional[str] = None,
-    ) -> None:
+    ) -> DataModelId:
         """Apply the DML for a given data model.
 
         Args:
@@ -43,11 +47,12 @@ class DataModelingGraphQLAPI(APIClient):
                     }}
                 ) {{
                     result {{
-                        graphQlDml
+                        space
                         externalId
                         version
                     }}
                 }}
             }}
         """
-        self._post_graphql(url_path="/dml/graphql", query=graphql_body)
+        res = self._post_graphql(url_path="/dml/graphql", query=graphql_body)
+        return DataModelId.load(res["upsertGraphQlDmlVersion"]["result"])

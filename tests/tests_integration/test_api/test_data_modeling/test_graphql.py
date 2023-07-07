@@ -15,7 +15,10 @@ def data_model(cognite_client: CogniteClient, integration_test_space: Space) -> 
 
 class TestDataModelingGraphQLAPI:
     def test_apply_dml(self, cognite_client: CogniteClient, data_model: DataModel) -> None:
-        cognite_client.data_modeling.graphql.apply_dml(data_model.as_id(), "type SomeType { someProp: String! }")
+        res = cognite_client.data_modeling.graphql.apply_dml(
+            data_model.as_id(), "type SomeType { someProp: String! } type AnotherType { anotherProp: String! }"
+        )
+        assert res.version == "v1"
 
     def test_apply_dml_invalid(self, cognite_client: CogniteClient, data_model: DataModel) -> None:
         with pytest.raises(CogniteGraphQLError) as exc:
