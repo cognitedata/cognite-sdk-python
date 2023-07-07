@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.6.1] - 2023-07-07
+### Improved
+- Added convenience function to instantiate a `CogniteClient.default(...)` to save the users from typing the 
+  default URLs.
+
 ## [6.6.0] - 2023-07-06
 ### Fixed
 - Support for query and sync endpoints across instances in the Data Modeling API with the implementation 

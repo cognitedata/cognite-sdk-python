@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import getpass
 import pprint
 from contextlib import suppress
 from typing import Dict, Optional, Set
@@ -101,3 +102,29 @@ class ClientConfig:
 
     def _repr_html_(self) -> str:
         return str(self)
+
+    @classmethod
+    def default(
+        cls, project: str, cdf_cluster: str, credentials: CredentialProvider, client_name: str = None
+    ) -> ClientConfig:
+        """
+        Create a default client config object.
+
+        Args:
+            project: CDF Project name.
+            cdf_cluster: The CDF cluster where the CDF project is located.
+            credentials: Credentials. e.g. Token, ClientCredentials.
+            client_name: A user-defined name for the client. Used to identify the number of unique applications/scripts
+                         running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning
+                         the username you are logged in with is used.
+
+        Returns:
+            ClientConfig: A default client config object.
+        """
+
+        return cls(
+            client_name=client_name or getpass.getuser(),
+            project=project,
+            credentials=credentials,
+            base_url=f"https://{cdf_cluster}.cognitedata.com/",
+        )
