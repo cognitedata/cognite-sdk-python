@@ -31,6 +31,22 @@ class DataModelingGraphQLAPI(APIClient):
             dml (str): The DML to apply.
             previous_version (Optional[str]): The previous version of the data model. Specify to reuse view versions from
                 previous data model version.
+            name (Optional[str]): The name of the data model.
+            description (Optional[str]): The description of the data model.
+
+        Returns:
+            DataModelId: The id of the updated data model.
+
+        Examples:
+
+            Apply DML::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.data_modeling.graphql.apply_dml(
+                ...     ("mySpace", "myDataModel", "v1"),
+                ...     dml="type MyType { id: String! }"
+                ... )
         """
         data_model_id = DataModelId.load(id)
         graphql_body = f"""
