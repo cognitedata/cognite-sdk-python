@@ -17,6 +17,14 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.7.1] - 2023-07-07
+### Fixed
+- Needless function "as_id" on View as it was already inherited
+### Added
+- Flag "all_versions" on data_modeling.data_models.retrieve() to retrieve all versions of a data model or only the latest one
+- Extra documentation on how to delete edges and nodes.
+- Support for using full Node and Edge objects when deleting instances.
+
 ## [6.7.0] - 2023-07-07
 ### Added
 - Support for applying graphql dml using `client.data_modeling.graphql.apply_dml()`.
@@ -30,7 +38,6 @@ Changes are grouped as follows
 ### Fixed
 - Support for query and sync endpoints across instances in the Data Modeling API with the implementation 
   `client.data_modeling.instances`, the methods `query` and `sync`.
-
 
 ## [6.5.8] - 2023-06-30
 ### Fixed
