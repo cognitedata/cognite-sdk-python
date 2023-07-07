@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from typing import Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
@@ -82,23 +83,13 @@ class ViewsAPI(APIClient):
         Yields:
             View: yields Views one by one.
         """
-        return cast(Iterator[View], self())
-
-    def _get_latest_version_in_view(self, views: ViewList) -> View:
-        views_created_time = [view.created_time for view in views]
-        latest_view = views[views_created_time.index(max(views_created_time))]
-        return latest_view
+        return self()
 
     def _get_latest_views(self, views: ViewList) -> ViewList:
-        space_view_set = {(view.space, view.external_id) for view in views}
-        result_views = []
-        for item in space_view_set:
-            space = item[0]
-            view_external_id = item[1]
-            view_list = [view for view in views if view.space == space and view.external_id == view_external_id]
-            result_views.append(self._get_latest_version_in_view(ViewList(view_list)))
-
-        return ViewList(result_views)
+        views_by_space_and_xid = defaultdict(list)
+        for view in views:
+            views_by_space_and_xid[(view.space, view.external_id)].append(view)
+        return ViewList([max(views, key=lambda view: view.created_time) for views in views_by_space_and_xid.values()])
 
     def retrieve(
         self,
