@@ -296,13 +296,15 @@ class InstancesAPI(APIClient):
         nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None,
         edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None,
     ) -> DataModelingIdentifierSequence:
+        nodes_seq: Sequence[NodeId | tuple[str, str]]
         if isinstance(nodes, NodeId) or (isinstance(nodes, tuple) and isinstance(nodes[0], str)):
-            nodes_seq: Sequence[NodeId | tuple[str, str]] = [nodes]  # type: ignore[list-item]
+            nodes_seq = [nodes]  # type: ignore[list-item]
         else:
             nodes_seq = nodes  # type: ignore[assignment]
 
+        edges_seq: Sequence[EdgeId | tuple[str, str]]
         if isinstance(edges, EdgeId) or (isinstance(edges, tuple) and isinstance(edges[0], str)):
-            edges_seq: Sequence[EdgeId | tuple[str, str]] = [edges]  # type: ignore[list-item]
+            edges_seq = [edges]  # type: ignore[list-item]
         else:
             edges_seq = edges  # type: ignore[assignment]
 
@@ -336,7 +338,7 @@ class InstancesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> c.data_modeling.instances.delete(nodes=("myNode", "mySpace"))
+                >>> c.data_modeling.instances.delete(nodes=("mySpace", "myNode"))
 
             Delete nodes and edges using the built in data class
 
@@ -344,6 +346,15 @@ class InstancesAPI(APIClient):
                 >>> from cognite.client.data_classes.data_modeling import NodeId, EdgeId
                 >>> c = CogniteClient()
                 >>> c.data_modeling.instances.delete(NodeId('mySpace', 'myNode'), EdgeId('mySpace', 'myEdge'))
+
+            Delete all nodes from a NodeList
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId, EdgeId
+                >>> c = CogniteClient()
+                >>> my_view = c.data_modeling.views.retrieve('mySpace', 'myView')
+                >>> my_nodes = c.data_modeling.instances.list(instance_type='node', sources=my_view, limit=None)
+                >>> c.data_modeling.instances.delete(nodes=my_nodes.as_ids())
         """
         identifiers = self._load_node_and_edge_ids(nodes, edges)
         deleted_instances = cast(List, self._delete_multiple(identifiers, wrap_ids=True, returns_items=True))

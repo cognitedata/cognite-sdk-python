@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from typing import Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
@@ -82,18 +83,26 @@ class ViewsAPI(APIClient):
         Yields:
             View: yields Views one by one.
         """
-        return cast(Iterator[View], self())
+        return self()
+
+    def _get_latest_views(self, views: ViewList) -> ViewList:
+        views_by_space_and_xid = defaultdict(list)
+        for view in views:
+            views_by_space_and_xid[(view.space, view.external_id)].append(view)
+        return ViewList([max(views, key=lambda view: view.created_time) for views in views_by_space_and_xid.values()])
 
     def retrieve(
         self,
         ids: ViewIdentifier | Sequence[ViewIdentifier],
         include_inherited_properties: bool = True,
+        all_versions: bool = True,
     ) -> ViewList:
         """`Retrieve a single view by id. <https://developer.cognite.com/api#tag/Views/operation/byExternalIdsViews>`_
 
         Args:
-            ids (ViewId | Sequence[ViewId]): View dentifier(s)
+            ids (ViewId | Sequence[ViewId]): View identifier(s)
             include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
+            all_versions (bool): Whether to return all versions. If false, only the newest version is returned,
 
         Returns:
             Optional[View]: Requested view or None if it does not exist.
@@ -106,12 +115,16 @@ class ViewsAPI(APIClient):
 
         """
         identifier = _load_identifier(ids, "view")
-        return self._retrieve_multiple(
+        views = self._retrieve_multiple(
             list_cls=ViewList,
             resource_cls=View,
             identifiers=identifier,
             params={"includeInheritedProperties": include_inherited_properties},
         )
+        if all_versions is True:
+            return views
+        else:
+            return self._get_latest_views(views)
 
     def delete(self, ids: ViewIdentifier | Sequence[ViewIdentifier]) -> list[ViewId]:
         """`Delete one or more views <https://developer.cognite.com/api#tag/Views/operation/deleteViews>`_
