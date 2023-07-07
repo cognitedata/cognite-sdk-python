@@ -100,7 +100,51 @@ class Annotation(CogniteResource):
         return result
 
 
-class AnnotationFilter(CogniteFilter):
+class AnnotationReverseLookupFilter(CogniteFilter):
+    """Filter on annotations with various criteria
+
+    Args:
+       annotated_resource_type (str): The type of the CDF resource that is annotated, e.g. "file".
+       status (str, optional): Status of annotations to filter for, e.g. "suggested", "approved", "rejected".
+       creating_user (str, optional): Name of the user who created the annotations to filter for. Can be set explicitly to "None" to filter for annotations created by a service.
+       creating_app (str, optional): Name of the app from which the annotations to filter for where created.
+       creating_app_version (str, optional): Version of the app from which the annotations to filter for were created.
+       annotation_type(str, optional): Type name of the annotations.
+       data(Dict[str, Any], optional): The annotation data to filter by. Example format: {"label": "cat", "confidence": 0.9}
+    """
+
+    def __init__(
+        self,
+        annotated_resource_type: str,
+        status: Optional[str] = None,
+        creating_user: Optional[str] = "",  # None means filtering for a service
+        creating_app: Optional[str] = None,
+        creating_app_version: Optional[str] = None,
+        annotation_type: Optional[str] = None,
+        data: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        self.annotated_resource_type = annotated_resource_type
+        self.status = status
+        self.creating_user = creating_user
+        self.creating_app = creating_app
+        self.creating_app_version = creating_app_version
+        self.annotation_type = annotation_type
+        self.data = data
+
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        result = super().dump(camel_case=camel_case)
+        # Special handling for creating_user, which has a valid None value
+        key = "creatingUser" if camel_case else "creating_user"
+        # Remove creating_user if it is an empty string
+        if self.creating_user == "":
+            del result[key]
+        # dump creating_user if it is None
+        elif self.creating_user is None:
+            result[key] = None
+        return result
+
+
+class AnnotationFilter(AnnotationReverseLookupFilter):
     """Filter on annotations with various criteria
 
     Args:
@@ -125,26 +169,17 @@ class AnnotationFilter(CogniteFilter):
         annotation_type: Optional[str] = None,
         data: Optional[Dict[str, Any]] = None,
     ) -> None:
-        self.annotated_resource_type = annotated_resource_type
-        self.annotated_resource_ids = annotated_resource_ids
-        self.status = status
-        self.creating_user = creating_user
-        self.creating_app = creating_app
-        self.creating_app_version = creating_app_version
-        self.annotation_type = annotation_type
-        self.data = data
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        result = super().dump(camel_case=camel_case)
-        # Special handling for creating_user, which has a valid None value
-        key = "creatingUser" if camel_case else "creating_user"
-        # Remove creating_user if it is an empty string
-        if self.creating_user == "":
-            del result[key]
-        # dump creating_user if it is None
-        elif self.creating_user is None:
-            result[key] = None
-        return result
+        self.annotated_resource_ids = annotated_resource_ids
+        super().__init__(
+            annotated_resource_type=annotated_resource_type,
+            status=status,
+            creating_user=creating_user,
+            creating_app=creating_app,
+            creating_app_version=creating_app_version,
+            annotation_type=annotation_type,
+            data=data,
+        )
 
 
 class AnnotationUpdate(CogniteUpdate):

@@ -844,3 +844,16 @@ class VisionExtractJob(VisionJob):
         raise CogniteException(
             "Extract job is not completed. If the job is queued or running, wait for completion and try again"
         )
+
+
+class ResourceReference(CogniteResource):
+    def __init__(
+        self, id: int | None = None, external_id: str | None = None, cognite_client: None | CogniteClient = None
+    ):
+        self.id = id
+        self.external_id = external_id
+        self._cognite_client: CogniteClient = cast("CogniteClient", None)  # Read only
+
+
+class ResourceReferenceList(CogniteResourceList[ResourceReference]):
+    _RESOURCE = ResourceReference
