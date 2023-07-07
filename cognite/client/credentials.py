@@ -298,7 +298,7 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         return credentials["access_token"], time.time() + credentials["expires_in"]
 
     @classmethod
-    def default_azure_project(
+    def default_for_azure_ad(
         cls,
         tenant_id: str,
         client_id: str,
@@ -437,7 +437,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
             ) from oauth_err
 
     @classmethod
-    def default_azure_project(
+    def default_for_azure_ad(
         cls,
         tenant_id: str,
         client_id: str,

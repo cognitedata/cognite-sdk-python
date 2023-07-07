@@ -174,7 +174,7 @@ class CogniteClient:
             A CogniteClient instance with default configurations.
         """
 
-        credentials = OAuthClientCredentials.default_azure_project(tenant_id, client_id, client_secret, cdf_cluster)
+        credentials = OAuthClientCredentials.default_for_azure_ad(tenant_id, client_id, client_secret, cdf_cluster)
 
         return cls.default(project, cdf_cluster, credentials, client_name)
 
@@ -208,5 +208,5 @@ class CogniteClient:
         Returns:
             A CogniteClient instance with default configurations.
         """
-        credentials = OAuthInteractive.default_azure_project(tenant_id, client_id, cdf_cluster)
+        credentials = OAuthInteractive.default_for_azure_ad(tenant_id, client_id, cdf_cluster)
         return cls.default(project, cdf_cluster, credentials, client_name)
