@@ -18,7 +18,7 @@ from cognite.client._api import (
     three_d,
     time_series,
 )
-from cognite.client._api.data_modeling import containers, data_models, instances, spaces, views
+from cognite.client._api.data_modeling import containers, data_models, graphql, instances, spaces, views
 from cognite.client.testing import CogniteClientMock
 
 # this fixes the issue with 'got MagicMock but expected Nothing in docstrings'
@@ -80,3 +80,4 @@ class TestDocstringExamples:
         run_docstring_tests(instances)
         run_docstring_tests(data_models)
         run_docstring_tests(spaces)
+        run_docstring_tests(graphql)

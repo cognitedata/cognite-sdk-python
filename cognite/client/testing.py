@@ -10,6 +10,7 @@ from cognite.client._api.assets import AssetsAPI
 from cognite.client._api.data_modeling import DataModelingAPI
 from cognite.client._api.data_modeling.containers import ContainersAPI
 from cognite.client._api.data_modeling.data_models import DataModelsAPI
+from cognite.client._api.data_modeling.graphql import DataModelingGraphQLAPI
 from cognite.client._api.data_modeling.instances import InstancesAPI
 from cognite.client._api.data_modeling.spaces import SpacesAPI
 from cognite.client._api.data_modeling.views import ViewsAPI
@@ -83,6 +84,7 @@ class CogniteClientMock(MagicMock):
         self.data_modeling.spaces = MagicMock(spec_set=SpacesAPI)
         self.data_modeling.views = MagicMock(spec_set=ViewsAPI)
         self.data_modeling.instances = MagicMock(spec_set=InstancesAPI)
+        self.data_modeling.graphql = MagicMock(spec_set=DataModelingGraphQLAPI)
 
         self.data_sets = MagicMock(spec_set=DataSetsAPI)
 

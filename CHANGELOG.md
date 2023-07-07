@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.7.0] - 2023-07-07
+### Added
+- Support for applying graphql dml using `client.data_modeling.graphql.apply_dml()`.
+
 ## [6.6.1] - 2023-07-07
 ### Improved
 - Added convenience function to instantiate a `CogniteClient.default(...)` to save the users from typing the 

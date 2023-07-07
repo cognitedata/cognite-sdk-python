@@ -154,3 +154,9 @@ Data Modeling ID data classes
 .. automodule:: cognite.client.data_classes.data_modeling.ids
     :members:
     :show-inheritance:
+
+GraphQL
+-------
+Apply DML
+^^^^^^^^^
+.. automethod:: cognite.client._api.data_modeling.graphql.DataModelingGraphQLAPI.apply_dml
