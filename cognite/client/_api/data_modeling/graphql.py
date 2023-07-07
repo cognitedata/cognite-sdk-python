@@ -4,6 +4,7 @@ from typing import Any, Optional
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.data_modeling import DataModelIdentifier
+from cognite.client.data_classes.data_modeling.graphql import DMLApplyResult
 from cognite.client.data_classes.data_modeling.ids import DataModelId
 from cognite.client.exceptions import CogniteGraphQLError, GraphQLErrorSpec
 
@@ -23,7 +24,7 @@ class DataModelingGraphQLAPI(APIClient):
         name: Optional[str] = None,
         description: Optional[str] = None,
         previous_version: Optional[str] = None,
-    ) -> DataModelId:
+    ) -> DMLApplyResult:
         """Apply the DML for a given data model.
 
         Args:
@@ -35,7 +36,7 @@ class DataModelingGraphQLAPI(APIClient):
             description (Optional[str]): The description of the data model.
 
         Returns:
-            DataModelId: The id of the updated data model.
+            DMLApplyResult: The id of the updated data model.
 
         Examples:
 
@@ -66,9 +67,13 @@ class DataModelingGraphQLAPI(APIClient):
                         space
                         externalId
                         version
+                        name
+                        description
+                        createdTime
+                        lastUpdatedTime
                     }}
                 }}
             }}
         """
         res = self._post_graphql(url_path="/dml/graphql", query=graphql_body)
-        return DataModelId.load(res["upsertGraphQlDmlVersion"]["result"])
+        return DMLApplyResult.load(res["upsertGraphQlDmlVersion"]["result"])

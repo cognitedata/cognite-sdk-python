@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import reprlib
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Sequence
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence
 
 if TYPE_CHECKING:
     from cognite.client.data_classes import AssetHierarchy
@@ -16,16 +16,16 @@ class CogniteException(Exception):
 @dataclass
 class GraphQLErrorSpec:
     message: str
-    locations: list[dict[str, int]]
+    locations: Optional[list[dict[str, int]]]
 
     def __repr__(self) -> str:
         return f"GraphQLErrorSpec(message={self.message}, locations={self.locations}"
 
     @classmethod
-    def load(cls, json_dict: Dict[str, Any]) -> GraphQLErrorSpec:
+    def load(cls, data: Dict[str, Any]) -> GraphQLErrorSpec:
         return cls(
-            message=json_dict["message"],
-            locations=json_dict["locations"],
+            message=data["message"],
+            locations=data.get("locations"),
         )
 
 
