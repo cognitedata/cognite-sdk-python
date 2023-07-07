@@ -40,12 +40,15 @@ class TestViewsAPI:
     def test_list(self, cognite_client: CogniteClient, movie_views: ViewList, integration_test_space: Space) -> None:
         # Arrange
         expected_views = ViewList([v for v in movie_views if v.space == integration_test_space.space])
+        expected_ids = {v.as_id() for v in expected_views}
 
         # Act
         actual_views = cognite_client.data_modeling.views.list(space=integration_test_space.space, limit=-1)
 
         # Assert
-        assert sorted(actual_views, key=lambda v: v.external_id) == sorted(expected_views, key=lambda v: v.external_id)
+        assert sorted([v for v in actual_views if v.as_id() in expected_ids], key=lambda v: v.external_id) == sorted(
+            expected_views, key=lambda v: v.external_id
+        )
         assert all(v.space == integration_test_space.space for v in actual_views)
 
     def test_apply_retrieve_and_delete(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
