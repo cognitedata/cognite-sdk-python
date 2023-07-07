@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import reprlib
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Sequence
 
 if TYPE_CHECKING:
@@ -10,6 +11,27 @@ if TYPE_CHECKING:
 
 class CogniteException(Exception):
     pass
+
+
+@dataclass
+class GraphQLErrorSpec:
+    message: str
+    locations: list[dict[str, int]]
+
+    def __repr__(self) -> str:
+        return f"GraphQLErrorSpec(message={self.message}, locations={self.locations}"
+
+    @classmethod
+    def load(cls, json_dict: Dict[str, Any]) -> GraphQLErrorSpec:
+        return cls(
+            message=json_dict["message"],
+            locations=json_dict["locations"],
+        )
+
+
+class CogniteGraphQLError(CogniteException):
+    def __init__(self, errors: list[GraphQLErrorSpec]):
+        self.errors = errors
 
 
 class CogniteConnectionError(CogniteException):
