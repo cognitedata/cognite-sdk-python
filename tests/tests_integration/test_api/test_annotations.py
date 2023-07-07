@@ -74,7 +74,7 @@ def file_id(cognite_client: CogniteClient) -> int:
     cognite_client.files.delete(id=file.id)
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def permanent_file_id(cognite_client: CogniteClient) -> int:
     # Create a test file
     external_id = "annotation_unit_test_file_permanent"
@@ -113,7 +113,7 @@ def base_suggest_annotation(base_annotation: Annotation) -> Annotation:
     return ann
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def asset_link_annotation(permanent_file_id: int, cognite_client: CogniteClient) -> Annotation:
     annotation = Annotation(
         annotation_type="diagrams.AssetLink",
