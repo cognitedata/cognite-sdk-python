@@ -329,7 +329,7 @@ class TestAssetsAPICreateHierarchy:
         hierarchy_fails = AssetHierarchy(assets, ignore_orphans=False)
         hierarchy_succeeds = AssetHierarchy(assets, ignore_orphans=True)
 
-        with pytest.raises(CogniteAssetHierarchyError, match=r"^Asset hierarchy is not valid. Issue\(s\): 4 orphans$"):
+        with pytest.raises(CogniteAssetHierarchyError, match=r"^Asset hierarchy is not valid. Issue\(s\): 2 orphans$"):
             cognite_client.assets.create_hierarchy(hierarchy_fails, upsert=False)
 
         with create_hierarchy_with_cleanup(cognite_client, hierarchy_succeeds) as created:

@@ -1,6 +1,7 @@
 import io
 import itertools
 import random
+import string
 import textwrap
 import time
 from contextlib import redirect_stdout
@@ -255,6 +256,22 @@ class TestAssetHierarchy:
         assert len(ahv.orphans) == 1
         with pytest.raises(exc_type, match=r"Issue\(s\): 1 orphans$"):
             ahv.is_valid(on_error="raise")
+
+    @pytest.mark.parametrize("n", [1, 2, 3, 10])
+    def test_validate_asset_hierarchy__orphans_given_ignore_false__all_parent_external_id(self, n):
+        assets = [Asset(name=c, external_id=c, parent_external_id="foo") for c in string.ascii_letters[:n]]
+        ahv = AssetHierarchy(assets, ignore_orphans=False).validate(on_error="ignore")
+        assert len(assets) == len(ahv.orphans) == n
+        with pytest.raises(CogniteAssetHierarchyError, match=rf"Issue\(s\): {n} orphans$"):
+            ahv.is_valid(on_error="raise")
+
+    @pytest.mark.parametrize("n", [0, 1, 2, 3, 10])
+    def test_validate_asset_hierarchy__orphans_given_ignore_false__all_parent_id(self, n):
+        assets = [Asset(name=c, external_id=c, parent_id=ord(c)) for c in string.ascii_letters[:n]]
+        ahv = AssetHierarchy(assets, ignore_orphans=False).validate(on_error="ignore")
+        # Parent ID links are never considered orphans (offline validation impossible as ID cant be set):
+        assert len(ahv.orphans) == 0
+        ahv.is_valid(on_error="raise")
 
     def test_validate_asset_hierarchy__orphans_given_ignore_true(self):
         assets = [
