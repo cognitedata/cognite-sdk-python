@@ -17,11 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [6.8.1] - 2023-07-07
-### Fixed
-- A bug in the class `AssetHierarchy` that could cause assets linking a parent (solely) by ID to fail the hierarchy
-  validation as they were misclassified as "orphan assets" when the class was instantiated with `ignore_orphans=False`
-  (this setting is `True` by default when using `AssetsAPI.create_hierarchy`, so only offline usage was affected).
+## [6.8.1] - 2023-07-08
+### Changed
+- The `AssetHierarchy` class would consider assets linking its parent only by ID as orphans, contradicting the
+  docstring stating "All assets linking a parent by ID are assumed valid". This is no longer the case.
 
 ## [6.8.0] - 2023-07-07
 ### Added

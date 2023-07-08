@@ -233,6 +233,7 @@ class TestAssetsAPI:
 
 def generate_orphan_assets(n_id, n_xid, sample_from):
     # Orphans only: We link all assets to an existing asset (some by ID, others by XID):
+    # Note however that orphans linking with parent ID are ignored!
     s = random_string(20)
     id_assets = [
         Asset(name="a", external_id=f"child-by-id-{i}-{s}", parent_id=parent.id)
