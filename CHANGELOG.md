@@ -19,8 +19,9 @@ Changes are grouped as follows
 
 ## [6.8.1] - 2023-07-08
 ### Changed
-- The `AssetHierarchy` class would consider assets linking its parent only by ID as orphans, contradicting the
-  docstring stating "All assets linking a parent by ID are assumed valid". This is no longer the case.
+- The `AssetHierarchy` class would consider assets linking their parent by ID only as orphans, contradicting the
+  docstring stating "All assets linking a parent by ID are assumed valid". This is now true (they are no longer
+  considered orphans).
 
 ## [6.8.0] - 2023-07-07
 ### Added
