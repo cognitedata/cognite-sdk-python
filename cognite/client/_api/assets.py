@@ -474,10 +474,9 @@ class AssetsAPI(APIClient):
             3. Any assets have an ambiguous parent link (category: ``unsure_parents``)
             4. Any group of assets form a cycle, e.g. A->B->A (category: ``cycles``)
 
-        It is worth noting that validation is done "offline", i.e. existing assets in CDF are not inspected. This means:
-
-            1. All assets linking a parent by ID are assumed valid
-            2. All orphan assets are assumed valid. "Orphan" means the parent is not part of the given assets (category: ``orphans``)
+        As part of validation there is a fifth category that is ignored when using this method (for backwards compatability) and that
+        is orphan assets. These are assets linking a parent by an identifier that is not present among the given assets, and as such,
+        might contain links we are unable to vet ahead of insertion. These are thus assumed to be valid, but may fail.
 
         Tip:
             The different categories specified above corresponds to the name of the attribute you might access on the raised error to

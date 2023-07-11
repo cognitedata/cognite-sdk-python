@@ -17,6 +17,12 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.8.1] - 2023-07-08
+### Changed
+- The `AssetHierarchy` class would consider assets linking their parent by ID only as orphans, contradicting the
+  docstring stating "All assets linking a parent by ID are assumed valid". This is now true (they are no longer
+  considered orphans).
+
 ## [6.8.0] - 2023-07-07
 ### Added
 - Support for annotations reverse lookup.
@@ -35,12 +41,12 @@ Changes are grouped as follows
 
 ## [6.6.1] - 2023-07-07
 ### Improved
-- Added convenience function to instantiate a `CogniteClient.default(...)` to save the users from typing the 
+- Added convenience function to instantiate a `CogniteClient.default(...)` to save the users from typing the
   default URLs.
 
 ## [6.6.0] - 2023-07-06
 ### Fixed
-- Support for query and sync endpoints across instances in the Data Modeling API with the implementation 
+- Support for query and sync endpoints across instances in the Data Modeling API with the implementation
   `client.data_modeling.instances`, the methods `query` and `sync`.
 
 ## [6.5.8] - 2023-06-30
@@ -50,12 +56,12 @@ Changes are grouped as follows
 
 ## [6.5.7] - 2023-06-29
 ### Fixed
-- A bug caused by use of snake case in field types causing `NodeApply.dump(camel_case=True)` 
-  trigger a 400 response from the API. 
+- A bug caused by use of snake case in field types causing `NodeApply.dump(camel_case=True)`
+  trigger a 400 response from the API.
 
 ## [6.5.6] - 2023-06-29
 ### Fixed
-- A bug causing `ClientConfig(debug=True)` to raise an AttributeError 
+- A bug causing `ClientConfig(debug=True)` to raise an AttributeError
 
 ## [6.5.5] - 2023-06-28
 ### Fixed
@@ -64,7 +70,7 @@ Changes are grouped as follows
 
 ## [6.5.4] - 2023-06-28
 ### Added
-- Missing query parameters: 
+- Missing query parameters:
      * `inline_views` in `data_modeling.data_models.retrieve()`.
      * `include_global` in `data_modeling.spaces.list()`.
      * `include_inherited_properties` in `data_modeling.views.retrieve()`.
@@ -85,12 +91,12 @@ Changes are grouped as follows
 
 ## [6.5.0] - 2023-06-27
 ### Added
-- Support for searching and aggregating across instances in the Data Modeling API with the implementation 
+- Support for searching and aggregating across instances in the Data Modeling API with the implementation
   `client.data_modeling.instances`, the methods `search`, `histogram` and `aggregate`.
 
 ## [6.4.8] - 2023-06-23
 ### Fixed
-- Handling non 200 responses in `data_modeling.spaces.apply`, `data_modeling.data_models.apply`, 
+- Handling non 200 responses in `data_modeling.spaces.apply`, `data_modeling.data_models.apply`,
   `data_modeling.views.apply` and `data_modeling.containers.apply`
 
 ## [6.4.7] - 2023-06-22
@@ -132,7 +138,7 @@ but we accept the cost of breaking a few consumers now early on the really nail 
 
 ## [6.4.2] - 2023-06-15
 ### Changed
-- When providing ids as tuples in `instances.retrieve` and `instances.delete` you should not 
+- When providing ids as tuples in `instances.retrieve` and `instances.delete` you should not
 have to specify the instance type in each tuple
 
 ### Fixed
@@ -144,7 +150,7 @@ have to specify the instance type in each tuple
 
 ## [6.4.0] - 2023-06-12
 ### Added
-- Partial support for the instance resource in the Data Modeling API with the implementation 
+- Partial support for the instance resource in the Data Modeling API with the implementation
   `client.data_modeling.instances`, the endpoints `list`, `delete`, `retrieve`, and `apply`
 
 ## [6.3.2] - 2023-06-08

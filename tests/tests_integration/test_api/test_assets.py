@@ -233,6 +233,7 @@ class TestAssetsAPI:
 
 def generate_orphan_assets(n_id, n_xid, sample_from):
     # Orphans only: We link all assets to an existing asset (some by ID, others by XID):
+    # Note however that orphans linking with parent ID are ignored!
     s = random_string(20)
     id_assets = [
         Asset(name="a", external_id=f"child-by-id-{i}-{s}", parent_id=parent.id)
@@ -329,7 +330,7 @@ class TestAssetsAPICreateHierarchy:
         hierarchy_fails = AssetHierarchy(assets, ignore_orphans=False)
         hierarchy_succeeds = AssetHierarchy(assets, ignore_orphans=True)
 
-        with pytest.raises(CogniteAssetHierarchyError, match=r"^Asset hierarchy is not valid. Issue\(s\): 4 orphans$"):
+        with pytest.raises(CogniteAssetHierarchyError, match=r"^Asset hierarchy is not valid. Issue\(s\): 2 orphans$"):
             cognite_client.assets.create_hierarchy(hierarchy_fails, upsert=False)
 
         with create_hierarchy_with_cleanup(cognite_client, hierarchy_succeeds) as created:
