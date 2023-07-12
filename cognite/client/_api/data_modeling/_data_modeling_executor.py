@@ -6,6 +6,7 @@ _THREAD_POOL_EXECUTOR_SINGLETON: ThreadPoolExecutor
 _MAIN_THREAD_EXECUTOR_SINGLETON = MainThreadExecutor()
 _MAX_WORKERS = 2
 
+
 def get_data_modeling_executor() -> TaskExecutor:
     """
     The data modeling backend has different concurrency limits in the backend compared to the rest of CDF.
