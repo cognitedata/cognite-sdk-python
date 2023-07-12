@@ -50,7 +50,18 @@ class DatapointsSubscriptionAPI(APIClient):
         )
 
     def delete(self, external_id: str | Sequence[str], ignore_unknown_ids: bool = False) -> None:
-        ...
+        """`Delete subscription(s). This operation cannot be undone. <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/deleteSubscriptions>`_
+
+        Args:
+            external_id (str | Sequence[str]): External ID or list of external IDs of subscriptions to delete.
+            ignore_unknown_ids (bool): Whether to ignore IDs and external IDs that are not found rather than throw an exception.
+
+        """
+        self._delete_multiple(
+            identifiers=IdentifierSequence.load(external_ids=external_id),
+            extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
+            wrap_ids=True,
+        )
 
     @overload
     def retrieve(
@@ -76,11 +87,10 @@ class DatapointsSubscriptionAPI(APIClient):
         Returns:
             The requested subscriptions.
         """
-        identifiers = IdentifierSequence.load(external_ids=external_id)
         return self._retrieve_multiple(
             list_cls=DatapointSubscriptionList,
             resource_cls=DatapointSubscription,
-            identifiers=identifiers,
+            identifiers=IdentifierSequence.load(external_ids=external_id),
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
