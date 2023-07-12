@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Sequence
+from typing import TYPE_CHECKING, Optional, Sequence, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DATAPOINT_SUBSCRIPTIONS_LIST_LIMIT_DEFAULT
 from cognite.client.data_classes.datapoints_subscriptions import (
     DatapointSubscription,
-    DatapointSubscriptionCreate,
+    DataPointSubscriptionCreate,
     DatapointSubscriptionList,
     DataPointSubscriptionUpdate,
 )
@@ -22,10 +22,31 @@ class DatapointsSubscriptionAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._api_subversion = "beta"
 
-    def create(
-        self, subscription: DatapointSubscriptionCreate | Sequence[DatapointSubscriptionCreate]
-    ) -> DatapointSubscription | DatapointSubscriptionList:
+    @overload
+    def create(self, subscription: DataPointSubscriptionCreate) -> DatapointSubscription:
         ...
+
+    @overload
+    def create(self, subscription: Sequence[DataPointSubscriptionCreate]) -> DatapointSubscriptionList:
+        ...
+
+    def create(
+        self, subscription: DataPointSubscriptionCreate | Sequence[DataPointSubscriptionCreate]
+    ) -> DatapointSubscription | DatapointSubscriptionList:
+        """`Create one or more subscriptions <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/postSubscriptions>`_
+
+        Create one or more subscriptions that can be used to listen for changes in data points for a set of time series.
+
+        Args:
+            subscription: Subscription or list of subscriptions to create.
+
+        Returns:
+            Created subscription(s)
+        """
+
+        return self._create_multiple(
+            subscription, list_cls=DatapointSubscriptionList, resource_cls=DatapointSubscription
+        )
 
     def delete(self, external_id: str | Sequence[str], ignore_unknown_ids: bool = False) -> None:
         ...
