@@ -299,8 +299,8 @@ class InstanceApplyResult(InstanceCore):
         external_id: str,
         version: str,
         was_modified: bool,
-        last_updated_time: int = None,
-        created_time: int = None,
+        last_updated_time: int,
+        created_time: int,
         **_: dict,
     ):
         super().__init__(space, external_id, instance_type)
@@ -471,8 +471,8 @@ class NodeApplyResult(InstanceApplyResult):
         external_id: str,
         version: str,
         was_modified: bool,
-        last_updated_time: int = None,
-        created_time: int = None,
+        last_updated_time: int,
+        created_time: int,
         **_: dict,
     ):
         super().__init__(
@@ -660,8 +660,8 @@ class EdgeApplyResult(InstanceApplyResult):
         external_id: str,
         version: str,
         was_modified: bool,
-        last_updated_time: int = None,
-        created_time: int = None,
+        last_updated_time: int,
+        created_time: int,
         **_: dict,
     ):
         super().__init__(
