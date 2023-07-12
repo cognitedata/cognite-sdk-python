@@ -1,9 +1,14 @@
 from __future__ import annotations
 
-from typing import Sequence
+import json
+from typing import TYPE_CHECKING, Sequence, Type
 
-from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
+from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, T_CogniteResource
 from cognite.client.utils._auxiliary import exactly_one_is_not_none
+from cognite.client.utils._text import convert_all_keys_to_snake_case
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 ExternalId = str
 
@@ -23,6 +28,14 @@ class DatapointSubscriptionCore(CogniteResource):
         self.name = name
         self.description = description
         self.time_series_ids = time_series_ids
+
+    @classmethod
+    def _load(
+        cls: Type[T_CogniteResource], resource: dict | str, cognite_client: CogniteClient = None
+    ) -> T_CogniteResource:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        resource = convert_all_keys_to_snake_case(resource)
+        return cls(**resource)
 
 
 class DatapointSubscription(DatapointSubscriptionCore):

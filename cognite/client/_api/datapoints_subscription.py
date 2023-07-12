@@ -23,17 +23,7 @@ class DatapointsSubscriptionAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._api_subversion = "beta"
 
-    @overload
     def create(self, subscription: DataPointSubscriptionCreate) -> DatapointSubscription:
-        ...
-
-    @overload
-    def create(self, subscription: Sequence[DataPointSubscriptionCreate]) -> DatapointSubscriptionList:
-        ...
-
-    def create(
-        self, subscription: DataPointSubscriptionCreate | Sequence[DataPointSubscriptionCreate]
-    ) -> DatapointSubscription | DatapointSubscriptionList:
         """`Create one or more subscriptions <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/postSubscriptions>`_
 
         Create one or more subscriptions that can be used to listen for changes in data points for a set of time series.
@@ -46,7 +36,10 @@ class DatapointsSubscriptionAPI(APIClient):
         """
 
         return self._create_multiple(
-            subscription, list_cls=DatapointSubscriptionList, resource_cls=DatapointSubscription
+            subscription,
+            list_cls=DatapointSubscriptionList,
+            resource_cls=DatapointSubscription,
+            input_resource_cls=DataPointSubscriptionCreate,
         )
 
     def delete(self, external_id: str | Sequence[str], ignore_unknown_ids: bool = False) -> None:

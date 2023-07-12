@@ -37,6 +37,11 @@ from cognite.client.data_classes.datapoints import (
     DatapointsList,
     LatestDatapointQuery,
 )
+from cognite.client.data_classes.datapoints_subscriptions import (
+    DatapointSubscription,
+    DataPointSubscriptionCreate,
+    DatapointSubscriptionList,
+)
 from cognite.client.data_classes.events import EndTimeFilter, Event, EventFilter, EventList, EventUpdate
 from cognite.client.data_classes.extractionpipelines import (
     ExtractionPipeline,
@@ -292,6 +297,9 @@ __all__ = [
     "TimeSeriesFilter",
     "TimeSeriesList",
     "TimeSeriesUpdate",
+    "DatapointSubscription",
+    "DataPointSubscriptionCreate",
+    "DatapointSubscriptionList",
     "OidcCredentials",
     "RawTable",
     "Transformation",
