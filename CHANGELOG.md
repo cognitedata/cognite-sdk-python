@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.8.2] - 2023-07-12
+### Fixed
+- The `.dump()` method for `InstanceAggregationResult` caused an `AttributeError` when called.
+
 ## [6.8.1] - 2023-07-08
 ### Changed
 - The `AssetHierarchy` class would consider assets linking their parent by ID only as orphans, contradicting the

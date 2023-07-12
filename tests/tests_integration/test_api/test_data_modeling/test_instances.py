@@ -23,6 +23,7 @@ from cognite.client.data_classes.data_modeling import (
     SingleHopConnectionDefinition,
     Space,
     View,
+    ViewId,
     aggregations,
     filters,
     query,
@@ -420,6 +421,41 @@ class TestInstancesAPI:
 
         # Assert
         assert len(counts)
+
+    def test_aggregate_count_persons(self, cognite_client: CogniteClient, person_view: View) -> None:
+        # Arrange
+        view_id = person_view.as_id()
+        count_agg = aggregations.Count("externalId")
+
+        # Act
+        counts = cognite_client.data_modeling.instances.aggregate(
+            view_id,
+            aggregates=count_agg,
+            instance_type="node",
+            limit=10,
+        )
+
+        # Assert
+        assert len(counts) == 1
+        assert counts[0].aggregates[0].value > 0, "Add at least one person to the view to run this test"
+
+    def test_aggregate_invalid_view_id(self, cognite_client: CogniteClient) -> None:
+        # Arrange
+        view_id = ViewId("myNonExistingSpace", "myNonExistingView", "myNonExistingVersion")
+        count_agg = aggregations.Count("externalId")
+
+        # Act
+        with pytest.raises(CogniteAPIError) as error:
+            cognite_client.data_modeling.instances.aggregate(
+                view_id,
+                aggregates=count_agg,
+                instance_type="node",
+                limit=10,
+            )
+
+        # Assert
+        assert error.value.code == 400
+        assert "View not found" in error.value.message
 
     def test_dump_json_serialize_load_node(self, cdf_nodes: NodeList) -> None:
         # Arrange
