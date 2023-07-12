@@ -286,6 +286,7 @@ class InstancesAPI(APIClient):
             resource_cls=_NodeOrEdgeResourceAdapter,  # type: ignore[type-var]
             identifiers=identifiers,
             other_params=other_params,
+            executor=get_data_modeling_executor(),
         )
 
         return InstancesResult(
@@ -359,7 +360,10 @@ class InstancesAPI(APIClient):
                 >>> c.data_modeling.instances.delete(nodes=my_nodes.as_ids())
         """
         identifiers = self._load_node_and_edge_ids(nodes, edges)
-        deleted_instances = cast(List, self._delete_multiple(identifiers, wrap_ids=True, returns_items=True))
+        deleted_instances = cast(
+            List,
+            self._delete_multiple(identifiers, wrap_ids=True, returns_items=True),
+        )
         node_ids = [NodeId.load(item) for item in deleted_instances if item["instanceType"] == "node"]
         edge_ids = [EdgeId.load(item) for item in deleted_instances if item["instanceType"] == "edge"]
         return InstancesDeleteResult(node_ids, edge_ids)
