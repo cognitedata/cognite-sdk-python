@@ -44,6 +44,8 @@ from cognite.client.data_classes.data_modeling.query import (
 from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
 
+from ._data_modeling_executor import get_data_modeling_executor
+
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
@@ -501,6 +503,7 @@ class InstancesAPI(APIClient):
             resource_cls=_NodeOrEdgeApplyResultAdapter,  # type: ignore[type-var]
             extra_body_fields=other_parameters,
             input_resource_cls=_NodeOrEdgeApplyAdapter,  # type: ignore[arg-type]
+            executor=get_data_modeling_executor(),
         )
         return InstancesApplyResult(
             nodes=NodeApplyResultList([item for item in res if isinstance(item, NodeApplyResult)]),
