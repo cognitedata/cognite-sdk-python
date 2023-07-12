@@ -343,19 +343,18 @@ class InstanceAggregationResult(DataModelingResource):
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         """
-        Dumps the instance to a dictionary.
+        Dumps the aggregation results to a dictionary.
 
         Args:
             camel_case (bool): Whether to convert the keys to camel case.
 
         Returns:
-            A dictionary.
+            A dictionary with the instance results.
 
         """
         return {
             "aggregates": [agg.dump(camel_case) for agg in self.aggregates],
             "group": self.group,
-            ("instanceType" if camel_case else "instance_type"): self.instance_type,
         }
 
 
