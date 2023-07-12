@@ -115,7 +115,12 @@ class SpacesAPI(APIClient):
         """
         deleted_spaces = cast(
             list,
-            self._delete_multiple(identifiers=_load_space_identifier(space), wrap_ids=True, returns_items=True),
+            self._delete_multiple(
+                identifiers=_load_space_identifier(space),
+                wrap_ids=True,
+                returns_items=True,
+                executor=get_data_modeling_executor(),
+            ),
         )
         return [item["space"] for item in deleted_spaces]
 

@@ -7,6 +7,13 @@ _MAIN_THREAD_EXECUTOR_SINGLETON = MainThreadExecutor()
 
 
 def get_data_modeling_executor() -> TaskExecutor:
+    """
+    The data modeling backend has different limits in the backend compared to the rest of CDF. Thus, we use a dedicated
+    executor for these endpoints to match the backend.
+
+    Returns:
+        The data modeling executor.
+    """
     global _THREAD_POOL_EXECUTOR_SINGLETON
 
     if ConcurrencySettings.executor_type == "threadpool":

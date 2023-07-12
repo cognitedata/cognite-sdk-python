@@ -150,6 +150,7 @@ class ViewsAPI(APIClient):
                 identifiers=_load_identifier(ids, "view"),
                 wrap_ids=True,
                 returns_items=True,
+                executor=get_data_modeling_executor(),
             ),
         )
         return [ViewId(item["space"], item["externalId"], item["version"]) for item in deleted_views]

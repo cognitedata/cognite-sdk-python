@@ -362,7 +362,9 @@ class InstancesAPI(APIClient):
         identifiers = self._load_node_and_edge_ids(nodes, edges)
         deleted_instances = cast(
             List,
-            self._delete_multiple(identifiers, wrap_ids=True, returns_items=True),
+            self._delete_multiple(
+                identifiers, wrap_ids=True, returns_items=True, executor=get_data_modeling_executor()
+            ),
         )
         node_ids = [NodeId.load(item) for item in deleted_instances if item["instanceType"] == "node"]
         edge_ids = [EdgeId.load(item) for item in deleted_instances if item["instanceType"] == "edge"]

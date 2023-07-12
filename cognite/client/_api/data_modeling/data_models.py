@@ -146,7 +146,12 @@ class DataModelsAPI(APIClient):
         """
         deleted_data_models = cast(
             list,
-            self._delete_multiple(identifiers=_load_identifier(ids, "data_model"), wrap_ids=True, returns_items=True),
+            self._delete_multiple(
+                identifiers=_load_identifier(ids, "data_model"),
+                wrap_ids=True,
+                returns_items=True,
+                executor=get_data_modeling_executor(),
+            ),
         )
         return [DataModelId(item["space"], item["externalId"], item["version"]) for item in deleted_data_models]
 
