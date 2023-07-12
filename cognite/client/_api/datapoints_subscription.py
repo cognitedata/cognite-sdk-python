@@ -10,6 +10,7 @@ from cognite.client.data_classes.datapoints_subscriptions import (
     DatapointSubscriptionList,
     DataPointSubscriptionUpdate,
 )
+from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
@@ -51,10 +52,37 @@ class DatapointsSubscriptionAPI(APIClient):
     def delete(self, external_id: str | Sequence[str], ignore_unknown_ids: bool = False) -> None:
         ...
 
+    @overload
+    def retrieve(
+        self, external_id: list[str] | tuple[str], ignore_unknown_ids: bool = False
+    ) -> DatapointSubscriptionList:
+        ...
+
+    @overload
     def retrieve(
         self, external_id: str | Sequence[str], ignore_unknown_ids: bool = False
     ) -> DatapointSubscription | DatapointSubscriptionList:
         ...
+
+    def retrieve(
+        self, external_id: str | list[str] | tuple[str] | Sequence[str], ignore_unknown_ids: bool = False
+    ) -> DatapointSubscription | DatapointSubscriptionList:
+        """`Retrieve one or more subscriptions by external ID. <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/getSubscriptionsByIds>`_
+
+        Args:
+            external_id (str | Sequence[str]): External ID or list of external IDs of subscriptions to retrieve.
+            ignore_unknown_ids (bool): Whether to ignore IDs and external IDs that are not found rather than throw an exception.
+
+        Returns:
+            The requested subscriptions.
+        """
+        identifiers = IdentifierSequence.load(external_ids=external_id)
+        return self._retrieve_multiple(
+            list_cls=DatapointSubscriptionList,
+            resource_cls=DatapointSubscription,
+            identifiers=identifiers,
+            ignore_unknown_ids=ignore_unknown_ids,
+        )
 
     def update(
         self, update: DataPointSubscriptionUpdate | Sequence[DataPointSubscriptionUpdate]
