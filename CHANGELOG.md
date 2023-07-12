@@ -18,8 +18,8 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 ## [6.8.2] - 2023-07-12
-### Changed
-- The `.dump()` method for `InstanceAggregationResult` caused an `AttributeError` when called. This is now fixed.
+### Fixed
+- The `.dump()` method for `InstanceAggregationResult` caused an `AttributeError` when called.
 
 ## [6.8.1] - 2023-07-08
 ### Changed
