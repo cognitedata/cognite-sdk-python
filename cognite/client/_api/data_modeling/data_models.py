@@ -13,6 +13,8 @@ from cognite.client.data_classes.data_modeling.data_models import (
 from cognite.client.data_classes.data_modeling.ids import DataModelId, DataModelIdentifier, ViewId, _load_identifier
 from cognite.client.data_classes.data_modeling.views import View
 
+from ._data_modeling_executor import get_data_modeling_executor
+
 
 class DataModelsAPI(APIClient):
     _RESOURCE_PATH = "/models/datamodels"
@@ -120,7 +122,11 @@ class DataModelsAPI(APIClient):
         """
         identifier = _load_identifier(ids, "data_model")
         return self._retrieve_multiple(
-            list_cls=DataModelList, resource_cls=DataModel, identifiers=identifier, params={"inlineViews": inline_views}
+            list_cls=DataModelList,
+            resource_cls=DataModel,
+            identifiers=identifier,
+            params={"inlineViews": inline_views},
+            executor=get_data_modeling_executor(),
         )
 
     def delete(self, ids: DataModelIdentifier | Sequence[DataModelIdentifier]) -> list[DataModelId]:
@@ -140,7 +146,12 @@ class DataModelsAPI(APIClient):
         """
         deleted_data_models = cast(
             list,
-            self._delete_multiple(identifiers=_load_identifier(ids, "data_model"), wrap_ids=True, returns_items=True),
+            self._delete_multiple(
+                identifiers=_load_identifier(ids, "data_model"),
+                wrap_ids=True,
+                returns_items=True,
+                executor=get_data_modeling_executor(),
+            ),
         )
         return [DataModelId(item["space"], item["externalId"], item["version"]) for item in deleted_data_models]
 
@@ -249,5 +260,9 @@ class DataModelsAPI(APIClient):
                 >>> res = c.data_modeling.data_models.apply(data_models)
         """
         return self._create_multiple(
-            list_cls=DataModelList, resource_cls=DataModel, items=data_model, input_resource_cls=DataModelApply
+            list_cls=DataModelList,
+            resource_cls=DataModel,
+            items=data_model,
+            input_resource_cls=DataModelApply,
+            executor=get_data_modeling_executor(),
         )

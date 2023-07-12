@@ -44,6 +44,7 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import is_unlimited, split_into_chunks
+from cognite.client.utils._concurrency import TaskExecutor
 from cognite.client.utils._identifier import IdentifierCore, IdentifierSequenceCore, SingletonIdentifierSequence
 from cognite.client.utils._text import convert_all_keys_to_camel_case, shorten, to_snake_case
 
@@ -280,6 +281,7 @@ class APIClient:
         headers: Optional[Dict[str, Any]] = None,
         other_params: Optional[Dict[str, Any]] = None,
         params: Optional[Dict[str, Any]] = None,
+        executor: Optional[TaskExecutor] = None,
     ) -> Optional[T_CogniteResource]:
         ...
 
@@ -294,6 +296,7 @@ class APIClient:
         headers: Optional[Dict[str, Any]] = None,
         other_params: Optional[Dict[str, Any]] = None,
         params: Optional[Dict[str, Any]] = None,
+        executor: Optional[TaskExecutor] = None,
     ) -> T_CogniteResourceList:
         ...
 
@@ -307,6 +310,7 @@ class APIClient:
         headers: Optional[Dict[str, Any]] = None,
         other_params: Optional[Dict[str, Any]] = None,
         params: Optional[Dict[str, Any]] = None,
+        executor: Optional[TaskExecutor] = None,
     ) -> Union[T_CogniteResourceList, Optional[T_CogniteResource]]:
         resource_path = resource_path or self._RESOURCE_PATH
 
@@ -324,7 +328,9 @@ class APIClient:
             }
             for id_chunk in identifiers.chunked(self._RETRIEVE_LIMIT)
         ]
-        tasks_summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
+        tasks_summary = utils._concurrency.execute_tasks(
+            self._post, tasks, max_workers=self._config.max_workers, executor=executor
+        )
 
         if tasks_summary.exceptions:
             try:
@@ -608,6 +614,7 @@ class APIClient:
         extra_body_fields: Optional[Dict] = None,
         limit: Optional[int] = None,
         input_resource_cls: Optional[Type[CogniteResource]] = None,
+        executor: Optional[TaskExecutor] = None,
     ) -> T_CogniteResourceList:
         ...
 
@@ -623,6 +630,7 @@ class APIClient:
         extra_body_fields: Optional[Dict] = None,
         limit: Optional[int] = None,
         input_resource_cls: Optional[Type[CogniteResource]] = None,
+        executor: Optional[TaskExecutor] = None,
     ) -> T_CogniteResource:
         ...
 
@@ -637,6 +645,7 @@ class APIClient:
         extra_body_fields: Optional[Dict] = None,
         limit: Optional[int] = None,
         input_resource_cls: Optional[Type[CogniteResource]] = None,
+        executor: Optional[TaskExecutor] = None,
     ) -> Union[T_CogniteResourceList, T_CogniteResource]:
         resource_path = resource_path or self._RESOURCE_PATH
         input_resource_cls = input_resource_cls or resource_cls
@@ -651,7 +660,9 @@ class APIClient:
             (resource_path, task_items, params, headers)
             for task_items in self._prepare_item_chunks(items, limit, extra_body_fields)
         ]
-        summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
+        summary = utils._concurrency.execute_tasks(
+            self._post, tasks, max_workers=self._config.max_workers, executor=executor
+        )
 
         def unwrap_element(el: T) -> Union[CogniteResource, T]:
             if isinstance(el, dict):
@@ -687,6 +698,7 @@ class APIClient:
         headers: Optional[Dict[str, Any]] = None,
         extra_body_fields: Optional[Dict[str, Any]] = None,
         returns_items: bool = False,
+        executor: Optional[TaskExecutor] = None,
     ) -> list | None:
         resource_path = resource_path or self._RESOURCE_PATH
         tasks = [
@@ -701,7 +713,9 @@ class APIClient:
             }
             for chunk in identifiers.chunked(self._DELETE_LIMIT)
         ]
-        summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
+        summary = utils._concurrency.execute_tasks(
+            self._post, tasks, max_workers=self._config.max_workers, executor=executor
+        )
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"],
             task_list_element_unwrap_fn=identifiers.unwrap_identifier,

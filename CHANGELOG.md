@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.8.4] - 2023-07-12
+### Fixed
+- `max_worker` limit match backend for `client.data_modeling`.
+
 ## [6.8.3] - 2023-07-12
 ### Fixed
 - `last_updated_time` and `created_time` are no longer optional on InstanceApplyResult

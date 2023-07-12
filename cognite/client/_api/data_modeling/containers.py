@@ -16,6 +16,8 @@ from cognite.client.data_classes.data_modeling.ids import (
     _load_identifier,
 )
 
+from ._data_modeling_executor import get_data_modeling_executor
+
 
 class ContainersAPI(APIClient):
     _RESOURCE_PATH = "/models/containers"
@@ -111,7 +113,12 @@ class ContainersAPI(APIClient):
                 >>> res = c.data_modeling.containers.retrieve(ContainerId(space='mySpace', external_id='myContainer'))
         """
         identifier = _load_identifier(ids, "container")
-        return self._retrieve_multiple(list_cls=ContainerList, resource_cls=Container, identifiers=identifier)
+        return self._retrieve_multiple(
+            list_cls=ContainerList,
+            resource_cls=Container,
+            identifiers=identifier,
+            executor=get_data_modeling_executor(),
+        )
 
     def delete(self, id: ContainerIdentifier | Sequence[ContainerIdentifier]) -> list[ContainerId]:
         """`Delete one or more containers <https://developer.cognite.com/api#tag/Containers/operation/deleteContainers>`_
@@ -130,7 +137,12 @@ class ContainersAPI(APIClient):
         """
         deleted_containers = cast(
             list,
-            self._delete_multiple(identifiers=_load_identifier(id, "container"), wrap_ids=True, returns_items=True),
+            self._delete_multiple(
+                identifiers=_load_identifier(id, "container"),
+                wrap_ids=True,
+                returns_items=True,
+                executor=get_data_modeling_executor(),
+            ),
         )
         return [ContainerId(space=item["space"], external_id=item["externalId"]) for item in deleted_containers]
 
@@ -209,5 +221,9 @@ class ContainersAPI(APIClient):
                 >>> res = c.data_modeling.containers.apply(container)
         """
         return self._create_multiple(
-            list_cls=ContainerList, resource_cls=Container, items=container, input_resource_cls=ContainerApply
+            list_cls=ContainerList,
+            resource_cls=Container,
+            items=container,
+            input_resource_cls=ContainerApply,
+            executor=get_data_modeling_executor(),
         )

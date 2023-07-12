@@ -12,6 +12,8 @@ from cognite.client.data_classes.data_modeling.ids import (
 )
 from cognite.client.data_classes.data_modeling.views import View, ViewApply, ViewFilter, ViewList
 
+from ._data_modeling_executor import get_data_modeling_executor
+
 
 class ViewsAPI(APIClient):
     _RESOURCE_PATH = "/models/views"
@@ -120,6 +122,7 @@ class ViewsAPI(APIClient):
             resource_cls=View,
             identifiers=identifier,
             params={"includeInheritedProperties": include_inherited_properties},
+            executor=get_data_modeling_executor(),
         )
         if all_versions is True:
             return views
@@ -147,6 +150,7 @@ class ViewsAPI(APIClient):
                 identifiers=_load_identifier(ids, "view"),
                 wrap_ids=True,
                 returns_items=True,
+                executor=get_data_modeling_executor(),
             ),
         )
         return [ViewId(item["space"], item["externalId"], item["version"]) for item in deleted_views]
@@ -229,4 +233,10 @@ class ViewsAPI(APIClient):
                 ... ViewApply(space="mySpace",external_id="myOtherView",version="v1")]
                 >>> res = c.data_modeling.views.apply(views)
         """
-        return self._create_multiple(list_cls=ViewList, resource_cls=View, items=view, input_resource_cls=ViewApply)
+        return self._create_multiple(
+            list_cls=ViewList,
+            resource_cls=View,
+            items=view,
+            input_resource_cls=ViewApply,
+            executor=get_data_modeling_executor(),
+        )
