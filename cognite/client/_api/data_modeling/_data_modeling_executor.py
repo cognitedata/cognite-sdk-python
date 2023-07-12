@@ -4,12 +4,12 @@ from cognite.client.utils._concurrency import ConcurrencySettings, MainThreadExe
 
 _THREAD_POOL_EXECUTOR_SINGLETON: ThreadPoolExecutor
 _MAIN_THREAD_EXECUTOR_SINGLETON = MainThreadExecutor()
-
+_MAX_WORKERS = 2
 
 def get_data_modeling_executor() -> TaskExecutor:
     """
-    The data modeling backend has different limits in the backend compared to the rest of CDF. Thus, we use a dedicated
-    executor for these endpoints to match the backend.
+    The data modeling backend has different concurrency limits in the backend compared to the rest of CDF.
+    Thus, we use a dedicated executor for these endpoints to match the backend.
 
     Returns:
         The data modeling executor.
@@ -21,7 +21,7 @@ def get_data_modeling_executor() -> TaskExecutor:
             executor: TaskExecutor = _THREAD_POOL_EXECUTOR_SINGLETON
         except NameError:
             # TPE has not been initialized
-            executor = _THREAD_POOL_EXECUTOR_SINGLETON = ThreadPoolExecutor(2)
+            executor = _THREAD_POOL_EXECUTOR_SINGLETON = ThreadPoolExecutor(_MAX_WORKERS)
     elif ConcurrencySettings.executor_type == "mainthread":
         executor = _MAIN_THREAD_EXECUTOR_SINGLETON
     else:
