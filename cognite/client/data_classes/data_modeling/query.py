@@ -6,7 +6,6 @@ from collections import UserDict
 from dataclasses import dataclass, field
 from typing import Any, Dict, Literal, Mapping, Optional, Type, cast
 
-from cognite.client.data_classes.data_modeling.filters import Filter
 from cognite.client.data_classes.data_modeling.ids import ViewId
 from cognite.client.data_classes.data_modeling.instances import (
     EdgeList,
@@ -16,6 +15,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     NodeListWithCursor,
     PropertyValue,
 )
+from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._auxiliary import local_import
 
 

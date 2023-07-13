@@ -3,8 +3,8 @@ from typing import Iterator
 import pytest
 from _pytest.mark import ParameterSet
 
-import cognite.client.data_classes.data_modeling.filters as f
-from cognite.client.data_classes.data_modeling.filters import Filter
+import cognite.client.data_classes.filters as f
+from cognite.client.data_classes.filters import Filter
 
 
 def load_and_dump_equals_data() -> Iterator[ParameterSet]:

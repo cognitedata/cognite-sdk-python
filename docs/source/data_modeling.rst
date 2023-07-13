@@ -145,7 +145,7 @@ Instances query data classes
 
 Data Modeling Filtering data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.data_modeling.filters
+.. automodule:: cognite.client.data_classes.filters
     :members:
     :show-inheritance:
 

@@ -29,7 +29,7 @@ from cognite.client.data_classes.data_modeling import (
     query,
 )
 from cognite.client.data_classes.data_modeling.aggregations import HistogramValue
-from cognite.client.data_classes.data_modeling.filters import Equals
+from cognite.client.data_classes.filters import Equals
 from cognite.client.exceptions import CogniteAPIError
 
 
