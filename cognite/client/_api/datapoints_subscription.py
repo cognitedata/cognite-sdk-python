@@ -3,11 +3,16 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Optional, Sequence, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import DATAPOINT_SUBSCRIPTIONS_LIST_LIMIT_DEFAULT
+from cognite.client._constants import (
+    DATAPOINT_SUBSCRIPTION_DATA_LIST_LIMIT_DEFAULT,
+    DATAPOINT_SUBSCRIPTIONS_LIST_LIMIT_DEFAULT,
+)
 from cognite.client.data_classes.datapoints_subscriptions import (
     DatapointSubscription,
+    DataPointSubscriptionBatch,
     DataPointSubscriptionCreate,
     DataPointSubscriptionList,
+    DataPointSubscriptionPartition,
     DataPointSubscriptionUpdate,
 )
 from cognite.client.utils._identifier import IdentifierSequence
@@ -107,7 +112,25 @@ class DatapointsSubscriptionAPI(APIClient):
             update_cls=DataPointSubscriptionUpdate,
         )
 
-    def list_data(self, external_id: str, partitions: list, limit: int) -> dict:
+    def list_data(
+        self,
+        external_id: str,
+        partitions: Sequence[tuple[int, str] | DataPointSubscriptionPartition],
+        limit: int = DATAPOINT_SUBSCRIPTION_DATA_LIST_LIMIT_DEFAULT,
+    ) -> DataPointSubscriptionBatch:
+        """`Fetch the next batch of data from a given subscription and partition(s). <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/listSubscriptionData>`_
+
+        Data can be ingested datapoints and time ranges where data is deleted. This endpoint will also return changes to
+        the subscription itself, that is, if time series are added or removed from the subscription.
+
+        Args:
+            external_id (str): The external ID provided by the client. Must be unique for the resource type.
+            partitions (Sequence[tuple[int, str] | DataPointSubscriptionPartition]): Pairs of (partition, cursor) to fetch from.
+            limit (int): Approximate number of results to return across all partitions.
+
+        Returns:
+           A datapoint subscription batch with data from the given subscription.
+        """
         ...
 
     def list(self, limit: int = DATAPOINT_SUBSCRIPTIONS_LIST_LIMIT_DEFAULT) -> DataPointSubscriptionList:

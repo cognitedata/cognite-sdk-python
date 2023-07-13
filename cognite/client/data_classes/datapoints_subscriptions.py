@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Sequence, Type
 
 from cognite.client.data_classes._base import (
@@ -11,6 +12,7 @@ from cognite.client.data_classes._base import (
     CogniteUpdate,
     T_CogniteResource,
 )
+from cognite.client.data_classes.datapoints import DatapointsList
 from cognite.client.utils._auxiliary import exactly_one_is_not_none
 from cognite.client.utils._text import convert_all_keys_to_snake_case
 
@@ -150,6 +152,67 @@ class DataPointSubscriptionUpdate(CogniteUpdate):
     @property
     def filter(self) -> _PrimitiveDataPointSubscriptionUpdate:
         return DataPointSubscriptionUpdate._PrimitiveDataPointSubscriptionUpdate(self, "filter")
+
+
+@dataclass
+class TimeSeriesID:
+    id: int
+    external_id: ExternalId | None = None
+
+
+@dataclass
+class DataDeletion:
+    inclusive_begin: int
+    exclusive_end: int | None
+
+
+@dataclass
+class DataPointUpdate:
+    time_series: TimeSeriesID
+    upserts: DatapointsList
+    deletes: list[DataDeletion]
+
+
+@dataclass
+class SubscriptionTimeSeriesUpdate:
+    added: list[TimeSeriesID]
+    removed: list[TimeSeriesID]
+
+
+@dataclass
+class DataPointSubscriptionPartition:
+    index: int
+    cursor: str
+
+
+class DataPointSubscriptionBatch:
+    """A batch of data from a subscription.
+
+    Args:
+        updates (list[DataPointUpdate]): List of updates from the subscription, sorted by point in time they were
+                                         applied to the time series. Every update contains a time series along with a
+                                         set of changes to that time series.
+        partitions (list[DataPointSubscriptionPartition]): Which partitions/cursors to use for the next request.
+                                                     Map from partition index to cursor.
+        has_next (list[str): Whether there is more data available at the time of the query. In rare cases, we may
+                             return true, even if there is no data available. If that is the case, just continue to
+                             query with the updated cursors, and it will eventually return false.
+        subscription_changes (SubscriptionTimeSeriesUpdate): If present, this object represents changes to the subscription
+                                                 definition. The subscription will now start/stop listening to changes
+                                                 from the time series listed here.
+    """
+
+    def __init__(
+        self,
+        updates: list[DataPointUpdate],
+        partitions: list[DataPointSubscriptionPartition],
+        has_next: bool,
+        subscription_changes: SubscriptionTimeSeriesUpdate | None = None,
+    ):
+        self.updates = updates
+        self.partitions = partitions
+        self.has_next = has_next
+        self.subscription_changes = subscription_changes
 
 
 class DataPointSubscriptionList(CogniteResourceList[DatapointSubscription]):
