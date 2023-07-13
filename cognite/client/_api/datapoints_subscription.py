@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional, Sequence, overload
+from warnings import warn
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import (
@@ -28,6 +29,7 @@ class DatapointsSubscriptionAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._api_subversion = "beta"
         self.show_experimental_warning = True
+        self._warning_message = "DataPoint Subscriptions are experimental and may be subject to breaking changes in future versions without notice."
 
     def create(self, subscription: DataPointSubscriptionCreate) -> DatapointSubscription:
         """`Create a subscription <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/postSubscriptions>`_
@@ -64,6 +66,8 @@ class DatapointsSubscriptionAPI(APIClient):
             >>> created = c.time_series.subscriptions.create(sub)
 
         """
+        if self.show_experimental_warning:
+            warn(self._warning_message, FutureWarning)
 
         return self._create_multiple(
             subscription,
@@ -88,6 +92,9 @@ class DatapointsSubscriptionAPI(APIClient):
             >>> batch = c.time_series.subscriptions.delete("my_subscription")
 
         """
+        if self.show_experimental_warning:
+            warn(self._warning_message, FutureWarning)
+
         self._delete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_id),
             extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
@@ -127,6 +134,9 @@ class DatapointsSubscriptionAPI(APIClient):
             >>> batch = c.time_series.subscriptions.retrieve("my_subscription")
 
         """
+        if self.show_experimental_warning:
+            warn(self._warning_message, FutureWarning)
+
         return self._retrieve_multiple(
             list_cls=DataPointSubscriptionList,
             resource_cls=DatapointSubscription,
@@ -166,6 +176,9 @@ class DatapointsSubscriptionAPI(APIClient):
             >>> updated = c.time_series.subscriptions.update(update)
 
         """
+        if self.show_experimental_warning:
+            warn(self._warning_message, FutureWarning)
+
         return self._update_multiple(
             items=update,
             list_cls=DataPointSubscriptionList,
@@ -208,6 +221,9 @@ class DatapointsSubscriptionAPI(APIClient):
             >>> batch2 = c.time_series.subscriptions.list_data("my_subscription", batch1.partitions)
 
         """
+        if self.show_experimental_warning:
+            warn(self._warning_message, FutureWarning)
+
         body = {
             "externalId": external_id,
             "partitions": [DataPointSubscriptionPartition.create(p).dump(camel_case=True) for p in partitions],
@@ -248,6 +264,9 @@ class DatapointsSubscriptionAPI(APIClient):
                 >>> for subscription_list in c.time_series.subscriptions(chunk_size=10):
                 ...     subscription_list # do something with the views
         """
+        if self.show_experimental_warning:
+            warn(self._warning_message, FutureWarning)
+
         return self._list(
             method="GET", limit=limit, list_cls=DataPointSubscriptionList, resource_cls=DatapointSubscription
         )
