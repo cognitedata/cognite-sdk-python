@@ -3,10 +3,10 @@ from __future__ import annotations
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import DatapointSubscription, DataPointSubscriptionCreate
+from cognite.client.data_classes import DatapointSubscription, DataPointSubscriptionCreate, DataPointSubscriptionUpdate
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def time_series_external_ids(cognite_client: CogniteClient):
     external_ids = [f"PYSDK DataPoint Subscription Test {no}" for no in range(10)]
     existing = cognite_client.time_series.retrieve_multiple(external_ids=external_ids, ignore_unknown_ids=True)
@@ -57,4 +57,32 @@ class TestDatapointSubscriptions:
             assert retrieved_deleted is None
         finally:
             if created_subscription:
+                cognite_client.time_series.subscriptions.delete(new_subscription.external_id, ignore_unknown_ids=True)
+
+    def test_update_subscription(self, cognite_client: CogniteClient, time_series_external_ids: list[str]):
+        # Arrange
+        new_subscription = DataPointSubscriptionCreate(
+            external_id="PYSDKDataPointSubscriptionUpdateTest",
+            name="PYSDKDataPointSubscriptionUpdateTest",
+            time_series_ids=time_series_external_ids,
+            partition_count=1,
+        )
+        created: DatapointSubscription | None = None
+        try:
+            created = cognite_client.time_series.subscriptions.create(new_subscription)
+
+            update = (
+                DataPointSubscriptionUpdate(new_subscription.external_id)
+                .name.set("New Name")
+                .time_series_ids.remove([time_series_external_ids[0]])
+            )
+
+            # Act
+            updated = cognite_client.time_series.subscriptions.update(update)
+
+            # Assert
+            assert updated.name == "New Name"
+            assert updated.time_series_count == len(time_series_external_ids) - 1
+        finally:
+            if created:
                 cognite_client.time_series.subscriptions.delete(new_subscription.external_id, ignore_unknown_ids=True)

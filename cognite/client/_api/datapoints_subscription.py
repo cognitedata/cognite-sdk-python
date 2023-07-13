@@ -7,7 +7,7 @@ from cognite.client._constants import DATAPOINT_SUBSCRIPTIONS_LIST_LIMIT_DEFAULT
 from cognite.client.data_classes.datapoints_subscriptions import (
     DatapointSubscription,
     DataPointSubscriptionCreate,
-    DatapointSubscriptionList,
+    DataPointSubscriptionList,
     DataPointSubscriptionUpdate,
 )
 from cognite.client.utils._identifier import IdentifierSequence
@@ -22,9 +22,10 @@ class DatapointsSubscriptionAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._api_subversion = "beta"
+        self.show_experimental_warning = True
 
     def create(self, subscription: DataPointSubscriptionCreate) -> DatapointSubscription:
-        """`Create one or more subscriptions <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/postSubscriptions>`_
+        """`Create a subscription <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/postSubscriptions>`_
 
         Create one or more subscriptions that can be used to listen for changes in data points for a set of time series.
 
@@ -37,7 +38,7 @@ class DatapointsSubscriptionAPI(APIClient):
 
         return self._create_multiple(
             subscription,
-            list_cls=DatapointSubscriptionList,
+            list_cls=DataPointSubscriptionList,
             resource_cls=DatapointSubscription,
             input_resource_cls=DataPointSubscriptionCreate,
         )
@@ -59,18 +60,18 @@ class DatapointsSubscriptionAPI(APIClient):
     @overload
     def retrieve(
         self, external_id: list[str] | tuple[str], ignore_unknown_ids: bool = False
-    ) -> DatapointSubscriptionList:
+    ) -> DataPointSubscriptionList:
         ...
 
     @overload
     def retrieve(
         self, external_id: str | Sequence[str], ignore_unknown_ids: bool = False
-    ) -> Optional[DatapointSubscription] | DatapointSubscriptionList:
+    ) -> Optional[DatapointSubscription] | DataPointSubscriptionList:
         ...
 
     def retrieve(
         self, external_id: str | list[str] | tuple[str] | Sequence[str], ignore_unknown_ids: bool = False
-    ) -> Optional[DatapointSubscription] | DatapointSubscriptionList:
+    ) -> Optional[DatapointSubscription] | DataPointSubscriptionList:
         """`Retrieve one or more subscriptions by external ID. <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/getSubscriptionsByIds>`_
 
         Args:
@@ -81,28 +82,42 @@ class DatapointsSubscriptionAPI(APIClient):
             The requested subscriptions.
         """
         return self._retrieve_multiple(
-            list_cls=DatapointSubscriptionList,
+            list_cls=DataPointSubscriptionList,
             resource_cls=DatapointSubscription,
             identifiers=IdentifierSequence.load(external_ids=external_id),
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def update(
-        self, update: DataPointSubscriptionUpdate | Sequence[DataPointSubscriptionUpdate]
-    ) -> DatapointSubscription | DatapointSubscriptionList:
-        ...
+    def update(self, update: DataPointSubscriptionUpdate) -> DatapointSubscription:
+        """`Update a subscriptions <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/updateSubscriptions>`_
+
+        Update a subscription. Note that Fields that are not included in the request are not changed.
+        Furthermore, the subscription partition cannot be changed.
+
+        Args:
+            update: The subscription update.
+
+        Returns:
+            Updated subscription.
+        """
+        return self._update_multiple(
+            items=update,
+            list_cls=DataPointSubscriptionList,
+            resource_cls=DatapointSubscription,
+            update_cls=DataPointSubscriptionUpdate,
+        )
 
     def list_data(self, external_id: str, partitions: list, limit: int) -> dict:
         ...
 
-    def list(self, limit: int = DATAPOINT_SUBSCRIPTIONS_LIST_LIMIT_DEFAULT) -> DatapointSubscriptionList:
+    def list(self, limit: int = DATAPOINT_SUBSCRIPTIONS_LIST_LIMIT_DEFAULT) -> DataPointSubscriptionList:
         """`List data point subscriptions <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/listSubscriptions>`_
 
         Args:
             limit (int, optional): Maximum number of subscriptions to return. Defaults to 100. Set to -1, float("inf") or None
                 to return all items.
         Returns:
-            DatapointSubscriptionList: List of requested datapoint subscriptions
+            DataPointSubscriptionList: List of requested datapoint subscriptions
 
         Examples:
 
@@ -127,5 +142,5 @@ class DatapointsSubscriptionAPI(APIClient):
                 ...     subscription_list # do something with the views
         """
         return self._list(
-            method="GET", limit=limit, list_cls=DatapointSubscriptionList, resource_cls=DatapointSubscription
+            method="GET", limit=limit, list_cls=DataPointSubscriptionList, resource_cls=DatapointSubscription
         )

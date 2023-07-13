@@ -1,9 +1,16 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Sequence, Type
+from typing import TYPE_CHECKING, Any, Sequence, Type
 
-from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, T_CogniteResource
+from cognite.client.data_classes._base import (
+    CogniteListUpdate,
+    CognitePrimitiveUpdate,
+    CogniteResource,
+    CogniteResourceList,
+    CogniteUpdate,
+    T_CogniteResource,
+)
 from cognite.client.utils._auxiliary import exactly_one_is_not_none
 from cognite.client.utils._text import convert_all_keys_to_snake_case
 
@@ -108,13 +115,46 @@ class DataPointSubscriptionCreate(DatapointSubscriptionCore):
         self.filter = filter
 
 
-class DataPointSubscriptionUpdate(CogniteResource):
-    ...
+class DataPointSubscriptionUpdate(CogniteUpdate):
+    """Changes applied to datapoint subscription
+
+    Args:
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+    """
+
+    def __init__(self, external_id: str):
+        super().__init__(external_id=external_id)
+
+    class _PrimitiveDataPointSubscriptionUpdate(CognitePrimitiveUpdate):
+        def set(self, value: Any) -> DataPointSubscriptionUpdate:
+            return self._set(value)
+
+    class _ListDataPointSubscriptionUpdate(CogniteListUpdate):
+        def set(self, value: list) -> DataPointSubscriptionUpdate:
+            return self._set(value)
+
+        def add(self, value: list) -> DataPointSubscriptionUpdate:
+            return self._add(value)
+
+        def remove(self, value: list) -> DataPointSubscriptionUpdate:
+            return self._remove(value)
+
+    @property
+    def name(self) -> _PrimitiveDataPointSubscriptionUpdate:
+        return DataPointSubscriptionUpdate._PrimitiveDataPointSubscriptionUpdate(self, "name")
+
+    @property
+    def time_series_ids(self) -> _ListDataPointSubscriptionUpdate:
+        return DataPointSubscriptionUpdate._ListDataPointSubscriptionUpdate(self, "timeSeriesIds")
+
+    @property
+    def filter(self) -> _PrimitiveDataPointSubscriptionUpdate:
+        return DataPointSubscriptionUpdate._PrimitiveDataPointSubscriptionUpdate(self, "filter")
 
 
-class DatapointSubscriptionList(CogniteResourceList[DatapointSubscription]):
+class DataPointSubscriptionList(CogniteResourceList[DatapointSubscription]):
     _RESOURCE = DatapointSubscription
 
 
-class DatapointSubscriptionCreateList(CogniteResourceList[DataPointSubscriptionCreate]):
+class DataPointSubscriptionCreateList(CogniteResourceList[DataPointSubscriptionCreate]):
     _RESOURCE = DataPointSubscriptionCreate
