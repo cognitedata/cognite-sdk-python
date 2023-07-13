@@ -250,19 +250,6 @@ class DatapointsSubscriptionAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> subscriptions = c.time_series.subscriptions.list(limit=5)
 
-            Iterate over subscriptions:
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for subscription in c.time_series.subscriptions:
-                ...     subscription # do something with the view
-
-            Iterate over chunks of subscriptions to reduce memory load::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for subscription_list in c.time_series.subscriptions(chunk_size=10):
-                ...     subscription_list # do something with the views
         """
         if self.show_experimental_warning:
             warn(self._warning_message, FutureWarning)

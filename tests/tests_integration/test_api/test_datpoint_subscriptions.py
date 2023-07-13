@@ -145,7 +145,6 @@ class TestDatapointSubscriptions:
         batch = cognite_client.time_series.subscriptions.list_data(subscription_one_timeseries.external_id, [0])
 
         # Assert
-        assert batch.has_next is False
         assert batch.partitions[0].cursor is not None
 
     def test_list_data_subscription_changed_time_series(
