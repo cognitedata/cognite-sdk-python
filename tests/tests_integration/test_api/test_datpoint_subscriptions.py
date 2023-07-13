@@ -7,13 +7,22 @@ from cognite.client.data_classes import DatapointSubscription, DataPointSubscrip
 
 
 @pytest.fixture(scope="session")
-def time_series_external_ids(cognite_client: CogniteClient):
+def time_series_external_ids(cognite_client: CogniteClient) -> list[str]:
     external_ids = [f"PYSDK DataPoint Subscription Test {no}" for no in range(10)]
     existing = cognite_client.time_series.retrieve_multiple(external_ids=external_ids, ignore_unknown_ids=True)
     assert len(existing) == len(external_ids), (
         "The 10 timeseries used for testing datapoint " "subscriptions must exist in the test environment"
     )
     return external_ids
+
+
+@pytest.fixture(scope="session")
+def subscription_one_timeseries(cognite_client: CogniteClient) -> DatapointSubscription:
+    sub1 = cognite_client.time_series.subscriptions.retrieve("PYSDKDataPointSubscriptionTest1", ignore_unknown_ids=True)
+    assert (
+        sub1 is not None
+    ), "The subscription used for testing datapoint subscriptions must exist in the test environment"
+    return sub1
 
 
 class TestDatapointSubscriptions:
@@ -86,3 +95,13 @@ class TestDatapointSubscriptions:
         finally:
             if created:
                 cognite_client.time_series.subscriptions.delete(new_subscription.external_id, ignore_unknown_ids=True)
+
+    def test_list_data_subscription(
+        self, cognite_client: CogniteClient, subscription_one_timeseries: DatapointSubscription
+    ):
+        # Act
+        batch = cognite_client.time_series.subscriptions.list_data(subscription_one_timeseries.external_id, [0])
+
+        # Assert
+        assert batch.has_next is False
+        assert batch.partitions[0].cursor is None

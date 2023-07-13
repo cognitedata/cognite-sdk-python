@@ -154,10 +154,33 @@ class DataPointSubscriptionUpdate(CogniteUpdate):
         return DataPointSubscriptionUpdate._PrimitiveDataPointSubscriptionUpdate(self, "filter")
 
 
-@dataclass
-class TimeSeriesID:
-    id: int
-    external_id: ExternalId | None = None
+class TimeSeriesID(CogniteResource):
+    """
+    A TimeSeries Identifier to uniquely identify a time series.
+
+    Args:
+        id (int): A server-generated ID for the object.
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+    """
+
+    def __init__(self, id: int, external_id: ExternalId | None = None):
+        self.id = id
+        self.external_id = external_id
+
+    @classmethod
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient = None) -> TimeSeriesID:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        return cls(id=resource["id"], external_id=resource.get("externalId"))
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        resource: dict[str, Any] = {"id": self.id}
+        if self.external_id is not None:
+            resource["externalId" if camel_case else "external_id"] = self.external_id
+        return resource
+
+
+class TimeSeriesIDList(CogniteResourceList):
+    _RESOURCE = TimeSeriesID
 
 
 @dataclass
@@ -165,24 +188,85 @@ class DataDeletion:
     inclusive_begin: int
     exclusive_end: int | None
 
+    @classmethod
+    def _load(cls, data: dict[str, Any]) -> DataDeletion:
+        return cls(inclusive_begin=data["inclusiveBegin"], exclusive_end=data.get("exclusiveEnd"))
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        resource: dict[str, Any] = {("inclusiveBegin" if camel_case else "inclusive_begin"): self.inclusive_begin}
+        if self.exclusive_end is not None:
+            resource["exclusiveEnd" if camel_case else "exclusive_end"] = self.exclusive_end
+        return resource
+
 
 @dataclass
 class DataPointUpdate:
     time_series: TimeSeriesID
-    upserts: DatapointsList
-    deletes: list[DataDeletion]
+    upserts: DatapointsList | None = None
+    deletes: list[DataDeletion] | None = None
+
+    @classmethod
+    def _load(cls, data: dict[str, Any]) -> DataPointUpdate:
+        return cls(
+            time_series=TimeSeriesID._load(data["timeSeries"], None),
+            upserts=DatapointsList._load(data["upserts"], None),
+            deletes=[DataDeletion._load(d) for d in data["deletes"]],
+        )
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        resource: dict[str, Any] = {("timeSeries" if camel_case else "time_series"): self.time_series.dump(camel_case)}
+        if self.upserts is not None:
+            resource["upserts"] = self.upserts.dump(camel_case)
+        if self.deletes is not None:
+            resource["deletes"] = [d.dump(camel_case) for d in self.deletes]
+        return resource
 
 
 @dataclass
 class SubscriptionTimeSeriesUpdate:
-    added: list[TimeSeriesID]
-    removed: list[TimeSeriesID]
+    added: TimeSeriesIDList | None = None
+    removed: TimeSeriesIDList | None = None
+
+    @classmethod
+    def _load(cls, data: dict[str, Any]) -> SubscriptionTimeSeriesUpdate:
+        resource = {}
+        if "added" in data:
+            resource["added"] = TimeSeriesIDList._load(data["added"])
+        if "removed" in data:
+            resource["removed"] = TimeSeriesIDList._load(data["removed"])
+        return cls(**resource)
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        resource: dict[str, Any] = {}
+        if self.added is not None:
+            resource["added"] = self.added.dump(camel_case)
+        if self.removed is not None:
+            resource["removed"] = self.removed.dump(camel_case)
+        return resource
 
 
 @dataclass
 class DataPointSubscriptionPartition:
     index: int
-    cursor: str
+    cursor: str | None = None
+
+    @classmethod
+    def create(cls, data: tuple[int, str] | int | DataPointSubscriptionPartition) -> DataPointSubscriptionPartition:
+        if isinstance(data, DataPointSubscriptionPartition):
+            return data
+        if isinstance(data, tuple):
+            return cls(*data)
+        return cls(data)
+
+    @classmethod
+    def _load(cls, data: dict[str, Any]) -> DataPointSubscriptionPartition:
+        return cls(index=data["index"], cursor=data.get("cursor"))
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        output: dict[str, Any] = {"index": self.index}
+        if self.cursor is not None:
+            output["cursor"] = self.cursor
+        return output
 
 
 class DataPointSubscriptionBatch:
@@ -213,6 +297,30 @@ class DataPointSubscriptionBatch:
         self.partitions = partitions
         self.has_next = has_next
         self.subscription_changes = subscription_changes
+
+    @classmethod
+    def _load(cls, resource: dict | str) -> DataPointSubscriptionBatch:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        data = {
+            "updates": [DataPointUpdate._load(u) for u in resource["updates"]],
+            "partitions": [DataPointSubscriptionPartition._load(p) for p in resource["partitions"]],
+            "has_next": resource["hasNext"],
+        }
+        if "subscriptionChanges" in resource:
+            data["subscription_changes"] = SubscriptionTimeSeriesUpdate._load(resource["subscriptionChanges"])
+        return cls(**data)
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        resource: dict[str, Any] = {
+            "updates": [u.dump(camel_case) for u in self.updates],
+            "partitions": [p.dump(camel_case) for p in self.partitions],
+            ("hasNext" if camel_case else "has_next"): self.has_next,
+        }
+        if self.subscription_changes is not None:
+            resource[
+                ("subscriptionChanges" if camel_case else "subscription_changes")
+            ] = self.subscription_changes.dump(camel_case)
+        return resource
 
 
 class DataPointSubscriptionList(CogniteResourceList[DatapointSubscription]):
