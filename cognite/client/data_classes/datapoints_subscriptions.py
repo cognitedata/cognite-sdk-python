@@ -151,6 +151,10 @@ class DataPointSubscriptionUpdate(CogniteUpdate):
         def set(self, value: Any) -> DataPointSubscriptionUpdate:
             return self._set(value)
 
+    class _FilterDataPointSubscriptionUpdate(CognitePrimitiveUpdate):
+        def set(self, value: Filter) -> DataPointSubscriptionUpdate:
+            return self._set(value.dump())  # type: ignore[arg-type]
+
     class _ListDataPointSubscriptionUpdate(CogniteListUpdate):
         def set(self, value: list) -> DataPointSubscriptionUpdate:
             return self._set(value)
@@ -170,8 +174,8 @@ class DataPointSubscriptionUpdate(CogniteUpdate):
         return DataPointSubscriptionUpdate._ListDataPointSubscriptionUpdate(self, "timeSeriesIds")
 
     @property
-    def filter(self) -> _PrimitiveDataPointSubscriptionUpdate:
-        return DataPointSubscriptionUpdate._PrimitiveDataPointSubscriptionUpdate(self, "filter")
+    def filter(self) -> _FilterDataPointSubscriptionUpdate:
+        return DataPointSubscriptionUpdate._FilterDataPointSubscriptionUpdate(self, "filter")
 
 
 class TimeSeriesID(CogniteResource):
@@ -412,4 +416,4 @@ class DataPointSubscriptionFilterProperties:
     id = ["id"]
     last_updated_time = ["lastUpdatedTime"]
     is_step = ["isStep"]
-    is_string = ("isString",)
+    is_string = ["isString"]

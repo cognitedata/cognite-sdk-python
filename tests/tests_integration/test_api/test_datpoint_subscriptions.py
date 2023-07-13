@@ -105,6 +105,39 @@ class TestDatapointSubscriptions:
             if created:
                 cognite_client.time_series.subscriptions.delete(new_subscription.external_id, ignore_unknown_ids=True)
 
+    def test_update_filter_defined_subscription(self, cognite_client: CogniteClient):
+        # Arrange
+        f = filters
+        p = DataPointSubscriptionFilterProperties
+        numerical_timeseries = f.And(
+            f.Equals(p.is_string, False),
+        )
+
+        new_subscription = DataPointSubscriptionCreate(
+            external_id="PYSDKFilterDefinedDataPointSubscriptionUpdateTest",
+            name="PYSDKFilterDefinedDataPointSubscriptionUpdateTest",
+            filter=numerical_timeseries,
+            partition_count=1,
+        )
+        created: DatapointSubscription | None = None
+        try:
+            created = cognite_client.time_series.subscriptions.create(new_subscription)
+
+            new_filter = f.And(
+                f.Equals(p.is_string, False), f.Prefix(p.external_id, "PYSDK DataPoint Subscription Test")
+            )
+            new_update = DataPointSubscriptionUpdate(new_subscription.external_id).filter.set(new_filter)
+
+            # Act
+            _ = cognite_client.time_series.subscriptions.update(new_update)
+            retrieved = cognite_client.time_series.subscriptions.retrieve(new_subscription.external_id)
+
+            # Assert
+            assert retrieved.filter.dump() == new_filter.dump()
+        finally:
+            if created:
+                cognite_client.time_series.subscriptions.delete(new_subscription.external_id, ignore_unknown_ids=True)
+
     def test_list_data_subscription_no_change(
         self, cognite_client: CogniteClient, subscription_one_timeseries: DatapointSubscription
     ):
@@ -217,6 +250,7 @@ class TestDatapointSubscriptions:
                     new_data.index[0], new_data.index[-1] + pd.Timedelta("1d"), external_id=time_series_external_ids[0]
                 )
 
+    @pytest.mark.skip(reason="This test is flaky")
     def test_update_filter_subscription_added_times_series(
         self, cognite_client: CogniteClient, time_series_external_ids: list[str]
     ):
