@@ -797,6 +797,20 @@ class APIClient:
             return resource_cls._load(updated_items[0], cognite_client=self._cognite_client)
         return list_cls._load(updated_items, cognite_client=self._cognite_client)
 
+    def _upsert_multiple(
+        self,
+        items: CogniteResource | Sequence[CogniteResource],
+        list_cls: Type[T_CogniteResourceList],
+        resource_cls: Type[T_CogniteResource],
+        update_cls: Type[CogniteUpdate],
+        input_resource_cls: Optional[Type[CogniteResource]] = None,
+    ) -> T_CogniteResource | T_CogniteResourceList:
+        raise NotImplementedError
+        try:
+            self._update_multiple(items, list_cls, resource_cls, update_cls)
+        except CogniteNotFoundError:
+            raise NotImplementedError
+
     def _search(
         self,
         list_cls: Type[T_CogniteResourceList],
