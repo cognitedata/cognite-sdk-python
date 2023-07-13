@@ -179,7 +179,7 @@ class TimeSeriesID(CogniteResource):
         return resource
 
 
-class TimeSeriesIDList(CogniteResourceList):
+class TimeSeriesIDList(CogniteResourceList[TimeSeriesID]):
     _RESOURCE = TimeSeriesID
 
 
@@ -260,7 +260,7 @@ class DataPointSubscriptionPartition:
 
     @classmethod
     def _load(cls, data: dict[str, Any]) -> DataPointSubscriptionPartition:
-        return cls(index=data["index"], cursor=data.get("cursor"))
+        return cls(index=data["index"], cursor=data.get("cursor") or data.get("nextCursor"))
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output: dict[str, Any] = {"index": self.index}

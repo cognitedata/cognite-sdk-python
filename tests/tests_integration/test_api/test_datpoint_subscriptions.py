@@ -96,7 +96,7 @@ class TestDatapointSubscriptions:
             if created:
                 cognite_client.time_series.subscriptions.delete(new_subscription.external_id, ignore_unknown_ids=True)
 
-    def test_list_data_subscription(
+    def test_list_data_subscription_no_change(
         self, cognite_client: CogniteClient, subscription_one_timeseries: DatapointSubscription
     ):
         # Act
@@ -105,3 +105,51 @@ class TestDatapointSubscriptions:
         # Assert
         assert batch.has_next is False
         assert batch.partitions[0].cursor is None
+
+    def test_list_data_subscription_changed_time_series(
+        self, cognite_client: CogniteClient, time_series_external_ids: list[str]
+    ):
+        # Arrange
+        new_subscription = DataPointSubscriptionCreate(
+            external_id="PYSDKDataPointSubscriptionChangedTimeSeriesTest",
+            name="PYSDKDataPointSubscriptionChangedTimeSeriesTest",
+            time_series_ids=[time_series_external_ids[0]],
+            partition_count=1,
+        )
+        created: DatapointSubscription | None = None
+        try:
+            created = cognite_client.time_series.subscriptions.create(new_subscription)
+
+            # Act
+            first_batch = cognite_client.time_series.subscriptions.list_data(new_subscription.external_id, [0])
+
+            # Assert
+            assert first_batch.has_next is False
+            assert first_batch.partitions[0].cursor is not None
+
+            # Arrange
+            update = (
+                DataPointSubscriptionUpdate(new_subscription.external_id)
+                .time_series_ids.add([time_series_external_ids[1]])
+                .time_series_ids.remove([time_series_external_ids[0]])
+            )
+
+            # Act
+            cognite_client.time_series.subscriptions.update(update)
+            second_batch = cognite_client.time_series.subscriptions.list_data(
+                new_subscription.external_id, first_batch.partitions
+            )
+
+            # Assert
+            assert second_batch.subscription_changes
+            subscription_changes = second_batch.subscription_changes
+            assert {a.external_id for a in subscription_changes.added} == {time_series_external_ids[1]}
+            assert {a.external_id for a in subscription_changes.removed} == {time_series_external_ids[0]}
+        finally:
+            if created:
+                cognite_client.time_series.subscriptions.delete(new_subscription.external_id, ignore_unknown_ids=True)
+
+    def test_list_data_subscription_datapoints_added(
+        self, cognite_client: CogniteClient, time_series_external_ids: list[str]
+    ):
+        ...
