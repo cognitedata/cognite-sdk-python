@@ -4,7 +4,13 @@ import pandas as pd
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import DatapointSubscription, DataPointSubscriptionCreate, DataPointSubscriptionUpdate
+from cognite.client.data_classes import TimeSeries, filters
+from cognite.client.data_classes.datapoints_subscriptions import (
+    DatapointSubscription,
+    DataPointSubscriptionCreate,
+    DataPointSubscriptionFilterProperties,
+    DataPointSubscriptionUpdate,
+)
 
 
 @pytest.fixture(scope="session")
@@ -208,3 +214,59 @@ class TestDatapointSubscriptions:
                 cognite_client.time_series.data.delete_range(
                     new_data.index[0], new_data.index[-1] + pd.Timedelta("1d"), external_id=time_series_external_ids[0]
                 )
+
+    def test_update_filter_subscription_added_times_series(
+        self, cognite_client: CogniteClient, time_series_external_ids: list[str]
+    ):
+        # Arrange
+        f = filters
+        p = DataPointSubscriptionFilterProperties
+        numerical_timeseries = f.And(
+            f.Equals(p.is_string, False), f.Prefix(p.external_id, "PYSDK DataPoint Subscription Test")
+        )
+
+        new_subscription = DataPointSubscriptionCreate(
+            external_id="PYSDKDataPointSubscriptionUpdateFilterTest",
+            name="PYSDKDataPointSubscriptionUpdateFilterTest",
+            filter=numerical_timeseries,
+            partition_count=1,
+        )
+
+        created: DatapointSubscription | None = None
+        created_timeseries: TimeSeries | None = None
+        try:
+            created = cognite_client.time_series.subscriptions.create(new_subscription)
+
+            # Act
+            first_batch = cognite_client.time_series.subscriptions.list_data(new_subscription.external_id, [0])
+
+            # Assert
+            assert first_batch.has_next is False
+            assert first_batch.partitions[0].cursor is not None
+
+            # Arrange
+            new_numerical_timeseries = TimeSeries(
+                external_id="PYSDK DataPoint Subscription Test 42",
+                name="PYSDK DataPoint Subscription Test 42",
+                is_string=False,
+            )
+            created_timeseries = cognite_client.time_series.create(new_numerical_timeseries)
+            cognite_client.time_series.data.insert_dataframe(
+                pd.DataFrame(index=[pd.Timestamp.now()], data=[[42]], columns=[new_numerical_timeseries.external_id])
+            )
+
+            # Act
+            second_batch = cognite_client.time_series.subscriptions.list_data(
+                new_subscription.external_id, first_batch.partitions
+            )
+
+            # Assert
+            assert second_batch.subscription_changes
+            subscription_changes = second_batch.subscription_changes
+            assert {a.external_id for a in subscription_changes.added} == {new_numerical_timeseries.external_id}
+            assert {a.external_id for a in subscription_changes.removed} == set()
+        finally:
+            if created:
+                cognite_client.time_series.subscriptions.delete(new_subscription.external_id, ignore_unknown_ids=True)
+            if created_timeseries:
+                cognite_client.time_series.delete(created_timeseries.id)
