@@ -65,12 +65,12 @@ class DatapointsSubscriptionAPI(APIClient):
     @overload
     def retrieve(
         self, external_id: str | Sequence[str], ignore_unknown_ids: bool = False
-    ) -> DatapointSubscription | DatapointSubscriptionList:
+    ) -> Optional[DatapointSubscription] | DatapointSubscriptionList:
         ...
 
     def retrieve(
         self, external_id: str | list[str] | tuple[str] | Sequence[str], ignore_unknown_ids: bool = False
-    ) -> DatapointSubscription | DatapointSubscriptionList:
+    ) -> Optional[DatapointSubscription] | DatapointSubscriptionList:
         """`Retrieve one or more subscriptions by external ID. <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/getSubscriptionsByIds>`_
 
         Args:
