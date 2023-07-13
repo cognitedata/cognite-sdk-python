@@ -258,7 +258,7 @@ class DataPointUpdate:
     def _load(cls, data: dict[str, Any]) -> DataPointUpdate:
         datapoints: dict[str, Any] = {"upserts": None, "deletes": None}
         for key in list(datapoints):
-            if values := data.get(key):
+            if (values := data.get(key)) and ("value" in values[0]):
                 if isinstance(values[0]["value"], float):
                     datapoints[key] = NumericDataPointList._load(values)
                 elif isinstance(values[0]["value"], str):

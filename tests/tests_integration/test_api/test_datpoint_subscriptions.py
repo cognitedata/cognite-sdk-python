@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import time
+
 import pandas as pd
 import pytest
 
@@ -111,7 +113,7 @@ class TestDatapointSubscriptions:
 
         # Assert
         assert batch.has_next is False
-        assert batch.partitions[0].cursor is None
+        assert batch.partitions[0].cursor is not None
 
     def test_list_data_subscription_changed_time_series(
         self, cognite_client: CogniteClient, time_series_external_ids: list[str]
@@ -254,6 +256,8 @@ class TestDatapointSubscriptions:
             cognite_client.time_series.data.insert_dataframe(
                 pd.DataFrame(index=[pd.Timestamp.now()], data=[[42]], columns=[new_numerical_timeseries.external_id])
             )
+            # Ensure that the subscription has been updated
+            time.sleep(1)
 
             # Act
             second_batch = cognite_client.time_series.subscriptions.list_data(
