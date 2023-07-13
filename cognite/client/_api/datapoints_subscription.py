@@ -27,13 +27,13 @@ class DatapointsSubscriptionAPI(APIClient):
     def create(self, subscription: DataPointSubscriptionCreate) -> DatapointSubscription:
         """`Create a subscription <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/postSubscriptions>`_
 
-        Create one or more subscriptions that can be used to listen for changes in data points for a set of time series.
+        Create a subscription that can be used to listen for changes in data points for a set of time series.
 
         Args:
-            subscription: Subscription or list of subscriptions to create.
+            subscription: Subscription to create.
 
         Returns:
-            Created subscription(s)
+            Created subscription
         """
 
         return self._create_multiple(
