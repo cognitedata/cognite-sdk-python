@@ -16,18 +16,16 @@ ExternalId = str
 class DatapointSubscriptionCore(CogniteResource):
     def __init__(
         self,
-        external_id: str,
+        external_id: ExternalId,
         partition_count: int,
         name: str = None,
         description: str = None,
-        time_series_ids: Sequence[ExternalId] = None,
         **_: dict,
     ):
         self.external_id = external_id
         self.partition_count = partition_count
         self.name = name
         self.description = description
-        self.time_series_ids = time_series_ids
 
     @classmethod
     def _load(
@@ -57,17 +55,18 @@ class DatapointSubscription(DatapointSubscriptionCore):
 
     def __init__(
         self,
-        external_id: str,
+        external_id: ExternalId,
         partition_count: int,
         created_time: int,
         last_updated_time: int,
-        time_series_count: Sequence[ExternalId] = None,
+        time_series_count: int = None,
         filter: str = None,
         name: str = None,
         description: str = None,
         **_: dict,
     ):
-        super().__init__(external_id, partition_count, name, description, time_series_count)
+        super().__init__(external_id, partition_count, name, description)
+        self.time_series_count = time_series_count
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.filter = filter
@@ -104,7 +103,8 @@ class DataPointSubscriptionCreate(DatapointSubscriptionCore):
     ):
         if not exactly_one_is_not_none(time_series_ids, filter):
             raise ValueError("Exactly one of time_series_ids and filter must be given")
-        super().__init__(external_id, partition_count, name, description, time_series_ids)
+        super().__init__(external_id, partition_count, name, description)
+        self.time_series_ids = time_series_ids
         self.filter = filter
 
 
