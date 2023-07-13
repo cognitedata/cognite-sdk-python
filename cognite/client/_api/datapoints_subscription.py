@@ -39,6 +39,30 @@ class DatapointsSubscriptionAPI(APIClient):
 
         Returns:
             Created subscription
+
+        Examples:
+
+        Create a subscrpition with explicit time series IDs:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes import DataPointSubscriptionCreate
+            >>> c = CogniteClient()
+            >>> sub = DataPointSubscriptionCreate("mySubscription", partition_count=1, time_series_ids=["myFistTimeSeries", "mySecondTimeSeries"], name="My subscription")
+            >>> created = c.time_series.subscriptions.create()
+
+        Create a filter defined subscription for all numeric time series:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes import DataPointSubscriptionCreate
+            >>> from cognite.client.data_classes import filters
+            >>> from cognite.client.data_classes.datapoints_subscriptions import DataPointSubscriptionFilterProperties
+            >>> c = CogniteClient()
+            >>> f = filters
+            >>> p = DataPointSubscriptionFilterProperties
+            >>> numeric_timeseries = f.Equals(p.is_string, False)
+            >>> sub = DataPointSubscriptionCreate("mySubscription", partition_count=1, filter=numeric_timeseries, name="My subscription for Numeric time series")
+            >>> created = c.time_series.subscriptions.create(sub)
+
         """
 
         return self._create_multiple(
@@ -54,6 +78,14 @@ class DatapointsSubscriptionAPI(APIClient):
         Args:
             external_id (str | Sequence[str]): External ID or list of external IDs of subscriptions to delete.
             ignore_unknown_ids (bool): Whether to ignore IDs and external IDs that are not found rather than throw an exception.
+
+        Examples:
+
+        Delete a subscription by external ID:
+
+            >>> from cognite.client import CogniteClient
+            >>> c = CogniteClient()
+            >>> batch = c.time_series.subscriptions.delete("my_subscription")
 
         """
         self._delete_multiple(
@@ -85,6 +117,15 @@ class DatapointsSubscriptionAPI(APIClient):
 
         Returns:
             The requested subscriptions.
+
+        Examples:
+
+        Retrieve a subscription by external ID:
+
+            >>> from cognite.client import CogniteClient
+            >>> c = CogniteClient()
+            >>> batch = c.time_series.subscriptions.retrieve("my_subscription")
+
         """
         return self._retrieve_multiple(
             list_cls=DataPointSubscriptionList,
@@ -104,6 +145,26 @@ class DatapointsSubscriptionAPI(APIClient):
 
         Returns:
             Updated subscription.
+
+        Examples:
+
+        Change the name of a preexisting subscription:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes import DataPointSubscriptionUpdate
+            >>> c = CogniteClient()
+            >>> update = DataPointSubscriptionUpdate("my_subscription").name.set("My New Name")
+            >>> updated = c.time_series.subscriptions.update(update)
+
+
+        Add a time series to a preexisting subscription:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes import DataPointSubscriptionUpdate
+            >>> c = CogniteClient()
+            >>> update = DataPointSubscriptionUpdate("my_subscription").time_series_ids.add("MyNewTimeSeriesExternalId")
+            >>> updated = c.time_series.subscriptions.update(update)
+
         """
         return self._update_multiple(
             items=update,
@@ -130,6 +191,22 @@ class DatapointsSubscriptionAPI(APIClient):
 
         Returns:
            A datapoint subscription batch with data from the given subscription.
+
+        Examples:
+
+        List a batch of data from a subscription, starting at the beginning:
+
+            >>> from cognite.client import CogniteClient
+            >>> c = CogniteClient()
+            >>> batch = c.time_series.subscriptions.list_data("my_subscription", [0])
+
+        Call the endpoint again to get the next batch:
+
+            >>> from cognite.client import CogniteClient
+            >>> c = CogniteClient()
+            >>> batch1 = c.time_series.subscriptions.list_data("my_subscription", [0])
+            >>> batch2 = c.time_series.subscriptions.list_data("my_subscription", batch1.partitions)
+
         """
         body = {
             "externalId": external_id,

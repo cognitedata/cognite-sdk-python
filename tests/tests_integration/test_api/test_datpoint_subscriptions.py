@@ -129,7 +129,7 @@ class TestDatapointSubscriptions:
             new_update = DataPointSubscriptionUpdate(new_subscription.external_id).filter.set(new_filter)
 
             # Act
-            _ = cognite_client.time_series.subscriptions.update(new_update)
+            cognite_client.time_series.subscriptions.update(new_update)
             retrieved = cognite_client.time_series.subscriptions.retrieve(new_subscription.external_id)
 
             # Assert
