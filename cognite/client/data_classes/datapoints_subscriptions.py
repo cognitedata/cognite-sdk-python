@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Sequence, Type
+from typing import TYPE_CHECKING, Any, Sequence, Type, TypeVar
 
 from cognite.client.data_classes._base import (
     CogniteListUpdate,
@@ -11,8 +11,8 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     CogniteUpdate,
     T_CogniteResource,
+    T_CogniteResourceList,
 )
-from cognite.client.data_classes.datapoints import DatapointsList
 from cognite.client.utils._auxiliary import exactly_one_is_not_none
 from cognite.client.utils._text import convert_all_keys_to_snake_case
 
@@ -184,6 +184,41 @@ class TimeSeriesIDList(CogniteResourceList[TimeSeriesID]):
 
 
 @dataclass
+class SubscriptionDataPoint(CogniteResource):
+    timestamp: int
+
+
+@dataclass
+class NumericDataPoint(SubscriptionDataPoint):
+    value: float
+
+
+@dataclass
+class StringDataPoint(SubscriptionDataPoint):
+    value: str
+
+
+T_SubscriptionDataPoint = TypeVar("T_SubscriptionDataPoint", bound=SubscriptionDataPoint)
+
+
+class DataPointList(CogniteResourceList[T_SubscriptionDataPoint]):
+    @classmethod
+    def _load(
+        cls: Type[T_CogniteResourceList], resource_list: str | list, cognite_client: CogniteClient = None
+    ) -> T_CogniteResourceList:
+        resource_list = json.loads(resource_list) if isinstance(resource_list, str) else resource_list
+        return cls([cls._RESOURCE(**resource) for resource in resource_list])
+
+
+class NumericDataPointList(DataPointList[NumericDataPoint]):
+    _RESOURCE = NumericDataPoint
+
+
+class StringDataPointList(CogniteResourceList[StringDataPoint]):
+    _RESOURCE = StringDataPoint
+
+
+@dataclass
 class DataDeletion:
     inclusive_begin: int
     exclusive_end: int | None
@@ -202,15 +237,23 @@ class DataDeletion:
 @dataclass
 class DataPointUpdate:
     time_series: TimeSeriesID
-    upserts: DatapointsList | None = None
+    upserts: NumericDataPointList | StringDataPointList | None = None
     deletes: list[DataDeletion] | None = None
 
     @classmethod
     def _load(cls, data: dict[str, Any]) -> DataPointUpdate:
+        datapoints: dict[str, Any] = {"upserts": None, "deletes": None}
+        for key in list(datapoints):
+            if values := data.get(key):
+                if isinstance(values[0]["value"], float):
+                    datapoints[key] = NumericDataPointList._load(values)
+                elif isinstance(values[0]["value"], str):
+                    datapoints[key] = StringDataPointList._load(values, None)
+                else:
+                    raise ValueError("Unknown value type")
         return cls(
             time_series=TimeSeriesID._load(data["timeSeries"], None),
-            upserts=DatapointsList._load(data["upserts"], None),
-            deletes=[DataDeletion._load(d) for d in data["deletes"]],
+            **datapoints,
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import pandas as pd
 import pytest
 
 from cognite.client import CogniteClient
@@ -152,4 +153,58 @@ class TestDatapointSubscriptions:
     def test_list_data_subscription_datapoints_added(
         self, cognite_client: CogniteClient, time_series_external_ids: list[str]
     ):
-        ...
+        # Arrange
+        new_subscription = DataPointSubscriptionCreate(
+            external_id="PYSDKDataPointSubscriptionChangedTimeSeriesTest",
+            name="PYSDKDataPointSubscriptionChangedTimeSeriesTest",
+            time_series_ids=[time_series_external_ids[0]],
+            partition_count=1,
+        )
+        created: DatapointSubscription | None = None
+        new_data: pd.DataFrame | None = None
+        try:
+            created = cognite_client.time_series.subscriptions.create(new_subscription)
+
+            # Act
+            first_batch = cognite_client.time_series.subscriptions.list_data(new_subscription.external_id, [0])
+
+            # Assert
+            assert first_batch.has_next is False
+            assert first_batch.partitions[0].cursor is not None
+
+            # Arrange
+            existing_data = cognite_client.time_series.data.retrieve_dataframe(external_id=time_series_external_ids[0])
+            new_data = pd.DataFrame(
+                index=pd.date_range(start=existing_data.index[-1] + pd.Timedelta("1d"), periods=2, freq="1d"),
+                data=[[42], [43]],
+                columns=[time_series_external_ids[0]],
+            )
+
+            # Act
+            cognite_client.time_series.data.insert_dataframe(new_data)
+            second_batch = cognite_client.time_series.subscriptions.list_data(
+                new_subscription.external_id, first_batch.partitions
+            )
+
+            # Assert
+            assert second_batch.updates
+            assert (
+                sum(
+                    abs(actual.value - expected)
+                    for actual, expected in zip(
+                        second_batch.updates[0].upserts, new_data[time_series_external_ids[0]].values
+                    )
+                )
+                < 1e-6
+            )
+            assert all(
+                (actual.timestamp == expected)
+                for actual, expected in zip(second_batch.updates[0].upserts, new_data.index.astype("int64") // 10**6)
+            )
+        finally:
+            if created:
+                cognite_client.time_series.subscriptions.delete(new_subscription.external_id, ignore_unknown_ids=True)
+            if new_data is not None:
+                cognite_client.time_series.data.delete_range(
+                    new_data.index[0], new_data.index[-1] + pd.Timedelta("1d"), external_id=time_series_external_ids[0]
+                )
