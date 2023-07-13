@@ -22,9 +22,14 @@ if TYPE_CHECKING:
 
 ExternalId = str
 
+_FILTERS_SUPPORTED = {"and", "or", "not", "equals", "in", "range", "prefix", "containsAny", "containsAll"}
 
-def _valid_filter(filter: Filter) -> bool:
-    ...
+
+def _validate_filter(filter: Filter | None) -> None:
+    if filter is None:
+        return
+    if not_supported := (set(filter._filter_names()) - _FILTERS_SUPPORTED):
+        raise ValueError(f"The filters {not_supported} are not supported for DataPointSubscriptions")
 
 
 class DatapointSubscriptionCore(CogniteResource):
@@ -127,6 +132,7 @@ class DataPointSubscriptionCreate(DatapointSubscriptionCore):
     ):
         if not exactly_one_is_not_none(time_series_ids, filter):
             raise ValueError("Exactly one of time_series_ids and filter must be given")
+        _validate_filter(filter)
         super().__init__(external_id, partition_count, filter, name, description)
         self.time_series_ids = time_series_ids
 
@@ -406,4 +412,4 @@ class DataPointSubscriptionFilterProperties:
     id = ["id"]
     last_updated_time = ["lastUpdatedTime"]
     is_step = ["isStep"]
-    is_string = ["isString"]
+    is_string = ("isString",)

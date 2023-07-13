@@ -257,7 +257,7 @@ class TestDatapointSubscriptions:
                 pd.DataFrame(index=[pd.Timestamp.now()], data=[[42]], columns=[new_numerical_timeseries.external_id])
             )
             # Ensure that the subscription has been updated
-            time.sleep(1)
+            time.sleep(2)
 
             # Act
             second_batch = cognite_client.time_series.subscriptions.list_data(

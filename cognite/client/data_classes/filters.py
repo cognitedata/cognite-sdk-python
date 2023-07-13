@@ -115,6 +115,13 @@ class Filter(ABC):
     def _filter_body(self) -> list | dict:
         ...
 
+    def _filter_names(self) -> list[str]:
+        output = [self._filter_name]
+        if isinstance(self, CompoundFilter):
+            for filter_ in self._filters:
+                output.extend(filter_._filter_names())
+        return output
+
 
 class CompoundFilter(Filter):
     _filter_name = "compound"
