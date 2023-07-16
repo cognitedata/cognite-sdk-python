@@ -170,3 +170,41 @@ class TestEventsAPI:
             assert new_event.external_id == res.external_id
         finally:
             cognite_client.events.delete(external_id=new_event.external_id, ignore_unknown_ids=True)
+
+    def test_upsert_without_external_id(self, cognite_client: CogniteClient) -> None:
+        # Arrange
+        new_event = Event(
+            external_id="test_upsert_without_external_id:new",
+            type="test__py__sdk",
+            start_time=0,
+            end_time=1,
+            subtype="mySubType1",
+        )
+        existing = Event(
+            external_id="test_upsert_without_external_id:existing",
+            type="test__py__sdk",
+            start_time=0,
+            end_time=1,
+            subtype="mySubType2",
+        )
+        existing_update = Event._load(existing.dump(camel_case=True))
+        existing_update.subtype = "mySubType1"
+
+        try:
+            created = cognite_client.events.create(existing)
+            existing_update.external_id = None
+            existing_update.id = created.id
+
+            # Act
+            res = cognite_client.events.upsert([new_event, existing_update])
+
+            # Assert
+            assert len(res) == 2
+            assert new_event.external_id == res[0].external_id
+            assert existing.external_id == res[1].external_id
+            assert new_event.subtype == res[0].subtype
+            assert existing_update.subtype == res[1].subtype
+        finally:
+            cognite_client.events.delete(
+                external_id=[new_event.external_id, existing.external_id], ignore_unknown_ids=True
+            )

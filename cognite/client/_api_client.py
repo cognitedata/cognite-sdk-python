@@ -810,17 +810,21 @@ class APIClient:
         try:
             result = self._update_multiple(items, list_cls, resource_cls, update_cls)
         except CogniteNotFoundError as not_found_error:
-            items_by_external_id = {item.external_id: item for item in items}
+            items_by_external_id = {item.external_id: item for item in items if item.external_id is not None}
+            items_by_id = {item.id: item for item in items if item.id is not None}
+            # Not found must have an external id as they do no existing in CDF.
             missing_external_ids = {entry["externalId"] for entry in not_found_error.not_found}
             to_create = [
                 items_by_external_id[external_id]
                 for external_id in not_found_error.failed
                 if external_id in missing_external_ids
             ]
+
+            # Updates can have either external id or id. If they have an id, they must exist in CDF.
             to_update = [
-                items_by_external_id[external_id]
-                for external_id in not_found_error.failed
-                if external_id not in missing_external_ids
+                items_by_external_id[identifier] if isinstance(identifier, str) else items_by_id[identifier]
+                for identifier in not_found_error.failed
+                if identifier not in missing_external_ids or isinstance(identifier, int)
             ]
 
             created: T_CogniteResourceList | None = None
@@ -846,7 +850,7 @@ class APIClient:
                     successful.extend([item.external_id for item in created])
                 if updated is None and created is not None:
                     # The created call failed
-                    failed.extend([item.external_id for item in to_update])
+                    failed.extend([item.external_id if item.external_id is not None else item.id for item in to_update])
                 raise CogniteAPIError(
                     api_error.message, code=api_error.code, successful=successful, failed=failed, unknown=unknown
                 )
