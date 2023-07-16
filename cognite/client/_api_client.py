@@ -805,11 +805,58 @@ class APIClient:
         update_cls: Type[CogniteUpdate],
         input_resource_cls: Optional[Type[CogniteResource]] = None,
     ) -> T_CogniteResource | T_CogniteResourceList:
-        raise NotImplementedError
+        is_single = isinstance(items, CogniteResource)
+        items = cast(Sequence[CogniteResource], [items] if is_single else items)
         try:
-            self._update_multiple(items, list_cls, resource_cls, update_cls)
-        except CogniteNotFoundError:
-            raise NotImplementedError
+            return self._update_multiple(items, list_cls, resource_cls, update_cls)
+        except CogniteNotFoundError as not_found_error:
+            items_by_external_id = {item.external_id: item for item in items}
+            missing_external_ids = {entry["externalId"] for entry in not_found_error.not_found}
+            to_create = [
+                items_by_external_id[external_id]
+                for external_id in not_found_error.failed
+                if external_id in missing_external_ids
+            ]
+            to_update = [
+                items_by_external_id[external_id]
+                for external_id in not_found_error.failed
+                if external_id not in missing_external_ids
+            ]
+
+            created: T_CogniteResourceList | None = None
+            updated: T_CogniteResourceList | None = None
+            try:
+                if to_create:
+                    created = self._create_multiple(
+                        to_create, list_cls=list_cls, resource_cls=resource_cls, input_resource_cls=input_resource_cls
+                    )
+                if to_update:
+                    updated = self._update_multiple(
+                        to_update, list_cls=list_cls, resource_cls=resource_cls, update_cls=update_cls
+                    )
+            except CogniteAPIError as api_error:
+                successful = list(api_error.successful)
+                unknown = list(api_error.unknown)
+                failed = list(api_error.failed)
+
+                successful.extend(not_found_error.successful)
+                unknown.extend(not_found_error.unknown)
+                if created is not None:
+                    # The update call failed
+                    successful.extend([item.external_id for item in created])
+                if updated is None and created is not None:
+                    # The created call failed
+                    failed.extend([item.external_id for item in to_update])
+                raise CogniteAPIError(
+                    api_error.message, code=api_error.code, successful=successful, failed=failed, unknown=unknown
+                )
+
+            result = list_cls(created or [], cognite_client=self._cognite_client) + list_cls(
+                updated or [], cognite_client=self._cognite_client
+            )
+            if is_single:
+                return result[0]
+            return result
 
     def _search(
         self,
