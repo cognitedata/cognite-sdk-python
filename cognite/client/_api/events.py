@@ -446,5 +446,5 @@ class EventsAPI(APIClient):
         """
         return self._search(list_cls=EventList, search={"description": description}, filter=filter or {}, limit=limit)
 
-    def upsert(self, item: Event | Sequence[Event]) -> EventList:
+    def upsert(self, item: Event | Sequence[Event]) -> EventList | EventList:
         raise NotImplementedError()

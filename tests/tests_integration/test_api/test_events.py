@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 from datetime import datetime
 from unittest import mock
 
 import pytest
 
 import cognite.client.utils._time
-from cognite.client import utils
+from cognite.client import CogniteClient, utils
 from cognite.client.data_classes import EndTimeFilter, Event, EventFilter, EventUpdate
 from cognite.client.exceptions import CogniteNotFoundError
 from tests.utils import set_request_limit
@@ -109,3 +111,41 @@ class TestEventsAPI:
         a = cognite_client.events.create(Event())
         cognite_client.events.delete(id=a.id, external_id="this event does not exist", ignore_unknown_ids=True)
         assert cognite_client.events.retrieve(id=a.id) is None
+
+    def test_upsert_2_events_one_preexisting(self, cognite_client: CogniteClient) -> None:
+        # Arrange
+        new_event = Event(
+            external_id="test_upsert2_one_preexisting:new",
+            type="test__py__sdk",
+            start_time=0,
+            end_time=1,
+            subtype="mySubType1",
+        )
+        preexisting = Event(
+            external_id="test_upsert2_one_preexisting:preexisting",
+            type="test__py__sdk",
+            start_time=0,
+            end_time=1,
+            subtype="mySubType2",
+        )
+        preexisting_update = Event._load(preexisting.dump(camel_case=True))
+        preexisting_update.subtype = "mySubType1"
+
+        created_existing: Event | None = None
+        try:
+            created_existing = cognite_client.events.create(preexisting)
+            assert created_existing is not None
+
+            # Act
+            res = cognite_client.events.upsert([new_event, preexisting_update])
+
+            # Assert
+            assert len(res) == 2
+            assert new_event.external_id == res[0].external_id
+            assert preexisting.external_id == res[1].external_id
+            assert new_event.subtype == res[0].subtype
+            assert preexisting_update.subtype == res[1].subtype
+        finally:
+            cognite_client.events.delete(
+                external_id=[new_event.external_id, preexisting.external_id], ignore_unknown_ids=True
+            )
