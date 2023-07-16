@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
 from unittest import mock
 
 import pytest
+from _pytest.monkeypatch import MonkeyPatch
 
 import cognite.client.utils._time
 from cognite.client import CogniteClient, utils
 from cognite.client.data_classes import EndTimeFilter, Event, EventFilter, EventUpdate
-from cognite.client.exceptions import CogniteNotFoundError
+from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from tests.utils import set_request_limit
 
 
@@ -210,7 +210,7 @@ class TestEventsAPI:
                 external_id=[new_event.external_id, existing.external_id], ignore_unknown_ids=True
             )
 
-    def test_upsert_split_into_multiple_tasks(self, cognite_client: CogniteClient, monkeypatch: Any) -> None:
+    def test_upsert_split_into_multiple_tasks(self, cognite_client: CogniteClient, monkeypatch: MonkeyPatch) -> None:
         # Arrange
         new_event = Event(
             external_id="test_upsert_split_into_multiple_tasks:new",
@@ -243,6 +243,81 @@ class TestEventsAPI:
             assert preexisting.external_id == res[1].external_id
             assert new_event.subtype == res[0].subtype
             assert preexisting_update.subtype == res[1].subtype
+        finally:
+            cognite_client.events.delete(
+                external_id=[new_event.external_id, preexisting.external_id], ignore_unknown_ids=True
+            )
+
+    def test_upsert_invalid_update(self, cognite_client: CogniteClient, monkeypatch: MonkeyPatch) -> None:
+        # Arrange
+        new_event = Event(
+            external_id="test_upsert_invalid_update:new",
+            type="test__py__sdk",
+            start_time=0,
+            end_time=1,
+            subtype="mySubType1",
+        )
+        preexisting = Event(
+            external_id="test_upsert_invalid_update:preexisting",
+            type="test__py__sdk",
+            start_time=0,
+            end_time=1,
+            subtype="mySubType2",
+        )
+        preexisting_update = Event._load(preexisting.dump(camel_case=True))
+        preexisting_update.type = "invalid_length" * 64
+
+        try:
+            created = cognite_client.events.create(preexisting)
+            assert created
+            monkeypatch.setattr(cognite_client.events, "_UPDATE_LIMIT", 1)
+
+            # Act
+            with pytest.raises(CogniteAPIError) as e:
+                cognite_client.events.upsert([new_event, preexisting_update])
+
+            # Assert
+            assert e.value.code == 400
+            # The first update call should fail.
+            assert len(e.value.failed) == 2
+            assert "size must be between 0 and 64" in e.value.message
+        finally:
+            cognite_client.events.delete(
+                external_id=[new_event.external_id, preexisting.external_id], ignore_unknown_ids=True
+            )
+
+    def test_upsert_invalid_create(self, cognite_client: CogniteClient, monkeypatch: MonkeyPatch) -> None:
+        # Arrange
+        new_event = Event(
+            external_id="test_upsert_invalid_create:new",
+            type="test__py__sdk",
+            start_time=0,
+            end_time=1,
+            subtype="InvalidLength" * 100,
+        )
+        preexisting = Event(
+            external_id="test_upsert_invalid_create:preexisting",
+            type="test__py__sdk",
+            start_time=0,
+            end_time=1,
+            subtype="mySubType2",
+        )
+        preexisting_update = Event._load(preexisting.dump(camel_case=True))
+        preexisting_update.type = "mySubType42"
+
+        try:
+            created = cognite_client.events.create(preexisting)
+            assert created
+            monkeypatch.setattr(cognite_client.events, "_UPDATE_LIMIT", 1)
+
+            # Act
+            with pytest.raises(CogniteAPIError) as e:
+                cognite_client.events.upsert([new_event, preexisting_update])
+
+            # Assert
+            assert e.value.code == 400
+            assert len(e.value.successful) == 1
+            assert "size must be between 0 and 64" in e.value.message
         finally:
             cognite_client.events.delete(
                 external_id=[new_event.external_id, preexisting.external_id], ignore_unknown_ids=True
