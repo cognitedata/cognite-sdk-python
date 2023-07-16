@@ -808,7 +808,7 @@ class APIClient:
         is_single = isinstance(items, CogniteResource)
         items = cast(Sequence[CogniteResource], [items] if is_single else items)
         try:
-            return self._update_multiple(items, list_cls, resource_cls, update_cls)
+            result = self._update_multiple(items, list_cls, resource_cls, update_cls)
         except CogniteNotFoundError as not_found_error:
             items_by_external_id = {item.external_id: item for item in items}
             missing_external_ids = {entry["externalId"] for entry in not_found_error.not_found}
@@ -854,9 +854,9 @@ class APIClient:
             result = list_cls(created or [], cognite_client=self._cognite_client) + list_cls(
                 updated or [], cognite_client=self._cognite_client
             )
-            if is_single:
-                return result[0]
-            return result
+        if is_single:
+            return result[0]
+        return result
 
     def _search(
         self,

@@ -131,7 +131,6 @@ class TestEventsAPI:
         preexisting_update = Event._load(preexisting.dump(camel_case=True))
         preexisting_update.subtype = "mySubType1"
 
-        created_existing: Event | None = None
         try:
             created_existing = cognite_client.events.create(preexisting)
             assert created_existing is not None
@@ -149,3 +148,25 @@ class TestEventsAPI:
             cognite_client.events.delete(
                 external_id=[new_event.external_id, preexisting.external_id], ignore_unknown_ids=True
             )
+
+    def test_upsert_with_all_preexisting(self, cognite_client: CogniteClient) -> None:
+        # Arrange
+        new_event = Event(
+            external_id="test_upsert_all_preexisting:new",
+            type="test__py__sdk",
+            start_time=0,
+            end_time=1,
+            subtype="mySubType1",
+        )
+
+        try:
+            _ = cognite_client.events.create(new_event)
+
+            # Act
+            res = cognite_client.events.upsert(new_event)
+
+            # Assert
+            assert isinstance(res, Event)
+            assert new_event.external_id == res.external_id
+        finally:
+            cognite_client.events.delete(external_id=new_event.external_id, ignore_unknown_ids=True)
