@@ -45,7 +45,12 @@ from cognite.client.data_classes._base import (
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import is_unlimited, split_into_chunks
 from cognite.client.utils._concurrency import TaskExecutor
-from cognite.client.utils._identifier import IdentifierCore, IdentifierSequenceCore, SingletonIdentifierSequence
+from cognite.client.utils._identifier import (
+    IdentifierCore,
+    IdentifierSequence,
+    IdentifierSequenceCore,
+    SingletonIdentifierSequence,
+)
 from cognite.client.utils._text import convert_all_keys_to_camel_case, shorten, to_snake_case
 
 if TYPE_CHECKING:
@@ -854,10 +859,27 @@ class APIClient:
                 raise CogniteAPIError(
                     api_error.message, code=api_error.code, successful=successful, failed=failed, unknown=unknown
                 )
+            # Need to retrieve the successful updated items from the first call.
+            successful_resources: T_CogniteResourceList | None = None
+            if not_found_error.successful:
+                identifiers = IdentifierSequence.of(*not_found_error.successful)
+                successful_resources = self._retrieve_multiple(
+                    list_cls=list_cls, resource_cls=resource_cls, identifiers=identifiers
+                )
+                if isinstance(successful_resources, resource_cls):
+                    successful_resources = list_cls([successful_resources], cognite_client=self._cognite_client)
 
-            result = list_cls(created or [], cognite_client=self._cognite_client) + list_cls(
-                updated or [], cognite_client=self._cognite_client
+            result = list_cls(
+                (successful_resources or []) + (created or []) + (updated or []), cognite_client=self._cognite_client
             )
+
+            # Reorder to match the order of the input items
+            result_by_identifier = {identifier: item for item in result for identifier in [item.external_id, item.id]}
+            result = list_cls(
+                [result_by_identifier[item.external_id or item.id] for item in items],
+                cognite_client=self._cognite_client,
+            )
+
         if is_single:
             return result[0]
         return result
