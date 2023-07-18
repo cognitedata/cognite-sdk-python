@@ -19,8 +19,11 @@ class DataModelingResource(CogniteResource):
         if hasattr(self, "external_id"):
             external_id = self.external_id
             args.append(f"{external_id=}")
+        if hasattr(self, "version"):
+            version = self.version
+            args.append(f"{version=}")
 
-        return f"{type(self).__name__}({', '.join(args)}) at {id(self):#x}"
+        return f"<{type(self).__qualname__}({', '.join(args)}) at {id(self):#x}>"
 
     @classmethod
     def load(cls: Type[T_DataModelingResource], data: dict | str) -> T_DataModelingResource:
