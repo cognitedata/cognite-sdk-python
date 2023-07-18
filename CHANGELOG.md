@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.10.0] - 2023-07-19
+### Added
+- Upsert method for `assets`, `events`, `files`, `timeseries`, `sequences`, `relationships`
+
+
 ## [6.9.0] - 2023-07-19
 ### Added
 - Basic runtime validation of ClientConfig.project
