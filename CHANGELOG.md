@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.8.6] - 2023-07-18
+### Fixed
+- Include `version` in __repr__ for View and DataModel
+
 ## [6.8.5] - 2023-07-18
 ### Fixed
 - Change all implicit Optional types to explicit Optional types.
