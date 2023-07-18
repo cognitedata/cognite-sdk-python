@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from collections import UserList
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -386,8 +386,7 @@ T_CogniteUpdate = TypeVar("T_CogniteUpdate", bound=CogniteUpdate)
 @dataclass(frozen=True)
 class CogniteUpdateProperties:
     not_nullable_properties: set[str]
-    has_meta_data: bool = True
-    has_labels: bool = True
+    list_properties: set[str] = field(default_factory=lambda: {"labels", "metadata"})
 
 
 class CognitePrimitiveUpdate(Generic[T_CogniteUpdate]):

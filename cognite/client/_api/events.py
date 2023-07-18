@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterator, List, Optional, Sequence, Union, cast, overload
+from typing import Any, Dict, Iterator, List, Literal, Optional, Sequence, Union, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import LIST_LIMIT_DEFAULT
@@ -14,6 +14,7 @@ from cognite.client.data_classes import (
     EventUpdate,
     TimestampRange,
 )
+from cognite.client.data_classes._base import CogniteUpdateProperties
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 
@@ -447,20 +448,21 @@ class EventsAPI(APIClient):
         return self._search(list_cls=EventList, search={"description": description}, filter=filter or {}, limit=limit)
 
     @overload
-    def upsert(self, item: Sequence[Event]) -> EventList:
+    def upsert(self, item: Sequence[Event], mode: Literal["patch", "replace"]) -> EventList:
         ...
 
     @overload
-    def upsert(self, item: Event) -> Event:
+    def upsert(self, item: Event, mode: Literal["patch", "replace"]) -> Event:
         ...
 
-    def upsert(self, item: Event | Sequence[Event]) -> Event | EventList:
+    def upsert(self, item: Event | Sequence[Event], mode: Literal["patch", "replace"]) -> Event | EventList:
         """Upsert events, i.e., update if it exists, and create if it does not exist.
          Note this is a convenience method that handles the upserting for you by first calling update on all items,
          and if any of them fail because they do not exist, it will create them instead.
 
         Args:
             item (Event | Sequence[Event]): Event or list of events to upsert.
+            mode (Literal['patch', "replace"]): Whether to patch or replace in the case the events are existing.
 
         Returns:
             EventList: List of upserted events.
@@ -483,6 +485,11 @@ class EventsAPI(APIClient):
             resource_cls=Event,
             update_cls=EventUpdate,
             input_resource_cls=Event,
-            mode="legacy",
-            attribute_properties=None,
+            mode=mode,
+            attribute_properties=_EVENT_ATTRIBUTE_PROPERTIES,
         )
+
+
+_EVENT_ATTRIBUTE_PROPERTIES = CogniteUpdateProperties(
+    not_nullable_properties={"labels"}, list_properties={"metadata", "assetIds"}
+)

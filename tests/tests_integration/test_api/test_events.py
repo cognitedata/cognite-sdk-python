@@ -137,7 +137,7 @@ class TestEventsAPI:
             assert created_existing is not None
 
             # Act
-            res = cognite_client.events.upsert([new_event, preexisting_update])
+            res = cognite_client.events.upsert([new_event, preexisting_update], mode="replace")
 
             # Assert
             assert len(res) == 2
@@ -164,7 +164,7 @@ class TestEventsAPI:
             _ = cognite_client.events.create(new_event)
 
             # Act
-            res = cognite_client.events.upsert(new_event)
+            res = cognite_client.events.upsert(new_event, mode="replace")
 
             # Assert
             assert isinstance(res, Event)
@@ -197,7 +197,7 @@ class TestEventsAPI:
             existing_update.id = created.id
 
             # Act
-            res = cognite_client.events.upsert([new_event, existing_update])
+            res = cognite_client.events.upsert([new_event, existing_update], mode="replace")
 
             # Assert
             assert len(res) == 2
@@ -235,7 +235,7 @@ class TestEventsAPI:
             monkeypatch.setattr(cognite_client.events, "_UPDATE_LIMIT", 1)
 
             # Act
-            res = cognite_client.events.upsert([new_event, preexisting_update])
+            res = cognite_client.events.upsert([new_event, preexisting_update], mode="replace")
 
             # Assert
             assert len(res) == 2
@@ -274,7 +274,7 @@ class TestEventsAPI:
 
             # Act
             with pytest.raises(CogniteAPIError) as e:
-                cognite_client.events.upsert([new_event, preexisting_update])
+                cognite_client.events.upsert([new_event, preexisting_update], mode="replace")
 
             # Assert
             assert e.value.code == 400
@@ -312,7 +312,7 @@ class TestEventsAPI:
 
             # Act
             with pytest.raises(CogniteAPIError) as e:
-                cognite_client.events.upsert([new_event, preexisting_update])
+                cognite_client.events.upsert([new_event, preexisting_update], mode="replace")
 
             # Assert
             assert e.value.code == 400

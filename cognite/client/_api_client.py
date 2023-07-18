@@ -819,12 +819,14 @@ class APIClient:
         list_cls: Type[T_CogniteResourceList],
         resource_cls: Type[T_CogniteResource],
         update_cls: Type[CogniteUpdate],
-        attribute_properties: CogniteUpdateProperties | None = None,
-        mode: Literal["patch", "replace", "legacy"] = "legacy",
+        attribute_properties: CogniteUpdateProperties,
+        mode: Literal["patch", "replace"],
         input_resource_cls: Optional[Type[CogniteResource]] = None,
     ) -> T_CogniteResource | T_CogniteResourceList:
         is_single = isinstance(items, CogniteResource)
         items = cast(Sequence[CogniteResource], [items] if is_single else items)
+        # External ID is used for the reordering later. Thus, cannot be nulled.
+        attribute_properties.not_nullable_properties.add("externalId")
         try:
             result = self._update_multiple(
                 items, list_cls, resource_cls, update_cls, mode=mode, attribute_properties=attribute_properties
@@ -856,7 +858,12 @@ class APIClient:
                     )
                 if to_update:
                     updated = self._update_multiple(
-                        to_update, list_cls=list_cls, resource_cls=resource_cls, update_cls=update_cls
+                        to_update,
+                        list_cls=list_cls,
+                        resource_cls=resource_cls,
+                        update_cls=update_cls,
+                        mode=mode,
+                        attribute_properties=attribute_properties,
                     )
             except CogniteAPIError as api_error:
                 successful = list(api_error.successful)
@@ -889,7 +896,12 @@ class APIClient:
             )
 
             # Reorder to match the order of the input items
-            result_by_identifier = {identifier: item for item in result for identifier in [item.external_id, item.id]}
+            result_by_identifier = {
+                identifier: item
+                for item in result
+                for identifier in [item.external_id, item.id]
+                if identifier is not None
+            }
             result = list_cls(
                 [result_by_identifier[item.external_id or item.id] for item in items],
                 cognite_client=self._cognite_client,
@@ -980,16 +992,14 @@ class APIClient:
             raise ValueError("attribute_properties must be provided if mode is 'replace'")
 
         props = {
-            to_camel_case(attr)
+            camel
             for attr in update_attributes
-            if attr not in attribute_properties.not_nullable_properties
+            if (camel := to_camel_case(attr)) not in attribute_properties.not_nullable_properties
         }
 
         clear_dict: dict[str, dict[str, Any]] = {key: {"setNull": True} for key in props}
-        if attribute_properties.has_labels:
-            clear_dict["labels"] = {"set": []}
-        if attribute_properties.has_meta_data:
-            clear_dict["metadata"] = {"set": []}
+        for attr in attribute_properties.list_properties:
+            clear_dict[attr] = {"set": []}
         return clear_dict
 
     @staticmethod
