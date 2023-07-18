@@ -23,26 +23,26 @@ class EventsAPI(APIClient):
 
     def __call__(
         self,
-        chunk_size: int = None,
-        start_time: Union[Dict[str, Any], TimestampRange] = None,
-        end_time: Union[Dict[str, Any], EndTimeFilter] = None,
-        active_at_time: Union[Dict[str, Any], TimestampRange] = None,
-        type: str = None,
-        subtype: str = None,
-        metadata: Dict[str, str] = None,
-        asset_ids: Sequence[int] = None,
-        asset_external_ids: Sequence[str] = None,
-        asset_subtree_ids: Union[int, Sequence[int]] = None,
-        asset_subtree_external_ids: Union[str, Sequence[str]] = None,
-        data_set_ids: Union[int, Sequence[int]] = None,
-        data_set_external_ids: Union[str, Sequence[str]] = None,
-        source: str = None,
-        created_time: Union[Dict[str, Any], TimestampRange] = None,
-        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        external_id_prefix: str = None,
-        sort: Sequence[str] = None,
-        limit: int = None,
-        partitions: int = None,
+        chunk_size: Optional[int] = None,
+        start_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        end_time: Optional[Union[Dict[str, Any], EndTimeFilter]] = None,
+        active_at_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        type: Optional[str] = None,
+        subtype: Optional[str] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        asset_ids: Optional[Sequence[int]] = None,
+        asset_external_ids: Optional[Sequence[str]] = None,
+        asset_subtree_ids: Optional[Union[int, Sequence[int]]] = None,
+        asset_subtree_external_ids: Optional[Union[str, Sequence[str]]] = None,
+        data_set_ids: Optional[Union[int, Sequence[int]]] = None,
+        data_set_external_ids: Optional[Union[str, Sequence[str]]] = None,
+        source: Optional[str] = None,
+        created_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        last_updated_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        external_id_prefix: Optional[str] = None,
+        sort: Optional[Sequence[str]] = None,
+        limit: Optional[int] = None,
+        partitions: Optional[int] = None,
     ) -> Union[Iterator[Event], Iterator[EventList]]:
         """Iterate over events
 
@@ -180,24 +180,24 @@ class EventsAPI(APIClient):
 
     def list(
         self,
-        start_time: Union[Dict[str, Any], TimestampRange] = None,
-        end_time: Union[Dict[str, Any], EndTimeFilter] = None,
-        active_at_time: Union[Dict[str, Any], TimestampRange] = None,
-        type: str = None,
-        subtype: str = None,
-        metadata: Dict[str, str] = None,
-        asset_ids: Sequence[int] = None,
-        asset_external_ids: Sequence[str] = None,
-        asset_subtree_ids: Union[int, Sequence[int]] = None,
-        asset_subtree_external_ids: Union[str, Sequence[str]] = None,
-        data_set_ids: Union[int, Sequence[int]] = None,
-        data_set_external_ids: Union[str, Sequence[str]] = None,
-        source: str = None,
-        created_time: Union[Dict[str, Any], TimestampRange] = None,
-        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        external_id_prefix: str = None,
-        sort: Sequence[str] = None,
-        partitions: int = None,
+        start_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        end_time: Optional[Union[Dict[str, Any], EndTimeFilter]] = None,
+        active_at_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        type: Optional[str] = None,
+        subtype: Optional[str] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        asset_ids: Optional[Sequence[int]] = None,
+        asset_external_ids: Optional[Sequence[str]] = None,
+        asset_subtree_ids: Optional[Union[int, Sequence[int]]] = None,
+        asset_subtree_external_ids: Optional[Union[str, Sequence[str]]] = None,
+        data_set_ids: Optional[Union[int, Sequence[int]]] = None,
+        data_set_external_ids: Optional[Union[str, Sequence[str]]] = None,
+        source: Optional[str] = None,
+        created_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        last_updated_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        external_id_prefix: Optional[str] = None,
+        sort: Optional[Sequence[str]] = None,
+        partitions: Optional[int] = None,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> EventList:
         """`List events <https://developer.cognite.com/api#tag/Events/operation/advancedListEvents>`_
@@ -284,7 +284,7 @@ class EventsAPI(APIClient):
             sort=sort,
         )
 
-    def aggregate(self, filter: Union[EventFilter, Dict] = None) -> List[AggregateResult]:
+    def aggregate(self, filter: Optional[Union[EventFilter, Dict]] = None) -> List[AggregateResult]:
         """`Aggregate events <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
 
         Args:
@@ -305,7 +305,7 @@ class EventsAPI(APIClient):
         return self._aggregate(filter=filter, cls=AggregateResult)
 
     def aggregate_unique_values(
-        self, filter: Union[EventFilter, Dict] = None, fields: Sequence[str] = None
+        self, filter: Optional[Union[EventFilter, Dict]] = None, fields: Optional[Sequence[str]] = None
     ) -> List[AggregateUniqueValuesResult]:
         """`Aggregate unique values for events <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
 
@@ -358,8 +358,8 @@ class EventsAPI(APIClient):
 
     def delete(
         self,
-        id: Union[int, Sequence[int]] = None,
-        external_id: Union[str, Sequence[str]] = None,
+        id: Optional[Union[int, Sequence[int]]] = None,
+        external_id: Optional[Union[str, Sequence[str]]] = None,
         ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete one or more events <https://developer.cognite.com/api#tag/Events/operation/deleteEvents>`_
@@ -422,7 +422,9 @@ class EventsAPI(APIClient):
         """
         return self._update_multiple(list_cls=EventList, resource_cls=Event, update_cls=EventUpdate, items=item)
 
-    def search(self, description: str = None, filter: Union[EventFilter, Dict] = None, limit: int = 100) -> EventList:
+    def search(
+        self, description: Optional[str] = None, filter: Optional[Union[EventFilter, Dict]] = None, limit: int = 100
+    ) -> EventList:
         """`Search for events <https://developer.cognite.com/api#tag/Events/operation/searchEvents>`_
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 

@@ -64,7 +64,7 @@ class Annotation(CogniteResource):
         self._cognite_client: CogniteClient = cast("CogniteClient", None)  # Read only
 
     @classmethod
-    def _load(cls, resource: Union[Dict[str, Any], str], cognite_client: CogniteClient = None) -> Annotation:
+    def _load(cls, resource: Union[Dict[str, Any], str], cognite_client: Optional[CogniteClient] = None) -> Annotation:
         if isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
         elif isinstance(resource, dict):
@@ -72,7 +72,7 @@ class Annotation(CogniteResource):
         raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
 
     @classmethod
-    def from_dict(cls, resource: Dict[str, Any], cognite_client: CogniteClient = None) -> Annotation:
+    def from_dict(cls, resource: Dict[str, Any], cognite_client: Optional[CogniteClient] = None) -> Annotation:
         # Create base annotation
         data = {to_snake_case(key): val for key, val in resource.items()}
         annotation = Annotation(

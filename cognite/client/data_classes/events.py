@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -28,7 +28,9 @@ class EndTimeFilter(dict):
         is_null (bool): Set to true if you want to search for data with field value not set, false to search for cases where some value is present.
     """
 
-    def __init__(self, max: int = None, min: int = None, is_null: bool = None, **kwargs: Any) -> None:
+    def __init__(
+        self, max: Optional[int] = None, min: Optional[int] = None, is_null: Optional[bool] = None, **kwargs: Any
+    ) -> None:
         self.max = max
         self.min = min
         self.is_null = is_null
@@ -61,20 +63,20 @@ class Event(CogniteResource):
 
     def __init__(
         self,
-        external_id: str = None,
-        data_set_id: int = None,
-        start_time: int = None,
-        end_time: int = None,
-        type: str = None,
-        subtype: str = None,
-        description: str = None,
-        metadata: Dict[str, str] = None,
-        asset_ids: Sequence[int] = None,
-        source: str = None,
-        id: int = None,
-        last_updated_time: int = None,
-        created_time: int = None,
-        cognite_client: CogniteClient = None,
+        external_id: Optional[str] = None,
+        data_set_id: Optional[int] = None,
+        start_time: Optional[int] = None,
+        end_time: Optional[int] = None,
+        type: Optional[str] = None,
+        subtype: Optional[str] = None,
+        description: Optional[str] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        asset_ids: Optional[Sequence[int]] = None,
+        source: Optional[str] = None,
+        id: Optional[int] = None,
+        last_updated_time: Optional[int] = None,
+        created_time: Optional[int] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ):
         self.external_id = external_id
         self.data_set_id = data_set_id
@@ -115,21 +117,21 @@ class EventFilter(CogniteFilter):
 
     def __init__(
         self,
-        start_time: Union[Dict[str, Any], TimestampRange] = None,
-        end_time: Union[Dict[str, Any], EndTimeFilter] = None,
-        active_at_time: Union[Dict[str, Any], TimestampRange] = None,
-        metadata: Dict[str, str] = None,
-        asset_ids: Sequence[int] = None,
-        asset_external_ids: Sequence[str] = None,
-        asset_subtree_ids: Sequence[Dict[str, Any]] = None,
-        data_set_ids: Sequence[Dict[str, Any]] = None,
-        source: str = None,
-        type: str = None,
-        subtype: str = None,
-        created_time: Union[Dict[str, Any], TimestampRange] = None,
-        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        external_id_prefix: str = None,
-        cognite_client: CogniteClient = None,
+        start_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        end_time: Optional[Union[Dict[str, Any], EndTimeFilter]] = None,
+        active_at_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        asset_ids: Optional[Sequence[int]] = None,
+        asset_external_ids: Optional[Sequence[str]] = None,
+        asset_subtree_ids: Optional[Sequence[Dict[str, Any]]] = None,
+        data_set_ids: Optional[Sequence[Dict[str, Any]]] = None,
+        source: Optional[str] = None,
+        type: Optional[str] = None,
+        subtype: Optional[str] = None,
+        created_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        last_updated_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        external_id_prefix: Optional[str] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ):
         self.start_time = start_time
         self.end_time = end_time

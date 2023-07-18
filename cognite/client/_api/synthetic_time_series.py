@@ -28,10 +28,10 @@ class SyntheticDatapointsAPI(APIClient):
         expressions: Union[str, sympy.Expr, Sequence[Union[str, sympy.Expr]]],
         start: Union[int, str, datetime],
         end: Union[int, str, datetime],
-        limit: int = None,
-        variables: Dict[str, Union[str, TimeSeries]] = None,
-        aggregate: str = None,
-        granularity: str = None,
+        limit: Optional[int] = None,
+        variables: Optional[Dict[str, Union[str, TimeSeries]]] = None,
+        aggregate: Optional[str] = None,
+        granularity: Optional[str] = None,
     ) -> Union[Datapoints, DatapointsList]:
         """`Calculate the result of a function on time series. <https://developer.cognite.com/api#tag/Synthetic-Time-Series/operation/querySyntheticTimeseries>`_
 
@@ -117,9 +117,9 @@ class SyntheticDatapointsAPI(APIClient):
     @staticmethod
     def _build_expression(
         expression: Union[str, sympy.Expr],
-        variables: Dict[str, Any] = None,
-        aggregate: str = None,
-        granularity: str = None,
+        variables: Optional[Dict[str, Any]] = None,
+        aggregate: Optional[str] = None,
+        granularity: Optional[str] = None,
     ) -> Tuple[str, str]:
         if expression.__class__.__module__.startswith("sympy."):
             expression_str = SyntheticDatapointsAPI._sympy_to_sts(expression)

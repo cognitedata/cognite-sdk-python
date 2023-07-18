@@ -46,28 +46,28 @@ class FilesAPI(APIClient):
 
     def __call__(
         self,
-        chunk_size: int = None,
-        name: str = None,
-        mime_type: str = None,
-        metadata: Dict[str, str] = None,
-        asset_ids: Sequence[int] = None,
-        asset_external_ids: Sequence[str] = None,
-        asset_subtree_ids: Union[int, Sequence[int]] = None,
-        asset_subtree_external_ids: Union[str, Sequence[str]] = None,
-        data_set_ids: Union[int, Sequence[int]] = None,
-        data_set_external_ids: Union[str, Sequence[str]] = None,
-        labels: LabelFilter = None,
-        geo_location: GeoLocationFilter = None,
-        source: str = None,
-        created_time: Union[Dict[str, Any], TimestampRange] = None,
-        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        source_created_time: Union[Dict[str, Any], TimestampRange] = None,
-        source_modified_time: Union[Dict[str, Any], TimestampRange] = None,
-        uploaded_time: Union[Dict[str, Any], TimestampRange] = None,
-        external_id_prefix: str = None,
-        directory_prefix: str = None,
-        uploaded: bool = None,
-        limit: int = None,
+        chunk_size: Optional[int] = None,
+        name: Optional[str] = None,
+        mime_type: Optional[str] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        asset_ids: Optional[Sequence[int]] = None,
+        asset_external_ids: Optional[Sequence[str]] = None,
+        asset_subtree_ids: Optional[Union[int, Sequence[int]]] = None,
+        asset_subtree_external_ids: Optional[Union[str, Sequence[str]]] = None,
+        data_set_ids: Optional[Union[int, Sequence[int]]] = None,
+        data_set_external_ids: Optional[Union[str, Sequence[str]]] = None,
+        labels: Optional[LabelFilter] = None,
+        geo_location: Optional[GeoLocationFilter] = None,
+        source: Optional[str] = None,
+        created_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        last_updated_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        source_created_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        source_modified_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        uploaded_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        external_id_prefix: Optional[str] = None,
+        directory_prefix: Optional[str] = None,
+        uploaded: Optional[bool] = None,
+        limit: Optional[int] = None,
     ) -> Union[Iterator[FileMetadata], Iterator[FileMetadataList]]:
         """Iterate over files
 
@@ -244,26 +244,26 @@ class FilesAPI(APIClient):
 
     def list(
         self,
-        name: str = None,
-        mime_type: str = None,
-        metadata: Dict[str, str] = None,
-        asset_ids: Sequence[int] = None,
-        asset_external_ids: Sequence[str] = None,
-        asset_subtree_ids: Union[int, Sequence[int]] = None,
-        asset_subtree_external_ids: Union[str, Sequence[str]] = None,
-        data_set_ids: Union[int, Sequence[int]] = None,
-        data_set_external_ids: Union[str, Sequence[str]] = None,
-        labels: LabelFilter = None,
-        geo_location: GeoLocationFilter = None,
-        source: str = None,
-        created_time: Union[Dict[str, Any], TimestampRange] = None,
-        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        source_created_time: Union[Dict[str, Any], TimestampRange] = None,
-        source_modified_time: Union[Dict[str, Any], TimestampRange] = None,
-        uploaded_time: Union[Dict[str, Any], TimestampRange] = None,
-        external_id_prefix: str = None,
-        directory_prefix: str = None,
-        uploaded: bool = None,
+        name: Optional[str] = None,
+        mime_type: Optional[str] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        asset_ids: Optional[Sequence[int]] = None,
+        asset_external_ids: Optional[Sequence[str]] = None,
+        asset_subtree_ids: Optional[Union[int, Sequence[int]]] = None,
+        asset_subtree_external_ids: Optional[Union[str, Sequence[str]]] = None,
+        data_set_ids: Optional[Union[int, Sequence[int]]] = None,
+        data_set_external_ids: Optional[Union[str, Sequence[str]]] = None,
+        labels: Optional[LabelFilter] = None,
+        geo_location: Optional[GeoLocationFilter] = None,
+        source: Optional[str] = None,
+        created_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        last_updated_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        source_created_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        source_modified_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        uploaded_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        external_id_prefix: Optional[str] = None,
+        directory_prefix: Optional[str] = None,
+        uploaded: Optional[bool] = None,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> FileMetadataList:
         """`List files <https://developer.cognite.com/api#tag/Files/operation/advancedListFiles>`_
@@ -361,7 +361,7 @@ class FilesAPI(APIClient):
             list_cls=FileMetadataList, resource_cls=FileMetadata, method="POST", limit=limit, filter=filter
         )
 
-    def aggregate(self, filter: Union[FileMetadataFilter, Dict] = None) -> List[FileAggregate]:
+    def aggregate(self, filter: Optional[Union[FileMetadataFilter, Dict]] = None) -> List[FileAggregate]:
         """`Aggregate files <https://developer.cognite.com/api#tag/Files/operation/aggregateFiles>`_
 
         Args:
@@ -381,7 +381,9 @@ class FilesAPI(APIClient):
 
         return self._aggregate(filter=filter, cls=FileAggregate)
 
-    def delete(self, id: Union[int, Sequence[int]] = None, external_id: Union[str, Sequence[str]] = None) -> None:
+    def delete(
+        self, id: Optional[Union[int, Sequence[int]]] = None, external_id: Optional[Union[str, Sequence[str]]] = None
+    ) -> None:
         """`Delete files <https://developer.cognite.com/api#tag/Files/operation/deleteFiles>`_
 
         Args:
@@ -464,7 +466,7 @@ class FilesAPI(APIClient):
         )
 
     def search(
-        self, name: str = None, filter: Optional[Union[FileMetadataFilter, dict]] = None, limit: int = 100
+        self, name: Optional[str] = None, filter: Optional[Union[FileMetadataFilter, dict]] = None, limit: int = 100
     ) -> FileMetadataList:
         """`Search for files. <https://developer.cognite.com/api#tag/Files/operation/searchFiles>`_
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
@@ -497,19 +499,19 @@ class FilesAPI(APIClient):
     def upload(
         self,
         path: str,
-        external_id: str = None,
-        name: str = None,
-        source: str = None,
-        mime_type: str = None,
-        metadata: Dict[str, str] = None,
-        directory: str = None,
-        asset_ids: Sequence[int] = None,
-        source_created_time: int = None,
-        source_modified_time: int = None,
-        data_set_id: int = None,
-        labels: Sequence[Label] = None,
-        geo_location: GeoLocation = None,
-        security_categories: Sequence[int] = None,
+        external_id: Optional[str] = None,
+        name: Optional[str] = None,
+        source: Optional[str] = None,
+        mime_type: Optional[str] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        directory: Optional[str] = None,
+        asset_ids: Optional[Sequence[int]] = None,
+        source_created_time: Optional[int] = None,
+        source_modified_time: Optional[int] = None,
+        data_set_id: Optional[int] = None,
+        labels: Optional[Sequence[Label]] = None,
+        geo_location: Optional[GeoLocation] = None,
+        security_categories: Optional[Sequence[int]] = None,
         recursive: bool = False,
         overwrite: bool = False,
     ) -> Union[FileMetadata, FileMetadataList]:
@@ -630,18 +632,18 @@ class FilesAPI(APIClient):
         self,
         content: Union[str, bytes, TextIO, BinaryIO],
         name: str,
-        external_id: str = None,
-        source: str = None,
-        mime_type: str = None,
-        metadata: Dict[str, str] = None,
-        directory: str = None,
-        asset_ids: Sequence[int] = None,
-        data_set_id: int = None,
-        labels: Sequence[Label] = None,
-        geo_location: GeoLocation = None,
-        source_created_time: int = None,
-        source_modified_time: int = None,
-        security_categories: Sequence[int] = None,
+        external_id: Optional[str] = None,
+        source: Optional[str] = None,
+        mime_type: Optional[str] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        directory: Optional[str] = None,
+        asset_ids: Optional[Sequence[int]] = None,
+        data_set_id: Optional[int] = None,
+        labels: Optional[Sequence[Label]] = None,
+        geo_location: Optional[GeoLocation] = None,
+        source_created_time: Optional[int] = None,
+        source_modified_time: Optional[int] = None,
+        security_categories: Optional[Sequence[int]] = None,
         overwrite: bool = False,
     ) -> FileMetadata:
         """Upload bytes or string.
@@ -709,8 +711,8 @@ class FilesAPI(APIClient):
 
     def retrieve_download_urls(
         self,
-        id: Union[int, Sequence[int]] = None,
-        external_id: Union[str, Sequence[str]] = None,
+        id: Optional[Union[int, Sequence[int]]] = None,
+        external_id: Optional[Union[str, Sequence[str]]] = None,
         extended_expiration: bool = False,
     ) -> Dict[Union[int, str], str]:
         """Get download links by id or external id
@@ -740,8 +742,8 @@ class FilesAPI(APIClient):
     def download(
         self,
         directory: Union[str, Path],
-        id: Union[int, Sequence[int]] = None,
-        external_id: Union[str, Sequence[str]] = None,
+        id: Optional[Union[int, Sequence[int]]] = None,
+        external_id: Optional[Union[str, Sequence[str]]] = None,
     ) -> None:
         """`Download files by id or external id. <https://developer.cognite.com/api#tag/Files/operation/downloadLinks>`_
 
@@ -831,7 +833,9 @@ class FilesAPI(APIClient):
                     if chunk:  # filter out keep-alive new chunks
                         f.write(chunk)
 
-    def download_to_path(self, path: Union[Path, str], id: int = None, external_id: str = None) -> None:
+    def download_to_path(
+        self, path: Union[Path, str], id: Optional[int] = None, external_id: Optional[str] = None
+    ) -> None:
         """Download a file to a specific target.
 
         Args:
@@ -856,7 +860,7 @@ class FilesAPI(APIClient):
         download_link = self._get_download_link(identifier)
         self._download_file_to_path(download_link, path)
 
-    def download_bytes(self, id: int = None, external_id: str = None) -> bytes:
+    def download_bytes(self, id: Optional[int] = None, external_id: Optional[str] = None) -> bytes:
         """Download a file as bytes.
 
         Args:

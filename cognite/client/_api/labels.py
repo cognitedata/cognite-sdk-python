@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterator, Sequence, Union, cast
+from typing import Iterator, Optional, Sequence, Union, cast
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import LIST_LIMIT_DEFAULT
@@ -24,12 +24,12 @@ class LabelsAPI(APIClient):
 
     def __call__(
         self,
-        name: str = None,
-        external_id_prefix: str = None,
-        limit: int = None,
-        chunk_size: int = None,
-        data_set_ids: Union[int, Sequence[int]] = None,
-        data_set_external_ids: Union[str, Sequence[str]] = None,
+        name: Optional[str] = None,
+        external_id_prefix: Optional[str] = None,
+        limit: Optional[int] = None,
+        chunk_size: Optional[int] = None,
+        data_set_ids: Optional[Union[int, Sequence[int]]] = None,
+        data_set_external_ids: Optional[Union[str, Sequence[str]]] = None,
     ) -> Union[Iterator[LabelDefinition], Iterator[LabelDefinitionList]]:
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
@@ -47,10 +47,10 @@ class LabelsAPI(APIClient):
 
     def list(
         self,
-        name: str = None,
-        external_id_prefix: str = None,
-        data_set_ids: Union[int, Sequence[int]] = None,
-        data_set_external_ids: Union[str, Sequence[str]] = None,
+        name: Optional[str] = None,
+        external_id_prefix: Optional[str] = None,
+        data_set_ids: Optional[Union[int, Sequence[int]]] = None,
+        data_set_external_ids: Optional[Union[str, Sequence[str]]] = None,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> LabelDefinitionList:
         """`List Labels <https://developer.cognite.com/api#tag/Labels/operation/listLabels>`_
@@ -124,7 +124,7 @@ class LabelsAPI(APIClient):
             raise TypeError("'label' must be of type LabelDefinition or Sequence[LabelDefinition]")
         return self._create_multiple(list_cls=LabelDefinitionList, resource_cls=LabelDefinition, items=label)
 
-    def delete(self, external_id: Union[str, Sequence[str]] = None) -> None:
+    def delete(self, external_id: Optional[Union[str, Sequence[str]]] = None) -> None:
         """`Delete one or more label definitions <https://developer.cognite.com/api#tag/Labels/operation/deleteLabels>`_
 
         Args:

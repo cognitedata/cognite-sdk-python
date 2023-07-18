@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional
 
 from cognite.client.data_classes._base import (
     CogniteResourceList,
@@ -18,7 +18,7 @@ class SpaceCore(DataModelingResource):
         name (str): Human readable name for the space.
     """
 
-    def __init__(self, space: str, description: str = None, name: str = None):
+    def __init__(self, space: str, description: Optional[str] = None, name: Optional[str] = None):
         self.space = space
         self.description = description
         self.name = name
@@ -39,8 +39,8 @@ class SpaceApply(SpaceCore):
     def __init__(
         self,
         space: str,
-        description: str = None,
-        name: str = None,
+        description: Optional[str] = None,
+        name: Optional[str] = None,
         **_: Any,
     ):
         validate_data_modeling_identifier(space)
@@ -65,8 +65,8 @@ class Space(SpaceCore):
         is_global: bool,
         last_updated_time: int,
         created_time: int,
-        description: str = None,
-        name: str = None,
+        description: Optional[str] = None,
+        name: Optional[str] = None,
         **_: Any,
     ):
         super().__init__(space, description, name)

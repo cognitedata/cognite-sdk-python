@@ -117,8 +117,8 @@ class InstanceApply(InstanceCore):
         space: str,
         external_id: str,
         instance_type: Literal["node", "edge"] = "node",
-        existing_version: int = None,
-        sources: list[NodeOrEdgeData] = None,
+        existing_version: Optional[int] = None,
+        sources: Optional[list[NodeOrEdgeData]] = None,
     ):
         validate_data_modeling_identifier(space, external_id)
         super().__init__(space, external_id, instance_type)
@@ -205,7 +205,9 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
         ...
 
     def get(
-        self, view: ViewIdentifier, default: Optional[MutableMapping[PropertyIdentifier, PropertyValue]] | _T = None
+        self,
+        view: ViewIdentifier,
+        default: Optional[Optional[MutableMapping[PropertyIdentifier, PropertyValue]] | _T] = None,
     ) -> Optional[MutableMapping[PropertyIdentifier, PropertyValue]] | _T:
         view_id = ViewId.load(view)
         return self.data.get(view_id, default)
@@ -248,8 +250,8 @@ class Instance(InstanceCore):
         last_updated_time: int,
         created_time: int,
         instance_type: Literal["node", "edge"] = "node",
-        deleted_time: int = None,
-        properties: Properties = None,
+        deleted_time: Optional[int] = None,
+        properties: Optional[Properties] = None,
         **_: dict,
     ):
         super().__init__(space, external_id, instance_type)
@@ -382,8 +384,8 @@ class NodeApply(InstanceApply):
         self,
         space: str,
         external_id: str,
-        existing_version: int = None,
-        sources: list[NodeOrEdgeData] = None,
+        existing_version: Optional[int] = None,
+        sources: Optional[list[NodeOrEdgeData]] = None,
     ):
         super().__init__(space, external_id, "node", existing_version, sources)
 
@@ -412,8 +414,8 @@ class Node(Instance):
         version: str,
         last_updated_time: int,
         created_time: int,
-        deleted_time: int = None,
-        properties: Properties = None,
+        deleted_time: Optional[int] = None,
+        properties: Optional[Properties] = None,
         **_: dict,
     ):
         super().__init__(space, external_id, version, last_updated_time, created_time, "node", deleted_time, properties)
@@ -515,8 +517,8 @@ class EdgeApply(InstanceApply):
         type: DirectRelationReference | tuple[str, str],
         start_node: DirectRelationReference | tuple[str, str],
         end_node: DirectRelationReference | tuple[str, str],
-        existing_version: int = None,
-        sources: list[NodeOrEdgeData] = None,
+        existing_version: Optional[int] = None,
+        sources: Optional[list[NodeOrEdgeData]] = None,
     ):
         super().__init__(space, external_id, "edge", existing_version, sources)
         self.type = type if isinstance(type, DirectRelationReference) else DirectRelationReference.load(type)
@@ -577,8 +579,8 @@ class Edge(Instance):
         created_time: int,
         start_node: DirectRelationReference,
         end_node: DirectRelationReference,
-        deleted_time: int = None,
-        properties: Properties = None,
+        deleted_time: Optional[int] = None,
+        properties: Optional[Properties] = None,
         **_: dict,
     ):
         super().__init__(space, external_id, version, last_updated_time, created_time, "edge", deleted_time, properties)
@@ -586,7 +588,9 @@ class Edge(Instance):
         self.start_node = start_node
         self.end_node = end_node
 
-    def as_apply(self, source: ViewIdentifier | ContainerIdentifier, existing_version: int = None) -> EdgeApply:
+    def as_apply(
+        self, source: ViewIdentifier | ContainerIdentifier, existing_version: Optional[int] = None
+    ) -> EdgeApply:
         """
         This is a convenience function for converting the read to a write edge.
 
@@ -693,7 +697,7 @@ class NodeList(CogniteResourceList[Node]):
 
 
 class NodeListWithCursor(NodeList):
-    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient = None):
+    def __init__(self, resources: Collection[Any], cognite_client: Optional[CogniteClient] = None):
         super().__init__(resources, cognite_client)
         self.cursor: str | None = None
 
@@ -713,7 +717,7 @@ class EdgeList(CogniteResourceList[Edge]):
 
 
 class EdgeListWithCursor(EdgeList):
-    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient = None):
+    def __init__(self, resources: Collection[Any], cognite_client: Optional[CogniteClient] = None):
         super().__init__(resources, cognite_client)
         self.cursor: str | None = None
 

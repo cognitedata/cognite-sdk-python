@@ -118,18 +118,18 @@ class Datapoint(CogniteResource):
 
     def __init__(
         self,
-        timestamp: int = None,
-        value: Union[str, float] = None,
-        average: float = None,
-        max: float = None,
-        min: float = None,
-        count: int = None,
-        sum: float = None,
-        interpolation: float = None,
-        step_interpolation: float = None,
-        continuous_variance: float = None,
-        discrete_variance: float = None,
-        total_variation: float = None,
+        timestamp: Optional[int] = None,
+        value: Optional[Union[str, float]] = None,
+        average: Optional[float] = None,
+        max: Optional[float] = None,
+        min: Optional[float] = None,
+        count: Optional[int] = None,
+        sum: Optional[float] = None,
+        interpolation: Optional[float] = None,
+        step_interpolation: Optional[float] = None,
+        continuous_variance: Optional[float] = None,
+        discrete_variance: Optional[float] = None,
+        total_variation: Optional[float] = None,
     ):
         self.timestamp = timestamp
         self.value = value
@@ -166,24 +166,24 @@ class DatapointsArray(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        external_id: str = None,
-        is_string: bool = None,
-        is_step: bool = None,
-        unit: str = None,
-        granularity: str = None,
-        timestamp: NumpyDatetime64NSArray = None,
-        value: Union[NumpyFloat64Array, NumpyObjArray] = None,
-        average: NumpyFloat64Array = None,
-        max: NumpyFloat64Array = None,
-        min: NumpyFloat64Array = None,
-        count: NumpyInt64Array = None,
-        sum: NumpyFloat64Array = None,
-        interpolation: NumpyFloat64Array = None,
-        step_interpolation: NumpyFloat64Array = None,
-        continuous_variance: NumpyFloat64Array = None,
-        discrete_variance: NumpyFloat64Array = None,
-        total_variation: NumpyFloat64Array = None,
+        id: Optional[int] = None,
+        external_id: Optional[str] = None,
+        is_string: Optional[bool] = None,
+        is_step: Optional[bool] = None,
+        unit: Optional[str] = None,
+        granularity: Optional[str] = None,
+        timestamp: Optional[NumpyDatetime64NSArray] = None,
+        value: Optional[Union[NumpyFloat64Array, NumpyObjArray]] = None,
+        average: Optional[NumpyFloat64Array] = None,
+        max: Optional[NumpyFloat64Array] = None,
+        min: Optional[NumpyFloat64Array] = None,
+        count: Optional[NumpyInt64Array] = None,
+        sum: Optional[NumpyFloat64Array] = None,
+        interpolation: Optional[NumpyFloat64Array] = None,
+        step_interpolation: Optional[NumpyFloat64Array] = None,
+        continuous_variance: Optional[NumpyFloat64Array] = None,
+        discrete_variance: Optional[NumpyFloat64Array] = None,
+        total_variation: Optional[NumpyFloat64Array] = None,
     ):
         self.id = id
         self.external_id = external_id
@@ -408,25 +408,25 @@ class Datapoints(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        external_id: str = None,
-        is_string: bool = None,
-        is_step: bool = None,
-        unit: str = None,
-        granularity: str = None,
-        timestamp: Sequence[int] = None,
-        value: Union[Sequence[str], Sequence[float]] = None,
-        average: List[float] = None,
-        max: List[float] = None,
-        min: List[float] = None,
-        count: List[int] = None,
-        sum: List[float] = None,
-        interpolation: List[float] = None,
-        step_interpolation: List[float] = None,
-        continuous_variance: List[float] = None,
-        discrete_variance: List[float] = None,
-        total_variation: List[float] = None,
-        error: List[Union[None, str]] = None,
+        id: Optional[int] = None,
+        external_id: Optional[str] = None,
+        is_string: Optional[bool] = None,
+        is_step: Optional[bool] = None,
+        unit: Optional[str] = None,
+        granularity: Optional[str] = None,
+        timestamp: Optional[Sequence[int]] = None,
+        value: Optional[Union[Sequence[str], Sequence[float]]] = None,
+        average: Optional[List[float]] = None,
+        max: Optional[List[float]] = None,
+        min: Optional[List[float]] = None,
+        count: Optional[List[int]] = None,
+        sum: Optional[List[float]] = None,
+        interpolation: Optional[List[float]] = None,
+        step_interpolation: Optional[List[float]] = None,
+        continuous_variance: Optional[List[float]] = None,
+        discrete_variance: Optional[List[float]] = None,
+        total_variation: Optional[List[float]] = None,
+        error: Optional[List[Union[None, str]]] = None,
     ):
         self.id = id
         self.external_id = external_id
@@ -568,7 +568,10 @@ class Datapoints(CogniteResource):
 
     @classmethod
     def _load(  # type: ignore [override]
-        cls, dps_object: Dict[str, Any], expected_fields: List[str] = None, cognite_client: CogniteClient = None
+        cls,
+        dps_object: Dict[str, Any],
+        expected_fields: Optional[List[str]] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ) -> Datapoints:
         del cognite_client  # just needed for signature
         instance = cls(
@@ -644,7 +647,7 @@ class Datapoints(CogniteResource):
 class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
     _RESOURCE = DatapointsArray
 
-    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient = None):
+    def __init__(self, resources: Collection[Any], cognite_client: Optional[CogniteClient] = None):
         super().__init__(resources, cognite_client)
 
         # Fix what happens for duplicated identifiers:
@@ -704,8 +707,8 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
 
     def get(  # type: ignore [override]
         self,
-        id: int = None,
-        external_id: str = None,
+        id: Optional[int] = None,
+        external_id: Optional[str] = None,
     ) -> Union[None, DatapointsArray, List[DatapointsArray]]:
         """Get a specific DatapointsArray from this list by id or exernal_id.
 
@@ -763,7 +766,7 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
 class DatapointsList(CogniteResourceList[Datapoints]):
     _RESOURCE = Datapoints
 
-    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient = None):
+    def __init__(self, resources: Collection[Any], cognite_client: Optional[CogniteClient] = None):
         super().__init__(resources, cognite_client)
 
         # Fix what happens for duplicated identifiers:
@@ -783,8 +786,8 @@ class DatapointsList(CogniteResourceList[Datapoints]):
 
     def get(  # type: ignore [override]
         self,
-        id: int = None,
-        external_id: str = None,
+        id: Optional[int] = None,
+        external_id: Optional[str] = None,
     ) -> Union[None, Datapoints, List[Datapoints]]:
         """Get a specific Datapoints from this list by id or exernal_id.
 

@@ -31,11 +31,11 @@ class TransformationJobMetric(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        timestamp: int = None,
-        name: str = None,
-        count: int = None,
-        cognite_client: CogniteClient = None,
+        id: Optional[int] = None,
+        timestamp: Optional[int] = None,
+        name: Optional[str] = None,
+        count: Optional[int] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ):
         self.timestamp = timestamp
         self.name = name
@@ -43,7 +43,9 @@ class TransformationJobMetric(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> TransformationJobMetric:
+    def _load(
+        cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None
+    ) -> TransformationJobMetric:
         instance = super()._load(resource, cognite_client)
         return instance
 
@@ -78,22 +80,22 @@ class TransformationJob(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        status: TransformationJobStatus = None,
-        transformation_id: int = None,
-        transformation_external_id: str = None,
-        source_project: str = None,
-        destination_project: str = None,
-        destination: TransformationDestination = None,
-        conflict_mode: str = None,
-        query: str = None,
-        error: str = None,
+        id: Optional[int] = None,
+        status: Optional[TransformationJobStatus] = None,
+        transformation_id: Optional[int] = None,
+        transformation_external_id: Optional[str] = None,
+        source_project: Optional[str] = None,
+        destination_project: Optional[str] = None,
+        destination: Optional[TransformationDestination] = None,
+        conflict_mode: Optional[str] = None,
+        query: Optional[str] = None,
+        error: Optional[str] = None,
         ignore_null_fields: bool = False,
-        created_time: int = None,
-        started_time: int = None,
-        finished_time: int = None,
-        last_seen_time: int = None,
-        cognite_client: CogniteClient = None,
+        created_time: Optional[int] = None,
+        started_time: Optional[int] = None,
+        finished_time: Optional[int] = None,
+        last_seen_time: Optional[int] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ):
         self.id = id
         self.status = status
@@ -246,7 +248,7 @@ class TransformationJob(CogniteResource):
         return self
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> TransformationJob:
+    def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> TransformationJob:
         instance = super()._load(resource, cognite_client)
         if isinstance(instance.destination, Dict):
             instance.destination = _load_destination_dct(instance.destination)
@@ -268,6 +270,6 @@ class TransformationJobFilter(CogniteFilter):
         transformation_external_id (str): Filter jobs by transformation external ID.
     """
 
-    def __init__(self, transformation_id: Optional[int] = None, transformation_external_id: str = None):
+    def __init__(self, transformation_id: Optional[int] = None, transformation_external_id: Optional[str] = None):
         self.transformation_id = transformation_id
         self.transformation_external_id = transformation_external_id

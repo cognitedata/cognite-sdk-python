@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterator, Sequence, cast, overload
+from typing import Iterator, Optional, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DATA_MODELING_LIST_LIMIT_DEFAULT
@@ -28,7 +28,7 @@ class ContainersAPI(APIClient):
         chunk_size: None = None,
         space: str | None = None,
         include_global: bool = False,
-        limit: int = None,
+        limit: Optional[int] = None,
     ) -> Iterator[Container]:
         ...
 
@@ -38,7 +38,7 @@ class ContainersAPI(APIClient):
         chunk_size: int,
         space: str | None = None,
         include_global: bool = False,
-        limit: int = None,
+        limit: Optional[int] = None,
     ) -> Iterator[ContainerList]:
         ...
 
@@ -47,7 +47,7 @@ class ContainersAPI(APIClient):
         chunk_size: int | None = None,
         space: str | None = None,
         include_global: bool = False,
-        limit: int = None,
+        limit: Optional[int] = None,
     ) -> Iterator[Container] | Iterator[ContainerList]:
         """Iterate over containers
 

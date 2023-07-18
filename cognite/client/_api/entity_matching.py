@@ -26,7 +26,7 @@ class EntityMatchingAPI(APIClient):
         job_cls: Type[T_ContextualizationJob],
         json: Dict[str, Any],
         status_path: Optional[str] = None,
-        headers: Dict = None,
+        headers: Optional[Dict] = None,
     ) -> T_ContextualizationJob:
         if status_path is None:
             status_path = job_path + "/"
@@ -91,11 +91,11 @@ class EntityMatchingAPI(APIClient):
 
     def list(
         self,
-        name: str = None,
-        description: str = None,
-        original_id: int = None,
-        feature_type: str = None,
-        classifier: str = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        original_id: Optional[int] = None,
+        feature_type: Optional[str] = None,
+        classifier: Optional[str] = None,
         limit: int = 100,
     ) -> EntityMatchingModelList:
         """List models
@@ -135,7 +135,9 @@ class EntityMatchingAPI(APIClient):
             self._get(self._RESOURCE_PATH + "/jobs").json()["items"], cognite_client=self._cognite_client
         )
 
-    def delete(self, id: Union[int, Sequence[int]] = None, external_id: Union[str, Sequence[str]] = None) -> None:
+    def delete(
+        self, id: Optional[Union[int, Sequence[int]]] = None, external_id: Optional[Union[str, Sequence[str]]] = None
+    ) -> None:
         """Delete models
 
         Args:
@@ -148,14 +150,14 @@ class EntityMatchingAPI(APIClient):
         self,
         sources: Sequence[Union[Dict, CogniteResource]],
         targets: Sequence[Union[Dict, CogniteResource]],
-        true_matches: Sequence[Union[Dict, Tuple[Union[int, str], Union[int, str]]]] = None,
-        match_fields: Union[Dict, Sequence[Tuple[str, str]]] = None,
-        feature_type: str = None,
-        classifier: str = None,
+        true_matches: Optional[Sequence[Union[Dict, Tuple[Union[int, str], Union[int, str]]]]] = None,
+        match_fields: Optional[Union[Dict, Sequence[Tuple[str, str]]]] = None,
+        feature_type: Optional[str] = None,
+        classifier: Optional[str] = None,
         ignore_missing_fields: bool = False,
-        name: str = None,
-        description: str = None,
-        external_id: str = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        external_id: Optional[str] = None,
     ) -> EntityMatchingModel:
         """Fit entity matching model.
 
@@ -208,7 +210,7 @@ class EntityMatchingAPI(APIClient):
         sources: Optional[Sequence[Dict]] = None,
         targets: Optional[Sequence[Dict]] = None,
         num_matches: int = 1,
-        score_threshold: float = None,
+        score_threshold: Optional[float] = None,
         id: Optional[int] = None,
         external_id: Optional[str] = None,
     ) -> ContextualizationJob:

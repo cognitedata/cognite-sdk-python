@@ -39,11 +39,11 @@ class ContainerCore(DataModelingResource):
         space: str,
         external_id: str,
         properties: dict[str, ContainerProperty],
-        description: str = None,
-        name: str = None,
-        used_for: Literal["node", "edge", "all"] = None,
-        constraints: dict[str, Constraint] = None,
-        indexes: dict[str, Index] = None,
+        description: Optional[str] = None,
+        name: Optional[str] = None,
+        used_for: Optional[Literal["node", "edge", "all"]] = None,
+        constraints: Optional[dict[str, Constraint]] = None,
+        indexes: Optional[dict[str, Index]] = None,
         **_: dict,
     ):
         self.space = space
@@ -100,11 +100,11 @@ class ContainerApply(ContainerCore):
         space: str,
         external_id: str,
         properties: dict[str, ContainerProperty],
-        description: str = None,
-        name: str = None,
-        used_for: Literal["node", "edge", "all"] = None,
-        constraints: dict[str, Constraint] = None,
-        indexes: dict[str, Index] = None,
+        description: Optional[str] = None,
+        name: Optional[str] = None,
+        used_for: Optional[Literal["node", "edge", "all"]] = None,
+        constraints: Optional[dict[str, Constraint]] = None,
+        indexes: Optional[dict[str, Index]] = None,
     ):
         validate_data_modeling_identifier(space, external_id)
         super().__init__(space, external_id, properties, description, name, used_for, constraints, indexes)
@@ -135,11 +135,11 @@ class Container(ContainerCore):
         is_global: bool,
         last_updated_time: int,
         created_time: int,
-        description: str = None,
-        name: str = None,
+        description: Optional[str] = None,
+        name: Optional[str] = None,
         used_for: Literal["node", "edge", "all"] = "node",
-        constraints: dict[str, Constraint] = None,
-        indexes: dict[str, Index] = None,
+        constraints: Optional[dict[str, Constraint]] = None,
+        indexes: Optional[dict[str, Index]] = None,
     ):
         super().__init__(space, external_id, properties, description, name, used_for, constraints, indexes)
         self.is_global = is_global
@@ -183,7 +183,7 @@ class ContainerFilter(CogniteFilter):
         include_global (bool): Whether the global containers should be included.
     """
 
-    def __init__(self, space: str = None, include_global: bool = False):
+    def __init__(self, space: Optional[str] = None, include_global: bool = False):
         self.space = space
         self.include_global = include_global
 

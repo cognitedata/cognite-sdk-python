@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Type, TypeVar
+from typing import TYPE_CHECKING, Optional, Type, TypeVar
 
 from cognite.client.data_classes._base import CogniteResource
 from cognite.client.utils._text import convert_all_keys_to_snake_case
@@ -29,7 +29,7 @@ class DataModelingResource(CogniteResource):
 
     @classmethod
     def _load(
-        cls: Type[T_DataModelingResource], resource: dict | str, cognite_client: CogniteClient = None
+        cls: Type[T_DataModelingResource], resource: dict | str, cognite_client: Optional[CogniteClient] = None
     ) -> T_DataModelingResource:
         return cls.load(resource)
 

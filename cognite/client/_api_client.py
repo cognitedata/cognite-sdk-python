@@ -251,9 +251,9 @@ class APIClient:
         self,
         identifier: IdentifierCore,
         cls: Type[T_CogniteResource],
-        resource_path: str = None,
-        params: Dict = None,
-        headers: Dict = None,
+        resource_path: Optional[str] = None,
+        params: Optional[Dict] = None,
+        headers: Optional[Dict] = None,
     ) -> Optional[T_CogniteResource]:
         resource_path = resource_path or self._RESOURCE_PATH
         try:
@@ -732,9 +732,9 @@ class APIClient:
         list_cls: Type[T_CogniteResourceList],
         resource_cls: Type[T_CogniteResource],
         update_cls: Type[CogniteUpdate],
-        resource_path: str = None,
-        params: Dict = None,
-        headers: Dict = None,
+        resource_path: Optional[str] = None,
+        params: Optional[Dict] = None,
+        headers: Optional[Dict] = None,
     ) -> T_CogniteResource:
         ...
 
@@ -745,9 +745,9 @@ class APIClient:
         list_cls: Type[T_CogniteResourceList],
         resource_cls: Type[T_CogniteResource],
         update_cls: Type[CogniteUpdate],
-        resource_path: str = None,
-        params: Dict = None,
-        headers: Dict = None,
+        resource_path: Optional[str] = None,
+        params: Optional[Dict] = None,
+        headers: Optional[Dict] = None,
     ) -> T_CogniteResourceList:
         ...
 
@@ -757,9 +757,9 @@ class APIClient:
         list_cls: Type[T_CogniteResourceList],
         resource_cls: Type[T_CogniteResource],
         update_cls: Type[CogniteUpdate],
-        resource_path: str = None,
-        params: Dict = None,
-        headers: Dict = None,
+        resource_path: Optional[str] = None,
+        params: Optional[Dict] = None,
+        headers: Optional[Dict] = None,
     ) -> Union[T_CogniteResourceList, T_CogniteResource]:
         resource_path = resource_path or self._RESOURCE_PATH
         patch_objects = []

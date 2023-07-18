@@ -29,8 +29,8 @@ class DataModelCore(DataModelingResource):
         space: str,
         external_id: str,
         version: str,
-        description: str = None,
-        name: str = None,
+        description: Optional[str] = None,
+        name: Optional[str] = None,
         **_: dict,
     ):
         self.space = space
@@ -60,9 +60,9 @@ class DataModelApply(DataModelCore):
         space: str,
         external_id: str,
         version: str,
-        description: str = None,
-        name: str = None,
-        views: list[ViewId | ViewApply] = None,
+        description: Optional[str] = None,
+        name: Optional[str] = None,
+        views: Optional[list[ViewId | ViewApply]] = None,
     ):
         validate_data_modeling_identifier(space, external_id)
         super().__init__(space, external_id, version, description, name)
@@ -118,8 +118,8 @@ class DataModel(DataModelCore, Generic[T_View]):
         is_global: bool,
         last_updated_time: int,
         created_time: int,
-        description: str = None,
-        name: str = None,
+        description: Optional[str] = None,
+        name: Optional[str] = None,
         views: Optional[list[T_View]] = None,
         **_: dict,
     ):
@@ -196,7 +196,7 @@ class DataModelFilter(CogniteFilter):
 
     def __init__(
         self,
-        space: str = None,
+        space: Optional[str] = None,
         inline_views: bool = False,
         all_versions: bool = False,
         include_global: bool = False,

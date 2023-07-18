@@ -30,10 +30,10 @@ class ViewCore(DataModelingResource):
         space: str,
         external_id: str,
         version: str,
-        description: str = None,
-        name: str = None,
+        description: Optional[str] = None,
+        name: Optional[str] = None,
         filter: Filter | None = None,
-        implements: list[ViewId] = None,
+        implements: Optional[list[ViewId]] = None,
         **_: dict,
     ):
         self.space = space
@@ -90,11 +90,11 @@ class ViewApply(ViewCore):
         space: str,
         external_id: str,
         version: str,
-        description: str = None,
-        name: str = None,
+        description: Optional[str] = None,
+        name: Optional[str] = None,
         filter: Filter | None = None,
-        implements: list[ViewId] = None,
-        properties: dict[str, MappedPropertyApply | ConnectionDefinition] = None,
+        implements: Optional[list[ViewId]] = None,
+        properties: Optional[dict[str, MappedPropertyApply | ConnectionDefinition]] = None,
     ):
         validate_data_modeling_identifier(space, external_id)
         super().__init__(space, external_id, version, description, name, filter, implements)
@@ -143,10 +143,10 @@ class View(ViewCore):
         properties: dict[str, MappedProperty | ConnectionDefinition],
         last_updated_time: int,
         created_time: int,
-        description: str = None,
-        name: str = None,
+        description: Optional[str] = None,
+        name: Optional[str] = None,
         filter: Filter | None = None,
-        implements: list[ViewId] = None,
+        implements: Optional[list[ViewId]] = None,
         writable: bool = False,
         used_for: Literal["node", "edge", "all"] = "node",
         is_global: bool = False,
@@ -234,7 +234,7 @@ class ViewFilter(CogniteFilter):
 
     def __init__(
         self,
-        space: str = None,
+        space: Optional[str] = None,
         include_inherited_properties: bool = True,
         all_versions: bool = False,
         include_global: bool = False,

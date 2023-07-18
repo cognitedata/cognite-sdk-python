@@ -223,7 +223,7 @@ def exactly_one_is_not_none(*args: Any) -> bool:
 
 
 def rename_and_exclude_keys(
-    dct: dict[str, Any], aliases: dict[str, str] = None, exclude: set[str] = None
+    dct: dict[str, Any], aliases: Optional[dict[str, str]] = None, exclude: Optional[set[str]] = None
 ) -> dict[str, Any]:
     aliases = aliases or {}
     exclude = exclude or set()
