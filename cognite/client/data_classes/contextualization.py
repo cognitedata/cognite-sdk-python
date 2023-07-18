@@ -14,6 +14,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    PropertySpec,
 )
 from cognite.client.data_classes.annotation_types.images import AssetLink, ObjectDetection, TextRegion
 from cognite.client.data_classes.annotation_types.primitives import VisionResource
@@ -324,6 +325,13 @@ class EntityMatchingModelUpdate(CogniteUpdate):
     @property
     def description(self) -> _PrimitiveUpdate:
         return EntityMatchingModelUpdate._PrimitiveUpdate(self, "description")
+
+    @classmethod
+    def _get_update_properties(cls) -> list[PropertySpec]:
+        return [
+            PropertySpec("name", is_nullable=False),
+            PropertySpec("description", is_nullable=False),
+        ]
 
 
 class EntityMatchingModelList(CogniteResourceList[EntityMatchingModel]):

@@ -10,6 +10,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    PropertySpec,
 )
 from cognite.client.utils._text import to_camel_case, to_snake_case
 
@@ -305,6 +306,12 @@ class TemplateInstanceUpdate(CogniteUpdate):
     @property
     def field_resolvers(self) -> _ObjectAssetUpdate:
         return TemplateInstanceUpdate._ObjectAssetUpdate(self, "fieldResolvers")
+
+    @classmethod
+    def _get_update_properties(cls) -> list[PropertySpec]:
+        return [
+            PropertySpec("field_resolvers"),
+        ]
 
 
 class Source(CogniteResource):

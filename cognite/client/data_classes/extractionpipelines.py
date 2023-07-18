@@ -11,6 +11,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    PropertySpec,
 )
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._text import convert_all_keys_to_camel_case
@@ -191,6 +192,22 @@ class ExtractionPipelineUpdate(CogniteUpdate):
     @property
     def contacts(self) -> _ListExtractionPipelineUpdate:
         return ExtractionPipelineUpdate._ListExtractionPipelineUpdate(self, "contacts")
+
+    @classmethod
+    def _get_update_properties(cls) -> list[PropertySpec]:
+        return [
+            PropertySpec("external_id", is_nullable=False),
+            PropertySpec("name", is_nullable=False),
+            PropertySpec("description", is_nullable=False),
+            PropertySpec("data_set_id", is_nullable=False),
+            PropertySpec("schedule", is_nullable=False),
+            PropertySpec("raw_tables", is_list=True),
+            PropertySpec("contacts", is_list=True),
+            PropertySpec("metadata", is_list=True),
+            PropertySpec("source", is_nullable=False),
+            PropertySpec("documentation", is_nullable=False),
+            PropertySpec("notification_config", is_nullable=False),
+        ]
 
 
 class ExtractionPipelineList(CogniteResourceList[ExtractionPipeline]):

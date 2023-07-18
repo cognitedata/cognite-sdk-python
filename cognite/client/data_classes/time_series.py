@@ -13,6 +13,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    PropertySpec,
 )
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._identifier import Identifier
@@ -271,6 +272,21 @@ class TimeSeriesUpdate(CogniteUpdate):
     @property
     def data_set_id(self) -> _PrimitiveTimeSeriesUpdate:
         return TimeSeriesUpdate._PrimitiveTimeSeriesUpdate(self, "dataSetId")
+
+    @classmethod
+    def _get_update_properties(cls) -> list[PropertySpec]:
+        return [
+            # External ID is nullable, but is used in the upsert logic and thus cannot be nulled out.
+            PropertySpec("external_id", is_nullable=False),
+            PropertySpec("name"),
+            PropertySpec("metadata", is_list=True),
+            PropertySpec("unit"),
+            PropertySpec("asset_id"),
+            PropertySpec("description"),
+            PropertySpec("is_step", is_nullable=True),
+            PropertySpec("security_categories", is_list=True),
+            PropertySpec("data_set_id"),
+        ]
 
 
 class TimeSeriesAggregate(dict):
