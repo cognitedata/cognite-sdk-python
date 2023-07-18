@@ -452,7 +452,7 @@ class RelationshipsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> existing_relationship = c.relationships.retrieve(id=1)
                 >>> existing_relationship.description = "New description"
-                >>> new_relationship = Relationship(external_id="new_relationship", description="New relationship")
+                >>> new_relationship = Relationship(external_id="new_relationship", source_external_id="new_source")
                 >>> res = c.relationships.upsert([existing_relationship, new_relationship], mode="replace")
         """
         return self._upsert_multiple(

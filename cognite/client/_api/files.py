@@ -497,7 +497,7 @@ class FilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> existing_file = c.files.retrieve(id=1)
                 >>> existing_file.description = "New description"
-                >>> new_file = FileMetadata(external_id="new_file", description="New file")
+                >>> new_file = FileMetadata(external_id="new_file", name="MyNewFile")
                 >>> res = c.files.upsert([existing_file, new_file], mode="replace")
         """
         return self._upsert_multiple(
