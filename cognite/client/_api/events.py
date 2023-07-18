@@ -14,7 +14,6 @@ from cognite.client.data_classes import (
     EventUpdate,
     TimestampRange,
 )
-from cognite.client.data_classes._base import CogniteUpdateProperties
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 
@@ -486,10 +485,4 @@ class EventsAPI(APIClient):
             update_cls=EventUpdate,
             input_resource_cls=Event,
             mode=mode,
-            attribute_properties=_EVENT_ATTRIBUTE_PROPERTIES,
         )
-
-
-_EVENT_ATTRIBUTE_PROPERTIES = CogniteUpdateProperties(
-    not_nullable_properties={"labels"}, list_properties={"metadata", "assetIds"}
-)

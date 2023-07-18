@@ -10,7 +10,6 @@ from json.decoder import JSONDecodeError
 from typing import (
     TYPE_CHECKING,
     Any,
-    Collection,
     Dict,
     Iterator,
     List,
@@ -39,7 +38,7 @@ from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteResource,
     CogniteUpdate,
-    CogniteUpdateProperties,
+    PropertySpec,
     T_CogniteResource,
     T_CogniteResourceList,
 )
@@ -742,7 +741,6 @@ class APIClient:
         params: Optional[Dict] = None,
         headers: Optional[Dict] = None,
         mode: Literal["legacy", "patch", "replace"] = "legacy",
-        attribute_properties: CogniteUpdateProperties | None = None,
     ) -> T_CogniteResource:
         ...
 
@@ -757,7 +755,6 @@ class APIClient:
         params: Optional[Dict] = None,
         headers: Optional[Dict] = None,
         mode: Literal["legacy", "patch", "replace"] = "legacy",
-        attribute_properties: CogniteUpdateProperties | None = None,
     ) -> T_CogniteResourceList:
         ...
 
@@ -771,7 +768,6 @@ class APIClient:
         params: Optional[Dict] = None,
         headers: Optional[Dict] = None,
         mode: Literal["legacy", "patch", "replace"] = "legacy",
-        attribute_properties: CogniteUpdateProperties | None = None,
     ) -> Union[T_CogniteResourceList, T_CogniteResource]:
         resource_path = resource_path or self._RESOURCE_PATH
         patch_objects = []
@@ -784,9 +780,7 @@ class APIClient:
         for index, item in enumerate(item_list):
             if isinstance(item, CogniteResource):
                 patch_objects.append(
-                    self._convert_resource_to_patch_object(
-                        item, update_cls._get_update_properties(), mode, attribute_properties
-                    )
+                    self._convert_resource_to_patch_object(item, update_cls._get_update_properties(), mode)
                 )
             elif isinstance(item, CogniteUpdate):
                 patch_objects.append(item.dump(camel_case=True))
@@ -819,18 +813,13 @@ class APIClient:
         list_cls: Type[T_CogniteResourceList],
         resource_cls: Type[T_CogniteResource],
         update_cls: Type[CogniteUpdate],
-        attribute_properties: CogniteUpdateProperties,
         mode: Literal["patch", "replace"],
         input_resource_cls: Optional[Type[CogniteResource]] = None,
     ) -> T_CogniteResource | T_CogniteResourceList:
         is_single = isinstance(items, CogniteResource)
         items = cast(Sequence[CogniteResource], [items] if is_single else items)
-        # External ID is used for the reordering later. Thus, cannot be nulled.
-        attribute_properties.not_nullable_properties.add("externalId")
         try:
-            result = self._update_multiple(
-                items, list_cls, resource_cls, update_cls, mode=mode, attribute_properties=attribute_properties
-            )
+            result = self._update_multiple(items, list_cls, resource_cls, update_cls, mode=mode)
         except CogniteNotFoundError as not_found_error:
             items_by_external_id = {item.external_id: item for item in items if item.external_id is not None}
             items_by_id = {item.id: item for item in items if item.id is not None}
@@ -863,7 +852,6 @@ class APIClient:
                         resource_cls=resource_cls,
                         update_cls=update_cls,
                         mode=mode,
-                        attribute_properties=attribute_properties,
                     )
             except CogniteAPIError as api_error:
                 successful = list(api_error.successful)
@@ -953,9 +941,8 @@ class APIClient:
     def _convert_resource_to_patch_object(
         cls,
         resource: CogniteResource,
-        update_attributes: Collection[str],
+        update_attributes: list[PropertySpec],
         mode: Literal["legacy", "patch", "replace"] = "legacy",
-        attribute_properties: CogniteUpdateProperties | None = None,
     ) -> Dict[str, Dict[str, Dict]]:
         dumped_resource = resource.dump(camel_case=True)
         has_id = "id" in dumped_resource
@@ -967,40 +954,30 @@ class APIClient:
         elif has_external_id:
             patch_object["externalId"] = dumped_resource.pop("externalId")
 
-        update: dict[str, dict] = (
-            {} if mode in {"patch", "legacy"} else cls._clear_all_attributes(update_attributes, attribute_properties)
-        )
+        update: dict[str, dict] = {} if mode in {"patch", "legacy"} else cls._clear_all_attributes(update_attributes)
+
+        update_attribute_by_name = {prop.name: prop for prop in update_attributes}
         for key, value in dumped_resource.items():
-            if to_snake_case(key) in update_attributes:
+            if (snake := to_snake_case(key)) not in update_attribute_by_name:
+                continue
+            prop = update_attribute_by_name[snake]
+            if prop.is_list and mode == "patch":
+                update[key] = {"add": value}
+            else:
                 update[key] = {"set": value}
 
-        if mode == "patch":
-            if "metadata" in dumped_resource:
-                update["metadata"]["add"] = update["metadata"].pop("set")
-            if "labels" in dumped_resource:
-                update["labels"]["add"] = update["labels"].pop("set")
-
         patch_object["update"] = update
-
         return patch_object
 
     @staticmethod
     def _clear_all_attributes(
-        update_attributes: Collection[str], attribute_properties: CogniteUpdateProperties | None = None
+        update_attributes: list[PropertySpec],
     ) -> dict[str, dict]:
-        if attribute_properties is None:
-            raise ValueError("attribute_properties must be provided if mode is 'replace'")
-
-        props = {
-            camel
-            for attr in update_attributes
-            if (camel := to_camel_case(attr)) not in attribute_properties.not_nullable_properties
+        return {
+            to_camel_case(prop.name): {"set": []} if prop.is_list else {"setNull": True}
+            for prop in update_attributes
+            if prop.is_nullable
         }
-
-        clear_dict: dict[str, dict[str, Any]] = {key: {"setNull": True} for key in props}
-        for attr in attribute_properties.list_properties:
-            clear_dict[attr] = {"set": []}
-        return clear_dict
 
     @staticmethod
     def _status_ok(status_code: int) -> bool:

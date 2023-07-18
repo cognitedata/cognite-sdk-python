@@ -12,6 +12,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    PropertySpec,
 )
 from cognite.client.data_classes.shared import TimestampRange
 
@@ -244,6 +245,22 @@ class EventUpdate(CogniteUpdate):
     @property
     def subtype(self) -> _PrimitiveEventUpdate:
         return EventUpdate._PrimitiveEventUpdate(self, "subtype")
+
+    @classmethod
+    def _get_update_properties(cls) -> list[PropertySpec]:
+        return [
+            # External ID is nullable, but is used in the upsert logic and thus cannot be nulled out.
+            PropertySpec("external_id", is_nullable=False),
+            PropertySpec("data_set_id"),
+            PropertySpec("start_time"),
+            PropertySpec("end_time"),
+            PropertySpec("description"),
+            PropertySpec("metadata", is_list=True),
+            PropertySpec("asset_ids", is_list=True),
+            PropertySpec("source"),
+            PropertySpec("type"),
+            PropertySpec("subtype"),
+        ]
 
 
 class EventList(CogniteResourceList[Event]):

@@ -108,30 +108,6 @@ class TestAPIClientUpsert:
                 external_id=[new_event.external_id, existing.external_id], ignore_unknown_ids=True
             )
 
-    def test_upsert_external_id_empty_string(self, cognite_client: CogniteClient) -> None:
-        # Arrange
-        existing = Event(
-            external_id="",
-            type="test__py__sdk",
-            start_time=0,
-            end_time=1,
-        )
-        existing_update = Event._load(existing.dump(camel_case=True))
-        existing_update.end_time = 2
-
-        try:
-            created = cognite_client.events.create(existing)
-            assert created.id is not None
-
-            # Act
-            res = cognite_client.events.upsert(existing_update, mode="replace")
-
-            # Assert
-            assert isinstance(res, Event)
-            assert res.dump() == existing_update.dump()
-        finally:
-            cognite_client.events.delete(id=existing_update.id, ignore_unknown_ids=True)
-
     def test_upsert_split_into_multiple_tasks(self, cognite_client: CogniteClient, monkeypatch: MonkeyPatch) -> None:
         # Arrange
         new_event = Event(

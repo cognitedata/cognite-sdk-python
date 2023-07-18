@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from collections import UserList
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -309,6 +309,13 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
 T_CogniteResourceList = TypeVar("T_CogniteResourceList", bound=CogniteResourceList)
 
 
+@dataclass
+class PropertySpec:
+    name: str
+    is_list: bool = False
+    is_nullable: bool = True
+
+
 class CogniteUpdate:
     def __init__(self, id: Optional[int] = None, external_id: Optional[str] = None):
         self._id = id
@@ -376,17 +383,12 @@ class CogniteUpdate:
         return dumped
 
     @classmethod
-    def _get_update_properties(cls) -> List[str]:
-        return [key for key in cls.__dict__ if not (key.startswith("_") or key == "columns")]
+    def _get_update_properties(cls) -> list[PropertySpec]:
+        # Default implementation should be overridden in subclasses
+        return [PropertySpec(key) for key in cls.__dict__ if not (key.startswith("_") or key == "columns")]
 
 
 T_CogniteUpdate = TypeVar("T_CogniteUpdate", bound=CogniteUpdate)
-
-
-@dataclass(frozen=True)
-class CogniteUpdateProperties:
-    not_nullable_properties: set[str]
-    list_properties: set[str] = field(default_factory=lambda: {"labels", "metadata"})
 
 
 class CognitePrimitiveUpdate(Generic[T_CogniteUpdate]):
