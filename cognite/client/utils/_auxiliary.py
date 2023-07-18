@@ -105,6 +105,26 @@ def interpolate_and_url_encode(path: str, *args: Any) -> str:
     return path.format(*[quote(str(arg), safe="") for arg in args])
 
 
+@overload
+def local_import(m1: str, /) -> ModuleType:
+    ...
+
+
+@overload
+def local_import(m1: str, m2: str, /) -> Tuple[ModuleType, ModuleType]:
+    ...
+
+
+@overload
+def local_import(m1: str, m2: str, m3: str, /) -> Tuple[ModuleType, ModuleType, ModuleType]:
+    ...
+
+
+@overload
+def local_import(m1: str, m2: str, m3: str, m4: str, /) -> Tuple[ModuleType, ModuleType, ModuleType, ModuleType]:
+    ...
+
+
 def local_import(*module: str) -> Union[ModuleType, Tuple[ModuleType, ...]]:
     assert_type(module, "module", [tuple])
     if len(module) == 1:
