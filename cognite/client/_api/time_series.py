@@ -419,7 +419,7 @@ class TimeSeriesAPI(APIClient):
                 >>> existing_time_series = c.time_series.retrieve(id=1)
                 >>> existing_time_series.description = "New description"
                 >>> new_time_series = TimeSeries(external_id="new_timeSeries", description="New timeSeries")
-                >>> res = c.time_series.upsert([existing_time_series, new_timeSeries], mode="replace")
+                >>> res = c.time_series.upsert([existing_time_series, new_time_series], mode="replace")
         """
         return self._upsert_multiple(
             item,
