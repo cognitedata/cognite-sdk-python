@@ -903,7 +903,7 @@ class APIClient:
                 if identifier is not None
             }
             result = list_cls(
-                [result_by_identifier[item.external_id or item.id] for item in items],
+                [result_by_identifier[item.external_id if item.external_id is not None else item.id] for item in items],
                 cognite_client=self._cognite_client,
             )
 

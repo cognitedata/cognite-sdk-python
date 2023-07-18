@@ -4,7 +4,7 @@ from datetime import datetime
 from unittest import mock
 
 import pytest
-from _pytest.monkeypatch import MonkeyPatch
+from pytest import MonkeyPatch
 
 import cognite.client.utils._time
 from cognite.client import CogniteClient, utils
