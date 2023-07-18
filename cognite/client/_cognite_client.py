@@ -77,21 +77,31 @@ class CogniteClient:
         # APIs just using base_url:
         self._api_client = APIClient(self._config, api_version=None, cognite_client=self)
 
-    def get(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None) -> Response:
+    def get(
+        self, url: str, params: Optional[Dict[str, Any]] = None, headers: Optional[Dict[str, Any]] = None
+    ) -> Response:
         """Perform a GET request to an arbitrary path in the API."""
         return self._api_client._get(url, params=params, headers=headers)
 
     def post(
-        self, url: str, json: Dict[str, Any], params: Dict[str, Any] = None, headers: Dict[str, Any] = None
+        self,
+        url: str,
+        json: Dict[str, Any],
+        params: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, Any]] = None,
     ) -> Response:
         """Perform a POST request to an arbitrary path in the API."""
         return self._api_client._post(url, json=json, params=params, headers=headers)
 
-    def put(self, url: str, json: Dict[str, Any] = None, headers: Dict[str, Any] = None) -> Response:
+    def put(
+        self, url: str, json: Optional[Dict[str, Any]] = None, headers: Optional[Dict[str, Any]] = None
+    ) -> Response:
         """Perform a PUT request to an arbitrary path in the API."""
         return self._api_client._put(url, json=json, headers=headers)
 
-    def delete(self, url: str, params: Dict[str, Any] = None, headers: Dict[str, Any] = None) -> Response:
+    def delete(
+        self, url: str, params: Optional[Dict[str, Any]] = None, headers: Optional[Dict[str, Any]] = None
+    ) -> Response:
         """Perform a DELETE request to an arbitrary path in the API."""
         return self._api_client._delete(url, params=params, headers=headers)
 

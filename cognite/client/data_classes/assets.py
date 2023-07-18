@@ -62,7 +62,7 @@ class AssetAggregate(dict):
         count (int): Size of the aggregation group
     """
 
-    def __init__(self, count: int = None, **kwargs: Any) -> None:
+    def __init__(self, count: Optional[int] = None, **kwargs: Any) -> None:
         self.count = count
         self.update(kwargs)
 
@@ -79,7 +79,11 @@ class AggregateResultItem(dict):
     """
 
     def __init__(
-        self, child_count: int = None, depth: int = None, path: List[Dict[str, Any]] = None, **kwargs: Any
+        self,
+        child_count: Optional[int] = None,
+        depth: Optional[int] = None,
+        path: Optional[List[Dict[str, Any]]] = None,
+        **kwargs: Any,
     ) -> None:
         self.child_count = child_count
         self.depth = depth
@@ -115,22 +119,22 @@ class Asset(CogniteResource):
 
     def __init__(
         self,
-        external_id: str = None,
-        name: str = None,
-        parent_id: int = None,
-        parent_external_id: str = None,
-        description: str = None,
-        data_set_id: int = None,
-        metadata: Dict[str, str] = None,
-        source: str = None,
-        labels: List[Union[Label, str, LabelDefinition, dict]] = None,
-        geo_location: GeoLocation = None,
-        id: int = None,
-        created_time: int = None,
-        last_updated_time: int = None,
-        root_id: int = None,
-        aggregates: Union[Dict[str, Any], AggregateResultItem] = None,
-        cognite_client: CogniteClient = None,
+        external_id: Optional[str] = None,
+        name: Optional[str] = None,
+        parent_id: Optional[int] = None,
+        parent_external_id: Optional[str] = None,
+        description: Optional[str] = None,
+        data_set_id: Optional[int] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        source: Optional[str] = None,
+        labels: Optional[List[Union[Label, str, LabelDefinition, dict]]] = None,
+        geo_location: Optional[GeoLocation] = None,
+        id: Optional[int] = None,
+        created_time: Optional[int] = None,
+        last_updated_time: Optional[int] = None,
+        root_id: Optional[int] = None,
+        aggregates: Optional[Union[Dict[str, Any], AggregateResultItem]] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ):
         if geo_location is not None and not isinstance(geo_location, GeoLocation):
             raise TypeError("Asset.geo_location should be of type GeoLocation")
@@ -152,7 +156,7 @@ class Asset(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> Asset:
+    def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> Asset:
         instance = super()._load(resource, cognite_client)
         if isinstance(resource, Dict):
             if instance.aggregates is not None:
@@ -183,7 +187,7 @@ class Asset(CogniteResource):
         """
         return self._cognite_client.assets.list(parent_ids=[self.id], limit=None)
 
-    def subtree(self, depth: int = None) -> AssetList:
+    def subtree(self, depth: Optional[int] = None) -> AssetList:
         """Returns the subtree of this asset up to a specified depth.
 
         Args:
@@ -234,7 +238,10 @@ class Asset(CogniteResource):
         return result
 
     def to_pandas(
-        self, expand: Sequence[str] = ("metadata", "aggregates"), ignore: List[str] = None, camel_case: bool = False
+        self,
+        expand: Sequence[str] = ("metadata", "aggregates"),
+        ignore: Optional[List[str]] = None,
+        camel_case: bool = False,
     ) -> pandas.DataFrame:
         """Convert the instance into a pandas DataFrame.
 
@@ -335,7 +342,7 @@ class AssetUpdate(CogniteUpdate):
 class AssetList(CogniteResourceList[Asset]):
     _RESOURCE = Asset
 
-    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient = None):
+    def __init__(self, resources: Collection[Any], cognite_client: Optional[CogniteClient] = None):
         super().__init__(resources, cognite_client)
         self._retrieve_chunk_size = 100
 
@@ -419,20 +426,20 @@ class AssetFilter(CogniteFilter):
 
     def __init__(
         self,
-        name: str = None,
-        parent_ids: Sequence[int] = None,
-        parent_external_ids: Sequence[str] = None,
-        asset_subtree_ids: Sequence[Dict[str, Any]] = None,
-        data_set_ids: Sequence[Dict[str, Any]] = None,
-        metadata: Dict[str, str] = None,
-        source: str = None,
-        created_time: Union[Dict[str, Any], TimestampRange] = None,
-        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        root: bool = None,
-        external_id_prefix: str = None,
-        labels: LabelFilter = None,
-        geo_location: GeoLocationFilter = None,
-        cognite_client: CogniteClient = None,
+        name: Optional[str] = None,
+        parent_ids: Optional[Sequence[int]] = None,
+        parent_external_ids: Optional[Sequence[str]] = None,
+        asset_subtree_ids: Optional[Sequence[Dict[str, Any]]] = None,
+        data_set_ids: Optional[Sequence[Dict[str, Any]]] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        source: Optional[str] = None,
+        created_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        last_updated_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        root: Optional[bool] = None,
+        external_id_prefix: Optional[str] = None,
+        labels: Optional[LabelFilter] = None,
+        geo_location: Optional[GeoLocationFilter] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ):
         self.name = name
         self.parent_ids = parent_ids

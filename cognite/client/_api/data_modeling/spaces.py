@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterator, Sequence, cast, overload
+from typing import Iterator, Optional, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import LIST_LIMIT_DEFAULT
@@ -17,7 +17,7 @@ class SpacesAPI(APIClient):
     def __call__(
         self,
         chunk_size: None = None,
-        limit: int = None,
+        limit: Optional[int] = None,
     ) -> Iterator[Space]:
         ...
 
@@ -25,14 +25,14 @@ class SpacesAPI(APIClient):
     def __call__(
         self,
         chunk_size: int,
-        limit: int = None,
+        limit: Optional[int] = None,
     ) -> Iterator[SpaceList]:
         ...
 
     def __call__(
         self,
-        chunk_size: int = None,
-        limit: int = None,
+        chunk_size: Optional[int] = None,
+        limit: Optional[int] = None,
     ) -> Iterator[Space] | Iterator[SpaceList]:
         """Iterate over spaces
 

@@ -46,21 +46,21 @@ class TimeSeries(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        external_id: str = None,
-        name: str = None,
-        is_string: bool = None,
-        metadata: Dict[str, str] = None,
-        unit: str = None,
-        asset_id: int = None,
-        is_step: bool = None,
-        description: str = None,
-        security_categories: Sequence[int] = None,
-        data_set_id: int = None,
-        created_time: int = None,
-        last_updated_time: int = None,
-        legacy_name: str = None,
-        cognite_client: CogniteClient = None,
+        id: Optional[int] = None,
+        external_id: Optional[str] = None,
+        name: Optional[str] = None,
+        is_string: Optional[bool] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        unit: Optional[str] = None,
+        asset_id: Optional[int] = None,
+        is_step: Optional[bool] = None,
+        description: Optional[str] = None,
+        security_categories: Optional[Sequence[int]] = None,
+        data_set_id: Optional[int] = None,
+        created_time: Optional[int] = None,
+        last_updated_time: Optional[int] = None,
+        legacy_name: Optional[str] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ):
         self.id = id
         self.external_id = external_id
@@ -101,7 +101,7 @@ class TimeSeries(CogniteResource):
         )
         return sum(dps.count)
 
-    def latest(self, before: Union[int, str, datetime] = None) -> Optional[Datapoint]:
+    def latest(self, before: Optional[Union[int, str, datetime]] = None) -> Optional[Datapoint]:
         """Returns the latest datapoint in this time series. If empty, returns None.
 
         Returns:
@@ -158,19 +158,19 @@ class TimeSeriesFilter(CogniteFilter):
 
     def __init__(
         self,
-        name: str = None,
-        unit: str = None,
-        is_string: bool = None,
-        is_step: bool = None,
-        metadata: Dict[str, str] = None,
-        asset_ids: Sequence[int] = None,
-        asset_external_ids: Sequence[str] = None,
-        asset_subtree_ids: Sequence[Dict[str, Any]] = None,
-        data_set_ids: Sequence[Dict[str, Any]] = None,
-        external_id_prefix: str = None,
-        created_time: Union[Dict[str, Any], TimestampRange] = None,
-        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        cognite_client: CogniteClient = None,
+        name: Optional[str] = None,
+        unit: Optional[str] = None,
+        is_string: Optional[bool] = None,
+        is_step: Optional[bool] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        asset_ids: Optional[Sequence[int]] = None,
+        asset_external_ids: Optional[Sequence[str]] = None,
+        asset_subtree_ids: Optional[Sequence[Dict[str, Any]]] = None,
+        data_set_ids: Optional[Sequence[Dict[str, Any]]] = None,
+        external_id_prefix: Optional[str] = None,
+        created_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        last_updated_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ):
         self.name = name
         self.unit = unit
@@ -280,7 +280,7 @@ class TimeSeriesAggregate(dict):
         count (int): No description.
     """
 
-    def __init__(self, count: int = None, **kwargs: Any) -> None:
+    def __init__(self, count: Optional[int] = None, **kwargs: Any) -> None:
         self.count = count
         self.update(kwargs)
 

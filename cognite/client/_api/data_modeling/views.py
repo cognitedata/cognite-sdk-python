@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Iterator, Sequence, cast, overload
+from typing import Iterator, Optional, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DATA_MODELING_LIST_LIMIT_DEFAULT
@@ -22,7 +22,7 @@ class ViewsAPI(APIClient):
     def __call__(
         self,
         chunk_size: None = None,
-        limit: int = None,
+        limit: Optional[int] = None,
         space: str | None = None,
         include_inherited_properties: bool = True,
         all_versions: bool = False,
@@ -34,7 +34,7 @@ class ViewsAPI(APIClient):
     def __call__(
         self,
         chunk_size: int,
-        limit: int = None,
+        limit: Optional[int] = None,
         space: str | None = None,
         include_inherited_properties: bool = True,
         all_versions: bool = False,
@@ -44,8 +44,8 @@ class ViewsAPI(APIClient):
 
     def __call__(
         self,
-        chunk_size: int = None,
-        limit: int = None,
+        chunk_size: Optional[int] = None,
+        limit: Optional[int] = None,
         space: str | None = None,
         include_inherited_properties: bool = True,
         all_versions: bool = False,

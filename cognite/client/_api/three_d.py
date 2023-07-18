@@ -37,7 +37,7 @@ class ThreeDModelsAPI(APIClient):
     _RESOURCE_PATH = "/3d/models"
 
     def __call__(
-        self, chunk_size: int = None, published: bool = None, limit: int = None
+        self, chunk_size: Optional[int] = None, published: Optional[bool] = None, limit: Optional[int] = None
     ) -> Union[Iterator[ThreeDModel], Iterator[ThreeDModelList]]:
         """Iterate over 3d models
 
@@ -89,7 +89,7 @@ class ThreeDModelsAPI(APIClient):
         """
         return self._retrieve(cls=ThreeDModel, identifier=InternalId(id))
 
-    def list(self, published: bool = None, limit: int = LIST_LIMIT_DEFAULT) -> ThreeDModelList:
+    def list(self, published: Optional[bool] = None, limit: int = LIST_LIMIT_DEFAULT) -> ThreeDModelList:
         """`List 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/get3DModels>`_
 
         Args:
@@ -212,7 +212,7 @@ class ThreeDRevisionsAPI(APIClient):
     _RESOURCE_PATH = "/3d/models/{}/revisions"
 
     def __call__(
-        self, model_id: int, chunk_size: int = None, published: bool = False, limit: int = None
+        self, model_id: int, chunk_size: Optional[int] = None, published: bool = False, limit: Optional[int] = None
     ) -> Union[Iterator[ThreeDModelRevision], Iterator[ThreeDModelRevisionList]]:
         """Iterate over 3d model revisions
 
@@ -418,10 +418,10 @@ class ThreeDRevisionsAPI(APIClient):
         self,
         model_id: int,
         revision_id: int,
-        node_id: int = None,
-        depth: int = None,
+        node_id: Optional[int] = None,
+        depth: Optional[int] = None,
         sort_by_node_id: bool = False,
-        partitions: int = None,
+        partitions: Optional[int] = None,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> ThreeDNodeList:
         """`Retrieves a list of nodes from the hierarchy in the 3D Model. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/get3DNodes>`_
@@ -468,9 +468,9 @@ class ThreeDRevisionsAPI(APIClient):
         self,
         model_id: int,
         revision_id: int,
-        properties: Dict[str, Dict[str, Sequence[str]]] = None,
+        properties: Optional[Dict[str, Dict[str, Sequence[str]]]] = None,
         limit: int = LIST_LIMIT_DEFAULT,
-        partitions: int = None,
+        partitions: Optional[int] = None,
     ) -> ThreeDNodeList:
         """`List nodes in a revision, filtered by node property values. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/filter3DNodes>`_
 
@@ -507,7 +507,7 @@ class ThreeDRevisionsAPI(APIClient):
         )
 
     def list_ancestor_nodes(
-        self, model_id: int, revision_id: int, node_id: int = None, limit: int = LIST_LIMIT_DEFAULT
+        self, model_id: int, revision_id: int, node_id: Optional[int] = None, limit: int = LIST_LIMIT_DEFAULT
     ) -> ThreeDNodeList:
         """`Retrieves a list of ancestor nodes of a given node, including itself, in the hierarchy of the 3D model <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/get3DNodeAncestors>`_
 
@@ -573,8 +573,8 @@ class ThreeDAssetMappingAPI(APIClient):
         self,
         model_id: int,
         revision_id: int,
-        node_id: int = None,
-        asset_id: int = None,
+        node_id: Optional[int] = None,
+        asset_id: Optional[int] = None,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> ThreeDAssetMappingList:
         """`List 3D node asset mappings. <https://developer.cognite.com/api#tag/3D-Asset-Mapping/operation/get3DMappings>`_

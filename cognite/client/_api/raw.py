@@ -27,7 +27,9 @@ class RawAPI(APIClient):
 class RawDatabasesAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs"
 
-    def __call__(self, chunk_size: int = None, limit: int = None) -> Union[Iterator[Database], Iterator[DatabaseList]]:
+    def __call__(
+        self, chunk_size: Optional[int] = None, limit: Optional[int] = None
+    ) -> Union[Iterator[Database], Iterator[DatabaseList]]:
         """Iterate over databases
 
         Fetches dbs as they are iterated over, so you keep a limited number of dbs in memory.
@@ -146,7 +148,7 @@ class RawTablesAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs/{}/tables"
 
     def __call__(
-        self, db_name: str, chunk_size: int = None, limit: int = None
+        self, db_name: str, chunk_size: Optional[int] = None, limit: Optional[int] = None
     ) -> Union[Iterator[Table], Iterator[TableList]]:
         """Iterate over tables
 
@@ -306,11 +308,11 @@ class RawRowsAPI(APIClient):
         self,
         db_name: str,
         table_name: str,
-        chunk_size: int = None,
-        limit: int = None,
-        min_last_updated_time: int = None,
-        max_last_updated_time: int = None,
-        columns: List[str] = None,
+        chunk_size: Optional[int] = None,
+        limit: Optional[int] = None,
+        min_last_updated_time: Optional[int] = None,
+        max_last_updated_time: Optional[int] = None,
+        columns: Optional[List[str]] = None,
     ) -> Union[Iterator[Row], Iterator[RowList]]:
         """Iterate over rows.
 
@@ -491,9 +493,9 @@ class RawRowsAPI(APIClient):
         self,
         db_name: str,
         table_name: str,
-        min_last_updated_time: int = None,
-        max_last_updated_time: int = None,
-        columns: List[str] = None,
+        min_last_updated_time: Optional[int] = None,
+        max_last_updated_time: Optional[int] = None,
+        columns: Optional[List[str]] = None,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> RowList:
         """`List rows in a table. <https://developer.cognite.com/api#tag/Raw/operation/getRows>`_
@@ -579,9 +581,9 @@ class RawRowsAPI(APIClient):
         self,
         db_name: str,
         table_name: str,
-        min_last_updated_time: int = None,
-        max_last_updated_time: int = None,
-        columns: List[str] = None,
+        min_last_updated_time: Optional[int] = None,
+        max_last_updated_time: Optional[int] = None,
+        columns: Optional[List[str]] = None,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> pandas.DataFrame:
         """`Retrieve rows in a table as a pandas dataframe. <https://developer.cognite.com/api#tag/Raw/operation/getRows>`_

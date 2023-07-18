@@ -105,7 +105,7 @@ class ClientConfig:
 
     @classmethod
     def default(
-        cls, project: str, cdf_cluster: str, credentials: CredentialProvider, client_name: str = None
+        cls, project: str, cdf_cluster: str, credentials: CredentialProvider, client_name: Optional[str] = None
     ) -> ClientConfig:
         """
         Create a default client config object.

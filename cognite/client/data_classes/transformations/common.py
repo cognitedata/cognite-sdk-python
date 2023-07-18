@@ -13,7 +13,7 @@ class TransformationDestination:
         type (str): Used as data type identifier on transformation creation/retrieval.
     """
 
-    def __init__(self, type: str = None):
+    def __init__(self, type: Optional[str] = None):
         self.type = type
 
     def __hash__(self) -> int:
@@ -153,7 +153,7 @@ class TransformationDestination:
 
 
 class RawTable(TransformationDestination):
-    def __init__(self, database: str = None, table: str = None):
+    def __init__(self, database: Optional[str] = None, table: Optional[str] = None):
         super().__init__(type="raw")
         self.database = database
         self.table = table
@@ -163,7 +163,7 @@ class RawTable(TransformationDestination):
 
 
 class SequenceRows(TransformationDestination):
-    def __init__(self, external_id: str = None):
+    def __init__(self, external_id: Optional[str] = None):
         super().__init__(type="sequence_rows")
         self.external_id = external_id
 
@@ -279,12 +279,12 @@ class Instances(TransformationDestination):
 class OidcCredentials:
     def __init__(
         self,
-        client_id: str = None,
-        client_secret: str = None,
-        scopes: str = None,
-        token_uri: str = None,
-        audience: str = None,
-        cdf_project_name: str = None,
+        client_id: Optional[str] = None,
+        client_secret: Optional[str] = None,
+        scopes: Optional[str] = None,
+        token_uri: Optional[str] = None,
+        audience: Optional[str] = None,
+        cdf_project_name: Optional[str] = None,
     ):
 
         self.client_id = client_id
@@ -337,7 +337,7 @@ class TransformationBlockedInfo:
         created_time (Optional[int]): Timestamp when the transformation was blocked.
     """
 
-    def __init__(self, reason: str = None, created_time: Optional[int] = None):
+    def __init__(self, reason: Optional[str] = None, created_time: Optional[int] = None):
         self.reason = reason
         self.created_time = created_time
 

@@ -37,9 +37,9 @@ class DiagramsAPI(APIClient):
     def _camel_post(
         self,
         context_path: str,
-        json: Dict[str, Any] = None,
-        params: Dict[str, Any] = None,
-        headers: Dict[str, Any] = None,
+        json: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, Any]] = None,
     ) -> Response:
         return self._post(
             self._RESOURCE_PATH + context_path,
@@ -52,8 +52,8 @@ class DiagramsAPI(APIClient):
         self,
         job_cls: Type[T_ContextualizationJob],
         job_path: str,
-        status_path: str = None,
-        headers: Dict[str, Any] = None,
+        status_path: Optional[str] = None,
+        headers: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> T_ContextualizationJob:
         if status_path is None:

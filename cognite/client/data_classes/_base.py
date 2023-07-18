@@ -120,7 +120,7 @@ class CogniteResource:
 
     @classmethod
     def _load(
-        cls: Type[T_CogniteResource], resource: Union[Dict, str], cognite_client: CogniteClient = None
+        cls: Type[T_CogniteResource], resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None
     ) -> T_CogniteResource:
         if isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
@@ -134,7 +134,7 @@ class CogniteResource:
         raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
 
     def to_pandas(
-        self, expand: Sequence[str] = ("metadata",), ignore: List[str] = None, camel_case: bool = False
+        self, expand: Sequence[str] = ("metadata",), ignore: Optional[List[str]] = None, camel_case: bool = False
     ) -> pandas.DataFrame:
         """Convert the instance into a pandas DataFrame.
 
@@ -192,7 +192,7 @@ class CognitePropertyClassUtil:
 class CogniteResourceList(UserList, Generic[T_CogniteResource]):
     _RESOURCE: Type[CogniteResource]
 
-    def __init__(self, resources: Collection[Any], cognite_client: CogniteClient = None):
+    def __init__(self, resources: Collection[Any], cognite_client: Optional[CogniteClient] = None):
         for resource in resources:
             if not isinstance(resource, self._RESOURCE):
                 raise TypeError(
@@ -264,7 +264,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
         """
         return [resource.dump(camel_case) for resource in self.data]
 
-    def get(self, id: int = None, external_id: str = None) -> Optional[T_CogniteResource]:
+    def get(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[T_CogniteResource]:
         """Get an item from this list by id or exernal_id.
 
         Args:
@@ -294,7 +294,9 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
 
     @classmethod
     def _load(
-        cls: Type[T_CogniteResourceList], resource_list: Union[List, str], cognite_client: CogniteClient = None
+        cls: Type[T_CogniteResourceList],
+        resource_list: Union[List, str],
+        cognite_client: Optional[CogniteClient] = None,
     ) -> T_CogniteResourceList:
         if isinstance(resource_list, str):
             return cls._load(json.loads(resource_list), cognite_client=cognite_client)
@@ -307,7 +309,7 @@ T_CogniteResourceList = TypeVar("T_CogniteResourceList", bound=CogniteResourceLi
 
 
 class CogniteUpdate:
-    def __init__(self, id: int = None, external_id: str = None):
+    def __init__(self, id: Optional[int] = None, external_id: Optional[str] = None):
         self._id = id
         self._external_id = external_id
         self._update_object: Dict[str, Any] = {}

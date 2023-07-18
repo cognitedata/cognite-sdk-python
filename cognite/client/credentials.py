@@ -172,7 +172,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         authority_url: str,
         client_id: str,
         scopes: List[str],
-        token_cache_path: Path = None,
+        token_cache_path: Optional[Path] = None,
         token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT,
     ) -> None:
         super().__init__(token_expiry_leeway_seconds)
@@ -250,7 +250,7 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         client_id: str,
         scopes: List[str],
         redirect_port: int = 53000,
-        token_cache_path: Path = None,
+        token_cache_path: Optional[Path] = None,
         token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT,
     ) -> None:
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from cognite.client.data_classes._base import CognitePropertyClassUtil
 from cognite.client.utils._text import convert_all_keys_to_camel_case
@@ -14,7 +14,7 @@ class TimestampRange(dict):
         min (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
     """
 
-    def __init__(self, max: int = None, min: int = None, **kwargs: Any):
+    def __init__(self, max: Optional[int] = None, min: Optional[int] = None, **kwargs: Any):
         self.max = max
         self.min = min
         self.update(kwargs)
@@ -30,7 +30,7 @@ class AggregateResult(dict):
         count (int): Size of the aggregation group
     """
 
-    def __init__(self, count: int = None, **kwargs: Any):
+    def __init__(self, count: Optional[int] = None, **kwargs: Any):
         super().__init__(count=count, **kwargs)
         self.count = count
 
@@ -43,7 +43,7 @@ class AggregateUniqueValuesResult(AggregateResult):
         value (Union(int, str)): A unique value from the requested field
     """
 
-    def __init__(self, count: int = None, value: Union[int, str] = None, **kwargs: Any):
+    def __init__(self, count: Optional[int] = None, value: Optional[Union[int, str]] = None, **kwargs: Any):
         super().__init__(count=count, value=value, **kwargs)
         self.value = value
 
@@ -56,7 +56,7 @@ class AggregateBucketResult(AggregateResult):
         value (Union(int, str)): A unique value for the bucket
     """
 
-    def __init__(self, count: int = None, value: Union[int, str] = None, **kwargs: Any):
+    def __init__(self, count: Optional[int] = None, value: Optional[Union[int, str]] = None, **kwargs: Any):
         super().__init__(count=count, value=value, **kwargs)
         self.value = value
 
@@ -168,7 +168,7 @@ class GeoLocation(dict):
 
     _VALID_TYPES = frozenset({"Feature"})
 
-    def __init__(self, type: Literal["Feature"], geometry: Geometry, properties: dict = None):
+    def __init__(self, type: Literal["Feature"], geometry: Geometry, properties: Optional[dict] = None):
         if type not in self._VALID_TYPES:
             raise ValueError("Only the 'Feature' type is supported.")
         self.type = type

@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.8.5] - 2023-07-18
+### Fixed
+- Change all implicit Optional types to explicit Optional types.
+
 ## [6.8.4] - 2023-07-12
 ### Fixed
 - `max_worker` limit match backend for `client.data_modeling`.

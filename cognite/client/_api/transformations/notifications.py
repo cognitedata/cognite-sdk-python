@@ -42,8 +42,8 @@ class TransformationNotificationsAPI(APIClient):
     def list(
         self,
         transformation_id: Optional[int] = None,
-        transformation_external_id: str = None,
-        destination: str = None,
+        transformation_external_id: Optional[str] = None,
+        destination: Optional[str] = None,
         limit: Optional[int] = LIST_LIMIT_DEFAULT,
     ) -> TransformationNotificationList:
         """`List notification subscriptions. <https://developer.cognite.com/api#tag/Transformation-Notifications/operation/getTransformationNotifications>`_
@@ -85,7 +85,7 @@ class TransformationNotificationsAPI(APIClient):
             filter=filter,
         )
 
-    def delete(self, id: Union[int, Sequence[int]] = None) -> None:
+    def delete(self, id: Optional[Union[int, Sequence[int]]] = None) -> None:
         """`Deletes the specified notification subscriptions on the transformation. Does nothing when the subscriptions already don't exist <https://developer.cognite.com/api#tag/Transformation-Notifications/operation/deleteTransformationNotifications>`_
 
         Args:

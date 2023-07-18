@@ -23,13 +23,13 @@ class TransformationNotification(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        transformation_id: int = None,
-        transformation_external_id: str = None,
-        destination: str = None,
-        created_time: int = None,
-        last_updated_time: int = None,
-        cognite_client: CogniteClient = None,
+        id: Optional[int] = None,
+        transformation_id: Optional[int] = None,
+        transformation_external_id: Optional[str] = None,
+        destination: Optional[str] = None,
+        created_time: Optional[int] = None,
+        last_updated_time: Optional[int] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ):
         self.id = id
         self.transformation_id = transformation_id
@@ -57,7 +57,10 @@ class TransformationNotificationFilter(CogniteFilter):
     """
 
     def __init__(
-        self, transformation_id: Optional[int] = None, transformation_external_id: str = None, destination: str = None
+        self,
+        transformation_id: Optional[int] = None,
+        transformation_external_id: Optional[str] = None,
+        destination: Optional[str] = None,
     ):
         self.transformation_id = transformation_id
         self.transformation_external_id = transformation_external_id

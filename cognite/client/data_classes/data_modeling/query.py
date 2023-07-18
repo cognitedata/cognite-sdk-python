@@ -184,7 +184,13 @@ class ResultSetExpression(ABC):
 
 
 class NodeResultSetExpression(ResultSetExpression):
-    def __init__(self, from_: str = None, filter: Filter = None, sort: list[InstanceSort] = None, limit: int = None):
+    def __init__(
+        self,
+        from_: Optional[str] = None,
+        filter: Optional[Filter] = None,
+        sort: Optional[list[InstanceSort]] = None,
+        limit: Optional[int] = None,
+    ):
         self.from_ = from_
         self.filter = filter
         self.sort = sort
@@ -216,9 +222,9 @@ class EdgeResultSetExpression(ResultSetExpression):
         node_filter: Optional[Filter] = None,
         termination_filter: Optional[Filter] = None,
         limit_each: Optional[int] = None,
-        sort: list[InstanceSort] = None,
-        post_sort: list[InstanceSort] = None,
-        limit: int = None,
+        sort: Optional[list[InstanceSort]] = None,
+        post_sort: Optional[list[InstanceSort]] = None,
+        limit: Optional[int] = None,
     ):
         self.from_ = from_
         self.max_distance = max_distance

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -47,25 +47,25 @@ class FileMetadata(CogniteResource):
 
     def __init__(
         self,
-        external_id: str = None,
-        name: str = None,
-        source: str = None,
-        mime_type: str = None,
-        metadata: Dict[str, str] = None,
-        directory: str = None,
-        asset_ids: Sequence[int] = None,
-        data_set_id: int = None,
-        labels: Sequence[Label] = None,
-        geo_location: GeoLocation = None,
-        source_created_time: int = None,
-        source_modified_time: int = None,
-        security_categories: Sequence[int] = None,
-        id: int = None,
-        uploaded: bool = None,
-        uploaded_time: int = None,
-        created_time: int = None,
-        last_updated_time: int = None,
-        cognite_client: CogniteClient = None,
+        external_id: Optional[str] = None,
+        name: Optional[str] = None,
+        source: Optional[str] = None,
+        mime_type: Optional[str] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        directory: Optional[str] = None,
+        asset_ids: Optional[Sequence[int]] = None,
+        data_set_id: Optional[int] = None,
+        labels: Optional[Sequence[Label]] = None,
+        geo_location: Optional[GeoLocation] = None,
+        source_created_time: Optional[int] = None,
+        source_modified_time: Optional[int] = None,
+        security_categories: Optional[Sequence[int]] = None,
+        id: Optional[int] = None,
+        uploaded: Optional[bool] = None,
+        uploaded_time: Optional[int] = None,
+        created_time: Optional[int] = None,
+        last_updated_time: Optional[int] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ):
         if geo_location is not None and not isinstance(geo_location, GeoLocation):
             raise TypeError("FileMetadata.geo_location should be of type GeoLocation")
@@ -90,7 +90,7 @@ class FileMetadata(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> FileMetadata:
+    def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> FileMetadata:
         instance = super()._load(resource, cognite_client)
         instance.labels = Label._load_list(instance.labels)
         if instance.geo_location is not None:
@@ -125,25 +125,25 @@ class FileMetadataFilter(CogniteFilter):
 
     def __init__(
         self,
-        name: str = None,
-        mime_type: str = None,
-        metadata: Dict[str, str] = None,
-        asset_ids: Sequence[int] = None,
-        asset_external_ids: Sequence[str] = None,
-        data_set_ids: Sequence[Dict[str, Any]] = None,
-        labels: LabelFilter = None,
-        geo_location: GeoLocationFilter = None,
-        asset_subtree_ids: Sequence[Dict[str, Any]] = None,
-        source: str = None,
-        created_time: Union[Dict[str, Any], TimestampRange] = None,
-        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        uploaded_time: Union[Dict[str, Any], TimestampRange] = None,
-        source_created_time: Dict[str, Any] = None,
-        source_modified_time: Dict[str, Any] = None,
-        external_id_prefix: str = None,
-        directory_prefix: str = None,
-        uploaded: bool = None,
-        cognite_client: CogniteClient = None,
+        name: Optional[str] = None,
+        mime_type: Optional[str] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        asset_ids: Optional[Sequence[int]] = None,
+        asset_external_ids: Optional[Sequence[str]] = None,
+        data_set_ids: Optional[Sequence[Dict[str, Any]]] = None,
+        labels: Optional[LabelFilter] = None,
+        geo_location: Optional[GeoLocationFilter] = None,
+        asset_subtree_ids: Optional[Sequence[Dict[str, Any]]] = None,
+        source: Optional[str] = None,
+        created_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        last_updated_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        uploaded_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        source_created_time: Optional[Dict[str, Any]] = None,
+        source_modified_time: Optional[Dict[str, Any]] = None,
+        external_id_prefix: Optional[str] = None,
+        directory_prefix: Optional[str] = None,
+        uploaded: Optional[bool] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ):
         self.name = name
         self.mime_type = mime_type
@@ -288,7 +288,7 @@ class FileAggregate(dict):
         count (int): Number of filtered items included in aggregation
     """
 
-    def __init__(self, count: int = None, **kwargs: Any) -> None:
+    def __init__(self, count: Optional[int] = None, **kwargs: Any) -> None:
         self.count = count
         self.update(kwargs)
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterator, Literal, Sequence, cast, overload
+from typing import Iterator, Literal, Optional, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DATA_MODELING_LIST_LIMIT_DEFAULT
@@ -23,7 +23,7 @@ class DataModelsAPI(APIClient):
     def __call__(
         self,
         chunk_size: None = None,
-        limit: int = None,
+        limit: Optional[int] = None,
         space: str | None = None,
         inline_views: bool = False,
         all_versions: bool = False,
@@ -35,7 +35,7 @@ class DataModelsAPI(APIClient):
     def __call__(
         self,
         chunk_size: int,
-        limit: int = None,
+        limit: Optional[int] = None,
         space: str | None = None,
         inline_views: bool = False,
         all_versions: bool = False,
@@ -46,7 +46,7 @@ class DataModelsAPI(APIClient):
     def __call__(
         self,
         chunk_size: int | None = None,
-        limit: int = None,
+        limit: Optional[int] = None,
         space: str | None = None,
         inline_views: bool = False,
         all_versions: bool = False,

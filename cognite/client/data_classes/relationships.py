@@ -48,21 +48,21 @@ class Relationship(CogniteResource):
 
     def __init__(
         self,
-        external_id: str = None,
-        source_external_id: str = None,
-        source_type: str = None,
-        source: Union[Asset, TimeSeries, FileMetadata, Sequence, Event, Dict] = None,
-        target_external_id: str = None,
-        target_type: str = None,
-        target: Union[Asset, TimeSeries, FileMetadata, Sequence, Event, Dict] = None,
-        start_time: int = None,
-        end_time: int = None,
-        confidence: float = None,
-        data_set_id: int = None,
-        labels: SequenceType[Union[Label, str, LabelDefinition, dict]] = None,
-        created_time: int = None,
-        last_updated_time: int = None,
-        cognite_client: CogniteClient = None,
+        external_id: Optional[str] = None,
+        source_external_id: Optional[str] = None,
+        source_type: Optional[str] = None,
+        source: Optional[Union[Asset, TimeSeries, FileMetadata, Sequence, Event, Dict]] = None,
+        target_external_id: Optional[str] = None,
+        target_type: Optional[str] = None,
+        target: Optional[Union[Asset, TimeSeries, FileMetadata, Sequence, Event, Dict]] = None,
+        start_time: Optional[int] = None,
+        end_time: Optional[int] = None,
+        confidence: Optional[float] = None,
+        data_set_id: Optional[int] = None,
+        labels: Optional[SequenceType[Union[Label, str, LabelDefinition, dict]]] = None,
+        created_time: Optional[int] = None,
+        last_updated_time: Optional[int] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ):
         self.external_id = external_id
         self.source_external_id = source_external_id
@@ -91,7 +91,7 @@ class Relationship(CogniteResource):
             raise TypeError(f"Invalid source or target '{resource_type}' in relationship")
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> Relationship:
+    def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> Relationship:
         instance = super()._load(resource, cognite_client)
         if instance.source is not None:
             instance.source = instance._convert_resource(instance.source, instance.source_type)  # type: ignore
@@ -136,19 +136,19 @@ class RelationshipFilter(CogniteFilter):
 
     def __init__(
         self,
-        source_external_ids: SequenceType[str] = None,
-        source_types: SequenceType[str] = None,
-        target_external_ids: SequenceType[str] = None,
-        target_types: SequenceType[str] = None,
-        data_set_ids: SequenceType[Dict[str, Any]] = None,
-        start_time: Dict[str, int] = None,
-        end_time: Dict[str, int] = None,
-        confidence: Dict[str, int] = None,
-        last_updated_time: Dict[str, int] = None,
-        created_time: Dict[str, int] = None,
-        active_at_time: Dict[str, int] = None,
-        labels: LabelFilter = None,
-        cognite_client: CogniteClient = None,
+        source_external_ids: Optional[SequenceType[str]] = None,
+        source_types: Optional[SequenceType[str]] = None,
+        target_external_ids: Optional[SequenceType[str]] = None,
+        target_types: Optional[SequenceType[str]] = None,
+        data_set_ids: Optional[SequenceType[Dict[str, Any]]] = None,
+        start_time: Optional[Dict[str, int]] = None,
+        end_time: Optional[Dict[str, int]] = None,
+        confidence: Optional[Dict[str, int]] = None,
+        last_updated_time: Optional[Dict[str, int]] = None,
+        created_time: Optional[Dict[str, int]] = None,
+        active_at_time: Optional[Dict[str, int]] = None,
+        labels: Optional[LabelFilter] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ):
         self.source_external_ids = source_external_ids
         self.source_types = source_types

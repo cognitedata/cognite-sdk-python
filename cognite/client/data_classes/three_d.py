@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteLabelUpdate,
@@ -25,7 +25,7 @@ class RevisionCameraProperties(dict):
         position (List[float]): Initial camera position.
     """
 
-    def __init__(self, target: List[float] = None, position: List[float] = None, **kwargs: Any):
+    def __init__(self, target: Optional[List[float]] = None, position: Optional[List[float]] = None, **kwargs: Any):
         self.target = target
         self.position = position
         self.update(kwargs)
@@ -42,7 +42,7 @@ class BoundingBox3D(dict):
         min (List[float]): No description.
     """
 
-    def __init__(self, max: List[float] = None, min: List[float] = None, **kwargs: Any):
+    def __init__(self, max: Optional[List[float]] = None, min: Optional[List[float]] = None, **kwargs: Any):
         self.max = max
         self.min = min
         self.update(kwargs)
@@ -64,11 +64,11 @@ class ThreeDModel(CogniteResource):
 
     def __init__(
         self,
-        name: str = None,
-        id: int = None,
-        created_time: int = None,
-        metadata: Dict[str, str] = None,
-        cognite_client: CogniteClient = None,
+        name: Optional[str] = None,
+        id: Optional[int] = None,
+        created_time: Optional[int] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ):
         self.name = name
         self.id = id
@@ -148,18 +148,18 @@ class ThreeDModelRevision(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        file_id: int = None,
-        published: bool = None,
-        rotation: List[float] = None,
-        camera: Union[Dict[str, Any], RevisionCameraProperties] = None,
-        status: str = None,
-        metadata: Dict[str, str] = None,
-        thumbnail_threed_file_id: int = None,
-        thumbnail_url: str = None,
-        asset_mapping_count: int = None,
-        created_time: int = None,
-        cognite_client: CogniteClient = None,
+        id: Optional[int] = None,
+        file_id: Optional[int] = None,
+        published: Optional[bool] = None,
+        rotation: Optional[List[float]] = None,
+        camera: Optional[Union[Dict[str, Any], RevisionCameraProperties]] = None,
+        status: Optional[str] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        thumbnail_threed_file_id: Optional[int] = None,
+        thumbnail_url: Optional[str] = None,
+        asset_mapping_count: Optional[int] = None,
+        created_time: Optional[int] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ):
         self.id = id
         self.file_id = file_id
@@ -175,7 +175,7 @@ class ThreeDModelRevision(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> ThreeDModelRevision:
+    def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> ThreeDModelRevision:
         instance = super()._load(resource, cognite_client)
         if isinstance(resource, Dict):
             if instance.camera is not None:
@@ -259,15 +259,15 @@ class ThreeDNode(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        tree_index: int = None,
-        parent_id: int = None,
-        depth: int = None,
-        name: str = None,
-        subtree_size: int = None,
-        properties: Dict[str, Dict[str, str]] = None,
-        bounding_box: Union[Dict[str, Any], BoundingBox3D] = None,
-        cognite_client: CogniteClient = None,
+        id: Optional[int] = None,
+        tree_index: Optional[int] = None,
+        parent_id: Optional[int] = None,
+        depth: Optional[int] = None,
+        name: Optional[str] = None,
+        subtree_size: Optional[int] = None,
+        properties: Optional[Dict[str, Dict[str, str]]] = None,
+        bounding_box: Optional[Union[Dict[str, Any], BoundingBox3D]] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ):
         self.id = id
         self.tree_index = tree_index
@@ -280,7 +280,7 @@ class ThreeDNode(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> ThreeDNode:
+    def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> ThreeDNode:
         instance = super()._load(resource, cognite_client)
         if isinstance(resource, Dict):
             if instance.bounding_box is not None:
@@ -305,11 +305,11 @@ class ThreeDAssetMapping(CogniteResource):
 
     def __init__(
         self,
-        node_id: int = None,
-        asset_id: int = None,
-        tree_index: int = None,
-        subtree_size: int = None,
-        cognite_client: CogniteClient = None,
+        node_id: Optional[int] = None,
+        asset_id: Optional[int] = None,
+        tree_index: Optional[int] = None,
+        subtree_size: Optional[int] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ):
         self.node_id = node_id
         self.asset_id = asset_id
