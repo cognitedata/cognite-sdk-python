@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 import math
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Literal, Optional, Tuple, Union, cast, overload
 from typing import Sequence as SequenceType
 
 from cognite.client import utils
@@ -436,6 +436,49 @@ class SequencesAPI(APIClient):
         """
         return self._update_multiple(
             list_cls=SequenceList, resource_cls=Sequence, update_cls=SequenceUpdate, items=item
+        )
+
+    @overload
+    def upsert(self, item: SequenceType[Sequence], mode: Literal["patch", "replace"]) -> SequenceList:
+        ...
+
+    @overload
+    def upsert(self, item: Sequence, mode: Literal["patch", "replace"]) -> Sequence:
+        ...
+
+    def upsert(
+        self, item: Sequence | SequenceType[Sequence], mode: Literal["patch", "replace"]
+    ) -> Sequence | SequenceList:
+        """Upsert sequences, i.e., update if it exists, and create if it does not exist.
+         Note this is a convenience method that handles the upserting for you by first calling update on all items,
+         and if any of them fail because they do not exist, it will create them instead.
+
+        Args:
+            item (Sequence | Sequence[Sequence]): Sequence or list of sequences to upsert.
+            mode (Literal['patch', "replace"]): Whether to patch or replace in the case the sequences are existing.
+
+        Returns:
+            Sequence | SequenceList: The upserted sequence(s).
+
+        Examples:
+
+            Upsert for sequences:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import Sequence
+                >>> c = CogniteClient()
+                >>> existing_sequence = c.sequences.retrieve(id=1)
+                >>> existing_sequence.description = "New description"
+                >>> new_sequence = Sequence(external_id="new_sequence", description="New sequence")
+                >>> res = c.sequences.upsert([existing_sequence, new_sequence], mode="replace")
+        """
+        return self._upsert_multiple(
+            item,
+            list_cls=SequenceList,
+            resource_cls=Sequence,
+            update_cls=SequenceUpdate,
+            input_resource_cls=Sequence,
+            mode=mode,
         )
 
     def search(

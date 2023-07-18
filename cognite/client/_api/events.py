@@ -464,11 +464,11 @@ class EventsAPI(APIClient):
             mode (Literal['patch', "replace"]): Whether to patch or replace in the case the events are existing.
 
         Returns:
-            EventList: List of upserted events.
+            Event | EventList: The upserted event(s).
 
         Examples:
 
-            Upsert for events::
+            Upsert for events:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import Event
@@ -476,7 +476,7 @@ class EventsAPI(APIClient):
                 >>> existing_event = c.events.retrieve(id=1)
                 >>> existing_event.description = "New description"
                 >>> new_event = Event(external_id="new_event", description="New event")
-                >>> res = c.events.upsert([existing_event, new_event])
+                >>> res = c.events.upsert([existing_event, new_event], mode="replace")
         """
         return self._upsert_multiple(
             item,
