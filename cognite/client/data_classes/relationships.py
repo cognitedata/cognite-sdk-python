@@ -100,6 +100,12 @@ class Relationship(CogniteResource):
         instance.labels = Label._load_list(instance.labels)
         return instance
 
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        result: dict[str, Any] = super().dump(camel_case)
+        if self.labels is not None:
+            result["labels"] = [label.dump(camel_case) for label in self.labels]
+        return result
+
     def _convert_resource(
         self, resource: Dict[str, Any], resource_type: Optional[str]
     ) -> Union[Dict[str, Any], CogniteResource]:
