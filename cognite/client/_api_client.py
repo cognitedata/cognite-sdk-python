@@ -961,7 +961,10 @@ class APIClient:
             if (snake := to_snake_case(key)) not in update_attribute_by_name:
                 continue
             prop = update_attribute_by_name[snake]
-            if prop.is_list and mode == "patch":
+            if prop.name == "columns":
+                continue
+                # Update columns properties in Sequence is not supported
+            elif prop.is_list and mode == "patch":
                 update[key] = {"add": value}
             else:
                 update[key] = {"set": value}
