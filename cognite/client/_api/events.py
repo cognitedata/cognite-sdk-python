@@ -478,5 +478,11 @@ class EventsAPI(APIClient):
                 >>> res = c.events.upsert([existing_event, new_event])
         """
         return self._upsert_multiple(
-            item, list_cls=EventList, resource_cls=Event, update_cls=EventUpdate, input_resource_cls=Event
+            item,
+            list_cls=EventList,
+            resource_cls=Event,
+            update_cls=EventUpdate,
+            input_resource_cls=Event,
+            mode="legacy",
+            attribute_properties=None,
         )

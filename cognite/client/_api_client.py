@@ -39,6 +39,7 @@ from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteResource,
     CogniteUpdate,
+    CogniteUpdateProperties,
     T_CogniteResource,
     T_CogniteResourceList,
 )
@@ -51,7 +52,7 @@ from cognite.client.utils._identifier import (
     IdentifierSequenceCore,
     SingletonIdentifierSequence,
 )
-from cognite.client.utils._text import convert_all_keys_to_camel_case, shorten, to_snake_case
+from cognite.client.utils._text import convert_all_keys_to_camel_case, shorten, to_camel_case, to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -256,9 +257,9 @@ class APIClient:
         self,
         identifier: IdentifierCore,
         cls: Type[T_CogniteResource],
-        resource_path: Optional[str] = None,
-        params: Optional[Dict] = None,
-        headers: Optional[Dict] = None,
+        resource_path: str = None,
+        params: Dict = None,
+        headers: Dict = None,
     ) -> Optional[T_CogniteResource]:
         resource_path = resource_path or self._RESOURCE_PATH
         try:
@@ -737,9 +738,11 @@ class APIClient:
         list_cls: Type[T_CogniteResourceList],
         resource_cls: Type[T_CogniteResource],
         update_cls: Type[CogniteUpdate],
-        resource_path: Optional[str] = None,
-        params: Optional[Dict] = None,
-        headers: Optional[Dict] = None,
+        resource_path: str = None,
+        params: Dict = None,
+        headers: Dict = None,
+        mode: Literal["legacy", "patch", "replace"] = "legacy",
+        attribute_properties: CogniteUpdateProperties | None = None,
     ) -> T_CogniteResource:
         ...
 
@@ -750,9 +753,11 @@ class APIClient:
         list_cls: Type[T_CogniteResourceList],
         resource_cls: Type[T_CogniteResource],
         update_cls: Type[CogniteUpdate],
-        resource_path: Optional[str] = None,
-        params: Optional[Dict] = None,
-        headers: Optional[Dict] = None,
+        resource_path: str = None,
+        params: Dict = None,
+        headers: Dict = None,
+        mode: Literal["legacy", "patch", "replace"] = "legacy",
+        attribute_properties: CogniteUpdateProperties | None = None,
     ) -> T_CogniteResourceList:
         ...
 
@@ -762,9 +767,11 @@ class APIClient:
         list_cls: Type[T_CogniteResourceList],
         resource_cls: Type[T_CogniteResource],
         update_cls: Type[CogniteUpdate],
-        resource_path: Optional[str] = None,
-        params: Optional[Dict] = None,
-        headers: Optional[Dict] = None,
+        resource_path: str = None,
+        params: Dict = None,
+        headers: Dict = None,
+        mode: Literal["legacy", "patch", "replace"] = "legacy",
+        attribute_properties: CogniteUpdateProperties | None = None,
     ) -> Union[T_CogniteResourceList, T_CogniteResource]:
         resource_path = resource_path or self._RESOURCE_PATH
         patch_objects = []
@@ -776,7 +783,11 @@ class APIClient:
 
         for index, item in enumerate(item_list):
             if isinstance(item, CogniteResource):
-                patch_objects.append(self._convert_resource_to_patch_object(item, update_cls._get_update_properties()))
+                patch_objects.append(
+                    self._convert_resource_to_patch_object(
+                        item, update_cls._get_update_properties(), mode, attribute_properties
+                    )
+                )
             elif isinstance(item, CogniteUpdate):
                 patch_objects.append(item.dump(camel_case=True))
                 patch_object_update = patch_objects[index]["update"]
@@ -808,12 +819,16 @@ class APIClient:
         list_cls: Type[T_CogniteResourceList],
         resource_cls: Type[T_CogniteResource],
         update_cls: Type[CogniteUpdate],
+        attribute_properties: CogniteUpdateProperties | None = None,
+        mode: Literal["patch", "replace", "legacy"] = "legacy",
         input_resource_cls: Optional[Type[CogniteResource]] = None,
     ) -> T_CogniteResource | T_CogniteResourceList:
         is_single = isinstance(items, CogniteResource)
         items = cast(Sequence[CogniteResource], [items] if is_single else items)
         try:
-            result = self._update_multiple(items, list_cls, resource_cls, update_cls)
+            result = self._update_multiple(
+                items, list_cls, resource_cls, update_cls, mode=mode, attribute_properties=attribute_properties
+            )
         except CogniteNotFoundError as not_found_error:
             items_by_external_id = {item.external_id: item for item in items if item.external_id is not None}
             items_by_id = {item.id: item for item in items if item.id is not None}
@@ -922,24 +937,60 @@ class APIClient:
             )
         ]
 
-    @staticmethod
+    @classmethod
     def _convert_resource_to_patch_object(
-        resource: CogniteResource, update_attributes: Collection[str]
+        cls,
+        resource: CogniteResource,
+        update_attributes: Collection[str],
+        mode: Literal["legacy", "patch", "replace"] = "legacy",
+        attribute_properties: CogniteUpdateProperties | None = None,
     ) -> Dict[str, Dict[str, Dict]]:
         dumped_resource = resource.dump(camel_case=True)
         has_id = "id" in dumped_resource
         has_external_id = "externalId" in dumped_resource
 
-        patch_object: Dict[str, Dict[str, Dict]] = {"update": {}}
+        patch_object: dict[str, dict[str, dict]] = {"update": {}}
         if has_id:
             patch_object["id"] = dumped_resource.pop("id")
         elif has_external_id:
             patch_object["externalId"] = dumped_resource.pop("externalId")
 
+        update: dict[str, dict] = (
+            {} if mode in {"patch", "legacy"} else cls._clear_all_attributes(update_attributes, attribute_properties)
+        )
         for key, value in dumped_resource.items():
             if to_snake_case(key) in update_attributes:
-                patch_object["update"][key] = {"set": value}
+                update[key] = {"set": value}
+
+        if mode == "patch":
+            if "metadata" in dumped_resource:
+                update["metadata"]["add"] = update["metadata"].pop("set")
+            if "labels" in dumped_resource:
+                update["labels"]["add"] = update["labels"].pop("set")
+
+        patch_object["update"] = update
+
         return patch_object
+
+    @staticmethod
+    def _clear_all_attributes(
+        update_attributes: Collection[str], attribute_properties: CogniteUpdateProperties | None = None
+    ) -> dict[str, dict]:
+        if attribute_properties is None:
+            raise ValueError("attribute_properties must be provided if mode is 'replace'")
+
+        props = {
+            to_camel_case(attr)
+            for attr in update_attributes
+            if attr not in attribute_properties.not_nullable_properties
+        }
+
+        clear_dict: dict[str, dict[str, Any]] = {key: {"setNull": True} for key in props}
+        if attribute_properties.has_labels:
+            clear_dict["labels"] = {"set": []}
+        if attribute_properties.has_meta_data:
+            clear_dict["metadata"] = {"set": []}
+        return clear_dict
 
     @staticmethod
     def _status_ok(status_code: int) -> bool:
