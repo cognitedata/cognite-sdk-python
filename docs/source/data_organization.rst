@@ -117,6 +117,10 @@ Update relationships
 ^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.relationships.RelationshipsAPI.update
 
+Upsert relationships
+^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.relationships.RelationshipsAPI.upsert
+
 Delete relationships
 ^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.relationships.RelationshipsAPI.delete

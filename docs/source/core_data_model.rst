@@ -50,6 +50,10 @@ Update assets
 ^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.update
 
+Upsert assets
+^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.assets.AssetsAPI.upsert
+
 Asset Data classes
 ^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.assets
@@ -90,6 +94,10 @@ Delete events
 Update events
 ^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.events.EventsAPI.update
+
+Upsert events
+^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.events.EventsAPI.upsert
 
 Events Data classes
 ^^^^^^^^^^^^^^^^^^^
@@ -203,6 +211,11 @@ Delete files
 Update files metadata
 ^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.files.FilesAPI.update
+
+Upsert files metadata
+^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.files.FilesAPI.upsert
+
 
 Files Data classes
 ^^^^^^^^^^^^^^^^^^
@@ -347,6 +360,11 @@ Update time series
 ^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.time_series.TimeSeriesAPI.update
 
+Upsert time series
+^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.time_series.TimeSeriesAPI.upsert
+
+
 Time Series Data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.time_series
@@ -388,6 +406,11 @@ Delete sequences
 Update sequences
 ^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.sequences.SequencesAPI.update
+
+Upsert sequences
+^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.sequences.SequencesAPI.upsert
+
 
 Retrieve data
 ^^^^^^^^^^^^^
