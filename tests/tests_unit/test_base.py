@@ -438,7 +438,7 @@ class TestCogniteUpdate:
         ).object.set({"bla": "bla"}).string.set("bla").dump()
 
     def test_get_update_properties(self):
-        props = MyUpdate._get_update_properties()
+        props = {prop.name for prop in MyUpdate._get_update_properties()}
         assert hasattr(MyUpdate, "columns") and "columns" not in props
         assert {"string", "list", "object", "labels"} == set(props)
 

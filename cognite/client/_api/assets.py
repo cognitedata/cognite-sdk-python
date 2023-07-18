@@ -953,7 +953,8 @@ class _AssetHierarchyCreator:
 
     @cached_property
     def clear_all_update(self) -> MappingProxyType[str, Dict[str, Any]]:
-        props = set(map(to_camel_case, AssetUpdate._get_update_properties()))
+        props = {to_camel_case(prop.name) for prop in AssetUpdate._get_update_properties()}
+
         # Does not support setNull:
         props -= {"name", "parentExternalId", "parentId"}
         dct: Dict[str, Dict[str, Any]] = {k: {"setNull": True} for k in props}
