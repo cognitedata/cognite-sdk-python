@@ -422,15 +422,15 @@ class RelationshipsAPI(APIClient):
         )
 
     @overload
-    def upsert(self, item: Sequence[Relationship], mode: Literal["patch", "replace"]) -> RelationshipList:
+    def upsert(self, item: Sequence[Relationship], mode: Literal["patch", "replace"] = "patch") -> RelationshipList:
         ...
 
     @overload
-    def upsert(self, item: Relationship, mode: Literal["patch", "replace"]) -> Relationship:
+    def upsert(self, item: Relationship, mode: Literal["patch", "replace"] = "patch") -> Relationship:
         ...
 
     def upsert(
-        self, item: Relationship | Sequence[Relationship], mode: Literal["patch", "replace"]
+        self, item: Relationship | Sequence[Relationship], mode: Literal["patch", "replace"] = "patch"
     ) -> Relationship | RelationshipList:
         """Upsert relationships, i.e., update if it exists, and create if it does not exist.
          Note this is a convenience method that handles the upserting for you by first calling update on all items,
@@ -438,7 +438,9 @@ class RelationshipsAPI(APIClient):
 
         Args:
             item (Relationship | Sequence[Relationship]): Relationship or list of relationships to upsert.
-            mode (Literal['patch', "replace"]): Whether to patch or replace in the case the relationships are existing.
+            mode (Literal['patch', "replace"]): Whether to patch or replace in the case the relationships are existing. If
+                                                you set 'patch', the call will only update fields with non-null values (default).
+                                                Setting 'replace' will unset any fields that are not specified.
 
         Returns:
             Relationship | RelationshipList: The upserted relationship(s).

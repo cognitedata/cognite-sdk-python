@@ -439,15 +439,15 @@ class SequencesAPI(APIClient):
         )
 
     @overload
-    def upsert(self, item: SequenceType[Sequence], mode: Literal["patch", "replace"]) -> SequenceList:
+    def upsert(self, item: SequenceType[Sequence], mode: Literal["patch", "replace"] = "patch") -> SequenceList:
         ...
 
     @overload
-    def upsert(self, item: Sequence, mode: Literal["patch", "replace"]) -> Sequence:
+    def upsert(self, item: Sequence, mode: Literal["patch", "replace"] = "patch") -> Sequence:
         ...
 
     def upsert(
-        self, item: Sequence | SequenceType[Sequence], mode: Literal["patch", "replace"]
+        self, item: Sequence | SequenceType[Sequence], mode: Literal["patch", "replace"] = "patch"
     ) -> Sequence | SequenceList:
         """Upsert sequences, i.e., update if it exists, and create if it does not exist.
          Note this is a convenience method that handles the upserting for you by first calling update on all items,
@@ -455,7 +455,9 @@ class SequencesAPI(APIClient):
 
         Args:
             item (Sequence | Sequence[Sequence]): Sequence or list of sequences to upsert.
-            mode (Literal['patch', "replace"]): Whether to patch or replace in the case the sequences are existing.
+            mode (Literal['patch', "replace"]): Whether to patch or replace in the case the sequences are existing. If
+                                                you set 'patch', the call will only update fields with non-null values (default).
+                                                Setting 'replace' will unset any fields that are not specified.
 
         Returns:
             Sequence | SequenceList: The upserted sequence(s).

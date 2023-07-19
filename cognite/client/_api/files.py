@@ -471,11 +471,11 @@ class FilesAPI(APIClient):
         ...
 
     @overload
-    def upsert(self, item: FileMetadata, mode: Literal["patch", "replace"]) -> FileMetadata:
+    def upsert(self, item: FileMetadata, mode: Literal["patch", "replace"] = "patch") -> FileMetadata:
         ...
 
     def upsert(
-        self, item: FileMetadata | Sequence[FileMetadata], mode: Literal["patch", "replace"]
+        self, item: FileMetadata | Sequence[FileMetadata], mode: Literal["patch", "replace"] = "patch"
     ) -> FileMetadata | FileMetadataList:
         """Upsert files, i.e., update if it exists, and create if it does not exist.
          Note this is a convenience method that handles the upserting for you by first calling update on all items,
@@ -483,7 +483,9 @@ class FilesAPI(APIClient):
 
         Args:
             item (FileMetadata | Sequence[FileMetadata]): File or list of files to upsert.
-            mode (Literal['patch', "replace"]): Whether to patch or replace in the case the fileMetadatas are existing.
+            mode (Literal['patch', "replace"]): Whether to patch or replace in the case the files are existing. If
+                                                you set 'patch', the call will only update fields with non-null values (default).
+                                                Setting 'replace' will unset any fields that are not specified.
 
         Returns:
             FileMetadata | FileMetadataList: The upserted files(s).

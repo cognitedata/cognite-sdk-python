@@ -388,15 +388,15 @@ class TimeSeriesAPI(APIClient):
         )
 
     @overload
-    def upsert(self, item: Sequence[TimeSeries], mode: Literal["patch", "replace"]) -> TimeSeriesList:
+    def upsert(self, item: Sequence[TimeSeries], mode: Literal["patch", "replace"] = "patch") -> TimeSeriesList:
         ...
 
     @overload
-    def upsert(self, item: TimeSeries, mode: Literal["patch", "replace"]) -> TimeSeries:
+    def upsert(self, item: TimeSeries, mode: Literal["patch", "replace"] = "patch") -> TimeSeries:
         ...
 
     def upsert(
-        self, item: TimeSeries | Sequence[TimeSeries], mode: Literal["patch", "replace"]
+        self, item: TimeSeries | Sequence[TimeSeries], mode: Literal["patch", "replace"] = "patch"
     ) -> TimeSeries | TimeSeriesList:
         """Upsert time series, i.e., update if it exists, and create if it does not exist.
          Note this is a convenience method that handles the upserting for you by first calling update on all items,
@@ -404,7 +404,9 @@ class TimeSeriesAPI(APIClient):
 
         Args:
             item (TimeSeries | Sequence[TimeSeries]): TimeSeries or list of TimeSeries to upsert.
-            mode (Literal['patch', "replace"]): Whether to patch or replace in the case the TimeSeries are existing.
+            mode (Literal['patch', "replace"]): Whether to patch or replace in the case the time series are existing. If
+                                                you set 'patch', the call will only update fields with non-null values (default).
+                                                Setting 'replace' will unset any fields that are not specified.
 
         Returns:
             TimeSeries | TimeSeriesList: The upserted time series(s).
