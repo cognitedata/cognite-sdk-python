@@ -46,6 +46,7 @@ from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import is_unlimited, split_into_chunks
 from cognite.client.utils._concurrency import TaskExecutor
 from cognite.client.utils._identifier import (
+    Identifier,
     IdentifierCore,
     IdentifierSequence,
     IdentifierSequenceCore,
@@ -862,10 +863,10 @@ class APIClient:
                 unknown.extend(not_found_error.unknown)
                 if created is not None:
                     # The update call failed
-                    successful.extend([item.external_id for item in created])
+                    successful.extend(item.external_id for item in created)
                 if updated is None and created is not None:
                     # The created call failed
-                    failed.extend([item.external_id if item.external_id is not None else item.id for item in to_update])
+                    failed.extend(item.external_id if item.external_id is not None else item.id for item in to_update)
                 raise CogniteAPIError(
                     api_error.message, code=api_error.code, successful=successful, failed=failed, unknown=unknown
                 )
@@ -884,16 +885,9 @@ class APIClient:
             )
 
             # Reorder to match the order of the input items
-            result_by_identifier = {
-                identifier: item
-                for item in result
-                for identifier in [item.external_id, item.id]
-                if identifier is not None
-            }
-            result = list_cls(
-                [result_by_identifier[item.external_id if item.external_id is not None else item.id] for item in items],
-                cognite_client=self._cognite_client,
-            )
+            result.data = [
+                result.get(**Identifier.load(item.id, item.external_id).as_dict(camel_case=False)) for item in items
+            ]
 
         if is_single:
             return result[0]

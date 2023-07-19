@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from abc import abstractmethod
 from collections import UserList
 from dataclasses import dataclass
 from typing import (
@@ -383,9 +384,9 @@ class CogniteUpdate:
         return dumped
 
     @classmethod
+    @abstractmethod
     def _get_update_properties(cls) -> list[PropertySpec]:
-        # Default implementation should be overridden in subclasses
-        return [PropertySpec(key) for key in cls.__dict__ if not (key.startswith("_") or key == "columns")]
+        ...
 
 
 T_CogniteUpdate = TypeVar("T_CogniteUpdate", bound=CogniteUpdate)

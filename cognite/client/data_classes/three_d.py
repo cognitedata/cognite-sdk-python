@@ -124,6 +124,14 @@ class ThreeDModelUpdate(CogniteUpdate):
     def metadata(self) -> _ObjectThreeDModelUpdate:
         return ThreeDModelUpdate._ObjectThreeDModelUpdate(self, "metadata")
 
+    @classmethod
+    def _get_update_properties(cls) -> list[PropertySpec]:
+        return [
+            PropertySpec("name", is_nullable=False),
+            PropertySpec("data_set_id"),
+            PropertySpec("metadata", is_list=True),
+        ]
+
 
 class ThreeDModelList(CogniteResourceList[ThreeDModel]):
     _RESOURCE = ThreeDModel
