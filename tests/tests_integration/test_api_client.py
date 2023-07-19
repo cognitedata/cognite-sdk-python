@@ -2,12 +2,21 @@
 This file contains integration tests for the logic in the generic API client. However, since we cannot instansiate a
 generic resource, an arbitrary resource is used instead to test the endpoint.
 """
+from unittest.mock import patch
+
 import pytest
 from pytest import MonkeyPatch
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import Event
 from cognite.client.exceptions import CogniteAPIError
+
+
+@pytest.fixture
+def post_spy_event(cognite_client):
+    dps_api = cognite_client.events
+    with patch.object(dps_api, "_post", wraps=dps_api._post):
+        yield
 
 
 class TestAPIClientUpsert:
@@ -108,7 +117,9 @@ class TestAPIClientUpsert:
                 external_id=[new_event.external_id, existing.external_id], ignore_unknown_ids=True
             )
 
-    def test_upsert_split_into_multiple_tasks(self, cognite_client: CogniteClient, monkeypatch: MonkeyPatch) -> None:
+    def test_upsert_split_into_multiple_tasks(
+        self, cognite_client: CogniteClient, monkeypatch: MonkeyPatch, post_spy_event
+    ) -> None:
         # Arrange
         new_event = Event(
             external_id="test_upsert_split_into_multiple_tasks:new",
@@ -136,6 +147,7 @@ class TestAPIClientUpsert:
             res = cognite_client.events.upsert([new_event, preexisting_update], mode="replace")
 
             # Assert
+            assert cognite_client.events._post.call_count >= 2
             assert len(res) == 2
             assert new_event.external_id == res[0].external_id
             assert preexisting.external_id == res[1].external_id
