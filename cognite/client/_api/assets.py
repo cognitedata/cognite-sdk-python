@@ -684,6 +684,19 @@ class AssetsAPI(APIClient):
          Note this is a convenience method that handles the upserting for you by first calling update on all items,
          and if any of them fail because they do not exist, it will create them instead.
 
+        Warning:
+            This is not an atomic operation. It performs multiple calls to the update and create endpoints, depending
+            on whether the assets exist from before or not. This means that if one of the calls fail, it is possible
+            that some of the assets have been updated/created while others have not been created/updated.
+
+        Note:
+            The mode parameter controls how the update is performed. If you set 'patch', the call will only update
+            the fields in the Asset object that are not None. This means that if the asset exists from before, the
+            fields that are not specified will not be changed. If you set 'replace', all the fields that are not
+            specified, i.e., set to None and support being set to null, will be nulled out. See the API
+            documentation for the update endpoint for more information.
+
+
         Args:
             item (Asset | Sequence[Asset]): Asset or list of assets to upsert.
             mode (Literal["patch", "replace"]): Whether to patch or replace in the case the assets are existing. If
