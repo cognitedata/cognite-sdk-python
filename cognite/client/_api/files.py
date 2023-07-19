@@ -483,7 +483,7 @@ class FilesAPI(APIClient):
 
         Args:
             item (FileMetadata | Sequence[FileMetadata]): File or list of files to upsert.
-            mode (Literal['patch', "replace"]): Whether to patch or replace in the case the files are existing. If
+            mode (Literal["patch", "replace"])): Whether to patch or replace in the case the files are existing. If
                                                 you set 'patch', the call will only update fields with non-null values (default).
                                                 Setting 'replace' will unset any fields that are not specified.
 

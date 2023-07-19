@@ -823,7 +823,7 @@ class APIClient:
         except CogniteNotFoundError as not_found_error:
             items_by_external_id = {item.external_id: item for item in items if item.external_id is not None}
             items_by_id = {item.id: item for item in items if item.id is not None}
-            # Not found must have an external id as they do no existing in CDF.
+            # Not found must have an external id as they do not exist in CDF:
             missing_external_ids = {entry["externalId"] for entry in not_found_error.not_found}
             to_create = [
                 items_by_external_id[external_id]
@@ -954,7 +954,7 @@ class APIClient:
         elif has_external_id:
             patch_object["externalId"] = dumped_resource.pop("externalId")
 
-        update: dict[str, dict] = {} if mode in {"patch", "legacy"} else cls._clear_all_attributes(update_attributes)
+        update: dict[str, dict] = cls._clear_all_attributes(update_attributes) if mode == "replace" else {}
 
         update_attribute_by_name = {prop.name: prop for prop in update_attributes}
         for key, value in dumped_resource.items():

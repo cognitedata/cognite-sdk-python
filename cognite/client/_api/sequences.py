@@ -455,7 +455,7 @@ class SequencesAPI(APIClient):
 
         Args:
             item (Sequence | Sequence[Sequence]): Sequence or list of sequences to upsert.
-            mode (Literal['patch', "replace"]): Whether to patch or replace in the case the sequences are existing. If
+            mode (Literal["patch", "replace"])): Whether to patch or replace in the case the sequences are existing. If
                                                 you set 'patch', the call will only update fields with non-null values (default).
                                                 Setting 'replace' will unset any fields that are not specified.
 

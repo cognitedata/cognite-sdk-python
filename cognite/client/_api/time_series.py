@@ -404,7 +404,7 @@ class TimeSeriesAPI(APIClient):
 
         Args:
             item (TimeSeries | Sequence[TimeSeries]): TimeSeries or list of TimeSeries to upsert.
-            mode (Literal['patch', "replace"]): Whether to patch or replace in the case the time series are existing. If
+            mode (Literal["patch", "replace"])): Whether to patch or replace in the case the time series are existing. If
                                                 you set 'patch', the call will only update fields with non-null values (default).
                                                 Setting 'replace' will unset any fields that are not specified.
 
@@ -413,7 +413,7 @@ class TimeSeriesAPI(APIClient):
 
         Examples:
 
-            Upsert for timeSeries::
+            Upsert for TimeSeries::
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import TimeSeries
