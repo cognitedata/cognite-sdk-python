@@ -956,8 +956,8 @@ class APIClient:
                 continue
             prop = update_attribute_by_name[snake]
             if prop.name == "columns":
+                # Update column property in Sequence is not supported
                 continue
-                # Update columns properties in Sequence is not supported
             elif prop.is_list and mode == "patch":
                 update[key] = {"add": value}
             else:
