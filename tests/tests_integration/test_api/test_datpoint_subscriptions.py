@@ -25,13 +25,13 @@ def time_series_external_ids(cognite_client: CogniteClient) -> list[str]:
     return external_ids
 
 
-@pytest.fixture(scope="session")
-def subscription_one_timeseries(cognite_client: CogniteClient) -> DatapointSubscription:
-    sub1 = cognite_client.time_series.subscriptions.retrieve("PYSDKDataPointSubscriptionTest1", ignore_unknown_ids=True)
-    assert (
-        sub1 is not None
-    ), "The subscription used for testing datapoint subscriptions must exist in the test environment"
-    return sub1
+# @pytest.fixture(scope="session")
+# def subscription_three_timeseries(cognite_client: CogniteClient) -> DatapointSubscription:
+#     sub3 = cognite_client.time_series.subscriptions.retrieve("PYSDKDataPointSubscriptionTest3", ignore_unknown_ids=True)
+#     assert (
+#         sub3 is not None
+#     ), "The subscription used for testing datapoint subscriptions must exist in the test environment"
+#     return sub3
 
 
 class TestDatapointSubscriptions:
@@ -165,26 +165,34 @@ class TestDatapointSubscriptions:
                 cognite_client.time_series.subscriptions.delete(new_subscription.external_id, ignore_unknown_ids=True)
 
     def test_list_data_subscription_initial_call(
-        self, cognite_client: CogniteClient, subscription_one_timeseries: DatapointSubscription
+        self, cognite_client: CogniteClient, time_series_external_ids: list[str]
     ):
         # Arrange
-        subscription = iter(
-            cognite_client.time_series.subscriptions.iterate_data(subscription_one_timeseries.external_id)
+        new_subscription = DataPointSubscriptionCreate(
+            external_id="PYSDKDataPointSubscriptionListDataTest",
+            name="PYSDKDataPointSubscriptionListDataTest",
+            time_series_ids=time_series_external_ids,
+            partition_count=1,
         )
 
-        # Act
-        data, time_series = next(subscription)
+        try:
+            cognite_client.time_series.subscriptions.create(new_subscription)
+            subscription = iter(cognite_client.time_series.subscriptions.iterate_data(new_subscription.external_id))
 
-        # Assert
-        assert (
-            len(time_series.added) > 0
-        ), "The subscription used for testing datapoint subscriptions must have at least one time series"
-        assert len(data) > 0, "The subscription used for testing datapoint subscriptions must have data"
+            # Act
+            _, time_series = next(subscription)
 
-        # Act
-        for next_data, next_timeseries in subscription:
             # Assert
-            assert len(next_timeseries.added) == 0, "There should be no more timeseries in the subsequent batches"
+            assert (
+                len(time_series.added) > 0
+            ), "The subscription used for testing datapoint subscriptions must have at least one time series"
+
+            # Act
+            for next_data, next_timeseries in subscription:
+                # Assert
+                assert len(next_timeseries.added) == 0, "There should be no more timeseries in the subsequent batches"
+        finally:
+            cognite_client.time_series.subscriptions.delete(new_subscription.external_id, ignore_unknown_ids=True)
 
     def test_list_data_subscription_changed_time_series(
         self, cognite_client: CogniteClient, time_series_external_ids: list[str]
