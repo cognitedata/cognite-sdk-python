@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterator, Literal, Optional, Sequence, overload
+from typing import TYPE_CHECKING, Iterator, Optional, Sequence
 from warnings import warn
 
 from cognite.client._api_client import APIClient
@@ -178,46 +178,21 @@ class DatapointsSubscriptionAPI(APIClient):
             update_cls=DataPointSubscriptionUpdate,
         )
 
-    @overload
     def iterate_data(
         self,
         external_id: str,
-        partitions: Sequence[tuple[int, str]] | Sequence[int] | Sequence[DataPointSubscriptionPartition],
-        return_partitions: Literal[False] = False,
         limit: int = DATAPOINT_SUBSCRIPTION_DATA_LIST_LIMIT_DEFAULT,
-    ) -> Iterator[tuple[list[DataPointUpdate], SubscriptionTimeSeriesUpdate]]:
-        ...
-
-    @overload
-    def iterate_data(
-        self,
-        external_id: str,
-        partitions: Sequence[tuple[int, str]] | Sequence[int] | Sequence[DataPointSubscriptionPartition],
-        return_partitions: Literal[True],
-        limit: int = DATAPOINT_SUBSCRIPTION_DATA_LIST_LIMIT_DEFAULT,
-    ) -> Iterator[tuple[list[DataPointUpdate], SubscriptionTimeSeriesUpdate, list[DataPointSubscriptionPartition]]]:
-        ...
-
-    def iterate_data(
-        self,
-        external_id: str,
-        partitions: Sequence[tuple[int, str]] | Sequence[int] | Sequence[DataPointSubscriptionPartition],
-        return_partitions: bool = False,
-        limit: int = DATAPOINT_SUBSCRIPTION_DATA_LIST_LIMIT_DEFAULT,
-    ) -> Iterator[tuple[list[DataPointUpdate], SubscriptionTimeSeriesUpdate]] | Iterator[
-        tuple[list[DataPointUpdate], SubscriptionTimeSeriesUpdate, list[DataPointSubscriptionPartition]]
-    ]:
+    ) -> Iterator[tuple[list[DataPointUpdate], Optional[SubscriptionTimeSeriesUpdate]]]:
         """`Fetch the next batch of data from a given subscription and partition(s). <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/listSubscriptionData>`_
 
         Data can be ingested datapoints and time ranges where data is deleted. This endpoint will also return changes to
         the subscription itself, that is, if time series are added or removed from the subscription.
 
+        Current implementation is limited to always start from the beginning of the subscription histroy.
+
         Args:
             external_id (str): The external ID provided by the client. Must be unique for the resource type.
-            partitions (Sequence[tuple[int, str] | int | DataPointSubscriptionPartition]): Pairs of (partition, cursor) to fetch from.
             limit (int): Approximate number of results to return across all partitions.
-            return_partitions (bool): Whether to yield the partitions in each iteration. This can be useful if you want to
-                                      call the endpoint again to get the next batch at a later stage.
 
         Yields:
            A triple of list datapoint updates, timeseries updates, the subscription partition..
@@ -239,24 +214,12 @@ class DatapointsSubscriptionAPI(APIClient):
             >>>      print(f"Removed {len(changed_timeseries.removed)} timeseries")
             >>>      print(f"Changed data in {len(changed_data)} timeseries")
 
-        Call subscription, and continue later from the last cursor:
-
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes.datapoints_subscriptions import DataPointSubscriptionPartition
-            >>> c = CogniteClient()
-            >>> current: list[DataPointSubscriptionPartition] = []
-            >>> for changed_data, changed_timeseries, partitions in c.time_series.subscriptions.iterate_data("my_subscription",[0], return_partitions=True):
-            >>>      print(f"Changed data in {len(changed_data)} timeseries")
-            >>>      current = partitions
-            >>> # ... (less than 7 days) later
-            >>> for changed_data, changed_timeseries in c.time_series.subscriptions.iterate_data("my_subscription", current):
-            >>>      print(f"Changed data in {len(changed_data)} timeseries")
         """
         if self.show_experimental_warning:
             warn(self._warning_message, FutureWarning)
 
         current_partitions: list[DataPointSubscriptionPartition] = [
-            DataPointSubscriptionPartition.create(p) for p in partitions
+            DataPointSubscriptionPartition.create(p) for p in [0]
         ]
         while True:
             body = {
@@ -267,10 +230,8 @@ class DatapointsSubscriptionAPI(APIClient):
 
             res = self._post(url_path=self._RESOURCE_PATH + "/data/list", json=body)
             batch = _DataPointSubscriptionBatch._load(res.json())
-            if return_partitions:
-                yield batch.updates, batch.subscription_changes, batch.partitions
-            else:
-                yield batch.updates, batch.subscription_changes
+
+            yield batch.updates, batch.subscription_changes
             if not batch.has_next:
                 return
             current_partitions = batch.partitions

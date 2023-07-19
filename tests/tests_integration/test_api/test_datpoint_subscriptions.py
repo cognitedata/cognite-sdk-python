@@ -138,12 +138,15 @@ class TestDatapointSubscriptions:
             if created:
                 cognite_client.time_series.subscriptions.delete(new_subscription.external_id, ignore_unknown_ids=True)
 
+    def test_delete_subscription(self, cognite_client: CogniteClient, time_series_external_ids: list[str]):
+        raise NotImplementedError()
+
     def test_list_data_subscription_initial_call(
         self, cognite_client: CogniteClient, subscription_one_timeseries: DatapointSubscription
     ):
         # Arrange
         subscription = iter(
-            cognite_client.time_series.subscriptions.iterate_data(subscription_one_timeseries.external_id, [0])
+            cognite_client.time_series.subscriptions.iterate_data(subscription_one_timeseries.external_id)
         )
 
         # Act
@@ -175,12 +178,8 @@ class TestDatapointSubscriptions:
             created = cognite_client.time_series.subscriptions.create(new_subscription)
 
             # Act
-            subscription = iter(
-                cognite_client.time_series.subscriptions.iterate_data(
-                    new_subscription.external_id, [0], return_partitions=True
-                )
-            )
-            data, timeseries, partitions = next(subscription)
+            subscription = iter(cognite_client.time_series.subscriptions.iterate_data(new_subscription.external_id))
+            data, timeseries = next(subscription)
 
             # Assert
             assert timeseries.added[0].external_id == time_series_external_ids[0]
@@ -195,12 +194,13 @@ class TestDatapointSubscriptions:
 
             # Act
             cognite_client.time_series.subscriptions.update(update)
-            data, timeseries = next(
-                cognite_client.time_series.subscriptions.iterate_data(new_subscription.external_id, partitions)
-            )
+            data, timeseries = next(cognite_client.time_series.subscriptions.iterate_data(new_subscription.external_id))
 
             # Assert
-            assert {a.external_id for a in timeseries.added} == {time_series_external_ids[1]}
+            assert {a.external_id for a in timeseries.added} == {
+                time_series_external_ids[1],
+                time_series_external_ids[0],
+            }
             assert {a.external_id for a in timeseries.removed} == {time_series_external_ids[0]}
             assert len(data) == 0
         finally:
@@ -224,11 +224,7 @@ class TestDatapointSubscriptions:
             assert created.created_time
 
             # Act
-            _, timeseries, partitions = next(
-                cognite_client.time_series.subscriptions.iterate_data(
-                    new_subscription.external_id, [0], return_partitions=True
-                )
-            )
+            _, timeseries = next(cognite_client.time_series.subscriptions.iterate_data(new_subscription.external_id))
 
             # Assert
             assert timeseries.added[0].external_id == time_series_external_ids[0]
@@ -244,7 +240,7 @@ class TestDatapointSubscriptions:
             # Act
             cognite_client.time_series.data.insert_dataframe(new_data)
             retrieved_data, timeseries = next(
-                cognite_client.time_series.subscriptions.iterate_data(new_subscription.external_id, partitions)
+                cognite_client.time_series.subscriptions.iterate_data(new_subscription.external_id)
             )
 
             # Assert
@@ -268,7 +264,7 @@ class TestDatapointSubscriptions:
                     new_data.index[0], new_data.index[-1] + pd.Timedelta("1d"), external_id=time_series_external_ids[0]
                 )
 
-    @pytest.mark.skip(reason="This test is flaky")
+    # @pytest.mark.skip(reason="This test is flaky")
     def test_update_filter_subscription_added_times_series(
         self, cognite_client: CogniteClient, time_series_external_ids: list[str]
     ):
@@ -293,14 +289,12 @@ class TestDatapointSubscriptions:
             assert created.created_time
 
             # Act
-            _, first_timeseries, partitions = next(
-                cognite_client.time_series.subscriptions.iterate_data(
-                    new_subscription.external_id, [0], return_partitions=True
-                )
-            )
+            initial_added_count = 0
+            for _, timeseries in cognite_client.time_series.subscriptions.iterate_data(new_subscription.external_id):
+                initial_added_count += len(timeseries.added)
 
             # Assert
-            assert len(first_timeseries.added) > 0, "There should be at least one numberical timeseries added"
+            assert initial_added_count > 0, "There should be at least one numerical timeseries added"
 
             # Arrange
             new_numerical_timeseries = TimeSeries(
@@ -316,15 +310,14 @@ class TestDatapointSubscriptions:
             time.sleep(10)
 
             # Act
-            _, timeseries = next(
-                cognite_client.time_series.subscriptions.iterate_data(new_subscription.external_id, partitions)
-            )
+            updated_added_count = 0
+            for _, timeseries in cognite_client.time_series.subscriptions.iterate_data(new_subscription.external_id):
+                updated_added_count += len(timeseries.added)
 
             # Assert
-            assert {a.external_id for a in timeseries.added} == {
-                new_numerical_timeseries.external_id
-            }, "The new timeseries should be added. Note this test is flaky and may fail."
-            assert {a.external_id for a in timeseries.removed} == set()
+            assert (
+                initial_added_count + 1 == updated_added_count
+            ), "The new timeseries should be added. Note this test is flaky and may fail."
         finally:
             if created:
                 cognite_client.time_series.subscriptions.delete(new_subscription.external_id, ignore_unknown_ids=True)
