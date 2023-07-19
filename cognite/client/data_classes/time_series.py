@@ -279,11 +279,12 @@ class TimeSeriesUpdate(CogniteUpdate):
             # External ID is nullable, but is used in the upsert logic and thus cannot be nulled out.
             PropertySpec("external_id", is_nullable=False),
             PropertySpec("name"),
-            PropertySpec("metadata", is_list=True),
+            # TimeSeries does not support setting metadata to an empty array.
+            PropertySpec("metadata", is_list=True, is_nullable=False),
             PropertySpec("unit"),
             PropertySpec("asset_id"),
             PropertySpec("description"),
-            PropertySpec("is_step", is_nullable=True),
+            PropertySpec("is_step", is_nullable=False),
             PropertySpec("security_categories", is_list=True),
             PropertySpec("data_set_id"),
         ]

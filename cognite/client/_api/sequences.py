@@ -302,8 +302,11 @@ class SequencesAPI(APIClient):
             sequence = self._clean_columns(sequence)
         return self._create_multiple(list_cls=SequenceList, resource_cls=Sequence, items=sequence)
 
-    def _clean_columns(self, sequence: Sequence) -> Sequence:
+    @staticmethod
+    def _clean_columns(sequence: Sequence) -> Sequence:
         sequence = copy.copy(sequence)
+        if not sequence.columns:
+            return sequence
         sequence.columns = [
             {
                 k: v
@@ -323,12 +326,14 @@ class SequencesAPI(APIClient):
         self,
         id: Optional[Union[int, SequenceType[int]]] = None,
         external_id: Optional[Union[str, SequenceType[str]]] = None,
+        ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete one or more sequences. <https://developer.cognite.com/api#tag/Sequences/operation/deleteSequences>`_
 
         Args:
             id (Union[int, SequenceType[int]): Id or list of ids
             external_id (Union[str, SequenceType[str]]): External ID or list of external ids
+            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
             None
@@ -341,7 +346,11 @@ class SequencesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.sequences.delete(id=[1,2,3], external_id="3")
         """
-        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id, external_ids=external_id), wrap_ids=True)
+        self._delete_multiple(
+            identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
+            wrap_ids=True,
+            extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
+        )
 
     @overload
     def update(self, item: Union[Sequence, SequenceUpdate]) -> Sequence:

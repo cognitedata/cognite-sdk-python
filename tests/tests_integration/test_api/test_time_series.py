@@ -3,6 +3,7 @@ from unittest import mock
 
 import pytest
 
+from cognite.client import CogniteClient
 from cognite.client.data_classes import TimeSeries, TimeSeriesFilter, TimeSeriesUpdate
 from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS
 from tests.utils import set_request_limit
@@ -118,6 +119,36 @@ class TestTimeSeriesAPI:
         a = cognite_client.time_series.create(TimeSeries(name="any"))
         cognite_client.assets.delete(id=a.id, external_id="this ts does not exist", ignore_unknown_ids=True)
         assert cognite_client.assets.retrieve(id=a.id) is None
+
+    def test_upsert_2_time_series_one_preexisting(self, cognite_client: CogniteClient) -> None:
+        # Arrange
+        new_times_series = TimeSeries(
+            external_id="test_upsert_2_time_series_one_preexisting:new", name="my new time series"
+        )
+        preexisting = TimeSeries(
+            external_id="test_upsert_2_time_series_one_preexisting:preexisting",
+            name="my preexisting time series",
+        )
+        preexisting_update = TimeSeries._load(preexisting.dump(camel_case=True))
+        preexisting_update.name = "my preexisting time series updated"
+
+        try:
+            created_existing = cognite_client.time_series.create(preexisting)
+            assert created_existing.id is not None
+
+            # Act
+            res = cognite_client.time_series.upsert([new_times_series, preexisting_update], mode="replace")
+
+            # Assert
+            assert len(res) == 2
+            assert new_times_series.external_id == res[0].external_id
+            assert preexisting.external_id == res[1].external_id
+            assert new_times_series.name == res[0].name
+            assert preexisting_update.name == res[1].name
+        finally:
+            cognite_client.time_series.delete(
+                external_id=[new_times_series.external_id, preexisting.external_id], ignore_unknown_ids=True
+            )
 
 
 class TestTimeSeriesHelperMethods:
