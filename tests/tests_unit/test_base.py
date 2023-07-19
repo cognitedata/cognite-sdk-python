@@ -19,6 +19,7 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     CogniteResponse,
     CogniteUpdate,
+    PropertySpec,
 )
 from cognite.client.exceptions import CogniteMissingClientError
 
@@ -56,6 +57,17 @@ class MyUpdate(CogniteUpdate):
     def columns(self):
         # Not really a PrimitiveUpdate, but we have this to ensure it is skipped from updates
         return PrimitiveUpdate(self, "columns")
+
+    @classmethod
+    def _get_update_properties(cls) -> list[PropertySpec]:
+        return [
+            PropertySpec("string", is_nullable=False),
+            PropertySpec("list", is_list=True),
+            PropertySpec("object", is_list=True),
+            PropertySpec("labels", is_list=True),
+            # Columns are not supported
+            # PropertySpec("columns", is_nullable=False),
+        ]
 
 
 class PrimitiveUpdate(CognitePrimitiveUpdate):
