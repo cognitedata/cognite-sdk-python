@@ -28,6 +28,8 @@ _FILTERS_SUPPORTED = {
     filters.Or,
     filters.Not,
     filters.In,
+    filters.Equals,
+    filters.Exists,
     filters.Range,
     filters.Prefix,
     filters.ContainsAny,
@@ -410,15 +412,14 @@ class DataPointSubscriptionCreateList(CogniteResourceList[DataPointSubscriptionC
     _RESOURCE = DataPointSubscriptionCreate
 
 
-class _Metadata:
-    def __call__(self, key: str) -> list[str]:
-        return ["metadata", key]
+def _metadata(key: str) -> list[str]:
+    return ["metadata", key]
 
 
 class DataPointSubscriptionFilterProperties:
     description = ["description"]
     external_id = ["externalId"]
-    metadata = _Metadata()
+    metadata = _metadata
     name = ["name"]
     unit = ["unit"]
     asset_id = ["assetId"]

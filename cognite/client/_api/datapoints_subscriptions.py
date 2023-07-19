@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Sequence, overload
+from typing import TYPE_CHECKING, Optional, Sequence
 from warnings import warn
 
 from cognite.client._api_client import APIClient
@@ -101,21 +101,7 @@ class DatapointsSubscriptionAPI(APIClient):
             wrap_ids=True,
         )
 
-    @overload
-    def retrieve(
-        self, external_id: list[str] | tuple[str], ignore_unknown_ids: bool = False
-    ) -> DataPointSubscriptionList:
-        ...
-
-    @overload
-    def retrieve(
-        self, external_id: str | Sequence[str], ignore_unknown_ids: bool = False
-    ) -> Optional[DatapointSubscription] | DataPointSubscriptionList:
-        ...
-
-    def retrieve(
-        self, external_id: str | list[str] | tuple[str] | Sequence[str], ignore_unknown_ids: bool = False
-    ) -> Optional[DatapointSubscription] | DataPointSubscriptionList:
+    def retrieve(self, external_id: str, ignore_unknown_ids: bool = False) -> Optional[DatapointSubscription]:
         """`Retrieve one or more subscriptions by external ID. <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/getSubscriptionsByIds>`_
 
         Args:
@@ -137,12 +123,16 @@ class DatapointsSubscriptionAPI(APIClient):
         if self.show_experimental_warning:
             warn(self._warning_message, FutureWarning)
 
-        return self._retrieve_multiple(
+        result = self._retrieve_multiple(
             list_cls=DataPointSubscriptionList,
             resource_cls=DatapointSubscription,
-            identifiers=IdentifierSequence.load(external_ids=external_id),
+            identifiers=IdentifierSequence.load(external_ids=[external_id]),
             ignore_unknown_ids=ignore_unknown_ids,
         )
+        if result:
+            return result[0]
+        else:
+            return None
 
     def update(self, update: DataPointSubscriptionUpdate) -> DatapointSubscription:
         """`Update a subscriptions <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/updateSubscriptions>`_
@@ -189,7 +179,7 @@ class DatapointsSubscriptionAPI(APIClient):
     def list_data(
         self,
         external_id: str,
-        partitions: Sequence[tuple[int, str] | int | DataPointSubscriptionPartition],
+        partitions: Sequence[tuple[int, str]] | Sequence[int] | Sequence[DataPointSubscriptionPartition],
         limit: int = DATAPOINT_SUBSCRIPTION_DATA_LIST_LIMIT_DEFAULT,
     ) -> DataPointSubscriptionBatch:
         """`Fetch the next batch of data from a given subscription and partition(s). <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/listSubscriptionData>`_

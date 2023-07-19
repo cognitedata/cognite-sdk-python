@@ -1,9 +1,11 @@
+import contextlib
 from datetime import datetime
 
 import pandas as pd
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import DataPointSubscriptionCreate, TimeSeries
+from cognite.client.exceptions import CogniteDuplicatedError
 
 TIMESERIES_EXTERNAL_IDS = [f"PYSDK DataPoint Subscription Test {no}" for no in range(10)]
 
@@ -40,25 +42,25 @@ def main(client: CogniteClient):
         time_series_ids=[TIMESERIES_EXTERNAL_IDS[0]],
         partition_count=1,
     )
-    client.time_series.subscriptions.create(sub1)
-    print("Created datapoint subscriptions sub1")
+
     sub2 = DataPointSubscriptionCreate(
         external_id="PYSDKDataPointSubscriptionTest2",
         name="PYSDKDataPointSubscriptionTest2_3ts",
         time_series_ids=TIMESERIES_EXTERNAL_IDS[:3],
         partition_count=1,
     )
-    client.time_series.subscriptions.create(sub2)
-    print("Created datapoint subscriptions sub2")
+
     sub3 = DataPointSubscriptionCreate(
         external_id="PYSDKDataPointSubscriptionTest3",
         name="PYSDKDataPointSubscriptionTest3_10ts",
         time_series_ids=TIMESERIES_EXTERNAL_IDS,
         partition_count=2,
     )
+    for no, sub in enumerate([sub1, sub2, sub3], 1):
+        with contextlib.suppress(CogniteDuplicatedError):
+            client.time_series.subscriptions.create(sub)
+            print(f"Created datapoint subscriptions sub{no}")
 
-    client.time_series.subscriptions.create(sub3)
-    print("Created datapoint subscriptions sub3")
     print("Done")
 
 
