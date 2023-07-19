@@ -129,7 +129,7 @@ class ThreeDModelUpdate(CogniteUpdate):
         return [
             PropertySpec("name", is_nullable=False),
             PropertySpec("data_set_id"),
-            PropertySpec("metadata", is_list=True),
+            PropertySpec("metadata", is_container=True),
         ]
 
 
@@ -254,7 +254,7 @@ class ThreeDModelRevisionUpdate(CogniteUpdate):
             PropertySpec("spec", is_nullable=False),
             PropertySpec("translation", is_nullable=False),
             PropertySpec("camera", is_nullable=False),
-            PropertySpec("metadata", is_list=True),
+            PropertySpec("metadata", is_container=True),
         ]
 
 

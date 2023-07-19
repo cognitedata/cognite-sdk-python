@@ -313,7 +313,7 @@ T_CogniteResourceList = TypeVar("T_CogniteResourceList", bound=CogniteResourceLi
 @dataclass
 class PropertySpec:
     name: str
-    is_list: bool = False
+    is_container: bool = False
     is_nullable: bool = True
 
 

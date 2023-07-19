@@ -62,9 +62,9 @@ class MyUpdate(CogniteUpdate):
     def _get_update_properties(cls) -> list[PropertySpec]:
         return [
             PropertySpec("string", is_nullable=False),
-            PropertySpec("list", is_list=True),
-            PropertySpec("object", is_list=True),
-            PropertySpec("labels", is_list=True),
+            PropertySpec("list", is_container=True),
+            PropertySpec("object", is_container=True),
+            PropertySpec("labels", is_container=True),
             # Columns are not supported
             # PropertySpec("columns", is_nullable=False),
         ]

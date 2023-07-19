@@ -250,7 +250,7 @@ class RelationshipUpdate(CogniteUpdate):
             PropertySpec("start_time"),
             PropertySpec("end_time"),
             PropertySpec("data_set_id"),
-            PropertySpec("labels", is_list=True),
+            PropertySpec("labels", is_container=True),
         ]
 
 

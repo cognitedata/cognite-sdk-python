@@ -289,13 +289,13 @@ class FileMetadataUpdate(CogniteUpdate):
             PropertySpec("directory"),
             PropertySpec("source"),
             PropertySpec("mime_type"),
-            PropertySpec("metadata", is_list=True),
-            PropertySpec("asset_ids", is_list=True),
+            PropertySpec("metadata", is_container=True),
+            PropertySpec("asset_ids", is_container=True),
             PropertySpec("source_created_time"),
             PropertySpec("source_modified_time"),
             PropertySpec("data_set_id"),
-            PropertySpec("security_categories", is_list=True),
-            PropertySpec("labels", is_list=True),
+            PropertySpec("security_categories", is_container=True),
+            PropertySpec("labels", is_container=True),
             PropertySpec("geo_location"),
         ]
 

@@ -347,11 +347,11 @@ class AssetUpdate(CogniteUpdate):
             PropertySpec("name", is_nullable=False),
             PropertySpec("description"),
             PropertySpec("data_set_id"),
-            PropertySpec("metadata", is_list=True),
+            PropertySpec("metadata", is_container=True),
             PropertySpec("source"),
             PropertySpec("parent_id", is_nullable=False),
             PropertySpec("parent_external_id", is_nullable=False),
-            PropertySpec("labels", is_list=True),
+            PropertySpec("labels", is_container=True),
             PropertySpec("geo_location"),
         ]
 

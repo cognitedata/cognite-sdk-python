@@ -285,7 +285,7 @@ class SequenceUpdate(CogniteUpdate):
             PropertySpec("description"),
             PropertySpec("asset_id"),
             # Sequences do not support setting metadata to an empty array.
-            PropertySpec("metadata", is_list=True, is_nullable=False),
+            PropertySpec("metadata", is_container=True, is_nullable=False),
             PropertySpec("data_set_id"),
             # PropertySpec("columns", is_list=True),
         ]

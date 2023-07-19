@@ -966,7 +966,7 @@ class APIClient:
             if (snake := to_snake_case(key)) not in update_attribute_by_name:
                 continue
             prop = update_attribute_by_name[snake]
-            if prop.is_list and mode == "patch":
+            if prop.is_container and mode == "patch":
                 update[key] = {"add": value}
             else:
                 update[key] = {"set": value}
@@ -979,7 +979,7 @@ class APIClient:
         update_attributes: list[PropertySpec],
     ) -> dict[str, dict]:
         return {
-            to_camel_case(prop.name): {"set": []} if prop.is_list else {"setNull": True}
+            to_camel_case(prop.name): {"set": []} if prop.is_container else {"setNull": True}
             for prop in update_attributes
             if prop.is_nullable
         }
