@@ -96,6 +96,11 @@ class ClientConfig:
                 from cognite.client.utils._auxiliary import _check_client_has_newest_major_version
 
                 _check_client_has_newest_major_version()
+        self._validate_config()
+
+    def _validate_config(self) -> None:
+        if not self.project:
+            raise ValueError(f"Invalid value for ClientConfig.project: <{self.project}>")
 
     def __str__(self) -> str:
         return pprint.pformat(self.__dict__, indent=4)
