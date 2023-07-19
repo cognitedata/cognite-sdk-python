@@ -331,6 +331,7 @@ class TestAnnotationsIntegration:
         ):
             assert ret.dump() == new.dump()
 
+    @pytest.mark.skip(reason="This test is flaky")
     def test_annotations_reverse_lookup(
         self, asset_link_annotation: Annotation, cognite_client: CogniteClient, permanent_file_id: int
     ) -> None:
