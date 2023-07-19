@@ -462,6 +462,8 @@ class SequencesAPI(APIClient):
          Note this is a convenience method that handles the upserting for you by first calling update on all items,
          and if any of them fail because they do not exist, it will create them instead.
 
+         For more details, see :ref:`appendix-upsert`.
+
         Args:
             item (Sequence | Sequence[Sequence]): Sequence or list of sequences to upsert.
             mode (Literal["patch", "replace"])): Whether to patch or replace in the case the sequences are existing. If

@@ -402,6 +402,8 @@ class TimeSeriesAPI(APIClient):
          Note this is a convenience method that handles the upserting for you by first calling update on all items,
          and if any of them fail because they do not exist, it will create them instead.
 
+         For more details, see :ref:`appendix-upsert`.
+
         Args:
             item (TimeSeries | Sequence[TimeSeries]): TimeSeries or list of TimeSeries to upsert.
             mode (Literal["patch", "replace"])): Whether to patch or replace in the case the time series are existing. If
