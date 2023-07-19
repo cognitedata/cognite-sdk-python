@@ -224,19 +224,33 @@ class DatapointsSubscriptionAPI(APIClient):
 
         Examples:
 
-        List a batch of data from a subscription, starting at the beginning:
+        Get a batch of data from a subscription, starting at the beginning:
 
             >>> from cognite.client import CogniteClient
             >>> c = CogniteClient()
-            >>> batch = c.time_series.subscriptions.iterate_data("my_subscription",[0])
+            >>> changed_data, changed_timeseries = next(c.time_series.subscriptions.iterate_data("my_subscription",[0]))
 
-        Call the endpoint again to get the next batch:
+        Iterate over multiple calls to a subscription until there is no more data:
 
             >>> from cognite.client import CogniteClient
             >>> c = CogniteClient()
-            >>> batch1 = c.time_series.subscriptions.iterate_data("my_subscription",[0])
-            >>> batch2 = c.time_series.subscriptions.iterate_data("my_subscription",batch1.partitions)
+            >>> for changed_data, changed_timeseries in c.time_series.subscriptions.iterate_data("my_subscription",[0]):
+            >>>      print(f"Added {len(changed_timeseries.added)} timeseries")
+            >>>      print(f"Removed {len(changed_timeseries.removed)} timeseries")
+            >>>      print(f"Changed data in {len(changed_data)} timeseries")
 
+        Call subscription, and continue later from the last cursor:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes.datapoints_subscriptions import DataPointSubscriptionPartition
+            >>> c = CogniteClient()
+            >>> current: list[DataPointSubscriptionPartition] = []
+            >>> for changed_data, changed_timeseries, partitions in c.time_series.subscriptions.iterate_data("my_subscription",[0], return_partitions=True):
+            >>>      print(f"Changed data in {len(changed_data)} timeseries")
+            >>>      current = partitions
+            >>> # ... (less than 7 days) later
+            >>> for changed_data, changed_timeseries in c.time_series.subscriptions.iterate_data("my_subscription", current):
+            >>>      print(f"Changed data in {len(changed_data)} timeseries")
         """
         if self.show_experimental_warning:
             warn(self._warning_message, FutureWarning)
