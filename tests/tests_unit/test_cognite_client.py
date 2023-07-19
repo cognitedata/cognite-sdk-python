@@ -55,6 +55,12 @@ def mock_token_inspect(rsps) -> None:
 
 
 class TestCogniteClient:
+    def test_project_is_empty(self):
+        with pytest.raises(ValueError, match="Invalid value for ClientConfig.project: <>"):
+            CogniteClient(ClientConfig(client_name="", project="", credentials=Token("bla")))
+        with pytest.raises(ValueError, match="Invalid value for ClientConfig.project: <None>"):
+            CogniteClient(ClientConfig(client_name="", project=None, credentials=Token("bla")))
+
     def test_project_is_correct(self, client_config_w_token_factory):
         c = CogniteClient(client_config_w_token_factory)
         assert c.config.project == "test-project"
