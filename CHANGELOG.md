@@ -17,10 +17,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.9.0] - 2023-07-19
+### Added
+- Basic runtime validation of ClientConfig.project
+
 ## [6.8.7] - 2023-07-18
 ### Fixed
 - Dumping of `Relationship` with `labels` is not `yaml` serializable. This is now fixed.
-
 
 ## [6.8.6] - 2023-07-18
 ### Fixed
