@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [6.10.0] - 2023-07-19
 ### Added
-- Upsert method for `assets`, `events`, `files`, `timeseries`, `sequences`, `relationships`
+- Upsert method for `assets`, `events`, `timeseries`, `sequences`, and `relationships`.
 - Added `ignore_unknown_ids` flag to `client.sequences.delete`
 
 ## [6.9.0] - 2023-07-19
