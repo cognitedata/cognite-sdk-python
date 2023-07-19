@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Sequence
+from typing import TYPE_CHECKING, Iterator, Optional, Sequence
 from warnings import warn
 
 from cognite.client._api_client import APIClient
@@ -10,11 +10,12 @@ from cognite.client._constants import (
 )
 from cognite.client.data_classes.datapoints_subscriptions import (
     DatapointSubscription,
-    DataPointSubscriptionBatch,
     DataPointSubscriptionCreate,
     DataPointSubscriptionList,
     DataPointSubscriptionPartition,
     DataPointSubscriptionUpdate,
+    DataPointUpdate,
+    SubscriptionTimeSeriesUpdate,
 )
 from cognite.client.utils._identifier import IdentifierSequence
 
@@ -176,12 +177,12 @@ class DatapointsSubscriptionAPI(APIClient):
             update_cls=DataPointSubscriptionUpdate,
         )
 
-    def list_data(
+    def iterate_data(
         self,
         external_id: str,
         partitions: Sequence[tuple[int, str]] | Sequence[int] | Sequence[DataPointSubscriptionPartition],
         limit: int = DATAPOINT_SUBSCRIPTION_DATA_LIST_LIMIT_DEFAULT,
-    ) -> DataPointSubscriptionBatch:
+    ) -> Iterator[tuple[list[DataPointUpdate], SubscriptionTimeSeriesUpdate]]:
         """`Fetch the next batch of data from a given subscription and partition(s). <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/listSubscriptionData>`_
 
         Data can be ingested datapoints and time ranges where data is deleted. This endpoint will also return changes to
@@ -201,14 +202,14 @@ class DatapointsSubscriptionAPI(APIClient):
 
             >>> from cognite.client import CogniteClient
             >>> c = CogniteClient()
-            >>> batch = c.time_series.subscriptions.list_data("my_subscription", [0])
+            >>> batch = c.time_series.subscriptions.iterate_data("my_subscription", [0])
 
         Call the endpoint again to get the next batch:
 
             >>> from cognite.client import CogniteClient
             >>> c = CogniteClient()
-            >>> batch1 = c.time_series.subscriptions.list_data("my_subscription", [0])
-            >>> batch2 = c.time_series.subscriptions.list_data("my_subscription", batch1.partitions)
+            >>> batch1 = c.time_series.subscriptions.iterate_data("my_subscription", [0])
+            >>> batch2 = c.time_series.subscriptions.iterate_data("my_subscription", batch1.partitions)
 
         """
         if self.show_experimental_warning:
@@ -220,8 +221,9 @@ class DatapointsSubscriptionAPI(APIClient):
             "limit": limit,
         }
 
-        res = self._post(url_path=self._RESOURCE_PATH + "/data/list", json=body)
-        return DataPointSubscriptionBatch._load(res.json())
+        self._post(url_path=self._RESOURCE_PATH + "/data/list", json=body)
+        raise NotImplementedError()
+        # return DataPointSubscriptionBatch._load(res.json())  # Temporary until implementation is done
 
     def list(self, limit: int = DATAPOINT_SUBSCRIPTIONS_LIST_LIMIT_DEFAULT) -> DataPointSubscriptionList:
         """`List data point subscriptions <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/listSubscriptions>`_

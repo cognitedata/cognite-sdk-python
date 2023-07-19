@@ -142,7 +142,7 @@ class TestDatapointSubscriptions:
         self, cognite_client: CogniteClient, subscription_one_timeseries: DatapointSubscription
     ):
         # Act
-        batch = cognite_client.time_series.subscriptions.list_data(subscription_one_timeseries.external_id, [0])
+        batch = cognite_client.time_series.subscriptions.iterate_data(subscription_one_timeseries.external_id, [0])
 
         # Assert
         assert batch.partitions[0].cursor is not None
@@ -162,7 +162,7 @@ class TestDatapointSubscriptions:
             created = cognite_client.time_series.subscriptions.create(new_subscription)
 
             # Act
-            first_batch = cognite_client.time_series.subscriptions.list_data(new_subscription.external_id, [0])
+            first_batch = cognite_client.time_series.subscriptions.iterate_data(new_subscription.external_id, [0])
 
             # Assert
             assert first_batch.has_next is False
@@ -177,7 +177,7 @@ class TestDatapointSubscriptions:
 
             # Act
             cognite_client.time_series.subscriptions.update(update)
-            second_batch = cognite_client.time_series.subscriptions.list_data(
+            second_batch = cognite_client.time_series.subscriptions.iterate_data(
                 new_subscription.external_id, first_batch.partitions
             )
 
@@ -206,7 +206,7 @@ class TestDatapointSubscriptions:
             created = cognite_client.time_series.subscriptions.create(new_subscription)
 
             # Act
-            first_batch = cognite_client.time_series.subscriptions.list_data(new_subscription.external_id, [0])
+            first_batch = cognite_client.time_series.subscriptions.iterate_data(new_subscription.external_id, [0])
 
             # Assert
             assert first_batch.has_next is False
@@ -222,7 +222,7 @@ class TestDatapointSubscriptions:
 
             # Act
             cognite_client.time_series.data.insert_dataframe(new_data)
-            second_batch = cognite_client.time_series.subscriptions.list_data(
+            second_batch = cognite_client.time_series.subscriptions.iterate_data(
                 new_subscription.external_id, first_batch.partitions
             )
 
@@ -273,7 +273,7 @@ class TestDatapointSubscriptions:
             created = cognite_client.time_series.subscriptions.create(new_subscription)
 
             # Act
-            first_batch = cognite_client.time_series.subscriptions.list_data(new_subscription.external_id, [0])
+            first_batch = cognite_client.time_series.subscriptions.iterate_data(new_subscription.external_id, [0])
 
             # Assert
             assert first_batch.has_next is False
@@ -293,7 +293,7 @@ class TestDatapointSubscriptions:
             time.sleep(2)
 
             # Act
-            second_batch = cognite_client.time_series.subscriptions.list_data(
+            second_batch = cognite_client.time_series.subscriptions.iterate_data(
                 new_subscription.external_id, first_batch.partitions
             )
 
