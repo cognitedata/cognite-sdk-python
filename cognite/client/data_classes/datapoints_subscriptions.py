@@ -350,7 +350,7 @@ class DataPointSubscriptionPartition:
         return output
 
 
-class DataPointSubscriptionBatch:
+class _DataPointSubscriptionBatch:
     """A batch of data from a subscription.
 
     Args:
@@ -380,7 +380,7 @@ class DataPointSubscriptionBatch:
         self.subscription_changes = subscription_changes
 
     @classmethod
-    def _load(cls, resource: dict | str) -> DataPointSubscriptionBatch:
+    def _load(cls, resource: dict | str) -> _DataPointSubscriptionBatch:
         resource = json.loads(resource) if isinstance(resource, str) else resource
         data = {
             "updates": [DataPointUpdate._load(u) for u in resource["updates"]],
