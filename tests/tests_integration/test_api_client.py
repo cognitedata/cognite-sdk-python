@@ -232,3 +232,24 @@ class TestAPIClientUpsert:
             cognite_client.events.delete(
                 external_id=[new_event.external_id, preexisting.external_id], ignore_unknown_ids=True
             )
+
+    def test_upsert_with_invalid_mode(self, cognite_client: CogniteClient):
+        # Arrange
+        new_event = Event(
+            external_id="test_upsert_with_invalid_mode:new",
+            type="test__py__sdk",
+            start_time=0,
+            end_time=1,
+            subtype="mySubType1",
+        )
+
+        # Act
+        try:
+            with pytest.raises(ValueError) as e:
+                cognite_client.events.upsert(new_event, mode="invalid_mode")
+
+            # Assert
+            assert "invalid_mode" in e.value.args[0]
+        finally:
+            # Just in case the even gets created
+            cognite_client.events.delete(external_id=new_event.external_id, ignore_unknown_ids=True)

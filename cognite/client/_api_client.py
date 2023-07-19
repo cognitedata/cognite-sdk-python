@@ -817,6 +817,8 @@ class APIClient:
         mode: Literal["patch", "replace"],
         input_resource_cls: Optional[Type[CogniteResource]] = None,
     ) -> T_CogniteResource | T_CogniteResourceList:
+        if mode not in ["patch", "replace"]:
+            raise ValueError(f"mode must be either 'patch' or 'replace', got {mode!r}")
         is_single = isinstance(items, CogniteResource)
         items = cast(Sequence[CogniteResource], [items] if is_single else items)
         try:
