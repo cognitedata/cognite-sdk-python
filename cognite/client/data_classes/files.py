@@ -294,7 +294,7 @@ class FileMetadataUpdate(CogniteUpdate):
             PropertySpec("source_created_time"),
             PropertySpec("source_modified_time"),
             PropertySpec("data_set_id"),
-            PropertySpec("security_categories"),
+            PropertySpec("security_categories", is_list=True),
             PropertySpec("labels", is_list=True),
             PropertySpec("geo_location"),
         ]
