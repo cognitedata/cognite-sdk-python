@@ -9,7 +9,7 @@ from pytest import MonkeyPatch
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import Event
-from cognite.client.exceptions import CogniteAPIError
+from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 
 
 @pytest.fixture
@@ -253,3 +253,25 @@ class TestAPIClientUpsert:
         finally:
             # Just in case the even gets created
             cognite_client.events.delete(external_id=new_event.external_id, ignore_unknown_ids=True)
+
+    def test_upsert_with_invalid_internal_id(self, cognite_client: CogniteClient):
+        # Arrange
+        new_event = Event(
+            # external_id="test_upsert_with_invalid_mode:new",
+            id=666,
+            type="test__py__sdk",
+            start_time=0,
+            end_time=1,
+            subtype="mySubType1",
+        )
+
+        # Act
+        try:
+            with pytest.raises(CogniteNotFoundError) as e:
+                cognite_client.events.upsert(new_event, mode="replace")
+
+            # Assert
+            assert [{"id": 666}] == e.value.not_found
+        finally:
+            # Just in case the even gets created
+            cognite_client.events.delete(id=new_event.id, ignore_unknown_ids=True)

@@ -827,7 +827,11 @@ class APIClient:
             items_by_external_id = {item.external_id: item for item in items if item.external_id is not None}
             items_by_id = {item.id: item for item in items if item.id is not None}
             # Not found must have an external id as they do not exist in CDF:
-            missing_external_ids = {entry["externalId"] for entry in not_found_error.not_found}
+            try:
+                missing_external_ids = {entry["externalId"] for entry in not_found_error.not_found}
+            except KeyError:
+                # There is a not found internal id, which means we cannot identify it.
+                raise not_found_error
             to_create = [
                 items_by_external_id[external_id]
                 for external_id in not_found_error.failed
