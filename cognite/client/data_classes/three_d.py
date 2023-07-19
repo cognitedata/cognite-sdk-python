@@ -128,7 +128,6 @@ class ThreeDModelUpdate(CogniteUpdate):
     def _get_update_properties(cls) -> list[PropertySpec]:
         return [
             PropertySpec("name", is_nullable=False),
-            PropertySpec("data_set_id"),
             PropertySpec("metadata", is_container=True),
         ]
 
@@ -251,8 +250,6 @@ class ThreeDModelRevisionUpdate(CogniteUpdate):
         return [
             PropertySpec("published", is_nullable=False),
             PropertySpec("rotation", is_nullable=False),
-            PropertySpec("spec", is_nullable=False),
-            PropertySpec("translation", is_nullable=False),
             PropertySpec("camera", is_nullable=False),
             PropertySpec("metadata", is_container=True),
         ]

@@ -186,6 +186,15 @@ class SequenceColumnUpdate(CogniteUpdate):
     def metadata(self) -> _ObjectSequenceColumnUpdate:
         return SequenceColumnUpdate._ObjectSequenceColumnUpdate(self, "metadata")
 
+    @classmethod
+    def _get_update_properties(cls) -> list[PropertySpec]:
+        return [
+            PropertySpec("description"),
+            PropertySpec("external_id", is_nullable=False),
+            PropertySpec("name"),
+            PropertySpec("metadata", is_container=True),
+        ]
+
 
 class SequenceUpdate(CogniteUpdate):
     """No description.

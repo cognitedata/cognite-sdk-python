@@ -22,6 +22,7 @@ from cognite.client.data_classes._base import (
     PropertySpec,
 )
 from cognite.client.exceptions import CogniteMissingClientError
+from tests.utils import all_subclasses
 
 
 class MyResource(CogniteResource):
@@ -453,6 +454,21 @@ class TestCogniteUpdate:
         props = {prop.name for prop in MyUpdate._get_update_properties()}
         assert hasattr(MyUpdate, "columns") and "columns" not in props
         assert {"string", "list", "object", "labels"} == set(props)
+
+    @pytest.mark.parametrize("cognite_update_subclass", all_subclasses(CogniteUpdate))
+    def test_correct_implementation_get_update_properties(self, cognite_update_subclass: CogniteUpdate):
+        # Arrange
+        expected = sorted(
+            key
+            for key in cognite_update_subclass.__dict__
+            if not key.startswith("_") and key not in {"columns", "dump"}
+        )
+
+        # Act
+        actual = sorted(prop.name for prop in cognite_update_subclass._get_update_properties())
+
+        # Assert
+        assert expected == actual
 
 
 class TestCogniteResponse:

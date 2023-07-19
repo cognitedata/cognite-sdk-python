@@ -206,7 +206,8 @@ class ExtractionPipelineUpdate(CogniteUpdate):
             PropertySpec("metadata", is_container=True),
             PropertySpec("source", is_nullable=False),
             PropertySpec("documentation", is_nullable=False),
-            PropertySpec("notification_config", is_nullable=False),
+            # Not supported yet
+            # PropertySpec("notification_config", is_nullable=False),
         ]
 
 
