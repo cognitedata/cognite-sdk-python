@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+from abc import abstractmethod
 from collections import UserList
+from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -308,6 +310,13 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
 T_CogniteResourceList = TypeVar("T_CogniteResourceList", bound=CogniteResourceList)
 
 
+@dataclass
+class PropertySpec:
+    name: str
+    is_container: bool = False
+    is_nullable: bool = True
+
+
 class CogniteUpdate:
     def __init__(self, id: Optional[int] = None, external_id: Optional[str] = None):
         self._id = id
@@ -375,8 +384,9 @@ class CogniteUpdate:
         return dumped
 
     @classmethod
-    def _get_update_properties(cls) -> List[str]:
-        return [key for key in cls.__dict__ if not (key.startswith("_") or key == "columns")]
+    @abstractmethod
+    def _get_update_properties(cls) -> list[PropertySpec]:
+        raise NotImplementedError
 
 
 T_CogniteUpdate = TypeVar("T_CogniteUpdate", bound=CogniteUpdate)

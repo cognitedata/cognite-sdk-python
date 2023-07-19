@@ -19,8 +19,10 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     CogniteResponse,
     CogniteUpdate,
+    PropertySpec,
 )
 from cognite.client.exceptions import CogniteMissingClientError
+from tests.utils import all_subclasses
 
 
 class MyResource(CogniteResource):
@@ -56,6 +58,17 @@ class MyUpdate(CogniteUpdate):
     def columns(self):
         # Not really a PrimitiveUpdate, but we have this to ensure it is skipped from updates
         return PrimitiveUpdate(self, "columns")
+
+    @classmethod
+    def _get_update_properties(cls) -> list[PropertySpec]:
+        return [
+            PropertySpec("string", is_nullable=False),
+            PropertySpec("list", is_container=True),
+            PropertySpec("object", is_container=True),
+            PropertySpec("labels", is_container=True),
+            # Columns are not supported
+            # PropertySpec("columns", is_nullable=False),
+        ]
 
 
 class PrimitiveUpdate(CognitePrimitiveUpdate):
@@ -438,9 +451,24 @@ class TestCogniteUpdate:
         ).object.set({"bla": "bla"}).string.set("bla").dump()
 
     def test_get_update_properties(self):
-        props = MyUpdate._get_update_properties()
+        props = {prop.name for prop in MyUpdate._get_update_properties()}
         assert hasattr(MyUpdate, "columns") and "columns" not in props
         assert {"string", "list", "object", "labels"} == set(props)
+
+    @pytest.mark.parametrize("cognite_update_subclass", all_subclasses(CogniteUpdate))
+    def test_correct_implementation_get_update_properties(self, cognite_update_subclass: CogniteUpdate):
+        # Arrange
+        expected = sorted(
+            key
+            for key in cognite_update_subclass.__dict__
+            if not key.startswith("_") and key not in {"columns", "dump"}
+        )
+
+        # Act
+        actual = sorted(prop.name for prop in cognite_update_subclass._get_update_properties())
+
+        # Assert
+        assert expected == actual
 
 
 class TestCogniteResponse:

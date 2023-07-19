@@ -671,6 +671,51 @@ class AssetsAPI(APIClient):
         """
         return self._update_multiple(list_cls=AssetList, resource_cls=Asset, update_cls=AssetUpdate, items=item)
 
+    @overload
+    def upsert(self, item: Sequence[Asset], mode: Literal["patch", "replace"] = "patch") -> AssetList:
+        ...
+
+    @overload
+    def upsert(self, item: Asset, mode: Literal["patch", "replace"] = "patch") -> Asset:
+        ...
+
+    def upsert(self, item: Asset | Sequence[Asset], mode: Literal["patch", "replace"] = "patch") -> Asset | AssetList:
+        """Upsert assets, i.e., update if it exists, and create if it does not exist.
+         Note this is a convenience method that handles the upserting for you by first calling update on all items,
+         and if any of them fail because they do not exist, it will create them instead.
+
+        For more details, see :ref:`appendix-upsert`.
+
+        Args:
+            item (Asset | Sequence[Asset]): Asset or list of assets to upsert.
+            mode (Literal["patch", "replace"]): Whether to patch or replace in the case the assets are existing. If
+                                                you set 'patch', the call will only update fields with non-null values (default).
+                                                Setting 'replace' will unset any fields that are not specified.
+
+        Returns:
+            Asset | AssetList: The upserted asset(s).
+
+        Examples:
+
+            Upsert for assets:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import Asset
+                >>> c = CogniteClient()
+                >>> existing_asset = c.assets.retrieve(id=1)
+                >>> existing_asset.description = "New description"
+                >>> new_asset = Asset(external_id="new_asset", description="New asset")
+                >>> res = c.assets.upsert([existing_asset, new_asset], mode="replace")
+        """
+        return self._upsert_multiple(
+            item,
+            list_cls=AssetList,
+            resource_cls=Asset,
+            update_cls=AssetUpdate,
+            input_resource_cls=Asset,
+            mode=mode,
+        )
+
     def search(
         self,
         name: Optional[str] = None,
@@ -953,7 +998,8 @@ class _AssetHierarchyCreator:
 
     @cached_property
     def clear_all_update(self) -> MappingProxyType[str, Dict[str, Any]]:
-        props = set(map(to_camel_case, AssetUpdate._get_update_properties()))
+        props = {to_camel_case(prop.name) for prop in AssetUpdate._get_update_properties()}
+
         # Does not support setNull:
         props -= {"name", "parentExternalId", "parentId"}
         dct: Dict[str, Dict[str, Any]] = {k: {"setNull": True} for k in props}

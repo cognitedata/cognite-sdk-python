@@ -38,6 +38,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    PropertySpec,
 )
 from cognite.client.data_classes.labels import Label, LabelDefinition, LabelFilter
 from cognite.client.data_classes.shared import GeoLocation, GeoLocationFilter, TimestampRange
@@ -337,6 +338,22 @@ class AssetUpdate(CogniteUpdate):
     @property
     def geo_location(self) -> _PrimitiveAssetUpdate:
         return AssetUpdate._PrimitiveAssetUpdate(self, "geoLocation")
+
+    @classmethod
+    def _get_update_properties(cls) -> list[PropertySpec]:
+        return [
+            # External ID is nullable, but is used in the upsert logic and thus cannot be nulled out.
+            PropertySpec("external_id", is_nullable=False),
+            PropertySpec("name", is_nullable=False),
+            PropertySpec("description"),
+            PropertySpec("data_set_id"),
+            PropertySpec("metadata", is_container=True),
+            PropertySpec("source"),
+            PropertySpec("parent_id", is_nullable=False),
+            PropertySpec("parent_external_id", is_nullable=False),
+            PropertySpec("labels", is_container=True),
+            PropertySpec("geo_location"),
+        ]
 
 
 class AssetList(CogniteResourceList[Asset]):

@@ -2,6 +2,7 @@ from unittest import mock
 
 import pytest
 
+from cognite.client import CogniteClient
 from cognite.client.data_classes import Sequence, SequenceColumnUpdate, SequenceFilter, SequenceUpdate
 from cognite.client.exceptions import CogniteNotFoundError
 from tests.utils import set_request_limit
@@ -149,3 +150,36 @@ class TestSequencesAPI:
         cognite_client.sequences.retrieve(id=new_seq.id)
         # assert ["DOUBLE"] == res.column_value_types # soon to change
         assert len(new_seq.columns) == 3
+
+    def test_upsert_2_sequence_one_preexisting(self, cognite_client: CogniteClient) -> None:
+        # Arrange
+        new_sequence = Sequence(
+            external_id="test_upsert_2_sequence_one_preexisting:new",
+            name="my new sequence",
+            columns=[{"externalId": "col1", "valueType": "STRING"}],
+        )
+        preexisting = Sequence(
+            external_id="test_upsert_2_sequence_one_preexisting:preexisting",
+            name="my preexisting sequence",
+            columns=[{"externalId": "col1", "valueType": "STRING"}],
+        )
+        preexisting_update = Sequence._load(preexisting.dump(camel_case=True))
+        preexisting_update.name = "my preexisting sequence updated"
+
+        try:
+            created_existing = cognite_client.sequences.create(preexisting)
+            assert created_existing.id is not None
+
+            # Act
+            res = cognite_client.sequences.upsert([new_sequence, preexisting_update], mode="replace")
+
+            # Assert
+            assert len(res) == 2
+            assert new_sequence.external_id == res[0].external_id
+            assert preexisting.external_id == res[1].external_id
+            assert new_sequence.name == res[0].name
+            assert preexisting_update.name == res[1].name
+        finally:
+            cognite_client.sequences.delete(
+                external_id=[new_sequence.external_id, preexisting.external_id], ignore_unknown_ids=True
+            )

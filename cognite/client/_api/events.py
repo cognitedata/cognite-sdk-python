@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterator, List, Optional, Sequence, Union, cast, overload
+from typing import Any, Dict, Iterator, List, Literal, Optional, Sequence, Union, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import LIST_LIMIT_DEFAULT
@@ -445,3 +445,48 @@ class EventsAPI(APIClient):
                 >>> res = c.events.search(description="some description")
         """
         return self._search(list_cls=EventList, search={"description": description}, filter=filter or {}, limit=limit)
+
+    @overload
+    def upsert(self, item: Sequence[Event], mode: Literal["patch", "replace"] = "patch") -> EventList:
+        ...
+
+    @overload
+    def upsert(self, item: Event, mode: Literal["patch", "replace"] = "patch") -> Event:
+        ...
+
+    def upsert(self, item: Event | Sequence[Event], mode: Literal["patch", "replace"] = "patch") -> Event | EventList:
+        """Upsert events, i.e., update if it exists, and create if it does not exist.
+         Note this is a convenience method that handles the upserting for you by first calling update on all items,
+         and if any of them fail because they do not exist, it will create them instead.
+
+         For more details, see :ref:`appendix-upsert`.
+
+        Args:
+            item (Event | Sequence[Event]): Event or list of events to upsert.
+            mode (Literal["patch", "replace"])): Whether to patch or replace in the case the events are existing. If
+                                                you set 'patch', the call will only update fields with non-null values (default).
+                                                Setting 'replace' will unset any fields that are not specified.
+
+        Returns:
+            Event | EventList: The upserted event(s).
+
+        Examples:
+
+            Upsert for events:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import Event
+                >>> c = CogniteClient()
+                >>> existing_event = c.events.retrieve(id=1)
+                >>> existing_event.description = "New description"
+                >>> new_event = Event(external_id="new_event", description="New event")
+                >>> res = c.events.upsert([existing_event, new_event], mode="replace")
+        """
+        return self._upsert_multiple(
+            item,
+            list_cls=EventList,
+            resource_cls=Event,
+            update_cls=EventUpdate,
+            input_resource_cls=Event,
+            mode=mode,
+        )

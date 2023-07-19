@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Literal, Optional, Sequence, Union, cast, overload
 
 from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api_client import APIClient
@@ -385,6 +385,53 @@ class TimeSeriesAPI(APIClient):
         """
         return self._update_multiple(
             list_cls=TimeSeriesList, resource_cls=TimeSeries, update_cls=TimeSeriesUpdate, items=item
+        )
+
+    @overload
+    def upsert(self, item: Sequence[TimeSeries], mode: Literal["patch", "replace"] = "patch") -> TimeSeriesList:
+        ...
+
+    @overload
+    def upsert(self, item: TimeSeries, mode: Literal["patch", "replace"] = "patch") -> TimeSeries:
+        ...
+
+    def upsert(
+        self, item: TimeSeries | Sequence[TimeSeries], mode: Literal["patch", "replace"] = "patch"
+    ) -> TimeSeries | TimeSeriesList:
+        """Upsert time series, i.e., update if it exists, and create if it does not exist.
+         Note this is a convenience method that handles the upserting for you by first calling update on all items,
+         and if any of them fail because they do not exist, it will create them instead.
+
+         For more details, see :ref:`appendix-upsert`.
+
+        Args:
+            item (TimeSeries | Sequence[TimeSeries]): TimeSeries or list of TimeSeries to upsert.
+            mode (Literal["patch", "replace"])): Whether to patch or replace in the case the time series are existing. If
+                                                you set 'patch', the call will only update fields with non-null values (default).
+                                                Setting 'replace' will unset any fields that are not specified.
+
+        Returns:
+            TimeSeries | TimeSeriesList: The upserted time series(s).
+
+        Examples:
+
+            Upsert for TimeSeries::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import TimeSeries
+                >>> c = CogniteClient()
+                >>> existing_time_series = c.time_series.retrieve(id=1)
+                >>> existing_time_series.description = "New description"
+                >>> new_time_series = TimeSeries(external_id="new_timeSeries", description="New timeSeries")
+                >>> res = c.time_series.upsert([existing_time_series, new_time_series], mode="replace")
+        """
+        return self._upsert_multiple(
+            item,
+            list_cls=TimeSeriesList,
+            resource_cls=TimeSeries,
+            update_cls=TimeSeriesUpdate,
+            input_resource_cls=TimeSeries,
+            mode=mode,
         )
 
     def search(

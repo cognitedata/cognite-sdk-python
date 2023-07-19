@@ -10,6 +10,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    PropertySpec,
 )
 from cognite.client.data_classes.iam import ClientCredentials
 from cognite.client.data_classes.shared import TimestampRange
@@ -393,6 +394,24 @@ class TransformationUpdate(CogniteUpdate):
                 update["set"] = item.dump(camel_case=camel_case)
         return obj
 
+    @classmethod
+    def _get_update_properties(cls) -> list[PropertySpec]:
+        return [
+            PropertySpec("external_id", is_nullable=False),
+            PropertySpec("name", is_nullable=False),
+            PropertySpec("destination", is_nullable=False),
+            PropertySpec("conflict_mode", is_nullable=False),
+            PropertySpec("query", is_nullable=False),
+            PropertySpec("source_oidc_credentials"),
+            PropertySpec("destination_oidc_credentials"),
+            PropertySpec("source_nonce"),
+            PropertySpec("destination_nonce"),
+            PropertySpec("is_public", is_nullable=False),
+            PropertySpec("ignore_null_fields", is_nullable=False),
+            PropertySpec("data_set_id"),
+            PropertySpec("tags", is_container=True),
+        ]
+
 
 class TransformationList(CogniteResourceList):
     _RESOURCE = Transformation
@@ -414,7 +433,7 @@ class ContainsAny(TagsFilter):
 
             List only resources marked as a PUMP or as a VALVE::
 
-                >>> from cognite.client.data_classes import ContainsAny
+                >>> from cognite.client.data_classes.transformations import ContainsAny
                 >>> my_tag_filter = ContainsAny(tags=["PUMP", "VALVE"])
     """
 

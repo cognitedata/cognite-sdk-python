@@ -2,6 +2,7 @@ import uuid
 
 import pytest
 
+from cognite.client import CogniteClient
 from cognite.client.data_classes import (
     Asset,
     Label,
@@ -213,3 +214,49 @@ class TestRelationshipscognite_client:
         res_generator = cognite_client.relationships(partitions=8, limit=None, source_external_ids=ext_ids)
         res_list = cognite_client.relationships.list(partitions=8, limit=None, source_external_ids=ext_ids)
         assert {a.external_id for a in res_generator} == {a.external_id for a in res_list}
+
+    def test_upsert_2_relationships_one_preexisting(self, cognite_client: CogniteClient) -> None:
+        # Arrange
+        asset1 = Asset(external_id="test_upsert_2_asset_one_preexisting:asset1", name="asset1")
+        asset2 = Asset(external_id="test_upsert_2_asset_one_preexisting:asset2", name="asset2")
+        asset3 = Asset(external_id="test_upsert_2_asset_one_preexisting:asset3", name="asset3")
+
+        new_relationship = Relationship(
+            external_id="test_upsert_2_relationships_one_preexisting:new",
+            source_external_id=asset1.external_id,
+            target_external_id=asset2.external_id,
+            source_type="asset",
+            target_type="asset",
+        )
+        preexisting = Relationship(
+            external_id="test_upsert_2_relationships_one_preexisting:preexisting",
+            source_external_id=asset2.external_id,
+            target_external_id=asset3.external_id,
+            source_type="asset",
+            target_type="asset",
+        )
+        preexisting_update = Relationship._load(preexisting.dump(camel_case=True))
+        preexisting_update.target_external_id = asset1.external_id
+
+        try:
+            created_assets = cognite_client.assets.create([asset1, asset2, asset3])
+            assert len(created_assets) == 3
+
+            created_existing = cognite_client.relationships.create(preexisting)
+            assert created_existing.created_time
+
+            # Act
+            res = cognite_client.relationships.upsert([new_relationship, preexisting_update], mode="replace")
+
+            # Assert
+            assert len(res) == 2
+            assert new_relationship.external_id == res[0].external_id
+            assert preexisting.external_id == res[1].external_id
+            assert preexisting_update.target_external_id == res[1].target_external_id
+        finally:
+            cognite_client.relationships.delete(
+                external_id=[new_relationship.external_id, preexisting.external_id], ignore_unknown_ids=True
+            )
+            cognite_client.assets.delete(
+                external_id=[asset1.external_id, asset2.external_id, asset3.external_id], ignore_unknown_ids=True
+            )

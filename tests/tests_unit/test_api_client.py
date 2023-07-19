@@ -19,6 +19,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    PropertySpec,
 )
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
@@ -201,6 +202,10 @@ class SomeUpdate(CogniteUpdate):
     @property
     def external_id(self):
         return PrimitiveUpdate(self, "externalId")
+
+    @classmethod
+    def _get_update_properties(cls) -> list[PropertySpec]:
+        return [PropertySpec("y", is_nullable=False), PropertySpec("external_id", is_nullable=False)]
 
 
 class PrimitiveUpdate(CognitePrimitiveUpdate):

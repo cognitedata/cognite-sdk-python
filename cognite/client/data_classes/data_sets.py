@@ -12,6 +12,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    PropertySpec,
 )
 from cognite.client.data_classes.shared import TimestampRange
 
@@ -154,6 +155,17 @@ class DataSetUpdate(CogniteUpdate):
     @property
     def write_protected(self) -> _PrimitiveDataSetUpdate:
         return DataSetUpdate._PrimitiveDataSetUpdate(self, "writeProtected")
+
+    @classmethod
+    def _get_update_properties(cls) -> list[PropertySpec]:
+        return [
+            # External ID is nullable, but is used in the upsert logic and thus cannot be nulled out.
+            PropertySpec("external_id", is_nullable=False),
+            PropertySpec("name"),
+            PropertySpec("description"),
+            PropertySpec("metadata", is_container=True),
+            PropertySpec("write_protected", is_nullable=False),
+        ]
 
 
 class DataSetAggregate(dict):

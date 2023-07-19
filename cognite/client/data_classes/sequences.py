@@ -16,6 +16,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    PropertySpec,
 )
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._identifier import Identifier
@@ -185,6 +186,15 @@ class SequenceColumnUpdate(CogniteUpdate):
     def metadata(self) -> _ObjectSequenceColumnUpdate:
         return SequenceColumnUpdate._ObjectSequenceColumnUpdate(self, "metadata")
 
+    @classmethod
+    def _get_update_properties(cls) -> list[PropertySpec]:
+        return [
+            PropertySpec("description"),
+            PropertySpec("external_id", is_nullable=False),
+            PropertySpec("name"),
+            PropertySpec("metadata", is_container=True),
+        ]
+
 
 class SequenceUpdate(CogniteUpdate):
     """No description.
@@ -274,6 +284,20 @@ class SequenceUpdate(CogniteUpdate):
     @property
     def columns(self) -> _ColumnsSequenceUpdate:
         return SequenceUpdate._ColumnsSequenceUpdate(self, "columns")
+
+    @classmethod
+    def _get_update_properties(cls) -> list[PropertySpec]:
+        return [
+            # External ID is nullable, but is used in the upsert logic and thus cannot be nulled out.
+            PropertySpec("external_id", is_nullable=False),
+            PropertySpec("name"),
+            PropertySpec("description"),
+            PropertySpec("asset_id"),
+            # Sequences do not support setting metadata to an empty array.
+            PropertySpec("metadata", is_container=True, is_nullable=False),
+            PropertySpec("data_set_id"),
+            # PropertySpec("columns", is_list=True),
+        ]
 
 
 class SequenceAggregate(dict):

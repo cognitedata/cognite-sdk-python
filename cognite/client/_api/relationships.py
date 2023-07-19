@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import copy
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Literal, Optional, Sequence, Union, cast, overload
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -419,6 +419,53 @@ class RelationshipsAPI(APIClient):
         """
         return self._update_multiple(
             list_cls=RelationshipList, resource_cls=Relationship, update_cls=RelationshipUpdate, items=item
+        )
+
+    @overload
+    def upsert(self, item: Sequence[Relationship], mode: Literal["patch", "replace"] = "patch") -> RelationshipList:
+        ...
+
+    @overload
+    def upsert(self, item: Relationship, mode: Literal["patch", "replace"] = "patch") -> Relationship:
+        ...
+
+    def upsert(
+        self, item: Relationship | Sequence[Relationship], mode: Literal["patch", "replace"] = "patch"
+    ) -> Relationship | RelationshipList:
+        """Upsert relationships, i.e., update if it exists, and create if it does not exist.
+         Note this is a convenience method that handles the upserting for you by first calling update on all items,
+         and if any of them fail because they do not exist, it will create them instead.
+
+         For more details, see :ref:`appendix-upsert`.
+
+        Args:
+            item (Relationship | Sequence[Relationship]): Relationship or list of relationships to upsert.
+            mode (Literal["patch", "replace"])): Whether to patch or replace in the case the relationships are existing. If
+                                                you set 'patch', the call will only update fields with non-null values (default).
+                                                Setting 'replace' will unset any fields that are not specified.
+
+        Returns:
+            Relationship | RelationshipList: The upserted relationship(s).
+
+        Examples:
+
+            Upsert for relationships:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import Relationship
+                >>> c = CogniteClient()
+                >>> existing_relationship = c.relationships.retrieve(id=1)
+                >>> existing_relationship.description = "New description"
+                >>> new_relationship = Relationship(external_id="new_relationship", source_external_id="new_source")
+                >>> res = c.relationships.upsert([existing_relationship, new_relationship], mode="replace")
+        """
+        return self._upsert_multiple(
+            item,
+            list_cls=RelationshipList,
+            resource_cls=Relationship,
+            update_cls=RelationshipUpdate,
+            input_resource_cls=Relationship,
+            mode=mode,
         )
 
     def delete(self, external_id: Union[str, Sequence[str]], ignore_unknown_ids: bool = False) -> None:

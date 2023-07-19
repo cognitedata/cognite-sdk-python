@@ -10,6 +10,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    PropertySpec,
 )
 from cognite.client.utils._text import to_snake_case
 
@@ -227,6 +228,14 @@ class AnnotationUpdate(CogniteUpdate):
     @property
     def annotation_type(self) -> AnnotationUpdate._StrUpdate:
         return AnnotationUpdate._StrUpdate(self, "annotationType")
+
+    @classmethod
+    def _get_update_properties(cls) -> list[PropertySpec]:
+        return [
+            PropertySpec("data", is_nullable=False),
+            PropertySpec("status", is_nullable=False),
+            PropertySpec("annotation_type", is_nullable=False),
+        ]
 
 
 class AnnotationList(CogniteResourceList[Annotation]):

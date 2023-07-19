@@ -11,6 +11,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    PropertySpec,
 )
 
 if TYPE_CHECKING:
@@ -122,6 +123,13 @@ class ThreeDModelUpdate(CogniteUpdate):
     @property
     def metadata(self) -> _ObjectThreeDModelUpdate:
         return ThreeDModelUpdate._ObjectThreeDModelUpdate(self, "metadata")
+
+    @classmethod
+    def _get_update_properties(cls) -> list[PropertySpec]:
+        return [
+            PropertySpec("name", is_nullable=False),
+            PropertySpec("metadata", is_container=True),
+        ]
 
 
 class ThreeDModelList(CogniteResourceList[ThreeDModel]):
@@ -236,6 +244,15 @@ class ThreeDModelRevisionUpdate(CogniteUpdate):
     @property
     def metadata(self) -> _ObjectThreeDModelRevisionUpdate:
         return ThreeDModelRevisionUpdate._ObjectThreeDModelRevisionUpdate(self, "metadata")
+
+    @classmethod
+    def _get_update_properties(cls) -> list[PropertySpec]:
+        return [
+            PropertySpec("published", is_nullable=False),
+            PropertySpec("rotation", is_nullable=False),
+            PropertySpec("camera", is_nullable=False),
+            PropertySpec("metadata", is_container=True),
+        ]
 
 
 class ThreeDModelRevisionList(CogniteResourceList[ThreeDModelRevision]):

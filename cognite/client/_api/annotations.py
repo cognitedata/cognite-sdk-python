@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Any, Collection, Dict, List, Optional, Sequence, Union, overload
+from typing import Any, Dict, List, Literal, Optional, Sequence, Union, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import Annotation, AnnotationFilter, AnnotationList, AnnotationUpdate
-from cognite.client.data_classes._base import CogniteResource
+from cognite.client.data_classes._base import CogniteResource, PropertySpec
 from cognite.client.data_classes.annotations import AnnotationReverseLookupFilter
 from cognite.client.data_classes.contextualization import ResourceReference, ResourceReferenceList
 from cognite.client.utils._auxiliary import assert_type
@@ -106,9 +106,12 @@ class AnnotationsAPI(APIClient):
 
         return self._list(list_cls=AnnotationList, resource_cls=Annotation, method="POST", limit=limit, filter=filter)
 
-    @staticmethod
+    @classmethod
     def _convert_resource_to_patch_object(
-        resource: CogniteResource, update_attributes: Collection[str]
+        cls,
+        resource: CogniteResource,
+        update_attributes: List[PropertySpec],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Dict[str, Dict[str, Dict]]:
         if not isinstance(resource, Annotation):
             return APIClient._convert_resource_to_patch_object(resource, update_attributes)
@@ -117,7 +120,7 @@ class AnnotationsAPI(APIClient):
         assert annotation.id is not None
         annotation_update = AnnotationUpdate(id=annotation.id)
         for attr in update_attributes:
-            getattr(annotation_update, attr).set(getattr(annotation, attr))
+            getattr(annotation_update, attr.name).set(getattr(annotation, attr.name))
         return annotation_update.dump()
 
     @overload

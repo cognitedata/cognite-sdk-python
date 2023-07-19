@@ -11,6 +11,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    PropertySpec,
 )
 from cognite.client.data_classes.assets import Asset
 from cognite.client.data_classes.events import Event
@@ -237,6 +238,20 @@ class RelationshipUpdate(CogniteUpdate):
     @property
     def labels(self) -> _LabelRelationshipUpdate:
         return RelationshipUpdate._LabelRelationshipUpdate(self, "labels")
+
+    @classmethod
+    def _get_update_properties(cls) -> list[PropertySpec]:
+        return [
+            PropertySpec("source_type", is_nullable=False),
+            PropertySpec("source_external_id", is_nullable=False),
+            PropertySpec("target_type", is_nullable=False),
+            PropertySpec("target_external_id", is_nullable=False),
+            PropertySpec("confidence"),
+            PropertySpec("start_time"),
+            PropertySpec("end_time"),
+            PropertySpec("data_set_id"),
+            PropertySpec("labels", is_container=True),
+        ]
 
 
 class RelationshipList(CogniteResourceList[Relationship]):
