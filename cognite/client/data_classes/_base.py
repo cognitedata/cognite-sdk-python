@@ -386,7 +386,7 @@ class CogniteUpdate:
     @classmethod
     @abstractmethod
     def _get_update_properties(cls) -> list[PropertySpec]:
-        ...
+        raise NotImplementedError
 
 
 T_CogniteUpdate = TypeVar("T_CogniteUpdate", bound=CogniteUpdate)

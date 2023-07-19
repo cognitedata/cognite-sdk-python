@@ -741,7 +741,7 @@ class APIClient:
         resource_path: Optional[str] = None,
         params: Optional[Dict] = None,
         headers: Optional[Dict] = None,
-        mode: Literal["legacy", "patch", "replace"] = "legacy",
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> T_CogniteResource:
         ...
 
@@ -755,7 +755,7 @@ class APIClient:
         resource_path: Optional[str] = None,
         params: Optional[Dict] = None,
         headers: Optional[Dict] = None,
-        mode: Literal["legacy", "patch", "replace"] = "legacy",
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> T_CogniteResourceList:
         ...
 
@@ -768,7 +768,7 @@ class APIClient:
         resource_path: Optional[str] = None,
         params: Optional[Dict] = None,
         headers: Optional[Dict] = None,
-        mode: Literal["legacy", "patch", "replace"] = "legacy",
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Union[T_CogniteResourceList, T_CogniteResource]:
         resource_path = resource_path or self._RESOURCE_PATH
         patch_objects = []
@@ -947,7 +947,7 @@ class APIClient:
         cls,
         resource: CogniteResource,
         update_attributes: list[PropertySpec],
-        mode: Literal["legacy", "patch", "replace"] = "legacy",
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Dict[str, Dict[str, Dict]]:
         dumped_resource = resource.dump(camel_case=True)
         has_id = "id" in dumped_resource
@@ -966,10 +966,7 @@ class APIClient:
             if (snake := to_snake_case(key)) not in update_attribute_by_name:
                 continue
             prop = update_attribute_by_name[snake]
-            if prop.name == "columns":
-                # Update column property in Sequence is not supported
-                continue
-            elif prop.is_list and mode == "patch":
+            if prop.is_list and mode == "patch":
                 update[key] = {"add": value}
             else:
                 update[key] = {"set": value}
