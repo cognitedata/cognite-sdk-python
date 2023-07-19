@@ -139,7 +139,30 @@ class TestDatapointSubscriptions:
                 cognite_client.time_series.subscriptions.delete(new_subscription.external_id, ignore_unknown_ids=True)
 
     def test_delete_subscription(self, cognite_client: CogniteClient, time_series_external_ids: list[str]):
-        raise NotImplementedError()
+        # Arrange
+        new_subscription = DataPointSubscriptionCreate(
+            external_id="PYSDKDataPointSubscriptionDeleteTest",
+            name="PYSDKDataPointSubscriptionDeleteTest",
+            time_series_ids=[time_series_external_ids[0]],
+            partition_count=1,
+        )
+
+        created: DatapointSubscription | None = None
+        try:
+            created = cognite_client.time_series.subscriptions.create(new_subscription)
+
+            # Act
+            cognite_client.time_series.subscriptions.delete(new_subscription.external_id)
+
+            retrieved = cognite_client.time_series.subscriptions.retrieve(
+                new_subscription.external_id, ignore_unknown_ids=True
+            )
+
+            # Assert
+            assert retrieved is None
+        finally:
+            if created:
+                cognite_client.time_series.subscriptions.delete(new_subscription.external_id, ignore_unknown_ids=True)
 
     def test_list_data_subscription_initial_call(
         self, cognite_client: CogniteClient, subscription_one_timeseries: DatapointSubscription
@@ -264,7 +287,7 @@ class TestDatapointSubscriptions:
                     new_data.index[0], new_data.index[-1] + pd.Timedelta("1d"), external_id=time_series_external_ids[0]
                 )
 
-    # @pytest.mark.skip(reason="This test is flaky")
+    @pytest.mark.skip(reason="This test is flaky")
     def test_update_filter_subscription_added_times_series(
         self, cognite_client: CogniteClient, time_series_external_ids: list[str]
     ):

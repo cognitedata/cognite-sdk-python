@@ -11,6 +11,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    PropertySpec,
     T_CogniteResource,
 )
 from cognite.client.data_classes.filters import Filter
@@ -189,6 +190,16 @@ class DataPointSubscriptionUpdate(CogniteUpdate):
     @property
     def filter(self) -> _FilterDataPointSubscriptionUpdate:
         return DataPointSubscriptionUpdate._FilterDataPointSubscriptionUpdate(self, "filter")
+
+    @classmethod
+    def _get_update_properties(cls) -> list[PropertySpec]:
+        return [
+            PropertySpec(
+                "name",
+            ),
+            PropertySpec("time_series_ids", is_container=True),
+            PropertySpec("filter", is_nullable=False),
+        ]
 
 
 class TimeSeriesID(CogniteResource):
