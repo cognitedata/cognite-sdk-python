@@ -212,11 +212,6 @@ Update files metadata
 ^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.files.FilesAPI.update
 
-Upsert files metadata
-^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.files.FilesAPI.upsert
-
-
 Files Data classes
 ^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.files

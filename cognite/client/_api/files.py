@@ -10,7 +10,6 @@ from typing import (
     Dict,
     Iterator,
     List,
-    Literal,
     Optional,
     Sequence,
     TextIO,
@@ -464,51 +463,6 @@ class FilesAPI(APIClient):
             update_cls=FileMetadataUpdate,
             resource_path=self._RESOURCE_PATH,
             items=item,
-        )
-
-    @overload
-    def upsert(self, item: Sequence[FileMetadata], mode: Literal["patch", "replace"]) -> FileMetadataList:
-        ...
-
-    @overload
-    def upsert(self, item: FileMetadata, mode: Literal["patch", "replace"] = "patch") -> FileMetadata:
-        ...
-
-    def upsert(
-        self, item: FileMetadata | Sequence[FileMetadata], mode: Literal["patch", "replace"] = "patch"
-    ) -> FileMetadata | FileMetadataList:
-        """Upsert files, i.e., update if it exists, and create if it does not exist.
-         Note this is a convenience method that handles the upserting for you by first calling update on all items,
-         and if any of them fail because they do not exist, it will create them instead.
-
-        Args:
-            item (FileMetadata | Sequence[FileMetadata]): File or list of files to upsert.
-            mode (Literal["patch", "replace"])): Whether to patch or replace in the case the files are existing. If
-                                                you set 'patch', the call will only update fields with non-null values (default).
-                                                Setting 'replace' will unset any fields that are not specified.
-
-        Returns:
-            FileMetadata | FileMetadataList: The upserted files(s).
-
-        Examples:
-
-            Upsert for files:
-
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import FileMetadata
-                >>> c = CogniteClient()
-                >>> existing_file = c.files.retrieve(id=1)
-                >>> existing_file.description = "New description"
-                >>> new_file = FileMetadata(external_id="new_file", name="MyNewFile")
-                >>> res = c.files.upsert([existing_file, new_file], mode="replace")
-        """
-        return self._upsert_multiple(
-            item,
-            list_cls=FileMetadataList,
-            resource_cls=FileMetadata,
-            update_cls=FileMetadataUpdate,
-            input_resource_cls=FileMetadata,
-            mode=mode,
         )
 
     def search(
