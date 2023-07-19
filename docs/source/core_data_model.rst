@@ -460,9 +460,9 @@ List data point subscriptions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.datapoints_subscriptions.DatapointsSubscriptionAPI.list
 
-List subscriptions data
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.datapoints_subscriptions.DatapointsSubscriptionAPI.list_data
+Iterate over subscriptions data
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.datapoints_subscriptions.DatapointsSubscriptionAPI.iterate_data
 
 Update data point subscription
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
