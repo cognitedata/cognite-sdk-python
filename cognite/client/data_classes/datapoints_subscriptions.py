@@ -4,6 +4,7 @@ import json
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Sequence, Type, TypeVar
 
+from cognite.client.data_classes import filters
 from cognite.client.data_classes._base import (
     CogniteListUpdate,
     CognitePrimitiveUpdate,
@@ -22,13 +23,24 @@ if TYPE_CHECKING:
 
 ExternalId = str
 
-_FILTERS_SUPPORTED = {"and", "or", "not", "equals", "in", "range", "prefix", "containsAny", "containsAll"}
+_FILTERS_SUPPORTED = {
+    filters.And,
+    filters.Or,
+    filters.Not,
+    filters.In,
+    filters.Range,
+    filters.Prefix,
+    filters.ContainsAny,
+    filters.ContainsAll,
+}
 
 
 def _validate_filter(filter: Filter | None) -> None:
     if filter is None:
         return
-    if not_supported := (set(filter._filter_names()) - _FILTERS_SUPPORTED):
+    if not_supported := (
+        {t.__name__ for t in filter._involved_filter_types()} - {t.__name__ for t in _FILTERS_SUPPORTED}
+    ):
         raise ValueError(f"The filters {not_supported} are not supported for DataPointSubscriptions")
 
 

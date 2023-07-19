@@ -19,4 +19,4 @@ class TestDataPointSubscription:
             )
 
         # Assert
-        assert "nested" in str(e.value) and "not supported" in str(e.value)
+        assert "Nested" in str(e.value) and "not supported" in str(e.value)
