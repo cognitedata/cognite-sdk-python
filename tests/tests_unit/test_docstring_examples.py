@@ -8,6 +8,7 @@ from cognite.client._api import (
     assets,
     data_sets,
     datapoints,
+    datapoints_subscriptions,
     entity_matching,
     events,
     files,
@@ -81,3 +82,6 @@ class TestDocstringExamples:
         run_docstring_tests(data_models)
         run_docstring_tests(spaces)
         run_docstring_tests(graphql)
+
+    def test_datapoint_subscriptions(self):
+        run_docstring_tests(datapoints_subscriptions)

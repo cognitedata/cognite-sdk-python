@@ -207,29 +207,23 @@ class DatapointsSubscriptionAPI(APIClient):
 
         Examples:
 
-        Get a batch of data from a subscription, starting at the beginning:
-
-            >>> from cognite.client import CogniteClient
-            >>> c = CogniteClient()
-            >>> changed_data, changed_timeseries = next(c.time_series.subscriptions.iterate_data("my_subscription"))
-
-        Iterate over multiple calls to a subscription until there is no more data:
+        Iterate over changes to subscription timeseries since the beginning until there is no more data:
 
             >>> from cognite.client import CogniteClient
             >>> c = CogniteClient()
             >>> for changed_data, changed_timeseries in c.time_series.subscriptions.iterate_data("my_subscription"):
-            >>>      print(f"Added {len(changed_timeseries.added)} timeseries")
-            >>>      print(f"Removed {len(changed_timeseries.removed)} timeseries")
-            >>>      print(f"Changed data in {len(changed_data)} timeseries")
+            ...     print(f"Added {len(changed_timeseries.added)} timeseries")
+            ...     print(f"Removed {len(changed_timeseries.removed)} timeseries")
+            ...     print(f"Changed data in {len(changed_data)} timeseries")
 
         Iterate over all changes in the subscripted timeseries the last 3 days:
 
             >>> from cognite.client import CogniteClient
             >>> c = CogniteClient()
             >>> for changed_data, changed_timeseries in c.time_series.subscriptions.iterate_data("my_subscription", "3d-ago"):
-            >>>      print(f"Added {len(changed_timeseries.added)} timeseries")
-            >>>      print(f"Removed {len(changed_timeseries.removed)} timeseries")
-            >>>      print(f"Changed data in {len(changed_data)} timeseries")
+            ...     print(f"Added {len(changed_timeseries.added)} timeseries")
+            ...     print(f"Removed {len(changed_timeseries.removed)} timeseries")
+            ...     print(f"Changed data in {len(changed_data)} timeseries")
 
         """
         self._experimental_warning()
