@@ -383,10 +383,6 @@ class DataPointSubscriptionList(CogniteResourceList[DatapointSubscription]):
     _RESOURCE = DatapointSubscription
 
 
-class DataPointSubscriptionCreateList(CogniteResourceList[DataPointSubscriptionCreate]):
-    _RESOURCE = DataPointSubscriptionCreate
-
-
 def _metadata(key: str) -> list[str]:
     return ["metadata", key]
 
