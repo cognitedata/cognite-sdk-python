@@ -224,10 +224,6 @@ class TimeSeriesID(CogniteResource):
         return resource
 
 
-class TimeSeriesIDList(CogniteResourceList[TimeSeriesID]):
-    _RESOURCE = TimeSeriesID
-
-
 @dataclass
 class DataDeletion:
     inclusive_begin: int
@@ -280,24 +276,20 @@ class DataPointUpdate:
 
 @dataclass
 class SubscriptionTimeSeriesUpdate:
-    added: TimeSeriesIDList | None = None
-    removed: TimeSeriesIDList | None = None
+    added: list[TimeSeriesID]
+    removed: list[TimeSeriesID]
 
     @classmethod
     def _load(cls, data: dict[str, Any]) -> SubscriptionTimeSeriesUpdate:
-        resource = {}
-        if "added" in data:
-            resource["added"] = TimeSeriesIDList._load(data["added"])
-        if "removed" in data:
-            resource["removed"] = TimeSeriesIDList._load(data["removed"])
-        return cls(**resource)
+        return cls(
+            added=[TimeSeriesID._load(added) for added in data.get("added", [])],
+            removed=[TimeSeriesID._load(added) for added in data.get("removed", [])],
+        )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         resource: dict[str, Any] = {}
-        if self.added is not None:
-            resource["added"] = self.added.dump(camel_case)
-        if self.removed is not None:
-            resource["removed"] = self.removed.dump(camel_case)
+        resource["added"] = [id_.dump() for id_ in self.added]
+        resource["removed"] = [id_.dump() for id_ in self.removed]
         return resource
 
 
