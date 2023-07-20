@@ -339,7 +339,7 @@ class _DatapointSubscriptionBatch:
         updates: list[DatapointsUpdate],
         partitions: list[DatapointSubscriptionPartition],
         has_next: bool,
-        subscription_changes: SubscriptionTimeSeriesUpdate | None = None,
+        subscription_changes: SubscriptionTimeSeriesUpdate,
     ):
         self.updates = updates
         self.partitions = partitions
@@ -356,6 +356,8 @@ class _DatapointSubscriptionBatch:
         }
         if "subscriptionChanges" in resource:
             data["subscription_changes"] = SubscriptionTimeSeriesUpdate._load(resource["subscriptionChanges"])
+        else:
+            data["subscription_changes"] = SubscriptionTimeSeriesUpdate([], [])
         return cls(**data)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:

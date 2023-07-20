@@ -186,7 +186,7 @@ class DatapointsSubscriptionAPI(APIClient):
         external_id: str,
         start: str | None = None,
         limit: int = DATAPOINT_SUBSCRIPTION_DATA_LIST_LIMIT_DEFAULT,
-    ) -> Iterator[tuple[list[DatapointsUpdate], Optional[SubscriptionTimeSeriesUpdate]]]:
+    ) -> Iterator[tuple[list[DatapointsUpdate], SubscriptionTimeSeriesUpdate]]:
         """`Fetch the next batch of data from a given subscription and partition(s). <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/listSubscriptionData>`_
 
         Data can be ingested datapoints and time ranges where data is deleted. This endpoint will also return changes to
