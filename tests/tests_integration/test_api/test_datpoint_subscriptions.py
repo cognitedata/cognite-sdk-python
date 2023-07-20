@@ -25,13 +25,13 @@ def time_series_external_ids(cognite_client: CogniteClient) -> list[str]:
     return external_ids
 
 
-# @pytest.fixture(scope="session")
-# def subscription_three_timeseries(cognite_client: CogniteClient) -> DatapointSubscription:
-#     sub3 = cognite_client.time_series.subscriptions.retrieve("PYSDKDataPointSubscriptionTest3", ignore_unknown_ids=True)
-#     assert (
-#         sub3 is not None
-#     ), "The subscription used for testing datapoint subscriptions must exist in the test environment"
-#     return sub3
+@pytest.fixture(scope="session")
+def subscription_3(cognite_client: CogniteClient) -> DatapointSubscription:
+    sub3 = cognite_client.time_series.subscriptions.retrieve("PYSDKDataPointSubscriptionTest3", ignore_unknown_ids=True)
+    assert (
+        sub3 is not None
+    ), "The subscription used for testing datapoint subscriptions must exist in the test environment"
+    return sub3
 
 
 class TestDatapointSubscriptions:
@@ -164,7 +164,7 @@ class TestDatapointSubscriptions:
             if created:
                 cognite_client.time_series.subscriptions.delete(new_subscription.external_id, ignore_unknown_ids=True)
 
-    def test_list_data_subscription_initial_call(
+    def test_iterate_data_subscription_initial_call(
         self, cognite_client: CogniteClient, time_series_external_ids: list[str]
     ):
         # Arrange
@@ -194,7 +194,7 @@ class TestDatapointSubscriptions:
         finally:
             cognite_client.time_series.subscriptions.delete(new_subscription.external_id, ignore_unknown_ids=True)
 
-    def test_list_data_subscription_changed_time_series(
+    def test_iterate_data_subscription_changed_time_series(
         self, cognite_client: CogniteClient, time_series_external_ids: list[str]
     ):
         # Arrange
@@ -238,7 +238,7 @@ class TestDatapointSubscriptions:
             if created:
                 cognite_client.time_series.subscriptions.delete(new_subscription.external_id, ignore_unknown_ids=True)
 
-    def test_list_data_subscription_datapoints_added(
+    def test_iterate_data_subscription_datapoints_added(
         self, cognite_client: CogniteClient, time_series_external_ids: list[str]
     ):
         # Arrange
@@ -294,6 +294,56 @@ class TestDatapointSubscriptions:
                 cognite_client.time_series.data.delete_range(
                     new_data.index[0], new_data.index[-1] + pd.Timedelta("1d"), external_id=time_series_external_ids[0]
                 )
+
+    def test_iterate_data_subscription_jump_to_end(
+        self, cognite_client: CogniteClient, time_series_external_ids: list[str]
+    ):
+        # Arrange
+        new_subscription = DataPointSubscriptionCreate(
+            external_id="PYSDKDataPointSubscriptionJumpToEndTest",
+            name="PYSDKDataPointSubscriptionJumpToEndTest",
+            time_series_ids=time_series_external_ids,
+            partition_count=1,
+        )
+
+        created: DatapointSubscription | None = None
+        try:
+            created = cognite_client.time_series.subscriptions.create(new_subscription)
+            assert created.created_time
+
+            # Act
+            for changed_data, timeseries in cognite_client.time_series.subscriptions.iterate_data(
+                new_subscription.external_id, start="now"
+            ):
+                # Assert
+                assert len(changed_data) == 0
+                assert len(timeseries.added) == 0
+                assert len(timeseries.removed) == 0
+
+        finally:
+            if created:
+                cognite_client.time_series.subscriptions.delete(new_subscription.external_id, ignore_unknown_ids=True)
+
+    def test_iterate_data_subscription_start_1m_ago(
+        self, cognite_client: CogniteClient, subscription_3: DatapointSubscription
+    ):
+        # Arrange
+        added_count = 0
+        for changed_data, timeseries in cognite_client.time_series.subscriptions.iterate_data(
+            subscription_3.external_id
+        ):
+            added_count += len(timeseries.added)
+        assert added_count > 0, "There should be at least one timeseries added"
+
+        # Act
+        added_last_minute = 0
+        for changed_data, timeseries in cognite_client.time_series.subscriptions.iterate_data(
+            subscription_3.external_id, start="1m-ago"
+        ):
+            added_last_minute += len(timeseries.added)
+
+        # Assert
+        assert added_last_minute == 0, "There should be no timeseries added in the last minute"
 
     @pytest.mark.skip(reason="This test is flaky")
     def test_update_filter_subscription_added_times_series(

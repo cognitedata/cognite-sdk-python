@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Sequence, Type
+from typing import TYPE_CHECKING, Any, Optional, Type
 
 from cognite.client.data_classes import Datapoints, filters
 from cognite.client.data_classes._base import (
@@ -51,9 +51,9 @@ class DatapointSubscriptionCore(CogniteResource):
         self,
         external_id: ExternalId,
         partition_count: int,
-        filter: Filter = None,
-        name: str = None,
-        description: str = None,
+        filter: Optional[Filter] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
         **_: dict,
     ):
         self.external_id = external_id
@@ -103,10 +103,10 @@ class DatapointSubscription(DatapointSubscriptionCore):
         partition_count: int,
         created_time: int,
         last_updated_time: int,
-        time_series_count: int = None,
-        filter: Filter = None,
-        name: str = None,
-        description: str = None,
+        time_series_count: Optional[int] = None,
+        filter: Optional[Filter] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
         **_: dict,
     ):
         super().__init__(external_id, partition_count, filter, name, description)
@@ -127,7 +127,7 @@ class DataPointSubscriptionCreate(DatapointSubscriptionCore):
                                read from it concurrently) will be limited to this number, but a higher partition count
                                will cause a higher time overhead. The partition count must be between 1 and 100.
                                CAVEAT: This cannot change after the subscription has been created.
-        times_series_ids (list[str): List of (external) ids of time series that this subscription will listen to.
+        time_series_ids (list[str): List of (external) ids of time series that this subscription will listen to.
                                      Not compatible with filter.
         filter (Filter): A filter DSL (Domain Specific Language) to define advanced filter queries. Not compatible
                          with time_series_ids.
@@ -139,10 +139,10 @@ class DataPointSubscriptionCreate(DatapointSubscriptionCore):
         self,
         external_id: str,
         partition_count: int,
-        time_series_ids: Sequence[ExternalId] = None,
-        filter: Filter = None,
-        name: str = None,
-        description: str = None,
+        time_series_ids: Optional[list[ExternalId]] = None,
+        filter: Optional[Filter] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
     ):
         if not exactly_one_is_not_none(time_series_ids, filter):
             raise ValueError("Exactly one of time_series_ids and filter must be given")
@@ -194,9 +194,7 @@ class DataPointSubscriptionUpdate(CogniteUpdate):
     @classmethod
     def _get_update_properties(cls) -> list[PropertySpec]:
         return [
-            PropertySpec(
-                "name",
-            ),
+            PropertySpec("name"),
             PropertySpec("time_series_ids", is_container=True),
             PropertySpec("filter", is_nullable=False),
         ]

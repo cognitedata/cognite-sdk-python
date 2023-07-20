@@ -181,6 +181,7 @@ class DatapointsSubscriptionAPI(APIClient):
     def iterate_data(
         self,
         external_id: str,
+        start: str | None = None,
         limit: int = DATAPOINT_SUBSCRIPTION_DATA_LIST_LIMIT_DEFAULT,
     ) -> Iterator[tuple[list[DataPointUpdate], Optional[SubscriptionTimeSeriesUpdate]]]:
         """`Fetch the next batch of data from a given subscription and partition(s). <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/listSubscriptionData>`_
@@ -192,10 +193,14 @@ class DatapointsSubscriptionAPI(APIClient):
 
         Args:
             external_id (str): The external ID provided by the client. Must be unique for the resource type.
+            start (str, optional): When to start the iteration. If set to None, the iteration will start from the beginning.
+                                   The format is "N[timeunit]-ago", where timeunit is w,d,h,m (week, day, hour, minute).
+                                   For example, "12h-ago" will start the iteration from 12 hours ago. You can also
+                                   set it to "now" to jump straight to the end. Defaults to None.
             limit (int): Approximate number of results to return across all partitions.
 
         Yields:
-           A triple of list datapoint updates, timeseries updates, the subscription partition..
+           A tuple of list datapoint updates, timeseries updates.
 
         Examples:
 
@@ -227,6 +232,9 @@ class DatapointsSubscriptionAPI(APIClient):
                 "partitions": [p.dump(camel_case=True) for p in current_partitions],
                 "limit": limit,
             }
+            if start is not None:
+                body["initializeCursors"] = start
+            start = None
 
             res = self._post(url_path=self._RESOURCE_PATH + "/data/list", json=body)
             batch = _DataPointSubscriptionBatch._load(res.json())
