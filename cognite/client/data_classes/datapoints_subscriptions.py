@@ -102,7 +102,7 @@ class DatapointSubscription(DatapointSubscriptionCore):
         partition_count: int,
         created_time: int,
         last_updated_time: int,
-        time_series_count: Optional[int] = None,
+        time_series_count: int,
         filter: Optional[Filter] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
