@@ -16,6 +16,7 @@ from cognite.client._api.data_modeling.spaces import SpacesAPI
 from cognite.client._api.data_modeling.views import ViewsAPI
 from cognite.client._api.data_sets import DataSetsAPI
 from cognite.client._api.datapoints import DatapointsAPI
+from cognite.client._api.datapoints_subscriptions import DatapointsSubscriptionAPI
 from cognite.client._api.diagrams import DiagramsAPI
 from cognite.client._api.entity_matching import EntityMatchingAPI
 from cognite.client._api.events import EventsAPI
@@ -137,6 +138,7 @@ class CogniteClientMock(MagicMock):
         self.time_series = MagicMock(spec=TimeSeriesAPI)
         self.time_series.data = MagicMock(spec=DatapointsAPI)
         self.time_series.data.synthetic = MagicMock(spec_set=SyntheticDatapointsAPI)
+        self.time_series.subscriptions = MagicMock(spec_set=DatapointsSubscriptionAPI)
 
         self.transformations = MagicMock(spec=TransformationsAPI)
         self.transformations.jobs = MagicMock(spec_set=TransformationJobsAPI)

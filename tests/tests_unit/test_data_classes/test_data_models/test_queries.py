@@ -3,8 +3,8 @@ from typing import Any, Dict, Iterator
 import pytest
 from _pytest.mark import ParameterSet
 
+from cognite.client.data_classes import filters as f
 from cognite.client.data_classes.data_modeling import ViewId
-from cognite.client.data_classes.data_modeling import filters as f
 from cognite.client.data_classes.data_modeling import query as q
 
 

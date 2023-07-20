@@ -440,3 +440,40 @@ Sequence Data classes
 
     .. autoclass:: Sequence
         :noindex:
+
+Data Point Subscriptions
+---------------------------
+
+.. warning::
+    DataPoint Subscriptions are experimental and may be subject to breaking changes in future versions without notice.
+
+
+Create data point subscriptions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.datapoints_subscriptions.DatapointsSubscriptionAPI.create
+
+Retrieve a data point subscription by id(s)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.datapoints_subscriptions.DatapointsSubscriptionAPI.retrieve
+
+List data point subscriptions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.datapoints_subscriptions.DatapointsSubscriptionAPI.list
+
+Iterate over subscriptions data
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.datapoints_subscriptions.DatapointsSubscriptionAPI.iterate_data
+
+Update data point subscription
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.datapoints_subscriptions.DatapointsSubscriptionAPI.update
+
+Delete data point subscription
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.datapoints_subscriptions.DatapointsSubscriptionAPI.delete
+
+Data Point Subscription classes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: cognite.client.data_classes.datapoints_subscriptions
+    :members:
+    :show-inheritance:

@@ -16,8 +16,8 @@ from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelationReference,
     PropertyType,
 )
-from cognite.client.data_classes.data_modeling.filters import Filter
 from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
+from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case_recursive,
     convert_all_keys_to_snake_case,

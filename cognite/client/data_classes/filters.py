@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, List, Mapping, Optional, Sequence, Tuple, Union, cast, final
+from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Sequence, Tuple, Union, cast, final
 
-from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
+if TYPE_CHECKING:
+    from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
+
 
 PropertyReference = Union[Tuple[str, ...], List[str]]
 
@@ -113,6 +115,13 @@ class Filter(ABC):
     def _filter_body(self) -> list | dict:
         ...
 
+    def _involved_filter_types(self) -> set[type[Filter]]:
+        output = {type(self)}
+        if isinstance(self, CompoundFilter):
+            for filter_ in self._filters:
+                output.update(filter_._involved_filter_types())
+        return output
+
 
 class CompoundFilter(Filter):
     _filter_name = "compound"
@@ -206,6 +215,8 @@ class HasData(Filter):
         containers: Optional[Sequence[tuple[str, str] | ContainerId]] = None,
         views: Optional[Sequence[tuple[str, str, str] | ViewId]] = None,
     ):
+        from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
+
         self.__containers: List[ContainerId] = [ContainerId.load(container) for container in (containers or [])]
         self.__views: List[ViewId] = [ViewId.load(view) for view in (views or [])]
 

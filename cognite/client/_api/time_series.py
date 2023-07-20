@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Literal, Optional, Sequence, Union, cast, overload
 
 from cognite.client._api.datapoints import DatapointsAPI
+from cognite.client._api.datapoints_subscriptions import DatapointsSubscriptionAPI
 from cognite.client._api_client import APIClient
 from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import (
@@ -26,6 +27,7 @@ class TimeSeriesAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.data = DatapointsAPI(config, api_version, cognite_client)
+        self.subscriptions = DatapointsSubscriptionAPI(config, api_version, cognite_client)
 
     def __call__(
         self,

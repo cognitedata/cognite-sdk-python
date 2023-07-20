@@ -12,7 +12,6 @@ from cognite.client.data_classes.data_modeling.aggregations import (
     HistogramValue,
     MetricAggregation,
 )
-from cognite.client.data_classes.data_modeling.filters import Filter
 from cognite.client.data_classes.data_modeling.ids import (
     EdgeId,
     NodeId,
@@ -42,6 +41,7 @@ from cognite.client.data_classes.data_modeling.query import (
     QueryResult,
 )
 from cognite.client.data_classes.data_modeling.views import View
+from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
 
 from ._data_modeling_executor import get_data_modeling_executor
@@ -582,7 +582,7 @@ class InstancesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import ViewId
-                >>> import cognite.client.data_classes.data_modeling.filters as filters
+                >>> import cognite.client.data_classes.filters as filters
                 >>> c = CogniteClient()
                 >>> born_after_1970 = filters.Range(["mySpace", "PersonView/v1", "birthYear"], gt=1970)
                 >>> res = c.data_modeling.instances.search(ViewId("mySpace", "PersonView", "v1"),
@@ -779,7 +779,7 @@ class InstancesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling.query import Query, Select, NodeResultSetExpression, EdgeResultSetExpression, SourceSelector
-                >>> from cognite.client.data_classes.data_modeling.filters import Range, Equals
+                >>> from cognite.client.data_classes.filters import Range, Equals
                 >>> from cognite.client.data_classes.data_modeling.ids import ViewId
                 >>> c = CogniteClient()
                 >>> movie_id = ViewId("mySpace", "MovieView", "v1")
@@ -816,7 +816,7 @@ class InstancesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling.query import Query, Select, NodeResultSetExpression, EdgeResultSetExpression, SourceSelector
-                >>> from cognite.client.data_classes.data_modeling.filters import Range, Equals
+                >>> from cognite.client.data_classes.filters import Range, Equals
                 >>> from cognite.client.data_classes.data_modeling.ids import ViewId
                 >>> c = CogniteClient()
                 >>> movie_id = ViewId("mySpace", "MovieView", "v1")
