@@ -43,10 +43,10 @@ class DatapointsSubscriptionAPI(APIClient):
         Create a subscription that can be used to listen for changes in data points for a set of time series.
 
         Args:
-            subscription: Subscription to create.
+            subscription (DataPointSubscriptionCreate): Subscription to create.
 
         Returns:
-            Created subscription
+            DatapointSubscription: Created subscription
 
         Examples:
 
@@ -88,6 +88,9 @@ class DatapointsSubscriptionAPI(APIClient):
             external_id (str | Sequence[str]): External ID or list of external IDs of subscriptions to delete.
             ignore_unknown_ids (bool): Whether to ignore IDs and external IDs that are not found rather than throw an exception.
 
+        Returns:
+            None
+
         Examples:
 
         Delete a subscription by external ID:
@@ -113,7 +116,7 @@ class DatapointsSubscriptionAPI(APIClient):
             ignore_unknown_ids (bool): Whether to ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
-            The requested subscriptions.
+            Optional[DatapointSubscription]: The requested subscription.
 
         Examples:
 
@@ -144,10 +147,10 @@ class DatapointsSubscriptionAPI(APIClient):
         Furthermore, the subscription partition cannot be changed.
 
         Args:
-            update: The subscription update.
+            update (DataPointSubscriptionUpdate): The subscription update.
 
         Returns:
-            Updated subscription.
+            DatapointSubscription: Updated subscription.
 
         Examples:
 
@@ -192,7 +195,7 @@ class DatapointsSubscriptionAPI(APIClient):
         Current implementation is limited to always start from the beginning of the subscription histroy.
 
         Args:
-            external_id (str): The external ID provided by the client. Must be unique for the resource type.
+            external_id (str): The external ID of the subscription.
             start (str, optional): When to start the iteration. If set to None, the iteration will start from the beginning.
                                    The format is "N[timeunit]-ago", where timeunit is w,d,h,m (week, day, hour, minute).
                                    For example, "12h-ago" will start the iteration from 12 hours ago. You can also
@@ -200,7 +203,7 @@ class DatapointsSubscriptionAPI(APIClient):
             limit (int): Approximate number of results to return across all partitions.
 
         Yields:
-           A tuple of list datapoint updates, timeseries updates.
+           Iterator[tuple[list[DatapointUpdate], Optional[SubscriptionTimeSeriesUpdate]]]: A tuple of list datapoint updates and timeseries updates.
 
         Examples:
 
