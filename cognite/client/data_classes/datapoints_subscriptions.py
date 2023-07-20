@@ -241,13 +241,13 @@ class DataDeletion:
 
 
 @dataclass
-class DataPointUpdate:
+class DatapointsUpdate:
     time_series: TimeSeriesID
     upserts: Datapoints
     deletes: list[DataDeletion]
 
     @classmethod
-    def _load(cls, data: dict[str, Any]) -> DataPointUpdate:
+    def _load(cls, data: dict[str, Any]) -> DatapointsUpdate:
         datapoints: dict[str, Any] = {"upserts": Datapoints(), "deletes": []}
         if (values := data["upserts"]) and ("value" in values[0]):
             datapoints["upserts"] = Datapoints._load(
@@ -294,20 +294,20 @@ class SubscriptionTimeSeriesUpdate:
 
 
 @dataclass
-class DataPointSubscriptionPartition:
+class DatapointSubscriptionPartition:
     index: int
     cursor: str | None = None
 
     @classmethod
-    def create(cls, data: tuple[int, str] | int | DataPointSubscriptionPartition) -> DataPointSubscriptionPartition:
-        if isinstance(data, DataPointSubscriptionPartition):
+    def create(cls, data: tuple[int, str] | int | DatapointSubscriptionPartition) -> DatapointSubscriptionPartition:
+        if isinstance(data, DatapointSubscriptionPartition):
             return data
         if isinstance(data, tuple):
             return cls(*data)
         return cls(data)
 
     @classmethod
-    def _load(cls, data: dict[str, Any]) -> DataPointSubscriptionPartition:
+    def _load(cls, data: dict[str, Any]) -> DatapointSubscriptionPartition:
         return cls(index=data["index"], cursor=data.get("cursor") or data.get("nextCursor"))
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -317,14 +317,14 @@ class DataPointSubscriptionPartition:
         return output
 
 
-class _DataPointSubscriptionBatch:
+class _DatapointSubscriptionBatch:
     """A batch of data from a subscription.
 
     Args:
-        updates (list[DataPointUpdate]): List of updates from the subscription, sorted by point in time they were
+        updates (list[DatapointsUpdate]): List of updates from the subscription, sorted by point in time they were
                                          applied to the time series. Every update contains a time series along with a
                                          set of changes to that time series.
-        partitions (list[DataPointSubscriptionPartition]): Which partitions/cursors to use for the next request.
+        partitions (list[DatapointSubscriptionPartition]): Which partitions/cursors to use for the next request.
                                                      Map from partition index to cursor.
         has_next (list[str): Whether there is more data available at the time of the query. In rare cases, we may
                              return true, even if there is no data available. If that is the case, just continue to
@@ -336,8 +336,8 @@ class _DataPointSubscriptionBatch:
 
     def __init__(
         self,
-        updates: list[DataPointUpdate],
-        partitions: list[DataPointSubscriptionPartition],
+        updates: list[DatapointsUpdate],
+        partitions: list[DatapointSubscriptionPartition],
         has_next: bool,
         subscription_changes: SubscriptionTimeSeriesUpdate | None = None,
     ):
@@ -347,11 +347,11 @@ class _DataPointSubscriptionBatch:
         self.subscription_changes = subscription_changes
 
     @classmethod
-    def _load(cls, resource: dict | str) -> _DataPointSubscriptionBatch:
+    def _load(cls, resource: dict | str) -> _DatapointSubscriptionBatch:
         resource = json.loads(resource) if isinstance(resource, str) else resource
         data = {
-            "updates": [DataPointUpdate._load(u) for u in resource["updates"]],
-            "partitions": [DataPointSubscriptionPartition._load(p) for p in resource["partitions"]],
+            "updates": [DatapointsUpdate._load(u) for u in resource["updates"]],
+            "partitions": [DatapointSubscriptionPartition._load(p) for p in resource["partitions"]],
             "has_next": resource["hasNext"],
         }
         if "subscriptionChanges" in resource:
@@ -371,7 +371,7 @@ class _DataPointSubscriptionBatch:
         return resource
 
 
-class DataPointSubscriptionList(CogniteResourceList[DatapointSubscription]):
+class DatapointSubscriptionList(CogniteResourceList[DatapointSubscription]):
     _RESOURCE = DatapointSubscription
 
 
@@ -379,7 +379,7 @@ def _metadata(key: str) -> list[str]:
     return ["metadata", key]
 
 
-class DataPointSubscriptionFilterProperties:
+class DatapointSubscriptionFilterProperties:
     description = ["description"]
     external_id = ["externalId"]
     metadata = _metadata

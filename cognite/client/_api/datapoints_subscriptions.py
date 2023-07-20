@@ -11,12 +11,12 @@ from cognite.client._constants import (
 from cognite.client.data_classes.datapoints_subscriptions import (
     DatapointSubscription,
     DataPointSubscriptionCreate,
-    DataPointSubscriptionList,
-    DataPointSubscriptionPartition,
+    DatapointSubscriptionList,
+    DatapointSubscriptionPartition,
     DataPointSubscriptionUpdate,
-    DataPointUpdate,
+    DatapointsUpdate,
     SubscriptionTimeSeriesUpdate,
-    _DataPointSubscriptionBatch,
+    _DatapointSubscriptionBatch,
 )
 from cognite.client.utils._identifier import IdentifierSequence
 
@@ -63,10 +63,10 @@ class DatapointsSubscriptionAPI(APIClient):
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes import DataPointSubscriptionCreate
             >>> from cognite.client.data_classes import filters
-            >>> from cognite.client.data_classes.datapoints_subscriptions import DataPointSubscriptionFilterProperties
+            >>> from cognite.client.data_classes.datapoints_subscriptions import DatapointSubscriptionFilterProperties
             >>> c = CogniteClient()
             >>> f = filters
-            >>> p = DataPointSubscriptionFilterProperties
+            >>> p = DatapointSubscriptionFilterProperties
             >>> numeric_timeseries = f.Equals(p.is_string, False)
             >>> sub = DataPointSubscriptionCreate("mySubscription", partition_count=1, filter=numeric_timeseries, name="My subscription for Numeric time series")
             >>> created = c.time_series.subscriptions.create(sub)
@@ -76,7 +76,7 @@ class DatapointsSubscriptionAPI(APIClient):
 
         return self._create_multiple(
             subscription,
-            list_cls=DataPointSubscriptionList,
+            list_cls=DatapointSubscriptionList,
             resource_cls=DatapointSubscription,
             input_resource_cls=DataPointSubscriptionCreate,
         )
@@ -130,7 +130,7 @@ class DatapointsSubscriptionAPI(APIClient):
         self._experimental_warning()
 
         result = self._retrieve_multiple(
-            list_cls=DataPointSubscriptionList,
+            list_cls=DatapointSubscriptionList,
             resource_cls=DatapointSubscription,
             identifiers=IdentifierSequence.load(external_ids=[external_id]),
             ignore_unknown_ids=ignore_unknown_ids,
@@ -176,7 +176,7 @@ class DatapointsSubscriptionAPI(APIClient):
 
         return self._update_multiple(
             items=update,
-            list_cls=DataPointSubscriptionList,
+            list_cls=DatapointSubscriptionList,
             resource_cls=DatapointSubscription,
             update_cls=DataPointSubscriptionUpdate,
         )
@@ -186,7 +186,7 @@ class DatapointsSubscriptionAPI(APIClient):
         external_id: str,
         start: str | None = None,
         limit: int = DATAPOINT_SUBSCRIPTION_DATA_LIST_LIMIT_DEFAULT,
-    ) -> Iterator[tuple[list[DataPointUpdate], Optional[SubscriptionTimeSeriesUpdate]]]:
+    ) -> Iterator[tuple[list[DatapointsUpdate], Optional[SubscriptionTimeSeriesUpdate]]]:
         """`Fetch the next batch of data from a given subscription and partition(s). <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/listSubscriptionData>`_
 
         Data can be ingested datapoints and time ranges where data is deleted. This endpoint will also return changes to
@@ -225,8 +225,8 @@ class DatapointsSubscriptionAPI(APIClient):
         """
         self._experimental_warning()
 
-        current_partitions: list[DataPointSubscriptionPartition] = [
-            DataPointSubscriptionPartition.create(p) for p in [0]
+        current_partitions: list[DatapointSubscriptionPartition] = [
+            DatapointSubscriptionPartition.create(p) for p in [0]
         ]
         while True:
             body = {
@@ -239,21 +239,21 @@ class DatapointsSubscriptionAPI(APIClient):
             start = None
 
             res = self._post(url_path=self._RESOURCE_PATH + "/data/list", json=body)
-            batch = _DataPointSubscriptionBatch._load(res.json())
+            batch = _DatapointSubscriptionBatch._load(res.json())
 
             yield batch.updates, batch.subscription_changes
             if not batch.has_next:
                 return
             current_partitions = batch.partitions
 
-    def list(self, limit: int = DATAPOINT_SUBSCRIPTIONS_LIST_LIMIT_DEFAULT) -> DataPointSubscriptionList:
+    def list(self, limit: int = DATAPOINT_SUBSCRIPTIONS_LIST_LIMIT_DEFAULT) -> DatapointSubscriptionList:
         """`List data point subscriptions <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/listSubscriptions>`_
 
         Args:
             limit (int, optional): Maximum number of subscriptions to return. Defaults to 100. Set to -1, float("inf") or None
                 to return all items.
         Returns:
-            DataPointSubscriptionList: List of requested datapoint subscriptions
+            DatapointSubscriptionList: List of requested datapoint subscriptions
 
         Examples:
 
@@ -267,5 +267,5 @@ class DatapointsSubscriptionAPI(APIClient):
         self._experimental_warning()
 
         return self._list(
-            method="GET", limit=limit, list_cls=DataPointSubscriptionList, resource_cls=DatapointSubscription
+            method="GET", limit=limit, list_cls=DatapointSubscriptionList, resource_cls=DatapointSubscription
         )

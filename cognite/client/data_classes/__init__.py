@@ -40,7 +40,7 @@ from cognite.client.data_classes.datapoints import (
 from cognite.client.data_classes.datapoints_subscriptions import (
     DatapointSubscription,
     DataPointSubscriptionCreate,
-    DataPointSubscriptionList,
+    DatapointSubscriptionList,
     DataPointSubscriptionUpdate,
 )
 from cognite.client.data_classes.events import EndTimeFilter, Event, EventFilter, EventList, EventUpdate
@@ -300,7 +300,7 @@ __all__ = [
     "TimeSeriesUpdate",
     "DatapointSubscription",
     "DataPointSubscriptionCreate",
-    "DataPointSubscriptionList",
+    "DatapointSubscriptionList",
     "DataPointSubscriptionUpdate",
     "OidcCredentials",
     "RawTable",

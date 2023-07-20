@@ -10,7 +10,7 @@ from cognite.client.data_classes import TimeSeries, filters
 from cognite.client.data_classes.datapoints_subscriptions import (
     DatapointSubscription,
     DataPointSubscriptionCreate,
-    DataPointSubscriptionFilterProperties,
+    DatapointSubscriptionFilterProperties,
     DataPointSubscriptionUpdate,
 )
 
@@ -108,7 +108,7 @@ class TestDatapointSubscriptions:
     def test_update_filter_defined_subscription(self, cognite_client: CogniteClient):
         # Arrange
         f = filters
-        p = DataPointSubscriptionFilterProperties
+        p = DatapointSubscriptionFilterProperties
         numerical_timeseries = f.And(
             f.Equals(p.is_string, False),
         )
@@ -351,7 +351,7 @@ class TestDatapointSubscriptions:
     ):
         # Arrange
         f = filters
-        p = DataPointSubscriptionFilterProperties
+        p = DatapointSubscriptionFilterProperties
         numerical_timeseries = f.And(
             f.Equals(p.is_string, False), f.Prefix(p.external_id, "PYSDK DataPoint Subscription Test")
         )
