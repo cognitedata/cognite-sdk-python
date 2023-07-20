@@ -349,16 +349,12 @@ class _DatapointSubscriptionBatch:
     @classmethod
     def _load(cls, resource: dict | str) -> _DatapointSubscriptionBatch:
         resource = json.loads(resource) if isinstance(resource, str) else resource
-        data = {
-            "updates": [DatapointsUpdate._load(u) for u in resource["updates"]],
-            "partitions": [DatapointSubscriptionPartition._load(p) for p in resource["partitions"]],
-            "has_next": resource["hasNext"],
-        }
-        if "subscriptionChanges" in resource:
-            data["subscription_changes"] = SubscriptionTimeSeriesUpdate._load(resource["subscriptionChanges"])
-        else:
-            data["subscription_changes"] = SubscriptionTimeSeriesUpdate([], [])
-        return cls(**data)
+        return cls(
+            updates=[DatapointsUpdate._load(u) for u in resource["updates"]],
+            partitions=[DatapointSubscriptionPartition._load(p) for p in resource["partitions"]],
+            has_next=resource["hasNext"],
+            subscription_changes=SubscriptionTimeSeriesUpdate._load(resource.get("subscriptionChanges", [])),
+        )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         resource: dict[str, Any] = {
