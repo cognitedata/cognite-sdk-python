@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Sequence, Tuple, Type, Union, cast, final
+from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Sequence, Tuple, Union, cast, final
 
 if TYPE_CHECKING:
     from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
@@ -115,18 +115,11 @@ class Filter(ABC):
     def _filter_body(self) -> list | dict:
         ...
 
-    def _filter_names(self) -> list[str]:
-        output = [self._filter_name]
+    def _involved_filter_types(self) -> set[type[Filter]]:
+        output = {type(self)}
         if isinstance(self, CompoundFilter):
             for filter_ in self._filters:
-                output.extend(filter_._filter_names())
-        return output
-
-    def _involved_filter_types(self) -> list[Type[Filter]]:
-        output = [type(self)]
-        if isinstance(self, CompoundFilter):
-            for filter_ in self._filters:
-                output.extend(filter_._involved_filter_types())
+                output.update(filter_._involved_filter_types())
         return output
 
 
