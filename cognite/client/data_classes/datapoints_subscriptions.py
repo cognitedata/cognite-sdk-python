@@ -63,7 +63,7 @@ class DatapointSubscriptionCore(CogniteResource):
 
     @classmethod
     def _load(
-        cls: Type[T_CogniteResource], resource: dict | str, cognite_client: CogniteClient = None
+        cls: Type[T_CogniteResource], resource: dict | str, cognite_client: Optional[CogniteClient] = None
     ) -> T_CogniteResource:
         resource = json.loads(resource) if isinstance(resource, str) else resource
         if "filter" in resource:
@@ -213,7 +213,7 @@ class TimeSeriesID(CogniteResource):
         self.external_id = external_id
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: CogniteClient = None) -> TimeSeriesID:
+    def _load(cls, resource: dict | str, cognite_client: Optional[CogniteClient] = None) -> TimeSeriesID:
         resource = json.loads(resource) if isinstance(resource, str) else resource
         return cls(id=resource["id"], external_id=resource.get("externalId"))
 
