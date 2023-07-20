@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.11.1] - 2023-07-19
+### Changed
+- Return type `SubscriptionTimeSeriesUpdate` in `client.time_series.subscriptions.iterate_data` is now required and not optional.
+
 ## [6.11.0] - 2023-07-19
 ### Added
 - Support for Data Point Subscription, `client.time_series.subscriptions`. Note this is an experimental feature.
