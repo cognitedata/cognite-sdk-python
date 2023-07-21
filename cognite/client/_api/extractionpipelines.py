@@ -381,7 +381,7 @@ class ExtractionPipelineConfigsAPI(APIClient):
             Create a config revision::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.config import ExtractionPipelineConfig
+                >>> from cognite.client.data_classes import ExtractionPipelineConfig
                 >>> c = CogniteClient()
                 >>> res = c.extraction_pipelines.config.create(ExtractionPipelineConfig(external_id="extId", config="my config contents"))
         """
