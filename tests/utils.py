@@ -3,14 +3,16 @@ from __future__ import annotations
 import cProfile
 import functools
 import gzip
+import inspect
 import json
 import math
 import os
 import random
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, Type, cast
 
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
+from cognite.client.data_classes._base import CogniteResource
 from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS
 from cognite.client.utils._auxiliary import local_import
 from cognite.client.utils._text import random_string
@@ -221,3 +223,29 @@ def cdf_aggregate(
         .shift(-step)
         .iloc[::step]
     )
+
+
+def create_fake_cognite_resource(resource_cls: Type[CogniteResource]) -> CogniteResource:
+    signature = inspect.signature(resource_cls.__init__)
+    arguments: dict[str, Any] = {}
+    for name, parameter in signature.parameters.items():
+        if name == "self":
+            continue
+        if parameter.annotation is inspect.Parameter.empty:
+            raise ValueError(f"Parameter {name} of {resource_cls} is missing annotation")
+        if name == "external_id":
+            arguments[name] = random_cognite_external_ids(1)[0]
+        elif name == "id":
+            arguments[name] = random_cognite_ids(1)[0]
+        elif parameter.annotation in ["str", "Optional[str]"]:
+            arguments[name] = random_string(10)
+        elif parameter.annotation in ["int", "Optional[int]"]:
+            arguments[name] = random.randint(1, 100000)
+        elif parameter.annotation in ["float", "Optional[float]"]:
+            arguments[name] = random.random()
+        elif parameter.annotation in ["bool", "Optional[bool]"]:
+            arguments[name] = random.choice([True, False])
+        # else:
+        #     raise ValueError(f"Unsupported annotation {parameter.annotation} for parameter {name}")
+
+    return resource_cls(**arguments)

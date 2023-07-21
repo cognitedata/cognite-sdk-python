@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import json
 from decimal import Decimal
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Type
 from unittest import mock
 
 import pytest
+import yaml
 
 from cognite.client import ClientConfig, CogniteClient
 from cognite.client.credentials import Token
@@ -23,7 +24,7 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.events import Event, EventList
 from cognite.client.exceptions import CogniteMissingClientError
-from tests.utils import all_subclasses
+from tests.utils import all_subclasses, create_fake_cognite_resource
 
 
 class MyResource(CogniteResource):
@@ -216,6 +217,32 @@ class TestCogniteResource:
         mr = MyResource()
         with pytest.raises(CogniteMissingClientError):
             mr.use()
+
+    @pytest.mark.parametrize("cognite_resource_subclass", all_subclasses(CogniteResource))
+    def test_json_serialize(self, cognite_resource_subclass: Type[CogniteResource]):
+        # Arrange
+        instance = create_fake_cognite_resource(cognite_resource_subclass)
+
+        # Act
+        dumped = instance.dump()
+        json_serialised = json.dumps(dumped)
+        loaded = instance._load(json.loads(json_serialised))
+
+        # Assert
+        assert loaded == instance
+
+    @pytest.mark.parametrize("cognite_resource_subclass", all_subclasses(CogniteResource))
+    def test_yaml_serialize(self, cognite_resource_subclass: Type[CogniteResource]):
+        # Arrange
+        instance = create_fake_cognite_resource(cognite_resource_subclass)
+
+        # Act
+        dumped = instance.dump()
+        yaml_serialised = yaml.safe_dump(dumped)
+        loaded = instance._load(yaml.safe_load(yaml_serialised))
+
+        # Assert
+        assert loaded == instance
 
 
 class TestCogniteResourceList:
