@@ -21,6 +21,7 @@ from cognite.client.data_classes._base import (
     CogniteUpdate,
     PropertySpec,
 )
+from cognite.client.data_classes.events import Event, EventList
 from cognite.client.exceptions import CogniteMissingClientError
 from tests.utils import all_subclasses
 
@@ -238,6 +239,36 @@ class TestCogniteResourceList:
         resource_list = MyResourceList([MyResource(1), MyResource(2, 3)])
         expected_df = pd.DataFrame({"var_a": [1, 2], "var_b": [None, 3]})
         pd.testing.assert_frame_equal(resource_list.to_pandas(camel_case=False), expected_df)
+
+    @pytest.mark.dsl
+    def test_to_pandas_metadata(self):
+        import pandas as pd
+
+        event_list = EventList(
+            [
+                Event(external_id="ev1", metadata={"value1": 1, "value2": "hello"}),
+                Event(external_id="ev2", metadata={"value1": 2, "value2": "world"}),
+            ]
+        )
+
+        expected_df = pd.DataFrame(
+            data={"external_id": ["ev1", "ev2"], "metadata.value1": [1, 2], "metadata.value2": ["hello", "world"]},
+            # index=[0, 1],
+        )
+
+        actual_df = event_list.to_pandas(expand_metadata=True)
+        pd.testing.assert_frame_equal(expected_df, actual_df, check_like=True)
+
+    @pytest.mark.dsl
+    def test_to_pandas_metadata_cols_overlap(self):
+        event_list = EventList(
+            [
+                Event(external_id="ev1", metadata={"external_id": 1, "value2": "hello"}),
+                Event(external_id="ev2", metadata={"external_id": 2, "value2": "world"}),
+            ]
+        )
+        with pytest.raises(ValueError):
+            event_list.to_pandas(expand_metadata=True, metadata_prefix="")
 
     def test_load(self):
         resource_list = MyResourceList._load([{"varA": 1, "varB": 2}, {"varA": 2, "varB": 3}, {"varA": 3}])
