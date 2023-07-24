@@ -192,8 +192,6 @@ class DatapointsSubscriptionAPI(APIClient):
         Data can be ingested datapoints and time ranges where data is deleted. This endpoint will also return changes to
         the subscription itself, that is, if time series are added or removed from the subscription.
 
-        Current implementation is limited to always start from the beginning of the subscription histroy.
-
         Args:
             external_id (str): The external ID of the subscription.
             start (str, optional): When to start the iteration. If set to None, the iteration will start from the beginning.
