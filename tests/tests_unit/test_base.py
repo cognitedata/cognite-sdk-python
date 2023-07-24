@@ -253,7 +253,6 @@ class TestCogniteResourceList:
 
         expected_df = pd.DataFrame(
             data={"external_id": ["ev1", "ev2"], "metadata.value1": [1, 2], "metadata.value2": ["hello", "world"]},
-            # index=[0, 1],
         )
 
         actual_df = event_list.to_pandas(expand_metadata=True)

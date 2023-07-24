@@ -136,10 +136,7 @@ class CogniteResource:
         raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
 
     def to_pandas(
-        self,
-        expand: Sequence[str] = ("metadata",),
-        ignore: Optional[List[str]] = None,
-        camel_case: bool = False,
+        self, expand: Sequence[str] = ("metadata",), ignore: Optional[List[str]] = None, camel_case: bool = False
     ) -> pandas.DataFrame:
         """Convert the instance into a pandas DataFrame.
 
@@ -148,8 +145,6 @@ class CogniteResource:
                 Will expand metadata by default.
             ignore (List[str]): List of row keys to not include when converting to a data frame.
             camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`)
-            expand_metadata (bool): Expand the metadata column into separate columns.
-            metadata_prefix (str): Prefix to use for metadata columns.
 
         Returns:
             pandas.DataFrame: The dataframe.
@@ -305,11 +300,10 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
         df = pd.DataFrame(self.dump(camel_case=camel_case))
 
         if expand_metadata and "metadata" in df.columns:
-            meta_df = pd.json_normalize(df["metadata"])
-            meta_df_prefix_cols = [f"{metadata_prefix}{col}" for col in meta_df.columns]
-            if common_cols := set(meta_df_prefix_cols).intersection(set(df.columns)):
+            meta_df = pd.json_normalize(df["metadata"]).add_prefix(metadata_prefix)
+            if common_cols := set(meta_df.columns).intersection(set(df.columns)):
                 raise ValueError(f"Metadata contains columns that are already present in the dataframe: {common_cols}")
-            df = pd.concat([df.drop("metadata", axis=1), meta_df.add_prefix(metadata_prefix)], axis=1)
+            df = pd.concat([df.drop("metadata", axis=1), meta_df], axis=1)
 
         return convert_nullable_int_cols(df, camel_case)
 
