@@ -301,7 +301,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
 
         if expand_metadata and "metadata" in df.columns:
             meta_df = pd.json_normalize(df["metadata"]).add_prefix(metadata_prefix)
-            if common_cols := set(meta_df.columns).intersection(set(df.columns)):
+            if common_cols := meta_df.columns.intersection(df.columns):
                 raise ValueError(f"Metadata contains columns that are already present in the dataframe: {common_cols}")
             df = pd.concat([df.drop("metadata", axis=1), meta_df], axis=1)
 
