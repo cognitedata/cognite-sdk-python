@@ -293,7 +293,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
             metadata_prefix (str): Prefix to use for metadata columns.
 
         Returns:
-            pandas.DataFrame: The dataframe.
+            pandas.DataFrame: The Cognite resource as a dataframe.
         """
         pd = cast(Any, utils._auxiliary.local_import("pandas"))
         df = pd.DataFrame(self.dump(camel_case=camel_case))

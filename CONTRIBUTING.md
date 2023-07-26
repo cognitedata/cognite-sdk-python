@@ -14,7 +14,7 @@ We use [poetry](https://pypi.org/project/poetry/) for dependency- and virtual en
 Install dependencies and initialize a shell within the virtual environment, with these commands:
 
 ```bash
-poetry install
+poetry install -E all
 poetry shell
 ```
 
@@ -96,6 +96,7 @@ pytest -n4 --dist loadscope tests
 ```
 
 ### Documentation
+
 Build html files of documentation locally by running
 
 ```bash
