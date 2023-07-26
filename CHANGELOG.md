@@ -23,8 +23,7 @@ Changes are grouped as follows
 
 ### Added
 
-* Added option in `.to_pandas()` method to include expanding metadata columns into a dataframe as well as an option to prefix those columns. Default is to prepend ".metadata" and `expand_metadata` defaults to `False` in order to maintain backwards compatibility.
-* Updated installation process for contributing.
+- Added option `expand_metadata` to `.to_pandas()` method for list resource types which converts the metadata (if any) into separate columns in the returned dataframe. Also added `metadata_prefix` to control the naming of these columns (default is "metadata.").
 
 ## [6.11.1] - 2023-07-19
 
