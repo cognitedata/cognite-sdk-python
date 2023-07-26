@@ -58,9 +58,8 @@ class CogniteResponse:
 
     def __getattribute__(self, item: Any) -> Any:
         attr = super().__getattribute__(item)
-        if item == "_cognite_client":
-            if attr is None:
-                raise CogniteMissingClientError
+        if item == "_cognite_client" and attr is None:
+            raise CogniteMissingClientError
         return attr
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
@@ -104,9 +103,8 @@ class CogniteResource:
 
     def __getattribute__(self, item: Any) -> Any:
         attr = super().__getattribute__(item)
-        if item == "_cognite_client":
-            if attr is None:
-                raise CogniteMissingClientError
+        if item == "_cognite_client" and attr is None:
+            raise CogniteMissingClientError
         return attr
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
@@ -286,7 +284,8 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
         expand_metadata: bool = False,
         metadata_prefix: str = "metadata.",
     ) -> pandas.DataFrame:
-        """Convert the instance into a pandas DataFrame.
+        """Convert the instance into a pandas DataFrame. Note that if the metadata column is expanded and there are
+        keys in the metadata that already exist in the DataFrame, then an error will be raised by pd.join.
 
         Args:
             camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`)
@@ -298,14 +297,14 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
         """
         pd = cast(Any, utils._auxiliary.local_import("pandas"))
         df = pd.DataFrame(self.dump(camel_case=camel_case))
+        df = convert_nullable_int_cols(df, camel_case)
 
         if expand_metadata and "metadata" in df.columns:
-            meta_df = pd.json_normalize(df["metadata"]).add_prefix(metadata_prefix)
-            if common_cols := meta_df.columns.intersection(df.columns):
-                raise ValueError(f"Metadata contains columns that are already present in the dataframe: {common_cols}")
-            df = pd.concat([df.drop("metadata", axis=1), meta_df], axis=1)
-
-        return convert_nullable_int_cols(df, camel_case)
+            # Equivalent to pd.json_normalize(df["metadata"]) but is a faster implementation.
+            meta_series = (meta := df.pop("metadata"))[meta.notna()]
+            meta_df = pd.DataFrame(meta_series.values.tolist(), index=meta_series.index).add_prefix(metadata_prefix)
+            df = df.join(meta_df)
+        return df
 
     def _repr_html_(self) -> str:
         return notebook_display_with_fallback(self)
@@ -498,9 +497,8 @@ class CogniteFilter:
 
     def __getattribute__(self, item: Any) -> Any:
         attr = super().__getattribute__(item)
-        if item == "_cognite_client":
-            if attr is None:
-                raise CogniteMissingClientError
+        if item == "_cognite_client" and attr is None:
+            raise CogniteMissingClientError
         return attr
 
     @classmethod

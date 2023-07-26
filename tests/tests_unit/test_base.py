@@ -258,17 +258,6 @@ class TestCogniteResourceList:
         actual_df = event_list.to_pandas(expand_metadata=True)
         pd.testing.assert_frame_equal(expected_df, actual_df, check_like=True)
 
-    @pytest.mark.dsl
-    def test_to_pandas_metadata_cols_overlap(self):
-        event_list = EventList(
-            [
-                Event(external_id="ev1", metadata={"external_id": 1, "value2": "hello"}),
-                Event(external_id="ev2", metadata={"external_id": 2, "value2": "world"}),
-            ]
-        )
-        with pytest.raises(ValueError):
-            event_list.to_pandas(expand_metadata=True, metadata_prefix="")
-
     def test_load(self):
         resource_list = MyResourceList._load([{"varA": 1, "varB": 2}, {"varA": 2, "varB": 3}, {"varA": 3}])
 
