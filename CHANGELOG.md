@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.12.0] - 2023-07-26
+### Added
+- Added option `expand_metadata` to `.to_pandas()` method for list resource types which converts the metadata (if any) into separate columns in the returned dataframe. Also added `metadata_prefix` to control the naming of these columns (default is "metadata.").
+
 ## [6.11.1] - 2023-07-19
 ### Changed
 - Return type `SubscriptionTimeSeriesUpdate` in `client.time_series.subscriptions.iterate_data` is now required and not optional.

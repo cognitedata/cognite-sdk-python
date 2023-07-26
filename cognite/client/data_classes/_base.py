@@ -58,9 +58,8 @@ class CogniteResponse:
 
     def __getattribute__(self, item: Any) -> Any:
         attr = super().__getattribute__(item)
-        if item == "_cognite_client":
-            if attr is None:
-                raise CogniteMissingClientError
+        if item == "_cognite_client" and attr is None:
+            raise CogniteMissingClientError
         return attr
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
@@ -104,9 +103,8 @@ class CogniteResource:
 
     def __getattribute__(self, item: Any) -> Any:
         attr = super().__getattribute__(item)
-        if item == "_cognite_client":
-            if attr is None:
-                raise CogniteMissingClientError
+        if item == "_cognite_client" and attr is None:
+            raise CogniteMissingClientError
         return attr
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
@@ -161,7 +159,6 @@ class CogniteResource:
                     dumped.update(dumped.pop(key))
                 else:
                     raise AssertionError(f"Could not expand attribute '{key}'")
-
         df = pd.DataFrame(columns=["value"])
         for name, value in dumped.items():
             df.loc[name] = [value]
@@ -281,15 +278,33 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
             return self._id_to_item.get(id)
         return self._external_id_to_item.get(external_id)
 
-    def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:
-        """Convert the instance into a pandas DataFrame.
+    def to_pandas(
+        self,
+        camel_case: bool = False,
+        expand_metadata: bool = False,
+        metadata_prefix: str = "metadata.",
+    ) -> pandas.DataFrame:
+        """Convert the instance into a pandas DataFrame. Note that if the metadata column is expanded and there are
+        keys in the metadata that already exist in the DataFrame, then an error will be raised by pd.join.
+
+        Args:
+            camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`)
+            expand_metadata (bool): Expand the metadata column into separate columns.
+            metadata_prefix (str): Prefix to use for metadata columns.
 
         Returns:
-            pandas.DataFrame: The dataframe.
+            pandas.DataFrame: The Cognite resource as a dataframe.
         """
         pd = cast(Any, utils._auxiliary.local_import("pandas"))
         df = pd.DataFrame(self.dump(camel_case=camel_case))
-        return convert_nullable_int_cols(df, camel_case)
+        df = convert_nullable_int_cols(df, camel_case)
+
+        if expand_metadata and "metadata" in df.columns:
+            # Equivalent to pd.json_normalize(df["metadata"]) but is a faster implementation.
+            meta_series = df.pop("metadata").dropna()
+            meta_df = pd.DataFrame(meta_series.values.tolist(), index=meta_series.index).add_prefix(metadata_prefix)
+            df = df.join(meta_df)
+        return df
 
     def _repr_html_(self) -> str:
         return notebook_display_with_fallback(self)
@@ -482,9 +497,8 @@ class CogniteFilter:
 
     def __getattribute__(self, item: Any) -> Any:
         attr = super().__getattribute__(item)
-        if item == "_cognite_client":
-            if attr is None:
-                raise CogniteMissingClientError
+        if item == "_cognite_client" and attr is None:
+            raise CogniteMissingClientError
         return attr
 
     @classmethod
