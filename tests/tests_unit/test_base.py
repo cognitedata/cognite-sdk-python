@@ -256,7 +256,25 @@ class TestCogniteResourceList:
         )
 
         actual_df = event_list.to_pandas(expand_metadata=True)
-        pd.testing.assert_frame_equal(expected_df, actual_df, check_like=True)
+        pd.testing.assert_frame_equal(expected_df, actual_df, check_like=False)
+
+    @pytest.mark.dsl
+    def test_to_pandas_metadata_some_nulls(self):
+        import pandas as pd
+
+        event_list = EventList(
+            [Event(external_id="ev1", metadata={"val1": 1}), Event(external_id="ev2", metadata={"val2": 2})]
+        )
+        expected_df = pd.DataFrame(
+            data={
+                "external_id": ["ev1", "ev2"],
+                "metadata.val1": [1, None],
+                "metadata.val2": [None, 2],
+            }
+        )
+
+        actual_df = event_list.to_pandas(expand_metadata=True)
+        pd.testing.assert_frame_equal(expected_df, actual_df)
 
     def test_load(self):
         resource_list = MyResourceList._load([{"varA": 1, "varB": 2}, {"varA": 2, "varB": 3}, {"varA": 3}])
