@@ -301,7 +301,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
 
         if expand_metadata and "metadata" in df.columns:
             # Equivalent to pd.json_normalize(df["metadata"]) but is a faster implementation.
-            meta_series = (meta := df.pop("metadata"))[meta.notna()]
+            meta_series = df.pop("metadata").dropna()
             meta_df = pd.DataFrame(meta_series.values.tolist(), index=meta_series.index).add_prefix(metadata_prefix)
             df = df.join(meta_df)
         return df
