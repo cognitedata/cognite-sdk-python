@@ -4,13 +4,15 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Sequence, Tuple, Union, cast, final
 
+from typing_extensions import TypeAlias
+
 if TYPE_CHECKING:
     from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
 
 
-PropertyReference = Union[Tuple[str, ...], List[str]]
+PropertyReference: TypeAlias = Union[Tuple[str, ...], List[str]]
 
-RawValue = Union[str, float, bool, Sequence, Mapping[str, Any]]
+RawValue: TypeAlias = Union[str, float, bool, Sequence, Mapping[str, Any]]
 
 
 @dataclass
@@ -23,8 +25,8 @@ class ParameterValue:
     parameter: str
 
 
-FilterValue = Union[RawValue, PropertyReferenceValue, ParameterValue]
-FilterValueList = Union[Sequence[RawValue], PropertyReferenceValue, ParameterValue]
+FilterValue: TypeAlias = Union[RawValue, PropertyReferenceValue, ParameterValue]
+FilterValueList: TypeAlias = Union[Sequence[RawValue], PropertyReferenceValue, ParameterValue]
 
 
 def _dump_filter_value(filter_value: FilterValueList | FilterValue) -> Any:
