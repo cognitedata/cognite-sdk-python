@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+from abc import ABC
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 
@@ -10,8 +12,10 @@ from cognite.client.utils._text import convert_dict_to_case
 if TYPE_CHECKING:
     import pandas
 
+    from cognite.client import CogniteClient
 
-class VisionResource(CogniteResource):
+
+class VisionResource(ABC, CogniteResource):
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
@@ -51,6 +55,11 @@ class Point(VisionResource):
     x: float
     y: float
 
+    @classmethod
+    def _load(cls, resource: dict | str, cognite_client: Optional[CogniteClient] = None) -> Point:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        return cls(x=resource["x"], y=resource["y"])
+
 
 PointDict = Dict[str, float]
 
@@ -74,12 +83,22 @@ class BoundingBox(VisionResource):
     y_min: float
     y_max: float
 
+    @classmethod
+    def _load(cls, resource: dict | str, cognite_client: Optional[CogniteClient] = None) -> BoundingBox:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        return cls(x_min=resource["xMin"], x_max=resource["xMax"], y_min=resource["yMin"], y_max=resource["yMax"])
+
 
 @dataclass
 class CdfResourceRef(VisionResource):
     # A valid reference instance contains exactly one of these
     id: Optional[int] = None
     external_id: Optional[str] = None
+
+    @classmethod
+    def _load(cls, resource: dict | str, cognite_client: Optional[CogniteClient] = None) -> CdfResourceRef:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        return cls(id=resource.get("id"), external_id=resource.get("externalId"))
 
 
 @dataclass
@@ -90,6 +109,11 @@ class Polygon(VisionResource):
     def __post_init__(self) -> None:
         self.vertices = _process_vertices(self.vertices)
 
+    @classmethod
+    def _load(cls, resource: dict | str, cognite_client: Optional[CogniteClient] = None) -> Polygon:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        return cls(vertices=[Point._load(vertex) for vertex in resource["vertices"]])
+
 
 @dataclass
 class PolyLine(VisionResource):
@@ -98,3 +122,8 @@ class PolyLine(VisionResource):
 
     def __post_init__(self) -> None:
         self.vertices = _process_vertices(self.vertices)
+
+    @classmethod
+    def _load(cls, resource: dict | str, cognite_client: Optional[CogniteClient] = None) -> PolyLine:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        return cls(vertices=[Point._load(vertex) for vertex in resource["vertices"]])
