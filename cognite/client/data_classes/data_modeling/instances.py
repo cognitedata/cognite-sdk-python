@@ -26,6 +26,8 @@ from typing import (
     overload,
 )
 
+from typing_extensions import TypeAlias
+
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteResourceList,
@@ -48,9 +50,11 @@ from cognite.client.utils._text import convert_all_keys_to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
-PropertyValue = Union[str, int, float, bool, dict, List[str], List[int], List[float], List[bool], List[dict]]
-Space = str
-PropertyIdentifier = str
+
+
+PropertyValue: TypeAlias = Union[str, int, float, bool, dict, List[str], List[int], List[float], List[bool], List[dict]]
+Space: TypeAlias = str
+PropertyIdentifier: TypeAlias = str
 
 
 @dataclass
