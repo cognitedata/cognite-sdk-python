@@ -145,7 +145,7 @@ class FilterWithProperty(Filter):
         return {"property": self._property}
 
 
-class FilterWithPropertyAndValue(FilterWithProperty):
+class FilterWithPropertyAndValue(FilterWithProperty, ABC):
     _filter_name = "propertyAndValueFilter"
 
     def __init__(self, property: PropertyReference, value: FilterValue):
@@ -156,7 +156,7 @@ class FilterWithPropertyAndValue(FilterWithProperty):
         return {"property": self._property, "value": _dump_filter_value(self._value)}
 
 
-class FilterWithPropertyAndValueList(FilterWithProperty):
+class FilterWithPropertyAndValueList(FilterWithProperty, ABC):
     _filter_name = "propertyAndValueListFilter"
 
     def __init__(self, property: PropertyReference, values: FilterValueList):
