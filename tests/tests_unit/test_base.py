@@ -24,7 +24,8 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.events import Event, EventList
 from cognite.client.exceptions import CogniteMissingClientError
-from tests.utils import all_subclasses, create_fake_cognite_resource
+from cognite.client.testing import CogniteClientMock
+from tests.utils import FakeCogniteResourceGenerator, all_concrete_subclasses, all_subclasses
 
 
 class MyResource(CogniteResource):
@@ -139,6 +140,11 @@ class MyResponse(CogniteResponse):
         return self._cognite_client
 
 
+@pytest.fixture(scope="session")
+def cognite_mock_client() -> CogniteClientMock:
+    return CogniteClientMock()
+
+
 class TestCogniteResource:
     def test_dump(self):
         assert {"var_a": 1} == MyResource(1).dump()
@@ -218,31 +224,37 @@ class TestCogniteResource:
         with pytest.raises(CogniteMissingClientError):
             mr.use()
 
-    @pytest.mark.parametrize("cognite_resource_subclass", all_subclasses(CogniteResource))
-    def test_json_serialize(self, cognite_resource_subclass: Type[CogniteResource]):
+    @pytest.mark.parametrize("cognite_resource_subclass", all_concrete_subclasses(CogniteResource))
+    def test_json_serialize(self, cognite_resource_subclass: Type[CogniteResource], cognite_mock_client):
         # Arrange
-        instance = create_fake_cognite_resource(cognite_resource_subclass)
+        instance = FakeCogniteResourceGenerator(seed=42, cognite_client=cognite_mock_client).create(
+            cognite_resource_subclass
+        )
 
         # Act
-        dumped = instance.dump()
+        dumped = instance.dump(camel_case=True)
         json_serialised = json.dumps(dumped)
-        loaded = instance._load(json.loads(json_serialised))
+        json_deserialised = json.loads(json_serialised)
+        loaded = instance._load(json_deserialised, cognite_client=cognite_mock_client)
 
         # Assert
-        assert loaded == instance
+        assert loaded.dump() == instance.dump()
 
-    @pytest.mark.parametrize("cognite_resource_subclass", all_subclasses(CogniteResource))
-    def test_yaml_serialize(self, cognite_resource_subclass: Type[CogniteResource]):
+    @pytest.mark.parametrize("cognite_resource_subclass", all_concrete_subclasses(CogniteResource))
+    def test_yaml_serialize(self, cognite_resource_subclass: Type[CogniteResource], cognite_mock_client):
         # Arrange
-        instance = create_fake_cognite_resource(cognite_resource_subclass)
+        instance = FakeCogniteResourceGenerator(seed=66, cognite_client=cognite_mock_client).create(
+            cognite_resource_subclass
+        )
 
         # Act
-        dumped = instance.dump()
+        dumped = instance.dump(camel_case=True)
         yaml_serialised = yaml.safe_dump(dumped)
-        loaded = instance._load(yaml.safe_load(yaml_serialised))
+        yaml_deserialised = yaml.safe_load(yaml_serialised)
+        loaded = instance._load(yaml_deserialised, cognite_client=cognite_mock_client)
 
         # Assert
-        assert loaded == instance
+        assert loaded.dump() == instance.dump()
 
 
 class TestCogniteResourceList:

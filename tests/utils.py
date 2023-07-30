@@ -1,27 +1,37 @@
 from __future__ import annotations
 
+import abc
 import cProfile
+import enum
 import functools
 import gzip
+import importlib
 import inspect
 import json
 import math
 import os
 import random
+import re
+import string
+from collections import Counter
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Literal, Type, cast
+from typing import TYPE_CHECKING, Any, Literal, Type, TypeVar, cast, get_args, get_origin
 
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
-from cognite.client.data_classes._base import CogniteResource
-from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS
+from cognite.client.data_classes import DataPointSubscriptionCreate, Relationship, filters
+from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, T_CogniteResource
+from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS, Datapoints, DatapointsArray
+from cognite.client.testing import CogniteClientMock
 from cognite.client.utils._auxiliary import local_import
 from cognite.client.utils._text import random_string
 
 if TYPE_CHECKING:
     import pandas
 
+T_Type = TypeVar("T_Type", bound=type)
 
-def all_subclasses(base: type) -> list[type]:
+
+def all_subclasses(base: T_Type) -> list[T_Type]:
     """Returns a list (without duplicates) of all subclasses of a given class, sorted on import-path-name.
     Ignores classes not part of the main library, e.g. subclasses part of tests.
     """
@@ -32,6 +42,14 @@ def all_subclasses(base: type) -> list[type]:
         ),
         key=str,
     )
+
+
+def all_concrete_subclasses(base: T_Type) -> list[T_Type]:
+    return [
+        sub
+        for sub in all_subclasses(base)
+        if all(base is not abc.ABC for base in sub.__bases__) and not inspect.isabstract(sub)
+    ]
 
 
 def all_mock_children(mock, parent_name=()):
@@ -225,27 +243,211 @@ def cdf_aggregate(
     )
 
 
-def create_fake_cognite_resource(resource_cls: Type[CogniteResource]) -> CogniteResource:
-    signature = inspect.signature(resource_cls.__init__)
-    arguments: dict[str, Any] = {}
-    for name, parameter in signature.parameters.items():
-        if name == "self":
-            continue
-        if parameter.annotation is inspect.Parameter.empty:
-            raise ValueError(f"Parameter {name} of {resource_cls} is missing annotation")
-        if name == "external_id":
-            arguments[name] = random_cognite_external_ids(1)[0]
-        elif name == "id":
-            arguments[name] = random_cognite_ids(1)[0]
-        elif parameter.annotation in ["str", "Optional[str]"]:
-            arguments[name] = random_string(10)
-        elif parameter.annotation in ["int", "Optional[int]"]:
-            arguments[name] = random.randint(1, 100000)
-        elif parameter.annotation in ["float", "Optional[float]"]:
-            arguments[name] = random.random()
-        elif parameter.annotation in ["bool", "Optional[bool]"]:
-            arguments[name] = random.choice([True, False])
-        # else:
-        #     raise ValueError(f"Unsupported annotation {parameter.annotation} for parameter {name}")
+T_Object = TypeVar("T_Object", bound=object)
 
-    return resource_cls(**arguments)
+
+class FakeCogniteResourceGenerator:
+    def __init__(self, seed: int | None = None, cognite_client: CogniteClientMock | None = None):
+        self._random = random.Random(seed)
+        self._cognite_client = cognite_client or CogniteClientMock()
+
+    def create(self, resource_cls: Type[T_CogniteResource]) -> T_CogniteResource:
+        return self._create(resource_cls)
+
+    def _create(self, object_cls: Type[T_Object]) -> T_Object:
+        signature = inspect.signature(object_cls.__init__)
+        keyword_arguments: dict[str, Any] = {}
+        positional_arguments: list[Any] = []
+        for name, parameter in signature.parameters.items():
+            if name == "self":
+                continue
+            elif name == "args" or name == "kwargs":
+                # Skipping generic arguments.
+                continue
+            elif parameter.annotation is inspect.Parameter.empty:
+                raise ValueError(f"Parameter {name} of {object_cls.__name__} is missing annotation")
+
+            annotation = str(parameter.annotation)
+            if name == "_" and annotation == "Any":
+                # This is used to goble up extra arguments in the data modeling read classes.
+                continue
+
+            value = self._create_complex_value(name, annotation, object_cls)
+            if parameter.kind in {parameter.POSITIONAL_ONLY, parameter.VAR_POSITIONAL}:
+                positional_arguments.append(value)
+            else:
+                keyword_arguments[name] = value
+
+        # Special cases
+        if object_cls is DataPointSubscriptionCreate:
+            # DataPointSubscriptionCreate requires either timeseries_ids or filter
+            keyword_arguments.pop("filter", None)
+        elif object_cls is Relationship:
+            # Relationship must set the source and target type consistently with the source and target
+            keyword_arguments["source_type"] = type(keyword_arguments["source"]).__name__
+            keyword_arguments["target_type"] = type(keyword_arguments["target"]).__name__
+        elif object_cls is Datapoints:
+            # All lists have to be equal in length and only value and timestamp
+            keyword_arguments["timestamp"] = keyword_arguments["timestamp"][:1]
+            keyword_arguments["value"] = keyword_arguments["value"][:1]
+            for key in list(keyword_arguments):
+                if isinstance(keyword_arguments[key], list) and key not in {"timestamp", "value"}:
+                    keyword_arguments.pop(key)
+        elif object_cls is DatapointsArray:
+            keyword_arguments["is_string"] = False
+        return object_cls(*positional_arguments, **keyword_arguments)
+
+    def _create_complex_value(self, name: str, annotation: str, resource_cls: Type[CogniteResource]) -> Any:
+        while True:
+            is_dict = False
+            is_list = False
+            if annotation.startswith("Optional[") and annotation.endswith("]"):
+                annotation = annotation[9:-1]
+            elif (annotation.startswith("Union[") and annotation.endswith("]")) or self._is_vertical_union(annotation):
+                if "|" in annotation:
+                    alternatives = [a.strip() for a in annotation.split("|")]
+                else:
+                    annotation = annotation[6:-1]
+                    alternatives = [a.strip() for a in re.split(r",\s*(?![^[]*])", annotation)]
+                if "LabelDefinition" in alternatives:
+                    annotation = "LabelDefinition"
+                else:
+                    annotation = next((a for a in alternatives if "Any" not in a and "None" not in a), None)
+                    annotation = annotation or alternatives[0]
+            elif annotation.lower().startswith("list[") and annotation.endswith("]"):
+                annotation = annotation[5:-1]
+                is_list = True
+            elif annotation.startswith("Sequence[") and annotation.endswith("]"):
+                annotation = annotation[9:-1]
+                is_list = True
+            elif annotation.startswith("SequenceType[") and annotation.endswith("]"):
+                annotation = annotation[13:-1]
+                is_list = True
+            elif annotation.startswith("Mapping[") and annotation.endswith("]"):
+                annotation = annotation[8:-1]
+                is_dict = True
+            elif annotation.startswith("MutableMapping[") and annotation.endswith("]"):
+                annotation = annotation[15:-1]
+                is_dict = True
+            elif annotation.lower().startswith("dict[") and annotation.endswith("]"):
+                annotation = annotation[5:-1]
+                is_dict = True
+            elif annotation.lower().startswith("tuple[") and annotation.endswith("]"):
+                annotation = annotation[6:-1]
+                annotation = annotation.split(",")[0]
+            else:
+                return self._create_simple_value(name, annotation, resource_cls)
+
+            if is_dict:
+                key, value = (x.strip() for x in annotation.split(",", maxsplit=1))
+                return {
+                    self._create_complex_value(name, key, resource_cls): self._create_complex_value(
+                        name, value, resource_cls
+                    )
+                    for _ in range(self._random.randint(1, 3))
+                }
+            elif is_list:
+                return [
+                    self._create_complex_value(name, annotation, resource_cls)
+                    for _ in range(self._random.randint(1, 3))
+                ]
+
+    def _create_simple_value(
+        self, name: str, annotation: str, resource_cls: Type[CogniteResource]
+    ) -> str | int | float | bool | dict | CogniteResource | None | Literal:
+        # Primitive types
+        if name == "external_id" and annotation == "str":
+            return self._random_string(50, sample_from=string.ascii_uppercase + string.digits)
+        elif name == "id" and annotation == "int":
+            return self._random.choice(range(1, MAX_VALID_INTERNAL_ID + 1))
+        elif annotation == "str" or annotation == "Any":
+            return self._random_string()
+        elif annotation == "int":
+            return self._random.randint(1, 100000)
+        elif annotation == "float":
+            return self._random.random()
+        elif annotation == "bool":
+            return self._random.choice([True, False])
+        elif annotation.lower() == "dict":
+            return {self._random_string(10): self._random_string(10) for _ in range(self._random.randint(1, 3))}
+        elif annotation == "CogniteClient":
+            return self._cognite_client
+        elif annotation.startswith("Literal[") and annotation.endswith("]"):
+            annotation = annotation[8:-1]
+            if annotation.startswith("(") and annotation.endswith(")"):
+                annotation = annotation[1:-1]
+            alternatives = [a.strip()[1:-1] for a in annotation.split(",")]
+            return self._random.choice(alternatives)
+        elif annotation == "NumpyFloat64Array":
+            import numpy as np
+
+            return np.array([self._random.random() for _ in range(3)], dtype=np.float64)
+        elif annotation == "NumpyInt64Array":
+            import numpy as np
+
+            return np.array([self._random.randint(1, 100) for _ in range(3)], dtype=np.int64)
+        elif annotation == "NumpyDatetime64NSArray":
+            import numpy as np
+
+            return np.array([self._random.randint(1, 1704067200000) for _ in range(3)], dtype="datetime64[ms]")
+
+        resource_module_vars = vars(importlib.import_module(resource_cls.__module__))
+        annotation_cls = resource_module_vars.get(annotation)
+        is_class = inspect.isclass(annotation_cls)
+        if get_origin(annotation_cls) is not None:
+            annotation = self._get_typing_args(annotation_cls)
+            return self._create_complex_value(name, annotation, resource_cls)
+        elif issubclass(resource_cls, CogniteResourceList):
+            return [self._create(resource_cls._RESOURCE) for _ in range(self._random.randint(1, 3))]
+        elif isinstance(annotation_cls, enum.EnumMeta):
+            return self._random.choice(list(annotation_cls))
+        elif isinstance(annotation_cls, TypeVar):
+            annotation = self._get_typing_args(annotation_cls.__bound__)
+            return self._create_complex_value(name, annotation, resource_cls)
+        elif is_class and issubclass(annotation_cls, (str, int, float, bool)):
+            return self._create_simple_value(name, annotation_cls.__name__, resource_cls)
+        elif is_class and issubclass(annotation_cls, CogniteResource):
+            return self.create(annotation_cls)
+        elif is_class and any(base is abc.ABC for base in annotation_cls.__bases__):
+            implementations = all_concrete_subclasses(annotation_cls)
+            if annotation == "Filter":
+                # Remove filters which are only used by data modeling classes
+                implementations.remove(filters.HasData)
+                implementations.remove(filters.Nested)
+            selected = self._random.choice(implementations)
+            return self._create(selected)
+        elif is_class:
+            return self._create(annotation_cls)
+
+        raise NotImplementedError(
+            f"Unsupported annotation {annotation!r} for parameter {name!r} in {resource_cls.__name__!r}."
+            " Please extend this function to support generating fake data for this type."
+        )
+
+    def _random_string(
+        self,
+        size: int | None = None,
+        sample_from: str = string.ascii_uppercase + string.digits + string.ascii_lowercase + string.punctuation,
+    ) -> str:
+        k = size or self._random.randint(1, 100)
+        return "".join(self._random.choices(sample_from, k=k))
+
+    @classmethod
+    def _is_vertical_union(cls, annotation: str) -> bool:
+        if "|" not in annotation:
+            return False
+        parts = [p.strip() for p in annotation.split("|")]
+        for part in parts:
+            counts = Counter(part)
+            if counts.get("[", 0) != counts.get("]", 0):
+                return False
+        return True
+
+    @classmethod
+    def _get_typing_args(cls, typing_cls: Any) -> str:
+        args = get_args(typing_cls)
+        arg = args[0]
+        if str(arg).startswith("typing."):
+            return str(arg).replace("typing.", "")
+        else:
+            return arg.__name__
