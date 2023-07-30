@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.utils._text import convert_all_keys_to_snake_case
@@ -59,6 +59,12 @@ class TransformationSchemaColumn(CogniteResource):
         self.type = type
         self.nullable = nullable
         self._cognite_client = cast("CogniteClient", cognite_client)
+
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        output = super().dump(camel_case)
+        if self.type:
+            output["type"] = self.type.type
+        return output
 
     @classmethod
     def _load(
