@@ -71,7 +71,21 @@ class NodeOrEdgeData:
 
     @classmethod
     def load(cls, data: dict) -> NodeOrEdgeData:
-        return cls(**convert_all_keys_to_snake_case(data))
+        try:
+            source_type = data["source"]["type"]
+        except KeyError as e:
+            raise ValueError("source must be a dict with a type key") from e
+        source: ContainerId | ViewId
+        if source_type == "container":
+            source = ContainerId.load(data["source"])
+        elif source_type == "view":
+            source = ViewId.load(data["source"])
+        else:
+            raise ValueError(f"source type must be container or view, but was {source_type}")
+        return cls(
+            source=source,
+            properties=data["properties"],
+        )
 
     def dump(self, camel_case: bool = False) -> dict:
         output: Dict[str, Any] = {"properties": dict(self.properties.items())}
