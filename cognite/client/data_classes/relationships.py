@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import copy
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Union, cast
 from typing import Sequence as SequenceType
 
 from cognite.client.data_classes._base import (
@@ -51,10 +51,10 @@ class Relationship(CogniteResource):
         self,
         external_id: Optional[str] = None,
         source_external_id: Optional[str] = None,
-        source_type: Optional[str] = None,
+        source_type: Optional[Literal["Asset", "TimeSeries", "Sequence", "File", "Event"] | str] = None,
         source: Optional[Union[Asset, TimeSeries, FileMetadata, Sequence, Event, Dict]] = None,
         target_external_id: Optional[str] = None,
-        target_type: Optional[str] = None,
+        target_type: Optional[Literal["Asset", "TimeSeries", "Sequence", "File", "Event"] | str] = None,
         target: Optional[Union[Asset, TimeSeries, FileMetadata, Sequence, Event, Dict]] = None,
         start_time: Optional[int] = None,
         end_time: Optional[int] = None,
@@ -93,11 +93,15 @@ class Relationship(CogniteResource):
 
     @classmethod
     def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> Relationship:
-        instance = super()._load(resource, cognite_client)
-        if instance.source is not None:
-            instance.source = instance._convert_resource(instance.source, instance.source_type)  # type: ignore
-        if instance.target is not None:
-            instance.target = instance._convert_resource(instance.target, instance.target_type)  # type: ignore
+        instance: Relationship = cast(Relationship, super()._load(resource, cognite_client))
+        if instance.source is not None and isinstance(instance.source, dict):
+            instance.source = instance._convert_resource(
+                instance.source, instance.source_type or type(instance.source).__name__
+            )
+        if instance.target is not None and isinstance(instance.target, dict):
+            instance.target = instance._convert_resource(
+                instance.target, instance.source_type or type(instance.target).__name__
+            )
         instance.labels = Label._load_list(instance.labels)
         return instance
 
@@ -105,20 +109,26 @@ class Relationship(CogniteResource):
         result: dict[str, Any] = super().dump(camel_case)
         if self.labels is not None:
             result["labels"] = [label.dump(camel_case) for label in self.labels]
+        if self.source is not None and not isinstance(self.source, dict):
+            result["source"] = self.source.dump(camel_case)
+        if self.target is not None and not isinstance(self.target, dict):
+            result["target"] = self.target.dump(camel_case)
         return result
 
     def _convert_resource(
-        self, resource: Dict[str, Any], resource_type: Optional[str]
-    ) -> Union[Dict[str, Any], CogniteResource]:
-        resource_map: Dict[str, Type[CogniteResource]] = {
-            "timeSeries": TimeSeries,
-            "asset": Asset,
-            "sequence": Sequence,
-            "file": FileMetadata,
-            "event": Event,
-        }
-        if resource_type in resource_map:
-            return resource_map[resource_type]._load(resource, self._cognite_client)
+        self, resource: Dict[str, Any], resource_type: str
+    ) -> dict[str, Any] | TimeSeries | Asset | Sequence | FileMetadata | Event:
+        resource_type = resource_type.lower()
+        if resource_type == "timeseries":
+            return TimeSeries._load(resource, cognite_client=self._cognite_client)
+        if resource_type == "asset":
+            return Asset._load(resource, cognite_client=self._cognite_client)
+        if resource_type == "sequence":
+            return Sequence._load(resource, cognite_client=self._cognite_client)
+        if resource_type == "file":
+            return FileMetadata._load(resource, cognite_client=self._cognite_client)
+        if resource_type == "event":
+            return Event._load(resource, cognite_client=self._cognite_client)
         return resource
 
 
