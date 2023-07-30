@@ -76,13 +76,13 @@ class PropertyType(ABC):
         elif type_ == "sequence":
             return SequenceReference(**data)
         elif type_ == "direct":
-            return DirectRelation(**data)
+            return DirectRelation.load(data)
 
         raise ValueError(f"Invalid type {type_}.")
 
 
 @dataclass
-class ListablePropertyType(PropertyType):
+class ListablePropertyType(PropertyType, ABC):
     _type = "listable"
     is_list: bool = False
 
@@ -171,7 +171,4 @@ class DirectRelation(PropertyType):
 
     @classmethod
     def load(cls, data: dict) -> DirectRelation:
-        output = cls(**convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"type"})))
-        if isinstance(data.get("container"), dict):
-            output.container = ContainerId.load(data["container"])
-        return output
+        return cls(container=ContainerId.load(data["container"]))
