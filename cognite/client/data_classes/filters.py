@@ -110,6 +110,11 @@ class Filter(ABC):
                 property=filter_body["property"],
                 values=cast(FilterValueList, _load_filter_value(filter_body["values"])),
             )
+        elif filter_name == ContainsAll._filter_name:
+            return ContainsAll(
+                property=filter_body["property"],
+                values=cast(FilterValueList, _load_filter_value(filter_body["values"])),
+            )
         else:
             raise ValueError(f"Unknown filter type: {filter_name}")
 
@@ -125,7 +130,7 @@ class Filter(ABC):
         return output
 
 
-class CompoundFilter(Filter):
+class CompoundFilter(Filter, ABC):
     _filter_name = "compound"
 
     def __init__(self, *filters: Filter):
@@ -135,7 +140,7 @@ class CompoundFilter(Filter):
         return [filter_.dump() for filter_ in self._filters]
 
 
-class FilterWithProperty(Filter):
+class FilterWithProperty(Filter, ABC):
     _filter_name = "propertyFilter"
 
     def __init__(self, property: PropertyReference):
