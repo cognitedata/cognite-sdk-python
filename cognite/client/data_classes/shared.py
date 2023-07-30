@@ -1,9 +1,13 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Sequence, Union, cast
+
+from typing_extensions import TypeAlias
 
 from cognite.client.data_classes._base import CognitePropertyClassUtil
 from cognite.client.utils._text import convert_all_keys_to_camel_case
+
+Number: TypeAlias = Union[int, float]
 
 
 class TimestampRange(dict):
@@ -117,12 +121,15 @@ class Geometry(dict):
     def __init__(
         self,
         type: Literal["Point", "MultiPoint", "LineString", "MultiLineString", "Polygon", "MultiPolygon"],
-        coordinates: List,
+        coordinates: Sequence[Number]
+        | Sequence[Sequence[Number]]
+        | Sequence[Sequence[Sequence[Number]]]
+        | Sequence[Sequence[Sequence[Sequence[Number]]]],
     ):
         if type not in self._VALID_TYPES:
             raise ValueError(f"type must be one of {self._VALID_TYPES}")
         self.type = type
-        self.coordinates = coordinates
+        self.coordinates = cast(list, coordinates)
 
     type = CognitePropertyClassUtil.declare_property("type")
     coordinates = CognitePropertyClassUtil.declare_property("coordinates")
