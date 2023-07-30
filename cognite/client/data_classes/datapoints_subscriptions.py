@@ -4,6 +4,8 @@ import json
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Optional, Type
 
+from typing_extensions import TypeAlias
+
 from cognite.client.data_classes import Datapoints, filters
 from cognite.client.data_classes._base import (
     CogniteListUpdate,
@@ -21,7 +23,7 @@ from cognite.client.utils._text import convert_all_keys_to_snake_case
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
-ExternalId = str
+ExternalId: TypeAlias = str
 
 _FILTERS_SUPPORTED: set[type[Filter]] = {
     filters.And,
