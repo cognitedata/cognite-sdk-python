@@ -326,23 +326,25 @@ class MappedProperty(ViewProperty):
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> MappedProperty:
-        output = cls(**convert_all_keys_to_snake_case(data))
-        if isinstance(data.get("container"), dict):
-            output.container = ContainerId.load(data["container"])
-        if "type" in data:
-            if data["type"].get("type") == "direct":
-                type_data = data["type"]
-                source = type_data.pop("source", None)
-                output.type = DirectRelation.load(type_data)
-                output.source = ViewId.load(source) if source else None
-            else:
-                output.type = PropertyType.load(data["type"])
-        return output
+        type_ = data["type"]
+        source = type_.pop("source", None)
+
+        return cls(
+            container=ContainerId.load(data["container"]),
+            container_property_identifier=data["containerPropertyIdentifier"],
+            type=PropertyType.load(type_),
+            nullable=data["nullable"],
+            auto_increment=data["autoIncrement"],
+            source=ViewId.load(source) if (source := source or data.get("source")) else None,
+            default_value=data.get("defaultValue"),
+            name=data.get("name"),
+            description=data.get("description"),
+        )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = asdict(self)
         output["type"] = self.type.dump(camel_case)
-        if self.source:
+        if self.source and isinstance(self.type, DirectRelation):
             output["type"]["source"] = output.pop("source", None)
         if camel_case:
             return convert_all_keys_to_camel_case_recursive(output)
