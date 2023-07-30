@@ -122,16 +122,18 @@ class CogniteResource:
     def _load(
         cls: Type[T_CogniteResource], resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None
     ) -> T_CogniteResource:
-        if isinstance(resource, str):
-            return cls._load(json.loads(resource), cognite_client=cognite_client)
-        elif isinstance(resource, Dict):
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        if not isinstance(resource, dict):
+            raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
+        try:
             instance = cls(cognite_client=cognite_client)
-            for key, value in resource.items():
-                snake_case_key = to_snake_case(key)
-                if hasattr(instance, snake_case_key):
-                    setattr(instance, snake_case_key, value)
-            return instance
-        raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
+        except TypeError:
+            instance = cls()
+        for key, value in resource.items():
+            snake_case_key = to_snake_case(key)
+            if hasattr(instance, snake_case_key):
+                setattr(instance, snake_case_key, value)
+        return instance
 
     def to_pandas(
         self, expand: Sequence[str] = ("metadata",), ignore: Optional[List[str]] = None, camel_case: bool = False
