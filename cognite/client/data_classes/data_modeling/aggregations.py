@@ -128,7 +128,7 @@ class AggregatedValue(ABC):
 
 
 @dataclass
-class AggregatedNumberedValue(AggregatedValue):
+class AggregatedNumberedValue(AggregatedValue, ABC):
     _aggregate: ClassVar[str] = "number"
 
     value: float
