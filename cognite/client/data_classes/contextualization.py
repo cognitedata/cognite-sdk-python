@@ -390,7 +390,7 @@ class DiagramConvertItem(CogniteResource):
         self,
         file_id: Optional[int] = None,
         file_external_id: Optional[str] = None,
-        results: Optional[list] = None,
+        results: Optional[list[Any]] = None,
         cognite_client: Optional[CogniteClient] = None,
     ):
         self.file_id = file_id
@@ -460,7 +460,7 @@ class DiagramDetectItem(CogniteResource):
         self,
         file_id: Optional[int] = None,
         file_external_id: Optional[str] = None,
-        annotations: Optional[list] = None,
+        annotations: Optional[list[Any]] = None,
         error_message: Optional[str] = None,
         cognite_client: Optional[CogniteClient] = None,
         page_range: Optional[Dict[str, int]] = None,
