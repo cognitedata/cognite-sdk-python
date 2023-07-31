@@ -2,7 +2,18 @@ from __future__ import annotations
 
 import json
 import math
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Tuple, Union, cast
+from dataclasses import dataclass
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Tuple,
+    Union,
+    cast,
+)
 from typing import Sequence as SequenceType
 
 from cognite.client import utils
@@ -318,6 +329,12 @@ class SequenceList(CogniteResourceList[Sequence]):
     _RESOURCE = Sequence
 
 
+@dataclass
+class Row:
+    row_number: int
+    value: int | float | str
+
+
 class SequenceData(CogniteResource):
     """An object representing a list of rows from a sequence.
 
@@ -334,14 +351,14 @@ class SequenceData(CogniteResource):
         self,
         id: Optional[int] = None,
         external_id: Optional[str] = None,
-        rows: Optional[SequenceType[dict]] = None,
+        rows: Optional[SequenceType[Row | dict]] = None,
         row_numbers: Optional[SequenceType[int]] = None,
         values: Optional[SequenceType[SequenceType[Union[int, str, float]]]] = None,
         columns: Optional[SequenceType[Dict[str, Any]]] = None,
     ):
         if rows:
-            row_numbers = [r["rowNumber"] for r in rows]
-            values = [r["values"] for r in rows]
+            row_numbers = [r["rowNumber"] if isinstance(r, dict) else r.row_number for r in rows]
+            values = [r["values"] if isinstance(r, dict) else r.value for r in rows]
         self.id = id
         self.external_id = external_id
         self.row_numbers = row_numbers or []
@@ -409,6 +426,18 @@ class SequenceData(CogniteResource):
         if camel_case:
             dumped = convert_all_keys_to_camel_case(dumped)
         return {key: value for key, value in dumped.items() if value is not None}
+
+    @classmethod
+    def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> SequenceData:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        return cls(
+            id=resource.get("id"),
+            external_id=resource.get("externalId"),
+            columns=resource.get("columns"),
+            rows=resource.get("rows"),
+            row_numbers=resource.get("rowNumbers"),
+            values=resource.get("values"),
+        )
 
     def to_pandas(self, column_names: str = "columnExternalId") -> pandas.DataFrame:  # type: ignore[override]
         """Convert the sequence data into a pandas DataFrame.
