@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, CogniteResponse
@@ -192,3 +193,14 @@ class ClientCredentials(CogniteResource):
     def __init__(self, client_id: str, client_secret: str):
         self.client_id = client_id
         self.client_secret = client_secret
+
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        return {
+            ("clientId" if camel_case else "client_id"): self.client_id,
+            ("clientSecret" if camel_case else "client_secret"): self.client_secret,
+        }
+
+    @classmethod
+    def _load(cls, resource: dict | str, cognite_client: Optional[CogniteClient] = None) -> ClientCredentials:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        return cls(client_id=resource["clientId"], client_secret=resource["clientSecret"])
