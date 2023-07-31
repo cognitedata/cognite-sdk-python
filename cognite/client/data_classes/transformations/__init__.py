@@ -546,12 +546,10 @@ class TransformationPreviewResult(CogniteResource):
     def _load(
         cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None
     ) -> TransformationPreviewResult:
-        instance = super()._load(resource, cognite_client)
-        if isinstance(instance.schema, Dict):
-            items = instance.schema.get("items")
-            if items is not None:
-                instance.schema = TransformationSchemaColumnList._load(items, cognite_client=cognite_client)
-        if isinstance(instance.results, Dict):
+        instance = cast(TransformationPreviewResult, super()._load(resource, cognite_client))
+        if isinstance(instance.schema, list):
+            instance.schema = TransformationSchemaColumnList._load(instance.schema, cognite_client=cognite_client)
+        if isinstance(instance.results, dict):
             items = instance.results.get("items")
             if items is not None:
                 instance.results = items
