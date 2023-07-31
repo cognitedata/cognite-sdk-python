@@ -447,6 +447,21 @@ class GraphQlResponse(CogniteResource):
         self.errors = errors
         self._cognite_client = cast("CogniteClient", cognite_client)
 
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        if self.errors:
+            output["errors"] = [error.dump(camel_case) for error in self.errors]
+        return output
+
+    @classmethod
+    def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> GraphQlResponse:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        return cls(
+            data=resource.get("data"),
+            errors=[GraphQlError._load(error) for error in resource.get("errors", [])],
+            cognite_client=cognite_client,
+        )
+
 
 class TemplateInstanceList(CogniteResourceList[TemplateInstance]):
     _RESOURCE = TemplateInstance
