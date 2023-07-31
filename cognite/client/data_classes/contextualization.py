@@ -725,6 +725,35 @@ class FeatureParameters(VisionResource):
     industrial_object_detection_parameters: Optional[IndustrialObjectDetectionParameters] = None
     personal_protective_equipment_detection_parameters: Optional[PersonalProtectiveEquipmentDetectionParameters] = None
 
+    @classmethod
+    def _load(cls, data: str | dict[str, Any], cognite_client: Any = None) -> FeatureParameters:
+        data = json.loads(data) if isinstance(data, str) else data
+        return cls(
+            text_detection_parameters=TextDetectionParameters._load(text_detection_parameters)
+            if (text_detection_parameters := data.get("textDetectionParameters"))
+            else None,
+            asset_tag_detection_parameters=AssetTagDetectionParameters._load(asset_tag_detection_parameters)
+            if (asset_tag_detection_parameters := data.get("assetTagDetectionParameters"))
+            else None,
+            people_detection_parameters=PeopleDetectionParameters._load(people_detection_parameters)
+            if (people_detection_parameters := data.get("peopleDetectionParameters"))
+            else None,
+            industrial_object_detection_parameters=IndustrialObjectDetectionParameters._load(
+                industrial_object_detection_parameters
+            )
+            if (industrial_object_detection_parameters := data.get("industrialObjectDetectionParameters"))
+            else None,
+            personal_protective_equipment_detection_parameters=PersonalProtectiveEquipmentDetectionParameters._load(
+                personal_protective_equipment_detection_parameters
+            )
+            if (
+                personal_protective_equipment_detection_parameters := data.get(
+                    "personalProtectiveEquipmentDetectionParameters"
+                )
+            )
+            else None,
+        )
+
 
 class VisionJob(ContextualizationJob):
     def update_status(self) -> str:
