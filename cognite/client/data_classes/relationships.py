@@ -95,12 +95,12 @@ class Relationship(CogniteResource):
     def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> Relationship:
         instance: Relationship = cast(Relationship, super()._load(resource, cognite_client))
         if instance.source is not None and isinstance(instance.source, dict):
-            instance.source = instance._convert_resource(
-                instance.source, instance.source_type or type(instance.source).__name__
+            instance.source = cls._convert_resource(
+                instance.source, instance.source_type or type(instance.source).__name__, cognite_client
             )
         if instance.target is not None and isinstance(instance.target, dict):
-            instance.target = instance._convert_resource(
-                instance.target, instance.source_type or type(instance.target).__name__
+            instance.target = cls._convert_resource(
+                instance.target, instance.source_type or type(instance.target).__name__, cognite_client
             )
         instance.labels = Label._load_list(instance.labels)
         return instance
@@ -115,20 +115,21 @@ class Relationship(CogniteResource):
             result["target"] = self.target.dump(camel_case)
         return result
 
+    @classmethod
     def _convert_resource(
-        self, resource: Dict[str, Any], resource_type: str
+        cls, resource: Dict[str, Any], resource_type: str, cognite_client: Optional[CogniteClient] = None
     ) -> dict[str, Any] | TimeSeries | Asset | Sequence | FileMetadata | Event:
         resource_type = resource_type.lower()
         if resource_type == "timeseries":
-            return TimeSeries._load(resource, cognite_client=self._cognite_client)
+            return TimeSeries._load(resource, cognite_client=cognite_client)
         if resource_type == "asset":
-            return Asset._load(resource, cognite_client=self._cognite_client)
+            return Asset._load(resource, cognite_client=cognite_client)
         if resource_type == "sequence":
-            return Sequence._load(resource, cognite_client=self._cognite_client)
+            return Sequence._load(resource, cognite_client=cognite_client)
         if resource_type == "file":
-            return FileMetadata._load(resource, cognite_client=self._cognite_client)
+            return FileMetadata._load(resource, cognite_client=cognite_client)
         if resource_type == "event":
-            return Event._load(resource, cognite_client=self._cognite_client)
+            return Event._load(resource, cognite_client=cognite_client)
         return resource
 
 
