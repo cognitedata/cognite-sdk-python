@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import time
 import warnings
 from dataclasses import dataclass
@@ -555,6 +556,32 @@ class VisionExtractPredictions(VisionResource):
     industrial_object_predictions: Optional[List[ObjectDetection]] = None
     people_predictions: Optional[List[ObjectDetection]] = None
     personal_protective_equipment_predictions: Optional[List[ObjectDetection]] = None
+
+    @classmethod
+    def _load(cls, data: str | dict[str, Any], cognite_client: Any = None) -> VisionExtractPredictions:
+        resource = json.loads(data) if isinstance(data, str) else data
+        return cls(
+            text_predictions=[
+                TextRegion._load(text_prediction) for text_prediction in resource.get("textPredictions", [])
+            ],
+            asset_tag_predictions=[
+                AssetLink._load(asset_tag_prediction)
+                for asset_tag_prediction in resource.get("assetTagPredictions", [])
+            ],
+            industrial_object_predictions=[
+                ObjectDetection._load(industrial_object_prediction)
+                for industrial_object_prediction in resource.get("industrialObjectPredictions", [])
+            ],
+            people_predictions=[
+                ObjectDetection._load(people_prediction) for people_prediction in resource.get("peoplePredictions", [])
+            ],
+            personal_protective_equipment_predictions=[
+                ObjectDetection._load(personal_protective_equipment_prediction)
+                for personal_protective_equipment_prediction in resource.get(
+                    "personalProtectiveEquipmentPredictions", []
+                )
+            ],
+        )
 
 
 VISION_FEATURE_MAP: Dict[str, Any] = {
