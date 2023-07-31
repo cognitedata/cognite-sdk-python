@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 from numbers import Number
-from typing import TYPE_CHECKING, Dict, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 
 from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList, CogniteResponse
@@ -163,6 +163,15 @@ class Function(CogniteResource):
                 continue
             latest_value = getattr(latest, attribute)
             setattr(self, attribute, latest_value)
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        output = super().dump(camel_case=camel_case)
+
+        if self.cpu is not None:
+            output["cpu"] = str(self.cpu)
+        if self.memory is not None:
+            output["memory"] = str(self.memory)
+        return output
 
 
 class FunctionFilter(CogniteFilter):
