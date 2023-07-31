@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import time
 from enum import Enum
-from typing import TYPE_CHECKING, Dict, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
 
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList
 from cognite.client.data_classes.transformations.common import TransformationDestination, _load_destination_dct
@@ -247,11 +247,19 @@ class TransformationJob(CogniteResource):
 
         return self
 
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        output = super().dump(camel_case)
+        if self.destination:
+            output["destination"] = self.destination.type
+        return output
+
     @classmethod
     def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> TransformationJob:
         instance = super()._load(resource, cognite_client)
         if isinstance(instance.destination, Dict):
             instance.destination = _load_destination_dct(instance.destination)
+        elif isinstance(instance.destination, str):
+            instance.destination = TransformationDestination(type=instance.destination)
         return instance
 
     def __hash__(self) -> int:

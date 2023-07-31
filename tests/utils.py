@@ -355,7 +355,6 @@ class FakeCogniteResourceGenerator:
     def _create_simple_value(
         self, name: str, annotation: str, resource_cls: Type[CogniteResource]
     ) -> str | int | float | bool | dict | CogniteResource | None | Literal:
-        # Primitive types
         if name == "external_id" and annotation == "str":
             return self._random_string(50, sample_from=string.ascii_uppercase + string.digits)
         elif name == "id" and annotation == "int":
