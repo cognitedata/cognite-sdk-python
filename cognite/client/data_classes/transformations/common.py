@@ -305,6 +305,22 @@ class OidcCredentials:
         """
         return basic_obj_dump(self, camel_case)
 
+    @classmethod
+    def _load(cls, data: dict[str, Any]) -> OidcCredentials:
+        """Load data into the instance.
+
+        Args:
+            data (Dict[str, Any]): A dictionary representation of the instance.
+        """
+        return cls(
+            client_id=data.get("clientId"),
+            client_secret=data.get("clientSecret"),
+            scopes=data.get("scopes"),
+            token_uri=data.get("tokenUri"),
+            audience=data.get("audience"),
+            cdf_project_name=data.get("cdfProjectName"),
+        )
+
 
 class NonceCredentials:
     def __init__(
@@ -328,6 +344,19 @@ class NonceCredentials:
         """
         return basic_obj_dump(self, camel_case)
 
+    @classmethod
+    def _load(cls, data: dict[str, Any]) -> NonceCredentials:
+        """Load data into the instance.
+
+        Args:
+            data (Dict[str, Any]): A dictionary representation of the instance.
+        """
+        return cls(
+            session_id=data["sessionId"],
+            nonce=data["nonce"],
+            cdf_project_name=data["cdfProjectName"],
+        )
+
 
 class TransformationBlockedInfo:
     """Information about the reason why and when a transformation is blocked.
@@ -340,6 +369,9 @@ class TransformationBlockedInfo:
     def __init__(self, reason: Optional[str] = None, created_time: Optional[int] = None):
         self.reason = reason
         self.created_time = created_time
+
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        return basic_obj_dump(self, camel_case)
 
 
 def _load_destination_dct(

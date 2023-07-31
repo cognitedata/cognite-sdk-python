@@ -251,15 +251,19 @@ class TransformationJob(CogniteResource):
         output = super().dump(camel_case)
         if self.destination:
             output["destination"] = self.destination.type
+        if self.status:
+            output["status"] = self.status.value
         return output
 
     @classmethod
     def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> TransformationJob:
-        instance = super()._load(resource, cognite_client)
+        instance: TransformationJob = cast(TransformationJob, super()._load(resource, cognite_client))
         if isinstance(instance.destination, Dict):
             instance.destination = _load_destination_dct(instance.destination)
         elif isinstance(instance.destination, str):
             instance.destination = TransformationDestination(type=instance.destination)
+        if isinstance(instance.status, str):
+            instance.status = TransformationJobStatus(instance.status)
         return instance
 
     def __hash__(self) -> int:

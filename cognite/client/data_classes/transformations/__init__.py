@@ -251,7 +251,7 @@ class Transformation(CogniteResource):
 
     @classmethod
     def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> Transformation:
-        instance = super()._load(resource, cognite_client)
+        instance = cast(Transformation, super()._load(resource, cognite_client))
         if isinstance(instance.destination, dict):
             instance.destination = _load_destination_dct(instance.destination)
 
@@ -265,7 +265,7 @@ class Transformation(CogniteResource):
 
         if isinstance(instance.blocked, dict):
             snake_dict = convert_all_keys_to_snake_case(instance.blocked)
-            snake_dict.pop("time")
+            snake_dict.pop("time", None)
             instance.blocked = TransformationBlockedInfo(**snake_dict)
 
         if isinstance(instance.schedule, dict):
@@ -279,6 +279,19 @@ class Transformation(CogniteResource):
         if isinstance(instance.destination_session, dict):
             snake_dict = convert_all_keys_to_snake_case(instance.destination_session)
             instance.destination_session = SessionDetails(**snake_dict)
+
+        if isinstance(instance.source_nonce, dict):
+            instance.source_nonce = NonceCredentials._load(instance.source_nonce)
+
+        if isinstance(instance.source_oidc_credentials, dict):
+            instance.source_oidc_credentials = OidcCredentials._load(instance.source_oidc_credentials)
+
+        if isinstance(instance.destination_nonce, dict):
+            instance.destination_nonce = NonceCredentials._load(instance.destination_nonce)
+
+        if isinstance(instance.destination_oidc_credentials, dict):
+            instance.destination_oidc_credentials = OidcCredentials._load(instance.destination_oidc_credentials)
+
         return instance
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
@@ -291,9 +304,9 @@ class Transformation(CogniteResource):
             Dict[str, Any]: A dictionary representation of the instance.
         """
 
-        ret = super().dump(camel_case=camel_case)
+        output = super().dump(camel_case=camel_case)
 
-        for name, prop in ret.items():
+        for name, prop in output.items():
             if isinstance(
                 prop,
                 (
@@ -302,10 +315,12 @@ class Transformation(CogniteResource):
                     TransformationDestination,
                     SessionDetails,
                     TransformationSchedule,
+                    TransformationBlockedInfo,
+                    TransformationJob,
                 ),
             ):
-                ret[name] = prop.dump(camel_case=camel_case)
-        return ret
+                output[name] = prop.dump(camel_case=camel_case)
+        return output
 
     def __hash__(self) -> int:
         return hash(self.external_id)
