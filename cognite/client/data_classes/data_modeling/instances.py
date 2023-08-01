@@ -190,7 +190,8 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
         for view_id, properties in self.data.items():
             view_id_str = f"{view_id.external_id}/{view_id.version}"
             props[view_id.space][view_id_str] = cast(Dict[PropertyIdentifier, PropertyValue], properties)
-        return props
+        # Defaultdict is not yaml serializable
+        return dict(props)
 
     def items(self) -> ItemsView[ViewId, MutableMapping[PropertyIdentifier, PropertyValue]]:
         return self.data.items()
