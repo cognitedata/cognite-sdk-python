@@ -195,7 +195,10 @@ class GeoLocation(dict):
         )
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        return convert_all_keys_to_camel_case(self) if camel_case else dict(self)
+        result = dict(convert_all_keys_to_camel_case(self) if camel_case else self)
+        if self.geometry:
+            result["geometry"] = dict(self.geometry)
+        return result
 
 
 class GeoLocationFilter(dict):
