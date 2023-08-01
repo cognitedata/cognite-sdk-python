@@ -184,11 +184,16 @@ class ThreeDModelRevision(CogniteResource):
 
     @classmethod
     def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> ThreeDModelRevision:
-        instance = super()._load(resource, cognite_client)
-        if isinstance(resource, Dict):
-            if instance.camera is not None:
-                instance.camera = RevisionCameraProperties(**instance.camera)
+        instance = cast(ThreeDModelRevision, super()._load(resource, cognite_client))
+        if isinstance(instance.camera, dict):
+            instance.camera = RevisionCameraProperties(**instance.camera)
         return instance
+
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        result = super().dump(camel_case)
+        if isinstance(self.camera, RevisionCameraProperties):
+            result["camera"] = dict(self.camera)
+        return result
 
 
 class ThreeDModelRevisionUpdate(CogniteUpdate):
