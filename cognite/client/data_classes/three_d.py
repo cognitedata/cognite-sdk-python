@@ -303,11 +303,16 @@ class ThreeDNode(CogniteResource):
 
     @classmethod
     def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> ThreeDNode:
-        instance = super()._load(resource, cognite_client)
-        if isinstance(resource, Dict):
-            if instance.bounding_box is not None:
-                instance.bounding_box = BoundingBox3D(**instance.bounding_box)
+        instance = cast(ThreeDNode, super()._load(resource, cognite_client))
+        if isinstance(instance.bounding_box, dict):
+            instance.bounding_box = BoundingBox3D(**instance.bounding_box)
         return instance
+
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        result = super().dump(camel_case)
+        if isinstance(self.bounding_box, BoundingBox3D):
+            result[("boundingBox" if camel_case else "bounding_box")] = dict(self.bounding_box)
+        return result
 
 
 class ThreeDNodeList(CogniteResourceList[ThreeDNode]):
