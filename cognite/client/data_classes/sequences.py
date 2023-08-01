@@ -330,7 +330,7 @@ class SequenceList(CogniteResourceList[Sequence]):
 
 
 @dataclass
-class Row:
+class RowValue:
     row_number: int
     value: int | float | str
 
@@ -351,7 +351,7 @@ class SequenceData(CogniteResource):
         self,
         id: Optional[int] = None,
         external_id: Optional[str] = None,
-        rows: Optional[SequenceType[Row | dict]] = None,
+        rows: Optional[SequenceType[RowValue | dict]] = None,
         row_numbers: Optional[SequenceType[int]] = None,
         values: Optional[SequenceType[SequenceType[Union[int, str, float]]]] = None,
         columns: Optional[SequenceType[Dict[str, Any]]] = None,
