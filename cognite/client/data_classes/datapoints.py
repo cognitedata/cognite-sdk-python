@@ -224,12 +224,13 @@ class DatapointsArray(CogniteResource):
             # (also future-proofs the SDK; ns is coming!):
             dps_dct["timestamp"] = dps_dct["timestamp"].astype("datetime64[ms]").astype("datetime64[ns]")
             return cls(**convert_all_keys_to_snake_case(dps_dct))
-        datapoints_by_attr = defaultdict(list)
+
+        array_by_attr = {}
         if "datapoints" in dps_dct:
+            datapoints_by_attr = defaultdict(list)
             for row in dps_dct["datapoints"]:
                 for attr, value in row.items():
                     datapoints_by_attr[attr].append(value)
-            array_by_attr = {}
             for attr, values in datapoints_by_attr.items():
                 array_by_attr[attr] = np.array(values)
                 if attr == "timestamp":
