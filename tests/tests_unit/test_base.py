@@ -224,6 +224,7 @@ class TestCogniteResource:
         with pytest.raises(CogniteMissingClientError):
             mr.use()
 
+    @pytest.mark.dsl
     @pytest.mark.parametrize("cognite_resource_subclass", all_concrete_subclasses(CogniteResource))
     def test_json_serialize(self, cognite_resource_subclass: Type[CogniteResource], cognite_mock_client):
         # Arrange
@@ -240,6 +241,7 @@ class TestCogniteResource:
         # Assert
         assert loaded.dump() == instance.dump()
 
+    @pytest.mark.dsl
     @pytest.mark.parametrize("cognite_resource_subclass", all_concrete_subclasses(CogniteResource))
     def test_yaml_serialize(self, cognite_resource_subclass: Type[CogniteResource], cognite_mock_client):
         # Arrange

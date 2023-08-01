@@ -171,4 +171,4 @@ class DirectRelation(PropertyType):
 
     @classmethod
     def load(cls, data: dict) -> DirectRelation:
-        return cls(container=ContainerId.load(data["container"]))
+        return cls(container=ContainerId.load(container) if (container := data.get("container")) else None)
