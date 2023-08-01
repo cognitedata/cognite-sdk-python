@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
 
 from cognite.client.data_classes._base import (
@@ -42,7 +43,14 @@ class ExtractionPipelineContact(dict):
     send_notification = CognitePropertyClassUtil.declare_property("sendNotification")
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        return convert_all_keys_to_camel_case(self) if camel_case else dict(self)
+        return dict(convert_all_keys_to_camel_case(self) if camel_case else self)
+
+    @classmethod
+    def _load(cls, data: str | dict) -> ExtractionPipelineContact:
+        data = json.loads(data) if isinstance(data, str) else data
+        return cls(
+            name=data["name"], email=data["email"], role=data["role"], send_notification=data["sendNotification"]
+        )
 
 
 class ExtractionPipeline(CogniteResource):
@@ -114,8 +122,16 @@ class ExtractionPipeline(CogniteResource):
 
     @classmethod
     def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> ExtractionPipeline:
-        instance = super()._load(resource, cognite_client)
+        instance = cast(ExtractionPipeline, super()._load(resource, cognite_client))
+        if instance.contacts:
+            instance.contacts = [ExtractionPipelineContact._load(contact) for contact in instance.contacts]
         return instance
+
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        result = super().dump(camel_case)
+        if self.contacts:
+            result["contacts"] = [contact.dump(camel_case) for contact in self.contacts]
+        return result
 
     def __hash__(self) -> int:
         return hash(self.external_id)
