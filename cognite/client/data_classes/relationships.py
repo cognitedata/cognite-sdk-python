@@ -94,14 +94,10 @@ class Relationship(CogniteResource):
     @classmethod
     def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> Relationship:
         instance: Relationship = cast(Relationship, super()._load(resource, cognite_client))
-        if instance.source is not None and isinstance(instance.source, dict):
-            instance.source = cls._convert_resource(
-                instance.source, instance.source_type or type(instance.source).__name__, cognite_client
-            )
-        if instance.target is not None and isinstance(instance.target, dict):
-            instance.target = cls._convert_resource(
-                instance.target, instance.source_type or type(instance.target).__name__, cognite_client
-            )
+        if isinstance(instance.source, dict):
+            instance.source = cls._convert_resource(instance.source, instance.source_type, cognite_client)
+        if isinstance(instance.target, dict):
+            instance.target = cls._convert_resource(instance.target, instance.target_type, cognite_client)
         instance.labels = Label._load_list(instance.labels)
         return instance
 
@@ -117,9 +113,9 @@ class Relationship(CogniteResource):
 
     @classmethod
     def _convert_resource(
-        cls, resource: Dict[str, Any], resource_type: str, cognite_client: Optional[CogniteClient] = None
+        cls, resource: Dict[str, Any], resource_type: str | None, cognite_client: Optional[CogniteClient] = None
     ) -> dict[str, Any] | TimeSeries | Asset | Sequence | FileMetadata | Event:
-        resource_type = resource_type.lower()
+        resource_type = resource_type.lower() if resource_type else resource_type
         if resource_type == "timeseries":
             return TimeSeries._load(resource, cognite_client=cognite_client)
         if resource_type == "asset":
