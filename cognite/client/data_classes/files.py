@@ -98,6 +98,14 @@ class FileMetadata(CogniteResource):
             instance.geo_location = GeoLocation._load(instance.geo_location)
         return instance
 
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        result = super().dump(camel_case)
+        if self.labels is not None:
+            result["labels"] = [label.dump(camel_case) for label in self.labels]
+        if self.geo_location:
+            result[("geoLocation" if camel_case else "geo_location")] = self.geo_location.dump(camel_case)
+        return result
+
 
 class FileMetadataFilter(CogniteFilter):
     """No description.
