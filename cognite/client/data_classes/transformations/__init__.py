@@ -549,6 +549,8 @@ class TransformationPreviewResult(CogniteResource):
         instance = cast(TransformationPreviewResult, super()._load(resource, cognite_client))
         if isinstance(instance.schema, dict) and (items := instance.schema.get("items")):
             instance.schema = TransformationSchemaColumnList._load(items, cognite_client=cognite_client)
+        elif isinstance(instance.schema, list):
+            instance.schema = TransformationSchemaColumnList._load(instance.schema, cognite_client=cognite_client)
         if isinstance(instance.results, dict) and (items := instance.results.get("items")):
             instance.results = items
         return instance
@@ -562,6 +564,7 @@ class TransformationPreviewResult(CogniteResource):
         Returns:
             Dict[str, Any]: A dictionary representation of the instance.
         """
-        ret = super().dump(camel_case=camel_case)
-        ret["schema"] = ret["schema"].dump(camel_case=camel_case)
-        return ret
+        output = super().dump(camel_case=camel_case)
+        if self.schema:
+            output["schema"] = self.schema.dump(camel_case=camel_case)
+        return output
