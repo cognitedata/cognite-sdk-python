@@ -1,15 +1,21 @@
 from __future__ import annotations
 
-from typing import Optional
+import json
+from typing import TYPE_CHECKING, Any, Optional
 
 from cognite.client.data_classes import GeoLocation, Label, LabelDefinition
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
+from cognite.client.utils._text import convert_all_keys_to_snake_case
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 class SourceFile(CogniteResource):
     def __init__(
         self,
         name: str,
+        hash: Optional[str] = None,
         directory: Optional[str] = None,
         source: Optional[str] = None,
         mime_type: Optional[str] = None,
@@ -20,18 +26,37 @@ class SourceFile(CogniteResource):
         dataset_id: Optional[int] = None,
         security_categories: Optional[list[int]] = None,
         metadata: Optional[dict[str, str]] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ):
         self.name = name
+        self.hash = hash
         self.directory = directory
         self.source = source
         self.mime_type = mime_type
         self.size = size
         self.asset_ids: list[int] = asset_ids or []
-        self.labels = labels
+        self.labels: list[Label] = Label._load_list(labels) or []
         self.geo_location = geo_location
         self.dataset_id = dataset_id
         self.security_categories = security_categories
         self.metadata: dict[str, str] = metadata or {}
+        self._cognite_client = cognite_client
+
+    @classmethod
+    def _load(cls, resource: dict | str, cognite_client: Optional[CogniteClient] = None) -> SourceFile:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        instance = cls(**convert_all_keys_to_snake_case(resource), cognite_client=cognite_client)
+        if isinstance(instance.geo_location, dict):
+            instance.geo_location = GeoLocation._load(instance.geo_location)
+        return instance
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        if self.labels:
+            output["labels"] = [label.dump(camel_case) for label in self.labels]
+        if self.geo_location:
+            output[("geoLocation" if camel_case else "geo_location")] = self.geo_location.dump(camel_case)
+        return output
 
 
 class Document(CogniteResource):
@@ -54,6 +79,7 @@ class Document(CogniteResource):
         asset_ids: Optional[list[int]] = None,
         labels: Optional[list[Label | str | LabelDefinition]] = None,
         geo_location: Optional[GeoLocation] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ):
         self.id = id
         self.created_time = created_time
@@ -70,8 +96,30 @@ class Document(CogniteResource):
         self.language = language
         self.truncated_content = truncated_content
         self.asset_ids: list[int] = asset_ids or []
-        self.labels = labels
+        self.labels: list[Label] = Label._load_list(labels) or []
         self.geo_location = geo_location
+        self._cognite_client = cognite_client
+
+    @classmethod
+    def _load(cls, resource: dict | str, cognite_client: Optional[CogniteClient] = None) -> Document:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+
+        instance = cls(**convert_all_keys_to_snake_case(resource), cognite_client=cognite_client)
+        if isinstance(instance.source_file, dict):
+            instance.source_file = SourceFile._load(instance.source_file)
+        if isinstance(instance.geo_location, dict):
+            instance.geo_location = GeoLocation._load(instance.geo_location)
+        return instance
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        if self.source_file:
+            output[("sourceFile" if camel_case else "source_file")] = self.source_file.dump(camel_case)
+        if self.labels:
+            output["labels"] = [label.dump(camel_case) for label in self.labels]
+        if self.geo_location:
+            output[("geoLocation" if camel_case else "geo_location")] = self.geo_location.dump(camel_case)
+        return output
 
 
 class DocumentList(CogniteResourceList[Document]):
