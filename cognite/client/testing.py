@@ -18,6 +18,7 @@ from cognite.client._api.data_sets import DataSetsAPI
 from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.datapoints_subscriptions import DatapointsSubscriptionAPI
 from cognite.client._api.diagrams import DiagramsAPI
+from cognite.client._api.documents import DocumentsAPI
 from cognite.client._api.entity_matching import EntityMatchingAPI
 from cognite.client._api.events import EventsAPI
 from cognite.client._api.extractionpipelines import (
@@ -90,6 +91,7 @@ class CogniteClientMock(MagicMock):
         self.data_sets = MagicMock(spec_set=DataSetsAPI)
 
         self.diagrams = MagicMock(spec_set=DiagramsAPI)
+        self.documents = MagicMock(spec_set=DocumentsAPI)
         self.entity_matching = MagicMock(spec_set=EntityMatchingAPI)
         self.events = MagicMock(spec_set=EventsAPI)
 
