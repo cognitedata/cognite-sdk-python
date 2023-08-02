@@ -93,7 +93,6 @@ class DataModelingGraphQLAPI(APIClient):
                 }
             }
         }
-        print(payload)
 
         res = self._post_graphql(url_path="/dml/graphql", json=payload)
         return DMLApplyResult.load(res["upsertGraphQlDmlVersion"]["result"])
