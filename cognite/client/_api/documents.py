@@ -13,7 +13,28 @@ class DocumentsAPI(APIClient):
         ...
 
     def retrieve_content(self, id: int) -> str:
-        ...
+        """`Retrieve document content <https://developer.cognite.com/api#tag/Documents/operation/documentsContent>`_
+
+        Returns extracted textual information for the given document.
+
+        The documents pipeline extracts up to 1MiB of textual information from each processed document.
+        The search and list endpoints truncate the textual content of each document,
+        in order to reduce the size of the returned payload. If you want the whole text for a document,
+        you can use this endpoint.
+
+
+        Args:
+            id: The server-generated ID for the document you want to retrieve the content of.
+
+        Returns:
+            str: The content of the document.
+
+        """
+
+        response = self._do_request("GET", f"{self._RESOURCE_PATH}/{id}/content", accept="text/plain")
+        if not self._status_ok(response.status_code):
+            self._raise_api_error(response, payload={})
+        return response.text
 
     def search(self) -> None:
         ...
