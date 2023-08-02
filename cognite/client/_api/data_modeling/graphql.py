@@ -14,9 +14,15 @@ class DataModelingGraphQLAPI(APIClient):
         res = self._post(url_path=url_path, json=json)
         json_res = res.json()
         if (errors := json_res.get("errors")) is not None:
-            raise CogniteGraphQLError([GraphQLErrorSpec.load(error) for error in errors])
-        if (errors := json_res.get("data").get("upsertGraphQlDmlVersion").get("errors")) is not None:
-            raise CogniteGraphQLError([GraphQLErrorSpec.load(error) for error in errors])
+            raise CogniteGraphQLError(
+                [GraphQLErrorSpec.load(error) for error in errors]
+            )
+        if (
+            errors := json_res.get("data").get("upsertGraphQlDmlVersion").get("errors")
+        ) is not None:
+            raise CogniteGraphQLError(
+                [GraphQLErrorSpec.load(error) for error in errors]
+            )
         return json_res["data"]
 
     def apply_dml(
@@ -89,9 +95,9 @@ class DataModelingGraphQLAPI(APIClient):
                     "previousVersion": previous_version,
                     "graphQlDml": dml,
                     "name": name,
-                    "description": description
+                    "description": description,
                 }
-            }
+            },
         }
 
         res = self._post_graphql(url_path="/dml/graphql", json=payload)
