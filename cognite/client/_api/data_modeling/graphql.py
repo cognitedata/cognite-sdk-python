@@ -8,11 +8,9 @@ from cognite.client.data_classes.data_modeling.graphql import DMLApplyResult
 from cognite.client.data_classes.data_modeling.ids import DataModelId
 from cognite.client.exceptions import CogniteGraphQLError, GraphQLErrorSpec
 
-import json
-
 
 class DataModelingGraphQLAPI(APIClient):
-    def _post_graphql(self, url_path: str, json: str) -> dict[str, Any]:
+    def _post_graphql(self, url_path: str, json: dict) -> dict[str, Any]:
         res = self._post(url_path=url_path, json=json)
         json_res = res.json()
         if (errors := json_res.get("errors")) is not None:
