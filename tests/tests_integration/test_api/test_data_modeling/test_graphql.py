@@ -8,17 +8,16 @@ from cognite.client.exceptions import CogniteGraphQLError
 @pytest.fixture(scope="session")
 def data_model(cognite_client: CogniteClient, integration_test_space: Space) -> DataModel:
     data_model = cognite_client.data_modeling.data_models.apply(
-        DataModelApply(integration_test_space.space, "DataModelForDmlTest", "v1")
+        DataModelApply(integration_test_space.space, "DataModelForDmlTest", "1")
     )
     return data_model
 
 
 class TestDataModelingGraphQLAPI:
     def test_apply_dml(self, cognite_client: CogniteClient, data_model: DataModel) -> None:
-        res = cognite_client.data_modeling.graphql.apply_dml(
-            data_model.as_id(), "type SomeType { someProp: String! } type AnotherType { anotherProp: String! }"
-        )
-        assert res.version == "v1"
+        dml = "type SomeType { someProp: String! } type AnotherType { anotherProp: String! }"
+        res = cognite_client.data_modeling.graphql.apply_dml(data_model.as_id(), dml)
+        assert res.version == "1"
 
     def test_apply_dml_invalid(self, cognite_client: CogniteClient, data_model: DataModel) -> None:
         with pytest.raises(CogniteGraphQLError) as exc:

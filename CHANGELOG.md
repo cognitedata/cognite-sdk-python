@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [6.13.0] - 2023-08-03
 ### Fixed
-- Changed the graphQl query used when updating DML models in `client.data_modeling.graphql.apply_dml` to ensure identical behaviour as the Cognite Data Fusion UI.
+- Changed the structure of the GraphQL query used when updating DML models through `client.data_modeling.graphql.apply_dml` to properly handle (i.e. escape) all valid symbols/characters.
 
 ## [6.12.0] - 2023-07-26
 ### Added
