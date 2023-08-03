@@ -1,6 +1,6 @@
-from cognite.client.data_classes import filters
-from cognite.client.data_classes.data_modeling import aggregations, query
-from cognite.client.data_classes.data_modeling.aggregations import AggregatedValue, Aggregation
+from cognite.client.data_classes import aggregations, filters
+from cognite.client.data_classes.aggregations import AggregatedValue, Aggregation
+from cognite.client.data_classes.data_modeling import query
 from cognite.client.data_classes.data_modeling.containers import (
     Constraint,
     Container,
