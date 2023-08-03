@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from abc import abstractmethod
 from collections import UserList
+from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
@@ -312,14 +313,16 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
     @classmethod
     def _load(
         cls: Type[T_CogniteResourceList],
-        resource_list: Union[List, str],
+        resource_list: str | Iterable[Dict[str, Any]],
         cognite_client: Optional[CogniteClient] = None,
     ) -> T_CogniteResourceList:
         if isinstance(resource_list, str):
             return cls._load(json.loads(resource_list), cognite_client=cognite_client)
-        elif isinstance(resource_list, List):
+        elif isinstance(resource_list, Iterable):
             resources = [cls._RESOURCE._load(resource, cognite_client=cognite_client) for resource in resource_list]
             return cls(resources, cognite_client=cognite_client)
+        else:
+            raise NotImplementedError(f"Resource list must be iterable or json str, not {type(resource_list)}")
 
 
 T_CogniteResourceList = TypeVar("T_CogniteResourceList", bound=CogniteResourceList)

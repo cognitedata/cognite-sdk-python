@@ -124,10 +124,40 @@ class Document(CogniteResource):
 
 
 @dataclass
+class Highlight(CogniteResource):
+    name: list[str]
+    content: list[str]
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        return {
+            "name": self.name,
+            "content": self.content,
+        }
+
+
+@dataclass
 class DocumentHighlight(CogniteResource):
-    name: str
-    content: str
+    highlight: Highlight
     document: Document
+
+    @classmethod
+    def _load(cls, resource: dict | str, cognite_client: Optional[CogniteClient] = None) -> DocumentHighlight:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+
+        instance = cls(**convert_all_keys_to_snake_case(resource))
+        if isinstance(instance.highlight, dict):
+            instance.highlight = Highlight(**convert_all_keys_to_snake_case(instance.highlight))
+        if isinstance(instance.document, dict):
+            instance.document = Document._load(instance.document)
+        return instance
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        output: dict[str, Any] = {}
+        if self.highlight:
+            output["highlight"] = self.highlight.dump(camel_case)
+        if self.document:
+            output["document"] = self.document.dump(camel_case)
+        return output
 
 
 class DocumentList(CogniteResourceList[Document]):

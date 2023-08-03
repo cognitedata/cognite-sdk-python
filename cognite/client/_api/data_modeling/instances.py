@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Literal, Optional, Sequence, Type, Union, cast, overload
 
 from cognite.client._api_client import APIClient
@@ -55,7 +56,7 @@ class _NodeOrEdgeList(CogniteResourceList):
 
     @classmethod
     def _load(
-        cls, resource_list: list[dict[str, Any]] | str, cognite_client: Optional[CogniteClient] = None
+        cls, resource_list: Iterable[dict[str, Any]] | str, cognite_client: Optional[CogniteClient] = None
     ) -> _NodeOrEdgeList:
         resource_list = json.loads(resource_list) if isinstance(resource_list, str) else resource_list
         resources: list[Node | Edge] = [
@@ -81,7 +82,7 @@ class _NodeOrEdgeApplyResultList(CogniteResourceList):
 
     @classmethod
     def _load(
-        cls, resource_list: list[dict[str, Any]] | str, cognite_client: Optional[CogniteClient] = None
+        cls, resource_list: Iterable[dict[str, Any]] | str, cognite_client: Optional[CogniteClient] = None
     ) -> _NodeOrEdgeApplyResultList:
         resource_list = json.loads(resource_list) if isinstance(resource_list, str) else resource_list
         resources: list[NodeApplyResult | EdgeApplyResult] = [

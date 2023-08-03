@@ -85,8 +85,38 @@ class DocumentsAPI(APIClient):
             DocumentList | DocumentHighlightList: List of search results. If highlight is True, a DocumentHighlightList
                                                   is returned, otherwise a DocumentList is returned.
         """
-        ...
-        # self._search()
+        results = []
+        next_cursor = None
+        while True:
+            body: dict[str, str | int | bool | dict] = {
+                "search": {"query": query},
+            }
+            if filter:
+                body["filter"] = filter.dump() if isinstance(filter, Filter) else filter
+            if sort:
+                body["sort"] = sort
+            if limit:
+                body["limit"] = limit
+            if highlight:
+                body["highlight"] = highlight
+            if next_cursor:
+                body["cursor"] = next_cursor
+
+            response = self._post(f"{self._RESOURCE_PATH}/search", json=body)
+            if not self._status_ok(response.status_code):
+                self._raise_api_error(response, payload={})
+            json_content = response.json()
+            results.extend(json_content["items"])
+            next_cursor = json_content.get("nextCursor")
+            if not next_cursor:
+                break
+
+        if highlight:
+            return DocumentHighlightList._load(
+                ({"highlight": item["highlight"], "document": item["item"]} for item in json_content["items"]),
+                cognite_client=self._cognite_client,
+            )
+        return DocumentList._load((item["item"] for item in results), cognite_client=self._cognite_client)
 
     def list(self, filter: Filter | dict | None = None, limit: int = DOCUMENT_LIST_LIMIT_DEFAULT) -> DocumentList:
         """`List documents <https://developer.cognite.com/api#tag/Documents/operation/documentsList>`_
