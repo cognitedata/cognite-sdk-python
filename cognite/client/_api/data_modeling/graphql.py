@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import textwrap
 from typing import Any, Optional
 
 from cognite.client._api_client import APIClient
