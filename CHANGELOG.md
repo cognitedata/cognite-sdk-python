@@ -17,7 +17,8 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [6.13.0] - 2023-08-02
+## [6.13.0] - 2023-08-03
+### Fixed
 - Changed the graphQl query used when updating DML models in `client.data_modeling.graphql.apply_dml` to ensure identical behaviour.
 
 ## [6.12.0] - 2023-07-26
