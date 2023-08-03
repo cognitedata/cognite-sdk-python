@@ -46,12 +46,36 @@ class TestDocumentsAPI:
         # Assert
         assert res == content
 
-    def test_search_no_filters(self, cognite_client: CogniteClient, file_content_pair: tuple[FileMetadata, str]):
+    def test_search_no_filters_no_highlight(
+        self, cognite_client: CogniteClient, file_content_pair: tuple[FileMetadata, str]
+    ):
         # Arrange
-        query = "pro at pericula ullamcorper"
+        doc, content = file_content_pair
+        query = '"pro at pericula ullamcorper"'
 
         # Act
-        res = cognite_client.documents.search(query=query, limit=5)
+        result = cognite_client.documents.search(query=query, limit=5)
 
         # Assert
-        assert len(res) > 0
+        assert len(result) == 1, "Expected to retrieve exactly one document."
+        actual = result[0]
+        assert actual.id == doc.id
+        assert actual.source_file.name == doc.name
+
+    def test_search_no_filter_with_highlight(
+        self, cognite_client: CogniteClient, file_content_pair: tuple[FileMetadata, str]
+    ):
+        # Arrange
+        doc, content = file_content_pair
+        query = '"pro at pericula ullamcorper"'
+
+        # Act
+        result = cognite_client.documents.search(query=query, highlight=True, limit=5)
+
+        # Assert
+        assert len(result) == 1, "Expected to retrieve exactly one document."
+        actual = result[0]
+        assert actual.document.id == doc.id
+        assert actual.document.source_file.name == doc.name
+        assert not actual.highlight.name
+        assert query[1:-1] in actual.highlight.content[0]
