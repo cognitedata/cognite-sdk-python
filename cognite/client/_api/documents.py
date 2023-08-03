@@ -11,7 +11,13 @@ from cognite.client.data_classes.filters import Filter
 class DocumentsAPI(APIClient):
     _RESOURCE_PATH = "/documents"
 
-    def aggregate(self) -> None:
+    def aggregate_count(self) -> None:
+        ...
+
+    def aggregate_cardinality(self) -> None:
+        ...
+
+    def aggregate_unique(self) -> None:
         ...
 
     def retrieve_content(self, id: int) -> str:
@@ -19,7 +25,7 @@ class DocumentsAPI(APIClient):
 
         Returns extracted textual information for the given document.
 
-        The documents pipeline extracts up to 1MiB of textual information from each processed document.
+        The document pipeline extracts up to 1MiB of textual information from each processed document.
         The search and list endpoints truncate the textual content of each document,
         in order to reduce the size of the returned payload. If you want the whole text for a document,
         you can use this endpoint.
