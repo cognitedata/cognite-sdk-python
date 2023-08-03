@@ -15,7 +15,7 @@ class DataModelingGraphQLAPI(APIClient):
         json_res = res.json()
         if (errors := json_res.get("errors")) is not None:
             raise CogniteGraphQLError([GraphQLErrorSpec.load(error) for error in errors])
-        if (errors := json_res.get("data").get("upsertGraphQlDmlVersion").get("errors")) is not None:
+        if (errors := json_res["data"].get("upsertGraphQlDmlVersion", {}).get("errors")) is not None:
             raise CogniteGraphQLError([GraphQLErrorSpec.load(error) for error in errors])
         return json_res["data"]
 
