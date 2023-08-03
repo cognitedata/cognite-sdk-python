@@ -80,7 +80,7 @@ class DataModelingGraphQLAPI(APIClient):
             }
         """
         payload = {
-            "query": graphql_body,
+            "query": textwrap.dedent(graphql_body),
             "variables": {
                 "dmCreate": {
                     "space": data_model_id.space,
