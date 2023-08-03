@@ -24,4 +24,4 @@ class TestDataModelingGraphQLAPI:
         with pytest.raises(CogniteGraphQLError) as exc:
             cognite_client.data_modeling.graphql.apply_dml(data_model.as_id(), "typ SomeType { someProp: String! }")
         assert exc.value.errors[0].message == "Invalid syntax in provided GraphQL schema"
-        assert exc.value.errors[0].locations == [{"column": 17, "line": 3}, {"column": 1, "line": 1}]
+        assert exc.value.errors[0].locations == [{"column": 5, "line": 3}, {"column": 1, "line": 1}]
