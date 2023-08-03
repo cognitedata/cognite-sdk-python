@@ -36,9 +36,22 @@ class TestDocumentsAPI:
         # Assert
         assert len(documents) > 0, "Expected to retrieve at least one document."
 
-    def test_retrieve_content(self, cognite_client: CogniteClient, file_content_pair):
+    def test_retrieve_content(self, cognite_client: CogniteClient, file_content_pair: tuple[FileMetadata, str]):
         # Arrange
         doc, content = file_content_pair
 
+        # Act
         res = cognite_client.documents.retrieve_content(id=doc.id)
+
+        # Assert
         assert res == content
+
+    def test_search_no_filters(self, cognite_client: CogniteClient, file_content_pair: tuple[FileMetadata, str]):
+        # Arrange
+        query = "pro at pericula ullamcorper"
+
+        # Act
+        res = cognite_client.documents.search(query=query, limit=5)
+
+        # Assert
+        assert len(res) > 0

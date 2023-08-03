@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Optional
 
 from cognite.client.data_classes import GeoLocation, Label, LabelDefinition
@@ -62,7 +63,7 @@ class SourceFile(CogniteResource):
 class Document(CogniteResource):
     def __init__(
         self,
-        id: str,
+        id: int,
         created_time: int,
         source_file: SourceFile,
         external_id: Optional[str] = None,
@@ -122,5 +123,16 @@ class Document(CogniteResource):
         return output
 
 
+@dataclass
+class DocumentHighlight(CogniteResource):
+    name: str
+    content: str
+    document: Document
+
+
 class DocumentList(CogniteResourceList[Document]):
     _RESOURCE = Document
+
+
+class DocumentHighlightList(CogniteResourceList[DocumentHighlight]):
+    _RESOURCE = DocumentHighlight

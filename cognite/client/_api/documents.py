@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from typing import Literal, overload
+
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DOCUMENT_LIST_LIMIT_DEFAULT
-from cognite.client.data_classes.documents import Document, DocumentList
+from cognite.client.data_classes.documents import Document, DocumentHighlightList, DocumentList
 from cognite.client.data_classes.filters import Filter
 
 
@@ -36,8 +38,55 @@ class DocumentsAPI(APIClient):
             self._raise_api_error(response, payload={})
         return response.text
 
-    def search(self) -> None:
+    @overload
+    def search(
+        self,
+        query: str,
+        highlight: Literal[False] = False,
+        filter: Filter | dict | None = None,
+        sort: str | None = None,
+        limit: int = DOCUMENT_LIST_LIMIT_DEFAULT,
+    ) -> DocumentList:
         ...
+
+    @overload
+    def search(
+        self,
+        query: str,
+        highlight: Literal[True],
+        filter: Filter | dict | None = None,
+        sort: str | None = None,
+        limit: int = DOCUMENT_LIST_LIMIT_DEFAULT,
+    ) -> DocumentHighlightList:
+        ...
+
+    def search(
+        self,
+        query: str,
+        highlight: bool = False,
+        filter: Filter | dict | None = None,
+        sort: str | None = None,
+        limit: int = DOCUMENT_LIST_LIMIT_DEFAULT,
+    ) -> DocumentList | DocumentHighlightList:
+        """Search documents <https://developer.cognite.com/api#tag/Documents/operation/documentsSearch>`_
+
+        This endpoint lets you search for documents by using advanced filters and free text queries.
+        Free text queries are matched against the documents' filenames and contents. For more information, see
+        endpoint documentation referenced above.
+
+        Args:
+            query (str) : The free text search query.
+            highlight: Whether or not matches in search results should be highlighted.
+            filter (Filter | dict | None): The filter to narrow down the documents to search.
+            sort: The property to sort by.
+            limit: Maximum number of items. When using highlights, the maximum value is reduced to 20. Defaults to 100.
+
+        Returns:
+            DocumentList | DocumentHighlightList: List of search results. If highlight is True, a DocumentHighlightList
+                                                  is returned, otherwise a DocumentList is returned.
+        """
+        ...
+        # self._search()
 
     def list(self, filter: Filter | dict | None = None, limit: int = DOCUMENT_LIST_LIMIT_DEFAULT) -> DocumentList:
         """`List documents <https://developer.cognite.com/api#tag/Documents/operation/documentsList>`_
