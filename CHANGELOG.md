@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.12.1] - 2023-08-03
+### Fixed
+- Changed the structure of the GraphQL query used when updating DML models through `client.data_modeling.graphql.apply_dml` to properly handle (i.e. escape) all valid symbols/characters.
+
 ## [6.12.0] - 2023-07-26
 ### Added
 - Added option `expand_metadata` to `.to_pandas()` method for list resource types which converts the metadata (if any) into separate columns in the returned dataframe. Also added `metadata_prefix` to control the naming of these columns (default is "metadata.").
