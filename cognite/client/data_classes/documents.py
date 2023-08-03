@@ -160,6 +160,25 @@ class DocumentHighlight(CogniteResource):
         return output
 
 
+@dataclass
+class DocumentCountResult(CogniteResource):
+    count: int
+
+
+class DocumentCountResultList(CogniteResourceList):
+    _RESOURCE = DocumentCountResult
+
+
+@dataclass
+class DocumentUniqueResult(CogniteResource):
+    count: int
+    list: list[str | int | float | Label]
+
+
+class DocumentUniqueResultList(CogniteResourceList):
+    _RESOURCE = DocumentUniqueResult
+
+
 class DocumentList(CogniteResourceList[Document]):
     _RESOURCE = Document
 
