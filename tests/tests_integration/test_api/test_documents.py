@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from cognite.client import CogniteClient
+from cognite.client.data_classes.documents import DocumentProperty, SourceFileProperty
 from cognite.client.data_classes.files import FileMetadata
 
 
@@ -89,28 +90,28 @@ class TestDocumentsAPI:
 
     def test_aggregate_cardinality(self, cognite_client: CogniteClient):
         # Act
-        count = cognite_client.documents.aggregate_cardinality(properties=["type"])
+        count = cognite_client.documents.aggregate_cardinality(property=DocumentProperty.type)
 
         # Assert
         assert count > 0
 
     def test_aggregate_cardinality_metadata(self, cognite_client: CogniteClient):
         # Act
-        count = cognite_client.documents.aggregate_cardinality(properties=["sourceFile", "metadata"])
+        count = cognite_client.documents.aggregate_cardinality(property=SourceFileProperty.metadata)
 
         # Assert
         assert count > 0
 
     def test_aggregate_unique_types(self, cognite_client: CogniteClient):
         # Act
-        result = cognite_client.documents.aggregate_unique(properties=["type"])
+        result = cognite_client.documents.aggregate_unique(property=DocumentProperty.type)
 
         # Assert
         assert len(result) > 0
 
     def test_aggregate_unique_metadata(self, cognite_client: CogniteClient):
         # Act
-        result = cognite_client.documents.aggregate_unique(properties=["sourceFile", "metadata"])
+        result = cognite_client.documents.aggregate_unique(property=SourceFileProperty.metadata)
 
         # Assert
         assert len(result) > 0
