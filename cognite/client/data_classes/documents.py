@@ -173,6 +173,10 @@ class DocumentUniqueResult(CogniteResource):
     count: int
     values: list[str | int | float | Label]
 
+    @property
+    def value(self) -> str | int | float | Label:
+        return self.values[0]
+
     @classmethod
     def _load(cls, resource: dict | str, cognite_client: Optional[CogniteClient] = None) -> DocumentUniqueResult:
         resource = json.loads(resource) if isinstance(resource, str) else resource
@@ -184,3 +188,7 @@ class DocumentUniqueResult(CogniteResource):
 
 class DocumentUniqueResultList(CogniteResourceList):
     _RESOURCE = DocumentUniqueResult
+
+    @property
+    def unique(self) -> list[str | int | float | Label]:
+        return [item.value for item in self]
