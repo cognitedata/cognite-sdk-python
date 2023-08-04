@@ -171,7 +171,15 @@ class DocumentHighlightList(CogniteResourceList[DocumentHighlight]):
 @dataclass
 class DocumentUniqueResult(CogniteResource):
     count: int
-    list: list[str | int | float | Label]
+    values: list[str | int | float | Label]
+
+    @classmethod
+    def _load(cls, resource: dict | str, cognite_client: Optional[CogniteClient] = None) -> DocumentUniqueResult:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        return cls(
+            count=resource["count"],
+            values=resource["values"],
+        )
 
 
 class DocumentUniqueResultList(CogniteResourceList):

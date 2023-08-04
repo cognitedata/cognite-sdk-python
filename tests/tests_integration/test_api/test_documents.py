@@ -100,3 +100,17 @@ class TestDocumentsAPI:
 
         # Assert
         assert count > 0
+
+    def test_aggregate_unique_types(self, cognite_client: CogniteClient):
+        # Act
+        result = cognite_client.documents.aggregate_unique(properties=["type"])
+
+        # Assert
+        assert len(result) > 0
+
+    def test_aggregate_unique_metadata(self, cognite_client: CogniteClient):
+        # Act
+        result = cognite_client.documents.aggregate_unique(properties=["sourceFile", "metadata"])
+
+        # Assert
+        assert len(result) > 0
