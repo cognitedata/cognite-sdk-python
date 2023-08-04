@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.12.2] - 2023-08-04
+### Fixed
+- Certain errors that were previously silently ignored in calls to `client.data_modeling.graphql.apply_dml` are now properly raised (used to fail as the API error was passed nested inside the API response).
+
 ## [6.12.1] - 2023-08-03
 ### Fixed
 - Changed the structure of the GraphQL query used when updating DML models through `client.data_modeling.graphql.apply_dml` to properly handle (i.e. escape) all valid symbols/characters.
