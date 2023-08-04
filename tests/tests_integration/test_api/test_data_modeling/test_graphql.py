@@ -7,10 +7,9 @@ from cognite.client.exceptions import CogniteGraphQLError
 
 @pytest.fixture(scope="session")
 def data_model(cognite_client: CogniteClient, integration_test_space: Space) -> DataModel:
-    data_model = cognite_client.data_modeling.data_models.apply(
+    return cognite_client.data_modeling.data_models.apply(
         DataModelApply(integration_test_space.space, "DataModelForDmlTest", "1")
     )
-    return data_model
 
 
 class TestDataModelingGraphQLAPI:
@@ -24,3 +23,15 @@ class TestDataModelingGraphQLAPI:
             cognite_client.data_modeling.graphql.apply_dml(data_model.as_id(), "typ SomeType { someProp: String! }")
         assert exc.value.errors[0].message == "Invalid syntax in provided GraphQL schema"
         assert exc.value.errors[0].locations == [{"column": 5, "line": 3}, {"column": 1, "line": 1}]
+
+    def test_apply_dml_invalid_error_passed_inside_response(
+        self, cognite_client: CogniteClient, data_model: DataModel
+    ) -> None:
+        with pytest.raises(CogniteGraphQLError) as exc:
+            cognite_client.data_modeling.graphql.apply_dml(data_model.as_id(), "type FailType { someProp: String! }")
+
+        assert len(exc.value.errors) == 2
+        err1, err2 = exc.value.errors
+        assert err1.kind == "DIFF_ERROR"
+        assert err1.message == "Can not remove view 'SomeType' from the data model definition"
+        assert err2.hint == "Please publish a new data model version."
