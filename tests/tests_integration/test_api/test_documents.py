@@ -86,3 +86,17 @@ class TestDocumentsAPI:
 
         # Assert
         assert count > 0, "There should be at least one document in the test environment."
+
+    def test_aggregate_cardinality(self, cognite_client: CogniteClient):
+        # Act
+        count = cognite_client.documents.aggregate_cardinality(properties=["type"])
+
+        # Assert
+        assert count > 0
+
+    def test_aggregate_cardinality_metadata(self, cognite_client: CogniteClient):
+        # Act
+        count = cognite_client.documents.aggregate_cardinality(properties=["sourceFile", "metadata"])
+
+        # Assert
+        assert count > 0

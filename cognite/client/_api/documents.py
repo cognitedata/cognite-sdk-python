@@ -6,7 +6,6 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import DOCUMENT_LIST_LIMIT_DEFAULT
 from cognite.client.data_classes.documents import (
     Document,
-    DocumentCountResultList,
     DocumentHighlightList,
     DocumentList,
     DocumentUniqueResultList,
@@ -27,13 +26,32 @@ class DocumentsAPI(APIClient):
         Returns:
             int: The number of documents matching the specified filters and search.
         """
+        return self._documents_aggregate("count", filter=filter, query=query)
+
+    def _documents_aggregate(
+        self,
+        aggregate: Literal["count", "cardinalityValues", "cardinalityProperties"],
+        properties: list[str] | None = None,
+        path: list[str] | None = None,
+        query: str | None = None,
+        filter: Filter | dict | None = None,
+        aggregate_filter: Filter | dict | None = None,
+    ) -> int:
         body: dict[str, Any] = {
-            "aggregate": "count",
+            "aggregate": aggregate,
         }
+        if properties is not None:
+            body["properties"] = [{"property": properties}]
+        if path is not None:
+            body["path"] = path
         if query is not None:
             body["search"] = {"query": query}
         if filter is not None:
             body["filter"] = filter.dump() if isinstance(filter, Filter) else filter
+        if aggregate_filter is not None:
+            body["aggregateFilter"] = (
+                aggregate_filter.dump() if isinstance(aggregate_filter, Filter) else aggregate_filter
+            )
 
         res = self._post(url_path=f"{self._RESOURCE_PATH}/aggregate", json=body)
         return res.json()["items"][0]["count"]
@@ -44,7 +62,7 @@ class DocumentsAPI(APIClient):
         query: str | None = None,
         filter: Filter | dict | None = None,
         aggregate_filter: Filter | dict | None = None,
-    ) -> DocumentCountResultList:
+    ) -> int:
         """`Find approximate number of unique properties.<https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
 
         Args:
@@ -54,9 +72,20 @@ class DocumentsAPI(APIClient):
             aggregate_filter (Filter | dict | None): The filter to apply to aggregations.
 
         Returns:
-            DocumentCountResultList: List of counts of documents matching the specified filters and search.
+            int: The number of documents matching the specified filters and search.
         """
-        ...
+        if properties == ["sourceFile", "metadata"]:
+            return self._documents_aggregate(
+                "cardinalityProperties", path=properties, query=query, filter=filter, aggregate_filter=aggregate_filter
+            )
+        else:
+            return self._documents_aggregate(
+                "cardinalityValues",
+                properties=properties,
+                query=query,
+                filter=filter,
+                aggregate_filter=aggregate_filter,
+            )
 
     def aggregate_unique(
         self,
