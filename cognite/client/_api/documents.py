@@ -8,7 +8,9 @@ from cognite.client.data_classes.documents import (
     Document,
     DocumentHighlightList,
     DocumentList,
+    DocumentProperty,
     DocumentUniqueResultList,
+    SourceFileProperty,
 )
 from cognite.client.data_classes.filters import Filter
 
@@ -79,6 +81,19 @@ class DocumentsAPI(APIClient):
         else:
             raise ValueError(f"Unknown aggregate: {aggregate}")
 
+    @classmethod
+    def _to_property_list(cls, property: DocumentProperty | SourceFileProperty | list[str] | str) -> list[str]:
+        if isinstance(property, DocumentProperty):
+            return [property.value]
+        elif isinstance(property, SourceFileProperty):
+            return ["sourceFile", property.value]
+        elif isinstance(property, str):
+            return [property]
+        elif isinstance(property, list):
+            return property
+        else:
+            raise ValueError(f"Unknown property format: {property}")
+
     def aggregate_count(self, query: str | None = None, filter: Filter | dict | None = None) -> int:
         """`Count of documents matching the specified filters and search.<https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
 
@@ -93,7 +108,7 @@ class DocumentsAPI(APIClient):
 
     def aggregate_cardinality(
         self,
-        properties: list[str],
+        property: DocumentProperty | SourceFileProperty | list[str] | str,
         query: str | None = None,
         filter: Filter | dict | None = None,
         aggregate_filter: Filter | dict | None = None,
@@ -101,7 +116,7 @@ class DocumentsAPI(APIClient):
         """`Find approximate number of unique properties.<https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
 
         Args:
-            properties (list[str]): The properties to count the cardinality of.
+            property (DocumentProperty | list[str] | str): The property to count the cardinality of.
             query (str | None): The free text search query, for details see the documentation referenced above.
             filter (Filter | dict | None): The filter to narrow down the documents to count cardinality.
             aggregate_filter (Filter | dict | None): The filter to apply to aggregations.
@@ -109,14 +124,16 @@ class DocumentsAPI(APIClient):
         Returns:
             int: The number of documents matching the specified filters and search.
         """
-        if properties == ["sourceFile", "metadata"]:
+        property = self._to_property_list(property)
+
+        if property == ["sourceFile", "metadata"]:
             return self._documents_aggregate(
-                "cardinalityProperties", path=properties, query=query, filter=filter, aggregate_filter=aggregate_filter
+                "cardinalityProperties", path=property, query=query, filter=filter, aggregate_filter=aggregate_filter
             )
         else:
             return self._documents_aggregate(
                 "cardinalityValues",
-                properties=properties,
+                properties=property,
                 query=query,
                 filter=filter,
                 aggregate_filter=aggregate_filter,
@@ -124,7 +141,7 @@ class DocumentsAPI(APIClient):
 
     def aggregate_unique(
         self,
-        properties: list[str],
+        property: DocumentProperty | SourceFileProperty | list[str] | str,
         query: str | None = None,
         filter: Filter | dict | None = None,
         aggregate_filter: Filter | dict | None = None,
@@ -133,7 +150,7 @@ class DocumentsAPI(APIClient):
         """`Find approximate number of unique properties..<https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
 
         Args:
-            properties (list[str]): The properties to group by.
+            property (list[str]): The property to group by.
             query (str | None): The free text search query, for details see the documentation referenced above.
             filter (Filter | dict | None): The filter to narrow down the documents to count cardinality.
             aggregate_filter (Filter | dict | None): The filter to apply to aggregations.
@@ -142,10 +159,12 @@ class DocumentsAPI(APIClient):
         Returns:
             DocumentUniqueResultList: List of unique values of documents matching the specified filters and search.
         """
-        if properties == ["sourceFile", "metadata"]:
+        property = self._to_property_list(property)
+
+        if property == ["sourceFile", "metadata"]:
             return self._documents_aggregate(
                 "uniqueProperties",
-                properties=properties,
+                properties=property,
                 query=query,
                 filter=filter,
                 aggregate_filter=aggregate_filter,
@@ -154,7 +173,7 @@ class DocumentsAPI(APIClient):
         else:
             return self._documents_aggregate(
                 "uniqueValues",
-                properties=properties,
+                properties=property,
                 query=query,
                 filter=filter,
                 aggregate_filter=aggregate_filter,

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from enum import Enum
 from typing import TYPE_CHECKING, Any, Optional
 
 from cognite.client.data_classes import GeoLocation, Label, LabelDefinition
@@ -192,3 +193,26 @@ class DocumentUniqueResultList(CogniteResourceList):
     @property
     def unique(self) -> list[str | int | float | Label]:
         return [item.value for item in self]
+
+
+class SourceFileProperty(Enum):
+    name = "name"
+    mime_type = "mimeType"
+    source = "source"
+    data_set_id = "dataSetId"
+    metadata = "metadata"
+
+
+class DocumentProperty(Enum):
+    id = "id"
+    external_id = "externalId"
+    mime_type = "mimeType"
+    extension = "extension"
+    page_count = "pageCount"
+    author = "author"
+    title = "title"
+    language = "language"
+    type = "type"
+    created_time = "createdTime"
+    modified_time = "modifiedTime"
+    last_indexed_time = "lastIndexedTime"
