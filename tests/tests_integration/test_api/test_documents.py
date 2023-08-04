@@ -68,7 +68,7 @@ class TestDocumentsAPI:
         # Arrange
         doc, content = file_content_pair
         query = '"pro at pericula ullamcorper"'
-
+        # Todo Make query optional?
         # Act
         result = cognite_client.documents.search(query=query, highlight=True, limit=5)
 
@@ -79,3 +79,10 @@ class TestDocumentsAPI:
         assert actual.document.source_file.name == doc.name
         assert not actual.highlight.name
         assert query[1:-1] in actual.highlight.content[0]
+
+    def test_aggregate_count(self, cognite_client: CogniteClient):
+        # Act
+        count = cognite_client.documents.aggregate_count()
+
+        # Assert
+        assert count > 0, "There should be at least one document in the test environment."

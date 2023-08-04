@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal, overload
+from typing import Any, Literal, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DOCUMENT_LIST_LIMIT_DEFAULT
@@ -17,18 +17,26 @@ from cognite.client.data_classes.filters import Filter
 class DocumentsAPI(APIClient):
     _RESOURCE_PATH = "/documents"
 
-    def aggregate_count(self, query: str | None = None, filter: Filter | dict | None = None) -> DocumentCountResultList:
+    def aggregate_count(self, query: str | None = None, filter: Filter | dict | None = None) -> int:
         """`Count of documents matching the specified filters and search.<https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
-
 
         Args:
             query (str | None): The free text search query, for details see the documentation referenced above.
             filter (Filter | dict | None): The filter to narrow down the documents to count.
 
         Returns:
-            DocumentCountResultList: List of counts of documents matching the specified filters and search.
+            int: The number of documents matching the specified filters and search.
         """
-        ...
+        body: dict[str, Any] = {
+            "aggregate": "count",
+        }
+        if query is not None:
+            body["search"] = {"query": query}
+        if filter is not None:
+            body["filter"] = filter.dump() if isinstance(filter, Filter) else filter
+
+        res = self._post(url_path=f"{self._RESOURCE_PATH}/aggregate", json=body)
+        return res.json()["items"][0]["count"]
 
     def aggregate_cardinality(
         self,
@@ -37,7 +45,7 @@ class DocumentsAPI(APIClient):
         filter: Filter | dict | None = None,
         aggregate_filter: Filter | dict | None = None,
     ) -> DocumentCountResultList:
-        """`Find approximate number of unique properties..<https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
+        """`Find approximate number of unique properties.<https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
 
         Args:
             properties (list[str]): The properties to count the cardinality of.
