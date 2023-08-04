@@ -16,16 +16,30 @@ class CogniteException(Exception):
 @dataclass
 class GraphQLErrorSpec:
     message: str
-    locations: Optional[list[dict[str, int]]]
+    hint: Optional[str]
+    kind: Optional[str]
+    location: Optional[dict[str, dict[str, int]]]
+    locations: Optional[list[dict[str, int]]]  # yes, the api distinguishes on plurality....
+    path: Optional[list[str]]
+    extensions: Optional[dict[str, str]]
 
     def __repr__(self) -> str:
-        return f"GraphQLErrorSpec(message={self.message}, locations={self.locations}"
+        attrs_string = f"message={self.message}"
+        for attr in ("hint", "kind", "location", "locations", "path", "extensions"):
+            if (value := getattr(self, attr)) is not None:
+                attrs_string += f", {attr}={value}"
+        return f"GraphQLErrorSpec({attrs_string})"
 
     @classmethod
     def load(cls, data: Dict[str, Any]) -> GraphQLErrorSpec:
         return cls(
             message=data["message"],
+            hint=data.get("hint"),
+            kind=data.get("kind"),
+            location=data.get("location"),
             locations=data.get("locations"),
+            path=data.get("path"),
+            extensions=data.get("extensions"),
         )
 
 
