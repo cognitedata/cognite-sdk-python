@@ -16,18 +16,7 @@ from cognite.client.data_classes.filters import Filter
 class DocumentsAPI(APIClient):
     _RESOURCE_PATH = "/documents"
 
-    def aggregate_count(self, query: str | None = None, filter: Filter | dict | None = None) -> int:
-        """`Count of documents matching the specified filters and search.<https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
-
-        Args:
-            query (str | None): The free text search query, for details see the documentation referenced above.
-            filter (Filter | dict | None): The filter to narrow down the documents to count.
-
-        Returns:
-            int: The number of documents matching the specified filters and search.
-        """
-        return self._documents_aggregate("count", filter=filter, query=query)
-
+    @overload
     def _documents_aggregate(
         self,
         aggregate: Literal["count", "cardinalityValues", "cardinalityProperties"],
@@ -36,7 +25,33 @@ class DocumentsAPI(APIClient):
         query: str | None = None,
         filter: Filter | dict | None = None,
         aggregate_filter: Filter | dict | None = None,
+        limit: int | None = None,
     ) -> int:
+        ...
+
+    @overload
+    def _documents_aggregate(
+        self,
+        aggregate: Literal["uniqueValues", "uniqueProperties"],
+        properties: list[str] | None = None,
+        path: list[str] | None = None,
+        query: str | None = None,
+        filter: Filter | dict | None = None,
+        aggregate_filter: Filter | dict | None = None,
+        limit: int | None = None,
+    ) -> DocumentUniqueResultList:
+        ...
+
+    def _documents_aggregate(
+        self,
+        aggregate: Literal["count", "cardinalityValues", "cardinalityProperties", "uniqueValues", "uniqueProperties"],
+        properties: list[str] | None = None,
+        path: list[str] | None = None,
+        query: str | None = None,
+        filter: Filter | dict | None = None,
+        aggregate_filter: Filter | dict | None = None,
+        limit: int | None = None,
+    ) -> int | DocumentUniqueResultList:
         body: dict[str, Any] = {
             "aggregate": aggregate,
         }
@@ -52,9 +67,29 @@ class DocumentsAPI(APIClient):
             body["aggregateFilter"] = (
                 aggregate_filter.dump() if isinstance(aggregate_filter, Filter) else aggregate_filter
             )
+        if limit is not None:
+            body["limit"] = limit
 
         res = self._post(url_path=f"{self._RESOURCE_PATH}/aggregate", json=body)
-        return res.json()["items"][0]["count"]
+        json_items = res.json()["items"]
+        if aggregate in {"count", "cardinalityValues", "cardinalityProperties"}:
+            return json_items[0]["count"]
+        elif aggregate in {"uniqueValues", "uniqueProperties"}:
+            return DocumentUniqueResultList._load(json_items, cognite_client=self._cognite_client)
+        else:
+            raise ValueError(f"Unknown aggregate: {aggregate}")
+
+    def aggregate_count(self, query: str | None = None, filter: Filter | dict | None = None) -> int:
+        """`Count of documents matching the specified filters and search.<https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
+
+        Args:
+            query (str | None): The free text search query, for details see the documentation referenced above.
+            filter (Filter | dict | None): The filter to narrow down the documents to count.
+
+        Returns:
+            int: The number of documents matching the specified filters and search.
+        """
+        return self._documents_aggregate("count", filter=filter, query=query)
 
     def aggregate_cardinality(
         self,
@@ -107,7 +142,24 @@ class DocumentsAPI(APIClient):
         Returns:
             DocumentUniqueResultList: List of unique values of documents matching the specified filters and search.
         """
-        ...
+        if properties == ["sourceFile", "metadata"]:
+            return self._documents_aggregate(
+                "uniqueProperties",
+                properties=properties,
+                query=query,
+                filter=filter,
+                aggregate_filter=aggregate_filter,
+                limit=limit,
+            )
+        else:
+            return self._documents_aggregate(
+                "uniqueValues",
+                properties=properties,
+                query=query,
+                filter=filter,
+                aggregate_filter=aggregate_filter,
+                limit=limit,
+            )
 
     def retrieve_content(self, id: int) -> str:
         """`Retrieve document content <https://developer.cognite.com/api#tag/Documents/operation/documentsContent>`_
