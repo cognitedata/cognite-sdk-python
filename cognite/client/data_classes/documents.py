@@ -123,6 +123,10 @@ class Document(CogniteResource):
         return output
 
 
+class DocumentList(CogniteResourceList[Document]):
+    _RESOURCE = Document
+
+
 @dataclass
 class Highlight(CogniteResource):
     name: list[str]
@@ -160,9 +164,18 @@ class DocumentHighlight(CogniteResource):
         return output
 
 
+class DocumentHighlightList(CogniteResourceList[DocumentHighlight]):
+    _RESOURCE = DocumentHighlight
+
+
 @dataclass
 class DocumentCountResult(CogniteResource):
     count: int
+
+    @classmethod
+    def _load(cls, resource: dict | str, cognite_client: Optional[CogniteClient] = None) -> DocumentCountResult:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        return cls(count=resource["count"])
 
 
 class DocumentCountResultList(CogniteResourceList):
@@ -177,11 +190,3 @@ class DocumentUniqueResult(CogniteResource):
 
 class DocumentUniqueResultList(CogniteResourceList):
     _RESOURCE = DocumentUniqueResult
-
-
-class DocumentList(CogniteResourceList[Document]):
-    _RESOURCE = Document
-
-
-class DocumentHighlightList(CogniteResourceList[DocumentHighlight]):
-    _RESOURCE = DocumentHighlight
