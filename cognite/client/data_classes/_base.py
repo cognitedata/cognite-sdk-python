@@ -616,7 +616,7 @@ class Geometry(dict):
         )
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
-        output = convert_all_keys_to_camel_case(self) if camel_case else dict(self)
+        output = dict(convert_all_keys_to_camel_case(self) if camel_case else self)
         if self.geometries:
             output["geometries"] = [g.dump(camel_case) for g in self.geometries]
         return output
