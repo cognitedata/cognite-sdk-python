@@ -4,6 +4,7 @@ from typing import Any, Literal, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DOCUMENT_LIST_LIMIT_DEFAULT
+from cognite.client.data_classes._base import EnumProperty
 from cognite.client.data_classes.documents import (
     Document,
     DocumentHighlightList,
@@ -11,7 +12,6 @@ from cognite.client.data_classes.documents import (
     DocumentProperty,
     DocumentSort,
     DocumentUniqueResultList,
-    EnumProperty,
     SortablePropertyLike,
     SourceFileProperty,
 )

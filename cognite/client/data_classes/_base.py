@@ -5,6 +5,7 @@ from abc import abstractmethod
 from collections import UserList
 from collections.abc import Iterable
 from dataclasses import dataclass
+from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -530,3 +531,8 @@ class CogniteFilter:
 
 
 T_CogniteFilter = TypeVar("T_CogniteFilter", bound=CogniteFilter)
+
+
+class EnumProperty(Enum):
+    def as_property(self) -> list[str]:
+        return [self.value]

@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from enum import Enum
 from typing import TYPE_CHECKING, Any, List, Literal, Optional, Union
 
 from typing_extensions import TypeAlias
 
 from cognite.client.data_classes import GeoLocation, Label, LabelDefinition
-from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
+from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, EnumProperty
 from cognite.client.utils._text import convert_all_keys_to_snake_case
 
 if TYPE_CHECKING:
@@ -197,11 +196,6 @@ class DocumentUniqueResultList(CogniteResourceList):
         return [item.value for item in self]
 
 
-class EnumProperty(Enum):
-    def as_property(self) -> list[str]:
-        return [self.value]
-
-
 class SortableSourceFileProperty(EnumProperty):
     name = "name"
     mime_type = "mimeType"
@@ -227,8 +221,9 @@ class SourceFileProperty(EnumProperty):
     geo_location = "geoLocation"
     labels = "labels"
 
-    def metadata_key(self, key: str) -> list[str]:
-        return ["metadata", key]
+    @classmethod
+    def metadata_key(cls, key: str) -> list[str]:
+        return ["sourceFile", "metadata", key]
 
 
 class SortableDocumentProperty(EnumProperty):
