@@ -3,7 +3,9 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, List, Literal, Optional, Union
+
+from typing_extensions import TypeAlias
 
 from cognite.client.data_classes import GeoLocation, Label, LabelDefinition
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
@@ -195,15 +197,41 @@ class DocumentUniqueResultList(CogniteResourceList):
         return [item.value for item in self]
 
 
-class SourceFileProperty(Enum):
+class EnumProperty(Enum):
+    def as_property(self) -> list[str]:
+        return [self.value]
+
+
+class SortableSourceFileProperty(EnumProperty):
     name = "name"
     mime_type = "mimeType"
     source = "source"
     data_set_id = "dataSetId"
     metadata = "metadata"
 
+    def as_property(self) -> list[str]:
+        return ["sourceFile", self.value]
 
-class DocumentProperty(Enum):
+
+class SourceFileProperty(EnumProperty):
+    name = "name"
+    mime_type = "mimeType"
+    source = "source"
+    data_set_id = "dataSetId"
+    metadata = "metadata"
+    size = "size"
+    directory = "directory"
+    asset_ids = "assetIds"
+    asset_external_ids = "assetExternalIds"
+    security_categories = "securityCategories"
+    geo_location = "geoLocation"
+    labels = "labels"
+
+    def metadata_key(self, key: str) -> list[str]:
+        return ["metadata", key]
+
+
+class SortableDocumentProperty(EnumProperty):
     id = "id"
     external_id = "externalId"
     mime_type = "mimeType"
@@ -216,3 +244,71 @@ class DocumentProperty(Enum):
     created_time = "createdTime"
     modified_time = "modifiedTime"
     last_indexed_time = "lastIndexedTime"
+
+
+class DocumentProperty(EnumProperty):
+    id = "id"
+    external_id = "externalId"
+    mime_type = "mimeType"
+    extension = "extension"
+    page_count = "pageCount"
+    author = "author"
+    title = "title"
+    language = "language"
+    type = "type"
+    created_time = "createdTime"
+    modified_time = "modifiedTime"
+    last_indexed_time = "lastIndexedTime"
+    geo_location = "geoLocation"
+    asset_ids = "assetIds"
+    asset_external_ids = "assetExternalIds"
+    labels = "labels"
+    content = "content"
+
+
+SortablePropertyLike: TypeAlias = Union[SortableSourceFileProperty, SortableDocumentProperty, str, List[str]]
+
+
+@dataclass
+class DocumentSort:
+    property: SortablePropertyLike
+    order: Literal["asc", "desc"] = "asc"
+
+    @classmethod
+    def load(
+        cls,
+        data: dict[str, Any]
+        | tuple[SortablePropertyLike, Literal["asc", "desc"]]
+        | SortablePropertyLike
+        | DocumentSort,
+    ) -> DocumentSort:
+        if isinstance(data, cls):
+            return data
+        elif isinstance(data, dict):
+            return cls(
+                property=data["property"],
+                order=data.get("order", "asc"),
+            )
+        elif isinstance(data, tuple) and len(data) == 2 and data[1] in ["asc", "desc"]:
+            return cls(
+                property=data[0],
+                order=data[1],
+            )
+        elif isinstance(data, (str, list, EnumProperty)):
+            return cls(
+                property=data,
+            )
+        else:
+            raise ValueError(f"Unable to load {cls.__name__} from {data}")
+
+    def dump(self) -> dict[str, Any]:
+        prop = self.property
+        if isinstance(prop, EnumProperty):
+            prop = prop.as_property()
+        elif isinstance(prop, str):
+            prop = [prop]
+
+        return {
+            "property": prop,
+            "order": self.order,
+        }

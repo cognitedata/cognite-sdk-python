@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes.documents import DocumentProperty, SourceFileProperty
+from cognite.client.data_classes.documents import DocumentProperty, SortableDocumentProperty, SourceFileProperty
 from cognite.client.data_classes.files import FileMetadata
 
 
@@ -55,7 +55,7 @@ class TestDocumentsAPI:
         query = '"pro at pericula ullamcorper"'
 
         # Act
-        result = cognite_client.documents.search(query=query, limit=5)
+        result = cognite_client.documents.search(query=query, limit=5, sort=SortableDocumentProperty.title)
 
         # Assert
         assert len(result) == 1, "Expected to retrieve exactly one document."
