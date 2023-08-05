@@ -128,7 +128,6 @@ from cognite.client.data_classes.shared import (
     AggregateUniqueValuesResult,
     GeoLocation,
     GeoLocationFilter,
-    Geometry,
     GeometryFilter,
     TimestampRange,
 )
@@ -332,7 +331,6 @@ __all__ = [
     "AggregateUniqueValuesResult",
     "GeoLocation",
     "GeoLocationFilter",
-    "Geometry",
     "GeometryFilter",
     "TimestampRange",
     "Datapoint",

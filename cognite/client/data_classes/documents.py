@@ -225,6 +225,9 @@ class SourceFileProperty(EnumProperty):
     def metadata_key(cls, key: str) -> list[str]:
         return ["sourceFile", "metadata", key]
 
+    def as_reference(self) -> list[str]:
+        return ["sourceFile", self.value]
+
 
 class SortableDocumentProperty(EnumProperty):
     id = "id"

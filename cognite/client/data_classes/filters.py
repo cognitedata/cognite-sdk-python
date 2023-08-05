@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Sequence, Tuple, Union, cast, final
 
-from cognite.client.data_classes._base import EnumProperty
+from cognite.client.data_classes._base import EnumProperty, Geometry
 from cognite.client.data_classes.labels import Label
 
 if TYPE_CHECKING:
@@ -114,6 +114,36 @@ class Filter(ABC):
             return ContainsAny(
                 property=filter_body["property"],
                 values=cast(FilterValueList, _load_filter_value(filter_body["values"])),
+            )
+        elif filter_name == ContainsAll._filter_name:
+            return ContainsAll(
+                property=filter_body["property"],
+                values=cast(FilterValueList, _load_filter_value(filter_body["values"])),
+            )
+        elif filter_name == GeojsonIntersects._filter_name:
+            return GeojsonIntersects(
+                property=filter_body["property"],
+                geometry=Geometry._load(filter_body["geometry"]),
+            )
+        elif filter_name == GeojsonDisjoint._filter_name:
+            return GeojsonDisjoint(
+                property=filter_body["property"],
+                geometry=Geometry._load(filter_body["geometry"]),
+            )
+        elif filter_name == GeojsonWithin._filter_name:
+            return GeojsonWithin(
+                property=filter_body["property"],
+                geometry=Geometry._load(filter_body["geometry"]),
+            )
+        elif filter_name == InAssetSubtree._filter_name:
+            return InAssetSubtree(
+                property=filter_body["property"],
+                value=_load_filter_value(filter_body["value"]),
+            )
+        elif filter_name == Search._filter_name:
+            return Search(
+                property=filter_body["property"],
+                value=_load_filter_value(filter_body["value"]),
             )
         else:
             raise ValueError(f"Unknown filter type: {filter_name}")
@@ -337,3 +367,39 @@ class ContainsAny(FilterWithPropertyAndValueList):
 @final
 class ContainsAll(FilterWithPropertyAndValueList):
     _filter_name = "containsAll"
+
+
+class Geojson(FilterWithProperty, ABC):
+    _filter_name = "geojson"
+
+    def __init__(self, property: PropertyReference, geometry: Geometry):
+        super().__init__(property)
+        self._geometry = geometry
+
+    def _filter_body(self) -> dict[str, Any]:
+        return {"property": self._dump_property(), "geometry": self._geometry.dump(camel_case=True)}
+
+
+@final
+class GeojsonIntersects(Geojson):
+    _filter_name = "geojsonIntersects"
+
+
+@final
+class GeojsonDisjoint(Geojson):
+    _filter_name = "geojsonDisjoint"
+
+
+@final
+class GeojsonWithin(Geojson):
+    _filter_name = "geojsonWithin"
+
+
+@final
+class InAssetSubtree(FilterWithPropertyAndValue):
+    _filter_name = "inAssetSubtree"
+
+
+@final
+class Search(FilterWithPropertyAndValue):
+    _filter_name = "search"
