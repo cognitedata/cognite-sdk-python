@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from cognite.client import CogniteClient
+from cognite.client.data_classes import filters
 from cognite.client.data_classes.documents import DocumentProperty, SortableDocumentProperty, SourceFileProperty
 from cognite.client.data_classes.files import FileMetadata
 
@@ -115,3 +116,13 @@ class TestDocumentsAPI:
 
         # Assert
         assert len(result) > 0
+
+    def test_iterate_over_text_documents(self, cognite_client: CogniteClient):
+        # Arrange
+        is_text_doc = filters.Equals(DocumentProperty.mime_type, "text/plain")
+
+        # Act
+        for text_doc in cognite_client.documents(filter=is_text_doc):
+            # Assert
+            assert text_doc.mime_type == "text/plain"
+            break
