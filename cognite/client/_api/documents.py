@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Literal, overload
+from collections.abc import Iterator
+from typing import Any, Literal, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DOCUMENT_LIST_LIMIT_DEFAULT
@@ -20,6 +21,69 @@ from cognite.client.data_classes.filters import Filter
 
 class DocumentsAPI(APIClient):
     _RESOURCE_PATH = "/documents"
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: int,
+        filter: Filter | dict | None = None,
+        limit: int | None = None,
+        partitions: int | None = None,
+    ) -> Iterator[DocumentList]:
+        ...
+
+    @overload
+    def __call__(
+        self,
+        chunk_size: Literal[None] = None,
+        filter: Filter | dict | None = None,
+        limit: int | None = None,
+        partitions: int | None = None,
+    ) -> Iterator[DocumentList]:
+        ...
+
+    def __call__(
+        self,
+        chunk_size: int | None = None,
+        filter: Filter | dict | None = None,
+        limit: int | None = None,
+        partitions: int | None = None,
+    ) -> Iterator[Document] | Iterator[DocumentList]:
+        """Iterate over documents
+
+        Fetches documents as they are iterated over, so you keep a limited number of documents in memory.
+
+        Args:
+            chunk_size (int, optional): Number of documents to return in each chunk. Defaults to yielding one document at a time.
+            filter(filter: Filter | dict | None): The filter to narrow down the documents to return.
+            limit (int, optional): Maximum number of documents to return. Default to return all items.
+            partitions (int): Retrieve documents in parallel using this number of workers. Also requires `limit=None` to be passed.
+                To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions.
+                When using more than 10 partitions, actual throughout decreases.
+                In future releases of the APIs, CDF may reject requests with more than 10 partitions.
+
+        Yields:
+            Document | DocumentList: yields Documents one by one if chunk_size is not specified, else DocumentList objects.
+        """
+        return self._list_generator(
+            list_cls=DocumentList,
+            resource_cls=Document,
+            method="POST",
+            chunk_size=chunk_size,
+            filter=filter.dump() if isinstance(filter, Filter) else filter,
+            limit=limit,
+            partitions=partitions,
+        )
+
+    def __iter__(self) -> Iterator[Document]:
+        """Iterate over documents
+
+        Fetches documents as they are iterated over, so you keep a limited number of documents in memory.
+
+        Yields:
+            Documents: yields documents one by one.
+        """
+        return cast(Iterator[Document], self())
 
     @overload
     def _documents_aggregate(
