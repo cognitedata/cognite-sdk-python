@@ -534,5 +534,5 @@ T_CogniteFilter = TypeVar("T_CogniteFilter", bound=CogniteFilter)
 
 
 class EnumProperty(Enum):
-    def as_property(self) -> list[str]:
+    def as_reference(self) -> list[str]:
         return [self.value]

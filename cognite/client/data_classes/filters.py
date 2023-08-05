@@ -4,13 +4,16 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Sequence, Tuple, Union, cast, final
 
+from cognite.client.data_classes._base import EnumProperty
+from cognite.client.data_classes.labels import Label
+
 if TYPE_CHECKING:
     from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
 
 
-PropertyReference = Union[Tuple[str, ...], List[str]]
+PropertyReference = Union[Tuple[str, ...], List[str], EnumProperty]
 
-RawValue = Union[str, float, bool, Sequence, Mapping[str, Any]]
+RawValue = Union[str, float, bool, Sequence, Mapping[str, Any], Label]
 
 
 @dataclass
@@ -29,7 +32,11 @@ FilterValueList = Union[Sequence[RawValue], PropertyReferenceValue, ParameterVal
 
 def _dump_filter_value(filter_value: FilterValueList | FilterValue) -> Any:
     if isinstance(filter_value, PropertyReferenceValue):
-        return {"property": filter_value.property}
+        return {
+            "property": filter_value.property.as_reference()
+            if isinstance(filter_value.property, EnumProperty)
+            else filter_value.property
+        }
     if isinstance(filter_value, ParameterValue):
         return {"parameter": filter_value.parameter}
     else:
@@ -139,8 +146,11 @@ class FilterWithProperty(Filter):
     def __init__(self, property: PropertyReference):
         self._property = property
 
+    def _dump_property(self) -> list[str] | tuple[str, ...]:
+        return self._property.as_reference() if isinstance(self._property, EnumProperty) else self._property
+
     def _filter_body(self) -> dict:
-        return {"property": self._property}
+        return {"property": self._dump_property()}
 
 
 class FilterWithPropertyAndValue(FilterWithProperty):
@@ -151,7 +161,7 @@ class FilterWithPropertyAndValue(FilterWithProperty):
         self._value = value
 
     def _filter_body(self) -> dict[str, Any]:
-        return {"property": self._property, "value": _dump_filter_value(self._value)}
+        return {"property": self._dump_property(), "value": _dump_filter_value(self._value)}
 
 
 class FilterWithPropertyAndValueList(FilterWithProperty):
@@ -162,7 +172,7 @@ class FilterWithPropertyAndValueList(FilterWithProperty):
         self._values = values
 
     def _filter_body(self) -> dict[str, Any]:
-        return {"property": self._property, "values": _dump_filter_value(self._values)}
+        return {"property": self._dump_property(), "values": _dump_filter_value(self._values)}
 
 
 @final
@@ -246,7 +256,7 @@ class Range(FilterWithProperty):
         self._lte = lte
 
     def _filter_body(self) -> dict[str, Any]:
-        body = {"property": self._property}
+        body = {"property": self._dump_property()}
         if self._gt is not None:
             body["gt"] = _dump_filter_value(self._gt)
         if self._gte is not None:
@@ -280,8 +290,12 @@ class Overlaps(Filter):
 
     def _filter_body(self) -> dict[str, Any]:
         body = {
-            "startProperty": self._start_property,
-            "endProperty": self._end_property,
+            "startProperty": self._start_property.as_reference()
+            if isinstance(self._start_property, EnumProperty)
+            else self._start_property,
+            "endProperty": self._end_property.as_reference()
+            if isinstance(self._end_property, EnumProperty)
+            else self._end_property,
         }
 
         if self._gt is not None:
