@@ -87,7 +87,7 @@ class DocumentsAPI(APIClient):
     @classmethod
     def _to_property_list(cls, property: EnumProperty | list[str] | str) -> list[str]:
         if isinstance(property, EnumProperty):
-            return property.as_property()
+            return property.as_reference()
         elif isinstance(property, str):
             return [property]
         elif isinstance(property, list):

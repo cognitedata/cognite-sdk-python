@@ -203,7 +203,7 @@ class SortableSourceFileProperty(EnumProperty):
     data_set_id = "dataSetId"
     metadata = "metadata"
 
-    def as_property(self) -> list[str]:
+    def as_reference(self) -> list[str]:
         return ["sourceFile", self.value]
 
 
@@ -299,7 +299,7 @@ class DocumentSort:
     def dump(self) -> dict[str, Any]:
         prop = self.property
         if isinstance(prop, EnumProperty):
-            prop = prop.as_property()
+            prop = prop.as_reference()
         elif isinstance(prop, str):
             prop = [prop]
 
