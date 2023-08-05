@@ -9,7 +9,9 @@ from cognite.client.data_classes.documents import (
     DocumentHighlightList,
     DocumentList,
     DocumentProperty,
+    DocumentSort,
     DocumentUniqueResultList,
+    SortablePropertyLike,
     SourceFileProperty,
 )
 from cognite.client.data_classes.filters import Filter
@@ -160,25 +162,17 @@ class DocumentsAPI(APIClient):
             DocumentUniqueResultList: List of unique values of documents matching the specified filters and search.
         """
         property = self._to_property_list(property)
-
-        if property == ["sourceFile", "metadata"]:
-            return self._documents_aggregate(
-                "uniqueProperties",
-                properties=property,
-                query=query,
-                filter=filter,
-                aggregate_filter=aggregate_filter,
-                limit=limit,
-            )
-        else:
-            return self._documents_aggregate(
-                "uniqueValues",
-                properties=property,
-                query=query,
-                filter=filter,
-                aggregate_filter=aggregate_filter,
-                limit=limit,
-            )
+        aggregate: Literal["uniqueValues", "uniqueProperties"] = (
+            "uniqueProperties" if property == ["sourceFile", "metadata"] else "uniqueValues"
+        )
+        return self._documents_aggregate(
+            aggregate=aggregate,
+            properties=property,
+            query=query,
+            filter=filter,
+            aggregate_filter=aggregate_filter,
+            limit=limit,
+        )
 
     def retrieve_content(self, id: int) -> str:
         """`Retrieve document content <https://developer.cognite.com/api#tag/Documents/operation/documentsContent>`_
@@ -210,7 +204,7 @@ class DocumentsAPI(APIClient):
         query: str,
         highlight: Literal[False] = False,
         filter: Filter | dict | None = None,
-        sort: str | None = None,
+        sort: DocumentSort | str | list[str] | tuple[SortablePropertyLike, Literal["asc", "desc"]] | None = None,
         limit: int = DOCUMENT_LIST_LIMIT_DEFAULT,
     ) -> DocumentList:
         ...
@@ -221,7 +215,7 @@ class DocumentsAPI(APIClient):
         query: str,
         highlight: Literal[True],
         filter: Filter | dict | None = None,
-        sort: str | None = None,
+        sort: DocumentSort | str | list[str] | tuple[SortablePropertyLike, Literal["asc", "desc"]] | None = None,
         limit: int = DOCUMENT_LIST_LIMIT_DEFAULT,
     ) -> DocumentHighlightList:
         ...
@@ -231,7 +225,7 @@ class DocumentsAPI(APIClient):
         query: str,
         highlight: bool = False,
         filter: Filter | dict | None = None,
-        sort: str | None = None,
+        sort: DocumentSort | SortablePropertyLike | tuple[SortablePropertyLike, Literal["asc", "desc"]] | None = None,
         limit: int = DOCUMENT_LIST_LIMIT_DEFAULT,
     ) -> DocumentList | DocumentHighlightList:
         """Search documents <https://developer.cognite.com/api#tag/Documents/operation/documentsSearch>`_
@@ -244,7 +238,8 @@ class DocumentsAPI(APIClient):
             query (str) : The free text search query.
             highlight: Whether or not matches in search results should be highlighted.
             filter (Filter | dict | None): The filter to narrow down the documents to search.
-            sort: The property to sort by.
+            sort (DocumentSort | str | list[str] | tuple[SortablePropertyLike, Literal["asc", "desc"]] | None):
+                The property to sort by. The default order is ascending.
             limit: Maximum number of items. When using highlights, the maximum value is reduced to 20. Defaults to 100.
 
         Returns:
@@ -253,18 +248,18 @@ class DocumentsAPI(APIClient):
         """
         results = []
         next_cursor = None
+        body: dict[str, str | int | bool | dict | list] = {
+            "search": {"query": query},
+        }
+        if filter:
+            body["filter"] = filter.dump() if isinstance(filter, Filter) else filter
+        if sort:
+            body["sort"] = [DocumentSort.load(sort).dump()]
+        if limit:
+            body["limit"] = limit
+        if highlight:
+            body["highlight"] = highlight
         while True:
-            body: dict[str, str | int | bool | dict] = {
-                "search": {"query": query},
-            }
-            if filter:
-                body["filter"] = filter.dump() if isinstance(filter, Filter) else filter
-            if sort:
-                body["sort"] = sort
-            if limit:
-                body["limit"] = limit
-            if highlight:
-                body["highlight"] = highlight
             if next_cursor:
                 body["cursor"] = next_cursor
 
