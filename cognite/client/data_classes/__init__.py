@@ -1,3 +1,4 @@
+from cognite.client.data_classes._base import Geometry
 from cognite.client.data_classes.annotations import (
     Annotation,
     AnnotationFilter,
@@ -332,6 +333,7 @@ __all__ = [
     "GeoLocation",
     "GeoLocationFilter",
     "GeometryFilter",
+    "Geometry",
     "TimestampRange",
     "Datapoint",
     "Datapoints",
