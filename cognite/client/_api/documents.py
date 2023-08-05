@@ -11,6 +11,7 @@ from cognite.client.data_classes.documents import (
     DocumentProperty,
     DocumentSort,
     DocumentUniqueResultList,
+    EnumProperty,
     SortablePropertyLike,
     SourceFileProperty,
 )
@@ -84,11 +85,9 @@ class DocumentsAPI(APIClient):
             raise ValueError(f"Unknown aggregate: {aggregate}")
 
     @classmethod
-    def _to_property_list(cls, property: DocumentProperty | SourceFileProperty | list[str] | str) -> list[str]:
-        if isinstance(property, DocumentProperty):
-            return [property.value]
-        elif isinstance(property, SourceFileProperty):
-            return ["sourceFile", property.value]
+    def _to_property_list(cls, property: EnumProperty | list[str] | str) -> list[str]:
+        if isinstance(property, EnumProperty):
+            return property.as_property()
         elif isinstance(property, str):
             return [property]
         elif isinstance(property, list):
