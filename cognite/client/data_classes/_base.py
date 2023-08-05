@@ -619,4 +619,6 @@ class Geometry(dict):
         output = dict(convert_all_keys_to_camel_case(self) if camel_case else self)
         if self.geometries:
             output["geometries"] = [g.dump(camel_case) for g in self.geometries]
+        else:
+            output.pop("geometries", None)
         return output
