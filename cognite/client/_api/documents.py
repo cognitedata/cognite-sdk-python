@@ -27,11 +27,41 @@ if TYPE_CHECKING:
 class DocumentPreviewAPI(APIClient):
     _RESOURCE_PATH = "/documents"
 
-    def download_png_bytes(self, id: int, page_number: int) -> bytes:
-        ...
+    def download_png_bytes(self, id: int, page_number: int = 1) -> bytes:
+        """`Downloads an image preview for a specific page of the specified document. <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewImagePage>`_
 
-    def download_png_to_path(self, id: int, page_number: int, path: Path | str) -> None:
-        ...
+        Args:
+            id: The server-generated ID for the document you want to retrieve the preview of.
+            page_number: Page number to preview. Starting at 1 for first page.
+
+        Returns:
+            bytes: The png preview of the document.
+        """
+        res = self._do_request(
+            "GET", f"{self._RESOURCE_PATH}/{id}/preview/image/pages/{page_number}", accept="image/png"
+        )
+        return res.content
+
+    def download_png_to_path(self, path: Path | str, id: int, page_number: int = 1) -> None:
+        """`Downloads an image preview for a specific page of the specified document. <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewImagePage>`_
+
+        Args:
+            path: The path to save the png preview of the document. If the path is a directory, the
+                  file name will be '[id]_page[page_number].png'.
+            id: The server-generated ID for the document you want to retrieve the preview of.
+            page_number: Page number to preview. Starting at 1 for first page.
+
+        Returns:
+            bytes: The png preview of the document.
+        """
+        path = Path(path)
+        if path.is_dir():
+            path = path / f"{id}_page{page_number}.png"
+        else:
+            if path.suffix != ".png":
+                raise ValueError("Path must be a directory or end with .png")
+        content = self.download_png_bytes(id, page_number)
+        path.write_bytes(content)
 
     def download_pdf_bytes(self, id: int) -> bytes:
         ...
