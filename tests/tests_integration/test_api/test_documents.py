@@ -88,7 +88,7 @@ class TestDocumentsAPI:
         # Arrange
         doc, content = text_file_content_pair
         query = '"pro at pericula ullamcorper"'
-        # Todo Make query optional?
+
         # Act
         result = cognite_client.documents.search(query=query, highlight=True, limit=5)
 

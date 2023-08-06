@@ -36,6 +36,15 @@ class DocumentPreviewAPI(APIClient):
 
         Returns:
             bytes: The png preview of the document.
+
+        Examples:
+
+        Download Image preview of page 5 of file with id 123:
+
+            >>> from cognite.client import CogniteClient
+            >>> c = CogniteClient()
+            >>> content = c.documents.preview.download_png_bytes(id=123, page_number=5)
+
         """
         res = self._do_request(
             "GET", f"{self._RESOURCE_PATH}/{id}/preview/image/pages/{page_number}", accept="image/png"
@@ -50,6 +59,15 @@ class DocumentPreviewAPI(APIClient):
                   file name will be '[id]_page[page_number].png'.
             id: The server-generated ID for the document you want to retrieve the preview of.
             page_number: Page number to preview. Starting at 1 for first page.
+
+        Examples:
+
+        Download Image preview of page 5 of file with id 123 to folder "previews":
+
+            >>> from cognite.client import CogniteClient
+            >>> c = CogniteClient()
+            >>> c.documents.preview.download_png_to_path("previews", id=123, page_number=5)
+
         """
         path = Path(path)
         if path.is_dir():
@@ -72,6 +90,14 @@ class DocumentPreviewAPI(APIClient):
 
         Returns:
             bytes: The pdf preview of the document.
+
+        Examples:
+
+        Download PDF preview of file with id 123:
+
+            >>> from cognite.client import CogniteClient
+            >>> c = CogniteClient()
+            >>> content = c.documents.preview.download_pdf_bytes(id=123)
         """
         res = self._do_request("GET", f"{self._RESOURCE_PATH}/{id}/preview/pdf", accept="application/pdf")
         return res.content
@@ -90,6 +116,15 @@ class DocumentPreviewAPI(APIClient):
 
         Returns:
             bytes: The pdf preview of the document.
+
+        Examples:
+
+        Download PDF preview of file with id 123 to folder "previews":
+
+            >>> from cognite.client import CogniteClient
+            >>> c = CogniteClient()
+            >>> c.documents.preview.download_pdf_to_path("previews", id=123)
+
         """
         path = Path(path)
         if path.is_dir():
@@ -109,6 +144,13 @@ class DocumentPreviewAPI(APIClient):
         Returns:
             A temporary link to download the pdf preview.
 
+        Examples:
+
+        Retrieve the PDF preview download link for document with id 123:
+
+            >>> from cognite.client import CogniteClient
+            >>> c = CogniteClient()
+            >>> link = c.documents.preview.retrieve_pdf_link(id=123)
         """
         res = self._get(f"{self._RESOURCE_PATH}/{id}/preview/pdf/temporarylink")
         return TemporaryLink.load(res.json())
@@ -267,6 +309,24 @@ class DocumentsAPI(APIClient):
 
         Returns:
             int: The number of documents matching the specified filters and search.
+
+        Examples:
+
+        Count the number of documents in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> c = CogniteClient()
+            >>> count = c.documents.aggregate_count()
+
+        Count the number of PDF documents in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes import filters
+            >>> from cognite.client.data_classes.documents import DocumentProperty
+            >>> c = CogniteClient()
+            >>> is_pdf = filters.Equals(DocumentProperty.mime_type, "application/pdf")
+            >>> pdf_count = c.documents.aggregate_count(filter=is_pdf)
+
         """
         return self._documents_aggregate("count", filter=filter, query=query)
 
@@ -287,6 +347,25 @@ class DocumentsAPI(APIClient):
 
         Returns:
             int: The number of documents matching the specified filters and search.
+
+        Examples:
+
+        Count the number of types of documents in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes.documents import DocumentProperty
+            >>> c = CogniteClient()
+            >>> pdf_count = c.documents.aggregate_cardinality(DocumentProperty.type)
+
+        Count the number of authors of plain/text documents in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes import filters
+            >>> from cognite.client.data_classes.documents import DocumentProperty
+            >>> c = CogniteClient()
+            >>> is_plain_text = filters.Equals(DocumentProperty.mime_type, "text/plain")
+            >>> plain_text_author_count = c.documents.aggregate_cardinality(DocumentProperty.author, filter=is_plain_text)
+
         """
         property = self._to_property_list(property)
 
@@ -322,6 +401,27 @@ class DocumentsAPI(APIClient):
 
         Returns:
             DocumentUniqueResultList: List of unique values of documents matching the specified filters and search.
+
+        Examples:
+
+        Get the unique types with count of documents in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes.documents import DocumentProperty
+            >>> c = CogniteClient()
+            >>> result = c.documents.aggregate_unique(DocumentProperty.mime_type)
+            >>> print(result.unique)
+
+        Get the different languages with count for documents with external id prefix "abc":
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes import filters
+            >>> from cognite.client.data_classes.documents import DocumentProperty
+            >>> c = CogniteClient()
+            >>> is_abc = filters.Prefix(DocumentProperty.external_id, "abc")
+            >>> result = c.documents.aggregate_unique(DocumentProperty.language, filter=is_abc)
+            >>> print(result.unique)
+
         """
         property = self._to_property_list(property)
         aggregate: Literal["uniqueValues", "uniqueProperties"] = (
@@ -352,6 +452,14 @@ class DocumentsAPI(APIClient):
 
         Returns:
             str: The content of the document.
+
+        Examples:
+
+        Retrieve the content of a document with id 123:
+
+            >>> from cognite.client import CogniteClient
+            >>> c = CogniteClient()
+            >>> content = c.documents.retrieve_content(id=123)
 
         """
 
@@ -405,6 +513,34 @@ class DocumentsAPI(APIClient):
         Returns:
             DocumentList | DocumentHighlightList: List of search results. If highlight is True, a DocumentHighlightList
                                                   is returned, otherwise a DocumentList is returned.
+
+        Examples:
+
+        Search for text "pump 123" in PDF documents in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes import filters
+            >>> from cognite.client.data_classes.documents import DocumentProperty
+            >>> c = CogniteClient()
+            >>> is_pdf = filters.Equals(DocumentProperty.mime_type, "application/pdf")
+            >>> documents = c.documents.search("pump 123", filter=is_pdf)
+
+        Find all documents with exact text 'CPLEX Error 1217: No Solution exists.'
+        in plain text files created the last week in your CDF project and highlight the matches:
+
+            >>> from datetime import datetime, timedelta
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes import filters
+            >>> from cognite.client.data_classes.documents import DocumentProperty
+            >>> from cognite.client.utils import timestamp_to_ms
+            >>> c = CogniteClient()
+            >>> is_plain_text = filters.Equals(DocumentProperty.mime_type, "text/plain")
+            >>> last_week = filters.Range(DocumentProperty.created_time,
+            ...                           gt=timestamp_to_ms(datetime.now() - timedelta(days=7)))
+            >>> documents = c.documents.search('"CPLEX Error 1217: No Solution exists."',
+            ...                                highlight=True,
+            ...                                filter=filters.And(is_plain_text, last_week))
+
         """
         results = []
         next_cursor = None
@@ -450,6 +586,26 @@ class DocumentsAPI(APIClient):
 
         Returns:
             DocumentList: List of documents
+
+        Examples:
+
+        List all PDF documents in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes import filters
+            >>> from cognite.client.data_classes.documents import DocumentProperty
+            >>> c = CogniteClient()
+            >>> is_pdf = filters.Equals(DocumentProperty.mime_type, "application/pdf")
+            >>> pdf_documents = c.documents.list(filter=is_pdf)
+
+        Iterate over all documents in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes.documents import DocumentProperty
+            >>> c = CogniteClient()
+            >>> for document in c.documents:
+            ...    print(document.name)
+
         """
         return self._list(
             list_cls=DocumentList,
