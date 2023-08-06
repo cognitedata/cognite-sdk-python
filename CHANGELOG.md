@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.14.0] - 2023-08-17
+### Added
+- Support for the DocumentsAPI with the implementation `client.documents`.
+
+
 ## [6.13.3] - 2023-08-14
 ### Fixed
 - Fixed bug in `ViewApply.properties` had type hint `ConnectionDefinition` instead of `ConnectionDefinitionApply`.
