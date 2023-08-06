@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DOCUMENT_LIST_LIMIT_DEFAULT
+from cognite.client.data_classes import filters
 from cognite.client.data_classes._base import EnumProperty
 from cognite.client.data_classes.documents import (
     Document,
@@ -22,6 +23,34 @@ from cognite.client.data_classes.filters import Filter
 
 if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
+
+_FILTERS_SUPPORTED: frozenset[type[Filter]] = frozenset(
+    {
+        filters.And,
+        filters.Or,
+        filters.Not,
+        filters.In,
+        filters.Equals,
+        filters.Exists,
+        filters.Range,
+        filters.Prefix,
+        filters.ContainsAny,
+        filters.ContainsAll,
+        filters.GeojsonIntersects,
+        filters.GeojsonDisjoint,
+        filters.GeojsonWithin,
+        filters.InAssetSubtree,
+        filters.Search,
+    }
+)
+
+
+def _validate_filter(filter: Filter | dict | None) -> None:
+    if filter is None or isinstance(filter, dict):
+        return
+    if not_supported := (filter._involved_filter_types() - _FILTERS_SUPPORTED):
+        names = [f.__name__ for f in not_supported]
+        raise ValueError(f"The filters {names} are not supported for Documents")
 
 
 class DocumentPreviewAPI(APIClient):
@@ -206,6 +235,7 @@ class DocumentsAPI(APIClient):
         Yields:
             Document | DocumentList: yields Documents one by one if chunk_size is not specified, else DocumentList objects.
         """
+        _validate_filter(filter)
         return self._list_generator(
             list_cls=DocumentList,
             resource_cls=Document,
@@ -328,6 +358,7 @@ class DocumentsAPI(APIClient):
             >>> pdf_count = c.documents.aggregate_count(filter=is_pdf)
 
         """
+        _validate_filter(filter)
         return self._documents_aggregate("count", filter=filter, query=query)
 
     def aggregate_cardinality(
@@ -367,6 +398,7 @@ class DocumentsAPI(APIClient):
             >>> plain_text_author_count = c.documents.aggregate_cardinality(DocumentProperty.author, filter=is_plain_text)
 
         """
+        _validate_filter(filter)
         property = self._to_property_list(property)
 
         if property == ["sourceFile", "metadata"]:
@@ -423,6 +455,7 @@ class DocumentsAPI(APIClient):
             >>> print(result.unique)
 
         """
+        _validate_filter(filter)
         property = self._to_property_list(property)
         aggregate: Literal["uniqueValues", "uniqueProperties"] = (
             "uniqueProperties" if property == ["sourceFile", "metadata"] else "uniqueValues"
@@ -462,7 +495,6 @@ class DocumentsAPI(APIClient):
             >>> content = c.documents.retrieve_content(id=123)
 
         """
-
         response = self._do_request("GET", f"{self._RESOURCE_PATH}/{id}/content", accept="text/plain")
         return response.text
 
@@ -542,6 +574,7 @@ class DocumentsAPI(APIClient):
             ...                                filter=filters.And(is_plain_text, last_week))
 
         """
+        _validate_filter(filter)
         results = []
         next_cursor = None
         body: dict[str, str | int | bool | dict | list] = {
@@ -607,6 +640,7 @@ class DocumentsAPI(APIClient):
             ...    print(document.name)
 
         """
+        _validate_filter(filter)
         return self._list(
             list_cls=DocumentList,
             resource_cls=Document,
