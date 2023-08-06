@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Literal, Optional, 
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import INSTANCES_LIST_LIMIT_DEFAULT
+from cognite.client.data_classes import filters
 from cognite.client.data_classes._base import CogniteResourceList
 from cognite.client.data_classes.aggregations import (
     Aggregation,
@@ -49,6 +50,33 @@ from ._data_modeling_executor import get_data_modeling_executor
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
+
+_FILTERS_SUPPORTED: frozenset[type[Filter]] = frozenset(
+    {
+        filters.And,
+        filters.Or,
+        filters.Not,
+        filters.In,
+        filters.Equals,
+        filters.Exists,
+        filters.Range,
+        filters.Prefix,
+        filters.ContainsAny,
+        filters.ContainsAll,
+        filters.Nested,
+        filters.HasData,
+        filters.MatchAll,
+        filters.Overlaps,
+    }
+)
+
+
+def _validate_filter(filter: Filter | dict | None) -> None:
+    if filter is None or isinstance(filter, dict):
+        return
+    if not_supported := (filter._involved_filter_types() - _FILTERS_SUPPORTED):
+        names = [f.__name__ for f in not_supported]
+        raise ValueError(f"The filters {names} are not supported for Instances")
 
 
 class _NodeOrEdgeList(CogniteResourceList):
@@ -196,6 +224,7 @@ class InstancesAPI(APIClient):
         Yields:
             Edge | Node | EdgeList | NodeList: yields Instance one by one if chunk_size is not specified, else NodeList/EdgeList objects.
         """
+        _validate_filter(filter)
         other_params = self._create_other_params(
             include_typing=include_typing, instance_type=instance_type, sort=sort, sources=sources
         )
@@ -590,6 +619,7 @@ class InstancesAPI(APIClient):
                 ... query="Quentin", properties=["name"], filter=born_after_1970)
 
         """
+        _validate_filter(filter)
         if instance_type == "node":
             list_cls: Union[Type[NodeList], Type[EdgeList]] = NodeList
         elif instance_type == "edge":
@@ -650,6 +680,8 @@ class InstancesAPI(APIClient):
         """
         if instance_type not in ("node", "edge"):
             raise ValueError(f"Invalid instance type: {instance_type}")
+        _validate_filter(filter)
+
         body: Dict[str, Any] = {"view": view.dump(camel_case=True), "instanceType": instance_type, "limit": limit}
         aggregate_seq: Sequence[Aggregation | dict] = aggregates if isinstance(aggregates, Sequence) else [aggregates]
         body["aggregates"] = [
@@ -733,6 +765,8 @@ class InstancesAPI(APIClient):
         """
         if instance_type not in ("node", "edge"):
             raise ValueError(f"Invalid instance type: {instance_type}")
+        _validate_filter(filter)
+
         body: Dict[str, Any] = {"view": view.dump(camel_case=True), "instanceType": instance_type, "limit": limit}
 
         if isinstance(histograms, Sequence):
@@ -922,6 +956,7 @@ class InstancesAPI(APIClient):
                 >>> for instance_list in c.data_modeling.instances(chunk_size=100):
                 ...     instance_list # do something with the instances
         """
+        _validate_filter(filter)
         other_params = self._create_other_params(
             include_typing=include_typing, instance_type=instance_type, sort=sort, sources=sources
         )
