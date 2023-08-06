@@ -165,3 +165,13 @@ class TestDocumentsAPI:
 
         # Assert
         assert content.startswith(b"\x89PNG\r\n\x1a\n")
+
+    def test_download_pdf_bytes(self, cognite_client: CogniteClient, text_file_content_pair: tuple[FileMetadata, str]):
+        # Arrange
+        doc, _ = text_file_content_pair
+
+        # Act
+        content = cognite_client.documents.preview.download_pdf_bytes(id=doc.id)
+
+        # Assert
+        assert content.startswith(b"%PDF")
