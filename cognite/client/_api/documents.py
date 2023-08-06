@@ -356,8 +356,6 @@ class DocumentsAPI(APIClient):
         """
 
         response = self._do_request("GET", f"{self._RESOURCE_PATH}/{id}/content", accept="text/plain")
-        if not self._status_ok(response.status_code):
-            self._raise_api_error(response, payload={})
         return response.text
 
     @overload
@@ -426,8 +424,6 @@ class DocumentsAPI(APIClient):
                 body["cursor"] = next_cursor
 
             response = self._post(f"{self._RESOURCE_PATH}/search", json=body)
-            if not self._status_ok(response.status_code):
-                self._raise_api_error(response, payload={})
             json_content = response.json()
             results.extend(json_content["items"])
             next_cursor = json_content.get("nextCursor")
