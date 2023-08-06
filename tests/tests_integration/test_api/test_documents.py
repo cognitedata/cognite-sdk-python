@@ -60,6 +60,16 @@ class TestDocumentsAPI:
         # Assert
         assert len(documents) > 0, "Expected to retrieve at least one document."
 
+    def test_list_lorem_ipsum(self, cognite_client: CogniteClient):
+        # Arrange
+        is_lorem = filters.Search(DocumentProperty.content, "lorem ipsum")
+
+        # Act
+        documents = cognite_client.documents.list(filter=is_lorem, limit=5)
+
+        # Assert
+        assert len(documents) > 0, "Expected to retrieve at least one document."
+
     def test_retrieve_content(self, cognite_client: CogniteClient, text_file_content_pair):
         # Arrange
         doc, content = text_file_content_pair

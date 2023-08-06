@@ -93,6 +93,7 @@ class Document(CogniteResource):
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         title (str): The title of the document.
         author (str): The author of the document.
+        producer (str): The producer of the document.
         modified_time (int): The last time the document was modified in CDF in milliseconds since Jan 1, 1970.
         last_indexed_time (int): The last time the document was indexed in the search engine, measured in milliseconds
                                  since Jan 1, 1970.
@@ -116,6 +117,7 @@ class Document(CogniteResource):
         external_id: Optional[str] = None,
         title: Optional[str] = None,
         author: Optional[str] = None,
+        producer: Optional[str] = None,
         modified_time: Optional[int] = None,
         last_indexed_time: Optional[int] = None,
         mime_type: Optional[str] = None,
@@ -135,6 +137,7 @@ class Document(CogniteResource):
         self.external_id = external_id
         self.title = title
         self.author = author
+        self.producer = producer
         self.modified_time = modified_time
         self.last_indexed_time = last_indexed_time
         self.mime_type = mime_type
@@ -315,6 +318,7 @@ class DocumentProperty(EnumProperty):
     mime_type = "mimeType"
     extension = "extension"
     page_count = "pageCount"
+    producer = "producer"
     author = "author"
     title = "title"
     language = "language"
