@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
-from typing import Any, Literal, cast, overload
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Literal, Optional, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DOCUMENT_LIST_LIMIT_DEFAULT
@@ -15,12 +16,37 @@ from cognite.client.data_classes.documents import (
     DocumentUniqueResultList,
     SortablePropertyLike,
     SourceFileProperty,
+    TemporaryLink,
 )
 from cognite.client.data_classes.filters import Filter
+
+if TYPE_CHECKING:
+    from cognite.client import ClientConfig, CogniteClient
+
+
+class DocumentPreviewAPI(APIClient):
+    def download_png_bytes(self, id: int, page_number: int) -> bytes:
+        ...
+
+    def download_png_to_path(self, id: int, page_number: int, path: Path | str) -> None:
+        ...
+
+    def download_pdf_bytes(self, id: int) -> bytes:
+        ...
+
+    def download_pdf_to_path(self, id: int, path: Path | str) -> None:
+        ...
+
+    def retrieve_pdf_link(self, id: int) -> TemporaryLink:
+        ...
 
 
 class DocumentsAPI(APIClient):
     _RESOURCE_PATH = "/documents"
+
+    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+        super().__init__(config, api_version, cognite_client)
+        self.preview = DocumentPreviewAPI(config, api_version, cognite_client)
 
     @overload
     def __call__(

@@ -310,3 +310,22 @@ class DocumentSort:
             "property": prop,
             "order": self.order,
         }
+
+
+@dataclass
+class TemporaryLink:
+    url: str
+    expires_at: int
+
+    @classmethod
+    def load(cls, data: dict[str, Any]) -> TemporaryLink:
+        return cls(
+            url=data["temporaryLink"],
+            expires_at=data["expirationTime"],
+        )
+
+    def dump(self) -> dict[str, Any]:
+        return {
+            "temporaryLink": self.url,
+            "expirationTime": self.expires_at,
+        }
