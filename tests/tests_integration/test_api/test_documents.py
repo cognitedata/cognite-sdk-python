@@ -153,3 +153,15 @@ class TestDocumentsAPI:
         life = link.expires_at - int(time.time() * 1000)
         assert life > 0
         assert link.url.startswith("http")
+
+    def test_download_image_bytes(
+        self, cognite_client: CogniteClient, text_file_content_pair: tuple[FileMetadata, str]
+    ):
+        # Arrange
+        doc, _ = text_file_content_pair
+
+        # Act
+        content = cognite_client.documents.preview.download_png_bytes(id=doc.id)
+
+        # Assert
+        assert content.startswith(b"\x89PNG\r\n\x1a\n")
