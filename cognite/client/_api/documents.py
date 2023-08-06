@@ -259,7 +259,7 @@ class DocumentsAPI(APIClient):
             raise ValueError(f"Unknown property format: {property}")
 
     def aggregate_count(self, query: str | None = None, filter: Filter | dict | None = None) -> int:
-        """`Count of documents matching the specified filters and search.<https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
+        """`Count of documents matching the specified filters and search. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
 
         Args:
             query (str | None): The free text search query, for details see the documentation referenced above.
@@ -277,7 +277,7 @@ class DocumentsAPI(APIClient):
         filter: Filter | dict | None = None,
         aggregate_filter: Filter | dict | None = None,
     ) -> int:
-        """`Find approximate number of unique properties.<https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
+        """`Find approximate number of unique properties. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
 
         Args:
             property (DocumentProperty | list[str] | str): The property to count the cardinality of.
@@ -311,7 +311,7 @@ class DocumentsAPI(APIClient):
         aggregate_filter: Filter | dict | None = None,
         limit: int = DOCUMENT_LIST_LIMIT_DEFAULT,
     ) -> DocumentUniqueResultList:
-        """`Find approximate number of unique properties..<https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
+        """`Find approximate number of unique properties. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
 
         Args:
             property (list[str]): The property to group by.
