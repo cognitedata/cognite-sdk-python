@@ -44,6 +44,13 @@ from cognite.client.data_classes.datapoints_subscriptions import (
     DatapointSubscriptionList,
     DataPointSubscriptionUpdate,
 )
+from cognite.client.data_classes.documents import (
+    Document,
+    DocumentHighlight,
+    DocumentHighlightList,
+    DocumentList,
+    SourceFile,
+)
 from cognite.client.data_classes.events import EndTimeFilter, Event, EventFilter, EventList, EventUpdate
 from cognite.client.data_classes.extractionpipelines import (
     ExtractionPipeline,
@@ -245,6 +252,11 @@ __all__ = [
     "FileMetadataFilter",
     "FileMetadataList",
     "FileMetadataUpdate",
+    "SourceFile",
+    "Document",
+    "DocumentList",
+    "DocumentHighlight",
+    "DocumentHighlightList",
     "ClientCredentials",
     "CreatedSession",
     "Group",

@@ -6,8 +6,9 @@ from typing import TYPE_CHECKING, Any, List, Literal, Optional, Union
 
 from typing_extensions import TypeAlias
 
-from cognite.client.data_classes import GeoLocation, Label, LabelDefinition
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, EnumProperty
+from cognite.client.data_classes.labels import Label, LabelDefinition
+from cognite.client.data_classes.shared import GeoLocation
 from cognite.client.utils._text import convert_all_keys_to_snake_case
 
 if TYPE_CHECKING:
