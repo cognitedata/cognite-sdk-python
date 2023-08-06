@@ -15,6 +15,25 @@ if TYPE_CHECKING:
 
 
 class SourceFile(CogniteResource):
+    """
+    The source file that a document is derived from.
+
+    Args:
+        name (str): The name of the source file.
+        hash (str): The hash of the source file.
+        directory (str): The directory the file can be found in.
+        source (str): The source of the file.
+        mime_type (str): The mime type of the file.
+        size (int): The size of the file in bytes.
+        asset_ids (list[int]): The ids of the assets related to this file.
+        labels (list[Label | str | LabelDefinition]): A list of labels associated with this document's source
+                                                      file in CDF.
+        geo_location (GeoLocation): The geolocation of the source file.
+        dataset_id (int): The id if the dataset this file belongs to, if any.
+        security_categories (list[int]): The security category IDs required to access this file.
+        metadata (dict[str, str]): Custom, application specific metadata. String key -> String value.
+    """
+
     def __init__(
         self,
         name: str,
@@ -63,6 +82,31 @@ class SourceFile(CogniteResource):
 
 
 class Document(CogniteResource):
+    """
+    A representation of a document in CDF.
+
+    Args:
+        id (int): A server-generated ID for the object.
+        created_time (int): The creation time of the document in CDF in milliseconds since Jan 1, 1970.
+        source_file (SourceFile): The source file that this document is derived from.
+        external_id (str): The external ID provided by the client. Must be unique for the resource type.
+        title (str): The title of the document.
+        author (str): The author of the document.
+        modified_time (int): The last time the document was modified in CDF in milliseconds since Jan 1, 1970.
+        last_indexed_time (int): The last time the document was indexed in the search engine, measured in milliseconds
+                                 since Jan 1, 1970.
+        mime_type (str): The detected mime type of the document.
+        extension (str): Extension of the file (always in lowercase)
+        page_count (int): The number of pages in the document.
+        type (str): The detected type of the document.
+        language (str): The detected language of the document.
+        truncated_content (str): The truncated content of the document.
+        asset_ids (list[int]): The ids of any assets referred to in the document.
+        labels (list[Label | str | LabelDefinition]): The labels attached to the document.
+        geo_location (GeoLocation): The geolocation of the document.
+
+    """
+
     def __init__(
         self,
         id: int,
@@ -131,6 +175,16 @@ class DocumentList(CogniteResourceList[Document]):
 
 @dataclass
 class Highlight(CogniteResource):
+    """
+    Highlighted snippets from name and content fields which show where the query matches are.
+
+    This is used in search results to represent the result.
+
+    Args:
+        name (list[str]): Matches is name.
+        content (list[str]): Matches in content.
+    """
+
     name: list[str]
     content: list[str]
 
@@ -143,6 +197,16 @@ class Highlight(CogniteResource):
 
 @dataclass
 class DocumentHighlight(CogniteResource):
+    """
+    A pair of a document and highlights.
+
+    This is used in search results to represent the result
+
+    Args:
+        highlight (Highlight): The highlight from the document matching search results.
+        document (Document): The document.
+    """
+
     highlight: Highlight
     document: Document
 
