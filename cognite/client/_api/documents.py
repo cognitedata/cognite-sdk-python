@@ -388,7 +388,7 @@ class DocumentsAPI(APIClient):
         sort: DocumentSort | SortablePropertyLike | tuple[SortablePropertyLike, Literal["asc", "desc"]] | None = None,
         limit: int = DOCUMENT_LIST_LIMIT_DEFAULT,
     ) -> DocumentList | DocumentHighlightList:
-        """Search documents <https://developer.cognite.com/api#tag/Documents/operation/documentsSearch>`_
+        """`Search documents <https://developer.cognite.com/api#tag/Documents/operation/documentsSearch>`_
 
         This endpoint lets you search for documents by using advanced filters and free text queries.
         Free text queries are matched against the documents' filenames and contents. For more information, see
