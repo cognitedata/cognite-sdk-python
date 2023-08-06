@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.15.0] - 2023-08-17
+### Added
+- Support for the DocumentsAPI with the implementation `client.documents`.
+
+
 ## [6.14.2] - 2023-08-22
 ### Fixed
 - All data modeling endpoints will now be retried. This was not the case for POST endpoints.
