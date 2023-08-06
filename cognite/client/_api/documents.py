@@ -50,9 +50,6 @@ class DocumentPreviewAPI(APIClient):
                   file name will be '[id]_page[page_number].png'.
             id: The server-generated ID for the document you want to retrieve the preview of.
             page_number: Page number to preview. Starting at 1 for first page.
-
-        Returns:
-            bytes: The png preview of the document.
         """
         path = Path(path)
         if path.is_dir():
@@ -64,10 +61,44 @@ class DocumentPreviewAPI(APIClient):
         path.write_bytes(content)
 
     def download_pdf_bytes(self, id: int) -> bytes:
-        ...
+        """`Downloads a pdf preview of the specified document. <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewPdf>`_
 
-    def download_pdf_to_path(self, id: int, path: Path | str) -> None:
-        ...
+        Only the 100 first pages will be included.
+
+        Previews will be rendered if necessary during the request. Be prepared for the request to take a few seconds to complete.
+
+        Args:
+            id: The server-generated ID for the document you want to retrieve the preview of.
+
+        Returns:
+            bytes: The pdf preview of the document.
+        """
+        res = self._do_request("GET", f"{self._RESOURCE_PATH}/{id}/preview/pdf", accept="application/pdf")
+        return res.content
+
+    def download_pdf_to_path(self, path: Path | str, id: int) -> None:
+        """`Downloads a pdf preview of the specified document. <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewPdf>`_
+
+        Only the 100 first pages will be included.
+
+        Previews will be rendered if necessary during the request. Be prepared for the request to take a few seconds to complete.
+
+        Args:
+            path: The path to save the pdf preview of the document. If the path is a directory, the
+                  file name will be '[id].pdf'.
+            id: The server-generated ID for the document you want to retrieve the preview of.
+
+        Returns:
+            bytes: The pdf preview of the document.
+        """
+        path = Path(path)
+        if path.is_dir():
+            path = path / f"{id}.pdf"
+        else:
+            if path.suffix != ".pdf":
+                raise ValueError("Path must be a directory or end with .pdf")
+        content = self.download_pdf_bytes(id)
+        path.write_bytes(content)
 
     def retrieve_pdf_link(self, id: int) -> TemporaryLink:
         """`Retrieve a Temporary link to download pdf preview <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewPdfTemporaryLink>`_
