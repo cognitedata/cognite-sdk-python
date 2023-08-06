@@ -25,6 +25,8 @@ if TYPE_CHECKING:
 
 
 class DocumentPreviewAPI(APIClient):
+    _RESOURCE_PATH = "/documents"
+
     def download_png_bytes(self, id: int, page_number: int) -> bytes:
         ...
 
@@ -38,7 +40,17 @@ class DocumentPreviewAPI(APIClient):
         ...
 
     def retrieve_pdf_link(self, id: int) -> TemporaryLink:
-        ...
+        """`Retrieve a Temporary link to download pdf preview <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewPdfTemporaryLink>`_
+
+        Args:
+            id: The server-generated ID for the document you want to retrieve the preview of.
+
+        Returns:
+            A temporary link to download the pdf preview.
+
+        """
+        res = self._get(f"{self._RESOURCE_PATH}/{id}/preview/pdf/temporarylink")
+        return TemporaryLink.load(res.json())
 
 
 class DocumentsAPI(APIClient):
