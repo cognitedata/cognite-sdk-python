@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from pathlib import Path
 
 import pytest
@@ -145,9 +146,10 @@ class TestDocumentsAPI:
             break
 
     def test_retrieve_pdf_link(self, cognite_client: CogniteClient, pdf_file: FileMetadata):
-
         # Act
-        res = cognite_client.documents.preview.retrieve_pdf_link(id=pdf_file.id)
+        link = cognite_client.documents.preview.retrieve_pdf_link(id=pdf_file.id)
 
         # Assert
-        assert res
+        life = link.expires_at - int(time.time() * 1000)
+        assert life > 0
+        assert link.url.startswith("http")
