@@ -162,6 +162,14 @@ class Container(ContainerCore):
 class ContainerList(CogniteResourceList[Container]):
     _RESOURCE = Container
 
+    def as_ids(self) -> list[ContainerId]:
+        """Convert to a container id list.
+
+        Returns:
+            list[ContainerId]: The container id list.
+        """
+        return [v.as_id() for v in self]
+
 
 class ContainerApplyList(CogniteResourceList[ContainerApply]):
     _RESOURCE = ContainerApply
@@ -173,6 +181,14 @@ class ContainerApplyList(CogniteResourceList[ContainerApply]):
             ContainerApplyList: The container apply list.
         """
         return ContainerApplyList(resources=[v.as_apply() for v in self.items])
+
+    def as_ids(self) -> list[ContainerId]:
+        """Convert to a container id list.
+
+        Returns:
+            list[ContainerId]: The container id list.
+        """
+        return [v.as_id() for v in self]
 
 
 class ContainerFilter(CogniteFilter):
