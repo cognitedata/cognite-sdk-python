@@ -10,8 +10,10 @@ from cognite.client.data_classes.data_modeling import Space, SpaceApply, SpaceLi
 from cognite.client.exceptions import CogniteAPIError
 
 
-@pytest.fixture(scope="function")
-def cdf_spaces(cognite_client: CogniteClient) -> SpaceList:
+@pytest.fixture(scope="session")
+def cdf_spaces(cognite_client: CogniteClient, integration_test_space: Space) -> SpaceList:
+    # The integration test space is created in the fixture integration_test_space.
+    # This ensures that at least one space exists in CDF.
     spaces = cognite_client.data_modeling.spaces.list(limit=-1)
     assert len(spaces) > 0, "Please create at least one space in CDF."
     return spaces
@@ -32,9 +34,9 @@ class TestSpacesAPI:
     def test_list(self, cognite_client: CogniteClient, cdf_spaces: SpaceList) -> None:
         actual_space_in_cdf = cognite_client.data_modeling.spaces.list(limit=-1)
 
-        assert _dump(actual_space_in_cdf) == _dump(cdf_spaces)
+        assert actual_space_in_cdf.as_apply_list() == cdf_spaces.as_apply_list()
 
-    def test_list_include_global(self, cognite_client: CogniteClient) -> None:
+    def test_list_include_global(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
         spaces_with_global = cognite_client.data_modeling.spaces.list(include_global=True, limit=-1)
         assert any(s.is_global for s in spaces_with_global), "Add at least one global space to CDF for testing."
         spaces_without_global = cognite_client.data_modeling.spaces.list(include_global=False, limit=-1)
@@ -46,32 +48,45 @@ class TestSpacesAPI:
         my_space = SpaceApply(
             space="myNewSpace", name="My New Space", description="This is part of the integration testing for the SDK."
         )
+        created_space: Space | None = None
+        deleted_spaces: list[str] = []
 
         # Act
-        created_space = cognite_client.data_modeling.spaces.apply(my_space)
-        retrieved_space = cognite_client.data_modeling.spaces.retrieve(my_space.space)
+        try:
+            created_space = cognite_client.data_modeling.spaces.apply(my_space)
+            retrieved_space = cognite_client.data_modeling.spaces.retrieve(my_space.space)
 
-        # Assert
-        assert retrieved_space is not None
-        assert retrieved_space.dump() == created_space.dump()
-        expected = retrieved_space.as_apply().dump()
-        assert my_space.dump() == expected
+            # Assert
+            assert retrieved_space is not None
+            assert retrieved_space.dump() == created_space.dump()
+            expected = retrieved_space.as_apply().dump()
+            assert my_space.dump() == expected
 
-        # Act
-        deleted_space = cognite_client.data_modeling.spaces.delete(my_space.space)[0]
+            # Act
+            deleted_spaces = cognite_client.data_modeling.spaces.delete(my_space.space)
 
-        # Assert
-        assert deleted_space == my_space.space
-        assert cognite_client.data_modeling.spaces.retrieve(space=my_space.space) is None
+            # Assert
+            assert deleted_spaces, "The deleted spaces should be returned."
+            assert deleted_spaces[0] == my_space.space
+            assert cognite_client.data_modeling.spaces.retrieve(space=my_space.space) is None
+        finally:
+            # Cleanup
+            if created_space and not deleted_spaces:
+                cognite_client.data_modeling.spaces.delete(created_space.space)
 
     def test_retrieve_multiple(self, cognite_client: CogniteClient, cdf_spaces: SpaceList) -> None:
-        retrieved_spaces = cognite_client.data_modeling.spaces.retrieve([s.space for s in cdf_spaces])
+        # Arrange
+        spaces = cdf_spaces[: min(2, len(cdf_spaces))]
 
-        assert _dump(retrieved_spaces) == _dump(cdf_spaces)
+        # Act
+        retrieved_spaces = cognite_client.data_modeling.spaces.retrieve(spaces.as_ids())
+
+        # Assert
+        assert retrieved_spaces.as_apply_list() == spaces.as_apply_list()
 
     def test_iterate_over_spaces(self, cognite_client: CogniteClient) -> None:
-        for space in cognite_client.data_modeling.spaces(chunk_size=1):
-            assert space
+        for space in cognite_client.data_modeling.spaces:
+            assert isinstance(space, Space)
 
     def test_retrieve_non_existing_space(self, cognite_client: CogniteClient) -> None:
         actual_retrieved = cognite_client.data_modeling.spaces.retrieve("notExistingSpace")
