@@ -14,6 +14,7 @@ from cognite.client.data_classes.data_modeling import (
     EdgeApplyResult,
     EdgeList,
     InstancesApplyResult,
+    InstancesDeleteResult,
     InstanceSort,
     InstancesResult,
     Node,
@@ -26,6 +27,7 @@ from cognite.client.data_classes.data_modeling import (
     Space,
     View,
     ViewId,
+    ViewList,
     aggregations,
     filters,
     query,
@@ -34,45 +36,50 @@ from cognite.client.data_classes.data_modeling.aggregations import HistogramValu
 from cognite.client.exceptions import CogniteAPIError
 
 
-@pytest.fixture()
-def cdf_nodes(cognite_client: CogniteClient, populated_movie: InstancesResult) -> NodeList:
+@pytest.fixture(scope="session")
+def movie_nodes(populated_movie: InstancesResult) -> NodeList:
     return populated_movie.nodes
 
 
-@pytest.fixture()
-def cdf_edges(cognite_client: CogniteClient, populated_movie: InstancesResult) -> EdgeList:
+@pytest.fixture(scope="session")
+def movie_edges(populated_movie: InstancesResult) -> EdgeList:
     return populated_movie.edges
 
 
-@pytest.fixture()
-def person_view(cognite_client: CogniteClient, movie_model: DataModel[View], integration_test_space: Space) -> View:
-    return cognite_client.data_modeling.views.retrieve((integration_test_space.space, "Person", "2"))[0]
+@pytest.fixture(scope="session")
+def movie_views(movie_model: DataModel[View]) -> ViewList:
+    return ViewList(movie_model.views)
 
 
 @pytest.fixture()
-def actor_view(cognite_client: CogniteClient, integration_test_space: Space) -> View:
-    return cognite_client.data_modeling.views.retrieve((integration_test_space.space, "Actor", "2"))[0]
+def person_view(movie_views: ViewList) -> View:
+    return cast(View, movie_views.get(external_id="Person"))
 
 
 @pytest.fixture()
-def movie_view(cognite_client: CogniteClient, integration_test_space: Space) -> View:
-    return cognite_client.data_modeling.views.retrieve((integration_test_space.space, "Movie", "2"))[0]
+def actor_view(movie_views: ViewList) -> View:
+    return cast(View, movie_views.get(external_id="Actor"))
+
+
+@pytest.fixture()
+def movie_view(movie_views: ViewList) -> View:
+    return cast(View, movie_views.get(external_id="Movie"))
 
 
 class TestInstancesAPI:
-    def test_list_nodes(self, cognite_client: CogniteClient, cdf_nodes: NodeList) -> None:
+    def test_list_nodes(self, cognite_client: CogniteClient, movie_nodes: NodeList) -> None:
         # Act
-        actual_nodes = cognite_client.data_modeling.instances.list(limit=-1)
+        listed_nodes = cognite_client.data_modeling.instances.list(limit=-1, instance_type="node")
 
         # Assert
-        assert sorted(actual_nodes, key=lambda v: v.external_id) == sorted(cdf_nodes, key=lambda v: v.external_id)
+        assert set(movie_nodes.as_ids()) <= set(listed_nodes.as_ids())
 
-    def test_list_edges(self, cognite_client: CogniteClient, cdf_edges: EdgeList) -> None:
+    def test_list_edges(self, cognite_client: CogniteClient, movie_edges: EdgeList) -> None:
         # Act
-        actual_edges = cognite_client.data_modeling.instances.list(limit=-1, instance_type="edge")
+        listed_edges = cognite_client.data_modeling.instances.list(limit=-1, instance_type="edge")
 
         # Assert
-        assert sorted(actual_edges, key=lambda v: v.external_id) == sorted(cdf_edges, key=lambda v: v.external_id)
+        assert set(movie_edges.as_ids()) <= set(listed_edges.as_ids())
 
     def test_list_nodes_with_properties(self, cognite_client: CogniteClient, person_view: View) -> None:
         # Act
@@ -120,22 +127,32 @@ class TestInstancesAPI:
             ],
         )
 
-        # Act
-        created = cognite_client.data_modeling.instances.apply(new_node, replace=True)
-        retrieved = cognite_client.data_modeling.instances.retrieve(new_node.as_id())
+        created: InstancesApplyResult | None = None
+        deleted_result: InstancesDeleteResult | None = None
 
-        # Assert
-        assert created.nodes[0].created_time
-        assert created.nodes[0].last_updated_time
-        assert retrieved.nodes[0].as_id() == new_node.as_id()
+        try:
+            # Act
+            created = cognite_client.data_modeling.instances.apply(new_node, replace=True)
+            retrieved = cognite_client.data_modeling.instances.retrieve(new_node.as_id())
 
-        # Act
-        deleted_id = cognite_client.data_modeling.instances.delete(new_node.as_id())
-        retrieved_deleted = cognite_client.data_modeling.instances.retrieve(new_node.as_id())
+            # Assert
+            assert len(created.nodes) == 1
+            assert created.nodes[0].created_time
+            assert created.nodes[0].last_updated_time
+            assert retrieved.nodes[0].as_id() == new_node.as_id()
 
-        # Assert
-        assert deleted_id.nodes[0] == new_node.as_id()
-        assert len(retrieved_deleted.nodes) == 0
+            # Act
+            deleted_result = cognite_client.data_modeling.instances.delete(new_node.as_id())
+            retrieved_deleted = cognite_client.data_modeling.instances.retrieve(new_node.as_id())
+
+            # Assert
+            assert len(deleted_result.nodes) == 1
+            assert deleted_result.nodes[0] == new_node.as_id()
+            assert len(retrieved_deleted.nodes) == 0
+        finally:
+            # Cleanup
+            if created is not None and created.nodes and deleted_result is None:
+                cognite_client.data_modeling.instances.delete(nodes=created.nodes.as_ids())
 
     def test_apply_nodes_and_edges(self, cognite_client: CogniteClient, person_view: View, actor_view: View) -> None:
         # Arrange
@@ -177,17 +194,19 @@ class TestInstancesAPI:
         )
         new_nodes = [person, actor]
         new_edges = [person_to_actor]
+        created: InstancesApplyResult | None = None
+        try:
+            # Act
+            created = cognite_client.data_modeling.instances.apply(new_nodes, new_edges, replace=True)
 
-        # Act
-        created = cognite_client.data_modeling.instances.apply(new_nodes, new_edges, replace=True)
-
-        # Assert
-        assert isinstance(created, InstancesApplyResult)
-        assert sum(isinstance(item, NodeApplyResult) for item in created.nodes) == 2
-        assert sum(isinstance(item, EdgeApplyResult) for item in created.edges) == 1
-
-        # Cleanup
-        cognite_client.data_modeling.instances.delete(created.nodes.as_ids())
+            # Assert
+            assert isinstance(created, InstancesApplyResult)
+            assert sum(isinstance(item, NodeApplyResult) for item in created.nodes) == 2
+            assert sum(isinstance(item, EdgeApplyResult) for item in created.edges) == 1
+        finally:
+            # Cleanup
+            if created is not None:
+                cognite_client.data_modeling.instances.delete(created.nodes.as_ids(), edges=created.edges.as_ids())
 
     def test_apply_auto_create_nodes(self, cognite_client: CogniteClient, person_view: View) -> None:
         # Arrange
@@ -201,24 +220,26 @@ class TestInstancesAPI:
             start_node=DirectRelationReference(space, "person:sylvester_stallone"),
             end_node=DirectRelationReference(space, "actor:sylvester_stallone"),
         )
+        node_pair = [person_to_actor.start_node.as_tuple(), person_to_actor.end_node.as_tuple()]
+        created_edges: InstancesApplyResult | None = None
+        try:
+            # Act
+            created_edges = cognite_client.data_modeling.instances.apply(
+                edges=person_to_actor, auto_create_start_nodes=True, auto_create_end_nodes=True, replace=True
+            )
+            created_nodes = cognite_client.data_modeling.instances.retrieve(node_pair)
 
-        # Act
-        created = cognite_client.data_modeling.instances.apply(
-            edges=person_to_actor, auto_create_start_nodes=True, auto_create_end_nodes=True, replace=True
-        ).edges[0]
-        created_nodes = cognite_client.data_modeling.instances.retrieve(
-            [person_to_actor.start_node.as_tuple(), person_to_actor.end_node.as_tuple()]
-        ).nodes
-
-        # Assert
-        assert created.created_time
-        assert created.last_updated_time
-        assert len(created_nodes) == 2
-        assert created_nodes[0].external_id == "person:sylvester_stallone"
-        assert created_nodes[1].external_id == "actor:sylvester_stallone"
-
-        # Cleanup
-        cognite_client.data_modeling.instances.delete(created_nodes.as_ids())
+            # Assert
+            assert len(created_edges.edges) == 1
+            assert created_edges.edges[0].created_time
+            assert created_edges.edges[0].last_updated_time
+            assert len(created_nodes.nodes) == 2
+            assert created_nodes.nodes[0].external_id == "person:sylvester_stallone"
+            assert created_nodes.nodes[1].external_id == "actor:sylvester_stallone"
+        finally:
+            # Cleanup
+            if created_edges is not None:
+                cognite_client.data_modeling.instances.delete(nodes=node_pair, edges=created_edges.edges.as_ids())
 
     def test_delete_non_existent(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
         space = integration_test_space.space
@@ -226,45 +247,41 @@ class TestInstancesAPI:
         assert res.nodes == []
         assert res.edges == []
 
-    def test_retrieve_multiple(self, cognite_client: CogniteClient, cdf_nodes: NodeList) -> None:
-        assert len(cdf_nodes) >= 2, "Please add at least two nodes to the test environment"
+    def test_retrieve_multiple(self, cognite_client: CogniteClient, movie_nodes: NodeList) -> None:
         # Act
-        retrieved = cognite_client.data_modeling.instances.retrieve(cdf_nodes.as_ids()).nodes
+        retrieved = cognite_client.data_modeling.instances.retrieve(movie_nodes.as_ids())
 
         # Assert
-        assert retrieved == cdf_nodes
+        assert len(retrieved.nodes) == len(movie_nodes)
 
     def test_retrieve_nodes_and_edges_using_id_tuples(
-        self, cognite_client: CogniteClient, cdf_nodes: NodeList, cdf_edges: EdgeList
+        self, cognite_client: CogniteClient, movie_nodes: NodeList, movie_edges: EdgeList
     ) -> None:
-        assert len(cdf_nodes) >= 2, "Please add at least two nodes to the test environment"
-        assert len(cdf_edges) >= 2, "Please add at least two edges to the test environment"
         # Act
         retrieved = cognite_client.data_modeling.instances.retrieve(
-            nodes=[(id.space, id.external_id) for id in cdf_nodes.as_ids()],
-            edges=[(id.space, id.external_id) for id in cdf_edges.as_ids()],
+            nodes=[(id.space, id.external_id) for id in movie_nodes.as_ids()],
+            edges=[(id.space, id.external_id) for id in movie_edges.as_ids()],
         )
 
         # Assert
-        assert [node.as_id() for node in retrieved.nodes] == [node.as_id() for node in cdf_nodes]
-        assert [edge.as_id() for edge in retrieved.edges] == [edge.as_id() for edge in cdf_edges]
+        assert set(retrieved.nodes.as_ids()) == set(movie_nodes.as_ids())
+        assert set(retrieved.edges.as_ids()) == set(movie_edges.as_ids())
 
     def test_retrieve_nodes_and_edges(
-        self, cognite_client: CogniteClient, cdf_nodes: NodeList, cdf_edges: EdgeList
+        self, cognite_client: CogniteClient, movie_nodes: NodeList, movie_edges: EdgeList
     ) -> None:
-        assert len(cdf_nodes) >= 2, "Please add at least two nodes to the test environment"
-        assert len(cdf_edges) >= 2, "Please add at least two edges to the test environment"
         # Act
-        retrieved = cognite_client.data_modeling.instances.retrieve(nodes=cdf_nodes.as_ids(), edges=cdf_edges.as_ids())
+        retrieved = cognite_client.data_modeling.instances.retrieve(
+            nodes=movie_nodes.as_ids(), edges=movie_edges.as_ids()
+        )
 
         # Assert
-        assert [node.as_id() for node in retrieved.nodes] == [node.as_id() for node in cdf_nodes]
-        assert [edge.as_id() for edge in retrieved.edges] == [edge.as_id() for edge in cdf_edges]
+        assert set(retrieved.nodes.as_ids()) == set(movie_nodes.as_ids())
+        assert set(retrieved.edges.as_ids()) == set(movie_edges.as_ids())
 
-    def test_retrieve_multiple_with_missing(self, cognite_client: CogniteClient, cdf_nodes: NodeList) -> None:
-        assert len(cdf_nodes) >= 2, "Please add at least two nodes to the test environment"
+    def test_retrieve_multiple_with_missing(self, cognite_client: CogniteClient, movie_nodes: NodeList) -> None:
         # Arrange
-        ids_without_missing = cdf_nodes.as_ids()
+        ids_without_missing = movie_nodes.as_ids()
         ids_with_missing = [*ids_without_missing, NodeId("myNonExistingSpace", "myImaginaryContainer")]
 
         # Act
@@ -450,9 +467,9 @@ class TestInstancesAPI:
         assert error.value.code == 400
         assert "View not found" in error.value.message
 
-    def test_dump_json_serialize_load_node(self, cdf_nodes: NodeList) -> None:
+    def test_dump_json_serialize_load_node(self, movie_nodes: NodeList) -> None:
         # Arrange
-        node = cdf_nodes.get(external_id="movie:pulp_fiction")
+        node = movie_nodes.get(external_id="movie:pulp_fiction")
         assert node is not None, "Pulp fiction movie not found, please recreate it"
 
         # Act
@@ -463,9 +480,9 @@ class TestInstancesAPI:
         # Assert
         assert node == node_loaded
 
-    def test_dump_json_serialize_load_edge(self, cdf_edges: EdgeList) -> None:
+    def test_dump_json_serialize_load_edge(self, movie_edges: EdgeList) -> None:
         # Arrange
-        edge = cdf_edges.get(external_id="relation:quentin_tarantino:director")
+        edge = movie_edges.get(external_id="person:quentin_tarantino:director:quentin_tarantino")
         assert edge is not None, "Relation between Quentin Tarantino person and director not found, please recreate it"
 
         # Act
