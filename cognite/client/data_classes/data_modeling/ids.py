@@ -107,12 +107,12 @@ T_InstanceId = TypeVar("T_InstanceId", bound=InstanceId)
 
 @dataclass
 class NodeId(InstanceId):
-    _instance_type = "node"  # type: ignore[assignment]
+    _instance_type: ClassVar[Literal["node", "edge"]] = "node"
 
 
 @dataclass
 class EdgeId(InstanceId):
-    _instance_type = "edge"  # type: ignore[assignment]
+    _instance_type: ClassVar[Literal["node", "edge"]] = "edge"
 
 
 @dataclass(frozen=True)
