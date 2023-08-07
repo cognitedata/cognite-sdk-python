@@ -736,6 +736,20 @@ class EdgeListWithCursor(EdgeList):
         self.cursor: str | None = None
 
 
+@dataclass
+class InstancesApply:
+    """
+    This represents the write request of an instance query
+
+    Args:
+        nodes (NodeApplyList): A list of nodes.
+        edges (EdgeApplyList): A list of edges.
+    """
+
+    nodes: NodeApplyList
+    edges: EdgeApplyList
+
+
 class InstanceSort(CogniteFilter):
     def __init__(
         self,
