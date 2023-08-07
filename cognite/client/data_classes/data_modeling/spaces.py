@@ -85,9 +85,15 @@ class Space(SpaceCore):
 class SpaceApplyList(CogniteResourceList[SpaceApply]):
     _RESOURCE = SpaceApply
 
+    def as_ids(self) -> list[str]:
+        return [item.space for item in self]
+
 
 class SpaceList(CogniteResourceList[Space]):
     _RESOURCE = Space
+
+    def as_ids(self) -> list[str]:
+        return [item.space for item in self]
 
     def as_apply_list(self) -> SpaceApplyList:
         return SpaceApplyList(
