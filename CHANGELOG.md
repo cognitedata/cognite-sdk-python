@@ -17,6 +17,16 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.13.0] - 2023-08-07
+### Fixed
+- Fixed a bug raising a `KeyError` when calling `client.data_modeling.graphql.apply_dml` with an invalid `DataModelingId`.
+- Fixed a bug raising `AttributeError` in `SpaceList.to_space_apply_list` and `DataModelList.to_data_model_apply_list`. 
+  These two methods has also been renamed to `.as_apply` for consistency with the other data modeling resources. 
+
+### Added
+- Missing `as_ids()` for `DataModelApplyList`, `ContainerList`, `ContainerApplyList`, `SpaceApplyList`, `SpaceList`. 
+- Added helper method `as_id` to `DMLApplyResult`. 
+
 ## [6.12.2] - 2023-08-04
 ### Fixed
 - Certain errors that were previously silently ignored in calls to `client.data_modeling.graphql.apply_dml` are now properly raised (used to fail as the API error was passed nested inside the API response).
