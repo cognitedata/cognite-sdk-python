@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Optional
 
+from cognite.client.data_classes.data_modeling.ids import DataModelId
+
 
 @dataclass
 class DMLApplyResult:
@@ -13,6 +15,13 @@ class DMLApplyResult:
     description: Optional[str]
     created_time: int
     last_updated_time: int
+
+    def as_id(self) -> DataModelId:
+        return DataModelId(
+            space=self.space,
+            external_id=self.external_id,
+            version=self.version,
+        )
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> DMLApplyResult:

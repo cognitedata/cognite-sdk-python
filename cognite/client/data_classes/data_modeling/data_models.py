@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from operator import attrgetter
 from typing import Any, Generic, List, Literal, Optional, TypeVar, Union, cast
 
 from cognite.client.data_classes._base import (
@@ -179,8 +180,25 @@ class DataModelApplyList(CogniteResourceList[DataModelApply]):
 class DataModelList(CogniteResourceList[DataModel[T_View]]):
     _RESOURCE = DataModel
 
-    def to_data_model_apply_list(self) -> DataModelApplyList:
-        return DataModelApplyList(resources=[d.as_apply() for d in self.items])
+    def as_apply_list(self) -> DataModelApplyList:
+        return DataModelApplyList([d.as_apply() for d in self])
+
+    def latest_version(self, key: Literal["created_time", "last_updated_time"] = "created_time") -> DataModel[T_View]:
+        """
+        Get the data model in the list with the latest version. The latest version is determined based on the
+        created_time or last_updated_time field.
+
+        Args:
+            key (Literal["created_time", "last_updated_time"]): The field to use for determining the latest version.
+
+        Returns:
+            DataModel: The data model with the latest version.
+        """
+        if not self.items:
+            raise ValueError("No data models in list")
+        if key not in ("created_time", "last_updated_time"):
+            raise ValueError(f"Unexpected key {key}")
+        return max(self, key=attrgetter(key))
 
 
 class DataModelFilter(CogniteFilter):
