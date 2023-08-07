@@ -689,6 +689,13 @@ class NodeApplyResultList(CogniteResourceList[NodeApplyResult]):
         return [result.as_id() for result in self]
 
 
+class NodeApplyList(CogniteResourceList[NodeApply]):
+    _RESOURCE = NodeApply
+
+    def as_ids(self) -> list[NodeId]:
+        return [node.as_id() for node in self]
+
+
 class NodeList(CogniteResourceList[Node]):
     _RESOURCE = Node
 
@@ -704,6 +711,13 @@ class NodeListWithCursor(NodeList):
 
 class EdgeApplyResultList(CogniteResourceList[EdgeApplyResult]):
     _RESOURCE = EdgeApplyResult
+
+    def as_ids(self) -> list[EdgeId]:
+        return [edge.as_id() for edge in self]
+
+
+class EdgeApplyList(CogniteResourceList[EdgeApply]):
+    _RESOURCE = EdgeApply
 
     def as_ids(self) -> list[EdgeId]:
         return [edge.as_id() for edge in self]
