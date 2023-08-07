@@ -216,9 +216,25 @@ class ViewList(CogniteResourceList[View]):
         """
         return ViewApplyList(resources=[v.as_apply() for v in self.items])
 
+    def as_ids(self) -> list[ViewId]:
+        """Returns the list of ViewIds
+
+        Returns:
+            list[ViewId]: The list of ViewIds
+        """
+        return [v.as_id() for v in self]
+
 
 class ViewApplyList(CogniteResourceList[ViewApply]):
     _RESOURCE = ViewApply
+
+    def as_ids(self) -> list[ViewId]:
+        """Returns the list of ViewIds
+
+        Returns:
+            list[ViewId]: The list of ViewIds
+        """
+        return [v.as_id() for v in self]
 
 
 class ViewFilter(CogniteFilter):
