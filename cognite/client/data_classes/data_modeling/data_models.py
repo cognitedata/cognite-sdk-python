@@ -194,7 +194,7 @@ class DataModelList(CogniteResourceList[DataModel[T_View]]):
         Returns:
             DataModel: The data model with the latest version.
         """
-        if not self.items:
+        if not self:
             raise ValueError("No data models in list")
         if key not in ("created_time", "last_updated_time"):
             raise ValueError(f"Unexpected key {key}")
