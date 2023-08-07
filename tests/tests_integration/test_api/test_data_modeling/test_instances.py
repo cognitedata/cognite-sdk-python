@@ -7,6 +7,7 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes.data_modeling import (
+    DataModel,
     DirectRelationReference,
     Edge,
     EdgeApply,
@@ -14,6 +15,7 @@ from cognite.client.data_classes.data_modeling import (
     EdgeList,
     InstancesApplyResult,
     InstanceSort,
+    InstancesResult,
     Node,
     NodeApply,
     NodeApplyResult,
@@ -29,30 +31,21 @@ from cognite.client.data_classes.data_modeling import (
     query,
 )
 from cognite.client.data_classes.data_modeling.aggregations import HistogramValue
-from cognite.client.data_classes.filters import Equals
 from cognite.client.exceptions import CogniteAPIError
 
 
 @pytest.fixture()
-def cdf_nodes(cognite_client: CogniteClient, integration_test_space: Space) -> NodeList:
-    nodes = cognite_client.data_modeling.instances.list(
-        limit=-1, instance_type="node", filter=Equals(("node", "space"), integration_test_space.space)
-    )
-    assert len(nodes) > 0, "Add at least one node to CDF"
-    return nodes
+def cdf_nodes(cognite_client: CogniteClient, populated_movie: InstancesResult) -> NodeList:
+    return populated_movie.nodes
 
 
 @pytest.fixture()
-def cdf_edges(cognite_client: CogniteClient, integration_test_space: Space) -> EdgeList:
-    edges = cognite_client.data_modeling.instances.list(
-        limit=-1, instance_type="edge", filter=Equals(("edge", "space"), integration_test_space.space)
-    )
-    assert len(edges) > 0, "Add at least one edge to CDF"
-    return edges
+def cdf_edges(cognite_client: CogniteClient, populated_movie: InstancesResult) -> EdgeList:
+    return populated_movie.edges
 
 
 @pytest.fixture()
-def person_view(cognite_client: CogniteClient, integration_test_space: Space) -> View:
+def person_view(cognite_client: CogniteClient, movie_model: DataModel[View], integration_test_space: Space) -> View:
     return cognite_client.data_modeling.views.retrieve((integration_test_space.space, "Person", "2"))[0]
 
 
