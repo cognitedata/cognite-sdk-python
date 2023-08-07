@@ -89,8 +89,8 @@ class SpaceApplyList(CogniteResourceList[SpaceApply]):
 class SpaceList(CogniteResourceList[Space]):
     _RESOURCE = Space
 
-    def to_space_apply_list(self) -> SpaceApplyList:
+    def as_apply_list(self) -> SpaceApplyList:
         return SpaceApplyList(
-            resources=[item.as_apply() for item in self.items],
+            resources=[item.as_apply() for item in self],
             cognite_client=self._cognite_client,
         )
