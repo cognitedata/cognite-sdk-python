@@ -1,4 +1,5 @@
 import json
+from operator import attrgetter
 from typing import Any
 
 import pytest
@@ -19,18 +20,14 @@ from cognite.client.data_classes.data_modeling import (
 from cognite.client.exceptions import CogniteAPIError
 
 
-@pytest.fixture(scope="function")
-def cdf_data_models(cognite_client: CogniteClient) -> DataModelList[ViewId]:
+@pytest.fixture(scope="session")
+def cdf_data_models(
+    cognite_client: CogniteClient, integration_test_space: Space, movie_model: DataModel[View]
+) -> DataModelList[ViewId]:
+    # The movie model fixture is used to ensure that there is at least one data model in the test environment.
     data_models = cognite_client.data_modeling.data_models.list(limit=-1)
     assert len(data_models) > 0, "Please create at least one data model in CDF."
     return data_models
-
-
-@pytest.fixture(scope="function")
-def movie_model(cdf_data_models: DataModelList[ViewId]) -> DataModel:
-    movie_model = cdf_data_models.get(external_id="Movie")
-    assert movie_model is not None, "Please create a data model with external_id 'Movie' in CDF."
-    return movie_model
 
 
 class TestDataModelsAPI:
@@ -46,9 +43,8 @@ class TestDataModelsAPI:
         actual_data_models = cognite_client.data_modeling.data_models.list(space=integration_test_space.space, limit=-1)
 
         # Assert
-        assert sorted(actual_data_models, key=lambda m: m.external_id) == sorted(
-            expected_data_models, key=lambda m: m.external_id
-        )
+        key = attrgetter("external_id")
+        assert sorted(actual_data_models, key=key) == sorted(expected_data_models, key=key)
         assert all(v.space == integration_test_space.space for v in actual_data_models)
 
     def test_apply_retrieve_and_delete(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:

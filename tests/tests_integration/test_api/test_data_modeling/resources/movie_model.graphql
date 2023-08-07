@@ -1,0 +1,60 @@
+type Person {
+    name: String!
+    birthYear: Int
+    roles: [Role]
+}
+interface Nomination{
+    name: String!
+    year: Int!
+}
+
+type BestDirector implements Nomination {
+    name: String!
+    year: Int!
+}
+
+type BestLeadingActor implements Nomination {
+    name: String!
+    year: Int!
+}
+
+type BestLeadingActress implements Nomination {
+    name: String!
+    year: Int!
+}
+
+interface Role{
+    movies: [Movie]
+    wonOscar: Boolean
+    nomination: [Nomination]
+    person: Person
+}
+
+type Actor implements Role {
+    movies: [Movie]
+    wonOscar: Boolean
+    nomination: [Nomination]
+    person: Person
+}
+
+type Director implements Role {
+    movies: [Movie]
+    wonOscar: Boolean
+    nomination: [Nomination]
+    person: Person
+}
+
+type Rating {
+    score: TimeSeries
+    votes: TimeSeries
+}
+
+type Movie{
+    title: String!
+    actors: [Actor]
+    directors: [Director]
+    releaseYear: Int
+    rating: Rating
+    runTimeMinutes: Float
+    meta: JSONObject
+}
