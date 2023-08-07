@@ -176,6 +176,9 @@ class DataModel(DataModelCore, Generic[T_View]):
 class DataModelApplyList(CogniteResourceList[DataModelApply]):
     _RESOURCE = DataModelApply
 
+    def as_ids(self) -> list[DataModelId]:
+        return [d.as_id() for d in self]
+
 
 class DataModelList(CogniteResourceList[DataModel[T_View]]):
     _RESOURCE = DataModel
@@ -199,6 +202,9 @@ class DataModelList(CogniteResourceList[DataModel[T_View]]):
         if key not in ("created_time", "last_updated_time"):
             raise ValueError(f"Unexpected key {key}")
         return max(self, key=attrgetter(key))
+
+    def as_ids(self) -> list[DataModelId]:
+        return [d.as_id() for d in self]
 
 
 class DataModelFilter(CogniteFilter):
