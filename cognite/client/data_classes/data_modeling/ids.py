@@ -79,7 +79,7 @@ class VersionedDataModelingId(AbstractDataclass):
 T_Versioned_DataModeling_Id = TypeVar("T_Versioned_DataModeling_Id", bound=VersionedDataModelingId)
 
 
-@dataclass
+@dataclass(frozen=True)
 class InstanceId:
     _instance_type: ClassVar[Literal["node", "edge"]]
     space: str
@@ -105,12 +105,12 @@ class InstanceId:
 T_InstanceId = TypeVar("T_InstanceId", bound=InstanceId)
 
 
-@dataclass
+@dataclass(frozen=True)
 class NodeId(InstanceId):
     _instance_type: ClassVar[Literal["node", "edge"]] = "node"
 
 
-@dataclass
+@dataclass(frozen=True)
 class EdgeId(InstanceId):
     _instance_type: ClassVar[Literal["node", "edge"]] = "edge"
 
