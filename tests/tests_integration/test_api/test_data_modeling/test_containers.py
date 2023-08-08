@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 from typing import Any
 
@@ -10,34 +12,43 @@ from cognite.client.data_classes.data_modeling import (
     ContainerId,
     ContainerList,
     ContainerProperty,
+    DataModel,
     Int32,
+    MappedProperty,
     Space,
     Text,
+    View,
 )
 from cognite.client.exceptions import CogniteAPIError
 
 
-@pytest.fixture()
-def cdf_containers(cognite_client: CogniteClient) -> ContainerList:
-    containers = cognite_client.data_modeling.containers.list(limit=-1)
-    assert len(containers), "There must be at least one container in CDF"
+@pytest.fixture(scope="session")
+def movie_containers(cognite_client: CogniteClient, movie_model: DataModel[View]) -> ContainerList:
+    container_ids = {
+        prop.container
+        for v in movie_model.views
+        for name, prop in v.properties.items()
+        if isinstance(prop, MappedProperty)
+    }
+    containers = cognite_client.data_modeling.containers.retrieve(list(container_ids))
+    assert len(containers) == len(container_ids), "The movie model is missing containers"
     return containers
 
 
 class TestContainersAPI:
     def test_list(
-        self, cognite_client: CogniteClient, cdf_containers: ContainerList, integration_test_space: Space
+        self, cognite_client: CogniteClient, movie_containers: ContainerList, integration_test_space: Space
     ) -> None:
         # Arrange
-        expected_containers = ContainerList([c for c in cdf_containers if c.space == integration_test_space.space])
+        expected_containers = ContainerList([c for c in movie_containers if c.space == integration_test_space.space])
+        expected_ids = set(expected_containers.as_ids())
 
         # Act
         actual_containers = cognite_client.data_modeling.containers.list(space=integration_test_space.space, limit=-1)
 
         # Assert
-        assert sorted(actual_containers, key=lambda c: c.external_id) == sorted(
-            expected_containers, key=lambda c: c.external_id
-        )
+        assert expected_ids, "The movie model is missing containers"
+        assert expected_ids <= set(actual_containers.as_ids())
         assert all(c.space == integration_test_space.space for c in actual_containers)
 
     def test_apply_retrieve_and_delete(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
@@ -55,26 +66,31 @@ class TestContainersAPI:
             name="Create and delete container",
             used_for="node",
         )
-
+        created: Container | None = None
+        deleted_ids: list[ContainerId] = []
         # Act
-        created = cognite_client.data_modeling.containers.apply(new_container)
-        retrieved = cognite_client.data_modeling.containers.retrieve((new_container.space, new_container.external_id))
+        try:
+            created = cognite_client.data_modeling.containers.apply(new_container)
+            retrieved = cognite_client.data_modeling.containers.retrieve(new_container.as_id())
 
-        # Assert
-        assert retrieved is not None
-        assert created.created_time
-        assert created.last_updated_time
-        assert retrieved.as_apply().dump() == new_container.dump()
+            # Assert
+            assert retrieved is not None
+            assert created.created_time
+            assert created.last_updated_time
+            assert retrieved.as_apply().dump() == new_container.dump()
 
-        # Act
-        deleted_id = cognite_client.data_modeling.containers.delete((new_container.space, new_container.external_id))
-        retrieved_deleted = cognite_client.data_modeling.containers.retrieve(
-            (new_container.space, new_container.external_id)
-        )
+            # Act
+            deleted_ids = cognite_client.data_modeling.containers.delete(new_container.as_id())
+            retrieved_deleted = cognite_client.data_modeling.containers.retrieve(new_container.as_id())
 
-        # Assert
-        assert deleted_id[0] == ContainerId(new_container.space, new_container.external_id)
-        assert retrieved_deleted is None
+            # Assert
+            assert len(deleted_ids) == 1
+            assert deleted_ids[0] == new_container.as_id()
+            assert retrieved_deleted is None
+        finally:
+            # Cleanup
+            if created and not deleted_ids:
+                cognite_client.data_modeling.containers.delete(created.as_id())
 
     def test_delete_non_existent(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
         space = integration_test_space.space
@@ -82,28 +98,28 @@ class TestContainersAPI:
             cognite_client.data_modeling.containers.delete(ContainerId(space=space, external_id="DoesNotExists")) == []
         )
 
-    def test_retrieve_multiple(self, cognite_client: CogniteClient, cdf_containers: ContainerList) -> None:
-        assert len(cdf_containers) >= 2, "Please add at least two containers to the test environment"
+    def test_retrieve_multiple(self, cognite_client: CogniteClient, movie_containers: ContainerList) -> None:
         # Arrange
-        ids = [ContainerId(c.space, c.external_id) for c in cdf_containers]
+        ids = movie_containers.as_ids()
 
         # Act
         retrieved = cognite_client.data_modeling.containers.retrieve(ids)
 
         # Assert
-        assert [container.as_id() for container in retrieved] == ids
+        assert set(retrieved.as_ids()) == set(ids)
 
-    def test_retrieve_multiple_with_missing(self, cognite_client: CogniteClient, cdf_containers: ContainerList) -> None:
-        assert len(cdf_containers) >= 2, "Please add at least two containers to the test environment"
+    def test_retrieve_multiple_with_missing(
+        self, cognite_client: CogniteClient, movie_containers: ContainerList
+    ) -> None:
         # Arrange
-        ids_without_missing = [ContainerId(c.space, c.external_id) for c in cdf_containers]
+        ids_without_missing = movie_containers.as_ids()
         ids_with_missing = [*ids_without_missing, ContainerId("myNonExistingSpace", "myImaginaryContainer")]
 
         # Act
         retrieved = cognite_client.data_modeling.containers.retrieve(ids_with_missing)
 
         # Assert
-        assert [container.as_id() for container in retrieved] == ids_without_missing
+        assert set(retrieved.as_ids()) == set(ids_without_missing)
 
     def test_retrieve_non_existent(self, cognite_client: CogniteClient) -> None:
         assert cognite_client.data_modeling.containers.retrieve(("myNonExistingSpace", "myImaginaryContainer")) is None
@@ -164,9 +180,9 @@ class TestContainersAPI:
             # Cleanup
             cognite_client.data_modeling.containers.delete(valid_container.as_id())
 
-    def test_dump_json_serialize_load(self, cdf_containers: ContainerList) -> None:
+    def test_dump_json_serialize_load(self, movie_containers: ContainerList) -> None:
         # Arrange
-        container = cdf_containers.get(external_id="Movie")
+        container = movie_containers.get(external_id="Movie")
         assert container is not None, "Movie container is missing from test environment"
 
         # Act

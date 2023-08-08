@@ -686,13 +686,38 @@ class NodeApplyResultList(CogniteResourceList[NodeApplyResult]):
     _RESOURCE = NodeApplyResult
 
     def as_ids(self) -> list[NodeId]:
+        """
+        Convert the list of nodes to a list of node ids.
+
+        Returns:
+            list[NodeId]: A list of node ids.
+        """
         return [result.as_id() for result in self]
+
+
+class NodeApplyList(CogniteResourceList[NodeApply]):
+    _RESOURCE = NodeApply
+
+    def as_ids(self) -> list[NodeId]:
+        """
+        Convert the list of nodes to a list of node ids.
+
+        Returns:
+            list[NodeId]: A list of node ids.
+        """
+        return [node.as_id() for node in self]
 
 
 class NodeList(CogniteResourceList[Node]):
     _RESOURCE = Node
 
     def as_ids(self) -> list[NodeId]:
+        """
+        Convert the list of nodes to a list of node ids.
+
+        Returns:
+            list[NodeId]: A list of node ids.
+        """
         return [node.as_id() for node in self]
 
 
@@ -706,6 +731,25 @@ class EdgeApplyResultList(CogniteResourceList[EdgeApplyResult]):
     _RESOURCE = EdgeApplyResult
 
     def as_ids(self) -> list[EdgeId]:
+        """
+        Convert the list of edges to a list of edge ids.
+
+        Returns:
+            list[EdgeId]: A list of edge ids.
+        """
+        return [edge.as_id() for edge in self]
+
+
+class EdgeApplyList(CogniteResourceList[EdgeApply]):
+    _RESOURCE = EdgeApply
+
+    def as_ids(self) -> list[EdgeId]:
+        """
+        Convert the list of edges to a list of edge ids.
+
+        Returns:
+            list[EdgeId]: A list of edge ids.
+        """
         return [edge.as_id() for edge in self]
 
 
@@ -713,6 +757,12 @@ class EdgeList(CogniteResourceList[Edge]):
     _RESOURCE = Edge
 
     def as_ids(self) -> list[EdgeId]:
+        """
+        Convert the list of edges to a list of edge ids.
+
+        Returns:
+            list[EdgeId]: A list of edge ids.
+        """
         return [edge.as_id() for edge in self]
 
 
@@ -720,6 +770,20 @@ class EdgeListWithCursor(EdgeList):
     def __init__(self, resources: Collection[Any], cognite_client: Optional[CogniteClient] = None):
         super().__init__(resources, cognite_client)
         self.cursor: str | None = None
+
+
+@dataclass
+class InstancesApply:
+    """
+    This represents the write request of an instance query
+
+    Args:
+        nodes (NodeApplyList): A list of nodes.
+        edges (EdgeApplyList): A list of edges.
+    """
+
+    nodes: NodeApplyList
+    edges: EdgeApplyList
 
 
 class InstanceSort(CogniteFilter):

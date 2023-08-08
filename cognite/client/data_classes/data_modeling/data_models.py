@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from operator import attrgetter
 from typing import Any, Generic, List, Literal, Optional, TypeVar, Union, cast
 
 from cognite.client.data_classes._base import (
@@ -175,12 +176,53 @@ class DataModel(DataModelCore, Generic[T_View]):
 class DataModelApplyList(CogniteResourceList[DataModelApply]):
     _RESOURCE = DataModelApply
 
+    def as_ids(self) -> list[DataModelId]:
+        """
+        Convert the list of data models to a list of data model ids.
+
+        Returns:
+            list[DataModelId]: The list of data model ids.
+        """
+        return [d.as_id() for d in self]
+
 
 class DataModelList(CogniteResourceList[DataModel[T_View]]):
     _RESOURCE = DataModel
 
-    def to_data_model_apply_list(self) -> DataModelApplyList:
-        return DataModelApplyList(resources=[d.as_apply() for d in self.items])
+    def as_apply(self) -> DataModelApplyList:
+        """
+        Convert the list of data models to a list of data model applies.
+
+        Returns:
+            DataModelApplyList: The list of data model applies.
+        """
+        return DataModelApplyList([d.as_apply() for d in self])
+
+    def latest_version(self, key: Literal["created_time", "last_updated_time"] = "created_time") -> DataModel[T_View]:
+        """
+        Get the data model in the list with the latest version. The latest version is determined based on the
+        created_time or last_updated_time field.
+
+        Args:
+            key (Literal["created_time", "last_updated_time"]): The field to use for determining the latest version.
+
+        Returns:
+            DataModel: The data model with the latest version.
+        """
+        if not self:
+            raise ValueError("No data models in list")
+        if key not in ("created_time", "last_updated_time"):
+            raise ValueError(f"Unexpected key {key}")
+        return max(self, key=attrgetter(key))
+
+    def as_ids(self) -> list[DataModelId]:
+        """
+        Convert the list of data models to a list of data model ids.
+
+        Returns:
+            list[DataModelId]: The list of data model ids.
+        """
+        return [d.as_id() for d in self]
 
 
 class DataModelFilter(CogniteFilter):
