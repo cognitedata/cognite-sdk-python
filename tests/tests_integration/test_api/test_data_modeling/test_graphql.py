@@ -1,7 +1,7 @@
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes.data_modeling import DataModel, DataModelApply, Space
+from cognite.client.data_classes.data_modeling import DataModel, DataModelApply, DataModelId, Space
 from cognite.client.exceptions import CogniteGraphQLError
 
 
@@ -35,3 +35,17 @@ class TestDataModelingGraphQLAPI:
         assert err1.kind == "DIFF_ERROR"
         assert err1.message == "Can not remove view 'SomeType' from the data model definition"
         assert err2.hint == "Please publish a new data model version."
+
+    def test_apply_dm_raise_top_level_error(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
+        # Arrange
+        # Invalid as it is a missing version, which will raise an exception
+        invalid_data_model_id = DataModelId(integration_test_space.space, "raiseTopLevelError")
+
+        with pytest.raises(CogniteGraphQLError) as exc:
+            cognite_client.data_modeling.graphql.apply_dml(
+                invalid_data_model_id, "type ScenarioInstance { start: Timestamp }"
+            )
+
+        exception_message = str(exc.value)
+        assert "version" in exception_message
+        assert "invalid value" in exception_message

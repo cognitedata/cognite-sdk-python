@@ -14,9 +14,7 @@ class DataModelingGraphQLAPI(APIClient):
     def _post_graphql(self, url_path: str, json: dict) -> dict[str, Any]:
         res = self._post(url_path=url_path, json=json).json()
         # Errors can be passed both at top level and nested in the response:
-        errors = res.get("errors", []) + (
-            (res.get("data", {}).get("upsertGraphQlDmlVersion") or {}).get("errors") or []
-        )
+        errors = res.get("errors", []) + ((res["data"].get("upsertGraphQlDmlVersion") or {}).get("errors") or [])
         if errors:
             raise CogniteGraphQLError([GraphQLErrorSpec.load(error) for error in errors])
         return res["data"]
