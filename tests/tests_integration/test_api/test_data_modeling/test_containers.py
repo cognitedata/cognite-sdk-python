@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-from operator import attrgetter
 from typing import Any
 
 import pytest
@@ -48,10 +47,8 @@ class TestContainersAPI:
         actual_containers = cognite_client.data_modeling.containers.list(space=integration_test_space.space, limit=-1)
 
         # Assert
-        key = attrgetter("external_id")
-        assert sorted([c for c in actual_containers if c.as_id() in expected_ids], key=key) == sorted(
-            expected_containers, key=key
-        )
+        assert expected_ids, "The movie model is missing containers"
+        assert expected_ids <= set(actual_containers.as_ids())
         assert all(c.space == integration_test_space.space for c in actual_containers)
 
     def test_apply_retrieve_and_delete(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:

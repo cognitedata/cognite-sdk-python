@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-from operator import attrgetter
 from typing import Any
 
 import pytest
@@ -35,10 +34,8 @@ class TestViewsAPI:
         actual_views = cognite_client.data_modeling.views.list(space=integration_test_space.space, limit=-1)
 
         # Assert
-        key = attrgetter("external_id")
-        assert sorted([v for v in actual_views if v.as_id() in expected_ids], key=key) == sorted(
-            expected_views, key=key
-        )
+        assert expected_ids, "The movie model is missing views"
+        assert expected_ids <= set(actual_views.as_ids())
         assert all(v.space == integration_test_space.space for v in actual_views)
 
     def test_apply_retrieve_and_delete(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:

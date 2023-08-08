@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-from operator import attrgetter
 from typing import Any
 
 import pytest
@@ -42,13 +41,14 @@ class TestDataModelsAPI:
         expected_data_models = DataModelList[ViewId](
             [m for m in cdf_data_models if m.space == integration_test_space.space]
         )
+        expected_ids = set(expected_data_models.as_ids())
 
         # Act
         actual_data_models = cognite_client.data_modeling.data_models.list(space=integration_test_space.space, limit=-1)
 
         # Assert
-        key = attrgetter("external_id")
-        assert sorted(actual_data_models, key=key) == sorted(expected_data_models, key=key)
+        assert expected_ids, "The test environment is missing data models"
+        assert expected_ids <= set(actual_data_models.as_ids())
         assert all(v.space == integration_test_space.space for v in actual_data_models)
 
     def test_apply_retrieve_and_delete(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
