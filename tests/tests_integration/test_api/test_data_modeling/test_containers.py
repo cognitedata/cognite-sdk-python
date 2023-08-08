@@ -23,7 +23,7 @@ from cognite.client.data_classes.data_modeling import (
 from cognite.client.exceptions import CogniteAPIError
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def movie_containers(cognite_client: CogniteClient, movie_model: DataModel[View]) -> ContainerList:
     container_ids = {
         prop.container

@@ -11,23 +11,13 @@ from cognite.client.exceptions import CogniteAPIError
 
 
 @pytest.fixture(scope="session")
-def cdf_spaces(cognite_client: CogniteClient, integration_test_space: Space) -> SpaceList:
+@pytest.mark.usefixtures("integration_test_space")
+def cdf_spaces(cognite_client: CogniteClient) -> SpaceList:
     # The integration test space is created in the fixture integration_test_space.
     # This ensures that at least one space exists in CDF.
     spaces = cognite_client.data_modeling.spaces.list(limit=-1)
     assert len(spaces) > 0, "Please create at least one space in CDF."
     return spaces
-
-
-def _dump(list_: SpaceList | Space) -> list[dict]:
-    if isinstance(list_, Space):
-        output = [list_.dump()]
-    else:
-        output = sorted((s.dump() for s in list_), key=lambda s: s["space"])
-    for entry in output:
-        if "last_updated_time" in entry:
-            entry["last_updated_time"] = None
-    return output
 
 
 class TestSpacesAPI:

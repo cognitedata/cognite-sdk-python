@@ -20,8 +20,8 @@ from cognite.client.data_classes.data_modeling import (
 from cognite.client.exceptions import CogniteAPIError
 
 
-@pytest.fixture()
-def movie_views(cognite_client: CogniteClient, movie_model: DataModel[View]) -> ViewList:
+@pytest.fixture(scope="session")
+def movie_views(movie_model: DataModel[View]) -> ViewList:
     return ViewList(movie_model.views)
 
 
