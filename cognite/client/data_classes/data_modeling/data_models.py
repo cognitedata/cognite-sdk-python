@@ -177,6 +177,12 @@ class DataModelApplyList(CogniteResourceList[DataModelApply]):
     _RESOURCE = DataModelApply
 
     def as_ids(self) -> list[DataModelId]:
+        """
+        Convert the list of data models to a list of data model ids.
+
+        Returns:
+            list[DataModelId]: The list of data model ids.
+        """
         return [d.as_id() for d in self]
 
 
@@ -184,6 +190,12 @@ class DataModelList(CogniteResourceList[DataModel[T_View]]):
     _RESOURCE = DataModel
 
     def as_apply(self) -> DataModelApplyList:
+        """
+        Convert the list of data models to a list of data model applies.
+
+        Returns:
+            DataModelApplyList: The list of data model applies.
+        """
         return DataModelApplyList([d.as_apply() for d in self])
 
     def latest_version(self, key: Literal["created_time", "last_updated_time"] = "created_time") -> DataModel[T_View]:
@@ -204,6 +216,12 @@ class DataModelList(CogniteResourceList[DataModel[T_View]]):
         return max(self, key=attrgetter(key))
 
     def as_ids(self) -> list[DataModelId]:
+        """
+        Convert the list of data models to a list of data model ids.
+
+        Returns:
+            list[DataModelId]: The list of data model ids.
+        """
         return [d.as_id() for d in self]
 
 

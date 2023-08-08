@@ -163,7 +163,7 @@ class ContainerList(CogniteResourceList[Container]):
     _RESOURCE = Container
 
     def as_apply(self) -> ContainerApplyList:
-        """Convert to a container an apply list.
+        """Convert to a ContainerApply list.
 
         Returns:
             ContainerApplyList: The container apply list.
