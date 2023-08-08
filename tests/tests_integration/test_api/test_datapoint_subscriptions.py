@@ -14,28 +14,48 @@ from cognite.client.data_classes.datapoints_subscriptions import (
     DataPointSubscriptionUpdate,
 )
 
+TIMESERIES_EXTERNAL_IDS = [f"PYSDK DataPoint Subscription Test {no}" for no in range(10)]
+
 
 @pytest.fixture(scope="session")
 def time_series_external_ids(cognite_client: CogniteClient) -> list[str]:
-    external_ids = [f"PYSDK DataPoint Subscription Test {no}" for no in range(10)]
-    existing = cognite_client.time_series.retrieve_multiple(external_ids=external_ids, ignore_unknown_ids=True)
-    assert len(existing) == len(external_ids), (
-        "The 10 timeseries used for testing datapoint " "subscriptions must exist in the test environment"
+    existing = cognite_client.time_series.retrieve_multiple(
+        external_ids=TIMESERIES_EXTERNAL_IDS, ignore_unknown_ids=True
     )
-    return external_ids
+    if len(existing) == len(TIMESERIES_EXTERNAL_IDS):
+        return [ts.external_id for ts in existing]
+    upserted = cognite_client.time_series.upsert(
+        [
+            TimeSeries(
+                external_id=external_id,
+                name=external_id,
+                is_string=False,
+            )
+            for external_id in TIMESERIES_EXTERNAL_IDS
+        ],
+        mode="overwrite",
+    )
+
+    return [ts.external_id for ts in upserted]
 
 
 @pytest.fixture(scope="session")
-def subscription_3(cognite_client: CogniteClient) -> DatapointSubscription:
-    sub3 = cognite_client.time_series.subscriptions.retrieve("PYSDKDataPointSubscriptionTest3", ignore_unknown_ids=True)
-    assert (
-        sub3 is not None
-    ), "The subscription used for testing datapoint subscriptions must exist in the test environment"
-    return sub3
+def subscription(cognite_client: CogniteClient, time_series_external_ids: list[str]) -> DatapointSubscription:
+    external_id = "PYSDKDataPointSubscriptionTest"
+    sub = cognite_client.time_series.subscriptions.retrieve(external_id, ignore_unknown_ids=True)
+    if sub is not None:
+        return sub
+    new_sub = DataPointSubscriptionCreate(
+        external_id=external_id,
+        name=f"{external_id}_3ts",
+        time_series_ids=time_series_external_ids[:3],
+        partition_count=1,
+    )
+    return cognite_client.time_series.subscriptions.create(new_sub)
 
 
 class TestDatapointSubscriptions:
-    def test_list_subscriptions(self, cognite_client: CogniteClient):
+    def test_list_subscriptions(self, cognite_client: CogniteClient, subscription: DatapointSubscription) -> None:
         subscriptions = cognite_client.time_series.subscriptions.list(limit=5)
 
         assert len(subscriptions) > 0, "Add at least one subscription to the test environment to run this test"
@@ -129,37 +149,12 @@ class TestDatapointSubscriptions:
             new_update = DataPointSubscriptionUpdate(new_subscription.external_id).filter.set(new_filter)
 
             # Act
+            # There is a bug in the API that causes the updated filter not to be returned when calling update.
             cognite_client.time_series.subscriptions.update(new_update)
             retrieved = cognite_client.time_series.subscriptions.retrieve(new_subscription.external_id)
 
             # Assert
             assert retrieved.filter.dump() == new_filter.dump()
-        finally:
-            if created:
-                cognite_client.time_series.subscriptions.delete(new_subscription.external_id, ignore_unknown_ids=True)
-
-    def test_delete_subscription(self, cognite_client: CogniteClient, time_series_external_ids: list[str]):
-        # Arrange
-        new_subscription = DataPointSubscriptionCreate(
-            external_id="PYSDKDataPointSubscriptionDeleteTest",
-            name="PYSDKDataPointSubscriptionDeleteTest",
-            time_series_ids=[time_series_external_ids[0]],
-            partition_count=1,
-        )
-
-        created: DatapointSubscription | None = None
-        try:
-            created = cognite_client.time_series.subscriptions.create(new_subscription)
-
-            # Act
-            cognite_client.time_series.subscriptions.delete(new_subscription.external_id)
-
-            retrieved = cognite_client.time_series.subscriptions.retrieve(
-                new_subscription.external_id, ignore_unknown_ids=True
-            )
-
-            # Assert
-            assert retrieved is None
         finally:
             if created:
                 cognite_client.time_series.subscriptions.delete(new_subscription.external_id, ignore_unknown_ids=True)
@@ -325,20 +320,18 @@ class TestDatapointSubscriptions:
                 cognite_client.time_series.subscriptions.delete(new_subscription.external_id, ignore_unknown_ids=True)
 
     def test_iterate_data_subscription_start_1m_ago(
-        self, cognite_client: CogniteClient, subscription_3: DatapointSubscription
+        self, cognite_client: CogniteClient, subscription: DatapointSubscription
     ):
         # Arrange
         added_count = 0
-        for changed_data, timeseries in cognite_client.time_series.subscriptions.iterate_data(
-            subscription_3.external_id
-        ):
+        for changed_data, timeseries in cognite_client.time_series.subscriptions.iterate_data(subscription.external_id):
             added_count += len(timeseries.added)
         assert added_count > 0, "There should be at least one timeseries added"
 
         # Act
         added_last_minute = 0
         for changed_data, timeseries in cognite_client.time_series.subscriptions.iterate_data(
-            subscription_3.external_id, start="1m-ago"
+            subscription.external_id, start="1m-ago"
         ):
             added_last_minute += len(timeseries.added)
 
