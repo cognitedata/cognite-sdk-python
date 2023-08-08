@@ -72,7 +72,9 @@ class TestInstancesAPI:
         listed_nodes = cognite_client.data_modeling.instances.list(limit=-1, instance_type="node")
 
         # Assert
-        assert set(movie_nodes.as_ids()) <= set(listed_nodes.as_ids())
+        movie_node_ids = set(movie_nodes.as_ids())
+        assert movie_node_ids
+        assert movie_node_ids <= set(listed_nodes.as_ids())
 
     def test_list_edges(self, cognite_client: CogniteClient, movie_edges: EdgeList) -> None:
         # Act
