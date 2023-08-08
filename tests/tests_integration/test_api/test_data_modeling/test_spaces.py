@@ -72,7 +72,7 @@ class TestSpacesAPI:
         retrieved_spaces = cognite_client.data_modeling.spaces.retrieve(spaces.as_ids())
 
         # Assert
-        assert retrieved_spaces.as_apply() == spaces.as_apply_list()
+        assert retrieved_spaces.as_apply() == spaces.as_apply()
 
     def test_iterate_over_spaces(self, cognite_client: CogniteClient) -> None:
         for space in cognite_client.data_modeling.spaces:
