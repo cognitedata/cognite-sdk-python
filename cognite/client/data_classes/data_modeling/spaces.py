@@ -95,7 +95,7 @@ class SpaceList(CogniteResourceList[Space]):
     def as_ids(self) -> list[str]:
         return [item.space for item in self]
 
-    def as_apply_list(self) -> SpaceApplyList:
+    def as_apply(self) -> SpaceApplyList:
         return SpaceApplyList(
             resources=[item.as_apply() for item in self],
             cognite_client=self._cognite_client,

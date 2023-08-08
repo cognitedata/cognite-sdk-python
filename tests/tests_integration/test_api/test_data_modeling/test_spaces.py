@@ -34,7 +34,7 @@ class TestSpacesAPI:
     def test_list(self, cognite_client: CogniteClient, cdf_spaces: SpaceList) -> None:
         actual_space_in_cdf = cognite_client.data_modeling.spaces.list(limit=-1)
 
-        assert actual_space_in_cdf.as_apply_list() == cdf_spaces.as_apply_list()
+        assert actual_space_in_cdf.as_apply() == cdf_spaces.as_apply()
 
     def test_list_include_global(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
         spaces_with_global = cognite_client.data_modeling.spaces.list(include_global=True, limit=-1)
@@ -82,7 +82,7 @@ class TestSpacesAPI:
         retrieved_spaces = cognite_client.data_modeling.spaces.retrieve(spaces.as_ids())
 
         # Assert
-        assert retrieved_spaces.as_apply_list() == spaces.as_apply_list()
+        assert retrieved_spaces.as_apply() == spaces.as_apply_list()
 
     def test_iterate_over_spaces(self, cognite_client: CogniteClient) -> None:
         for space in cognite_client.data_modeling.spaces:

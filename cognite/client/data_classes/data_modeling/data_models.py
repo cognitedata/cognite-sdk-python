@@ -183,7 +183,7 @@ class DataModelApplyList(CogniteResourceList[DataModelApply]):
 class DataModelList(CogniteResourceList[DataModel[T_View]]):
     _RESOURCE = DataModel
 
-    def as_apply_list(self) -> DataModelApplyList:
+    def as_apply(self) -> DataModelApplyList:
         return DataModelApplyList([d.as_apply() for d in self])
 
     def latest_version(self, key: Literal["created_time", "last_updated_time"] = "created_time") -> DataModel[T_View]:

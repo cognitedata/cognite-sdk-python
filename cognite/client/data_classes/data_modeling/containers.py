@@ -162,6 +162,14 @@ class Container(ContainerCore):
 class ContainerList(CogniteResourceList[Container]):
     _RESOURCE = Container
 
+    def as_apply(self) -> ContainerApplyList:
+        """Convert to a container an apply list.
+
+        Returns:
+            ContainerApplyList: The container apply list.
+        """
+        return ContainerApplyList(resources=[v.as_apply() for v in self])
+
     def as_ids(self) -> list[ContainerId]:
         """Convert to a container id list.
 
@@ -173,14 +181,6 @@ class ContainerList(CogniteResourceList[Container]):
 
 class ContainerApplyList(CogniteResourceList[ContainerApply]):
     _RESOURCE = ContainerApply
-
-    def as_apply(self) -> ContainerApplyList:
-        """Convert to a container an apply list.
-
-        Returns:
-            ContainerApplyList: The container apply list.
-        """
-        return ContainerApplyList(resources=[v.as_apply() for v in self.items])
 
     def as_ids(self) -> list[ContainerId]:
         """Convert to a container id list.
