@@ -12,6 +12,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    EnumProperty,
     PropertySpec,
 )
 from cognite.client.data_classes.shared import TimestampRange
@@ -265,3 +266,41 @@ class EventUpdate(CogniteUpdate):
 
 class EventList(CogniteResourceList[Event]):
     _RESOURCE = Event
+
+
+class EventProperty(EnumProperty):
+    asset_ids = "assetIds"
+    created_time = "createdTime"
+    data_set_id = "dataSetId"
+    end_time = "endTime"
+    id = "id"
+    last_updated_time = "lastUpdatedTime"
+    start_time = "startTime"
+    description = "description"
+    external_id = "externalId"
+    metadata = "metadata"
+    source = "source"
+    subtype = "subtype"
+    type = "type"
+
+    @classmethod
+    def metadata_key(cls, key: str) -> list[str]:
+        return ["metadata", key]
+
+
+class SortableEvenProperty(EnumProperty):
+    created_time = "createdTime"
+    data_set_id = "dataSetId"
+    description = "description"
+    end_time = "endTime"
+    external_id = "externalId"
+    last_updated_time = "lastUpdatedTime"
+    source = "source"
+    start_time = "startTime"
+    subtype = "subtype"
+    type = "type"
+    score = "_score_"
+
+    @classmethod
+    def metadata_key(cls, key: str) -> list[str]:
+        return ["metadata", key]
