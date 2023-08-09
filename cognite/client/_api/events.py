@@ -515,28 +515,26 @@ class EventsAPI(APIClient):
         such as equals, prefix, exists, etc., using boolean operators and, or, and not.
         It applies to basic fields as well as metadata.
 
-
         Args:
             filter: Filter to apply.
             sort: The criteria to sort by. Can be up to two properties to sort by default to ascending order.
-            limit: Maximum number of results to return.
+            limit: Maximum number of results to return. Defaults to 100. Set to -1, float("inf") or None
+                   to return all items.
 
         Returns:
             EventList: List of events that match the filter criteria.
 
         """
-        body: dict[str, Any] = {
-            "advancedFilter": filter.dump() if isinstance(filter, Filter) else filter,
-        }
-        if sort:
-            if not isinstance(sort, list):
-                sort = [sort]
-            body["sort"] = [EventSort.load(item).dump(camel_case=True) for item in sort]
+        if sort is None:
+            sort = []
+        elif not isinstance(sort, list):
+            sort = [sort]
 
         return self._list(
             list_cls=EventList,
             resource_cls=Event,
             method="POST",
             limit=limit,
-            other_params=body,
+            advanced_filter=filter.dump() if isinstance(filter, Filter) else filter,
+            sort=[EventSort.load(item).dump(camel_case=True) for item in sort],
         )
