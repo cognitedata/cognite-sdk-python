@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import filters
+from cognite.client.data_classes import aggregations, filters
 from cognite.client.data_classes.documents import DocumentProperty, SortableDocumentProperty, SourceFileProperty
 from cognite.client.data_classes.files import FileMetadata
 
@@ -132,11 +132,19 @@ class TestDocumentsAPI:
         assert count > 0
 
     def test_aggregate_unique_types(self, cognite_client: CogniteClient):
+        # Arrange
+        a = aggregations
+        is_not_text = a.Not(a.Prefix("text"))
+
         # Act
-        result = cognite_client.documents.aggregate_unique(property=DocumentProperty.type)
+        all_buckets = cognite_client.documents.aggregate_unique(property=DocumentProperty.mime_type)
+        not_text_buckets = cognite_client.documents.aggregate_unique(
+            property=DocumentProperty.mime_type,
+            aggregate_filter=is_not_text,
+        )
 
         # Assert
-        assert len(result) > 0
+        assert len(all_buckets) > len(not_text_buckets)
 
     def test_aggregate_unique_metadata(self, cognite_client: CogniteClient):
         # Act

@@ -1,9 +1,12 @@
 from __future__ import annotations
 
-from abc import ABC
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, ClassVar, Type, TypeVar, cast, final
+from typing import Any, ClassVar, Type, TypeVar, Union, cast, final
 
+from typing_extensions import TypeAlias
+
+from cognite.client.data_classes import Label
 from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_snake_case
 
@@ -194,3 +197,67 @@ class HistogramValue(AggregatedValue):
         output["interval"] = self.interval
         output["buckets"] = [bucket.dump(camel_case) for bucket in self.buckets]
         return output
+
+
+Value: TypeAlias = Union[str, float, bool, Label]
+
+
+class AggregationFilter(ABC):
+    _filter_name: ClassVar[str]
+
+    def dump(self) -> dict[str, Any]:
+        return {self._filter_name: self._filter_body()}
+
+    @classmethod
+    def load(cls, filter_: dict[str, Any]) -> AggregationFilter:
+        ...
+
+    @abstractmethod
+    def _filter_body(self) -> list | dict:
+        raise NotImplementedError()
+
+
+class CompoundFilter(AggregationFilter):
+    _filter_name = "compound"
+
+    def __init__(self, *filters: AggregationFilter):
+        self._filters = filters
+
+    def _filter_body(self) -> list | dict:
+        return [filter_.dump() for filter_ in self._filters]
+
+
+class FilterWithValue(AggregationFilter):
+    _filter_name = "valueFilter"
+
+    def __init__(self, value: Value):
+        self._value = value
+
+    def _filter_body(self) -> dict:
+        return {"value": self._value}
+
+
+@final
+class And(CompoundFilter):
+    _filter_name = "and"
+
+
+@final
+class Or(CompoundFilter):
+    _filter_name = "or"
+
+
+@final
+class Not(CompoundFilter):
+    _filter_name = "not"
+
+    def __init__(self, filter: AggregationFilter):
+        super().__init__(filter)
+
+    def _filter_body(self) -> dict:
+        return self._filters[0].dump()
+
+
+@final
+class Prefix(FilterWithValue):
+    _filter_name = "prefix"
