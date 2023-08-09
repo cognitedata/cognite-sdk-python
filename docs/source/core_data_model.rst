@@ -99,6 +99,10 @@ Upsert events
 ^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.events.EventsAPI.upsert
 
+Filter events
+^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.events.EventsAPI.filter
+
 Events Data classes
 ^^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.events
