@@ -21,7 +21,8 @@ class SourceFile(CogniteResource):
 
     Args:
         name (str): The name of the source file.
-        hash (str): The hash of the source file.
+        hash (str): The hash of the source file. This is a SHA256 hash of the original file. The hash only covers the
+                    file content, and not other CDF metadata.
         directory (str): The directory the file can be found in.
         source (str): The source of the file.
         mime_type (str): The mime type of the file.
@@ -50,6 +51,7 @@ class SourceFile(CogniteResource):
         security_categories: Optional[list[int]] = None,
         metadata: Optional[dict[str, str]] = None,
         cognite_client: Optional[CogniteClient] = None,
+        **_: Any,
     ):
         self.name = name
         self.hash = hash
@@ -93,7 +95,8 @@ class Document(CogniteResource):
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
         title (str): The title of the document.
         author (str): The author of the document.
-        producer (str): The producer of the document.
+        producer (str): The producer of the document. Many document types contain metadata indicating what software
+                        or system was used to create the document.
         modified_time (int): The last time the document was modified in CDF in milliseconds since Jan 1, 1970.
         last_indexed_time (int): The last time the document was indexed in the search engine, measured in milliseconds
                                  since Jan 1, 1970.
@@ -130,6 +133,7 @@ class Document(CogniteResource):
         labels: Optional[list[Label | str | LabelDefinition]] = None,
         geo_location: Optional[GeoLocation] = None,
         cognite_client: Optional[CogniteClient] = None,
+        **_: Any,
     ):
         self.id = id
         self.created_time = created_time
