@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterator, List, Literal, Optional, Sequence, Union, cast, overload
+from typing import Any, Dict, Iterator, List, Literal, Optional, Sequence, Tuple, Union, cast, overload
+
+from typing_extensions import TypeAlias
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import ADVANCED_LIST_LIMIT_DEFAULT, LIST_LIMIT_DEFAULT
@@ -14,9 +16,18 @@ from cognite.client.data_classes import (
     EventUpdate,
     TimestampRange,
 )
+from cognite.client.data_classes.events import EventSort, SortableEventProperty
 from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
+
+SortArg: TypeAlias = Union[
+    EventSort,
+    str,
+    SortableEventProperty,
+    Tuple[str, Literal["asc", "desc"]],
+    Tuple[str, Literal["asc", "desc"], Literal["auto", "first", "last"]],
+]
 
 
 class EventsAPI(APIClient):
@@ -495,7 +506,7 @@ class EventsAPI(APIClient):
     def filter(
         self,
         filter: Filter | dict | None = None,
-        sort: str | Sequence[str] | None = None,
+        sort: SortArg | Sequence[SortArg] | None = None,
         limit: int = ADVANCED_LIST_LIMIT_DEFAULT,
     ) -> EventList:
         ...

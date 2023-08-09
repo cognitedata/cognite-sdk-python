@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Union, cast
+
+from typing_extensions import TypeAlias
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -14,6 +16,7 @@ from cognite.client.data_classes._base import (
     CogniteUpdate,
     EnumProperty,
     PropertySpec,
+    Sort,
 )
 from cognite.client.data_classes.shared import TimestampRange
 
@@ -288,7 +291,7 @@ class EventProperty(EnumProperty):
         return ["metadata", key]
 
 
-class SortableEvenProperty(EnumProperty):
+class SortableEventProperty(EnumProperty):
     created_time = "createdTime"
     data_set_id = "dataSetId"
     description = "description"
@@ -304,3 +307,16 @@ class SortableEvenProperty(EnumProperty):
     @classmethod
     def metadata_key(cls, key: str) -> list[str]:
         return ["metadata", key]
+
+
+SortableEventPropertyLike: TypeAlias = Union[SortableEventProperty, str, List[str]]
+
+
+class EventSort(Sort):
+    def __init__(
+        self,
+        property: SortableEventPropertyLike,
+        order: Literal["asc", "desc"] = "asc",
+        nulls: Literal["auto", "first", "last"] = "auto",
+    ):
+        super().__init__(property, order, nulls)
