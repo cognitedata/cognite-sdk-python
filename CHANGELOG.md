@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.13.1] - 2023-08-09
+### Fixed
+- Fixed bug when calling a `retrieve`, `list`, or `create` in `client.data_modeling.container` raised a `TypeError`.
+  This is caused by additions of fields to the API, this is now fixed by ignoring unknown fields.
+
 ## [6.13.0] - 2023-08-07
 ### Fixed
 - Fixed a bug raising a `KeyError` when calling `client.data_modeling.graphql.apply_dml` with an invalid `DataModelingId`.
