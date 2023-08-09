@@ -140,7 +140,7 @@ class Container(ContainerCore):
         used_for: Literal["node", "edge", "all"] = "node",
         constraints: Optional[dict[str, Constraint]] = None,
         indexes: Optional[dict[str, Index]] = None,
-        **_: dict,
+        **_: Any,
     ):
         super().__init__(space, external_id, properties, description, name, used_for, constraints, indexes)
         self.is_global = is_global
