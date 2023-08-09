@@ -531,11 +531,13 @@ class EventsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes.events import EventProperty, SortableEventProperty
                 >>> c = CogniteClient()
                 >>> f = filters
-                >>> is_workorder = f.Prefix("externalId", "workorder")
-                >>> has_failure = f.Search("description", "failure")
-                >>> res = c.events.filter(filter=f.And(is_workorder, has_failure), sort=("startTime, desc"))
+                >>> is_workorder = f.Prefix(EventProperty.external_id, "workorder")
+                >>> has_failure = f.Search(EventProperty.description, "failure")
+                >>> res = c.events.filter(filter=f.And(is_workorder, has_failure),
+                ...                       sort=(SortableEventProperty.start_time, "desc"))
 
         """
         if sort is None:
