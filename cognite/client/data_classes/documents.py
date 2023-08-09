@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, List, Literal, Optional, Union
 
 from typing_extensions import TypeAlias
 
-from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, EnumProperty
+from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, EnumProperty, Sort
 from cognite.client.data_classes.labels import Label, LabelDefinition
 from cognite.client.data_classes.shared import GeoLocation
 from cognite.client.utils._text import convert_all_keys_to_snake_case
@@ -340,40 +340,9 @@ class DocumentProperty(EnumProperty):
 SortableProperty: TypeAlias = Union[SortableSourceFileProperty, SortableDocumentProperty, str, List[str]]
 
 
-@dataclass
-class DocumentSort:
-    property: SortableProperty
-    order: Literal["asc", "desc"] = "asc"
-
-    @classmethod
-    def load(
-        cls,
-        data: dict[str, Any] | tuple[SortableProperty, Literal["asc", "desc"]] | SortableProperty | DocumentSort,
-    ) -> DocumentSort:
-        if isinstance(data, cls):
-            return data
-        elif isinstance(data, dict):
-            return cls(property=data["property"], order=data.get("order", "asc"))
-        elif isinstance(data, tuple) and len(data) == 2 and data[1] in ["asc", "desc"]:
-            return cls(property=data[0], order=data[1])
-        elif isinstance(data, (str, list, EnumProperty)):
-            return cls(
-                property=data,
-            )
-        else:
-            raise ValueError(f"Unable to load {cls.__name__} from {data}")
-
-    def dump(self) -> dict[str, Any]:
-        prop = self.property
-        if isinstance(prop, EnumProperty):
-            prop = prop.as_reference()
-        elif isinstance(prop, str):
-            prop = [prop]
-
-        return {
-            "property": prop,
-            "order": self.order,
-        }
+class DocumentSort(Sort):
+    def __init__(self, property: SortableProperty, order: Literal["asc", "desc"] = "asc"):
+        super().__init__(property, order)
 
 
 @dataclass
