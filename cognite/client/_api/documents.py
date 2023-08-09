@@ -8,6 +8,7 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import DOCUMENT_LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import filters
 from cognite.client.data_classes._base import EnumProperty
+from cognite.client.data_classes.aggregations import AggregationFilter
 from cognite.client.data_classes.documents import (
     Document,
     DocumentHighlightList,
@@ -264,7 +265,7 @@ class DocumentsAPI(APIClient):
         path: list[str] | None = None,
         query: str | None = None,
         filter: Filter | dict | None = None,
-        aggregate_filter: Filter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict | None = None,
         limit: int | None = None,
     ) -> int:
         ...
@@ -277,7 +278,7 @@ class DocumentsAPI(APIClient):
         path: list[str] | None = None,
         query: str | None = None,
         filter: Filter | dict | None = None,
-        aggregate_filter: Filter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict | None = None,
         limit: int | None = None,
     ) -> DocumentUniqueResultList:
         ...
@@ -289,7 +290,7 @@ class DocumentsAPI(APIClient):
         path: list[str] | None = None,
         query: str | None = None,
         filter: Filter | dict | None = None,
-        aggregate_filter: Filter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict | None = None,
         limit: int | None = None,
     ) -> int | DocumentUniqueResultList:
         body: dict[str, Any] = {
@@ -305,7 +306,7 @@ class DocumentsAPI(APIClient):
             body["filter"] = filter.dump() if isinstance(filter, Filter) else filter
         if aggregate_filter is not None:
             body["aggregateFilter"] = (
-                aggregate_filter.dump() if isinstance(aggregate_filter, Filter) else aggregate_filter
+                aggregate_filter.dump() if isinstance(aggregate_filter, AggregationFilter) else aggregate_filter
             )
         if limit is not None:
             body["limit"] = limit
@@ -366,7 +367,7 @@ class DocumentsAPI(APIClient):
         property: DocumentProperty | SourceFileProperty | list[str] | str,
         query: str | None = None,
         filter: Filter | dict | None = None,
-        aggregate_filter: Filter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict | None = None,
     ) -> int:
         """`Find approximate number of unique properties. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
 
@@ -374,7 +375,7 @@ class DocumentsAPI(APIClient):
             property (DocumentProperty | list[str] | str): The property to count the cardinality of.
             query (str | None): The free text search query, for details see the documentation referenced above.
             filter (Filter | dict | None): The filter to narrow down the documents to count cardinality.
-            aggregate_filter (Filter | dict | None): The filter to apply to aggregations.
+            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
 
         Returns:
             int: The number of documents matching the specified filters and search.
@@ -419,7 +420,7 @@ class DocumentsAPI(APIClient):
         property: DocumentProperty | SourceFileProperty | list[str] | str,
         query: str | None = None,
         filter: Filter | dict | None = None,
-        aggregate_filter: Filter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict | None = None,
         limit: int = DOCUMENT_LIST_LIMIT_DEFAULT,
     ) -> DocumentUniqueResultList:
         """`Find approximate number of unique properties. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
@@ -428,7 +429,7 @@ class DocumentsAPI(APIClient):
             property (list[str]): The property to group by.
             query (str | None): The free text search query, for details see the documentation referenced above.
             filter (Filter | dict | None): The filter to narrow down the documents to count cardinality.
-            aggregate_filter (Filter | dict | None): The filter to apply to aggregations.
+            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
             limit (int): Maximum number of items. Defaults to 100.
 
         Returns:
