@@ -387,7 +387,7 @@ class DocumentsAPI(APIClient):
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.documents import DocumentProperty
             >>> c = CogniteClient()
-            >>> pdf_count = c.documents.aggregate_cardinality(DocumentProperty.type)
+            >>> count = c.documents.aggregate_cardinality(DocumentProperty.type)
 
         Count the number of authors of plain/text documents in your CDF project:
 
@@ -397,6 +397,16 @@ class DocumentsAPI(APIClient):
             >>> c = CogniteClient()
             >>> is_plain_text = filters.Equals(DocumentProperty.mime_type, "text/plain")
             >>> plain_text_author_count = c.documents.aggregate_cardinality(DocumentProperty.author, filter=is_plain_text)
+
+        Count the number of types of documents in your CDF project but exclude documents that start with "text":
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes.documents import DocumentProperty
+            >>> from cognite.client.data_classes import aggregations
+            >>> c = CogniteClient()
+            >>> a = aggregations
+            >>> is_not_text = a.Not(a.Prefix("text"))
+            >>> type_count_excluded_text = c.documents.aggregate_cardinality(DocumentProperty.type, aggregate_filter=is_not_text)
 
         """
         _validate_filter(filter)
@@ -453,6 +463,17 @@ class DocumentsAPI(APIClient):
             >>> c = CogniteClient()
             >>> is_abc = filters.Prefix(DocumentProperty.external_id, "abc")
             >>> result = c.documents.aggregate_unique(DocumentProperty.language, filter=is_abc)
+            >>> print(result.unique)
+
+        Get the unique mime types with count of documents, but exclude mime types that start with text:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes.documents import DocumentProperty
+            >>> from cognite.client.data_classes import aggregations
+            >>> c = CogniteClient()
+            >>> a = aggregations
+            >>> is_not_text = a.Not(a.Prefix("text"))
+            >>> result = c.documents.aggregate_unique(DocumentProperty.mime_type, aggregate_filter=is_not_text)
             >>> print(result.unique)
 
         """
