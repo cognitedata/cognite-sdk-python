@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any, Dict, Iterator, List, Literal, Optional, Sequence, Union, cast, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import ADVANCED_LIST_LIMIT_DEFAULT, LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import (
     AggregateResult,
     AggregateUniqueValuesResult,
@@ -14,6 +14,7 @@ from cognite.client.data_classes import (
     EventUpdate,
     TimestampRange,
 )
+from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 
@@ -490,3 +491,11 @@ class EventsAPI(APIClient):
             input_resource_cls=Event,
             mode=mode,
         )
+
+    def filter(
+        self,
+        filter: Filter | dict | None = None,
+        sort: str | Sequence[str] | None = None,
+        limit: int = ADVANCED_LIST_LIMIT_DEFAULT,
+    ) -> EventList:
+        ...
