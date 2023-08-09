@@ -505,8 +505,38 @@ class EventsAPI(APIClient):
 
     def filter(
         self,
-        filter: Filter | dict | None = None,
-        sort: SortArg | Sequence[SortArg] | None = None,
+        filter: Filter | dict,
+        sort: SortArg | List[SortArg] | None = None,
         limit: int = ADVANCED_LIST_LIMIT_DEFAULT,
     ) -> EventList:
-        ...
+        """`Advanced filter events <https://developer.cognite.com/api#tag/Events/operation/advancedListEvents>`_
+
+        Advanced filter lets you create complex filtering expressions that combine simple operations,
+        such as equals, prefix, exists, etc., using boolean operators and, or, and not.
+        It applies to basic fields as well as metadata.
+
+
+        Args:
+            filter: Filter to apply.
+            sort: The criteria to sort by. Can be up to two properties to sort by default to ascending order.
+            limit: Maximum number of results to return.
+
+        Returns:
+            EventList: List of events that match the filter criteria.
+
+        """
+        body: dict[str, Any] = {
+            "advancedFilter": filter.dump() if isinstance(filter, Filter) else filter,
+        }
+        if sort:
+            if not isinstance(sort, list):
+                sort = [sort]
+            body["sort"] = [EventSort.load(item).dump(camel_case=True) for item in sort]
+
+        return self._list(
+            list_cls=EventList,
+            resource_cls=Event,
+            method="POST",
+            limit=limit,
+            other_params=body,
+        )
