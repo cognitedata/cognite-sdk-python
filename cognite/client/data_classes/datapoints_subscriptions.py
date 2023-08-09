@@ -53,7 +53,7 @@ class DatapointSubscriptionCore(CogniteResource):
         filter: Optional[Filter] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        **_: dict,
+        **_: Any,
     ):
         self.external_id = external_id
         self.partition_count = partition_count
@@ -106,7 +106,7 @@ class DatapointSubscription(DatapointSubscriptionCore):
         filter: Optional[Filter] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        **_: dict,
+        **_: Any,
     ):
         super().__init__(external_id, partition_count, filter, name, description)
         self.time_series_count = time_series_count

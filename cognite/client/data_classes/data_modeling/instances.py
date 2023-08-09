@@ -252,7 +252,7 @@ class Instance(InstanceCore):
         instance_type: Literal["node", "edge"] = "node",
         deleted_time: Optional[int] = None,
         properties: Optional[Properties] = None,
-        **_: dict,
+        **_: Any,
     ):
         super().__init__(space, external_id, instance_type)
         self.version = version
@@ -303,7 +303,7 @@ class InstanceApplyResult(InstanceCore):
         was_modified: bool,
         last_updated_time: int,
         created_time: int,
-        **_: dict,
+        **_: Any,
     ):
         super().__init__(space, external_id, instance_type)
         self.version = version
@@ -416,7 +416,7 @@ class Node(Instance):
         created_time: int,
         deleted_time: Optional[int] = None,
         properties: Optional[Properties] = None,
-        **_: dict,
+        **_: Any,
     ):
         super().__init__(space, external_id, version, last_updated_time, created_time, "node", deleted_time, properties)
 
@@ -475,7 +475,7 @@ class NodeApplyResult(InstanceApplyResult):
         was_modified: bool,
         last_updated_time: int,
         created_time: int,
-        **_: dict,
+        **_: Any,
     ):
         super().__init__(
             instance_type="node",
@@ -581,7 +581,7 @@ class Edge(Instance):
         end_node: DirectRelationReference,
         deleted_time: Optional[int] = None,
         properties: Optional[Properties] = None,
-        **_: dict,
+        **_: Any,
     ):
         super().__init__(space, external_id, version, last_updated_time, created_time, "edge", deleted_time, properties)
         self.type = type
@@ -666,7 +666,7 @@ class EdgeApplyResult(InstanceApplyResult):
         was_modified: bool,
         last_updated_time: int,
         created_time: int,
-        **_: dict,
+        **_: Any,
     ):
         super().__init__(
             instance_type="edge",
