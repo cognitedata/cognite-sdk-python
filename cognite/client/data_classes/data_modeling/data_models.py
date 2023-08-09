@@ -32,7 +32,7 @@ class DataModelCore(DataModelingResource):
         version: str,
         description: Optional[str] = None,
         name: Optional[str] = None,
-        **_: dict,
+        **_: Any,
     ):
         self.space = space
         self.external_id = external_id
@@ -122,7 +122,7 @@ class DataModel(DataModelCore, Generic[T_View]):
         description: Optional[str] = None,
         name: Optional[str] = None,
         views: Optional[list[T_View]] = None,
-        **_: dict,
+        **_: Any,
     ):
         super().__init__(space, external_id, version, description, name)
         self.views: list[T_View] = views or []

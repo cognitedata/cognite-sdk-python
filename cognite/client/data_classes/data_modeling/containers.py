@@ -44,7 +44,7 @@ class ContainerCore(DataModelingResource):
         used_for: Optional[Literal["node", "edge", "all"]] = None,
         constraints: Optional[dict[str, Constraint]] = None,
         indexes: Optional[dict[str, Index]] = None,
-        **_: dict,
+        **_: Any,
     ):
         self.space = space
         self.external_id = external_id

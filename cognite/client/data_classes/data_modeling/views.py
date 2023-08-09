@@ -34,7 +34,7 @@ class ViewCore(DataModelingResource):
         name: Optional[str] = None,
         filter: Filter | None = None,
         implements: Optional[list[ViewId]] = None,
-        **_: dict,
+        **_: Any,
     ):
         self.space = space
         self.external_id = external_id
@@ -150,7 +150,7 @@ class View(ViewCore):
         writable: bool = False,
         used_for: Literal["node", "edge", "all"] = "node",
         is_global: bool = False,
-        **_: dict,
+        **_: Any,
     ):
         super().__init__(
             space,
