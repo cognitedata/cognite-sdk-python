@@ -524,6 +524,19 @@ class EventsAPI(APIClient):
         Returns:
             EventList: List of events that match the filter criteria.
 
+        Examples:
+
+            Find all events that has external id with prefix "workorder" and the word 'failure' in the description,
+            and sort by start time descending:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> c = CogniteClient()
+                >>> f = filters
+                >>> is_workorder = f.Prefix("externalId", "workorder")
+                >>> has_failure = f.Search("description", "failure")
+                >>> res = c.events.filter(filter=f.And(is_workorder, has_failure), sort=("startTime, desc"))
+
         """
         if sort is None:
             sort = []
