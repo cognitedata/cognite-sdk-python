@@ -15,9 +15,10 @@ from cognite.client.data_classes import (
     EventList,
     EventUpdate,
     TimestampRange,
+    filters,
 )
 from cognite.client.data_classes.events import EventSort, SortableEventProperty
-from cognite.client.data_classes.filters import Filter
+from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 
@@ -28,6 +29,23 @@ SortArg: TypeAlias = Union[
     Tuple[str, Literal["asc", "desc"]],
     Tuple[str, Literal["asc", "desc"], Literal["auto", "first", "last"]],
 ]
+
+_FILTERS_SUPPORTED: frozenset[type[Filter]] = frozenset(
+    {
+        filters.And,
+        filters.Or,
+        filters.Not,
+        filters.In,
+        filters.Equals,
+        filters.Exists,
+        filters.Range,
+        filters.Prefix,
+        filters.ContainsAny,
+        filters.ContainsAll,
+        filters.InAssetSubtree,
+        filters.Search,
+    }
+)
 
 
 class EventsAPI(APIClient):
@@ -556,6 +574,7 @@ class EventsAPI(APIClient):
                 ...                       sort=(SortableEventProperty.start_time, "desc"))
 
         """
+        _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)
         if sort is None:
             sort = []
         elif not isinstance(sort, list):

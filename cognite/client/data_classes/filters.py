@@ -173,6 +173,14 @@ class Filter(ABC):
         return output
 
 
+def _validate_filter(filter: Filter | dict | None, supported_filters: frozenset[type[Filter]], api_name: str) -> None:
+    if filter is None or isinstance(filter, dict):
+        return
+    if not_supported := (filter._involved_filter_types() - supported_filters):
+        names = [f.__name__ for f in not_supported]
+        raise ValueError(f"The filters {names} are not supported for {api_name}")
+
+
 class CompoundFilter(Filter):
     _filter_name = "compound"
 
