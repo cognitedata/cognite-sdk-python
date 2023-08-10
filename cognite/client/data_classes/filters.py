@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
 
 
-PropertyReference: TypeAlias = Union[Tuple[str, ...], List[str], EnumProperty]
+PropertyReference: TypeAlias = Union[str, Tuple[str, ...], List[str], EnumProperty]
 
 RawValue: TypeAlias = Union[str, float, bool, Sequence, Mapping[str, Any], Label]
 
@@ -53,6 +53,17 @@ def _load_filter_value(value: Any) -> FilterValue | FilterValueList:
         if value_key == "parameter":
             return ParameterValue(value[value_key])
     return value
+
+
+def _dump_property(property_: PropertyReference) -> list[str] | tuple[str, ...]:
+    if isinstance(property_, EnumProperty):
+        return property_.as_reference()
+    elif isinstance(property_, str):
+        return [property_]
+    elif isinstance(property_, (list, tuple)):
+        return property_
+    else:
+        raise ValueError(f"Invalid property format {property_}")
 
 
 class Filter(ABC):
@@ -176,9 +187,7 @@ class FilterWithProperty(Filter):
     _filter_name = "propertyFilter"
 
     def __init__(self, property: PropertyReference):
-        self._property: list[str] | tuple[str, ...] = (
-            property.as_reference() if isinstance(property, EnumProperty) else property
-        )
+        self._property: list[str] | tuple[str, ...] = _dump_property(property)
 
     def _filter_body(self) -> dict:
         return {"property": self._property}
@@ -321,12 +330,8 @@ class Overlaps(Filter):
 
     def _filter_body(self) -> dict[str, Any]:
         body = {
-            "startProperty": self._start_property.as_reference()
-            if isinstance(self._start_property, EnumProperty)
-            else self._start_property,
-            "endProperty": self._end_property.as_reference()
-            if isinstance(self._end_property, EnumProperty)
-            else self._end_property,
+            "startProperty": _dump_property(self._start_property),
+            "endProperty": _dump_property(self._end_property),
         }
 
         if self._gt is not None:
