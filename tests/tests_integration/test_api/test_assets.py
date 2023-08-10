@@ -292,15 +292,15 @@ class TestAssetsAPI:
                 external_id=[new_asset.external_id, preexisting.external_id], ignore_unknown_ids=True
             )
 
-    def test_filter_in_asset_subtree(self, cognite_client: CogniteClient, asset_list: AssetList) -> None:
+    def test_filter_on_metadata_key(self, cognite_client: CogniteClient, asset_list: AssetList) -> None:
         # Arrange
         f = filters
-        is_integration_test = f.Prefix("externalId", "integration_test:")
+        is_integration_test = f.Prefix("external_id", "integration_test:")
         in_europe = f.Prefix(AssetProperty.metadata_key("timezone"), "Europe")
 
         # Act
         result = cognite_client.assets.filter(
-            f.And(is_integration_test, in_europe), sort=("externalId", "asc"), aggregated_properties=["child_count"]
+            f.And(is_integration_test, in_europe), sort=("external_id", "asc"), aggregated_properties=["child_count"]
         )
 
         # Assert

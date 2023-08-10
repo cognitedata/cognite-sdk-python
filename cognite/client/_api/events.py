@@ -551,16 +551,16 @@ class EventsAPI(APIClient):
                 >>> from cognite.client.data_classes import filters
                 >>> c = CogniteClient()
                 >>> f = filters
-                >>> is_workorder = f.Prefix("externalId", "workorder")
+                >>> is_workorder = f.Prefix("external_id", "workorder")
                 >>> has_failure = f.Search("description", "failure")
                 >>> res = c.events.filter(filter=f.And(is_workorder, has_failure),
-                ...                       sort=("startTime", "desc"))
+                ...                       sort=("start_time", "desc"))
 
-            Note that you have to use camelCase to refer to properties, check the
+            Note that you can check the
             `API documentation <https://developer.cognite.com/api#tag/Events/operation/advancedListEvents>`_ to see
             which properties you can filter on with which filters.
 
-            To make it easier to avoid spelling mistakes and easiser to look up avaiable properties
+            To make it easier to avoid spelling mistakes and easiser to look up available properties
             for filtering and sorting, you can also use the `EventProperty` and `SortableEventProperty` enums.
 
                 >>> from cognite.client import CogniteClient

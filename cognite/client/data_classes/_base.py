@@ -31,7 +31,7 @@ from cognite.client import utils
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._pandas_helpers import convert_nullable_int_cols, notebook_display_with_fallback
-from cognite.client.utils._text import convert_all_keys_to_camel_case, to_snake_case
+from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case, to_snake_case
 from cognite.client.utils._time import convert_time_attributes_to_datetime
 
 if TYPE_CHECKING:
@@ -685,7 +685,11 @@ class Sort(CogniteResource):
         if isinstance(prop, EnumProperty):
             prop = prop.as_reference()
         elif isinstance(prop, str):
-            prop = [prop]
+            prop = [to_camel_case(prop)]
+        elif isinstance(prop, list):
+            prop = [to_camel_case(p) for p in prop]
+        else:
+            raise ValueError(f"Unable to dump {type(self).__name__} with property {prop}")
 
         output: dict[str, str | list[str]] = {
             "property": prop,

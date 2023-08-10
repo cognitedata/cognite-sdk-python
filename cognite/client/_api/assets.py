@@ -771,7 +771,7 @@ class AssetsAPI(APIClient):
 
         Examples:
 
-            Find all assets that has a metadata key 'timezone' starting with 'Europe',
+            Find all assets that have a metadata key 'timezone' starting with 'Europe',
             and sort by external id ascending:
 
                 >>> from cognite.client import CogniteClient
@@ -780,13 +780,13 @@ class AssetsAPI(APIClient):
                 >>> f = filters
                 >>> in_timezone = f.Prefix(["metadata", "timezone"], "Europe")
                 >>> res = c.assets.filter(filter=in_timezone,
-                ...                       sort=("externalId", "asc"))
+                ...                       sort=("external_id", "asc"))
 
-            Note that you have to use camelCase to refer to properties, check the
+            Note that you can check the
             `API documentation <https://developer.cognite.com/api#tag/Assets/operation/listAssets>`_ to see
             which properties you can filter on with which filters.
 
-            To make it easier to avoid spelling mistakes and easiser to look up available properties
+            To make it easier to avoid spelling mistakes and easier to look up available properties
             for filtering and sorting, you can also use the `AssetProperty` and `SortableAssetProperty` Enums.
 
                 >>> from cognite.client import CogniteClient

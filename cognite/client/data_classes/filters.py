@@ -8,6 +8,7 @@ from typing_extensions import TypeAlias
 
 from cognite.client.data_classes._base import EnumProperty, Geometry
 from cognite.client.data_classes.labels import Label
+from cognite.client.utils._text import to_camel_case
 
 if TYPE_CHECKING:
     from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
@@ -59,9 +60,9 @@ def _dump_property(property_: PropertyReference) -> list[str] | tuple[str, ...]:
     if isinstance(property_, EnumProperty):
         return property_.as_reference()
     elif isinstance(property_, str):
-        return [property_]
+        return [to_camel_case(property_)]
     elif isinstance(property_, (list, tuple)):
-        return property_
+        return [to_camel_case(prop) for prop in property_]
     else:
         raise ValueError(f"Invalid property format {property_}")
 
