@@ -42,7 +42,6 @@ _FILTERS_SUPPORTED: frozenset[type[Filter]] = frozenset(
         filters.Prefix,
         filters.ContainsAny,
         filters.ContainsAll,
-        filters.InAssetSubtree,
         filters.Search,
     }
 )
