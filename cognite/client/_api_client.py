@@ -45,7 +45,6 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
 from cognite.client.data_classes.filters import Filter
-from cognite.client.data_classes.aggregations import AggregationFilter
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import is_unlimited, split_into_chunks
 from cognite.client.utils._concurrency import TaskExecutor
@@ -632,7 +631,11 @@ class APIClient:
     def _aggregate2(
         self,
         aggregate: Literal["count", "cardinalityValues", "cardinalityProperties"],
-        properties: EnumProperty | str | list[str] | None = None,
+        properties: EnumProperty
+        | str
+        | list[str]
+        | tuple[EnumProperty | str | list[str], AggregationFilter]
+        | None = None,
         path: EnumProperty | str | list[str] | None = None,
         query: str | None = None,
         filter: CogniteFilter | dict | None = None,
@@ -646,7 +649,11 @@ class APIClient:
     def _aggregate2(
         self,
         aggregate: Literal["uniqueValues", "uniqueProperties"],
-        properties: EnumProperty | str | list[str] | None = None,
+        properties: EnumProperty
+        | str
+        | list[str]
+        | tuple[EnumProperty | str | list[str], AggregationFilter]
+        | None = None,
         path: EnumProperty | str | list[str] | None = None,
         query: str | None = None,
         filter: CogniteFilter | dict | None = None,
@@ -659,7 +666,11 @@ class APIClient:
     def _aggregate2(
         self,
         aggregate: Literal["count", "cardinalityValues", "cardinalityProperties", "uniqueValues", "uniqueProperties"],
-        properties: EnumProperty | str | list[str] | None = None,
+        properties: EnumProperty
+        | str
+        | list[str]
+        | tuple[EnumProperty | str | list[str], AggregationFilter]
+        | None = None,
         path: EnumProperty | str | list[str] | None = None,
         query: str | None = None,
         filter: CogniteFilter | dict | None = None,
@@ -677,6 +688,10 @@ class APIClient:
             "aggregate": aggregate,
         }
         if properties is not None:
+            if isinstance(properties, tuple):
+                properties, property_aggregation_filter = properties
+            else:
+                property_aggregation_filter = None
             if isinstance(properties, EnumProperty):
                 dumped_properties = properties.as_reference()
             elif isinstance(properties, str):
@@ -686,6 +701,8 @@ class APIClient:
             else:
                 raise ValueError(f"Unknown property format: {properties}")
             body["properties"] = [{"property": dumped_properties}]
+            if property_aggregation_filter is not None:
+                body["properties"][0]["filter"] = property_aggregation_filter.dump()
         if path is not None:
             if isinstance(path, EnumProperty):
                 dumped_path = path.as_reference()

@@ -188,3 +188,45 @@ class TestEventsAPI:
         # Assert
         assert len(result) == 1, "Expected only one event to match the filter"
         assert result[0].external_id == "integration_test:event1_lorem_ipsum"
+
+    def test_aggregate_count(self, cognite_client: CogniteClient, event_list: EventList) -> None:
+        # Act
+        count = cognite_client.events.aggregate_count()
+
+        # Assert
+        assert count > 0, "Expected at least one event to exist"
+
+    def test_aggregate_has_type(self, cognite_client: CogniteClient, event_list: EventList) -> None:
+        # Act
+        count = cognite_client.events.aggregate_count(EventProperty.type)
+
+        # Assert
+        assert count > 0, "Expected at least one event with type to exist"
+
+    def test_aggregate_type_count(self, cognite_client: CogniteClient, event_list: EventList) -> None:
+        # Act
+        count = cognite_client.events.aggregate_cardinality(EventProperty.type)
+
+        # Assert
+        assert count > 0, "Expected at one type to exists"
+
+    def test_aggregate_metadata_keys_count(self, cognite_client: CogniteClient, event_list: EventList) -> None:
+        # Act
+        count = cognite_client.events.aggregate_cardinality(EventProperty.metadata)
+
+        # Assert
+        assert count > 0, "Expected at one metadata key to exists"
+
+    def test_aggregate_unique_types(self, cognite_client: CogniteClient, event_list: EventList) -> None:
+        # Act
+        result = cognite_client.events.aggregate_unique(EventProperty.type)
+
+        # Assert
+        assert len(result.unique) > 0, "Expected at one type to exists"
+
+    def test_aggregate_unique_metadata_keys(self, cognite_client: CogniteClient, event_list: EventList) -> None:
+        # Act
+        result = cognite_client.events.aggregate_unique(EventProperty.metadata)
+
+        # Assert
+        assert len(result.unique) > 0, "Expected at one metadata key to exists"

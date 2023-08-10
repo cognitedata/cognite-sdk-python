@@ -247,14 +247,6 @@ class DocumentUniqueResult(UniqueResult):
     ...
 
 
-class DocumentUniqueResultList(CogniteResourceList):
-    _RESOURCE = DocumentUniqueResult
-
-    @property
-    def unique(self) -> list[str | int | float | Label]:
-        return [item.value for item in self]
-
-
 class SortableSourceFileProperty(EnumProperty):
     name = "name"
     mime_type = "mimeType"
