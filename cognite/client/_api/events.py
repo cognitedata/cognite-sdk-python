@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from typing import Any, Dict, Iterator, List, Literal, Optional, Sequence, Tuple, Union, cast, overload
 
 from typing_extensions import TypeAlias
@@ -353,7 +354,9 @@ class EventsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> aggregate_subtype = c.events.aggregate_unique_values(filter={"type": "failure"}, fields=["subtype"])
         """
-
+        warnings.warn(
+            "This method is deprecated and will be removed in future versions of the SDK.", DeprecationWarning
+        )
         return self._aggregate(filter=filter, fields=fields, aggregate="uniqueValues", cls=AggregateUniqueValuesResult)
 
     @overload

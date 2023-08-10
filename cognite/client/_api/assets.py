@@ -5,6 +5,7 @@ import heapq
 import itertools
 import math
 import operator as op
+import warnings
 from functools import cached_property
 from types import MappingProxyType
 from typing import (
@@ -399,6 +400,9 @@ class AssetsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> aggregate_by_prefix = c.assets.aggregate_metadata_keys(filter={"external_id_prefix": "prefix"})
         """
+        warnings.warn(
+            "This method is deprecated and will be removed in future versions of the SDK.", DeprecationWarning
+        )
         return self._aggregate(filter=filter, aggregate="metadataKeys", cls=AggregateBucketResult)
 
     def aggregate_metadata_values(
@@ -427,6 +431,9 @@ class AssetsAPI(APIClient):
                 ...     filter={"external_id_prefix": "prefix"}
                 ... )
         """
+        warnings.warn(
+            "This method is deprecated and will be removed in future versions of the SDK.", DeprecationWarning
+        )
         return self._aggregate(filter=filter, aggregate="metadataValues", keys=keys, cls=AggregateBucketResult)
 
     @overload
