@@ -46,6 +46,10 @@ Delete assets
 ^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.delete
 
+Filter assets
+^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.assets.AssetsAPI.filter
+
 Update assets
 ^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.update

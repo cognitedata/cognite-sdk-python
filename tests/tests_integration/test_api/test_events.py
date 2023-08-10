@@ -41,7 +41,7 @@ def event_list(cognite_client: CogniteClient) -> EventList:
     )
     retrieved = cognite_client.events.retrieve_multiple(external_ids=events.as_external_ids(), ignore_unknown_ids=True)
     if len(retrieved) == len(events):
-        return events
+        return retrieved
     return cognite_client.events.upsert(events, mode="replace")
 
 

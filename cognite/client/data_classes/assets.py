@@ -27,6 +27,7 @@ from typing import (
 )
 
 from graphlib import TopologicalSorter
+from typing_extensions import TypeAlias
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -38,7 +39,9 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    EnumProperty,
     PropertySpec,
+    Sort,
 )
 from cognite.client.data_classes.labels import Label, LabelDefinition, LabelFilter
 from cognite.client.data_classes.shared import GeoLocation, GeoLocationFilter, TimestampRange
@@ -362,6 +365,22 @@ class AssetList(CogniteResourceList[Asset]):
     def __init__(self, resources: Collection[Any], cognite_client: Optional[CogniteClient] = None):
         super().__init__(resources, cognite_client)
         self._retrieve_chunk_size = 100
+
+    def as_external_ids(self) -> list[str]:
+        external_ids: list[str] = []
+        for x in self:
+            if x.external_id is None:
+                raise ValueError("All assets must have external_id")
+            external_ids.append(x.external_id)
+        return external_ids
+
+    def as_ids(self) -> list[int]:
+        ids: list[int] = []
+        for x in self:
+            if x.id is None:
+                raise ValueError("All assets must have id")
+            ids.append(x.id)
+        return ids
 
     def time_series(self) -> TimeSeriesList:
         """Retrieve all time series related to these assets.
@@ -863,3 +882,48 @@ class AssetHierarchy:
                 f"Cycle {i}/{n_cycles}:",
                 textwrap.fill(" -> ".join(map(repr, cycle)), width=80, break_on_hyphens=False),
             )
+
+
+class AssetProperty(EnumProperty):
+    labels = "labels"
+    created_time = "createdTime"
+    data_set_id = "dataSetId"
+    id = "id"
+    last_updated_time = "lastUpdatedTime"
+    parent_id = "parentId"
+    root_id = "rootId"
+    description = "description"
+    external_id = "externalId"
+    metadata = "metadata"
+    source = "source"
+
+    @classmethod
+    def metadata_key(cls, key: str) -> list[str]:
+        return ["metadata", key]
+
+
+class SortableAssetProperty(EnumProperty):
+    created_time = "createdTime"
+    data_set_id = "dataSetId"
+    description = "description"
+    external_id = "externalId"
+    last_updated_time = "lastUpdatedTime"
+    source = "source"
+    score = "_score_"
+
+    @classmethod
+    def metadata_key(cls, key: str) -> list[str]:
+        return ["metadata", key]
+
+
+SortableAssetPropertyLike: TypeAlias = Union[SortableAssetProperty, str, List[str]]
+
+
+class AssetSort(Sort):
+    def __init__(
+        self,
+        property: SortableAssetProperty,
+        order: Literal["asc", "desc"] = "asc",
+        nulls: Literal["auto", "first", "last"] = "auto",
+    ):
+        super().__init__(property, order, nulls)
