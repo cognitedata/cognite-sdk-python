@@ -38,11 +38,13 @@ from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteResource,
     CogniteUpdate,
+    EnumProperty,
     PropertySpec,
     T_CogniteResource,
     T_CogniteResourceList,
 )
 from cognite.client.data_classes.filters import Filter
+from cognite.client.data_classes.aggregations import AggregationFilter
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import is_unlimited, split_into_chunks
 from cognite.client.utils._concurrency import TaskExecutor
@@ -624,6 +626,109 @@ class APIClient:
             body["keys"] = keys
         res = self._post(url_path=resource_path + "/aggregate", json=body, headers=headers)
         return [cls(**agg) for agg in res.json()["items"]]
+
+    @overload
+    def _aggregate2(
+        self,
+        aggregate: Literal["count", "cardinalityValues", "cardinalityProperties"],
+        list_cls: Type[T_CogniteResourceList] | None = None,
+        properties: EnumProperty | str | list[str] | None = None,
+        path: EnumProperty | str | list[str] | None = None,
+        query: str | None = None,
+        filter: CogniteFilter | dict | None = None,
+        advanced_filter: Filter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict | None = None,
+        limit: int | None = None,
+    ) -> int:
+        ...
+
+    @overload
+    def _aggregate2(
+        self,
+        aggregate: Literal["uniqueValues", "uniqueProperties"],
+        list_cls: Type[T_CogniteResourceList] | None = None,
+        properties: EnumProperty | str | list[str] | None = None,
+        path: EnumProperty | str | list[str] | None = None,
+        query: str | None = None,
+        filter: CogniteFilter | dict | None = None,
+        advanced_filter: Filter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict | None = None,
+        limit: int | None = None,
+    ) -> T_CogniteResourceList:
+        ...
+
+    def _aggregate2(
+        self,
+        aggregate: Literal["count", "cardinalityValues", "cardinalityProperties", "uniqueValues", "uniqueProperties"],
+        list_cls: Type[T_CogniteResourceList] | None = None,
+        properties: EnumProperty | str | list[str] | None = None,
+        path: EnumProperty | str | list[str] | None = None,
+        query: str | None = None,
+        filter: CogniteFilter | dict | None = None,
+        advanced_filter: Filter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict | None = None,
+        limit: int | None = None,
+    ) -> int | T_CogniteResourceList:
+        if aggregate not in ["count", "cardinalityValues", "cardinalityProperties", "uniqueValues", "uniqueProperties"]:
+            raise ValueError(
+                f"Invalid aggregate '{aggregate}'. Valid aggregates are 'count', 'cardinalityValues', "
+                f"'cardinalityProperties', 'uniqueValues', and 'uniqueProperties'."
+            )
+        if aggregate in ["uniqueValues", "uniqueProperties"] and list_cls is None:
+            raise ValueError(f"Must specify cls when using aggregate '{aggregate}'")
+
+        body: dict[str, Any] = {
+            "aggregate": aggregate,
+        }
+        if properties is not None:
+            if isinstance(properties, EnumProperty):
+                dumped_properties = properties.as_reference()
+            elif isinstance(properties, str):
+                dumped_properties = [to_camel_case(properties)]
+            elif isinstance(properties, list):
+                dumped_properties = [to_camel_case(p) for p in properties]
+            else:
+                raise ValueError(f"Unknown property format: {properties}")
+            body["properties"] = [{"property": dumped_properties}]
+        if path is not None:
+            if isinstance(path, EnumProperty):
+                dumped_path = path.as_reference()
+            elif isinstance(path, str):
+                dumped_path = [path]
+            elif isinstance(path, list):
+                dumped_path = path
+            else:
+                raise ValueError(f"Unknown path format: {path}")
+            body["path"] = dumped_path
+        if query is not None:
+            body["search"] = {"query": query}
+        if filter is not None:
+            utils._auxiliary.assert_type(filter, "filter", [dict, CogniteFilter], allow_none=False)
+            if isinstance(filter, CogniteFilter):
+                dumped_filter = filter.dump(camel_case=True)
+            elif isinstance(filter, Dict):
+                dumped_filter = convert_all_keys_to_camel_case(filter)
+            else:
+                raise ValueError(f"Unknown filter format: {filter}")
+            body["filter"] = dumped_filter
+        if advanced_filter is not None:
+            body["advancedFilter"] = advanced_filter.dump() if isinstance(advanced_filter, Filter) else advanced_filter
+
+        if aggregate_filter is not None:
+            body["aggregateFilter"] = (
+                aggregate_filter.dump() if isinstance(aggregate_filter, AggregationFilter) else aggregate_filter
+            )
+        if limit is not None:
+            body["limit"] = limit
+
+        res = self._post(url_path=f"{self._RESOURCE_PATH}/aggregate", json=body)
+        json_items = res.json()["items"]
+        if aggregate in {"count", "cardinalityValues", "cardinalityProperties"}:
+            return json_items[0]["count"]
+        elif aggregate in {"uniqueValues", "uniqueProperties"}:
+            return cast(Type[T_CogniteResourceList], list_cls)._load(json_items, cognite_client=self._cognite_client)
+        else:
+            raise ValueError(f"Unknown aggregate: {aggregate}")
 
     @overload
     def _create_multiple(

@@ -1,14 +1,19 @@
 from __future__ import annotations
 
+import json
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, ClassVar, Type, TypeVar, Union, cast, final
+from typing import TYPE_CHECKING, Any, ClassVar, Optional, Type, TypeVar, Union, cast, final
 
 from typing_extensions import TypeAlias
 
-from cognite.client.data_classes import Label
+from cognite.client.data_classes._base import CogniteResource
+from cognite.client.data_classes.labels import Label
 from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_snake_case
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 @dataclass
@@ -261,3 +266,26 @@ class Not(CompoundFilter):
 @final
 class Prefix(FilterWithValue):
     _filter_name = "prefix"
+
+
+@dataclass
+class UniqueResult(CogniteResource):
+    count: int
+    values: list[str | int | float | Label]
+
+    @property
+    def value(self) -> str | int | float | Label:
+        return self.values[0]
+
+    @classmethod
+    def _load(
+        cls: Type[T_UniqueResult], resource: dict | str, cognite_client: Optional[CogniteClient] = None
+    ) -> T_UniqueResult:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        return cls(
+            count=resource["count"],
+            values=resource["values"],
+        )
+
+
+T_UniqueResult = TypeVar("T_UniqueResult", bound="UniqueResult")
