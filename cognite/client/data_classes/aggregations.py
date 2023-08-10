@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Optional, Type, TypeVar, Union,
 
 from typing_extensions import TypeAlias
 
-from cognite.client.data_classes._base import CogniteResource
+from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.data_classes.labels import Label
 from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_snake_case
@@ -278,9 +278,7 @@ class UniqueResult(CogniteResource):
         return self.values[0]
 
     @classmethod
-    def _load(
-        cls: Type[T_UniqueResult], resource: dict | str, cognite_client: Optional[CogniteClient] = None
-    ) -> T_UniqueResult:
+    def _load(cls, resource: dict | str, cognite_client: Optional[CogniteClient] = None) -> UniqueResult:
         resource = json.loads(resource) if isinstance(resource, str) else resource
         return cls(
             count=resource["count"],
@@ -289,3 +287,11 @@ class UniqueResult(CogniteResource):
 
 
 T_UniqueResult = TypeVar("T_UniqueResult", bound="UniqueResult")
+
+
+class UniqueResultList(CogniteResourceList):
+    _RESOURCE = UniqueResult
+
+    @property
+    def unique(self) -> list[str | int | float | Label]:
+        return [item.value for item in self]

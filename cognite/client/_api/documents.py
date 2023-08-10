@@ -7,7 +7,7 @@ from typing import IO, TYPE_CHECKING, Any, Literal, Optional, cast, overload
 from cognite.client._api_client import APIClient
 from cognite.client._constants import ADVANCED_LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import filters
-from cognite.client.data_classes.aggregations import AggregationFilter
+from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
 from cognite.client.data_classes.documents import (
     Document,
     DocumentHighlightList,
@@ -379,7 +379,7 @@ class DocumentsAPI(APIClient):
         filter: Filter | dict | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
         limit: int = ADVANCED_LIST_LIMIT_DEFAULT,
-    ) -> DocumentUniqueResultList:
+    ) -> UniqueResultList:
         """`Find approximate number of unique properties. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
 
         Args:
@@ -390,7 +390,7 @@ class DocumentsAPI(APIClient):
             limit (int): Maximum number of items. Defaults to 100.
 
         Returns:
-            DocumentUniqueResultList: List of unique values of documents matching the specified filters and search.
+            UniqueResultList: List of unique values of documents matching the specified filters and search.
 
         Examples:
 
@@ -433,7 +433,6 @@ class DocumentsAPI(APIClient):
 
         return self._aggregate2(
             aggregate=aggregate,
-            list_cls=DocumentUniqueResultList,
             properties=property,
             query=query,
             filter=filter.dump() if isinstance(filter, Filter) else filter,
