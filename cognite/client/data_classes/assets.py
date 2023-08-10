@@ -895,6 +895,7 @@ class AssetProperty(EnumProperty):
     description = "description"
     external_id = "externalId"
     metadata = "metadata"
+    name = "name"
     source = "source"
 
     @classmethod
@@ -908,6 +909,7 @@ class SortableAssetProperty(EnumProperty):
     description = "description"
     external_id = "externalId"
     last_updated_time = "lastUpdatedTime"
+    name = "name"
     source = "source"
     score = "_score_"
 
