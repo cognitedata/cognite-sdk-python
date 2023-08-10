@@ -356,7 +356,7 @@ class SortableTimeSeriesProperty(EnumProperty):
     description = "description"
     external_id = "externalId"
     last_updated_time = "lastUpdatedTime"
-    score = "_score_"
+    name = "name"
 
     @classmethod
     def metadata_key(cls, key: str) -> list[str]:
