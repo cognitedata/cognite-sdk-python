@@ -410,6 +410,11 @@ Delete sequences
 ^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.sequences.SequencesAPI.delete
 
+Filter sequences
+^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.sequences.SequencesAPI.filter
+
+
 Update sequences
 ^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.sequences.SequencesAPI.update

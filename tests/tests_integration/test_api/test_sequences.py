@@ -3,7 +3,16 @@ from unittest import mock
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import Sequence, SequenceColumnUpdate, SequenceFilter, SequenceUpdate
+from cognite.client.data_classes import (
+    Asset,
+    Sequence,
+    SequenceColumnUpdate,
+    SequenceFilter,
+    SequenceList,
+    SequenceUpdate,
+    filters,
+)
+from cognite.client.data_classes.sequences import SequenceProperty, SortableSequenceProperty
 from cognite.client.exceptions import CogniteNotFoundError
 from tests.utils import set_request_limit
 
@@ -31,6 +40,43 @@ def get_spy(cognite_client):
 def post_spy(cognite_client):
     with mock.patch.object(cognite_client.sequences, "_post", wraps=cognite_client.sequences._post) as _:
         yield
+
+
+@pytest.fixture()
+def root_asset(cognite_client: CogniteClient) -> Asset:
+    root_asset = Asset(
+        name="integration_test:root_asset",
+        external_id="integration_test:root_asset",
+    )
+    retrieved = cognite_client.assets.retrieve_multiple(external_ids=[root_asset.external_id], ignore_unknown_ids=True)
+    if retrieved:
+        return retrieved[0]
+    return cognite_client.assets.create(root_asset)
+
+
+@pytest.fixture
+def sequence_list(cognite_client: CogniteClient, root_asset: Asset) -> SequenceList:
+    prefix = "integration_test:"
+    columns = [
+        {"valueType": "STRING", "externalId": "text"},
+        {"valueType": "DOUBLE", "externalId": "value"},
+    ]
+    sequences = SequenceList(
+        [
+            Sequence(
+                external_id=f"{prefix}sequence1",
+                columns=columns,
+                asset_id=root_asset.id,
+            ),
+            Sequence(external_id=f"{prefix}sequence2", columns=columns),
+        ]
+    )
+    retrieved = cognite_client.sequences.retrieve_multiple(
+        external_ids=sequences.as_external_ids(), ignore_unknown_ids=True
+    )
+    if len(retrieved) == len(sequences):
+        return retrieved
+    return cognite_client.sequences.upsert(sequences, mode="replace")
 
 
 class TestSequencesAPI:
@@ -183,3 +229,18 @@ class TestSequencesAPI:
             cognite_client.sequences.delete(
                 external_id=[new_sequence.external_id, preexisting.external_id], ignore_unknown_ids=True
             )
+
+    def test_filter_equals(self, cognite_client: CogniteClient, sequence_list: SequenceList, root_asset: Asset) -> None:
+        # Arrange
+        f = filters
+        is_integration_test = f.Prefix(SequenceProperty.external_id, "integration_test:")
+        is_asset = f.Equals(SequenceProperty.asset_id, root_asset.id)
+
+        # Act
+        result = cognite_client.sequences.filter(
+            f.And(is_integration_test, is_asset), sort=SortableSequenceProperty.created_time
+        )
+
+        # Assert
+        assert len(result) == 1, "Expected only one sequence in subtree"
+        assert result[0].external_id == sequence_list[0].external_id
