@@ -293,10 +293,15 @@ class UniquenessConstraintDefinition(Constraint):
 class Index:
     properties: list[str]
     index_type: Literal["btree"] | str = "btree"
+    cursorable: bool = False
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> Index:
-        return cls(**convert_all_keys_to_snake_case(data))
+        data = convert_all_keys_to_snake_case(data)
+        # We want to avoid repeating the default values here (e.g. cursorable = False):
+        for key in set(data) - set(cls.__dataclass_fields__):
+            del data[key]
+        return cls(**data)
 
     def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
         output = asdict(self)
