@@ -17,15 +17,20 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [6.14.0] - 2023-08-14
+## [6.14.0] - 2023-08-17
 ### Added
 - Support for the DocumentsAPI with the implementation `client.documents`.
 - Support for advanced filtering for `Events`, `TimeSeries`, `Assets` and `Sequences`. This is available through the 
   `.filter()` method, for example, `client.events.filter`.
-- Support for advanced filtering for `Events`, `TimeSeries`, `Assets` and `Sequences`. This is available through the 
-  `.filter()` method, for example, `client.events.filter`.
+- Extended aggregation support for `Events`, `TimeSeries`, `Assets` and `Sequences`. This is available through the 
+  methods `.aggregate_count(...)`, `aggregate_cardinality(...)`, and `.aggregate_unique(...)`. For example, 
+  `client.events.aggregate_count(...)`.
 - Added helper methods `as_external_ids` and `as_ids` for `EventList`, `TimeSeriesList`, `AssetList` and `SequenceList`.
-- Added helper methods `as_external_ids` and `as_ids` for `EventList`, `TimeSeriesList`, `AssetList` and `SequenceList`.
+
+### Improved
+- Added `DeprecationWarning` to methods `client.assets.aggregate_metadata_keys`, 
+  `client.assets.aggregate_metadata_values`, and `client.events.aggregate_unique_values` as the endpoint
+  used by these methods have been deprecated in the CDF API.
 
 
 ## [6.13.3] - 2023-08-14
