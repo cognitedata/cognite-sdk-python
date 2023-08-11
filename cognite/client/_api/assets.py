@@ -590,7 +590,7 @@ class AssetsAPI(APIClient):
 
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.assets import AssetProperty
-            >>> from cognite.client.data_classes import aggregations
+            >>> from cognite.client.data_classes import aggregations, filters
             >>> c = CogniteClient()
             >>> a = aggregations
             >>> not_test = a.Not(a.Prefix("test"))
