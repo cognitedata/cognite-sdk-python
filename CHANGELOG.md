@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.13.2] - 2023-08-11
+### Fixed
+- Fixed bug in `Index.load` that would raise `TypeError` when trying to loading `indexes`, when an unexpected field was
+  encountered (e.g. during a call to `client.data_modeling.container.list`).
+
 ## [6.13.1] - 2023-08-09
 ### Fixed
 - Fixed bug when calling a `retrieve`, `list`, or `create` in `client.data_modeling.container` raised a `TypeError`.
@@ -26,16 +31,16 @@ Changes are grouped as follows
 ### Fixed
 - Fixed a bug raising a `KeyError` when calling `client.data_modeling.graphql.apply_dml` with an invalid `DataModelingId`.
 - Fixed a bug raising `AttributeError` in `SpaceList.to_space_apply_list`, `DataModelList.to_data_model_apply_list`,
-  `ViewList.to_view_apply`. These methods have also been renamed to `.as_apply` for consistency 
+  `ViewList.to_view_apply`. These methods have also been renamed to `.as_apply` for consistency
   with the other data modeling resources.
 
 ### Removed
 - The method `.as_apply` from `ContainerApplyList` as this method should be on the `ContainerList` instead.
 
 ### Added
-- Missing `as_ids()` for `DataModelApplyList`, `ContainerList`, `ContainerApplyList`, `SpaceApplyList`, `SpaceList`, 
+- Missing `as_ids()` for `DataModelApplyList`, `ContainerList`, `ContainerApplyList`, `SpaceApplyList`, `SpaceList`,
   `ViewApplyList`, `ViewList`.
-- Added helper method `.as_id` to `DMLApplyResult`. 
+- Added helper method `.as_id` to `DMLApplyResult`.
 - Added helper method `.latest_version` to `DataModelList`.
 - Added helper method `.as_apply` to `ContainerList`.
 - Added container classes `NodeApplyList`, `EdgeApplyList`, and `InstancesApply`.
