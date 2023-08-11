@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [6.13.2] - 2023-08-11
 ### Fixed
-- Fixed bug in `Index.load` that would raise `TypeError` when trying to loading `indexes`, when an unexpected field was
+- Fixed bug in `Index.load` that would raise `TypeError` when trying to load `indexes`, when an unexpected field was
   encountered (e.g. during a call to `client.data_modeling.container.list`).
 
 ## [6.13.1] - 2023-08-09
