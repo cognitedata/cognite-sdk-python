@@ -165,6 +165,41 @@ class TestTimeSeriesAPI:
         # Assert
         assert result, "There should be at least one numeric time series"
 
+    def test_aggregate_count(self, cognite_client: CogniteClient) -> None:
+        # Act
+        count = cognite_client.time_series.aggregate_count()
+
+        # Assert
+        assert count > 0, "Expected at least one time series to exist"
+
+    def test_aggregate_is_string(self, cognite_client: CogniteClient) -> None:
+        # Act
+        count = cognite_client.time_series.aggregate_cardinality(TimeSeriesProperty.is_string)
+
+        # Assert
+        assert count > 0, "Expected at one is string to exists"
+
+    def test_aggregate_metadata_keys_count(self, cognite_client: CogniteClient) -> None:
+        # Act
+        count = cognite_client.time_series.aggregate_cardinality(TimeSeriesProperty.metadata)
+
+        # Assert
+        assert count > 0, "Expected at one least metadata key to exists"
+
+    def test_aggregate_unique_is_step(self, cognite_client: CogniteClient) -> None:
+        # Act
+        result = cognite_client.time_series.aggregate_unique(TimeSeriesProperty.is_step)
+
+        # Assert
+        assert len(result.unique) > 0, "Expected a least one is step to exists"
+
+    def test_aggregate_unique_metadata_keys(self, cognite_client: CogniteClient) -> None:
+        # Act
+        result = cognite_client.time_series.aggregate_unique(TimeSeriesProperty.metadata)
+
+        # Assert
+        assert len(result.unique) > 0, "Expected at one metadata key to exists"
+
 
 class TestTimeSeriesHelperMethods:
     @pytest.mark.parametrize(

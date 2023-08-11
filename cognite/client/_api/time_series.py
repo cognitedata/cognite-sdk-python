@@ -16,8 +16,9 @@ from cognite.client.data_classes import (
     TimeSeriesUpdate,
     filters,
 )
+from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
 from cognite.client.data_classes.filters import Filter, _validate_filter
-from cognite.client.data_classes.time_series import SortableTimeSeriesProperty, TimeSeriesSort
+from cognite.client.data_classes.time_series import SortableTimeSeriesProperty, TimeSeriesProperty, TimeSeriesSort
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 
@@ -320,6 +321,198 @@ class TimeSeriesAPI(APIClient):
 
         return self._aggregate(filter=filter, cls=TimeSeriesAggregate)
 
+    def aggregate_count(
+        self,
+        advanced_filter: Filter | dict | None = None,
+        filter: TimeSeriesFilter | dict | None = None,
+    ) -> int:
+        """`Count of time series matching the specified filters and search. <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
+
+        Args:
+            advanced_filter (Filter | dict | None): The filter to narrow down the time series to count.
+            filter (TimeSeriesFilter | dict | None): The filter to narrow down time series to count requirering exact match.
+
+        Returns:
+            int: The number of time series matching the specified filters and search.
+
+        Examples:
+
+        Count the number of time series in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> c = CogniteClient()
+            >>> count = c.time_series.aggregate_count()
+
+        Count the number of numeric time series in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes import filters
+            >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
+            >>> c = CogniteClient()
+            >>> is_numeric = filters.Equals(TimeSeriesProperty.is_string, False)
+            >>> count = c.time_series.aggregate_count(advanced_filter=is_numeric)
+
+        """
+        self._validate_filter(advanced_filter)
+
+        api_version = self._api_subversion
+        try:
+            self._api_subversion = "beta"
+            return self._aggregate2(
+                "count",
+                filter=filter,
+                advanced_filter=advanced_filter,
+            )
+        finally:
+            self._api_subversion = api_version
+
+    def aggregate_cardinality(
+        self,
+        property: TimeSeriesProperty | str | List[str],
+        advanced_filter: Filter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict | None = None,
+        filter: TimeSeriesFilter | dict | None = None,
+    ) -> int:
+        """`Find approximate number of unique properties. <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
+
+        Args:
+            property (TimeSeriesProperty | str | List[str]): The property to count the cardinality of.
+            query (str | None): The free text search query, for details see the documentation referenced above.
+            advanced_filter (Filter | dict | None): The filter to narrow down the time series to count cardinality.
+            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
+            filter (TimeSeriesFilter | dict | None): The filter to narrow down the time series to count requirering exact match.
+        Returns:
+            int: The number of properties matching the specified filters and search.
+
+        Examples:
+
+        Count the number of different units used for time series in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
+            >>> c = CogniteClient()
+            >>> unit_count = c.time_series.aggregate_cardinality(TimeSeriesProperty.unit)
+
+        Count the number of timezones (metadata key) for time series with the word "critical" in the description
+        in your CDF project, but exclude timezones from america:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes import filters, aggregations
+            >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
+            >>> c = CogniteClient()
+            >>> a = aggregations
+            >>> not_america = a.Not(a.Prefix("america"))
+            >>> is_critical = filters.Search(TimeSeriesProperty.description, "critical")
+            >>> timezone_count = c.time_series.aggregate_cardinality(
+            ...                                           TimeSeriesProperty.metadata_key("timezone"),
+            ...                                           advanced_filter=is_critical,
+            ...                                           aggregate_filter=not_america)
+
+        """
+        self._validate_filter(advanced_filter)
+
+        api_version = self._api_subversion
+
+        try:
+            self._api_subversion = "beta"
+            if property == ["metadata"] or property is TimeSeriesProperty.metadata:
+                return self._aggregate2(
+                    "cardinalityProperties",
+                    path=property,
+                    filter=filter,
+                    advanced_filter=advanced_filter,
+                    aggregate_filter=aggregate_filter,
+                )
+            else:
+                return self._aggregate2(
+                    "cardinalityValues",
+                    properties=property,
+                    filter=filter,
+                    advanced_filter=advanced_filter,
+                    aggregate_filter=aggregate_filter,
+                )
+        finally:
+            self._api_subversion = api_version
+
+    def aggregate_unique(
+        self,
+        property: TimeSeriesProperty | str | List[str],
+        advanced_filter: Filter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict | None = None,
+        filter: TimeSeriesFilter | dict | None = None,
+    ) -> UniqueResultList:
+        """`Find approximate unique properties. <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
+
+        Args:
+            property (TimeSeriesProperty | str | List[str]): The property to group by.
+            advanced_filter (Filter | dict | None): The filter to narrow down the time series to count cardinality.
+            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
+            filter (TimeSeriesFilter | dict | None): The filter to narrow down the time series to count requirering exact match.
+
+        Returns:
+            UniqueResultList: List of unique values of time series matching the specified filters and search.
+
+        Examples:
+
+        Get the timezones (metadata key) with count for your time series in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
+            >>> c = CogniteClient()
+            >>> result = c.time_series.aggregate_unique(TimeSeriesProperty.metadata_key("timezone"))
+            >>> print(result.unique)
+
+        Get the different labels with count used for time series created after 2020-01-01 in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes import filters
+            >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
+            >>> from cognite.client.utils import timestamp_to_ms
+            >>> from datetime import datetime
+            >>> c = CogniteClient()
+            >>> created_after_2020 = filters.Range(TimeSeriesProperty.created_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
+            >>> result = c.time_series.aggregate_unique(TimeSeriesProperty.labels, advanced_filter=created_after_2020)
+            >>> print(result.unique)
+
+        Get the different labels with count for time series updated after 2020-01-01 in your CDF project, but exclude all labels that
+        starts with "test":
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
+            >>> from cognite.client.data_classes import aggregations, filters
+            >>> c = CogniteClient()
+            >>> a = aggregations
+            >>> not_test = a.Not(a.Prefix("test"))
+            >>> created_after_2020 = filters.Range(TimeSeriesProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
+            >>> result = c.time_series.aggregate_unique(TimeSeriesProperty.labels, advanced_filter=created_after_2020, aggregate_filter=not_test)
+            >>> print(result.unique)
+
+        """
+        self._validate_filter(advanced_filter)
+
+        api_version = self._api_subversion
+
+        try:
+            self._api_subversion = "beta"
+            if property == ["metadata"] or property is TimeSeriesProperty.metadata:
+                return self._aggregate2(
+                    aggregate="uniqueProperties",
+                    path=property,
+                    filter=filter,
+                    advanced_filter=advanced_filter,
+                    aggregate_filter=aggregate_filter,
+                )
+            else:
+                return self._aggregate2(
+                    aggregate="uniqueValues",
+                    properties=property,
+                    filter=filter,
+                    advanced_filter=advanced_filter,
+                    aggregate_filter=aggregate_filter,
+                )
+        finally:
+            self._api_subversion = api_version
+
     @overload
     def create(self, time_series: Sequence[TimeSeries]) -> TimeSeriesList:
         ...
@@ -556,7 +749,7 @@ class TimeSeriesAPI(APIClient):
                 >>> res = c.time_series.filter(filter=is_numeric, sort=SortableTimeSeriesProperty.external_id)
 
         """
-        _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)
+        self._validate_filter(filter)
         if sort is None:
             sort = []
         elif not isinstance(sort, list):
@@ -576,3 +769,6 @@ class TimeSeriesAPI(APIClient):
             )
         finally:
             self._api_subversion = api_version
+
+    def _validate_filter(self, filter: Filter | dict | None) -> None:
+        _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)
