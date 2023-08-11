@@ -405,7 +405,6 @@ class EventsAPI(APIClient):
     def aggregate_cardinality(
         self,
         property: EventPropertyLike | tuple[EventPropertyLike, AggregationFilter],
-        query: str | None = None,
         advanced_filter: Filter | dict | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: EventFilter | dict | None = None,
@@ -414,7 +413,6 @@ class EventsAPI(APIClient):
 
         Args:
             property (EventPropertyLike | tuple[EventPropertyLike, AggregationFilter]): The property to count the cardinality of.
-            query (str | None): The free text search query, for details see the documentation referenced above.
             advanced_filter (Filter | dict | None): The filter to narrow down the events to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
             filter (EventFilter | dict | None): The filter to narrow down the events to count requirering exact match.
@@ -449,7 +447,6 @@ class EventsAPI(APIClient):
             return self._aggregate2(
                 "cardinalityProperties",
                 path=property,
-                query=query,
                 filter=filter,
                 advanced_filter=advanced_filter,
                 aggregate_filter=aggregate_filter,
@@ -458,7 +455,6 @@ class EventsAPI(APIClient):
             return self._aggregate2(
                 "cardinalityValues",
                 properties=property,
-                query=query,
                 filter=filter,
                 advanced_filter=advanced_filter,
                 aggregate_filter=aggregate_filter,
@@ -467,7 +463,6 @@ class EventsAPI(APIClient):
     def aggregate_unique(
         self,
         property: EventPropertyLike | tuple[EventPropertyLike, AggregationFilter],
-        query: str | None = None,
         advanced_filter: Filter | dict | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: EventFilter | dict | None = None,
@@ -476,7 +471,6 @@ class EventsAPI(APIClient):
 
         Args:
             property (EventPropertyLike | tuple[EventPropertyLike, AggregationFilter]): The property to group by.
-            query (str | None): The free text search query, for details see the documentation referenced above.
             advanced_filter (Filter | dict | None): The filter to narrow down the events to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
             filter (EventFilter | dict | None): The filter to narrow down the events to count requirering exact match.
@@ -528,7 +522,6 @@ class EventsAPI(APIClient):
             return self._aggregate2(
                 aggregate="uniqueProperties",
                 path=property,
-                query=query,
                 filter=filter,
                 advanced_filter=advanced_filter,
                 aggregate_filter=aggregate_filter,
@@ -537,7 +530,6 @@ class EventsAPI(APIClient):
             return self._aggregate2(
                 aggregate="uniqueValues",
                 properties=property,
-                query=query,
                 filter=filter,
                 advanced_filter=advanced_filter,
                 aggregate_filter=aggregate_filter,

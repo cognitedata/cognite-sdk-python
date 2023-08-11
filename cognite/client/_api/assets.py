@@ -483,7 +483,6 @@ class AssetsAPI(APIClient):
     def aggregate_cardinality(
         self,
         property: AssetPropertyLike | tuple[AssetPropertyLike, AggregationFilter],
-        query: str | None = None,
         advanced_filter: Filter | dict | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: AssetFilter | dict | None = None,
@@ -492,7 +491,6 @@ class AssetsAPI(APIClient):
 
         Args:
             property (AssetPropertyLike | tuple[AssetPropertyLike, AggregationFilter]): The property to count the cardinality of.
-            query (str | None): The free text search query, for details see the documentation referenced above.
             advanced_filter (Filter | dict | None): The filter to narrow down the assets to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
             filter (AssetFilter | dict | None): The filter to narrow down the assets to count requirering exact match.
@@ -528,7 +526,6 @@ class AssetsAPI(APIClient):
             return self._aggregate2(
                 "cardinalityProperties",
                 path=property,
-                query=query,
                 filter=filter,
                 advanced_filter=advanced_filter,
                 aggregate_filter=aggregate_filter,
@@ -537,7 +534,6 @@ class AssetsAPI(APIClient):
             return self._aggregate2(
                 "cardinalityValues",
                 properties=property,
-                query=query,
                 filter=filter,
                 advanced_filter=advanced_filter,
                 aggregate_filter=aggregate_filter,
@@ -546,7 +542,6 @@ class AssetsAPI(APIClient):
     def aggregate_unique(
         self,
         property: AssetPropertyLike | tuple[AssetPropertyLike, AggregationFilter],
-        query: str | None = None,
         advanced_filter: Filter | dict | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: AssetFilter | dict | None = None,
@@ -555,7 +550,6 @@ class AssetsAPI(APIClient):
 
         Args:
             property (AssetPropertyLike | tuple[AssetPropertyLike, AggregationFilter]): The property to group by.
-            query (str | None): The free text search query, for details see the documentation referenced above.
             advanced_filter (Filter | dict | None): The filter to narrow down the assets to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
             filter (AssetFilter | dict | None): The filter to narrow down the assets to count requirering exact match.
@@ -607,7 +601,6 @@ class AssetsAPI(APIClient):
             return self._aggregate2(
                 aggregate="uniqueProperties",
                 path=property,
-                query=query,
                 filter=filter,
                 advanced_filter=advanced_filter,
                 aggregate_filter=aggregate_filter,
@@ -616,7 +609,6 @@ class AssetsAPI(APIClient):
             return self._aggregate2(
                 aggregate="uniqueValues",
                 properties=property,
-                query=query,
                 filter=filter,
                 advanced_filter=advanced_filter,
                 aggregate_filter=aggregate_filter,
