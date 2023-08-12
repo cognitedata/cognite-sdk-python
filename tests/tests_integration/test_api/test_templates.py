@@ -207,11 +207,11 @@ class TestTemplatesCogniteClient:
 
     def test_view_list(self, cognite_client, new_view):
         new_group, ext_id, new_version, view = new_view
-        first_element = [
+        first_element = next(
             res
             for res in cognite_client.templates.views.list(ext_id, new_version.version)
             if res.external_id == view.external_id
-        ][0]
+        )
         assert first_element == view
 
     def test_view_delete(self, cognite_client, new_view):

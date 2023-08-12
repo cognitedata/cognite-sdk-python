@@ -145,7 +145,7 @@ class TestVisionExtract:
                 ),
                 None,
             ),
-            (list(VisionFeature.beta_features())[0], None, None),
+            (next(iter(VisionFeature.beta_features())), None, None),
         ],
         ids=[
             "invalid_feature",

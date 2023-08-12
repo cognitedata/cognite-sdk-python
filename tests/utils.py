@@ -8,7 +8,7 @@ import math
 import os
 import random
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Literal, Mapping, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Literal, Mapping, Optional, TypeVar, cast
 
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
 from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS
@@ -158,7 +158,7 @@ def cdf_aggregate(
     aggregate: Literal["average", "sum", "count"],
     granularity: str,
     is_step: bool = False,
-    raw_freq: str = None,
+    raw_freq: Optional[str] = None,
 ) -> pandas.DataFrame:
     """Aggregates the dataframe as CDF is doing it on the database layer.
 

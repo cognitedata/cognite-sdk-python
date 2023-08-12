@@ -10,7 +10,6 @@ from cognite.client.config import ClientConfig
 from cognite.client.credentials import CredentialProvider
 
 if TYPE_CHECKING:
-
     from requests import Session
 
     from cognite.client._http_client import HTTPClient, HTTPClientConfig

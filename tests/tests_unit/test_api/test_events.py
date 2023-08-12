@@ -194,7 +194,6 @@ class TestEvents:
         )
 
     def test_event_update_object(self):
-
         assert isinstance(
             EventUpdate(1)
             .asset_ids.add([])

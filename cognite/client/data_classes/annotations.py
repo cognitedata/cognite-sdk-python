@@ -170,7 +170,6 @@ class AnnotationFilter(AnnotationReverseLookupFilter):
         annotation_type: Optional[str] = None,
         data: Optional[Dict[str, Any]] = None,
     ) -> None:
-
         self.annotated_resource_ids = annotated_resource_ids
         super().__init__(
             annotated_resource_type=annotated_resource_type,

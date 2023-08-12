@@ -25,7 +25,6 @@ def mock_get_datapoints(rsps, cognite_client):
 
         items = []
         for dps_query in payload["items"]:
-
             if "start" in dps_query and "end" in dps_query:
                 start, end = dps_query["start"], dps_query["end"]
             else:

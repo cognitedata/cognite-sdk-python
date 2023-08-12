@@ -205,7 +205,6 @@ class DataModelInfo:
         destination_type: str,
         destination_relationship_from_type: Optional[str] = None,
     ):
-
         self.space = space
         self.external_id = external_id
         self.version = version
@@ -222,7 +221,6 @@ class Nodes(TransformationDestination):
         view: Optional[ViewInfo] = None,
         instance_space: Optional[str] = None,
     ):
-
         super().__init__(type="nodes")
         self.view = view
         self.instance_space = instance_space
@@ -242,7 +240,6 @@ class Edges(TransformationDestination):
         instance_space: Optional[str] = None,
         edge_type: Optional[EdgeType] = None,
     ):
-
         super().__init__(type="edges")
         self.view = view
         self.instance_space = instance_space
@@ -286,7 +283,6 @@ class OidcCredentials:
         audience: Optional[str] = None,
         cdf_project_name: Optional[str] = None,
     ):
-
         self.client_id = client_id
         self.client_secret = client_secret
         self.scopes = scopes

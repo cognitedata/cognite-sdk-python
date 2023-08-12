@@ -271,7 +271,7 @@ class CogniteAssetHierarchyError(CogniteException, AssertionError):
         self._hierarchy = hierarchy
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}({str(self)})"
+        return f"{type(self).__name__}({self!s})"
 
     def __str__(self) -> str:
         msg = self.message.strip() + " Issue(s): "

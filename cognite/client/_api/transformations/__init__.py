@@ -313,7 +313,7 @@ class TransformationsAPI(APIClient):
         if isinstance(item, Sequence):
             item = list(item).copy()
             sessions: Dict[str, NonceCredentials] = {}
-            for (i, t) in enumerate(item):
+            for i, t in enumerate(item):
                 if isinstance(t, Transformation):
                     t = t.copy()
                     item[i] = t
