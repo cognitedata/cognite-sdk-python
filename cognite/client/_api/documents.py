@@ -61,19 +61,25 @@ class DocumentPreviewAPI(APIClient):
         """`Downloads an image preview for a specific page of the specified document. <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewImagePage>`_
 
         Args:
-            id: The server-generated ID for the document you want to retrieve the preview of.
-            page_number: Page number to preview. Starting at 1 for first page.
+            id (int): The server-generated ID for the document you want to retrieve the preview of.
+            page_number (int, Optional): Page number to preview. Starting at 1 for first page.
 
         Returns:
             bytes: The png preview of the document.
 
         Examples:
 
-        Download Image preview of page 5 of file with id 123:
+        Download image preview of page 5 of file with id 123:
 
             >>> from cognite.client import CogniteClient
             >>> c = CogniteClient()
             >>> content = c.documents.preview.download_png_bytes(id=123, page_number=5)
+
+        Download an image preview and display using IPython.display.Image (for example in a Jupyter Notebook):
+
+            >>> from IPython.display import Image
+            >>> binary_png = c.documents.preview.download_png_bytes(id=123, page_number=5)
+            >>> Image(binary_png)
 
         """
         res = self._do_request(
@@ -85,10 +91,10 @@ class DocumentPreviewAPI(APIClient):
         """`Downloads an image preview for a specific page of the specified document. <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewImagePage>`_
 
         Args:
-            path: The path to save the png preview of the document. If the path is a directory, the
+            path (Path): The path to save the png preview of the document. If the path is a directory, the
                   file name will be '[id]_page[page_number].png'.
-            id: The server-generated ID for the document you want to retrieve the preview of.
-            page_number: Page number to preview. Starting at 1 for first page.
+            id (int): The server-generated ID for the document you want to retrieve the preview of.
+            page_number (int, Optional): Page number to preview. Starting at 1 for first page.
 
         Examples:
 
