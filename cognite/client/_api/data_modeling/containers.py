@@ -63,7 +63,7 @@ class ContainersAPI(APIClient):
             Container | ContainerList: yields Container one by one if chunk_size is not specified, else ContainerList objects.
         """
         filter = ContainerFilter(space, include_global)
-        return self._list_generator(
+        yield from self._list_generator(
             list_cls=ContainerList,
             resource_cls=Container,
             method="GET",

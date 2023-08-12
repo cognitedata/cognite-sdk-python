@@ -126,7 +126,7 @@ class EventsAPI(APIClient):
             type=type,
             subtype=subtype,
         ).dump(camel_case=True)
-        return self._list_generator(
+        yield from self._list_generator(
             list_cls=EventList,
             resource_cls=Event,
             method="POST",

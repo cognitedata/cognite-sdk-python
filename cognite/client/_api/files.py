@@ -124,7 +124,7 @@ class FilesAPI(APIClient):
             uploaded=uploaded,
             data_set_ids=data_set_ids_processed,
         ).dump(camel_case=True)
-        return self._list_generator(
+        yield from self._list_generator(
             list_cls=FileMetadataList,
             resource_cls=FileMetadata,
             method="POST",

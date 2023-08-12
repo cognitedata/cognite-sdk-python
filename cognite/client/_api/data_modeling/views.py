@@ -68,7 +68,7 @@ class ViewsAPI(APIClient):
             Union[View, ViewList]: yields View one by one if chunk_size is not specified, else ViewList objects.
         """
         filter_ = ViewFilter(space, include_inherited_properties, all_versions, include_global)
-        return self._list_generator(
+        yield from self._list_generator(
             list_cls=ViewList,
             resource_cls=View,
             method="GET",

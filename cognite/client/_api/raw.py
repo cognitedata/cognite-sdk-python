@@ -38,7 +38,7 @@ class RawDatabasesAPI(APIClient):
             chunk_size (int, optional): Number of dbs to return in each chunk. Defaults to yielding one db a time.
             limit (int, optional): Maximum number of dbs to return. Defaults to return all items.
         """
-        return self._list_generator(
+        yield from self._list_generator(
             list_cls=DatabaseList, resource_cls=Database, chunk_size=chunk_size, method="GET", limit=limit
         )
 
@@ -327,7 +327,7 @@ class RawRowsAPI(APIClient):
             max_last_updated_time (int): Rows must have been last updated before this time (inclusive). ms since epoch.
             columns (List[str]): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
         """
-        return self._list_generator(
+        yield from self._list_generator(
             list_cls=RowList,
             resource_cls=Row,
             resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),

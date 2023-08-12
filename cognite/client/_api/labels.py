@@ -36,7 +36,7 @@ class LabelsAPI(APIClient):
         filter = LabelDefinitionFilter(
             name=name, external_id_prefix=external_id_prefix, data_set_ids=data_set_ids_processed
         ).dump(camel_case=True)
-        return self._list_generator(
+        yield from self._list_generator(
             list_cls=LabelDefinitionList,
             resource_cls=LabelDefinition,
             method="POST",

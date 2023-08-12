@@ -45,7 +45,7 @@ class SpacesAPI(APIClient):
         Yields:
             Union[Space, SpaceList]: yields Space one by one if chunk_size is not specified, else SpaceList objects.
         """
-        return self._list_generator(
+        yield from self._list_generator(
             list_cls=SpaceList,
             resource_cls=Space,
             method="GET",

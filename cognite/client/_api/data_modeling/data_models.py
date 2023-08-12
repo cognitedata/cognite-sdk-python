@@ -70,7 +70,7 @@ class DataModelsAPI(APIClient):
         """
         filter = DataModelFilter(space, inline_views, all_versions, include_global)
 
-        return self._list_generator(
+        yield from self._list_generator(
             list_cls=DataModelList,
             resource_cls=DataModel,
             method="GET",

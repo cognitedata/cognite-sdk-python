@@ -51,7 +51,7 @@ class ThreeDModelsAPI(APIClient):
         Yields:
             Union[ThreeDModel, ThreeDModelList]: yields ThreeDModel one by one if chunk is not specified, else ThreeDModelList objects.
         """
-        return self._list_generator(
+        yield from self._list_generator(
             list_cls=ThreeDModelList,
             resource_cls=ThreeDModel,
             method="GET",
@@ -228,7 +228,7 @@ class ThreeDRevisionsAPI(APIClient):
             Union[ThreeDModelRevision, ThreeDModelRevisionList]: yields ThreeDModelRevision one by one if chunk is not
                 specified, else ThreeDModelRevisionList objects.
         """
-        return self._list_generator(
+        yield from self._list_generator(
             list_cls=ThreeDModelRevisionList,
             resource_cls=ThreeDModelRevision,
             resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, model_id),
