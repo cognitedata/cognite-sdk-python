@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 ExternalId = str
 
-_FILTERS_SUPPORTED: set[type[Filter]] = {
+_DATAPOINT_SUBSCRIPTION_SUPPORTED_FILTERS: set[type[Filter]] = {
     filters.And,
     filters.Or,
     filters.Not,
@@ -40,7 +40,7 @@ _FILTERS_SUPPORTED: set[type[Filter]] = {
 def _validate_filter(filter: Filter | None) -> None:
     if filter is None:
         return
-    if not_supported := (filter._involved_filter_types() - _FILTERS_SUPPORTED):
+    if not_supported := (filter._involved_filter_types() - _DATAPOINT_SUBSCRIPTION_SUPPORTED_FILTERS):
         names = [f.__name__ for f in not_supported]
         raise ValueError(f"The filters {names} are not supported for DataPointSubscriptions")
 
