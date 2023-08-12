@@ -37,19 +37,19 @@ Preview
 ---------
 Download Image Preview Bytes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.documents.DocumentPreviewAPI.download_png_bytes
+.. automethod:: cognite.client._api.documents.DocumentPreviewAPI.download_page_as_png_bytes
 
 Download Image Preview to Path
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.documents.DocumentPreviewAPI.download_png_to_path
+.. automethod:: cognite.client._api.documents.DocumentPreviewAPI.download_page_as_png
 
 Download PDF Preview Bytes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.documents.DocumentPreviewAPI.download_pdf_bytes
+.. automethod:: cognite.client._api.documents.DocumentPreviewAPI.download_document_as_pdf_bytes
 
 Download PDF Preview to Path
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.documents.DocumentPreviewAPI.download_pdf_to_path
+.. automethod:: cognite.client._api.documents.DocumentPreviewAPI.download_document_as_pdf
 
 Retrieve PDF Preview Temporary Link
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
