@@ -626,7 +626,7 @@ class SequencesAPI(APIClient):
                 resource_cls=Sequence,
                 method="POST",
                 limit=limit,
-                advanced_filter=filter.dump() if isinstance(filter, Filter) else filter,
+                advanced_filter=filter.dump(camel_case_property=True) if isinstance(filter, Filter) else filter,
                 sort=[SequenceSort.load(item).dump(camel_case=True) for item in sort],
             )
         finally:
