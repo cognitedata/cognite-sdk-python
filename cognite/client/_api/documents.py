@@ -57,12 +57,12 @@ def _validate_filter(filter: Filter | dict | None) -> None:
 class DocumentPreviewAPI(APIClient):
     _RESOURCE_PATH = "/documents"
 
-    def download_png_bytes(self, id: int, page_number: int = 1) -> bytes:
+    def download_page_as_png_bytes(self, id: int, page_number: int = 1) -> bytes:
         """`Downloads an image preview for a specific page of the specified document. <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewImagePage>`_
 
         Args:
             id (int): The server-generated ID for the document you want to retrieve the preview of.
-            page_number (int, Optional): Page number to preview. Starting at 1 for first page.
+            page_number (int, optional): Page number to preview. Starting at 1 for first page.
 
         Returns:
             bytes: The png preview of the document.
@@ -73,12 +73,12 @@ class DocumentPreviewAPI(APIClient):
 
             >>> from cognite.client import CogniteClient
             >>> c = CogniteClient()
-            >>> content = c.documents.preview.download_png_bytes(id=123, page_number=5)
+            >>> content = c.documents.preview.download_page_as_png_bytes(id=123, page_number=5)
 
         Download an image preview and display using IPython.display.Image (for example in a Jupyter Notebook):
 
             >>> from IPython.display import Image
-            >>> binary_png = c.documents.preview.download_png_bytes(id=123, page_number=5)
+            >>> binary_png = c.documents.preview.download_page_as_png_bytes(id=123, page_number=5)
             >>> Image(binary_png)
 
         """
@@ -87,14 +87,15 @@ class DocumentPreviewAPI(APIClient):
         )
         return res.content
 
-    def download_png_to_path(self, path: Path | str, id: int, page_number: int = 1) -> None:
+    def download_page_as_png(self, path: Path | str, id: int, page_number: int = 1, overwrite: bool = False) -> None:
         """`Downloads an image preview for a specific page of the specified document. <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewImagePage>`_
 
         Args:
             path (Path): The path to save the png preview of the document. If the path is a directory, the
                   file name will be '[id]_page[page_number].png'.
             id (int): The server-generated ID for the document you want to retrieve the preview of.
-            page_number (int, Optional): Page number to preview. Starting at 1 for first page.
+            page_number (int, optional): Page number to preview. Starting at 1 for first page.
+            overwrite (bool, optional): Whether to overwrite existing file at the given path. Defaults to False.
 
         Examples:
 
@@ -102,19 +103,19 @@ class DocumentPreviewAPI(APIClient):
 
             >>> from cognite.client import CogniteClient
             >>> c = CogniteClient()
-            >>> c.documents.preview.download_png_to_path("previews", id=123, page_number=5)
+            >>> c.documents.preview.download_page_as_png("previews", id=123, page_number=5)
 
         """
-        path = Path(path)
-        if path.is_dir():
-            path = path / f"{id}_page{page_number}.png"
-        else:
-            if path.suffix != ".png":
-                raise ValueError("Path must be a directory or end with .png")
-        content = self.download_png_bytes(id, page_number)
+        if (path := Path(path)).is_dir():
+            path /= f"{id}_page{page_number}.png"
+        elif path.suffix != ".png":
+            raise ValueError("Path must be a directory or end with .png")
+        if not overwrite and path.exists():
+            raise FileExistsError(f"File {path} already exists. Use overwrite=True to overwrite existing file.")
+        content = self.download_page_as_png_bytes(id, page_number)
         path.write_bytes(content)
 
-    def download_pdf_bytes(self, id: int) -> bytes:
+    def download_document_as_pdf_bytes(self, id: int) -> bytes:
         """`Downloads a pdf preview of the specified document. <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewPdf>`_
 
         Only the 100 first pages will be included.
@@ -122,7 +123,7 @@ class DocumentPreviewAPI(APIClient):
         Previews will be rendered if necessary during the request. Be prepared for the request to take a few seconds to complete.
 
         Args:
-            id: The server-generated ID for the document you want to retrieve the preview of.
+            id (int): The server-generated ID for the document you want to retrieve the preview of.
 
         Returns:
             bytes: The pdf preview of the document.
@@ -133,12 +134,12 @@ class DocumentPreviewAPI(APIClient):
 
             >>> from cognite.client import CogniteClient
             >>> c = CogniteClient()
-            >>> content = c.documents.preview.download_pdf_bytes(id=123)
+            >>> content = c.documents.preview.download_document_as_pdf_bytes(id=123)
         """
         res = self._do_request("GET", f"{self._RESOURCE_PATH}/{id}/preview/pdf", accept="application/pdf")
         return res.content
 
-    def download_pdf_to_path(self, path: Path | str, id: int) -> None:
+    def download_document_as_pdf(self, path: Path | str, id: int, overwrite: bool = False) -> None:
         """`Downloads a pdf preview of the specified document. <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewPdf>`_
 
         Only the 100 first pages will be included.
@@ -146,9 +147,10 @@ class DocumentPreviewAPI(APIClient):
         Previews will be rendered if necessary during the request. Be prepared for the request to take a few seconds to complete.
 
         Args:
-            path: The path to save the pdf preview of the document. If the path is a directory, the
+            path (Path): The path to save the pdf preview of the document. If the path is a directory, the
                   file name will be '[id].pdf'.
-            id: The server-generated ID for the document you want to retrieve the preview of.
+            id (int): The server-generated ID for the document you want to retrieve the preview of.
+            overwrite (bool, optional): Whether to overwrite existing file at the given path. Defaults to False.
 
         Returns:
             bytes: The pdf preview of the document.
@@ -159,23 +161,23 @@ class DocumentPreviewAPI(APIClient):
 
             >>> from cognite.client import CogniteClient
             >>> c = CogniteClient()
-            >>> c.documents.preview.download_pdf_to_path("previews", id=123)
+            >>> c.documents.preview.download_document_as_pdf("previews", id=123)
 
         """
-        path = Path(path)
-        if path.is_dir():
-            path = path / f"{id}.pdf"
-        else:
-            if path.suffix != ".pdf":
-                raise ValueError("Path must be a directory or end with .pdf")
-        content = self.download_pdf_bytes(id)
+        if (path := Path(path)).is_dir():
+            path /= f"{id}.pdf"
+        elif path.suffix != ".pdf":
+            raise ValueError("Path must be a directory or end with .pdf")
+        if not overwrite and path.exists():
+            raise FileExistsError(f"File {path} already exists. Use overwrite=True to overwrite existing file.")
+        content = self.download_document_as_pdf_bytes(id)
         path.write_bytes(content)
 
     def retrieve_pdf_link(self, id: int) -> TemporaryLink:
         """`Retrieve a Temporary link to download pdf preview <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewPdfTemporaryLink>`_
 
         Args:
-            id: The server-generated ID for the document you want to retrieve the preview of.
+            id (int): The server-generated ID for the document you want to retrieve the preview of.
 
         Returns:
             A temporary link to download the pdf preview.
