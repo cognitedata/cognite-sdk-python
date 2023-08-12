@@ -557,9 +557,10 @@ class APIClient:
                         "limit": self._LIST_LIMIT,
                         "cursor": next_cursor,
                         "partition": partition,
-                        "advancedFilter": advanced_filter or {},
                         **(other_params or {}),
                     }
+                    if advanced_filter:
+                        body["advancedFilter"] = advanced_filter
                     res = self._post(
                         url_path=(resource_path or self._RESOURCE_PATH) + "/list", json=body, headers=headers
                     )

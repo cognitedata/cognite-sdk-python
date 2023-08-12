@@ -484,7 +484,7 @@ class TestStandardList:
             request = jsgz_load(call.request.body)
             assert "X-Test" in call.request.headers.keys()
             del request["partition"]
-            assert {"advancedFilter": {}, "cursor": None, "filter": {}, "limit": 1000} == request
+            assert {"cursor": None, "filter": {}, "limit": 1000} == request
             assert call.response.json()["items"] == [{"x": 1, "y": 2}, {"x": 1}]
 
     def test_list_partitions_with_failure(self, api_client_with_token, rsps):
