@@ -158,7 +158,7 @@ class FilterWithPropertyAndValue(FilterWithProperty, ABC):
         self._value = value
 
     def _filter_body(self) -> dict[str, Any]:
-        return {"property": self._property, "value": _dump_filter_value(self._value)}
+        return {"property": list(self._property), "value": _dump_filter_value(self._value)}
 
 
 class FilterWithPropertyAndValueList(FilterWithProperty, ABC):
@@ -169,7 +169,7 @@ class FilterWithPropertyAndValueList(FilterWithProperty, ABC):
         self._values = values
 
     def _filter_body(self) -> dict[str, Any]:
-        return {"property": self._property, "values": _dump_filter_value(self._values)}
+        return {"property": list(self._property), "values": _dump_filter_value(self._values)}
 
 
 @final
