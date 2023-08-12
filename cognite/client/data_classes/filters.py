@@ -287,8 +287,8 @@ class Overlaps(Filter):
 
     def _filter_body(self) -> dict[str, Any]:
         body = {
-            "startProperty": self._start_property,
-            "endProperty": self._end_property,
+            "startProperty": list(self._start_property),
+            "endProperty": list(self._end_property),
         }
 
         if self._gt is not None:
