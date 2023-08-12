@@ -179,7 +179,7 @@ class TestDocumentsAPI:
         doc, _ = text_file_content_pair
 
         # Act
-        content = cognite_client.documents.preview.download_png_bytes(id=doc.id)
+        content = cognite_client.documents.preview.download_page_as_png_bytes(id=doc.id)
 
         # Assert
         assert content.startswith(b"\x89PNG\r\n\x1a\n")
@@ -189,7 +189,7 @@ class TestDocumentsAPI:
         doc, _ = text_file_content_pair
 
         # Act
-        content = cognite_client.documents.preview.download_pdf_bytes(id=doc.id)
+        content = cognite_client.documents.preview.download_document_as_pdf_bytes(id=doc.id)
 
         # Assert
         assert content.startswith(b"%PDF")
