@@ -409,7 +409,7 @@ class EventsAPI(APIClient):
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: EventFilter | dict | None = None,
     ) -> int:
-        """`Find approximate number of unique properties. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
+        """`Find approximate count of event properties. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
 
         Args:
             property (EventPropertyLike | tuple[EventPropertyLike, AggregationFilter]): The property to count the cardinality of.
@@ -467,7 +467,7 @@ class EventsAPI(APIClient):
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: EventFilter | dict | None = None,
     ) -> UniqueResultList:
-        """`Find approximate number of unique properties. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
+        """`Find approximate unique event properties. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
 
         Args:
             property (EventPropertyLike | tuple[EventPropertyLike, AggregationFilter]): The property to group by.

@@ -340,7 +340,7 @@ class SequencesAPI(APIClient):
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: SequenceFilter | dict | None = None,
     ) -> int:
-        """`Find approximate number of unique properties. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
+        """`Find approximate count of sequence properties. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
 
         Args:
             property (SequenceProperty | str | List[str]): The property to count the cardinality of.
@@ -408,7 +408,7 @@ class SequencesAPI(APIClient):
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: SequenceFilter | dict | None = None,
     ) -> UniqueResultList:
-        """`Find approximate unique properties. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
+        """`Find approximate unique sequence properties. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
 
         Args:
             property (SequenceProperty | str | List[str]): The property to group by.

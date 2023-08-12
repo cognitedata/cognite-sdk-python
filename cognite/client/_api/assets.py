@@ -487,7 +487,7 @@ class AssetsAPI(APIClient):
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: AssetFilter | dict | None = None,
     ) -> int:
-        """`Find approximate number of unique properties. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
+        """`Find approximate count of asset properties. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
         Args:
             property (AssetPropertyLike | tuple[AssetPropertyLike, AggregationFilter]): The property to count the cardinality of.
@@ -546,7 +546,7 @@ class AssetsAPI(APIClient):
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: AssetFilter | dict | None = None,
     ) -> UniqueResultList:
-        """`Find approximate unique properties. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
+        """`Find approximate unique asset properties. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
         Args:
             property (AssetPropertyLike | tuple[AssetPropertyLike, AggregationFilter]): The property to group by.

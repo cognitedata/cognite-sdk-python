@@ -373,7 +373,7 @@ class TimeSeriesAPI(APIClient):
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: TimeSeriesFilter | dict | None = None,
     ) -> int:
-        """`Find approximate number of unique properties. <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
+        """`Find approximate count time series properties. <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
 
         Args:
             property (TimeSeriesProperty | str | List[str]): The property to count the cardinality of.
@@ -441,7 +441,7 @@ class TimeSeriesAPI(APIClient):
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: TimeSeriesFilter | dict | None = None,
     ) -> UniqueResultList:
-        """`Find approximate unique properties. <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
+        """`Find approximate unique time series properties. <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
 
         Args:
             property (TimeSeriesProperty | str | List[str]): The property to group by.
