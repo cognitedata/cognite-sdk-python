@@ -424,14 +424,13 @@ class DocumentsAPI(APIClient):
             return self._documents_aggregate(
                 "cardinalityProperties", path=property, query=query, filter=filter, aggregate_filter=aggregate_filter
             )
-        else:
-            return self._documents_aggregate(
-                "cardinalityValues",
-                properties=property,
-                query=query,
-                filter=filter,
-                aggregate_filter=aggregate_filter,
-            )
+        return self._documents_aggregate(
+            "cardinalityValues",
+            properties=property,
+            query=query,
+            filter=filter,
+            aggregate_filter=aggregate_filter,
+        )
 
     def aggregate_unique(
         self,
@@ -444,7 +443,7 @@ class DocumentsAPI(APIClient):
         """`Find approximate number of unique properties. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
 
         Args:
-            property (list[str]): The property to group by.
+            property (DocumentProperty | SourceFileProperty | list[str] | str): The property to group by.
             query (str | None): The free text search query, for details see the documentation referenced above.
             filter (Filter | dict | None): The filter to narrow down the documents to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
@@ -461,7 +460,7 @@ class DocumentsAPI(APIClient):
             >>> from cognite.client.data_classes.documents import DocumentProperty
             >>> c = CogniteClient()
             >>> result = c.documents.aggregate_unique(DocumentProperty.mime_type)
-            >>> print(result.unique)
+            >>> unique_types = result.unique
 
         Get the different languages with count for documents with external id prefix "abc":
 
@@ -471,7 +470,7 @@ class DocumentsAPI(APIClient):
             >>> c = CogniteClient()
             >>> is_abc = filters.Prefix(DocumentProperty.external_id, "abc")
             >>> result = c.documents.aggregate_unique(DocumentProperty.language, filter=is_abc)
-            >>> print(result.unique)
+            >>> unique_languages = result.unique
 
         Get the unique mime types with count of documents, but exclude mime types that start with text:
 
@@ -482,7 +481,7 @@ class DocumentsAPI(APIClient):
             >>> a = aggregations
             >>> is_not_text = a.Not(a.Prefix("text"))
             >>> result = c.documents.aggregate_unique(DocumentProperty.mime_type, aggregate_filter=is_not_text)
-            >>> print(result.unique)
+            >>> unique_mime_types = result.unique
 
         """
         _validate_filter(filter)
@@ -511,7 +510,7 @@ class DocumentsAPI(APIClient):
 
 
         Args:
-            id: The server-generated ID for the document you want to retrieve the content of.
+            id (int): The server-generated ID for the document you want to retrieve the content of.
 
         Returns:
             str: The content of the document.
@@ -565,12 +564,12 @@ class DocumentsAPI(APIClient):
         endpoint documentation referenced above.
 
         Args:
-            query (str) : The free text search query.
-            highlight: Whether or not matches in search results should be highlighted.
-            filter (Filter | dict | None): The filter to narrow down the documents to search.
-            sort (DocumentSort | str | list[str] | tuple[SortablePropertyLike, Literal["asc", "desc"]] | None):
+            query (str): The free text search query.
+            highlight (bool, optional): Whether or not matches in search results should be highlighted.
+            filter (Filter | dict | None, optional): The filter to narrow down the documents to search.
+            sort (DocumentSort | str | list[str] | tuple[SortablePropertyLike, Literal["asc", "desc"]] | None, optional):
                 The property to sort by. The default order is ascending.
-            limit: Maximum number of items. When using highlights, the maximum value is reduced to 20. Defaults to 100.
+            limit (int, optional): Maximum number of items. When using highlights, the maximum value is reduced to 20. Defaults to 100.
 
         Returns:
             DocumentList | DocumentHighlightList: List of search results. If highlight is True, a DocumentHighlightList
@@ -598,18 +597,16 @@ class DocumentsAPI(APIClient):
             >>> c = CogniteClient()
             >>> is_plain_text = filters.Equals(DocumentProperty.mime_type, "text/plain")
             >>> last_week = filters.Range(DocumentProperty.created_time,
-            ...                           gt=timestamp_to_ms(datetime.now() - timedelta(days=7)))
+            ...     gt=timestamp_to_ms(datetime.now() - timedelta(days=7)))
             >>> documents = c.documents.search('"CPLEX Error 1217: No Solution exists."',
-            ...                                highlight=True,
-            ...                                filter=filters.And(is_plain_text, last_week))
+            ...     highlight=True,
+            ...     filter=filters.And(is_plain_text, last_week))
 
         """
         _validate_filter(filter)
         results = []
         next_cursor = None
-        body: dict[str, str | int | bool | dict | list] = {
-            "search": {"query": query},
-        }
+        body: dict[str, str | int | bool | dict | list] = {"search": {"query": query}}
         if filter:
             body["filter"] = filter.dump() if isinstance(filter, Filter) else filter
         if sort:
@@ -625,8 +622,7 @@ class DocumentsAPI(APIClient):
             response = self._post(f"{self._RESOURCE_PATH}/search", json=body)
             json_content = response.json()
             results.extend(json_content["items"])
-            next_cursor = json_content.get("nextCursor")
-            if not next_cursor:
+            if not (next_cursor := json_content.get("nextCursor")):
                 break
 
         if highlight:
@@ -645,7 +641,8 @@ class DocumentsAPI(APIClient):
 
         Args:
             filter(filter: Filter | dict | None): The filter to narrow down the documents to return.
-            limit (int): Maximum number of documents to return. Defaults to 100. Set to -1 to return all documents.
+            limit (int): Maximum number of documents to return. Defaults to 100. Set to None or -1 to return all
+                         documents.
 
         Returns:
             DocumentList: List of documents

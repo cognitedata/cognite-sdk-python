@@ -214,7 +214,7 @@ class AggregationFilter(ABC):
 
     @abstractmethod
     def _filter_body(self) -> list | dict:
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class CompoundFilter(AggregationFilter):
