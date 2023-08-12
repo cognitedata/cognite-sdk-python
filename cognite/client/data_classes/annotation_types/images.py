@@ -4,6 +4,7 @@ import json
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Dict, Optional
 
+from cognite.client.data_classes._base import load_resource
 from cognite.client.data_classes.annotation_types.primitives import (
     BoundingBox,
     CdfResourceRef,
@@ -39,9 +40,9 @@ class ObjectDetection(VisionResource):
         return cls(
             label=resource["label"],
             confidence=resource.get("confidence"),
-            bounding_box=BoundingBox._load(bounding_box) if (bounding_box := resource.get("boundingBox")) else None,
-            polygon=Polygon._load(polygon) if (polygon := resource.get("polygon")) else None,
-            polyline=PolyLine._load(polyline) if (polyline := resource.get("polyline")) else None,
+            bounding_box=load_resource(resource, BoundingBox, "boundingBox"),
+            polygon=load_resource(resource, Polygon, "polygon"),
+            polyline=load_resource(resource, PolyLine, "polyline"),
         )
 
 

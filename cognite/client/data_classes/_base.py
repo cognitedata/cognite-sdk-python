@@ -173,6 +173,12 @@ class CogniteResource:
 T_CogniteResource = TypeVar("T_CogniteResource", bound=CogniteResource)
 
 
+def load_resource(dct: dict[str, Any], cls: Type[T_CogniteResource], key: str) -> T_CogniteResource | None:
+    if (res := dct.get(key)) is not None:
+        return cls._load(res)
+    return None
+
+
 class CognitePropertyClassUtil:
     @staticmethod
     def declare_property(schema_name: str) -> property:

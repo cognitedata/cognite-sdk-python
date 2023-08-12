@@ -16,6 +16,7 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     CogniteUpdate,
     PropertySpec,
+    load_resource,
 )
 from cognite.client.data_classes.annotation_types.images import AssetLink, ObjectDetection, TextRegion
 from cognite.client.data_classes.annotation_types.primitives import VisionResource
@@ -729,29 +730,17 @@ class FeatureParameters(VisionResource):
     def _load(cls, data: str | dict[str, Any], cognite_client: Any = None) -> FeatureParameters:
         data = json.loads(data) if isinstance(data, str) else data
         return cls(
-            text_detection_parameters=TextDetectionParameters._load(text_detection_parameters)
-            if (text_detection_parameters := data.get("textDetectionParameters"))
-            else None,
-            asset_tag_detection_parameters=AssetTagDetectionParameters._load(asset_tag_detection_parameters)
-            if (asset_tag_detection_parameters := data.get("assetTagDetectionParameters"))
-            else None,
-            people_detection_parameters=PeopleDetectionParameters._load(people_detection_parameters)
-            if (people_detection_parameters := data.get("peopleDetectionParameters"))
-            else None,
-            industrial_object_detection_parameters=IndustrialObjectDetectionParameters._load(
-                industrial_object_detection_parameters
-            )
-            if (industrial_object_detection_parameters := data.get("industrialObjectDetectionParameters"))
-            else None,
-            personal_protective_equipment_detection_parameters=PersonalProtectiveEquipmentDetectionParameters._load(
-                personal_protective_equipment_detection_parameters
-            )
-            if (
-                personal_protective_equipment_detection_parameters := data.get(
-                    "personalProtectiveEquipmentDetectionParameters"
-                )
-            )
-            else None,
+            text_detection_parameters=load_resource(data, TextDetectionParameters, "textDetectionParameters"),
+            asset_tag_detection_parameters=load_resource(
+                data, AssetTagDetectionParameters, "assetTagDetectionParameters"
+            ),
+            people_detection_parameters=load_resource(data, PeopleDetectionParameters, "peopleDetectionParameters"),
+            industrial_object_detection_parameters=load_resource(
+                data, IndustrialObjectDetectionParameters, "industrialObjectDetectionParameters"
+            ),
+            personal_protective_equipment_detection_parameters=load_resource(
+                data, PersonalProtectiveEquipmentDetectionParameters, "personalProtectiveEquipmentDetectionParameters"
+            ),
         )
 
 

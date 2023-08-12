@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import abc
 import json
+from abc import ABC
 from typing import TYPE_CHECKING, Optional, Type, TypeVar
 
 from cognite.client.data_classes._base import CogniteResource
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
-class DataModelingResource(abc.ABC, CogniteResource):
+class DataModelingResource(CogniteResource, ABC):
     def __repr__(self) -> str:
         args = []
         if hasattr(self, "space"):
