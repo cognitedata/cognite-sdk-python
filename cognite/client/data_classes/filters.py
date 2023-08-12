@@ -253,7 +253,7 @@ class Range(FilterWithProperty):
         self._lte = lte
 
     def _filter_body(self) -> dict[str, Any]:
-        body = {"property": self._property}
+        body = {"property": list(self._property)}
         if self._gt is not None:
             body["gt"] = _dump_filter_value(self._gt)
         if self._gte is not None:

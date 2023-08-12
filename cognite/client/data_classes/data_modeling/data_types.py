@@ -139,7 +139,7 @@ class Json(ListablePropertyType):
 
 
 @dataclass
-class CDFExternalIdReference(ListablePropertyType):
+class CDFExternalIdReference(ListablePropertyType, ABC):
     _type = "cdf_external_reference"
 
 
