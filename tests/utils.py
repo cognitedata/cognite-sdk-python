@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import abc
+import collections.abc
 import cProfile
 import enum
 import functools
@@ -11,16 +12,18 @@ import json
 import math
 import os
 import random
-import re
 import string
+import typing
 from collections import Counter
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Literal, Type, TypeVar, cast, get_args, get_origin
+from typing import TYPE_CHECKING, Any, Literal, Type, TypeVar, cast, get_args, get_origin, get_type_hints
 
+from cognite.client import CogniteClient
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
 from cognite.client.data_classes import DataPointSubscriptionCreate, Relationship, filters
-from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, T_CogniteResource
+from cognite.client.data_classes._base import CogniteResourceList
 from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS, Datapoints, DatapointsArray
+from cognite.client.data_classes.filters import Filter
 from cognite.client.testing import CogniteClientMock
 from cognite.client.utils._auxiliary import local_import
 from cognite.client.utils._text import random_string
@@ -247,15 +250,23 @@ T_Object = TypeVar("T_Object", bound=object)
 
 
 class FakeCogniteResourceGenerator:
+    _error_msg: typing.ClassVar[str] = "Please extend this function to support generating fake data for this type"
+
     def __init__(self, seed: int | None = None, cognite_client: CogniteClientMock | None = None):
         self._random = random.Random(seed)
         self._cognite_client = cognite_client or CogniteClientMock()
 
-    def create(self, resource_cls: Type[T_CogniteResource]) -> T_CogniteResource:
-        return self._create(resource_cls)
+    def create_instance(self, resource_cls: Type[T_Object]) -> T_Object:
+        signature = inspect.signature(resource_cls.__init__)
+        try:
+            type_hint_by_name = get_type_hints(resource_cls.__init__, localns=self._type_checking)
+        except TypeError:
+            # Python 3.10 Type hints cannot be evaluated with get_type_hints,
+            # ref https://stackoverflow.com/questions/66006087/how-to-use-typing-get-type-hints-with-pep585-in-python3-8
+            resource_module_vars = vars(importlib.import_module(resource_cls.__module__))
+            resource_module_vars.update(self._type_checking())
+            type_hint_by_name = self._get_type_hints_3_10(resource_module_vars, signature)
 
-    def _create(self, object_cls: Type[T_Object]) -> T_Object:
-        signature = inspect.signature(object_cls.__init__)
         keyword_arguments: dict[str, Any] = {}
         positional_arguments: list[Any] = []
         for name, parameter in signature.parameters.items():
@@ -265,163 +276,112 @@ class FakeCogniteResourceGenerator:
                 # Skipping generic arguments.
                 continue
             elif parameter.annotation is inspect.Parameter.empty:
-                raise ValueError(f"Parameter {name} of {object_cls.__name__} is missing annotation")
+                raise ValueError(f"Parameter {name} of {resource_cls.__name__} is missing annotation")
 
-            annotation = str(parameter.annotation)
-            if name == "_" and annotation == "Any":
-                # This is used to goble up extra arguments in the data modeling read classes.
-                continue
+            value = self.create_value(type_hint_by_name[name])
 
-            value = self._create_complex_value(name, annotation, object_cls)
             if parameter.kind in {parameter.POSITIONAL_ONLY, parameter.VAR_POSITIONAL}:
                 positional_arguments.append(value)
             else:
                 keyword_arguments[name] = value
 
         # Special cases
-        if object_cls is DataPointSubscriptionCreate:
+        if resource_cls is DataPointSubscriptionCreate:
             # DataPointSubscriptionCreate requires either timeseries_ids or filter
             keyword_arguments.pop("filter", None)
-        elif object_cls is Relationship:
+        elif resource_cls is Relationship:
             # Relationship must set the source and target type consistently with the source and target
             keyword_arguments["source_type"] = type(keyword_arguments["source"]).__name__
             keyword_arguments["target_type"] = type(keyword_arguments["target"]).__name__
-        elif object_cls is Datapoints:
+        elif resource_cls is Datapoints:
             # All lists have to be equal in length and only value and timestamp
             keyword_arguments["timestamp"] = keyword_arguments["timestamp"][:1]
             keyword_arguments["value"] = keyword_arguments["value"][:1]
             for key in list(keyword_arguments):
                 if isinstance(keyword_arguments[key], list) and key not in {"timestamp", "value"}:
                     keyword_arguments.pop(key)
-        elif object_cls is DatapointsArray:
+        elif resource_cls is DatapointsArray:
             keyword_arguments["is_string"] = False
-        return object_cls(*positional_arguments, **keyword_arguments)
+        return resource_cls(*positional_arguments, **keyword_arguments)
 
-    def _create_complex_value(self, name: str, annotation: str, resource_cls: Type[CogniteResource]) -> Any:
-        while True:
-            is_dict = False
-            is_list = False
-            if annotation.startswith("Optional[") and annotation.endswith("]"):
-                annotation = annotation[9:-1]
-            elif (annotation.startswith("Union[") and annotation.endswith("]")) or self._is_vertical_union(annotation):
-                if "|" in annotation:
-                    alternatives = [a.strip() for a in annotation.split("|")]
-                else:
-                    annotation = annotation[6:-1]
-                    alternatives = [a.strip() for a in re.split(r",\s*(?![^[]*])", annotation)]
-                if "LabelDefinition" in alternatives:
-                    annotation = "LabelDefinition"
-                else:
-                    annotation = next((a for a in alternatives if "Any" not in a and "None" not in a), None)
-                    annotation = annotation or alternatives[0]
-            elif annotation.lower().startswith("list[") and annotation.endswith("]"):
-                annotation = annotation[5:-1]
-                is_list = True
-            elif annotation.startswith("Sequence[") and annotation.endswith("]"):
-                annotation = annotation[9:-1]
-                is_list = True
-            elif annotation.startswith("SequenceType[") and annotation.endswith("]"):
-                annotation = annotation[13:-1]
-                is_list = True
-            elif annotation.startswith("Mapping[") and annotation.endswith("]"):
-                annotation = annotation[8:-1]
-                is_dict = True
-            elif annotation.startswith("MutableMapping[") and annotation.endswith("]"):
-                annotation = annotation[15:-1]
-                is_dict = True
-            elif annotation.lower().startswith("dict[") and annotation.endswith("]"):
-                annotation = annotation[5:-1]
-                is_dict = True
-            elif annotation.lower().startswith("tuple[") and annotation.endswith("]"):
-                annotation = annotation[6:-1]
-                annotation = annotation.split(",")[0]
-            else:
-                return self._create_simple_value(name, annotation, resource_cls)
-
-            if is_dict:
-                key, value = (x.strip() for x in annotation.split(",", maxsplit=1))
-                return {
-                    self._create_complex_value(name, key, resource_cls): self._create_complex_value(
-                        name, value, resource_cls
-                    )
-                    for _ in range(self._random.randint(1, 3))
-                }
-            elif is_list:
-                return [
-                    self._create_complex_value(name, annotation, resource_cls)
-                    for _ in range(self._random.randint(1, 3))
-                ]
-
-    def _create_simple_value(
-        self, name: str, annotation: str, resource_cls: Type[CogniteResource]
-    ) -> str | int | float | bool | dict | CogniteResource | None | Literal:
-        if name == "external_id" and annotation == "str":
+    def create_value(self, type_: Any, var_name: str | None = None) -> Any:
+        if var_name == "external_id" and type_ is str:
             return self._random_string(50, sample_from=string.ascii_uppercase + string.digits)
-        elif name == "id" and annotation == "int":
+        elif var_name == "id" and type_ is int:
             return self._random.choice(range(1, MAX_VALID_INTERNAL_ID + 1))
-        elif annotation == "str" or annotation == "Any":
+        if type_ is str or type_ is Any:
             return self._random_string()
-        elif annotation == "int":
+        elif type_ is int:
             return self._random.randint(1, 100000)
-        elif annotation == "float":
+        elif type_ is float:
             return self._random.random()
-        elif annotation == "bool":
+        elif type_ is bool:
             return self._random.choice([True, False])
-        elif annotation.lower() == "dict":
+        elif type_ is dict:
             return {self._random_string(10): self._random_string(10) for _ in range(self._random.randint(1, 3))}
-        elif annotation == "CogniteClient":
+        elif type_ is CogniteClient:
             return self._cognite_client
-        elif annotation.startswith("Literal[") and annotation.endswith("]"):
-            annotation = annotation[8:-1]
-            if annotation.startswith("(") and annotation.endswith(")"):
-                annotation = annotation[1:-1]
-            alternatives = [a.strip()[1:-1] for a in annotation.split(",")]
-            return self._random.choice(alternatives)
-        elif annotation == "NumpyFloat64Array":
-            import numpy as np
-
-            return np.array([self._random.random() for _ in range(3)], dtype=np.float64)
-        elif annotation == "NumpyInt64Array":
-            import numpy as np
-
-            return np.array([self._random.randint(1, 100) for _ in range(3)], dtype=np.int64)
-        elif annotation == "NumpyDatetime64NSArray":
-            import numpy as np
-
-            return np.array([self._random.randint(1, 1704067200000) for _ in range(3)], dtype="datetime64[ms]")
-
-        resource_module_vars = vars(importlib.import_module(resource_cls.__module__))
-        annotation_cls = resource_module_vars.get(annotation)
-        is_class = inspect.isclass(annotation_cls)
-        if get_origin(annotation_cls) is not None:
-            annotation = self._get_typing_args(annotation_cls)
-            return self._create_complex_value(name, annotation, resource_cls)
-        elif issubclass(resource_cls, CogniteResourceList):
-            return [self._create(resource_cls._RESOURCE) for _ in range(self._random.randint(1, 3))]
-        elif isinstance(annotation_cls, enum.EnumMeta):
-            return self._random.choice(list(annotation_cls))
-        elif isinstance(annotation_cls, TypeVar):
-            annotation = self._get_typing_args(annotation_cls.__bound__)
-            return self._create_complex_value(name, annotation, resource_cls)
-        elif is_class and issubclass(annotation_cls, (str, int, float, bool)):
-            return self._create_simple_value(name, annotation_cls.__name__, resource_cls)
-        elif is_class and issubclass(annotation_cls, CogniteResource):
-            return self.create(annotation_cls)
-        elif is_class and any(base is abc.ABC for base in annotation_cls.__bases__):
-            implementations = all_concrete_subclasses(annotation_cls)
-            if annotation == "Filter":
+        elif inspect.isclass(type_) and any(base is abc.ABC for base in type_.__bases__):
+            implementations = all_concrete_subclasses(type_)
+            if type_ is Filter:
                 # Remove filters which are only used by data modeling classes
                 implementations.remove(filters.HasData)
                 implementations.remove(filters.Nested)
             selected = self._random.choice(implementations)
-            return self._create(selected)
-        elif is_class:
-            return self._create(annotation_cls)
+            return self.create_instance(selected)
+        elif isinstance(type_, enum.EnumMeta):
+            return self._random.choice(list(type_))
+        elif isinstance(type_, TypeVar):
+            return self.create_value(type_.__bound__)
+        elif inspect.isclass(type_) and issubclass(type_, CogniteResourceList):
+            return type_([self.create_value(type_._RESOURCE) for _ in range(self._random.randint(1, 3))])
+        elif inspect.isclass(type_):
+            return self.create_instance(type_)
 
-        raise NotImplementedError(
-            f"Unsupported annotation {annotation!r} for parameter {name!r} in {resource_cls.__name__!r}."
-            " Please extend this function to support generating fake data for this type."
-        )
+        container_type = get_origin(type_)
+        is_container = container_type is not None
+        if not is_container:
+            # Handle numpy types
+            import numpy as np
+            from numpy.typing import NDArray
+
+            if type_ == NDArray[np.float64]:
+                return np.array([self._random.random() for _ in range(3)], dtype=np.float64)
+            elif type_ == NDArray[np.int64]:
+                return np.array([self._random.randint(1, 100) for _ in range(3)], dtype=np.int64)
+            elif type_ == NDArray[np.datetime64]:
+                return np.array([self._random.randint(1, 1704067200000) for _ in range(3)], dtype="datetime64[ms]")
+            else:
+                raise ValueError(f"Unknown type {type_} {type(type_)}. {self._error_msg}")
+
+        # Handle containers
+        args = get_args(type_)
+        first_not_none = next((arg for arg in args if arg is not None), None)
+        if container_type is typing.Union:
+            return self.create_value(first_not_none)
+        elif container_type is typing.Literal:
+            return self._random.choice(args)
+        elif container_type in [
+            typing.List,
+            list,
+            typing.Sequence,
+            collections.abc.Sequence,
+            collections.abc.Collection,
+        ]:
+            return [self.create_value(first_not_none) for _ in range(self._random.randint(1, 3))]
+        elif container_type in [typing.Dict, dict, collections.abc.MutableMapping, collections.abc.Mapping]:
+            if first_not_none is None:
+                return self.create_value(dict)
+            key_type, value_type = args
+            return {
+                self.create_value(key_type): self.create_value(value_type) for _ in range(self._random.randint(1, 3))
+            }
+        elif container_type in [typing.Tuple, tuple]:
+            if any(arg is ... for arg in args):
+                return tuple(self.create_value(first_not_none) for _ in range(self._random.randint(1, 3)))
+            raise NotImplementedError(f"Tuple with multiple types is not supported. {self._error_msg}")
+
+        raise NotImplementedError(f"Unsupported container type {container_type}. {self._error_msg}")
 
     def _random_string(
         self,
@@ -430,6 +390,74 @@ class FakeCogniteResourceGenerator:
     ) -> str:
         k = size or self._random.randint(1, 100)
         return "".join(self._random.choices(sample_from, k=k))
+
+    @classmethod
+    def _type_checking(cls) -> dict[str, Any]:
+        """
+        When calling the get_type_hints function, it imports the module with the function TYPE_CHECKING is set to False.
+
+        This function takes all the special types used in data classes and returns them as a dictionary so it
+        can be used in the local namespaces.
+        """
+        import numpy as np
+        import numpy.typing as npt
+
+        from cognite.client import CogniteClient
+
+        NumpyDatetime64NSArray = npt.NDArray[np.datetime64]
+        NumpyInt64Array = npt.NDArray[np.int64]
+        NumpyFloat64Array = npt.NDArray[np.float64]
+        NumpyObjArray = npt.NDArray[np.object_]
+        return {
+            "CogniteClient": CogniteClient,
+            "NumpyDatetime64NSArray": NumpyDatetime64NSArray,
+            "NumpyInt64Array": NumpyInt64Array,
+            "NumpyFloat64Array": NumpyFloat64Array,
+            "NumpyObjArray": NumpyObjArray,
+        }
+
+    @classmethod
+    def _get_type_hints_3_10(
+        cls, resource_module_vars: dict[str, Any], signature310: inspect.Signature
+    ) -> dict[str, Any]:
+        return {
+            name: cls._create_type_hint_3_10(parameter.annotation, resource_module_vars)
+            for name, parameter in signature310.parameters.items()
+            if name != "self"
+        }
+
+    @classmethod
+    def _create_type_hint_3_10(cls, annotation: str, resource_module_vars: dict[str, Any]) -> Any:
+        try:
+            return eval(annotation, resource_module_vars)
+        except TypeError:
+            # Python 3.10 Type Hint
+            return cls._type_hint_3_10_to_8(annotation, resource_module_vars)
+
+    @classmethod
+    def _type_hint_3_10_to_8(cls, annotation: str, resource_module_vars: dict[str, Any]) -> Any:
+        if cls._is_vertical_union(annotation):
+            alternatives = [cls._create_type_hint_3_10(a.strip(), resource_module_vars) for a in annotation.split("|")]
+            return typing.Union[tuple(alternatives)]
+        elif annotation.startswith("dict[") and annotation.endswith("]"):
+            if Counter(annotation)[","] != 1:
+                raise NotImplementedError("Only one comma is supported in dict type hints.")
+            key, value = annotation[5:-1].split(",")
+            return typing.Dict[
+                cls._create_type_hint_3_10(key.strip(), resource_module_vars),
+                cls._create_type_hint_3_10(value.strip(), resource_module_vars),
+            ]
+        elif annotation.startswith("Optional[") and annotation.endswith("]"):
+            return typing.Optional[cls._create_type_hint_3_10(annotation[9:-1], resource_module_vars)]
+        elif annotation.startswith("list[") and annotation.endswith("]"):
+            return typing.List[cls._create_type_hint_3_10(annotation[5:-1], resource_module_vars)]
+        elif annotation.startswith("tuple[") and annotation.endswith("]"):
+            return typing.Tuple[cls._create_type_hint_3_10(annotation[6:-1], resource_module_vars)]
+        elif annotation.startswith("SequenceType[") and annotation.endswith("]"):
+            # SequenceType is a custom type hint used in the SDK to indicate that the type is typing.Sequence
+            # to avoid confusion with the CDF Resource Sequence type
+            return typing.Sequence[cls._create_type_hint_3_10(annotation[13:-1], resource_module_vars)]
+        raise NotImplementedError(f"Unsupported conversion of type hint {annotation!r}. {cls._error_msg}")
 
     @classmethod
     def _is_vertical_union(cls, annotation: str) -> bool:
@@ -441,12 +469,3 @@ class FakeCogniteResourceGenerator:
             if counts["["] != counts["]"]:
                 return False
         return True
-
-    @classmethod
-    def _get_typing_args(cls, typing_cls: Any) -> str:
-        args = get_args(typing_cls)
-        arg = args[0]
-        if str(arg).startswith("typing."):
-            return str(arg).replace("typing.", "")
-        else:
-            return arg.__name__
