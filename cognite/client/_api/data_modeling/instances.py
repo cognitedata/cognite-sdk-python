@@ -51,7 +51,7 @@ from ._data_modeling_executor import get_data_modeling_executor
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
-_FILTERS_SUPPORTED: frozenset[type[Filter]] = frozenset(
+_DATA_MODELING_SUPPORTED_FILTERS: frozenset[type[Filter]] = frozenset(
     {
         filters.And,
         filters.Or,
@@ -74,7 +74,7 @@ _FILTERS_SUPPORTED: frozenset[type[Filter]] = frozenset(
 def _validate_filter(filter: Filter | dict | None) -> None:
     if filter is None or isinstance(filter, dict):
         return
-    if not_supported := (filter._involved_filter_types() - _FILTERS_SUPPORTED):
+    if not_supported := (filter._involved_filter_types() - _DATA_MODELING_SUPPORTED_FILTERS):
         names = [f.__name__ for f in not_supported]
         raise ValueError(f"The filters {names} are not supported for Instances")
 
