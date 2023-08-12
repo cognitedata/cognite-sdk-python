@@ -189,7 +189,7 @@ class Highlight(CogniteResource):
     This is used in search results to represent the result.
 
     Args:
-        name (list[str]): Matches is name.
+        name (list[str]): Matches in name.
         content (list[str]): Matches in content.
     """
 
@@ -356,15 +356,9 @@ class DocumentSort:
         if isinstance(data, cls):
             return data
         elif isinstance(data, dict):
-            return cls(
-                property=data["property"],
-                order=data.get("order", "asc"),
-            )
+            return cls(property=data["property"], order=data.get("order", "asc"))
         elif isinstance(data, tuple) and len(data) == 2 and data[1] in ["asc", "desc"]:
-            return cls(
-                property=data[0],
-                order=data[1],
-            )
+            return cls(property=data[0], order=data[1])
         elif isinstance(data, (str, list, EnumProperty)):
             return cls(
                 property=data,

@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Sequence, Tuple, Union, cast, final
 
+from typing_extensions import TypeAlias
+
 from cognite.client.data_classes._base import EnumProperty, Geometry
 from cognite.client.data_classes.labels import Label
 
@@ -11,9 +13,9 @@ if TYPE_CHECKING:
     from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
 
 
-PropertyReference = Union[Tuple[str, ...], List[str], EnumProperty]
+PropertyReference: TypeAlias = Union[Tuple[str, ...], List[str], EnumProperty]
 
-RawValue = Union[str, float, bool, Sequence, Mapping[str, Any], Label]
+RawValue: TypeAlias = Union[str, float, bool, Sequence, Mapping[str, Any], Label]
 
 
 @dataclass
