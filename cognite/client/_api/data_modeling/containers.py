@@ -55,7 +55,7 @@ class ContainersAPI(APIClient):
 
         Args:
             chunk_size (int, optional): Number of containers to return in each chunk. Defaults to yielding one container a time.
-            space (int, optional): The space to query.
+            space (str, optional): The space to query.
             include_global (bool, optional): Whether the global containers should be returned.
             limit (int, optional): Maximum number of containers to return. Default to return all items.
 
@@ -152,7 +152,7 @@ class ContainersAPI(APIClient):
         """`List containers <https://developer.cognite.com/api#tag/Containers/operation/listContainers>`_
 
         Args:
-            space (int, optional): The space to query
+            space (str, optional): The space to query
             limit (int, optional): Maximum number of containers to return. Default to 10. Set to -1, float("inf") or None
                 to return all items.
             include_global (bool, optional): Whether the global containers should be returned.
