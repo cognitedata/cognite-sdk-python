@@ -438,7 +438,7 @@ class FakeCogniteResourceGenerator:
         parts = [p.strip() for p in annotation.split("|")]
         for part in parts:
             counts = Counter(part)
-            if counts.get("[", 0) != counts.get("]", 0):
+            if counts["["] != counts["]"]:
                 return False
         return True
 

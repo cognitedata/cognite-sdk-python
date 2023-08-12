@@ -449,6 +449,4 @@ class GeospatialComputedResponse(CogniteResource):
         return cls(item_list, cognite_client=cognite_client)
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        return {
-            "items": self.items.dump(camel_case=camel_case),
-        }
+        return {"items": self.items.dump(camel_case=camel_case)}
