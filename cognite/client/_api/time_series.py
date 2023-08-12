@@ -462,7 +462,7 @@ class TimeSeriesAPI(APIClient):
             >>> result = c.time_series.aggregate_unique(TimeSeriesProperty.metadata_key("timezone"))
             >>> print(result.unique)
 
-        Get the different labels with count used for time series created after 2020-01-01 in your CDF project:
+        Get the different units with count used for time series created after 2020-01-01 in your CDF project:
 
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes import filters
@@ -471,11 +471,11 @@ class TimeSeriesAPI(APIClient):
             >>> from datetime import datetime
             >>> c = CogniteClient()
             >>> created_after_2020 = filters.Range(TimeSeriesProperty.created_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
-            >>> result = c.time_series.aggregate_unique(TimeSeriesProperty.labels, advanced_filter=created_after_2020)
+            >>> result = c.time_series.aggregate_unique(TimeSeriesProperty.unit, advanced_filter=created_after_2020)
             >>> print(result.unique)
 
-        Get the different labels with count for time series updated after 2020-01-01 in your CDF project, but exclude all labels that
-        starts with "test":
+        Get the different units with count for time series updated after 2020-01-01 in your CDF project, but exclude all units that
+         start with "test":
 
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
@@ -484,7 +484,7 @@ class TimeSeriesAPI(APIClient):
             >>> a = aggregations
             >>> not_test = a.Not(a.Prefix("test"))
             >>> created_after_2020 = filters.Range(TimeSeriesProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
-            >>> result = c.time_series.aggregate_unique(TimeSeriesProperty.labels, advanced_filter=created_after_2020, aggregate_filter=not_test)
+            >>> result = c.time_series.aggregate_unique(TimeSeriesProperty.unit, advanced_filter=created_after_2020, aggregate_filter=not_test)
             >>> print(result.unique)
 
         """
