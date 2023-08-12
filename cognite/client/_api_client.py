@@ -42,6 +42,7 @@ from cognite.client.data_classes._base import (
     T_CogniteResource,
     T_CogniteResourceList,
 )
+from cognite.client.data_classes.filters import Filter
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import is_unlimited, split_into_chunks
 from cognite.client.utils._concurrency import TaskExecutor
@@ -372,7 +373,7 @@ class APIClient:
         partitions: Optional[int] = None,
         headers: Optional[Dict[str, Any]] = None,
         initial_cursor: Optional[str] = None,
-        advanced_filter: Optional[dict] = None,
+        advanced_filter: Optional[dict | Filter] = None,
     ) -> Union[Iterator[T_CogniteResourceList], Iterator[T_CogniteResource]]:
         if is_unlimited(limit):
             limit = None
@@ -420,7 +421,11 @@ class APIClient:
                     if filter:
                         body["filter"] = filter
                     if advanced_filter:
-                        body["advancedFilter"] = advanced_filter
+                        body["advancedFilter"] = (
+                            advanced_filter.dump(camel_case_property=True)
+                            if isinstance(advanced_filter, Filter)
+                            else advanced_filter
+                        )
                     if sort is not None:
                         body["sort"] = sort
                     res = self._post(url_path=url_path or resource_path + "/list", json=body, headers=headers)
@@ -499,7 +504,7 @@ class APIClient:
         sort: Optional[Sequence[str | dict]] = None,
         headers: Optional[Dict] = None,
         initial_cursor: Optional[str] = None,
-        advanced_filter: Optional[dict] = None,
+        advanced_filter: Optional[dict | Filter] = None,
     ) -> T_CogniteResourceList:
         if partitions:
             if not is_unlimited(limit):
@@ -545,7 +550,7 @@ class APIClient:
         filter: Optional[Dict] = None,
         other_params: Optional[Dict] = None,
         headers: Optional[Dict] = None,
-        advanced_filter: Optional[dict] = None,
+        advanced_filter: Optional[dict | Filter] = None,
     ) -> T_CogniteResourceList:
         def get_partition(partition: int) -> List[Dict[str, Any]]:
             next_cursor = None
@@ -560,7 +565,11 @@ class APIClient:
                         **(other_params or {}),
                     }
                     if advanced_filter:
-                        body["advancedFilter"] = advanced_filter
+                        body["advancedFilter"] = (
+                            advanced_filter.dump(camel_case_property=True)
+                            if isinstance(advanced_filter, Filter)
+                            else advanced_filter
+                        )
                     res = self._post(
                         url_path=(resource_path or self._RESOURCE_PATH) + "/list", json=body, headers=headers
                     )
