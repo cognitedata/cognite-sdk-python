@@ -2,20 +2,28 @@
 repos:
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     hooks:
-      -   id: ruff
-          args:
-            - --fix
-            - --exit-non-zero-on-fix
-            - --line-length=120
-            - --ignore=E731,E501,W605
+      - id: ruff
+        args:
+          - --fix
+          - --exit-non-zero-on-fix
+          - --line-length=120
+          - --ignore=E731,E501,W605
             # See https://beta.ruff.rs/docs/rules for an overview of ruff rules
-            - --select=E,W,F,I,T,RUF,TID,UP
-            - --fixable=E,W,F,I,T,RUF,TID,UP
-            - --target-version=py38
-            - --exclude=cognite/client/_proto,cognite/client/_proto_legacy
-    rev: v0.0.261
+          - --select=E,W,F,I,T,RUF,TID,UP
+          - --fixable=E,W,F,I,T,RUF,TID,UP
+          - --target-version=py38
+          - --exclude=cognite/client/_proto,cognite/client/_proto_legacy
+    rev: v0.0.284
 
-  - hooks:
+  - repo: https://github.com/jsh9/pydoclint
+    rev: 0.1.4
+    hooks:
+      - id: pydoclint
+        args: [--config=pyproject.toml]
+
+  - repo: https://github.com/psf/black
+    rev: 23.7.0
+    hooks:
       - id: black
         exclude: ^cognite/client/_proto.*$
         args:
@@ -25,8 +33,6 @@ repos:
           - py38
           - --include
           - \.py$
-    repo: https://github.com/psf/black
-    rev: 22.12.0
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
@@ -34,20 +40,22 @@ repos:
       - id: debug-statements
       - id: check-docstring-first
 
-  - hooks:
-    - id: mypy
-      name: mypy
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
       # Eventually we want to run mypy on the whole test code base. But for now we only enable it for data modeling tests.
-      entry: poetry run dmypy run -- cognite tests/tests_integration/test_api/test_data_modeling tests/tests_unit/test_data_classes/test_data_models
-      files: ^.*.(py|pyi)$
-      language: system
-      pass_filenames: false
-    repo: local
+        entry: |
+          poetry run dmypy run -- cognite tests/tests_integration/test_api/test_data_modeling
+          tests/tests_unit/test_data_classes/test_data_models
+        files: ^.*.(py|pyi)$
+        language: system
+        pass_filenames: false
 
-  - hooks:
+  - repo: local
+    hooks:
       - id: custom-checks
         name: custom repo checks
         entry: poetry run python scripts/run_checks.py
         language: system
         pass_filenames: false
-    repo: local
