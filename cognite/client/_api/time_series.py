@@ -541,9 +541,8 @@ class TimeSeriesAPI(APIClient):
                 >>> is_numeric = f.Equals("is_string", False)
                 >>> res = c.time_series.filter(filter=is_numeric, sort="external_id")
 
-            Note that you can check the
-            `API documentation <https://developer.cognite.com/api#tag/Time-series/operation/listTimeSeries>`_ to see
-            which properties you can filter on with which filters.
+            Note that you can check the API documentation above to see which properties you can filter on
+            with which filters.
 
             To make it easier to avoid spelling mistakes and easiser to look up available properties
             for filtering and sorting, you can also use the `TimeSeriesProperty` and `SortableTimeSeriesProperty` enums.

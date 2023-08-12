@@ -782,9 +782,8 @@ class AssetsAPI(APIClient):
                 >>> res = c.assets.filter(filter=in_timezone,
                 ...                       sort=("external_id", "asc"))
 
-            Note that you can check the
-            `API documentation <https://developer.cognite.com/api#tag/Assets/operation/listAssets>`_ to see
-            which properties you can filter on with which filters.
+            Note that you can check the API documentation above to see which properties you can filter on
+            with which filters.
 
             To make it easier to avoid spelling mistakes and easier to look up available properties
             for filtering and sorting, you can also use the `AssetProperty` and `SortableAssetProperty` Enums.

@@ -555,9 +555,8 @@ class EventsAPI(APIClient):
                 >>> res = c.events.filter(filter=f.And(is_workorder, has_failure),
                 ...                       sort=("start_time", "desc"))
 
-            Note that you can check the
-            `API documentation <https://developer.cognite.com/api#tag/Events/operation/advancedListEvents>`_ to see
-            which properties you can filter on with which filters.
+            Note that you can check the API documentation above to see which properties you can filter on
+            with which filters.
 
             To make it easier to avoid spelling mistakes and easiser to look up available properties
             for filtering and sorting, you can also use the `EventProperty` and `SortableEventProperty` enums.

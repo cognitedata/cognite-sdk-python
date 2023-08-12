@@ -591,12 +591,11 @@ class SequencesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> f = filters
                 >>> is_asset = f.Equals("asset_id", 123)
-                >>> is_efficency = f.Equals(["metadata", "type"], "efficiency")
-                >>> res = c.time_series.filter(filter=f.And(is_asset, is_efficency), sort="created_time")
+                >>> is_efficiency = f.Equals(["metadata", "type"], "efficiency")
+                >>> res = c.time_series.filter(filter=f.And(is_asset, is_efficiency), sort="created_time")
 
-            Note that you can check the
-            `API documentation <https://developer.cognite.com/api#tag/Sequences/operation/advancedListSequences>`_ to see
-            which properties you can filter on with which filters.
+            Note that you can check the API documentation above to see which properties you can filter on
+            with which filters.
 
             To make it easier to avoid spelling mistakes and easiser to look up available properties
             for filtering and sorting, you can also use the `SequenceProperty` and `SortableSequenceProperty` enums.
