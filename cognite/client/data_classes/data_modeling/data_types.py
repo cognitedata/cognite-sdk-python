@@ -94,7 +94,7 @@ class Text(ListablePropertyType):
 
 
 @dataclass
-class Primitive(ListablePropertyType):
+class Primitive(ListablePropertyType, ABC):
     _type = "primitive"
 
 
