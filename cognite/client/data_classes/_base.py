@@ -652,16 +652,9 @@ class Sort(CogniteResource):
         if isinstance(data, cls):
             return data
         elif isinstance(data, dict):
-            return cls(
-                property=data["property"],
-                order=data.get("order", "asc"),
-                nulls=data.get("nulls"),
-            )
+            return cls(property=data["property"], order=data.get("order", "asc"), nulls=data.get("nulls"))
         elif isinstance(data, tuple) and len(data) == 2 and data[1] in ["asc", "desc"]:
-            return cls(
-                property=data[0],
-                order=data[1],
-            )
+            return cls(property=data[0], order=data[1])
         elif (
             isinstance(data, tuple)
             and len(data) == 3
