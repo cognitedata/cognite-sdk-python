@@ -318,13 +318,13 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
         return notebook_display_with_fallback(self)
 
     @classmethod
-    def _load(
+    def load(
         cls: Type[T_CogniteResourceList],
         resource_list: Union[List, str],
         cognite_client: Optional[CogniteClient] = None,
     ) -> T_CogniteResourceList:
         if isinstance(resource_list, str):
-            return cls._load(json.loads(resource_list), cognite_client=cognite_client)
+            return cls.load(json.loads(resource_list), cognite_client=cognite_client)
         elif isinstance(resource_list, List):
             resources = [cls._RESOURCE.load(resource, cognite_client=cognite_client) for resource in resource_list]
             return cls(resources, cognite_client=cognite_client)

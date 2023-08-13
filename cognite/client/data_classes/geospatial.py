@@ -443,7 +443,7 @@ class GeospatialComputedResponse(CogniteResource):
         cls, resource: Union[str, Dict[str, Any]], cognite_client: Optional[CogniteClient] = None
     ) -> GeospatialComputedResponse:
         resource = json.loads(resource) if isinstance(resource, str) else resource
-        item_list = GeospatialComputedItemList._load(
+        item_list = GeospatialComputedItemList.load(
             cast("List[Any]", resource.get("items")), cognite_client=cognite_client
         )
         return cls(item_list, cognite_client=cognite_client)

@@ -318,13 +318,13 @@ class TestCogniteResourceList:
         pd.testing.assert_frame_equal(expected_df, actual_df)
 
     def test_load(self):
-        resource_list = MyResourceList._load([{"varA": 1, "varB": 2}, {"varA": 2, "varB": 3}, {"varA": 3}])
+        resource_list = MyResourceList.load([{"varA": 1, "varB": 2}, {"varA": 2, "varB": 3}, {"varA": 3}])
 
         assert {"var_a": 1, "var_b": 2} == resource_list[0].dump()
         assert [{"var_a": 1, "var_b": 2}, {"var_a": 2, "var_b": 3}, {"var_a": 3}] == resource_list.dump()
 
     def test_load_unknown_attribute(self):
-        assert [{"var_a": 1, "var_b": 2}] == MyResourceList._load([{"varA": 1, "varB": 2, "varC": 3}]).dump()
+        assert [{"var_a": 1, "var_b": 2}] == MyResourceList.load([{"varA": 1, "varB": 2, "varC": 3}]).dump()
 
     def test_indexing(self):
         resource_list = MyResourceList([MyResource(1, 2), MyResource(2, 3)])

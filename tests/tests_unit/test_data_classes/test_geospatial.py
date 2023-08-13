@@ -44,7 +44,7 @@ class TestFeature:
 
 class TestFeatureList:
     def test_load_feature_list(self):
-        features = FeatureList._load(
+        features = FeatureList.load(
             [
                 {
                     "firstName": "name",

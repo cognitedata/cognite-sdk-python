@@ -131,7 +131,7 @@ class EntityMatchingAPI(APIClient):
 
         Returns:
             ContextualizationJobList: List of jobs."""
-        return ContextualizationJobList._load(
+        return ContextualizationJobList.load(
             self._get(self._RESOURCE_PATH + "/jobs").json()["items"], cognite_client=self._cognite_client
         )
 

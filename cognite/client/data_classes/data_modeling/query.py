@@ -286,11 +286,11 @@ class QueryResult(UserDict):
             if not values:
                 instance[key] = default_by_reference[key]([])
             elif values[0].get("instanceType") == "node":
-                instance[key] = NodeListWithCursor._load(values)
+                instance[key] = NodeListWithCursor.load(values)
                 if cursors:
                     instance[key].cursor = cursors.get(key)
             elif values[0].get("instanceType") == "edge":
-                instance[key] = EdgeListWithCursor._load(values)
+                instance[key] = EdgeListWithCursor.load(values)
                 if cursors:
                     instance[key].cursor = cursors.get(key)
             else:

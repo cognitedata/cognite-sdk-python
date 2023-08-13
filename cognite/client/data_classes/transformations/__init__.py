@@ -548,9 +548,9 @@ class TransformationPreviewResult(CogniteResource):
     ) -> TransformationPreviewResult:
         instance = cast(TransformationPreviewResult, super().load(resource, cognite_client))
         if isinstance(instance.schema, dict) and (items := instance.schema.get("items")):
-            instance.schema = TransformationSchemaColumnList._load(items, cognite_client=cognite_client)
+            instance.schema = TransformationSchemaColumnList.load(items, cognite_client=cognite_client)
         elif isinstance(instance.schema, list):
-            instance.schema = TransformationSchemaColumnList._load(instance.schema, cognite_client=cognite_client)
+            instance.schema = TransformationSchemaColumnList.load(instance.schema, cognite_client=cognite_client)
         if isinstance(instance.results, dict) and (items := instance.results.get("items")):
             instance.results = items
         return instance

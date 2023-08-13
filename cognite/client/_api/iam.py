@@ -54,7 +54,7 @@ class GroupsAPI(APIClient):
                 >>> res = c.iam.groups.list()
         """
         res = self._get(self._RESOURCE_PATH, params={"all": all})
-        return GroupList._load(res.json()["items"])
+        return GroupList.load(res.json()["items"])
 
     def create(self, group: Union[Group, Sequence[Group]]) -> Union[Group, GroupList]:
         """`Create one or more groups. <https://developer.cognite.com/api#tag/Groups/operation/createGroups>`_
@@ -222,7 +222,7 @@ class SessionsAPI(APIClient):
         identifiers = IdentifierSequence.load(ids=id, external_ids=None)
         items = {"items": identifiers.as_dicts()}
 
-        return SessionList._load(self._post(self._RESOURCE_PATH + "/revoke", items).json()["items"])
+        return SessionList.load(self._post(self._RESOURCE_PATH + "/revoke", items).json()["items"])
 
     def list(self, status: Optional[str] = None) -> SessionList:
         """`List all sessions in the current project. <https://developer.cognite.com/api#tag/Sessions/operation/listSessions>`_

@@ -284,7 +284,7 @@ class FunctionsAPI(APIClient):
         ).dump(camel_case=True)
         res = self._post(url_path=f"{self._RESOURCE_PATH}/list", json={"filter": filter, "limit": limit})
 
-        return FunctionList._load(res.json()["items"], cognite_client=self._cognite_client)
+        return FunctionList.load(res.json()["items"], cognite_client=self._cognite_client)
 
     def retrieve(
         self, id: Optional[int] = None, external_id: Optional[str] = None
@@ -828,7 +828,7 @@ class FunctionCallsAPI(APIClient):
         function_id = _get_function_internal_id(self._cognite_client, identifier)
 
         resource_path = self._RESOURCE_PATH_LOGS.format(function_id, call_id)
-        return FunctionCallLog._load(self._get(resource_path).json()["items"])
+        return FunctionCallLog.load(self._get(resource_path).json()["items"])
 
 
 class FunctionSchedulesAPI(APIClient):
@@ -916,7 +916,7 @@ class FunctionSchedulesAPI(APIClient):
         ).dump(camel_case=True)
         res = self._post(url_path=f"{self._RESOURCE_PATH}/list", json={"filter": filter, "limit": limit})
 
-        return FunctionSchedulesList._load(res.json()["items"], cognite_client=self._cognite_client)
+        return FunctionSchedulesList.load(res.json()["items"], cognite_client=self._cognite_client)
 
     # TODO: Major version 7, remove 'function_external_id' which only worked when using API-keys.
     def create(

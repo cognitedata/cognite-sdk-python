@@ -54,7 +54,7 @@ class _NodeOrEdgeList(CogniteResourceList):
     _RESOURCE = (Node, Edge)  # type: ignore[assignment]
 
     @classmethod
-    def _load(
+    def load(
         cls, resource_list: list[dict[str, Any]] | str, cognite_client: Optional[CogniteClient] = None
     ) -> _NodeOrEdgeList:
         resource_list = json.loads(resource_list) if isinstance(resource_list, str) else resource_list
@@ -80,7 +80,7 @@ class _NodeOrEdgeApplyResultList(CogniteResourceList):
     _RESOURCE = (NodeApplyResult, EdgeApplyResult)  # type: ignore[assignment]
 
     @classmethod
-    def _load(
+    def load(
         cls, resource_list: list[dict[str, Any]] | str, cognite_client: Optional[CogniteClient] = None
     ) -> _NodeOrEdgeApplyResultList:
         resource_list = json.loads(resource_list) if isinstance(resource_list, str) else resource_list
@@ -603,7 +603,7 @@ class InstancesAPI(APIClient):
             body["filter"] = filter.dump() if isinstance(filter, Filter) else filter
 
         res = self._post(url_path=self._RESOURCE_PATH + "/search", json=body)
-        return list_cls._load(res.json()["items"], cognite_client=None)
+        return list_cls.load(res.json()["items"], cognite_client=None)
 
     def aggregate(
         self,
@@ -664,7 +664,7 @@ class InstancesAPI(APIClient):
             body["properties"] = properties
 
         res = self._post(url_path=self._RESOURCE_PATH + "/aggregate", json=body)
-        return InstanceAggregationResultList._load(res.json()["items"], cognite_client=None)
+        return InstanceAggregationResultList.load(res.json()["items"], cognite_client=None)
 
     @overload
     def histogram(

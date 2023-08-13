@@ -365,7 +365,7 @@ class ExtractionPipelineConfigsAPI(APIClient):
                 >>> res = c.extraction_pipelines.config.list("extId")
         """
         response = self._get("/extpipes/config/revisions", params={"externalId": external_id})
-        return ExtractionPipelineConfigRevisionList._load(response.json()["items"], cognite_client=self._cognite_client)
+        return ExtractionPipelineConfigRevisionList.load(response.json()["items"], cognite_client=self._cognite_client)
 
     def create(self, config: ExtractionPipelineConfig) -> ExtractionPipelineConfig:
         """`Create a new configuration revision <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/createExtPipeConfig>`
