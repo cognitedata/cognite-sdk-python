@@ -17,15 +17,19 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [7.0.0] - 2023-08-02 
-This release ensure that all CogniteResources have `.dump` and `._load` methods, and that calling these two methods
+## [7.0.0] - 2023-08-14 
+This release ensure that all CogniteResources have `.dump` and `.load` methods, and that calling these two methods
 in sequence produces an equal object to the original, for example, 
-`my_asset == Asset._load(my_asset.dump(camel_case=True)`. In addition, this ensures that the output of all `.dump` 
+`my_asset == Asset.load(my_asset.dump(camel_case=True)`. In addition, this ensures that the output of all `.dump` 
 methods is `json` and `yaml` serializable. 
+
+### Changed
+* The `CogniteResource._load` has been made public, i.e., it is now `CogniteResource.load`.
+* The `CogniteResourceList._load` has been made public, i.e., it is now `CogniteResourceList.load`.
 
 ### Added
 
-* Added `_load` implementation for `VisionResource`s: `ObjectDetection`, `TextRegion`, `AssetLink`, `BoundingBox`, 
+* Added `load` implementation for `VisionResource`s: `ObjectDetection`, `TextRegion`, `AssetLink`, `BoundingBox`, 
   `CdfRerourceRef`, `Polygon`, `Polyline`, `VisionExtractPredictions`, `FeatureParameters`.  
 * Added missing type annotations for `DiagramConvertItem` and `DiagramDetectItem` in `contextualization.
 * Missing `dump` and `_load` methods for `ClientCredentials`.
@@ -40,7 +44,7 @@ methods is `json` and `yaml` serializable.
 * `Asset.dump()` was not dumping attributes `geo_location` and `aggregates` to `json` serializable data structures.
 * In data modeling, `NodeOrEdgeData.load` method was not loading the `source` attribute to `ContainerId` or `ViewId`. This is now fixed.
 * In data modeling, the attribute `property` used in `Node` and `Edge` was not `yaml` serializable.
-* In `DatapointsArray`, `_load` method was not compatible with `.dump` method.
+* In `DatapointsArray`, `load` method was not compatible with `.dump` method.
 * in extraction pipelines, `ExtractionPipelineContact.dump` was not `yaml` serializable
 * `ExtractionPipeline.dump` attribute `contacts` was not `json` serializable.
 * `FileMetadata.dump` attributes `labels` and `geo_location` was not `json` serializable.
@@ -60,7 +64,7 @@ methods is `json` and `yaml` serializable.
   the appropriate data structure. In addition, `TransformationBlockedInfo` and `TransformationJob`
   were not dumped as `json` serializable.
 * `TransformationPreviewResult` was not dumping attribute `schema` as `yaml` serializable, and the 
-  `_load` and `dump` methods were not compatible.
+  `load` and `dump` methods were not compatible.
 * In transformations, `TransformationJob` `dump` was not `json` serializable, and attributes
   `destination` and `status` were not loaded into appropriate data structures. 
 * In transformations, `TransformationSchemaMapType` `dump` was not `json` serializable.
