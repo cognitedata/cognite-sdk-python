@@ -1014,7 +1014,7 @@ class BaseConcurrentRawTask(BaseConcurrentTask):
     def _create_empty_result(self) -> Union[Datapoints, DatapointsArray]:
         if not self.use_numpy:
             return Datapoints(**self.ts_info_dct, timestamp=[], value=[])
-        return DatapointsArray._load(
+        return DatapointsArray.load(
             {
                 **self.ts_info_dct,
                 "timestamp": np.array([], dtype=np.int64),
@@ -1033,7 +1033,7 @@ class BaseConcurrentRawTask(BaseConcurrentTask):
         if self.query.include_outside_points:
             self._include_outside_points_in_result()
         if self.use_numpy:
-            return DatapointsArray._load(
+            return DatapointsArray.load(
                 {
                     **self.ts_info_dct,
                     "timestamp": create_array_from_dps_container(self.ts_data),
@@ -1179,7 +1179,7 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
                 arr_dct["count"] = np.array([], dtype=np.int64)
             if self.has_non_count_aggs:
                 arr_dct.update({agg: np.array([], dtype=np.float64) for agg in self.float_aggs})
-            return DatapointsArray._load({**self.ts_info_dct, **arr_dct})
+            return DatapointsArray.load({**self.ts_info_dct, **arr_dct})
 
         lst_dct: Dict[str, List] = {"timestamp": []}
         if self.is_count_query:
@@ -1201,7 +1201,7 @@ class BaseConcurrentAggTask(BaseConcurrentTask):
             if self.has_non_count_aggs:
                 arr_lst = create_aggregates_arrays_from_dps_container(self.dps_data, len(self.float_aggs))
                 arr_dct.update(dict(zip(self.float_aggs, arr_lst)))
-            return DatapointsArray._load({**self.ts_info_dct, **arr_dct})
+            return DatapointsArray.load({**self.ts_info_dct, **arr_dct})
 
         lst_dct = {"timestamp": create_list_from_dps_container(self.ts_data)}
         if self.is_count_query:

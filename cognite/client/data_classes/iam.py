@@ -201,6 +201,6 @@ class ClientCredentials(CogniteResource):
         }
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: Optional[CogniteClient] = None) -> ClientCredentials:
+    def load(cls, resource: dict | str, cognite_client: Optional[CogniteClient] = None) -> ClientCredentials:
         resource = json.loads(resource) if isinstance(resource, str) else resource
         return cls(client_id=resource["clientId"], client_secret=resource["clientSecret"])

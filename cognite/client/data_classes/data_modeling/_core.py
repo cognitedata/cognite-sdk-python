@@ -27,15 +27,15 @@ class DataModelingResource(CogniteResource, ABC):
         return f"<{type(self).__qualname__}({', '.join(args)}) at {id(self):#x}>"
 
     @classmethod
-    def load(cls: Type[T_DataModelingResource], data: dict | str) -> T_DataModelingResource:
+    def _load(cls: Type[T_DataModelingResource], data: dict | str) -> T_DataModelingResource:
         data = json.loads(data) if isinstance(data, str) else data
         return cls(**convert_all_keys_to_snake_case(data))
 
     @classmethod
-    def _load(
+    def load(
         cls: Type[T_DataModelingResource], resource: dict | str, cognite_client: Optional[CogniteClient] = None
     ) -> T_DataModelingResource:
-        return cls.load(resource)
+        return cls._load(resource)
 
 
 T_DataModelingResource = TypeVar("T_DataModelingResource", bound=DataModelingResource)

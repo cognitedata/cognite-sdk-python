@@ -174,7 +174,7 @@ class FilesAPI(APIClient):
         )
         returned_file_metadata = res.json()
         upload_url = returned_file_metadata["uploadUrl"]
-        file_metadata = FileMetadata._load(returned_file_metadata)
+        file_metadata = FileMetadata.load(returned_file_metadata)
         return (file_metadata, upload_url)
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[FileMetadata]:
@@ -707,7 +707,7 @@ class FilesAPI(APIClient):
         self._http_client_with_retry.request(
             "PUT", upload_url, data=content, timeout=self._config.file_transfer_timeout, headers=headers
         )
-        return FileMetadata._load(returned_file_metadata)
+        return FileMetadata.load(returned_file_metadata)
 
     def retrieve_download_urls(
         self,

@@ -157,11 +157,10 @@ class Asset(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> Asset:
-        instance = super()._load(resource, cognite_client)
-        if isinstance(resource, Dict):
-            if instance.aggregates is not None:
-                instance.aggregates = AggregateResultItem(**instance.aggregates)
+    def load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> Asset:
+        instance = cast(Asset, super().load(resource, cognite_client))
+        if isinstance(resource, dict) and instance.aggregates is not None:
+            instance.aggregates = AggregateResultItem(**instance.aggregates)
         instance.labels = Label._load_list(instance.labels)
         if instance.geo_location is not None:
             instance.geo_location = GeoLocation._load(instance.geo_location)

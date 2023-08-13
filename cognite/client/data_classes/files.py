@@ -91,8 +91,8 @@ class FileMetadata(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> FileMetadata:
-        instance = super()._load(resource, cognite_client)
+    def load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> FileMetadata:
+        instance = super().load(resource, cognite_client)
         instance.labels = Label._load_list(instance.labels)
         if instance.geo_location is not None:
             instance.geo_location = GeoLocation._load(instance.geo_location)

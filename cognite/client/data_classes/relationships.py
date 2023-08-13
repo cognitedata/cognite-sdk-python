@@ -92,8 +92,8 @@ class Relationship(CogniteResource):
             raise TypeError(f"Invalid source or target '{resource_type}' in relationship")
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> Relationship:
-        instance: Relationship = cast(Relationship, super()._load(resource, cognite_client))
+    def load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> Relationship:
+        instance: Relationship = cast(Relationship, super().load(resource, cognite_client))
         if isinstance(instance.source, dict):
             instance.source = cls._convert_resource(instance.source, instance.source_type, cognite_client)
         if isinstance(instance.target, dict):
@@ -117,15 +117,15 @@ class Relationship(CogniteResource):
     ) -> dict[str, Any] | TimeSeries | Asset | Sequence | FileMetadata | Event:
         resource_type = resource_type.lower() if resource_type else resource_type
         if resource_type == "timeseries":
-            return TimeSeries._load(resource, cognite_client=cognite_client)
+            return TimeSeries.load(resource, cognite_client=cognite_client)
         if resource_type == "asset":
-            return Asset._load(resource, cognite_client=cognite_client)
+            return Asset.load(resource, cognite_client=cognite_client)
         if resource_type == "sequence":
-            return Sequence._load(resource, cognite_client=cognite_client)
+            return Sequence.load(resource, cognite_client=cognite_client)
         if resource_type == "file":
-            return FileMetadata._load(resource, cognite_client=cognite_client)
+            return FileMetadata.load(resource, cognite_client=cognite_client)
         if resource_type == "event":
-            return Event._load(resource, cognite_client=cognite_client)
+            return Event.load(resource, cognite_client=cognite_client)
         return resource
 
 

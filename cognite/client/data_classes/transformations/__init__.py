@@ -250,18 +250,18 @@ class Transformation(CogniteResource):
         return self._cognite_client.transformations.jobs.list(transformation_id=self.id)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> Transformation:
-        instance = cast(Transformation, super()._load(resource, cognite_client))
+    def load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> Transformation:
+        instance = cast(Transformation, super().load(resource, cognite_client))
         if isinstance(instance.destination, dict):
             instance.destination = _load_destination_dct(instance.destination)
 
         if isinstance(instance.running_job, dict):
             snake_dict = convert_all_keys_to_snake_case(instance.running_job)
-            instance.running_job = TransformationJob._load(snake_dict, cognite_client=cognite_client)
+            instance.running_job = TransformationJob.load(snake_dict, cognite_client=cognite_client)
 
         if isinstance(instance.last_finished_job, dict):
             snake_dict = convert_all_keys_to_snake_case(instance.last_finished_job)
-            instance.last_finished_job = TransformationJob._load(snake_dict, cognite_client=cognite_client)
+            instance.last_finished_job = TransformationJob.load(snake_dict, cognite_client=cognite_client)
 
         if isinstance(instance.blocked, dict):
             snake_dict = convert_all_keys_to_snake_case(instance.blocked)
@@ -270,7 +270,7 @@ class Transformation(CogniteResource):
 
         if isinstance(instance.schedule, dict):
             snake_dict = convert_all_keys_to_snake_case(instance.schedule)
-            instance.schedule = TransformationSchedule._load(snake_dict, cognite_client=cognite_client)
+            instance.schedule = TransformationSchedule.load(snake_dict, cognite_client=cognite_client)
 
         if isinstance(instance.source_session, dict):
             snake_dict = convert_all_keys_to_snake_case(instance.source_session)
@@ -543,10 +543,10 @@ class TransformationPreviewResult(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(
+    def load(
         cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None
     ) -> TransformationPreviewResult:
-        instance = cast(TransformationPreviewResult, super()._load(resource, cognite_client))
+        instance = cast(TransformationPreviewResult, super().load(resource, cognite_client))
         if isinstance(instance.schema, dict) and (items := instance.schema.get("items")):
             instance.schema = TransformationSchemaColumnList._load(items, cognite_client=cognite_client)
         elif isinstance(instance.schema, list):

@@ -67,10 +67,10 @@ class TransformationSchemaColumn(CogniteResource):
         return output
 
     @classmethod
-    def _load(
+    def load(
         cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None
     ) -> TransformationSchemaColumn:
-        instance = super()._load(resource, cognite_client)
+        instance = super().load(resource, cognite_client)
         if isinstance(instance.type, Dict):
             snake_dict = convert_all_keys_to_snake_case(instance.type)
             instance_type = instance.type.get("type")

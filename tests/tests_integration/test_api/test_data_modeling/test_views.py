@@ -215,7 +215,7 @@ class TestViewsAPI:
         # Act
         view_dumped = view.dump(camel_case=True)
         view_json = json.dumps(view_dumped)
-        view_loaded = View.load(view_json)
+        view_loaded = View._load(view_json)
 
         # Assert
         assert view == view_loaded

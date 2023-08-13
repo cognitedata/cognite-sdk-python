@@ -56,7 +56,7 @@ class ContainerCore(DataModelingResource):
         self.indexes = indexes
 
     @classmethod
-    def load(cls, resource: dict | str) -> ContainerCore:
+    def _load(cls, resource: dict | str) -> ContainerCore:
         data = json.loads(resource) if isinstance(resource, str) else resource
         if "constraints" in data:
             data["constraints"] = {k: Constraint.load(v) for k, v in data["constraints"].items()} or None
@@ -64,7 +64,7 @@ class ContainerCore(DataModelingResource):
             data["indexes"] = {k: Index.load(v) for k, v in data["indexes"].items()} or None
         if "properties" in data:
             data["properties"] = {k: ContainerProperty.load(v) for k, v in data["properties"].items()} or None
-        return cast(ContainerCore, super().load(data))
+        return cast(ContainerCore, super()._load(data))
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)

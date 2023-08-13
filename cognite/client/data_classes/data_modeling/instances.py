@@ -150,7 +150,7 @@ class InstanceApply(InstanceCore):
         return output
 
     @classmethod
-    def load(cls: Type[T_Instance_Apply], data: dict | str) -> T_Instance_Apply:
+    def _load(cls: Type[T_Instance_Apply], data: dict | str) -> T_Instance_Apply:
         data = data if isinstance(data, dict) else json.loads(data)
         data = convert_all_keys_to_snake_case(data)
         if cls is not InstanceApply:
@@ -281,11 +281,11 @@ class Instance(InstanceCore):
         self.properties: Properties = properties or Properties({})
 
     @classmethod
-    def load(cls: Type[T_Instance], data: dict | str) -> T_Instance:
+    def _load(cls: Type[T_Instance], data: dict | str) -> T_Instance:
         data = json.loads(data) if isinstance(data, str) else data
         if "properties" in data:
             data["properties"] = Properties.load(data["properties"])
-        res = super().load(data)
+        res = super()._load(data)
         return res
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:
@@ -344,7 +344,7 @@ class InstanceAggregationResult(DataModelingResource):
         self.group = group
 
     @classmethod
-    def load(cls, data: dict | str) -> InstanceAggregationResult:
+    def _load(cls, data: dict | str) -> InstanceAggregationResult:
         """
         Loads an instance from a json string or dictionary.
 
@@ -562,9 +562,9 @@ class EdgeApply(InstanceApply):
         return output
 
     @classmethod
-    def load(cls, data: dict | str) -> EdgeApply:
+    def _load(cls, data: dict | str) -> EdgeApply:
         data = json.loads(data) if isinstance(data, str) else data
-        instance = cast(EdgeApply, super().load(data))
+        instance = cast(EdgeApply, super()._load(data))
 
         instance.type = DirectRelationReference.load(data["type"])
         instance.start_node = DirectRelationReference.load(data["startNode"])
@@ -655,9 +655,9 @@ class Edge(Instance):
         return output
 
     @classmethod
-    def load(cls, data: dict | str) -> Edge:
+    def _load(cls, data: dict | str) -> Edge:
         data = json.loads(data) if isinstance(data, str) else data
-        instance = cast(Edge, super().load(data))
+        instance = cast(Edge, super()._load(data))
 
         instance.type = DirectRelationReference.load(data["type"])
         instance.start_node = DirectRelationReference.load(data["startNode"])

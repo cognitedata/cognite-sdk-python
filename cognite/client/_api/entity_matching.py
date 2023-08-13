@@ -123,7 +123,7 @@ class EntityMatchingAPI(APIClient):
         # NB no pagination support yet
         models = self._post(self._RESOURCE_PATH + "/list", json={"filter": filter, "limit": limit}).json()["items"]
         return EntityMatchingModelList(
-            [EntityMatchingModel._load(model, cognite_client=self._cognite_client) for model in models]
+            [EntityMatchingModel.load(model, cognite_client=self._cognite_client) for model in models]
         )
 
     def list_jobs(self) -> ContextualizationJobList:
@@ -203,7 +203,7 @@ class EntityMatchingAPI(APIClient):
                 "ignoreMissingFields": ignore_missing_fields,
             },
         )
-        return EntityMatchingModel._load(response.json(), cognite_client=self._cognite_client)
+        return EntityMatchingModel.load(response.json(), cognite_client=self._cognite_client)
 
     def predict(
         self,

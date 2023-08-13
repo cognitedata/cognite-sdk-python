@@ -159,7 +159,7 @@ class ContextualizationJob(CogniteResource):
         status_path: str,
         cognite_client: Any,
     ) -> T_ContextualizationJob:
-        obj = cls._load({**data, "jobToken": headers.get("X-Job-Token")}, cognite_client=cognite_client)
+        obj = cls.load({**data, "jobToken": headers.get("X-Job-Token")}, cognite_client=cognite_client)
         obj._status_path = status_path
         return obj
 
@@ -290,7 +290,7 @@ class EntityMatchingModel(CogniteResource):
         response = self._cognite_client.entity_matching._post(
             self._RESOURCE_PATH + "/refit", json={"trueMatches": true_matches, "id": self.id}
         )
-        return self._load(response.json(), cognite_client=self._cognite_client)
+        return self.load(response.json(), cognite_client=self._cognite_client)
 
     @staticmethod
     def _flatten_entity(entity: Union[dict, CogniteResource]) -> Dict:
@@ -440,14 +440,14 @@ class DiagramConvertResults(ContextualizationJob):
             raise IndexError(f"File with (external) id {find_id} not found in results")
         if len(found) != 1:
             raise IndexError(f"Found multiple results for file with (external) id {find_id}, use .items instead")
-        return DiagramConvertItem._load(found[0], cognite_client=self._cognite_client)
+        return DiagramConvertItem.load(found[0], cognite_client=self._cognite_client)
 
     @property
     def items(self) -> Optional[List[DiagramConvertItem]]:
         """returns a list of all results by file"""
         if JobStatus(self.status) is JobStatus.COMPLETED:
             self._items = [
-                DiagramConvertItem._load(item, cognite_client=self._cognite_client) for item in self.result["items"]
+                DiagramConvertItem.load(item, cognite_client=self._cognite_client) for item in self.result["items"]
             ]
         return self._items
 
@@ -507,14 +507,14 @@ class DiagramDetectResults(ContextualizationJob):
             raise IndexError(f"File with (external) id {find_id} not found in results")
         if len(found) != 1:
             raise IndexError(f"Found multiple results for file with (external) id {find_id}, use .items instead")
-        return DiagramDetectItem._load(found[0], cognite_client=self._cognite_client)
+        return DiagramDetectItem.load(found[0], cognite_client=self._cognite_client)
 
     @property
     def items(self) -> Optional[List[DiagramDetectItem]]:
         """Returns a list of all results by file"""
         if JobStatus(self.status) is JobStatus.COMPLETED:
             self._items = [
-                DiagramDetectItem._load(item, cognite_client=self._cognite_client) for item in self.result["items"]
+                DiagramDetectItem.load(item, cognite_client=self._cognite_client) for item in self.result["items"]
             ]
         return self._items
 
@@ -559,25 +559,24 @@ class VisionExtractPredictions(VisionResource):
     personal_protective_equipment_predictions: Optional[List[ObjectDetection]] = None
 
     @classmethod
-    def _load(cls, data: str | dict[str, Any], cognite_client: Any = None) -> VisionExtractPredictions:
+    def load(cls, data: str | dict[str, Any], cognite_client: Any = None) -> VisionExtractPredictions:
         resource = json.loads(data) if isinstance(data, str) else data
         return cls(
             text_predictions=[
-                TextRegion._load(text_prediction) for text_prediction in resource.get("textPredictions", [])
+                TextRegion.load(text_prediction) for text_prediction in resource.get("textPredictions", [])
             ],
             asset_tag_predictions=[
-                AssetLink._load(asset_tag_prediction)
-                for asset_tag_prediction in resource.get("assetTagPredictions", [])
+                AssetLink.load(asset_tag_prediction) for asset_tag_prediction in resource.get("assetTagPredictions", [])
             ],
             industrial_object_predictions=[
-                ObjectDetection._load(industrial_object_prediction)
+                ObjectDetection.load(industrial_object_prediction)
                 for industrial_object_prediction in resource.get("industrialObjectPredictions", [])
             ],
             people_predictions=[
-                ObjectDetection._load(people_prediction) for people_prediction in resource.get("peoplePredictions", [])
+                ObjectDetection.load(people_prediction) for people_prediction in resource.get("peoplePredictions", [])
             ],
             personal_protective_equipment_predictions=[
-                ObjectDetection._load(personal_protective_equipment_prediction)
+                ObjectDetection.load(personal_protective_equipment_prediction)
                 for personal_protective_equipment_prediction in resource.get(
                     "personalProtectiveEquipmentPredictions", []
                 )
@@ -727,7 +726,7 @@ class FeatureParameters(VisionResource):
     personal_protective_equipment_detection_parameters: Optional[PersonalProtectiveEquipmentDetectionParameters] = None
 
     @classmethod
-    def _load(cls, data: str | dict[str, Any], cognite_client: Any = None) -> FeatureParameters:
+    def load(cls, data: str | dict[str, Any], cognite_client: Any = None) -> FeatureParameters:
         data = json.loads(data) if isinstance(data, str) else data
         return cls(
             text_detection_parameters=load_resource(data, TextDetectionParameters, "textDetectionParameters"),
@@ -778,9 +777,9 @@ class VisionExtractItem(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> VisionExtractItem:
+    def load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> VisionExtractItem:
         """Override CogniteResource._load so that we can convert the dicts returned by the API to data classes"""
-        extracted_item = super()._load(resource, cognite_client=cognite_client)
+        extracted_item = super().load(resource, cognite_client=cognite_client)
         if isinstance(extracted_item.predictions, dict):
             extracted_item._predictions_dict = extracted_item.predictions
             extracted_item.predictions = cls._process_predictions_dict(extracted_item._predictions_dict)
@@ -829,14 +828,14 @@ class VisionExtractJob(VisionJob):
         found = [item for item in self.result["items"] if item.get("fileId") == file_id]
         if not found:
             raise IndexError(f"File with id {file_id} not found in results")
-        return VisionExtractItem._load(found[0], cognite_client=self._cognite_client)
+        return VisionExtractItem.load(found[0], cognite_client=self._cognite_client)
 
     @property
     def items(self) -> Optional[List[VisionExtractItem]]:
         """Returns a list of all predictions by file"""
         if JobStatus(self.status) is JobStatus.COMPLETED:
             self._items = [
-                VisionExtractItem._load(item, cognite_client=self._cognite_client) for item in self.result["items"]
+                VisionExtractItem.load(item, cognite_client=self._cognite_client) for item in self.result["items"]
             ]
         return self._items
 

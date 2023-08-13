@@ -270,7 +270,7 @@ class APIClient:
                 params=params,
                 headers=headers,
             )
-            return cls._load(res.json(), cognite_client=self._cognite_client)
+            return cls.load(res.json(), cognite_client=self._cognite_client)
         except CogniteAPIError as e:
             if e.code != 404:
                 raise
@@ -350,7 +350,7 @@ class APIClient:
 
         if identifiers.is_singleton():
             if retrieved_items:
-                return resource_cls._load(retrieved_items[0], cognite_client=self._cognite_client)
+                return resource_cls.load(retrieved_items[0], cognite_client=self._cognite_client)
             else:
                 # Not all APIs (such as the Data Modeling API) return an error when unknown ids are provided,
                 # so we need to handle the unknown singleton identifier case here as well.
@@ -428,7 +428,7 @@ class APIClient:
 
                 if not chunk_size:
                     for item in last_received_items:
-                        yield resource_cls._load(item, cognite_client=self._cognite_client)
+                        yield resource_cls.load(item, cognite_client=self._cognite_client)
                 else:
                     current_items.extend(last_received_items)
                     if len(current_items) >= chunk_size:
@@ -477,7 +477,7 @@ class APIClient:
                 raise tasks_summary.exceptions[0]
 
             for item in tasks_summary.joined_results():
-                yield resource_cls._load(item, cognite_client=self._cognite_client)
+                yield resource_cls.load(item, cognite_client=self._cognite_client)
 
             # Remove None from cursor dict
             next_cursors = {partition: next_cursors[partition] for partition in next_cursors if next_cursors[partition]}
@@ -672,7 +672,7 @@ class APIClient:
 
         def unwrap_element(el: T) -> Union[CogniteResource, T]:
             if isinstance(el, dict):
-                return input_resource_cls._load(el, cognite_client=self._cognite_client)  # type: ignore[union-attr]
+                return input_resource_cls.load(el, cognite_client=self._cognite_client)  # type: ignore[union-attr]
             else:
                 return el
 
@@ -692,7 +692,7 @@ class APIClient:
         created_resources = summary.joined_results(lambda res: res.json()["items"])
 
         if single_item:
-            return resource_cls._load(created_resources[0], cognite_client=self._cognite_client)
+            return resource_cls.load(created_resources[0], cognite_client=self._cognite_client)
         return list_cls._load(created_resources, cognite_client=self._cognite_client)
 
     def _delete_multiple(
@@ -805,7 +805,7 @@ class APIClient:
         updated_items = tasks_summary.joined_results(lambda res: res.json()["items"])
 
         if single_item:
-            return resource_cls._load(updated_items[0], cognite_client=self._cognite_client)
+            return resource_cls.load(updated_items[0], cognite_client=self._cognite_client)
         return list_cls._load(updated_items, cognite_client=self._cognite_client)
 
     def _upsert_multiple(

@@ -36,7 +36,7 @@ class TestAPIClientUpsert:
             end_time=1,
             subtype="mySubType2",
         )
-        preexisting_update = Event._load(preexisting.dump(camel_case=True))
+        preexisting_update = Event.load(preexisting.dump(camel_case=True))
         preexisting_update.subtype = "mySubType1"
 
         try:
@@ -95,7 +95,7 @@ class TestAPIClientUpsert:
             end_time=1,
             subtype="mySubType2",
         )
-        existing_update = Event._load(existing.dump(camel_case=True))
+        existing_update = Event.load(existing.dump(camel_case=True))
         existing_update.subtype = "mySubType1"
 
         try:
@@ -135,7 +135,7 @@ class TestAPIClientUpsert:
             end_time=1,
             subtype="mySubType2",
         )
-        preexisting_update = Event._load(preexisting.dump(camel_case=True))
+        preexisting_update = Event.load(preexisting.dump(camel_case=True))
         preexisting_update.subtype = "mySubType1"
 
         try:
@@ -174,7 +174,7 @@ class TestAPIClientUpsert:
             end_time=1,
             subtype="mySubType2",
         )
-        preexisting_update = Event._load(preexisting.dump(camel_case=True))
+        preexisting_update = Event.load(preexisting.dump(camel_case=True))
         preexisting_update.type = "invalid_length" * 64
 
         try:
@@ -212,7 +212,7 @@ class TestAPIClientUpsert:
             end_time=1,
             subtype="mySubType2",
         )
-        preexisting_update = Event._load(preexisting.dump(camel_case=True))
+        preexisting_update = Event.load(preexisting.dump(camel_case=True))
         preexisting_update.type = "mySubType42"
 
         try:
@@ -285,7 +285,7 @@ class TestAPIClientUpsert:
             external_id="",
             name="test_upsert_with_empty_external_id",
         )
-        update_asset = Asset._load(existing_asset.dump(camel_case=True))
+        update_asset = Asset.load(existing_asset.dump(camel_case=True))
         update_asset.name = "test_upsert_with_empty_external_id_updated"
 
         try:

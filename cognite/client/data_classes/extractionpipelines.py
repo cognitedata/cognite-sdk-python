@@ -121,8 +121,8 @@ class ExtractionPipeline(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> ExtractionPipeline:
-        instance = cast(ExtractionPipeline, super()._load(resource, cognite_client))
+    def load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> ExtractionPipeline:
+        instance = cast(ExtractionPipeline, super().load(resource, cognite_client))
         if instance.contacts:
             instance.contacts = [ExtractionPipelineContact._load(contact) for contact in instance.contacts]
         return instance
@@ -260,8 +260,8 @@ class ExtractionPipelineRun(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> ExtractionPipelineRun:
-        obj = super()._load(resource, cognite_client)
+    def load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> ExtractionPipelineRun:
+        obj = super().load(resource, cognite_client)
         # Note: The API ONLY returns IDs, but if they chose to change this, we're ready:
         if isinstance(resource, dict):
             obj.extpipe_external_id = resource.get("externalId")

@@ -259,9 +259,9 @@ class TemplateInstance(CogniteResource):
         }
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> TemplateInstance:
+    def load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> TemplateInstance:
         if isinstance(resource, str):
-            return cls._load(json.loads(resource), cognite_client=cognite_client)
+            return cls.load(json.loads(resource), cognite_client=cognite_client)
         elif isinstance(resource, Dict):
             instance = cls(cognite_client=cognite_client)
             for key, value in resource.items():
@@ -283,7 +283,7 @@ class TemplateInstance(CogniteResource):
 
     @staticmethod
     def _field_resolver_load(resource: Dict, cognite_client: Optional[CogniteClient] = None) -> CogniteResource:
-        return TemplateInstance.field_resolver_mapper[resource["type"]]._load(resource, cognite_client)
+        return TemplateInstance.field_resolver_mapper[resource["type"]].load(resource, cognite_client)
 
 
 class TemplateInstanceUpdate(CogniteUpdate):
@@ -392,15 +392,15 @@ class View(CogniteResource):
             return value
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> View:
+    def load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> View:
         if isinstance(resource, str):
-            return cls._load(json.loads(resource), cognite_client=cognite_client)
+            return cls.load(json.loads(resource), cognite_client=cognite_client)
         elif isinstance(resource, Dict):
             instance = cls(cognite_client=cognite_client)
             for key, value in resource.items():
                 snake_case_key = to_snake_case(key)
                 if hasattr(instance, snake_case_key):
-                    value = value if key != "source" else Source._load(value, cognite_client)
+                    value = value if key != "source" else Source.load(value, cognite_client)
                     setattr(instance, snake_case_key, value)
             return instance
         raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
@@ -415,9 +415,9 @@ class ViewResolveItem(UserDict, CogniteResource):
         return self.data
 
     @classmethod
-    def _load(cls, data: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> ViewResolveItem:
+    def load(cls, data: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> ViewResolveItem:
         if isinstance(data, str):
-            return cls._load(json.loads(data), cognite_client=cognite_client)
+            return cls.load(json.loads(data), cognite_client=cognite_client)
         elif isinstance(data, Dict):
             return cls(data, cognite_client=cognite_client)
 
@@ -454,11 +454,11 @@ class GraphQlResponse(CogniteResource):
         return output
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> GraphQlResponse:
+    def load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> GraphQlResponse:
         resource = json.loads(resource) if isinstance(resource, str) else resource
         return cls(
             data=resource.get("data"),
-            errors=[GraphQlError._load(error) for error in resource.get("errors", [])],
+            errors=[GraphQlError.load(error) for error in resource.get("errors", [])],
             cognite_client=cognite_client,
         )
 

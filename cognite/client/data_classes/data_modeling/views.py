@@ -45,14 +45,14 @@ class ViewCore(DataModelingResource):
         self.version = version
 
     @classmethod
-    def load(cls, resource: dict | str) -> ViewCore:
+    def _load(cls, resource: dict | str) -> ViewCore:
         data = json.loads(resource) if isinstance(resource, str) else resource
         if "implements" in data:
             data["implements"] = [ViewId.load(v) for v in data["implements"]] or None
         if "filter" in data:
             data["filter"] = Filter.load(data["filter"])
 
-        return cast(ViewCore, super().load(data))
+        return cast(ViewCore, super()._load(data))
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -101,12 +101,12 @@ class ViewApply(ViewCore):
         self.properties = properties
 
     @classmethod
-    def load(cls, resource: dict | str) -> ViewApply:
+    def _load(cls, resource: dict | str) -> ViewApply:
         data = json.loads(resource) if isinstance(resource, str) else resource
         if "properties" in data and isinstance(data["properties"], dict):
             data["properties"] = {k: ViewPropertyApply.load(v) for k, v in data["properties"].items()} or None
 
-        return cast(ViewApply, super().load(data))
+        return cast(ViewApply, super()._load(data))
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -169,12 +169,12 @@ class View(ViewCore):
         self.created_time = created_time
 
     @classmethod
-    def load(cls, resource: dict | str) -> View:
+    def _load(cls, resource: dict | str) -> View:
         data = json.loads(resource) if isinstance(resource, str) else resource
         if "properties" in data and isinstance(data["properties"], dict):
             data["properties"] = {k: ViewProperty.load(v) for k, v in data["properties"].items()} or None
 
-        return cast(View, super().load(data))
+        return cast(View, super()._load(data))
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = super().dump(camel_case)

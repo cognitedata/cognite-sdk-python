@@ -64,7 +64,7 @@ class DatapointSubscriptionCore(CogniteResource):
         self.description = description
 
     @classmethod
-    def _load(
+    def load(
         cls: Type[T_CogniteResource], resource: dict | str, cognite_client: Optional[CogniteClient] = None
     ) -> T_CogniteResource:
         resource = json.loads(resource) if isinstance(resource, str) else resource
@@ -215,7 +215,7 @@ class TimeSeriesID(CogniteResource):
         self.external_id = external_id
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: Optional[CogniteClient] = None) -> TimeSeriesID:
+    def load(cls, resource: dict | str, cognite_client: Optional[CogniteClient] = None) -> TimeSeriesID:
         resource = json.loads(resource) if isinstance(resource, str) else resource
         return cls(id=resource["id"], external_id=resource.get("externalId"))
 
@@ -252,7 +252,7 @@ class DatapointsUpdate:
     def _load(cls, data: dict[str, Any]) -> DatapointsUpdate:
         datapoints: dict[str, Any] = {"upserts": Datapoints(), "deletes": []}
         if (values := data["upserts"]) and ("value" in values[0]):
-            datapoints["upserts"] = Datapoints._load(
+            datapoints["upserts"] = Datapoints.load(
                 {
                     "id": data["timeSeries"]["id"],
                     "externalId": data["timeSeries"].get("externalId"),
@@ -263,7 +263,7 @@ class DatapointsUpdate:
         if values := data["deletes"]:
             datapoints["deletes"] = [DataDeletion._load(value) for value in values]
         return cls(
-            time_series=TimeSeriesID._load(data["timeSeries"], None),
+            time_series=TimeSeriesID.load(data["timeSeries"], None),
             **datapoints,
         )
 
@@ -284,8 +284,8 @@ class SubscriptionTimeSeriesUpdate:
     @classmethod
     def _load(cls, data: dict[str, Any]) -> SubscriptionTimeSeriesUpdate:
         return cls(
-            added=[TimeSeriesID._load(added) for added in data.get("added", [])],
-            removed=[TimeSeriesID._load(added) for added in data.get("removed", [])],
+            added=[TimeSeriesID.load(added) for added in data.get("added", [])],
+            removed=[TimeSeriesID.load(added) for added in data.get("removed", [])],
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:

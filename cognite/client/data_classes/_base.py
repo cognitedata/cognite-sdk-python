@@ -119,7 +119,7 @@ class CogniteResource:
         return basic_instance_dump(self, camel_case=camel_case)
 
     @classmethod
-    def _load(
+    def load(
         cls: Type[T_CogniteResource], resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None
     ) -> T_CogniteResource:
         resource = json.loads(resource) if isinstance(resource, str) else resource
@@ -175,7 +175,7 @@ T_CogniteResource = TypeVar("T_CogniteResource", bound=CogniteResource)
 
 def load_resource(dct: dict[str, Any], cls: Type[T_CogniteResource], key: str) -> T_CogniteResource | None:
     if (res := dct.get(key)) is not None:
-        return cls._load(res)
+        return cls.load(res)
     return None
 
 
@@ -326,7 +326,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
         if isinstance(resource_list, str):
             return cls._load(json.loads(resource_list), cognite_client=cognite_client)
         elif isinstance(resource_list, List):
-            resources = [cls._RESOURCE._load(resource, cognite_client=cognite_client) for resource in resource_list]
+            resources = [cls._RESOURCE.load(resource, cognite_client=cognite_client) for resource in resource_list]
             return cls(resources, cognite_client=cognite_client)
 
 

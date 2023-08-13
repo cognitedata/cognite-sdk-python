@@ -102,7 +102,7 @@ class Label(dict):
         return [convert_label(label) for label in labels]
 
     @classmethod
-    def _load(cls, raw_label: Dict[str, Any]) -> Label:
+    def load(cls, raw_label: Dict[str, Any]) -> Label:
         return cls(external_id=raw_label["externalId"])
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:

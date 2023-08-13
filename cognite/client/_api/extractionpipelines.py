@@ -345,7 +345,7 @@ class ExtractionPipelineConfigsAPI(APIClient):
         response = self._get(
             "/extpipes/config", params={"externalId": external_id, "activeAtTime": active_at_time, "revision": revision}
         )
-        return ExtractionPipelineConfig._load(response.json(), cognite_client=self._cognite_client)
+        return ExtractionPipelineConfig.load(response.json(), cognite_client=self._cognite_client)
 
     def list(self, external_id: str) -> ExtractionPipelineConfigRevisionList:
         """`Retrieve all configuration revisions from an extraction pipeline <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/listExtPipeConfigRevisions>`
@@ -386,7 +386,7 @@ class ExtractionPipelineConfigsAPI(APIClient):
                 >>> res = c.extraction_pipelines.config.create(ExtractionPipelineConfig(external_id="extId", config="my config contents"))
         """
         response = self._post("/extpipes/config", json=config.dump(camel_case=True))
-        return ExtractionPipelineConfig._load(response.json(), cognite_client=self._cognite_client)
+        return ExtractionPipelineConfig.load(response.json(), cognite_client=self._cognite_client)
 
     def revert(self, external_id: str, revision: int) -> ExtractionPipelineConfig:
         """`Revert to a previous configuration revision <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/createExtPipeConfig>`
@@ -407,4 +407,4 @@ class ExtractionPipelineConfigsAPI(APIClient):
                 >>> res = c.extraction_pipelines.config.revert("extId", 5)
         """
         response = self._post("/extpipes/config/revert", json={"externalId": external_id, "revision": revision})
-        return ExtractionPipelineConfig._load(response.json(), cognite_client=self._cognite_client)
+        return ExtractionPipelineConfig.load(response.json(), cognite_client=self._cognite_client)

@@ -183,8 +183,8 @@ class ThreeDModelRevision(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> ThreeDModelRevision:
-        instance = cast(ThreeDModelRevision, super()._load(resource, cognite_client))
+    def load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> ThreeDModelRevision:
+        instance = cast(ThreeDModelRevision, super().load(resource, cognite_client))
         if isinstance(instance.camera, dict):
             instance.camera = RevisionCameraProperties(**instance.camera)
         return instance
@@ -302,8 +302,8 @@ class ThreeDNode(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> ThreeDNode:
-        instance = cast(ThreeDNode, super()._load(resource, cognite_client))
+    def load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> ThreeDNode:
+        instance = cast(ThreeDNode, super().load(resource, cognite_client))
         if isinstance(instance.bounding_box, dict):
             instance.bounding_box = BoundingBox3D(**instance.bounding_box)
         return instance

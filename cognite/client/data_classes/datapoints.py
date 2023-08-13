@@ -216,7 +216,7 @@ class DatapointsArray(CogniteResource):
         }
 
     @classmethod
-    def _load(cls, dps_dct: Union[Dict, str], cognite_client: CogniteClient | None = None) -> DatapointsArray:
+    def load(cls, dps_dct: Union[Dict, str], cognite_client: CogniteClient | None = None) -> DatapointsArray:
         dps_dct = json.loads(dps_dct) if isinstance(dps_dct, str) else dps_dct
         if "timestamp" in dps_dct:
             assert isinstance(dps_dct["timestamp"], np.ndarray)  # mypy love
@@ -586,7 +586,7 @@ class Datapoints(CogniteResource):
         return df
 
     @classmethod
-    def _load(  # type: ignore [override]
+    def load(  # type: ignore [override]
         cls,
         dps_object: Dict[str, Any],
         expected_fields: Optional[List[str]] = None,
