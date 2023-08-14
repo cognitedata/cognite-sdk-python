@@ -49,9 +49,8 @@ class TestViewPropertyDefinition:
         assert actual.dump() == {
             "container": {"external_id": "myExternalId", "space": "mySpace", "type": "container"},
             "container_property_identifier": "name",
-            "description": None,
             "name": "fullName",
-            "source": {"space": "mySpace", "external_id": "myExternalId", "version": "myVersion"},
+            "source": {"space": "mySpace", "external_id": "myExternalId", "version": "myVersion", "type": "view"},
         }
 
     def test_load_dump_connection_property(self) -> None:
@@ -84,9 +83,7 @@ class TestViewPropertyDefinition:
         actual = ViewPropertyApply.load(input)
 
         assert actual.dump() == {
-            "description": None,
             "direction": "outwards",
-            "edge_source": None,
             "name": "fullName",
             "source": {"external_id": "myExternalId", "space": "mySpace", "type": "view", "version": "myVersion"},
             "type": {"external_id": "myExternalId", "space": "mySpace"},

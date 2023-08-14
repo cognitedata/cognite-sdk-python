@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
-from typing import Any, Dict, Literal, Optional, Union, cast
+from typing import Any, Dict, Literal, Optional, TypeVar, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -94,7 +94,7 @@ class ViewApply(ViewCore):
         name: Optional[str] = None,
         filter: Filter | None = None,
         implements: Optional[list[ViewId]] = None,
-        properties: Optional[dict[str, MappedPropertyApply | ConnectionDefinition]] = None,
+        properties: Optional[dict[str, MappedPropertyApply | ConnectionDefinitionApply]] = None,
     ):
         validate_data_modeling_identifier(space, external_id)
         super().__init__(space, external_id, version, description, name, filter, implements)
@@ -189,9 +189,15 @@ class View(ViewCore):
         Returns:
             ViewApply: The view apply.
         """
-        properties: Optional[Dict[str, Union[MappedPropertyApply, ConnectionDefinition]]] = None
+        properties: Optional[Dict[str, Union[MappedPropertyApply, ConnectionDefinitionApply]]] = None
         if self.properties:
-            properties = {k: (v.as_apply() if isinstance(v, MappedProperty) else v) for k, v in self.properties.items()}
+            for k, v in self.properties.items():
+                if isinstance(v, (MappedProperty, SingleHopConnectionDefinition)):
+                    if properties is None:
+                        properties = {}
+                    properties[k] = v.as_apply()
+                else:
+                    raise NotImplementedError(f"Unsupported conversion to apply for property type {type(v)}")
 
         return ViewApply(
             space=self.space,
@@ -305,10 +311,19 @@ class MappedPropertyApply(ViewPropertyApply):
         return output
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        output = asdict(self)
-        output["container"] = self.container.dump(camel_case)
-        if camel_case:
-            return convert_all_keys_to_camel_case_recursive(output)
+        output: dict[str, Any] = {
+            "container": self.container.dump(camel_case, include_type=True),
+            (
+                "containerPropertyIdentifier" if camel_case else "container_property_identifier"
+            ): self.container_property_identifier,
+        }
+        if self.name is not None:
+            output["name"] = self.name
+        if self.description is not None:
+            output["description"] = self.description
+        if self.source is not None:
+            output["source"] = self.source.dump(camel_case, include_type=True)
+
         return output
 
 
@@ -396,10 +411,23 @@ class SingleHopConnectionDefinition(ConnectionDefinition):
 
         return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
 
+    def as_apply(self) -> SingleHopConnectionDefinitionApply:
+        return SingleHopConnectionDefinitionApply(
+            type=self.type,
+            source=self.source,
+            name=self.name,
+            description=self.description,
+            edge_source=self.edge_source,
+            direction=self.direction,
+        )
+
 
 @dataclass
 class ConnectionDefinitionApply(ViewPropertyApply):
     ...
+
+
+T_ConnectionDefinitionApply = TypeVar("T_ConnectionDefinitionApply", bound=ConnectionDefinitionApply)
 
 
 @dataclass
@@ -423,15 +451,18 @@ class SingleHopConnectionDefinitionApply(ConnectionDefinitionApply):
         return output
 
     def dump(self, camel_case: bool = False) -> dict:
-        output = asdict(self)
+        output: dict[str, Any] = {
+            "type": self.type.dump(camel_case),
+            "source": self.source.dump(camel_case, include_type=True),
+            "direction": self.direction,
+        }
+        if self.name is not None:
+            output["name"] = self.name
+        if self.description is not None:
+            output["description"] = self.description
+        if self.edge_source is not None:
+            output[("edgeSource" if camel_case else "edge_source")] = self.edge_source.dump(
+                camel_case, include_type=True
+            )
 
-        if self.type:
-            output["type"] = self.type.dump(camel_case)
-
-        if self.source:
-            output["source"] = self.source.dump(camel_case)
-
-        if self.edge_source:
-            output["edge_source"] = self.edge_source.dump(camel_case)
-
-        return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
+        return output
