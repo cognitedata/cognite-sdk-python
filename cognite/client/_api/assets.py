@@ -292,7 +292,6 @@ class AssetsAPI(APIClient):
                 To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions.
                 When using more than 10 partitions, actual throughout decreases.
                 In future releases of the APIs, CDF may reject requests with more than 10 partitions.
-
             limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
 

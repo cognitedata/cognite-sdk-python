@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from scripts.custom_checks.docstrings import format_docstrings
 from scripts.custom_checks.version import (
     changelog_entry_date,
     changelog_entry_version_matches,
@@ -14,6 +15,7 @@ def run_checks() -> list[str | None]:
         changelog_entry_version_matches(),
         changelog_entry_date(),
         version_number_is_increasing(),
+        format_docstrings(),
     ]
 
 
