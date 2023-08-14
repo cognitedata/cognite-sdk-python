@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
-from typing import Any, Dict, Literal, Optional, Union, cast
+from typing import Any, Dict, Literal, Optional, TypeVar, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -94,7 +94,7 @@ class ViewApply(ViewCore):
         name: Optional[str] = None,
         filter: Filter | None = None,
         implements: Optional[list[ViewId]] = None,
-        properties: Optional[dict[str, MappedPropertyApply | ConnectionDefinition]] = None,
+        properties: Optional[dict[str, MappedPropertyApply | ConnectionDefinitionApply]] = None,
     ):
         validate_data_modeling_identifier(space, external_id)
         super().__init__(space, external_id, version, description, name, filter, implements)
@@ -189,9 +189,15 @@ class View(ViewCore):
         Returns:
             ViewApply: The view apply.
         """
-        properties: Optional[Dict[str, Union[MappedPropertyApply, ConnectionDefinition]]] = None
+        properties: Optional[Dict[str, Union[MappedPropertyApply, ConnectionDefinitionApply]]] = None
         if self.properties:
-            properties = {k: (v.as_apply() if isinstance(v, MappedProperty) else v) for k, v in self.properties.items()}
+            for k, v in self.properties.items():
+                if isinstance(v, (MappedProperty, SingleHopConnectionDefinition)):
+                    if properties is None:
+                        properties = {}
+                    properties[k] = v.as_apply()
+                else:
+                    raise NotImplementedError(f"Unsupported conversion to apply for property type {type(v)}")
 
         return ViewApply(
             space=self.space,
@@ -396,10 +402,23 @@ class SingleHopConnectionDefinition(ConnectionDefinition):
 
         return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
 
+    def as_apply(self) -> SingleHopConnectionDefinitionApply:
+        return SingleHopConnectionDefinitionApply(
+            type=self.type,
+            source=self.source,
+            name=self.name,
+            description=self.description,
+            edge_source=self.edge_source,
+            direction=self.direction,
+        )
+
 
 @dataclass
 class ConnectionDefinitionApply(ViewPropertyApply):
     ...
+
+
+T_ConnectionDefinitionApply = TypeVar("T_ConnectionDefinitionApply", bound=ConnectionDefinitionApply)
 
 
 @dataclass
