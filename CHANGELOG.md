@@ -35,7 +35,7 @@ methods is `json` and `yaml` serializable.
 * Missing `dump` and `_load` methods for `ClientCredentials`.
 * Literal annotation for `source_type` and `target_type` in `Relationship`
 * Type annotation for `SequenceData` attribute `rows`.
-* Type annoataion for `Geometry` attribute `coordinates`
+* Type annotation for `Geometry` attribute `coordinates`
 * In transformations, `NonceCredentials` was missing `_load` method. 
 * In transformations, `TransformationBlockedInfo` was missing `.dump` method
 
