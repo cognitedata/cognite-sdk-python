@@ -17,6 +17,14 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.13.3] - 2023-08-14
+### Fixed
+- Fixed bug in `ViewApply.properties` had type hint `ConnectionDefinition` instead of `ConnectionDefinitionApply`.
+- Fixed bug in `dump` methods of `ViewApply.properties` causing the return code `400` with message
+  `Request had 1 constraint violations. Please fix the request and try again. [type must not be null]` to be returned
+  from the CDF API.
+
+
 ## [6.13.2] - 2023-08-11
 ### Fixed
 - Fixed bug in `Index.load` that would raise `TypeError` when trying to load `indexes`, when an unexpected field was
