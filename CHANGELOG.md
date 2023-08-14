@@ -17,13 +17,19 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.14.0] - 2023-08-14
+### Changed
+- Don't terminate client.timeseries.subscriptions.iterate_data() when `has_next=false` as more data
+may be returned in the future. Instead we return the `has_next` field in the batch, and let the user
+decide whether to terminate iteration. This is a breaking change, but this particular API is still
+in beta and thus we reserve the right to break it without bumping the major version.
+
 ## [6.13.3] - 2023-08-14
 ### Fixed
 - Fixed bug in `ViewApply.properties` had type hint `ConnectionDefinition` instead of `ConnectionDefinitionApply`.
 - Fixed bug in `dump` methods of `ViewApply.properties` causing the return code `400` with message
   `Request had 1 constraint violations. Please fix the request and try again. [type must not be null]` to be returned
   from the CDF API.
-
 
 ## [6.13.2] - 2023-08-11
 ### Fixed
