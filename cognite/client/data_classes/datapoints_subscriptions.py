@@ -369,6 +369,13 @@ class _DatapointSubscriptionBatch:
         return resource
 
 
+@dataclass
+class DatapointSubscriptionBatch:
+    updates: list[DatapointsUpdate]
+    subscription_changes: SubscriptionTimeSeriesUpdate
+    has_next: bool
+
+
 class DatapointSubscriptionList(CogniteResourceList[DatapointSubscription]):
     _RESOURCE = DatapointSubscription
 
