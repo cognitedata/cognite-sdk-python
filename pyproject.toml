@@ -17,8 +17,13 @@ keep-runtime-typing = true
 [tool.pydoclint]
 style = 'google'
 exclude = '\.git|\.tox|tests/|scripts/'
-require-return-section-when-returning-none = true
+require-return-section-when-returning-nothing = true
+arg-type-hints-in-signature = true
 arg-type-hints-in-docstring = true
+allow-init-docstring = false
+check-return-types = true
+check-arg-order = true
+skip-checking-raises = false  # todo: remove
 
 [tool.ruff.per-file-ignores]
 # let scripts use print statements
