@@ -34,10 +34,9 @@ class DataModelingGraphQLAPI(APIClient):
         Args:
             id (DataModelIdentifier): The data model to apply DML to.
             dml (str): The DML to apply.
-            previous_version (Optional[str]): The previous version of the data model. Specify to reuse view versions from
-                previous data model version.
             name (Optional[str]): The name of the data model.
             description (Optional[str]): The description of the data model.
+            previous_version (Optional[str]): The previous version of the data model. Specify to reuse view versions from previous data model version.
 
         Returns:
             DMLApplyResult: The id of the updated data model.

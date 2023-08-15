@@ -78,21 +78,23 @@ class RelationshipsAPI(APIClient):
         Fetches relationships as they are iterated over, so you keep a limited number of relationships in memory.
 
         Args:
-            source_external_ids (Sequence[str]): Include relationships that have any of these values in their source External Id field
-            source_types (Sequence[str]): Include relationships that have any of these values in their source Type field
-            target_external_ids (Sequence[str]): Include relationships that have any of these values in their target External Id field
-            target_types (Sequence[str]): Include relationships that have any of these values in their target Type field
-            data_set_ids (Union[int, Sequence[int]]): Return only relationships in the specified data set(s) with this id / these ids.
-            data_set_external_ids (Union[str, Sequence[str]]): Return only relationships in the specified data set(s) with this external id / these external ids.
-            start_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
-            end_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
-            confidence (Dict[str, int]): Range to filter the field for (inclusive).
-            last_updated_time (Dict[str, Any]): Range to filter the field for (inclusive).
-            created_time (Dict[str, int]): Range to filter the field for (inclusive).
-            active_at_time (Dict[str, int]): Limits results to those active at any point within the given time range, i.e. if there is any overlap in the intervals [activeAtTime.min, activeAtTime.max] and [startTime, endTime], where both intervals are inclusive. If a relationship does not have a startTime, it is regarded as active from the begining of time by this filter. If it does not have an endTime is will be regarded as active until the end of time. Similarly, if a min is not supplied to the filter, the min will be implicitly set to the beginning of time, and if a max is not supplied, the max will be implicitly set to the end of time.
-            labels (LabelFilter): Return only the resource matching the specified label constraints.
-            chunk_size (int, optional): Number of Relationships to return in each chunk. Defaults to yielding one relationship at a time.
-            partitions (int): Retrieve relationships in parallel using this number of workers. Also requires `limit=None` to be passed.
+            source_external_ids (Optional[Sequence[str]]): Include relationships that have any of these values in their source External Id field
+            source_types (Optional[Sequence[str]]): Include relationships that have any of these values in their source Type field
+            target_external_ids (Optional[Sequence[str]]): Include relationships that have any of these values in their target External Id field
+            target_types (Optional[Sequence[str]]): Include relationships that have any of these values in their target Type field
+            data_set_ids (Optional[Union[int, Sequence[int]]]): Return only relationships in the specified data set(s) with this id / these ids.
+            data_set_external_ids (Optional[Union[str, Sequence[str]]]): Return only relationships in the specified data set(s) with this external id / these external ids.
+            start_time (Optional[Dict[str, int]]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
+            end_time (Optional[Dict[str, int]]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
+            confidence (Optional[Dict[str, int]]): Range to filter the field for (inclusive).
+            last_updated_time (Optional[Dict[str, int]]): Range to filter the field for (inclusive).
+            created_time (Optional[Dict[str, int]]): Range to filter the field for (inclusive).
+            active_at_time (Optional[Dict[str, int]]): Limits results to those active at any point within the given time range, i.e. if there is any overlap in the intervals [activeAtTime.min, activeAtTime.max] and [startTime, endTime], where both intervals are inclusive. If a relationship does not have a startTime, it is regarded as active from the begining of time by this filter. If it does not have an endTime is will be regarded as active until the end of time. Similarly, if a min is not supplied to the filter, the min will be implicitly set to the beginning of time, and if a max is not supplied, the max will be implicitly set to the end of time.
+            labels (Optional[LabelFilter]): Return only the resource matching the specified label constraints.
+            limit (Optional[int]): No description.
+            fetch_resources (bool): No description.
+            chunk_size (Optional[int]): Number of Relationships to return in each chunk. Defaults to yielding one relationship at a time.
+            partitions (Optional[int]): Retrieve relationships in parallel using this number of workers. Also requires `limit=None` to be passed.
 
         Yields:
             Union[Relationship, RelationshipList]: yields Relationship one by one if chunk_size is not specified, else RelationshipList objects.
@@ -219,24 +221,22 @@ class RelationshipsAPI(APIClient):
         """`Lists relationships stored in the project based on a query filter given in the payload of this request. Up to 1000 relationships can be retrieved in one operation.  <https://developer.cognite.com/api#tag/Relationships/operation/listRelationships>`_
 
         Args:
-            source_external_ids (Sequence[str]): Include relationships that have any of these values in their source External Id field
-            source_types (Sequence[str]): Include relationships that have any of these values in their source Type field
-            target_external_ids (Sequence[str]): Include relationships that have any of these values in their target External Id field
-            target_types (Sequence[str]): Include relationships that have any of these values in their target Type field
-            data_set_ids (Union[int, Sequence[int]]): Return only relationships in the specified data set(s) with this id / these ids.
-            data_set_external_ids (Union[str, Sequence[str]]): Return only relationships in the specified data set(s) with this external id / these external ids.
-            start_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
-            end_time (Dict[str, int]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
-            confidence (Dict[str, int]): Range to filter the field for (inclusive).
-            last_updated_time (Dict[str, Any]): Range to filter the field for (inclusive).
-            created_time (Dict[str, int]): Range to filter the field for (inclusive).
-            active_at_time (Dict[str, int]): Limits results to those active at any point within the given time range, i.e. if there is any overlap in the intervals [activeAtTime.min, activeAtTime.max] and [startTime, endTime], where both intervals are inclusive. If a relationship does not have a startTime, it is regarded as active from the begining of time by this filter. If it does not have an endTime is will be regarded as active until the end of time. Similarly, if a min is not supplied to the filter, the min will be implicitly set to the beginning of time, and if a max is not supplied, the max will be implicitly set to the end of time.
-            labels (LabelFilter): Return only the resource matching the specified label constraints.
-            limit (int): Maximum number of relationships to return. Defaults to 100. Set to -1, float("inf") or None
-                to return all items.
-            partitions (int): Retrieve relationships in parallel using this number of workers. Also requires `limit=None` to be passed.
-            fetch_resources (bool): if true, will try to return the full resources referenced by the relationship in the
-                source and target fields.
+            source_external_ids (Optional[Sequence[str]]): Include relationships that have any of these values in their source External Id field
+            source_types (Optional[Sequence[str]]): Include relationships that have any of these values in their source Type field
+            target_external_ids (Optional[Sequence[str]]): Include relationships that have any of these values in their target External Id field
+            target_types (Optional[Sequence[str]]): Include relationships that have any of these values in their target Type field
+            data_set_ids (Optional[Union[int, Sequence[int]]]): Return only relationships in the specified data set(s) with this id / these ids.
+            data_set_external_ids (Optional[Union[str, Sequence[str]]]): Return only relationships in the specified data set(s) with this external id / these external ids.
+            start_time (Optional[Dict[str, int]]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
+            end_time (Optional[Dict[str, int]]): Range between two timestamps, minimum and maximum milli seconds (inclusive)
+            confidence (Optional[Dict[str, int]]): Range to filter the field for (inclusive).
+            last_updated_time (Optional[Dict[str, int]]): Range to filter the field for (inclusive).
+            created_time (Optional[Dict[str, int]]): Range to filter the field for (inclusive).
+            active_at_time (Optional[Dict[str, int]]): Limits results to those active at any point within the given time range, i.e. if there is any overlap in the intervals [activeAtTime.min, activeAtTime.max] and [startTime, endTime], where both intervals are inclusive. If a relationship does not have a startTime, it is regarded as active from the begining of time by this filter. If it does not have an endTime is will be regarded as active until the end of time. Similarly, if a min is not supplied to the filter, the min will be implicitly set to the beginning of time, and if a max is not supplied, the max will be implicitly set to the end of time.
+            labels (Optional[LabelFilter]): Return only the resource matching the specified label constraints.
+            limit (int): Maximum number of relationships to return. Defaults to 100. Set to -1, float("inf") or None to return all items.
+            partitions (Optional[int]): Retrieve relationships in parallel using this number of workers. Also requires `limit=None` to be passed.
+            fetch_resources (bool): if true, will try to return the full resources referenced by the relationship in the source and target fields.
 
         Returns:
             RelationshipList: List of requested relationships

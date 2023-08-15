@@ -65,8 +65,9 @@ class VisionAPI(APIClient):
 
         Args:
             features (Union[VisionFeature, List[VisionFeature]]): The feature(s) to extract from the provided image files.
-            file_ids (List[int]): IDs of the image files to analyze. The images must already be uploaded in the same CDF project.
-            file_external_ids (List[str]): The external file ids of the image files to analyze.
+            file_ids (Optional[List[int]]): IDs of the image files to analyze. The images must already be uploaded in the same CDF project.
+            file_external_ids (Optional[List[str]]): The external file ids of the image files to analyze.
+            parameters (Optional[FeatureParameters]): No description.
         Returns:
             VisionExtractJob: Resulting queued job, which can be used to retrieve the status of the job or the prediction results if the job is finished. Note that .result property of this job will wait for the job to finish and returns the results.
 

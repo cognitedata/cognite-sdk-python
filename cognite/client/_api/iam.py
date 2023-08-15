@@ -214,7 +214,7 @@ class SessionsAPI(APIClient):
         """`Revoke access to a session. Revocation of a session may in some cases take up to 1 hour to take effect. <https://developer.cognite.com/api#tag/Sessions/operation/revokeSessions>`_
 
         Args:
-            id (Union[int, Sequence[int]): Id or list of session ids
+            id (Union[int, Sequence[int]]): Id or list of session ids
 
         Returns:
             SessionList: List of revoked sessions. If the user does not have the sessionsAcl:LIST capability, then only the session IDs will be present in the response.

@@ -621,13 +621,13 @@ class DatapointsAPI(APIClient):
             3. Try to avoid specifying `start` and `end` to be very far from the actual data: If you have data from 2000 to 2015, don't set start=0 (1970).
 
         Args:
-            start (Union[int, str, datetime, None]): Inclusive start. Default: 1970-01-01 UTC.
-            end (Union[int, str, datetime, None]): Exclusive end. Default: "now"
-            id (Union[None, int, Dict[str, Any], List[Union[int, Dict[str, Any]]]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
-            external_id (Union[None, str, Dict[str, Any], List[Union[str, Dict[str, Any]]]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
-            aggregates (Union[str, List[str], None]): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
-            granularity (str): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
-            limit (int): Maximum number of datapoints to return for each time series. Default: None (no limit)
+            id (None | int | dict[str, Any] | Sequence[int | dict[str, Any]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
+            external_id (None | str | dict[str, Any] | Sequence[str | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
+            start (int | str | datetime | None): Inclusive start. Default: 1970-01-01 UTC.
+            end (int | str | datetime | None): Exclusive end. Default: "now"
+            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
+            granularity (Optional[str]): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
+            limit (Optional[int]): Maximum number of datapoints to return for each time series. Default: None (no limit)
             include_outside_points (bool): Whether to include outside points. Not allowed when fetching aggregates. Default: False
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
 
@@ -802,13 +802,13 @@ class DatapointsAPI(APIClient):
         **Note**: This method requires `numpy` to be installed.
 
         Args:
-            start (Union[int, str, datetime, None]): Inclusive start. Default: 1970-01-01 UTC.
-            end (Union[int, str, datetime, None]): Exclusive end. Default: "now"
-            id (Union[None, int, Dict[str, Any], List[Union[int, Dict[str, Any]]]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
-            external_id (Union[None, str, Dict[str, Any], List[Union[str, Dict[str, Any]]]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
-            aggregates (Union[str, List[str], None]): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
-            granularity (str): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
-            limit (int): Maximum number of datapoints to return for each time series. Default: None (no limit)
+            id (None | int | dict[str, Any] | Sequence[int | dict[str, Any]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
+            external_id (None | str | dict[str, Any] | Sequence[str | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
+            start (int | str | datetime | None): Inclusive start. Default: 1970-01-01 UTC.
+            end (int | str | datetime | None): Exclusive end. Default: "now"
+            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
+            granularity (Optional[str]): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
+            limit (Optional[int]): Maximum number of datapoints to return for each time series. Default: None (no limit)
             include_outside_points (bool): Whether to include outside points. Not allowed when fetching aggregates. Default: False
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
 
@@ -902,20 +902,19 @@ class DatapointsAPI(APIClient):
         **Note**: If you have duplicated time series in your query, the dataframe columns will also contain duplicates.
 
         Args:
-            start (Union[int, str, datetime, None]): Inclusive start. Default: 1970-01-01 UTC.
-            end (Union[int, str, datetime, None]): Exclusive end. Default: "now"
-            id (Union[None, int, Dict[str, Any], List[Union[int, Dict[str, Any]]]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
-            external_id (Union[None, str, Dict[str, Any], List[Union[str, Dict[str, Any]]]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
-            aggregates (Union[str, List[str], None]): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
-            granularity (str): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
-            limit (int): Maximum number of datapoints to return for each time series. Default: None (no limit)
+            id (None | int | dict[str, Any] | Sequence[int | dict[str, Any]]): Id, dict (with id) or (mixed) sequence of these. See examples below.
+            external_id (None | str | dict[str, Any] | Sequence[str | dict[str, Any]]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
+            start (int | str | datetime | None): Inclusive start. Default: 1970-01-01 UTC.
+            end (int | str | datetime | None): Exclusive end. Default: "now"
+            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
+            granularity (Optional[str]): The granularity to fetch aggregates at. e.g. '15s', '2h', '10d'. Default: None.
+            limit (Optional[int]): Maximum number of datapoints to return for each time series. Default: None (no limit)
             include_outside_points (bool): Whether to include outside points. Not allowed when fetching aggregates. Default: False
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
-            uniform_index (bool): If only querying aggregates AND a single granularity is used AND no limit is used, specifying `uniform_index=True` will return a dataframe with an
-                equidistant datetime index from the earliest `start` to the latest `end` (missing values will be NaNs). If these requirements are not met, a ValueError is raised. Default: False
+            uniform_index (bool): If only querying aggregates AND a single granularity is used AND no limit is used, specifying `uniform_index=True` will return a dataframe with an equidistant datetime index from the earliest `start` to the latest `end` (missing values will be NaNs). If these requirements are not met, a ValueError is raised. Default: False
             include_aggregate_name (bool): Include 'aggregate' in the column name, e.g. `my-ts|average`. Ignored for raw time series. Default: True
             include_granularity_name (bool): Include 'granularity' in the column name, e.g. `my-ts|12h`. Added after 'aggregate' when present. Ignored for raw time series. Default: False
-            column_names ("id" | "external_id"): Use either ids or external ids as column names. Time series missing external id will use id as backup. Default: "external_id"
+            column_names (Literal["id", "external_id"]): Use either ids or external ids as column names. Time series missing external id will use id as backup. Default: "external_id"
 
         Returns:
             pandas.DataFrame: A pandas DataFrame containing the requested time series. The ordering of columns is ids first, then external_ids. For time series with multiple aggregates, they will be sorted in alphabetical order ("average" before "max").
@@ -1049,13 +1048,12 @@ class DatapointsAPI(APIClient):
             start (datetime): Inclusive start, must be time zone aware.
             end (datetime): Exclusive end, must be time zone aware and have the same time zone as start.
             aggregates (Aggregate | str | Sequence[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Default: None (raw datapoints returned)
-            granularity (str): The granularity to fetch aggregates at, supported are: second, minute, hour, day, week, month, quarter and year. Default: None.
+            granularity (Optional[str]): The granularity to fetch aggregates at, supported are: second, minute, hour, day, week, month, quarter and year. Default: None.
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
-            uniform_index (bool): If querying aggregates, specifying `uniform_index=True` will return a dataframe with an
-                index with constant spacing between timestamps decided by granularity all the way from `start` to `end` (missing values will be NaNs). Default: False
+            uniform_index (bool): If querying aggregates, specifying `uniform_index=True` will return a dataframe with an index with constant spacing between timestamps decided by granularity all the way from `start` to `end` (missing values will be NaNs). Default: False
             include_aggregate_name (bool): Include 'aggregate' in the column name, e.g. `my-ts|average`. Ignored for raw time series. Default: True
             include_granularity_name (bool): Include 'granularity' in the column name, e.g. `my-ts|12h`. Added after 'aggregate' when present. Ignored for raw time series. Default: False
-            column_names ("id" | "external_id"): Use either ids or external ids as column names. Time series missing external id will use id as backup. Default: "external_id"
+            column_names (Literal["id", "external_id"]): Use either ids or external ids as column names. Time series missing external id will use id as backup. Default: "external_id"
 
         Returns:
             pandas.DataFrame: A pandas DataFrame containing the requested time series with a DatetimeIndex localized
@@ -1181,9 +1179,9 @@ class DatapointsAPI(APIClient):
         """`Get the latest datapoint for one or more time series <https://developer.cognite.com/api#tag/Time-series/operation/getLatest>`_
 
         Args:
-            id (Union[int, LatestDatapointQuery, List[Union[int, LatestDatapointQuery]]]): Id or list of ids.
-            external_id (Union[str, LatestDatapointQuery, List[Union[str, LatestDatapointQuery]]]): External id or list of external ids.
-            before: (Union[int, str, datetime]): Get latest datapoint before this time. Not used when passing 'LatestDatapointQuery'.
+            id (int | LatestDatapointQuery | list[int | LatestDatapointQuery] | None): Id or list of ids.
+            external_id (str | LatestDatapointQuery | list[str | LatestDatapointQuery] | None): External id or list of external ids.
+            before (None | int | str | datetime): (Union[int, str, datetime]): Get latest datapoint before this time. Not used when passing 'LatestDatapointQuery'.
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -1248,10 +1246,9 @@ class DatapointsAPI(APIClient):
         Timestamps can be represented as milliseconds since epoch or datetime objects.
 
         Args:
-            datapoints(Union[Datapoints, DatapointsArray, List[Dict], List[Tuple]]): The datapoints you wish to insert. Can either be a list of tuples,
-                a list of dictionaries, a Datapoints object or a DatapointsArray object. See examples below.
-            id (int): Id of time series to insert datapoints into.
-            external_id (str): External id of time series to insert datapoint into.
+            datapoints (Datapoints | DatapointsArray | Sequence[dict[str, int | float | str | datetime]] | Sequence[tuple[int | float | datetime, int | float | str]]): The datapoints you wish to insert. Can either be a list of tuples, a list of dictionaries, a Datapoints object or a DatapointsArray object. See examples below.
+            id (Optional[int]): Id of time series to insert datapoints into.
+            external_id (Optional[str]): External id of time series to insert datapoint into.
 
         Returns:
             None
@@ -1308,7 +1305,7 @@ class DatapointsAPI(APIClient):
         """`Insert datapoints into multiple time series <https://developer.cognite.com/api#tag/Time-series/operation/postMultiTimeSeriesDatapoints>`_
 
         Args:
-            datapoints (List[Dict]): The datapoints you wish to insert along with the ids of the time series. See examples below.
+            datapoints (list[dict[str, str | int | list | Datapoints | DatapointsArray]]): The datapoints you wish to insert along with the ids of the time series. See examples below.
 
         Returns:
             None
@@ -1356,10 +1353,10 @@ class DatapointsAPI(APIClient):
         """Delete a range of datapoints from a time series.
 
         Args:
-            start (Union[int, str, datetime]): Inclusive start of delete range
-            end (Union[int, str, datetime]): Exclusvie end of delete range
-            id (int): Id of time series to delete data from
-            external_id (str): External id of time series to delete data from
+            start (int | str | datetime): Inclusive start of delete range
+            end (int | str | datetime): Exclusvie end of delete range
+            id (Optional[int]): Id of time series to delete data from
+            external_id (Optional[str]): External id of time series to delete data from
 
         Returns:
             None
@@ -1384,7 +1381,7 @@ class DatapointsAPI(APIClient):
         """`Delete a range of datapoints from multiple time series. <https://developer.cognite.com/api#tag/Time-series/operation/deleteDatapoints>`_
 
         Args:
-            ranges (List[Dict[str, Any]]): The list of datapoint ids along with time range to delete. See examples below.
+            ranges (list[dict[str, Any]]): The list of datapoint ids along with time range to delete. See examples below.
 
         Returns:
             None
@@ -1421,7 +1418,7 @@ class DatapointsAPI(APIClient):
         Said time series must already exist.
 
         Args:
-            df (pandas.DataFrame):  Pandas DataFrame object containing the time series.
+            df (pd.DataFrame):  Pandas DataFrame object containing the time series.
             external_id_headers (bool): Interpret the column names as external id. Pass False if using ids. Default: True.
             dropna (bool): Set to True to ignore NaNs in the given DataFrame, applied per column. Default: True.
 

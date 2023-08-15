@@ -57,12 +57,11 @@ class DataModelsAPI(APIClient):
         Fetches data model as they are iterated over, so you keep a limited number of data model in memory.
 
         Args:
-            chunk_size (int, optional): Number of data model to return in each chunk. Defaults to yielding one data_model a time.
-            limit (int, optional): Maximum number of data model to return. Default to return all items.
-            space: (str | None): The space to query.
+            chunk_size (int | None): Number of data model to return in each chunk. Defaults to yielding one data_model a time.
+            limit (Optional[int]): Maximum number of data model to return. Default to return all items.
+            space (str | None): (str | None): The space to query.
             inline_views (bool): Whether to expand the referenced views inline in the returned result.
-            all_versions (bool): Whether to return all versions. If false, only the newest version is returned,
-                                 which is determined based on the 'createdTime' field.
+            all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
             include_global (bool): Whether to include global views.
 
         Yields:
@@ -107,7 +106,7 @@ class DataModelsAPI(APIClient):
         """`Retrieve data_model(s) by id(s). <https://developer.cognite.com/api#tag/Data-models/operation/byExternalIdsDataModels>`_
 
         Args:
-            ids (DataModelId | Sequence[DataModelId]): Data Model identifier(s).
+            ids (DataModelIdentifier | Sequence[DataModelIdentifier]): Data Model identifier(s).
             inline_views (bool): Whether to expand the referenced views inline in the returned result.
 
         Returns:
@@ -133,7 +132,7 @@ class DataModelsAPI(APIClient):
         """`Delete one or more data model <https://developer.cognite.com/api#tag/Data-models/operation/deleteDataModels>`_
 
         Args:
-            ids (DataModelId | Sequence[DataModelId]): Data Model identifier(s).
+            ids (DataModelIdentifier | Sequence[DataModelIdentifier]): Data Model identifier(s).
         Returns:
             The data_model(s) which has been deleted. None if nothing was deleted.
         Examples:
@@ -189,11 +188,9 @@ class DataModelsAPI(APIClient):
 
         Args:
             inline_views (bool): Whether to expand the referenced views inline in the returned result.
-            limit (int, optional): Maximum number of data model to return. Default to 10. Set to -1, float("inf") or None
-                to return all items.
-            space: (str | None): The space to query.
-            all_versions (bool): Whether to return all versions. If false, only the newest version is returned,
-                                 which is determined based on the 'createdTime' field.
+            limit (int): Maximum number of data model to return. Default to 10. Set to -1, float("inf") or None to return all items.
+            space (str | None): (str | None): The space to query.
+            all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
             include_global (bool): Whether to include global data models.
 
         Returns:
@@ -243,7 +240,7 @@ class DataModelsAPI(APIClient):
         """`Create or update one or more data model. <https://developer.cognite.com/api#tag/Data-models/operation/createDataModels>`_
 
         Args:
-            data_model (data_model: DataModelApply | Sequence[DataModelApply]): DataModel or data model to create or update (upsert).
+            data_model (DataModelApply | Sequence[DataModelApply]): DataModelApply | Sequence[DataModelApply]): DataModel or data model to create or update (upsert).
 
         Returns:
             DataModel | DataModelList: Created data_model(s)

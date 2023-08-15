@@ -36,8 +36,8 @@ class ExtractionPipelinesAPI(APIClient):
         """`Retrieve a single extraction pipeline by id. <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/showExtPipe>`_
 
         Args:
-            id (int, optional): ID
-            external_id (str, optional): External ID
+            id (Optional[int]): ID
+            external_id (Optional[str]): External ID
 
         Returns:
             Optional[ExtractionPipeline]: Requested extraction pipeline or None if it does not exist.
@@ -71,8 +71,8 @@ class ExtractionPipelinesAPI(APIClient):
         """`Retrieve multiple extraction pipelines by ids and external ids. <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/byidsExtPipes>`_
 
         Args:
-            ids (Sequence[int], optional): IDs
-            external_ids (Sequence[str], optional): External IDs
+            ids (Optional[Sequence[int]]): IDs
+            external_ids (Optional[Sequence[str]]): External IDs
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -104,8 +104,7 @@ class ExtractionPipelinesAPI(APIClient):
         """`List extraction pipelines <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/listExtPipes>`_
 
         Args:
-            limit (int, optional): Maximum number of ExtractionPipelines to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
+            limit (int): Maximum number of ExtractionPipelines to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             ExtractionPipelineList: List of requested ExtractionPipelines
@@ -137,7 +136,7 @@ class ExtractionPipelinesAPI(APIClient):
         You can create an arbitrary number of extraction pipelines, and the SDK will split the request into multiple requests if necessary.
 
         Args:
-            extraction_pipeline (Union[ExtractionPipeline, List[ExtractionPipeline]]): Extraction pipeline or list of extraction pipelines to create.
+            extraction_pipeline (Union[ExtractionPipeline, Sequence[ExtractionPipeline]]): Extraction pipeline or list of extraction pipelines to create.
 
         Returns:
             Union[ExtractionPipeline, ExtractionPipelineList]: Created extraction pipeline(s)
@@ -163,8 +162,8 @@ class ExtractionPipelinesAPI(APIClient):
         """`Delete one or more extraction pipelines <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/deleteExtPipes>`_
 
         Args:
-            id (Union[int, Sequence[int]): Id or list of ids
-            external_id (Union[str, Sequence[str]]): External ID or list of external ids
+            id (Optional[Union[int, Sequence[int]]]): Id or list of ids
+            external_id (Optional[Union[str, Sequence[str]]]): External ID or list of external ids
 
         Returns:
             None
@@ -234,11 +233,10 @@ class ExtractionPipelineRunsAPI(APIClient):
 
         Args:
             external_id (str): Extraction pipeline external Id.
-            statuses (Sequence[str]): One or more among "success" / "failure" / "seen".
-            message_substring (str): Failure message part.
-            created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-            limit (int, optional): Maximum number of ExtractionPipelines to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
+            statuses (Optional[Sequence[str]]): One or more among "success" / "failure" / "seen".
+            message_substring (Optional[str]): Failure message part.
+            created_time (Optional[Union[Dict[str, Any], TimestampRange]]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+            limit (int): Maximum number of ExtractionPipelines to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             ExtractionPipelineRunList: List of requested extraction pipeline runs

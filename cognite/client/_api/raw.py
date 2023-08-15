@@ -35,8 +35,8 @@ class RawDatabasesAPI(APIClient):
         Fetches dbs as they are iterated over, so you keep a limited number of dbs in memory.
 
         Args:
-            chunk_size (int, optional): Number of dbs to return in each chunk. Defaults to yielding one db a time.
-            limit (int, optional): Maximum number of dbs to return. Defaults to return all items.
+            chunk_size (Optional[int]): Number of dbs to return in each chunk. Defaults to yielding one db a time.
+            limit (Optional[int]): Maximum number of dbs to return. Defaults to return all items.
         """
         yield from self._list_generator(
             list_cls=DatabaseList, resource_cls=Database, chunk_size=chunk_size, method="GET", limit=limit
@@ -113,8 +113,7 @@ class RawDatabasesAPI(APIClient):
         """`List databases <https://developer.cognite.com/api#tag/Raw/operation/getDBs>`_
 
         Args:
-            limit (int, optional): Maximum number of databases to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
+            limit (int): Maximum number of databases to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             DatabaseList: List of requested databases.
@@ -156,8 +155,8 @@ class RawTablesAPI(APIClient):
 
         Args:
             db_name (str): Name of the database to iterate over tables for
-            chunk_size (int, optional): Number of tables to return in each chunk. Defaults to yielding one table a time.
-            limit (int, optional): Maximum number of tables to return. Defaults to return all items.
+            chunk_size (Optional[int]): Number of tables to return in each chunk. Defaults to yielding one table a time.
+            limit (Optional[int]): Maximum number of tables to return. Defaults to return all items.
         """
         for tb in self._list_generator(
             list_cls=TableList,
@@ -248,8 +247,7 @@ class RawTablesAPI(APIClient):
 
         Args:
             db_name (str): The database to list tables from.
-            limit (int, optional): Maximum number of tables to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
+            limit (int): Maximum number of tables to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             TableList: List of requested tables.
@@ -321,11 +319,11 @@ class RawRowsAPI(APIClient):
         Args:
             db_name (str): Name of the database
             table_name (str): Name of the table to iterate over rows for
-            chunk_size (int, optional): Number of rows to return in each chunk. Defaults to yielding one row a time.
-            limit (int, optional): Maximum number of rows to return. Defaults to return all items.
-            min_last_updated_time (int): Rows must have been last updated after this time (exclusive). ms since epoch.
-            max_last_updated_time (int): Rows must have been last updated before this time (inclusive). ms since epoch.
-            columns (List[str]): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
+            chunk_size (Optional[int]): Number of rows to return in each chunk. Defaults to yielding one row a time.
+            limit (Optional[int]): Maximum number of rows to return. Defaults to return all items.
+            min_last_updated_time (Optional[int]): Rows must have been last updated after this time (exclusive). ms since epoch.
+            max_last_updated_time (Optional[int]): Rows must have been last updated before this time (inclusive). ms since epoch.
+            columns (Optional[List[str]]): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
         """
         yield from self._list_generator(
             list_cls=RowList,
@@ -387,7 +385,7 @@ class RawRowsAPI(APIClient):
         Args:
             db_name (str): Name of the database.
             table_name (str): Name of the table.
-            dataframe (pandas.DataFrame): The dataframe to insert. Index will be used as rowkeys.
+            dataframe (Any): The dataframe to insert. Index will be used as rowkeys.
             ensure_parent (bool): Create database/table if they don't already exist.
 
         Returns:
@@ -503,9 +501,9 @@ class RawRowsAPI(APIClient):
         Args:
             db_name (str): Name of the database.
             table_name (str): Name of the table.
-            min_last_updated_time (int): Rows must have been last updated after this time (exclusive). ms since epoch.
-            max_last_updated_time (int): Rows must have been last updated before this time (inclusive). ms since epoch.
-            columns (List[str]): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
+            min_last_updated_time (Optional[int]): Rows must have been last updated after this time (exclusive). ms since epoch.
+            max_last_updated_time (Optional[int]): Rows must have been last updated before this time (inclusive). ms since epoch.
+            columns (Optional[List[str]]): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
             limit (int): The number of rows to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
@@ -593,9 +591,9 @@ class RawRowsAPI(APIClient):
         Args:
             db_name (str): Name of the database.
             table_name (str): Name of the table.
-            min_last_updated_time (int): Rows must have been last updated after this time. ms since epoch.
-            max_last_updated_time (int): Rows must have been last updated before this time. ms since epoch.
-            columns (List[str]): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
+            min_last_updated_time (Optional[int]): Rows must have been last updated after this time. ms since epoch.
+            max_last_updated_time (Optional[int]): Rows must have been last updated before this time. ms since epoch.
+            columns (Optional[List[str]]): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
             limit (int): The number of rows to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:

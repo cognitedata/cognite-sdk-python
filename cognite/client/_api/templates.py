@@ -169,9 +169,8 @@ class TemplateGroupsAPI(APIClient):
         Up to 1000 template groups can be retrieved in one operation.
 
         Args:
-            owners (Sequence[str]): Include template groups that have any of these values in their `owner` field.
-            limit (int): Maximum number of template groups to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
+            limit (int): Maximum number of template groups to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            owners (Optional[Sequence[str]]): Include template groups that have any of these values in their `owner` field.
 
         Returns:
             TemplateGroupList: List of requested template groups
@@ -279,10 +278,9 @@ class TemplateGroupVersionsAPI(APIClient):
 
         Args:
             external_id (str): The external id of the template group.
-            limit (int): Maximum number of template group versions to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
-            min_version: (Optional[int]): Exclude versions with a version number smaller than this.
-            max_version: (Optional[int]): Exclude versions with a version number larger than this.
+            limit (int): Maximum number of template group versions to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            min_version (Optional[int]): (Optional[int]): Exclude versions with a version number smaller than this.
+            max_version (Optional[int]): (Optional[int]): Exclude versions with a version number larger than this.
 
         Returns:
             TemplateGroupVersionList: List of requested template group versions
@@ -431,6 +429,8 @@ class TemplateInstancesAPI(APIClient):
     ) -> Union[TemplateInstance, TemplateInstanceList]:
         """`Update one or more template instances`
         Args:
+            external_id (str): No description.
+            version (int): No description.
             item (Union[TemplateInstanceUpdate, Sequence[TemplateInstanceUpdate]]): Templates instance(s) to update
 
         Returns:
@@ -499,10 +499,9 @@ class TemplateInstancesAPI(APIClient):
         Args:
             external_id (str): The external id of the template group.
             version (int): The version of the template group.
-            limit (int): Maximum number of template group versions to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
-            data_set_ids: (Optional[Sequence[int]]): Only include instances which has one of these values in their `data_set_id` field.
-            template_names: (Optional[Sequence[str]]): Only include instances which has one of these values in their `template_name` field.
+            limit (int): Maximum number of template group versions to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            data_set_ids (Optional[Sequence[int]]): (Optional[Sequence[int]]): Only include instances which has one of these values in their `data_set_id` field.
+            template_names (Optional[Sequence[str]]): (Optional[Sequence[str]]): Only include instances which has one of these values in their `template_name` field.
 
         Returns:
             TemplateInstanceList: List of requested template instances
@@ -656,9 +655,9 @@ class TemplateViewsAPI(APIClient):
         Args:
             external_id (str): The external id of the template group.
             version (int): The version of the template group.
-            input (Optional[Dict[str, any]]): The input for the View.
-            limit (int): Maximum number of views to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
+            view_external_id (str): No description.
+            input (Optional[Dict[str, Any]]): The input for the View.
+            limit (int): Maximum number of views to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             ViewResolveList: The resolved items.

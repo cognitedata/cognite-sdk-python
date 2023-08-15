@@ -74,29 +74,28 @@ class FilesAPI(APIClient):
         Fetches file metadata objects as they are iterated over, so you keep a limited number of metadata objects in memory.
 
         Args:
-            chunk_size (int, optional): Number of files to return in each chunk. Defaults to yielding one event a time.
-            name (str): Name of the file.
-            mime_type (str): File type. E.g. text/plain, application/pdf, ..
-            metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value
-            asset_ids (Sequence[int]): Only include files that reference these specific asset IDs.
-            asset_subtree_external_ids (Sequence[str]): Only include files that reference these specific asset external IDs.
-            root_asset_external_ids (Sequence[str]): The external IDs of the root assets that the related assets should be children of.
-            asset_subtree_ids (Union[int, Sequence[int]]): Asset subtree id or list of asset subtree ids to filter on.
-            asset_subtree_external_ids (Union[str, Sequence[str]]): Asset subtree external id or list of asset subtree external ids to filter on.
-            data_set_ids (Union[int, Sequence[int]]): Return only files in the specified data set(s) with this id / these ids.
-            data_set_external_ids (Sequence[str]): Return only files in the specified data set(s) with this external id / these external ids.
-            labels (LabelFilter): Return only the files matching the specified label(s).
-            geo_location (GeoLocationFilter): Only include files matching the specified geographic relation.
-            source (str): The source of this event.
-            source_created_time (Union[Dict[str, Any], TimestampRange]): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
-            source_modified_time (Union[Dict[str, Any], TimestampRange]): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
-            created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            uploaded_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
-            external_id_prefix (str): External Id provided by client. Should be unique within the project.
-            directory_prefix (str): Filter by this (case-sensitive) prefix for the directory provided by the client.
-            uploaded (bool): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
-            limit (int, optional): Maximum number of files to return. Defaults to return all items.
+            chunk_size (Optional[int]): Number of files to return in each chunk. Defaults to yielding one event a time.
+            name (Optional[str]): Name of the file.
+            mime_type (Optional[str]): File type. E.g. text/plain, application/pdf, ..
+            metadata (Optional[Dict[str, str]]): Custom, application specific metadata. String key -> String value
+            asset_ids (Optional[Sequence[int]]): Only include files that reference these specific asset IDs.
+            asset_external_ids (Optional[Sequence[str]]): No description.
+            asset_subtree_ids (Optional[Union[int, Sequence[int]]]): Asset subtree id or list of asset subtree ids to filter on.
+            asset_subtree_external_ids (Optional[Union[str, Sequence[str]]]): Asset subtree external id or list of asset subtree external ids to filter on.
+            data_set_ids (Optional[Union[int, Sequence[int]]]): Return only files in the specified data set(s) with this id / these ids.
+            data_set_external_ids (Optional[Union[str, Sequence[str]]]): Return only files in the specified data set(s) with this external id / these external ids.
+            labels (Optional[LabelFilter]): Return only the files matching the specified label(s).
+            geo_location (Optional[GeoLocationFilter]): Only include files matching the specified geographic relation.
+            source (Optional[str]): The source of this event.
+            created_time (Optional[Union[Dict[str, Any], TimestampRange]]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            last_updated_time (Optional[Union[Dict[str, Any], TimestampRange]]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            source_created_time (Optional[Union[Dict[str, Any], TimestampRange]]): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
+            source_modified_time (Optional[Union[Dict[str, Any], TimestampRange]]): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
+            uploaded_time (Optional[Union[Dict[str, Any], TimestampRange]]): Range between two timestamps
+            external_id_prefix (Optional[str]): External Id provided by client. Should be unique within the project.
+            directory_prefix (Optional[str]): Filter by this (case-sensitive) prefix for the directory provided by the client.
+            uploaded (Optional[bool]): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
+            limit (Optional[int]): Maximum number of files to return. Defaults to return all items.
 
         Yields:
             Union[FileMetadata, FileMetadataList]: yields FileMetadata one by one if chunk_size is not specified, else FileMetadataList objects.
@@ -147,12 +146,8 @@ class FilesAPI(APIClient):
         """Create file without uploading content.
 
         Args:
-            file_metadata (FileMetaData): File metadata for the file to create.
-            overwrite (bool): If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field,
-                fields for the file found for externalId can be overwritten. The default setting is false.
-                If metadata is included in the request body, all of the original metadata will be overwritten.
-                File-Asset mappings only change if explicitly stated in the assetIds field of the POST json body.
-                Do not set assetIds in request body if you want to keep the current file-asset mappings.
+            file_metadata (FileMetadata): File metadata for the file to create.
+            overwrite (bool): If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field, fields for the file found for externalId can be overwritten. The default setting is false. If metadata is included in the request body, all of the original metadata will be overwritten. File-Asset mappings only change if explicitly stated in the assetIds field of the POST json body. Do not set assetIds in request body if you want to keep the current file-asset mappings.
 
         Returns:
             Tuple[FileMetaData, str]: Tuple containing the file metadata and upload url of the created file.
@@ -181,8 +176,8 @@ class FilesAPI(APIClient):
         """`Retrieve a single file metadata by id. <https://developer.cognite.com/api#tag/Files/operation/getFileByInternalId>`_
 
         Args:
-            id (int, optional): ID
-            external_id (str, optional): External ID
+            id (Optional[int]): ID
+            external_id (Optional[str]): External ID
 
         Returns:
             Optional[FileMetadata]: Requested file metadata or None if it does not exist.
@@ -213,8 +208,8 @@ class FilesAPI(APIClient):
         """`Retrieve multiple file metadatas by id. <https://developer.cognite.com/api#tag/Files/operation/byIdsFiles>`_
 
         Args:
-            ids (Sequence[int], optional): IDs
-            external_ids (Sequence[str], optional): External IDs
+            ids (Optional[Sequence[int]]): IDs
+            external_ids (Optional[Sequence[str]]): External IDs
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -269,28 +264,27 @@ class FilesAPI(APIClient):
         """`List files <https://developer.cognite.com/api#tag/Files/operation/advancedListFiles>`_
 
         Args:
-            name (str): Name of the file.
-            mime_type (str): File type. E.g. text/plain, application/pdf, ..
-            metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value
-            asset_ids (Sequence[int]): Only include files that reference these specific asset IDs.
-            asset_subtree_external_ids (Sequence[str]): Only include files that reference these specific asset external IDs.
-            asset_subtree_ids (Union[int, Sequence[int]]): Asset subtree id or list of asset subtree ids to filter on.
-            asset_subtree_external_ids (Union[str, Sequence[str]]): Asset subtree external id or list of asset subtree external ids to filter on.
-            data_set_ids (Union[int, Sequence[int]]): Return only files in the specified data set(s) with this id / these ids.
-            data_set_external_ids (Sequence[str]): Return only files in the specified data set(s) with this external id / these external ids.
-            labels (LabelFilter): Return only the files matching the specified label filter(s).
-            geo_location (GeoLocationFilter): Only include files matching the specified geographic relation.
-            source (str): The source of this event.
-            created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            uploaded_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps
-            source_created_time (Union[Dict[str, Any], TimestampRange]): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
-            source_modified_time (Union[Dict[str, Any], TimestampRange]): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
-            external_id_prefix (str): External Id provided by client. Should be unique within the project.
-            directory_prefix (str): Filter by this (case-sensitive) prefix for the directory provided by the client.
-            uploaded (bool): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
-            limit (int, optional): Max number of files to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
+            name (Optional[str]): Name of the file.
+            mime_type (Optional[str]): File type. E.g. text/plain, application/pdf, ..
+            metadata (Optional[Dict[str, str]]): Custom, application specific metadata. String key -> String value
+            asset_ids (Optional[Sequence[int]]): Only include files that reference these specific asset IDs.
+            asset_external_ids (Optional[Sequence[str]]): No description.
+            asset_subtree_ids (Optional[Union[int, Sequence[int]]]): Asset subtree id or list of asset subtree ids to filter on.
+            asset_subtree_external_ids (Optional[Union[str, Sequence[str]]]): Asset subtree external id or list of asset subtree external ids to filter on.
+            data_set_ids (Optional[Union[int, Sequence[int]]]): Return only files in the specified data set(s) with this id / these ids.
+            data_set_external_ids (Optional[Union[str, Sequence[str]]]): Return only files in the specified data set(s) with this external id / these external ids.
+            labels (Optional[LabelFilter]): Return only the files matching the specified label filter(s).
+            geo_location (Optional[GeoLocationFilter]): Only include files matching the specified geographic relation.
+            source (Optional[str]): The source of this event.
+            created_time (Optional[Union[Dict[str, Any], TimestampRange]]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            last_updated_time (Optional[Union[Dict[str, Any], TimestampRange]]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            source_created_time (Optional[Union[Dict[str, Any], TimestampRange]]): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
+            source_modified_time (Optional[Union[Dict[str, Any], TimestampRange]]): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
+            uploaded_time (Optional[Union[Dict[str, Any], TimestampRange]]): Range between two timestamps
+            external_id_prefix (Optional[str]): External Id provided by client. Should be unique within the project.
+            directory_prefix (Optional[str]): Filter by this (case-sensitive) prefix for the directory provided by the client.
+            uploaded (Optional[bool]): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
+            limit (int): Max number of files to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             FileMetadataList: The requested files.
@@ -365,7 +359,7 @@ class FilesAPI(APIClient):
         """`Aggregate files <https://developer.cognite.com/api#tag/Files/operation/aggregateFiles>`_
 
         Args:
-            filter (Union[FileMetadataFilter, Dict]): Filter on file metadata filter with exact match
+            filter (Optional[Union[FileMetadataFilter, Dict]]): Filter on file metadata filter with exact match
 
         Returns:
             List[FileAggregate]: List of file aggregates
@@ -387,8 +381,8 @@ class FilesAPI(APIClient):
         """`Delete files <https://developer.cognite.com/api#tag/Files/operation/deleteFiles>`_
 
         Args:
-            id (Union[int, Sequence[int]]): Id or list of ids
-            external_id (Union[str, Sequence[str]]): str or list of str
+            id (Optional[Union[int, Sequence[int]]]): Id or list of ids
+            external_id (Optional[Union[str, Sequence[str]]]): str or list of str
 
         Returns:
             None
@@ -472,9 +466,9 @@ class FilesAPI(APIClient):
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:
-            name (str, optional): Prefix and fuzzy search on name.
-            filter (Union[FileMetadataFilter, dict], optional): Filter to apply. Performs exact match on these fields.
-            limit (int, optional): Max number of results to return.
+            name (Optional[str]): Prefix and fuzzy search on name.
+            filter (Optional[Union[FileMetadataFilter, dict]]): Filter to apply. Performs exact match on these fields.
+            limit (int): Max number of results to return.
 
         Returns:
             FileMetadataList: List of requested files metadata.
@@ -519,27 +513,21 @@ class FilesAPI(APIClient):
 
         Args:
             path (str): Path to the file you wish to upload. If path is a directory, this method will upload all files in that directory.
-            external_id (str): The external ID provided by the client. Must be unique within the project.
-            name (str): Name of the file.
-            source (str): The source of the file.
-            mime_type (str): File type. E.g. text/plain, application/pdf, ...
-            metadata (Dict[str, str]): Customizable extra data about the file. String key -> String value.
-            directory (str): The directory to be associated with this file. Must be an absolute, unix-style path.
-            asset_ids (Sequence[int]): No description.
-            data_set_id (int): ID of the data set.
-            labels (Sequence[Label]): A list of the labels associated with this resource item.
-            geo_location (GeoLocation): The geographic metadata of the file.
-            security_categories (Sequence[int]): Security categories to attach to this file.
-            source_created_time (int): The timestamp for when the file was originally created in the source system.
-            source_modified_time (int): The timestamp for when the file was last modified in the source system.
+            external_id (Optional[str]): The external ID provided by the client. Must be unique within the project.
+            name (Optional[str]): Name of the file.
+            source (Optional[str]): The source of the file.
+            mime_type (Optional[str]): File type. E.g. text/plain, application/pdf, ...
+            metadata (Optional[Dict[str, str]]): Customizable extra data about the file. String key -> String value.
+            directory (Optional[str]): The directory to be associated with this file. Must be an absolute, unix-style path.
+            asset_ids (Optional[Sequence[int]]): No description.
+            source_created_time (Optional[int]): The timestamp for when the file was originally created in the source system.
+            source_modified_time (Optional[int]): The timestamp for when the file was last modified in the source system.
+            data_set_id (Optional[int]): ID of the data set.
+            labels (Optional[Sequence[Label]]): A list of the labels associated with this resource item.
+            geo_location (Optional[GeoLocation]): The geographic metadata of the file.
+            security_categories (Optional[Sequence[int]]): Security categories to attach to this file.
             recursive (bool): If path is a directory, upload all contained files recursively.
-            overwrite (bool): If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field,
-                fields for the file found for externalId can be overwritten. The default setting is false.
-                If metadata is included in the request body, all of the original metadata will be overwritten.
-                The actual file will be overwritten after successful upload. If there is no successful upload, the
-                current file contents will be kept.
-                File-Asset mappings only change if explicitly stated in the assetIds field of the POST json body.
-                Do not set assetIds in request body if you want to keep the current file-asset mappings.
+            overwrite (bool): If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field, fields for the file found for externalId can be overwritten. The default setting is false. If metadata is included in the request body, all of the original metadata will be overwritten. The actual file will be overwritten after successful upload. If there is no successful upload, the current file contents will be kept. File-Asset mappings only change if explicitly stated in the assetIds field of the POST json body. Do not set assetIds in request body if you want to keep the current file-asset mappings.
 
         Returns:
             Union[FileMetadata, FileMetadataList]: The file metadata of the uploaded file(s).
@@ -653,25 +641,19 @@ class FilesAPI(APIClient):
         Args:
             content (Union[str, bytes, TextIO, BinaryIO]): The content to upload.
             name (str): Name of the file.
-            external_id (str): The external ID provided by the client. Must be unique within the project.
-            source (str): The source of the file.
-            mime_type (str): File type. E.g. text/plain, application/pdf,...
-            metadata (Dict[str, str]): Customizable extra data about the file. String key -> String value.
-            directory (str): The directory to be associated with this file. Must be an absolute, unix-style path.
-            asset_ids (Sequence[int]): No description.
-            data_set_id (int): Id of the data set.
-            labels (Sequence[Label]): A list of the labels associated with this resource item.
-            geo_location (GeoLocation): The geographic metadata of the file.
-            source_created_time (int): The timestamp for when the file was originally created in the source system.
-            source_modified_time (int): The timestamp for when the file was last modified in the source system.
-            security_categories (Sequence[int]): Security categories to attach to this file.
-            overwrite (bool): If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field,
-                fields for the file found for externalId can be overwritten. The default setting is false.
-                If metadata is included in the request body, all of the original metadata will be overwritten.
-                The actual file will be overwritten after successful upload. If there is no successful upload, the
-                current file contents will be kept.
-                File-Asset mappings only change if explicitly stated in the assetIds field of the POST json body.
-                Do not set assetIds in request body if you want to keep the current file-asset mappings.
+            external_id (Optional[str]): The external ID provided by the client. Must be unique within the project.
+            source (Optional[str]): The source of the file.
+            mime_type (Optional[str]): File type. E.g. text/plain, application/pdf,...
+            metadata (Optional[Dict[str, str]]): Customizable extra data about the file. String key -> String value.
+            directory (Optional[str]): The directory to be associated with this file. Must be an absolute, unix-style path.
+            asset_ids (Optional[Sequence[int]]): No description.
+            data_set_id (Optional[int]): Id of the data set.
+            labels (Optional[Sequence[Label]]): A list of the labels associated with this resource item.
+            geo_location (Optional[GeoLocation]): The geographic metadata of the file.
+            source_created_time (Optional[int]): The timestamp for when the file was originally created in the source system.
+            source_modified_time (Optional[int]): The timestamp for when the file was last modified in the source system.
+            security_categories (Optional[Sequence[int]]): Security categories to attach to this file.
+            overwrite (bool): If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field, fields for the file found for externalId can be overwritten. The default setting is false. If metadata is included in the request body, all of the original metadata will be overwritten. The actual file will be overwritten after successful upload. If there is no successful upload, the current file contents will be kept. File-Asset mappings only change if explicitly stated in the assetIds field of the POST json body. Do not set assetIds in request body if you want to keep the current file-asset mappings.
 
         Examples:
 
@@ -718,8 +700,8 @@ class FilesAPI(APIClient):
         """Get download links by id or external id
 
         Args:
-            id (Union[int, Sequence[int]]): Id or list of ids.
-            external_id (Union[str, Sequence[str]]): External id or list of external ids.
+            id (Optional[Union[int, Sequence[int]]]): Id or list of ids.
+            external_id (Optional[Union[str, Sequence[str]]]): External id or list of external ids.
             extended_expiration (bool): Extend expiration time of download url to 1 hour. Defaults to false.
 
         Returns:
@@ -752,9 +734,9 @@ class FilesAPI(APIClient):
 
 
         Args:
-            directory (str): Directory to download the file(s) to.
-            id (Union[int, Sequence[int]], optional): Id or list of ids
-            external_id (Union[str, Sequence[str]), optional): External ID or list of external ids.
+            directory (Union[str, Path]): Directory to download the file(s) to.
+            id (Optional[Union[int, Sequence[int]]]): Id or list of ids
+            external_id (Optional[Union[str, Sequence[str]]]): External ID or list of external ids.
 
         Returns:
             None
@@ -839,9 +821,9 @@ class FilesAPI(APIClient):
         """Download a file to a specific target.
 
         Args:
-            path (str): The path in which to place the file.
-            id (int): Id of of the file to download.
-            external_id (str): External id of the file to download.
+            path (Union[Path, str]): The path in which to place the file.
+            id (Optional[int]): Id of of the file to download.
+            external_id (Optional[str]): External id of the file to download.
 
         Returns:
             None
@@ -864,8 +846,8 @@ class FilesAPI(APIClient):
         """Download a file as bytes.
 
         Args:
-            id (int, optional): Id of the file
-            external_id (str, optional): External id of the file
+            id (Optional[int]): Id of the file
+            external_id (Optional[str]): External id of the file
 
         Examples:
 

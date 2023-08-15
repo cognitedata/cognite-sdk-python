@@ -54,10 +54,10 @@ class ContainersAPI(APIClient):
         Fetches containers as they are iterated over, so you keep a limited number of containers in memory.
 
         Args:
-            chunk_size (int, optional): Number of containers to return in each chunk. Defaults to yielding one container a time.
-            space (str, optional): The space to query.
-            include_global (bool, optional): Whether the global containers should be returned.
-            limit (int, optional): Maximum number of containers to return. Default to return all items.
+            chunk_size (int | None): Number of containers to return in each chunk. Defaults to yielding one container a time.
+            space (str | None): The space to query.
+            include_global (bool): Whether the global containers should be returned.
+            limit (Optional[int]): Maximum number of containers to return. Default to return all items.
 
         Yields:
             Container | ContainerList: yields Container one by one if chunk_size is not specified, else ContainerList objects.
@@ -94,7 +94,7 @@ class ContainersAPI(APIClient):
         """`Retrieve one or more container by id(s). <https://developer.cognite.com/api#tag/Containers/operation/byExternalIdsContainers>`_
 
         Args:
-            ids (ContainerId | Sequence[ContainerId]): Identifier for container(s).
+            ids (ContainerIdentifier | Sequence[ContainerIdentifier]): Identifier for container(s).
 
         Returns:
             Optional[Container]: Requested container or None if it does not exist.
@@ -124,7 +124,7 @@ class ContainersAPI(APIClient):
         """`Delete one or more containers <https://developer.cognite.com/api#tag/Containers/operation/deleteContainers>`_
 
         Args:
-            id (ContainerId | Sequence[ContainerId): The container identifier(s).
+            id (ContainerIdentifier | Sequence[ContainerIdentifier]): The container identifier(s).
         Returns:
             The container(s) which has been deleted. Empty list if nothing was deleted.
         Examples:
@@ -152,10 +152,9 @@ class ContainersAPI(APIClient):
         """`List containers <https://developer.cognite.com/api#tag/Containers/operation/listContainers>`_
 
         Args:
-            space (str, optional): The space to query
-            limit (int, optional): Maximum number of containers to return. Default to 10. Set to -1, float("inf") or None
-                to return all items.
-            include_global (bool, optional): Whether the global containers should be returned.
+            space (str | None): The space to query
+            limit (int): Maximum number of containers to return. Default to 10. Set to -1, float("inf") or None to return all items.
+            include_global (bool): Whether the global containers should be returned.
 
         Returns:
             ContainerList: List of requested containers
@@ -204,7 +203,7 @@ class ContainersAPI(APIClient):
         """`Add or update (upsert) containers. <https://developer.cognite.com/api#tag/Containers/operation/ApplyContainers>`_
 
         Args:
-            container (container: ContainerApply | Sequence[ContainerApply]): Container or containers of containers to create or update.
+            container (ContainerApply | Sequence[ContainerApply]): ContainerApply | Sequence[ContainerApply]): Container or containers of containers to create or update.
 
         Returns:
             Container | ContainerList: Created container(s)

@@ -84,8 +84,8 @@ class AnnotationsAPI(APIClient):
         """`List annotations. <https://developer.cognite.com/api#tag/Annotations/operation/annotationsFilter>`_
 
         Args:
+            filter (Union[AnnotationFilter, Dict]): Return annotations with parameter values that matches what is specified. Note that annotated_resource_type and annotated_resource_ids are always required.
             limit (int): Maximum number of annotations to return. Defaults to 25.
-            filter (AnnotationFilter): Return annotations with parameter values that matches what is specified. Note that annotated_resource_type and annotated_resource_ids are always required.
 
         Returns:
             AnnotationList: list of annotations
@@ -155,7 +155,7 @@ class AnnotationsAPI(APIClient):
         """`Retrieve annotations by IDs <https://developer.cognite.com/api#tag/Annotations/operation/annotationsByids>`_`
 
         Args:
-            ids (Sequence[int]]: list of IDs to be retrieved
+            ids (Sequence[int]): list of IDs to be retrieved
 
         Returns:
             AnnotationList: list of annotations
@@ -180,7 +180,7 @@ class AnnotationsAPI(APIClient):
 
         Args:
             filter (AnnotationReverseLookupFilter): Filter to apply
-            limit (int, optional): Maximum number of results to return. Defaults to None.
+            limit (int | None): Maximum number of results to return. Defaults to None.
 
         Returns:
             ResourceReferenceList: List of resource references

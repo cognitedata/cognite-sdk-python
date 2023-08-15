@@ -39,10 +39,10 @@ class SyntheticDatapointsAPI(APIClient):
             expressions (Union[str, sympy.Expr, Sequence[Union[str, sympy.Expr]]]): Functions to be calculated. Supports both strings and sympy expressions. Strings can have either the API `ts{}` syntax, or contain variable names to be replaced using the `variables` parameter.
             start (Union[int, str, datetime]): Inclusive start.
             end (Union[int, str, datetime]): Exclusive end
-            limit (int): Number of datapoints per expression to retrieve.
-            variables (Dict[str,Union[str,TimeSeries]]): An optional map of symbol replacements.
-            aggregate (str): use this aggregate when replacing entries from `variables`, does not affect time series given in the `ts{}` syntax.
-            granularity (str): use this granularity with the aggregate.
+            limit (Optional[int]): Number of datapoints per expression to retrieve.
+            variables (Optional[Dict[str, Union[str, TimeSeries]]]): An optional map of symbol replacements.
+            aggregate (Optional[str]): use this aggregate when replacing entries from `variables`, does not affect time series given in the `ts{}` syntax.
+            granularity (Optional[str]): use this granularity with the aggregate.
 
         Returns:
             Union[Datapoints, DatapointsList]: A DatapointsList object containing the calculated data.

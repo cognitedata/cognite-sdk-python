@@ -321,13 +321,10 @@ class GeospatialAPI(APIClient):
         <https://developer.cognite.com/api#tag/Geospatial/operation/createFeatures>
 
         Args:
-            feature_type_external_id: Feature type definition for the features to create.
-            feature: one feature or a list of features to create or a FeatureList object
-            allow_crs_transformation: If true, then input geometries will be transformed into the Coordinate Reference
-                System defined in the feature type specification. When it is false, then requests with geometries in
-                Coordinate Reference System different from the ones defined in the feature type will result in
-                CogniteAPIError exception.
-            chunk_size: maximum number of items in a single request to the api
+            feature_type_external_id (str): Feature type definition for the features to create.
+            feature (Union[Feature, Sequence[Feature], FeatureList]): one feature or a list of features to create or a FeatureList object
+            allow_crs_transformation (bool): If true, then input geometries will be transformed into the Coordinate Reference System defined in the feature type specification. When it is false, then requests with geometries in Coordinate Reference System different from the ones defined in the feature type will result in CogniteAPIError exception.
+            chunk_size (Optional[int]): maximum number of items in a single request to the api
 
         Returns:
             Union[Feature, FeatureList]: Created features
@@ -379,8 +376,8 @@ class GeospatialAPI(APIClient):
         <https://developer.cognite.com/api#tag/Geospatial/operation/deleteFeatures>
 
         Args:
-            feature_type_external_id : Feature type external id for the features to delete.
-            external_id (Union[str, Sequence[str]]): External ID or list of external ids
+            feature_type_external_id (str): No description.
+            external_id (Optional[Union[str, Sequence[str]]]): External ID or list of external ids
 
         Returns:
             None
@@ -429,9 +426,9 @@ class GeospatialAPI(APIClient):
         <https://developer.cognite.com/api#tag/Geospatial/operation/getFeaturesByIds>
 
         Args:
-            feature_type_external_id : Feature type external id for the features to retrieve.
+            feature_type_external_id (str): No description.
             external_id (Union[str, List[str]]): External ID or list of external ids
-            properties (Dict[str, Any]): the output property selection
+            properties (Optional[Dict[str, Any]]): the output property selection
 
         Returns:
             FeatureList: Requested features or None if it does not exist.
@@ -468,13 +465,10 @@ class GeospatialAPI(APIClient):
         <https://developer.cognite.com/api#tag/Geospatial/operation/updateFeatures>
 
         Args:
-            feature_type_external_id : Feature type definition for the features to update.
+            feature_type_external_id (str): No description.
             feature (Union[Feature, Sequence[Feature]]): feature or list of features.
-            allow_crs_transformation: If true, then input geometries will be transformed into the Coordinate Reference
-                System defined in the feature type specification. When it is false, then requests with geometries in
-                Coordinate Reference System different from the ones defined in the feature type will result in
-                CogniteAPIError exception.
-            chunk_size: maximum number of items in a single request to the api
+            allow_crs_transformation (bool): If true, then input geometries will be transformed into the Coordinate Reference System defined in the feature type specification. When it is false, then requests with geometries in Coordinate Reference System different from the ones defined in the feature type will result in CogniteAPIError exception.
+            chunk_size (Optional[int]): maximum number of items in a single request to the api
 
         Returns:
             FeatureList: Updated features
@@ -528,15 +522,11 @@ class GeospatialAPI(APIClient):
         This method allows to filter all features.
 
         Args:
-            feature_type_external_id: the feature type to list features for
-            filter (Dict[str, Any]): the list filter
-            limit (int, optional): Maximum number of features to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all features.
-            properties (Dict[str, Any]): the output property selection
-            allow_crs_transformation: If true, then input geometries if existing in the filter will be transformed into
-                the Coordinate Reference System defined in the feature type specification. When it is false, then
-                requests with geometries in Coordinate Reference System different from the ones defined in the feature
-                type will result in CogniteAPIError exception.
+            feature_type_external_id (str): the feature type to list features for
+            filter (Optional[Dict[str, Any]]): the list filter
+            properties (Optional[Dict[str, Any]]): the output property selection
+            limit (int): Maximum number of features to return. Defaults to 25. Set to -1, float("inf") or None to return all features.
+            allow_crs_transformation (bool): If true, then input geometries if existing in the filter will be transformed into the Coordinate Reference System defined in the feature type specification. When it is false, then requests with geometries in Coordinate Reference System different from the ones defined in the feature type will result in CogniteAPIError exception.
 
         Returns:
             FeatureList: The filtered features
@@ -613,15 +603,12 @@ class GeospatialAPI(APIClient):
         If you need to return more than 1000 items, use the `stream_features(...)` method instead.
 
         Args:
-            feature_type_external_id: the feature type to search for
-            filter (Dict[str, Any]): the search filter
+            feature_type_external_id (str): the feature type to search for
+            filter (Optional[Dict[str, Any]]): the search filter
+            properties (Optional[Dict[str, Any]]): the output property selection
             limit (int): maximum number of results
-            properties (Dict[str, Any]): the output property selection
-            order_by (Sequence[OrderSpec]): the order specification
-            allow_crs_transformation: If true, then input geometries will be transformed into the Coordinate Reference
-                System defined in the feature type specification. When it is false, then requests with geometries in
-                Coordinate Reference System different from the ones defined in the feature type will result in
-                CogniteAPIError exception.
+            order_by (Optional[Sequence[OrderSpec]]): the order specification
+            allow_crs_transformation (bool): If true, then input geometries will be transformed into the Coordinate Reference System defined in the feature type specification. When it is false, then requests with geometries in Coordinate Reference System different from the ones defined in the feature type will result in CogniteAPIError exception.
 
         Returns:
             FeatureList: the filtered features
@@ -732,13 +719,10 @@ class GeospatialAPI(APIClient):
         If you need to order the results, use the `search_features(...)` method instead.
 
         Args:
-            feature_type_external_id: the feature type to search for
-            filter (Dict[str, Any]): the search filter
-            properties (Dict[str, Any]): the output property selection
-            allow_crs_transformation: If true, then input geometries will be transformed into the Coordinate Reference
-                System defined in the feature type specification. When it is false, then requests with geometries in
-                Coordinate Reference System different from the ones defined in the feature type will result in
-                CogniteAPIError exception.
+            feature_type_external_id (str): the feature type to search for
+            filter (Optional[Dict[str, Any]]): the search filter
+            properties (Optional[Dict[str, Any]]): the output property selection
+            allow_crs_transformation (bool): If true, then input geometries will be transformed into the Coordinate Reference System defined in the feature type specification. When it is false, then requests with geometries in Coordinate Reference System different from the ones defined in the feature type will result in CogniteAPIError exception.
 
         Returns:
             Generator[Feature]: a generator for the filtered features
@@ -798,13 +782,13 @@ class GeospatialAPI(APIClient):
         <https://developer.cognite.com/api#tag/Geospatial/operation/aggregateFeatures>
 
         Args:
-            feature_type_external_id: the feature type to filter features from
-            filter (Dict[str, Any]): the search filter
-            property (str): the property for which aggregates should be calculated
-            aggregates (Sequence[str]): list of aggregates to be calculated
-            group_by (Sequence[str]): list of properties to group by with
-            order_by (Sequence[OrderSpec]): the order specification
-            output (Dict[str, Any]): the aggregate output
+            feature_type_external_id (str): the feature type to filter features from
+            property (Optional[str]): the property for which aggregates should be calculated
+            aggregates (Optional[Sequence[str]]): list of aggregates to be calculated
+            filter (Optional[Dict[str, Any]]): the search filter
+            group_by (Optional[Sequence[str]]): list of properties to group by with
+            order_by (Optional[Sequence[OrderSpec]]): the order specification
+            output (Optional[Dict[str, Any]]): the aggregate output
 
         Returns:
             FeatureAggregateList: the filtered features
@@ -862,7 +846,7 @@ class GeospatialAPI(APIClient):
         <https://developer.cognite.com/api#tag/Geospatial/operation/getCoordinateReferenceSystem>
 
         Args:
-            srids: (Union[int, Sequence[int]]): SRID or list of SRIDs
+            srids (Union[int, Sequence[int]]): (Union[int, Sequence[int]]): SRID or list of SRIDs
 
         Returns:
             CoordinateReferenceSystemList: Requested CRSs.
@@ -913,7 +897,7 @@ class GeospatialAPI(APIClient):
         <https://developer.cognite.com/api#tag/Geospatial/operation/createGeospatialCoordinateReferenceSystems>
 
         Args:
-            crs: a CoordinateReferenceSystem or a list of CoordinateReferenceSystem
+            crs (Union[CoordinateReferenceSystem, Sequence[CoordinateReferenceSystem]]): a CoordinateReferenceSystem or a list of CoordinateReferenceSystem
 
         Returns:
             CoordinateReferenceSystemList: list of CRSs.
@@ -972,7 +956,7 @@ class GeospatialAPI(APIClient):
         <https://developer.cognite.com/api#tag/Geospatial/operation/deleteGeospatialCoordinateReferenceSystems>
 
         Args:
-            srids: (Union[int, Sequence[int]]): SRID or list of SRIDs
+            srids (Union[int, Sequence[int]]): (Union[int, Sequence[int]]): SRID or list of SRIDs
 
         Returns:
             None
@@ -1009,16 +993,15 @@ class GeospatialAPI(APIClient):
         """`Put raster <https://developer.cognite.com/api#tag/Geospatial/operation/putRaster>`
 
         Args:
-            feature_type_external_id : Feature type definition for the features to create.
-            feature_external_id: one feature or a list of features to create
-            raster_property_name: the raster property name
-            raster_format: the raster input format
-            raster_srid: the associated SRID for the raster
-            file: the path to the file of the raster
-            allow_crs_transformation: When the parameter is false, requests with rasters in Coordinate Reference
-                System different from the one defined in the feature type will result in bad request response code.
-            raster_scale_x: the X component of the pixel width in units of coordinate reference system
-            raster_scale_y: the Y component of the pixel height in units of coordinate reference system
+            feature_type_external_id (str): No description.
+            feature_external_id (str): one feature or a list of features to create
+            raster_property_name (str): the raster property name
+            raster_format (str): the raster input format
+            raster_srid (int): the associated SRID for the raster
+            file (str): the path to the file of the raster
+            allow_crs_transformation (bool): When the parameter is false, requests with rasters in Coordinate Reference System different from the one defined in the feature type will result in bad request response code.
+            raster_scale_x (Optional[float]): the X component of the pixel width in units of coordinate reference system
+            raster_scale_y (Optional[float]): the Y component of the pixel height in units of coordinate reference system
 
         Returns:
             RasterMetadata: the raster metadata if it was ingested succesfully
@@ -1064,9 +1047,9 @@ class GeospatialAPI(APIClient):
         """`Delete raster <https://developer.cognite.com/api#tag/Geospatial/operation/deleteRaster>`
 
         Args:
-            feature_type_external_id : Feature type definition for the features to create.
-            feature_external_id: one feature or a list of features to create
-            raster_property_name: the raster property name
+            feature_type_external_id (str): No description.
+            feature_external_id (str): one feature or a list of features to create
+            raster_property_name (str): the raster property name
 
         Returns:
             None
@@ -1106,16 +1089,15 @@ class GeospatialAPI(APIClient):
         """`Get raster <https://developer.cognite.com/api#tag/Geospatial/operation/getRaster>`
 
         Args:
-            feature_type_external_id: Feature type definition for the features to create.
-            feature_external_id: one feature or a list of features to create
-            raster_property_name: the raster property name
-            raster_format: the raster output format
-            raster_options: GDAL raster creation key-value options
-            raster_srid: the SRID for the output raster
-            raster_scale_x: the X component of the output pixel width in units of coordinate reference system
-            raster_scale_y: the Y component of the output pixel height in units of coordinate reference system
-            allow_crs_transformation: When the parameter is false, requests with output rasters in Coordinate Reference
-                System different from the one defined in the feature type will result in bad request response code.
+            feature_type_external_id (str): Feature type definition for the features to create.
+            feature_external_id (str): one feature or a list of features to create
+            raster_property_name (str): the raster property name
+            raster_format (str): the raster output format
+            raster_options (Optional[Dict[str, Any]]): GDAL raster creation key-value options
+            raster_srid (Optional[int]): the SRID for the output raster
+            raster_scale_x (Optional[float]): the X component of the output pixel width in units of coordinate reference system
+            raster_scale_y (Optional[float]): the Y component of the output pixel height in units of coordinate reference system
+            allow_crs_transformation (bool): When the parameter is false, requests with output rasters in Coordinate Reference System different from the one defined in the feature type will result in bad request response code.
 
         Returns:
             bytes: the raster data
@@ -1155,7 +1137,7 @@ class GeospatialAPI(APIClient):
         """`Compute <https://developer.cognite.com/api#tag/Geospatial/operation/compute>`
 
         Args:
-            output : Mapping of keys to compute functions.
+            output (Dict[str, GeospatialComputeFunction]): No description.
 
         Returns:
             dict: Mapping of keys to computed items.

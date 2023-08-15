@@ -41,13 +41,13 @@ class DataSetsAPI(APIClient):
         Fetches data sets as they are iterated over, so you keep a limited number of data sets in memory.
 
         Args:
-            chunk_size (int, optional): Number of data sets to return in each chunk. Defaults to yielding one data set a time.
-            metadata (Dict[str, str]): Custom, application-specific metadata. String key -> String value.
-            created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-            last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-            external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
-            write_protected (bool): Specify whether the filtered data sets are write-protected, or not. Set to True to only list write-protected data sets.
-            limit (int, optional): Maximum number of data sets to return. Defaults to return all items.
+            chunk_size (Optional[int]): Number of data sets to return in each chunk. Defaults to yielding one data set a time.
+            metadata (Optional[Dict[str, str]]): Custom, application-specific metadata. String key -> String value.
+            created_time (Optional[Union[Dict[str, Any], TimestampRange]]): Range between two timestamps.
+            last_updated_time (Optional[Union[Dict[str, Any], TimestampRange]]): Range between two timestamps.
+            external_id_prefix (Optional[str]): Filter by this (case-sensitive) prefix for the external ID.
+            write_protected (Optional[bool]): Specify whether the filtered data sets are write-protected, or not. Set to True to only list write-protected data sets.
+            limit (Optional[int]): Maximum number of data sets to return. Defaults to return all items.
 
         Yields:
             Union[DataSet, DataSetList]: yields DataSet one by one if chunk is not specified, else DataSetList objects.
@@ -77,7 +77,7 @@ class DataSetsAPI(APIClient):
         """`Create one or more data sets. <https://developer.cognite.com/api#tag/Data-sets/operation/createDataSets>`_
 
         Args:
-            data_set: Union[DataSet, Sequence[DataSet]]: Data set or list of data sets to create.
+            data_set (Union[DataSet, Sequence[DataSet]]): Union[DataSet, Sequence[DataSet]]: Data set or list of data sets to create.
 
         Returns:
             Union[DataSet, DataSetList]: Created data set(s)
@@ -98,8 +98,8 @@ class DataSetsAPI(APIClient):
         """`Retrieve a single data set by id. <https://developer.cognite.com/api#tag/Data-sets/operation/getDataSets>`_
 
         Args:
-            id (int, optional): ID
-            external_id (str, optional): External ID
+            id (Optional[int]): ID
+            external_id (Optional[str]): External ID
 
         Returns:
             Optional[DataSet]: Requested data set or None if it does not exist.
@@ -130,8 +130,8 @@ class DataSetsAPI(APIClient):
         """`Retrieve multiple data sets by id. <https://developer.cognite.com/api#tag/Data-sets/operation/getDataSets>`_
 
         Args:
-            ids (Sequence[int], optional): IDs
-            external_ids (Sequence[str], optional): External IDs
+            ids (Optional[Sequence[int]]): IDs
+            external_ids (Optional[Sequence[str]]): External IDs
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -168,13 +168,12 @@ class DataSetsAPI(APIClient):
         """`List data sets <https://developer.cognite.com/api#tag/Data-sets/operation/listDataSets>`_
 
         Args:
-            metadata (Dict[str, str]): Custom, application-specific metadata. String key -> String value.
-            created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-            last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-            external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
-            write_protected (bool): Specify whether the filtered data sets are write-protected, or not. Set to True to only list write-protected data sets.
-            limit (int, optional): Maximum number of data sets to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
+            metadata (Optional[Dict[str, str]]): Custom, application-specific metadata. String key -> String value.
+            created_time (Optional[Union[Dict[str, Any], TimestampRange]]): Range between two timestamps.
+            last_updated_time (Optional[Union[Dict[str, Any], TimestampRange]]): Range between two timestamps.
+            external_id_prefix (Optional[str]): Filter by this (case-sensitive) prefix for the external ID.
+            write_protected (Optional[bool]): Specify whether the filtered data sets are write-protected, or not. Set to True to only list write-protected data sets.
+            limit (int): Maximum number of data sets to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             DataSetList: List of requested data sets
@@ -215,7 +214,7 @@ class DataSetsAPI(APIClient):
         """`Aggregate data sets <https://developer.cognite.com/api#tag/Data-sets/operation/aggregateDataSets>`_
 
         Args:
-            filter (Union[DataSetFilter, Dict]): Filter on data set filter with exact match
+            filter (Optional[Union[DataSetFilter, Dict]]): Filter on data set filter with exact match
 
         Returns:
             List[DataSetAggregate]: List of data set aggregates
@@ -237,7 +236,7 @@ class DataSetsAPI(APIClient):
         """`Update one or more data sets <https://developer.cognite.com/api#tag/Data-sets/operation/updateDataSets>`_
 
         Args:
-            item: Union[DataSet, DataSetUpdate, Sequence[Union[DataSet, DataSetUpdate]]]: Data set(s) to update
+            item (Union[DataSet, DataSetUpdate, Sequence[Union[DataSet, DataSetUpdate]]]): Union[DataSet, DataSetUpdate, Sequence[Union[DataSet, DataSetUpdate]]]: Data set(s) to update
 
         Returns:
             Union[DataSet, DataSetList]: Updated data set(s)

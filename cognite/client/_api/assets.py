@@ -117,28 +117,25 @@ class AssetsAPI(APIClient):
         Fetches assets as they are iterated over, so you keep a limited number of assets in memory.
 
         Args:
-            chunk_size (int, optional): Number of assets to return in each chunk. Defaults to yielding one asset a time.
-            name (str): Name of asset. Often referred to as tag.
-            parent_ids (Sequence[int]): Return only the direct descendants of the specified assets.
-            parent_external_ids (Sequence[str]): Return only the direct descendants of the specified assets.
-            asset_subtree_ids (Union[int, Sequence[int]]): Asset subtree id or list of asset subtree ids to filter on.
-            asset_subtree_external_ids (Union[str, Sequence[str]]): Asset subtree external id or list of asset subtree external ids to filter on.
-            metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value
-            data_set_ids (Union[int, Sequence[int]]): Return only assets in the specified data set(s) with this id / these ids.
-            data_set_external_ids (Union[str, Sequence[str]]): Return only assets in the specified data set(s) with this external id / these external ids.
-            labels (LabelFilter): Return only the assets matching the specified label.
-            geo_location (GeoLocationFilter): Only include files matching the specified geographic relation.
-            source (str): The source of this asset
-            created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            root (bool): filtered assets are root assets or not
-            external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
-            aggregated_properties (Sequence[str]): Set of aggregated properties to include.
-            limit (int, optional): Maximum number of assets to return. Defaults to return all items.
-            partitions (int): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed.
-                To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions.
-                When using more than 10 partitions, actual throughout decreases.
-                In future releases of the APIs, CDF may reject requests with more than 10 partitions.
+            chunk_size (Optional[int]): Number of assets to return in each chunk. Defaults to yielding one asset a time.
+            name (Optional[str]): Name of asset. Often referred to as tag.
+            parent_ids (Optional[Sequence[int]]): Return only the direct descendants of the specified assets.
+            parent_external_ids (Optional[Sequence[str]]): Return only the direct descendants of the specified assets.
+            asset_subtree_ids (Optional[Union[int, Sequence[int]]]): Asset subtree id or list of asset subtree ids to filter on.
+            asset_subtree_external_ids (Optional[Union[str, Sequence[str]]]): Asset subtree external id or list of asset subtree external ids to filter on.
+            metadata (Optional[Dict[str, str]]): Custom, application specific metadata. String key -> String value
+            data_set_ids (Optional[Union[int, Sequence[int]]]): Return only assets in the specified data set(s) with this id / these ids.
+            data_set_external_ids (Optional[Union[str, Sequence[str]]]): Return only assets in the specified data set(s) with this external id / these external ids.
+            labels (Optional[LabelFilter]): Return only the assets matching the specified label.
+            geo_location (Optional[GeoLocationFilter]): Only include files matching the specified geographic relation.
+            source (Optional[str]): The source of this asset
+            created_time (Optional[Union[Dict[str, Any], TimestampRange]]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            last_updated_time (Optional[Union[Dict[str, Any], TimestampRange]]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            root (Optional[bool]): filtered assets are root assets or not
+            external_id_prefix (Optional[str]): Filter by this (case-sensitive) prefix for the external ID.
+            aggregated_properties (Optional[Sequence[str]]): Set of aggregated properties to include.
+            limit (Optional[int]): Maximum number of assets to return. Defaults to return all items.
+            partitions (Optional[int]): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
 
         Yields:
             Union[Asset, AssetList]: yields Asset one by one if chunk_size is not specified, else AssetList objects.
@@ -190,8 +187,8 @@ class AssetsAPI(APIClient):
         """`Retrieve a single asset by id. <https://developer.cognite.com/api#tag/Assets/operation/getAsset>`_
 
         Args:
-            id (int, optional): ID
-            external_id (str, optional): External ID
+            id (Optional[int]): ID
+            external_id (Optional[str]): External ID
 
         Returns:
             Optional[Asset]: Requested asset or None if it does not exist.
@@ -222,8 +219,8 @@ class AssetsAPI(APIClient):
         """`Retrieve multiple assets by id. <https://developer.cognite.com/api#tag/Assets/operation/byIdsAssets>`_
 
         Args:
-            ids (Sequence[int], optional): IDs
-            external_ids (Sequence[str], optional): External IDs
+            ids (Optional[Sequence[int]]): IDs
+            external_ids (Optional[Sequence[str]]): External IDs
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -272,28 +269,24 @@ class AssetsAPI(APIClient):
         """`List assets <https://developer.cognite.com/api#tag/Assets/operation/listAssets>`_
 
         Args:
-            name (str): Name of asset. Often referred to as tag.
-            parent_ids (Sequence[int]): Return only the direct descendants of the specified assets.
-            parent_external_ids (Sequence[str]): Return only the direct descendants of the specified assets.
-            asset_subtree_ids (Union[int, Sequence[int]]): Asset subtree id or list of asset subtree ids to filter on.
-            asset_subtree_external_ids (Union[str, Sequence[str]]): Asset subtree external id or list of asset subtree external ids to filter on.
-            data_set_ids (Union[int, Sequence[int]]): Return only assets in the specified data set(s) with this id / these ids.
-            data_set_external_ids (Union[str, Sequence[str]]): Return only assets in the specified data set(s) with this external id / these external ids.
-            labels (LabelFilter): Return only the assets matching the specified label filter.
-            geo_location (GeoLocationFilter): Only include files matching the specified geographic relation.
-            metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value.
-            source (str): The source of this asset.
-            created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            root (bool): filtered assets are root assets or not.
-            external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
-            aggregated_properties (Sequence[str]): Set of aggregated properties to include.
-            partitions (int): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed.
-                To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions.
-                When using more than 10 partitions, actual throughout decreases.
-                In future releases of the APIs, CDF may reject requests with more than 10 partitions.
-            limit (int, optional): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
+            name (Optional[str]): Name of asset. Often referred to as tag.
+            parent_ids (Optional[Sequence[int]]): Return only the direct descendants of the specified assets.
+            parent_external_ids (Optional[Sequence[str]]): Return only the direct descendants of the specified assets.
+            asset_subtree_ids (Optional[Union[int, Sequence[int]]]): Asset subtree id or list of asset subtree ids to filter on.
+            asset_subtree_external_ids (Optional[Union[str, Sequence[str]]]): Asset subtree external id or list of asset subtree external ids to filter on.
+            data_set_ids (Optional[Union[int, Sequence[int]]]): Return only assets in the specified data set(s) with this id / these ids.
+            data_set_external_ids (Optional[Union[str, Sequence[str]]]): Return only assets in the specified data set(s) with this external id / these external ids.
+            labels (Optional[LabelFilter]): Return only the assets matching the specified label filter.
+            geo_location (Optional[GeoLocationFilter]): Only include files matching the specified geographic relation.
+            metadata (Optional[Dict[str, str]]): Custom, application specific metadata. String key -> String value.
+            source (Optional[str]): The source of this asset.
+            created_time (Optional[Union[Dict[str, Any], TimestampRange]]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            last_updated_time (Optional[Union[Dict[str, Any], TimestampRange]]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            root (Optional[bool]): filtered assets are root assets or not.
+            external_id_prefix (Optional[str]): Filter by this (case-sensitive) prefix for the external ID.
+            aggregated_properties (Optional[Sequence[str]]): Set of aggregated properties to include.
+            partitions (Optional[int]): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
+            limit (int): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             AssetList: List of requested assets
@@ -363,7 +356,7 @@ class AssetsAPI(APIClient):
         """`Aggregate assets <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
         Args:
-            filter (Union[AssetFilter, Dict]): Filter on assets filter with exact match
+            filter (Optional[Union[AssetFilter, dict]]): Filter on assets filter with exact match
 
         Returns:
             List[AssetAggregate]: List of asset aggregates
@@ -387,7 +380,7 @@ class AssetsAPI(APIClient):
             In the case of text fields, the values are aggregated in a case-insensitive manner
 
         Args:
-            filter (Union[AssetFilter, Dict]): Filter on assets filter with exact match
+            filter (Optional[Union[AssetFilter, dict]]): Filter on assets filter with exact match
 
         Returns:
             Sequence[AggregateBucketResult]: List of asset aggregates
@@ -414,8 +407,8 @@ class AssetsAPI(APIClient):
             In the case of text fields, the values are aggregated in a case-insensitive manner
 
         Args:
-            filter (Union[AssetFilter, Dict]): Filter on assets filter with exact match
             keys (Sequence[str]): Metadata key(s) to apply the aggregation on. Currently supports exactly one key per request.
+            filter (Optional[Union[AssetFilter, dict]]): Filter on assets filter with exact match
 
         Returns:
             Sequence[AggregateBucketResult]: List of asset aggregates
@@ -718,11 +711,9 @@ class AssetsAPI(APIClient):
         assets, so you may pass zero, one or many (same goes for the non-root assets).
 
         Args:
-            assets (Sequence[Asset] | AssetHierarchy): List of assets to create or an instance of AssetHierarchy.
-            upsert (bool): If used, already existing assets will be updated instead of an exception being raised.
-                You may control how updates are applied with the 'upsert_mode' argument.
-            upsert_mode ("patch" | "replace"): Only applicable with upsert. Pass 'patch' to only update fields with
-                non-null values (default), or 'replace' to do full updates (unset fields become null or empty).
+            assets (Union[Sequence[Asset], AssetHierarchy]): List of assets to create or an instance of AssetHierarchy.
+            upsert (bool): If used, already existing assets will be updated instead of an exception being raised. You may control how updates are applied with the 'upsert_mode' argument.
+            upsert_mode (Literal["patch", "replace"]): Only applicable with upsert. Pass 'patch' to only update fields with non-null values (default), or 'replace' to do full updates (unset fields become null or empty).
 
         Returns:
             AssetList: Created (and possibly updated) asset hierarchy
@@ -844,8 +835,8 @@ class AssetsAPI(APIClient):
         """`Delete one or more assets <https://developer.cognite.com/api#tag/Assets/operation/deleteAssets>`_
 
         Args:
-            id (Union[int, Sequence[int]): Id or list of ids
-            external_id (Union[str, Sequence[str]]): External ID or list of external ids
+            id (Optional[Union[int, Sequence[int]]]): Id or list of ids
+            external_id (Optional[Union[str, Sequence[str]]]): External ID or list of external ids
             recursive (bool): Recursively delete whole asset subtrees under given ids. Defaults to False.
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
@@ -1066,10 +1057,10 @@ class AssetsAPI(APIClient):
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:
-            name (str): Fuzzy match on name.
-            description (str): Fuzzy match on description.
-            query (str): Whitespace-separated terms to search for in assets. Does a best-effort fuzzy search in relevant fields (currently name and description) for variations of any of the search terms, and orders results by relevance.
-            filter (Union[AssetFilter, Dict]): Filter to apply. Performs exact match on these fields.
+            name (Optional[str]): Fuzzy match on name.
+            description (Optional[str]): Fuzzy match on description.
+            query (Optional[str]): Whitespace-separated terms to search for in assets. Does a best-effort fuzzy search in relevant fields (currently name and description) for variations of any of the search terms, and orders results by relevance.
+            filter (Optional[Union[AssetFilter, Dict]]): Filter to apply. Performs exact match on these fields.
             limit (int): Maximum number of results to return.
 
         Returns:
@@ -1121,10 +1112,9 @@ class AssetsAPI(APIClient):
         """Retrieve the subtree for this asset up to a specified depth.
 
         Args:
-            id (int): Id of the root asset in the subtree.
-            external_id (str): External id of the root asset in the subtree.
-            depth (int): Retrieve assets up to this depth below the root asset in the subtree. Omit to get the entire
-                subtree.
+            id (Optional[int]): Id of the root asset in the subtree.
+            external_id (Optional[str]): External id of the root asset in the subtree.
+            depth (Optional[int]): Retrieve assets up to this depth below the root asset in the subtree. Omit to get the entire subtree.
 
         Returns:
             AssetList: The requested assets or empty AssetList if asset does not exist.

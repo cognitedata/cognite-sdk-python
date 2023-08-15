@@ -56,12 +56,11 @@ class ViewsAPI(APIClient):
         Fetches views as they are iterated over, so you keep a limited number of views in memory.
 
         Args:
-            chunk_size (int, optional): Number of views to return in each chunk. Defaults to yielding one view at a time.
-            limit (int, optional): Maximum number of views to return. Default to return all items.
-            space: (str | None): The space to query.
+            chunk_size (Optional[int]): Number of views to return in each chunk. Defaults to yielding one view at a time.
+            limit (Optional[int]): Maximum number of views to return. Default to return all items.
+            space (str | None): (str | None): The space to query.
             include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
-            all_versions (bool): Whether to return all versions. If false, only the newest version is returned,
-                                 which is determined based on the 'createdTime' field.
+            all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
             include_global (bool): Whether to include global views.
 
         Yields:
@@ -102,7 +101,7 @@ class ViewsAPI(APIClient):
         """`Retrieve a single view by id. <https://developer.cognite.com/api#tag/Views/operation/byExternalIdsViews>`_
 
         Args:
-            ids (ViewId | Sequence[ViewId]): View identifier(s)
+            ids (ViewIdentifier | Sequence[ViewIdentifier]): View identifier(s)
             include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
             all_versions (bool): Whether to return all versions. If false, only the newest version is returned,
 
@@ -133,7 +132,7 @@ class ViewsAPI(APIClient):
         """`Delete one or more views <https://developer.cognite.com/api#tag/Views/operation/deleteViews>`_
 
         Args:
-            ids (ViewId | Sequence[ViewId]): View dentifier(s)
+            ids (ViewIdentifier | Sequence[ViewIdentifier]): View dentifier(s)
         Returns:
             The identifier for the view(s) which has been deleted. Empty list if nothing was deleted.
         Examples:
@@ -166,12 +165,10 @@ class ViewsAPI(APIClient):
         """`List views <https://developer.cognite.com/api#tag/Views/operation/listViews>`_
 
         Args:
-            limit (int, optional): Maximum number of views to return. Defaults to 10. Set to -1, float("inf") or None
-                to return all items.
-            space: (str | None): The space to query.
+            limit (int): Maximum number of views to return. Defaults to 10. Set to -1, float("inf") or None to return all items.
+            space (str | None): (str | None): The space to query.
             include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
-            all_versions (bool): Whether to return all versions. If false, only the newest version is returned,
-                                 which is determined based on the 'createdTime' field.
+            all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
             include_global (bool): Whether to include global views.
 
         Returns:
@@ -217,7 +214,7 @@ class ViewsAPI(APIClient):
         """`Create or update (upsert) one or more views. <https://developer.cognite.com/api#tag/Views/operation/ApplyViews>`_
 
         Args:
-            view (view: ViewApply | Sequence[ViewApply]): View or views of views to create or update.
+            view (ViewApply | Sequence[ViewApply]): ViewApply | Sequence[ViewApply]): View or views of views to create or update.
 
         Returns:
             View | ViewList: Created view(s)

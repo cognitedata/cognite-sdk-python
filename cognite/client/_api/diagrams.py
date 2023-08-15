@@ -166,9 +166,10 @@ class DiagramsAPI(APIClient):
             search_field (str): If entities is a list of dictionaries, this is the key to the values to detect in the PnId
             partial_match (bool): Allow for a partial match (e.g. missing prefix).
             min_tokens (int): Minimal number of tokens a match must be based on
-            file_ids (Sequence[int]): ID of the files, should already be uploaded in the same tenant.
-            file_external_ids (Sequence[str]): File external ids.
-            file_references (Sequence[FileReference]): File references (id or external id) with page ranges.
+            file_ids (Optional[Union[int, Sequence[int]]]): ID of the files, should already be uploaded in the same tenant.
+            file_external_ids (Optional[Union[str, Sequence[str]]]): File external ids.
+            file_references (Union[List[FileReference], FileReference, None]): File references (id or external id) with page ranges.
+            multiple_jobs (bool): No description.
         Keyword Args:
             multiple_jobs (bool): Enables you to publish multiple jobs. If True the method will return a tuple of DetectJobBundle and list
                 of potentially unposted files. If False it will return a single DiagramDetectResults. Defaults to False.
@@ -272,7 +273,7 @@ class DiagramsAPI(APIClient):
         """Convert a P&ID to interactive SVGs where the provided annotations are highlighted.
 
         Args:
-            detect_job(DiagramConvertResults): detect job
+            detect_job (DiagramDetectResults): detect job
 
         Returns:
             DiagramConvertResults: Resulting queued job. Note that .result property of this job will block waiting for results.

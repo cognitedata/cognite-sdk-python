@@ -223,8 +223,8 @@ class FunctionsAPI(APIClient):
         """`Delete one or more functions. <https://developer.cognite.com/api#tag/Functions/operation/deleteFunctions>`_
 
         Args:
-            id (Union[int, Sequence[int]): Id or list of ids.
-            external_id (Union[str, Sequence[str]]): External ID or list of external ids.
+            id (Optional[Union[int, Sequence[int]]]): Id or list of ids.
+            external_id (Optional[Union[str, Sequence[str]]]): External ID or list of external ids.
 
         Returns:
             None
@@ -252,13 +252,13 @@ class FunctionsAPI(APIClient):
         """`List all functions. <https://developer.cognite.com/api#tag/Functions/operation/listFunctions>`_
 
         Args:
-            name (str): The name of the function.
-            owner (str): Owner of the function.
-            file_id (int): The file ID of the zip-file used to create the function.
-            status (str): Status of the function. Possible values: ["Queued", "Deploying", "Ready", "Failed"].
-            external_id_prefix (str): External ID prefix to filter on.
-            created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            limit (int): Maximum number of functions to return. Pass in -1, float('inf') or None to list all.
+            name (Optional[str]): The name of the function.
+            owner (Optional[str]): Owner of the function.
+            file_id (Optional[int]): The file ID of the zip-file used to create the function.
+            status (Optional[str]): Status of the function. Possible values: ["Queued", "Deploying", "Ready", "Failed"].
+            external_id_prefix (Optional[str]): External ID prefix to filter on.
+            created_time (Optional[Union[Dict[str, int], TimestampRange]]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            limit (Optional[int]): Maximum number of functions to return. Pass in -1, float('inf') or None to list all.
 
         Returns:
             FunctionList: List of functions
@@ -292,8 +292,8 @@ class FunctionsAPI(APIClient):
         """`Retrieve a single function by id. <https://developer.cognite.com/api#tag/Functions/operation/byIdsFunctions>`_
 
         Args:
-            id (int, optional): ID
-            external_id (str, optional): External ID
+            id (Optional[int]): ID
+            external_id (Optional[str]): External ID
 
         Returns:
             Optional[Function]: Requested function or None if it does not exist.
@@ -321,8 +321,8 @@ class FunctionsAPI(APIClient):
         """`Retrieve multiple functions by id. <https://developer.cognite.com/api#tag/Functions/operation/byIdsFunctions>`_
 
         Args:
-            ids (Sequence[int], optional): IDs
-            external_ids (Sequence[str], optional): External IDs
+            ids (Optional[Sequence[int]]): IDs
+            external_ids (Optional[Sequence[str]]): External IDs
 
         Returns:
             FunctionList: The requested functions.
@@ -359,9 +359,9 @@ class FunctionsAPI(APIClient):
         """`Call a function by its ID or external ID. <https://developer.cognite.com/api#tag/Functions/operation/postFunctionsCall>`_.
 
         Args:
-            id (int, optional): ID
-            external_id (str, optional): External ID
-            data (Union[str, dict], optional): Input data to the function (JSON serializable). This data is passed deserialized into the function through one of the arguments called data. **WARNING:** Secrets or other confidential information should not be passed via this argument. There is a dedicated `secrets` argument in FunctionsAPI.create() for this purpose.'
+            id (Optional[int]): ID
+            external_id (Optional[str]): External ID
+            data (Optional[Dict]): Input data to the function (JSON serializable). This data is passed deserialized into the function through one of the arguments called data. **WARNING:** Secrets or other confidential information should not be passed via this argument. There is a dedicated `secrets` argument in FunctionsAPI.create() for this purpose.'
             wait (bool): Wait until the function call is finished. Defaults to True.
 
         Returns:
@@ -676,13 +676,13 @@ class FunctionCallsAPI(APIClient):
         """`List all calls associated with a specific function id. <https://developer.cognite.com/api#tag/Function-calls/operation/listFunctionCalls>`_ Either function_id or function_external_id must be specified.
 
         Args:
-            function_id (int, optional): ID of the function on which the calls were made.
-            function_external_id (str, optional): External ID of the function on which the calls were made.
-            status (str, optional): Status of the call. Possible values ["Running", "Failed", "Completed", "Timeout"].
-            schedule_id (int, optional): Schedule id from which the call belongs (if any).
-            start_time (Dict[str, int], optional): Start time of the call. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            end_time (Dict[str, int], optional): End time of the call. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            limit (int, optional): Maximum number of function calls to list. Pass in -1, float('inf') or None to list all Function Calls.
+            function_id (Optional[int]): ID of the function on which the calls were made.
+            function_external_id (Optional[str]): External ID of the function on which the calls were made.
+            status (Optional[str]): Status of the call. Possible values ["Running", "Failed", "Completed", "Timeout"].
+            schedule_id (Optional[int]): Schedule id from which the call belongs (if any).
+            start_time (Optional[Dict[str, int]]): Start time of the call. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            end_time (Optional[Dict[str, int]]): End time of the call. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            limit (Optional[int]): Maximum number of function calls to list. Pass in -1, float('inf') or None to list all Function Calls.
 
         Returns:
             FunctionCallList: List of function calls
@@ -725,8 +725,8 @@ class FunctionCallsAPI(APIClient):
 
         Args:
             call_id (int): ID of the call.
-            function_id (int, optional): ID of the function on which the call was made.
-            function_external_id (str, optional): External ID of the function on which the call was made.
+            function_id (Optional[int]): ID of the function on which the call was made.
+            function_external_id (Optional[str]): External ID of the function on which the call was made.
 
         Returns:
             Union[FunctionCallList, FunctionCall, None]: Requested function call.
@@ -767,8 +767,8 @@ class FunctionCallsAPI(APIClient):
 
         Args:
             call_id (int): ID of the call.
-            function_id (int, optional): ID of the function on which the call was made.
-            function_external_id (str, optional): External ID of the function on which the call was made.
+            function_id (Optional[int]): ID of the function on which the call was made.
+            function_external_id (Optional[str]): External ID of the function on which the call was made.
 
         Returns:
             Dict[str, Any] | None: Response from the function call.
@@ -802,8 +802,8 @@ class FunctionCallsAPI(APIClient):
 
         Args:
             call_id (int): ID of the call.
-            function_id (int, optional): ID of the function on which the call was made.
-            function_external_id (str, optional): External ID of the function on which the call was made.
+            function_id (Optional[int]): ID of the function on which the call was made.
+            function_external_id (Optional[str]): External ID of the function on which the call was made.
 
         Returns:
             FunctionCallLog: Log for the function call.
@@ -872,12 +872,12 @@ class FunctionSchedulesAPI(APIClient):
         """`List all schedules associated with a specific project. <https://developer.cognite.com/api#tag/Function-schedules/operation/listFunctionSchedules>`_
 
         Args:
-            name (str): Name of the function schedule.
-            function_id (int): ID of the function the schedules are linked to.
-            function_external_id (str): External ID of the function the schedules are linked to.
-            created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            cron_expression (str): Cron expression.
-            limit (int): Maximum number of schedules to list. Pass in -1, float('inf') or None to list all.
+            name (Optional[str]): Name of the function schedule.
+            function_id (Optional[int]): ID of the function the schedules are linked to.
+            function_external_id (Optional[str]): External ID of the function the schedules are linked to.
+            created_time (Optional[Union[Dict[str, int], TimestampRange]]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            cron_expression (Optional[str]): Cron expression.
+            limit (Optional[int]): Maximum number of schedules to list. Pass in -1, float('inf') or None to list all.
 
         Returns:
             FunctionSchedulesList: List of function schedules
@@ -933,14 +933,12 @@ class FunctionSchedulesAPI(APIClient):
 
         Args:
             name (str): Name of the schedule.
-            function_id (optional, int): Id of the function. This is required if the schedule is created with client_credentials.
-            function_external_id (optional, str): External id of the function. **NOTE**: This is deprecated and will be removed in a future major version.
-            description (str): Description of the schedule.
             cron_expression (str): Cron expression.
-            client_credentials: (optional, ClientCredentials, Dict): Instance of ClientCredentials or a dictionary containing client credentials:
-                client_id
-                client_secret
-            data (optional, Dict): Data to be passed to the scheduled run.
+            function_id (Optional[int]): Id of the function. This is required if the schedule is created with client_credentials.
+            function_external_id (Optional[str]): External id of the function. **NOTE**: This is deprecated and will be removed in a future major version.
+            client_credentials (Union[Dict, ClientCredentials, None]): (optional, ClientCredentials, Dict): Instance of ClientCredentials or a dictionary containing client credentials: client_id client_secret
+            description (str): Description of the schedule.
+            data (Optional[Dict]): Data to be passed to the scheduled run.
 
         Returns:
             FunctionSchedule: Created function schedule.

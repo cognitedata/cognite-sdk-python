@@ -53,8 +53,8 @@ class TransformationSchedulesAPI(APIClient):
         """`Retrieve a single transformation schedule by the id or external id of its transformation. <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/getTransformationSchedulesByIds>`_
 
         Args:
-            id (int, optional): transformation ID
-            external_id (str, optional): transformation External ID
+            id (Optional[int]): transformation ID
+            external_id (Optional[str]): transformation External ID
 
         Returns:
             Optional[TransformationSchedule]: Requested transformation schedule or None if it does not exist.
@@ -87,8 +87,8 @@ class TransformationSchedulesAPI(APIClient):
         """`Retrieve multiple transformation schedules by the ids or external ids of the corresponding transformations. <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/getTransformationSchedulesByIds>`_
 
         Args:
-            ids (int, optional): transformation IDs
-            external_ids (str, optional): transformation External IDs
+            ids (Optional[Sequence[int]]): transformation IDs
+            external_ids (Optional[Sequence[str]]): transformation External IDs
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -123,8 +123,7 @@ class TransformationSchedulesAPI(APIClient):
 
         Args:
             include_public (bool): Whether public transformations should be included in the results. (default true).
-            cursor (str): Cursor for paging through results.
-            limit (int): Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
+            limit (Optional[int]): Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
 
         Returns:
             TransformationScheduleList: List of schedules
@@ -156,8 +155,8 @@ class TransformationSchedulesAPI(APIClient):
         """`Unschedule one or more transformations <https://developer.cognite.com/api#tag/Transformation-Schedules/operation/deleteTransformationSchedules>`_
 
         Args:
-            id (Union[int, Sequence[int]): Id or list of ids
-            external_id (Union[str, Sequence[str]]): External ID or list of external ids
+            id (Optional[Union[int, Sequence[int]]]): Id or list of ids
+            external_id (Optional[Union[str, Sequence[str]]]): External ID or list of external ids
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:

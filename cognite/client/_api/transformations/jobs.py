@@ -27,9 +27,9 @@ class TransformationJobsAPI(APIClient):
         """`List all running transformation jobs. <https://developer.cognite.com/api#tag/Transformation-Jobs/operation/getTransformationJobs>`_
 
         Args:
-            limit (int): Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
-            transformation_id (int): Filters the results by the internal transformation id.
-            transformation_external_id (str): Filters the results by the external transformation id.
+            limit (Optional[int]): Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
+            transformation_id (Optional[int]): Filters the results by the internal transformation id.
+            transformation_external_id (Optional[str]): Filters the results by the external transformation id.
 
         Returns:
             TransformationJobList: List of transformation jobs

@@ -39,8 +39,8 @@ class SpacesAPI(APIClient):
         Fetches spaces as they are iterated over, so you keep a limited number of spaces in memory.
 
         Args:
-            chunk_size (int, optional): Number of spaces to return in each chunk. Defaults to yielding one space a time.
-            limit (int, optional): Maximum number of spaces to return. Default to return all items.
+            chunk_size (Optional[int]): Number of spaces to return in each chunk. Defaults to yielding one space a time.
+            limit (Optional[int]): Maximum number of spaces to return. Default to return all items.
 
         Yields:
             Union[Space, SpaceList]: yields Space one by one if chunk_size is not specified, else SpaceList objects.
@@ -75,7 +75,7 @@ class SpacesAPI(APIClient):
         """`Retrieve space by id. <https://developer.cognite.com/api#tag/Spaces/operation/bySpaceIdsSpaces>`_
 
         Args:
-            space (str): Space ID
+            space (str | Sequence[str]): Space ID
 
         Returns:
             Optional[Space]: Requested space or None if it does not exist.
@@ -132,9 +132,8 @@ class SpacesAPI(APIClient):
         """`List spaces <https://developer.cognite.com/api#tag/Spaces/operation/listSpacesV3>`_
 
         Args:
-            limit (int, optional): Maximum number of spaces to return. Defaults to 10. Set to -1, float("inf") or None
-                to return all items.
-            include_global (bool, optional): Whether to include global spaces. Defaults to False.
+            limit (int): Maximum number of spaces to return. Defaults to 10. Set to -1, float("inf") or None to return all items.
+            include_global (bool): Whether to include global spaces. Defaults to False.
 
         Returns:
             SpaceList: List of requested spaces
@@ -181,7 +180,7 @@ class SpacesAPI(APIClient):
         """`Create or patch one or more spaces. <https://developer.cognite.com/api#tag/Spaces/operation/ApplySpaces>`_
 
         Args:
-            space (space: Space | Sequence[Space]): Space or spaces of spacesda to create or update.
+            space (SpaceApply | Sequence[SpaceApply]): Space | Sequence[Space]): Space or spaces of spacesda to create or update.
 
         Returns:
             Space | SpaceList: Created space(s)

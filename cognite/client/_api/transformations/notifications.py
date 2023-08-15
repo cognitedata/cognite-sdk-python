@@ -50,9 +50,9 @@ class TransformationNotificationsAPI(APIClient):
 
         Args:
             transformation_id (Optional[int]): Filter by transformation internal numeric ID.
-            transformation_external_id (str): Filter by transformation externalId.
-            destination (str): Filter by notification destination.
-            limit (int): Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
+            transformation_external_id (Optional[str]): Filter by transformation externalId.
+            destination (Optional[str]): Filter by notification destination.
+            limit (Optional[int]): Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
 
         Returns:
             TransformationNotificationList: List of transformation notifications
@@ -89,7 +89,7 @@ class TransformationNotificationsAPI(APIClient):
         """`Deletes the specified notification subscriptions on the transformation. Does nothing when the subscriptions already don't exist <https://developer.cognite.com/api#tag/Transformation-Notifications/operation/deleteTransformationNotifications>`_
 
         Args:
-            id (Union[int, Sequence[int]): Id or list of transformation notification ids
+            id (Optional[Union[int, Sequence[int]]]): Id or list of transformation notification ids
 
         Returns:
             None

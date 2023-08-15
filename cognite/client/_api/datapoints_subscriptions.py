@@ -111,7 +111,7 @@ class DatapointsSubscriptionAPI(APIClient):
         """`Retrieve one or more subscriptions by external ID. <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/getSubscriptionsByIds>`_
 
         Args:
-            external_id (str | Sequence[str]): External ID or list of external IDs of subscriptions to retrieve.
+            external_id (str): External ID or list of external IDs of subscriptions to retrieve.
             ignore_unknown_ids (bool): Whether to ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -197,10 +197,7 @@ class DatapointsSubscriptionAPI(APIClient):
 
         Args:
             external_id (str): The external ID of the subscription.
-            start (str, optional): When to start the iteration. If set to None, the iteration will start from the beginning.
-                                   The format is "N[timeunit]-ago", where timeunit is w,d,h,m (week, day, hour, minute).
-                                   For example, "12h-ago" will start the iteration from 12 hours ago. You can also
-                                   set it to "now" to jump straight to the end. Defaults to None.
+            start (str | None): When to start the iteration. If set to None, the iteration will start from the beginning. The format is "N[timeunit]-ago", where timeunit is w,d,h,m (week, day, hour, minute). For example, "12h-ago" will start the iteration from 12 hours ago. You can also set it to "now" to jump straight to the end. Defaults to None.
             limit (int): Approximate number of results to return across all partitions.
 
         Yields:
@@ -253,8 +250,7 @@ class DatapointsSubscriptionAPI(APIClient):
         """`List data point subscriptions <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/listSubscriptions>`_
 
         Args:
-            limit (int, optional): Maximum number of subscriptions to return. Defaults to 100. Set to -1, float("inf") or None
-                to return all items.
+            limit (int): Maximum number of subscriptions to return. Defaults to 100. Set to -1, float("inf") or None to return all items.
         Returns:
             DatapointSubscriptionList: List of requested datapoint subscriptions
 

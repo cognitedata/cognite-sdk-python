@@ -86,18 +86,18 @@ class SequencesAPI(APIClient):
         Fetches sequences as they are iterated over, so you keep a limited number of objects in memory.
 
         Args:
-            chunk_size (int, optional): Number of sequences to return in each chunk. Defaults to yielding one event a time.
-            name (str): Filter out sequences that do not have this *exact* name.
-            external_id_prefix (str): Filter out sequences that do not have this string as the start of the externalId
-            metadata (Dict[str, Any]): Filter out sequences that do not match these metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
-            asset_ids (SequenceType[int]): Filter out sequences that are not linked to any of these assets.
-            asset_subtree_ids (Union[int, SequenceType[int]]): Asset subtree id or list of asset subtree ids to filter on.
-            asset_subtree_external_ids (Union[str, SequenceType[str]]): Asset subtree external id or list of asset subtree external ids to filter on.
-            data_set_ids (Union[int, SequenceType[int]]): Return only sequences in the specified data set(s) with this id / these ids.
-            data_set_external_ids (SequenceType[str]): Return only sequences in the specified data set(s) with this external id / these external ids.
-            created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            limit (int, optional): Max number of sequences to return. Defaults to return all items.
+            chunk_size (Optional[int]): Number of sequences to return in each chunk. Defaults to yielding one event a time.
+            name (Optional[str]): Filter out sequences that do not have this *exact* name.
+            external_id_prefix (Optional[str]): Filter out sequences that do not have this string as the start of the externalId
+            metadata (Optional[Dict[str, str]]): Filter out sequences that do not match these metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
+            asset_ids (Optional[SequenceType[int]]): Filter out sequences that are not linked to any of these assets.
+            asset_subtree_ids (Optional[Union[int, SequenceType[int]]]): Asset subtree id or list of asset subtree ids to filter on.
+            asset_subtree_external_ids (Optional[Union[str, SequenceType[str]]]): Asset subtree external id or list of asset subtree external ids to filter on.
+            data_set_ids (Optional[Union[int, SequenceType[int]]]): Return only sequences in the specified data set(s) with this id / these ids.
+            data_set_external_ids (Optional[Union[str, SequenceType[str]]]): Return only sequences in the specified data set(s) with this external id / these external ids.
+            created_time (Optional[Dict[str, Any]]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            last_updated_time (Optional[Dict[str, Any]]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            limit (Optional[int]): Max number of sequences to return. Defaults to return all items.
 
         Yields:
             Union[Sequence, SequenceList]: yields Sequence one by one if chunk_size is not specified, else SequenceList objects.
@@ -138,8 +138,8 @@ class SequencesAPI(APIClient):
         """`Retrieve a single sequence by id. <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceById>`_
 
         Args:
-            id (int, optional): ID
-            external_id (str, optional): External ID
+            id (Optional[int]): ID
+            external_id (Optional[str]): External ID
 
         Returns:
             Optional[Sequence]: Requested sequences or None if it does not exist.
@@ -170,9 +170,9 @@ class SequencesAPI(APIClient):
         """`Retrieve multiple sequences by id. <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceById>`_
 
         Args:
-            ids (SequenceType[int], optional): IDs
-            external_ids (SequenceType[str], optional): External IDs
-            ignore_unknown_ids (bool, optional): Ignore IDs and external IDs that are not found rather than throw an exception.
+            ids (Optional[SequenceType[int]]): IDs
+            external_ids (Optional[SequenceType[str]]): External IDs
+            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
             SequenceList: The requested sequences.
@@ -215,18 +215,17 @@ class SequencesAPI(APIClient):
         Fetches sequences as they are iterated over, so you keep a limited number of objects in memory.
 
         Args:
-            name (str): Filter out sequences that do not have this *exact* name.
-            external_id_prefix (str): Filter out sequences that do not have this string as the start of the externalId
-            metadata (Dict[str, Any]): Filter out sequences that do not match these metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
-            asset_ids (SequenceType[int]): Filter out sequences that are not linked to any of these assets.
-            asset_subtree_ids (Union[int, SequenceType[int]]): Asset subtree id or list of asset subtree ids to filter on.
-            asset_subtree_external_ids (Union[str, SequenceType[str]]): Asset subtree external id or list of asset subtree external ids to filter on.
-            data_set_ids (Union[int, SequenceType[int]]): Return only sequences in the specified data set(s) with this id / these ids.
-            data_set_external_ids (SequenceType[str]): Return only sequences in the specified data set(s) with this external id / these external ids.
-            created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            limit (int, optional): Max number of sequences to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
+            name (Optional[str]): Filter out sequences that do not have this *exact* name.
+            external_id_prefix (Optional[str]): Filter out sequences that do not have this string as the start of the externalId
+            metadata (Optional[Dict[str, str]]): Filter out sequences that do not match these metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
+            asset_ids (Optional[SequenceType[int]]): Filter out sequences that are not linked to any of these assets.
+            asset_subtree_ids (Optional[Union[int, SequenceType[int]]]): Asset subtree id or list of asset subtree ids to filter on.
+            asset_subtree_external_ids (Optional[Union[str, SequenceType[str]]]): Asset subtree external id or list of asset subtree external ids to filter on.
+            data_set_ids (Optional[Union[int, SequenceType[int]]]): Return only sequences in the specified data set(s) with this id / these ids.
+            data_set_external_ids (Optional[Union[str, SequenceType[str]]]): Return only sequences in the specified data set(s) with this external id / these external ids.
+            created_time (Optional[Union[Dict[str, Any], TimestampRange]]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            last_updated_time (Optional[Union[Dict[str, Any], TimestampRange]]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            limit (Optional[int]): Max number of sequences to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             SequenceList: The requested sequences.
@@ -272,7 +271,7 @@ class SequencesAPI(APIClient):
         """`Aggregate sequences <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
 
         Args:
-            filter (Union[SequenceFilter, Dict]): Filter on sequence filter with exact match
+            filter (Optional[Union[SequenceFilter, Dict]]): Filter on sequence filter with exact match
 
         Returns:
             List[SequenceAggregate]: List of sequence aggregates
@@ -633,8 +632,8 @@ class SequencesAPI(APIClient):
         """`Delete one or more sequences. <https://developer.cognite.com/api#tag/Sequences/operation/deleteSequences>`_
 
         Args:
-            id (Union[int, SequenceType[int]): Id or list of ids
-            external_id (Union[str, SequenceType[str]]): External ID or list of external ids
+            id (Optional[Union[int, SequenceType[int]]]): Id or list of ids
+            external_id (Optional[Union[str, SequenceType[str]]]): External ID or list of external ids
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -767,10 +766,8 @@ class SequencesAPI(APIClient):
          For more details, see :ref:`appendix-upsert`.
 
         Args:
-            item (Sequence | Sequence[Sequence]): Sequence or list of sequences to upsert.
-            mode (Literal["patch", "replace"])): Whether to patch or replace in the case the sequences are existing. If
-                                                you set 'patch', the call will only update fields with non-null values (default).
-                                                Setting 'replace' will unset any fields that are not specified.
+            item (Sequence | SequenceType[Sequence]): Sequence or list of sequences to upsert.
+            mode (Literal["patch", "replace"]): Whether to patch or replace in the case the sequences are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
 
         Returns:
             Sequence | SequenceList: The upserted sequence(s).
@@ -808,12 +805,11 @@ class SequencesAPI(APIClient):
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:
-            name (str, optional): Prefix and fuzzy search on name.
-            description (str, optional): Prefix and fuzzy search on description.
-            query (str, optional): Search on name and description using wildcard search on each of the words (separated
-                by spaces). Retrieves results where at least one word must match. Example: 'some other'
-            filter (Union[SequenceFilter, Dict], optional): Filter to apply. Performs exact match on these fields.
-            limit (int, optional): Max number of results to return.
+            name (Optional[str]): Prefix and fuzzy search on name.
+            description (Optional[str]): Prefix and fuzzy search on description.
+            query (Optional[str]): Search on name and description using wildcard search on each of the words (separated by spaces). Retrieves results where at least one word must match. Example: 'some other'
+            filter (Optional[Union[SequenceFilter, Dict]]): Filter to apply. Performs exact match on these fields.
+            limit (int): Max number of results to return.
 
         Returns:
             SequenceList: List of requested sequences.
@@ -933,11 +929,10 @@ class SequencesDataAPI(APIClient):
         """`Insert rows into a sequence <https://developer.cognite.com/api#tag/Sequences/operation/postSequenceData>`_
 
         Args:
+            rows (Union[Dict[int, SequenceType[Union[int, float, str]]], SequenceType[Tuple[int, SequenceType[Union[int, float, str]]]], SequenceType[Dict[str, Any]], SequenceData]):  The rows you wish to insert. Can either be a list of tuples, a list of {"rowNumber":... ,"values": ...} objects, a dictionary of rowNumber: data, or a SequenceData object. See examples below.
             column_external_ids (Optional[SequenceType[str]]): List of external id for the columns of the sequence.
-            rows (Union[ Dict[int, SequenceType[Union[int, float, str]]], SequenceType[Tuple[int, SequenceType[Union[int, float, str]]]], SequenceType[Dict[str,Any]], SequenceData]):  The rows you wish to insert.
-                Can either be a list of tuples, a list of {"rowNumber":... ,"values": ...} objects, a dictionary of rowNumber: data, or a SequenceData object. See examples below.
-            id (int): Id of sequence to insert rows into.
-            external_id (str): External id of sequence to insert rows into.
+            id (Optional[int]): Id of sequence to insert rows into.
+            external_id (Optional[str]): External id of sequence to insert rows into.
 
         Returns:
             None
@@ -1010,8 +1005,8 @@ class SequencesDataAPI(APIClient):
 
         Args:
             dataframe (pandas.DataFrame):  Pandas DataFrame object containing the sequence data.
-            id (int): Id of sequence to insert rows into.
-            external_id (str): External id of sequence to insert rows into.
+            id (Optional[int]): Id of sequence to insert rows into.
+            external_id (Optional[str]): External id of sequence to insert rows into.
 
         Returns:
             None
@@ -1037,8 +1032,8 @@ class SequencesDataAPI(APIClient):
 
         Args:
             rows (SequenceType[int]): List of row numbers.
-            id (int): Id of sequence to delete rows from.
-            external_id (str): External id of sequence to delete rows from.
+            id (Optional[int]): Id of sequence to delete rows from.
+            external_id (Optional[str]): External id of sequence to delete rows from.
 
         Returns:
             None
@@ -1061,10 +1056,9 @@ class SequencesDataAPI(APIClient):
 
         Args:
             start (int): Row number to start from (inclusive).
-            end (Union[int, None]): Upper limit on the row number (exclusive).
-                Set to None or -1 to delete all rows until end of sequence.
-            id (int): Id of sequence to delete rows from.
-            external_id (str): External id of sequence to delete rows from.
+            end (Union[int, None]): Upper limit on the row number (exclusive). Set to None or -1 to delete all rows until end of sequence.
+            id (Optional[int]): Id of sequence to delete rows from.
+            external_id (Optional[str]): External id of sequence to delete rows from.
 
         Returns:
             None
@@ -1097,13 +1091,11 @@ class SequencesDataAPI(APIClient):
 
         Args:
             start (int): Row number to start from (inclusive).
-            end (Union[int, None]): Upper limit on the row number (exclusive). Set to None or -1 to get all rows
-                until end of sequence.
+            end (Union[int, None]): Upper limit on the row number (exclusive). Set to None or -1 to get all rows until end of sequence.
             column_external_ids (Optional[SequenceType[str]]): List of external id for the columns of the sequence. If 'None' is passed, all columns will be retrieved.
-            id (int): Id of sequence.
-            external_id (str): External id of sequence.
-            limit (int): Maximum number of rows to return per sequence. 10000 is the maximum limit per request.
-
+            external_id (Optional[Union[str, SequenceType[str]]]): External id of sequence.
+            id (Optional[Union[int, SequenceType[int]]]): Id of sequence.
+            limit (Optional[int]): Maximum number of rows to return per sequence. 10000 is the maximum limit per request.
 
         Returns:
             List of sequence data
@@ -1152,10 +1144,10 @@ class SequencesDataAPI(APIClient):
         """`Retrieves the last row (i.e the row with the highest row number) in a sequence. <https://developer.cognite.com/api#tag/Sequences/operation/getLatestSequenceRow>`_
 
         Args:
-            id (optional, int): Id or list of ids.
-            external_id (optional, str): External id or list of external ids.
-            column_external_ids: (optional, SequenceType[str]): external ids of columns to include. Omitting wil return all columns.
-            before: (optional, int): Get latest datapoint before this row number.
+            id (Optional[int]): Id or list of ids.
+            external_id (Optional[str]): External id or list of external ids.
+            column_external_ids (Optional[SequenceType[str]]): (optional, SequenceType[str]): external ids of columns to include. Omitting wil return all columns.
+            before (Optional[int]): (optional, int): Get latest datapoint before this row number.
 
         Returns:
             SequenceData: A Datapoints object containing the requested data, or a list of such objects.
@@ -1188,13 +1180,12 @@ class SequencesDataAPI(APIClient):
 
         Args:
             start (int): (inclusive) row number to start from.
-            end (Union[int, None]): (exclusive) upper limit on the row number. Set to None or -1 to get all rows
-                until end of sequence.
-            column_external_ids (Optional[SequenceType[str]]): List of external id for the columns of the sequence.  If 'None' is passed, all columns will be retrieved.
-            id (int): Id of sequence
-            external_id (str): External id of sequence.
-            column_names (str):  Which field(s) to use as column header. Can use "externalId", "id", "columnExternalId", "id|columnExternalId" or "externalId|columnExternalId". Default is "externalId|columnExternalId" for queries on more than one sequence, and "columnExternalId" for queries on a single sequence.
-            limit (int): Maximum number of rows to return per sequence.
+            end (Union[int, None]): (exclusive) upper limit on the row number. Set to None or -1 to get all rows until end of sequence.
+            column_external_ids (Optional[List[str]]): List of external id for the columns of the sequence.  If 'None' is passed, all columns will be retrieved.
+            external_id (Optional[str]): External id of sequence.
+            column_names (Optional[str]):  Which field(s) to use as column header. Can use "externalId", "id", "columnExternalId", "id|columnExternalId" or "externalId|columnExternalId". Default is "externalId|columnExternalId" for queries on more than one sequence, and "columnExternalId" for queries on a single sequence.
+            id (Optional[int]): Id of sequence
+            limit (Optional[int]): Maximum number of rows to return per sequence.
 
         Returns:
              pandas.DataFrame

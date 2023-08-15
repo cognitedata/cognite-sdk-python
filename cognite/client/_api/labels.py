@@ -56,11 +56,11 @@ class LabelsAPI(APIClient):
         """`List Labels <https://developer.cognite.com/api#tag/Labels/operation/listLabels>`_
 
         Args:
-            name (str): returns the label definitions matching that name
-            data_set_ids (Union[int, Sequence[int]]): return only labels in the data sets with this id / these ids.
-            data_set_external_ids (Union[str, Sequence[str]]): return only labels in the data sets with this external id / these external ids.
-            external_id_prefix (str): filter label definitions with external ids starting with the prefix specified
-            limit (int, optional): Maximum number of label definitions to return.
+            name (Optional[str]): returns the label definitions matching that name
+            external_id_prefix (Optional[str]): filter label definitions with external ids starting with the prefix specified
+            data_set_ids (Optional[Union[int, Sequence[int]]]): return only labels in the data sets with this id / these ids.
+            data_set_external_ids (Optional[Union[str, Sequence[str]]]): return only labels in the data sets with this external id / these external ids.
+            limit (int): Maximum number of label definitions to return.
 
         Returns:
             LabelDefinitionList: List of requested Labels
@@ -102,7 +102,7 @@ class LabelsAPI(APIClient):
         """`Create one or more label definitions. <https://developer.cognite.com/api#tag/Labels/operation/createLabelDefinitions>`_
 
         Args:
-            Label (Union[LabelDefinition, Sequence[LabelDefinition]]): label definition or a list of label definitions to create.
+            label (Union[LabelDefinition, Sequence[LabelDefinition]]): No description.
 
         Returns:
             Union[LabelDefinition, LabelDefinitionList]: Created label definition(s)
@@ -128,7 +128,7 @@ class LabelsAPI(APIClient):
         """`Delete one or more label definitions <https://developer.cognite.com/api#tag/Labels/operation/deleteLabels>`_
 
         Args:
-            external_id (Union[str, Sequence[str]]): One or more label external ids
+            external_id (Optional[Union[str, Sequence[str]]]): One or more label external ids
 
         Returns:
             None
