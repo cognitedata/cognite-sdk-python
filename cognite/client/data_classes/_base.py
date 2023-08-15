@@ -145,9 +145,8 @@ class CogniteResource:
         """Convert the instance into a pandas DataFrame.
 
         Args:
-            expand (List[str]): List of row keys to expand, only works if the value is a Dict.
-                Will expand metadata by default.
-            ignore (List[str]): List of row keys to not include when converting to a data frame.
+            expand (Sequence[str]): List of row keys to expand, only works if the value is a Dict. Will expand metadata by default.
+            ignore (Optional[List[str]]): List of row keys to not include when converting to a data frame.
             camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`)
 
         Returns:
@@ -273,8 +272,8 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
         """Get an item from this list by id or external_id.
 
         Args:
-            id (int): The id of the item to get.
-            external_id (str): The external_id of the item to get.
+            id (Optional[int]): The id of the item to get.
+            external_id (Optional[str]): The external_id of the item to get.
 
         Returns:
             Optional[CogniteResource]: The requested item

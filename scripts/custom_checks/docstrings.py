@@ -163,7 +163,7 @@ def get_all_non_inherited_methods(cls):
 
 def format_docstrings_for_subclasses(cls) -> list[str]:
     failed = []
-    for cls in all_subclasses(cls):
+    for cls in [cls, *all_subclasses(cls)]:
         for attr, method in get_all_non_inherited_methods(cls):
             # The __init__ method is documented in the class level docstring
             is_init = attr == "__init__"
