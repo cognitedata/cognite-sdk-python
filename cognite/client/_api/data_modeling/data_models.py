@@ -59,7 +59,7 @@ class DataModelsAPI(APIClient):
         Args:
             chunk_size (int | None): Number of data model to return in each chunk. Defaults to yielding one data_model a time.
             limit (Optional[int]): Maximum number of data model to return. Default to return all items.
-            space (str | None): (str | None): The space to query.
+            space (str | None): The space to query.
             inline_views (bool): Whether to expand the referenced views inline in the returned result.
             all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
             include_global (bool): Whether to include global views.
@@ -189,7 +189,7 @@ class DataModelsAPI(APIClient):
         Args:
             inline_views (bool): Whether to expand the referenced views inline in the returned result.
             limit (int): Maximum number of data model to return. Default to 10. Set to -1, float("inf") or None to return all items.
-            space (str | None): (str | None): The space to query.
+            space (str | None): The space to query.
             all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
             include_global (bool): Whether to include global data models.
 
@@ -240,7 +240,7 @@ class DataModelsAPI(APIClient):
         """`Create or update one or more data model. <https://developer.cognite.com/api#tag/Data-models/operation/createDataModels>`_
 
         Args:
-            data_model (DataModelApply | Sequence[DataModelApply]): DataModelApply | Sequence[DataModelApply]): DataModel or data model to create or update (upsert).
+            data_model (DataModelApply | Sequence[DataModelApply]): DataModel or data model to create or update (upsert).
 
         Returns:
             DataModel | DataModelList: Created data_model(s)
