@@ -97,34 +97,36 @@ class FunctionsAPI(APIClient):
         index_url: Optional[str] = None,
         extra_index_urls: Optional[List[str]] = None,
     ) -> Function:
-        """`When creating a function, <https://developer.cognite.com/api#tag/Functions/operation/postFunctions>`_
-        the source code can be specified in one of three ways:\n
-        - Via the `folder` argument, which is the path to the folder where the source code is located. `function_path` must point to a python file in the folder within which a function named `handle` must be defined.\n
-        - Via the `file_id` argument, which is the ID of a zip-file uploaded to the files API. `function_path` must point to a python file in the zipped folder within which a function named `handle` must be defined.\n
-        - Via the `function_handle` argument, which is a reference to a function object, which must be named `handle`.\n
+        '''`When creating a function, <https://developer.cognite.com/api#tag/Functions/operation/postFunctions>`_
+        the source code can be specified in one of three ways:
 
-        The function named `handle` is the entrypoint of the created function. Valid arguments to `handle` are `data`, `client`, `secrets` and `function_call_info`:\n
-        - If the user calls the function with input data, this is passed through the `data` argument.\n
-        - If the user gives one or more secrets when creating the function, these are passed through the `secrets` argument. \n
-        - Data about the function call can be accessed via the argument `function_call_info`, which is a dictionary with keys `function_id` and, if the call is scheduled, `schedule_id` and `scheduled_time`.\n
+        - Via the `folder` argument, which is the path to the folder where the source code is located. `function_path` must point to a python file in the folder within which a function named `handle` must be defined.
+        - Via the `file_id` argument, which is the ID of a zip-file uploaded to the files API. `function_path` must point to a python file in the zipped folder within which a function named `handle` must be defined.
+        - Via the `function_handle` argument, which is a reference to a function object, which must be named `handle`.
+
+        The function named `handle` is the entrypoint of the created function. Valid arguments to `handle` are `data`, `client`, `secrets` and `function_call_info`:
+        - If the user calls the function with input data, this is passed through the `data` argument.
+        - If the user gives one or more secrets when creating the function, these are passed through the `secrets` argument.
+        - Data about the function call can be accessed via the argument `function_call_info`, which is a dictionary with keys `function_id` and, if the call is scheduled, `schedule_id` and `scheduled_time`.
 
         Args:
-            name (str):                              The name of the function.
-            folder (str, optional):                  Path to the folder where the function source code is located.
-            file_id (int, optional):                 File ID of the code uploaded to the Files API.
-            function_path (str):                     Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on POSIX path format.
-            function_handle (Callable, optional):    Reference to a function object, which must be named `handle`.
-            external_id (str, optional):             External id of the function.
-            description (str, optional):             Description of the function.
-            owner (str, optional):                   Owner of this function. Typically used to know who created it.
-            secrets (Dict[str, str]):                Additional secrets as key/value pairs. These can e.g. password to simulators or other data sources. Keys must be lowercase characters, numbers or dashes (-) and at most 15 characters. You can create at most 30 secrets, all keys must be unique.
-            env_vars (Dict[str, str]):               Environment variables as key/value pairs. Keys can contain only letters, numbers or the underscore character. You can create at most 100 environment variables.
-            cpu (Number, optional):                  Number of CPU cores per function. Allowed values are in the range [0.1, 0.6], and None translates to the API default which is 0.25 in GCP. The argument is unavailable in Azure.
-            memory (Number, optional):               Memory per function measured in GB. Allowed values are in the range [0.1, 2.5], and None translates to the API default which is 1 GB in GCP. The argument is unavailable in Azure.
-            runtime (str, optional):                 The function runtime. Valid values are ["py37", "py38", "py39", "py310", `None`], and `None` translates to the API default which will change over time. The runtime "py38" resolves to the latest version of the Python 3.8 series.
-            metadata (Dict[str, str], optional):     Metadata for the function as key/value pairs. Key & values can be at most 32, 512 characters long respectively. You can have at the most 16 key-value pairs, with a maximum size of 512 bytes.
-            index_url (str, optional):               Index URL for Python Package Manager to use. Be aware of the intrinsic security implications of using the `index_url` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
-            extra_index_urls (List[str], optional):  Extra Index URLs for Python Package Manager to use. Be aware of the intrinsic security implications of using the `extra_index_urls` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
+            name (str): The name of the function.
+            folder (Optional[str]): Path to the folder where the function source code is located.
+            file_id (Optional[int]): File ID of the code uploaded to the Files API.
+            function_path (str): Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on POSIX path format.
+            function_handle (Optional[Callable]): Reference to a function object, which must be named `handle`.
+            external_id (Optional[str]): External id of the function.
+            description (Optional[str]): Description of the function.
+            owner (Optional[str]): Owner of this function. Typically used to know who created it.
+            secrets (Optional[Dict]): Additional secrets as key/value pairs. These can e.g. password to simulators or other data sources. Keys must be lowercase characters, numbers or dashes (-) and at most 15 characters. You can create at most 30 secrets, all keys must be unique.
+            env_vars (Optional[Dict]): Environment variables as key/value pairs. Keys can contain only letters, numbers or the underscore character. You can create at most 100 environment variables.
+            cpu (Optional[Number]): Number of CPU cores per function. Allowed values are in the range [0.1, 0.6], and None translates to the API default which is 0.25 in GCP. The argument is unavailable in Azure.
+            memory (Optional[Number]): Memory per function measured in GB. Allowed values are in the range [0.1, 2.5], and None translates to the API default which is 1 GB in GCP. The argument is unavailable in Azure.
+            runtime (Optional[str]): The function runtime. Valid values are ["py37", "py38", "py39", "py310", `None`], and `None` translates to the API default which will change over time. The runtime "py38" resolves to the latest version of the Python 3.8 series.
+            metadata (Optional[Dict]): Metadata for the function as key/value pairs. Key & values can be at most 32, 512 characters long respectively. You can have at the most 16 key-value pairs, with a maximum size of 512 bytes.
+            index_url (Optional[str]): Index URL for Python Package Manager to use. Be aware of the intrinsic security implications of using the `index_url` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
+            extra_index_urls (Optional[List[str]]): Extra Index URLs for Python Package Manager to use. Be aware of the intrinsic security implications of using the `extra_index_urls` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
+
         Returns:
             Function: The created function.
 
@@ -153,11 +155,11 @@ class FunctionsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>>
                 >>> def handle(client, data):
-                >>>     \"\"\"
+                >>>     """
                 >>>     [requirements]
                 >>>     numpy
                 >>>     [/requirements]
-                >>>     \"\"\"
+                >>>     """
                 >>>     ...
                 >>>
                 >>> c = CogniteClient()
@@ -165,7 +167,7 @@ class FunctionsAPI(APIClient):
 
             .. note::
                 When using a predefined function object, you can list dependencies between the tags `[requirements]` and `[/requirements]` in the function's docstring. The dependencies will be parsed and validated in accordance with requirement format specified in `PEP 508 <https://peps.python.org/pep-0508/>`_.
-        """
+        '''
         self._assert_exactly_one_of_folder_or_file_id_or_function_handle(folder, file_id, function_handle)
 
         if folder:

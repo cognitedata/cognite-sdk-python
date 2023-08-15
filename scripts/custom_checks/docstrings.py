@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import inspect
 import re
-from pathlib import Path
 from dataclasses import is_dataclass
+from pathlib import Path
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
@@ -157,14 +157,16 @@ class DocstrFormatter:
         return f"Fixed docstring for '{cls.__name__}.{attr}'"
 
 
-def get_all_methods(cls):
-    return [(attr, method) for attr in dir(cls) if inspect.isfunction(method := getattr(cls, attr))]
+def get_all_non_inherited_methods(cls):
+    return [
+        (attr, method) for attr in dir(cls) if inspect.isfunction(method := getattr(cls, attr)) and attr in cls.__dict__
+    ]
 
 
 def format_docstrings_for_subclasses(cls) -> list[str]:
     failed = []
     for cls in all_subclasses(cls):
-        for attr, method in get_all_methods(cls):
+        for attr, method in get_all_non_inherited_methods(cls):
             # The __init__ method is documented in the class level docstring
             is_init = attr == "__init__"
             doc = cls.__doc__ if is_init else method.__doc__
@@ -194,6 +196,6 @@ def format_docstrings() -> list[str]:
                 format_docstrings_for_subclasses(base_cls)
                 for base_cls in [APIClient, CogniteResource, CogniteResourceList]
             ),
-            []
+            [],
         )
     )
