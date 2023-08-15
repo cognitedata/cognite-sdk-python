@@ -715,8 +715,8 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
         Note: For duplicated time series, returns a list of DatapointsArray.
 
         Args:
-            id (int): The id of the item(s) to get.
-            external_id (str): The external_id of the item(s) to get.
+            id (Optional[int]): The id of the item(s) to get.
+            external_id (Optional[str]): The external_id of the item(s) to get.
 
         Returns:
             Union[None, DatapointsArray, List[DatapointsArray]]: The requested item(s)
@@ -736,7 +736,7 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
         """Convert the DatapointsArrayList into a pandas DataFrame.
 
         Args:
-            column_names (str): Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
+            column_names (Literal["id", "external_id"]): Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
             include_aggregate_name (bool): Include aggregate in the column name
             include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
 
@@ -794,8 +794,8 @@ class DatapointsList(CogniteResourceList[Datapoints]):
         Note: For duplicated time series, returns a list of Datapoints.
 
         Args:
-            id (int): The id of the item(s) to get.
-            external_id (str): The external_id of the item(s) to get.
+            id (Optional[int]): The id of the item(s) to get.
+            external_id (Optional[str]): The external_id of the item(s) to get.
 
         Returns:
             Union[None, Datapoints, List[Datapoints]]: The requested item(s)
@@ -818,7 +818,7 @@ class DatapointsList(CogniteResourceList[Datapoints]):
         """Convert the datapoints list into a pandas DataFrame.
 
         Args:
-            column_names (str): Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
+            column_names (Literal["id", "external_id"]): Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
             include_aggregate_name (bool): Include aggregate in the column name
             include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
 

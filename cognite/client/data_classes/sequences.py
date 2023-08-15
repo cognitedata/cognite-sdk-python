@@ -478,7 +478,6 @@ class SequenceDataList(CogniteResourceList[SequenceData]):
 
         Args:
             column_names (str):  Which field to use as column header. Can use any combination of "externalId", "columnExternalId", "id" and other characters as a template.
-            include_aggregate_name (bool): Include aggregate in the column name
 
         Returns:
             pandas.DataFrame: The sequence data list as a pandas DataFrame.

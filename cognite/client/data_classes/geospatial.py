@@ -222,10 +222,10 @@ class FeatureList(CogniteResourceList[Feature]):
 
         Args:
             feature_type (FeatureType): The feature type the features will conform to
-            geodataframe (GeoDataFrame): the geodataframe instance to convert into features
-            external_id_column: the geodataframe column to use for the feature external id
-            data_set_id_column: the geodataframe column to use for the feature dataSet id
-            property_column_mapping: provides a mapping from featuretype property names to geodataframe columns
+            geodataframe (geopandas.GeoDataFrame): the geodataframe instance to convert into features
+            external_id_column (str): the geodataframe column to use for the feature external id
+            property_column_mapping (Optional[Dict[str, str]]): provides a mapping from featuretype property names to geodataframe columns
+            data_set_id_column (str): the geodataframe column to use for the feature dataSet id
 
         Returns:
             FeatureList: The list of features converted from the geodataframe rows.
