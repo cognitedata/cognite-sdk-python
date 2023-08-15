@@ -100,6 +100,9 @@ class DocstrFormatter:
                     continue
                 if line_indent == args_indent:
                     idx_end = i
+                    if not lines[i - 1].strip():  # Note: i-1 >= 0
+                        # If last line was empty, we keep the spacing:
+                        idx_end -= 1
                     break
                 if line_indent > args_indent + 4:
                     # Assume multilines belong to previous line:
