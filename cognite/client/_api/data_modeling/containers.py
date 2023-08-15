@@ -153,7 +153,7 @@ class ContainersAPI(APIClient):
 
         Args:
             space (str | None): The space to query
-            limit (int): Maximum number of containers to return. Default to 10. Set to -1, float("inf") or None to return all items.
+            limit (int): Maximum number of containers to return. Defaults to 10. Set to -1, float("inf") or None to return all items.
             include_global (bool): Whether the global containers should be returned.
 
         Returns:
@@ -203,7 +203,7 @@ class ContainersAPI(APIClient):
         """`Add or update (upsert) containers. <https://developer.cognite.com/api#tag/Containers/operation/ApplyContainers>`_
 
         Args:
-            container (ContainerApply | Sequence[ContainerApply]): ContainerApply | Sequence[ContainerApply]): Container or containers of containers to create or update.
+            container (ContainerApply | Sequence[ContainerApply]): Container or containers to create or update.
 
         Returns:
             Container | ContainerList: Created container(s)
