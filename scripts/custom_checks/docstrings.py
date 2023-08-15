@@ -6,7 +6,7 @@ from pathlib import Path
 from dataclasses import is_dataclass
 
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes._base import CogniteResource
+from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from tests.utils import all_subclasses
 
 CWD = Path.cwd()
@@ -188,7 +188,12 @@ def format_docstrings_for_subclasses(cls) -> list[str]:
 
 
 def format_docstrings() -> list[str]:
-    # TODO: Add more baseclasses to parse, e.g. CogniteResourceList?:
     return "\n".join(
-        sum((format_docstrings_for_subclasses(base_cls) for base_cls in [APIClient, CogniteResource]), [])
+        sum(
+            (
+                format_docstrings_for_subclasses(base_cls)
+                for base_cls in [APIClient, CogniteResource, CogniteResourceList]
+            ),
+            []
+        )
     )
