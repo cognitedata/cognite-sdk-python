@@ -97,13 +97,13 @@ class AnnotationReverseLookupFilter(CogniteFilter):
     """Filter on annotations with various criteria
 
     Args:
-       annotated_resource_type (str): The type of the CDF resource that is annotated, e.g. "file".
-       status (str, optional): Status of annotations to filter for, e.g. "suggested", "approved", "rejected".
-       creating_user (str, optional): Name of the user who created the annotations to filter for. Can be set explicitly to "None" to filter for annotations created by a service.
-       creating_app (str, optional): Name of the app from which the annotations to filter for where created.
-       creating_app_version (str, optional): Version of the app from which the annotations to filter for were created.
-       annotation_type(str, optional): Type name of the annotations.
-       data(Dict[str, Any], optional): The annotation data to filter by. Example format: {"label": "cat", "confidence": 0.9}
+        annotated_resource_type (str): The type of the CDF resource that is annotated, e.g. "file".
+        status (Optional[str]): Status of annotations to filter for, e.g. "suggested", "approved", "rejected".
+        creating_user (Optional[str]): Name of the user who created the annotations to filter for. Can be set explicitly to "None" to filter for annotations created by a service.
+        creating_app (Optional[str]): Name of the app from which the annotations to filter for where created.
+        creating_app_version (Optional[str]): Version of the app from which the annotations to filter for were created.
+        annotation_type (Optional[str]): Type name of the annotations.
+        data (Optional[Dict[str, Any]]): The annotation data to filter by. Example format: {"label": "cat", "confidence": 0.9}
     """
 
     def __init__(
@@ -142,13 +142,13 @@ class AnnotationFilter(AnnotationReverseLookupFilter):
 
     Args:
         annotated_resource_type (str): The type of the CDF resource that is annotated, e.g. "file".
-        annotated_resource_ids (List[Dict[str, Any]]): List of ids of the annotated CDF resources to filter in. Example format: [{"id": 1234}, {"id": "4567"}]. Must contain at least one item.
-        status (str, optional): Status of annotations to filter for, e.g. "suggested", "approved", "rejected".
-        creating_user (str, optional): Name of the user who created the annotations to filter for. Can be set explicitly to "None" to filter for annotations created by a service.
-        creating_app (str, optional): Name of the app from which the annotations to filter for where created.
-        creating_app_version (str, optional): Version of the app from which the annotations to filter for were created.
-        annotation_type(str, optional): Type name of the annotations.
-        data(Dict[str, Any], optional): The annotation data to filter by. Example format: {"label": "cat", "confidence": 0.9}
+        annotated_resource_ids (List[Dict[str, int]]): List of ids of the annotated CDF resources to filter in. Example format: [{"id": 1234}, {"id": "4567"}]. Must contain at least one item.
+        status (Optional[str]): Status of annotations to filter for, e.g. "suggested", "approved", "rejected".
+        creating_user (Optional[str]): Name of the user who created the annotations to filter for. Can be set explicitly to "None" to filter for annotations created by a service.
+        creating_app (Optional[str]): Name of the app from which the annotations to filter for where created.
+        creating_app_version (Optional[str]): Version of the app from which the annotations to filter for were created.
+        annotation_type (Optional[str]): Type name of the annotations.
+        data (Optional[Dict[str, Any]]): The annotation data to filter by. Example format: {"label": "cat", "confidence": 0.9}
     """
 
     def __init__(

@@ -114,15 +114,15 @@ class SequenceFilter(CogniteFilter):
     """No description.
 
     Args:
-        name (str): Return only sequences with this *exact* name.
-        external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
-        metadata (Dict[str, Any]): Filter the sequences by metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
-        asset_ids (SequenceType[int]): Return only sequences linked to one of the specified assets.
-        asset_subtree_ids (SequenceType[Dict[str, Any]]): Only include sequences that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-        created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-        last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-        data_set_ids (SequenceType[Dict[str, Any]]): Only include sequences that belong to these datasets.
-        cognite_client (CogniteClient): The client to associate with this object.
+        name (Optional[str]): Return only sequences with this *exact* name.
+        external_id_prefix (Optional[str]): Filter by this (case-sensitive) prefix for the external ID.
+        metadata (Optional[Dict[str, Any]]): Filter the sequences by metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
+        asset_ids (Optional[SequenceType[int]]): Return only sequences linked to one of the specified assets.
+        asset_subtree_ids (Optional[SequenceType[Dict[str, Any]]]): Only include sequences that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        created_time (Optional[Union[Dict[str, Any], TimestampRange]]): Range between two timestamps.
+        last_updated_time (Optional[Union[Dict[str, Any], TimestampRange]]): Range between two timestamps.
+        data_set_ids (Optional[SequenceType[Dict[str, Any]]]): Only include sequences that belong to these datasets.
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
     """
 
     def __init__(

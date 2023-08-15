@@ -266,7 +266,7 @@ class TransformationJobFilter(CogniteFilter):
 
     Args:
         transformation_id (Optional[int]):  Filter jobs by transformation internal numeric ID.
-        transformation_external_id (str): Filter jobs by transformation external ID.
+        transformation_external_id (Optional[str]): Filter jobs by transformation external ID.
     """
 
     def __init__(self, transformation_id: Optional[int] = None, transformation_external_id: Optional[str] = None):

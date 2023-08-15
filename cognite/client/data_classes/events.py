@@ -104,21 +104,21 @@ class EventFilter(CogniteFilter):
     """Filter on events filter with exact match
 
     Args:
-        start_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-        end_time (Union[Dict[str, Any], EndTimeFilter]): Either range between two timestamps or isNull filter condition.
-        active_at_time (Union[Dict[str, Any], TimestampRange]): Event is considered active from its startTime to endTime inclusive. If startTime is null, event is never active. If endTime is null, event is active from startTime onwards. activeAtTime filter will match all events that are active at some point from min to max, from min, or to max, depending on which of min and max parameters are specified.
-        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 128000 bytes, up to 256 key-value pairs, of total size at most 200000.
-        asset_ids (Sequence[int]): Asset IDs of equipment that this event relates to.
-        asset_external_ids (Sequence[str]): Asset External IDs of equipment that this event relates to.
-        asset_subtree_ids (Sequence[Dict[str, Any]]): Only include events that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-        data_set_ids (Sequence[Dict[str, Any]]): Only include events that belong to these datasets.
-        source (str): The source of this event.
-        type (str): Type of the event, e.g 'failure'.
-        subtype (str): SubType of the event, e.g 'electrical'.
-        created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-        last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-        external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
-        cognite_client (CogniteClient): The client to associate with this object.
+        start_time (Optional[Union[Dict[str, Any], TimestampRange]]): Range between two timestamps.
+        end_time (Optional[Union[Dict[str, Any], EndTimeFilter]]): Either range between two timestamps or isNull filter condition.
+        active_at_time (Optional[Union[Dict[str, Any], TimestampRange]]): Event is considered active from its startTime to endTime inclusive. If startTime is null, event is never active. If endTime is null, event is active from startTime onwards. activeAtTime filter will match all events that are active at some point from min to max, from min, or to max, depending on which of min and max parameters are specified.
+        metadata (Optional[Dict[str, str]]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 128000 bytes, up to 256 key-value pairs, of total size at most 200000.
+        asset_ids (Optional[Sequence[int]]): Asset IDs of equipment that this event relates to.
+        asset_external_ids (Optional[Sequence[str]]): Asset External IDs of equipment that this event relates to.
+        asset_subtree_ids (Optional[Sequence[Dict[str, Any]]]): Only include events that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        data_set_ids (Optional[Sequence[Dict[str, Any]]]): Only include events that belong to these datasets.
+        source (Optional[str]): The source of this event.
+        type (Optional[str]): Type of the event, e.g 'failure'.
+        subtype (Optional[str]): SubType of the event, e.g 'electrical'.
+        created_time (Optional[Union[Dict[str, Any], TimestampRange]]): Range between two timestamps.
+        last_updated_time (Optional[Union[Dict[str, Any], TimestampRange]]): Range between two timestamps.
+        external_id_prefix (Optional[str]): Filter by this (case-sensitive) prefix for the external ID.
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
     """
 
     def __init__(

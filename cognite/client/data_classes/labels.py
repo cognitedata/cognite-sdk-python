@@ -47,10 +47,10 @@ class LabelDefinitionFilter(CogniteFilter):
     """Filter on labels definitions with strict matching.
 
     Args:
-        name (str): Returns the label definitions matching that name.
-        external_id_prefix (str): filter label definitions with external ids starting with the prefix specified
-        data_set_ids (List[Dict[str, Any]]): Only include labels that belong to these datasets.
-        cognite_client (CogniteClient): The client to associate with this object.
+        name (Optional[str]): Returns the label definitions matching that name.
+        external_id_prefix (Optional[str]): filter label definitions with external ids starting with the prefix specified
+        data_set_ids (Optional[List[Dict[str, Any]]]): Only include labels that belong to these datasets.
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
     """
 
     def __init__(
@@ -113,9 +113,9 @@ class LabelFilter(dict, CogniteFilter):
     """Return only the resource matching the specified label constraints.
 
     Args:
-        contains_any (List[str]): The resource item contains at least one of the listed labels. The labels are defined by a list of external ids.
-        contains_all (List[str]): The resource item contains all the listed labels. The labels are defined by a list of external ids.
-        cognite_client (CogniteClient): The client to associate with this object.
+        contains_any (Optional[List[str]]): The resource item contains at least one of the listed labels. The labels are defined by a list of external ids.
+        contains_all (Optional[List[str]]): The resource item contains all the listed labels. The labels are defined by a list of external ids.
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
 
     Examples:
 

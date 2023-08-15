@@ -147,19 +147,19 @@ class TimeSeriesFilter(CogniteFilter):
     """No description.
 
     Args:
-        name (str): Filter on name.
-        unit (str): Filter on unit.
-        is_string (bool): Filter on isString.
-        is_step (bool): Filter on isStep.
-        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        asset_ids (Sequence[int]): Only include time series that reference these specific asset IDs.
-        asset_external_ids (Sequence[str]): Asset External IDs of related equipment that this time series relates to.
-        asset_subtree_ids (Sequence[Dict[str, Any]]): Only include time series that are related to an asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-        data_set_ids (Sequence[Dict[str, Any]]): No description.
-        external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
-        created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-        last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-        cognite_client (CogniteClient): The client to associate with this object.
+        name (Optional[str]): Filter on name.
+        unit (Optional[str]): Filter on unit.
+        is_string (Optional[bool]): Filter on isString.
+        is_step (Optional[bool]): Filter on isStep.
+        metadata (Optional[Dict[str, str]]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        asset_ids (Optional[Sequence[int]]): Only include time series that reference these specific asset IDs.
+        asset_external_ids (Optional[Sequence[str]]): Asset External IDs of related equipment that this time series relates to.
+        asset_subtree_ids (Optional[Sequence[Dict[str, Any]]]): Only include time series that are related to an asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        data_set_ids (Optional[Sequence[Dict[str, Any]]]): No description.
+        external_id_prefix (Optional[str]): Filter by this (case-sensitive) prefix for the external ID.
+        created_time (Optional[Union[Dict[str, Any], TimestampRange]]): Range between two timestamps.
+        last_updated_time (Optional[Union[Dict[str, Any], TimestampRange]]): Range between two timestamps.
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
     """
 
     def __init__(

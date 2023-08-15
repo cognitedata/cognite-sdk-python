@@ -104,25 +104,25 @@ class FileMetadataFilter(CogniteFilter):
     """No description.
 
     Args:
-        name (str): Name of the file.
-        mime_type (str): File type. E.g. text/plain, application/pdf, ..
-        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        asset_ids (Sequence[int]): Only include files that reference these specific asset IDs.
-        asset_external_ids (Sequence[str]): Only include files that reference these specific asset external IDs.
-        data_set_ids (Sequence[Dict[str, Any]]): Only include files that belong to these datasets.
-        labels (LabelFilter): Return only the files matching the specified label(s).
-        geo_location (GeoLocationFilter): Only include files matching the specified geographic relation.
-        asset_subtree_ids (Sequence[Dict[str, Any]]): Only include files that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-        source (str): The source of this event.
-        created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-        last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-        uploaded_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-        source_created_time (Dict[str, Any]): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
-        source_modified_time (Dict[str, Any]): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
-        external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
-        directory_prefix (str): Filter by this (case-sensitive) prefix for the directory provided by the client.
-        uploaded (bool): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
-        cognite_client (CogniteClient): The client to associate with this object.
+        name (Optional[str]): Name of the file.
+        mime_type (Optional[str]): File type. E.g. text/plain, application/pdf, ..
+        metadata (Optional[Dict[str, str]]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        asset_ids (Optional[Sequence[int]]): Only include files that reference these specific asset IDs.
+        asset_external_ids (Optional[Sequence[str]]): Only include files that reference these specific asset external IDs.
+        data_set_ids (Optional[Sequence[Dict[str, Any]]]): Only include files that belong to these datasets.
+        labels (Optional[LabelFilter]): Return only the files matching the specified label(s).
+        geo_location (Optional[GeoLocationFilter]): Only include files matching the specified geographic relation.
+        asset_subtree_ids (Optional[Sequence[Dict[str, Any]]]): Only include files that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        source (Optional[str]): The source of this event.
+        created_time (Optional[Union[Dict[str, Any], TimestampRange]]): Range between two timestamps.
+        last_updated_time (Optional[Union[Dict[str, Any], TimestampRange]]): Range between two timestamps.
+        uploaded_time (Optional[Union[Dict[str, Any], TimestampRange]]): Range between two timestamps.
+        source_created_time (Optional[Dict[str, Any]]): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
+        source_modified_time (Optional[Dict[str, Any]]): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
+        external_id_prefix (Optional[str]): Filter by this (case-sensitive) prefix for the external ID.
+        directory_prefix (Optional[str]): Filter by this (case-sensitive) prefix for the directory provided by the client.
+        uploaded (Optional[bool]): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
     """
 
     def __init__(

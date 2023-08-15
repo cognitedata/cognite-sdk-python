@@ -52,8 +52,8 @@ class TransformationNotificationFilter(CogniteFilter):
 
     Args:
         transformation_id (Optional[int]): Filter by transformation internal numeric ID.
-        transformation_external_id (str): Filter by transformation externalId.
-        destination (str): Filter by notification destination.
+        transformation_external_id (Optional[str]): Filter by transformation externalId.
+        destination (Optional[str]): Filter by notification destination.
     """
 
     def __init__(

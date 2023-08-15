@@ -231,10 +231,9 @@ class DataModelFilter(CogniteFilter):
     """Represent the filer arguments for the list endpoint.
 
     Args:
-        space (str | None): The space to query
+        space (Optional[str]): The space to query
         inline_views (bool): Whether to expand the referenced views inline in the returned result.
-        all_versions (bool): Whether to return all versions. If false, only the newest version is returned,
-                             which is determined based on the 'createdTime' field.
+        all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
         include_global (bool): Whether to include global views.
     """
 

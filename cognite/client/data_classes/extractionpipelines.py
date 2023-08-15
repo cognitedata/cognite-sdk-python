@@ -275,7 +275,7 @@ class StringFilter(CogniteFilter):
     """Filter runs on substrings of the message
 
     Args:
-        substring (str): Part of message
+        substring (Optional[str]): Part of message
     """
 
     def __init__(self, substring: Optional[str] = None):
@@ -286,11 +286,11 @@ class ExtractionPipelineRunFilter(CogniteFilter):
     """Filter runs with exact matching
 
     Args:
-        external_id (str): The external ID of related ExtractionPipeline provided by the client. Must be unique for the resource type.
-        statuses (Sequence[str]): success/failure/seen.
-        message (StringFilter): message filter.
-        created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-        cognite_client (CogniteClient): The client to associate with this object.
+        external_id (Optional[str]): The external ID of related ExtractionPipeline provided by the client. Must be unique for the resource type.
+        statuses (Optional[Sequence[str]]): success/failure/seen.
+        message (Optional[StringFilter]): message filter.
+        created_time (Optional[Union[Dict[str, Any], TimestampRange]]): Range between two timestamps.
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
     """
 
     def __init__(

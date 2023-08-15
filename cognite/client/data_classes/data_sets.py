@@ -63,12 +63,12 @@ class DataSetFilter(CogniteFilter):
     """Filter on data sets with strict matching.
 
     Args:
-        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
-        created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-        last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-        external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
-        write_protected (bool): No description.
-        cognite_client (CogniteClient): The client to associate with this object.
+        metadata (Optional[Dict[str, str]]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
+        created_time (Optional[Union[Dict[str, Any], TimestampRange]]): Range between two timestamps.
+        last_updated_time (Optional[Union[Dict[str, Any], TimestampRange]]): Range between two timestamps.
+        external_id_prefix (Optional[str]): Filter by this (case-sensitive) prefix for the external ID.
+        write_protected (Optional[bool]): No description.
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
     """
 
     def __init__(

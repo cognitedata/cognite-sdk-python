@@ -249,10 +249,9 @@ class ViewFilter(CogniteFilter):
     """Represent the filer arguments for the list endpoint.
 
     Args:
-        space (str | None): The space to query
+        space (Optional[str]): The space to query
         include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
-        all_versions (bool): Whether to return all versions. If false, only the newest version is returned,
-                             which is determined based on the 'createdTime' field.
+        all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
         include_global (bool): Whether to include global views.
     """
 

@@ -6,7 +6,7 @@ from dataclasses import is_dataclass
 from pathlib import Path
 
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
+from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList
 from tests.utils import all_subclasses
 
 
@@ -192,7 +192,7 @@ def format_docstrings() -> list[str]:
         sum(
             (
                 format_docstrings_for_subclasses(base_cls)
-                for base_cls in [APIClient, CogniteResource, CogniteResourceList]
+                for base_cls in [APIClient, CogniteResource, CogniteResourceList, CogniteFilter]
             ),
             [],
         )

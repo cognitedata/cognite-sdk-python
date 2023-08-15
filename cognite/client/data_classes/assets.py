@@ -429,20 +429,20 @@ class AssetFilter(CogniteFilter):
     """Filter on assets with strict matching.
 
     Args:
-        name (str): The name of the asset.
-        parent_ids (Sequence[int]): Return only the direct descendants of the specified assets.
-        parent_external_ids (Sequence[str]): Return only the direct descendants of the specified assets.
-        asset_subtree_ids (Sequence[Dict[str, Any]]): Only include assets in subtrees rooted at the specified assets (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-        data_set_ids (Sequence[Dict[str, Any]]): No description.
-        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
-        source (str): The source of the asset.
-        created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-        last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-        root (bool): Whether the filtered assets are root assets, or not. Set to True to only list root assets.
-        external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
-        labels (LabelFilter): Return only the resource matching the specified label constraints.
-        geo_location (GeoLocationFilter): Only include files matching the specified geographic relation.
-        cognite_client (CogniteClient): The client to associate with this object.
+        name (Optional[str]): The name of the asset.
+        parent_ids (Optional[Sequence[int]]): Return only the direct descendants of the specified assets.
+        parent_external_ids (Optional[Sequence[str]]): Return only the direct descendants of the specified assets.
+        asset_subtree_ids (Optional[Sequence[Dict[str, Any]]]): Only include assets in subtrees rooted at the specified assets (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        data_set_ids (Optional[Sequence[Dict[str, Any]]]): No description.
+        metadata (Optional[Dict[str, str]]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
+        source (Optional[str]): The source of the asset.
+        created_time (Optional[Union[Dict[str, Any], TimestampRange]]): Range between two timestamps.
+        last_updated_time (Optional[Union[Dict[str, Any], TimestampRange]]): Range between two timestamps.
+        root (Optional[bool]): Whether the filtered assets are root assets, or not. Set to True to only list root assets.
+        external_id_prefix (Optional[str]): Filter by this (case-sensitive) prefix for the external ID.
+        labels (Optional[LabelFilter]): Return only the resource matching the specified label constraints.
+        geo_location (Optional[GeoLocationFilter]): Only include files matching the specified geographic relation.
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
     """
 
     def __init__(

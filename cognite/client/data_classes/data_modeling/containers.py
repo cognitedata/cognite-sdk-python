@@ -198,7 +198,7 @@ class ContainerFilter(CogniteFilter):
     """Represent the filter arguments for the list endpoint.
 
     Args:
-        space (str): The space to query
+        space (Optional[str]): The space to query
         include_global (bool): Whether the global containers should be included.
     """
 
