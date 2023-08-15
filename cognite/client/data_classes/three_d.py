@@ -56,11 +56,11 @@ class ThreeDModel(CogniteResource):
     """No description.
 
     Args:
-        name (str): The name of the model.
-        id (int): The ID of the model.
-        created_time (int): The creation time of the resource, in milliseconds since January 1, 1970 at 00:00 UTC.
-        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        cognite_client (CogniteClient): The client to associate with this object.
+        name (Optional[str]): The name of the model.
+        id (Optional[int]): The ID of the model.
+        created_time (Optional[int]): The creation time of the resource, in milliseconds since January 1, 1970 at 00:00 UTC.
+        metadata (Optional[Dict[str, str]]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
     """
 
     def __init__(
@@ -140,18 +140,18 @@ class ThreeDModelRevision(CogniteResource):
     """No description.
 
     Args:
-        id (int): The ID of the revision.
-        file_id (int): The file id.
-        published (bool): True if the revision is marked as published.
-        rotation (List[float]): No description.
-        camera (Union[Dict[str, Any], RevisionCameraProperties]): Initial camera position and target.
-        status (str): The status of the revision.
-        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        thumbnail_threed_file_id (int): The threed file ID of a thumbnail for the revision. Use /3d/files/{id} to retrieve the file.
-        thumbnail_url (str): The URL of a thumbnail for the revision.
-        asset_mapping_count (int): The number of asset mappings for this revision.
-        created_time (int): The creation time of the resource, in milliseconds since January 1, 1970 at 00:00 UTC.
-        cognite_client (CogniteClient): The client to associate with this object.
+        id (Optional[int]): The ID of the revision.
+        file_id (Optional[int]): The file id.
+        published (Optional[bool]): True if the revision is marked as published.
+        rotation (Optional[List[float]]): No description.
+        camera (Optional[Union[Dict[str, Any], RevisionCameraProperties]]): Initial camera position and target.
+        status (Optional[str]): The status of the revision.
+        metadata (Optional[Dict[str, str]]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        thumbnail_threed_file_id (Optional[int]): The threed file ID of a thumbnail for the revision. Use /3d/files/{id} to retrieve the file.
+        thumbnail_url (Optional[str]): The URL of a thumbnail for the revision.
+        asset_mapping_count (Optional[int]): The number of asset mappings for this revision.
+        created_time (Optional[int]): The creation time of the resource, in milliseconds since January 1, 1970 at 00:00 UTC.
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
     """
 
     def __init__(
@@ -263,15 +263,15 @@ class ThreeDNode(CogniteResource):
     """No description.
 
     Args:
-        id (int): The ID of the node.
-        tree_index (int): The index of the node in the 3D model hierarchy, starting from 0. The tree is traversed in a depth-first order.
-        parent_id (int): The parent of the node, null if it is the root node.
-        depth (int): The depth of the node in the tree, starting from 0 at the root node.
-        name (str): The name of the node.
-        subtree_size (int): The number of descendants of the node, plus one (counting itself).
-        properties (Dict[str, Dict[str, str]]): Properties extracted from 3D model, with property categories containing key/value string pairs.
-        bounding_box (Union[Dict[str, Any], BoundingBox3D]): The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
-        cognite_client (CogniteClient): The client to associate with this object.
+        id (Optional[int]): The ID of the node.
+        tree_index (Optional[int]): The index of the node in the 3D model hierarchy, starting from 0. The tree is traversed in a depth-first order.
+        parent_id (Optional[int]): The parent of the node, null if it is the root node.
+        depth (Optional[int]): The depth of the node in the tree, starting from 0 at the root node.
+        name (Optional[str]): The name of the node.
+        subtree_size (Optional[int]): The number of descendants of the node, plus one (counting itself).
+        properties (Optional[Dict[str, Dict[str, str]]]): Properties extracted from 3D model, with property categories containing key/value string pairs.
+        bounding_box (Optional[Union[Dict[str, Any], BoundingBox3D]]): The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
     """
 
     def __init__(
@@ -313,11 +313,11 @@ class ThreeDAssetMapping(CogniteResource):
     """No description.
 
     Args:
-        node_id (int): The ID of the node.
-        asset_id (int): The ID of the associated asset (Cognite's Assets API).
-        tree_index (int): A number describing the position of this node in the 3D hierarchy, starting from 0. The tree is traversed in a depth-first order.
-        subtree_size (int): The number of nodes in the subtree of this node (this number included the node itself).
-        cognite_client (CogniteClient): The client to associate with this object.
+        node_id (Optional[int]): The ID of the node.
+        asset_id (Optional[int]): The ID of the associated asset (Cognite's Assets API).
+        tree_index (Optional[int]): A number describing the position of this node in the 3D hierarchy, starting from 0. The tree is traversed in a depth-first order.
+        subtree_size (Optional[int]): The number of nodes in the subtree of this node (this number included the node itself).
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
     """
 
     def __init__(

@@ -84,9 +84,9 @@ class NodeOrEdgeData:
 class InstanceCore(DataModelingResource):
     """A node or edge
     Args:
-        instance_type (Literal["node", "edge"]) The type of instance.
         space (str): The workspace for the instance.a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the instance.
+        instance_type (Literal["node", "edge"]): No description.
     """
 
     def __init__(self, space: str, external_id: str, instance_type: Literal["node", "edge"] = "node"):
@@ -101,15 +101,9 @@ class InstanceApply(InstanceCore):
     Args:
         space (str): The workspace for the instance.a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the instance.
-        instance_type (Literal["node", "edge"]) The type of instance.
-        existing_version (int): Fail the ingestion request if the node's version is greater than or equal to this value.
-                                If no existingVersion is specified, the ingestion will always overwrite any
-                                existing data for the edge (for the specified container or instance). If existingVersion is
-                                set to 0, the upsert will behave as an insert, so it will fail the bulk if the
-                                item already exists. If skipOnVersionConflict is set on the ingestion request,
-                                then the item will be skipped instead of failing the ingestion request.
-        sources (list[NodeOrEdgeData]): List of source properties to write. The properties are from the instance and/or
-                        container the container(s) making up this node.
+        instance_type (Literal["node", "edge"]): No description.
+        existing_version (Optional[int]): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or instance). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        sources (Optional[list[NodeOrEdgeData]]): List of source properties to write. The properties are from the instance and/or container the container(s) making up this node.
     """
 
     def __init__(
@@ -236,10 +230,10 @@ class Instance(InstanceCore):
         version (str): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        deleted_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-                            Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
-        instance_type (Literal["node", "edge"]) The type of instance.
-        properties (Properties): Properties of the instance.
+        instance_type (Literal["node", "edge"]): No description.
+        deleted_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        properties (Optional[Properties]): Properties of the instance.
+        _ (Any): No description.
     """
 
     def __init__(
@@ -285,13 +279,14 @@ class InstanceApplyResult(InstanceCore):
     """A node or edge. This represents the update on the instance.
 
     Args:
-        instance_type (Literal["node", "edge"]) The type of instance.
+        instance_type (Literal["node", "edge"]): No description.
         space (str): The workspace for the instance.a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the instance.
         version (str): DMS version of the instance.
         was_modified (bool): Whether the instance was modified by the ingestion.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        _ (Any): No description.
     """
 
     def __init__(
@@ -316,8 +311,8 @@ class InstanceAggregationResult(DataModelingResource):
     """A node or edge. This represents the update on the instance.
 
     Args:
-        aggregates (list[AggregatedNumberedValue]) : List of aggregated values.
-        group (dict[str, str | int | float | bool]) : The grouping used for the aggregation.
+        aggregates (list[AggregatedNumberedValue]): List of aggregated values.
+        group (dict[str, str | int | float | bool]): The grouping used for the aggregation.
     """
 
     def __init__(self, aggregates: list[AggregatedNumberedValue], group: dict[str, str | int | float | bool]):
@@ -370,14 +365,8 @@ class NodeApply(InstanceApply):
     Args:
         space (str): The workspace for the node.a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the node.
-        existing_version (int): Fail the ingestion request if the node's version is greater than or equal to this value.
-                                If no existingVersion is specified, the ingestion will always overwrite any
-                                existing data for the edge (for the specified container or node). If existingVersion is
-                                set to 0, the upsert will behave as an insert, so it will fail the bulk if the
-                                item already exists. If skipOnVersionConflict is set on the ingestion request,
-                                then the item will be skipped instead of failing the ingestion request.
-        sources (list[NodeOrEdgeData]): List of source properties to write. The properties are from the node and/or
-                        container the container(s) making up this node.
+        existing_version (Optional[int]): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        sources (Optional[list[NodeOrEdgeData]]): List of source properties to write. The properties are from the node and/or container the container(s) making up this node.
     """
 
     def __init__(
@@ -402,9 +391,9 @@ class Node(Instance):
         version (str): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        deleted_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-                            Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
-        properties (dict[Space, dict[PropertyIdentifier, dict[str, PropertyValue]]]): Properties of the node.
+        deleted_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        properties (Optional[Properties]): Properties of the node.
+        _ (Any): No description.
     """
 
     def __init__(
@@ -465,6 +454,7 @@ class NodeApplyResult(InstanceApplyResult):
         was_modified (bool): Whether the node was modified by the ingestion.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        _ (Any): No description.
     """
 
     def __init__(
@@ -497,17 +487,11 @@ class EdgeApply(InstanceApply):
     Args:
         space (str): The workspace for the edge, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the edge.
-        type (DirectRelationReference): The type of edge.
-        start_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
-        end_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
-        existing_version (int): Fail the ingestion request if the node's version is greater than or equal to this value.
-                                If no existingVersion is specified, the ingestion will always overwrite any
-                                existing data for the edge (for the specified container or edge). If existingVersion is
-                                set to 0, the upsert will behave as an insert, so it will fail the bulk if the
-                                item already exists. If skipOnVersionConflict is set on the ingestion request,
-                                then the item will be skipped instead of failing the ingestion request.
-        sources (list[NodeOrEdgeData]): List of source properties to write. The properties are from the edge and/or
-                        container the container(s) making up this node.
+        type (DirectRelationReference | tuple[str, str]): The type of edge.
+        start_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
+        end_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
+        existing_version (Optional[int]): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or edge). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        sources (Optional[list[NodeOrEdgeData]]): List of source properties to write. The properties are from the edge and/or container the container(s) making up this node.
     """
 
     def __init__(
@@ -565,8 +549,9 @@ class Edge(Instance):
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         start_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
         end_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
-        deleted_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-                            Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        deleted_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+        properties (Optional[Properties]): No description.
+        _ (Any): No description.
     """
 
     def __init__(
@@ -599,12 +584,7 @@ class Edge(Instance):
 
         Args:
             source (ViewIdentifier | ContainerIdentifier): The view or container to with all the properties.
-            existing_version (int): Fail the ingestion request if the node's version is greater than or equal to this value.
-                                    If no existingVersion is specified, the ingestion will always overwrite any
-                                    existing data for the edge (for the specified container or instance). If existingVersion is
-                                    set to 0, the upsert will behave as an insert, so it will fail the bulk if the
-                                    item already exists. If skipOnVersionConflict is set on the ingestion request,
-                                    then the item will be skipped instead of failing the ingestion request.
+            existing_version (Optional[int]): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or instance). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
 
         Returns:
             A write edge, EdgeApply
@@ -656,6 +636,7 @@ class EdgeApplyResult(InstanceApplyResult):
         was_modified (bool): Whether the edge was modified by the ingestion.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        _ (Any): No description.
     """
 
     def __init__(

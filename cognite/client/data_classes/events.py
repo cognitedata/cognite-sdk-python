@@ -51,20 +51,20 @@ class Event(CogniteResource):
     """An event represents something that happened at a given interval in time, e.g a failure, a work order etc.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        data_set_id (int): The id of the dataset this event belongs to.
-        start_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        end_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        type (str): Type of the event, e.g 'failure'.
-        subtype (str): SubType of the event, e.g 'electrical'.
-        description (str): Textual description of the event.
-        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 128000 bytes, up to 256 key-value pairs, of total size at most 200000.
-        asset_ids (Sequence[int]): Asset IDs of equipment that this event relates to.
-        source (str): The source of this event.
-        id (int): A server-generated ID for the object.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        cognite_client (CogniteClient): The client to associate with this object.
+        external_id (Optional[str]): The external ID provided by the client. Must be unique for the resource type.
+        data_set_id (Optional[int]): The id of the dataset this event belongs to.
+        start_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        end_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        type (Optional[str]): Type of the event, e.g 'failure'.
+        subtype (Optional[str]): SubType of the event, e.g 'electrical'.
+        description (Optional[str]): Textual description of the event.
+        metadata (Optional[Dict[str, str]]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 128000 bytes, up to 256 key-value pairs, of total size at most 200000.
+        asset_ids (Optional[Sequence[int]]): Asset IDs of equipment that this event relates to.
+        source (Optional[str]): The source of this event.
+        id (Optional[int]): A server-generated ID for the object.
+        last_updated_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
     """
 
     def __init__(

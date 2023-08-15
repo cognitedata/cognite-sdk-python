@@ -14,8 +14,8 @@ class SpaceCore(DataModelingResource):
 
     Args:
         space (str): A unique identifier for space.
-        description (str): Textual description of the space
-        name (str): Human readable name for the space.
+        description (Optional[str]): Textual description of the space
+        name (Optional[str]): Human readable name for the space.
     """
 
     def __init__(self, space: str, description: Optional[str] = None, name: Optional[str] = None):
@@ -32,8 +32,9 @@ class SpaceApply(SpaceCore):
 
     Args:
         space (str): A unique identifier for space.
-        description (str): Textual description of the space
-        name (str): Human readable name for the space.
+        description (Optional[str]): Textual description of the space
+        name (Optional[str]): Human readable name for the space.
+        _ (Any): No description.
     """
 
     def __init__(
@@ -52,11 +53,12 @@ class Space(SpaceCore):
 
     Args:
         space (str): a unique identifier for the space.
-        description (str): Textual description of the space
-        name (str): Human readable name for the space.
         is_global (bool): Whether the space is global or not.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        description (Optional[str]): Textual description of the space
+        name (Optional[str]): Human readable name for the space.
+        _ (Any): No description.
     """
 
     def __init__(

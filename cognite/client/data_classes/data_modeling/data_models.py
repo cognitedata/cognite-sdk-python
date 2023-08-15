@@ -20,9 +20,10 @@ class DataModelCore(DataModelingResource):
     Args:
         space (str): The workspace for the data model, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the data model.
-        description (str): Textual description of the data model
-        name (str): Human readable name for the data model.
         version (str): DMS version.
+        description (Optional[str]): Textual description of the data model
+        name (Optional[str]): Human readable name for the data model.
+        _ (Any): No description.
     """
 
     def __init__(
@@ -50,10 +51,10 @@ class DataModelApply(DataModelCore):
     Args:
         space (str): The workspace for the data model, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the data model.
-        description (str): Textual description of the data model
-        name (str): Human readable name for the data model.
         version (str): DMS version.
-        views (list[ViewReference | ViewApply]): List of views included in this data model.
+        description (Optional[str]): Textual description of the data model
+        name (Optional[str]): Human readable name for the data model.
+        views (Optional[list[ViewId | ViewApply]]): List of views included in this data model.
     """
 
     def __init__(
@@ -102,13 +103,14 @@ class DataModel(DataModelCore, Generic[T_View]):
     Args:
         space (str): The workspace for the data model, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the data model.
-        description (str): Textual description of the data model
-        name (str): Human readable name for the data model.
         version (str): DMS version.
-        views (list): List of views included in this data model.
         is_global (bool): Whether this is a global data model.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        description (Optional[str]): Textual description of the data model
+        name (Optional[str]): Human readable name for the data model.
+        views (Optional[list[T_View]]): List of views included in this data model.
+        _ (Any): No description.
     """
 
     def __init__(

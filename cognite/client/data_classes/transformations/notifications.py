@@ -12,13 +12,13 @@ class TransformationNotification(CogniteResource):
     """The transformation notification resource allows configuring email alerts on events related to a transformation run.
 
     Args:
-        id (int): A server-generated ID for the object.
-        transformation_id (int): Transformation Id.
-        transformation_external_id (str): Transformation external Id.
-        destination (str): Email address where notifications should be sent.
-        created_time (int): Time when the notification was created.
-        last_updated_time (int): Time when the notification was last updated.
-        cognite_client (CogniteClient): The client to associate with this object.
+        id (Optional[int]): A server-generated ID for the object.
+        transformation_id (Optional[int]): Transformation Id.
+        transformation_external_id (Optional[str]): Transformation external Id.
+        destination (Optional[str]): Email address where notifications should be sent.
+        created_time (Optional[int]): Time when the notification was created.
+        last_updated_time (Optional[int]): Time when the notification was last updated.
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
     """
 
     def __init__(

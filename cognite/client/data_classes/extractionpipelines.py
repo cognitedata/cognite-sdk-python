@@ -50,25 +50,25 @@ class ExtractionPipeline(CogniteResource):
     """An extraction pipeline is a representation of a process writing data to CDF, such as an extractor or an ETL tool.
 
     Args:
-        id (int): A server-generated ID for the object.
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        name (str): The name of the extraction pipeline.
-        description (str): The description of the extraction pipeline.
-        data_set_id (int): The id of the dataset this extraction pipeline related with.
-        raw_tables (List[Dict[str, str]): list of raw tables in list format: [{"dbName": "value", "tableName" : "value"}].
-        last_success (int): Milliseconds value of last success status.
-        last_failure (int): Milliseconds value of last failure status.
-        last_message (str): Message of last failure.
-        last_seen (int): Milliseconds value of last seen status.
-        schedule (str): None/On trigger/Continuous/cron regex.
-        contacts (List[ExtractionPipelineContact]): list of contacts
-        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
-        source (str): Source text value for extraction pipeline.
-        documentation (str): Documentation text value for extraction pipeline.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_by (str): Extraction pipeline creator, usually an email.
-        cognite_client (CogniteClient): The client to associate with this object.
+        id (Optional[int]): A server-generated ID for the object.
+        external_id (Optional[str]): The external ID provided by the client. Must be unique for the resource type.
+        name (Optional[str]): The name of the extraction pipeline.
+        description (Optional[str]): The description of the extraction pipeline.
+        data_set_id (Optional[int]): The id of the dataset this extraction pipeline related with.
+        raw_tables (Optional[List[Dict[str, str]]]): list of raw tables in list format: [{"dbName": "value", "tableName" : "value"}].
+        last_success (Optional[int]): Milliseconds value of last success status.
+        last_failure (Optional[int]): Milliseconds value of last failure status.
+        last_message (Optional[str]): Message of last failure.
+        last_seen (Optional[int]): Milliseconds value of last seen status.
+        schedule (Optional[str]): None/On trigger/Continuous/cron regex.
+        contacts (Optional[List[ExtractionPipelineContact]]): list of contacts
+        metadata (Optional[Dict[str, str]]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
+        source (Optional[str]): Source text value for extraction pipeline.
+        documentation (Optional[str]): Documentation text value for extraction pipeline.
+        created_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_by (Optional[str]): Extraction pipeline creator, usually an email.
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
     """
 
     def __init__(
@@ -220,12 +220,12 @@ class ExtractionPipelineRun(CogniteResource):
     """A representation of an extraction pipeline run.
 
     Args:
-        id (int): A server-generated ID for the object.
-        extpipe_external_id (str): The external ID of the extraction pipeline.
-        status (str): success/failure/seen.
-        message (str): Optional status message.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        cognite_client (CogniteClient): The client to associate with this object.
+        extpipe_external_id (Optional[str]): The external ID of the extraction pipeline.
+        status (Optional[str]): success/failure/seen.
+        message (Optional[str]): Optional status message.
+        created_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
+        id (Optional[int]): A server-generated ID for the object.
     """
 
     def __init__(
@@ -320,11 +320,11 @@ class ExtractionPipelineConfigRevision(CogniteResource):
     """An extraction pipeline config revision
 
     Args:
-        external_id (str): The external ID of the associated extraction pipeline.
-        revision (int): The revision number of this config as a positive integer.
-        description (str): Short description of this configuration revision.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        cognite_client (CogniteClient): The client to associate with this object.
+        external_id (Optional[str]): The external ID of the associated extraction pipeline.
+        revision (Optional[int]): The revision number of this config as a positive integer.
+        description (Optional[str]): Short description of this configuration revision.
+        created_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
     """
 
     def __init__(
@@ -346,12 +346,12 @@ class ExtractionPipelineConfig(ExtractionPipelineConfigRevision):
     """An extraction pipeline config
 
     Args:
-        external_id (str): The external ID of the associated extraction pipeline.
-        config (str): Contents of this configuration revision.
-        revision (int): The revision number of this config as a positive integer.
-        description (str): Short description of this configuration revision.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        cognite_client (CogniteClient): The client to associate with this object.
+        external_id (Optional[str]): The external ID of the associated extraction pipeline.
+        config (Optional[str]): Contents of this configuration revision.
+        revision (Optional[int]): The revision number of this config as a positive integer.
+        description (Optional[str]): Short description of this configuration revision.
+        created_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
     """
 
     def __init__(

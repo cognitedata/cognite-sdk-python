@@ -69,31 +69,33 @@ class Transformation(CogniteResource):
     """The transformations resource allows transforming data in CDF.
 
     Args:
-        id (int): A server-generated ID for the object.
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        name (str): The name of the Transformation.
-        query (str): SQL query of the transformation.
-        destination (TransformationDestination): see TransformationDestination for options.
-        conflict_mode (str): What to do in case of id collisions: either "abort", "upsert", "update" or "delete"
+        id (Optional[int]): A server-generated ID for the object.
+        external_id (Optional[str]): The external ID provided by the client. Must be unique for the resource type.
+        name (Optional[str]): The name of the Transformation.
+        query (Optional[str]): SQL query of the transformation.
+        destination (Optional[TransformationDestination]): see TransformationDestination for options.
+        conflict_mode (Optional[str]): What to do in case of id collisions: either "abort", "upsert", "update" or "delete"
         is_public (bool): Indicates if the transformation is visible to all in project or only to the owner.
         ignore_null_fields (bool): Indicates how null values are handled on updates: ignore or set null.
         source_oidc_credentials (Optional[OidcCredentials]): Configures the transformation to authenticate with the given oidc credentials key on the destination.
         destination_oidc_credentials (Optional[OidcCredentials]): Configures the transformation to authenticate with the given oidc credentials on the destination.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        owner (str): Owner of the transformation: requester's identity.
+        created_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        owner (Optional[str]): Owner of the transformation: requester's identity.
         owner_is_current_user (bool): Indicates if the transformation belongs to the current user.
-        has_source_oidc_credentials (bool): Indicates if the transformation is configured with a source oidc credentials set.
-        has_destination_oidc_credentials (bool): Indicates if the transformation is configured with a destination oidc credentials set.
-        running_job (TransformationJob): Details for the job of this transformation currently running.
-        last_finished_job (TransformationJob): Details for the last finished job of this transformation.
-        blocked (TransformationBlockedInfo): Provides reason and time if the transformation is blocked.
-        schedule (TransformationSchedule): Details for the schedule if the transformation is scheduled.
-        cognite_client (CogniteClient): The client to associate with this object.
-        source_nonce (NonceCredentials): Single use credentials to bind to a CDF session for reading.
-        destination_nonce (NonceCredentials): Single use credentials to bind to a CDF session for writing.
-        source_session (SessionDetails): Details for the session used to read from the source project.
-        destination_session (SessionDetails): Details for the session used to write to the destination project.
+        has_source_oidc_credentials (Optional[bool]): Indicates if the transformation is configured with a source oidc credentials set.
+        has_destination_oidc_credentials (Optional[bool]): Indicates if the transformation is configured with a destination oidc credentials set.
+        running_job (Optional[TransformationJob]): Details for the job of this transformation currently running.
+        last_finished_job (Optional[TransformationJob]): Details for the last finished job of this transformation.
+        blocked (Optional[TransformationBlockedInfo]): Provides reason and time if the transformation is blocked.
+        schedule (Optional[TransformationSchedule]): Details for the schedule if the transformation is scheduled.
+        data_set_id (Optional[int]): No description.
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
+        source_nonce (Optional[NonceCredentials]): Single use credentials to bind to a CDF session for reading.
+        destination_nonce (Optional[NonceCredentials]): Single use credentials to bind to a CDF session for writing.
+        source_session (Optional[SessionDetails]): Details for the session used to read from the source project.
+        destination_session (Optional[SessionDetails]): Details for the session used to write to the destination project.
+        tags (Optional[List[str]]): No description.
     """
 
     def __init__(
@@ -513,8 +515,9 @@ class TransformationPreviewResult(CogniteResource):
     """Allows previewing the result of a sql transformation before executing it.
 
     Args:
-        schema (TransformationSchemaColumnList): List of column descriptions.
-        results (List[Dict]): List of resulting rows. Each row is a dictionary where the key is the column name and the value is the entrie.
+        schema (Optional[TransformationSchemaColumnList]): List of column descriptions.
+        results (Optional[List[Dict]]): List of resulting rows. Each row is a dictionary where the key is the column name and the value is the entrie.
+        cognite_client (Optional[CogniteClient]): No description.
     """
 
     def __init__(

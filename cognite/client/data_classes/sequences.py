@@ -37,17 +37,17 @@ class Sequence(CogniteResource):
     """Information about the sequence stored in the database
 
     Args:
-        id (int): Unique cognite-provided identifier for the sequence
-        name (str): Name of the sequence
-        description (str): Description of the sequence
-        asset_id (int): Optional asset this sequence is associated with
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value. Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        columns (SequenceType[Dict[str, Any]]): List of column definitions
-        created_time (int): Time when this sequence was created in CDF in milliseconds since Jan 1, 1970.
-        last_updated_time (int): The last time this sequence was updated in CDF, in milliseconds since Jan 1, 1970.
-        data_set_id (int): Data set that this sequence belongs to
-        cognite_client (CogniteClient): The client to associate with this object.
+        id (Optional[int]): Unique cognite-provided identifier for the sequence
+        name (Optional[str]): Name of the sequence
+        description (Optional[str]): Description of the sequence
+        asset_id (Optional[int]): Optional asset this sequence is associated with
+        external_id (Optional[str]): The external ID provided by the client. Must be unique for the resource type.
+        metadata (Optional[Dict[str, Any]]): Custom, application specific metadata. String key -> String value. Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        columns (Optional[SequenceType[Dict[str, Any]]]): List of column definitions
+        created_time (Optional[int]): Time when this sequence was created in CDF in milliseconds since Jan 1, 1970.
+        last_updated_time (Optional[int]): The last time this sequence was updated in CDF, in milliseconds since Jan 1, 1970.
+        data_set_id (Optional[int]): Data set that this sequence belongs to
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
     """
 
     def __init__(
@@ -327,12 +327,12 @@ class SequenceData(CogniteResource):
     """An object representing a list of rows from a sequence.
 
     Args:
-        id (int): Id of the sequence the data belong to
-        external_id (str): External id of the sequence the data belong to
-        rows (SequenceType[dict]): Combined row numbers and row data object from the API. If you pass this, row_numbers/values are ignored.
-        row_numbers (SequenceType[int]): The data row numbers.
-        values (SequenceType[SequenceType[ Union[int, str, float]]]): The data values, one row at a time.
-        columns: SequenceType[dict]: The column information, in the format returned by the API.
+        id (Optional[int]): Id of the sequence the data belong to
+        external_id (Optional[str]): External id of the sequence the data belong to
+        rows (Optional[SequenceType[dict]]): Combined row numbers and row data object from the API. If you pass this, row_numbers/values are ignored.
+        row_numbers (Optional[SequenceType[int]]): The data row numbers.
+        values (Optional[SequenceType[SequenceType[Union[int, str, float]]]]): The data values, one row at a time.
+        columns (Optional[SequenceType[Dict[str, Any]]]): SequenceType[dict]: The column information, in the format returned by the API.
     """
 
     def __init__(

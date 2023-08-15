@@ -28,21 +28,21 @@ class Relationship(CogniteResource):
     """Representation of a relationship in CDF, consists of a source and a target and some additional parameters.
 
     Args:
-        external_id (str): External id of the relationship, must be unique within the project.
-        source_external_id (str): External id of the CDF resource that constitutes the relationship source.
-        source_type (str): The CDF resource type of the relationship source. Must be one of the specified values.
-        source (Union[Asset, TimeSeries, FileMetadata, Event, Sequence, Dict]): The full resource referenced by the source_external_id and source_type fields.
-        target_external_id (str): External id of the CDF resource that constitutes the relationship target.
-        target_type (str): The CDF resource type of the relationship target. Must be one of the specified values.
-        target (Union[Asset, TimeSeries, FileMetadata, Event, Sequence, Dict]): The full resource referenced by the target_external_id and target_type fields.
-        start_time (int): Time, in milliseconds since Jan. 1, 1970, when the relationship became active. If there is no startTime, relationship is active from the beginning of time until endTime.
-        end_time (int): Time, in milliseconds since Jan. 1, 1970, when the relationship became inactive. If there is no endTime, relationship is active from startTime until the present or any point in the future. If endTime and startTime are set, then endTime must be strictly greater than startTime.
-        confidence (float): Confidence value of the existence of this relationship. Generated relationships should provide a realistic score on the likelihood of the existence of the relationship. Relationships without a confidence value can be interpreted at the discretion of each project.
-        data_set_id (int): The id of the dataset this relationship belongs to.
-        labels (SequenceType[Label]): A list of the labels associated with this resource item.
-        created_time (int): Time, in milliseconds since Jan. 1, 1970, when this relationship was created in CDF.
-        last_updated_time (int): Time, in milliseconds since Jan. 1, 1970, when this relationship was last updated in CDF.
-        cognite_client (CogniteClient): The client to associate with this object.
+        external_id (Optional[str]): External id of the relationship, must be unique within the project.
+        source_external_id (Optional[str]): External id of the CDF resource that constitutes the relationship source.
+        source_type (Optional[str]): The CDF resource type of the relationship source. Must be one of the specified values.
+        source (Optional[Union[Asset, TimeSeries, FileMetadata, Sequence, Event, Dict]]): The full resource referenced by the source_external_id and source_type fields.
+        target_external_id (Optional[str]): External id of the CDF resource that constitutes the relationship target.
+        target_type (Optional[str]): The CDF resource type of the relationship target. Must be one of the specified values.
+        target (Optional[Union[Asset, TimeSeries, FileMetadata, Sequence, Event, Dict]]): The full resource referenced by the target_external_id and target_type fields.
+        start_time (Optional[int]): Time, in milliseconds since Jan. 1, 1970, when the relationship became active. If there is no startTime, relationship is active from the beginning of time until endTime.
+        end_time (Optional[int]): Time, in milliseconds since Jan. 1, 1970, when the relationship became inactive. If there is no endTime, relationship is active from startTime until the present or any point in the future. If endTime and startTime are set, then endTime must be strictly greater than startTime.
+        confidence (Optional[float]): Confidence value of the existence of this relationship. Generated relationships should provide a realistic score on the likelihood of the existence of the relationship. Relationships without a confidence value can be interpreted at the discretion of each project.
+        data_set_id (Optional[int]): The id of the dataset this relationship belongs to.
+        labels (Optional[SequenceType[Union[Label, str, LabelDefinition, dict]]]): A list of the labels associated with this resource item.
+        created_time (Optional[int]): Time, in milliseconds since Jan. 1, 1970, when this relationship was created in CDF.
+        last_updated_time (Optional[int]): Time, in milliseconds since Jan. 1, 1970, when this relationship was last updated in CDF.
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
     """
 
     _RESOURCE_TYPES = frozenset({"asset", "timeseries", "file", "event", "sequence"})

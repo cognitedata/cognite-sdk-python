@@ -39,11 +39,11 @@ class TransformationSchemaColumn(CogniteResource):
     """Represents a column of the expected sql structure for a destination type.
 
     Args:
-        name (str): Column name
-        sql_type (str): Type of the column in sql format.
-        type (TransformationSchemaType): Type of the column in json format.
+        name (Optional[str]): Column name
+        sql_type (Optional[str]): Type of the column in sql format.
+        type (Optional[TransformationSchemaType]): Type of the column in json format.
         nullable (bool): Values for the column can be null or not
-        cognite_client (CogniteClient): The client to associate with this object.
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
     """
 
     def __init__(

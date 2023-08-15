@@ -27,10 +27,13 @@ class TemplateGroup(CogniteResource):
     GraphQL schema definition language is used as the language to describe the structure of the templates and data types.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        description (str): The description of the template groups.
-        owners (List[str]): The list of owners for the template groups.
-        data_set_id (int): The dataSet which this Template Group belongs to
+        external_id (Optional[str]): The external ID provided by the client. Must be unique for the resource type.
+        description (Optional[str]): The description of the template groups.
+        owners (Optional[List[str]]): The list of owners for the template groups.
+        data_set_id (Optional[int]): The dataSet which this Template Group belongs to
+        created_time (Optional[int]): No description.
+        last_updated_time (Optional[int]): No description.
+        cognite_client (Optional[CogniteClient]): No description.
     """
 
     def __init__(
@@ -66,9 +69,12 @@ class TemplateGroupVersion(CogniteResource):
     The default mode is "patch".
 
     Args:
-        schema (str): The GraphQL schema.
-        version (int): Incremented by the server whenever the schema of a template groups changes.
-        conflict_mode (str): Can be set to 'Patch', 'Update' or 'Force'.
+        schema (Optional[str]): The GraphQL schema.
+        version (Optional[int]): Incremented by the server whenever the schema of a template groups changes.
+        conflict_mode (Optional[str]): Can be set to 'Patch', 'Update' or 'Force'.
+        created_time (Optional[int]): No description.
+        last_updated_time (Optional[int]): No description.
+        cognite_client (Optional[CogniteClient]): No description.
     """
 
     def __init__(
@@ -96,7 +102,8 @@ class ConstantResolver(CogniteResource):
     """Resolves a field to a constant value. The value can be of any supported JSON type.
 
     Args:
-        value (any): The value of the field.
+        value (Optional[Any]): The value of the field.
+        cognite_client (Optional[CogniteClient]): No description.
     """
 
     def __init__(self, value: Optional[Any] = None, cognite_client: Optional[CogniteClient] = None):
@@ -109,10 +116,11 @@ class RawResolver(CogniteResource):
     """Resolves a field to a RAW column.
 
     Args:
-        db_name (str): The database name.
-        table_name (str): The table name.
-        row_key (str): The row key.
-        column_name (str): The column to fetch the value from.
+        db_name (Optional[str]): The database name.
+        table_name (Optional[str]): The table name.
+        row_key (Optional[str]): The row key.
+        column_name (Optional[str]): The column to fetch the value from.
+        cognite_client (Optional[CogniteClient]): No description.
     """
 
     def __init__(
@@ -135,13 +143,14 @@ class SyntheticTimeSeriesResolver(CogniteResource):
     """Resolves a field of type 'SyntheticTimeSeries' to a Synthetic Time Series.
 
     Args:
-        expression (str): The synthetic time series expression. See this for syntax https://docs.cognite.com/api/v1/#tag/Synthetic-Time-Series.
+        expression (Optional[str]): The synthetic time series expression. See this for syntax https://docs.cognite.com/api/v1/#tag/Synthetic-Time-Series.
         name (Optional[str]): The name of the Time Series.
         description (Optional[str]): The description for the Time Series.
         metadata (Optional[Dict[str, str]]): Specifies metadata for the Time Series.
         is_step (Optional[bool]): Specifies if the synthetic time series is step based.
         is_string (Optional[bool]): Specifies if the synthetic time series returned contains string values.
         unit (Optional[str]): The unit of the time series.
+        cognite_client (Optional[CogniteClient]): No description.
     """
 
     def __init__(
@@ -170,8 +179,9 @@ class ViewResolver(CogniteResource):
     """Resolves the field by loading the data from a view.
 
     Args:
-        external_id (str): The external id of the view.
-        input (Optional[Dict[str, any]]): The input used to resolve the view.
+        external_id (Optional[str]): The external id of the view.
+        input (Optional[Dict[str, Any]]): The input used to resolve the view.
+        cognite_client (Optional[CogniteClient]): No description.
     """
 
     def __init__(
@@ -193,12 +203,13 @@ class TemplateInstance(CogniteResource):
     """A template instance that implements a template by specifying a resolver per field.
 
     Args:
-        external_id (str): The id of the template instance.
-        template_name (str): The template name to implement.
-        field_resolvers (Dict[str, FieldResolvers]): A set of field resolvers where the dictionary key correspond to the field name.
-        data_set_id (int): The id of the dataset this instance belongs to.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        external_id (Optional[str]): The id of the template instance.
+        template_name (Optional[str]): The template name to implement.
+        field_resolvers (Optional[Dict[str, FieldResolvers]]): A set of field resolvers where the dictionary key correspond to the field name.
+        data_set_id (Optional[int]): The id of the dataset this instance belongs to.
+        created_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        cognite_client (Optional[CogniteClient]): No description.
     """
 
     def __init__(
@@ -319,9 +330,10 @@ class Source(CogniteResource):
     A source defines the data source with filters and a mapping table.
 
     Args:
-        type (str): The type of source. Possible values are: "events", "assets", "sequences", "timeSeries", "files".
-        filter (Dict[str, any]): The filter to apply to the source when resolving the source. A filter also supports binding view input to the filter, by prefixing the input name with '$'.
-        mappings (Dict[str, str]): The mapping between source result and expected schema.
+        type (Optional[str]): The type of source. Possible values are: "events", "assets", "sequences", "timeSeries", "files".
+        filter (Optional[Dict[str, Any]]): The filter to apply to the source when resolving the source. A filter also supports binding view input to the filter, by prefixing the input name with '$'.
+        mappings (Optional[Dict[str, str]]): The mapping between source result and expected schema.
+        cognite_client (Optional[CogniteClient]): No description.
     """
 
     def __init__(
@@ -342,9 +354,12 @@ class View(CogniteResource):
     A view is used to map existing data to a type in the template group. A view supports input, that can be bound to the underlying filter.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        source (Source): Defines the data source for the view.
+        external_id (Optional[str]): The external ID provided by the client. Must be unique for the resource type.
+        source (Optional[Source]): Defines the data source for the view.
         data_set_id (Optional[int]): The dataSetId of the view
+        created_time (Optional[int]): No description.
+        last_updated_time (Optional[int]): No description.
+        cognite_client (Optional[CogniteClient]): No description.
     """
 
     def __init__(

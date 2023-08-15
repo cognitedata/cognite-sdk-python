@@ -78,11 +78,12 @@ class ViewApply(ViewCore):
     Args:
         space (str): The workspace for the view, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the view.
-        description (str): Textual description of the view
-        name (str): Human readable name for the view.
-        filter (dict): A filter Domain Specific Language (DSL) used to create advanced filter queries.
-        implements (list): References to the views from where this view will inherit properties and edges.
         version (str): DMS version.
+        description (Optional[str]): Textual description of the view
+        name (Optional[str]): Human readable name for the view.
+        filter (Filter | None): A filter Domain Specific Language (DSL) used to create advanced filter queries.
+        implements (Optional[list[ViewId]]): References to the views from where this view will inherit properties and edges.
+        properties (Optional[dict[str, MappedPropertyApply | ConnectionDefinitionApply]]): No description.
     """
 
     def __init__(
@@ -122,17 +123,18 @@ class View(ViewCore):
     Args:
         space (str): The workspace for the view, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the view.
-        description (str): Textual description of the view
-        name (str): Human readable name for the view.
-        filter (dict): A filter Domain Specific Language (DSL) used to create advanced filter queries.
-        implements (list): References to the views from where this view will inherit properties and edges.
         version (str): DMS version.
+        properties (dict[str, MappedProperty | ConnectionDefinition]): View with included properties and expected edges, indexed by a unique space-local identifier.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        description (Optional[str]): Textual description of the view
+        name (Optional[str]): Human readable name for the view.
+        filter (Filter | None): A filter Domain Specific Language (DSL) used to create advanced filter queries.
+        implements (Optional[list[ViewId]]): References to the views from where this view will inherit properties and edges.
         writable (bool): Whether the view supports write operations.
         used_for (Literal["node", "edge", "all"]): Does this view apply to nodes, edges or both.
         is_global (bool): Whether this is a global container, i.e., one of the out-of-the-box models.
-        properties (dict): View with included properties and expected edges, indexed by a unique space-local identifier.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        _ (Any): No description.
     """
 
     def __init__(

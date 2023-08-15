@@ -18,13 +18,13 @@ class TransformationSchedule(CogniteResource):
     """The transformation schedules resource allows running recurrent transformations.
 
     Args:
-        id (int): Transformation id.
-        external_id (str): Transformation externalId.
-        created_time (int): Time when the schedule was created.
-        last_updated_time (int): Time when the schedule was last updated.
-        interval (str): Cron expression describes when the function should be called. Use http://www.cronmaker.com to create a cron expression.
+        id (Optional[int]): Transformation id.
+        external_id (Optional[str]): Transformation externalId.
+        created_time (Optional[int]): Time when the schedule was created.
+        last_updated_time (Optional[int]): Time when the schedule was last updated.
+        interval (Optional[str]): Cron expression describes when the function should be called. Use http://www.cronmaker.com to create a cron expression.
         is_paused (bool): If true, the transformation is not scheduled.
-        cognite_client (CogniteClient): The client to associate with this object.
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
     """
 
     def __init__(

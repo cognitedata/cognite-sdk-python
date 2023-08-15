@@ -33,21 +33,21 @@ class TimeSeries(CogniteResource):
     """No description.
 
     Args:
-        id (int): A server-generated ID for the object.
-        external_id (str): The externally supplied ID for the time series.
-        name (str): The display short name of the time series. Note: Value of this field can differ from name presented by older versions of API 0.3-0.6.
-        is_string (bool): Whether the time series is string valued or not.
-        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        unit (str): The physical unit of the time series.
-        asset_id (int): Asset ID of equipment linked to this time series.
-        is_step (bool): Whether the time series is a step series or not.
-        description (str): Description of the time series.
-        security_categories (Sequence[int]): The required security categories to access this time series.
-        data_set_id (int): The dataSet Id for the item.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        legacy_name (str): Set a value for legacyName to allow applications using API v0.3, v04, v05, and v0.6 to access this time series. The legacy name is the human-readable name for the time series and is mapped to the name field used in API versions 0.3-0.6. The legacyName field value must be unique, and setting this value to an already existing value will return an error. We recommend that you set this field to the same value as externalId.
-        cognite_client (CogniteClient): The client to associate with this object.
+        id (Optional[int]): A server-generated ID for the object.
+        external_id (Optional[str]): The externally supplied ID for the time series.
+        name (Optional[str]): The display short name of the time series. Note: Value of this field can differ from name presented by older versions of API 0.3-0.6.
+        is_string (Optional[bool]): Whether the time series is string valued or not.
+        metadata (Optional[Dict[str, str]]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        unit (Optional[str]): The physical unit of the time series.
+        asset_id (Optional[int]): Asset ID of equipment linked to this time series.
+        is_step (Optional[bool]): Whether the time series is a step series or not.
+        description (Optional[str]): Description of the time series.
+        security_categories (Optional[Sequence[int]]): The required security categories to access this time series.
+        data_set_id (Optional[int]): The dataSet Id for the item.
+        created_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        legacy_name (Optional[str]): Set a value for legacyName to allow applications using API v0.3, v04, v05, and v0.6 to access this time series. The legacy name is the human-readable name for the time series and is mapped to the name field used in API versions 0.3-0.6. The legacyName field value must be unique, and setting this value to an already existing value will return an error. We recommend that you set this field to the same value as externalId.
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
     """
 
     def __init__(

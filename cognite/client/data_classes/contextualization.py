@@ -122,7 +122,7 @@ class ContextualizationJob(CogniteResource):
         """Waits for job completion. This is generally not needed to call directly, as `.result` will do so automatically.
 
         Args:
-            timeout (int): Time out after this many seconds. (None means wait indefinitely)
+            timeout (Optional[int]): Time out after this many seconds. (None means wait indefinitely)
             interval (int): Poll status every this many seconds.
 
         Raises:
@@ -224,8 +224,8 @@ class EntityMatchingModel(CogniteResource):
         """Waits for model completion. This is generally not needed to call directly, as `.result` will do so automatically.
 
         Args:
-            timeout: Time out after this many seconds. (None means wait indefinitely)
-            interval: Poll status every this many seconds.
+            timeout (Optional[int]): Time out after this many seconds. (None means wait indefinitely)
+            interval (int): Poll status every this many seconds.
 
         Raises:
             ModelFailedException: The model fit failed.
@@ -251,11 +251,10 @@ class EntityMatchingModel(CogniteResource):
         """Predict entity matching. NB. blocks and waits for the model to be ready if it has been recently created.
 
         Args:
-            sources: entities to match from, does not need an 'id' field. Tolerant to passing more than is needed or used (e.g. json dump of time series list). If omitted, will use data from fit.
-            targets: entities to match to, does not need an 'id' field.  Tolerant to passing more than is needed or used. If omitted, will use data from fit.
+            sources (Optional[List[Dict]]): entities to match from, does not need an 'id' field. Tolerant to passing more than is needed or used (e.g. json dump of time series list). If omitted, will use data from fit.
+            targets (Optional[List[Dict]]): entities to match to, does not need an 'id' field.  Tolerant to passing more than is needed or used. If omitted, will use data from fit.
             num_matches (int): number of matches to return for each item.
-            score_threshold (float): only return matches with a score above this threshold
-            ignore_missing_fields (bool): whether missing data in match_fields should be filled in with an empty string.
+            score_threshold (Optional[float]): only return matches with a score above this threshold
 
         Returns:
             ContextualizationJob: object which can be used to wait for and retrieve results."""
@@ -279,8 +278,7 @@ class EntityMatchingModel(CogniteResource):
         """Re-fits an entity matching model, using the combination of the old and new true matches.
 
         Args:
-            true_matches: Updated known valid matches given as a list of dicts with keys 'fromId', 'fromExternalId', 'toId', 'toExternalId').
-                A tuple can be used instead of the dictionary for convenience, interpreted as id/externalId based on type.
+            true_matches (Sequence[Union[Dict, Tuple[Union[int, str], Union[int, str]]]]): Updated known valid matches given as a list of dicts with keys 'fromId', 'fromExternalId', 'toId', 'toExternalId'). A tuple can be used instead of the dictionary for convenience, interpreted as id/externalId based on type.
         Returns:
             EntityMatchingModel: new model refitted to true_matches."""
         true_matches = [convert_true_match(true_match) for true_match in true_matches]
@@ -838,9 +836,9 @@ class VisionExtractJob(VisionJob):
         See https://docs.cognite.com/api/v1/#operation/annotationsSuggest
 
         Args:
-            creating_app (str, optional): The name of the app from which this annotation was created. Defaults to 'cognite-sdk-python'.
-            creating_app_version (str, optional): The version of the app that created this annotation. Must be a valid semantic versioning (SemVer) string. Defaults to client version.
-            creating_user: (str, optional): A username, or email, or name. This is not checked nor enforced. If the value is None, it means the annotation was created by a service.
+            creating_user (Optional[str]): (str, optional): A username, or email, or name. This is not checked nor enforced. If the value is None, it means the annotation was created by a service.
+            creating_app (Optional[str]): The name of the app from which this annotation was created. Defaults to 'cognite-sdk-python'.
+            creating_app_version (Optional[str]): The version of the app that created this annotation. Must be a valid semantic versioning (SemVer) string. Defaults to client version.
         Returns:
             Union[Annotation, AnnotationList]: (suggested) annotation(s) stored in CDF.
 

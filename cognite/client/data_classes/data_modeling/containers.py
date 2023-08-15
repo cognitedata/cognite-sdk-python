@@ -26,12 +26,13 @@ class ContainerCore(DataModelingResource):
     Args:
         space (str): The workspace for the view, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the view.
-        description (str): Textual description of the view
-        name (str): Human readable name for the view.
-        used_for (Literal['node', 'edge', 'all']): Should this operation apply to nodes, edges or both.
         properties (dict[str, ContainerProperty]): We index the property by a local unique identifier.
-        constraints (dict[str, Constraint]): Set of constraints to apply to the container
-        indexes (dict[str, Index]): Set of indexes to apply to the container.
+        description (Optional[str]): Textual description of the view
+        name (Optional[str]): Human readable name for the view.
+        used_for (Optional[Literal["node", "edge", "all"]]): Should this operation apply to nodes, edges or both.
+        constraints (Optional[dict[str, Constraint]]): Set of constraints to apply to the container
+        indexes (Optional[dict[str, Index]]): Set of indexes to apply to the container.
+        _ (Any): No description.
     """
 
     def __init__(
@@ -87,12 +88,12 @@ class ContainerApply(ContainerCore):
     Args:
         space (str): The workspace for the view, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the view.
-        description (str): Textual description of the view
-        name (str): Human readable name for the view.
-        used_for (Literal['node', 'edge', 'all']): Should this operation apply to nodes, edges or both.
         properties (dict[str, ContainerProperty]): We index the property by a local unique identifier.
-        constraints (dict[str, Constraint]): Set of constraints to apply to the container
-        indexes (dict[str, Index]): Set of indexes to apply to the container.
+        description (Optional[str]): Textual description of the view
+        name (Optional[str]): Human readable name for the view.
+        used_for (Optional[Literal["node", "edge", "all"]]): Should this operation apply to nodes, edges or both.
+        constraints (Optional[dict[str, Constraint]]): Set of constraints to apply to the container
+        indexes (Optional[dict[str, Index]]): Set of indexes to apply to the container.
     """
 
     def __init__(
@@ -116,15 +117,16 @@ class Container(ContainerCore):
     Args:
         space (str): The workspace for the view, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the view.
-        description (str): Textual description of the view
-        name (str): Human readable name for the view.
-        is_global (bool): Whether this is a global container, i.e., one of the out-of-the-box models.
-        used_for (Literal['node', 'edge', 'all']): Should this operation apply to nodes, edges or both.
         properties (dict[str, ContainerProperty]): We index the property by a local unique identifier.
-        constraints (dict[str, Constraint]): Set of constraints to apply to the container
-        indexes (dict[str, Index]): Set of indexes to apply to the container.
+        is_global (bool): Whether this is a global container, i.e., one of the out-of-the-box models.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        description (Optional[str]): Textual description of the view
+        name (Optional[str]): Human readable name for the view.
+        used_for (Literal["node", "edge", "all"]): Should this operation apply to nodes, edges or both.
+        constraints (Optional[dict[str, Constraint]]): Set of constraints to apply to the container
+        indexes (Optional[dict[str, Index]]): Set of indexes to apply to the container.
+        _ (Any): No description.
     """
 
     def __init__(

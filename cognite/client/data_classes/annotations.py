@@ -25,19 +25,11 @@ class Annotation(CogniteResource):
         annotation_type (str): The type of the annotation. This uniquely decides what the structure of the 'data' block will be.
         data (dict): The annotation information. The format of this object is decided by and validated against the 'annotation_type' attribute.
         status (str): The status of the annotation, e.g. "suggested", "approved", "rejected".
-
-        annotated_resource_type (str): Type name of the CDF resource that is annotated, e.g. "file".
-        annotated_resource_id (int, optional): The internal ID of the annotated resource.
-
         creating_app (str): The name of the app from which this annotation was created.
         creating_app_version (str): The version of the app that created this annotation. Must be a valid semantic versioning (SemVer) string.
-        creating_user: (str, optional): A username, or email, or name. This is not checked nor enforced. If the value is None, it means the annotation was created by a service.
-
-        id (int, optional): A server-generated id for the object. Read-only.
-        created_time (int, optional): Time when this annotation was created in CDF. The time is measured in milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Read-only.
-        last_updated_time (int, optional): Time when this annotation was last updated in CDF. The time is measured in milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Read-only.
-
-        cognite_client (CogniteClient, optional): The client to associate with this object. Read-only.
+        creating_user (Optional[str]): (str, optional): A username, or email, or name. This is not checked nor enforced. If the value is None, it means the annotation was created by a service.
+        annotated_resource_type (str): Type name of the CDF resource that is annotated, e.g. "file".
+        annotated_resource_id (Optional[int]): The internal ID of the annotated resource.
     """
 
     def __init__(

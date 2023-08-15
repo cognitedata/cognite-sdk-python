@@ -102,18 +102,18 @@ class Datapoint(CogniteResource):
     """An object representing a datapoint.
 
     Args:
-        timestamp (Union[int, float]): The data timestamp in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
-        value (Union[str, float]): The data value. Can be string or numeric
-        average (float): The integral average value in the aggregate period
-        max (float): The maximum value in the aggregate period
-        min (float): The minimum value in the aggregate period
-        count (int): The number of datapoints in the aggregate period
-        sum (float): The sum of the datapoints in the aggregate period
-        interpolation (float): The interpolated value of the series in the beginning of the aggregate
-        step_interpolation (float): The last value before or at the beginning of the aggregate.
-        continuous_variance (float): The variance of the interpolated underlying function.
-        discrete_variance (float): The variance of the datapoint values.
-        total_variation (float): The total variation of the interpolated underlying function.
+        timestamp (Optional[int]): The data timestamp in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
+        value (Optional[Union[str, float]]): The data value. Can be string or numeric
+        average (Optional[float]): The integral average value in the aggregate period
+        max (Optional[float]): The maximum value in the aggregate period
+        min (Optional[float]): The minimum value in the aggregate period
+        count (Optional[int]): The number of datapoints in the aggregate period
+        sum (Optional[float]): The sum of the datapoints in the aggregate period
+        interpolation (Optional[float]): The interpolated value of the series in the beginning of the aggregate
+        step_interpolation (Optional[float]): The last value before or at the beginning of the aggregate.
+        continuous_variance (Optional[float]): The variance of the interpolated underlying function.
+        discrete_variance (Optional[float]): The variance of the datapoint values.
+        total_variation (Optional[float]): The total variation of the interpolated underlying function.
     """
 
     def __init__(
@@ -338,7 +338,7 @@ class DatapointsArray(CogniteResource):
         """Convert the DatapointsArray into a pandas DataFrame.
 
         Args:
-            column_names (str): Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
+            column_names (Literal["id", "external_id"]): Which field to use as column header. Defaults to "external_id", can also be "id". For time series with no external ID, ID will be used instead.
             include_aggregate_name (bool): Include aggregate in the column name
             include_granularity_name (bool): Include granularity in the column name (after aggregate if present)
 
@@ -386,24 +386,25 @@ class Datapoints(CogniteResource):
     """An object representing a list of datapoints.
 
     Args:
-        id (int): Id of the timeseries the datapoints belong to
-        external_id (str): External id of the timeseries the datapoints belong to
-        is_string (bool): Whether the time series is string valued or not.
-        is_step (bool): Whether the time series is a step series or not.
-        unit (str): The physical unit of the time series.
-        granularity (str): The granularity of the aggregate datapoints (does not apply to raw data)
-        timestamp (List[int]): The data timestamps in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
-        value (Union[List[str], List[float]]): The data values. Can be string or numeric
-        average (List[float]): The integral average values in the aggregate period
-        max (List[float]): The maximum values in the aggregate period
-        min (List[float]): The minimum values in the aggregate period
-        count (List[int]): The number of datapoints in the aggregate periods
-        sum (List[float]): The sum of the datapoints in the aggregate periods
-        interpolation (List[float]): The interpolated values of the series in the beginning of the aggregates
-        step_interpolation (List[float]): The last values before or at the beginning of the aggregates.
-        continuous_variance (List[float]): The variance of the interpolated underlying function.
-        discrete_variance (List[float]): The variance of the datapoint values.
-        total_variation (List[float]): The total variation of the interpolated underlying function.
+        id (Optional[int]): Id of the timeseries the datapoints belong to
+        external_id (Optional[str]): External id of the timeseries the datapoints belong to
+        is_string (Optional[bool]): Whether the time series is string valued or not.
+        is_step (Optional[bool]): Whether the time series is a step series or not.
+        unit (Optional[str]): The physical unit of the time series.
+        granularity (Optional[str]): The granularity of the aggregate datapoints (does not apply to raw data)
+        timestamp (Optional[Sequence[int]]): The data timestamps in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
+        value (Optional[Union[Sequence[str], Sequence[float]]]): The data values. Can be string or numeric
+        average (Optional[List[float]]): The integral average values in the aggregate period
+        max (Optional[List[float]]): The maximum values in the aggregate period
+        min (Optional[List[float]]): The minimum values in the aggregate period
+        count (Optional[List[int]]): The number of datapoints in the aggregate periods
+        sum (Optional[List[float]]): The sum of the datapoints in the aggregate periods
+        interpolation (Optional[List[float]]): The interpolated values of the series in the beginning of the aggregates
+        step_interpolation (Optional[List[float]]): The last values before or at the beginning of the aggregates.
+        continuous_variance (Optional[List[float]]): The variance of the interpolated underlying function.
+        discrete_variance (Optional[List[float]]): The variance of the datapoint values.
+        total_variation (Optional[List[float]]): The total variation of the interpolated underlying function.
+        error (Optional[List[Union[None, str]]]): No description.
     """
 
     def __init__(

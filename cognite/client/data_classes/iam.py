@@ -13,15 +13,14 @@ class Group(CogniteResource):
     """No description.
 
     Args:
-        name (str): Name of the group
-        source_id (str): ID of the group in the source. If this is the same ID as a group in the IDP, a service account in that group will implicitly be a part of this group as well.
-        capabilities (List[Dict[str, Any]]): No description.
-        id (int): No description.
-        is_deleted (bool): No description.
-        deleted_time (int): No description.
-        metadata (Dict[str, Any]): Custom, immutable application specific metadata. String key -> String value. Limits:
-        Key are at most 32 bytes. Values are at most 512 bytes. Up to 16 key-value pairs. Total size is at most 4096.
-        cognite_client (CogniteClient): The client to associate with this object.
+        name (Optional[str]): Name of the group
+        source_id (Optional[str]): ID of the group in the source. If this is the same ID as a group in the IDP, a service account in that group will implicitly be a part of this group as well.
+        capabilities (Optional[List[Dict[str, Any]]]): No description.
+        id (Optional[int]): No description.
+        is_deleted (Optional[bool]): No description.
+        deleted_time (Optional[int]): No description.
+        metadata (Optional[Dict[str, Any]]): Custom, immutable application specific metadata. String key -> String value. Limits:
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
     """
 
     def __init__(
@@ -53,9 +52,9 @@ class SecurityCategory(CogniteResource):
     """No description.
 
     Args:
-        name (str): Name of the security category
-        id (int): Id of the security category
-        cognite_client (CogniteClient): The client to associate with this object.
+        name (Optional[str]): Name of the security category
+        id (Optional[int]): Id of the security category
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
     """
 
     def __init__(
@@ -124,11 +123,12 @@ class CreatedSession(CogniteResource):
     """Session creation related information
 
     Args:
-        id (int): ID of the created session.
-        type (str): Credentials kind used to create the session.
-        status (str): Current status of the session.
-        nonce (str): Nonce to be passed to the internal service that will bind the session
-        client_id (str): Client ID in identity provider. Returned only if the session was created using client credentials
+        id (Optional[int]): ID of the created session.
+        type (Optional[str]): Credentials kind used to create the session.
+        status (Optional[str]): Current status of the session.
+        nonce (Optional[str]): Nonce to be passed to the internal service that will bind the session
+        client_id (Optional[str]): Client ID in identity provider. Returned only if the session was created using client credentials
+        cognite_client (Optional[CogniteClient]): No description.
     """
 
     def __init__(
@@ -151,12 +151,13 @@ class Session(CogniteResource):
     """Session status
 
     Args:
-        id (int): ID of the session.
-        type (str): Credentials kind used to create the session.
-        status (str): Current status of the session.
-        creation_time (int): Session creation time, in milliseconds since 1970
-        expiration_time (int): Session expiry time, in milliseconds since 1970. This value is updated on refreshing a token
-        client_id (str): Client ID in identity provider. Returned only if the session was created using client credentials
+        id (Optional[int]): ID of the session.
+        type (Optional[str]): Credentials kind used to create the session.
+        status (Optional[str]): Current status of the session.
+        creation_time (Optional[int]): Session creation time, in milliseconds since 1970
+        expiration_time (Optional[int]): Session expiry time, in milliseconds since 1970. This value is updated on refreshing a token
+        client_id (Optional[str]): Client ID in identity provider. Returned only if the session was created using client credentials
+        cognite_client (Optional[CogniteClient]): No description.
     """
 
     def __init__(

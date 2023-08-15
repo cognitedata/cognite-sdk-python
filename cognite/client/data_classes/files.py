@@ -26,25 +26,25 @@ class FileMetadata(CogniteResource):
     """No description.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        name (str): Name of the file.
-        source (str): The source of the file.
-        mime_type (str): File type. E.g. text/plain, application/pdf, ..
-        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        directory (str): Directory associated with the file. Must be an absolute, unix-style path.
-        asset_ids (Sequence[int]): No description.
-        data_set_id (int): The dataSet Id for the item.
-        labels (Sequence[Label]): A list of the labels associated with this resource item.
-        geo_location (GeoLocation): The geographic metadata of the file.
-        source_created_time (int): The timestamp for when the file was originally created in the source system.
-        source_modified_time (int): The timestamp for when the file was last modified in the source system.
-        security_categories (Sequence[int]): The security category IDs required to access this file.
-        id (int): A server-generated ID for the object.
-        uploaded (bool): Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body.
-        uploaded_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        cognite_client (CogniteClient): The client to associate with this object.
+        external_id (Optional[str]): The external ID provided by the client. Must be unique for the resource type.
+        name (Optional[str]): Name of the file.
+        source (Optional[str]): The source of the file.
+        mime_type (Optional[str]): File type. E.g. text/plain, application/pdf, ..
+        metadata (Optional[Dict[str, str]]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        directory (Optional[str]): Directory associated with the file. Must be an absolute, unix-style path.
+        asset_ids (Optional[Sequence[int]]): No description.
+        data_set_id (Optional[int]): The dataSet Id for the item.
+        labels (Optional[Sequence[Label]]): A list of the labels associated with this resource item.
+        geo_location (Optional[GeoLocation]): The geographic metadata of the file.
+        source_created_time (Optional[int]): The timestamp for when the file was originally created in the source system.
+        source_modified_time (Optional[int]): The timestamp for when the file was last modified in the source system.
+        security_categories (Optional[Sequence[int]]): The security category IDs required to access this file.
+        id (Optional[int]): A server-generated ID for the object.
+        uploaded (Optional[bool]): Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body.
+        uploaded_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
     """
 
     def __init__(

@@ -25,15 +25,15 @@ class DataSet(CogniteResource):
     """No description.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        name (str): The name of the data set.
-        description (str): The description of the data set.
-        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
-        write_protected (bool): To write data to a write-protected data set, you need to be a member of a group that has the "datasets:owner" action for the data set.  To learn more about write-protected data sets, follow this [guide](/cdf/data_governance/concepts/datasets/#write-protection)
-        id (int): A server-generated ID for the object.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        cognite_client (CogniteClient): The client to associate with this object.
+        external_id (Optional[str]): The external ID provided by the client. Must be unique for the resource type.
+        name (Optional[str]): The name of the data set.
+        description (Optional[str]): The description of the data set.
+        metadata (Optional[Dict[str, str]]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
+        write_protected (Optional[bool]): To write data to a write-protected data set, you need to be a member of a group that has the "datasets:owner" action for the data set.  To learn more about write-protected data sets, follow this [guide](/cdf/data_governance/concepts/datasets/#write-protection)
+        id (Optional[int]): A server-generated ID for the object.
+        created_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
     """
 
     def __init__(

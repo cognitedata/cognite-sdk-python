@@ -18,12 +18,12 @@ class LabelDefinition(CogniteResource):
     """A label definition is a globally defined label that can later be attached to resources (e.g., assets). For example, can you define a "Pump" label definition and attach that label to your pump assets.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        name (str): Name of the label.
-        description (str): Description of the label.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        data_set_id (int): The id of the dataset this label belongs to.
-        cognite_client (CogniteClient): The client to associate with this object.
+        external_id (Optional[str]): The external ID provided by the client. Must be unique for the resource type.
+        name (Optional[str]): Name of the label.
+        description (Optional[str]): Description of the label.
+        created_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        data_set_id (Optional[int]): The id of the dataset this label belongs to.
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
     """
 
     def __init__(

@@ -23,10 +23,11 @@ class TransformationJobMetric(CogniteResource):
     """The transformation job metric resource allows following details of execution of a transformation run.
 
     Args:
-        timestamp (int): Time of the last metric update.
-        name (str): Name of the metric.
-        count (int): Value of the metric.
-        cognite_client (CogniteClient): The client to associate with this object.
+        id (Optional[int]): No description.
+        timestamp (Optional[int]): Time of the last metric update.
+        name (Optional[str]): Name of the metric.
+        count (Optional[int]): Value of the metric.
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
     """
 
     def __init__(
@@ -58,24 +59,22 @@ class TransformationJob(CogniteResource):
     """The transformation job resource allows following the status of execution of a transformation run.
 
     Args:
-        id (int): A server-generated ID for the object.
-        status (TransformationJobStatus): Status of the job.
-        transformation_id (int): Server-generated ID of the transformation.
-        transformation_external_id (str): external ID of the transformation.
-        source_project (str): Name of the CDF project the data will be read from.
-        destination_project (str): Name of the CDF project the data will be written to.
-        destination_type (str): Target resource type of the transformation.
-        destination_database (str): Target database if the destination type is raw.
-        destination_table (str): Target table name if the destination type is RAW.
-        conflict_mode (str): What to do in case of id collisions: either "abort", "upsert", "update" or "delete".
-        query (str): Query of the transformation that is being executed.
-        error (str): Error message from the server.
+        id (Optional[int]): A server-generated ID for the object.
+        status (Optional[TransformationJobStatus]): Status of the job.
+        transformation_id (Optional[int]): Server-generated ID of the transformation.
+        transformation_external_id (Optional[str]): external ID of the transformation.
+        source_project (Optional[str]): Name of the CDF project the data will be read from.
+        destination_project (Optional[str]): Name of the CDF project the data will be written to.
+        destination (Optional[TransformationDestination]): No description.
+        conflict_mode (Optional[str]): What to do in case of id collisions: either "abort", "upsert", "update" or "delete".
+        query (Optional[str]): Query of the transformation that is being executed.
+        error (Optional[str]): Error message from the server.
         ignore_null_fields (bool): Indicates how null values are handled on updates: ignore or set null.
-        created_time (int): Time when the job was created.
-        started_time (int): Time when the job started running.
-        finished_time (int): Time when the job finished running.
-        last_seen_time (int): Time of the last status update from the job.
-        cognite_client (CogniteClient): The client to associate with this object.
+        created_time (Optional[int]): Time when the job was created.
+        started_time (Optional[int]): Time when the job started running.
+        finished_time (Optional[int]): Time when the job finished running.
+        last_seen_time (Optional[int]): Time of the last status update from the job.
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
     """
 
     def __init__(

@@ -104,22 +104,22 @@ class Asset(CogniteResource):
     """A representation of a physical asset, for example a factory or a piece of equipment.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        name (str): The name of the asset.
-        parent_id (int): The parent of the node, null if it is the root node.
-        parent_external_id (str): The external ID of the parent. The property is omitted if the asset doesn't have a parent or if the parent doesn't have externalId.
-        description (str): The description of the asset.
-        data_set_id (int): The id of the dataset this asset belongs to.
-        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
-        source (str): The source of the asset.
-        labels (List[Label]): A list of the labels associated with this resource item.
-        geo_location (GeoLocation): The geographic metadata of the asset.
-        id (int): A server-generated ID for the object.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        root_id (int): ID of the root asset.
-        aggregates (Union[Dict[str, Any], AggregateResultItem]): Aggregated metrics of the asset
-        cognite_client (CogniteClient): The client to associate with this object.
+        external_id (Optional[str]): The external ID provided by the client. Must be unique for the resource type.
+        name (Optional[str]): The name of the asset.
+        parent_id (Optional[int]): The parent of the node, null if it is the root node.
+        parent_external_id (Optional[str]): The external ID of the parent. The property is omitted if the asset doesn't have a parent or if the parent doesn't have externalId.
+        description (Optional[str]): The description of the asset.
+        data_set_id (Optional[int]): The id of the dataset this asset belongs to.
+        metadata (Optional[Dict[str, str]]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
+        source (Optional[str]): The source of the asset.
+        labels (Optional[List[Union[Label, str, LabelDefinition, dict]]]): A list of the labels associated with this resource item.
+        geo_location (Optional[GeoLocation]): The geographic metadata of the asset.
+        id (Optional[int]): A server-generated ID for the object.
+        created_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        root_id (Optional[int]): ID of the root asset.
+        aggregates (Optional[Union[Dict[str, Any], AggregateResultItem]]): Aggregated metrics of the asset
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
     """
 
     def __init__(
@@ -196,7 +196,7 @@ class Asset(CogniteResource):
         """Returns the subtree of this asset up to a specified depth.
 
         Args:
-            depth (int, optional): Retrieve assets up to this depth below the asset.
+            depth (Optional[int]): Retrieve assets up to this depth below the asset.
 
         Returns:
             AssetList: The requested assets sorted topologically.
@@ -251,8 +251,8 @@ class Asset(CogniteResource):
         """Convert the instance into a pandas DataFrame.
 
         Args:
-            expand (List[str]): List of row keys to expand, only works if the value is a Dict.
-            ignore (List[str]): List of row keys to not include when converting to a data frame.
+            expand (Sequence[str]): List of row keys to expand, only works if the value is a Dict.
+            ignore (Optional[List[str]]): List of row keys to not include when converting to a data frame.
             camel_case (bool): Convert column names to camel case (e.g. `externalId` instead of `external_id`)
 
         Returns:

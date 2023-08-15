@@ -16,10 +16,10 @@ class Row(CogniteResource):
     """No description.
 
     Args:
-        key (str): Unique row key
-        columns (Dict[str, Any]): Row data stored as a JSON object.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        cognite_client (CogniteClient): The client to associate with this object.
+        key (Optional[str]): Unique row key
+        columns (Optional[Dict[str, Any]]): Row data stored as a JSON object.
+        last_updated_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
     """
 
     def __init__(
@@ -61,9 +61,9 @@ class Table(CogniteResource):
     """A NoSQL database table to store customer data
 
     Args:
-        name (str): Unique name of the table
-        created_time (int): Time the table was created.
-        cognite_client (CogniteClient): The client to associate with this object.
+        name (Optional[str]): Unique name of the table
+        created_time (Optional[int]): Time the table was created.
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
     """
 
     def __init__(
@@ -82,8 +82,8 @@ class Table(CogniteResource):
         """Get the rows in this table.
 
         Args:
-            key (str): Specify a key to return only that row.
-            limit (int): The number of rows to return.
+            key (Optional[str]): Specify a key to return only that row.
+            limit (Optional[int]): The number of rows to return.
 
         Returns:
             Union[Row, RowList]: List of tables in this database.
@@ -101,9 +101,9 @@ class Database(CogniteResource):
     """A NoSQL database to store customer data.
 
     Args:
-        name (str): Unique name of a database.
-        created_time (int): Time the database was created.
-        cognite_client (CogniteClient): The client to associate with this object.
+        name (Optional[str]): Unique name of a database.
+        created_time (Optional[int]): Time the database was created.
+        cognite_client (Optional[CogniteClient]): The client to associate with this object.
     """
 
     def __init__(
@@ -120,7 +120,7 @@ class Database(CogniteResource):
         """Get the tables in this database.
 
         Args:
-            limit (int): The number of tables to return.
+            limit (Optional[int]): The number of tables to return.
 
         Returns:
             TableList: List of tables in this database.
