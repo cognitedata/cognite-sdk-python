@@ -96,7 +96,7 @@ class EntityMatchingAPI(APIClient):
         original_id: Optional[int] = None,
         feature_type: Optional[str] = None,
         classifier: Optional[str] = None,
-        limit: int = 100,
+        limit: Optional[int] = 100,
     ) -> EntityMatchingModelList:
         """List models
 
@@ -106,10 +106,11 @@ class EntityMatchingAPI(APIClient):
             original_id (Optional[int]): id of the original model for models that were created with refit.
             feature_type (Optional[str]): feature type that defines the combination of features used.
             classifier (Optional[str]): classifier used in training.
-            limit (int): Maximum number of items to return. Defaults to 100. Set to -1, float("inf") or None to return all items.
+            limit (Optional[int]): Maximum number of items to return. Defaults to 100. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            EntityMatchingModelList: List of models."""
+            EntityMatchingModelList: List of models.
+        """
         if is_unlimited(limit):
             limit = 1_000_000_000  # currently no pagination
         filter = {

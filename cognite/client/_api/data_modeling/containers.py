@@ -57,7 +57,7 @@ class ContainersAPI(APIClient):
             chunk_size (int | None): Number of containers to return in each chunk. Defaults to yielding one container a time.
             space (str | None): The space to query.
             include_global (bool): Whether the global containers should be returned.
-            limit (Optional[int]): Maximum number of containers to return. Default to return all items.
+            limit (Optional[int]): Maximum number of containers to return. Defaults to returning all items.
 
         Yields:
             Container | ContainerList: yields Container one by one if chunk_size is not specified, else ContainerList objects.
@@ -203,7 +203,7 @@ class ContainersAPI(APIClient):
         """`Add or update (upsert) containers. <https://developer.cognite.com/api#tag/Containers/operation/ApplyContainers>`_
 
         Args:
-            container (ContainerApply | Sequence[ContainerApply]): Container or containers to create or update.
+            container (ContainerApply | Sequence[ContainerApply]): Container(s) to create or update.
 
         Returns:
             Container | ContainerList: Created container(s)

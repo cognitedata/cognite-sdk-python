@@ -57,7 +57,7 @@ class ViewsAPI(APIClient):
 
         Args:
             chunk_size (Optional[int]): Number of views to return in each chunk. Defaults to yielding one view at a time.
-            limit (Optional[int]): Maximum number of views to return. Default to return all items.
+            limit (Optional[int]): Maximum number of views to return. Defaults to returning all items.
             space (str | None): (str | None): The space to query.
             include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
             all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
@@ -214,7 +214,7 @@ class ViewsAPI(APIClient):
         """`Create or update (upsert) one or more views. <https://developer.cognite.com/api#tag/Views/operation/ApplyViews>`_
 
         Args:
-            view (ViewApply | Sequence[ViewApply]): ViewApply | Sequence[ViewApply]): View or views of views to create or update.
+            view (ViewApply | Sequence[ViewApply]): View(s) to create or update.
 
         Returns:
             View | ViewList: Created view(s)

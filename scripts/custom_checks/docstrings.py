@@ -9,8 +9,6 @@ from cognite.client._api_client import APIClient
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from tests.utils import all_subclasses
 
-CWD = Path.cwd()
-
 
 class Param:
     def __init__(self, line: str):

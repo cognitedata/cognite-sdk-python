@@ -68,7 +68,7 @@ class Select:
 
 
 class Query:
-    """Query allows you to do advanced queries on the data model.
+    r"""Query allows you to do advanced queries on the data model.
 
     Args:
         with\_ (dict[str, ResultSetExpression]): A dictionary of result set expressions to use in the query. The keys

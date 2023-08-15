@@ -236,7 +236,7 @@ class DataSetsAPI(APIClient):
         """`Update one or more data sets <https://developer.cognite.com/api#tag/Data-sets/operation/updateDataSets>`_
 
         Args:
-            item (Union[DataSet, DataSetUpdate, Sequence[Union[DataSet, DataSetUpdate]]]): Union[DataSet, DataSetUpdate, Sequence[Union[DataSet, DataSetUpdate]]]: Data set(s) to update
+            item (Union[DataSet, DataSetUpdate, Sequence[Union[DataSet, DataSetUpdate]]]): Data set(s) to update
 
         Returns:
             Union[DataSet, DataSetList]: Updated data set(s)

@@ -204,7 +204,7 @@ class InstancesAPI(APIClient):
         Args:
             chunk_size (int | None): Number of data_models to return in each chunk. Defaults to yielding one instance at a time.
             instance_type (Literal["node", "edge"]): Whether to query for nodes or edges.
-            limit (int | None): Maximum number of instances to return. Default to return all items.
+            limit (int | None): Maximum number of instances to return. Defaults to returning all items.
             include_typing (bool): Whether to return property type information as part of the result.
             sources (list[ViewId] | ViewId | None): Views to retrieve properties from.
             sort (list[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
@@ -439,8 +439,8 @@ class InstancesAPI(APIClient):
         Args:
             nodes (NodeApply | Sequence[NodeApply] | None): Nodes to apply
             edges (EdgeApply | Sequence[EdgeApply] | None): Edges to apply
-            auto_create_start_nodes (bool): Whether to create missing start nodes for edges when ingesting. By default, the start node of an edge must exist before it can be ingestested.
-            auto_create_end_nodes (bool): Whether to create missing end nodes for edges when ingesting. By default, the end node of an edge must exist before it can be ingestested.
+            auto_create_start_nodes (bool): Whether to create missing start nodes for edges when ingesting. By default, the start node of an edge must exist before it can be ingested.
+            auto_create_end_nodes (bool): Whether to create missing end nodes for edges when ingesting. By default, the end node of an edge must exist before it can be ingested.
             auto_create_direct_relations (bool): Whether to create missing direct relation targets when ingesting.
             skip_on_version_conflict (bool): If existingVersion is specified on any of the nodes/edges in the input, the default behaviour is that the entire ingestion will fail when version conflicts occur. If skipOnVersionConflict is set to true, items with version conflicts will be skipped instead. If no version is specified for nodes/edges, it will do the writing directly.
             replace (bool): How do we behave when a property value exists? Do we replace all matching and existing values with the supplied values (true)? Or should we merge in new values for properties together with the existing values (false)? Note: This setting applies for all nodes or edges specified in the ingestion call.
@@ -564,7 +564,7 @@ class InstancesAPI(APIClient):
             instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
             properties (list[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
             filter (Filter | dict | None): Advnanced filtering of instances.
-            limit (int): Maximum number of instances to return. Default to 1000. Set to -1, float("inf") or None to return all items.
+            limit (int): Maximum number of instances to return. Defaults to 1000. Set to -1, float("inf") or None to return all items.
 
         Returns:
             EdgeList | NodeList: Search result with matching nodes or edges.
@@ -627,7 +627,7 @@ class InstancesAPI(APIClient):
             query (str | None): Query string that will be parsed and used for search.
             properties (Sequence[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
             filter (Filter | None): Advnanced filtering of instances.
-            limit (int): Maximum number of instances to return. Default to 1000. Set to -1, float("inf") or None to return all items.
+            limit (int): Maximum number of instances to return. Defaults to 1000. Set to -1, float("inf") or None to return all items.
 
         Returns:
             InstanceAggregationResultList: Node or edge aggregation results.
@@ -710,7 +710,7 @@ class InstancesAPI(APIClient):
             query (str | None): Query string that will be parsed and used for search.
             properties (Sequence[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
             filter (Filter | None): Advnanced filtering of instances.
-            limit (int): Maximum number of instances to return. Default to 1000. Set to -1, float("inf") or None to return all items.
+            limit (int): Maximum number of instances to return. Defaults to 1000. Set to -1, float("inf") or None to return all items.
 
         Returns:
             list[HistogramValue]: Node or edge aggregation results.
@@ -889,7 +889,7 @@ class InstancesAPI(APIClient):
             instance_type (Literal["node", "edge"]): Whether to query for nodes or edges.
             include_typing (bool): Whether to return property type information as part of the result.
             sources (ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None): Views to retrieve properties from.
-            limit (int): Maximum number of instances to return. Default to 1000. Set to -1, float("inf") or None to return all items.
+            limit (int): Maximum number of instances to return. Defaults to 1000. Set to -1, float("inf") or None to return all items.
             sort (Sequence[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
             filter (Filter | dict | None): Advanced filtering of instances.
 

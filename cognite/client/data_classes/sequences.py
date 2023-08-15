@@ -79,6 +79,10 @@ class Sequence(CogniteResource):
     def rows(self, start: int, end: int) -> List[dict]:
         """Retrieves rows from this sequence.
 
+        Args:
+            start (int): No description.
+            end (int): No description.
+
         Returns:
             List of sequence data.
         """
