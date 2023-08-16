@@ -15,7 +15,7 @@ from cognite.client.data_classes.datapoints_subscriptions import (
     DatapointSubscriptionList,
     DatapointSubscriptionPartition,
     DataPointSubscriptionUpdate,
-    _DatapointSubscriptionBatch,
+    _DatapointSubscriptionBatchWithPartitions,
 )
 from cognite.client.utils._identifier import IdentifierSequence
 
@@ -243,7 +243,7 @@ class DatapointsSubscriptionAPI(APIClient):
             start = None
 
             res = self._post(url_path=self._RESOURCE_PATH + "/data/list", json=body)
-            batch = _DatapointSubscriptionBatch._load(res.json())
+            batch = _DatapointSubscriptionBatchWithPartitions._load(res.json())
 
             yield DatapointSubscriptionBatch(batch.updates, batch.subscription_changes, batch.has_next)
 

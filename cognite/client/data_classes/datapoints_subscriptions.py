@@ -317,7 +317,15 @@ class DatapointSubscriptionPartition:
         return output
 
 
-class _DatapointSubscriptionBatch:
+@dataclass(frozen=True)
+class DatapointSubscriptionBatch:
+    updates: list[DatapointsUpdate]
+    subscription_changes: SubscriptionTimeSeriesUpdate
+    has_next: bool
+
+
+@dataclass(frozen=True)
+class _DatapointSubscriptionBatchWithPartitions(DatapointSubscriptionBatch):
     """A batch of data from a subscription.
 
     Args:
@@ -334,20 +342,10 @@ class _DatapointSubscriptionBatch:
                                                  from the time series listed here.
     """
 
-    def __init__(
-        self,
-        updates: list[DatapointsUpdate],
-        partitions: list[DatapointSubscriptionPartition],
-        has_next: bool,
-        subscription_changes: SubscriptionTimeSeriesUpdate,
-    ):
-        self.updates = updates
-        self.partitions = partitions
-        self.has_next = has_next
-        self.subscription_changes = subscription_changes
+    partitions: list[DatapointSubscriptionPartition]
 
     @classmethod
-    def _load(cls, resource: dict | str) -> _DatapointSubscriptionBatch:
+    def _load(cls, resource: dict | str) -> _DatapointSubscriptionBatchWithPartitions:
         resource = json.loads(resource) if isinstance(resource, str) else resource
         return cls(
             updates=[DatapointsUpdate._load(u) for u in resource["updates"]],
@@ -367,13 +365,6 @@ class _DatapointSubscriptionBatch:
                 ("subscriptionChanges" if camel_case else "subscription_changes")
             ] = self.subscription_changes.dump(camel_case)
         return resource
-
-
-@dataclass
-class DatapointSubscriptionBatch:
-    updates: list[DatapointsUpdate]
-    subscription_changes: SubscriptionTimeSeriesUpdate
-    has_next: bool
 
 
 class DatapointSubscriptionList(CogniteResourceList[DatapointSubscription]):
