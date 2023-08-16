@@ -412,8 +412,8 @@ class DocumentsAPI(APIClient):
             >>> from cognite.client.data_classes.documents import DocumentProperty
             >>> from cognite.client.data_classes import aggregations
             >>> c = CogniteClient()
-            >>> a = aggregations
-            >>> is_not_text = a.Not(a.Prefix("text"))
+            >>> agg = aggregations
+            >>> is_not_text = agg.Not(agg.Prefix("text"))
             >>> type_count_excluded_text = c.documents.aggregate_cardinality(DocumentProperty.type, aggregate_filter=is_not_text)
 
         """
@@ -478,8 +478,8 @@ class DocumentsAPI(APIClient):
             >>> from cognite.client.data_classes.documents import DocumentProperty
             >>> from cognite.client.data_classes import aggregations
             >>> c = CogniteClient()
-            >>> a = aggregations
-            >>> is_not_text = a.Not(a.Prefix("text"))
+            >>> agg = aggregations
+            >>> is_not_text = agg.Not(agg.Prefix("text"))
             >>> result = c.documents.aggregate_unique(DocumentProperty.mime_type, aggregate_filter=is_not_text)
             >>> unique_mime_types = result.unique
 

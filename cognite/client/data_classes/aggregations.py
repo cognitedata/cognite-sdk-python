@@ -199,7 +199,7 @@ class HistogramValue(AggregatedValue):
         return output
 
 
-Value: TypeAlias = Union[str, float, bool, Label]
+FilterValue: TypeAlias = Union[str, float, bool, Label]
 
 
 class AggregationFilter(ABC):
@@ -230,7 +230,7 @@ class CompoundFilter(AggregationFilter):
 class FilterWithValue(AggregationFilter):
     _filter_name = "valueFilter"
 
-    def __init__(self, value: Value):
+    def __init__(self, value: FilterValue):
         self._value = value
 
     def _filter_body(self) -> dict:
