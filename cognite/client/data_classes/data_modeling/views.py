@@ -35,7 +35,7 @@ class ViewCore(DataModelingResource):
         filter: Filter | None = None,
         implements: Optional[list[ViewId]] = None,
         **_: Any,
-    ):
+    ) -> None:
         self.space = space
         self.external_id = external_id
         self.description = description
@@ -96,7 +96,7 @@ class ViewApply(ViewCore):
         filter: Filter | None = None,
         implements: Optional[list[ViewId]] = None,
         properties: Optional[dict[str, MappedPropertyApply | ConnectionDefinitionApply]] = None,
-    ):
+    ) -> None:
         validate_data_modeling_identifier(space, external_id)
         super().__init__(space, external_id, version, description, name, filter, implements)
         self.properties = properties
@@ -153,7 +153,7 @@ class View(ViewCore):
         used_for: Literal["node", "edge", "all"] = "node",
         is_global: bool = False,
         **_: Any,
-    ):
+    ) -> None:
         super().__init__(
             space,
             external_id,
@@ -261,7 +261,7 @@ class ViewFilter(CogniteFilter):
         include_inherited_properties: bool = True,
         all_versions: bool = False,
         include_global: bool = False,
-    ):
+    ) -> None:
         self.space = space
         self.include_inherited_properties = include_inherited_properties
         self.all_versions = all_versions

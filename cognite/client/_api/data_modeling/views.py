@@ -64,7 +64,7 @@ class ViewsAPI(APIClient):
             include_global (bool): Whether to include global views.
 
         Yields:
-            Union[View, ViewList]: yields View one by one if chunk_size is not specified, else ViewList objects.
+            Iterator[View] | Iterator[ViewList]: yields View one by one if chunk_size is not specified, else ViewList objects.
         """
         filter_ = ViewFilter(space, include_inherited_properties, all_versions, include_global)
         yield from self._list_generator(
@@ -82,7 +82,7 @@ class ViewsAPI(APIClient):
         Fetches views as they are iterated over, so you keep a limited number of views in memory.
 
         Returns:
-            View: yields Views one by one.
+            Iterator[View]: yields Views one by one.
         """
         return self()
 
@@ -106,7 +106,7 @@ class ViewsAPI(APIClient):
             all_versions (bool): Whether to return all versions. If false, only the newest version is returned,
 
         Returns:
-            Optional[View]: Requested view or None if it does not exist.
+            ViewList: Requested view or None if it does not exist.
 
         Examples:
 
@@ -134,7 +134,7 @@ class ViewsAPI(APIClient):
         Args:
             ids (ViewIdentifier | Sequence[ViewIdentifier]): View dentifier(s)
         Returns:
-            The identifier for the view(s) which has been deleted. Empty list if nothing was deleted.
+            list[ViewId]: The identifier for the view(s) which has been deleted. Empty list if nothing was deleted.
         Examples:
 
             Delete views by id::

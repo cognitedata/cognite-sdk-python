@@ -138,7 +138,9 @@ class AnnotationsAPI(APIClient):
 
         Args:
             item (Union[Annotation, AnnotationUpdate, Sequence[Union[Annotation, AnnotationUpdate]]]): Annotation or list of annotations to update (or patch or list of patches to apply)
-        """
+
+        Returns:
+            Union[Annotation, AnnotationList]: No description."""
         return self._update_multiple(
             list_cls=AnnotationList, resource_cls=Annotation, update_cls=AnnotationUpdate, items=item
         )
@@ -170,7 +172,7 @@ class AnnotationsAPI(APIClient):
             id (int): id of the annotation to be retrieved
 
         Returns:
-            Annotation: annotation requested
+            Optional[Annotation]: annotation requested
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=None).as_singleton()
         return self._retrieve_multiple(list_cls=AnnotationList, resource_cls=Annotation, identifiers=identifiers)

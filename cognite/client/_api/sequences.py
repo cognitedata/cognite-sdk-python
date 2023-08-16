@@ -100,7 +100,7 @@ class SequencesAPI(APIClient):
             limit (Optional[int]): Max number of sequences to return. Defaults to return all items.
 
         Yields:
-            Union[Sequence, SequenceList]: yields Sequence one by one if chunk_size is not specified, else SequenceList objects.
+            Union[Iterator[Sequence], Iterator[SequenceList]]: yields Sequence one by one if chunk_size is not specified, else SequenceList objects.
         """
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
@@ -130,7 +130,7 @@ class SequencesAPI(APIClient):
         Fetches sequences as they are iterated over, so you keep a limited number of metadata objects in memory.
 
         Returns:
-            Sequence: yields Sequence one by one.
+            Iterator[Sequence]: yields Sequence one by one.
         """
         return cast(Iterator[Sequence], self())
 
@@ -636,9 +636,6 @@ class SequencesAPI(APIClient):
             external_id (Optional[Union[str, SequenceType[str]]]): External ID or list of external ids
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
-        Returns:
-            None
-
         Examples:
 
             Delete sequences by id or external id::
@@ -934,9 +931,6 @@ class SequencesDataAPI(APIClient):
             id (Optional[int]): Id of sequence to insert rows into.
             external_id (Optional[str]): External id of sequence to insert rows into.
 
-        Returns:
-            None
-
         Examples:
             Your rows of data can be a list of tuples where the first element is the rownumber and the second element is the data to be inserted::
 
@@ -1008,9 +1002,6 @@ class SequencesDataAPI(APIClient):
             id (Optional[int]): Id of sequence to insert rows into.
             external_id (Optional[str]): External id of sequence to insert rows into.
 
-        Returns:
-            None
-
         Examples:
             Multiply data in the sequence by 2::
 
@@ -1035,9 +1026,6 @@ class SequencesDataAPI(APIClient):
             id (Optional[int]): Id of sequence to delete rows from.
             external_id (Optional[str]): External id of sequence to delete rows from.
 
-        Returns:
-            None
-
         Examples:
 
                 >>> from cognite.client import CogniteClient
@@ -1059,9 +1047,6 @@ class SequencesDataAPI(APIClient):
             end (Union[int, None]): Upper limit on the row number (exclusive). Set to None or -1 to delete all rows until end of sequence.
             id (Optional[int]): Id of sequence to delete rows from.
             external_id (Optional[str]): External id of sequence to delete rows from.
-
-        Returns:
-            None
 
         Examples:
 
@@ -1098,7 +1083,7 @@ class SequencesDataAPI(APIClient):
             limit (Optional[int]): Maximum number of rows to return per sequence. 10000 is the maximum limit per request.
 
         Returns:
-            List of sequence data
+            Union[SequenceData, SequenceDataList]: List of sequence data
 
         Examples:
 

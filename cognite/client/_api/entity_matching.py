@@ -47,7 +47,7 @@ class EntityMatchingAPI(APIClient):
             external_id (Optional[str]): external id of the model to retrieve.
 
         Returns:
-            EntityMatchingModel: Model requested."""
+            Optional[EntityMatchingModel]: Model requested."""
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
         return self._retrieve_multiple(
             list_cls=EntityMatchingModelList, resource_cls=EntityMatchingModel, identifiers=identifiers
@@ -81,7 +81,9 @@ class EntityMatchingAPI(APIClient):
 
         Args:
             item (Union[EntityMatchingModel, EntityMatchingModelUpdate, Sequence[Union[EntityMatchingModel, EntityMatchingModelUpdate]]]): Model(s) to update
-        """
+
+        Returns:
+            Union[EntityMatchingModelList, EntityMatchingModel]: No description."""
         return self._update_multiple(
             list_cls=EntityMatchingModelList,
             resource_cls=EntityMatchingModel,

@@ -43,7 +43,7 @@ class SpacesAPI(APIClient):
             limit (Optional[int]): Maximum number of spaces to return. Defaults to returning all items.
 
         Yields:
-            Union[Space, SpaceList]: yields Space one by one if chunk_size is not specified, else SpaceList objects.
+            Iterator[Space] | Iterator[SpaceList]: yields Space one by one if chunk_size is not specified, else SpaceList objects.
         """
         yield from self._list_generator(
             list_cls=SpaceList,
@@ -59,7 +59,7 @@ class SpacesAPI(APIClient):
         Fetches spaces as they are iterated over, so you keep a limited number of spaces in memory.
 
         Returns:
-            Space: yields Spaces one by one.
+            Iterator[Space]: yields Spaces one by one.
         """
         return cast(Iterator[Space], self())
 

@@ -60,7 +60,7 @@ class ContainersAPI(APIClient):
             limit (Optional[int]): Maximum number of containers to return. Defaults to returning all items.
 
         Yields:
-            Container | ContainerList: yields Container one by one if chunk_size is not specified, else ContainerList objects.
+            Iterator[Container] | Iterator[ContainerList]: yields Container one by one if chunk_size is not specified, else ContainerList objects.
         """
         filter = ContainerFilter(space, include_global)
         yield from self._list_generator(
@@ -78,7 +78,7 @@ class ContainersAPI(APIClient):
         Fetches containers as they are iterated over, so you keep a limited number of containers in memory.
 
         Returns:
-            Container: yields Containers one by one.
+            Iterator[Container]: yields Containers one by one.
         """
         return cast(Iterator[Container], self())
 
@@ -97,7 +97,7 @@ class ContainersAPI(APIClient):
             ids (ContainerIdentifier | Sequence[ContainerIdentifier]): Identifier for container(s).
 
         Returns:
-            Optional[Container]: Requested container or None if it does not exist.
+            Container | ContainerList | None: Requested container or None if it does not exist.
 
         Examples:
 
@@ -126,7 +126,7 @@ class ContainersAPI(APIClient):
         Args:
             id (ContainerIdentifier | Sequence[ContainerIdentifier]): The container identifier(s).
         Returns:
-            The container(s) which has been deleted. Empty list if nothing was deleted.
+            list[ContainerId]: The container(s) which has been deleted. Empty list if nothing was deleted.
         Examples:
 
             Delete containers by id::

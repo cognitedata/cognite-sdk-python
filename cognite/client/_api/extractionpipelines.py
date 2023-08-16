@@ -165,9 +165,6 @@ class ExtractionPipelinesAPI(APIClient):
             id (Optional[Union[int, Sequence[int]]]): Id or list of ids
             external_id (Optional[Union[str, Sequence[str]]]): External ID or list of external ids
 
-        Returns:
-            None
-
         Examples:
 
             Delete extraction pipelines by id or external id::

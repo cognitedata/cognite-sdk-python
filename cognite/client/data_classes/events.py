@@ -84,7 +84,7 @@ class Event(CogniteResource):
         last_updated_time: Optional[int] = None,
         created_time: Optional[int] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.external_id = external_id
         self.data_set_id = data_set_id
         self.start_time = start_time
@@ -139,7 +139,7 @@ class EventFilter(CogniteFilter):
         last_updated_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
         external_id_prefix: Optional[str] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.start_time = start_time
         self.end_time = end_time
         self.active_at_time = active_at_time

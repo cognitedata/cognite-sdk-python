@@ -193,7 +193,7 @@ class TransformationJob(CogniteResource):
             timeout (Optional[float]): maximum time (s) to wait, default is None (infinite time). Once the timeout is reached, it returns with the current status.
 
         Returns:
-            Awaitable[TransformationJob]: coroutine object that will finish when the job finishes and resolves to self.
+            TransformationJob: coroutine object that will finish when the job finishes and resolves to self.
 
         Examples:
 

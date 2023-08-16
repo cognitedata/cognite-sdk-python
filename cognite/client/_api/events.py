@@ -102,7 +102,7 @@ class EventsAPI(APIClient):
             partitions (Optional[int]): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
 
         Yields:
-            Union[Event, EventList]: yields Event one by one if chunk_size is not specified, else EventList objects.
+            Union[Iterator[Event], Iterator[EventList]]: yields Event one by one if chunk_size is not specified, else EventList objects.
         """
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
@@ -140,7 +140,7 @@ class EventsAPI(APIClient):
         Fetches events as they are iterated over, so you keep a limited number of events in memory.
 
         Returns:
-            Event: yields Events one by one.
+            Iterator[Event]: yields Events one by one.
         """
         return cast(Iterator[Event], self())
 
@@ -629,8 +629,6 @@ class EventsAPI(APIClient):
             external_id (Optional[Union[str, Sequence[str]]]): External ID or list of external ids
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
-        Returns:
-            None
         Examples:
 
             Delete events by id or external id::

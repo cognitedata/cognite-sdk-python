@@ -67,7 +67,7 @@ class TimeSeries(CogniteResource):
         last_updated_time: Optional[int] = None,
         legacy_name: Optional[str] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.id = id
         self.external_id = external_id
         self.name = name
@@ -111,7 +111,7 @@ class TimeSeries(CogniteResource):
         """Returns the latest datapoint in this time series. If empty, returns None.
 
         Returns:
-            Datapoint: A datapoint object containing the value and timestamp of the latest datapoint.
+            Optional[Datapoint]: A datapoint object containing the value and timestamp of the latest datapoint.
         """
         identifier = Identifier.load(self.id, self.external_id).as_dict()
         if dps := self._cognite_client.time_series.data.retrieve_latest(**identifier, before=before):
@@ -122,7 +122,7 @@ class TimeSeries(CogniteResource):
         """Returns the first datapoint in this time series. If empty, returns None.
 
         Returns:
-            Datapoint: A datapoint object containing the value and timestamp of the first datapoint.
+            Optional[Datapoint]: A datapoint object containing the value and timestamp of the first datapoint.
         """
         identifier = Identifier.load(self.id, self.external_id).as_dict()
         dps = self._cognite_client.time_series.data.retrieve(
@@ -177,7 +177,7 @@ class TimeSeriesFilter(CogniteFilter):
         created_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
         last_updated_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.name = name
         self.unit = unit
         self.is_string = is_string

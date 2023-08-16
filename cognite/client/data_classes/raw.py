@@ -28,7 +28,7 @@ class Row(CogniteResource):
         columns: Optional[Dict[str, Any]] = None,
         last_updated_time: Optional[int] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.key = key
         self.columns = columns
         self.last_updated_time = last_updated_time
@@ -71,7 +71,7 @@ class Table(CogniteResource):
         name: Optional[str] = None,
         created_time: Optional[int] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.name = name
         self.created_time = created_time
         self._cognite_client = cast("CogniteClient", cognite_client)
@@ -111,7 +111,7 @@ class Database(CogniteResource):
         name: Optional[str] = None,
         created_time: Optional[int] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.name = name
         self.created_time = created_time
         self._cognite_client = cast("CogniteClient", cognite_client)

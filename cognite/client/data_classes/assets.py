@@ -638,7 +638,9 @@ class AssetHierarchy:
             if any, are returned as part of the root assets in the mapping and can be accessed by
             `mapping[None]`.
             The same is true for all assets linking its parent by ID.
-        """
+
+        Returns:
+            Dict[Optional[str], List[Asset]]: No description."""
         self.is_valid(on_error="raise")
 
         # Sort (on parent) as required by groupby. This is tricky as we need to avoid comparing string with None,

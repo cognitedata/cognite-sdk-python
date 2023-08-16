@@ -172,8 +172,7 @@ class DiagramsAPI(APIClient):
             multiple_jobs (bool): Enables you to publish multiple jobs. If True the method will return a tuple of DetectJobBundle and list of potentially unposted files. If False it will return a single DiagramDetectResults. Defaults to False.
 
         Returns:
-            Union[DiagramDetectResults, Tuple[DetectJobBundle, List[Dict[str, Any]]]: Resulting queued job or a bundle of jobs and a list of unposted files.
-                Note that the .result property of the job or job bundle will block waiting for results.
+            Union[DiagramDetectResults, Tuple[Optional[DetectJobBundle], List[Dict[str, Any]]]]: Resulting queued job or a bundle of jobs and a list of unposted files. Note that the .result property of the job or job bundle will block waiting for results.
 
         Examples:
                 >>> from cognite.client import CogniteClient
@@ -259,7 +258,7 @@ class DiagramsAPI(APIClient):
             detect_job (DiagramDetectResults): detect job
 
         Returns:
-            items: the format complies with diagram convert schema
+            list: the format complies with diagram convert schema
         """
         if any(item.get("page_range") is not None for item in detect_job.result["items"]):
             raise NotImplementedError("Can not run convert on a detect job that used the page range feature")

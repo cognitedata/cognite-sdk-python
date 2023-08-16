@@ -37,7 +37,9 @@ class RawDatabasesAPI(APIClient):
         Args:
             chunk_size (Optional[int]): Number of dbs to return in each chunk. Defaults to yielding one db a time.
             limit (Optional[int]): Maximum number of dbs to return. Defaults to return all items.
-        """
+
+        Yields:
+            Union[Iterator[Database], Iterator[DatabaseList]]: No description."""
         yield from self._list_generator(
             list_cls=DatabaseList, resource_cls=Database, chunk_size=chunk_size, method="GET", limit=limit
         )
@@ -46,7 +48,7 @@ class RawDatabasesAPI(APIClient):
         """Iterate over databases
 
         Returns:
-            Database: yields Database one by one.
+            Iterator[Database]: yields Database one by one.
         """
         return cast(Iterator[Database], self())
 
@@ -88,9 +90,6 @@ class RawDatabasesAPI(APIClient):
         Args:
             name (Union[str, Sequence[str]]): A db name or list of db names to delete.
             recursive (bool): Recursively delete all tables in the database(s).
-
-        Returns:
-            None
 
         Examples:
 
@@ -162,7 +161,9 @@ class RawTablesAPI(APIClient):
             db_name (str): Name of the database to iterate over tables for
             chunk_size (Optional[int]): Number of tables to return in each chunk. Defaults to yielding one table a time.
             limit (Optional[int]): Maximum number of tables to return. Defaults to return all items.
-        """
+
+        Yields:
+            Union[Iterator[Table], Iterator[TableList]]: No description."""
         for tb in self._list_generator(
             list_cls=TableList,
             resource_cls=Table,
@@ -218,9 +219,6 @@ class RawTablesAPI(APIClient):
         Args:
             db_name (str): Database to delete tables from.
             name (Union[str, Sequence[str]]): A table name or list of table names to delete.
-
-        Returns:
-            None
 
         Examples:
 
@@ -329,7 +327,9 @@ class RawRowsAPI(APIClient):
             min_last_updated_time (Optional[int]): Rows must have been last updated after this time (exclusive). ms since epoch.
             max_last_updated_time (Optional[int]): Rows must have been last updated before this time (inclusive). ms since epoch.
             columns (Optional[List[str]]): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
-        """
+
+        Yields:
+            Union[Iterator[Row], Iterator[RowList]]: No description."""
         yield from self._list_generator(
             list_cls=RowList,
             resource_cls=Row,
@@ -354,9 +354,6 @@ class RawRowsAPI(APIClient):
             table_name (str): Name of the table.
             row (Union[Sequence[Row], Row, Dict]): The row(s) to insert
             ensure_parent (bool): Create database/table if they don't already exist.
-
-        Returns:
-            None
 
         Examples:
 
@@ -392,9 +389,6 @@ class RawRowsAPI(APIClient):
             table_name (str): Name of the table.
             dataframe (Any): The dataframe to insert. Index will be used as rowkeys.
             ensure_parent (bool): Create database/table if they don't already exist.
-
-        Returns:
-            None
 
         Examples:
 
@@ -434,9 +428,6 @@ class RawRowsAPI(APIClient):
             db_name (str): Name of the database.
             table_name (str): Name of the table.
             key (Union[str, Sequence[str]]): The key(s) of the row(s) to delete.
-
-        Returns:
-            None
 
         Examples:
 

@@ -36,7 +36,7 @@ class TransformationSchedule(CogniteResource):
         interval: Optional[str] = None,
         is_paused: bool = False,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.id = id
         self.external_id = external_id
         self.created_time = created_time

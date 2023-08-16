@@ -346,7 +346,7 @@ class InstanceAggregationResult(DataModelingResource):
             camel_case (bool): Whether to convert the keys to camel case.
 
         Returns:
-            A dictionary with the instance results.
+            dict[str, Any]: A dictionary with the instance results.
 
         """
         return {
@@ -418,15 +418,10 @@ class Node(Instance):
 
         Args:
             source (ViewIdentifier | ContainerIdentifier): The view or container to with all the properties.
-            existing_version (int): Fail the ingestion request if the node's version is greater than or equal to this value.
-                                    If no existingVersion is specified, the ingestion will always overwrite any
-                                    existing data for the edge (for the specified container or instance). If existingVersion is
-                                    set to 0, the upsert will behave as an insert, so it will fail the bulk if the
-                                    item already exists. If skipOnVersionConflict is set on the ingestion request,
-                                    then the item will be skipped instead of failing the ingestion request.
+            existing_version (int): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or instance). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
 
         Returns:
-            A write node, NodeApply
+            NodeApply: A write node, NodeApply
 
         """
         return NodeApply(
@@ -587,7 +582,7 @@ class Edge(Instance):
             existing_version (Optional[int]): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or instance). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
 
         Returns:
-            A write edge, EdgeApply
+            EdgeApply: A write edge, EdgeApply
         """
         return EdgeApply(
             space=self.space,

@@ -50,7 +50,7 @@ class DataSetsAPI(APIClient):
             limit (Optional[int]): Maximum number of data sets to return. Defaults to return all items.
 
         Yields:
-            Union[DataSet, DataSetList]: yields DataSet one by one if chunk is not specified, else DataSetList objects.
+            Union[Iterator[DataSet], Iterator[DataSetList]]: yields DataSet one by one if chunk is not specified, else DataSetList objects.
         """
         filter = DataSetFilter(
             metadata=metadata,
@@ -69,7 +69,7 @@ class DataSetsAPI(APIClient):
         Fetches data sets as they are iterated over, so you keep a limited number of data sets in memory.
 
         Returns:
-            Event: yields DataSet one by one.
+            Iterator[DataSet]: yields DataSet one by one.
         """
         return cast(Iterator[DataSet], self())
 

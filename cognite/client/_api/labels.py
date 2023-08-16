@@ -18,7 +18,7 @@ class LabelsAPI(APIClient):
         Fetches Labels as they are iterated over, so you keep a limited number of Labels in memory.
 
         Returns:
-            LabelDefinition: yields Labels one by one.
+            Iterator[LabelDefinition]: yields Labels one by one.
         """
         return cast(Iterator[LabelDefinition], self())
 
@@ -129,9 +129,6 @@ class LabelsAPI(APIClient):
 
         Args:
             external_id (Optional[Union[str, Sequence[str]]]): One or more label external ids
-
-        Returns:
-            None
 
         Examples:
 

@@ -97,7 +97,7 @@ class RelationshipsAPI(APIClient):
             partitions (Optional[int]): Retrieve relationships in parallel using this number of workers. Also requires `limit=None` to be passed.
 
         Yields:
-            Union[Relationship, RelationshipList]: yields Relationship one by one if chunk_size is not specified, else RelationshipList objects.
+            Union[Iterator[Relationship], Iterator[RelationshipList]]: yields Relationship one by one if chunk_size is not specified, else RelationshipList objects.
         """
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
@@ -141,7 +141,7 @@ class RelationshipsAPI(APIClient):
         Fetches relationships as they are iterated over, so you keep a limited number of relationships in memory.
 
         Returns:
-            Relationship: yields Relationships one by one.
+            Iterator[Relationship]: yields Relationships one by one.
         """
         return cast(Iterator[Relationship], self())
 
@@ -474,9 +474,6 @@ class RelationshipsAPI(APIClient):
         Args:
             external_id (Union[str, Sequence[str]]): External ID or list of external ids
             ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
-        Returns:
-            None
-
         Examples:
 
             Delete relationships by external id::

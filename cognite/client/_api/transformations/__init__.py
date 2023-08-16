@@ -51,7 +51,7 @@ class TransformationsAPI(APIClient):
             transformation (Union[Transformation, Sequence[Transformation]]): Transformation or list of transformations to create.
 
         Returns:
-            Created transformation(s)
+            Union[Transformation, TransformationList]: Created transformation(s)
 
         Examples:
 
@@ -126,9 +126,6 @@ class TransformationsAPI(APIClient):
             id (Optional[Union[int, Sequence[int]]]): Id or list of ids.
             external_id (Optional[Union[str, Sequence[str]]]): External ID or list of external ids.
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
-
-        Returns:
-            None
 
         Example:
 
@@ -349,7 +346,7 @@ class TransformationsAPI(APIClient):
             timeout (Optional[float]): maximum time (s) to wait, default is None (infinite time). Once the timeout is reached, it returns with the current status. Won't have any effect if wait is False.
 
         Returns:
-            Created transformation job
+            TransformationJob: Created transformation job
 
         Examples:
 
@@ -393,7 +390,7 @@ class TransformationsAPI(APIClient):
             timeout (Optional[float]): maximum time (s) to wait, default is None (infinite time). Once the timeout is reached, it returns with the current status.
 
         Returns:
-            Completed (if finished) or running (if timeout reached) transformation job.
+            TransformationJob: Completed (if finished) or running (if timeout reached) transformation job.
 
         Examples:
 
@@ -460,7 +457,7 @@ class TransformationsAPI(APIClient):
             infer_schema_limit (Optional[int]): Limit for how many rows that are used for inferring result schema, default is 1000.
 
         Returns:
-            Result of the executed query
+            TransformationPreviewResult: Result of the executed query
 
         Examples:
 

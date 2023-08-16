@@ -228,9 +228,6 @@ class FunctionsAPI(APIClient):
             id (Optional[Union[int, Sequence[int]]]): Id or list of ids.
             external_id (Optional[Union[str, Sequence[str]]]): External ID or list of external ids.
 
-        Returns:
-            None
-
         Example:
 
             Delete functions by id or external id::
@@ -298,7 +295,7 @@ class FunctionsAPI(APIClient):
             external_id (Optional[str]): External ID
 
         Returns:
-            Optional[Function]: Requested function or None if it does not exist.
+            Union[FunctionList, Function, None]: Requested function or None if it does not exist.
 
         Examples:
 
@@ -327,7 +324,7 @@ class FunctionsAPI(APIClient):
             external_ids (Optional[Sequence[str]]): External IDs
 
         Returns:
-            FunctionList: The requested functions.
+            Union[FunctionList, Function, None]: The requested functions.
 
         Examples:
 
@@ -773,7 +770,7 @@ class FunctionCallsAPI(APIClient):
             function_external_id (Optional[str]): External ID of the function on which the call was made.
 
         Returns:
-            Dict[str, Any] | None: Response from the function call.
+            Optional[Dict]: Response from the function call.
 
         Examples:
 
@@ -847,7 +844,7 @@ class FunctionSchedulesAPI(APIClient):
             id (int): ID
 
         Returns:
-            Optional[FunctionSchedule]: Requested function schedule.
+            Union[FunctionSchedule, FunctionSchedulesList, None]: Requested function schedule.
 
         Examples:
 
@@ -1005,9 +1002,6 @@ class FunctionSchedulesAPI(APIClient):
 
         Args:
             id (int): Id of the schedule
-
-        Returns:
-            None
 
         Examples:
 

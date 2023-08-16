@@ -157,8 +157,6 @@ class Function(CogniteResource):
     def update(self) -> None:
         """Update the function object. Can be useful to check for the latet status of the function ('Queued', 'Deploying', 'Ready' or 'Failed').
 
-        Returns:
-            None
         """
         latest = self._cognite_client.functions.retrieve(id=self.id)
         if latest is None:
@@ -248,8 +246,7 @@ class FunctionSchedule(CogniteResource):
         Retrieve the input data to the associated function.
 
         Returns:
-            Optional[Dict]: Input data to the associated function or None if not set. This data is passed
-            deserialized into the function through the data argument.
+            Optional[dict]: Input data to the associated function or None if not set. This data is passed deserialized into the function through the data argument.
         """
         return self._cognite_client.functions.schedules.get_input_data(id=self.id)
 
@@ -319,7 +316,7 @@ class FunctionCall(CogniteResource):
         """Retrieve the response from this function call.
 
         Returns:
-            Response from the function call.
+            Dict: Response from the function call.
         """
         return self._cognite_client.functions.calls.get_response(call_id=self.id, function_id=self.function_id)
 
@@ -334,8 +331,6 @@ class FunctionCall(CogniteResource):
     def update(self) -> None:
         """Update the function call object. Can be useful if the call was made with wait=False.
 
-        Returns:
-            None
         """
         latest = self._cognite_client.functions.calls.retrieve(call_id=self.id, function_id=self.function_id)
         self.status = latest.status
@@ -366,7 +361,7 @@ class FunctionCallLogEntry(CogniteResource):
         timestamp: Optional[int] = None,
         message: Optional[str] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.timestamp = timestamp
         self.message = message
         self._cognite_client = cast("CogniteClient", cognite_client)

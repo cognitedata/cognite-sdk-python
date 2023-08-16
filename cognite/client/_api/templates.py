@@ -202,9 +202,6 @@ class TemplateGroupsAPI(APIClient):
             external_ids (Union[str, Sequence[str]]): External ID or list of external ids
             ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
 
-        Returns:
-            None
-
         Examples:
             Delete template groups by external id:
 
@@ -313,9 +310,6 @@ class TemplateGroupVersionsAPI(APIClient):
         Args:
             external_id (str): External ID of the template group.
             version (int): The version of the template group to delete.
-
-        Returns:
-            None
 
         Examples:
             Delete template groups by external id:
@@ -539,9 +533,6 @@ class TemplateInstancesAPI(APIClient):
             external_ids (Sequence[str]): The external ids of the template instances to delete
             ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
 
-        Returns:
-            None
-
         Examples:
             Delete template groups by external id:
 
@@ -716,9 +707,6 @@ class TemplateViewsAPI(APIClient):
             version (int): The version of the template group.
             view_external_id (Union[Sequence[str], str]): The external ids of the views to delete
             ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
-
-        Returns:
-            None
 
         Examples:
             Delete views by external id:

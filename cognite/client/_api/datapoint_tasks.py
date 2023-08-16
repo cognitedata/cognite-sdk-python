@@ -743,7 +743,9 @@ class SplittingFetchSubtask(SerialFetchSubtask):
         """Since this task may decide to split itself multiple times, we count backwards to keep order
         (we rely on tuple sorting logic). Example using `self.subtask_idx=(4,)`:
         - First split into e.g. 3 parts: (4,-3), (4,-2), (4,-1)
-        - Next, split into 2: (4, -5) and (4, -4). These now sort before the first split."""
+        - Next, split into 2: (4, -5) and (4, -4). These now sort before the first split.
+        Yields:
+            Iterable[Tuple[float, ...]]: No description."""
         end = self.split_subidx
         self.split_subidx -= n_new_tasks
         yield from ((*self.subtask_idx, i) for i in range(self.split_subidx, end))

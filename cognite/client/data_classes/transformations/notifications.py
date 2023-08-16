@@ -30,7 +30,7 @@ class TransformationNotification(CogniteResource):
         created_time: Optional[int] = None,
         last_updated_time: Optional[int] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.id = id
         self.transformation_id = transformation_id
         self.transformation_external_id = transformation_external_id
@@ -61,7 +61,7 @@ class TransformationNotificationFilter(CogniteFilter):
         transformation_id: Optional[int] = None,
         transformation_external_id: Optional[str] = None,
         destination: Optional[str] = None,
-    ):
+    ) -> None:
         self.transformation_id = transformation_id
         self.transformation_external_id = transformation_external_id
         self.destination = destination

@@ -68,7 +68,7 @@ class FileMetadata(CogniteResource):
         created_time: Optional[int] = None,
         last_updated_time: Optional[int] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         if geo_location is not None and not isinstance(geo_location, GeoLocation):
             raise TypeError("FileMetadata.geo_location should be of type GeoLocation")
         self.external_id = external_id
@@ -146,7 +146,7 @@ class FileMetadataFilter(CogniteFilter):
         directory_prefix: Optional[str] = None,
         uploaded: Optional[bool] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.name = name
         self.mime_type = mime_type
         self.metadata = metadata

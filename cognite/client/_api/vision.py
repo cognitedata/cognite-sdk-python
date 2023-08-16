@@ -24,7 +24,9 @@ class VisionAPI(APIClient):
         Utility for sanitizing a given lists of ids and external ids.
         Returns the concatenation of the ids an external ids in the format
         expected by the Context API.
-        """
+
+        Returns:
+            List: No description."""
         identifier_sequence = IdentifierSequence.load(ids=ids, external_ids=external_ids).as_primitives()
         id_objs = [{"fileId": id} for id in identifier_sequence if isinstance(id, int)]
         external_id_objs = [

@@ -102,9 +102,6 @@ class GeospatialAPI(APIClient):
             external_id (Union[str, Sequence[str]]): External ID or list of external ids
             recursive (bool): if `true` the features will also be dropped
 
-        Returns:
-            None
-
         Examples:
 
             Delete feature type definitions external id:
@@ -160,7 +157,7 @@ class GeospatialAPI(APIClient):
             external_id (Union[str, List[str]]): External ID
 
         Returns:
-            FeatureTypeList: Requested Type or None if it does not exist.
+            Union[FeatureType, FeatureTypeList]: Requested Type or None if it does not exist.
 
         Examples:
 
@@ -379,9 +376,6 @@ class GeospatialAPI(APIClient):
             feature_type_external_id (str): No description.
             external_id (Optional[Union[str, Sequence[str]]]): External ID or list of external ids
 
-        Returns:
-            None
-
         Examples:
 
             Delete feature type definitions external id:
@@ -431,7 +425,7 @@ class GeospatialAPI(APIClient):
             properties (Optional[Dict[str, Any]]): the output property selection
 
         Returns:
-            FeatureList: Requested features or None if it does not exist.
+            Union[FeatureList, Feature]: Requested features or None if it does not exist.
 
         Examples:
 
@@ -754,7 +748,9 @@ class GeospatialAPI(APIClient):
                 >>> for f in features:
                 ...     # do something with the features
 
-        """
+
+        Yields:
+            Generator[Feature, None, None]: No description."""
         resource_path = self._feature_resource_path(feature_type_external_id) + "/search-streaming"
         json = {"filter": filter or {}, "output": {"properties": properties, "jsonStreamFormat": "NEW_LINE_DELIMITED"}}
         params = {"allowCrsTransformation": "true"} if allow_crs_transformation else None
@@ -958,9 +954,6 @@ class GeospatialAPI(APIClient):
         Args:
             srids (Union[int, Sequence[int]]): (Union[int, Sequence[int]]): SRID or list of SRIDs
 
-        Returns:
-            None
-
         Examples:
 
             Delete a custom CRS:
@@ -1051,9 +1044,6 @@ class GeospatialAPI(APIClient):
             feature_external_id (str): one feature or a list of features to create
             raster_property_name (str): the raster property name
 
-        Returns:
-            None
-
         Examples:
 
             Delete a raster in a feature raster property:
@@ -1140,7 +1130,7 @@ class GeospatialAPI(APIClient):
             output (Dict[str, GeospatialComputeFunction]): No description.
 
         Returns:
-            dict: Mapping of keys to computed items.
+            GeospatialComputedResponse: Mapping of keys to computed items.
 
         Examples:
 

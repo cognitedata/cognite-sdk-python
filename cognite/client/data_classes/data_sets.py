@@ -47,7 +47,7 @@ class DataSet(CogniteResource):
         created_time: Optional[int] = None,
         last_updated_time: Optional[int] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.external_id = external_id
         self.name = name
         self.description = description
@@ -79,7 +79,7 @@ class DataSetFilter(CogniteFilter):
         external_id_prefix: Optional[str] = None,
         write_protected: Optional[bool] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.metadata = metadata
         self.created_time = created_time
         self.last_updated_time = last_updated_time

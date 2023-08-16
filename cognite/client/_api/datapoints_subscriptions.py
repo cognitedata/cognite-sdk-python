@@ -86,9 +86,6 @@ class DatapointsSubscriptionAPI(APIClient):
             external_id (str | Sequence[str]): External ID or list of external IDs of subscriptions to delete.
             ignore_unknown_ids (bool): Whether to ignore IDs and external IDs that are not found rather than throw an exception.
 
-        Returns:
-            None
-
         Examples:
 
             Delete a subscription by external ID:

@@ -22,7 +22,7 @@ class TransformationNotificationsAPI(APIClient):
             notification (Union[TransformationNotification, Sequence[TransformationNotification]]): Notification or list of notifications to create.
 
         Returns:
-            Created notification(s)
+            Union[TransformationNotification, TransformationNotificationList]: Created notification(s)
 
         Examples:
 
@@ -90,9 +90,6 @@ class TransformationNotificationsAPI(APIClient):
 
         Args:
             id (Optional[Union[int, Sequence[int]]]): Id or list of transformation notification ids
-
-        Returns:
-            None
 
         Examples:
 

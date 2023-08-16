@@ -104,7 +104,7 @@ class TimeSeriesAPI(APIClient):
             partitions (Optional[int]): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed.
 
         Yields:
-            Union[TimeSeries, TimeSeriesList]: yields TimeSeries one by one if chunk_size is not specified, else TimeSeriesList objects.
+            Union[Iterator[TimeSeries], Iterator[TimeSeriesList]]: yields TimeSeries one by one if chunk_size is not specified, else TimeSeriesList objects.
         """
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
@@ -139,7 +139,7 @@ class TimeSeriesAPI(APIClient):
         Fetches time series as they are iterated over, so you keep a limited number of metadata objects in memory.
 
         Returns:
-            TimeSeries: yields TimeSeries one by one.
+            Iterator[TimeSeries]: yields TimeSeries one by one.
         """
         return cast(Iterator[TimeSeries], self())
 
@@ -624,9 +624,6 @@ class TimeSeriesAPI(APIClient):
             id (Optional[Union[int, Sequence[int]]]): Id or list of ids
             external_id (Optional[Union[str, Sequence[str]]]): External ID or list of external ids
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
-
-        Returns:
-            None
 
         Examples:
 

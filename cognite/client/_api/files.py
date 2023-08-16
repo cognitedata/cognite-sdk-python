@@ -98,7 +98,7 @@ class FilesAPI(APIClient):
             limit (Optional[int]): Maximum number of files to return. Defaults to return all items.
 
         Yields:
-            Union[FileMetadata, FileMetadataList]: yields FileMetadata one by one if chunk_size is not specified, else FileMetadataList objects.
+            Union[Iterator[FileMetadata], Iterator[FileMetadataList]]: yields FileMetadata one by one if chunk_size is not specified, else FileMetadataList objects.
         """
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
@@ -138,7 +138,7 @@ class FilesAPI(APIClient):
         Fetches file metadata objects as they are iterated over, so you keep a limited number of metadata objects in memory.
 
         Returns:
-            FileMetadata: yields Files one by one.
+            Iterator[FileMetadata]: yields Files one by one.
         """
         return cast(Iterator[FileMetadata], self())
 
@@ -150,7 +150,7 @@ class FilesAPI(APIClient):
             overwrite (bool): If 'overwrite' is set to true, and the POST body content specifies a 'externalId' field, fields for the file found for externalId can be overwritten. The default setting is false. If metadata is included in the request body, all of the original metadata will be overwritten. File-Asset mappings only change if explicitly stated in the assetIds field of the POST json body. Do not set assetIds in request body if you want to keep the current file-asset mappings.
 
         Returns:
-            Tuple[FileMetaData, str]: Tuple containing the file metadata and upload url of the created file.
+            Tuple[FileMetadata, str]: Tuple containing the file metadata and upload url of the created file.
 
         Examples:
 
@@ -383,9 +383,6 @@ class FilesAPI(APIClient):
         Args:
             id (Optional[Union[int, Sequence[int]]]): Id or list of ids
             external_id (Optional[Union[str, Sequence[str]]]): str or list of str
-
-        Returns:
-            None
 
         Examples:
 
@@ -663,7 +660,9 @@ class FilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.files.upload_bytes(b"some content", name="my_file", asset_ids=[1,2,3])
 
-        """
+
+        Returns:
+            FileMetadata: No description."""
         file_metadata = FileMetadata(
             name=name,
             external_id=external_id,
@@ -705,7 +704,7 @@ class FilesAPI(APIClient):
             extended_expiration (bool): Extend expiration time of download url to 1 hour. Defaults to false.
 
         Returns:
-            Dict[Union[str, int], str]: Dictionary containing download urls.
+            Dict[Union[int, str], str]: Dictionary containing download urls.
         """
         batch_size = 100
         id_batches = [seq.as_dicts() for seq in IdentifierSequence.load(id, external_id).chunked(batch_size)]
@@ -737,9 +736,6 @@ class FilesAPI(APIClient):
             directory (Union[str, Path]): Directory to download the file(s) to.
             id (Optional[Union[int, Sequence[int]]]): Id or list of ids
             external_id (Optional[Union[str, Sequence[str]]]): External ID or list of external ids.
-
-        Returns:
-            None
 
         Examples:
 
@@ -825,9 +821,6 @@ class FilesAPI(APIClient):
             id (Optional[int]): Id of of the file to download.
             external_id (Optional[str]): External id of the file to download.
 
-        Returns:
-            None
-
         Examples:
 
             Download a file by id:
@@ -856,7 +849,9 @@ class FilesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> file_content = c.files.download_bytes(id=1)
-        """
+
+        Returns:
+            bytes: No description."""
         identifier = Identifier.of_either(id, external_id).as_dict()
         download_link = self._get_download_link(identifier)
         return self._download_file(download_link)

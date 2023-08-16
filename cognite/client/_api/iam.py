@@ -83,9 +83,6 @@ class GroupsAPI(APIClient):
         Args:
             id (Union[int, Sequence[int]]): ID or list of IDs of groups to delete.
 
-        Returns:
-            None
-
         Example:
 
             Delete group::
@@ -149,9 +146,6 @@ class SecurityCategoriesAPI(APIClient):
 
         Args:
             id (Union[int, Sequence[int]]): ID or list of IDs of security categories to delete.
-
-        Returns:
-            None
 
         Example:
 

@@ -49,7 +49,7 @@ class ThreeDModelsAPI(APIClient):
             limit (Optional[int]): Maximum number of 3d models to return. Defaults to return all items.
 
         Yields:
-            Union[ThreeDModel, ThreeDModelList]: yields ThreeDModel one by one if chunk is not specified, else ThreeDModelList objects.
+            Union[Iterator[ThreeDModel], Iterator[ThreeDModelList]]: yields ThreeDModel one by one if chunk is not specified, else ThreeDModelList objects.
         """
         yield from self._list_generator(
             list_cls=ThreeDModelList,
@@ -66,7 +66,7 @@ class ThreeDModelsAPI(APIClient):
         Fetches models as they are iterated over, so you keep a limited number of models in memory.
 
         Returns:
-            ThreeDModel: yields models one by one.
+            Iterator[ThreeDModel]: yields models one by one.
         """
         return cast(Iterator[ThreeDModel], self())
 
@@ -77,7 +77,7 @@ class ThreeDModelsAPI(APIClient):
             id (int): Get the model with this id.
 
         Returns:
-            ThreeDModel: The requested 3d model.
+            Optional[ThreeDModel]: The requested 3d model.
 
         Example:
 
@@ -193,9 +193,6 @@ class ThreeDModelsAPI(APIClient):
         Args:
             id (Union[int, Sequence[int]]): ID or list of IDs to delete.
 
-        Returns:
-            None
-
         Example:
 
             Delete 3d model by id::
@@ -224,8 +221,7 @@ class ThreeDRevisionsAPI(APIClient):
             limit (Optional[int]): Maximum number of 3d model revisions to return. Defaults to return all items.
 
         Yields:
-            Union[ThreeDModelRevision, ThreeDModelRevisionList]: yields ThreeDModelRevision one by one if chunk is not
-                specified, else ThreeDModelRevisionList objects.
+            Union[Iterator[ThreeDModelRevision], Iterator[ThreeDModelRevisionList]]: yields ThreeDModelRevision one by one if chunk is not specified, else ThreeDModelRevisionList objects.
         """
         yield from self._list_generator(
             list_cls=ThreeDModelRevisionList,
@@ -371,9 +367,6 @@ class ThreeDRevisionsAPI(APIClient):
             model_id (int): Delete the revision under the model with this id.
             id (Union[int, Sequence[int]]): ID or list of IDs to delete.
 
-        Returns:
-            None
-
         Example:
 
             Delete 3d model revision by id::
@@ -395,9 +388,6 @@ class ThreeDRevisionsAPI(APIClient):
             model_id (int): Id of the model.
             revision_id (int): Id of the revision.
             file_id (int): Id of the thumbnail file in the Files API.
-
-        Returns:
-            None
 
         Example:
 
@@ -640,9 +630,6 @@ class ThreeDAssetMappingAPI(APIClient):
             model_id (int): Id of the model.
             revision_id (int): Id of the revision.
             asset_mapping (Union[ThreeDAssetMapping, Sequence[ThreeDAssetMapping]]): The asset mapping(s) to delete.
-
-        Returns:
-            None
 
         Example:
 

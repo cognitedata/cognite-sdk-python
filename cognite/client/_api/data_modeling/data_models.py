@@ -65,7 +65,7 @@ class DataModelsAPI(APIClient):
             include_global (bool): Whether to include global views.
 
         Yields:
-            Union[DataModel, DataModelList]: yields DataModel one by one if chunk_size is not specified, else DataModelList objects.
+            Iterator[DataModel] | Iterator[DataModelList]: yields DataModel one by one if chunk_size is not specified, else DataModelList objects.
         """
         filter = DataModelFilter(space, inline_views, all_versions, include_global)
 
@@ -84,7 +84,7 @@ class DataModelsAPI(APIClient):
         Fetches data model as they are iterated over, so you keep a limited number of data model in memory.
 
         Returns:
-            DataModel: yields DataModels one by one.
+            Iterator[DataModel]: yields DataModels one by one.
         """
         return cast(Iterator[DataModel], self())
 
@@ -110,7 +110,7 @@ class DataModelsAPI(APIClient):
             inline_views (bool): Whether to expand the referenced views inline in the returned result.
 
         Returns:
-            Optional[DataModel]: Requested data_model or None if it does not exist.
+            DataModelList[ViewId] | DataModelList[View]: Requested data_model or None if it does not exist.
 
         Examples:
 
@@ -134,7 +134,7 @@ class DataModelsAPI(APIClient):
         Args:
             ids (DataModelIdentifier | Sequence[DataModelIdentifier]): Data Model identifier(s).
         Returns:
-            The data_model(s) which has been deleted. None if nothing was deleted.
+            list[DataModelId]: The data_model(s) which has been deleted. None if nothing was deleted.
         Examples:
 
             Delete data model by id::
@@ -194,7 +194,7 @@ class DataModelsAPI(APIClient):
             include_global (bool): Whether to include global data models.
 
         Returns:
-            DataModelList: List of requested data models
+            DataModelList[View] | DataModelList[ViewId]: List of requested data models
 
         Examples:
 

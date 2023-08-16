@@ -276,7 +276,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
             external_id (Optional[str]): The external_id of the item to get.
 
         Returns:
-            Optional[CogniteResource]: The requested item
+            Optional[T_CogniteResource]: The requested item
         """
         IdentifierSequence.load(id, external_id).assert_singleton()
         if id:

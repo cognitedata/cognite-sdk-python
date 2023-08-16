@@ -365,7 +365,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         scopes: List[str],
         token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT,
         **token_custom_args: Any,
-    ):
+    ) -> None:
         super().__init__(token_expiry_leeway_seconds)
         self.__token_url = token_url
         self.__client_id = client_id
@@ -506,7 +506,7 @@ class OAuthClientCertificate(_OAuthCredentialProviderWithTokenRefresh):
         certificate: str,
         scopes: List[str],
         token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT,
-    ):
+    ) -> None:
         super().__init__(token_expiry_leeway_seconds)
         self.__authority_url = authority_url
         self.__client_id = client_id

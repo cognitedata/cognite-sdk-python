@@ -34,7 +34,7 @@ class DataModelCore(DataModelingResource):
         description: Optional[str] = None,
         name: Optional[str] = None,
         **_: Any,
-    ):
+    ) -> None:
         self.space = space
         self.external_id = external_id
         self.description = description
@@ -65,7 +65,7 @@ class DataModelApply(DataModelCore):
         description: Optional[str] = None,
         name: Optional[str] = None,
         views: Optional[list[ViewId | ViewApply]] = None,
-    ):
+    ) -> None:
         validate_data_modeling_identifier(space, external_id)
         super().__init__(space, external_id, version, description, name)
         self.views = views
@@ -125,7 +125,7 @@ class DataModel(DataModelCore, Generic[T_View]):
         name: Optional[str] = None,
         views: Optional[list[T_View]] = None,
         **_: Any,
-    ):
+    ) -> None:
         super().__init__(space, external_id, version, description, name)
         self.views: list[T_View] = views or []
         self.is_global = is_global
@@ -209,7 +209,7 @@ class DataModelList(CogniteResourceList[DataModel[T_View]]):
             key (Literal["created_time", "last_updated_time"]): The field to use for determining the latest version.
 
         Returns:
-            DataModel: The data model with the latest version.
+            DataModel[T_View]: The data model with the latest version.
         """
         if not self:
             raise ValueError("No data models in list")
@@ -243,7 +243,7 @@ class DataModelFilter(CogniteFilter):
         inline_views: bool = False,
         all_versions: bool = False,
         include_global: bool = False,
-    ):
+    ) -> None:
         self.space = space
         self.inline_views = inline_views
         self.all_versions = all_versions
@@ -258,7 +258,7 @@ class DataModelsSort(CogniteFilter):
         ],
         direction: Literal["ascending", "descending"] = "ascending",
         nulls_first: bool = False,
-    ):
+    ) -> None:
         self.property = property
         self.direction = direction
         self.nulls_first = nulls_first

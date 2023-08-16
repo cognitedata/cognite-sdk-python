@@ -138,7 +138,7 @@ class AssetsAPI(APIClient):
             partitions (Optional[int]): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
 
         Yields:
-            Union[Asset, AssetList]: yields Asset one by one if chunk_size is not specified, else AssetList objects.
+            Union[Iterator[Asset], Iterator[AssetList]]: yields Asset one by one if chunk_size is not specified, else AssetList objects.
         """
         if aggregated_properties:
             aggregated_properties = [to_camel_case(s) for s in aggregated_properties]
@@ -179,7 +179,7 @@ class AssetsAPI(APIClient):
         Fetches assets as they are iterated over, so you keep a limited number of assets in memory.
 
         Returns:
-            Asset: yields Assets one by one.
+            Iterator[Asset]: yields Assets one by one.
         """
         return cast(Iterator[Asset], self())
 
@@ -839,9 +839,6 @@ class AssetsAPI(APIClient):
             external_id (Optional[Union[str, Sequence[str]]]): External ID or list of external ids
             recursive (bool): Recursively delete whole asset subtrees under given ids. Defaults to False.
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
-
-        Returns:
-            None
 
         Examples:
 

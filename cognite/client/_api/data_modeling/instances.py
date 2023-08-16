@@ -210,8 +210,8 @@ class InstancesAPI(APIClient):
             sort (list[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
             filter (Filter | dict | None): Advanced filtering of instances.
 
-        Yields:
-            Edge | Node | EdgeList | NodeList: yields Instance one by one if chunk_size is not specified, else NodeList/EdgeList objects.
+        Returns:
+            Iterator[Edge] | Iterator[EdgeList] | Iterator[Node] | Iterator[NodeList]: yields Instance one by one if chunk_size is not specified, else NodeList/EdgeList objects.
         """
         self._validate_filter(filter)
         other_params = self._create_other_params(
@@ -244,7 +244,7 @@ class InstancesAPI(APIClient):
         Fetches instances as they are iterated over, so you keep a limited number of instances in memory.
 
         Returns:
-            Instance: yields Instances one by one.
+            Iterator[Node]: yields Instances one by one.
         """
         return cast(Iterator[Node], self(None, "node"))
 
@@ -357,7 +357,7 @@ class InstancesAPI(APIClient):
             edges (EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Edge ids
 
         Returns:
-            The instance(s) which has been deleted. Empty list if nothing was deleted.
+            InstancesDeleteResult: The instance(s) which has been deleted. Empty list if nothing was deleted.
 
         Examples:
 
@@ -568,7 +568,7 @@ class InstancesAPI(APIClient):
             limit (int): Maximum number of instances to return. Defaults to 1000. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            EdgeList | NodeList: Search result with matching nodes or edges.
+            NodeList | EdgeList: Search result with matching nodes or edges.
 
         Examples:
 
@@ -714,7 +714,7 @@ class InstancesAPI(APIClient):
             limit (int): Maximum number of instances to return. Defaults to 1000. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            list[HistogramValue]: Node or edge aggregation results.
+            HistogramValue | list[HistogramValue]: Node or edge aggregation results.
 
         Examples:
 
@@ -895,7 +895,7 @@ class InstancesAPI(APIClient):
             filter (Filter | dict | None): Advanced filtering of instances.
 
         Returns:
-            Union[EdgeList, NodeList]: List of requested instances
+            NodeList | EdgeList: List of requested instances
 
         Examples:
 

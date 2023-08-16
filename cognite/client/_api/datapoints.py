@@ -323,7 +323,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
     time series are chunked per request is dynamic and is decided by the overall number to fetch, their
     individual number of datapoints and whether raw- or aggregate datapoints are asked for since
     they are independent in requests - as long as the total number of time series does not exceed `_FETCH_TS_LIMIT`.
-    """
+        """
 
     def __init__(self, *args: Any) -> None:
         super().__init__(*args)
@@ -632,7 +632,7 @@ class DatapointsAPI(APIClient):
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
 
         Returns:
-            Union[None, Datapoints, DatapointsList]: A `Datapoints` object containing the requested data, or a `DatapointsList` if multiple time series were asked for (the ordering is ids first, then external_ids). If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
+            None | Datapoints | DatapointsList: A `Datapoints` object containing the requested data, or a `DatapointsList` if multiple time series were asked for (the ordering is ids first, then external_ids). If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
 
         Examples:
 
@@ -813,7 +813,7 @@ class DatapointsAPI(APIClient):
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
 
         Returns:
-            Union[None, DatapointsArray, DatapointsArrayList]: A `DatapointsArray` object containing the requested data, or a `DatapointsArrayList` if multiple time series were asked for (the ordering is ids first, then external_ids). If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
+            None | DatapointsArray | DatapointsArrayList: A `DatapointsArray` object containing the requested data, or a `DatapointsArrayList` if multiple time series were asked for (the ordering is ids first, then external_ids). If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
 
         Examples:
 
@@ -917,7 +917,7 @@ class DatapointsAPI(APIClient):
             column_names (Literal["id", "external_id"]): Use either ids or external ids as column names. Time series missing external id will use id as backup. Default: "external_id"
 
         Returns:
-            pandas.DataFrame: A pandas DataFrame containing the requested time series. The ordering of columns is ids first, then external_ids. For time series with multiple aggregates, they will be sorted in alphabetical order ("average" before "max").
+            pd.DataFrame: A pandas DataFrame containing the requested time series. The ordering of columns is ids first, then external_ids. For time series with multiple aggregates, they will be sorted in alphabetical order ("average" before "max").
 
         Examples:
 
@@ -1056,8 +1056,7 @@ class DatapointsAPI(APIClient):
             column_names (Literal["id", "external_id"]): Use either ids or external ids as column names. Time series missing external id will use id as backup. Default: "external_id"
 
         Returns:
-            pandas.DataFrame: A pandas DataFrame containing the requested time series with a DatetimeIndex localized
-            in the given time zone.
+            pd.DataFrame: A pandas DataFrame containing the requested time series with a DatetimeIndex localized in the given time zone.
 
         Examples:
 
@@ -1185,7 +1184,7 @@ class DatapointsAPI(APIClient):
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
-            Union[None, Datapoints, DatapointsList]: A Datapoints object containing the requested data, or a DatapointsList if multiple were requested. If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
+            Datapoints | DatapointsList | None: A Datapoints object containing the requested data, or a DatapointsList if multiple were requested. If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
 
         Examples:
 
@@ -1250,9 +1249,6 @@ class DatapointsAPI(APIClient):
             id (Optional[int]): Id of time series to insert datapoints into.
             external_id (Optional[str]): External id of time series to insert datapoint into.
 
-        Returns:
-            None
-
         Examples:
 
             Your datapoints can be a list of tuples where the first element is the timestamp and the second element is the value::
@@ -1307,9 +1303,6 @@ class DatapointsAPI(APIClient):
         Args:
             datapoints (list[dict[str, str | int | list | Datapoints | DatapointsArray]]): The datapoints you wish to insert along with the ids of the time series. See examples below.
 
-        Returns:
-            None
-
         Examples:
 
             Your datapoints can be a list of dictionaries, each containing datapoints for a different (presumably) time series. These dictionaries
@@ -1358,9 +1351,6 @@ class DatapointsAPI(APIClient):
             id (Optional[int]): Id of time series to delete data from
             external_id (Optional[str]): External id of time series to delete data from
 
-        Returns:
-            None
-
         Examples:
 
             Deleting the last week of data from a time series::
@@ -1382,9 +1372,6 @@ class DatapointsAPI(APIClient):
 
         Args:
             ranges (list[dict[str, Any]]): The list of datapoint ids along with time range to delete. See examples below.
-
-        Returns:
-            None
 
         Examples:
 
@@ -1421,9 +1408,6 @@ class DatapointsAPI(APIClient):
             df (pd.DataFrame):  Pandas DataFrame object containing the time series.
             external_id_headers (bool): Interpret the column names as external id. Pass False if using ids. Default: True.
             dropna (bool): Set to True to ignore NaNs in the given DataFrame, applied per column. Default: True.
-
-        Returns:
-            None
 
         Examples:
             Post a dataframe with white noise::

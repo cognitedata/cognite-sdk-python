@@ -95,7 +95,7 @@ class TransformationDestination:
             table (str): name of the target raw table
 
         Returns:
-            TransformationDestination pointing to the target table
+            RawTable: TransformationDestination pointing to the target table
         """
         return RawTable(database=database, table=table)
 
@@ -107,7 +107,7 @@ class TransformationDestination:
             external_id (str): Sequence external id.
 
         Returns:
-            TransformationDestination pointing to the target sequence rows
+            SequenceRows: TransformationDestination pointing to the target sequence rows
         """
         return SequenceRows(external_id=external_id)
 
