@@ -7,10 +7,20 @@ import re
 from dataclasses import is_dataclass
 from pathlib import Path
 
+import numpy as np
+
 from cognite.client.data_classes.data_modeling.query import Query
+
+# from cognite.client.utils._priority_tpe import PriorityThreadPoolExecutor
 
 EXCEPTIONS = {
     (Query, "__init__"),  # Reason: Uses a parameter 'with_'; and we need to escape the underscore
+}
+
+# Helper for testing specific class + method:
+TESTING = False
+ONLY_RUN = {
+    (Query, "__init__"),  # Example
 }
 
 
@@ -24,7 +34,6 @@ class Param:
     def _parse(self, line: str):
         if ":" not in line:
             line += ": No description."
-
         check = line.split(":", 1)[0]
         if check.count("(") and line[(idx := line.index("(")) - 1] != " ":
             # User forgot to add a space before first parenthesis:
@@ -33,18 +42,31 @@ class Param:
         if check.count("(") or check.count(")"):
             # We probably have an annotation:
             self.var_name, split_line = line.strip().split(" ", 1)
-            self.annot, self.descr = split_line.split(": ", 1)
-            self.annot = self.annot.lstrip("(").rstrip(")")
+            self.annotation, self.description = split_line.split(": ", 1)
+            self.annotation = self.annotation.lstrip("(").rstrip(")")
 
         elif check.count("(") == check.count(")") == 0:
             # ...we probably don't:
-            self.var_name, self.descr = line.strip().split(": ", 1)
-            self.annot = ""
+            self.var_name, self.description = line.strip().split(": ", 1)
+            self.annotation = ""
         else:
             raise ValueError
 
     def __repr__(self):
-        return f"Param({self.var_name!r}, {self.annot!r}, {self.descr!r})"
+        return f"Param({self.var_name!r}, {self.annotation!r}, {self.description!r})"
+
+
+class ReturnParam(Param):
+    def _parse(self, line: str):
+        line = line.strip()
+        if ":" not in line:
+            # Better to guess wrong and not lose description - we can always recreate the annotation:
+            self.annotation, self.description = "", line
+        else:
+            self.annotation, self.description = line.split(": ", 1)
+
+    def __repr__(self):
+        return f"Param({self.annotation!r}, {self.description!r})"
 
 
 def count_indent(s):
@@ -53,23 +75,13 @@ def count_indent(s):
 
 class DocstrFormatter:
     def __init__(self, doc, method):
-        self.params = []
         self.original_doc = doc
-        self.doc_annots, self.return_annot = self._extract_annotations(method)
-        if not self.doc_annots:  # Function takes no args
-            return
+        self.is_generator = inspect.isgeneratorfunction(method)
+        self.RETURN_STRING = "Yields:" if self.is_generator else "Returns:"
 
-        self.doc_before, self.doc_after, args_indent, parameters = self.parse_doc(doc)
-        if args_indent is None:
-            self.doc_annots = {}  # Hack to quit as no parameters were found
-            return
-
-        if not self.doc_after:
-            # Make sure closing triple-quote aligns correctly:
-            self.doc_after.append(" " * args_indent)
-
-        self.indentation = args_indent + 4
-        self.params = list(map(Param, parameters))
+        self.lines_grouped, self.indentation = self._separate_docstring(doc)
+        self.actual_annotations, self.actual_return_annotation = self._extract_annotations(method)
+        self.parse_doc_and_store(self.lines_grouped, self.indentation)
 
     def _extract_annotations(self, method):
         def fix_literal(s):
@@ -80,6 +92,8 @@ class DocstrFormatter:
 
         annots, method_signature = {}, inspect.signature(method)
         return_annot = method_signature.return_annotation
+        if return_annot is inspect._empty:
+            raise ValueError("Missing return type annotation")
 
         for var_name, param in method_signature.parameters.items():
             if var_name in {"self", "cls"}:
@@ -93,67 +107,147 @@ class DocstrFormatter:
         return annots, return_annot
 
     @staticmethod
-    def parse_doc(doc):
-        idx_start, idx_end = None, None
-        args_indent = None
-        start_capture = False
-        parameters = []
-
+    def _separate_docstring(doc):
         lines = doc.splitlines()
-        if not lines[-1].strip():
-            lines[:-1] = [line.rstrip() for line in lines[:-1]]
+        indentations = np.array(list(map(count_indent, lines)))
+        if any(indentations % 4 != 0):
+            raise ValueError("One or more lines is not indented a multiple of 4 spaces")
 
-        for i, line in enumerate(lines):
-            line_indent = count_indent(line)
-            if start_capture:
-                if not line.strip():
-                    continue
-                if line_indent == args_indent:
-                    idx_end = i
-                    if not lines[i - 1].strip():  # Note: i-1 >= 0
-                        # If last line was empty, we keep the spacing:
-                        idx_end -= 1
-                    break
-                if line_indent > args_indent + 4:
-                    # Assume multilines belong to previous line:
-                    parameters[-1] += f" {line.strip()}"
-                    continue
-                parameters.append(line)
+        section_indent = indentations[np.nonzero(indentations)].min()
+        all_chunks, chunk = [], []
+        for line, indent in zip(lines, indentations):
+            # If a line is non-empty, remove any excess whitespace at end:
+            if line.strip():
+                line = line.rstrip()
+
+            if indent != section_indent:
+                chunk.append(line)
+            else:
+                all_chunks.append(chunk)
+                chunk = [line]
+        all_chunks.append(chunk)
+        return all_chunks, section_indent
+
+    def parse_doc_and_store(self, lines_grouped, indentation):
+        self.parameters, self.return_parameter = [], None
+        self.line_args_group, self.line_return_group = None, None
+
+        for line_group in lines_grouped:
+            if (first := line_group[0].strip()) == "Args:":
+                self.line_args_group = line_group
+            elif len(first.split("Args:")) > 1:
+                raise ValueError("'Args:'-line contains additional text")
+
+            elif first == self.RETURN_STRING:
+                self.line_return_group = line_group
+            elif len(first.split(self.RETURN_STRING)) > 1:
+                raise ValueError(f"'{self.RETURN_STRING}'-line contains additional text")
+
+        self.add_space_after_args, self.add_space_after_returns = False, False
+        if self.line_args_group is not None:
+            self.parameters = list(map(Param, DocstrFormatter._parse_args_section(self.line_args_group, indentation)))
+            self.add_space_after_args = not self.line_args_group[-1].strip()
+
+        if self.line_return_group is not None:
+            self.return_parameter = DocstrFormatter._parse_returns_section(self.line_return_group, indentation)
+            self.add_space_after_returns = not self.line_return_group[-1].strip()
+
+    @staticmethod
+    def _parse_args_section(lines, indent):
+        parameters = []
+        for line in lines[1:]:
+            if not line.strip():
                 continue
 
-            elif "args:" in line.lower():
-                args_indent = line_indent
-                start_capture = True
-                idx_start = i + 1
-        else:
-            # End was not found:
-            idx_end = len(lines)
+            if count_indent(line) == indent + 4:
+                parameters.append(line)
 
-        return lines[:idx_start], lines[idx_end:], args_indent, parameters
+            elif parameters:
+                # Assume multilines belong to the previous line
+                parameters[-1] += f" {line.strip()}"
+            else:
+                # We can infer that this line is indented wrong (and prob the rest, best to raise):
+                raise ValueError(
+                    "First parameter description after 'Args:' is not indented correctly (should be 4 spaces)"
+                )
+
+        return parameters
+
+    @staticmethod
+    def _parse_returns_section(lines, indent):
+        line = lines[1].strip()
+        for extra_line in lines[2:]:
+            # Assume multilines regardless of (missing extra) indentation belongs:
+            line += f" {extra_line.strip()}"
+        return ReturnParam(line)
 
     def docstring_is_correct(self):
-        annots = dict((p.var_name, p.annot) for p in self.params)
-        return (
+        return_annot_is_correct = False
+        if self.actual_return_annotation == "None":
+            # If the function returns None, we don't want a returns-section:
+            return_annot_is_correct = self.return_parameter is None
+        elif self.return_parameter is not None:
+            return_annot_is_correct = self.actual_return_annotation == self.return_parameter.annotation
+
+        parsed_annotations = dict((p.var_name, p.annotation) for p in self.parameters)
+        parameters_are_correct = (
             # Takes no args?
-            not self.doc_annots
+            not self.actual_annotations
             # Do the variables match? ...correct order?
-            or list(self.doc_annots.keys()) == list(annots.keys())
+            or list(self.actual_annotations.keys()) == list(parsed_annotations.keys())
             # Do the annotations match?
-            and list(self.doc_annots.values()) == list(annots.values())
+            and list(self.actual_annotations.values()) == list(parsed_annotations.values())
         )
+        return return_annot_is_correct and parameters_are_correct
 
     def _create_docstring_param_description(self):
         whitespace = " " * self.indentation
-        fixed_lines = []
-        doc_annot_dct = dict((p.var_name, p.descr) for p in self.params)
-        for var, annot in self.doc_annots.items():
-            description = doc_annot_dct.get(var, "No description.")
-            fixed_lines.append(f"{whitespace}{var} ({annot}): {description}")
+        fixed_lines = [f"{whitespace}Args:"]
+        doc_descr = dict((p.var_name, p.description) for p in self.parameters)
+        for var, annot in self.actual_annotations.items():
+            description = doc_descr.get(var, "No description.")
+            fixed_lines.append(f"{whitespace}    {var} ({annot}): {description}")
+        if self.add_space_after_args:
+            fixed_lines.append("")
+        return fixed_lines
+
+    def _create_docstring_return_description(self):
+        if self.actual_return_annotation == "None":
+            return []
+
+        description = "No description."
+        if self.return_parameter is not None:
+            description = self.return_parameter.description
+
+        whitespace = " " * self.indentation
+        fixed_lines = [
+            f"{whitespace}{self.RETURN_STRING}",
+            f"{whitespace}    {self.actual_return_annotation}: {description}",
+        ]
+        if self.add_space_after_returns:
+            fixed_lines.append("")
         return fixed_lines
 
     def create_docstring(self):
-        fixed_param_description = self._create_docstring_param_description()
-        return "\n".join(self.doc_before + fixed_param_description + self.doc_after)
+        final_doc_lines = []
+        for lines in self.lines_grouped:
+            if lines is self.line_args_group:
+                lines = self._create_docstring_param_description()
+            elif lines is self.line_return_group:
+                lines = self._create_docstring_return_description()
+            final_doc_lines.extend(lines)
+
+        # If the returns-section is missing, add it
+        if self.line_return_group is None:
+            final_doc_lines.extend(self._create_docstring_return_description())
+
+        # Remove unwanted space from right, but keep for last (avoid moving closing triple quote):
+        last = final_doc_lines[-1]
+        final_doc_lines = [s.rstrip() for s in final_doc_lines]
+        if not last.strip():
+            final_doc_lines[-1] = last
+
+        return "\n".join(final_doc_lines)
 
     def update_py_file(self, cls, attr) -> str:
         source_code = (path := Path(inspect.getfile(cls))).read_text()
@@ -179,6 +273,9 @@ def format_docstring(cls) -> list[str]:
     failed = []
     for attr, method in get_all_non_inherited_methods(cls):
         if (cls, attr) in EXCEPTIONS:
+            continue
+
+        if TESTING and (cls, attr) not in ONLY_RUN:
             continue
 
         # The __init__ method is documented in the class level docstring
