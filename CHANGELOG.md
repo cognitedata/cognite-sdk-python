@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.14.0] - 2023-07-26
+### Added
+- Added parameter `keep_folder_structure`to `client.files.download` to allow downloading files to a folder structure matching the one in CDF.
+This also keeps all files when downloading, and avoid the problem of files being ignored if they have the same name in different folders.
+
 ## [6.13.3] - 2023-08-14
 ### Fixed
 - Fixed bug in `ViewApply.properties` had type hint `ConnectionDefinition` instead of `ConnectionDefinitionApply`.
