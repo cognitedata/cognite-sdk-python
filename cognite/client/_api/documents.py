@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, Optional, cast, overload
+from typing import IO, TYPE_CHECKING, Any, Literal, Optional, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DOCUMENT_LIST_LIMIT_DEFAULT
@@ -37,9 +37,9 @@ _DOCUMENTS_SUPPORTED_FILTERS: frozenset[type[Filter]] = frozenset(
         filters.Prefix,
         filters.ContainsAny,
         filters.ContainsAll,
-        filters.GeojsonIntersects,
-        filters.GeojsonDisjoint,
-        filters.GeojsonWithin,
+        filters.GeoJSONIntersects,
+        filters.GeoJSONDisjoint,
+        filters.GeoJSONWithin,
         filters.InAssetSubtree,
         filters.Search,
     }
@@ -73,12 +73,12 @@ class DocumentPreviewAPI(APIClient):
 
             >>> from cognite.client import CogniteClient
             >>> c = CogniteClient()
-            >>> content = c.documents.preview.download_page_as_png_bytes(id=123, page_number=5)
+            >>> content = c.documents.previews.download_page_as_png_bytes(id=123, page_number=5)
 
         Download an image preview and display using IPython.display.Image (for example in a Jupyter Notebook):
 
             >>> from IPython.display import Image
-            >>> binary_png = c.documents.preview.download_page_as_png_bytes(id=123, page_number=5)
+            >>> binary_png = c.documents.previews.download_page_as_png_bytes(id=123, page_number=5)
             >>> Image(binary_png)
 
         """
@@ -87,11 +87,13 @@ class DocumentPreviewAPI(APIClient):
         )
         return res.content
 
-    def download_page_as_png(self, path: Path | str, id: int, page_number: int = 1, overwrite: bool = False) -> None:
+    def download_page_as_png(
+        self, path: Path | str | IO, id: int, page_number: int = 1, overwrite: bool = False
+    ) -> None:
         """`Downloads an image preview for a specific page of the specified document. <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewImagePage>`_
 
         Args:
-            path (Path): The path to save the png preview of the document. If the path is a directory, the
+            path (Path | str | IO): The path to save the png preview of the document. If the path is a directory, the
                   file name will be '[id]_page[page_number].png'.
             id (int): The server-generated ID for the document you want to retrieve the preview of.
             page_number (int, optional): Page number to preview. Starting at 1 for first page.
@@ -103,9 +105,14 @@ class DocumentPreviewAPI(APIClient):
 
             >>> from cognite.client import CogniteClient
             >>> c = CogniteClient()
-            >>> c.documents.preview.download_page_as_png("previews", id=123, page_number=5)
+            >>> c.documents.previews.download_page_as_png("previews", id=123, page_number=5)
 
         """
+        if isinstance(path, IO):
+            content = self.download_page_as_png_bytes(id)
+            path.write(content)
+            return
+
         if (path := Path(path)).is_dir():
             path /= f"{id}_page{page_number}.png"
         elif path.suffix != ".png":
@@ -134,12 +141,12 @@ class DocumentPreviewAPI(APIClient):
 
             >>> from cognite.client import CogniteClient
             >>> c = CogniteClient()
-            >>> content = c.documents.preview.download_document_as_pdf_bytes(id=123)
+            >>> content = c.documents.previews.download_document_as_pdf_bytes(id=123)
         """
         res = self._do_request("GET", f"{self._RESOURCE_PATH}/{id}/preview/pdf", accept="application/pdf")
         return res.content
 
-    def download_document_as_pdf(self, path: Path | str, id: int, overwrite: bool = False) -> None:
+    def download_document_as_pdf(self, path: Path | str | IO, id: int, overwrite: bool = False) -> None:
         """`Downloads a pdf preview of the specified document. <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewPdf>`_
 
         Only the 100 first pages will be included.
@@ -147,7 +154,7 @@ class DocumentPreviewAPI(APIClient):
         Previews will be rendered if necessary during the request. Be prepared for the request to take a few seconds to complete.
 
         Args:
-            path (Path): The path to save the pdf preview of the document. If the path is a directory, the
+            path (Path | str | IO): The path to save the pdf preview of the document. If the path is a directory, the
                   file name will be '[id].pdf'.
             id (int): The server-generated ID for the document you want to retrieve the preview of.
             overwrite (bool, optional): Whether to overwrite existing file at the given path. Defaults to False.
@@ -161,9 +168,14 @@ class DocumentPreviewAPI(APIClient):
 
             >>> from cognite.client import CogniteClient
             >>> c = CogniteClient()
-            >>> c.documents.preview.download_document_as_pdf("previews", id=123)
+            >>> c.documents.previews.download_document_as_pdf("previews", id=123)
 
         """
+        if isinstance(path, IO):
+            content = self.download_document_as_pdf_bytes(id)
+            path.write(content)
+            return
+
         if (path := Path(path)).is_dir():
             path /= f"{id}.pdf"
         elif path.suffix != ".pdf":
@@ -188,7 +200,7 @@ class DocumentPreviewAPI(APIClient):
 
             >>> from cognite.client import CogniteClient
             >>> c = CogniteClient()
-            >>> link = c.documents.preview.retrieve_pdf_link(id=123)
+            >>> link = c.documents.previews.retrieve_pdf_link(id=123)
         """
         res = self._get(f"{self._RESOURCE_PATH}/{id}/preview/pdf/temporarylink")
         return TemporaryLink.load(res.json())
@@ -199,7 +211,7 @@ class DocumentsAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        self.preview = DocumentPreviewAPI(config, api_version, cognite_client)
+        self.previews = DocumentPreviewAPI(config, api_version, cognite_client)
 
     @overload
     def __call__(
@@ -498,7 +510,7 @@ class DocumentsAPI(APIClient):
             limit=limit,
         )
 
-    def retrieve_content(self, id: int) -> str:
+    def retrieve_content(self, id: int) -> bytes:
         """`Retrieve document content <https://developer.cognite.com/api#tag/Documents/operation/documentsContent>`_
 
         Returns extracted textual information for the given document.
@@ -513,7 +525,7 @@ class DocumentsAPI(APIClient):
             id (int): The server-generated ID for the document you want to retrieve the content of.
 
         Returns:
-            str: The content of the document.
+            bytes: The content of the document.
 
         Examples:
 
@@ -525,7 +537,7 @@ class DocumentsAPI(APIClient):
 
         """
         response = self._do_request("GET", f"{self._RESOURCE_PATH}/{id}/content", accept="text/plain")
-        return response.text
+        return response.content
 
     @overload
     def search(
