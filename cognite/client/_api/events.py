@@ -6,7 +6,7 @@ from typing import Any, Dict, Iterator, List, Literal, Optional, Sequence, Tuple
 from typing_extensions import TypeAlias
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import ADVANCED_LIST_LIMIT_DEFAULT, LIST_LIMIT_DEFAULT
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import (
     AggregateResult,
     AggregateUniqueValuesResult,
@@ -703,7 +703,7 @@ class EventsAPI(APIClient):
         self,
         filter: Filter | dict,
         sort: SortSpec | List[SortSpec] | None = None,
-        limit: int = ADVANCED_LIST_LIMIT_DEFAULT,
+        limit: int = LIST_LIMIT_DEFAULT,
     ) -> EventList:
         """`Advanced filter events <https://developer.cognite.com/api#tag/Events/operation/advancedListEvents>`_
 
@@ -714,7 +714,7 @@ class EventsAPI(APIClient):
         Args:
             filter: Filter to apply.
             sort: The criteria to sort by. Can be up to two properties to sort by default to ascending order.
-            limit: Maximum number of results to return. Defaults to 100. Set to -1, float("inf") or None
+            limit: Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None
                    to return all items.
 
         Returns:

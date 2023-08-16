@@ -7,7 +7,7 @@ from typing_extensions import TypeAlias
 from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.datapoints_subscriptions import DatapointsSubscriptionAPI
 from cognite.client._api_client import APIClient
-from cognite.client._constants import ADVANCED_LIST_LIMIT_DEFAULT, LIST_LIMIT_DEFAULT
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import (
     TimeSeries,
     TimeSeriesAggregate,
@@ -706,7 +706,7 @@ class TimeSeriesAPI(APIClient):
         self,
         filter: Filter | dict,
         sort: SortSpec | List[SortSpec] | None = None,
-        limit: int = ADVANCED_LIST_LIMIT_DEFAULT,
+        limit: int = LIST_LIMIT_DEFAULT,
     ) -> TimeSeriesList:
         """`Advanced filter time series <https://developer.cognite.com/api#tag/Time-series/operation/listTimeSeries>`_
 
@@ -717,7 +717,7 @@ class TimeSeriesAPI(APIClient):
         Args:
             filter: Filter to apply.
             sort: The criteria to sort by. Can be up to two properties to sort by default to ascending order.
-            limit: Maximum number of results to return. Defaults to 100. Set to -1, float("inf") or None
+            limit: Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None
                    to return all items.
 
         Returns:
