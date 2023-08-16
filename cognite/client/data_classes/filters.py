@@ -122,18 +122,18 @@ class Filter(ABC):
                 property=filter_body["property"],
                 values=cast(FilterValueList, _load_filter_value(filter_body["values"])),
             )
-        elif filter_name == GeojsonIntersects._filter_name:
-            return GeojsonIntersects(
+        elif filter_name == GeoJSONIntersects._filter_name:
+            return GeoJSONIntersects(
                 property=filter_body["property"],
                 geometry=Geometry._load(filter_body["geometry"]),
             )
-        elif filter_name == GeojsonDisjoint._filter_name:
-            return GeojsonDisjoint(
+        elif filter_name == GeoJSONDisjoint._filter_name:
+            return GeoJSONDisjoint(
                 property=filter_body["property"],
                 geometry=Geometry._load(filter_body["geometry"]),
             )
-        elif filter_name == GeojsonWithin._filter_name:
-            return GeojsonWithin(
+        elif filter_name == GeoJSONWithin._filter_name:
+            return GeoJSONWithin(
                 property=filter_body["property"],
                 geometry=Geometry._load(filter_body["geometry"]),
             )
@@ -176,13 +176,12 @@ class FilterWithProperty(Filter):
     _filter_name = "propertyFilter"
 
     def __init__(self, property: PropertyReference):
-        self._property = property
-
-    def _dump_property(self) -> list[str] | tuple[str, ...]:
-        return self._property.as_reference() if isinstance(self._property, EnumProperty) else self._property
+        self._property: list[str] | tuple[str, ...] = (
+            property.as_reference() if isinstance(property, EnumProperty) else property
+        )
 
     def _filter_body(self) -> dict:
-        return {"property": self._dump_property()}
+        return {"property": self._property}
 
 
 class FilterWithPropertyAndValue(FilterWithProperty):
@@ -193,7 +192,7 @@ class FilterWithPropertyAndValue(FilterWithProperty):
         self._value = value
 
     def _filter_body(self) -> dict[str, Any]:
-        return {"property": self._dump_property(), "value": _dump_filter_value(self._value)}
+        return {"property": self._property, "value": _dump_filter_value(self._value)}
 
 
 class FilterWithPropertyAndValueList(FilterWithProperty):
@@ -204,7 +203,7 @@ class FilterWithPropertyAndValueList(FilterWithProperty):
         self._values = values
 
     def _filter_body(self) -> dict[str, Any]:
-        return {"property": self._dump_property(), "values": _dump_filter_value(self._values)}
+        return {"property": self._property, "values": _dump_filter_value(self._values)}
 
 
 @final
@@ -288,7 +287,7 @@ class Range(FilterWithProperty):
         self._lte = lte
 
     def _filter_body(self) -> dict[str, Any]:
-        body = {"property": self._dump_property()}
+        body = {"property": self._property}
         if self._gt is not None:
             body["gt"] = _dump_filter_value(self._gt)
         if self._gte is not None:
@@ -371,7 +370,7 @@ class ContainsAll(FilterWithPropertyAndValueList):
     _filter_name = "containsAll"
 
 
-class Geojson(FilterWithProperty, ABC):
+class GeoJSON(FilterWithProperty, ABC):
     _filter_name = "geojson"
 
     def __init__(self, property: PropertyReference, geometry: Geometry):
@@ -379,21 +378,21 @@ class Geojson(FilterWithProperty, ABC):
         self._geometry = geometry
 
     def _filter_body(self) -> dict[str, Any]:
-        return {"property": self._dump_property(), "geometry": self._geometry.dump(camel_case=True)}
+        return {"property": self._property, "geometry": self._geometry.dump(camel_case=True)}
 
 
 @final
-class GeojsonIntersects(Geojson):
+class GeoJSONIntersects(GeoJSON):
     _filter_name = "geojsonIntersects"
 
 
 @final
-class GeojsonDisjoint(Geojson):
+class GeoJSONDisjoint(GeoJSON):
     _filter_name = "geojsonDisjoint"
 
 
 @final
-class GeojsonWithin(Geojson):
+class GeoJSONWithin(GeoJSON):
     _filter_name = "geojsonWithin"
 
 
