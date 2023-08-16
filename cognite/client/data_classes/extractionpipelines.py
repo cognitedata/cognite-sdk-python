@@ -31,7 +31,7 @@ class ExtractionPipelineContact(dict):
         send_notification (bool): Whether to send notifications to this contact or not
     """
 
-    def __init__(self, name: str, email: str, role: str, send_notification: bool):
+    def __init__(self, name: str, email: str, role: str, send_notification: bool) -> None:
         self.name = name
         self.email = email
         self.role = role
@@ -92,7 +92,7 @@ class ExtractionPipeline(CogniteResource):
         last_updated_time: Optional[int] = None,
         created_by: Optional[str] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.id = id
         self.external_id = external_id
         self.name = name
@@ -236,7 +236,7 @@ class ExtractionPipelineRun(CogniteResource):
         created_time: Optional[int] = None,
         cognite_client: Optional[CogniteClient] = None,
         id: Optional[int] = None,
-    ):
+    ) -> None:
         self.id = id
         self.extpipe_external_id = extpipe_external_id
         self.status = status
@@ -278,7 +278,7 @@ class StringFilter(CogniteFilter):
         substring (Optional[str]): Part of message
     """
 
-    def __init__(self, substring: Optional[str] = None):
+    def __init__(self, substring: Optional[str] = None) -> None:
         self.substring = substring
 
 
@@ -300,7 +300,7 @@ class ExtractionPipelineRunFilter(CogniteFilter):
         message: Optional[StringFilter] = None,
         created_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.external_id = external_id
         self.statuses = statuses
         self.message = message
@@ -334,7 +334,7 @@ class ExtractionPipelineConfigRevision(CogniteResource):
         description: Optional[str] = None,
         created_time: Optional[int] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.external_id = external_id
         self.revision = revision
         self.description = description
@@ -362,7 +362,7 @@ class ExtractionPipelineConfig(ExtractionPipelineConfigRevision):
         description: Optional[str] = None,
         created_time: Optional[int] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         super().__init__(
             external_id=external_id,
             revision=revision,

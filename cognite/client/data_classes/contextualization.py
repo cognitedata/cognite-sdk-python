@@ -87,7 +87,7 @@ class ContextualizationJob(CogniteResource):
         status_path: Optional[str] = None,
         job_token: Optional[str] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         """Data class for the result of a contextualization job."""
         self.job_id = job_id
         self.model_id = model_id
@@ -189,7 +189,7 @@ class EntityMatchingModel(CogniteResource):
         description: Optional[str] = None,
         external_id: Optional[str] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         """Entity matching model. See the `fit` method for the meaning of these fields."""
         self.id = id
         self.status = status
@@ -343,7 +343,7 @@ class FileReference:
         file_external_id: Optional[str] = None,
         first_page: Optional[int] = None,
         last_page: Optional[int] = None,
-    ):
+    ) -> None:
         self.file_id = file_id
         self.file_external_id = file_external_id
         self.first_page = first_page
@@ -371,7 +371,7 @@ class DiagramConvertPage(CogniteResource):
         png_url: Optional[str] = None,
         svg_url: Optional[str] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.page = page
         self.png_url = png_url
         self.svg_url = svg_url
@@ -389,7 +389,7 @@ class DiagramConvertItem(CogniteResource):
         file_external_id: Optional[str] = None,
         results: Optional[list] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.file_id = file_id
         self.file_external_id = file_external_id
         self.results = results
@@ -462,7 +462,7 @@ class DiagramDetectItem(CogniteResource):
         cognite_client: Optional[CogniteClient] = None,
         page_range: Optional[Dict[str, int]] = None,
         page_count: Optional[int] = None,
-    ):
+    ) -> None:
         self.file_id = file_id
         self.file_external_id = file_external_id
         self.annotations = annotations
@@ -609,7 +609,7 @@ class DetectJobBundle:
     _STATUS_PATH = "/context/diagram/detect/status"
     _WAIT_TIME = 2
 
-    def __init__(self, job_ids: List[int], cognite_client: Optional[CogniteClient] = None):
+    def __init__(self, job_ids: List[int], cognite_client: Optional[CogniteClient] = None) -> None:
         warnings.warn(
             "DetectJobBundle.result is calling a beta endpoint which is still in development. "
             "Breaking changes can happen in between patch versions."
@@ -858,7 +858,7 @@ class VisionExtractJob(VisionJob):
 class ResourceReference(CogniteResource):
     def __init__(
         self, id: int | None = None, external_id: str | None = None, cognite_client: None | CogniteClient = None
-    ):
+    ) -> None:
         self.id = id
         self.external_id = external_id
         self._cognite_client: CogniteClient = cast("CogniteClient", None)  # Read only

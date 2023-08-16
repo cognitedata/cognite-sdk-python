@@ -29,7 +29,7 @@ class FeatureType(CogniteResource):
         properties: Optional[Dict[str, Any]] = None,
         search_spec: Optional[Dict[str, Any]] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.external_id = external_id
         self.data_set_id = data_set_id
         self.created_time = created_time
@@ -60,7 +60,7 @@ class PropertyAndSearchSpec:
         self,
         properties: Optional[Union[Dict[str, Any], List[str]]] = None,
         search_spec: Optional[Union[Dict[str, Any], List[str]]] = None,
-    ):
+    ) -> None:
         self.properties = properties
         self.search_spec = search_spec
 
@@ -74,7 +74,7 @@ class FeatureTypeUpdate:
         add: Optional[PropertyAndSearchSpec] = None,
         remove: Optional[PropertyAndSearchSpec] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.external_id = external_id
         self.add = add if add is not None else PropertyAndSearchSpec()
         self.remove = remove if remove is not None else PropertyAndSearchSpec()
@@ -105,7 +105,7 @@ class Feature(CogniteResource):
 
     def __init__(
         self, external_id: Optional[str] = None, cognite_client: Optional[CogniteClient] = None, **properties: Any
-    ):
+    ) -> None:
         self.external_id = external_id
         for key in properties:
             setattr(self, key, properties[key])
@@ -291,7 +291,7 @@ def nan_to_none(column_value: Any) -> Any:
 class FeatureAggregate(CogniteResource):
     """A result of aggregating features in geospatial api."""
 
-    def __init__(self, cognite_client: Optional[CogniteClient] = None):
+    def __init__(self, cognite_client: Optional[CogniteClient] = None) -> None:
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
@@ -320,7 +320,7 @@ class CoordinateReferenceSystem(CogniteResource):
         wkt: Optional[str] = None,
         proj_string: Optional[str] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.srid = srid
         self.wkt = wkt
         self.proj_string = proj_string
@@ -346,7 +346,7 @@ class CoordinateReferenceSystemList(CogniteResourceList[CoordinateReferenceSyste
 class OrderSpec:
     """An order specification with respect to an property."""
 
-    def __init__(self, property: str, direction: str):
+    def __init__(self, property: str, direction: str) -> None:
         self.property = property
         self.direction = direction
 
@@ -354,7 +354,7 @@ class OrderSpec:
 class RasterMetadata:
     """Raster metadata"""
 
-    def __init__(self, **properties: Any):
+    def __init__(self, **properties: Any) -> None:
         for key in properties:
             setattr(self, key, properties[key])
 
@@ -378,7 +378,7 @@ class GeospatialComputeFunction(ABC):
 class GeospatialGeometryTransformComputeFunction(GeospatialComputeFunction):
     "A stTransform geospatial compute function"
 
-    def __init__(self, geospatial_geometry_compute_function: GeospatialComputeFunction, srid: int):
+    def __init__(self, geospatial_geometry_compute_function: GeospatialComputeFunction, srid: int) -> None:
         self.geospatial_geometry_compute_function = geospatial_geometry_compute_function
         self.srid = srid
 
@@ -397,7 +397,7 @@ class GeospatialGeometryValueComputeFunction(GeospatialGeometryComputeFunction):
     Accepts a well-known text of the geometry prefixed with a spatial reference identifier,
     see https://docs.geotools.org/stable/javadocs/org/opengis/referencing/doc-files/WKT.html"""
 
-    def __init__(self, ewkt: str):
+    def __init__(self, ewkt: str) -> None:
         self.ewkt = ewkt
 
     def to_json_payload(self) -> dict:
@@ -409,7 +409,7 @@ class GeospatialGeometryValueComputeFunction(GeospatialGeometryComputeFunction):
 class GeospatialComputedItem(CogniteResource):
     """A representation of an item computed from geospatial."""
 
-    def __init__(self, resource: Dict[str, Any], cognite_client: Optional[CogniteClient] = None):
+    def __init__(self, resource: Dict[str, Any], cognite_client: Optional[CogniteClient] = None) -> None:
         self.resource = resource
         self._cognite_client = cast("CogniteClient", cognite_client)
 
@@ -434,7 +434,9 @@ class GeospatialComputedItemList(CogniteResourceList[GeospatialComputedItem]):
 class GeospatialComputedResponse(CogniteResource):
     "The geospatial compute response."
 
-    def __init__(self, computed_item_list: GeospatialComputedItemList, cognite_client: Optional[CogniteClient] = None):
+    def __init__(
+        self, computed_item_list: GeospatialComputedItemList, cognite_client: Optional[CogniteClient] = None
+    ) -> None:
         self.items = computed_item_list
         self._cognite_client = cast("CogniteClient", cognite_client)
 

@@ -13,7 +13,7 @@ class TransformationDestination:
         type (Optional[str]): Used as data type identifier on transformation creation/retrieval.
     """
 
-    def __init__(self, type: Optional[str] = None):
+    def __init__(self, type: Optional[str] = None) -> None:
         self.type = type
 
     def __hash__(self) -> int:
@@ -153,7 +153,7 @@ class TransformationDestination:
 
 
 class RawTable(TransformationDestination):
-    def __init__(self, database: Optional[str] = None, table: Optional[str] = None):
+    def __init__(self, database: Optional[str] = None, table: Optional[str] = None) -> None:
         super().__init__(type="raw")
         self.database = database
         self.table = table
@@ -163,7 +163,7 @@ class RawTable(TransformationDestination):
 
 
 class SequenceRows(TransformationDestination):
-    def __init__(self, external_id: Optional[str] = None):
+    def __init__(self, external_id: Optional[str] = None) -> None:
         super().__init__(type="sequence_rows")
         self.external_id = external_id
 
@@ -172,7 +172,7 @@ class SequenceRows(TransformationDestination):
 
 
 class ViewInfo:
-    def __init__(self, space: str, external_id: str, version: str):
+    def __init__(self, space: str, external_id: str, version: str) -> None:
         self.space = space
         self.external_id = external_id
         self.version = version
@@ -185,7 +185,7 @@ class ViewInfo:
 
 
 class EdgeType:
-    def __init__(self, space: str, external_id: str):
+    def __init__(self, space: str, external_id: str) -> None:
         self.space = space
         self.external_id = external_id
 
@@ -204,7 +204,7 @@ class DataModelInfo:
         version: str,
         destination_type: str,
         destination_relationship_from_type: Optional[str] = None,
-    ):
+    ) -> None:
         self.space = space
         self.external_id = external_id
         self.version = version
@@ -220,7 +220,7 @@ class Nodes(TransformationDestination):
         self,
         view: Optional[ViewInfo] = None,
         instance_space: Optional[str] = None,
-    ):
+    ) -> None:
         super().__init__(type="nodes")
         self.view = view
         self.instance_space = instance_space
@@ -239,7 +239,7 @@ class Edges(TransformationDestination):
         view: Optional[ViewInfo] = None,
         instance_space: Optional[str] = None,
         edge_type: Optional[EdgeType] = None,
-    ):
+    ) -> None:
         super().__init__(type="edges")
         self.view = view
         self.instance_space = instance_space
@@ -260,7 +260,7 @@ class Instances(TransformationDestination):
         self,
         data_model: Optional[DataModelInfo] = None,
         instance_space: Optional[str] = None,
-    ):
+    ) -> None:
         super().__init__(type="instances")
         self.data_model = data_model
         self.instance_space = instance_space
@@ -282,7 +282,7 @@ class OidcCredentials:
         token_uri: Optional[str] = None,
         audience: Optional[str] = None,
         cdf_project_name: Optional[str] = None,
-    ):
+    ) -> None:
         self.client_id = client_id
         self.client_secret = client_secret
         self.scopes = scopes
@@ -308,7 +308,7 @@ class NonceCredentials:
         session_id: int,
         nonce: str,
         cdf_project_name: str,
-    ):
+    ) -> None:
         self.session_id = session_id
         self.nonce = nonce
         self.cdf_project_name = cdf_project_name
@@ -333,7 +333,7 @@ class TransformationBlockedInfo:
         created_time (Optional[int]): Timestamp when the transformation was blocked.
     """
 
-    def __init__(self, reason: Optional[str] = None, created_time: Optional[int] = None):
+    def __init__(self, reason: Optional[str] = None, created_time: Optional[int] = None) -> None:
         self.reason = reason
         self.created_time = created_time
 

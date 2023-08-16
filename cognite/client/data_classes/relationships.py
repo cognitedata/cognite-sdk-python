@@ -64,7 +64,7 @@ class Relationship(CogniteResource):
         created_time: Optional[int] = None,
         last_updated_time: Optional[int] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.external_id = external_id
         self.source_external_id = source_external_id
         self.source_type = source_type
@@ -156,7 +156,7 @@ class RelationshipFilter(CogniteFilter):
         active_at_time: Optional[Dict[str, int]] = None,
         labels: Optional[LabelFilter] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.source_external_ids = source_external_ids
         self.source_types = source_types
         self.target_external_ids = target_external_ids
@@ -187,7 +187,7 @@ class RelationshipUpdate(CogniteUpdate):
     """
 
     # Relationships have only an external_id and do not expose id
-    def __init__(self, external_id: str):
+    def __init__(self, external_id: str) -> None:
         self._id = None
         self._external_id = external_id
         self._update_object = {}

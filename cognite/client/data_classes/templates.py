@@ -45,7 +45,7 @@ class TemplateGroup(CogniteResource):
         created_time: Optional[int] = None,
         last_updated_time: Optional[int] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.external_id = external_id
         self.description = description
         self.owners = owners
@@ -85,7 +85,7 @@ class TemplateGroupVersion(CogniteResource):
         created_time: Optional[int] = None,
         last_updated_time: Optional[int] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.schema = schema
         self.version = version
         self.conflict_mode = conflict_mode
@@ -106,7 +106,7 @@ class ConstantResolver(CogniteResource):
         cognite_client (Optional[CogniteClient]): No description.
     """
 
-    def __init__(self, value: Optional[Any] = None, cognite_client: Optional[CogniteClient] = None):
+    def __init__(self, value: Optional[Any] = None, cognite_client: Optional[CogniteClient] = None) -> None:
         self.type = "constant"
         self.value = value
         self._cognite_client = cast("CogniteClient", cognite_client)
@@ -130,7 +130,7 @@ class RawResolver(CogniteResource):
         row_key: Optional[str] = None,
         column_name: Optional[str] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.type = "raw"
         self.db_name = db_name
         self.table_name = table_name
@@ -163,7 +163,7 @@ class SyntheticTimeSeriesResolver(CogniteResource):
         is_string: Optional[bool] = None,
         unit: Optional[str] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.type = "syntheticTimeSeries"
         self.expression = expression
         self.name = name
@@ -221,7 +221,7 @@ class TemplateInstance(CogniteResource):
         created_time: Optional[int] = None,
         last_updated_time: Optional[int] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.external_id = external_id
         self.template_name = template_name
         self.field_resolvers = field_resolvers
@@ -370,7 +370,7 @@ class View(CogniteResource):
         created_time: Optional[int] = None,
         last_updated_time: Optional[int] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.external_id = external_id
         self.source = source
         self.data_set_id = data_set_id
@@ -444,7 +444,7 @@ class GraphQlError(CogniteResource):
         path: Optional[List[str]] = None,
         locations: Optional[List[Dict[str, Any]]] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.message = message
         self.path = path
         self.locations = locations
@@ -457,7 +457,7 @@ class GraphQlResponse(CogniteResource):
         data: Optional[Any] = None,
         errors: Optional[List[GraphQlError]] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.data = data
         self.errors = errors
         self._cognite_client = cast("CogniteClient", cognite_client)

@@ -96,7 +96,7 @@ class PriorityThreadPoolExecutor(ThreadPoolExecutor):
     regular ThreadPoolExecutor.
     """
 
-    def __init__(self, max_workers=None):
+    def __init__(self, max_workers=None) -> None:
         super().__init__(max_workers)
         self._work_queue = PriorityQueue()
         self._task_counter = itertools.count().__next__

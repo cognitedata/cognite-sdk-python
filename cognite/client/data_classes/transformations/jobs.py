@@ -37,7 +37,7 @@ class TransformationJobMetric(CogniteResource):
         name: Optional[str] = None,
         count: Optional[int] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.timestamp = timestamp
         self.name = name
         self.count = count
@@ -95,7 +95,7 @@ class TransformationJob(CogniteResource):
         finished_time: Optional[int] = None,
         last_seen_time: Optional[int] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.id = id
         self.status = status
         self.transformation_id = transformation_id
@@ -269,6 +269,8 @@ class TransformationJobFilter(CogniteFilter):
         transformation_external_id (Optional[str]): Filter jobs by transformation external ID.
     """
 
-    def __init__(self, transformation_id: Optional[int] = None, transformation_external_id: Optional[str] = None):
+    def __init__(
+        self, transformation_id: Optional[int] = None, transformation_external_id: Optional[str] = None
+    ) -> None:
         self.transformation_id = transformation_id
         self.transformation_external_id = transformation_external_id

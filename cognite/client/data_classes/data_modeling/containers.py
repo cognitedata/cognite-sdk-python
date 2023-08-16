@@ -46,7 +46,7 @@ class ContainerCore(DataModelingResource):
         constraints: Optional[dict[str, Constraint]] = None,
         indexes: Optional[dict[str, Index]] = None,
         **_: Any,
-    ):
+    ) -> None:
         self.space = space
         self.external_id = external_id
         self.description = description
@@ -106,7 +106,7 @@ class ContainerApply(ContainerCore):
         used_for: Optional[Literal["node", "edge", "all"]] = None,
         constraints: Optional[dict[str, Constraint]] = None,
         indexes: Optional[dict[str, Index]] = None,
-    ):
+    ) -> None:
         validate_data_modeling_identifier(space, external_id)
         super().__init__(space, external_id, properties, description, name, used_for, constraints, indexes)
 
@@ -143,7 +143,7 @@ class Container(ContainerCore):
         constraints: Optional[dict[str, Constraint]] = None,
         indexes: Optional[dict[str, Index]] = None,
         **_: Any,
-    ):
+    ) -> None:
         super().__init__(space, external_id, properties, description, name, used_for, constraints, indexes)
         self.is_global = is_global
         self.last_updated_time = last_updated_time
@@ -202,7 +202,7 @@ class ContainerFilter(CogniteFilter):
         include_global (bool): Whether the global containers should be included.
     """
 
-    def __init__(self, space: Optional[str] = None, include_global: bool = False):
+    def __init__(self, space: Optional[str] = None, include_global: bool = False) -> None:
         self.space = space
         self.include_global = include_global
 

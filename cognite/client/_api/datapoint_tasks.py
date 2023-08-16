@@ -521,7 +521,7 @@ FIRST_IDX = (0,)
 
 
 class DefaultSortedDict(SortedDict, Generic[T]):
-    def __init__(self, default_factory: Callable[[], T], /, **kw: Any):
+    def __init__(self, default_factory: Callable[[], T], /, **kw: Any) -> None:
         self.default_factory = default_factory
         super().__init__(**kw)
 

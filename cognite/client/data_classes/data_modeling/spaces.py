@@ -18,7 +18,7 @@ class SpaceCore(DataModelingResource):
         name (Optional[str]): Human readable name for the space.
     """
 
-    def __init__(self, space: str, description: Optional[str] = None, name: Optional[str] = None):
+    def __init__(self, space: str, description: Optional[str] = None, name: Optional[str] = None) -> None:
         self.space = space
         self.description = description
         self.name = name
@@ -43,7 +43,7 @@ class SpaceApply(SpaceCore):
         description: Optional[str] = None,
         name: Optional[str] = None,
         **_: Any,
-    ):
+    ) -> None:
         validate_data_modeling_identifier(space)
         super().__init__(space, description, name)
 
@@ -70,7 +70,7 @@ class Space(SpaceCore):
         description: Optional[str] = None,
         name: Optional[str] = None,
         **_: Any,
-    ):
+    ) -> None:
         super().__init__(space, description, name)
         self.is_global = is_global
         self.last_updated_time = last_updated_time

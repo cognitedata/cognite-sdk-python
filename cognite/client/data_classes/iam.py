@@ -33,7 +33,7 @@ class Group(CogniteResource):
         deleted_time: Optional[int] = None,
         metadata: Optional[Dict[str, Any]] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.name = name
         self.source_id = source_id
         self.capabilities = capabilities
@@ -59,7 +59,7 @@ class SecurityCategory(CogniteResource):
 
     def __init__(
         self, name: Optional[str] = None, id: Optional[int] = None, cognite_client: Optional[CogniteClient] = None
-    ):
+    ) -> None:
         self.name = name
         self.id = id
         self._cognite_client = cast("CogniteClient", cognite_client)
@@ -95,7 +95,7 @@ class TokenInspection(CogniteResponse):
         capabilities (List[Dict]): Capabilities associated with this token.
     """
 
-    def __init__(self, subject: str, projects: List[ProjectSpec], capabilities: List[Dict]):
+    def __init__(self, subject: str, projects: List[ProjectSpec], capabilities: List[Dict]) -> None:
         self.subject = subject
         self.projects = projects
         self.capabilities = capabilities
@@ -139,7 +139,7 @@ class CreatedSession(CogniteResource):
         nonce: Optional[str] = None,
         client_id: Optional[str] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.id = id
         self.type = type
         self.status = status
@@ -169,7 +169,7 @@ class Session(CogniteResource):
         expiration_time: Optional[int] = None,
         client_id: Optional[str] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.id = id
         self.type = type
         self.status = status
@@ -190,6 +190,6 @@ class ClientCredentials(CogniteResource):
         client_secret (str): Client secret from identity provider.
     """
 
-    def __init__(self, client_id: str, client_secret: str):
+    def __init__(self, client_id: str, client_secret: str) -> None:
         self.client_id = client_id
         self.client_secret = client_secret

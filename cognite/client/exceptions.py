@@ -44,7 +44,7 @@ class GraphQLErrorSpec:
 
 
 class CogniteGraphQLError(CogniteException):
-    def __init__(self, errors: list[GraphQLErrorSpec]):
+    def __init__(self, errors: list[GraphQLErrorSpec]) -> None:
         self.errors = errors
 
 
@@ -68,7 +68,7 @@ class CogniteMultiException(CogniteException):
         failed: Optional[Sequence] = None,
         unknown: Optional[Sequence] = None,
         unwrap_fn: Optional[Callable] = None,
-    ):
+    ) -> None:
         self.successful = successful or []
         self.failed = failed or []
         self.unknown = unknown or []
@@ -181,7 +181,7 @@ class CogniteNotFoundError(CogniteMultiException):
         failed: Optional[List] = None,
         unknown: Optional[List] = None,
         unwrap_fn: Optional[Callable] = None,
-    ):
+    ) -> None:
         self.not_found = not_found
         super().__init__(successful, failed, unknown, unwrap_fn)
 
@@ -211,7 +211,7 @@ class CogniteDuplicatedError(CogniteMultiException):
         failed: Optional[List] = None,
         unknown: Optional[List] = None,
         unwrap_fn: Optional[Callable] = None,
-    ):
+    ) -> None:
         self.duplicated = duplicated
         super().__init__(successful, failed, unknown, unwrap_fn)
 
@@ -231,7 +231,7 @@ class CogniteImportError(CogniteException):
         message (Optional[str]): The error message to output.
     """
 
-    def __init__(self, module: str, message: Optional[str] = None):
+    def __init__(self, module: str, message: Optional[str] = None) -> None:
         self.module = module
         self.message = message or f"The functionality you are trying to use requires '{self.module}' to be installed."
 

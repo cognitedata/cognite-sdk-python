@@ -27,7 +27,9 @@ class RevisionCameraProperties(dict):
         **kwargs (Any): No description.
     """
 
-    def __init__(self, target: Optional[List[float]] = None, position: Optional[List[float]] = None, **kwargs: Any):
+    def __init__(
+        self, target: Optional[List[float]] = None, position: Optional[List[float]] = None, **kwargs: Any
+    ) -> None:
         self.target = target
         self.position = position
         self.update(kwargs)
@@ -45,7 +47,7 @@ class BoundingBox3D(dict):
         **kwargs (Any): No description.
     """
 
-    def __init__(self, max: Optional[List[float]] = None, min: Optional[List[float]] = None, **kwargs: Any):
+    def __init__(self, max: Optional[List[float]] = None, min: Optional[List[float]] = None, **kwargs: Any) -> None:
         self.max = max
         self.min = min
         self.update(kwargs)
@@ -72,7 +74,7 @@ class ThreeDModel(CogniteResource):
         created_time: Optional[int] = None,
         metadata: Optional[Dict[str, str]] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.name = name
         self.id = id
         self.created_time = created_time
@@ -170,7 +172,7 @@ class ThreeDModelRevision(CogniteResource):
         asset_mapping_count: Optional[int] = None,
         created_time: Optional[int] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.id = id
         self.file_id = file_id
         self.published = published
@@ -287,7 +289,7 @@ class ThreeDNode(CogniteResource):
         properties: Optional[Dict[str, Dict[str, str]]] = None,
         bounding_box: Optional[Union[Dict[str, Any], BoundingBox3D]] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.id = id
         self.tree_index = tree_index
         self.parent_id = parent_id
@@ -329,7 +331,7 @@ class ThreeDAssetMapping(CogniteResource):
         tree_index: Optional[int] = None,
         subtree_size: Optional[int] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.node_id = node_id
         self.asset_id = asset_id
         self.tree_index = tree_index

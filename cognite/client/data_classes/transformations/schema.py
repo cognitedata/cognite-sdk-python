@@ -10,12 +10,14 @@ if TYPE_CHECKING:
 
 
 class TransformationSchemaType:
-    def __init__(self, type: Optional[str] = None):
+    def __init__(self, type: Optional[str] = None) -> None:
         self.type = type
 
 
 class TransformationSchemaArrayType(TransformationSchemaType):
-    def __init__(self, type: Optional[str] = None, element_type: Optional[str] = None, contains_null: bool = False):
+    def __init__(
+        self, type: Optional[str] = None, element_type: Optional[str] = None, contains_null: bool = False
+    ) -> None:
         super().__init__(type=type)
         self.element_type = element_type
         self.contains_null = contains_null
@@ -28,7 +30,7 @@ class TransformationSchemaMapType(TransformationSchemaType):
         key_type: Optional[str] = None,
         value_type: Optional[str] = None,
         value_contains_null: bool = False,
-    ):
+    ) -> None:
         super().__init__(type=type)
         self.key_type = key_type
         self.value_type = value_type
@@ -53,7 +55,7 @@ class TransformationSchemaColumn(CogniteResource):
         type: Optional[TransformationSchemaType] = None,
         nullable: bool = False,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.name = name
         self.sql_type = sql_type
         self.type = type

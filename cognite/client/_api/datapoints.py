@@ -1464,7 +1464,7 @@ class DatapointsAPI(APIClient):
 
 
 class DatapointsBin:
-    def __init__(self, dps_objects_limit: int, dps_limit: int):
+    def __init__(self, dps_objects_limit: int, dps_limit: int) -> None:
         self.dps_objects_limit = dps_objects_limit
         self.dps_limit = dps_limit
         self.current_num_datapoints = 0

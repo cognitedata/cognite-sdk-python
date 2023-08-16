@@ -186,7 +186,7 @@ def _validate_filter(filter: Filter | dict | None, supported_filters: frozenset[
 class CompoundFilter(Filter):
     _filter_name = "compound"
 
-    def __init__(self, *filters: Filter):
+    def __init__(self, *filters: Filter) -> None:
         self._filters = filters
 
     def _filter_body(self, camel_case_property: bool) -> list | dict:
@@ -196,7 +196,7 @@ class CompoundFilter(Filter):
 class FilterWithProperty(Filter):
     _filter_name = "propertyFilter"
 
-    def __init__(self, property: PropertyReference):
+    def __init__(self, property: PropertyReference) -> None:
         self._property = property
 
     def _dump_property(self, camel_case: bool) -> list[str] | tuple[str, ...]:
@@ -209,7 +209,7 @@ class FilterWithProperty(Filter):
 class FilterWithPropertyAndValue(FilterWithProperty):
     _filter_name = "propertyAndValueFilter"
 
-    def __init__(self, property: PropertyReference, value: FilterValue):
+    def __init__(self, property: PropertyReference, value: FilterValue) -> None:
         super().__init__(property)
         self._value = value
 
@@ -220,7 +220,7 @@ class FilterWithPropertyAndValue(FilterWithProperty):
 class FilterWithPropertyAndValueList(FilterWithProperty):
     _filter_name = "propertyAndValueListFilter"
 
-    def __init__(self, property: PropertyReference, values: FilterValueList):
+    def __init__(self, property: PropertyReference, values: FilterValueList) -> None:
         super().__init__(property)
         self._values = values
 
@@ -242,7 +242,7 @@ class Or(CompoundFilter):
 class Not(CompoundFilter):
     _filter_name = "not"
 
-    def __init__(self, filter: Filter):
+    def __init__(self, filter: Filter) -> None:
         super().__init__(filter)
 
     def _filter_body(self, camel_case_property: bool) -> dict:
@@ -277,7 +277,7 @@ class HasData(Filter):
         self,
         containers: Optional[Sequence[tuple[str, str] | ContainerId]] = None,
         views: Optional[Sequence[tuple[str, str, str] | ViewId]] = None,
-    ):
+    ) -> None:
         from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
 
         self.__containers: List[ContainerId] = [ContainerId.load(container) for container in (containers or [])]
@@ -301,7 +301,7 @@ class Range(FilterWithProperty):
         gte: Optional[FilterValue] = None,
         lt: Optional[FilterValue] = None,
         lte: Optional[FilterValue] = None,
-    ):
+    ) -> None:
         super().__init__(property)
         self._gt = gt
         self._gte = gte
@@ -333,7 +333,7 @@ class Overlaps(Filter):
         gte: Optional[FilterValue] = None,
         lt: Optional[FilterValue] = None,
         lte: Optional[FilterValue] = None,
-    ):
+    ) -> None:
         self._start_property = start_property
         self._end_property = end_property
         self._gt = gt

@@ -142,7 +142,7 @@ class Asset(CogniteResource):
         root_id: Optional[int] = None,
         aggregates: Optional[Union[Dict[str, Any], AggregateResultItem]] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         if geo_location is not None and not isinstance(geo_location, GeoLocation):
             raise TypeError("Asset.geo_location should be of type GeoLocation")
         self.external_id = external_id
@@ -365,7 +365,7 @@ class AssetUpdate(CogniteUpdate):
 class AssetList(CogniteResourceList[Asset], IdTransformerMixin):
     _RESOURCE = Asset
 
-    def __init__(self, resources: Collection[Any], cognite_client: Optional[CogniteClient] = None):
+    def __init__(self, resources: Collection[Any], cognite_client: Optional[CogniteClient] = None) -> None:
         super().__init__(resources, cognite_client)
         self._retrieve_chunk_size = 100
 
@@ -463,7 +463,7 @@ class AssetFilter(CogniteFilter):
         labels: Optional[LabelFilter] = None,
         geo_location: Optional[GeoLocationFilter] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.name = name
         self.parent_ids = parent_ids
         self.parent_external_ids = parent_external_ids

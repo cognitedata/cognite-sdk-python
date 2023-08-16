@@ -34,7 +34,7 @@ class LabelDefinition(CogniteResource):
         created_time: Optional[int] = None,
         data_set_id: Optional[int] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.external_id = external_id
         self.name = name
         self.description = description
@@ -59,7 +59,7 @@ class LabelDefinitionFilter(CogniteFilter):
         external_id_prefix: Optional[str] = None,
         data_set_ids: Optional[List[Dict[str, Any]]] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.name = name
         self.external_id_prefix = external_id_prefix
         self.data_set_ids = data_set_ids
@@ -78,7 +78,7 @@ class Label(dict):
         **kwargs (Any): No description.
     """
 
-    def __init__(self, external_id: Optional[str] = None, **kwargs: Any):
+    def __init__(self, external_id: Optional[str] = None, **kwargs: Any) -> None:
         self.external_id = external_id
         self.update(kwargs)
 
@@ -136,7 +136,7 @@ class LabelFilter(dict, CogniteFilter):
         contains_any: Optional[List[str]] = None,
         contains_all: Optional[List[str]] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.contains_any = contains_any
         self.contains_all = contains_all
         self._cognite_client = cast("CogniteClient", cognite_client)

@@ -14,7 +14,6 @@ from typing import (
     Callable,
     Collection,
     Dict,
-    Generator,
     Iterator,
     List,
     Literal,
@@ -130,7 +129,7 @@ class Datapoint(CogniteResource):
         continuous_variance: Optional[float] = None,
         discrete_variance: Optional[float] = None,
         total_variation: Optional[float] = None,
-    ):
+    ) -> None:
         self.timestamp = timestamp
         self.value = value
         self.average = average
@@ -184,7 +183,7 @@ class DatapointsArray(CogniteResource):
         continuous_variance: Optional[NumpyFloat64Array] = None,
         discrete_variance: Optional[NumpyFloat64Array] = None,
         total_variation: Optional[NumpyFloat64Array] = None,
-    ):
+    ) -> None:
         self.id = id
         self.external_id = external_id
         self.is_string = is_string
@@ -437,7 +436,7 @@ class Datapoints(CogniteResource):
         discrete_variance: Optional[List[float]] = None,
         total_variation: Optional[List[float]] = None,
         error: Optional[List[Union[None, str]]] = None,
-    ):
+    ) -> None:
         self.id = id
         self.external_id = external_id
         self.is_string = is_string
@@ -657,7 +656,7 @@ class Datapoints(CogniteResource):
 class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
     _RESOURCE = DatapointsArray
 
-    def __init__(self, resources: Collection[Any], cognite_client: Optional[CogniteClient] = None):
+    def __init__(self, resources: Collection[Any], cognite_client: Optional[CogniteClient] = None) -> None:
         super().__init__(resources, cognite_client)
 
         # Fix what happens for duplicated identifiers:
@@ -776,7 +775,7 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
 class DatapointsList(CogniteResourceList[Datapoints]):
     _RESOURCE = Datapoints
 
-    def __init__(self, resources: Collection[Any], cognite_client: Optional[CogniteClient] = None):
+    def __init__(self, resources: Collection[Any], cognite_client: Optional[CogniteClient] = None) -> None:
         super().__init__(resources, cognite_client)
 
         # Fix what happens for duplicated identifiers:

@@ -196,7 +196,7 @@ class CognitePropertyClassUtil:
 class CogniteResourceList(UserList, Generic[T_CogniteResource]):
     _RESOURCE: Type[CogniteResource]
 
-    def __init__(self, resources: Collection[Any], cognite_client: Optional[CogniteClient] = None):
+    def __init__(self, resources: Collection[Any], cognite_client: Optional[CogniteClient] = None) -> None:
         for resource in resources:
             if not isinstance(resource, self._RESOURCE):
                 raise TypeError(
@@ -340,7 +340,7 @@ class PropertySpec:
 
 
 class CogniteUpdate:
-    def __init__(self, id: Optional[int] = None, external_id: Optional[str] = None):
+    def __init__(self, id: Optional[int] = None, external_id: Optional[str] = None) -> None:
         self._id = id
         self._external_id = external_id
         self._update_object: Dict[str, Any] = {}
@@ -415,7 +415,7 @@ T_CogniteUpdate = TypeVar("T_CogniteUpdate", bound=CogniteUpdate)
 
 
 class CognitePrimitiveUpdate(Generic[T_CogniteUpdate]):
-    def __init__(self, update_object: T_CogniteUpdate, name: str):
+    def __init__(self, update_object: T_CogniteUpdate, name: str) -> None:
         self._update_object = update_object
         self._name = name
 
@@ -446,7 +446,7 @@ class CogniteObjectUpdate(Generic[T_CogniteUpdate]):
 
 
 class CogniteListUpdate(Generic[T_CogniteUpdate]):
-    def __init__(self, update_object: T_CogniteUpdate, name: str):
+    def __init__(self, update_object: T_CogniteUpdate, name: str) -> None:
         self._update_object = update_object
         self._name = name
 

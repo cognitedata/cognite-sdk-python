@@ -44,7 +44,7 @@ class SessionDetails:
         session_id: Optional[int] = None,
         client_id: Optional[str] = None,
         project_name: Optional[str] = None,
-    ):
+    ) -> None:
         self.session_id = session_id
         self.client_id = client_id
         self.project_name = project_name
@@ -127,7 +127,7 @@ class Transformation(CogniteResource):
         source_session: Optional[SessionDetails] = None,
         destination_session: Optional[SessionDetails] = None,
         tags: Optional[List[str]] = None,
-    ):
+    ) -> None:
         self.id = id
         self.external_id = external_id
         self.name = name
@@ -439,7 +439,7 @@ class ContainsAny(TagsFilter):
                 >>> my_tag_filter = ContainsAny(tags=["PUMP", "VALVE"])
     """
 
-    def __init__(self, tags: Optional[List[str]] = None):
+    def __init__(self, tags: Optional[List[str]] = None) -> None:
         self.tags = tags
 
     def dump(self, camel_case: bool = True) -> Dict[str, Any]:
@@ -477,7 +477,7 @@ class TransformationFilter(CogniteFilter):
         last_updated_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
         data_set_ids: Optional[List[Dict[str, Any]]] = None,
         tags: Optional[TagsFilter] = None,
-    ):
+    ) -> None:
         self.include_public = include_public
         self.name_regex = name_regex
         self.query_regex = query_regex

@@ -63,7 +63,7 @@ class Sequence(CogniteResource):
         last_updated_time: Optional[int] = None,
         data_set_id: Optional[int] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.id = id
         self.name = name
         self.description = description
@@ -136,7 +136,7 @@ class SequenceFilter(CogniteFilter):
         last_updated_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
         data_set_ids: Optional[SequenceType[Dict[str, Any]]] = None,
         cognite_client: Optional[CogniteClient] = None,
-    ):
+    ) -> None:
         self.name = name
         self.external_id_prefix = external_id_prefix
         self.metadata = metadata
@@ -317,7 +317,7 @@ class SequenceAggregate(dict):
         **kwargs (Any): No description.
     """
 
-    def __init__(self, count: Optional[int] = None, **kwargs: Any):
+    def __init__(self, count: Optional[int] = None, **kwargs: Any) -> None:
         self.count = count
         self.update(kwargs)
 
@@ -348,7 +348,7 @@ class SequenceData(CogniteResource):
         row_numbers: Optional[SequenceType[int]] = None,
         values: Optional[SequenceType[SequenceType[Union[int, str, float]]]] = None,
         columns: Optional[SequenceType[Dict[str, Any]]] = None,
-    ):
+    ) -> None:
         if rows:
             row_numbers = [r["rowNumber"] for r in rows]
             values = [r["values"] for r in rows]

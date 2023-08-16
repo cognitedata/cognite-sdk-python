@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 class TasksSummary:
     def __init__(
         self, successful_tasks: List, unknown_tasks: List, failed_tasks: List, results: List, exceptions: List
-    ):
+    ) -> None:
         self.successful_tasks = successful_tasks
         self.unknown_tasks = unknown_tasks
         self.failed_tasks = failed_tasks
@@ -145,7 +145,7 @@ class TaskFuture(Protocol[T_Result]):
 
 
 class SyncFuture(TaskFuture[T_Result]):
-    def __init__(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any):
+    def __init__(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any) -> None:
         self._task = functools.partial(fn, *args, **kwargs)
         self._result: Optional[T_Result] = None
         self._is_cancelled = False

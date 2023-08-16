@@ -15,7 +15,7 @@ class TimestampRange(dict):
         **kwargs (Any): No description.
     """
 
-    def __init__(self, max: Optional[int] = None, min: Optional[int] = None, **kwargs: Any):
+    def __init__(self, max: Optional[int] = None, min: Optional[int] = None, **kwargs: Any) -> None:
         self.max = max
         self.min = min
         self.update(kwargs)
@@ -32,7 +32,7 @@ class AggregateResult(dict):
         **kwargs (Any): No description.
     """
 
-    def __init__(self, count: Optional[int] = None, **kwargs: Any):
+    def __init__(self, count: Optional[int] = None, **kwargs: Any) -> None:
         super().__init__(count=count, **kwargs)
         self.count = count
 
@@ -46,7 +46,7 @@ class AggregateUniqueValuesResult(AggregateResult):
         **kwargs (Any): No description.
     """
 
-    def __init__(self, count: Optional[int] = None, value: Optional[Union[int, str]] = None, **kwargs: Any):
+    def __init__(self, count: Optional[int] = None, value: Optional[Union[int, str]] = None, **kwargs: Any) -> None:
         super().__init__(count=count, value=value, **kwargs)
         self.value = value
 
@@ -60,7 +60,7 @@ class AggregateBucketResult(AggregateResult):
         **kwargs (Any): No description.
     """
 
-    def __init__(self, count: Optional[int] = None, value: Optional[Union[int, str]] = None, **kwargs: Any):
+    def __init__(self, count: Optional[int] = None, value: Optional[Union[int, str]] = None, **kwargs: Any) -> None:
         super().__init__(count=count, value=value, **kwargs)
         self.value = value
 
@@ -79,7 +79,7 @@ class GeometryFilter(dict):
         self,
         type: Literal["Point", "LineString", "MultiLineString", "Polygon", "MultiPolygon"],
         coordinates: List,
-    ):
+    ) -> None:
         if type not in self._VALID_TYPES:
             raise ValueError(f"type must be one of {self._VALID_TYPES}")
         self.type = type
@@ -100,7 +100,7 @@ class GeoLocation(dict):
 
     _VALID_TYPES = frozenset({"Feature"})
 
-    def __init__(self, type: Literal["Feature"], geometry: Geometry, properties: Optional[dict] = None):
+    def __init__(self, type: Literal["Feature"], geometry: Geometry, properties: Optional[dict] = None) -> None:
         if type not in self._VALID_TYPES:
             raise ValueError("Only the 'Feature' type is supported.")
         self.type = type
@@ -131,7 +131,7 @@ class GeoLocationFilter(dict):
         shape (GeometryFilter): Represents the points, curves and surfaces in the coordinate space.
     """
 
-    def __init__(self, relation: str, shape: GeometryFilter):
+    def __init__(self, relation: str, shape: GeometryFilter) -> None:
         self.relation = relation
         self.shape = shape
 

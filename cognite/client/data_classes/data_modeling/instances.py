@@ -89,7 +89,7 @@ class InstanceCore(DataModelingResource):
         instance_type (Literal["node", "edge"]): No description.
     """
 
-    def __init__(self, space: str, external_id: str, instance_type: Literal["node", "edge"] = "node"):
+    def __init__(self, space: str, external_id: str, instance_type: Literal["node", "edge"] = "node") -> None:
         self.instance_type = instance_type
         self.space = space
         self.external_id = external_id
@@ -113,7 +113,7 @@ class InstanceApply(InstanceCore):
         instance_type: Literal["node", "edge"] = "node",
         existing_version: Optional[int] = None,
         sources: Optional[list[NodeOrEdgeData]] = None,
-    ):
+    ) -> None:
         validate_data_modeling_identifier(space, external_id)
         super().__init__(space, external_id, instance_type)
         self.existing_version = existing_version
@@ -144,7 +144,7 @@ _T = TypeVar("_T")
 
 
 class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifier, PropertyValue]]):
-    def __init__(self, properties: MutableMapping[ViewId, MutableMapping[PropertyIdentifier, PropertyValue]]):
+    def __init__(self, properties: MutableMapping[ViewId, MutableMapping[PropertyIdentifier, PropertyValue]]) -> None:
         self.data = properties
 
     @classmethod
@@ -247,7 +247,7 @@ class Instance(InstanceCore):
         deleted_time: Optional[int] = None,
         properties: Optional[Properties] = None,
         **_: Any,
-    ):
+    ) -> None:
         super().__init__(space, external_id, instance_type)
         self.version = version
         self.last_updated_time = last_updated_time
@@ -299,7 +299,7 @@ class InstanceApplyResult(InstanceCore):
         last_updated_time: int,
         created_time: int,
         **_: Any,
-    ):
+    ) -> None:
         super().__init__(space, external_id, instance_type)
         self.version = version
         self.was_modified = was_modified
@@ -315,7 +315,7 @@ class InstanceAggregationResult(DataModelingResource):
         group (dict[str, str | int | float | bool]): The grouping used for the aggregation.
     """
 
-    def __init__(self, aggregates: list[AggregatedNumberedValue], group: dict[str, str | int | float | bool]):
+    def __init__(self, aggregates: list[AggregatedNumberedValue], group: dict[str, str | int | float | bool]) -> None:
         self.aggregates = aggregates
         self.group = group
 
@@ -375,7 +375,7 @@ class NodeApply(InstanceApply):
         external_id: str,
         existing_version: Optional[int] = None,
         sources: Optional[list[NodeOrEdgeData]] = None,
-    ):
+    ) -> None:
         super().__init__(space, external_id, "node", existing_version, sources)
 
     def as_id(self) -> NodeId:
@@ -406,7 +406,7 @@ class Node(Instance):
         deleted_time: Optional[int] = None,
         properties: Optional[Properties] = None,
         **_: Any,
-    ):
+    ) -> None:
         super().__init__(space, external_id, version, last_updated_time, created_time, "node", deleted_time, properties)
 
     def as_apply(self, source: ViewIdentifier | ContainerIdentifier, existing_version: int) -> NodeApply:
@@ -466,7 +466,7 @@ class NodeApplyResult(InstanceApplyResult):
         last_updated_time: int,
         created_time: int,
         **_: Any,
-    ):
+    ) -> None:
         super().__init__(
             instance_type="node",
             space=space,
@@ -503,7 +503,7 @@ class EdgeApply(InstanceApply):
         end_node: DirectRelationReference | tuple[str, str],
         existing_version: Optional[int] = None,
         sources: Optional[list[NodeOrEdgeData]] = None,
-    ):
+    ) -> None:
         super().__init__(space, external_id, "edge", existing_version, sources)
         self.type = type if isinstance(type, DirectRelationReference) else DirectRelationReference.load(type)
         self.start_node = (
@@ -567,7 +567,7 @@ class Edge(Instance):
         deleted_time: Optional[int] = None,
         properties: Optional[Properties] = None,
         **_: Any,
-    ):
+    ) -> None:
         super().__init__(space, external_id, version, last_updated_time, created_time, "edge", deleted_time, properties)
         self.type = type
         self.start_node = start_node
@@ -648,7 +648,7 @@ class EdgeApplyResult(InstanceApplyResult):
         last_updated_time: int,
         created_time: int,
         **_: Any,
-    ):
+    ) -> None:
         super().__init__(
             instance_type="edge",
             space=space,
@@ -703,7 +703,7 @@ class NodeList(CogniteResourceList[Node]):
 
 
 class NodeListWithCursor(NodeList):
-    def __init__(self, resources: Collection[Any], cognite_client: Optional[CogniteClient] = None):
+    def __init__(self, resources: Collection[Any], cognite_client: Optional[CogniteClient] = None) -> None:
         super().__init__(resources, cognite_client)
         self.cursor: str | None = None
 
@@ -748,7 +748,7 @@ class EdgeList(CogniteResourceList[Edge]):
 
 
 class EdgeListWithCursor(EdgeList):
-    def __init__(self, resources: Collection[Any], cognite_client: Optional[CogniteClient] = None):
+    def __init__(self, resources: Collection[Any], cognite_client: Optional[CogniteClient] = None) -> None:
         super().__init__(resources, cognite_client)
         self.cursor: str | None = None
 
@@ -773,7 +773,7 @@ class InstanceSort(CogniteFilter):
         property: list[str] | tuple[str, ...],
         direction: Literal["ascending", "descending"] = "ascending",
         nulls_first: bool = False,
-    ):
+    ) -> None:
         self.property = property
         self.direction = direction
         self.nulls_first = nulls_first

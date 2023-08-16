@@ -48,7 +48,7 @@ class HTTPClientConfig:
         max_retries_status: int,
         max_retries_read: int,
         max_retries_connect: int,
-    ):
+    ) -> None:
         self.status_codes_to_retry = status_codes_to_retry
         self.backoff_factor = backoff_factor
         self.max_backoff_seconds = max_backoff_seconds
@@ -59,7 +59,7 @@ class HTTPClientConfig:
 
 
 class _RetryTracker:
-    def __init__(self, config: HTTPClientConfig):
+    def __init__(self, config: HTTPClientConfig) -> None:
         self.config = config
         self.status = 0
         self.read = 0
@@ -98,7 +98,7 @@ class HTTPClient:
         session: requests.Session,
         refresh_auth_header: Callable[[MutableMapping[str, Any]], None],
         retry_tracker_factory: Callable[[HTTPClientConfig], _RetryTracker] = _RetryTracker,
-    ):
+    ) -> None:
         self.session = session
         self.config = config
         self.refresh_auth_header = refresh_auth_header

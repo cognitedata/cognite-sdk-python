@@ -181,7 +181,7 @@ class AnnotationUpdate(CogniteUpdate):
         id (int): A server-generated ID for the object.
     """
 
-    def __init__(self, id: int):
+    def __init__(self, id: int) -> None:
         super().__init__(id=id)
 
     class _StrUpdate(CognitePrimitiveUpdate):

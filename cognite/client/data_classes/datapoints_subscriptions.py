@@ -50,7 +50,7 @@ class DatapointSubscriptionCore(CogniteResource):
         name: Optional[str] = None,
         description: Optional[str] = None,
         **_: Any,
-    ):
+    ) -> None:
         self.external_id = external_id
         self.partition_count = partition_count
         self.filter = filter
@@ -102,7 +102,7 @@ class DatapointSubscription(DatapointSubscriptionCore):
         name: Optional[str] = None,
         description: Optional[str] = None,
         **_: Any,
-    ):
+    ) -> None:
         super().__init__(external_id, partition_count, filter, name, description)
         self.time_series_count = time_series_count
         self.created_time = created_time
@@ -132,7 +132,7 @@ class DataPointSubscriptionCreate(DatapointSubscriptionCore):
         filter: Optional[Filter] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
-    ):
+    ) -> None:
         if not exactly_one_is_not_none(time_series_ids, filter):
             raise ValueError("Exactly one of time_series_ids and filter must be given")
         _validate_filter(filter, _DATAPOINT_SUBSCRIPTION_SUPPORTED_FILTERS, "DataPointSubscriptions")
@@ -147,7 +147,7 @@ class DataPointSubscriptionUpdate(CogniteUpdate):
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
     """
 
-    def __init__(self, external_id: str):
+    def __init__(self, external_id: str) -> None:
         super().__init__(external_id=external_id)
 
     class _PrimitiveDataPointSubscriptionUpdate(CognitePrimitiveUpdate):
@@ -198,7 +198,7 @@ class TimeSeriesID(CogniteResource):
         external_id (ExternalId | None): The external ID provided by the client. Must be unique for the resource type.
     """
 
-    def __init__(self, id: int, external_id: ExternalId | None = None):
+    def __init__(self, id: int, external_id: ExternalId | None = None) -> None:
         self.id = id
         self.external_id = external_id
 
