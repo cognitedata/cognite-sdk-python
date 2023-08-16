@@ -92,7 +92,7 @@ class CogniteClientMock(MagicMock):
 
         self.diagrams = MagicMock(spec_set=DiagramsAPI)
         self.documents = MagicMock(spec=DocumentsAPI)
-        self.documents.preview = MagicMock(spec_set=DocumentPreviewAPI)
+        self.documents.previews = MagicMock(spec_set=DocumentPreviewAPI)
         self.entity_matching = MagicMock(spec_set=EntityMatchingAPI)
         self.events = MagicMock(spec_set=EventsAPI)
 
