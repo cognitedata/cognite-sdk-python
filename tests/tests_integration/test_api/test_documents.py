@@ -70,6 +70,8 @@ class TestDocumentsAPI:
 
         res = cognite_client.documents.retrieve_content(id=doc.id)
 
+        assert isinstance(res, bytes)
+        res = res.decode("utf-8")
         assert res == content
 
     def test_search_no_filters_no_highlight(self, cognite_client: CogniteClient, text_file_content_pair):
