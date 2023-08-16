@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 
 
 class SessionDetails:
-    """Details of a source session which provid.
+    """Details of a source session.
 
     Args:
         session_id (int): CDF source session ID

@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import inspect
+import importlib
+import itertools
 import re
 from dataclasses import is_dataclass
 from pathlib import Path
-
-from cognite.client._api_client import APIClient
-from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList
-from tests.utils import all_subclasses
 
 
 class Param:
@@ -172,45 +170,45 @@ def get_all_non_inherited_methods(cls):
     ]
 
 
-def format_docstrings_for_subclasses(cls_lst) -> list[str]:
+def format_docstring(cls) -> list[str]:
     failed = []
-    for cls in cls_lst:
-        for attr, method in get_all_non_inherited_methods(cls):
-            # The __init__ method is documented in the class level docstring
-            is_init = attr == "__init__"
-            doc = cls.__doc__ if is_init else method.__doc__
+    for attr, method in get_all_non_inherited_methods(cls):
+        # The __init__ method is documented in the class level docstring
+        is_init = attr == "__init__"
+        doc = cls.__doc__ if is_init else method.__doc__
 
-            if not doc or (is_init and is_dataclass(cls)):
-                continue
+        if not doc or (is_init and is_dataclass(cls)):
+            continue
 
-            try:
-                doc_fmt = DocstrFormatter(doc, method)
-            except (ValueError, IndexError) as e:
-                failed.append(
-                    f"Couldn't parse parameters in docstring for '{cls.__name__}.{attr}', "
-                    f"please inspect manually. Reason: {e}"
-                )
-                continue
+        try:
+            doc_fmt = DocstrFormatter(doc, method)
+        except (ValueError, IndexError) as e:
+            failed.append(
+                f"Couldn't parse parameters in docstring for '{cls.__name__}.{attr}', "
+                f"please inspect manually. Reason: {e}"
+            )
+            continue
 
-            if not doc_fmt.docstring_is_correct():
-                if err_msg := doc_fmt.update_py_file(cls, attr):
-                    failed.append(err_msg)
+        if not doc_fmt.docstring_is_correct():
+            if err_msg := doc_fmt.update_py_file(cls, attr):
+                failed.append(err_msg)
     return failed
 
 
+def find_all_classes_in_sdk():
+    locations = [
+        ".".join(p.parts)[:-3]
+        for p in
+        Path("cognite/client/").glob("**/*.py")
+        if "_pb2.py" not in str(p)
+    ]
+    return {
+        cls
+        for loc in locations
+        for _, cls in inspect.getmembers(importlib.import_module(loc), inspect.isclass)
+        if str(cls).startswith("<class 'cognite.client")
+    }
+
+
 def format_docstrings() -> list[str]:
-    return "\n".join(
-        format_docstrings_for_subclasses(
-            [
-                APIClient,
-                CogniteFilter,
-                CogniteResource,
-                CogniteResourceList,
-                *all_subclasses(dict),
-                *all_subclasses(APIClient),
-                *all_subclasses(CogniteFilter),
-                *all_subclasses(CogniteResource),
-                *all_subclasses(CogniteResourceList),
-            ]
-        )
-    )
+    return "\n".join(itertools.chain.from_iterable(map(format_docstring, find_all_classes_in_sdk())))

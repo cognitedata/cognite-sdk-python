@@ -38,7 +38,7 @@ class CogniteClient:
     All services are made available through this object. See examples below.
 
     Args:
-        config (ClientConfig): The configuration for this client.
+        config (Optional[ClientConfig]): The configuration for this client.
     """
 
     _API_VERSION = "v1"
