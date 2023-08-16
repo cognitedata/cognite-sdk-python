@@ -337,21 +337,18 @@ class DocumentProperty(EnumProperty):
     content = "content"
 
 
-SortablePropertyLike: TypeAlias = Union[SortableSourceFileProperty, SortableDocumentProperty, str, List[str]]
+SortableProperty: TypeAlias = Union[SortableSourceFileProperty, SortableDocumentProperty, str, List[str]]
 
 
 @dataclass
 class DocumentSort:
-    property: SortablePropertyLike
+    property: SortableProperty
     order: Literal["asc", "desc"] = "asc"
 
     @classmethod
     def load(
         cls,
-        data: dict[str, Any]
-        | tuple[SortablePropertyLike, Literal["asc", "desc"]]
-        | SortablePropertyLike
-        | DocumentSort,
+        data: dict[str, Any] | tuple[SortableProperty, Literal["asc", "desc"]] | SortableProperty | DocumentSort,
     ) -> DocumentSort:
         if isinstance(data, cls):
             return data
