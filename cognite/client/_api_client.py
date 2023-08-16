@@ -628,7 +628,7 @@ class APIClient:
         return [cls(**agg) for agg in res.json()["items"]]
 
     @overload
-    def _aggregate2(
+    def _advanced_aggregate(
         self,
         aggregate: Literal["count", "cardinalityValues", "cardinalityProperties"],
         properties: EnumProperty
@@ -646,7 +646,7 @@ class APIClient:
         ...
 
     @overload
-    def _aggregate2(
+    def _advanced_aggregate(
         self,
         aggregate: Literal["uniqueValues", "uniqueProperties"],
         properties: EnumProperty
@@ -663,7 +663,7 @@ class APIClient:
     ) -> UniqueResultList:
         ...
 
-    def _aggregate2(
+    def _advanced_aggregate(
         self,
         aggregate: Literal["count", "cardinalityValues", "cardinalityProperties", "uniqueValues", "uniqueProperties"],
         properties: EnumProperty

@@ -473,7 +473,7 @@ class AssetsAPI(APIClient):
 
         """
         self._validate_filter(advanced_filter)
-        return self._aggregate2(
+        return self._advanced_aggregate(
             "count",
             properties=property,
             filter=filter,
@@ -523,7 +523,7 @@ class AssetsAPI(APIClient):
             if isinstance(property, tuple):
                 property = property[0]
 
-            return self._aggregate2(
+            return self._advanced_aggregate(
                 "cardinalityProperties",
                 path=property,
                 filter=filter,
@@ -531,7 +531,7 @@ class AssetsAPI(APIClient):
                 aggregate_filter=aggregate_filter,
             )
         else:
-            return self._aggregate2(
+            return self._advanced_aggregate(
                 "cardinalityValues",
                 properties=property,
                 filter=filter,
@@ -598,7 +598,7 @@ class AssetsAPI(APIClient):
             if isinstance(property, tuple):
                 property = property[0]
 
-            return self._aggregate2(
+            return self._advanced_aggregate(
                 aggregate="uniqueProperties",
                 path=property,
                 filter=filter,
@@ -606,7 +606,7 @@ class AssetsAPI(APIClient):
                 aggregate_filter=aggregate_filter,
             )
         else:
-            return self._aggregate2(
+            return self._advanced_aggregate(
                 aggregate="uniqueValues",
                 properties=property,
                 filter=filter,

@@ -232,7 +232,7 @@ class CompoundFilter(AggregationFilter):
         return [filter_.dump() for filter_ in self._filters]
 
 
-def _dump_value(value: Value) -> dict[str, str] | str | bool | int | float:
+def _dump_value(value: FilterValue) -> dict[str, str] | str | bool | int | float:
     if isinstance(value, Label):
         return {"externalId": value.external_id}
     return value
@@ -251,7 +251,7 @@ class FilterWithValue(AggregationFilter):
 class FilterWithValueList(AggregationFilter):
     _filter_name = "valueListFilter"
 
-    def __init__(self, values: Sequence[Value]):
+    def __init__(self, values: Sequence[FilterValue]):
         self._values = values
 
     def _filter_body(self) -> dict[str, Any]:

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from pathlib import Path
-from typing import IO, TYPE_CHECKING, Any, Literal, Optional, cast, overload
+from typing import IO, TYPE_CHECKING, Literal, Optional, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import ADVANCED_LIST_LIMIT_DEFAULT
@@ -14,7 +14,6 @@ from cognite.client.data_classes.documents import (
     DocumentList,
     DocumentProperty,
     DocumentSort,
-    DocumentUniqueResultList,
     SortableProperty,
     SourceFileProperty,
     TemporaryLink,
@@ -305,7 +304,9 @@ class DocumentsAPI(APIClient):
 
         """
         _validate_filter(filter)
-        return self._aggregate2("count", filter=filter.dump() if isinstance(filter, Filter) else filter, query=query)
+        return self._advanced_aggregate(
+            "count", filter=filter.dump() if isinstance(filter, Filter) else filter, query=query
+        )
 
     def aggregate_cardinality(
         self,
@@ -357,14 +358,14 @@ class DocumentsAPI(APIClient):
         _validate_filter(filter)
 
         if property == ["sourceFile", "metadata"] or property is SourceFileProperty.metadata:
-            return self._aggregate2(
+            return self._advanced_aggregate(
                 "cardinalityProperties",
                 path=property,
                 query=query,
                 filter=filter.dump() if isinstance(filter, Filter) else filter,
                 aggregate_filter=aggregate_filter,
             )
-        return self._aggregate2(
+        return self._advanced_aggregate(
             "cardinalityValues",
             properties=property,
             query=query,
@@ -431,7 +432,7 @@ class DocumentsAPI(APIClient):
             else "uniqueValues"
         )
 
-        return self._aggregate2(
+        return self._advanced_aggregate(
             aggregate=aggregate,
             properties=property,
             query=query,

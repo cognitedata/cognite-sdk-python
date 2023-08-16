@@ -358,7 +358,7 @@ class TimeSeriesAPI(APIClient):
         api_version = self._api_subversion
         try:
             self._api_subversion = "beta"
-            return self._aggregate2(
+            return self._advanced_aggregate(
                 "count",
                 filter=filter,
                 advanced_filter=advanced_filter,
@@ -416,7 +416,7 @@ class TimeSeriesAPI(APIClient):
         try:
             self._api_subversion = "beta"
             if property == ["metadata"] or property is TimeSeriesProperty.metadata:
-                return self._aggregate2(
+                return self._advanced_aggregate(
                     "cardinalityProperties",
                     path=property,
                     filter=filter,
@@ -424,7 +424,7 @@ class TimeSeriesAPI(APIClient):
                     aggregate_filter=aggregate_filter,
                 )
             else:
-                return self._aggregate2(
+                return self._advanced_aggregate(
                     "cardinalityValues",
                     properties=property,
                     filter=filter,
@@ -495,7 +495,7 @@ class TimeSeriesAPI(APIClient):
         try:
             self._api_subversion = "beta"
             if property == ["metadata"] or property is TimeSeriesProperty.metadata:
-                return self._aggregate2(
+                return self._advanced_aggregate(
                     aggregate="uniqueProperties",
                     path=property,
                     filter=filter,
@@ -503,7 +503,7 @@ class TimeSeriesAPI(APIClient):
                     aggregate_filter=aggregate_filter,
                 )
             else:
-                return self._aggregate2(
+                return self._advanced_aggregate(
                     aggregate="uniqueValues",
                     properties=property,
                     filter=filter,
