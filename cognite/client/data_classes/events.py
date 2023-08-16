@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Union, cast
+
+from typing_extensions import TypeAlias
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -12,7 +14,9 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    EnumProperty,
     PropertySpec,
+    Sort,
 )
 from cognite.client.data_classes.shared import TimestampRange
 
@@ -265,3 +269,70 @@ class EventUpdate(CogniteUpdate):
 
 class EventList(CogniteResourceList[Event]):
     _RESOURCE = Event
+
+    def as_external_ids(self) -> list[str]:
+        external_ids: list[str] = []
+        for x in self:
+            if x.external_id is None:
+                raise ValueError("All events must have external_id")
+            external_ids.append(x.external_id)
+        return external_ids
+
+    def as_ids(self) -> list[int]:
+        ids: list[int] = []
+        for x in self:
+            if x.id is None:
+                raise ValueError("All events must have id")
+            ids.append(x.id)
+        return ids
+
+
+class EventProperty(EnumProperty):
+    asset_ids = "assetIds"
+    created_time = "createdTime"
+    data_set_id = "dataSetId"
+    end_time = "endTime"
+    id = "id"
+    last_updated_time = "lastUpdatedTime"
+    start_time = "startTime"
+    description = "description"
+    external_id = "externalId"
+    metadata = "metadata"
+    source = "source"
+    subtype = "subtype"
+    type = "type"
+
+    @classmethod
+    def metadata_key(cls, key: str) -> list[str]:
+        return ["metadata", key]
+
+
+class SortableEventProperty(EnumProperty):
+    created_time = "createdTime"
+    data_set_id = "dataSetId"
+    description = "description"
+    end_time = "endTime"
+    external_id = "externalId"
+    last_updated_time = "lastUpdatedTime"
+    source = "source"
+    start_time = "startTime"
+    subtype = "subtype"
+    type = "type"
+    score = "_score_"
+
+    @classmethod
+    def metadata_key(cls, key: str) -> list[str]:
+        return ["metadata", key]
+
+
+SortableEventPropertyLike: TypeAlias = Union[SortableEventProperty, str, List[str]]
+
+
+class EventSort(Sort):
+    def __init__(
+        self,
+        property: SortableEventPropertyLike,
+        order: Literal["asc", "desc"] = "asc",
+        nulls: Literal["auto", "first", "last"] = "auto",
+    ):
+        super().__init__(property, order, nulls)

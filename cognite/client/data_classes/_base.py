@@ -25,11 +25,13 @@ from typing import (
     overload,
 )
 
+from typing_extensions import TypeAlias
+
 from cognite.client import utils
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._pandas_helpers import convert_nullable_int_cols, notebook_display_with_fallback
-from cognite.client.utils._text import convert_all_keys_to_camel_case, to_snake_case
+from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case, to_snake_case
 from cognite.client.utils._time import convert_time_attributes_to_datetime
 
 if TYPE_CHECKING:
@@ -622,3 +624,73 @@ class Geometry(dict):
         else:
             output.pop("geometries", None)
         return output
+
+
+SortableProperty: TypeAlias = Union[str, List[str], EnumProperty]
+
+
+class Sort(CogniteResource):
+    def __init__(
+        self,
+        property: SortableProperty,
+        order: Literal["asc", "desc"] = "asc",
+        nulls: Literal["auto", "first", "last"] | None = None,
+    ):
+        self.property = property
+        self.order = order
+        self.nulls = nulls
+
+    @classmethod
+    def load(
+        cls: Type[T_Sort],
+        data: dict[str, Any]
+        | tuple[SortableProperty, Literal["asc", "desc"]]
+        | tuple[SortableProperty, Literal["asc", "desc"], Literal["auto", "first", "last"]]
+        | SortableProperty
+        | T_Sort,
+    ) -> T_Sort:
+        if isinstance(data, cls):
+            return data
+        elif isinstance(data, dict):
+            return cls(property=data["property"], order=data.get("order", "asc"), nulls=data.get("nulls"))
+        elif isinstance(data, tuple) and len(data) == 2 and data[1] in ["asc", "desc"]:
+            return cls(property=data[0], order=data[1])
+        elif (
+            isinstance(data, tuple)
+            and len(data) == 3
+            and data[1] in ["asc", "desc"]
+            and data[2] in ["auto", "first", "last"]  # type: ignore[misc]
+        ):
+            return cls(
+                property=data[0],
+                order=data[1],
+                nulls=data[2],  # type: ignore[misc]
+            )
+        elif isinstance(data, (str, list, EnumProperty)):
+            return cls(
+                property=data,
+            )
+        else:
+            raise ValueError(f"Unable to load {cls.__name__} from {data}")
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        prop = self.property
+        if isinstance(prop, EnumProperty):
+            prop = prop.as_reference()
+        elif isinstance(prop, str):
+            prop = [to_camel_case(prop)]
+        elif isinstance(prop, list):
+            prop = [to_camel_case(p) for p in prop]
+        else:
+            raise ValueError(f"Unable to dump {type(self).__name__} with property {prop}")
+
+        output: dict[str, str | list[str]] = {
+            "property": prop,
+            "order": self.order,
+        }
+        if self.nulls is not None:
+            output["nulls"] = self.nulls
+        return output
+
+
+T_Sort = TypeVar("T_Sort", bound=Sort)

@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import IO, TYPE_CHECKING, Any, Literal, Optional, cast, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import DOCUMENT_LIST_LIMIT_DEFAULT
+from cognite.client._constants import ADVANCED_LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import filters
 from cognite.client.data_classes._base import EnumProperty
 from cognite.client.data_classes.aggregations import AggregationFilter
@@ -450,7 +450,7 @@ class DocumentsAPI(APIClient):
         query: str | None = None,
         filter: Filter | dict | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
-        limit: int = DOCUMENT_LIST_LIMIT_DEFAULT,
+        limit: int = ADVANCED_LIST_LIMIT_DEFAULT,
     ) -> DocumentUniqueResultList:
         """`Find approximate number of unique properties. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
 
@@ -546,7 +546,7 @@ class DocumentsAPI(APIClient):
         highlight: Literal[False] = False,
         filter: Filter | dict | None = None,
         sort: DocumentSort | str | list[str] | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
-        limit: int = DOCUMENT_LIST_LIMIT_DEFAULT,
+        limit: int = ADVANCED_LIST_LIMIT_DEFAULT,
     ) -> DocumentList:
         ...
 
@@ -557,7 +557,7 @@ class DocumentsAPI(APIClient):
         highlight: Literal[True],
         filter: Filter | dict | None = None,
         sort: DocumentSort | str | list[str] | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
-        limit: int = DOCUMENT_LIST_LIMIT_DEFAULT,
+        limit: int = ADVANCED_LIST_LIMIT_DEFAULT,
     ) -> DocumentHighlightList:
         ...
 
@@ -567,7 +567,7 @@ class DocumentsAPI(APIClient):
         highlight: bool = False,
         filter: Filter | dict | None = None,
         sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
-        limit: int = DOCUMENT_LIST_LIMIT_DEFAULT,
+        limit: int = ADVANCED_LIST_LIMIT_DEFAULT,
     ) -> DocumentList | DocumentHighlightList:
         """`Search documents <https://developer.cognite.com/api#tag/Documents/operation/documentsSearch>`_
 
@@ -644,7 +644,7 @@ class DocumentsAPI(APIClient):
             )
         return DocumentList._load((item["item"] for item in results), cognite_client=self._cognite_client)
 
-    def list(self, filter: Filter | dict | None = None, limit: int = DOCUMENT_LIST_LIMIT_DEFAULT) -> DocumentList:
+    def list(self, filter: Filter | dict | None = None, limit: int = ADVANCED_LIST_LIMIT_DEFAULT) -> DocumentList:
         """`List documents <https://developer.cognite.com/api#tag/Documents/operation/documentsList>`_
 
          You can use filters to narrow down the list. Unlike the search method, list does not restrict the number

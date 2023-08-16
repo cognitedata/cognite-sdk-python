@@ -5,9 +5,11 @@ import math
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Literal, Optional, Tuple, Union, cast, overload
 from typing import Sequence as SequenceType
 
+from typing_extensions import TypeAlias
+
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import ADVANCED_LIST_LIMIT_DEFAULT, LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import (
     Sequence,
     SequenceAggregate,
@@ -16,7 +18,10 @@ from cognite.client.data_classes import (
     SequenceFilter,
     SequenceList,
     SequenceUpdate,
+    filters,
 )
+from cognite.client.data_classes.filters import Filter, _validate_filter
+from cognite.client.data_classes.sequences import SequenceSort, SortableSequenceProperty
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._text import convert_all_keys_to_camel_case
@@ -27,6 +32,30 @@ if TYPE_CHECKING:
 
     from cognite.client import CogniteClient
     from cognite.client.config import ClientConfig
+
+SortSpec: TypeAlias = Union[
+    SequenceSort,
+    str,
+    SortableSequenceProperty,
+    Tuple[str, Literal["asc", "desc"]],
+    Tuple[str, Literal["asc", "desc"], Literal["auto", "first", "last"]],
+]
+
+_FILTERS_SUPPORTED: frozenset[type[Filter]] = frozenset(
+    {
+        filters.And,
+        filters.Or,
+        filters.Not,
+        filters.In,
+        filters.Equals,
+        filters.Exists,
+        filters.Range,
+        filters.Prefix,
+        filters.ContainsAny,
+        filters.ContainsAll,
+        filters.Search,
+    }
+)
 
 
 class SequencesAPI(APIClient):
@@ -530,6 +559,78 @@ class SequencesAPI(APIClient):
             filter=filter or {},
             limit=limit,
         )
+
+    def filter(
+        self,
+        filter: Filter | dict,
+        sort: SortSpec | List[SortSpec] | None = None,
+        limit: int = ADVANCED_LIST_LIMIT_DEFAULT,
+    ) -> SequenceList:
+        """`Advanced filter sequences <https://developer.cognite.com/api#tag/Sequences/operation/advancedListSequences>`_
+
+        Advanced filter lets you create complex filtering expressions that combine simple operations,
+        such as equals, prefix, exists, etc., using boolean operators and, or, and not.
+        It applies to basic fields as well as metadata.
+
+        Args:
+            filter: Filter to apply.
+            sort: The criteria to sort by. Can be up to two properties to sort by default to ascending order.
+            limit: Maximum number of results to return. Defaults to 100. Set to -1, float("inf") or None
+                   to return all items.
+
+        Returns:
+            SequenceList: List of sequences that match the filter criteria.
+
+        Examples:
+
+            Find all sequences with asset id '123' and metadata key 'type' equals 'efficency' and
+            return them sorted by created time:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> c = CogniteClient()
+                >>> f = filters
+                >>> is_asset = f.Equals("asset_id", 123)
+                >>> is_efficiency = f.Equals(["metadata", "type"], "efficiency")
+                >>> res = c.time_series.filter(filter=f.And(is_asset, is_efficiency), sort="created_time")
+
+            Note that you can check the API documentation above to see which properties you can filter on
+            with which filters.
+
+            To make it easier to avoid spelling mistakes and easiser to look up available properties
+            for filtering and sorting, you can also use the `SequenceProperty` and `SortableSequenceProperty` enums.
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes.sequences import SequenceProperty, SortableSequenceProperty
+                >>> c = CogniteClient()
+                >>> f = filters
+                >>> is_asset = f.Equals(SequenceProperty.asset_id, 123)
+                >>> is_efficency = f.Equals(SequenceProperty.metadata_key("type"), "efficiency")
+                >>> res = c.time_series.filter(filter=f.And(is_asset, is_efficency),
+                ...                            sort=SortableSequenceProperty.created_time)
+
+        """
+        _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)
+        if sort is None:
+            sort = []
+        elif not isinstance(sort, list):
+            sort = [sort]
+
+        api_version = self._api_subversion
+
+        try:
+            self._api_subversion = "beta"
+            return self._list(
+                list_cls=SequenceList,
+                resource_cls=Sequence,
+                method="POST",
+                limit=limit,
+                advanced_filter=filter,
+                sort=[SequenceSort.load(item).dump(camel_case=True) for item in sort],
+            )
+        finally:
+            self._api_subversion = api_version
 
 
 class SequencesDataAPI(APIClient):

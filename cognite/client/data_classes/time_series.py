@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Union, cast
+
+from typing_extensions import TypeAlias
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -13,7 +15,9 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    EnumProperty,
     PropertySpec,
+    Sort,
 )
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._identifier import Identifier
@@ -306,3 +310,67 @@ class TimeSeriesAggregate(dict):
 
 class TimeSeriesList(CogniteResourceList[TimeSeries]):
     _RESOURCE = TimeSeries
+
+    def as_external_ids(self) -> list[str]:
+        external_ids: list[str] = []
+        for x in self:
+            if x.external_id is None:
+                raise ValueError("All time series must have external_id")
+            external_ids.append(x.external_id)
+        return external_ids
+
+    def as_ids(self) -> list[int]:
+        ids: list[int] = []
+        for x in self:
+            if x.id is None:
+                raise ValueError("All time series must have id")
+            ids.append(x.id)
+        return ids
+
+
+class TimeSeriesProperty(EnumProperty):
+    description = "description"
+    external_id = "externalId"
+    name = "name"
+    unit = "unit"
+    asset_id = "assetId"
+    asset_root_id = "assetRootId"
+    created_time = "createdTime"
+    data_set_id = "dataSetId"
+    id = "id"
+    last_updated_time = "lastUpdatedTime"
+    is_step = "isStep"
+    is_string = "isString"
+    access_categories = "accessCategories"
+    security_categories = "securityCategories"
+
+    @classmethod
+    def metadata_key(cls, key: str) -> list[str]:
+        return ["metadata", key]
+
+
+class SortableTimeSeriesProperty(EnumProperty):
+    asset_id = "assetId"
+    created_time = "createdTime"
+    data_set_id = "dataSetId"
+    description = "description"
+    external_id = "externalId"
+    last_updated_time = "lastUpdatedTime"
+    name = "name"
+
+    @classmethod
+    def metadata_key(cls, key: str) -> list[str]:
+        return ["metadata", key]
+
+
+SortableTimeSeriesPropertyLike: TypeAlias = Union[SortableTimeSeriesProperty, str, List[str]]
+
+
+class TimeSeriesSort(Sort):
+    def __init__(
+        self,
+        property: SortableTimeSeriesProperty,
+        order: Literal["asc", "desc"] = "asc",
+        nulls: Literal["auto", "first", "last"] = "auto",
+    ):
+        super().__init__(property, order, nulls)
