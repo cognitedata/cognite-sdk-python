@@ -132,6 +132,35 @@ def mock_file_download_response(rsps, cognite_client):
 
 
 @pytest.fixture
+def mock_file_download_response_with_folder_structure(rsps, cognite_client):
+    rsps.add(
+        rsps.POST,
+        cognite_client.files._get_base_url_with_base_path() + "/files/byids",
+        status=200,
+        json={"items": [{"id": 1, "name": "file_a", "directory": "/rootdir/subdir"}, {"id": 2, "name": "file_a"}]},
+    )
+
+    def download_link_callback(request):
+        identifier = jsgz_load(request.body)["items"][0]
+        response = {}
+        if "id" in identifier and identifier.get("id") == 1:
+            response = {"items": [{"id": 1, "downloadUrl": "https://download.fileFromSubdir.here"}]}
+        if "id" in identifier and identifier.get("id") == 2:
+            response = {"items": [{"id": 2, "downloadUrl": "https://download.fileNoDir.here"}]}
+        return 200, {}, json.dumps(response)
+
+    rsps.add_callback(
+        rsps.POST,
+        cognite_client.files._get_base_url_with_base_path() + "/files/downloadlink",
+        callback=download_link_callback,
+        content_type="application/json",
+    )
+    rsps.add(rsps.GET, "https://download.fileFromSubdir.here", status=200, body="contentSubDir")
+    rsps.add(rsps.GET, "https://download.fileNoDir.here", status=200, body="contentNoDir")
+    yield rsps
+
+
+@pytest.fixture
 def mock_file_download_response_one_fails(rsps, cognite_client):
     rsps.add(
         rsps.POST,
@@ -490,6 +519,19 @@ class TestFilesAPI:
                 assert b"content1" == fh.read()
             with open(fp2, "rb") as fh:
                 assert b"content2" == fh.read()
+
+    def test_download_with_folder_structure(self, cognite_client, mock_file_download_response_with_folder_structure):
+        with TemporaryDirectory() as dir:
+            cognite_client.files.download(directory=dir, id=[1, 2], keep_folder_structure=True)
+
+            fp1 = os.path.join(dir, "rootdir/subdir/file_a")
+            fp2 = os.path.join(dir, "file_a")
+            assert os.path.isfile(fp1)
+            assert os.path.isfile(fp2)
+            with open(fp1, "rb") as fh:
+                assert b"contentSubDir" == fh.read()
+            with open(fp2, "rb") as fh:
+                assert b"contentNoDir" == fh.read()
 
     @pytest.fixture
     def mock_byids_response__file_with_double_dots(self, rsps, cognite_client):

@@ -744,17 +744,19 @@ class FilesAPI(APIClient):
         directory: Union[str, Path],
         id: Optional[Union[int, Sequence[int]]] = None,
         external_id: Optional[Union[str, Sequence[str]]] = None,
+        keep_folder_structure: bool = False,
     ) -> None:
         """`Download files by id or external id. <https://developer.cognite.com/api#tag/Files/operation/downloadLinks>`_
 
         This method will stream all files to disk, never keeping more than 2MB in memory per worker.
         The files will be stored in the provided directory using the name retrieved from the file metadata in CDF.
-
+        You can choose to keep the folder structure from CDF or not.
 
         Args:
             directory (str): Directory to download the file(s) to.
             id (Union[int, Sequence[int]], optional): Id or list of ids
             external_id (Union[str, Sequence[str]), optional): External ID or list of external ids.
+            keep_folder_structure (bool): Whether or not to keep the folder structure from CDF.
 
         Returns:
             None
@@ -767,12 +769,30 @@ class FilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.files.download(directory="my_directory", id=[1,2,3], external_id=["abc", "def"])
         """
+
         if isinstance(directory, str):
             directory = Path(directory)
+        assert directory.is_dir(), f"{directory} is not a directory"
+
         all_ids = IdentifierSequence.load(id, external_id).as_dicts()
         id_to_metadata = self._get_id_to_metadata_map(all_ids)
-        assert directory.is_dir(), f"{directory} is not a directory"
-        self._download_files_to_directory(directory, all_ids, id_to_metadata)
+
+        if keep_folder_structure:
+            for metadata in id_to_metadata.values():
+                if metadata.directory:
+                    cdf_directory = Path(metadata.directory[1:])  # Making the directory relative
+                else:
+                    cdf_directory = Path("")
+                file_folder = directory / cdf_directory
+
+                file_folder.mkdir(parents=True, exist_ok=True)
+                self._download_files_to_directory(
+                    directory=file_folder,
+                    all_ids=[item for item in all_ids if item.get("id") == metadata.id],
+                    id_to_metadata=id_to_metadata,
+                )
+        else:
+            self._download_files_to_directory(directory, all_ids, id_to_metadata)
 
     def _get_id_to_metadata_map(self, all_ids: Sequence[Dict]) -> Dict[Union[str, int], FileMetadata]:
         ids = [id["id"] for id in all_ids if "id" in id]
