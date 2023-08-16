@@ -32,7 +32,7 @@ class ContainerCore(DataModelingResource):
         used_for (Optional[Literal["node", "edge", "all"]]): Should this operation apply to nodes, edges or both.
         constraints (Optional[dict[str, Constraint]]): Set of constraints to apply to the container
         indexes (Optional[dict[str, Index]]): Set of indexes to apply to the container.
-        _ (Any): No description.
+        **_ (Any): No description.
     """
 
     def __init__(
@@ -126,7 +126,7 @@ class Container(ContainerCore):
         used_for (Literal["node", "edge", "all"]): Should this operation apply to nodes, edges or both.
         constraints (Optional[dict[str, Constraint]]): Set of constraints to apply to the container
         indexes (Optional[dict[str, Index]]): Set of indexes to apply to the container.
-        _ (Any): No description.
+        **_ (Any): No description.
     """
 
     def __init__(

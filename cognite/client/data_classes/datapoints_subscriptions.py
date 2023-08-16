@@ -88,7 +88,7 @@ class DatapointSubscription(DatapointSubscriptionCore):
         filter (Optional[Filter]): If present, the subscription is defined by this filter.
         name (Optional[str]): No description.
         description (Optional[str]): A summary explanation for the subscription.
-        _ (Any): No description.
+        **_ (Any): No description.
     """
 
     def __init__(

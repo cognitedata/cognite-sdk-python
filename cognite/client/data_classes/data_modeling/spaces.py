@@ -34,7 +34,7 @@ class SpaceApply(SpaceCore):
         space (str): A unique identifier for space.
         description (Optional[str]): Textual description of the space
         name (Optional[str]): Human readable name for the space.
-        _ (Any): No description.
+        **_ (Any): No description.
     """
 
     def __init__(
@@ -58,7 +58,7 @@ class Space(SpaceCore):
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         description (Optional[str]): Textual description of the space
         name (Optional[str]): Human readable name for the space.
-        _ (Any): No description.
+        **_ (Any): No description.
     """
 
     def __init__(

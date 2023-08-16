@@ -233,7 +233,7 @@ class Instance(InstanceCore):
         instance_type (Literal["node", "edge"]): No description.
         deleted_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
         properties (Optional[Properties]): Properties of the instance.
-        _ (Any): No description.
+        **_ (Any): No description.
     """
 
     def __init__(
@@ -286,7 +286,7 @@ class InstanceApplyResult(InstanceCore):
         was_modified (bool): Whether the instance was modified by the ingestion.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        _ (Any): No description.
+        **_ (Any): No description.
     """
 
     def __init__(
@@ -393,7 +393,7 @@ class Node(Instance):
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         deleted_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
         properties (Optional[Properties]): Properties of the node.
-        _ (Any): No description.
+        **_ (Any): No description.
     """
 
     def __init__(
@@ -454,7 +454,7 @@ class NodeApplyResult(InstanceApplyResult):
         was_modified (bool): Whether the node was modified by the ingestion.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        _ (Any): No description.
+        **_ (Any): No description.
     """
 
     def __init__(
@@ -551,7 +551,7 @@ class Edge(Instance):
         end_node (DirectRelationReference): Reference to the direct relation. The reference consists of a space and an external-id.
         deleted_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
         properties (Optional[Properties]): No description.
-        _ (Any): No description.
+        **_ (Any): No description.
     """
 
     def __init__(
@@ -636,7 +636,7 @@ class EdgeApplyResult(InstanceApplyResult):
         was_modified (bool): Whether the edge was modified by the ingestion.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        _ (Any): No description.
+        **_ (Any): No description.
     """
 
     def __init__(

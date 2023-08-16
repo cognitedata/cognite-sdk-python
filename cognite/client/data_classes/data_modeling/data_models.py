@@ -23,7 +23,7 @@ class DataModelCore(DataModelingResource):
         version (str): DMS version.
         description (Optional[str]): Textual description of the data model
         name (Optional[str]): Human readable name for the data model.
-        _ (Any): No description.
+        **_ (Any): No description.
     """
 
     def __init__(
@@ -110,7 +110,7 @@ class DataModel(DataModelCore, Generic[T_View]):
         description (Optional[str]): Textual description of the data model
         name (Optional[str]): Human readable name for the data model.
         views (Optional[list[T_View]]): List of views included in this data model.
-        _ (Any): No description.
+        **_ (Any): No description.
     """
 
     def __init__(

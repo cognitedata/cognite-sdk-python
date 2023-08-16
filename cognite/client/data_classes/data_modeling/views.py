@@ -134,7 +134,7 @@ class View(ViewCore):
         writable (bool): Whether the view supports write operations.
         used_for (Literal["node", "edge", "all"]): Does this view apply to nodes, edges or both.
         is_global (bool): Whether this is a global container, i.e., one of the out-of-the-box models.
-        _ (Any): No description.
+        **_ (Any): No description.
     """
 
     def __init__(

@@ -81,7 +81,6 @@ class Query:
                                                          as part of the query object, and referenced in the filter itself.
         cursors (Optional[Mapping[str, Optional[str]]]): A dictionary of cursors to use in the query. These are for
                                                          pagination purposes, for example, in the sync endpoint.
-
     """
 
     def __init__(
