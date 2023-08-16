@@ -10,13 +10,12 @@ from cognite.client._constants import (
 )
 from cognite.client.data_classes.datapoints_subscriptions import (
     DatapointSubscription,
+    DatapointSubscriptionBatch,
     DataPointSubscriptionCreate,
     DatapointSubscriptionList,
     DatapointSubscriptionPartition,
     DataPointSubscriptionUpdate,
-    DatapointsUpdate,
-    SubscriptionTimeSeriesUpdate,
-    _DatapointSubscriptionBatch,
+    _DatapointSubscriptionBatchWithPartitions,
 )
 from cognite.client.utils._identifier import IdentifierSequence
 
@@ -186,8 +185,8 @@ class DatapointsSubscriptionAPI(APIClient):
         external_id: str,
         start: str | None = None,
         limit: int = DATAPOINT_SUBSCRIPTION_DATA_LIST_LIMIT_DEFAULT,
-    ) -> Iterator[tuple[list[DatapointsUpdate], SubscriptionTimeSeriesUpdate]]:
-        """`Fetch the next batch of data from a given subscription and partition(s). <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/listSubscriptionData>`_
+    ) -> Iterator[DatapointSubscriptionBatch]:
+        """`Iterate over data from a given subscription. <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/listSubscriptionData>`_
 
         Data can be ingested datapoints and time ranges where data is deleted. This endpoint will also return changes to
         the subscription itself, that is, if time series are added or removed from the subscription.
@@ -205,7 +204,7 @@ class DatapointsSubscriptionAPI(APIClient):
             limit (int): Approximate number of results to return across all partitions.
 
         Yields:
-           Iterator[tuple[list[DatapointUpdate], Optional[SubscriptionTimeSeriesUpdate]]]: A tuple of list datapoint updates and timeseries updates.
+           Iterator[DatapointSubscriptionBatch]: Changes to the subscription and data in the subscribed time series.
 
         Examples:
 
@@ -213,19 +212,19 @@ class DatapointsSubscriptionAPI(APIClient):
 
             >>> from cognite.client import CogniteClient
             >>> c = CogniteClient()
-            >>> for changed_data, changed_timeseries in c.time_series.subscriptions.iterate_data("my_subscription"):
-            ...     print(f"Added {len(changed_timeseries.added)} timeseries")
-            ...     print(f"Removed {len(changed_timeseries.removed)} timeseries")
-            ...     print(f"Changed data in {len(changed_data)} timeseries")
+            >>> for batch in c.time_series.subscriptions.iterate_data("my_subscription"):
+            ...     print(f"Added {len(batch.subscription_changes.added)} timeseries")
+            ...     print(f"Removed {len(batch.subscription_changes.removed)} timeseries")
+            ...     print(f"Changed data in {len(batch.updates)} timeseries")
 
         Iterate over all changes in the subscripted timeseries the last 3 days:
 
             >>> from cognite.client import CogniteClient
             >>> c = CogniteClient()
-            >>> for changed_data, changed_timeseries in c.time_series.subscriptions.iterate_data("my_subscription", "3d-ago"):
-            ...     print(f"Added {len(changed_timeseries.added)} timeseries")
-            ...     print(f"Removed {len(changed_timeseries.removed)} timeseries")
-            ...     print(f"Changed data in {len(changed_data)} timeseries")
+            >>> for batch in c.time_series.subscriptions.iterate_data("my_subscription", "3d-ago"):
+            ...     print(f"Added {len(batch.subscription_changes.added)} timeseries")
+            ...     print(f"Removed {len(batch.subscription_changes.removed)} timeseries")
+            ...     print(f"Changed data in {len(batch.updates)} timeseries")
 
         """
         self._experimental_warning()
@@ -244,11 +243,10 @@ class DatapointsSubscriptionAPI(APIClient):
             start = None
 
             res = self._post(url_path=self._RESOURCE_PATH + "/data/list", json=body)
-            batch = _DatapointSubscriptionBatch._load(res.json())
+            batch = _DatapointSubscriptionBatchWithPartitions._load(res.json())
 
-            yield batch.updates, batch.subscription_changes
-            if not batch.has_next:
-                return
+            yield DatapointSubscriptionBatch(batch.updates, batch.subscription_changes, batch.has_next)
+
             current_partitions = batch.partitions
 
     def list(self, limit: int = DATAPOINT_SUBSCRIPTIONS_LIST_LIMIT_DEFAULT) -> DatapointSubscriptionList:
