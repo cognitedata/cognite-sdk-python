@@ -299,7 +299,8 @@ class TimeSeriesAggregate(dict):
     """No description.
 
     Args:
-        count (int): No description.
+        count (Optional[int]): No description.
+        **kwargs (Any): No description.
     """
 
     def __init__(self, count: Optional[int] = None, **kwargs: Any) -> None:

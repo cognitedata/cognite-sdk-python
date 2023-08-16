@@ -29,9 +29,10 @@ class EndTimeFilter(dict):
     """Either range between two timestamps or isNull filter condition.
 
     Args:
-        max (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        min (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        is_null (bool): Set to true if you want to search for data with field value not set, false to search for cases where some value is present.
+        max (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        min (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        is_null (Optional[bool]): Set to true if you want to search for data with field value not set, false to search for cases where some value is present.
+        **kwargs (Any): No description.
     """
 
     def __init__(

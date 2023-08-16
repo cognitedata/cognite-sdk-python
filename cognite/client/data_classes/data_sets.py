@@ -173,7 +173,8 @@ class DataSetAggregate(dict):
     """Aggregation group of data sets
 
     Args:
-        count (int): Size of the aggregation group
+        count (Optional[int]): Size of the aggregation group
+        **kwargs (Any): No description.
     """
 
     def __init__(self, count: Optional[int] = None, **kwargs: Any) -> None:

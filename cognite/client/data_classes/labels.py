@@ -74,7 +74,8 @@ class Label(dict):
     """A label assigned to a resource.
 
     Args:
-        external_id (str): The external id to the attached label.
+        external_id (Optional[str]): The external id to the attached label.
+        **kwargs (Any): No description.
     """
 
     def __init__(self, external_id: Optional[str] = None, **kwargs: Any):

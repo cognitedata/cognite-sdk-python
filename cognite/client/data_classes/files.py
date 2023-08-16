@@ -305,7 +305,8 @@ class FileAggregate(dict):
     """Aggregation results for files
 
     Args:
-        count (int): Number of filtered items included in aggregation
+        count (Optional[int]): Number of filtered items included in aggregation
+        **kwargs (Any): No description.
     """
 
     def __init__(self, count: Optional[int] = None, **kwargs: Any) -> None:

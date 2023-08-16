@@ -10,8 +10,9 @@ class TimestampRange(dict):
     """Range between two timestamps.
 
     Args:
-        max (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        min (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        max (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        min (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        **kwargs (Any): No description.
     """
 
     def __init__(self, max: Optional[int] = None, min: Optional[int] = None, **kwargs: Any):
@@ -27,7 +28,8 @@ class AggregateResult(dict):
     """Aggregation group
 
     Args:
-        count (int): Size of the aggregation group
+        count (Optional[int]): Size of the aggregation group
+        **kwargs (Any): No description.
     """
 
     def __init__(self, count: Optional[int] = None, **kwargs: Any):
@@ -39,8 +41,9 @@ class AggregateUniqueValuesResult(AggregateResult):
     """Aggregation group
 
     Args:
-        count (int): Size of the aggregation group
-        value (Union(int, str)): A unique value from the requested field
+        count (Optional[int]): Size of the aggregation group
+        value (Optional[Union[int, str]]): A unique value from the requested field
+        **kwargs (Any): No description.
     """
 
     def __init__(self, count: Optional[int] = None, value: Optional[Union[int, str]] = None, **kwargs: Any):
@@ -52,8 +55,9 @@ class AggregateBucketResult(AggregateResult):
     """Aggregation group
 
     Args:
-        count (int): Size of the bucket
-        value (Union(int, str)): A unique value for the bucket
+        count (Optional[int]): Size of the bucket
+        value (Optional[Union[int, str]]): A unique value for the bucket
+        **kwargs (Any): No description.
     """
 
     def __init__(self, count: Optional[int] = None, value: Optional[Union[int, str]] = None, **kwargs: Any):
@@ -64,8 +68,9 @@ class AggregateBucketResult(AggregateResult):
 class GeometryFilter(dict):
     """Represents the points, curves and surfaces in the coordinate space.
 
-    Args: type (str): The geometry type. One of 'Point', 'LineString', 'MultiLineString', 'Polygon', or 'MultiPolygon'.
-          coordinates (List): An array of the coordinates of the geometry. The structure of the elements in this array is determined by the type of geometry.
+    Args:
+        type (Literal["Point", "LineString", "MultiLineString", "Polygon", "MultiPolygon"]): The geometry type.
+        coordinates (List): An array of the coordinates of the geometry. The structure of the elements in this array is determined by the type of geometry.
     """
 
     _VALID_TYPES = frozenset({"Point", "LineString", "MultiLineString", "Polygon", "MultiPolygon"})
@@ -87,9 +92,10 @@ class GeometryFilter(dict):
 class GeoLocation(dict):
     """A GeoLocation object conforming to the GeoJSON spec.
 
-    Args: type (str): The GeoJSON type. Currently only 'Feature' is supported.
-          geometry (object): The geometry type. One of 'Point', 'MultiPoint, 'LineString', 'MultiLineString', 'Polygon', or 'MultiPolygon'.
-          properties (object): Optional additional properties in a String key -> Object value format.
+    Args:
+        type (Literal['Feature']): The GeoJSON type. Currently only 'Feature' is supported.
+        geometry (Geometry): The geometry. One of 'Point', 'MultiPoint, 'LineString', 'MultiLineString', 'Polygon', or 'MultiPolygon'.
+        properties (Optional[dict]): Optional additional properties in a String key -> Object value format.
     """
 
     _VALID_TYPES = frozenset({"Feature"})
@@ -120,8 +126,9 @@ class GeoLocation(dict):
 class GeoLocationFilter(dict):
     """Return only the resource matching the specified geographic relation.
 
-    Args: relation (str): One of the following supported queries: INTERSECTS, DISJOINT, WITHIN.
-          shape (GeometryFilter): Represents the points, curves and surfaces in the coordinate space.
+    Args:
+        relation (str): One of the following supported queries: INTERSECTS, DISJOINT, WITHIN.
+        shape (GeometryFilter): Represents the points, curves and surfaces in the coordinate space.
     """
 
     def __init__(self, relation: str, shape: GeometryFilter):

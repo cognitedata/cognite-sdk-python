@@ -22,8 +22,9 @@ class RevisionCameraProperties(dict):
     """Initial camera position and target.
 
     Args:
-        target (List[float]): Initial camera target.
-        position (List[float]): Initial camera position.
+        target (Optional[List[float]]): Initial camera target.
+        position (Optional[List[float]]): Initial camera position.
+        **kwargs (Any): No description.
     """
 
     def __init__(self, target: Optional[List[float]] = None, position: Optional[List[float]] = None, **kwargs: Any):
@@ -39,8 +40,9 @@ class BoundingBox3D(dict):
     """The bounding box of the subtree with this sector as the root sector. Is null if there are no geometries in the subtree.
 
     Args:
-        max (List[float]): No description.
-        min (List[float]): No description.
+        max (Optional[List[float]]): No description.
+        min (Optional[List[float]]): No description.
+        **kwargs (Any): No description.
     """
 
     def __init__(self, max: Optional[List[float]] = None, min: Optional[List[float]] = None, **kwargs: Any):

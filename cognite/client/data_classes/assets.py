@@ -64,7 +64,8 @@ class AssetAggregate(dict):
     """Aggregation group of assets
 
     Args:
-        count (int): Size of the aggregation group
+        count (Optional[int]): Size of the aggregation group
+        **kwargs (Any): No description.
     """
 
     def __init__(self, count: Optional[int] = None, **kwargs: Any) -> None:
@@ -78,9 +79,10 @@ class AggregateResultItem(dict):
     """Aggregated metrics of the asset
 
     Args:
-        child_count (int): Number of direct descendants for the asset
-        depth (int): Asset path depth (number of levels below root node).
-        path (List[Dict[str, Any]]): IDs of assets on the path to the asset.
+        child_count (Optional[int]): Number of direct descendants for the asset
+        depth (Optional[int]): Asset path depth (number of levels below root node).
+        path (Optional[List[Dict[str, Any]]]): IDs of assets on the path to the asset.
+        **kwargs (Any): No description.
     """
 
     def __init__(
