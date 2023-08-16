@@ -277,6 +277,15 @@ class DatapointsArray(CogniteResource):
         return DatapointsArray(**self._ts_info, **data)
 
     def __iter__(self) -> Iterator[Datapoint]:
+        """Iterate over datapoints
+
+        Warning:
+            For efficient storage, datapoints are not stored as a sequence of (singular) Datapoint
+            objects, so these are created on demand while iterating (slow).
+
+        Returns:
+            Iterator[Datapoint]: yields single Datapoint objects, one by one.
+        """
         # Let's not create a single Datapoint more than we have too:
         attrs, arrays = self._data_fields()
         yield from (
@@ -483,7 +492,7 @@ class Datapoints(CogniteResource):
             dp_args[attr] = values[item]
         return Datapoint(**dp_args)
 
-    def __iter__(self) -> Generator[Datapoint, None, None]:
+    def __iter__(self) -> Iterator[Datapoint]:
         yield from self.__get_datapoint_objects()
 
     def dump(self, camel_case: bool = False) -> Dict[str, Any]:

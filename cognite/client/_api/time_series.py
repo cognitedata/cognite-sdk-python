@@ -138,7 +138,7 @@ class TimeSeriesAPI(APIClient):
 
         Fetches time series as they are iterated over, so you keep a limited number of metadata objects in memory.
 
-        Yields:
+        Returns:
             TimeSeries: yields TimeSeries one by one.
         """
         return cast(Iterator[TimeSeries], self())

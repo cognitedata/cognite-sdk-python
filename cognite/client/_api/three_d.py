@@ -65,7 +65,7 @@ class ThreeDModelsAPI(APIClient):
 
         Fetches models as they are iterated over, so you keep a limited number of models in memory.
 
-        Yields:
+        Returns:
             ThreeDModel: yields models one by one.
         """
         return cast(Iterator[ThreeDModel], self())

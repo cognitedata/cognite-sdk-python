@@ -139,7 +139,7 @@ class EventsAPI(APIClient):
 
         Fetches events as they are iterated over, so you keep a limited number of events in memory.
 
-        Yields:
+        Returns:
             Event: yields Events one by one.
         """
         return cast(Iterator[Event], self())

@@ -68,7 +68,7 @@ class DataSetsAPI(APIClient):
 
         Fetches data sets as they are iterated over, so you keep a limited number of data sets in memory.
 
-        Yields:
+        Returns:
             Event: yields DataSet one by one.
         """
         return cast(Iterator[DataSet], self())

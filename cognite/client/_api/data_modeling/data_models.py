@@ -83,7 +83,7 @@ class DataModelsAPI(APIClient):
 
         Fetches data model as they are iterated over, so you keep a limited number of data model in memory.
 
-        Yields:
+        Returns:
             DataModel: yields DataModels one by one.
         """
         return cast(Iterator[DataModel], self())

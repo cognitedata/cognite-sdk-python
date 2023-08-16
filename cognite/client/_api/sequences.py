@@ -129,7 +129,7 @@ class SequencesAPI(APIClient):
 
         Fetches sequences as they are iterated over, so you keep a limited number of metadata objects in memory.
 
-        Yields:
+        Returns:
             Sequence: yields Sequence one by one.
         """
         return cast(Iterator[Sequence], self())

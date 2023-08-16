@@ -178,7 +178,7 @@ class AssetsAPI(APIClient):
 
         Fetches assets as they are iterated over, so you keep a limited number of assets in memory.
 
-        Yields:
+        Returns:
             Asset: yields Assets one by one.
         """
         return cast(Iterator[Asset], self())

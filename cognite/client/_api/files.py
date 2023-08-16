@@ -137,7 +137,7 @@ class FilesAPI(APIClient):
 
         Fetches file metadata objects as they are iterated over, so you keep a limited number of metadata objects in memory.
 
-        Yields:
+        Returns:
             FileMetadata: yields Files one by one.
         """
         return cast(Iterator[FileMetadata], self())

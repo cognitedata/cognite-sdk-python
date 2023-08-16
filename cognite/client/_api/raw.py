@@ -43,6 +43,11 @@ class RawDatabasesAPI(APIClient):
         )
 
     def __iter__(self) -> Iterator[Database]:
+        """Iterate over databases
+
+        Returns:
+            Database: yields Database one by one.
+        """
         return cast(Iterator[Database], self())
 
     @overload

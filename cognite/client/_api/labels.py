@@ -17,7 +17,7 @@ class LabelsAPI(APIClient):
 
         Fetches Labels as they are iterated over, so you keep a limited number of Labels in memory.
 
-        Yields:
+        Returns:
             LabelDefinition: yields Labels one by one.
         """
         return cast(Iterator[LabelDefinition], self())

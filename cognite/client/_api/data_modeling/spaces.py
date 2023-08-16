@@ -58,7 +58,7 @@ class SpacesAPI(APIClient):
 
         Fetches spaces as they are iterated over, so you keep a limited number of spaces in memory.
 
-        Yields:
+        Returns:
             Space: yields Spaces one by one.
         """
         return cast(Iterator[Space], self())

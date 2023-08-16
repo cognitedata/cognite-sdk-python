@@ -242,7 +242,8 @@ class InstancesAPI(APIClient):
     def __iter__(self) -> Iterator[Node]:
         """Iterate over instances
         Fetches instances as they are iterated over, so you keep a limited number of instances in memory.
-        Yields:
+
+        Returns:
             Instance: yields Instances one by one.
         """
         return cast(Iterator[Node], self(None, "node"))

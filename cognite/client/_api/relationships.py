@@ -140,7 +140,7 @@ class RelationshipsAPI(APIClient):
 
         Fetches relationships as they are iterated over, so you keep a limited number of relationships in memory.
 
-        Yields:
+        Returns:
             Relationship: yields Relationships one by one.
         """
         return cast(Iterator[Relationship], self())

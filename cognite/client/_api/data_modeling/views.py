@@ -81,7 +81,7 @@ class ViewsAPI(APIClient):
 
         Fetches views as they are iterated over, so you keep a limited number of views in memory.
 
-        Yields:
+        Returns:
             View: yields Views one by one.
         """
         return self()

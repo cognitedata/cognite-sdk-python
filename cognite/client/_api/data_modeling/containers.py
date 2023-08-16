@@ -77,7 +77,7 @@ class ContainersAPI(APIClient):
 
         Fetches containers as they are iterated over, so you keep a limited number of containers in memory.
 
-        Yields:
+        Returns:
             Container: yields Containers one by one.
         """
         return cast(Iterator[Container], self())
