@@ -60,7 +60,7 @@ if TYPE_CHECKING:
     from cognite.client.utils._priority_tpe import PriorityThreadPoolExecutor
 
 
-SortArg: TypeAlias = Union[
+SortSpec: TypeAlias = Union[
     AssetSort,
     str,
     SortableAssetProperty,
@@ -749,7 +749,7 @@ class AssetsAPI(APIClient):
     def filter(
         self,
         filter: Filter | dict,
-        sort: SortArg | List[SortArg] | None = None,
+        sort: SortSpec | List[SortSpec] | None = None,
         aggregated_properties: Sequence[Literal["child_count", "path", "depth"]] | None = None,
         limit: int = ADVANCED_LIST_LIMIT_DEFAULT,
     ) -> AssetList:

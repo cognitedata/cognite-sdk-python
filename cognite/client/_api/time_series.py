@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
     from cognite.client.config import ClientConfig
 
-SortArg: TypeAlias = Union[
+SortSpec: TypeAlias = Union[
     TimeSeriesSort,
     str,
     SortableTimeSeriesProperty,
@@ -512,7 +512,7 @@ class TimeSeriesAPI(APIClient):
     def filter(
         self,
         filter: Filter | dict,
-        sort: SortArg | List[SortArg] | None = None,
+        sort: SortSpec | List[SortSpec] | None = None,
         limit: int = ADVANCED_LIST_LIMIT_DEFAULT,
     ) -> TimeSeriesList:
         """`Advanced filter time series <https://developer.cognite.com/api#tag/Time-series/operation/listTimeSeries>`_

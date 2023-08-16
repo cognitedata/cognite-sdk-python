@@ -33,7 +33,7 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
     from cognite.client.config import ClientConfig
 
-SortArg: TypeAlias = Union[
+SortSpec: TypeAlias = Union[
     SequenceSort,
     str,
     SortableSequenceProperty,
@@ -563,7 +563,7 @@ class SequencesAPI(APIClient):
     def filter(
         self,
         filter: Filter | dict,
-        sort: SortArg | List[SortArg] | None = None,
+        sort: SortSpec | List[SortSpec] | None = None,
         limit: int = ADVANCED_LIST_LIMIT_DEFAULT,
     ) -> SequenceList:
         """`Advanced filter sequences <https://developer.cognite.com/api#tag/Sequences/operation/advancedListSequences>`_

@@ -22,7 +22,7 @@ from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 
-SortArg: TypeAlias = Union[
+SortSpec: TypeAlias = Union[
     EventSort,
     str,
     SortableEventProperty,
@@ -523,7 +523,7 @@ class EventsAPI(APIClient):
     def filter(
         self,
         filter: Filter | dict,
-        sort: SortArg | List[SortArg] | None = None,
+        sort: SortSpec | List[SortSpec] | None = None,
         limit: int = ADVANCED_LIST_LIMIT_DEFAULT,
     ) -> EventList:
         """`Advanced filter events <https://developer.cognite.com/api#tag/Events/operation/advancedListEvents>`_
