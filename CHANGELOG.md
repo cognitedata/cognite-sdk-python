@@ -20,6 +20,9 @@ Changes are grouped as follows
 ## [6.15.0] - 2023-08-17
 ### Added
 - Support for the DocumentsAPI with the implementation `client.documents`.
+- Support for advanced filtering for `Events`, `TimeSeries`, `Assets` and `Sequences`. This is available through the 
+  `.filter()` method, for example, `client.events.filter`.
+- Added helper methods `as_external_ids` and `as_ids` for `EventList`, `TimeSeriesList`, `AssetList` and `SequenceList`.
 
 
 ## [6.14.2] - 2023-08-22

@@ -7,8 +7,10 @@ import pytest
 
 import cognite.client.utils._time
 from cognite.client import CogniteClient, utils
-from cognite.client.data_classes import EndTimeFilter, Event, EventFilter, EventUpdate
+from cognite.client.data_classes import EndTimeFilter, Event, EventFilter, EventList, EventUpdate, filters
+from cognite.client.data_classes.events import EventProperty, SortableEventProperty
 from cognite.client.exceptions import CogniteNotFoundError
+from cognite.client.utils import timestamp_to_ms
 from tests.utils import set_request_limit
 
 
@@ -18,6 +20,29 @@ def new_event(cognite_client):
     yield event
     cognite_client.events.delete(id=event.id)
     assert cognite_client.events.retrieve(event.id) is None
+
+
+@pytest.fixture
+def event_list(cognite_client: CogniteClient) -> EventList:
+    prefix = "integration_test:"
+    events = EventList(
+        [
+            Event(
+                external_id=f"{prefix}event1_lorem_ipsum",
+                description="This is a a test event with some lorem ipsum text.",
+                start_time=timestamp_to_ms(datetime(2023, 8, 9, 11, 42)),
+            ),
+            Event(
+                external_id=f"{prefix}event2",
+                description="This is also a test event, this time without the same text as the other one.",
+                end_time=timestamp_to_ms(datetime(2023, 8, 9, 11, 43)),
+            ),
+        ]
+    )
+    retrieved = cognite_client.events.retrieve_multiple(external_ids=events.as_external_ids(), ignore_unknown_ids=True)
+    if len(retrieved) == len(events):
+        return retrieved
+    return cognite_client.events.upsert(events, mode="replace")
 
 
 @pytest.fixture
@@ -148,3 +173,18 @@ class TestEventsAPI:
             cognite_client.events.delete(
                 external_id=[new_event.external_id, preexisting.external_id], ignore_unknown_ids=True
             )
+
+    def test_filter_search(self, cognite_client: CogniteClient, event_list: EventList) -> None:
+        # Arrange
+        f = filters
+        is_integration_test = f.Prefix(EventProperty.external_id, "integration_test:")
+        has_lorem_ipsum = f.Search(EventProperty.description, "lorem ipsum")
+
+        # Act
+        result = cognite_client.events.filter(
+            f.And(is_integration_test, has_lorem_ipsum), sort=SortableEventProperty.external_id
+        )
+
+        # Assert
+        assert len(result) == 1, "Expected only one event to match the filter"
+        assert result[0].external_id == "integration_test:event1_lorem_ipsum"

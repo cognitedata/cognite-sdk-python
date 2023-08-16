@@ -16,7 +16,9 @@ from cognite.client.data_classes import (
     GeoLocationFilter,
     Geometry,
     GeometryFilter,
+    filters,
 )
+from cognite.client.data_classes.assets import AssetProperty
 from cognite.client.exceptions import CogniteAPIError, CogniteAssetHierarchyError, CogniteNotFoundError
 from cognite.client.utils._text import random_string
 from cognite.client.utils._time import timestamp_to_ms
@@ -70,6 +72,37 @@ def root_test_asset_subtree(cognite_client, root_test_asset):
             cognite_client.assets.delete(id=to_delete)
     except Exception:
         pass
+
+
+@pytest.fixture(scope="module")
+def asset_list(cognite_client: CogniteClient) -> AssetList:
+    prefix = "integration_test:"
+    assets = AssetList(
+        [
+            Asset(
+                external_id=f"{prefix}asset1",
+                name="asset1",
+            ),
+            Asset(
+                external_id=f"{prefix}asset2",
+                parent_external_id=f"{prefix}asset1",
+                name="asset2",
+                metadata={
+                    "timezone": "Europe/Oslo",
+                },
+            ),
+            Asset(
+                external_id=f"{prefix}asset3",
+                parent_external_id=f"{prefix}asset1",
+                name="asset3",
+                metadata={"timezone": "America/New_York"},
+            ),
+        ]
+    )
+    retrieved = cognite_client.assets.retrieve_multiple(external_ids=assets.as_external_ids(), ignore_unknown_ids=True)
+    if len(retrieved) == len(assets):
+        return retrieved
+    return cognite_client.assets.upsert(assets, mode="replace")
 
 
 class TestAssetsAPI:
@@ -258,6 +291,21 @@ class TestAssetsAPI:
             cognite_client.assets.delete(
                 external_id=[new_asset.external_id, preexisting.external_id], ignore_unknown_ids=True
             )
+
+    def test_filter_on_metadata_key(self, cognite_client: CogniteClient, asset_list: AssetList) -> None:
+        # Arrange
+        f = filters
+        is_integration_test = f.Prefix("external_id", "integration_test:")
+        in_europe = f.Prefix(AssetProperty.metadata_key("timezone"), "Europe")
+
+        # Act
+        result = cognite_client.assets.filter(
+            f.And(is_integration_test, in_europe), sort=("external_id", "asc"), aggregated_properties=["child_count"]
+        )
+
+        # Assert
+        assert len(result) == 1, "Expected only one asset to match the filter"
+        assert result[0].external_id == "integration_test:asset2"
 
 
 def generate_orphan_assets(n_id, n_xid, sample_from):

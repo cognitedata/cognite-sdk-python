@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import json
 import math
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Literal, Optional, Tuple, Union, cast
 from typing import Sequence as SequenceType
+
+from typing_extensions import TypeAlias
 
 from cognite.client import utils
 from cognite.client.data_classes._base import (
@@ -16,7 +18,9 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    EnumProperty,
     PropertySpec,
+    Sort,
 )
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._identifier import Identifier
@@ -317,6 +321,22 @@ class SequenceAggregate(dict):
 class SequenceList(CogniteResourceList[Sequence]):
     _RESOURCE = Sequence
 
+    def as_external_ids(self) -> list[str]:
+        external_ids: list[str] = []
+        for x in self:
+            if x.external_id is None:
+                raise ValueError("All sequences must have external_id")
+            external_ids.append(x.external_id)
+        return external_ids
+
+    def as_ids(self) -> list[int]:
+        ids: list[int] = []
+        for x in self:
+            if x.id is None:
+                raise ValueError("All sequences must have id")
+            ids.append(x.id)
+        return ids
+
 
 class SequenceData(CogniteResource):
     """An object representing a list of rows from a sequence.
@@ -480,3 +500,47 @@ class SequenceDataList(CogniteResourceList[SequenceData]):
         """
         pd = utils._auxiliary.local_import("pandas")
         return pd.concat([seq_data.to_pandas(column_names=column_names) for seq_data in self.data], axis=1)  # type: ignore
+
+
+class SequenceProperty(EnumProperty):
+    description = "description"
+    external_id = "externalId"
+    name = "name"
+    asset_id = "assetId"
+    asset_root_id = "assetRootId"
+    created_time = "createdTime"
+    data_set_id = "dataSetId"
+    id = "id"
+    last_updated_time = "lastUpdatedTime"
+    access_categories = "accessCategories"
+
+    @classmethod
+    def metadata_key(cls, key: str) -> list[str]:
+        return ["metadata", key]
+
+
+class SortableSequenceProperty(EnumProperty):
+    asset_id = "assetId"
+    created_time = "createdTime"
+    data_set_id = "dataSetId"
+    description = "description"
+    external_id = "externalId"
+    last_updated_time = "lastUpdatedTime"
+    name = "name"
+
+    @classmethod
+    def metadata_key(cls, key: str) -> list[str]:
+        return ["metadata", key]
+
+
+SortableSequencePropertyLike: TypeAlias = Union[SortableSequenceProperty, str, List[str]]
+
+
+class SequenceSort(Sort):
+    def __init__(
+        self,
+        property: SortableSequenceProperty,
+        order: Literal["asc", "desc"] = "asc",
+        nulls: Literal["auto", "first", "last"] = "auto",
+    ):
+        super().__init__(property, order, nulls)

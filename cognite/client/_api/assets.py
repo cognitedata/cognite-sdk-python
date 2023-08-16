@@ -27,9 +27,11 @@ from typing import (
     overload,
 )
 
+from typing_extensions import TypeAlias
+
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import ADVANCED_LIST_LIMIT_DEFAULT, LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import (
     Asset,
     AssetAggregate,
@@ -40,7 +42,10 @@ from cognite.client.data_classes import (
     GeoLocationFilter,
     LabelFilter,
     TimestampRange,
+    filters,
 )
+from cognite.client.data_classes.assets import AssetSort, SortableAssetProperty
+from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.data_classes.shared import AggregateBucketResult
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._auxiliary import split_into_n_parts
@@ -53,6 +58,31 @@ if TYPE_CHECKING:
     from concurrent.futures import Future
 
     from cognite.client.utils._priority_tpe import PriorityThreadPoolExecutor
+
+
+SortSpec: TypeAlias = Union[
+    AssetSort,
+    str,
+    SortableAssetProperty,
+    Tuple[str, Literal["asc", "desc"]],
+    Tuple[str, Literal["asc", "desc"], Literal["auto", "first", "last"]],
+]
+
+_FILTERS_SUPPORTED: frozenset[type[Filter]] = frozenset(
+    {
+        filters.And,
+        filters.Or,
+        filters.Not,
+        filters.In,
+        filters.Equals,
+        filters.Exists,
+        filters.Range,
+        filters.Prefix,
+        filters.ContainsAny,
+        filters.ContainsAll,
+        filters.Search,
+    }
+)
 
 
 class AssetsAPI(APIClient):
@@ -714,6 +744,78 @@ class AssetsAPI(APIClient):
             update_cls=AssetUpdate,
             input_resource_cls=Asset,
             mode=mode,
+        )
+
+    def filter(
+        self,
+        filter: Filter | dict,
+        sort: SortSpec | List[SortSpec] | None = None,
+        aggregated_properties: Sequence[Literal["child_count", "path", "depth"]] | None = None,
+        limit: int = ADVANCED_LIST_LIMIT_DEFAULT,
+    ) -> AssetList:
+        """`Advanced filter assets <https://developer.cognite.com/api#tag/Assets/operation/listAssets>`_
+
+        Advanced filter lets you create complex filtering expressions that combine simple operations,
+        such as equals, prefix, exists, etc., using boolean operators and, or, and not.
+        It applies to basic fields as well as metadata.
+
+        Args:
+            filter: Filter to apply.
+            sort: The criteria to sort by. Can be up to two properties to sort by default to ascending order.
+            aggregated_properties: Set of aggregated properties to include. Options are childCount, path, depth.
+            limit: Maximum number of results to return. Defaults to 100. Set to -1, float("inf") or None
+                   to return all items.
+
+        Returns:
+            AssetList: List of assets that match the filter criteria.
+
+        Examples:
+
+            Find all assets that have a metadata key 'timezone' starting with 'Europe',
+            and sort by external id ascending:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> c = CogniteClient()
+                >>> f = filters
+                >>> in_timezone = f.Prefix(["metadata", "timezone"], "Europe")
+                >>> res = c.assets.filter(filter=in_timezone,
+                ...                       sort=("external_id", "asc"))
+
+            Note that you can check the API documentation above to see which properties you can filter on
+            with which filters.
+
+            To make it easier to avoid spelling mistakes and easier to look up available properties
+            for filtering and sorting, you can also use the `AssetProperty` and `SortableAssetProperty` Enums.
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes.assets import AssetProperty, SortableAssetProperty
+                >>> c = CogniteClient()
+                >>> f = filters
+                >>> in_timezone = f.Prefix(AssetProperty.metadata_key("timezone"), "Europe")
+                >>> res = c.assets.filter(filter=in_timezone,
+                ...                       sort=(SortableAssetProperty.external_id, "asc"))
+
+        """
+        _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)
+        if sort is None:
+            sort = []
+        elif not isinstance(sort, list):
+            sort = [sort]
+        if aggregated_properties:
+            aggregated_properties_camel = [to_camel_case(prop) for prop in aggregated_properties]
+        else:
+            aggregated_properties_camel = None
+
+        return self._list(
+            list_cls=AssetList,
+            resource_cls=Asset,
+            method="POST",
+            limit=limit,
+            advanced_filter=filter,
+            sort=[AssetSort.load(item).dump(camel_case=True) for item in sort],
+            other_params={"aggregatedProperties": aggregated_properties_camel} if aggregated_properties_camel else {},
         )
 
     def search(

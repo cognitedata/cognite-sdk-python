@@ -46,6 +46,10 @@ Delete assets
 ^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.delete
 
+Filter assets
+^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.assets.AssetsAPI.filter
+
 Update assets
 ^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.update
@@ -98,6 +102,10 @@ Update events
 Upsert events
 ^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.events.EventsAPI.upsert
+
+Filter events
+^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.events.EventsAPI.filter
 
 Events Data classes
 ^^^^^^^^^^^^^^^^^^^
@@ -351,6 +359,10 @@ Delete time series
 ^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.time_series.TimeSeriesAPI.delete
 
+Filter time series
+^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.time_series.TimeSeriesAPI.filter
+
 Update time series
 ^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.time_series.TimeSeriesAPI.update
@@ -397,6 +409,11 @@ Create a sequence
 Delete sequences
 ^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.sequences.SequencesAPI.delete
+
+Filter sequences
+^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.sequences.SequencesAPI.filter
+
 
 Update sequences
 ^^^^^^^^^^^^^^^^

@@ -1,24 +1,54 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Literal, Optional, Sequence, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Literal, Optional, Sequence, Tuple, Union, cast, overload
+
+from typing_extensions import TypeAlias
 
 from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.datapoints_subscriptions import DatapointsSubscriptionAPI
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import ADVANCED_LIST_LIMIT_DEFAULT, LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import (
     TimeSeries,
     TimeSeriesAggregate,
     TimeSeriesFilter,
     TimeSeriesList,
     TimeSeriesUpdate,
+    filters,
 )
+from cognite.client.data_classes.filters import Filter, _validate_filter
+from cognite.client.data_classes.time_series import SortableTimeSeriesProperty, TimeSeriesSort
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
     from cognite.client.config import ClientConfig
+
+SortSpec: TypeAlias = Union[
+    TimeSeriesSort,
+    str,
+    SortableTimeSeriesProperty,
+    Tuple[str, Literal["asc", "desc"]],
+    Tuple[str, Literal["asc", "desc"], Literal["auto", "first", "last"]],
+]
+
+_FILTERS_SUPPORTED: frozenset[type[Filter]] = frozenset(
+    {
+        filters.And,
+        filters.Or,
+        filters.Not,
+        filters.In,
+        filters.Equals,
+        filters.Exists,
+        filters.Range,
+        filters.Prefix,
+        filters.ContainsAny,
+        filters.ContainsAll,
+        filters.InAssetSubtree,
+        filters.Search,
+    }
+)
 
 
 class TimeSeriesAPI(APIClient):
@@ -478,3 +508,71 @@ class TimeSeriesAPI(APIClient):
             filter=filter or {},
             limit=limit,
         )
+
+    def filter(
+        self,
+        filter: Filter | dict,
+        sort: SortSpec | List[SortSpec] | None = None,
+        limit: int = ADVANCED_LIST_LIMIT_DEFAULT,
+    ) -> TimeSeriesList:
+        """`Advanced filter time series <https://developer.cognite.com/api#tag/Time-series/operation/listTimeSeries>`_
+
+        Advanced filter lets you create complex filtering expressions that combine simple operations,
+        such as equals, prefix, exists, etc., using boolean operators and, or, and not.
+        It applies to basic fields as well as metadata.
+
+        Args:
+            filter: Filter to apply.
+            sort: The criteria to sort by. Can be up to two properties to sort by default to ascending order.
+            limit: Maximum number of results to return. Defaults to 100. Set to -1, float("inf") or None
+                   to return all items.
+
+        Returns:
+            TimeSeriesList: List of time series that match the filter criteria.
+
+        Examples:
+
+            Find all numeric time series and return them sorted by external id:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> c = CogniteClient()
+                >>> f = filters
+                >>> is_numeric = f.Equals("is_string", False)
+                >>> res = c.time_series.filter(filter=is_numeric, sort="external_id")
+
+            Note that you can check the API documentation above to see which properties you can filter on
+            with which filters.
+
+            To make it easier to avoid spelling mistakes and easiser to look up available properties
+            for filtering and sorting, you can also use the `TimeSeriesProperty` and `SortableTimeSeriesProperty` enums.
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes.time_series import TimeSeriesProperty, SortableTimeSeriesProperty
+                >>> c = CogniteClient()
+                >>> f = filters
+                >>> is_numeric = f.Equals(TimeSeriesProperty.is_string, False)
+                >>> res = c.time_series.filter(filter=is_numeric, sort=SortableTimeSeriesProperty.external_id)
+
+        """
+        _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)
+        if sort is None:
+            sort = []
+        elif not isinstance(sort, list):
+            sort = [sort]
+
+        api_version = self._api_subversion
+
+        try:
+            self._api_subversion = "beta"
+            return self._list(
+                list_cls=TimeSeriesList,
+                resource_cls=TimeSeries,
+                method="POST",
+                limit=limit,
+                advanced_filter=filter,
+                sort=[TimeSeriesSort.load(item).dump(camel_case=True) for item in sort],
+            )
+        finally:
+            self._api_subversion = api_version
