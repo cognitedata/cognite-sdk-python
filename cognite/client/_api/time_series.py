@@ -404,9 +404,9 @@ class TimeSeriesAPI(APIClient):
             >>> not_america = a.Not(a.Prefix("america"))
             >>> is_critical = filters.Search(TimeSeriesProperty.description, "critical")
             >>> timezone_count = c.time_series.aggregate_cardinality(
-            ...                                           TimeSeriesProperty.metadata_key("timezone"),
-            ...                                           advanced_filter=is_critical,
-            ...                                           aggregate_filter=not_america)
+            ...     TimeSeriesProperty.metadata_key("timezone"),
+            ...     advanced_filter=is_critical,
+            ...     aggregate_filter=not_america)
 
         """
         self._validate_filter(advanced_filter)

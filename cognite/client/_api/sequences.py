@@ -371,9 +371,9 @@ class SequencesAPI(APIClient):
             >>> not_america = a.Not(a.Prefix("america"))
             >>> is_critical = filters.Search(SequenceProperty.description, "critical")
             >>> timezone_count = c.sequences.aggregate_cardinality(
-            ...                                           SequenceProperty.metadata_key("timezone"),
-            ...                                           advanced_filter=is_critical,
-            ...                                           aggregate_filter=not_america)
+            ...     SequenceProperty.metadata_key("timezone"),
+            ...     advanced_filter=is_critical,
+            ...     aggregate_filter=not_america)
 
         """
         self._validate_filter(advanced_filter)
