@@ -28,7 +28,7 @@ class Token(CredentialProvider):
     """Token credential provider
 
     Args:
-        token (Union[str, Callable[[], str]): A token or a token factory.
+        token (Union[str, Callable[[], str]]): A token or a token factory.
 
     Examples:
 
@@ -154,7 +154,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         authority_url (str): OAuth authority url
         client_id (str): Your application's client id.
         scopes (List[str]): A list of scopes.
-        token_cache_path (Path): Location to store token cache, defaults to os temp directory/cognitetokencache.{client_id}.bin.
+        token_cache_path (Optional[Path]): Location to store token cache, defaults to os temp directory/cognitetokencache.{client_id}.bin.
         token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 15 sec
 
     Examples:
@@ -230,8 +230,8 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         authority_url (str): OAuth authority url
         client_id (str): Your application's client id.
         scopes (List[str]): A list of scopes.
-        redirect_port (List[str]): Redirect port defaults to 53000.
-        token_cache_path (Path): Location to store token cache, defaults to os temp directory/cognitetokencache.{client_id}.bin.
+        redirect_port (int): Redirect port defaults to 53000.
+        token_cache_path (Optional[Path]): Location to store token cache, defaults to os temp directory/cognitetokencache.{client_id}.bin.
         token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 15 sec
 
     Examples:

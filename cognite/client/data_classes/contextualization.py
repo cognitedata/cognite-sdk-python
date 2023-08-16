@@ -641,8 +641,7 @@ class DetectJobBundle:
         """Waits for all jobs to complete, generally not needed to call as it is called by result.
 
         Args:
-            timeout (int): Time out after this many seconds. (None means wait indefinitely)
-            interval (int): Poll status every this many seconds.
+            timeout (Optional[int]): Time out after this many seconds. (None means wait indefinitely)
         """
         start = time.time()
         self._remaining_job_ids = self.job_ids

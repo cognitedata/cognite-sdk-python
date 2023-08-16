@@ -98,14 +98,14 @@ class CogniteAPIError(CogniteMultiException):
     Args:
         message (str): The error message produced by the API.
         code (int): The error code produced by the failure.
-        x_request_id (str): The request-id generated for the failed request.
-        missing: (List) List of missing identifiers.
-        duplicated: (List) List of duplicated identifiers.
-        successful (List): List of items which were successfully processed.
-        failed (List): List of items which failed.
-        unknown (List): List of items which may or may not have been successfully processed.
-        unwrap_fn: (Callable): Function to extract identifier from the Cognite resource.
-        extra (Dict): A dict of any additional information.
+        x_request_id (Optional[str]): The request-id generated for the failed request.
+        missing (Optional[Sequence]): (List) List of missing identifiers.
+        duplicated (Optional[Sequence]): (List) List of duplicated identifiers.
+        successful (Optional[Sequence]): List of items which were successfully processed.
+        failed (Optional[Sequence]): List of items which failed.
+        unknown (Optional[Sequence]): List of items which may or may not have been successfully processed.
+        unwrap_fn (Optional[Callable]): (Callable): Function to extract identifier from the Cognite resource.
+        extra (Optional[Dict]): A dict of any additional information.
 
     Examples:
         Catching an API-error and handling it based on the error code::
@@ -168,9 +168,10 @@ class CogniteNotFoundError(CogniteMultiException):
 
     Args:
         not_found (List): The ids not found.
-        successful (List): List of items which were successfully processed.
-        failed (List): List of items which failed.
-        unknown (List): List of items which may or may not have been successfully processed.
+        successful (Optional[List]): List of items which were successfully processed.
+        failed (Optional[List]): List of items which failed.
+        unknown (Optional[List]): List of items which may or may not have been successfully processed.
+        unwrap_fn (Optional[Callable]): No description.
     """
 
     def __init__(
@@ -197,10 +198,10 @@ class CogniteDuplicatedError(CogniteMultiException):
 
     Args:
         duplicated (List): The duplicated ids.
-        successful (List): List of items which were successfully processed.
-        failed (List): List of items which failed.
-        unknown (List): List of items which may or may not have been successfully processed.
-        unwrap_fn: (Callable): Function to extract identifier from the Cognite resource.
+        successful (Optional[List]): List of items which were successfully processed.
+        failed (Optional[List]): List of items which failed.
+        unknown (Optional[List]): List of items which may or may not have been successfully processed.
+        unwrap_fn (Optional[Callable]): (Callable): Function to extract identifier from the Cognite resource.
     """
 
     def __init__(
@@ -227,7 +228,7 @@ class CogniteImportError(CogniteException):
 
     Args:
         module (str): Name of the module which could not be imported
-        message (str): The error message to output.
+        message (Optional[str]): The error message to output.
     """
 
     def __init__(self, module: str, message: Optional[str] = None):

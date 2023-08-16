@@ -1,11 +1,17 @@
 from __future__ import annotations
 
-import inspect
 import importlib
+import inspect
 import itertools
 import re
 from dataclasses import is_dataclass
 from pathlib import Path
+
+from cognite.client.data_classes.data_modeling.query import Query
+
+EXCEPTIONS = {
+    (Query, "__init__"),  # Reason: Uses a parameter 'with_'; and we need to escape the underscore
+}
 
 
 class Param:
@@ -72,7 +78,6 @@ class DocstrFormatter:
                 return s.replace(match.group(1), match.group(2).replace("'", '"'))
             return s
 
-        # annots = {var: fix_literal(str(annot)) for var, annot in method.__annotations__.items()}
         annots, method_signature = {}, inspect.signature(method)
         return_annot = method_signature.return_annotation
 
@@ -173,6 +178,9 @@ def get_all_non_inherited_methods(cls):
 def format_docstring(cls) -> list[str]:
     failed = []
     for attr, method in get_all_non_inherited_methods(cls):
+        if (cls, attr) in EXCEPTIONS:
+            continue
+
         # The __init__ method is documented in the class level docstring
         is_init = attr == "__init__"
         doc = cls.__doc__ if is_init else method.__doc__
@@ -196,12 +204,7 @@ def format_docstring(cls) -> list[str]:
 
 
 def find_all_classes_in_sdk():
-    locations = [
-        ".".join(p.parts)[:-3]
-        for p in
-        Path("cognite/client/").glob("**/*.py")
-        if "_pb2.py" not in str(p)
-    ]
+    locations = [".".join(p.parts)[:-3] for p in Path("cognite/client/").glob("**/*.py") if "_pb2.py" not in str(p)]
     return {
         cls
         for loc in locations

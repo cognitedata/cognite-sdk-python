@@ -34,9 +34,9 @@ class SessionDetails:
     """Details of a source session.
 
     Args:
-        session_id (int): CDF source session ID
-        client_id (str): Idp source client ID
-        project_name (str): CDF source project name
+        session_id (Optional[int]): CDF source session ID
+        client_id (Optional[str]): Idp source client ID
+        project_name (Optional[str]): CDF source project name
     """
 
     def __init__(
@@ -429,7 +429,7 @@ class ContainsAny(TagsFilter):
     """Return transformations that has one of the tags specified.
 
     Args:
-        tags (List[str]): The resource item contains at least one of the listed tags. The tags are defined by a list of external ids.
+        tags (Optional[List[str]]): The resource item contains at least one of the listed tags. The tags are defined by a list of external ids.
 
     Examples:
 

@@ -673,7 +673,7 @@ class AssetHierarchy:
         """Returns a mapping from asset external ID to the size of its subtree (children and children of chidren etc.).
 
         Args:
-            mapping (Dict | None): The mapping returned by `groupby_parent_xid()`. If None is passed, will be recreated (slightly expensive).
+            mapping (Dict[Optional[str], List[Asset]]): The mapping returned by `groupby_parent_xid()`. If None is passed, will be recreated (slightly expensive).
 
         Returns:
             Dict[str, int]: Lookup from external ID to descendant count.

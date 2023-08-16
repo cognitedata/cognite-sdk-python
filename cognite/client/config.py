@@ -49,16 +49,15 @@ class ClientConfig:
     """Configuration object for the client
 
     Args:
-        client_name (str): A user-defined name for the client. Used to identify number of unique applications/scripts
-            running on top of CDF.
+        client_name (str): A user-defined name for the client. Used to identify number of unique applications/scripts running on top of CDF.
         project (str): CDF Project name.
         credentials (CredentialProvider): Credentials. e.g. Token, ClientCredentials.
-        api_subversion (str): API subversion
-        base_url (str): Base url to send requests to. Defaults to "https://api.cognitedata.com"
-        max_workers (int): Max number of workers to spawn when parallelizing data fetching. Defaults to 10.
-        headers (Dict): Additional headers to add to all requests.
-        timeout (int): Timeout on requests sent to the api. Defaults to 30 seconds.
-        file_transfer_timeout (int): Timeout on file upload/download requests. Defaults to 600 seconds.
+        api_subversion (Optional[str]): API subversion
+        base_url (Optional[str]): Base url to send requests to. Defaults to "https://api.cognitedata.com"
+        max_workers (Optional[int]): Max number of workers to spawn when parallelizing data fetching. Defaults to 10.
+        headers (Optional[Dict[str, str]]): Additional headers to add to all requests.
+        timeout (Optional[int]): Timeout on requests sent to the api. Defaults to 30 seconds.
+        file_transfer_timeout (Optional[int]): Timeout on file upload/download requests. Defaults to 600 seconds.
         debug (bool): Configures logger to log extra request details to stderr.
     """
 

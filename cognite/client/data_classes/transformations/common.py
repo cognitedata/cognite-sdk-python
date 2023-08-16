@@ -10,7 +10,7 @@ class TransformationDestination:
     """TransformationDestination has static methods to define the target resource type of a transformation
 
     Args:
-        type (str): Used as data type identifier on transformation creation/retrieval.
+        type (Optional[str]): Used as data type identifier on transformation creation/retrieval.
     """
 
     def __init__(self, type: Optional[str] = None):
@@ -116,8 +116,8 @@ class TransformationDestination:
         """
 
         Args:
-            view (ViewInfo): information of the view.
-            instance_space (str): space id of the instance.
+            view (Optional[ViewInfo]): information of the view.
+            instance_space (Optional[str]): space id of the instance.
         Returns:
             Nodes: pointing to the target flexible data model.
         """
@@ -132,9 +132,9 @@ class TransformationDestination:
         """
 
         Args:
-            view (ViewInfo): information of the view.
-            instance_space (str): space id of the instance.
-            edge_type (EdgeType): information about the type of the edge
+            view (Optional[ViewInfo]): information of the view.
+            instance_space (Optional[str]): space id of the instance.
+            edge_type (Optional[EdgeType]): information about the type of the edge
         Returns:
             Edges: pointing to the target flexible data model.
         """
@@ -144,8 +144,8 @@ class TransformationDestination:
     def instances(data_model: Optional[DataModelInfo] = None, instance_space: Optional[str] = None) -> Instances:
         """
         Args:
-            data_model (DataModelInfo): information of the Data Model.
-            instance_space (str): space id of the instance.
+            data_model (Optional[DataModelInfo]): information of the Data Model.
+            instance_space (Optional[str]): space id of the instance.
         Returns:
             Instances: pointing to the target centric data model.
         """
@@ -329,7 +329,7 @@ class TransformationBlockedInfo:
     """Information about the reason why and when a transformation is blocked.
 
     Args:
-        reason (str): Reason why the transformation is blocked.
+        reason (Optional[str]): Reason why the transformation is blocked.
         created_time (Optional[int]): Timestamp when the transformation was blocked.
     """
 
