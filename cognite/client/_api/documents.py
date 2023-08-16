@@ -16,7 +16,7 @@ from cognite.client.data_classes.documents import (
     DocumentProperty,
     DocumentSort,
     DocumentUniqueResultList,
-    SortablePropertyLike,
+    SortableProperty,
     SourceFileProperty,
     TemporaryLink,
 )
@@ -545,7 +545,7 @@ class DocumentsAPI(APIClient):
         query: str,
         highlight: Literal[False] = False,
         filter: Filter | dict | None = None,
-        sort: DocumentSort | str | list[str] | tuple[SortablePropertyLike, Literal["asc", "desc"]] | None = None,
+        sort: DocumentSort | str | list[str] | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int = DOCUMENT_LIST_LIMIT_DEFAULT,
     ) -> DocumentList:
         ...
@@ -556,7 +556,7 @@ class DocumentsAPI(APIClient):
         query: str,
         highlight: Literal[True],
         filter: Filter | dict | None = None,
-        sort: DocumentSort | str | list[str] | tuple[SortablePropertyLike, Literal["asc", "desc"]] | None = None,
+        sort: DocumentSort | str | list[str] | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int = DOCUMENT_LIST_LIMIT_DEFAULT,
     ) -> DocumentHighlightList:
         ...
@@ -566,7 +566,7 @@ class DocumentsAPI(APIClient):
         query: str,
         highlight: bool = False,
         filter: Filter | dict | None = None,
-        sort: DocumentSort | SortablePropertyLike | tuple[SortablePropertyLike, Literal["asc", "desc"]] | None = None,
+        sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
         limit: int = DOCUMENT_LIST_LIMIT_DEFAULT,
     ) -> DocumentList | DocumentHighlightList:
         """`Search documents <https://developer.cognite.com/api#tag/Documents/operation/documentsSearch>`_
