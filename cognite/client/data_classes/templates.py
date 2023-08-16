@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from collections import UserDict
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Type, Union, cast
 
 from cognite.client.data_classes._base import (
     EXCLUDE_VALUE,
@@ -230,7 +230,7 @@ class TemplateInstance(CogniteResource):
         self.last_updated_time = last_updated_time
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    field_resolver_mapper: Dict[str, Type[CogniteResource]] = {
+    field_resolver_mapper: ClassVar[Dict[str, Type[CogniteResource]]] = {
         "constant": ConstantResolver,
         "syntheticTimeSeries": SyntheticTimeSeriesResolver,
         "raw": RawResolver,
