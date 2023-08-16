@@ -20,8 +20,9 @@ from cognite.client.data_classes import (
     SequenceUpdate,
     filters,
 )
+from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
 from cognite.client.data_classes.filters import Filter, _validate_filter
-from cognite.client.data_classes.sequences import SequenceSort, SortableSequenceProperty
+from cognite.client.data_classes.sequences import SequenceProperty, SequenceSort, SortableSequenceProperty
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._text import convert_all_keys_to_camel_case
@@ -286,6 +287,198 @@ class SequencesAPI(APIClient):
         """
 
         return self._aggregate(filter=filter, cls=SequenceAggregate)
+
+    def aggregate_count(
+        self,
+        advanced_filter: Filter | dict | None = None,
+        filter: SequenceFilter | dict | None = None,
+    ) -> int:
+        """`Count of sequences matching the specified filters and search. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
+
+        Args:
+            advanced_filter (Filter | dict | None): The filter to narrow down the sequences to count.
+            filter (TimeSeriesFilter | dict | None): The filter to narrow down sequences to count requirering exact match.
+
+        Returns:
+            int: The number of sequences matching the specified filters and search.
+
+        Examples:
+
+        Count the number of time series in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> c = CogniteClient()
+            >>> count = c.sequences.aggregate_count()
+
+        Count the number of sequences with external id prefixed with "mapping:" in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes import filters
+            >>> from cognite.client.data_classes.sequences import SequenceProperty
+            >>> c = CogniteClient()
+            >>> is_mapping = filters.Prefix(SequenceProperty.external_id, "mapping:")
+            >>> count = c.sequences.aggregate_count(advanced_filter=is_mapping)
+
+        """
+        self._validate_filter(advanced_filter)
+
+        api_version = self._api_subversion
+        try:
+            self._api_subversion = "beta"
+            return self._advanced_aggregate(
+                "count",
+                filter=filter,
+                advanced_filter=advanced_filter,
+            )
+        finally:
+            self._api_subversion = api_version
+
+    def aggregate_cardinality(
+        self,
+        property: SequenceProperty | str | List[str],
+        advanced_filter: Filter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict | None = None,
+        filter: SequenceFilter | dict | None = None,
+    ) -> int:
+        """`Find approximate count of sequence properties. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
+
+        Args:
+            property (SequenceProperty | str | List[str]): The property to count the cardinality of.
+            query (str | None): The free text search query, for details see the documentation referenced above.
+            advanced_filter (Filter | dict | None): The filter to narrow down the sequences to count cardinality.
+            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
+            filter (SequenceFilter | dict | None): The filter to narrow down the sequences  to count requirering exact match.
+        Returns:
+            int: The number of properties matching the specified filters and search.
+
+        Examples:
+
+        Count the number of different values for the metadata key "efficiency" used for sequences in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes.sequences import SequenceProperty
+            >>> c = CogniteClient()
+            >>> count = c.sequences.aggregate_cardinality(SequenceProperty.metadata_key("efficiency"))
+
+        Count the number of timezones (metadata key) for sequences with the word "critical" in the description
+        in your CDF project, but exclude timezones from america:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes import filters, aggregations
+            >>> from cognite.client.data_classes.sequences import SequenceProperty
+            >>> c = CogniteClient()
+            >>> a = aggregations
+            >>> not_america = a.Not(a.Prefix("america"))
+            >>> is_critical = filters.Search(SequenceProperty.description, "critical")
+            >>> timezone_count = c.sequences.aggregate_cardinality(
+            ...     SequenceProperty.metadata_key("timezone"),
+            ...     advanced_filter=is_critical,
+            ...     aggregate_filter=not_america)
+
+        """
+        self._validate_filter(advanced_filter)
+
+        api_version = self._api_subversion
+
+        try:
+            self._api_subversion = "beta"
+            if property == ["metadata"] or property is SequenceProperty.metadata:
+                return self._advanced_aggregate(
+                    "cardinalityProperties",
+                    path=property,
+                    filter=filter,
+                    advanced_filter=advanced_filter,
+                    aggregate_filter=aggregate_filter,
+                )
+            else:
+                return self._advanced_aggregate(
+                    "cardinalityValues",
+                    properties=property,
+                    filter=filter,
+                    advanced_filter=advanced_filter,
+                    aggregate_filter=aggregate_filter,
+                )
+        finally:
+            self._api_subversion = api_version
+
+    def aggregate_unique(
+        self,
+        property: SequenceProperty | str | List[str],
+        advanced_filter: Filter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict | None = None,
+        filter: SequenceFilter | dict | None = None,
+    ) -> UniqueResultList:
+        """`Find approximate unique sequence properties. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
+
+        Args:
+            property (SequenceProperty | str | List[str]): The property to group by.
+            advanced_filter (Filter | dict | None): The filter to narrow down the sequences to count cardinality.
+            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
+            filter (SequenceFilter | dict | None): The filter to narrow down the sequences to count requirering exact match.
+
+        Returns:
+            UniqueResultList: List of unique values of sequences matching the specified filters and search.
+
+        Examples:
+
+        Get the timezones (metadata key) with count for your sequences in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes.sequences import SequenceProperty
+            >>> c = CogniteClient()
+            >>> result = c.sequences.aggregate_unique(SequenceProperty.metadata_key("timezone"))
+            >>> print(result.unique)
+
+        Get the different metadata keys with count used for sequences created after 2020-01-01 in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes import filters
+            >>> from cognite.client.data_classes.sequences import SequenceProperty
+            >>> from cognite.client.utils import timestamp_to_ms
+            >>> from datetime import datetime
+            >>> c = CogniteClient()
+            >>> created_after_2020 = filters.Range(SequenceProperty.created_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
+            >>> result = c.sequences.aggregate_unique(SequenceProperty.metadata, advanced_filter=created_after_2020)
+            >>> print(result.unique)
+
+        Get the different metadata keys with count for sequences updated after 2020-01-01 in your CDF project, but exclude all metadata keys that
+        starts with "test":
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes.sequences import SequenceProperty
+            >>> from cognite.client.data_classes import aggregations, filters
+            >>> c = CogniteClient()
+            >>> a = aggregations
+            >>> not_test = a.Not(a.Prefix("test"))
+            >>> created_after_2020 = filters.Range(SequenceProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
+            >>> result = c.sequences.aggregate_unique(SequenceProperty.metadata, advanced_filter=created_after_2020, aggregate_filter=not_test)
+            >>> print(result.unique)
+
+        """
+        self._validate_filter(advanced_filter)
+
+        api_version = self._api_subversion
+
+        try:
+            self._api_subversion = "beta"
+            if property == ["metadata"] or property is SequenceProperty.metadata:
+                return self._advanced_aggregate(
+                    aggregate="uniqueProperties",
+                    path=property,
+                    filter=filter,
+                    advanced_filter=advanced_filter,
+                    aggregate_filter=aggregate_filter,
+                )
+            else:
+                return self._advanced_aggregate(
+                    aggregate="uniqueValues",
+                    properties=property,
+                    filter=filter,
+                    advanced_filter=advanced_filter,
+                    aggregate_filter=aggregate_filter,
+                )
+        finally:
+            self._api_subversion = api_version
 
     @overload
     def create(self, sequence: Sequence) -> Sequence:
@@ -611,7 +804,7 @@ class SequencesAPI(APIClient):
                 ...                            sort=SortableSequenceProperty.created_time)
 
         """
-        _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)
+        self._validate_filter(filter)
         if sort is None:
             sort = []
         elif not isinstance(sort, list):
@@ -626,11 +819,14 @@ class SequencesAPI(APIClient):
                 resource_cls=Sequence,
                 method="POST",
                 limit=limit,
-                advanced_filter=filter,
+                advanced_filter=filter.dump(camel_case_property=True) if isinstance(filter, Filter) else filter,
                 sort=[SequenceSort.load(item).dump(camel_case=True) for item in sort],
             )
         finally:
             self._api_subversion = api_version
+
+    def _validate_filter(self, filter: Filter | dict | None) -> None:
+        _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)
 
 
 class SequencesDataAPI(APIClient):

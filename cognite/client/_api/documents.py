@@ -2,20 +2,18 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from pathlib import Path
-from typing import IO, TYPE_CHECKING, Any, Literal, Optional, cast, overload
+from typing import IO, TYPE_CHECKING, Literal, Optional, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import ADVANCED_LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import filters
-from cognite.client.data_classes._base import EnumProperty
-from cognite.client.data_classes.aggregations import AggregationFilter
+from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
 from cognite.client.data_classes.documents import (
     Document,
     DocumentHighlightList,
     DocumentList,
     DocumentProperty,
     DocumentSort,
-    DocumentUniqueResultList,
     SortableProperty,
     SourceFileProperty,
     TemporaryLink,
@@ -277,80 +275,6 @@ class DocumentsAPI(APIClient):
         """
         return cast(Iterator[Document], self())
 
-    @overload
-    def _documents_aggregate(
-        self,
-        aggregate: Literal["count", "cardinalityValues", "cardinalityProperties"],
-        properties: list[str] | None = None,
-        path: list[str] | None = None,
-        query: str | None = None,
-        filter: Filter | dict | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
-        limit: int | None = None,
-    ) -> int:
-        ...
-
-    @overload
-    def _documents_aggregate(
-        self,
-        aggregate: Literal["uniqueValues", "uniqueProperties"],
-        properties: list[str] | None = None,
-        path: list[str] | None = None,
-        query: str | None = None,
-        filter: Filter | dict | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
-        limit: int | None = None,
-    ) -> DocumentUniqueResultList:
-        ...
-
-    def _documents_aggregate(
-        self,
-        aggregate: Literal["count", "cardinalityValues", "cardinalityProperties", "uniqueValues", "uniqueProperties"],
-        properties: list[str] | None = None,
-        path: list[str] | None = None,
-        query: str | None = None,
-        filter: Filter | dict | None = None,
-        aggregate_filter: AggregationFilter | dict | None = None,
-        limit: int | None = None,
-    ) -> int | DocumentUniqueResultList:
-        body: dict[str, Any] = {
-            "aggregate": aggregate,
-        }
-        if properties is not None:
-            body["properties"] = [{"property": properties}]
-        if path is not None:
-            body["path"] = path
-        if query is not None:
-            body["search"] = {"query": query}
-        if filter is not None:
-            body["filter"] = filter.dump() if isinstance(filter, Filter) else filter
-        if aggregate_filter is not None:
-            body["aggregateFilter"] = (
-                aggregate_filter.dump() if isinstance(aggregate_filter, AggregationFilter) else aggregate_filter
-            )
-        if limit is not None:
-            body["limit"] = limit
-
-        res = self._post(url_path=f"{self._RESOURCE_PATH}/aggregate", json=body)
-        json_items = res.json()["items"]
-        if aggregate in {"count", "cardinalityValues", "cardinalityProperties"}:
-            return json_items[0]["count"]
-        elif aggregate in {"uniqueValues", "uniqueProperties"}:
-            return DocumentUniqueResultList._load(json_items, cognite_client=self._cognite_client)
-        else:
-            raise ValueError(f"Unknown aggregate: {aggregate}")
-
-    @classmethod
-    def _to_property_list(cls, property: EnumProperty | list[str] | str) -> list[str]:
-        if isinstance(property, EnumProperty):
-            return property.as_reference()
-        elif isinstance(property, str):
-            return [property]
-        elif isinstance(property, list):
-            return property
-        else:
-            raise ValueError(f"Unknown property format: {property}")
-
     def aggregate_count(self, query: str | None = None, filter: Filter | dict | None = None) -> int:
         """`Count of documents matching the specified filters and search. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
 
@@ -380,7 +304,9 @@ class DocumentsAPI(APIClient):
 
         """
         _validate_filter(filter)
-        return self._documents_aggregate("count", filter=filter, query=query)
+        return self._advanced_aggregate(
+            "count", filter=filter.dump() if isinstance(filter, Filter) else filter, query=query
+        )
 
     def aggregate_cardinality(
         self,
@@ -430,17 +356,20 @@ class DocumentsAPI(APIClient):
 
         """
         _validate_filter(filter)
-        property = self._to_property_list(property)
 
-        if property == ["sourceFile", "metadata"]:
-            return self._documents_aggregate(
-                "cardinalityProperties", path=property, query=query, filter=filter, aggregate_filter=aggregate_filter
+        if property == ["sourceFile", "metadata"] or property is SourceFileProperty.metadata:
+            return self._advanced_aggregate(
+                "cardinalityProperties",
+                path=property,
+                query=query,
+                filter=filter.dump() if isinstance(filter, Filter) else filter,
+                aggregate_filter=aggregate_filter,
             )
-        return self._documents_aggregate(
+        return self._advanced_aggregate(
             "cardinalityValues",
             properties=property,
             query=query,
-            filter=filter,
+            filter=filter.dump() if isinstance(filter, Filter) else filter,
             aggregate_filter=aggregate_filter,
         )
 
@@ -451,7 +380,7 @@ class DocumentsAPI(APIClient):
         filter: Filter | dict | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
         limit: int = ADVANCED_LIST_LIMIT_DEFAULT,
-    ) -> DocumentUniqueResultList:
+    ) -> UniqueResultList:
         """`Find approximate number of unique properties. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
 
         Args:
@@ -462,7 +391,7 @@ class DocumentsAPI(APIClient):
             limit (int): Maximum number of items. Defaults to 100.
 
         Returns:
-            DocumentUniqueResultList: List of unique values of documents matching the specified filters and search.
+            UniqueResultList: List of unique values of documents matching the specified filters and search.
 
         Examples:
 
@@ -497,15 +426,17 @@ class DocumentsAPI(APIClient):
 
         """
         _validate_filter(filter)
-        property = self._to_property_list(property)
         aggregate: Literal["uniqueValues", "uniqueProperties"] = (
-            "uniqueProperties" if property == ["sourceFile", "metadata"] else "uniqueValues"
+            "uniqueProperties"
+            if property == ["sourceFile", "metadata"] or property is SourceFileProperty.metadata
+            else "uniqueValues"
         )
-        return self._documents_aggregate(
+
+        return self._advanced_aggregate(
             aggregate=aggregate,
             properties=property,
             query=query,
-            filter=filter,
+            filter=filter.dump() if isinstance(filter, Filter) else filter,
             aggregate_filter=aggregate_filter,
             limit=limit,
         )

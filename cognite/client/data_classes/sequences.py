@@ -513,6 +513,7 @@ class SequenceProperty(EnumProperty):
     id = "id"
     last_updated_time = "lastUpdatedTime"
     access_categories = "accessCategories"
+    metadata = "metadata"
 
     @classmethod
     def metadata_key(cls, key: str) -> list[str]:

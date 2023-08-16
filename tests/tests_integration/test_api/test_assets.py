@@ -307,6 +307,48 @@ class TestAssetsAPI:
         assert len(result) == 1, "Expected only one asset to match the filter"
         assert result[0].external_id == "integration_test:asset2"
 
+    def test_aggregate_count(self, cognite_client: CogniteClient, asset_list: AssetList) -> None:
+        # Act
+        count = cognite_client.assets.aggregate_count()
+
+        # Assert
+        assert count > 0, "Expected at least one asset to exist"
+
+    def test_aggregate_has_label_count(self, cognite_client: CogniteClient, asset_list: AssetList) -> None:
+        # Act
+        count = cognite_client.assets.aggregate_count(AssetProperty.labels)
+
+        # Assert
+        assert count > 0, "Expected at least one asset with label to exist"
+
+    def test_aggregate_timezone_count(self, cognite_client: CogniteClient, asset_list: AssetList) -> None:
+        # Act
+        count = cognite_client.assets.aggregate_cardinality(AssetProperty.metadata_key("timezone"))
+
+        # Assert
+        assert count > 0, "Expected at one type to exists"
+
+    def test_aggregate_metadata_keys_count(self, cognite_client: CogniteClient, asset_list: AssetList) -> None:
+        # Act
+        count = cognite_client.assets.aggregate_cardinality(AssetProperty.metadata)
+
+        # Assert
+        assert count > 0, "Expected at one metadata key to exists"
+
+    def test_aggregate_unique_timezone(self, cognite_client: CogniteClient, asset_list: AssetList) -> None:
+        # Act
+        result = cognite_client.assets.aggregate_unique(AssetProperty.metadata_key("timezone"))
+
+        # Assert
+        assert len(result.unique) > 0, "Expected a least one timezone to exists"
+
+    def test_aggregate_unique_metadata_keys(self, cognite_client: CogniteClient, asset_list: AssetList) -> None:
+        # Act
+        result = cognite_client.assets.aggregate_unique(AssetProperty.metadata)
+
+        # Assert
+        assert len(result.unique) > 0, "Expected at one metadata key to exists"
+
 
 def generate_orphan_assets(n_id, n_xid, sample_from):
     # Orphans only: We link all assets to an existing asset (some by ID, others by XID):

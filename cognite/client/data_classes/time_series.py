@@ -343,6 +343,7 @@ class TimeSeriesProperty(EnumProperty):
     is_string = "isString"
     access_categories = "accessCategories"
     security_categories = "securityCategories"
+    metadata = "metadata"
 
     @classmethod
     def metadata_key(cls, key: str) -> list[str]:

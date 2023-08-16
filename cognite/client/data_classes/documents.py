@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, List, Literal, Optional, Union
 from typing_extensions import TypeAlias
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, EnumProperty, Sort
+from cognite.client.data_classes.aggregations import UniqueResult
 from cognite.client.data_classes.labels import Label, LabelDefinition
 from cognite.client.data_classes.shared import GeoLocation
 from cognite.client.utils._text import convert_all_keys_to_snake_case
@@ -242,30 +243,8 @@ class DocumentHighlightList(CogniteResourceList[DocumentHighlight]):
     _RESOURCE = DocumentHighlight
 
 
-@dataclass
-class DocumentUniqueResult(CogniteResource):
-    count: int
-    values: list[str | int | float | Label]
-
-    @property
-    def value(self) -> str | int | float | Label:
-        return self.values[0]
-
-    @classmethod
-    def _load(cls, resource: dict | str, cognite_client: Optional[CogniteClient] = None) -> DocumentUniqueResult:
-        resource = json.loads(resource) if isinstance(resource, str) else resource
-        return cls(
-            count=resource["count"],
-            values=resource["values"],
-        )
-
-
-class DocumentUniqueResultList(CogniteResourceList):
-    _RESOURCE = DocumentUniqueResult
-
-    @property
-    def unique(self) -> list[str | int | float | Label]:
-        return [item.value for item in self]
+class DocumentUniqueResult(UniqueResult):
+    ...
 
 
 class SortableSourceFileProperty(EnumProperty):

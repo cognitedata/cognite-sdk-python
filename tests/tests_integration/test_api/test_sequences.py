@@ -244,3 +244,38 @@ class TestSequencesAPI:
         # Assert
         assert len(result) == 1, "Expected only one sequence in subtree"
         assert result[0].external_id == sequence_list[0].external_id
+
+    def test_aggregate_count(self, cognite_client: CogniteClient, sequence_list: SequenceList) -> None:
+        # Act
+        count = cognite_client.sequences.aggregate_count()
+
+        # Assert
+        assert count > 0, "Expected at least one sequence to exist"
+
+    def test_aggregate_asset_id_count(self, cognite_client: CogniteClient, sequence_list: SequenceList) -> None:
+        # Act
+        count = cognite_client.sequences.aggregate_cardinality(SequenceProperty.asset_id)
+
+        # Assert
+        assert count > 0, "Expected at least one asset to exists"
+
+    def test_aggregate_metadata_keys_count(self, cognite_client: CogniteClient, sequence_list: SequenceList) -> None:
+        # Act
+        count = cognite_client.sequences.aggregate_cardinality(SequenceProperty.metadata)
+
+        # Assert
+        assert count > 0, "Expected at one least metadata key to exists"
+
+    def test_aggregate_unique_asset_ids(self, cognite_client: CogniteClient, sequence_list: SequenceList) -> None:
+        # Act
+        result = cognite_client.sequences.aggregate_unique(SequenceProperty.asset_id)
+
+        # Assert
+        assert len(result.unique) > 0, "Expected a least one asset id to exists"
+
+    def test_aggregate_unique_metadata_keys(self, cognite_client: CogniteClient, sequence_list: SequenceList) -> None:
+        # Act
+        result = cognite_client.sequences.aggregate_unique(SequenceProperty.metadata)
+
+        # Assert
+        assert len(result.unique) > 0, "Expected at one metadata key to exists"

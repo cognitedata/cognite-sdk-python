@@ -307,6 +307,9 @@ class EventProperty(EnumProperty):
         return ["metadata", key]
 
 
+EventPropertyLike: TypeAlias = Union[EventProperty, str, List[str]]
+
+
 class SortableEventProperty(EnumProperty):
     created_time = "createdTime"
     data_set_id = "dataSetId"

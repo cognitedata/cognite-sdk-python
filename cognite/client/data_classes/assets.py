@@ -903,6 +903,9 @@ class AssetProperty(EnumProperty):
         return ["metadata", key]
 
 
+AssetPropertyLike: TypeAlias = Union[AssetProperty, str, List[str]]
+
+
 class SortableAssetProperty(EnumProperty):
     created_time = "createdTime"
     data_set_id = "dataSetId"
