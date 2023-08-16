@@ -48,8 +48,6 @@ def count_indent(s):
 
 
 class DocstrFormatter:
-    NO_ANNOT = object()
-
     def __init__(self, doc, method):
         self.params = []
         self.original_doc = doc
@@ -76,8 +74,19 @@ class DocstrFormatter:
                 return s.replace(match.group(1), match.group(2).replace("'", '"'))
             return s
 
-        annots = {var: fix_literal(str(annot)) for var, annot in method.__annotations__.items()}
-        return_annot = annots.pop("return", self.NO_ANNOT)
+        # annots = {var: fix_literal(str(annot)) for var, annot in method.__annotations__.items()}
+        annots, method_signature = {}, inspect.signature(method)
+        return_annot = method_signature.return_annotation
+
+        for var_name, param in method_signature.parameters.items():
+            if var_name in {"self", "cls"}:
+                continue
+            if param.kind is param.VAR_POSITIONAL:
+                var_name = "*" + var_name
+            elif param.kind is param.VAR_KEYWORD:
+                var_name = "**" + var_name
+            annots[var_name] = fix_literal(str(param.annotation))
+
         return annots, return_annot
 
     @staticmethod
@@ -145,14 +154,16 @@ class DocstrFormatter:
 
     def update_py_file(self, cls, attr) -> str:
         source_code = (path := Path(inspect.getfile(cls))).read_text()
-        new_source = source_code.replace(self.original_doc, self.create_docstring())
-        if source_code == new_source:
-            return f"Couldn't update docstring for '{cls.__name__}.{attr}', please inspect manually"
 
-        with path.open("w") as file:
-            file.write(new_source)
+        if (n_matches := source_code.count(self.original_doc)) == 0:
+            return f"Couldn't fix docstring for '{cls.__name__}.{attr}', as the old doc was not found in the file"
 
-        return f"Fixed docstring for '{cls.__name__}.{attr}'"
+        elif n_matches == 1:
+            path.write_text(source_code.replace(self.original_doc, self.create_docstring()))
+            return f"Fixed docstring for '{cls.__name__}.{attr}'"
+
+        else:
+            return f"Couldn't fix docstring for '{cls.__name__}.{attr}', as the old doc was not unique to the file"
 
 
 def get_all_non_inherited_methods(cls):
@@ -161,9 +172,9 @@ def get_all_non_inherited_methods(cls):
     ]
 
 
-def format_docstrings_for_subclasses(cls) -> list[str]:
+def format_docstrings_for_subclasses(cls_lst) -> list[str]:
     failed = []
-    for cls in [cls, *all_subclasses(cls)]:
+    for cls in cls_lst:
         for attr, method in get_all_non_inherited_methods(cls):
             # The __init__ method is documented in the class level docstring
             is_init = attr == "__init__"
@@ -174,7 +185,7 @@ def format_docstrings_for_subclasses(cls) -> list[str]:
 
             try:
                 doc_fmt = DocstrFormatter(doc, method)
-            except ValueError as e:
+            except (ValueError, IndexError) as e:
                 failed.append(
                     f"Couldn't parse parameters in docstring for '{cls.__name__}.{attr}', "
                     f"please inspect manually. Reason: {e}"
@@ -189,11 +200,17 @@ def format_docstrings_for_subclasses(cls) -> list[str]:
 
 def format_docstrings() -> list[str]:
     return "\n".join(
-        sum(
-            (
-                format_docstrings_for_subclasses(base_cls)
-                for base_cls in [APIClient, CogniteResource, CogniteResourceList, CogniteFilter]
-            ),
-            [],
+        format_docstrings_for_subclasses(
+            [
+                APIClient,
+                CogniteFilter,
+                CogniteResource,
+                CogniteResourceList,
+                *all_subclasses(dict),
+                *all_subclasses(APIClient),
+                *all_subclasses(CogniteFilter),
+                *all_subclasses(CogniteResource),
+                *all_subclasses(CogniteResourceList),
+            ]
         )
     )
