@@ -439,14 +439,14 @@ class AssetsAPI(APIClient):
 
     def aggregate_count(
         self,
-        property: AssetPropertyLike | tuple[AssetPropertyLike, AggregationFilter] | None = None,
+        property: AssetPropertyLike | None = None,
         advanced_filter: Filter | dict | None = None,
         filter: AssetFilter | dict | None = None,
     ) -> int:
         """`Count of assets matching the specified filters. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
         Args:
-            property (AssetPropertyLike | tuple[AssetPropertyLike, AggregationFilter]): If specified, get an approximate number of asset with a specific property
+            property (AssetPropertyLike): If specified, get an approximate number of asset with a specific property
                                                                                         (property is not null) and matching the filters.
             advanced_filter (Filter | dict | None): The filter to narrow down the asset to count.
             filter (AssetFilter | dict | None): The filter to narrow down asset to count requirering exact match.
@@ -482,7 +482,7 @@ class AssetsAPI(APIClient):
 
     def aggregate_cardinality_values(
         self,
-        property: AssetPropertyLike | tuple[AssetPropertyLike, AggregationFilter],
+        property: AssetPropertyLike,
         advanced_filter: Filter | dict | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: AssetFilter | dict | None = None,
@@ -490,7 +490,7 @@ class AssetsAPI(APIClient):
         """`Find approximate property count for assets. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
         Args:
-            property (AssetPropertyLike | tuple[AssetPropertyLike, AggregationFilter]): The property to count the cardinality of.
+            property (AssetPropertyLike): The property to count the cardinality of.
             advanced_filter (Filter | dict | None): The filter to narrow down the assets to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
             filter (AssetFilter | dict | None): The filter to narrow down the assets to count requirering exact match.
@@ -564,7 +564,7 @@ class AssetsAPI(APIClient):
 
     def aggregate_unique_values(
         self,
-        property: AssetPropertyLike | tuple[AssetPropertyLike, AggregationFilter],
+        property: AssetPropertyLike,
         advanced_filter: Filter | dict | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: AssetFilter | dict | None = None,
@@ -572,7 +572,7 @@ class AssetsAPI(APIClient):
         """`Get unique properties with counts for assets. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
         Args:
-            property (AssetPropertyLike | tuple[AssetPropertyLike, AggregationFilter]): The property to group by.
+            property (AssetPropertyLike): The property to group by.
             advanced_filter (Filter | dict | None): The filter to narrow down the assets to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
             filter (AssetFilter | dict | None): The filter to narrow down the assets to count requirering exact match.

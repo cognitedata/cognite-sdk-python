@@ -339,7 +339,7 @@ class EventsAPI(APIClient):
         self,
         fields: Sequence[str],
         filter: EventFilter | dict | None = None,
-        property: EventPropertyLike | tuple[EventPropertyLike, AggregationFilter] | None = None,
+        property: EventPropertyLike | None = None,
         advanced_filter: Filter | dict | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
     ) -> List[AggregateUniqueValuesResult]:
@@ -350,7 +350,7 @@ class EventsAPI(APIClient):
         self,
         fields: Literal[None] = None,
         filter: EventFilter | dict | None = None,
-        property: EventPropertyLike | tuple[EventPropertyLike, AggregationFilter] | None = None,
+        property: EventPropertyLike | None = None,
         advanced_filter: Filter | dict | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
     ) -> UniqueResultList:
@@ -360,7 +360,7 @@ class EventsAPI(APIClient):
         self,
         fields: Sequence[str] | None = None,
         filter: EventFilter | dict | None = None,
-        property: EventPropertyLike | tuple[EventPropertyLike, AggregationFilter] | None = None,
+        property: EventPropertyLike | None = None,
         advanced_filter: Filter | dict | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
     ) -> List[AggregateUniqueValuesResult] | UniqueResultList:
@@ -369,7 +369,7 @@ class EventsAPI(APIClient):
         Args:
             fields (Sequence[str]): The fields to return. Defaults to ["count"].
             filter (EventFilter | dict | None): The filter to narrow down the events to count requirering exact match.
-            property (EventPropertyLike | tuple[EventPropertyLike, AggregationFilter]): The property name(s) to apply the aggregation on.
+            property (EventPropertyLike): The property name(s) to apply the aggregation on.
             advanced_filter (Filter | dict | None): The filter to narrow down the events to consider.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
 
@@ -431,14 +431,14 @@ class EventsAPI(APIClient):
 
     def aggregate_count(
         self,
-        property: EventPropertyLike | tuple[EventPropertyLike, AggregationFilter] | None = None,
+        property: EventPropertyLike | None = None,
         advanced_filter: Filter | dict | None = None,
         filter: EventFilter | dict | None = None,
     ) -> int:
         """`Count of event matching the specified filters. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
 
         Args:
-            property (EventPropertyLike | tuple[EventPropertyLike, AggregationFilter] | None): If specified, Get an approximate number of Events with a specific property
+            property (EventPropertyLike | None): If specified, Get an approximate number of Events with a specific property
                                                                                                (property is not null) and matching the filters.
             advanced_filter (Filter | dict | None): The filter to narrow down the events to count.
             filter (EventFilter | dict | None): The filter to narrow down the events to count requirering exact match.
@@ -474,7 +474,7 @@ class EventsAPI(APIClient):
 
     def aggregate_cardinality_values(
         self,
-        property: EventPropertyLike | tuple[EventPropertyLike, AggregationFilter],
+        property: EventPropertyLike,
         advanced_filter: Filter | dict | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: EventFilter | dict | None = None,
@@ -482,7 +482,7 @@ class EventsAPI(APIClient):
         """`Find approximate property count for events. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
 
         Args:
-            property (EventPropertyLike | tuple[EventPropertyLike, AggregationFilter]): The property to count the cardinality of.
+            property (EventPropertyLike): The property to count the cardinality of.
             advanced_filter (Filter | dict | None): The filter to narrow down the events to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
             filter (EventFilter | dict | None): The filter to narrow down the events to count requirering exact match.
