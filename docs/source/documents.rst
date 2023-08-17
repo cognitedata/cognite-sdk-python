@@ -6,13 +6,21 @@ Aggregate Document Count
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.documents.DocumentsAPI.aggregate_count
 
+Aggregate Document Value Cardinality
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.documents.DocumentsAPI.aggregate_cardinality_values
+
 Aggregate Document Property Cardinality
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.documents.DocumentsAPI.aggregate_cardinality
+.. automethod:: cognite.client._api.documents.DocumentsAPI.aggregate_cardinality_properties
 
-Aggregate Document Unique Property Values
+Aggregate Document Unique Values
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.documents.DocumentsAPI.aggregate_unique
+.. automethod:: cognite.client._api.documents.DocumentsAPI.aggregate_unique_values
+
+Aggregate Document Unique Properties
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.documents.DocumentsAPI.aggregate_unique_properties
 
 List Documents
 ^^^^^^^^^^^^^^^

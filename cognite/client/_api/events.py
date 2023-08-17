@@ -364,13 +364,13 @@ class EventsAPI(APIClient):
         advanced_filter: Filter | dict | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
     ) -> List[AggregateUniqueValuesResult] | UniqueResultList:
-        """`Find approximate unique event properties. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
+        """`Get unique properties with counts for events. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
 
         Args:
             fields (Sequence[str]): The fields to return. Defaults to ["count"].
             filter (EventFilter | dict | None): The filter to narrow down the events to count requirering exact match.
-            property (EventPropertyLike | tuple[EventPropertyLike, AggregationFilter]): The property to group by.
-            advanced_filter (Filter | dict | None): The filter to narrow down the events to count cardinality.
+            property (EventPropertyLike | tuple[EventPropertyLike, AggregationFilter]): The property name(s) to apply the aggregation on.
+            advanced_filter (Filter | dict | None): The filter to narrow down the events to consider.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
 
         Returns:
@@ -405,8 +405,8 @@ class EventsAPI(APIClient):
             >>> from cognite.client.data_classes.events import EventProperty
             >>> from cognite.client.data_classes import aggregations
             >>> c = CogniteClient()
-            >>> a = aggregations
-            >>> not_planned = a.Not(a.Prefix("planned"))
+            >>> agg = aggregations
+            >>> not_planned = agg.Not(agg.Prefix("planned"))
             >>> is_after_2020 = filters.Range(EventProperty.start_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
             >>> result = c.events.aggregate_unique_values(EventProperty.type, advanced_filter=is_after_2020, aggregate_filter=not_planned)
             >>> print(result.unique)
@@ -435,7 +435,7 @@ class EventsAPI(APIClient):
         advanced_filter: Filter | dict | None = None,
         filter: EventFilter | dict | None = None,
     ) -> int:
-        """`Count of event matching the specified filters and search. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
+        """`Count of event matching the specified filters. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
 
         Args:
             property (EventPropertyLike | tuple[EventPropertyLike, AggregationFilter] | None): If specified, Get an approximate number of Events with a specific property
@@ -479,7 +479,7 @@ class EventsAPI(APIClient):
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: EventFilter | dict | None = None,
     ) -> int:
-        """`Find approximate count of event properties. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
+        """`Find approximate property count for events. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
 
         Args:
             property (EventPropertyLike | tuple[EventPropertyLike, AggregationFilter]): The property to count the cardinality of.
@@ -487,7 +487,7 @@ class EventsAPI(APIClient):
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
             filter (EventFilter | dict | None): The filter to narrow down the events to count requirering exact match.
         Returns:
-            int: The number of properties matching the specified filters and search.
+            int: The number of properties matching the specified filter.
 
         Examples:
 
@@ -525,10 +525,11 @@ class EventsAPI(APIClient):
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: EventFilter | dict | None = None,
     ) -> int:
-        """`Find approximate count of event properties. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
+        """`Find approximate paths count for events. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
 
         Args:
-            path (EventPropertyLike): The property to count the cardinality of.
+            path (EventPropertyLike): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
+                                      It means to aggregate only metadata properties (aka keys).
             advanced_filter (Filter | dict | None): The filter to narrow down the events to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
             filter (EventFilter | dict | None): The filter to narrow down the events to count requirering exact match.
@@ -537,21 +538,12 @@ class EventsAPI(APIClient):
 
         Examples:
 
-        Count the number of types of events in your CDF project:
+        Count the number of metadata keys for events in your CDF project:
 
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.events import EventProperty
             >>> c = CogniteClient()
-            >>> type_count = c.events.aggregate_cardinality_values(EventProperty.type)
-
-        Count the number of types of events linked to asset 123 in your CDF project:
-
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes import filters
-            >>> from cognite.client.data_classes.events import EventProperty
-            >>> c = CogniteClient()
-            >>> is_asset = filters.ContainsAny(EventProperty.asset_ids, 123)
-            >>> plain_text_author_count = c.events.aggregate_cardinality_values(EventProperty.type, advanced_filter=is_asset)
+            >>> type_count = c.events.aggregate_cardinality_properties(EventProperty.metadata)
 
         """
         self._validate_filter(advanced_filter)
@@ -570,10 +562,11 @@ class EventsAPI(APIClient):
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: EventFilter | dict | None = None,
     ) -> UniqueResultList:
-        """`Find approximate unique event properties. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
+        """`Get unique paths with counts for events. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
 
         Args:
-            path (EventPropertyLike): The property to group by.
+            path (EventPropertyLike): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
+                                      It means to aggregate only metadata properties (aka keys).
             advanced_filter (Filter | dict | None): The filter to narrow down the events to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
             filter (EventFilter | dict | None): The filter to narrow down the events to count requirering exact match.
@@ -583,37 +576,12 @@ class EventsAPI(APIClient):
 
         Examples:
 
-        Get the unique types with count of events in your CDF project:
+        Get the unique metadata keys with count of events in your CDF project:
 
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.events import EventProperty
             >>> c = CogniteClient()
-            >>> result = c.events.aggregate_unique_values(EventProperty.type)
-            >>> print(result.unique)
-
-        Get the unique types of events after 2020-01-01 in your CDF project:
-
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes import filters
-            >>> from cognite.client.data_classes.events import EventProperty
-            >>> from cognite.client.utils import timestamp_to_ms
-            >>> from datetime import datetime
-            >>> c = CogniteClient()
-            >>> is_after_2020 = filters.Range(EventProperty.start_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
-            >>> result = c.events.aggregate_unique_values(EventProperty.type, advanced_filter=is_after_2020)
-            >>> print(result.unique)
-
-        Get the unique types of events after 2020-01-01 in your CDF project, but exclude all types that start with
-        "planned":
-
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes.events import EventProperty
-            >>> from cognite.client.data_classes import aggregations
-            >>> c = CogniteClient()
-            >>> a = aggregations
-            >>> not_planned = a.Not(a.Prefix("planned"))
-            >>> is_after_2020 = filters.Range(EventProperty.start_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
-            >>> result = c.events.aggregate_unique_values(EventProperty.type, advanced_filter=is_after_2020, aggregate_filter=not_planned)
+            >>> result = c.events.aggregate_unique_properties(EventProperty.metadata)
             >>> print(result.unique)
 
         """

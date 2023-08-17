@@ -34,13 +34,21 @@ Aggregate Asset Count
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.assets.AssetsAPI.aggregate_count
 
+Aggregate Asset Value Cardinality
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.assets.AssetsAPI.aggregate_cardinality_values
+
 Aggregate Asset Property Cardinality
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.aggregate_cardinality
+.. automethod:: cognite.client._api.assets.AssetsAPI.aggregate_cardinality_properties
 
-Aggregate Asset Unique Property Values
+Aggregate Asset Unique Values
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.aggregate_unique
+.. automethod:: cognite.client._api.assets.AssetsAPI.aggregate_unique_values
+
+Aggregate Asset Unique Properties
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.assets.AssetsAPI.aggregate_unique_properties
 
 Search for assets
 ^^^^^^^^^^^^^^^^^
@@ -93,19 +101,26 @@ List events
 Aggregate events
 ^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.events.EventsAPI.aggregate
-.. automethod:: cognite.client._api.events.EventsAPI.aggregate_unique_values
 
 Aggregate Event Count
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.events.EventsAPI.aggregate_count
 
+Aggregate Event Values Cardinality
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.events.EventsAPI.aggregate_cardinality_values
+
 Aggregate Event Property Cardinality
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.events.EventsAPI.aggregate_cardinality
+.. automethod:: cognite.client._api.events.EventsAPI.aggregate_cardinality_properties
 
-Aggregate Event Unique Property Values
+Aggregate Event Unique Values
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.events.EventsAPI.aggregate_unique
+.. automethod:: cognite.client._api.events.EventsAPI.aggregate_unique_values
+
+Aggregate Event Unique Properties
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.events.EventsAPI.aggregate_unique_properties
 
 Search for events
 ^^^^^^^^^^^^^^^^^
@@ -375,13 +390,21 @@ Aggregate Time Series Count
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.time_series.TimeSeriesAPI.aggregate_count
 
+Aggregate Time Series Values Cardinality
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.time_series.TimeSeriesAPI.aggregate_cardinality_values
+
 Aggregate Time Series Property Cardinality
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.time_series.TimeSeriesAPI.aggregate_cardinality
+.. automethod:: cognite.client._api.time_series.TimeSeriesAPI.aggregate_cardinality_properties
 
-Aggregate Time Series Unique Property Values
+Aggregate Time Series Unique Values
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.time_series.TimeSeriesAPI.aggregate_unique
+.. automethod:: cognite.client._api.time_series.TimeSeriesAPI.aggregate_unique_values
+
+Aggregate Time Series Unique Properties
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.time_series.TimeSeriesAPI.aggregate_unique_properties
 
 Search for time series
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -438,13 +461,21 @@ Aggregate Sequences Count
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.sequences.SequencesAPI.aggregate_count
 
+Aggregate Sequences Value Cardinality
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.sequences.SequencesAPI.aggregate_cardinality_values
+
 Aggregate Sequences Property Cardinality
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.sequences.SequencesAPI.aggregate_cardinality
+.. automethod:: cognite.client._api.sequences.SequencesAPI.aggregate_cardinality_properties
 
-Aggregate Sequences Unique Property Values
+Aggregate Sequences Unique Values
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.sequences.SequencesAPI.aggregate_unique
+.. automethod:: cognite.client._api.sequences.SequencesAPI.aggregate_unique_values
+
+Aggregate Sequences Unique Properties
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.sequences.SequencesAPI.aggregate_unique_properties
 
 Search for sequences
 ^^^^^^^^^^^^^^^^^^^^
