@@ -208,6 +208,8 @@ class Asset(CogniteResource):
     def time_series(self, **kwargs: Any) -> TimeSeriesList:
         """Retrieve all time series related to this asset.
 
+        Args:
+            **kwargs (Any): All extra keyword arguments are passed to time_series/list. NB: 'asset_ids' can't be used.
         Returns:
             TimeSeriesList: All time series related to this asset.
         """
@@ -216,6 +218,8 @@ class Asset(CogniteResource):
     def sequences(self, **kwargs: Any) -> SequenceList:
         """Retrieve all sequences related to this asset.
 
+        Args:
+            **kwargs (Any): All extra keyword arguments are passed to sequences/list. NB: 'asset_ids' can't be used.
         Returns:
             SequenceList: All sequences related to this asset.
         """
@@ -224,6 +228,8 @@ class Asset(CogniteResource):
     def events(self, **kwargs: Any) -> EventList:
         """Retrieve all events related to this asset.
 
+        Args:
+            **kwargs (Any): All extra keyword arguments are passed to events/list. NB: 'asset_ids' can't be used.
         Returns:
             EventList: All events related to this asset.
         """
@@ -233,6 +239,8 @@ class Asset(CogniteResource):
     def files(self, **kwargs: Any) -> FileMetadataList:
         """Retrieve all files metadata related to this asset.
 
+        Args:
+            **kwargs (Any): All extra keyword arguments are passed to files/list. NB: 'asset_ids' can't be used.
         Returns:
             FileMetadataList: Metadata about all files related to this asset.
         """
