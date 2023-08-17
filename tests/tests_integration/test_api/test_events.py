@@ -234,7 +234,9 @@ class TestEventsAPI:
         f = filters
         is_integration_test = f.Prefix(EventProperty.external_id, "integration_test:")
 
-        result = cognite_client.events.aggregate_unique_values(EventProperty.type, advanced_filter=is_integration_test)
+        result = cognite_client.events.aggregate_unique_values(
+            property=EventProperty.type, advanced_filter=is_integration_test
+        )
 
         assert set(result.unique) >= {e.type for e in event_list if e.type}
 
