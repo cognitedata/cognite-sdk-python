@@ -414,7 +414,8 @@ class EventsAPI(APIClient):
         """
         if fields is not None:
             warnings.warn(
-                "This method is deprecated and will be removed in future versions of the SDK.", DeprecationWarning
+                "Using of the parameter 'fields' is deprecated and will be removed in future versions of the SDK.",
+                DeprecationWarning,
             )
             return self._aggregate(
                 filter=filter, fields=fields, aggregate="uniqueValues", cls=AggregateUniqueValuesResult
