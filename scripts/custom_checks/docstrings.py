@@ -346,15 +346,18 @@ def format_docstring(cls) -> list[str]:
     return failed
 
 
-def find_all_classes_in_sdk():
+def find_all_classes_and_funcs_in_sdk():
+    def predicate(obj):
+        return inspect.isclass(obj) or inspect.isfunction(obj)
+
     locations = [".".join(p.parts)[:-3] for p in Path("cognite/client/").glob("**/*.py") if "_pb2.py" not in str(p)]
     return {
-        cls
+        cls_or_fn
         for loc in locations
-        for _, cls in inspect.getmembers(importlib.import_module(loc), inspect.isclass)  # todo: add fns
-        if str(cls).startswith("<class 'cognite.client")
+        for _, cls_or_fn in inspect.getmembers(importlib.import_module(loc), predicate=predicate)
+        if cls_or_fn.__module__.startswith("cognite.client.")
     }
 
 
 def format_docstrings() -> list[str]:
-    return "\n".join(itertools.chain.from_iterable(map(format_docstring, find_all_classes_in_sdk())))
+    return "\n".join(itertools.chain.from_iterable(map(format_docstring, find_all_classes_and_funcs_in_sdk())))
