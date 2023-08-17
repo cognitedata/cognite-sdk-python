@@ -45,7 +45,11 @@ def convert_all_keys_to_camel_case_recursive(dct: dict[str, Any]) -> dict[str, A
     """Converts all the dictionary keys from snake to camel cases included nested objects.
     >>> convert_all_keys_to_camel_case_recursive({"my_key": {"my_key": 1}})
     {'myKey': {'myKey': 1}}
-    """
+
+    Args:
+        dct (dict[str, Any]): No description.
+    Returns:
+        dict[str, Any]: No description."""
     return {
         to_camel_case(k): (convert_all_keys_to_camel_case_recursive(v) if isinstance(v, dict) else v)
         for k, v in dct.items()
@@ -56,7 +60,12 @@ def convert_all_keys_recursive(dct: dict[str, Any], camel_case: bool = False) ->
     """Converts all the dictionary keys from snake to camel cases included nested objects.
     >>> convert_all_keys_recursive({"my_key": {"my_key": 1}}, camel_case=True)
     {'myKey': {'myKey': 1}}
-    """
+
+    Args:
+        dct (dict[str, Any]): No description.
+        camel_case (bool): No description.
+    Returns:
+        dict[str, Any]: No description."""
     return {
         (to_camel_case(k) if camel_case else k): (
             convert_all_keys_recursive(v, camel_case) if isinstance(v, dict) else v

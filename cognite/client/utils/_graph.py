@@ -8,7 +8,12 @@ def find_all_cycles_with_elements(has_cycles: Set[str], edges: Dict) -> List[Lis
 
     Raises:
         KeyError: No loop found or edge does not exist.
-    """
+
+    Args:
+        has_cycles (Set[str]): No description.
+        edges (Dict): No description.
+    Returns:
+        List[List[str]]: No description."""
     cycles = []
     skip: Set[str] = set()
     while has_cycles:
@@ -26,7 +31,13 @@ def find_extended_cycle(slow: str, edges: Dict, skip: Set[str]) -> Tuple[Set[str
 
     Raises:
         KeyError: No loop found or edge does not exist.
-    """
+
+    Args:
+        slow (str): No description.
+        edges (Dict): No description.
+        skip (Set[str]): No description.
+    Returns:
+        Tuple[Set[str], List[str]]: No description."""
     all_elements = {slow}
     fast = edges[slow]
     while slow != fast:

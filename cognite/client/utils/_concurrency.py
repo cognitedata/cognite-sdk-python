@@ -251,7 +251,14 @@ def execute_tasks(
     """
     Will use a default executor if one is not passed explicitly. The default executor type uses a thread pool but can
     be changed using ExecutorSettings.executor_type.
-    """
+
+    Args:
+        func (Callable[..., T_Result]): No description.
+        tasks (Union[Sequence[Tuple], List[Dict]]): No description.
+        max_workers (int): No description.
+        executor (Optional[TaskExecutor]): No description.
+    Returns:
+        TasksSummary: No description."""
     executor = executor or get_executor(max_workers)
     futures = []
     for task in tasks:

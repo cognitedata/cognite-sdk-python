@@ -572,7 +572,7 @@ def _extract_requirements_from_file(file_name: str) -> List[str]:
         file_name (str): name of the file to parse
 
     Returns:
-        (list[str]): returns a list of library records
+        List[str]: returns a list of library records
     """
     requirements: List[str] = []
     with open(file_name, "r+") as f:
@@ -590,7 +590,7 @@ def _extract_requirements_from_doc_string(docstr: str) -> Optional[List[str]]:
         docstr (str): the docstring to extract requirements from
 
     Returns:
-        (list[str] | None): returns a list of library records if requirements are defined in the docstring, else None
+        Optional[List[str]]: returns a list of library records if requirements are defined in the docstring, else None
     """
     substr_start, substr_end = None, None
 
@@ -612,7 +612,7 @@ def _validate_and_parse_requirements(requirements: List[str]) -> List[str]:
     """Validates the requirement specifications
 
     Args:
-        requirements (list[str]): list of requirement specifications
+        requirements (List[str]): list of requirement specifications
     Raises:
         ValueError: if validation of requirements fails
     Returns:
@@ -636,7 +636,6 @@ def _get_fn_docstring_requirements(fn: Callable) -> List[str]:
 
     Args:
         fn (Callable): the function to read requirements from
-        file_path (str): Path of file to write requirements to
 
     Returns:
         List[str]: A (possibly empty) list of requirements.

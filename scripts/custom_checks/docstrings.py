@@ -11,14 +11,17 @@ import numpy as np
 
 from cognite.client.data_classes import TimeSeries
 from cognite.client.data_classes.data_modeling.query import Query
+from cognite.client.testing import monkeypatch_cognite_client
 
-EXCEPTIONS = {
+FUNC_EXCEPTIONS = {}
+CLS_METHOD_EXCEPTIONS = {
     (Query, "__init__"),  # Reason: Uses a parameter 'with_'; and we need to escape the underscore
 }
 
 # Helper for testing specific class + method/property:
 TESTING = False
-ONLY_RUN = {
+ONLY_RUN_FUNCS = {monkeypatch_cognite_client}
+ONLY_RUN_CLS_METHODS = {
     (TimeSeries, "latest"),  # Just an example
 }
 
@@ -96,12 +99,12 @@ class DocstrFormatter:
         annots = {}
         if isinstance(method, property):
             method_signature = inspect.signature(lambda: ...)  # just 'self' anyways
-            return_annot = method.fget.__annotations__.get("return", inspect._empty)
+            return_annot = method.fget.__annotations__.get("return", inspect.Signature.empty)
         else:
             method_signature = inspect.signature(method)
             return_annot = method_signature.return_annotation
 
-        if return_annot is inspect._empty:
+        if return_annot is inspect.Signature.empty:
             raise ValueError("Missing return type annotation")
 
         for var_name, param in method_signature.parameters.items():
@@ -279,12 +282,11 @@ class DocstrFormatter:
 
         return "\n".join(final_doc_lines)
 
-    def update_py_file(self, cls, attr) -> str:
-        source_code = (path := Path(inspect.getfile(cls))).read_text()
+    def update_py_file(self, cls_or_fn, method_description) -> str:
+        source_code = (path := Path(inspect.getsourcefile(cls_or_fn))).read_text()
 
-        was_tested = f"{cls.__name__}.{attr}"
         if (n_matches := source_code.count(self.original_doc)) == 0:
-            return f"Couldn't fix docstring for '{was_tested}', as the old doc was not found in the file"
+            return f"Couldn't fix docstring for '{method_description}', as the old doc was not found in the file"
 
         elif n_matches == 1:
             new_docstr = self.create_docstring()
@@ -297,34 +299,37 @@ class DocstrFormatter:
                 )
 
             path.write_text(source_code.replace(self.original_doc, new_docstr))
-            return f"Fixed docstring for '{was_tested}'"
+            return f"Fixed docstring for '{method_description}'"
 
         else:
-            return f"Couldn't fix docstring for '{was_tested}', as the old doc was not unique to the file"
+            return f"Couldn't fix docstring for '{method_description}', as the old doc was not unique to the file"
 
 
 def get_all_non_inherited_attributes(cls):
-    return [
-        (attr, method)
-        for attr, method in inspect.getmembers(
-            cls, predicate=lambda method: inspect.isfunction(method) or isinstance(method, property)
-        )
-        if attr in cls.__dict__
-    ]
+    def predicate(obj):
+        return inspect.isfunction(obj) or isinstance(obj, property)
+
+    return [(attr, method) for attr, method in inspect.getmembers(cls, predicate=predicate) if attr in cls.__dict__]
 
 
-def format_docstring(cls) -> list[str]:
+def format_docstring(cls_or_fn):
+    is_func = inspect.isfunction(cls_or_fn)
+    return {True: format_docstring_function, False: format_docstring_class_methods}[is_func](cls_or_fn)
+
+
+def format_docstring_class_methods(cls) -> list[str]:
     failed = []
     for attr, method in get_all_non_inherited_attributes(cls):
-        if (cls, attr) in EXCEPTIONS:
+        if (cls, attr) in CLS_METHOD_EXCEPTIONS:
             continue
 
-        if TESTING and (cls, attr) not in ONLY_RUN:
+        if TESTING and (cls, attr) not in ONLY_RUN_CLS_METHODS:
             continue
 
         # The __init__ method is documented in the class level docstring
         is_init = attr == "__init__"
         doc = cls.__doc__ if is_init else method.__doc__
+        method_description = f"{cls.__name__}.{attr}"
 
         if not doc or (is_init and is_dataclass(cls)):
             continue
@@ -335,15 +340,38 @@ def format_docstring(cls) -> list[str]:
             continue
         except (ValueError, IndexError) as e:
             failed.append(
-                f"Couldn't parse parameters in docstring for '{cls.__name__}.{attr}', "
+                f"Couldn't parse parameters in docstring for '{method_description}', "
                 f"please inspect manually. Reason: {e}"
             )
             continue
 
         if not doc_fmt.docstring_is_correct():
-            if err_msg := doc_fmt.update_py_file(cls, attr):
+            if err_msg := doc_fmt.update_py_file(cls, method_description):
                 failed.append(err_msg)
     return failed
+
+
+def format_docstring_function(fn) -> list[str]:
+    # Unwrap is needed for decorated functions to avoid getting the docstring (or later, the file to fix)
+    # of the decorator function!
+    fn = inspect.unwrap(fn)
+
+    if fn in FUNC_EXCEPTIONS or TESTING and fn not in ONLY_RUN_FUNCS or not (doc := fn.__doc__):
+        return []
+
+    fn_description = f"function: {fn.__name__}"
+
+    try:
+        doc_fmt = DocstrFormatter(doc, fn)
+    except FalsePositiveDocstring:
+        return []
+    except (ValueError, IndexError) as e:
+        return [f"Couldn't parse parameters in docstring for '{fn_description}', please inspect manually. Reason: {e}"]
+
+    if not doc_fmt.docstring_is_correct():
+        if err_msg := doc_fmt.update_py_file(fn, fn_description):
+            return [err_msg]
+    return []
 
 
 def find_all_classes_and_funcs_in_sdk():

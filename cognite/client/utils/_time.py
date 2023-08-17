@@ -68,7 +68,7 @@ def datetime_to_ms(dt: datetime) -> int:
         dt (datetime): Naive or aware datetime object. Naive datetimes are interpreted as local time.
 
     Returns:
-        ms: Milliseconds since epoch (negative for time prior to 1970-01-01)
+        int: Milliseconds since epoch (negative for time prior to 1970-01-01)
     """
     try:
         return int(1000 * dt.timestamp())
@@ -398,12 +398,12 @@ def align_large_granularity(start: datetime, end: datetime, granularity: str) ->
     This is done to get consistent behavior with the Cognite Datapoints API.
 
     Args:
-        start: Start time
-        end: End time
-        granularity: The large granularity, day|week|month|quarter|year.
+        start (datetime): Start time
+        end (datetime): End time
+        granularity (str): The large granularity, day|week|month|quarter|year.
 
     Returns:
-        start and end aligned with granularity
+        tuple[datetime, datetime]: start and end aligned with granularity
     """
     multiplier, unit = get_granularity_multiplier_and_unit(granularity)
     # Can be replaced by a single dispatch pattern, but kept more explicit for readability.
@@ -539,7 +539,14 @@ def pandas_date_range_tz(start: datetime, end: datetime, freq: str, inclusive: s
     This function overcomes that limitation.
 
     Assumes that start and end have the same timezone.
-    """
+
+    Args:
+        start (datetime): No description.
+        end (datetime): No description.
+        freq (str): No description.
+        inclusive (str): No description.
+    Returns:
+        pandas.DatetimeIndex: No description."""
     pd = cast(Any, local_import("pandas"))
     # There is a bug in date_range which makes it fail to handle ambiguous timestamps when you use time zone aware
     # datetimes. This is a workaround by passing the time zone as an argument to the function.
@@ -573,7 +580,12 @@ def _timezones_are_equal(start_tz: tzinfo, end_tz: tzinfo) -> bool:
     Note:
         We do not consider timezones with different keys, but equal fixed offsets from UTC to be equal. An example
         would be Zulu Time (which is +00:00 ahead of UTC) and UTC.
-    """
+
+    Args:
+        start_tz (tzinfo): No description.
+        end_tz (tzinfo): No description.
+    Returns:
+        bool: No description."""
     if start_tz is end_tz:
         return True
     ZoneInfo, ZoneInfoNotFoundError = import_zoneinfo(), _import_zoneinfo_not_found_error()
@@ -630,7 +642,12 @@ def _unit_in_days(unit: str, ceil: bool = True) -> float:
     **Caveat** Should not be used for precise calculations, as month, quarter, and year
     do not have a precise timespan in days. Instead, the ceil argument is used to select between
     the maximum and minimum length of a year, quarter, and month.
-    """
+
+    Args:
+        unit (str): No description.
+        ceil (bool): No description.
+    Returns:
+        float: No description."""
     if unit in {"w", "d", "h", "m", "s"}:
         unit = GRANULARITY_IN_TIMEDELTA_UNIT[unit]
         arg = {unit: 1}
@@ -650,12 +667,11 @@ def in_timedelta(granularity: str, ceil: bool = True) -> timedelta:
     Converts the granularity to a timedelta.
 
     Args:
-        granularity: The granularity.
-        ceil: In the case the unit is month, quarter or year. Ceil = True will use 31, 92, 366 days for these
-              timespans, and if ceil is false 28, 91, 365
+        granularity (str): The granularity.
+        ceil (bool): In the case the unit is month, quarter or year. Ceil = True will use 31, 92, 366 days for these timespans, and if ceil is false 28, 91, 365
 
     Returns:
-        A timespan for the granularity
+        timedelta: A timespan for the granularity
     """
     multiplier, unit = get_granularity_multiplier_and_unit(granularity, standardize=True)
     if unit in {"w", "d", "h", "m", "s"}:
