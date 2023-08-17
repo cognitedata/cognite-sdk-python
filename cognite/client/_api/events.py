@@ -337,41 +337,41 @@ class EventsAPI(APIClient):
     @overload
     def aggregate_unique_values(
         self,
-        property: EventPropertyLike | tuple[EventPropertyLike, AggregationFilter],
         fields: Sequence[str],
+        filter: EventFilter | dict | None = None,
+        property: EventPropertyLike | tuple[EventPropertyLike, AggregationFilter] | None = None,
         advanced_filter: Filter | dict | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
-        filter: EventFilter | dict | None = None,
     ) -> List[AggregateUniqueValuesResult]:
         ...
 
     @overload
     def aggregate_unique_values(
         self,
-        property: EventPropertyLike | tuple[EventPropertyLike, AggregationFilter],
         fields: Literal[None] = None,
+        filter: EventFilter | dict | None = None,
+        property: EventPropertyLike | tuple[EventPropertyLike, AggregationFilter] | None = None,
         advanced_filter: Filter | dict | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
-        filter: EventFilter | dict | None = None,
     ) -> UniqueResultList:
         ...
 
     def aggregate_unique_values(
         self,
-        property: EventPropertyLike | tuple[EventPropertyLike, AggregationFilter],
-        fields: Optional[Sequence[str]] = None,
+        fields: Sequence[str] | None = None,
+        filter: EventFilter | dict | None = None,
+        property: EventPropertyLike | tuple[EventPropertyLike, AggregationFilter] | None = None,
         advanced_filter: Filter | dict | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
-        filter: EventFilter | dict | None = None,
     ) -> List[AggregateUniqueValuesResult] | UniqueResultList:
         """`Find approximate unique event properties. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
 
         Args:
-            property (EventPropertyLike | tuple[EventPropertyLike, AggregationFilter]): The property to group by.
             fields (Sequence[str]): The fields to return. Defaults to ["count"].
+            filter (EventFilter | dict | None): The filter to narrow down the events to count requirering exact match.
+            property (EventPropertyLike | tuple[EventPropertyLike, AggregationFilter]): The property to group by.
             advanced_filter (Filter | dict | None): The filter to narrow down the events to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
-            filter (EventFilter | dict | None): The filter to narrow down the events to count requirering exact match.
 
         Returns:
             UniqueResultList: List of unique values of events matching the specified filters and search.
