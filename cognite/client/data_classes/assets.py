@@ -504,7 +504,11 @@ class AssetHierarchy:
     This is done "offline", meaning CDF is -not- queried for the already existing assets. As a result,
     any asset providing a parent link by ID instead of external ID, are assumed valid.
 
-    Example usage:
+    Args:
+        assets (Sequence[Asset]): Sequence of assets to be inspected for validity.
+        ignore_orphans (bool): If true, orphan assets are assumed valid and won't raise.
+
+    Examples:
 
         >>> from cognite.client import CogniteClient
         >>> from cognite.client.data_classes import AssetHierarchy
@@ -522,9 +526,9 @@ class AssetHierarchy:
         ...     hierarchy.duplicates
         ...     hierarchy.cycles  # Requires no other basic issues
 
-    There are other ways to generate the report than to write directly to screen. You may pass an
-    ``output_file`` which can be either a ``Path`` object (writes are done in append-mode) or a
-    file-like object supporting ``write`` (default is ``None`` which is just regular ``print``):
+        There are other ways to generate the report than to write directly to screen. You may pass an
+        ``output_file`` which can be either a ``Path`` object (writes are done in append-mode) or a
+        file-like object supporting ``write`` (default is ``None`` which is just regular ``print``):
 
         >>> # Get a report written to file:
         >>> from pathlib import Path

@@ -9,7 +9,7 @@ from pathlib import Path
 
 import numpy as np
 
-from cognite.client.data_classes import AssetHierarchy
+from cognite.client.data_classes import TimeSeries
 from cognite.client.data_classes.data_modeling.query import Query
 
 EXCEPTIONS = {
@@ -19,7 +19,7 @@ EXCEPTIONS = {
 # Helper for testing specific class + method/property:
 TESTING = False
 ONLY_RUN = {
-    (AssetHierarchy, "__init__"),  # Just an example
+    (TimeSeries, "latest"),  # Just an example
 }
 
 
@@ -89,8 +89,14 @@ class DocstrFormatter:
                 return s.replace(match.group(1), match.group(2).replace("'", '"'))
             return s
 
-        annots, method_signature = {}, inspect.signature(method)
-        return_annot = method_signature.return_annotation
+        annots = {}
+        if isinstance(method, property):
+            method_signature = inspect.signature(lambda: ...)  # just 'self' anyways
+            return_annot = method.fget.__annotations__.get("return", inspect._empty)
+        else:
+            method_signature = inspect.signature(method)
+            return_annot = method_signature.return_annotation
+
         if return_annot is inspect._empty:
             raise ValueError("Missing return type annotation")
 
@@ -229,18 +235,28 @@ class DocstrFormatter:
 
     def create_docstring(self):
         final_doc_lines = []
+        args_missing = self.line_args_group is None
+        return_missing = self.line_return_group is None
+
+        # Reconstruct the docstring, modifying params + return sections:
         for lines in self.lines_grouped:
             if lines is self.line_args_group:
                 lines = self._create_docstring_param_description()
+                if return_missing:
+                    lines += self._create_docstring_return_description()
+
             elif lines is self.line_return_group:
                 lines = self._create_docstring_return_description()
+                if args_missing:
+                    # If return section exists, but args section doesnt, we can't add 'args' later (wrong order):
+                    lines = self._create_docstring_param_description() + lines
+
             final_doc_lines.extend(lines)
 
-        # If any section is missing, add them:
-        if self.line_args_group is None:
-            final_doc_lines.extend(self._create_docstring_param_description())
-        if self.line_return_group is None:
-            final_doc_lines.extend(self._create_docstring_return_description())
+        # If both sections are missing, we punch them in at the end, hopefully the user will move if weird order
+        if args_missing and return_missing:
+            lines = self._create_docstring_param_description() + self._create_docstring_return_description()
+            final_doc_lines.extend(lines)
 
         # Remove unwanted space from right, but keep for last (avoid moving closing triple quote):
         last = final_doc_lines[-1]
