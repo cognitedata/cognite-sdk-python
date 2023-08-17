@@ -724,7 +724,12 @@ class SerialFetchSubtask(BaseDpsFetchSubtask):
 
 class SplittingFetchSubtask(SerialFetchSubtask):
     """Fetches data serially, but splits its time domain ("divide and conquer") based on the density
-    of returned datapoints. Stores data in parent"""
+    of returned datapoints. Stores data in parent
+
+    Args:
+        max_splitting_factor (int): No description.
+        **kwargs (Any): No description.
+    """
 
     def __init__(self, *, max_splitting_factor: int = 10, **kwargs: Any) -> None:
         super().__init__(**kwargs)
@@ -744,6 +749,8 @@ class SplittingFetchSubtask(SerialFetchSubtask):
         (we rely on tuple sorting logic). Example using `self.subtask_idx=(4,)`:
         - First split into e.g. 3 parts: (4,-3), (4,-2), (4,-1)
         - Next, split into 2: (4, -5) and (4, -4). These now sort before the first split.
+        Args:
+            n_new_tasks (int): No description.
         Yields:
             Iterable[Tuple[float, ...]]: No description."""
         end = self.split_subidx

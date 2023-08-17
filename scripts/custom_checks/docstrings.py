@@ -206,6 +206,8 @@ class DocstrFormatter:
         return return_annot_is_correct and parameters_are_correct
 
     def _create_docstring_param_description(self):
+        if not self.actual_annotations:
+            return []
         whitespace = " " * self.indentation
         fixed_lines = [f"{whitespace}Args:"]
         doc_descr = dict((p.var_name, p.description) for p in self.parameters)

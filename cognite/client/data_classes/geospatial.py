@@ -395,7 +395,9 @@ class GeospatialGeometryComputeFunction(GeospatialComputeFunction, ABC):
 class GeospatialGeometryValueComputeFunction(GeospatialGeometryComputeFunction):
     """A geospatial geometry value compute function.
     Accepts a well-known text of the geometry prefixed with a spatial reference identifier,
-    see https://docs.geotools.org/stable/javadocs/org/opengis/referencing/doc-files/WKT.html"""
+    see https://docs.geotools.org/stable/javadocs/org/opengis/referencing/doc-files/WKT.html
+    Args:
+        ewkt (str): No description."""
 
     def __init__(self, ewkt: str) -> None:
         self.ewkt = ewkt

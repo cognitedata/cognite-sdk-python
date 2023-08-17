@@ -139,6 +139,10 @@ class HTTPClient:
         exception is not in the context, so we need to check for the appropriate built-in exceptions,
         urllib3 exceptions, and requests exceptions.
 
+        Args:
+            method (str): No description.
+            url (str): No description.
+            **kwargs (Any): No description.
         Returns:
             requests.Response: No description."""
         try:

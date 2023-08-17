@@ -64,7 +64,10 @@ class CogniteClientMock(MagicMock):
     """Mock for CogniteClient object
 
     All APIs are replaced with specced MagicMock objects.
-    """
+
+    Args:
+        *args (Any): No description.
+        **kwargs (Any): No description."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         if "parent" in kwargs:

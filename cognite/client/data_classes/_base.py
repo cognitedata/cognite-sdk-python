@@ -394,6 +394,8 @@ class CogniteUpdate:
     def dump(self, camel_case: bool = True) -> Dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
+        Args:
+            camel_case (bool): No description.
         Returns:
             Dict[str, Any]: A dictionary representation of the instance.
         """

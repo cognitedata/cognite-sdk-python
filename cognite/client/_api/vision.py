@@ -25,6 +25,9 @@ class VisionAPI(APIClient):
         Returns the concatenation of the ids an external ids in the format
         expected by the Context API.
 
+        Args:
+            ids (Union[List[int], int, None]): No description.
+            external_ids (Union[List[str], str, None]): No description.
         Returns:
             List: No description."""
         identifier_sequence = IdentifierSequence.load(ids=ids, external_ids=external_ids).as_primitives()

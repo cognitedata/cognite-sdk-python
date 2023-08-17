@@ -94,7 +94,7 @@ class Sequence(CogniteResource):
         """Retrieves list of column external ids for the sequence, for use in e.g. data retrieve or insert methods
 
         Returns:
-            List of sequence column external ids
+            List[str]: List of sequence column external ids
         """
         assert self.columns is not None
         return [cast(str, c.get("externalId")) for c in self.columns]

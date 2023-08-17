@@ -110,6 +110,8 @@ class TimeSeries(CogniteResource):
     def latest(self, before: Optional[Union[int, str, datetime]] = None) -> Optional[Datapoint]:
         """Returns the latest datapoint in this time series. If empty, returns None.
 
+        Args:
+            before (Optional[Union[int, str, datetime]]): No description.
         Returns:
             Optional[Datapoint]: A datapoint object containing the value and timestamp of the latest datapoint.
         """
