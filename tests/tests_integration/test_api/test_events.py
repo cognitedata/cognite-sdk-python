@@ -31,11 +31,19 @@ def event_list(cognite_client: CogniteClient) -> EventList:
                 external_id=f"{prefix}event1_lorem_ipsum",
                 description="This is a a test event with some lorem ipsum text.",
                 start_time=timestamp_to_ms(datetime(2023, 8, 9, 11, 42)),
+                metadata={
+                    "timezone": "Europe/Oslo",
+                },
             ),
             Event(
                 external_id=f"{prefix}event2",
                 description="This is also a test event, this time without the same text as the other one.",
                 end_time=timestamp_to_ms(datetime(2023, 8, 9, 11, 43)),
+                type="lorem ipsum",
+                metadata={
+                    "timezone": "America/New_York",
+                    "some_other_key": "some_other_value",
+                },
             ),
         ]
     )
@@ -175,58 +183,69 @@ class TestEventsAPI:
             )
 
     def test_filter_search(self, cognite_client: CogniteClient, event_list: EventList) -> None:
-        # Arrange
         f = filters
         is_integration_test = f.Prefix(EventProperty.external_id, "integration_test:")
         has_lorem_ipsum = f.Search(EventProperty.description, "lorem ipsum")
 
-        # Act
         result = cognite_client.events.filter(
             f.And(is_integration_test, has_lorem_ipsum), sort=SortableEventProperty.external_id
         )
 
-        # Assert
         assert len(result) == 1, "Expected only one event to match the filter"
         assert result[0].external_id == "integration_test:event1_lorem_ipsum"
 
     def test_aggregate_count(self, cognite_client: CogniteClient, event_list: EventList) -> None:
-        # Act
-        count = cognite_client.events.aggregate_count()
+        f = filters
+        is_integration_test = f.Prefix(EventProperty.external_id, "integration_test:")
 
-        # Assert
-        assert count > 0, "Expected at least one event to exist"
+        count = cognite_client.events.aggregate_count(advanced_filter=is_integration_test)
+
+        assert count >= len(event_list)
 
     def test_aggregate_has_type(self, cognite_client: CogniteClient, event_list: EventList) -> None:
-        # Act
-        count = cognite_client.events.aggregate_count(EventProperty.type)
+        f = filters
+        is_integration_test = f.Prefix(EventProperty.external_id, "integration_test:")
 
-        # Assert
-        assert count > 0, "Expected at least one event with type to exist"
+        count = cognite_client.events.aggregate_count(EventProperty.type, advanced_filter=is_integration_test)
+
+        assert count >= sum(1 for e in event_list if e.type)
 
     def test_aggregate_type_count(self, cognite_client: CogniteClient, event_list: EventList) -> None:
-        # Act
-        count = cognite_client.events.aggregate_cardinality_values(EventProperty.type)
+        f = filters
+        is_integration_test = f.Prefix(EventProperty.external_id, "integration_test:")
 
-        # Assert
-        assert count > 0, "Expected at one type to exists"
+        count = cognite_client.events.aggregate_cardinality_values(
+            EventProperty.type, advanced_filter=is_integration_test
+        )
+
+        assert count >= len({e.type for e in event_list if e.type})
 
     def test_aggregate_metadata_keys_count(self, cognite_client: CogniteClient, event_list: EventList) -> None:
-        # Act
-        count = cognite_client.events.aggregate_cardinality_values(EventProperty.metadata)
+        f = filters
+        is_integration_test = f.Prefix(EventProperty.external_id, "integration_test:")
 
-        # Assert
-        assert count > 0, "Expected at one metadata key to exists"
+        count = cognite_client.events.aggregate_cardinality_properties(
+            EventProperty.metadata, advanced_filter=is_integration_test
+        )
+
+        assert count >= len({k for e in event_list for k in e.metadata})
 
     def test_aggregate_unique_types(self, cognite_client: CogniteClient, event_list: EventList) -> None:
-        # Act
-        result = cognite_client.events.aggregate_unique_values(EventProperty.type)
+        f = filters
+        is_integration_test = f.Prefix(EventProperty.external_id, "integration_test:")
 
-        # Assert
-        assert len(result.unique) > 0, "Expected at one type to exists"
+        result = cognite_client.events.aggregate_unique_values(EventProperty.type, advanced_filter=is_integration_test)
+
+        assert set(result.unique) >= {e.type for e in event_list if e.type}
 
     def test_aggregate_unique_metadata_keys(self, cognite_client: CogniteClient, event_list: EventList) -> None:
-        # Act
-        result = cognite_client.events.aggregate_unique_values(EventProperty.metadata)
+        f = filters
+        is_integration_test = f.Prefix(EventProperty.external_id, "integration_test:")
 
-        # Assert
-        assert len(result.unique) > 0, "Expected at one metadata key to exists"
+        result = cognite_client.events.aggregate_unique_properties(
+            EventProperty.metadata, advanced_filter=is_integration_test
+        )
+
+        assert {tuple(item.value["property"]) for item in result} >= {
+            ("metadata", key.casefold()) for a in event_list for key in a.metadata or []
+        }
