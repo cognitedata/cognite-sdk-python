@@ -443,7 +443,7 @@ class SequencesAPI(APIClient):
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: SequenceFilter | dict | None = None,
     ) -> UniqueResultList:
-        """`Get unique paths with counts for sequences.<https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
+        """`Get unique paths with counts for sequences. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
 
         Args:
             property (SequenceProperty | str | List[str]): The property to group by.

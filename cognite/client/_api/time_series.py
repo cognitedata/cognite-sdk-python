@@ -547,7 +547,7 @@ class TimeSeriesAPI(APIClient):
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: TimeSeriesFilter | dict | None = None,
     ) -> UniqueResultList:
-        """`Get unique paths with counts for time series.<https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
+        """`Get unique paths with counts for time series. <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
 
         Args:
             path (TimeSeriesProperty | str | List[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
