@@ -8,14 +8,16 @@ import pytest
 from cognite.client import CogniteClient
 from cognite.client.data_classes import aggregations, filters
 from cognite.client.data_classes.documents import DocumentProperty, SortableDocumentProperty, SourceFileProperty
-from cognite.client.data_classes.files import FileMetadata
+from cognite.client.data_classes.files import FileMetadata, FileMetadataList
 
 RESOURCES = Path(__file__).resolve().parent / "documents_resources"
+
+_FILE_PREFIX = "document_api_integration"
 
 
 @pytest.fixture(scope="session")
 def text_file_content_pair(cognite_client: CogniteClient) -> tuple[FileMetadata, str]:
-    external_id = "document_api_integration_test_file"
+    external_id = f"{_FILE_PREFIX}_test_file"
     content = """This is a test file for the document API integration test.
 
 Lorem ipsum dolor sit amet, eum an quando noster graecis, nam everti offendit an.
@@ -31,13 +33,16 @@ Mei et possim option. An sit ipsum scaevola."""
         name=external_id,
         external_id=external_id,
         mime_type="text/plain",
+        metadata={
+            "solver_type": "linear",
+        },
     )
     return created_file, content
 
 
 @pytest.fixture(scope="session")
 def pdf_file(cognite_client: CogniteClient) -> FileMetadata:
-    external_id = "document_api_integration_test_pdf_file"
+    external_id = f"{_FILE_PREFIX}_test_pdf_file"
     file = cognite_client.files.retrieve(external_id=external_id)
     if file is not None:
         return file
@@ -50,6 +55,11 @@ def pdf_file(cognite_client: CogniteClient) -> FileMetadata:
         mime_type="application/pdf",
     )
     return created_file
+
+
+@pytest.fixture(scope="session")
+def document_list(text_file_content_pair: tuple[FileMetadata, str], pdf_file: FileMetadata) -> FileMetadataList:
+    return FileMetadataList([text_file_content_pair[0], pdf_file])
 
 
 class TestDocumentsAPI:
@@ -98,37 +108,61 @@ class TestDocumentsAPI:
         assert not actual.highlight.name
         assert query[1:-1] in actual.highlight.content[0]
 
-    def test_aggregate_count(self, cognite_client: CogniteClient):
-        count = cognite_client.documents.aggregate_count()
+    def test_aggregate_count(self, cognite_client: CogniteClient, document_list: FileMetadataList):
+        f = filters
+        is_integration_test = f.Prefix("externalId", _FILE_PREFIX)
 
-        assert count > 0, "There should be at least one document in the test environment."
+        count = cognite_client.documents.aggregate_count(filter=is_integration_test)
 
-    def test_aggregate_cardinality(self, cognite_client: CogniteClient):
-        count = cognite_client.documents.aggregate_cardinality_values(property=DocumentProperty.type)
+        assert count >= len(document_list)
 
-        assert count > 0
+    def test_aggregate_cardinality(self, cognite_client: CogniteClient, document_list: FileMetadataList):
+        f = filters
+        is_integration_test = f.Prefix("externalId", _FILE_PREFIX)
 
-    def test_aggregate_cardinality_metadata(self, cognite_client: CogniteClient):
-        count = cognite_client.documents.aggregate_cardinality_values(property=SourceFileProperty.metadata)
+        count = cognite_client.documents.aggregate_cardinality_values(
+            property=DocumentProperty.mime_type, filter=is_integration_test
+        )
 
-        assert count > 0
+        assert count >= len({doc.mime_type for doc in document_list if doc.mime_type is not None})
 
-    def test_aggregate_unique_types(self, cognite_client: CogniteClient):
+    def test_aggregate_cardinality_metadata(self, cognite_client: CogniteClient, document_list: FileMetadataList):
+        f = filters
+        is_integration_test = f.Prefix("externalId", _FILE_PREFIX)
+
+        count = cognite_client.documents.aggregate_cardinality_properties(
+            path=SourceFileProperty.metadata, filter=is_integration_test
+        )
+
+        assert count >= len({k for doc in document_list for k in doc.metadata or []})
+
+    def test_aggregate_unique_types(self, cognite_client: CogniteClient, document_list: FileMetadataList):
+        f = filters
+        is_integration_test = f.Prefix("externalId", _FILE_PREFIX)
+
         agg = aggregations
         is_not_text = agg.Not(agg.Prefix("text"))
 
-        all_buckets = cognite_client.documents.aggregate_unique_values(property=DocumentProperty.mime_type)
+        all_buckets = cognite_client.documents.aggregate_unique_values(
+            property=DocumentProperty.mime_type, filter=is_integration_test
+        )
         not_text_buckets = cognite_client.documents.aggregate_unique_values(
             property=DocumentProperty.mime_type,
             aggregate_filter=is_not_text,
+            filter=is_integration_test,
         )
 
         assert len(all_buckets) > len(not_text_buckets)
 
-    def test_aggregate_unique_metadata(self, cognite_client: CogniteClient):
-        result = cognite_client.documents.aggregate_unique_values(property=SourceFileProperty.metadata)
+    def test_aggregate_unique_metadata(self, cognite_client: CogniteClient, document_list: FileMetadataList):
+        f = filters
+        is_integration_test = f.Prefix("externalId", _FILE_PREFIX)
 
-        assert len(result) > 0
+        result = cognite_client.documents.aggregate_unique_properties(
+            path=SourceFileProperty.metadata, filter=is_integration_test
+        )
+
+        assert set(result.unique) >= {key.casefold() for a in document_list for key in a.metadata or []}
 
     def test_iterate_over_text_documents(self, cognite_client: CogniteClient):
         is_text_doc = filters.Equals(DocumentProperty.mime_type, "text/plain")
