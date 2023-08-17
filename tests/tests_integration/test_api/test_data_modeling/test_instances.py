@@ -437,7 +437,7 @@ class TestInstancesAPI:
     def test_aggregate_count_persons(self, cognite_client: CogniteClient, person_view: View) -> None:
         # Arrange
         view_id = person_view.as_id()
-        count_agg = aggregations.Count("externalId")
+        count_agg = aggregations.Count("name")
 
         # Act
         counts = cognite_client.data_modeling.instances.aggregate(
