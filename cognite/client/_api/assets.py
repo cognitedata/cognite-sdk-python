@@ -487,7 +487,7 @@ class AssetsAPI(APIClient):
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: AssetFilter | dict | None = None,
     ) -> int:
-        """`Request values approximate cardinality aggregate on a specific property. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
+        """`Find approximate property count for assets. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
         Args:
             property (AssetPropertyLike | tuple[AssetPropertyLike, AggregationFilter]): The property to count the cardinality of.
@@ -533,7 +533,7 @@ class AssetsAPI(APIClient):
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: AssetFilter | dict | None = None,
     ) -> int:
-        """`Get the asset properties approximate cardinality. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
+        """`Find approximate paths count for assets.  <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
         Args:
             path (AssetPropertyLike): The scope in every document to aggregate properties.  The only value allowed now is ["metadata"].
@@ -569,7 +569,7 @@ class AssetsAPI(APIClient):
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: AssetFilter | dict | None = None,
     ) -> UniqueResultList:
-        """`Find approximate unique asset properties. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
+        """`Get unique properties with counts for assets. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
         Args:
             property (AssetPropertyLike | tuple[AssetPropertyLike, AggregationFilter]): The property to group by.
@@ -632,7 +632,7 @@ class AssetsAPI(APIClient):
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: AssetFilter | dict | None = None,
     ) -> UniqueResultList:
-        """`Find approximate unique asset properties. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
+        """`Get unique paths with counts for assets. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
         Args:
             path (AssetPropertyLike): The scope in every document to aggregate properties.  The only value allowed now is ["metadata"].

@@ -340,7 +340,7 @@ class SequencesAPI(APIClient):
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: SequenceFilter | dict | None = None,
     ) -> int:
-        """`Find approximate count of sequence properties. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
+        """`Find approximate property count for sequences. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
 
         Args:
             property (SequenceProperty | str | List[str]): The property to count the cardinality of.
@@ -399,10 +399,11 @@ class SequencesAPI(APIClient):
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: SequenceFilter | dict | None = None,
     ) -> int:
-        """`Request resource properties approximate cardinality aggregate. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
+        """`Find approximate paths count for sequences.  <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
 
         Args:
-            path (SequenceProperty | str | List[str]): The property to count the cardinality of.
+            path (SequenceProperty | str | List[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
+                                                       It means to aggregate only metadata properties (aka keys).
             query (str | None): The free text search query, for details see the documentation referenced above.
             advanced_filter (Filter | dict | None): The filter to narrow down the sequences to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
@@ -442,7 +443,7 @@ class SequencesAPI(APIClient):
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: SequenceFilter | dict | None = None,
     ) -> UniqueResultList:
-        """`Find approximate unique sequence properties. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
+        """`Get unique paths with counts for sequences.<https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
 
         Args:
             property (SequenceProperty | str | List[str]): The property to group by.
@@ -524,7 +525,8 @@ class SequencesAPI(APIClient):
         """`Find approximate unique sequence properties. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
 
         Args:
-            path (SequenceProperty | str | List[str]): The property to group by.
+            path (SequenceProperty | str | List[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
+                                                       It means to aggregate only metadata properties (aka keys).
             advanced_filter (Filter | dict | None): The filter to narrow down the sequences to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
             filter (SequenceFilter | dict | None): The filter to narrow down the sequences to count requirering exact match.

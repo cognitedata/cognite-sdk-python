@@ -315,7 +315,7 @@ class DocumentsAPI(APIClient):
         filter: Filter | dict | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
     ) -> int:
-        """`Find approximate number of unique properties. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
+        """`Find approximate property count for documents. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
 
         Args:
             property (DocumentProperty | list[str] | str): The property to count the cardinality of.
@@ -372,10 +372,11 @@ class DocumentsAPI(APIClient):
         filter: Filter | dict | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
     ) -> int:
-        """`Find approximate number of unique properties. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
+        """`Find approximate paths count for documents.  <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
 
         Args:
-            path (DocumentProperty | list[str] | str): The property to count the cardinality of.
+            path (DocumentProperty | list[str] | str): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
+                                                        It means to aggregate only metadata properties (aka keys).
             query (str | None): The free text search query, for details see the documentation referenced above.
             filter (Filter | dict | None): The filter to narrow down the documents to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
@@ -385,31 +386,12 @@ class DocumentsAPI(APIClient):
 
         Examples:
 
-        Count the number of types of documents in your CDF project:
+        Count the number metadata keys for documents in your CDF project:
 
             >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes.documents import DocumentProperty
+            >>> from cognite.client.data_classes.documents import SourceFileProperty
             >>> c = CogniteClient()
-            >>> count = c.documents.aggregate_cardinality_values(DocumentProperty.type)
-
-        Count the number of authors of plain/text documents in your CDF project:
-
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes import filters
-            >>> from cognite.client.data_classes.documents import DocumentProperty
-            >>> c = CogniteClient()
-            >>> is_plain_text = filters.Equals(DocumentProperty.mime_type, "text/plain")
-            >>> plain_text_author_count = c.documents.aggregate_cardinality_values(DocumentProperty.author, filter=is_plain_text)
-
-        Count the number of types of documents in your CDF project but exclude documents that start with "text":
-
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes.documents import DocumentProperty
-            >>> from cognite.client.data_classes import aggregations
-            >>> c = CogniteClient()
-            >>> agg = aggregations
-            >>> is_not_text = agg.Not(agg.Prefix("text"))
-            >>> type_count_excluded_text = c.documents.aggregate_cardinality_values(DocumentProperty.type, aggregate_filter=is_not_text)
+            >>> count = c.documents.aggregate_cardinality_properties(SourceFileProperty.metadata)
 
         """
         _validate_filter(filter)
@@ -430,7 +412,7 @@ class DocumentsAPI(APIClient):
         aggregate_filter: AggregationFilter | dict | None = None,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> UniqueResultList:
-        """`Find approximate number of unique properties. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
+        """`Get unique properties with counts for documents. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
 
         Args:
             property (DocumentProperty | SourceFileProperty | list[str] | str): The property to group by.
@@ -492,10 +474,11 @@ class DocumentsAPI(APIClient):
         aggregate_filter: AggregationFilter | dict | None = None,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> UniqueResultList:
-        """`Find approximate number of unique properties. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
+        """`Get unique paths with counts for documents. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
 
         Args:
-            path (DocumentProperty | SourceFileProperty | list[str] | str): The property to group by.
+            path (DocumentProperty | SourceFileProperty | list[str] | str): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
+                                                                            It means to aggregate only metadata properties (aka keys).
             query (str | None): The free text search query, for details see the documentation referenced above.
             filter (Filter | dict | None): The filter to narrow down the documents to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
@@ -506,34 +489,12 @@ class DocumentsAPI(APIClient):
 
         Examples:
 
-        Get the unique types with count of documents in your CDF project:
+        Get the unique metadata keys with count of documents in your CDF project:
 
             >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes.documents import DocumentProperty
+            >>> from cognite.client.data_classes.documents import SourceFileProperty
             >>> c = CogniteClient()
-            >>> result = c.documents.aggregate_unique_values(DocumentProperty.mime_type)
-            >>> unique_types = result.unique
-
-        Get the different languages with count for documents with external id prefix "abc":
-
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes import filters
-            >>> from cognite.client.data_classes.documents import DocumentProperty
-            >>> c = CogniteClient()
-            >>> is_abc = filters.Prefix(DocumentProperty.external_id, "abc")
-            >>> result = c.documents.aggregate_unique_values(DocumentProperty.language, filter=is_abc)
-            >>> unique_languages = result.unique
-
-        Get the unique mime types with count of documents, but exclude mime types that start with text:
-
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes.documents import DocumentProperty
-            >>> from cognite.client.data_classes import aggregations
-            >>> c = CogniteClient()
-            >>> agg = aggregations
-            >>> is_not_text = agg.Not(agg.Prefix("text"))
-            >>> result = c.documents.aggregate_unique_values(DocumentProperty.mime_type, aggregate_filter=is_not_text)
-            >>> unique_mime_types = result.unique
+            >>> result = c.documents.aggregate_unique_values(SourceFileProperty.metadata)
 
         """
         _validate_filter(filter)

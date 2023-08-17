@@ -373,7 +373,7 @@ class TimeSeriesAPI(APIClient):
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: TimeSeriesFilter | dict | None = None,
     ) -> int:
-        """`Find approximate count time series properties. <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
+        """`Find approximate property count for time series. <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
 
         Args:
             property (TimeSeriesProperty | str | List[str]): The property to count the cardinality of.
@@ -432,10 +432,11 @@ class TimeSeriesAPI(APIClient):
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: TimeSeriesFilter | dict | None = None,
     ) -> int:
-        """`Find approximate count time series properties. <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
+        """`Find approximate paths count for time series.  <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
 
         Args:
-            path (TimeSeriesProperty | str | List[str]): The property to count the cardinality of.
+            path (TimeSeriesProperty | str | List[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
+                                                         It means to aggregate only metadata properties (aka keys).
             query (str | None): The free text search query, for details see the documentation referenced above.
             advanced_filter (Filter | dict | None): The filter to narrow down the time series to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
@@ -476,7 +477,7 @@ class TimeSeriesAPI(APIClient):
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: TimeSeriesFilter | dict | None = None,
     ) -> UniqueResultList:
-        """`Find approximate unique time series properties. <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
+        """`Get unique properties with counts for time series. <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
 
         Args:
             property (TimeSeriesProperty | str | List[str]): The property to group by.
@@ -546,10 +547,11 @@ class TimeSeriesAPI(APIClient):
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: TimeSeriesFilter | dict | None = None,
     ) -> UniqueResultList:
-        """`Find approximate unique time series properties. <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
+        """`Get unique paths with counts for time series.<https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
 
         Args:
-            path (TimeSeriesProperty | str | List[str]): The property to group by.
+            path (TimeSeriesProperty | str | List[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
+                                                         It means to aggregate only metadata properties (aka keys).
             advanced_filter (Filter | dict | None): The filter to narrow down the time series to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
             filter (TimeSeriesFilter | dict | None): The filter to narrow down the time series to count requirering exact match.
