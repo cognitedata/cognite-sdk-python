@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from cognite.client.data_classes import filters
 from cognite.client.data_classes.data_modeling import aggregations, query
 from cognite.client.data_classes.data_modeling.aggregations import AggregatedValue, Aggregation

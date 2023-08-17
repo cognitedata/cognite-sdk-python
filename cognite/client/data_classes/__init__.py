@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from cognite.client.data_classes.annotations import (
     Annotation,
     AnnotationFilter,

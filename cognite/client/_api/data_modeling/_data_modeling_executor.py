@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from concurrent.futures import ThreadPoolExecutor
 
 from cognite.client.utils._concurrency import ConcurrencySettings, MainThreadExecutor, TaskExecutor
