@@ -46,6 +46,30 @@ def test_ts_string(test_tss):
     return test_tss[1]
 
 
+@pytest.fixture
+def time_series_list(cognite_client: CogniteClient) -> TimeSeriesList:
+    prefix = "integration_test:"
+    time_series = TimeSeriesList(
+        [
+            TimeSeries(
+                external_id=f"{prefix}timeseries1",
+                unit="$",
+                metadata={"market": "Nordpool", "timezone": "Europe/Oslo"},
+            ),
+            TimeSeries(
+                external_id=f"{prefix}timeseries2",
+                metadata={"market": "Balancing", "timezone": "Europe/London"},
+            ),
+        ]
+    )
+    retrieved = cognite_client.time_series.retrieve_multiple(
+        external_ids=time_series.as_external_ids(), ignore_unknown_ids=True
+    )
+    if len(retrieved) == len(time_series):
+        return retrieved
+    return cognite_client.time_series.upsert(time_series, mode="replace")
+
+
 class TestTimeSeriesAPI:
     def test_retrieve(self, cognite_client):
         listed_asset = cognite_client.time_series.list(limit=1)[0]
@@ -165,40 +189,55 @@ class TestTimeSeriesAPI:
         # Assert
         assert result, "There should be at least one numeric time series"
 
-    def test_aggregate_count(self, cognite_client: CogniteClient) -> None:
-        # Act
-        count = cognite_client.time_series.aggregate_count()
+    def test_aggregate_count(self, cognite_client: CogniteClient, time_series_list: TimeSeriesList) -> None:
+        f = filters
+        is_integration_test = f.Prefix("externalId", "integration_test:")
 
-        # Assert
-        assert count > 0, "Expected at least one time series to exist"
+        count = cognite_client.time_series.aggregate_count(advanced_filter=is_integration_test)
 
-    def test_aggregate_is_string(self, cognite_client: CogniteClient) -> None:
-        # Act
-        count = cognite_client.time_series.aggregate_cardinality_values(TimeSeriesProperty.is_string)
+        assert count >= len(time_series_list)
 
-        # Assert
-        assert count > 0, "Expected at one is string to exists"
+    def test_aggregate_unit(self, cognite_client: CogniteClient, time_series_list: TimeSeriesList) -> None:
+        f = filters
+        is_integration_test = f.Prefix("externalId", "integration_test:")
 
-    def test_aggregate_metadata_keys_count(self, cognite_client: CogniteClient) -> None:
-        # Act
-        count = cognite_client.time_series.aggregate_cardinality_values(TimeSeriesProperty.metadata)
+        count = cognite_client.time_series.aggregate_cardinality_values(TimeSeriesProperty.unit, is_integration_test)
 
-        # Assert
-        assert count > 0, "Expected at one least metadata key to exists"
+        assert count >= len({t.unit for t in time_series_list if t.unit})
 
-    def test_aggregate_unique_is_step(self, cognite_client: CogniteClient) -> None:
-        # Act
-        result = cognite_client.time_series.aggregate_unique_values(TimeSeriesProperty.is_step)
+    def test_aggregate_metadata_keys_count(
+        self, cognite_client: CogniteClient, time_series_list: TimeSeriesList
+    ) -> None:
+        f = filters
+        is_integration_test = f.Prefix("externalId", "integration_test:")
 
-        # Assert
-        assert len(result.unique) > 0, "Expected a least one is step to exists"
+        count = cognite_client.time_series.aggregate_cardinality_properties(
+            TimeSeriesProperty.metadata, advanced_filter=is_integration_test
+        )
 
-    def test_aggregate_unique_metadata_keys(self, cognite_client: CogniteClient) -> None:
-        # Act
-        result = cognite_client.time_series.aggregate_unique_values(TimeSeriesProperty.metadata)
+        assert count >= len({k for t in time_series_list for k in t.metadata.keys()})
 
-        # Assert
-        assert len(result.unique) > 0, "Expected at one metadata key to exists"
+    def test_aggregate_unique_units(self, cognite_client: CogniteClient, time_series_list: TimeSeriesList) -> None:
+        f = filters
+        is_integration_test = f.Prefix("externalId", "integration_test:")
+
+        result = cognite_client.time_series.aggregate_unique_values(TimeSeriesProperty.unit, is_integration_test)
+
+        assert set(result.unique) >= {t.unit for t in time_series_list if t.unit}
+
+    def test_aggregate_unique_metadata_keys(
+        self, cognite_client: CogniteClient, time_series_list: TimeSeriesList
+    ) -> None:
+        f = filters
+        is_integration_test = f.Prefix("externalId", "integration_test:")
+
+        result = cognite_client.time_series.aggregate_unique_properties(
+            TimeSeriesProperty.metadata, advanced_filter=is_integration_test
+        )
+
+        assert {tuple(item.value["property"]) for item in result} >= {
+            ("metadata", key.casefold()) for a in time_series_list for key in a.metadata or []
+        }
 
 
 class TestTimeSeriesHelperMethods:

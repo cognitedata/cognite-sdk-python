@@ -366,7 +366,7 @@ class TimeSeriesAPI(APIClient):
         finally:
             self._api_subversion = api_version
 
-    def aggregate_cardinality(
+    def aggregate_cardinality_values(
         self,
         property: TimeSeriesProperty | str | List[str],
         advanced_filter: Filter | dict | None = None,
@@ -415,26 +415,61 @@ class TimeSeriesAPI(APIClient):
 
         try:
             self._api_subversion = "beta"
-            if property == ["metadata"] or property is TimeSeriesProperty.metadata:
-                return self._advanced_aggregate(
-                    "cardinalityProperties",
-                    path=property,
-                    filter=filter,
-                    advanced_filter=advanced_filter,
-                    aggregate_filter=aggregate_filter,
-                )
-            else:
-                return self._advanced_aggregate(
-                    "cardinalityValues",
-                    properties=property,
-                    filter=filter,
-                    advanced_filter=advanced_filter,
-                    aggregate_filter=aggregate_filter,
-                )
+            return self._advanced_aggregate(
+                "cardinalityValues",
+                properties=property,
+                filter=filter,
+                advanced_filter=advanced_filter,
+                aggregate_filter=aggregate_filter,
+            )
         finally:
             self._api_subversion = api_version
 
-    def aggregate_unique(
+    def aggregate_cardinality_properties(
+        self,
+        path: TimeSeriesProperty | str | List[str],
+        advanced_filter: Filter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict | None = None,
+        filter: TimeSeriesFilter | dict | None = None,
+    ) -> int:
+        """`Find approximate count time series properties. <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
+
+        Args:
+            path (TimeSeriesProperty | str | List[str]): The property to count the cardinality of.
+            query (str | None): The free text search query, for details see the documentation referenced above.
+            advanced_filter (Filter | dict | None): The filter to narrow down the time series to count cardinality.
+            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
+            filter (TimeSeriesFilter | dict | None): The filter to narrow down the time series to count requirering exact match.
+        Returns:
+            int: The number of properties matching the specified filters and search.
+
+        Examples:
+
+        Count the number of metadata keys in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
+            >>> c = CogniteClient()
+            >>> key_count = c.time_series.aggregate_cardinality_properties(TimeSeriesProperty.metadata)
+
+        """
+        self._validate_filter(advanced_filter)
+
+        api_version = self._api_subversion
+
+        try:
+            self._api_subversion = "beta"
+            return self._advanced_aggregate(
+                "cardinalityProperties",
+                path=path,
+                filter=filter,
+                advanced_filter=advanced_filter,
+                aggregate_filter=aggregate_filter,
+            )
+        finally:
+            self._api_subversion = api_version
+
+    def aggregate_unique_values(
         self,
         property: TimeSeriesProperty | str | List[str],
         advanced_filter: Filter | dict | None = None,
@@ -494,22 +529,57 @@ class TimeSeriesAPI(APIClient):
 
         try:
             self._api_subversion = "beta"
-            if property == ["metadata"] or property is TimeSeriesProperty.metadata:
-                return self._advanced_aggregate(
-                    aggregate="uniqueProperties",
-                    path=property,
-                    filter=filter,
-                    advanced_filter=advanced_filter,
-                    aggregate_filter=aggregate_filter,
-                )
-            else:
-                return self._advanced_aggregate(
-                    aggregate="uniqueValues",
-                    properties=property,
-                    filter=filter,
-                    advanced_filter=advanced_filter,
-                    aggregate_filter=aggregate_filter,
-                )
+            return self._advanced_aggregate(
+                aggregate="uniqueValues",
+                properties=property,
+                filter=filter,
+                advanced_filter=advanced_filter,
+                aggregate_filter=aggregate_filter,
+            )
+        finally:
+            self._api_subversion = api_version
+
+    def aggregate_unique_properties(
+        self,
+        path: TimeSeriesProperty | str | List[str],
+        advanced_filter: Filter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict | None = None,
+        filter: TimeSeriesFilter | dict | None = None,
+    ) -> UniqueResultList:
+        """`Find approximate unique time series properties. <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
+
+        Args:
+            path (TimeSeriesProperty | str | List[str]): The property to group by.
+            advanced_filter (Filter | dict | None): The filter to narrow down the time series to count cardinality.
+            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
+            filter (TimeSeriesFilter | dict | None): The filter to narrow down the time series to count requirering exact match.
+
+        Returns:
+            UniqueResultList: List of unique values of time series matching the specified filters and search.
+
+        Examples:
+
+        Get the metadata keys with count for your time series in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
+            >>> c = CogniteClient()
+            >>> result = c.time_series.aggregate_unique_values(TimeSeriesProperty.metadata)
+
+        """
+        self._validate_filter(advanced_filter)
+
+        api_version = self._api_subversion
+
+        try:
+            self._api_subversion = "beta"
+            return self._advanced_aggregate(
+                aggregate="uniqueProperties",
+                path=path,
+                filter=filter,
+                advanced_filter=advanced_filter,
+                aggregate_filter=aggregate_filter,
+            )
         finally:
             self._api_subversion = api_version
 
