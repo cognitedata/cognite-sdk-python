@@ -426,7 +426,7 @@ class EventsAPI(APIClient):
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.events import EventProperty
             >>> c = CogniteClient()
-            >>> type_count = c.events.aggregate_cardinality(EventProperty.type)
+            >>> type_count = c.events.aggregate_cardinality_values(EventProperty.type)
 
         Count the number of types of events linked to asset 123 in your CDF project:
 
@@ -435,7 +435,7 @@ class EventsAPI(APIClient):
             >>> from cognite.client.data_classes.events import EventProperty
             >>> c = CogniteClient()
             >>> is_asset = filters.ContainsAny(EventProperty.asset_ids, 123)
-            >>> plain_text_author_count = c.events.aggregate_cardinality(EventProperty.type, advanced_filter=is_asset)
+            >>> plain_text_author_count = c.events.aggregate_cardinality_values(EventProperty.type, advanced_filter=is_asset)
 
         """
         self._validate_filter(advanced_filter)
@@ -485,7 +485,7 @@ class EventsAPI(APIClient):
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.events import EventProperty
             >>> c = CogniteClient()
-            >>> result = c.events.aggregate_unique(EventProperty.type)
+            >>> result = c.events.aggregate_unique_values(EventProperty.type)
             >>> print(result.unique)
 
         Get the unique types of events after 2020-01-01 in your CDF project:
@@ -497,7 +497,7 @@ class EventsAPI(APIClient):
             >>> from datetime import datetime
             >>> c = CogniteClient()
             >>> is_after_2020 = filters.Range(EventProperty.start_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
-            >>> result = c.events.aggregate_unique(EventProperty.type, advanced_filter=is_after_2020)
+            >>> result = c.events.aggregate_unique_values(EventProperty.type, advanced_filter=is_after_2020)
             >>> print(result.unique)
 
         Get the unique types of events after 2020-01-01 in your CDF project, but exclude all types that start with
@@ -510,7 +510,7 @@ class EventsAPI(APIClient):
             >>> a = aggregations
             >>> not_planned = a.Not(a.Prefix("planned"))
             >>> is_after_2020 = filters.Range(EventProperty.start_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
-            >>> result = c.events.aggregate_unique(EventProperty.type, advanced_filter=is_after_2020, aggregate_filter=not_planned)
+            >>> result = c.events.aggregate_unique_values(EventProperty.type, advanced_filter=is_after_2020, aggregate_filter=not_planned)
             >>> print(result.unique)
 
         """

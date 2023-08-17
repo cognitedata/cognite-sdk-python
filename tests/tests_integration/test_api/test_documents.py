@@ -104,12 +104,12 @@ class TestDocumentsAPI:
         assert count > 0, "There should be at least one document in the test environment."
 
     def test_aggregate_cardinality(self, cognite_client: CogniteClient):
-        count = cognite_client.documents.aggregate_cardinality(property=DocumentProperty.type)
+        count = cognite_client.documents.aggregate_cardinality_values(property=DocumentProperty.type)
 
         assert count > 0
 
     def test_aggregate_cardinality_metadata(self, cognite_client: CogniteClient):
-        count = cognite_client.documents.aggregate_cardinality(property=SourceFileProperty.metadata)
+        count = cognite_client.documents.aggregate_cardinality_values(property=SourceFileProperty.metadata)
 
         assert count > 0
 
@@ -117,8 +117,8 @@ class TestDocumentsAPI:
         agg = aggregations
         is_not_text = agg.Not(agg.Prefix("text"))
 
-        all_buckets = cognite_client.documents.aggregate_unique(property=DocumentProperty.mime_type)
-        not_text_buckets = cognite_client.documents.aggregate_unique(
+        all_buckets = cognite_client.documents.aggregate_unique_values(property=DocumentProperty.mime_type)
+        not_text_buckets = cognite_client.documents.aggregate_unique_values(
             property=DocumentProperty.mime_type,
             aggregate_filter=is_not_text,
         )
@@ -126,7 +126,7 @@ class TestDocumentsAPI:
         assert len(all_buckets) > len(not_text_buckets)
 
     def test_aggregate_unique_metadata(self, cognite_client: CogniteClient):
-        result = cognite_client.documents.aggregate_unique(property=SourceFileProperty.metadata)
+        result = cognite_client.documents.aggregate_unique_values(property=SourceFileProperty.metadata)
 
         assert len(result) > 0
 

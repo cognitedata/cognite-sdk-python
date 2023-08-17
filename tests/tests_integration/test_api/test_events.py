@@ -205,28 +205,28 @@ class TestEventsAPI:
 
     def test_aggregate_type_count(self, cognite_client: CogniteClient, event_list: EventList) -> None:
         # Act
-        count = cognite_client.events.aggregate_cardinality(EventProperty.type)
+        count = cognite_client.events.aggregate_cardinality_values(EventProperty.type)
 
         # Assert
         assert count > 0, "Expected at one type to exists"
 
     def test_aggregate_metadata_keys_count(self, cognite_client: CogniteClient, event_list: EventList) -> None:
         # Act
-        count = cognite_client.events.aggregate_cardinality(EventProperty.metadata)
+        count = cognite_client.events.aggregate_cardinality_values(EventProperty.metadata)
 
         # Assert
         assert count > 0, "Expected at one metadata key to exists"
 
     def test_aggregate_unique_types(self, cognite_client: CogniteClient, event_list: EventList) -> None:
         # Act
-        result = cognite_client.events.aggregate_unique(EventProperty.type)
+        result = cognite_client.events.aggregate_unique_values(EventProperty.type)
 
         # Assert
         assert len(result.unique) > 0, "Expected at one type to exists"
 
     def test_aggregate_unique_metadata_keys(self, cognite_client: CogniteClient, event_list: EventList) -> None:
         # Act
-        result = cognite_client.events.aggregate_unique(EventProperty.metadata)
+        result = cognite_client.events.aggregate_unique_values(EventProperty.metadata)
 
         # Assert
         assert len(result.unique) > 0, "Expected at one metadata key to exists"

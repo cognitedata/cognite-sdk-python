@@ -391,7 +391,7 @@ class TimeSeriesAPI(APIClient):
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
             >>> c = CogniteClient()
-            >>> unit_count = c.time_series.aggregate_cardinality(TimeSeriesProperty.unit)
+            >>> unit_count = c.time_series.aggregate_cardinality_values(TimeSeriesProperty.unit)
 
         Count the number of timezones (metadata key) for time series with the word "critical" in the description
         in your CDF project, but exclude timezones from america:
@@ -403,7 +403,7 @@ class TimeSeriesAPI(APIClient):
             >>> a = aggregations
             >>> not_america = a.Not(a.Prefix("america"))
             >>> is_critical = filters.Search(TimeSeriesProperty.description, "critical")
-            >>> timezone_count = c.time_series.aggregate_cardinality(
+            >>> timezone_count = c.time_series.aggregate_cardinality_values(
             ...     TimeSeriesProperty.metadata_key("timezone"),
             ...     advanced_filter=is_critical,
             ...     aggregate_filter=not_america)
@@ -459,7 +459,7 @@ class TimeSeriesAPI(APIClient):
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
             >>> c = CogniteClient()
-            >>> result = c.time_series.aggregate_unique(TimeSeriesProperty.metadata_key("timezone"))
+            >>> result = c.time_series.aggregate_unique_values(TimeSeriesProperty.metadata_key("timezone"))
             >>> print(result.unique)
 
         Get the different units with count used for time series created after 2020-01-01 in your CDF project:
@@ -471,7 +471,7 @@ class TimeSeriesAPI(APIClient):
             >>> from datetime import datetime
             >>> c = CogniteClient()
             >>> created_after_2020 = filters.Range(TimeSeriesProperty.created_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
-            >>> result = c.time_series.aggregate_unique(TimeSeriesProperty.unit, advanced_filter=created_after_2020)
+            >>> result = c.time_series.aggregate_unique_values(TimeSeriesProperty.unit, advanced_filter=created_after_2020)
             >>> print(result.unique)
 
         Get the different units with count for time series updated after 2020-01-01 in your CDF project, but exclude all units that
@@ -484,7 +484,7 @@ class TimeSeriesAPI(APIClient):
             >>> a = aggregations
             >>> not_test = a.Not(a.Prefix("test"))
             >>> created_after_2020 = filters.Range(TimeSeriesProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
-            >>> result = c.time_series.aggregate_unique(TimeSeriesProperty.unit, advanced_filter=created_after_2020, aggregate_filter=not_test)
+            >>> result = c.time_series.aggregate_unique_values(TimeSeriesProperty.unit, advanced_filter=created_after_2020, aggregate_filter=not_test)
             >>> print(result.unique)
 
         """

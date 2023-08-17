@@ -308,46 +308,63 @@ class TestAssetsAPI:
         assert result[0].external_id == "integration_test:asset2"
 
     def test_aggregate_count(self, cognite_client: CogniteClient, asset_list: AssetList) -> None:
-        # Act
-        count = cognite_client.assets.aggregate_count()
+        f = filters
+        is_integration_test = f.Prefix("externalId", "integration_test:")
 
-        # Assert
-        assert count > 0, "Expected at least one asset to exist"
+        count = cognite_client.assets.aggregate_count(advanced_filter=is_integration_test)
 
-    def test_aggregate_has_label_count(self, cognite_client: CogniteClient, asset_list: AssetList) -> None:
-        # Act
-        count = cognite_client.assets.aggregate_count(AssetProperty.labels)
+        assert count >= len(asset_list), "Expected at least the created asset list to exist"
 
-        # Assert
-        assert count > 0, "Expected at least one asset with label to exist"
+    def test_aggregate_has_parent_id_count(self, cognite_client: CogniteClient, asset_list: AssetList) -> None:
+        f = filters
+        is_integration_test = f.Prefix("externalId", "integration_test:")
+
+        count = cognite_client.assets.aggregate_count(AssetProperty.parent_id, advanced_filter=is_integration_test)
+
+        assert count >= sum(1 for a in asset_list if a.parent_id)
 
     def test_aggregate_timezone_count(self, cognite_client: CogniteClient, asset_list: AssetList) -> None:
-        # Act
-        count = cognite_client.assets.aggregate_cardinality(AssetProperty.metadata_key("timezone"))
+        f = filters
+        is_integration_test = f.Prefix("externalId", "integration_test:")
 
-        # Assert
-        assert count > 0, "Expected at one type to exists"
+        count = cognite_client.assets.aggregate_cardinality_values(
+            AssetProperty.metadata_key("timezone"), advanced_filter=is_integration_test
+        )
+
+        assert count >= len({a.metadata["timezone"] for a in asset_list if "timezone" in a.metadata})
 
     def test_aggregate_metadata_keys_count(self, cognite_client: CogniteClient, asset_list: AssetList) -> None:
-        # Act
-        count = cognite_client.assets.aggregate_cardinality(AssetProperty.metadata)
+        f = filters
+        is_integration_test = f.Prefix("externalId", "integration_test:")
 
-        # Assert
-        assert count > 0, "Expected at one metadata key to exists"
+        count = cognite_client.assets.aggregate_cardinality_properties(
+            AssetProperty.metadata, advanced_filter=is_integration_test
+        )
+
+        assert count >= len({key for a in asset_list for key in a.metadata or []})
 
     def test_aggregate_unique_timezone(self, cognite_client: CogniteClient, asset_list: AssetList) -> None:
-        # Act
-        result = cognite_client.assets.aggregate_unique(AssetProperty.metadata_key("timezone"))
+        f = filters
+        is_integration_test = f.Prefix("externalId", "integration_test:")
 
-        # Assert
-        assert len(result.unique) > 0, "Expected a least one timezone to exists"
+        result = cognite_client.assets.aggregate_unique_values(
+            AssetProperty.metadata_key("timezone"), advanced_filter=is_integration_test
+        )
+
+        # Casefold is needed because the aggregation is case insensitive
+        assert set(result.unique) >= {a.metadata["timezone"].casefold() for a in asset_list if "timezone" in a.metadata}
 
     def test_aggregate_unique_metadata_keys(self, cognite_client: CogniteClient, asset_list: AssetList) -> None:
-        # Act
-        result = cognite_client.assets.aggregate_unique(AssetProperty.metadata)
+        f = filters
+        is_integration_test = f.Prefix("externalId", "integration_test:")
 
-        # Assert
-        assert len(result.unique) > 0, "Expected at one metadata key to exists"
+        result = cognite_client.assets.aggregate_unique_properties(
+            AssetProperty.metadata, advanced_filter=is_integration_test
+        )
+
+        assert {tuple(item.value["property"]) for item in result} >= {
+            ("metadata", key.casefold()) for a in asset_list for key in a.metadata or []
+        }
 
 
 def generate_orphan_assets(n_id, n_xid, sample_from):

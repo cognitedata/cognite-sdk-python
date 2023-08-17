@@ -358,7 +358,7 @@ class SequencesAPI(APIClient):
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.sequences import SequenceProperty
             >>> c = CogniteClient()
-            >>> count = c.sequences.aggregate_cardinality(SequenceProperty.metadata_key("efficiency"))
+            >>> count = c.sequences.aggregate_cardinality_values(SequenceProperty.metadata_key("efficiency"))
 
         Count the number of timezones (metadata key) for sequences with the word "critical" in the description
         in your CDF project, but exclude timezones from america:
@@ -370,7 +370,7 @@ class SequencesAPI(APIClient):
             >>> a = aggregations
             >>> not_america = a.Not(a.Prefix("america"))
             >>> is_critical = filters.Search(SequenceProperty.description, "critical")
-            >>> timezone_count = c.sequences.aggregate_cardinality(
+            >>> timezone_count = c.sequences.aggregate_cardinality_values(
             ...     SequenceProperty.metadata_key("timezone"),
             ...     advanced_filter=is_critical,
             ...     aggregate_filter=not_america)
@@ -426,7 +426,7 @@ class SequencesAPI(APIClient):
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.sequences import SequenceProperty
             >>> c = CogniteClient()
-            >>> result = c.sequences.aggregate_unique(SequenceProperty.metadata_key("timezone"))
+            >>> result = c.sequences.aggregate_unique_values(SequenceProperty.metadata_key("timezone"))
             >>> print(result.unique)
 
         Get the different metadata keys with count used for sequences created after 2020-01-01 in your CDF project:
@@ -438,7 +438,7 @@ class SequencesAPI(APIClient):
             >>> from datetime import datetime
             >>> c = CogniteClient()
             >>> created_after_2020 = filters.Range(SequenceProperty.created_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
-            >>> result = c.sequences.aggregate_unique(SequenceProperty.metadata, advanced_filter=created_after_2020)
+            >>> result = c.sequences.aggregate_unique_values(SequenceProperty.metadata, advanced_filter=created_after_2020)
             >>> print(result.unique)
 
         Get the different metadata keys with count for sequences updated after 2020-01-01 in your CDF project, but exclude all metadata keys that
@@ -451,7 +451,7 @@ class SequencesAPI(APIClient):
             >>> a = aggregations
             >>> not_test = a.Not(a.Prefix("test"))
             >>> created_after_2020 = filters.Range(SequenceProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
-            >>> result = c.sequences.aggregate_unique(SequenceProperty.metadata, advanced_filter=created_after_2020, aggregate_filter=not_test)
+            >>> result = c.sequences.aggregate_unique_values(SequenceProperty.metadata, advanced_filter=created_after_2020, aggregate_filter=not_test)
             >>> print(result.unique)
 
         """

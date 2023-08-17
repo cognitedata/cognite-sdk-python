@@ -333,7 +333,7 @@ class DocumentsAPI(APIClient):
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.documents import DocumentProperty
             >>> c = CogniteClient()
-            >>> count = c.documents.aggregate_cardinality(DocumentProperty.type)
+            >>> count = c.documents.aggregate_cardinality_values(DocumentProperty.type)
 
         Count the number of authors of plain/text documents in your CDF project:
 
@@ -342,7 +342,7 @@ class DocumentsAPI(APIClient):
             >>> from cognite.client.data_classes.documents import DocumentProperty
             >>> c = CogniteClient()
             >>> is_plain_text = filters.Equals(DocumentProperty.mime_type, "text/plain")
-            >>> plain_text_author_count = c.documents.aggregate_cardinality(DocumentProperty.author, filter=is_plain_text)
+            >>> plain_text_author_count = c.documents.aggregate_cardinality_values(DocumentProperty.author, filter=is_plain_text)
 
         Count the number of types of documents in your CDF project but exclude documents that start with "text":
 
@@ -352,7 +352,7 @@ class DocumentsAPI(APIClient):
             >>> c = CogniteClient()
             >>> agg = aggregations
             >>> is_not_text = agg.Not(agg.Prefix("text"))
-            >>> type_count_excluded_text = c.documents.aggregate_cardinality(DocumentProperty.type, aggregate_filter=is_not_text)
+            >>> type_count_excluded_text = c.documents.aggregate_cardinality_values(DocumentProperty.type, aggregate_filter=is_not_text)
 
         """
         _validate_filter(filter)
@@ -400,7 +400,7 @@ class DocumentsAPI(APIClient):
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.documents import DocumentProperty
             >>> c = CogniteClient()
-            >>> result = c.documents.aggregate_unique(DocumentProperty.mime_type)
+            >>> result = c.documents.aggregate_unique_values(DocumentProperty.mime_type)
             >>> unique_types = result.unique
 
         Get the different languages with count for documents with external id prefix "abc":
@@ -410,7 +410,7 @@ class DocumentsAPI(APIClient):
             >>> from cognite.client.data_classes.documents import DocumentProperty
             >>> c = CogniteClient()
             >>> is_abc = filters.Prefix(DocumentProperty.external_id, "abc")
-            >>> result = c.documents.aggregate_unique(DocumentProperty.language, filter=is_abc)
+            >>> result = c.documents.aggregate_unique_values(DocumentProperty.language, filter=is_abc)
             >>> unique_languages = result.unique
 
         Get the unique mime types with count of documents, but exclude mime types that start with text:
@@ -421,7 +421,7 @@ class DocumentsAPI(APIClient):
             >>> c = CogniteClient()
             >>> agg = aggregations
             >>> is_not_text = agg.Not(agg.Prefix("text"))
-            >>> result = c.documents.aggregate_unique(DocumentProperty.mime_type, aggregate_filter=is_not_text)
+            >>> result = c.documents.aggregate_unique_values(DocumentProperty.mime_type, aggregate_filter=is_not_text)
             >>> unique_mime_types = result.unique
 
         """
