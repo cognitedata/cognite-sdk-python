@@ -19,10 +19,10 @@ def test_ensure_all_files_use_future_annots():
         ]
         return all(skip not in str(path.as_posix()) for skip in skip_list)
 
-    all_filepaths = filter(keep, Path("cognite/client/").glob("**/*.py"))
+    all_filepaths = Path("cognite/client/").glob("**/*.py")
     err_msg = "File: '{}' is missing 'from __future__ import annotations' at line=0"
 
-    for filepath in all_filepaths:
+    for filepath in filter(keep, all_filepaths):
         with filepath.open("r") as file:
             # We just read the first line from each file:
             assert file.readline() == "from __future__ import annotations\n", err_msg.format(filepath)
