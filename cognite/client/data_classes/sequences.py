@@ -104,7 +104,7 @@ class Sequence(CogniteResource):
         """Retrieves list of column value types
 
         Returns:
-            List of column value types
+            List[str]: List of column value types
         """
         assert self.columns is not None
         return [cast(str, c.get("valueType")) for c in self.columns]
@@ -456,7 +456,7 @@ class SequenceData(CogniteResource):
         """Retrieves list of column external ids for the sequence, for use in e.g. data retrieve or insert methods.
 
         Returns:
-            List of sequence column external ids.
+            List[str]: List of sequence column external ids.
         """
         assert self.columns is not None
         return [cast(str, c.get("externalId")) for c in self.columns]
@@ -466,7 +466,7 @@ class SequenceData(CogniteResource):
         """Retrieves list of column value types.
 
         Returns:
-            List of column value types
+            List[str]: List of column value types
         """
         assert self.columns is not None
         return [cast(str, c.get("valueType")) for c in self.columns]
