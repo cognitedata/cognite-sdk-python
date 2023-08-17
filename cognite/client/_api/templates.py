@@ -384,26 +384,26 @@ class TemplateInstancesAPI(APIClient):
         Examples:
             Create new template instances for Covid-19 spread:
 
-             >>> from cognite.client import CogniteClient
-             >>> from cognite.client.data_classes import TemplateInstance
-             >>> c = CogniteClient()
-             >>> template_instance_1 = TemplateInstance(external_id="norway",
-             >>>        template_name="Country",
-             >>>        field_resolvers={
-             >>>            "name": ConstantResolver("Norway"),
-             >>>            "demographics": ConstantResolver("norway_demographics"),
-             >>>            "deaths": ConstantResolver("Norway_deaths"),
-             >>>            "confirmed": ConstantResolver("Norway_confirmed"),
-             >>>        }
-             >>>    )
-             >>> template_instance_2 = TemplateInstance(external_id="norway_demographics",
-             >>>       template_name="Demographics",
-             >>>       field_resolvers={
-             >>>           "populationSize": ConstantResolver(5328000),
-             >>>           "growthRate": ConstantResolver(0.02)
-             >>>           }
-             >>>   )
-             >>> c.templates.instances.upsert("sdk-test-group", 1, [template_instance_1, template_instance_2])
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes import TemplateInstance
+            >>> c = CogniteClient()
+            >>> template_instance_1 = TemplateInstance(external_id="norway",
+            >>>        template_name="Country",
+            >>>        field_resolvers={
+            >>>            "name": ConstantResolver("Norway"),
+            >>>            "demographics": ConstantResolver("norway_demographics"),
+            >>>            "deaths": ConstantResolver("Norway_deaths"),
+            >>>            "confirmed": ConstantResolver("Norway_confirmed"),
+            >>>        }
+            >>>    )
+            >>> template_instance_2 = TemplateInstance(external_id="norway_demographics",
+            >>>       template_name="Demographics",
+            >>>       field_resolvers={
+            >>>           "populationSize": ConstantResolver(5328000),
+            >>>           "growthRate": ConstantResolver(0.02)
+            >>>           }
+            >>>   )
+            >>> c.templates.instances.upsert("sdk-test-group", 1, [template_instance_1, template_instance_2])
         """
         if isinstance(instances, TemplateInstance):
             instances = [instances]

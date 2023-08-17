@@ -78,7 +78,7 @@ class SpacesAPI(APIClient):
             space (str | Sequence[str]): Space ID
 
         Returns:
-            Optional[Space]: Requested space or None if it does not exist.
+            Space | SpaceList | None: Requested space or None if it does not exist.
 
         Examples:
 
@@ -86,7 +86,7 @@ class SpacesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.data_modeling.spaces.retrieve(space='mySpace')
 
-         Get multiple spaces by id:
+            Get multiple spaces by id:
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()

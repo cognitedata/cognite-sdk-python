@@ -757,10 +757,10 @@ class SequencesAPI(APIClient):
         self, item: Sequence | SequenceType[Sequence], mode: Literal["patch", "replace"] = "patch"
     ) -> Sequence | SequenceList:
         """Upsert sequences, i.e., update if it exists, and create if it does not exist.
-         Note this is a convenience method that handles the upserting for you by first calling update on all items,
-         and if any of them fail because they do not exist, it will create them instead.
+            Note this is a convenience method that handles the upserting for you by first calling update on all items,
+            and if any of them fail because they do not exist, it will create them instead.
 
-         For more details, see :ref:`appendix-upsert`.
+            For more details, see :ref:`appendix-upsert`.
 
         Args:
             item (Sequence | SequenceType[Sequence]): Sequence or list of sequences to upsert.
@@ -1173,7 +1173,7 @@ class SequencesDataAPI(APIClient):
             limit (Optional[int]): Maximum number of rows to return per sequence.
 
         Returns:
-             pandas.DataFrame
+            pandas.DataFrame: pandas.DataFrame
 
         Examples:
 

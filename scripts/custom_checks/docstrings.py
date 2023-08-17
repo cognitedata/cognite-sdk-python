@@ -23,6 +23,10 @@ ONLY_RUN = {
 }
 
 
+class FalsePositiveDocstring(Exception):
+    pass
+
+
 class Param:
     def __init__(self, line: str):
         try:
@@ -116,9 +120,16 @@ class DocstrFormatter:
         lines = doc.splitlines()
         indentations = np.array(list(map(count_indent, lines)))
         if any(indentations % 4 != 0):
+            # Developer-help to find wrongly indented lines: (uncomment and run again)
+            # for info in zip(indentations, indentations % 4 != 0, lines):
+            #     print(*info)
             raise ValueError("One or more lines is not indented a multiple of 4 spaces")
 
-        section_indent = indentations[np.nonzero(indentations)].min()
+        # TODO: Short, or only-text docstrings is most likely ok to skip, at least for now:
+        if len(non_zero := np.nonzero(indentations)[0]) == 0:
+            raise FalsePositiveDocstring
+
+        section_indent = indentations[(non_zero,)].min()
         all_chunks, chunk = [], []
         for line, indent in zip(lines, indentations):
             # If a line is non-empty, remove any excess whitespace at end:
@@ -320,6 +331,8 @@ def format_docstring(cls) -> list[str]:
 
         try:
             doc_fmt = DocstrFormatter(doc, method)
+        except FalsePositiveDocstring:
+            continue
         except (ValueError, IndexError) as e:
             failed.append(
                 f"Couldn't parse parameters in docstring for '{cls.__name__}.{attr}', "
