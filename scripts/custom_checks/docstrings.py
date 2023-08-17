@@ -9,18 +9,17 @@ from pathlib import Path
 
 import numpy as np
 
+from cognite.client.data_classes import AssetHierarchy
 from cognite.client.data_classes.data_modeling.query import Query
-
-# from cognite.client.utils._priority_tpe import PriorityThreadPoolExecutor
 
 EXCEPTIONS = {
     (Query, "__init__"),  # Reason: Uses a parameter 'with_'; and we need to escape the underscore
 }
 
-# Helper for testing specific class + method:
+# Helper for testing specific class + method/property:
 TESTING = False
 ONLY_RUN = {
-    (Query, "__init__"),  # Example
+    (AssetHierarchy, "__init__"),  # Just an example
 }
 
 
@@ -237,7 +236,9 @@ class DocstrFormatter:
                 lines = self._create_docstring_return_description()
             final_doc_lines.extend(lines)
 
-        # If the returns-section is missing, add it
+        # If any section is missing, add them:
+        if self.line_args_group is None:
+            final_doc_lines.extend(self._create_docstring_param_description())
         if self.line_return_group is None:
             final_doc_lines.extend(self._create_docstring_return_description())
 
@@ -252,26 +253,40 @@ class DocstrFormatter:
     def update_py_file(self, cls, attr) -> str:
         source_code = (path := Path(inspect.getfile(cls))).read_text()
 
+        was_tested = f"{cls.__name__}.{attr}"
         if (n_matches := source_code.count(self.original_doc)) == 0:
-            return f"Couldn't fix docstring for '{cls.__name__}.{attr}', as the old doc was not found in the file"
+            return f"Couldn't fix docstring for '{was_tested}', as the old doc was not found in the file"
 
         elif n_matches == 1:
-            path.write_text(source_code.replace(self.original_doc, self.create_docstring()))
-            return f"Fixed docstring for '{cls.__name__}.{attr}'"
+            new_docstr = self.create_docstring()
+            if self.original_doc == new_docstr:
+                # Shouldn't be possible, but surely it will happen :D
+                raise RuntimeError(
+                    "Existing docstring was considered wrong, but the newly generated one was identical... "
+                    "If pre-commit does not report any other errors, consider committing using '--no-verify' "
+                    "and create an issue on github!"
+                )
+
+            path.write_text(source_code.replace(self.original_doc, new_docstr))
+            return f"Fixed docstring for '{was_tested}'"
 
         else:
-            return f"Couldn't fix docstring for '{cls.__name__}.{attr}', as the old doc was not unique to the file"
+            return f"Couldn't fix docstring for '{was_tested}', as the old doc was not unique to the file"
 
 
-def get_all_non_inherited_methods(cls):
+def get_all_non_inherited_attributes(cls):
     return [
-        (attr, method) for attr in dir(cls) if inspect.isfunction(method := getattr(cls, attr)) and attr in cls.__dict__
+        (attr, method)
+        for attr, method in inspect.getmembers(
+            cls, predicate=lambda method: inspect.isfunction(method) or isinstance(method, property)
+        )
+        if attr in cls.__dict__
     ]
 
 
 def format_docstring(cls) -> list[str]:
     failed = []
-    for attr, method in get_all_non_inherited_methods(cls):
+    for attr, method in get_all_non_inherited_attributes(cls):
         if (cls, attr) in EXCEPTIONS:
             continue
 
@@ -305,7 +320,7 @@ def find_all_classes_in_sdk():
     return {
         cls
         for loc in locations
-        for _, cls in inspect.getmembers(importlib.import_module(loc), inspect.isclass)
+        for _, cls in inspect.getmembers(importlib.import_module(loc), inspect.isclass)  # todo: add fns
         if str(cls).startswith("<class 'cognite.client")
     }
 
