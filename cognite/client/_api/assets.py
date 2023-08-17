@@ -443,7 +443,7 @@ class AssetsAPI(APIClient):
         advanced_filter: Filter | dict | None = None,
         filter: AssetFilter | dict | None = None,
     ) -> int:
-        """`Count of assets matching the specified filters and search. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
+        """`Count of assets matching the specified filters. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
         Args:
             property (AssetPropertyLike | tuple[AssetPropertyLike, AggregationFilter]): If specified, get an approximate number of asset with a specific property
@@ -533,7 +533,7 @@ class AssetsAPI(APIClient):
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: AssetFilter | dict | None = None,
     ) -> int:
-        """`Request resource properties approximate cardinality aggregate. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
+        """`Get the asset properties approximate cardinality. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
         Args:
             path (AssetPropertyLike): The scope in every document to aggregate properties.  The only value allowed now is ["metadata"].

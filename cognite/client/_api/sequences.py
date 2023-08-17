@@ -333,7 +333,7 @@ class SequencesAPI(APIClient):
         finally:
             self._api_subversion = api_version
 
-    def aggregate_cardinality(
+    def aggregate_cardinality_values(
         self,
         property: SequenceProperty | str | List[str],
         advanced_filter: Filter | dict | None = None,
@@ -382,26 +382,60 @@ class SequencesAPI(APIClient):
 
         try:
             self._api_subversion = "beta"
-            if property == ["metadata"] or property is SequenceProperty.metadata:
-                return self._advanced_aggregate(
-                    "cardinalityProperties",
-                    path=property,
-                    filter=filter,
-                    advanced_filter=advanced_filter,
-                    aggregate_filter=aggregate_filter,
-                )
-            else:
-                return self._advanced_aggregate(
-                    "cardinalityValues",
-                    properties=property,
-                    filter=filter,
-                    advanced_filter=advanced_filter,
-                    aggregate_filter=aggregate_filter,
-                )
+            return self._advanced_aggregate(
+                "cardinalityValues",
+                properties=property,
+                filter=filter,
+                advanced_filter=advanced_filter,
+                aggregate_filter=aggregate_filter,
+            )
         finally:
             self._api_subversion = api_version
 
-    def aggregate_unique(
+    def aggregate_cardinality_properties(
+        self,
+        path: SequenceProperty | str | List[str],
+        advanced_filter: Filter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict | None = None,
+        filter: SequenceFilter | dict | None = None,
+    ) -> int:
+        """`Request resource properties approximate cardinality aggregate. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
+
+        Args:
+            path (SequenceProperty | str | List[str]): The property to count the cardinality of.
+            query (str | None): The free text search query, for details see the documentation referenced above.
+            advanced_filter (Filter | dict | None): The filter to narrow down the sequences to count cardinality.
+            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
+            filter (SequenceFilter | dict | None): The filter to narrow down the sequences  to count requirering exact match.
+        Returns:
+            int: The number of properties matching the specified filters and search.
+
+        Examples:
+
+        Count the number of different metadata keys in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes.sequences import SequenceProperty
+            >>> c = CogniteClient()
+            >>> count = c.sequences.aggregate_cardinality_values(SequenceProperty.metadata)
+
+        """
+        self._validate_filter(advanced_filter)
+        api_version = self._api_subversion
+
+        try:
+            self._api_subversion = "beta"
+            return self._advanced_aggregate(
+                "cardinalityProperties",
+                path=path,
+                filter=filter,
+                advanced_filter=advanced_filter,
+                aggregate_filter=aggregate_filter,
+            )
+        finally:
+            self._api_subversion = api_version
+
+    def aggregate_unique_values(
         self,
         property: SequenceProperty | str | List[str],
         advanced_filter: Filter | dict | None = None,
@@ -477,6 +511,50 @@ class SequencesAPI(APIClient):
                     advanced_filter=advanced_filter,
                     aggregate_filter=aggregate_filter,
                 )
+        finally:
+            self._api_subversion = api_version
+
+    def aggregate_unique_properties(
+        self,
+        path: SequenceProperty | str | List[str],
+        advanced_filter: Filter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict | None = None,
+        filter: SequenceFilter | dict | None = None,
+    ) -> UniqueResultList:
+        """`Find approximate unique sequence properties. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
+
+        Args:
+            path (SequenceProperty | str | List[str]): The property to group by.
+            advanced_filter (Filter | dict | None): The filter to narrow down the sequences to count cardinality.
+            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
+            filter (SequenceFilter | dict | None): The filter to narrow down the sequences to count requirering exact match.
+
+        Returns:
+            UniqueResultList: List of unique values of sequences matching the specified filters and search.
+
+        Examples:
+
+        Get the metadata keys with count for your sequences in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes.sequences import SequenceProperty
+            >>> c = CogniteClient()
+            >>> result = c.sequences.aggregate_unique_properties(SequenceProperty.metadata)
+
+        """
+        self._validate_filter(advanced_filter)
+
+        api_version = self._api_subversion
+
+        try:
+            self._api_subversion = "beta"
+            return self._advanced_aggregate(
+                aggregate="uniqueProperties",
+                path=path,
+                filter=filter,
+                advanced_filter=advanced_filter,
+                aggregate_filter=aggregate_filter,
+            )
         finally:
             self._api_subversion = api_version
 

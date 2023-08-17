@@ -67,8 +67,13 @@ def sequence_list(cognite_client: CogniteClient, root_asset: Asset) -> SequenceL
                 external_id=f"{prefix}sequence1",
                 columns=columns,
                 asset_id=root_asset.id,
+                metadata={"unit": "m/s"},
             ),
-            Sequence(external_id=f"{prefix}sequence2", columns=columns),
+            Sequence(
+                external_id=f"{prefix}sequence2",
+                columns=columns,
+                metadata={"unit": "km/h"},
+            ),
         ]
     )
     retrieved = cognite_client.sequences.retrieve_multiple(
@@ -246,36 +251,61 @@ class TestSequencesAPI:
         assert result[0].external_id == sequence_list[0].external_id
 
     def test_aggregate_count(self, cognite_client: CogniteClient, sequence_list: SequenceList) -> None:
-        # Act
-        count = cognite_client.sequences.aggregate_count()
+        f = filters
+        is_integration_test = f.Prefix("externalId", "integration_test:")
 
-        # Assert
-        assert count > 0, "Expected at least one sequence to exist"
+        count = cognite_client.sequences.aggregate_count(advanced_filter=is_integration_test)
+
+        assert count >= len(sequence_list)
 
     def test_aggregate_asset_id_count(self, cognite_client: CogniteClient, sequence_list: SequenceList) -> None:
-        # Act
-        count = cognite_client.sequences.aggregate_cardinality_values(SequenceProperty.asset_id)
+        f = filters
+        is_integration_test = f.Prefix("externalId", "integration_test:")
 
-        # Assert
-        assert count > 0, "Expected at least one asset to exists"
+        count = cognite_client.sequences.aggregate_cardinality_values(
+            SequenceProperty.asset_id, advanced_filter=is_integration_test
+        )
+
+        assert count >= sum(1 for s in sequence_list if s.asset_id is not None)
 
     def test_aggregate_metadata_keys_count(self, cognite_client: CogniteClient, sequence_list: SequenceList) -> None:
-        # Act
-        count = cognite_client.sequences.aggregate_cardinality_values(SequenceProperty.metadata)
+        f = filters
+        is_integration_test = f.Prefix("externalId", "integration_test:")
 
-        # Assert
-        assert count > 0, "Expected at one least metadata key to exists"
+        count = cognite_client.sequences.aggregate_cardinality_properties(
+            SequenceProperty.metadata, advanced_filter=is_integration_test
+        )
+
+        assert count >= len({k for s in sequence_list for k in s.metadata.keys()})
+
+    def test_aggregate_metadata_key_count(self, cognite_client: CogniteClient, sequence_list: SequenceList) -> None:
+        f = filters
+        is_integration_test = f.Prefix("externalId", "integration_test:")
+
+        count = cognite_client.sequences.aggregate_cardinality_values(
+            SequenceProperty.metadata_key("unit"), advanced_filter=is_integration_test
+        )
+
+        assert count >= len({s.metadata["unit"] for s in sequence_list if "unit" in s.metadata})
 
     def test_aggregate_unique_asset_ids(self, cognite_client: CogniteClient, sequence_list: SequenceList) -> None:
-        # Act
-        result = cognite_client.sequences.aggregate_unique_values(SequenceProperty.asset_id)
+        f = filters
+        is_integration_test = f.Prefix("externalId", "integration_test:")
 
-        # Assert
-        assert len(result.unique) > 0, "Expected a least one asset id to exists"
+        result = cognite_client.sequences.aggregate_unique_values(
+            SequenceProperty.asset_id, advanced_filter=is_integration_test
+        )
+
+        assert {int(item) for item in result.unique} >= {s.asset_id for s in sequence_list if s.asset_id is not None}
 
     def test_aggregate_unique_metadata_keys(self, cognite_client: CogniteClient, sequence_list: SequenceList) -> None:
-        # Act
-        result = cognite_client.sequences.aggregate_unique_values(SequenceProperty.metadata)
+        f = filters
+        is_integration_test = f.Prefix("externalId", "integration_test:")
 
-        # Assert
-        assert len(result.unique) > 0, "Expected at one metadata key to exists"
+        result = cognite_client.sequences.aggregate_unique_properties(
+            SequenceProperty.metadata, advanced_filter=is_integration_test
+        )
+
+        assert {tuple(item.value["property"]) for item in result} >= {
+            ("metadata", key.casefold()) for a in sequence_list for key in a.metadata or []
+        }
