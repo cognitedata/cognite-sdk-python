@@ -141,15 +141,13 @@ class CogniteClient:
         * Base URL: "https://{cdf_cluster}.cognitedata.com/
 
         Args:
-            project (str):
-            cdf_cluster: The CDF cluster where the CDF project is located.
-            credentials: Credentials. e.g. Token, ClientCredentials.
-            client_name (str, optional): A user-defined name for the client. Used to identify the number of unique applications/scripts
-                                         running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning
-                                         the username you are logged in with is used.
+            project (str): The CDF project.
+            cdf_cluster (str): The CDF cluster where the CDF project is located.
+            credentials (CredentialProvider): Credentials. e.g. Token, ClientCredentials.
+            client_name (str | None): A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
 
         Returns:
-            A CogniteClient instance with default configurations.
+            CogniteClient: A CogniteClient instance with default configurations.
         """
         return cls(ClientConfig.default(project, cdf_cluster, credentials, client_name=client_name))
 
@@ -173,17 +171,15 @@ class CogniteClient:
         * Scopes: [f"https://{cdf_cluster}.cognitedata.com/.default"]
 
         Args:
-            project (str):  The CDF project.
-            cdf_cluster: The CDF cluster where the CDF project is located.
-            tenant_id: The Azure tenant ID.
-            client_id: The Azure client ID.
-            client_secret: The Azure client secret.
-            client_name (str, optional): A user-defined name for the client. Used to identify the number of unique applications/scripts
-                                         running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning
-                                         the username you are logged in with is used.
+            project (str): The CDF project.
+            cdf_cluster (str): The CDF cluster where the CDF project is located.
+            tenant_id (str): The Azure tenant ID.
+            client_id (str): The Azure client ID.
+            client_secret (str): The Azure client secret.
+            client_name (str | None): A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
 
         Returns:
-            A CogniteClient instance with default configurations.
+            CogniteClient: A CogniteClient instance with default configurations.
         """
 
         credentials = OAuthClientCredentials.default_for_azure_ad(tenant_id, client_id, client_secret, cdf_cluster)
@@ -210,15 +206,13 @@ class CogniteClient:
 
         Args:
             project (str): The CDF project.
-            cdf_cluster: The CDF cluster where the CDF project is located.
-            tenant_id: The Azure tenant ID.
-            client_id: The Azure client ID.
-            client_name (str, optional): A user-defined name for the client. Used to identify the number of unique applications/scripts
-                                         running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning
-                                         the username you are logged in with is used.
+            cdf_cluster (str): The CDF cluster where the CDF project is located.
+            tenant_id (str): The Azure tenant ID.
+            client_id (str): The Azure client ID.
+            client_name (str | None): A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
 
         Returns:
-            A CogniteClient instance with default configurations.
+            CogniteClient: A CogniteClient instance with default configurations.
         """
         credentials = OAuthInteractive.default_for_azure_ad(tenant_id, client_id, cdf_cluster)
         return cls.default(project, cdf_cluster, credentials, client_name)

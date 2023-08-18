@@ -111,16 +111,13 @@ class ClientConfig:
     def default(
         cls, project: str, cdf_cluster: str, credentials: CredentialProvider, client_name: Optional[str] = None
     ) -> ClientConfig:
-        """
-        Create a default client config object.
+        """Create a default client config object.
 
         Args:
-            project: CDF Project name.
-            cdf_cluster: The CDF cluster where the CDF project is located.
-            credentials: Credentials. e.g. Token, ClientCredentials.
-            client_name: A user-defined name for the client. Used to identify the number of unique applications/scripts
-                         running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning
-                         the username you are logged in with is used.
+            project (str): CDF Project name.
+            cdf_cluster (str): The CDF cluster where the CDF project is located.
+            credentials (CredentialProvider): Credentials. e.g. Token, ClientCredentials.
+            client_name (Optional[str]): A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
 
         Returns:
             ClientConfig: A default client config object.

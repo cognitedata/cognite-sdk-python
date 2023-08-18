@@ -268,7 +268,11 @@ class WeekAligner(DateTimeAligner):
         Ceils the date to the next monday
         >>> WeekAligner.ceil(datetime(2023, 4, 9 ))
         datetime.datetime(2023, 4, 10, 0, 0)
-        """
+
+        Args:
+            date (datetime): No description.
+        Returns:
+            datetime: No description."""
         date = cls.normalize(date)
         if (weekday := date.weekday()) != 0:
             return date + timedelta(days=7 - weekday)
@@ -280,7 +284,11 @@ class WeekAligner(DateTimeAligner):
         Floors the date to the nearest monday
         >>> WeekAligner.floor(datetime(2023, 4, 9))
         datetime.datetime(2023, 4, 3, 0, 0)
-        """
+
+        Args:
+            date (datetime): No description.
+        Returns:
+            datetime: No description."""
         date = cls.normalize(date)
         if (weekday := date.weekday()) != 0:
             return date - timedelta(days=weekday)
@@ -309,7 +317,11 @@ class MonthAligner(DateTimeAligner):
         datetime.datetime(2024, 1, 1, 0, 0)
         >>> MonthAligner.ceil(datetime(2024, 1, 10))
         datetime.datetime(2024, 2, 1, 0, 0)
-        """
+
+        Args:
+            date (datetime): No description.
+        Returns:
+            datetime: No description."""
         if date == datetime(year=date.year, month=date.month, day=1, tzinfo=date.tzinfo):
             return date
         extra, month = divmod(date.month + 1, 12)
@@ -341,7 +353,11 @@ class QuarterAligner(DateTimeAligner):
         datetime.datetime(2024, 1, 1, 0, 0)
         >>> QuarterAligner.ceil(datetime(2023, 1, 1))
         datetime.datetime(2023, 1, 1, 0, 0)
-        """
+
+        Args:
+            date (datetime): No description.
+        Returns:
+            datetime: No description."""
         if any(date == datetime(date.year, month, 1, tzinfo=date.tzinfo) for month in [1, 4, 7, 10]):
             return date
         month = 3 * ((date.month - 1) // 3 + 1) + 1
@@ -358,7 +374,11 @@ class QuarterAligner(DateTimeAligner):
         datetime.datetime(2023, 7, 1, 0, 0)
         >>> QuarterAligner.floor(datetime(2023, 12, 1))
         datetime.datetime(2023, 10, 1, 0, 0)
-        """
+
+        Args:
+            date (datetime): No description.
+        Returns:
+            datetime: No description."""
         month = 3 * ((date.month - 1) // 3) + 1
         return cls.normalize(date.replace(month=month, day=1))
 

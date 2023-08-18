@@ -139,6 +139,8 @@ class TimeSeries(CogniteResource):
 
         Returns:
             Asset: The asset given by its `asset_id`.
+        Raises:
+            ValueError: If asset_id is missing.
         """
         if self.asset_id is None:
             raise ValueError("asset_id is None")

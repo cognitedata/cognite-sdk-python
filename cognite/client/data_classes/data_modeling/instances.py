@@ -328,7 +328,7 @@ class InstanceAggregationResult(DataModelingResource):
             data (dict | str): The json string or dictionary.
 
         Returns:
-            An instance.
+            InstanceAggregationResult: An instance.
 
         """
         data = json.loads(data) if isinstance(data, str) else data

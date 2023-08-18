@@ -314,14 +314,14 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         * Scopes: [f"https://{cdf_cluster}.cognitedata.com/.default"]
 
         Args:
-            tenant_id: The Azure tenant id
-            cdf_cluster: The CDF cluster where the CDF project is located.
-            client_id: Your application's client id.
-            token_expiry_leeway_seconds: The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 15 sec
-            **token_custom_args: Optional additional arguments to pass as query parameters to the token fetch request.
+            tenant_id (str): The Azure tenant id
+            client_id (str): Your application's client id.
+            cdf_cluster (str): The CDF cluster where the CDF project is located.
+            token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 15 sec
+            **token_custom_args (Any): Optional additional arguments to pass as query parameters to the token fetch request.
 
         Returns:
-            An OAuthInteractive instance
+            OAuthInteractive: An OAuthInteractive instance
         """
         return cls(
             authority_url=f"https://login.microsoftonline.com/{tenant_id}",
@@ -454,15 +454,15 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         * Scopes: [f"https://{cdf_cluster}.cognitedata.com/.default"]
 
         Args:
-            tenant_id: The Azure tenant id
-            cdf_cluster: The CDF cluster where the CDF project is located.
-            client_id: Your application's client id.
-            client_secret: Your application's client secret.
-            token_expiry_leeway_seconds: The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 15 sec
-            **token_custom_args: Optional additional arguments to pass as query parameters to the token fetch request.
+            tenant_id (str): The Azure tenant id
+            client_id (str): Your application's client id.
+            client_secret (str): Your application's client secret.
+            cdf_cluster (str): The CDF cluster where the CDF project is located.
+            token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 15 sec
+            **token_custom_args (Any): Optional additional arguments to pass as query parameters to the token fetch request.
 
         Returns:
-            An OAuthClientCredentials instance
+            OAuthClientCredentials: An OAuthClientCredentials instance
         """
         return cls(
             token_url=f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token",

@@ -107,6 +107,9 @@ class LabelsAPI(APIClient):
         Returns:
             Union[LabelDefinition, LabelDefinitionList]: Created label definition(s)
 
+        Raises:
+            TypeError: Function input 'label' is of the wrong type
+
         Examples:
 
             Create new label definitions::
