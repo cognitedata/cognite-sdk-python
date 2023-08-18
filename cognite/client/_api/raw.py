@@ -38,9 +38,10 @@ class RawDatabasesAPI(APIClient):
             chunk_size (Optional[int]): Number of dbs to return in each chunk. Defaults to yielding one db a time.
             limit (Optional[int]): Maximum number of dbs to return. Defaults to return all items.
 
-        Yields:
-            Union[Iterator[Database], Iterator[DatabaseList]]: No description."""
-        yield from self._list_generator(
+        Returns:
+            Union[Iterator[Database], Iterator[DatabaseList]]: No description.
+        """
+        return self._list_generator(
             list_cls=DatabaseList, resource_cls=Database, chunk_size=chunk_size, method="GET", limit=limit
         )
 
@@ -328,9 +329,10 @@ class RawRowsAPI(APIClient):
             max_last_updated_time (Optional[int]): Rows must have been last updated before this time (inclusive). ms since epoch.
             columns (Optional[List[str]]): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
 
-        Yields:
-            Union[Iterator[Row], Iterator[RowList]]: No description."""
-        yield from self._list_generator(
+        Returns:
+            Union[Iterator[Row], Iterator[RowList]]: No description.
+        """
+        return self._list_generator(
             list_cls=RowList,
             resource_cls=Row,
             resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name, table_name),

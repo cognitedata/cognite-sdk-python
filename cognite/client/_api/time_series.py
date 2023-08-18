@@ -123,7 +123,7 @@ class TimeSeriesAPI(APIClient):
             last_updated_time=last_updated_time,
             external_id_prefix=external_id_prefix,
         ).dump(camel_case=True)
-        yield from self._list_generator(
+        return self._list_generator(
             list_cls=TimeSeriesList,
             resource_cls=TimeSeries,
             method="POST",

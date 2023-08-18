@@ -124,7 +124,7 @@ class RelationshipsAPI(APIClient):
                 "target_external_ids, only list is supported"
             )
 
-        yield from self._list_generator(
+        return self._list_generator(
             list_cls=RelationshipList,
             resource_cls=Relationship,
             method="POST",

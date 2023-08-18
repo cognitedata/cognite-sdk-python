@@ -115,7 +115,7 @@ class SequencesAPI(APIClient):
             last_updated_time=last_updated_time,
             data_set_ids=data_set_ids_processed,
         ).dump(camel_case=True)
-        yield from self._list_generator(
+        return self._list_generator(
             list_cls=SequenceList,
             resource_cls=Sequence,
             method="POST",

@@ -45,7 +45,7 @@ class SpacesAPI(APIClient):
         Yields:
             Iterator[Space] | Iterator[SpaceList]: yields Space one by one if chunk_size is not specified, else SpaceList objects.
         """
-        yield from self._list_generator(
+        return self._list_generator(
             list_cls=SpaceList,
             resource_cls=Space,
             method="GET",

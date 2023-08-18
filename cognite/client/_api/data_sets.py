@@ -59,7 +59,7 @@ class DataSetsAPI(APIClient):
             external_id_prefix=external_id_prefix,
             write_protected=write_protected,
         ).dump(camel_case=True)
-        yield from self._list_generator(
+        return self._list_generator(
             list_cls=DataSetList, resource_cls=DataSet, method="POST", chunk_size=chunk_size, filter=filter, limit=limit
         )
 

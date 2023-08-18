@@ -162,7 +162,7 @@ class AssetsAPI(APIClient):
             external_id_prefix=external_id_prefix,
         ).dump(camel_case=True)
 
-        yield from self._list_generator(
+        return self._list_generator(
             list_cls=AssetList,
             resource_cls=Asset,
             method="POST",
