@@ -17,9 +17,9 @@ def test_ensure_all_files_use_future_annots():
             "_pb2.py",  # Auto-generated, dislikes changes ;)
             "cognite/client/utils/_priority_tpe.py",  # Module docstring at the top takes priority
         ]
-        return all(skip not in str(path) for skip in skip_list)
+        return all(skip not in str(path.as_posix()) for skip in skip_list)
 
-    all_filepaths = [Path(p) for p in Path("cognite/client/").glob("**/*.py") if keep(p)]
+    all_filepaths = filter(keep, Path("cognite/client/").glob("**/*.py"))
     err_msg = "File: '{}' is missing 'from __future__ import annotations' at line=0"
 
     for filepath in all_filepaths:
