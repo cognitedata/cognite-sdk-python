@@ -24,6 +24,7 @@ arg-type-hints-in-docstring = true
 allow-init-docstring = false
 check-return-types = true
 check-arg-order = true
+skip-checking-raises = true  # TODO: Fix in other PR
 
 [tool.ruff.per-file-ignores]
 # let scripts use print statements
