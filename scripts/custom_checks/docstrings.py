@@ -4,6 +4,7 @@ import importlib
 import inspect
 import itertools
 import re
+import types
 from dataclasses import is_dataclass
 from pathlib import Path
 
@@ -34,12 +35,16 @@ class Param:
     def __init__(self, line: str):
         try:
             self._parse(line)
-        except ValueError:
-            raise ValueError(f"Unable to parse line: {line.strip()!r}")
+        except ValueError as e:
+            raise ValueError(f"Unable to parse line: {line.strip()!r}. Reason: {e}")
 
     def _parse(self, line: str):
+        if line[-1] == ":" and line.count(":") == 1:
+            line += " No description."
+
         if ":" not in line:
             line += ": No description."
+
         check = line.split(":", 1)[0]
         if check.count("(") and line[(idx := line.index("(")) - 1] != " ":
             # User forgot to add a space before first parenthesis:
@@ -307,7 +312,7 @@ class DocstrFormatter:
 
 def get_all_non_inherited_attributes(cls):
     def predicate(obj):
-        return inspect.isfunction(obj) or isinstance(obj, property)
+        return inspect.isfunction(obj) or isinstance(obj, (property, types.MethodType))
 
     return [(attr, method) for attr, method in inspect.getmembers(cls, predicate=predicate) if attr in cls.__dict__]
 
