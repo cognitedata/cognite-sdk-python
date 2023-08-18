@@ -385,11 +385,7 @@ class InstancesAPI(APIClient):
     ) -> dict[str, Any]:
         other_params: dict[str, Any] = {"includeTyping": include_typing}
         if sources:
-            other_params["sources"] = (
-                [cls._dump_instance_source(source) for source in sources]
-                if isinstance(sources, Sequence)
-                else [cls._dump_instance_source(sources)]
-            )
+            other_params["sources"] = cls._dump_instance_source(sources)
         if sort:
             if isinstance(sort, (InstanceSort, dict)):
                 other_params["sort"] = [cls._dump_instance_sort(sort)]
@@ -400,13 +396,12 @@ class InstancesAPI(APIClient):
         return other_params
 
     @classmethod
-    def _dump_instance_source(cls, source: ViewIdentifier | View) -> dict:
-        instance_source: ViewIdentifier
-        if isinstance(source, View):
-            instance_source = source.as_id()
-        else:
-            instance_source = source
-        return {"source": ViewId.load(instance_source).dump(camel_case=True)}
+    def _dump_instance_source(
+        cls, sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View]
+    ) -> list[dict]:
+        return [
+            {"source": ViewId.load(dct).dump(camel_case=True)} for dct in _load_identifier(sources, "view").as_dicts()
+        ]
 
     @classmethod
     def _dump_instance_sort(cls, sort: InstanceSort | dict) -> dict:
