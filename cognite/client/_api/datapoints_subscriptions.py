@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterator, Optional, Sequence
+from typing import TYPE_CHECKING, Generator, Optional, Sequence
 from warnings import warn
 
 from cognite.client._api_client import APIClient
@@ -178,7 +178,7 @@ class DatapointsSubscriptionAPI(APIClient):
         external_id: str,
         start: str | None = None,
         limit: int = DATAPOINT_SUBSCRIPTION_DATA_LIST_LIMIT_DEFAULT,
-    ) -> Iterator[DatapointSubscriptionBatch]:
+    ) -> Generator[DatapointSubscriptionBatch, None, None]:
         """`Iterate over data from a given subscription. <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/listSubscriptionData>`_
 
         Data can be ingested datapoints and time ranges where data is deleted. This endpoint will also return changes to
@@ -194,7 +194,7 @@ class DatapointsSubscriptionAPI(APIClient):
             limit (int): Approximate number of results to return across all partitions.
 
         Yields:
-            Iterator[DatapointSubscriptionBatch]: Changes to the subscription and data in the subscribed time series.
+            Generator[DatapointSubscriptionBatch, None, None]: Changes to the subscription and data in the subscribed time series.
 
         Examples:
 

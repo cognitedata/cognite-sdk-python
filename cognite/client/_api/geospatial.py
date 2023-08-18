@@ -718,8 +718,8 @@ class GeospatialAPI(APIClient):
             properties (Optional[Dict[str, Any]]): the output property selection
             allow_crs_transformation (bool): If true, then input geometries will be transformed into the Coordinate Reference System defined in the feature type specification. When it is false, then requests with geometries in Coordinate Reference System different from the ones defined in the feature type will result in CogniteAPIError exception.
 
-        Returns:
-            Generator[Feature]: a generator for the filtered features
+        Yields:
+            Generator[Feature, None, None]: a generator for the filtered features
 
         Examples:
 
@@ -747,10 +747,7 @@ class GeospatialAPI(APIClient):
                 ... )
                 >>> for f in features:
                 ...     # do something with the features
-
-
-        Yields:
-            Generator[Feature, None, None]: No description."""
+        """
         resource_path = self._feature_resource_path(feature_type_external_id) + "/search-streaming"
         json = {"filter": filter or {}, "output": {"properties": properties, "jsonStreamFormat": "NEW_LINE_DELIMITED"}}
         params = {"allowCrsTransformation": "true"} if allow_crs_transformation else None

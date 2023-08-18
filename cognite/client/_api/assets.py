@@ -137,7 +137,7 @@ class AssetsAPI(APIClient):
             limit (Optional[int]): Maximum number of assets to return. Defaults to return all items.
             partitions (Optional[int]): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
 
-        Yields:
+        Returns:
             Union[Iterator[Asset], Iterator[AssetList]]: yields Asset one by one if chunk_size is not specified, else AssetList objects.
         """
         if aggregated_properties:

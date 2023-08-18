@@ -49,7 +49,7 @@ class DataSetsAPI(APIClient):
             write_protected (Optional[bool]): Specify whether the filtered data sets are write-protected, or not. Set to True to only list write-protected data sets.
             limit (Optional[int]): Maximum number of data sets to return. Defaults to return all items.
 
-        Yields:
+        Returns:
             Union[Iterator[DataSet], Iterator[DataSetList]]: yields DataSet one by one if chunk is not specified, else DataSetList objects.
         """
         filter = DataSetFilter(

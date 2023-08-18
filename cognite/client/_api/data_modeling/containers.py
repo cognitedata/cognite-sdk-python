@@ -59,7 +59,7 @@ class ContainersAPI(APIClient):
             include_global (bool): Whether the global containers should be returned.
             limit (Optional[int]): Maximum number of containers to return. Defaults to returning all items.
 
-        Yields:
+        Returns:
             Iterator[Container] | Iterator[ContainerList]: yields Container one by one if chunk_size is not specified, else ContainerList objects.
         """
         filter = ContainerFilter(space, include_global)

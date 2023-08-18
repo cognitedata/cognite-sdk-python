@@ -97,7 +97,7 @@ class FilesAPI(APIClient):
             uploaded (Optional[bool]): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
             limit (Optional[int]): Maximum number of files to return. Defaults to return all items.
 
-        Yields:
+        Returns:
             Union[Iterator[FileMetadata], Iterator[FileMetadataList]]: yields FileMetadata one by one if chunk_size is not specified, else FileMetadataList objects.
         """
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)

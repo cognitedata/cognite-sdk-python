@@ -55,6 +55,9 @@ class Param:
             self.var_name, split_line = line.strip().split(" ", 1)
             self.annotation, self.description = split_line.split(": ", 1)
             self.annotation = self.annotation.lstrip("(").rstrip(")")
+            if check.count("(") > 1 or check.count(")") > 1:
+                # Too many parentheses, let's make it fail:
+                self.annotation += ")))))"
 
         elif check.count("(") == check.count(")") == 0:
             # ...we probably don't:

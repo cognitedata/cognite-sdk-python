@@ -96,7 +96,7 @@ class RelationshipsAPI(APIClient):
             chunk_size (Optional[int]): Number of Relationships to return in each chunk. Defaults to yielding one relationship at a time.
             partitions (Optional[int]): Retrieve relationships in parallel using this number of workers. Also requires `limit=None` to be passed.
 
-        Yields:
+        Returns:
             Union[Iterator[Relationship], Iterator[RelationshipList]]: yields Relationship one by one if chunk_size is not specified, else RelationshipList objects.
         """
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
@@ -440,9 +440,7 @@ class RelationshipsAPI(APIClient):
 
         Args:
             item (Relationship | Sequence[Relationship]): Relationship or list of relationships to upsert.
-            mode (Literal["patch", "replace"])): Whether to patch or replace in the case the relationships are existing. If
-                you set 'patch', the call will only update fields with non-null values (default).
-                Setting 'replace' will unset any fields that are not specified.
+            mode (Literal["patch", "replace"]): Whether to patch or replace in the case the relationships are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
 
         Returns:
             Relationship | RelationshipList: The upserted relationship(s).

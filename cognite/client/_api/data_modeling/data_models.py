@@ -64,7 +64,7 @@ class DataModelsAPI(APIClient):
             all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
             include_global (bool): Whether to include global views.
 
-        Yields:
+        Returns:
             Iterator[DataModel] | Iterator[DataModelList]: yields DataModel one by one if chunk_size is not specified, else DataModelList objects.
         """
         filter = DataModelFilter(space, inline_views, all_versions, include_global)

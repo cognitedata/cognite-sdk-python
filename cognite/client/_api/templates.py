@@ -86,7 +86,7 @@ class TemplateGroupsAPI(APIClient):
         """`Create one or more template groups.`
 
         Args:
-            template_groups (Union[TemplateGroup, Sequence[TemplateGroup]])
+            template_groups (Union[TemplateGroup, Sequence[TemplateGroup]]): No description.
 
         Returns:
             Union[TemplateGroup, TemplateGroupList]: Created template group(s)
@@ -110,7 +110,7 @@ class TemplateGroupsAPI(APIClient):
         Will overwrite existing template group(s) with the same external id(s).
 
         Args:
-            template_groups (Union[TemplateGroup, Sequence[TemplateGroup]])
+            template_groups (Union[TemplateGroup, Sequence[TemplateGroup]]): No description.
 
         Returns:
             Union[TemplateGroup, TemplateGroupList]: Created template group(s)

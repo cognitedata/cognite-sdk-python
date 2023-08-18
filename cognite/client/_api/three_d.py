@@ -48,7 +48,7 @@ class ThreeDModelsAPI(APIClient):
             published (Optional[bool]): Filter based on whether or not the model has published revisions.
             limit (Optional[int]): Maximum number of 3d models to return. Defaults to return all items.
 
-        Yields:
+        Returns:
             Union[Iterator[ThreeDModel], Iterator[ThreeDModelList]]: yields ThreeDModel one by one if chunk is not specified, else ThreeDModelList objects.
         """
         return self._list_generator(
@@ -220,7 +220,7 @@ class ThreeDRevisionsAPI(APIClient):
             published (bool): Filter based on whether or not the revision has been published.
             limit (Optional[int]): Maximum number of 3d model revisions to return. Defaults to return all items.
 
-        Yields:
+        Returns:
             Union[Iterator[ThreeDModelRevision], Iterator[ThreeDModelRevisionList]]: yields ThreeDModelRevision one by one if chunk is not specified, else ThreeDModelRevisionList objects.
         """
         return self._list_generator(

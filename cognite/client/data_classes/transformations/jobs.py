@@ -262,7 +262,7 @@ class TransformationJobList(CogniteResourceList[TransformationJob]):
 
 
 class TransformationJobFilter(CogniteFilter):
-    """
+    """TransformationJobFilter
 
     Args:
         transformation_id (Optional[int]):  Filter jobs by transformation internal numeric ID.

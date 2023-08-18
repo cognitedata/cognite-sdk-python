@@ -163,17 +163,20 @@ class RawTablesAPI(APIClient):
             chunk_size (Optional[int]): Number of tables to return in each chunk. Defaults to yielding one table a time.
             limit (Optional[int]): Maximum number of tables to return. Defaults to return all items.
 
-        Yields:
-            Union[Iterator[Table], Iterator[TableList]]: No description."""
-        for tb in self._list_generator(
-            list_cls=TableList,
-            resource_cls=Table,
-            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name),
-            chunk_size=chunk_size,
-            method="GET",
-            limit=limit,
-        ):
-            yield self._set_db_name_on_tables(tb, db_name)
+        Returns:
+            Union[Iterator[Table], Iterator[TableList]]: No description.
+        """
+        return (
+            self._set_db_name_on_tables(tbl, db_name)
+            for tbl in self._list_generator(
+                list_cls=TableList,
+                resource_cls=Table,
+                resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name),
+                chunk_size=chunk_size,
+                method="GET",
+                limit=limit,
+            )
+        )
 
     @overload
     def create(self, db_name: str, name: str) -> Table:

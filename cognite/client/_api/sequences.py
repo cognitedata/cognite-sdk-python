@@ -99,7 +99,7 @@ class SequencesAPI(APIClient):
             last_updated_time (Optional[Dict[str, Any]]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             limit (Optional[int]): Max number of sequences to return. Defaults to return all items.
 
-        Yields:
+        Returns:
             Union[Iterator[Sequence], Iterator[SequenceList]]: yields Sequence one by one if chunk_size is not specified, else SequenceList objects.
         """
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)

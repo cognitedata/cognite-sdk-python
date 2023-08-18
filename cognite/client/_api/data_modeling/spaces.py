@@ -42,7 +42,7 @@ class SpacesAPI(APIClient):
             chunk_size (Optional[int]): Number of spaces to return in each chunk. Defaults to yielding one space a time.
             limit (Optional[int]): Maximum number of spaces to return. Defaults to returning all items.
 
-        Yields:
+        Returns:
             Iterator[Space] | Iterator[SpaceList]: yields Space one by one if chunk_size is not specified, else SpaceList objects.
         """
         return self._list_generator(

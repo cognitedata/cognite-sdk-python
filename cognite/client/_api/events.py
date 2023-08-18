@@ -101,7 +101,7 @@ class EventsAPI(APIClient):
             limit (Optional[int]): Maximum number of events to return. Defaults to return all items.
             partitions (Optional[int]): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
 
-        Yields:
+        Returns:
             Union[Iterator[Event], Iterator[EventList]]: yields Event one by one if chunk_size is not specified, else EventList objects.
         """
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
@@ -721,9 +721,7 @@ class EventsAPI(APIClient):
 
         Args:
             item (Event | Sequence[Event]): Event or list of events to upsert.
-            mode (Literal["patch", "replace"])): Whether to patch or replace in the case the events are existing. If
-                you set 'patch', the call will only update fields with non-null values (default).
-                Setting 'replace' will unset any fields that are not specified.
+            mode (Literal["patch", "replace"]): Whether to patch or replace in the case the events are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
 
         Returns:
             Event | EventList: The upserted event(s).

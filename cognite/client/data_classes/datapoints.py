@@ -282,11 +282,11 @@ class DatapointsArray(CogniteResource):
             For efficient storage, datapoints are not stored as a sequence of (singular) Datapoint
             objects, so these are created on demand while iterating (slow).
 
-        Yields:
+        Returns:
             Iterator[Datapoint]: No description."""
         # Let's not create a single Datapoint more than we have too:
         attrs, arrays = self._data_fields()
-        yield from (
+        return (
             Datapoint(
                 timestamp=self._dtype_fix(row[0]) // 1_000_000, **dict(zip(attrs[1:], map(self._dtype_fix, row[1:])))
             )

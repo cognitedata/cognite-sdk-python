@@ -60,6 +60,8 @@ class ContextualizationJobType(Enum):
 
 
 class ContextualizationJob(CogniteResource):
+    """Data class for the result of a contextualization job."""
+
     _COMMON_FIELDS = frozenset(
         {
             "status",
@@ -88,7 +90,6 @@ class ContextualizationJob(CogniteResource):
         job_token: Optional[str] = None,
         cognite_client: Optional[CogniteClient] = None,
     ) -> None:
-        """Data class for the result of a contextualization job."""
         self.job_id = job_id
         self.model_id = model_id
         self.status = status
@@ -170,6 +171,8 @@ class ContextualizationJobList(CogniteResourceList[ContextualizationJob]):
 
 
 class EntityMatchingModel(CogniteResource):
+    """Entity matching model. See the `fit` method for the meaning of these fields."""
+
     _RESOURCE_PATH = "/context/entitymatching"
     _STATUS_PATH = _RESOURCE_PATH + "/"
 
@@ -190,7 +193,6 @@ class EntityMatchingModel(CogniteResource):
         external_id: Optional[str] = None,
         cognite_client: Optional[CogniteClient] = None,
     ) -> None:
-        """Entity matching model. See the `fit` method for the meaning of these fields."""
         self.id = id
         self.status = status
         self.created_time = created_time
@@ -712,6 +714,8 @@ class VisionJob(ContextualizationJob):
 
 
 class VisionExtractItem(CogniteResource):
+    """Data class for storing predictions for a single image file"""
+
     def __init__(
         self,
         file_id: Optional[int] = None,
@@ -720,7 +724,6 @@ class VisionExtractItem(CogniteResource):
         error_message: Optional[str] = None,
         cognite_client: Optional[CogniteClient] = None,
     ) -> None:
-        """Data class for storing predictions for a single image file"""
         self.file_id = file_id
         self.file_external_id = file_external_id
         self.error_message = error_message

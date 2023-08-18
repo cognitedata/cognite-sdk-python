@@ -48,7 +48,7 @@ class TransformationNotificationList(CogniteResourceList[TransformationNotificat
 
 
 class TransformationNotificationFilter(CogniteFilter):
-    """
+    """TransformationNotificationFilter
 
     Args:
         transformation_id (Optional[int]): Filter by transformation internal numeric ID.

@@ -103,7 +103,7 @@ class TimeSeriesAPI(APIClient):
             limit (Optional[int]): Maximum number of time series to return. Defaults to return all items.
             partitions (Optional[int]): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed.
 
-        Yields:
+        Returns:
             Union[Iterator[TimeSeries], Iterator[TimeSeriesList]]: yields TimeSeries one by one if chunk_size is not specified, else TimeSeriesList objects.
         """
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
@@ -699,9 +699,7 @@ class TimeSeriesAPI(APIClient):
 
         Args:
             item (TimeSeries | Sequence[TimeSeries]): TimeSeries or list of TimeSeries to upsert.
-            mode (Literal["patch", "replace"])): Whether to patch or replace in the case the time series are existing. If
-                you set 'patch', the call will only update fields with non-null values (default).
-                Setting 'replace' will unset any fields that are not specified.
+            mode (Literal["patch", "replace"]): Whether to patch or replace in the case the time series are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
 
         Returns:
             TimeSeries | TimeSeriesList: The upserted time series(s).
