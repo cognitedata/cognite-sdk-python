@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+from io import BytesIO
 from pathlib import Path
 
 import pytest
@@ -83,6 +84,15 @@ class TestDocumentsAPI:
         assert isinstance(res, bytes)
         res = res.decode("utf-8")
         assert res == content
+
+    def test_retrieve_content_into_buffer(self, cognite_client: CogniteClient, text_file_content_pair):
+        doc, content = text_file_content_pair
+        buffer = BytesIO()
+
+        res = cognite_client.documents.retrieve_content_buffer(id=doc.id, buffer=buffer)
+
+        assert res is None
+        assert buffer.getvalue().decode("utf-8") == content
 
     def test_search_no_filters_no_highlight(self, cognite_client: CogniteClient, text_file_content_pair):
         doc, content = text_file_content_pair

@@ -26,9 +26,13 @@ List Documents
 ^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.documents.DocumentsAPI.list
 
-Retrieve Documents
-^^^^^^^^^^^^^^^^^^^
+Retrieve Document Content
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automethod:: cognite.client._api.documents.DocumentsAPI.retrieve_content
+
+Retrieve Document Content Buffer
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.documents.DocumentsAPI.retrieve_content_buffer
 
 Search Documents
 ^^^^^^^^^^^^^^^^^^

@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from pathlib import Path
-from typing import IO, TYPE_CHECKING, Literal, Optional, cast, overload
+from typing import IO, TYPE_CHECKING, BinaryIO, Literal, Optional, cast, overload
+
+from requests import Response
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import LIST_LIMIT_DEFAULT
@@ -538,6 +540,44 @@ class DocumentsAPI(APIClient):
         """
         response = self._do_request("GET", f"{self._RESOURCE_PATH}/{id}/content", accept="text/plain")
         return response.content
+
+    def retrieve_content_buffer(self, id: int, buffer: BinaryIO) -> None:
+        """`Retrieve document content into buffer <https://developer.cognite.com/api#tag/Documents/operation/documentsContent>`_
+
+        Returns extracted textual information for the given document.
+
+        The document pipeline extracts up to 1MiB of textual information from each processed document.
+        The search and list endpoints truncate the textual content of each document,
+        in order to reduce the size of the returned payload. If you want the whole text for a document,
+        you can use this endpoint.
+
+
+        Args:
+            id (int): The server-generated ID for the document you want to retrieve the content of.
+            buffer (BinaryIO): The document content is streamed directly into the buffer. This is useful for
+                         retriving large documents.
+
+        Returns:
+            None: None
+
+        Examples:
+
+        Retrieve the content of a document with id 123 into local file "my_text.txt":
+
+            >>> from cognite.client import CogniteClient
+            >>> from pathlib import Path
+            >>> c = CogniteClient()
+            >>> with open(Path("my_file.txt"), "wb") as buffer:
+            ...     c.documents.retrieve_content_buffer(id=123, buffer=buffer)
+
+        """
+        with self._do_request(
+            "GET", f"{self._RESOURCE_PATH}/{id}/content", stream=True, accept="text/plain"
+        ) as response:
+            response = cast(Response, response)
+            for chunk in response.iter_content(chunk_size=2**21):
+                if chunk:  # filter out keep-alive new chunks
+                    buffer.write(chunk)
 
     @overload
     def search(
