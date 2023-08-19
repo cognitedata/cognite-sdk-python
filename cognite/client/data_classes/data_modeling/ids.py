@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import asdict, dataclass, field
-from typing import Any, ClassVar, Literal, Optional, Sequence, Tuple, Type, TypeVar, Union, cast
+from typing import Any, ClassVar, Literal, Optional, Protocol, Sequence, Tuple, Type, TypeVar, Union, cast
 
 from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._identifier import DataModelingIdentifier, DataModelingIdentifierSequence
@@ -142,13 +142,28 @@ class DataModelId(VersionedDataModelingId):
     _type = "datamodel"
 
 
+class IdLike(Protocol):
+    space: str
+    external_id: str
+    version: str
+
+
 ContainerIdentifier = Union[ContainerId, Tuple[str, str]]
 ViewIdentifier = Union[ViewId, Tuple[str, str], Tuple[str, str, str]]
 DataModelIdentifier = Union[DataModelId, Tuple[str, str], Tuple[str, str, str]]
 NodeIdentifier = Union[NodeId, Tuple[str, str, str]]
 EdgeIdentifier = Union[EdgeId, Tuple[str, str, str]]
 
-Id = Union[Tuple[str, str], Tuple[str, str, str], DataModelingId, VersionedDataModelingId, NodeId, EdgeId, InstanceId]
+Id = Union[
+    Tuple[str, str],
+    Tuple[str, str, str],
+    DataModelingId,
+    VersionedDataModelingId,
+    NodeId,
+    EdgeId,
+    InstanceId,
+    IdLike,
+]
 
 
 def _load_space_identifier(ids: str | Sequence[str]) -> DataModelingIdentifierSequence:
