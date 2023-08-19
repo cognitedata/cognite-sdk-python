@@ -2,11 +2,14 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import asdict, dataclass, field
-from typing import Any, ClassVar, Literal, Optional, Sequence, Tuple, Type, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Optional, Sequence, Tuple, Type, TypeVar, Union, cast
 
 from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._identifier import DataModelingIdentifier, DataModelingIdentifierSequence
 from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_snake_case
+
+if TYPE_CHECKING:
+    from cognite.client.data_classes.data_modeling.views import View
 
 
 @dataclass(frozen=True)
@@ -148,7 +151,17 @@ DataModelIdentifier = Union[DataModelId, Tuple[str, str], Tuple[str, str, str]]
 NodeIdentifier = Union[NodeId, Tuple[str, str, str]]
 EdgeIdentifier = Union[EdgeId, Tuple[str, str, str]]
 
-Id = Union[Tuple[str, str], Tuple[str, str, str], DataModelingId, VersionedDataModelingId, NodeId, EdgeId, InstanceId]
+Id = Union[
+    Tuple[str, str],
+    Tuple[str, str, str],
+    DataModelingId,
+    VersionedDataModelingId,
+    "View",
+    ViewId,
+    NodeId,
+    EdgeId,
+    InstanceId,
+]
 
 
 def _load_space_identifier(ids: str | Sequence[str]) -> DataModelingIdentifierSequence:
