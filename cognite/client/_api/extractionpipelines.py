@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Union, cast, overload
 
 from cognite.client import utils
@@ -18,6 +19,7 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.extractionpipelines import StringFilter
 from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._time import datetime_to_ms, time_ago_to_ms
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -319,7 +321,7 @@ class ExtractionPipelineRunsAPI(APIClient):
         self,
         external_id: str,
         status: Literal["success", "failure", "seen"] | Sequence[Literal["success", "failure", "seen"]] | None = None,
-        created_time: TimestampRange | Dict[str, Any] | None = None,
+        created_time: TimestampRange | Dict[str, Any] | str | None = None,
         message: str | None = None,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> ExtractionPipelineRunList:
@@ -328,7 +330,7 @@ class ExtractionPipelineRunsAPI(APIClient):
         Args:
             external_id (str): Extraction pipeline external Id.
             status (Literal["success", "failure", "seen"], optional): Filter for one or more statuses.
-            created_time (TimestampRange | tuple[int, int], optional): Filter for extraction pipeline runs created within a time range.
+            created_time (TimestampRange | Dict[str, Any] | str, optional): Filter for extraction pipeline runs created within a time range.
             message (str, optional): Filter for the extraction pipeline runs with substring to find. Ignoring case.
             limit (int, optional): Maximum number of ExtractionPipelines to return. Defaults to 25. Set to -1, float("inf") or None
                 to return all items.
@@ -357,6 +359,11 @@ class ExtractionPipelineRunsAPI(APIClient):
         status_list: list[str] | None = None
         if status is not None:
             status_list = [status] if isinstance(status, str) else cast(List[str], status)
+
+        if isinstance(created_time, str):
+            timespan = time_ago_to_ms(created_time)
+            now = datetime_to_ms(datetime.now(timezone.utc))
+            created_time = TimestampRange(start=now - timespan, end=now)
 
         filter_ = ExtractionPipelineRunFilter(
             external_id=external_id,
