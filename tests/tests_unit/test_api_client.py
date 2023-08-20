@@ -1009,14 +1009,26 @@ class TestStandardUpdate:
         assert e.value.failed == []
         assert e.value.unknown == [0, "abc"]
 
-    def test_standard_update_fail_missing_and_5xx(self, api_client_with_token, rsps):
+    def test_standard_update_fail_missing_and_5xx(self, api_client_with_token, rsps, monkeypatch):
+        # Note on this test: we have two tasks being added to an executor, but that doesnt mean we
+        # know the execution order. Depending on whether the 400 or 500 hits the first or second task,
+        # the following asserts fail (ordering issue). Thus, we use a mainthread executor (deterministic)
+        from cognite.client.utils._concurrency import ConcurrencySettings
+
+        monkeypatch.setattr(ConcurrencySettings, "executor_type", "mainthread")
+
         rsps.add(
             rsps.POST,
             BASE_URL + URL_PATH + "/update",
             status=400,
             json={"error": {"message": "Missing ids", "missing": [{"id": 0}]}},
         )
-        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/update", status=500, json={"error": {"message": "Server Error"}})
+        rsps.add(
+            rsps.POST,
+            BASE_URL + URL_PATH + "/update",
+            status=500,
+            json={"error": {"message": "Server Error"}},
+        )
         with set_request_limit(api_client_with_token, 1):
             with pytest.raises(CogniteAPIError) as e:
                 api_client_with_token._update_multiple(
