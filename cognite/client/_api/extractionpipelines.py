@@ -318,7 +318,7 @@ class ExtractionPipelineRunsAPI(APIClient):
     def filter(
         self,
         external_id: str,
-        statuses: Literal["success", "failure", "seen"] | Sequence[Literal["success", "failure", "seen"]] | None = None,
+        status: Literal["success", "failure", "seen"] | Sequence[Literal["success", "failure", "seen"]] | None = None,
         created_time: TimestampRange | Dict[str, Any] | None = None,
         message: str | None = None,
         limit: int = LIST_LIMIT_DEFAULT,
@@ -327,7 +327,7 @@ class ExtractionPipelineRunsAPI(APIClient):
 
         Args:
             external_id (str): Extraction pipeline external Id.
-            statuses (Literal["success", "failure", "seen"], optional): Filter for one or more statuses.
+            status (Literal["success", "failure", "seen"], optional): Filter for one or more statuses.
             created_time (TimestampRange | tuple[int, int], optional): Filter for extraction pipeline runs created within a time range.
             message (str, optional): Filter for the extraction pipeline runs with substring to find. Ignoring case.
             limit (int, optional): Maximum number of ExtractionPipelines to return. Defaults to 25. Set to -1, float("inf") or None
@@ -336,10 +336,27 @@ class ExtractionPipelineRunsAPI(APIClient):
         Returns:
             ExtractionPipelineRunList: List of extraction pipeline runs matching the filters.
 
+        Examples:
+
+            Get all pipeline runs with status "success" for pipeliene 'extId':
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import ExtractionPipelineRun
+                >>> c = CogniteClient()
+                >>> res = c.extraction_pipelines.runs.filter(external_id="extId", status="success")
+
+            Get all pipeline runs with message containing "CLPEX Error" and status ="failure" for pipeliene 'extId':
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import ExtractionPipelineRun
+                >>> c = CogniteClient()
+                >>> res = c.extraction_pipelines.runs.filter(external_id="extId", status="failure", message="CPLEX Error")
+
+
         """
         status_list: list[str] | None = None
-        if statuses is not None:
-            status_list = [statuses] if isinstance(statuses, str) else cast(List[str], statuses)
+        if status is not None:
+            status_list = [status] if isinstance(status, str) else cast(List[str], status)
 
         filter_ = ExtractionPipelineRunFilter(
             external_id=external_id,

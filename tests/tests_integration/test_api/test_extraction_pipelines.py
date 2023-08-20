@@ -2,13 +2,13 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import ExtractionPipeline, ExtractionPipelineRun, ExtractionPipelineUpdate
-from cognite.client.data_classes.extractionpipelines import ExtractionPipelineContact
+from cognite.client.data_classes.extractionpipelines import ExtractionPipelineContact, ExtractionPipelineRunList
 from cognite.client.exceptions import CogniteNotFoundError
 from cognite.client.utils._text import random_string
 
 
 @pytest.fixture
-def new_extpipe(cognite_client):
+def new_extpipe(cognite_client: CogniteClient):
     testid = random_string(50)
     dataset = cognite_client.data_sets.list()[0]
     extpipe = cognite_client.extraction_pipelines.create(
@@ -31,6 +31,19 @@ def new_extpipe(cognite_client):
     except Exception:
         pass
     assert cognite_client.extraction_pipelines.retrieve(extpipe.id) is None
+
+
+@pytest.fixture
+def populated_runs(cognite_client: CogniteClient, new_extpipe: ExtractionPipeline) -> ExtractionPipelineRunList:
+    runs = [
+        ExtractionPipelineRun(extpipe_external_id=new_extpipe.external_id, status="failure", message="lorem ipsum"),
+        ExtractionPipelineRun(extpipe_external_id=new_extpipe.external_id, status="success", message="dolor sit amet"),
+    ]
+    created = []
+    for run in runs:
+        new_run = cognite_client.extraction_pipelines.runs.create(run)
+        created.append(new_run)
+    return ExtractionPipelineRunList(created)
 
 
 class TestExtractionPipelinesAPI:
@@ -118,13 +131,20 @@ class TestExtractionPipelinesAPI:
             assert run["external_id"] == new_extpipe.external_id
 
     def test_filter_extraction_pipeline_runs(
-        self, cognite_client: CogniteClient, new_extpipe: ExtractionPipeline
+        self,
+        cognite_client: CogniteClient,
+        new_extpipe: ExtractionPipeline,
+        populated_runs: ExtractionPipelineRunList,
     ) -> None:
-        cognite_client.extraction_pipelines.runs.list(new_extpipe.external_id)
+        def pop_ext_id(run: ExtractionPipelineRun) -> ExtractionPipelineRun:
+            # Remove the external id from the run, since it is not returned by the API
+            run.extpipe_external_id = None
+            return run
+
+        expected = ExtractionPipelineRunList([pop_ext_id(run) for run in populated_runs if run.status == "failure"])
 
         filtered = cognite_client.extraction_pipelines.runs.filter(
-            external_id=new_extpipe.external_id, status="seen", limit=1
+            external_id=new_extpipe.external_id, status="failure", limit=1
         )
 
-        assert len(filtered) == 1
-        assert filtered[0].status == "seen"
+        assert expected.dump() == filtered.dump()
