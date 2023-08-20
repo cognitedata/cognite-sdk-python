@@ -2,16 +2,18 @@ from __future__ import annotations
 
 import json
 import math
+import random
 import unittest
 from collections import namedtuple
 from typing import Any
 
 import pytest
 from requests import Response
+from responses import matchers
 
 from cognite.client import CogniteClient, utils
 from cognite.client._api_client import APIClient
-from cognite.client.config import ClientConfig
+from cognite.client.config import ClientConfig, global_config
 from cognite.client.credentials import Token
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -1009,14 +1011,33 @@ class TestStandardUpdate:
         assert e.value.failed == []
         assert e.value.unknown == [0, "abc"]
 
-    def test_standard_update_fail_missing_and_5xx(self, api_client_with_token, rsps):
+    def test_standard_update_fail_missing_and_5xx(self, api_client_with_token, rsps, monkeypatch):
+        # Note 1: We have two tasks being added to an executor, but that doesnt mean we know the
+        # execution order. Depending on whether the 400 or 500 hits the first or second task,
+        # the following asserts fail (ordering issue). Thus, we use 'matchers.json_params_matcher'
+        # to make sure the responses match the two tasks.
+
+        # Note 2: The matcher function expects request.body to not be gzipped (it just does .decode("utf-8")
+        # which fails, making the matching functions useless.. so we temporarily turn off gzip for this test
+        monkeypatch.setattr(global_config, "disable_gzip", True)
+
         rsps.add(
             rsps.POST,
             BASE_URL + URL_PATH + "/update",
             status=400,
             json={"error": {"message": "Missing ids", "missing": [{"id": 0}]}},
+            match=[matchers.json_params_matcher({"items": [{"update": {}, "id": 0}]})],
         )
-        rsps.add(rsps.POST, BASE_URL + URL_PATH + "/update", status=500, json={"error": {"message": "Server Error"}})
+        rsps.add(
+            rsps.POST,
+            BASE_URL + URL_PATH + "/update",
+            status=500,
+            json={"error": {"message": "Server Error"}},
+            match=[matchers.json_params_matcher({"items": [{"update": {}, "externalId": "abc"}]})],
+        )
+        items = [SomeResource(external_id="abc"), SomeResource(id=0)]
+        random.shuffle(items)
+
         with set_request_limit(api_client_with_token, 1):
             with pytest.raises(CogniteAPIError) as e:
                 api_client_with_token._update_multiple(
@@ -1024,7 +1045,7 @@ class TestStandardUpdate:
                     list_cls=SomeResourceList,
                     resource_cls=SomeResource,
                     resource_path=URL_PATH,
-                    items=[SomeResource(id=0), SomeResource(external_id="abc")],
+                    items=items,
                 )
         assert ["abc"] == e.value.unknown
         assert [0] == e.value.failed
