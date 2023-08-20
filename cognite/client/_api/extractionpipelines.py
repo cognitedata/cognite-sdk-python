@@ -338,6 +338,11 @@ class ExtractionPipelineRunsAPI(APIClient):
         Returns:
             ExtractionPipelineRunList: List of extraction pipeline runs matching the filters.
 
+        Tip:
+            The created_time paremeter supports in addition to a dictonary with the format
+            `{"min": epoch_min, "max": epoch_max}`, arguments given on the format `<integer>(s|m|h|d|w)-ago`.
+            For example, `12h-ago`, which will be parsed to  `{"min"= now - 12h-ago}`.
+
         Examples:
 
             Get all pipeline runs with status "success" for pipeliene 'extId':
@@ -347,7 +352,7 @@ class ExtractionPipelineRunsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.extraction_pipelines.runs.filter(external_id="extId", status="success")
 
-            Get all pipeline runs with message containing "CLPEX Error" and status ="failure" for pipeliene 'extId':
+            Get all pipeline runs with a message containing "CLPEX Error" and status ="failure" for pipeline 'extId':
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ExtractionPipelineRun
