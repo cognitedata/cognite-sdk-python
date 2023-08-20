@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, Literal, Optional, Sequence, Union, overload
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Union, cast, overload
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -314,6 +314,46 @@ class ExtractionPipelineRunsAPI(APIClient):
         """
         utils._auxiliary.assert_type(run, "run", [ExtractionPipelineRun, Sequence])
         return self._create_multiple(list_cls=ExtractionPipelineRunList, resource_cls=ExtractionPipelineRun, items=run)
+
+    def filter(
+        self,
+        external_id: str,
+        statuses: Literal["success", "failure", "seen"] | Sequence[Literal["success", "failure", "seen"]] | None = None,
+        created_time: TimestampRange | Dict[str, Any] | None = None,
+        message: str | None = None,
+        limit: int = LIST_LIMIT_DEFAULT,
+    ) -> ExtractionPipelineRunList:
+        """`Filter extraction pipeline runs <https://developer.cognite.com/api#tag/Extraction-Pipelines-Runs/operation/filterRuns>`_
+
+        Args:
+            external_id (str): Extraction pipeline external Id.
+            statuses (Literal["success", "failure", "seen"], optional): Filter for one or more statuses.
+            created_time (TimestampRange | tuple[int, int], optional): Filter for extraction pipeline runs created within a time range.
+            message (str, optional): Filter for the extraction pipeline runs with substring to find. Ignoring case.
+            limit (int, optional): Maximum number of ExtractionPipelines to return. Defaults to 25. Set to -1, float("inf") or None
+                to return all items.
+
+        Returns:
+            ExtractionPipelineRunList: List of extraction pipeline runs matching the filters.
+
+        """
+        status_list: list[str] | None = None
+        if statuses is not None:
+            status_list = [statuses] if isinstance(statuses, str) else cast(List[str], statuses)
+
+        filter_ = ExtractionPipelineRunFilter(
+            external_id=external_id,
+            statuses=status_list,
+            created_time=created_time,
+            message=StringFilter(substring=message),
+        )
+        return self._list(
+            list_cls=ExtractionPipelineRunList,
+            resource_cls=ExtractionPipelineRun,
+            method="POST",
+            limit=limit,
+            filter=filter_.dump(camel_case=True),
+        )
 
 
 class ExtractionPipelineConfigsAPI(APIClient):

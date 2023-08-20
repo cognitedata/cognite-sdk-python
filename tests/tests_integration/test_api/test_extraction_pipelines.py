@@ -116,3 +116,15 @@ class TestExtractionPipelinesAPI:
         dumped = res.dump()
         for run in dumped:
             assert run["external_id"] == new_extpipe.external_id
+
+    def test_filter_extraction_pipeline_runs(
+        self, cognite_client: CogniteClient, new_extpipe: ExtractionPipeline
+    ) -> None:
+        cognite_client.extraction_pipelines.runs.list(new_extpipe.external_id)
+
+        filtered = cognite_client.extraction_pipelines.runs.filter(
+            external_id=new_extpipe.external_id, status="seen", limit=1
+        )
+
+        assert len(filtered) == 1
+        assert filtered[0].status == "seen"
