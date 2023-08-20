@@ -354,6 +354,12 @@ class ExtractionPipelineRunsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.extraction_pipelines.runs.filter(external_id="extId", status="failure", message="CPLEX Error")
 
+            Get all failed pipeline runs the last 24 hours for pipeliene 'extId':
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import ExtractionPipelineRun
+                >>> c = CogniteClient()
+                >>> res = c.extraction_pipelines.runs.filter(external_id="extId", status="failure", created_time="24h-ago")
 
         """
         status_list: list[str] | None = None
@@ -363,7 +369,7 @@ class ExtractionPipelineRunsAPI(APIClient):
         if isinstance(created_time, str):
             timespan = time_ago_to_ms(created_time)
             now = datetime_to_ms(datetime.now(timezone.utc))
-            created_time = TimestampRange(start=now - timespan, end=now)
+            created_time = TimestampRange(min=now - timespan)
 
         filter_ = ExtractionPipelineRunFilter(
             external_id=external_id,

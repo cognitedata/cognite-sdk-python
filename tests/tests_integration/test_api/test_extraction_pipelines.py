@@ -1,9 +1,12 @@
+from datetime import datetime, timedelta, timezone
+
 import pytest
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import ExtractionPipeline, ExtractionPipelineRun, ExtractionPipelineUpdate
 from cognite.client.data_classes.extractionpipelines import ExtractionPipelineContact, ExtractionPipelineRunList
 from cognite.client.exceptions import CogniteNotFoundError
+from cognite.client.utils import datetime_to_ms
 from cognite.client.utils._text import random_string
 
 
@@ -35,9 +38,18 @@ def new_extpipe(cognite_client: CogniteClient):
 
 @pytest.fixture
 def populated_runs(cognite_client: CogniteClient, new_extpipe: ExtractionPipeline) -> ExtractionPipelineRunList:
+    now = datetime_to_ms(datetime.now(timezone.utc))
+    a_year_ago = datetime_to_ms(datetime.now(timezone.utc).replace(year=datetime.now(timezone.utc).year - 1))
     runs = [
-        ExtractionPipelineRun(extpipe_external_id=new_extpipe.external_id, status="failure", message="lorem ipsum"),
-        ExtractionPipelineRun(extpipe_external_id=new_extpipe.external_id, status="success", message="dolor sit amet"),
+        ExtractionPipelineRun(
+            extpipe_external_id=new_extpipe.external_id, status="failure", message="lorem ipsum", created_time=now
+        ),
+        ExtractionPipelineRun(
+            extpipe_external_id=new_extpipe.external_id,
+            status="success",
+            message="dolor sit amet",
+            created_time=a_year_ago,
+        ),
     ]
     created = []
     for run in runs:
@@ -136,15 +148,33 @@ class TestExtractionPipelinesAPI:
         new_extpipe: ExtractionPipeline,
         populated_runs: ExtractionPipelineRunList,
     ) -> None:
-        def pop_ext_id(run: ExtractionPipelineRun) -> ExtractionPipelineRun:
-            # Remove the external id from the run, since it is not returned by the API
-            run.extpipe_external_id = None
-            return run
-
-        expected = ExtractionPipelineRunList([pop_ext_id(run) for run in populated_runs if run.status == "failure"])
+        expected = ExtractionPipelineRunList([_pop_ext_id(run) for run in populated_runs if run.status == "failure"])
 
         filtered = cognite_client.extraction_pipelines.runs.filter(
             external_id=new_extpipe.external_id, status="failure", limit=1
         )
 
         assert expected.dump() == filtered.dump()
+
+    def test_filter_extraction_pipeline_runs_created_ago(
+        self,
+        cognite_client: CogniteClient,
+        new_extpipe: ExtractionPipeline,
+        populated_runs: ExtractionPipelineRunList,
+    ) -> None:
+        yesterday = datetime_to_ms(datetime.now(timezone.utc) - timedelta(days=1))
+        expected = ExtractionPipelineRunList(
+            [_pop_ext_id(run) for run in populated_runs if run.created_time > yesterday]
+        )
+
+        filtered = cognite_client.extraction_pipelines.runs.filter(
+            external_id=new_extpipe.external_id, created_time="24h-ago", limit=1
+        )
+
+        assert expected.dump() == filtered.dump()
+
+
+def _pop_ext_id(run: ExtractionPipelineRun) -> ExtractionPipelineRun:
+    # Remove the external id from the run, since it is not returned by the API
+    run.extpipe_external_id = None
+    return run
