@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.14.1] - 2023-08-19
+### Fixed
+- Passing `sources` as a tuple no longer raises `ValueError` in `InstancesAPI.retrieve`.
+
 ## [6.14.0] - 2023-08-14
 ### Changed
 - Don't terminate client.timeseries.subscriptions.iterate_data() when `has_next=false` as more data
