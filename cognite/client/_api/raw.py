@@ -166,16 +166,17 @@ class RawTablesAPI(APIClient):
         Returns:
             Union[Iterator[Table], Iterator[TableList]]: No description.
         """
-        return (
-            self._set_db_name_on_tables(tbl, db_name)
-            for tbl in self._list_generator(
-                list_cls=TableList,
-                resource_cls=Table,
-                resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name),
-                chunk_size=chunk_size,
-                method="GET",
-                limit=limit,
-            )
+        table_iterator = self._list_generator(
+            list_cls=TableList,
+            resource_cls=Table,
+            resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name),
+            chunk_size=chunk_size,
+            method="GET",
+            limit=limit,
+        )
+        return cast(
+            Union[Iterator[Table], Iterator[TableList]],
+            (self._set_db_name_on_tables(tbl, db_name) for tbl in table_iterator),
         )
 
     @overload
