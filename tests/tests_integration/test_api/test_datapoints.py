@@ -9,7 +9,6 @@ from __future__ import annotations
 import itertools
 import random
 import re
-import time
 from contextlib import nullcontext as does_not_raise
 from datetime import datetime, timezone
 from typing import Literal
@@ -208,100 +207,110 @@ PARAMETRIZED_VALUES_OUTSIDE_POINTS = [
     (-100, 101, False, False),
 ]
 
-# To avoid the `xdist` error "different tests were collected between...", we must make sure all parallel test-runners
-# generate the same tests (randomized test data) so we must set a fixed seed... but we also want different random
-# test data over time (...thats the whole point), so we set seed based on time, but round to have some buffer:
-SEED = round(time.time(), -3)
-
 
 @pytest.fixture(scope="module", autouse=True)
-def make_dps_tests_reproducible():
+def make_dps_tests_reproducible(testrun_uid):
+    # To avoid the `xdist` error "different tests were collected between...", we must make sure all parallel test-runners
+    # generate the same tests (randomized test data) so we must set a fixed seed... but we also want different random
+    # test data over time (...thats the whole point), so we set seed based on a unique run ID created by pytest-xdist:
     print(  # noqa: T201
-        f"Random seed used in datapoints integration tests: {SEED}. If any datapoints test failed - and you weren't "
+        f"Random seed used in datapoints integration tests: {testrun_uid}. If any datapoints test failed - and you weren't "
         "the cause, please create a new (Github) issue: https://github.com/cognitedata/cognite-sdk-python/issues"
     )
-    with rng_context(SEED):  # Internal state of `random` will be reset after exiting contextmanager
+    with rng_context(testrun_uid):  # Internal state of `random` will be reset after exiting contextmanager
         yield
 
 
-# We also have some test data that depend on random input: (TODO: consider moving into respective tests)
-with rng_context(SEED + 42):
-    PARAMETRIZED_VALUES_ALL_UNKNOWN_SINGLE_MULTIPLE_GIVEN = (
-        # Single identifier given as base type (int/str) or as dict
-        (1, "ChunkingDpsFetcher", random_cognite_ids(1)[0], None, [None, None]),
-        (1, "ChunkingDpsFetcher", None, random_cognite_external_ids(1)[0], [None, None]),
-        (1, "ChunkingDpsFetcher", {"id": random_cognite_ids(1)[0]}, None, [None, None]),
-        (1, "ChunkingDpsFetcher", None, {"external_id": random_cognite_external_ids(1)[0]}, [None, None]),
-        # Single identifier given as length-1 list:
-        (1, "ChunkingDpsFetcher", random_cognite_ids(1), None, DPS_LST_TYPES),
-        (1, "ChunkingDpsFetcher", None, random_cognite_external_ids(1), DPS_LST_TYPES),
-        # Single identifier given by BOTH id and external id:
-        (2, "ChunkingDpsFetcher", random_cognite_ids(1)[0], random_cognite_external_ids(1)[0], DPS_LST_TYPES),
-        (
-            2,
-            "ChunkingDpsFetcher",
-            {"id": random_cognite_ids(1)[0]},
-            {"external_id": random_cognite_external_ids(1)[0]},
-            DPS_LST_TYPES,
-        ),
-        (2, "ChunkingDpsFetcher", {"id": random_cognite_ids(1)[0]}, random_cognite_external_ids(1)[0], DPS_LST_TYPES),
-        (
-            2,
-            "ChunkingDpsFetcher",
-            random_cognite_ids(1)[0],
-            {"external_id": random_cognite_external_ids(1)[0]},
-            DPS_LST_TYPES,
-        ),
-        (1, "EagerDpsFetcher", random_cognite_ids(1)[0], random_cognite_external_ids(1)[0], DPS_LST_TYPES),
-        (
-            1,
-            "EagerDpsFetcher",
-            {"id": random_cognite_ids(1)[0]},
-            {"external_id": random_cognite_external_ids(1)[0]},
-            DPS_LST_TYPES,
-        ),
-        (
-            1,
-            "EagerDpsFetcher",
-            random_cognite_ids(1)[0],
-            {"external_id": random_cognite_external_ids(1)[0]},
-            DPS_LST_TYPES,
-        ),
-        (1, "EagerDpsFetcher", {"id": random_cognite_ids(1)[0]}, random_cognite_external_ids(1)[0], DPS_LST_TYPES),
-        # Multiple identifiers given by single identifier:
-        (4, "ChunkingDpsFetcher", random_cognite_ids(3), None, DPS_LST_TYPES),
-        (4, "ChunkingDpsFetcher", None, random_cognite_external_ids(3), DPS_LST_TYPES),
-        (2, "EagerDpsFetcher", random_cognite_ids(3), None, DPS_LST_TYPES),
-        (2, "EagerDpsFetcher", None, random_cognite_external_ids(3), DPS_LST_TYPES),
-        # Multiple identifiers given by BOTH identifiers:
-        (5, "ChunkingDpsFetcher", random_cognite_ids(2), random_cognite_external_ids(2), DPS_LST_TYPES),
-        (5, "ChunkingDpsFetcher", random_cognite_ids(2), random_cognite_external_ids(2), DPS_LST_TYPES),
-        (3, "EagerDpsFetcher", random_cognite_ids(2), random_cognite_external_ids(2), DPS_LST_TYPES),
-        (3, "EagerDpsFetcher", random_cognite_ids(2), random_cognite_external_ids(2), DPS_LST_TYPES),
-        (
-            5,
-            "ChunkingDpsFetcher",
-            [{"id": id} for id in random_cognite_ids(2)],
-            [{"external_id": xid} for xid in random_cognite_external_ids(2)],
-            DPS_LST_TYPES,
-        ),
-        (
-            3,
-            "EagerDpsFetcher",
-            [{"id": id} for id in random_cognite_ids(2)],
-            [{"external_id": xid} for xid in random_cognite_external_ids(2)],
-            DPS_LST_TYPES,
-        ),
-    )
+# We also have some test data that depend on random input:
+@pytest.fixture
+def parametrized_values_all_unknown_single_multiple_given(testrun_uid):
+    with rng_context(testrun_uid + "42"):
+        return (
+            # Single identifier given as base type (int/str) or as dict
+            (1, "ChunkingDpsFetcher", random_cognite_ids(1)[0], None, [None, None]),
+            (1, "ChunkingDpsFetcher", None, random_cognite_external_ids(1)[0], [None, None]),
+            (1, "ChunkingDpsFetcher", {"id": random_cognite_ids(1)[0]}, None, [None, None]),
+            (1, "ChunkingDpsFetcher", None, {"external_id": random_cognite_external_ids(1)[0]}, [None, None]),
+            # Single identifier given as length-1 list:
+            (1, "ChunkingDpsFetcher", random_cognite_ids(1), None, DPS_LST_TYPES),
+            (1, "ChunkingDpsFetcher", None, random_cognite_external_ids(1), DPS_LST_TYPES),
+            # Single identifier given by BOTH id and external id:
+            (2, "ChunkingDpsFetcher", random_cognite_ids(1)[0], random_cognite_external_ids(1)[0], DPS_LST_TYPES),
+            (
+                2,
+                "ChunkingDpsFetcher",
+                {"id": random_cognite_ids(1)[0]},
+                {"external_id": random_cognite_external_ids(1)[0]},
+                DPS_LST_TYPES,
+            ),
+            (
+                2,
+                "ChunkingDpsFetcher",
+                {"id": random_cognite_ids(1)[0]},
+                random_cognite_external_ids(1)[0],
+                DPS_LST_TYPES,
+            ),
+            (
+                2,
+                "ChunkingDpsFetcher",
+                random_cognite_ids(1)[0],
+                {"external_id": random_cognite_external_ids(1)[0]},
+                DPS_LST_TYPES,
+            ),
+            (1, "EagerDpsFetcher", random_cognite_ids(1)[0], random_cognite_external_ids(1)[0], DPS_LST_TYPES),
+            (
+                1,
+                "EagerDpsFetcher",
+                {"id": random_cognite_ids(1)[0]},
+                {"external_id": random_cognite_external_ids(1)[0]},
+                DPS_LST_TYPES,
+            ),
+            (
+                1,
+                "EagerDpsFetcher",
+                random_cognite_ids(1)[0],
+                {"external_id": random_cognite_external_ids(1)[0]},
+                DPS_LST_TYPES,
+            ),
+            (1, "EagerDpsFetcher", {"id": random_cognite_ids(1)[0]}, random_cognite_external_ids(1)[0], DPS_LST_TYPES),
+            # Multiple identifiers given by single identifier:
+            (4, "ChunkingDpsFetcher", random_cognite_ids(3), None, DPS_LST_TYPES),
+            (4, "ChunkingDpsFetcher", None, random_cognite_external_ids(3), DPS_LST_TYPES),
+            (2, "EagerDpsFetcher", random_cognite_ids(3), None, DPS_LST_TYPES),
+            (2, "EagerDpsFetcher", None, random_cognite_external_ids(3), DPS_LST_TYPES),
+            # Multiple identifiers given by BOTH identifiers:
+            (5, "ChunkingDpsFetcher", random_cognite_ids(2), random_cognite_external_ids(2), DPS_LST_TYPES),
+            (5, "ChunkingDpsFetcher", random_cognite_ids(2), random_cognite_external_ids(2), DPS_LST_TYPES),
+            (3, "EagerDpsFetcher", random_cognite_ids(2), random_cognite_external_ids(2), DPS_LST_TYPES),
+            (3, "EagerDpsFetcher", random_cognite_ids(2), random_cognite_external_ids(2), DPS_LST_TYPES),
+            (
+                5,
+                "ChunkingDpsFetcher",
+                [{"id": id} for id in random_cognite_ids(2)],
+                [{"external_id": xid} for xid in random_cognite_external_ids(2)],
+                DPS_LST_TYPES,
+            ),
+            (
+                3,
+                "EagerDpsFetcher",
+                [{"id": id} for id in random_cognite_ids(2)],
+                [{"external_id": xid} for xid in random_cognite_external_ids(2)],
+                DPS_LST_TYPES,
+            ),
+        )
 
-    PARAMETRIZED_VALUES_UNIFORM_INDEX_FAILS = (
-        # Fail because of raw request:
-        ([None, "1s"], [None, random_aggregates(1)], [None, None]),
-        # Fail because of multiple granularities:
-        (["1m", "60s"], [random_aggregates(1), random_aggregates(1)], [None, None]),
-        # Fail because of finite limit:
-        (["1d", "1d"], [random_aggregates(1), random_aggregates(1)], [123, None]),
-    )
+
+@pytest.fixture
+def parametrized_values_uniform_index_fails(testrun_uid):
+    with rng_context(testrun_uid + "1337"):
+        return (
+            # Fail because of raw request:
+            ([None, "1s"], [None, random_aggregates(1)], [None, None]),
+            # Fail because of multiple granularities:
+            (["1m", "60s"], [random_aggregates(1), random_aggregates(1)], [None, None]),
+            # Fail because of finite limit:
+            (["1d", "1d"], [random_aggregates(1), random_aggregates(1)], [123, None]),
+        )
 
 
 class TestRetrieveRawDatapointsAPI:
@@ -502,13 +511,12 @@ class TestRetrieveRawDatapointsAPI:
                     assert exp_len == len(res_lst)
                     validate_raw_datapoints_lst([ts_exists] * exp_len, res_lst)
 
-    @pytest.mark.parametrize(
-        "max_workers, mock_out_eager_or_chunk, ids, external_ids, exp_res_types",
-        PARAMETRIZED_VALUES_ALL_UNKNOWN_SINGLE_MULTIPLE_GIVEN,
-    )
+    @pytest.mark.parametrize("test_id", range(24))  # not populated here because test data depend on deterministic rng
     def test_retrieve__all_unknown_single_multiple_given(
-        self, max_workers, mock_out_eager_or_chunk, ids, external_ids, exp_res_types, cognite_client, retrieve_endpoints
+        self, test_id, cognite_client, retrieve_endpoints, parametrized_values_all_unknown_single_multiple_given
     ):
+        test_data = parametrized_values_all_unknown_single_multiple_given[test_id]
+        max_workers, mock_out_eager_or_chunk, ids, external_ids, exp_res_types = test_data
         with set_max_workers(cognite_client, max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
             for endpoint, exp_res_type in zip(retrieve_endpoints, exp_res_types):
                 res = endpoint(
@@ -1562,8 +1570,11 @@ class TestRetrieveDataFrameAPI:
         assert (res_df[[c1, c3, *cx]].count() == [limit] * (len(cx) + 2)).all()
         assert (res_df[[c2, c4]].count() == [limit + 2] * 2).all()
 
-    @pytest.mark.parametrize("granularity_lst, aggregates_lst, limits", PARAMETRIZED_VALUES_UNIFORM_INDEX_FAILS)
-    def test_uniform_index_fails(self, granularity_lst, aggregates_lst, limits, cognite_client, one_mill_dps_ts):
+    @pytest.mark.parametrize("test_id", range(3))
+    def test_uniform_index_fails(
+        self, test_id, parametrized_values_uniform_index_fails, cognite_client, one_mill_dps_ts
+    ):
+        granularity_lst, aggregates_lst, limits = parametrized_values_uniform_index_fails[test_id]
         with pytest.raises(ValueError, match="Cannot return a uniform index"):
             cognite_client.time_series.data.retrieve_dataframe(
                 uniform_index=True,
