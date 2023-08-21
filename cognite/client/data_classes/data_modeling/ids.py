@@ -143,9 +143,19 @@ class DataModelId(VersionedDataModelingId):
 
 
 class IdLike(Protocol):
-    space: str
-    external_id: str
-    version: str
+    @property
+    def space(self) -> str:
+        ...
+
+    @property
+    def external_id(self) -> str:
+        ...
+
+
+class VersionedIdLike(IdLike):
+    @property
+    def version(self) -> Optional[str]:
+        ...
 
 
 ContainerIdentifier = Union[ContainerId, Tuple[str, str]]
@@ -154,16 +164,7 @@ DataModelIdentifier = Union[DataModelId, Tuple[str, str], Tuple[str, str, str]]
 NodeIdentifier = Union[NodeId, Tuple[str, str, str]]
 EdgeIdentifier = Union[EdgeId, Tuple[str, str, str]]
 
-Id = Union[
-    Tuple[str, str],
-    Tuple[str, str, str],
-    DataModelingId,
-    VersionedDataModelingId,
-    NodeId,
-    EdgeId,
-    InstanceId,
-    IdLike,
-]
+Id = Union[Tuple[str, str], Tuple[str, str, str], IdLike, VersionedIdLike]
 
 
 def _load_space_identifier(ids: str | Sequence[str]) -> DataModelingIdentifierSequence:
