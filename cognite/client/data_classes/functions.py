@@ -155,9 +155,7 @@ class Function(CogniteResource):
         return self._cognite_client.functions.calls.retrieve(call_id=id, function_id=self.id)
 
     def update(self) -> None:
-        """Update the function object. Can be useful to check for the latet status of the function ('Queued', 'Deploying', 'Ready' or 'Failed').
-
-        """
+        """Update the function object. Can be useful to check for the latet status of the function ('Queued', 'Deploying', 'Ready' or 'Failed')."""
         latest = self._cognite_client.functions.retrieve(id=self.id)
         if latest is None:
             return None
@@ -329,9 +327,7 @@ class FunctionCall(CogniteResource):
         return self._cognite_client.functions.calls.get_logs(call_id=self.id, function_id=self.function_id)
 
     def update(self) -> None:
-        """Update the function call object. Can be useful if the call was made with wait=False.
-
-        """
+        """Update the function call object. Can be useful if the call was made with wait=False."""
         latest = self._cognite_client.functions.calls.retrieve(call_id=self.id, function_id=self.function_id)
         self.status = latest.status
         self.end_time = latest.end_time

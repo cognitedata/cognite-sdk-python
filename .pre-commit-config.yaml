@@ -19,6 +19,8 @@ repos:
     rev: 0.1.9
     hooks:
       - id: pydoclint
+        require_serial: true  # spammy in run-all scenarios (more than fast enough already)
+        exclude: cognite/client/data_classes/data_modeling/query.py  # Argument 'with_' (sphinx forces escaping of trailing underscore...)
         args:
           - --config=pyproject.toml
 

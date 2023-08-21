@@ -685,7 +685,7 @@ class TestRequirementsParser:
         with open(file, "w+") as f:
             f.writelines("\n".join(["# this should not be included", "     " + req]))
         reqs = _extract_requirements_from_file(file_name=file)
-        assert type(reqs) is list
+        assert type(reqs) is list  # noqa E721
         assert len(reqs) == 1
         assert req in reqs
 
