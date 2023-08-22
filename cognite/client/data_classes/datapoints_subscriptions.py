@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Optional, Type
+from typing import TYPE_CHECKING, Any, Literal, Optional, Type
 
 from cognite.client.data_classes import Datapoints, filters
 from cognite.client.data_classes._base import (
@@ -365,21 +365,58 @@ class DatapointSubscriptionList(CogniteResourceList[DatapointSubscription]):
     _RESOURCE = DatapointSubscription
 
 
-def _metadata(key: str) -> list[str]:
-    return ["metadata", key]
+class _DatapointSubscriptionFilterProperties:
+    @property
+    def description(self) -> list[Literal["description"]]:
+        return ["description"]
+
+    @property
+    def external_id(self) -> list[Literal["externalId"]]:
+        return ["externalId"]
+
+    @staticmethod
+    def metadata(key) -> list[str]:
+        return ["metadata", key]
+
+    @property
+    def name(self) -> list[Literal["name"]]:
+        return ["name"]
+
+    @property
+    def unit(self) -> list[Literal["unit"]]:
+        return ["unit"]
+
+    @property
+    def asset_id(self) -> list[Literal["assetId"]]:
+        return ["assetId"]
+
+    @property
+    def asset_root_id(self) -> list[Literal["assetRootId"]]:
+        return ["assetRootId"]
+
+    @property
+    def created_time(self) -> list[Literal["createdTime"]]:
+        return ["createdTime"]
+
+    @property
+    def data_set_id(self) -> list[Literal["dataSetId"]]:
+        return ["dataSetId"]
+
+    @property
+    def id(self) -> list[Literal["id"]]:
+        return ["id"]
+
+    @property
+    def last_updated_time(self) -> list[Literal["lastUpdatedTime"]]:
+        return ["lastUpdatedTime"]
+
+    @property
+    def is_step(self) -> list[Literal["isStep"]]:
+        return ["isStep"]
+
+    @property
+    def is_string(self) -> list[Literal["isString"]]:
+        return ["isString"]
 
 
-class DatapointSubscriptionFilterProperties:
-    description = ["description"]
-    external_id = ["externalId"]
-    metadata = _metadata
-    name = ["name"]
-    unit = ["unit"]
-    asset_id = ["assetId"]
-    asset_root_id = ["assetRootId"]
-    created_time = ["createdTime"]
-    data_set_id = ["dataSetId"]
-    id = ["id"]
-    last_updated_time = ["lastUpdatedTime"]
-    is_step = ["isStep"]
-    is_string = ["isString"]
+DatapointSubscriptionFilterProperties = _DatapointSubscriptionFilterProperties()
