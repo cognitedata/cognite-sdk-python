@@ -425,7 +425,7 @@ class APIClient:
                         body["filter"] = filter
                     if advanced_filter:
                         body["advancedFilter"] = (
-                            advanced_filter.dump(camel_case_property=True)
+                            advanced_filter.dump(camel_case=True)
                             if isinstance(advanced_filter, Filter)
                             else advanced_filter
                         )
@@ -569,7 +569,7 @@ class APIClient:
                     }
                     if advanced_filter:
                         body["advancedFilter"] = (
-                            advanced_filter.dump(camel_case_property=True)
+                            advanced_filter.dump(camel_case=True)
                             if isinstance(advanced_filter, Filter)
                             else advanced_filter
                         )

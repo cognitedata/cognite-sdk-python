@@ -71,8 +71,8 @@ def _dump_property(property_: PropertyReference, camel_case: bool) -> list[str] 
 class Filter(ABC):
     _filter_name: str
 
-    def dump(self, camel_case_property: bool = False) -> dict[str, Any]:
-        return {self._filter_name: self._filter_body(camel_case_property)}
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        return {self._filter_name: self._filter_body(camel_case)}
 
     @classmethod
     def load(cls, filter_: dict[str, Any]) -> Filter:
