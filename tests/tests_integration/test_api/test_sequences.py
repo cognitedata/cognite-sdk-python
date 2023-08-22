@@ -296,6 +296,7 @@ class TestSequencesAPI:
             SequenceProperty.asset_id, advanced_filter=is_integration_test
         )
 
+        assert result
         assert {int(item) for item in result.unique} >= {s.asset_id for s in sequence_list if s.asset_id is not None}
 
     def test_aggregate_unique_metadata_keys(self, cognite_client: CogniteClient, sequence_list: SequenceList) -> None:
@@ -306,6 +307,7 @@ class TestSequencesAPI:
             SequenceProperty.metadata, advanced_filter=is_integration_test
         )
 
+        assert result
         assert {tuple(item.value["property"]) for item in result} >= {
             ("metadata", key.casefold()) for a in sequence_list for key in a.metadata or []
         }

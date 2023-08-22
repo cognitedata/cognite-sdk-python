@@ -223,6 +223,7 @@ class TestTimeSeriesAPI:
 
         result = cognite_client.time_series.aggregate_unique_values(TimeSeriesProperty.unit, is_integration_test)
 
+        assert result
         assert set(result.unique) >= {t.unit for t in time_series_list if t.unit}
 
     def test_aggregate_unique_metadata_keys(
@@ -235,6 +236,7 @@ class TestTimeSeriesAPI:
             TimeSeriesProperty.metadata, advanced_filter=is_integration_test
         )
 
+        assert result
         assert {tuple(item.value["property"]) for item in result} >= {
             ("metadata", key.casefold()) for a in time_series_list for key in a.metadata or []
         }

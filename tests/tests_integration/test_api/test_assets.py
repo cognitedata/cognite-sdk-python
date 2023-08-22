@@ -351,6 +351,7 @@ class TestAssetsAPI:
             AssetProperty.metadata_key("timezone"), advanced_filter=is_integration_test
         )
 
+        assert result
         # Casefold is needed because the aggregation is case insensitive
         assert set(result.unique) >= {a.metadata["timezone"].casefold() for a in asset_list if "timezone" in a.metadata}
 
@@ -362,6 +363,7 @@ class TestAssetsAPI:
             AssetProperty.metadata, advanced_filter=is_integration_test
         )
 
+        assert result
         assert {tuple(item.value["property"]) for item in result} >= {
             ("metadata", key.casefold()) for a in asset_list for key in a.metadata or []
         }

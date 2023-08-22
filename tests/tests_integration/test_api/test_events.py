@@ -238,6 +238,7 @@ class TestEventsAPI:
             property=EventProperty.type, advanced_filter=is_integration_test
         )
 
+        assert result
         assert set(result.unique) >= {e.type for e in event_list if e.type}
 
     def test_aggregate_unique_metadata_keys(self, cognite_client: CogniteClient, event_list: EventList) -> None:
@@ -248,6 +249,7 @@ class TestEventsAPI:
             EventProperty.metadata, advanced_filter=is_integration_test
         )
 
+        assert result
         assert {tuple(item.value["property"]) for item in result} >= {
             ("metadata", key.casefold()) for a in event_list for key in a.metadata or []
         }

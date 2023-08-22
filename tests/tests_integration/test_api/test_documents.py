@@ -160,6 +160,7 @@ class TestDocumentsAPI:
             filter=is_integration_test,
         )
 
+        assert not_text_buckets
         assert len(all_buckets) > len(not_text_buckets)
 
     def test_aggregate_unique_metadata(self, cognite_client: CogniteClient, document_list: FileMetadataList):
@@ -170,6 +171,7 @@ class TestDocumentsAPI:
             path=SourceFileProperty.metadata, filter=is_integration_test
         )
 
+        assert result
         assert set(result.unique) >= {key.casefold() for a in document_list for key in a.metadata or []}
 
     def test_iterate_over_text_documents(self, cognite_client: CogniteClient):
