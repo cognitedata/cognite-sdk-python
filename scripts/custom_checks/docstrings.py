@@ -1,3 +1,10 @@
+"""
+This module is a custom-made docstring formatter. It follows the 'google' style
+in an opinionated way. It makes it easy to keep docstrings up-to-date with the
+actual function- or method annotations; when typing info changes, new arguments
+are added/removed etc, they will be auto-updated, or, a verbose error will be
+raised, making sure the user making the commit aware of the issue(s).
+"""
 from __future__ import annotations
 
 import importlib
@@ -10,9 +17,7 @@ from pathlib import Path
 
 import numpy as np
 
-from cognite.client.data_classes import TimeSeries
 from cognite.client.data_classes.data_modeling.query import Query
-from cognite.client.testing import monkeypatch_cognite_client
 
 FUNC_EXCEPTIONS = {}
 CLS_METHOD_EXCEPTIONS = {
@@ -21,10 +26,8 @@ CLS_METHOD_EXCEPTIONS = {
 
 # Helper for testing specific class + method/property:
 TESTING = False
-ONLY_RUN_FUNCS = {monkeypatch_cognite_client}
-ONLY_RUN_CLS_METHODS = {
-    (TimeSeries, "latest"),  # Just an example
-}
+ONLY_RUN_FUNCS = {}
+ONLY_RUN_CLS_METHODS = {}  # Example: Add tuples like: (TimeSeries, "latest")
 
 
 class FalsePositiveDocstring(Exception):
@@ -197,7 +200,6 @@ class DocstrFormatter:
                 raise ValueError(
                     "First parameter description after 'Args:' is not indented correctly (should be 4 spaces)"
                 )
-
         return parameters
 
     @staticmethod

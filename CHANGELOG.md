@@ -39,14 +39,13 @@ Changes are grouped as follows
 ### Fixed
 - All data modeling endpoints will now be retried. This was not the case for POST endpoints.
 
-
 ## [6.14.1] - 2023-08-19
 ### Fixed
 - Passing `sources` as a tuple no longer raises `ValueError` in `InstancesAPI.retrieve`.
 
 ## [6.14.0] - 2023-08-14
 ### Changed
-- Don't terminate client.timeseries.subscriptions.iterate_data() when `has_next=false` as more data
+- Don't terminate client.time_series.subscriptions.iterate_data() when `has_next=false` as more data
 may be returned in the future. Instead we return the `has_next` field in the batch, and let the user
 decide whether to terminate iteration. This is a breaking change, but this particular API is still
 in beta and thus we reserve the right to break it without bumping the major version.
