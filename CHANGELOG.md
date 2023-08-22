@@ -30,8 +30,9 @@ Changes are grouped as follows
 
 ### Deprecated
 - Added `DeprecationWarning` to methods `client.assets.aggregate_metadata_keys` and 
-  `client.assets.aggregate_metadata_values`, in addition, to if you use parameter `fields` in 
-  `client.events.aggregate_unique_values`, as these endpoints used by these methods have been deprecated in the CDF API.
+  `client.assets.aggregate_metadata_values`. The use parameter the `fields` in 
+  `client.events.aggregate_unique_values` will also lead to a deprecation warning. The reason is that the endpoints 
+  these methods are using have been deprecated in the CDF API.
 
 ## [6.14.2] - 2023-08-22
 ### Fixed
