@@ -230,10 +230,10 @@ class Instance(InstanceCore):
         version (str): DMS version.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        instance_type (Literal["node", "edge"]): No description.
+        instance_type (Literal["node", "edge"]): The type of instance.
         deleted_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
         properties (Optional[Properties]): Properties of the instance.
-        **_ (Any): No description.
+        **_ (Any): This is used to capture any changes in the API without breaking the SDK. 
     """
 
     def __init__(
@@ -279,7 +279,7 @@ class InstanceApplyResult(InstanceCore):
     """A node or edge. This represents the update on the instance.
 
     Args:
-        instance_type (Literal["node", "edge"]): No description.
+        instance_type (Literal["node", "edge"]): The type of instance.
         space (str): The workspace for the instance.a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the instance.
         version (str): DMS version of the instance.
