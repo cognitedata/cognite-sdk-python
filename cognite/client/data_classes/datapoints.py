@@ -712,7 +712,7 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
         self,
         id: int | None = None,
         external_id: str | None = None,
-    ) -> None | DatapointsArray | list[DatapointsArray]:
+    ) -> DatapointsArray | list[DatapointsArray] | None:
         """Get a specific DatapointsArray from this list by id or exernal_id.
 
         Note: For duplicated time series, returns a list of DatapointsArray.
@@ -722,7 +722,7 @@ class DatapointsArrayList(CogniteResourceList[DatapointsArray]):
             external_id (str | None): The external_id of the item(s) to get.
 
         Returns:
-            None | DatapointsArray | list[DatapointsArray]: The requested item(s)
+            DatapointsArray | list[DatapointsArray] | None: The requested item(s)
         """
         # TODO: Question, can we type annotate without specifying the function?
         return super().get(id, external_id)  # type: ignore [return-value]
@@ -791,7 +791,7 @@ class DatapointsList(CogniteResourceList[Datapoints]):
         self,
         id: int | None = None,
         external_id: str | None = None,
-    ) -> None | Datapoints | list[Datapoints]:
+    ) -> Datapoints | list[Datapoints] | None:
         """Get a specific Datapoints from this list by id or exernal_id.
 
         Note: For duplicated time series, returns a list of Datapoints.
@@ -801,7 +801,7 @@ class DatapointsList(CogniteResourceList[Datapoints]):
             external_id (str | None): The external_id of the item(s) to get.
 
         Returns:
-            None | Datapoints | list[Datapoints]: The requested item(s)
+            Datapoints | list[Datapoints] | None: The requested item(s)
         """
         # TODO: Question, can we type annotate without specifying the function?
         return super().get(id, external_id)  # type: ignore [return-value]

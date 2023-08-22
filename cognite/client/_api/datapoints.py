@@ -610,7 +610,7 @@ class DatapointsAPI(APIClient):
         limit: int | None = None,
         include_outside_points: bool = False,
         ignore_unknown_ids: bool = False,
-    ) -> None | Datapoints | DatapointsList:
+    ) -> Datapoints | DatapointsList | None:
         """`Retrieve datapoints for one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_
 
         **Performance guide**:
@@ -632,7 +632,7 @@ class DatapointsAPI(APIClient):
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
 
         Returns:
-            None | Datapoints | DatapointsList: A `Datapoints` object containing the requested data, or a `DatapointsList` if multiple time series were asked for (the ordering is ids first, then external_ids). If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
+            Datapoints | DatapointsList | None: A `Datapoints` object containing the requested data, or a `DatapointsList` if multiple time series were asked for (the ordering is ids first, then external_ids). If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
 
         Examples:
 
@@ -796,7 +796,7 @@ class DatapointsAPI(APIClient):
         limit: int | None = None,
         include_outside_points: bool = False,
         ignore_unknown_ids: bool = False,
-    ) -> None | DatapointsArray | DatapointsArrayList:
+    ) -> DatapointsArray | DatapointsArrayList | None:
         """`Retrieve datapoints for one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_
 
         **Note**: This method requires `numpy` to be installed.
@@ -813,7 +813,7 @@ class DatapointsAPI(APIClient):
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
 
         Returns:
-            None | DatapointsArray | DatapointsArrayList: A `DatapointsArray` object containing the requested data, or a `DatapointsArrayList` if multiple time series were asked for (the ordering is ids first, then external_ids). If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
+            DatapointsArray | DatapointsArrayList | None: A `DatapointsArray` object containing the requested data, or a `DatapointsArrayList` if multiple time series were asked for (the ordering is ids first, then external_ids). If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
 
         Examples:
 
@@ -1595,7 +1595,7 @@ class RetrieveLatestDpsFetcher:
         self,
         user_input: Any,
         identifier_type: Literal["id", "external_id"],
-    ) -> None | int | str | list[int] | list[str]:
+    ) -> int | str | list[int] | list[str] | None:
         if user_input is None:
             return None
         # We depend on 'IdentifierSequence.load' to parse given ids/xids later, so we need to

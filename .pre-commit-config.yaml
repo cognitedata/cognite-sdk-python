@@ -15,17 +15,6 @@ repos:
           - --exclude=cognite/client/_proto,cognite/client/_proto_legacy
     rev: v0.0.285
 
-  - repo: https://github.com/jsh9/pydoclint
-    rev: 0.2.2
-    hooks:
-      - id: pydoclint
-        require_serial: true  # Spammy in run-all scenarios (more than fast enough already)
-        args:
-          - --style=google
-          - --exclude=tests/|scripts/
-          - --quiet  # otherwise prints all checked files that are ok...
-          - --skip-checking-raises=true  # TODO: Fix in other PR
-
   - repo: https://github.com/psf/black
     rev: 23.7.0
     hooks:
@@ -64,3 +53,14 @@ repos:
         entry: poetry run python scripts/run_checks.py
         language: system
         pass_filenames: false
+
+  - repo: https://github.com/jsh9/pydoclint  # Run after 'custom-checks' as these may auto-fix
+    rev: 0.2.2
+    hooks:
+      - id: pydoclint
+        require_serial: true  # Spammy in run-all scenarios (more than fast enough already)
+        args:
+          - --style=google
+          - --exclude=tests/|scripts/
+          - --quiet  # otherwise prints all checked files that are ok...
+          - --skip-checking-raises=true  # TODO: Fix in other PR
