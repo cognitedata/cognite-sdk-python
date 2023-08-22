@@ -28,7 +28,7 @@ Changes are grouped as follows
   `client.assets.aggregate_count(...)`. 
 - Added helper methods `as_external_ids` and `as_ids` for `EventList`, `TimeSeriesList`, `AssetList` and `SequenceList`.
 
-### Improved
+### Deprecated
 - Added `DeprecationWarning` to methods `client.assets.aggregate_metadata_keys` and 
   `client.assets.aggregate_metadata_values`, in addition, to if you use parameter `fields` in 
   `client.events.aggregate_unique_values`, as these endpoints used by these methods have been deprecated in the CDF API.
