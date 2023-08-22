@@ -34,9 +34,7 @@ Mei et possim option. An sit ipsum scaevola."""
         name=external_id,
         external_id=external_id,
         mime_type="text/plain",
-        metadata={
-            "solver_type": "linear",
-        },
+        metadata={"solver_type": "linear"},
     )
     return created_file, content
 

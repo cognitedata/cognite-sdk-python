@@ -272,8 +272,8 @@ class SourceFileProperty(EnumProperty):
     geo_location = "geoLocation"
     labels = "labels"
 
-    @classmethod
-    def metadata_key(cls, key: str) -> list[str]:
+    @staticmethod
+    def metadata_key(key: str) -> list[str]:
         return ["sourceFile", "metadata", key]
 
     def as_reference(self) -> list[str]:

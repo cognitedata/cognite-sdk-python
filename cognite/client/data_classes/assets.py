@@ -898,8 +898,8 @@ class AssetProperty(EnumProperty):
     name = "name"
     source = "source"
 
-    @classmethod
-    def metadata_key(cls, key: str) -> list[str]:
+    @staticmethod
+    def metadata_key(key: str) -> list[str]:
         return ["metadata", key]
 
 
@@ -916,8 +916,8 @@ class SortableAssetProperty(EnumProperty):
     source = "source"
     score = "_score_"
 
-    @classmethod
-    def metadata_key(cls, key: str) -> list[str]:
+    @staticmethod
+    def metadata_key(key: str) -> list[str]:
         return ["metadata", key]
 
 

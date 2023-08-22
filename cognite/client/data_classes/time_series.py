@@ -345,8 +345,8 @@ class TimeSeriesProperty(EnumProperty):
     security_categories = "securityCategories"
     metadata = "metadata"
 
-    @classmethod
-    def metadata_key(cls, key: str) -> list[str]:
+    @staticmethod
+    def metadata_key(key: str) -> list[str]:
         return ["metadata", key]
 
 
@@ -359,8 +359,8 @@ class SortableTimeSeriesProperty(EnumProperty):
     last_updated_time = "lastUpdatedTime"
     name = "name"
 
-    @classmethod
-    def metadata_key(cls, key: str) -> list[str]:
+    @staticmethod
+    def metadata_key(key: str) -> list[str]:
         return ["metadata", key]
 
 
