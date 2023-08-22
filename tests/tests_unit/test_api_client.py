@@ -1172,6 +1172,11 @@ class TestHelpers:
             ("POST", "https://api.cognitedata.com/api/v1/projects/bla/sequences/byids", True),
             ("POST", "https://api.cognitedata.com/api/v1/projects/bla/datasets/aggregate", True),
             ("POST", "https://api.cognitedata.com/api/v1/projects/bla/relationships/list", True),
+            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/models/spaces", True),
+            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/models/instances", True),
+            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/models/containers", True),
+            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/models/views", True),
+            ("POST", "https://api.cognitedata.com/api/v1/projects/bla/models/datamodels", True),
         ],
     )
     def test_is_retryable(self, api_client_with_token, method, path, expected):
