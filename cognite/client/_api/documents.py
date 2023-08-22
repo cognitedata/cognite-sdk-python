@@ -20,7 +20,7 @@ from cognite.client.data_classes.documents import (
     SourceFileProperty,
     TemporaryLink,
 )
-from cognite.client.data_classes.filters import Filter
+from cognite.client.data_classes.filters import Filter, _validate_filter
 
 if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
@@ -44,14 +44,6 @@ _DOCUMENTS_SUPPORTED_FILTERS: frozenset[type[Filter]] = frozenset(
         filters.Search,
     }
 )
-
-
-def _validate_filter(filter: Filter | dict | None) -> None:
-    if filter is None or isinstance(filter, dict):
-        return
-    if not_supported := (filter._involved_filter_types() - _DOCUMENTS_SUPPORTED_FILTERS):
-        names = [f.__name__ for f in not_supported]
-        raise ValueError(f"The filters {names} are not supported for Documents")
 
 
 class DocumentPreviewAPI(APIClient):
@@ -256,7 +248,7 @@ class DocumentsAPI(APIClient):
         Yields:
             Document | DocumentList: yields Documents one by one if chunk_size is not specified, else DocumentList objects.
         """
-        _validate_filter(filter)
+        self._validate_filter(filter)
         return self._list_generator(
             list_cls=DocumentList,
             resource_cls=Document,
@@ -305,7 +297,7 @@ class DocumentsAPI(APIClient):
             >>> pdf_count = c.documents.aggregate_count(filter=is_pdf)
 
         """
-        _validate_filter(filter)
+        self._validate_filter(filter)
         return self._advanced_aggregate(
             "count", filter=filter.dump() if isinstance(filter, Filter) else filter, query=query
         )
@@ -357,7 +349,7 @@ class DocumentsAPI(APIClient):
             >>> type_count_excluded_text = c.documents.aggregate_cardinality_values(DocumentProperty.type, aggregate_filter=is_not_text)
 
         """
-        _validate_filter(filter)
+        self._validate_filter(filter)
 
         return self._advanced_aggregate(
             "cardinalityValues",
@@ -396,7 +388,7 @@ class DocumentsAPI(APIClient):
             >>> count = c.documents.aggregate_cardinality_properties(SourceFileProperty.metadata)
 
         """
-        _validate_filter(filter)
+        self._validate_filter(filter)
 
         return self._advanced_aggregate(
             "cardinalityProperties",
@@ -458,7 +450,7 @@ class DocumentsAPI(APIClient):
             >>> unique_mime_types = result.unique
 
         """
-        _validate_filter(filter)
+        self._validate_filter(filter)
         return self._advanced_aggregate(
             aggregate="uniqueValues",
             properties=property,
@@ -499,7 +491,7 @@ class DocumentsAPI(APIClient):
             >>> result = c.documents.aggregate_unique_values(SourceFileProperty.metadata)
 
         """
-        _validate_filter(filter)
+        self._validate_filter(filter)
 
         return self._advanced_aggregate(
             aggregate="uniqueProperties",
@@ -655,7 +647,7 @@ class DocumentsAPI(APIClient):
             ...     filter=filters.And(is_plain_text, last_week))
 
         """
-        _validate_filter(filter)
+        self._validate_filter(filter)
         results = []
         next_cursor = None
         body: dict[str, str | int | bool | dict | list] = {"search": {"query": query}}
@@ -719,7 +711,7 @@ class DocumentsAPI(APIClient):
             ...    print(document.name)
 
         """
-        _validate_filter(filter)
+        self._validate_filter(filter)
         return self._list(
             list_cls=DocumentList,
             resource_cls=Document,
@@ -727,3 +719,6 @@ class DocumentsAPI(APIClient):
             limit=limit,
             filter=filter.dump() if isinstance(filter, Filter) else filter,
         )
+
+    def _validate_filter(self, filter: Filter | dict | None) -> None:
+        _validate_filter(filter, _DOCUMENTS_SUPPORTED_FILTERS, type(self).__name__)

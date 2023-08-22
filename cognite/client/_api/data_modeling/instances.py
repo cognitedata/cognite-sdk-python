@@ -43,7 +43,7 @@ from cognite.client.data_classes.data_modeling.query import (
     QueryResult,
 )
 from cognite.client.data_classes.data_modeling.views import View
-from cognite.client.data_classes.filters import Filter
+from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
 
 from ._data_modeling_executor import get_data_modeling_executor
@@ -69,14 +69,6 @@ _DATA_MODELING_SUPPORTED_FILTERS: frozenset[type[Filter]] = frozenset(
         filters.Overlaps,
     }
 )
-
-
-def _validate_filter(filter: Filter | dict | None) -> None:
-    if filter is None or isinstance(filter, dict):
-        return
-    if not_supported := (filter._involved_filter_types() - _DATA_MODELING_SUPPORTED_FILTERS):
-        names = [f.__name__ for f in not_supported]
-        raise ValueError(f"The filters {names} are not supported for Instances")
 
 
 class _NodeOrEdgeList(CogniteResourceList):
@@ -222,7 +214,7 @@ class InstancesAPI(APIClient):
         Yields:
             Edge | Node | EdgeList | NodeList: yields Instance one by one if chunk_size is not specified, else NodeList/EdgeList objects.
         """
-        _validate_filter(filter)
+        self._validate_filter(filter)
         other_params = self._create_other_params(
             include_typing=include_typing, instance_type=instance_type, sort=sort, sources=sources
         )
@@ -610,7 +602,7 @@ class InstancesAPI(APIClient):
                 ... query="Quentin", properties=["name"], filter=born_after_1970)
 
         """
-        _validate_filter(filter)
+        self._validate_filter(filter)
         if instance_type == "node":
             list_cls: Union[Type[NodeList], Type[EdgeList]] = NodeList
         elif instance_type == "edge":
@@ -671,7 +663,7 @@ class InstancesAPI(APIClient):
         """
         if instance_type not in ("node", "edge"):
             raise ValueError(f"Invalid instance type: {instance_type}")
-        _validate_filter(filter)
+        self._validate_filter(filter)
 
         body: Dict[str, Any] = {"view": view.dump(camel_case=True), "instanceType": instance_type, "limit": limit}
         aggregate_seq: Sequence[Aggregation | dict] = aggregates if isinstance(aggregates, Sequence) else [aggregates]
@@ -756,7 +748,7 @@ class InstancesAPI(APIClient):
         """
         if instance_type not in ("node", "edge"):
             raise ValueError(f"Invalid instance type: {instance_type}")
-        _validate_filter(filter)
+        self._validate_filter(filter)
 
         body: Dict[str, Any] = {"view": view.dump(camel_case=True), "instanceType": instance_type, "limit": limit}
 
@@ -947,7 +939,7 @@ class InstancesAPI(APIClient):
                 >>> for instance_list in c.data_modeling.instances(chunk_size=100):
                 ...     instance_list # do something with the instances
         """
-        _validate_filter(filter)
+        self._validate_filter(filter)
         other_params = self._create_other_params(
             include_typing=include_typing, instance_type=instance_type, sort=sort, sources=sources
         )
@@ -971,3 +963,6 @@ class InstancesAPI(APIClient):
                 other_params=other_params,
             ),
         )
+
+    def _validate_filter(self, filter: Filter | dict | None) -> None:
+        _validate_filter(filter, _DATA_MODELING_SUPPORTED_FILTERS, type(self).__name__)
