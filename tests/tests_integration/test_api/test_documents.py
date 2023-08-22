@@ -62,20 +62,34 @@ def document_list(text_file_content_pair: tuple[FileMetadata, str], pdf_file: Fi
 
 
 class TestDocumentsAPI:
-    def test_list(self, cognite_client: CogniteClient, document_list: FileMetadataList):
+    def test_list(
+        self,
+        cognite_client: CogniteClient,
+        document_list: FileMetadataList,
+        text_file_content_pair: tuple[FileMetadata, str],
+    ):
+        doc, content = text_file_content_pair
         is_integration_test = filters.Prefix("externalId", _FILE_PREFIX)
 
         documents = cognite_client.documents.list(limit=5, filter=is_integration_test)
 
         assert len(documents) >= len(document_list), "Expected to retrieve at least one document."
+        assert any(doc.metadata == d.source_file.metadata for d in documents)
 
-    def test_list_lorem_ipsum(self, cognite_client: CogniteClient, document_list: FileMetadataList):
+    def test_list_lorem_ipsum(
+        self,
+        cognite_client: CogniteClient,
+        document_list: FileMetadataList,
+        text_file_content_pair: tuple[FileMetadata, str],
+    ):
+        doc, content = text_file_content_pair
         is_lorem = filters.Search(DocumentProperty.content, "lorem ipsum")
 
         documents = cognite_client.documents.list(filter=is_lorem, limit=5)
 
         # Bot the files in the document list has "lorem ipsum" in the content
         assert len(documents) >= len(document_list), "Expected to retrieve at least one document."
+        assert any(doc.metadata == d.source_file.metadata for d in documents)
 
     def test_retrieve_content(self, cognite_client: CogniteClient, text_file_content_pair):
         doc, content = text_file_content_pair
