@@ -21,7 +21,10 @@ repos:
       - id: pydoclint
         require_serial: true  # Spammy in run-all scenarios (more than fast enough already)
         args:
-          - --config=pyproject.toml
+          - --style=google
+          - --exclude=tests/|scripts/
+          - --quiet  # otherwise prints all checked files that are ok...
+          - --skip-checking-raises=true  # TODO: Fix in other PR
 
   - repo: https://github.com/psf/black
     rev: 23.7.0
