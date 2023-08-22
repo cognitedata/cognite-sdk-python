@@ -629,7 +629,7 @@ class Geometry(dict):
 SortableProperty: TypeAlias = Union[str, List[str], EnumProperty]
 
 
-class Sort(CogniteResource):
+class Sort:
     def __init__(
         self,
         property: SortableProperty,
