@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, Sequence, Type, TypeVar, Union, cast, final
+from typing import TYPE_CHECKING, Any, ClassVar, Optional, Sequence, TypeVar, Union, cast, final
 
 from typing_extensions import TypeAlias
 
@@ -105,7 +105,7 @@ class AggregatedValue(ABC):
     property: str
 
     @classmethod
-    def load(cls: Type[T_AggregatedValue], aggregated_value: dict[str, Any]) -> T_AggregatedValue:
+    def load(cls: type[T_AggregatedValue], aggregated_value: dict[str, Any]) -> T_AggregatedValue:
         if "aggregate" not in aggregated_value:
             raise ValueError("Missing aggregate, this is required")
         aggregate = aggregated_value["aggregate"]

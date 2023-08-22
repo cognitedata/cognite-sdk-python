@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 from numbers import Number
-from typing import TYPE_CHECKING, Dict, List, Optional, Union, cast
+from typing import TYPE_CHECKING, cast
 
 from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes._base import (
@@ -23,46 +23,46 @@ class Function(CogniteResource):
     """A representation of a Cognite Function.
 
     Args:
-        id (Optional[int]): Id of the function.
-        name (Optional[str]): Name of the function.
-        external_id (Optional[str]): External id of the function.
-        description (Optional[str]): Description of the function.
-        owner (Optional[str]): Owner of the function.
-        status (Optional[str]): Status of the function.
-        file_id (Optional[int]): File id of the code represented by this object.
-        function_path (Optional[str]): Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on posix path format.
-        created_time (Optional[int]): Created time in UNIX.
-        secrets (Optional[Dict]): Secrets attached to the function ((key, value) pairs).
-        env_vars (Optional[Dict]): User specified environment variables on the function ((key, value) pairs).
-        cpu (Optional[Number]): Number of CPU cores per function. Defaults to 0.25. Allowed values are in the range [0.1, 0.6].
-        memory (Optional[Number]): Memory per function measured in GB. Defaults to 1. Allowed values are in the range [0.1, 2.5].
-        runtime (Optional[str]): Runtime of the function. Allowed values are ["py37", "py38", "py39"]. The runtime "py38" resolves to the latest version of the Python 3.8 series. Will default to "py38" if not specified.
-        runtime_version (Optional[str]): The complete specification of the function runtime with major, minor and patch version numbers.
-        metadata (Optional[Dict]): Metadata associated with a function as a set of key:value pairs.
-        error (Optional[Dict]): Dictionary with keys "message" and "trace", which is populated if deployment fails.
-        cognite_client (Optional[CogniteClient]): An optional CogniteClient to associate with this data class.
+        id (int | None): Id of the function.
+        name (str | None): Name of the function.
+        external_id (str | None): External id of the function.
+        description (str | None): Description of the function.
+        owner (str | None): Owner of the function.
+        status (str | None): Status of the function.
+        file_id (int | None): File id of the code represented by this object.
+        function_path (str | None): Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on posix path format.
+        created_time (int | None): Created time in UNIX.
+        secrets (dict | None): Secrets attached to the function ((key, value) pairs).
+        env_vars (dict | None): User specified environment variables on the function ((key, value) pairs).
+        cpu (Number | None): Number of CPU cores per function. Defaults to 0.25. Allowed values are in the range [0.1, 0.6].
+        memory (Number | None): Memory per function measured in GB. Defaults to 1. Allowed values are in the range [0.1, 2.5].
+        runtime (str | None): Runtime of the function. Allowed values are ["py37", "py38", "py39"]. The runtime "py38" resolves to the latest version of the Python 3.8 series. Will default to "py38" if not specified.
+        runtime_version (str | None): The complete specification of the function runtime with major, minor and patch version numbers.
+        metadata (dict | None): Metadata associated with a function as a set of key:value pairs.
+        error (dict | None): Dictionary with keys "message" and "trace", which is populated if deployment fails.
+        cognite_client (CogniteClient | None): An optional CogniteClient to associate with this data class.
     """
 
     def __init__(
         self,
-        id: Optional[int] = None,
-        name: Optional[str] = None,
-        external_id: Optional[str] = None,
-        description: Optional[str] = None,
-        owner: Optional[str] = None,
-        status: Optional[str] = None,
-        file_id: Optional[int] = None,
-        function_path: Optional[str] = None,
-        created_time: Optional[int] = None,
-        secrets: Optional[Dict] = None,
-        env_vars: Optional[Dict] = None,
-        cpu: Optional[Number] = None,
-        memory: Optional[Number] = None,
-        runtime: Optional[str] = None,
-        runtime_version: Optional[str] = None,
-        metadata: Optional[Dict] = None,
-        error: Optional[Dict] = None,
-        cognite_client: Optional[CogniteClient] = None,
+        id: int | None = None,
+        name: str | None = None,
+        external_id: str | None = None,
+        description: str | None = None,
+        owner: str | None = None,
+        status: str | None = None,
+        file_id: int | None = None,
+        function_path: str | None = None,
+        created_time: int | None = None,
+        secrets: dict | None = None,
+        env_vars: dict | None = None,
+        cpu: Number | None = None,
+        memory: Number | None = None,
+        runtime: str | None = None,
+        runtime_version: str | None = None,
+        metadata: dict | None = None,
+        error: dict | None = None,
+        cognite_client: CogniteClient | None = None,
     ) -> None:
         self.id = cast(int, id)
         self.name = cast(str, name)
@@ -83,11 +83,11 @@ class Function(CogniteResource):
         self.error = error
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def call(self, data: Optional[Dict] = None, wait: bool = True) -> FunctionCall:
+    def call(self, data: dict | None = None, wait: bool = True) -> FunctionCall:
         """`Call this particular function. <https://docs.cognite.com/api/v1/#operation/postFunctionsCall>`_
 
         Args:
-            data (Optional[Dict]): Input data to the function (JSON serializable). This data is passed deserialized into the function through one of the arguments called data. **WARNING:** Secrets or other confidential information should not be passed via this argument. There is a dedicated `secrets` argument in FunctionsAPI.create() for this purpose.
+            data (dict | None): Input data to the function (JSON serializable). This data is passed deserialized into the function through one of the arguments called data. **WARNING:** Secrets or other confidential information should not be passed via this argument. There is a dedicated `secrets` argument in FunctionsAPI.create() for this purpose.
             wait (bool): Wait until the function call is finished. Defaults to True.
 
         Returns:
@@ -97,20 +97,20 @@ class Function(CogniteResource):
 
     def list_calls(
         self,
-        status: Optional[str] = None,
-        schedule_id: Optional[int] = None,
-        start_time: Optional[Dict[str, int]] = None,
-        end_time: Optional[Dict[str, int]] = None,
-        limit: Optional[int] = LIST_LIMIT_DEFAULT,
+        status: str | None = None,
+        schedule_id: int | None = None,
+        start_time: dict[str, int] | None = None,
+        end_time: dict[str, int] | None = None,
+        limit: int | None = LIST_LIMIT_DEFAULT,
     ) -> FunctionCallList:
         """List all calls to this function.
 
         Args:
-            status (Optional[str]): Status of the call. Possible values ["Running", "Failed", "Completed", "Timeout"].
-            schedule_id (Optional[int]): Schedule id from which the call belongs (if any).
-            start_time (Optional[Dict[str, int]]): Start time of the call. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            end_time (Optional[Dict[str, int]]): End time of the call. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            limit (Optional[int]): Maximum number of function calls to list. Pass in -1, float('inf') or None to list all Function Calls.
+            status (str | None): Status of the call. Possible values ["Running", "Failed", "Completed", "Timeout"].
+            schedule_id (int | None): Schedule id from which the call belongs (if any).
+            start_time (dict[str, int] | None): Start time of the call. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            end_time (dict[str, int] | None): End time of the call. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            limit (int | None): Maximum number of function calls to list. Pass in -1, float('inf') or None to list all Function Calls.
 
         Returns:
             FunctionCallList: List of function calls
@@ -124,11 +124,11 @@ class Function(CogniteResource):
             limit=limit,
         )
 
-    def list_schedules(self, limit: Optional[int] = LIST_LIMIT_DEFAULT) -> FunctionSchedulesList:
+    def list_schedules(self, limit: int | None = LIST_LIMIT_DEFAULT) -> FunctionSchedulesList:
         """`List all schedules associated with this function. <https://docs.cognite.com/api/v1/#operation/getFunctionSchedules>`_
 
         Args:
-            limit (Optional[int]): Maximum number of schedules to list. Pass in -1, float('inf') or None to list all.
+            limit (int | None): Maximum number of schedules to list. Pass in -1, float('inf') or None to list all.
 
         Returns:
             FunctionSchedulesList: List of function schedules
@@ -170,12 +170,12 @@ class Function(CogniteResource):
 class FunctionFilter(CogniteFilter):
     def __init__(
         self,
-        name: Optional[str] = None,
-        owner: Optional[str] = None,
-        file_id: Optional[int] = None,
-        status: Optional[str] = None,
-        external_id_prefix: Optional[str] = None,
-        created_time: Optional[Union[Dict[str, int], TimestampRange]] = None,
+        name: str | None = None,
+        owner: str | None = None,
+        file_id: int | None = None,
+        status: str | None = None,
+        external_id_prefix: str | None = None,
+        created_time: dict[str, int] | TimestampRange | None = None,
     ) -> None:
         self.name = name
         self.owner = owner
@@ -188,10 +188,10 @@ class FunctionFilter(CogniteFilter):
 class FunctionCallsFilter(CogniteFilter):
     def __init__(
         self,
-        status: Optional[str] = None,
-        schedule_id: Optional[int] = None,
-        start_time: Optional[Union[Dict[str, int], TimestampRange]] = None,
-        end_time: Optional[Union[Dict[str, int], TimestampRange]] = None,
+        status: str | None = None,
+        schedule_id: int | None = None,
+        start_time: dict[str, int] | TimestampRange | None = None,
+        end_time: dict[str, int] | TimestampRange | None = None,
     ) -> None:
         self.status = status
         self.schedule_id = schedule_id
@@ -203,30 +203,30 @@ class FunctionSchedule(CogniteResource):
     """A representation of a Cognite Function Schedule.
 
     Args:
-        id (Optional[int]): Id of the schedule.
-        name (Optional[str]): Name of the function schedule.
-        function_id (Optional[str]): Id of the function.
-        function_external_id (Optional[str]): External id of the function.
-        description (Optional[str]): Description of the function schedule.
-        created_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        cron_expression (Optional[str]): Cron expression
-        session_id (Optional[int]): ID of the session running with the schedule.
-        when (Optional[str]): When the schedule will trigger, in human readable text (server generated from cron_expression).
-        cognite_client (Optional[CogniteClient]): An optional CogniteClient to associate with this data class.
+        id (int | None): Id of the schedule.
+        name (str | None): Name of the function schedule.
+        function_id (str | None): Id of the function.
+        function_external_id (str | None): External id of the function.
+        description (str | None): Description of the function schedule.
+        created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        cron_expression (str | None): Cron expression
+        session_id (int | None): ID of the session running with the schedule.
+        when (str | None): When the schedule will trigger, in human readable text (server generated from cron_expression).
+        cognite_client (CogniteClient | None): An optional CogniteClient to associate with this data class.
     """
 
     def __init__(
         self,
-        id: Optional[int] = None,
-        name: Optional[str] = None,
-        function_id: Optional[str] = None,
-        function_external_id: Optional[str] = None,
-        description: Optional[str] = None,
-        created_time: Optional[int] = None,
-        cron_expression: Optional[str] = None,
-        session_id: Optional[int] = None,
-        when: Optional[str] = None,
-        cognite_client: Optional[CogniteClient] = None,
+        id: int | None = None,
+        name: str | None = None,
+        function_id: str | None = None,
+        function_external_id: str | None = None,
+        description: str | None = None,
+        created_time: int | None = None,
+        cron_expression: str | None = None,
+        session_id: int | None = None,
+        when: str | None = None,
+        cognite_client: CogniteClient | None = None,
     ) -> None:
         self.id = id
         self.name = name
@@ -239,12 +239,12 @@ class FunctionSchedule(CogniteResource):
         self.when = when
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def get_input_data(self) -> Optional[dict]:
+    def get_input_data(self) -> dict | None:
         """
         Retrieve the input data to the associated function.
 
         Returns:
-            Optional[dict]: Input data to the associated function or None if not set. This data is passed deserialized into the function through the data argument.
+            dict | None: Input data to the associated function or None if not set. This data is passed deserialized into the function through the data argument.
         """
         return self._cognite_client.functions.schedules.get_input_data(id=self.id)
 
@@ -252,11 +252,11 @@ class FunctionSchedule(CogniteResource):
 class FunctionSchedulesFilter(CogniteFilter):
     def __init__(
         self,
-        name: Optional[str] = None,
-        function_id: Optional[int] = None,
-        function_external_id: Optional[str] = None,
-        created_time: Optional[Union[Dict[str, int], TimestampRange]] = None,
-        cron_expression: Optional[str] = None,
+        name: str | None = None,
+        function_id: int | None = None,
+        function_external_id: str | None = None,
+        created_time: dict[str, int] | TimestampRange | None = None,
+        cron_expression: str | None = None,
     ) -> None:
         self.name = name
         self.function_id = function_id
@@ -277,28 +277,28 @@ class FunctionCall(CogniteResource):
     """A representation of a Cognite Function call.
 
     Args:
-        id (Optional[int]): A server-generated ID for the object.
-        start_time (Optional[int]): Start time of the call, measured in number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        end_time (Optional[int]): End time of the call, measured in number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        scheduled_time (Optional[int]): Scheduled time of the call, measured in number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        status (Optional[str]): Status of the function call ("Running", "Completed" or "Failed").
-        schedule_id (Optional[int]): The schedule id belonging to the call.
-        error (Optional[dict]): Error from the function call. It contains an error message and the stack trace.
-        function_id (Optional[int]): No description.
-        cognite_client (Optional[CogniteClient]): An optional CogniteClient to associate with this data class.
+        id (int | None): A server-generated ID for the object.
+        start_time (int | None): Start time of the call, measured in number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        end_time (int | None): End time of the call, measured in number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        scheduled_time (int | None): Scheduled time of the call, measured in number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        status (str | None): Status of the function call ("Running", "Completed" or "Failed").
+        schedule_id (int | None): The schedule id belonging to the call.
+        error (dict | None): Error from the function call. It contains an error message and the stack trace.
+        function_id (int | None): No description.
+        cognite_client (CogniteClient | None): An optional CogniteClient to associate with this data class.
     """
 
     def __init__(
         self,
-        id: Optional[int] = None,
-        start_time: Optional[int] = None,
-        end_time: Optional[int] = None,
-        scheduled_time: Optional[int] = None,
-        status: Optional[str] = None,
-        schedule_id: Optional[int] = None,
-        error: Optional[dict] = None,
-        function_id: Optional[int] = None,
-        cognite_client: Optional[CogniteClient] = None,
+        id: int | None = None,
+        start_time: int | None = None,
+        end_time: int | None = None,
+        scheduled_time: int | None = None,
+        status: str | None = None,
+        schedule_id: int | None = None,
+        error: dict | None = None,
+        function_id: int | None = None,
+        cognite_client: CogniteClient | None = None,
     ) -> None:
         self.id = id
         self.start_time = start_time
@@ -310,11 +310,11 @@ class FunctionCall(CogniteResource):
         self.function_id = function_id
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def get_response(self) -> Dict:
+    def get_response(self) -> dict:
         """Retrieve the response from this function call.
 
         Returns:
-            Dict: Response from the function call.
+            dict: Response from the function call.
         """
         return self._cognite_client.functions.calls.get_response(call_id=self.id, function_id=self.function_id)
 
@@ -347,16 +347,16 @@ class FunctionCallLogEntry(CogniteResource):
     """A log entry for a function call.
 
     Args:
-        timestamp (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        message (Optional[str]): Single line from stdout / stderr.
-        cognite_client (Optional[CogniteClient]): No description.
+        timestamp (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        message (str | None): Single line from stdout / stderr.
+        cognite_client (CogniteClient | None): No description.
     """
 
     def __init__(
         self,
-        timestamp: Optional[int] = None,
-        message: Optional[str] = None,
-        cognite_client: Optional[CogniteClient] = None,
+        timestamp: int | None = None,
+        message: str | None = None,
+        cognite_client: CogniteClient | None = None,
     ) -> None:
         self.timestamp = timestamp
         self.message = message
@@ -372,19 +372,19 @@ class FunctionsLimits(CogniteResponse):
 
     Args:
         timeout_minutes (int): Timeout of each function call.
-        cpu_cores (Dict[str, float]): The number of CPU cores per function exectuion (i.e. function call).
-        memory_gb (Dict[str, float]): The amount of available memory in GB per function execution (i.e. function call).
-        runtimes (List[str]): Available runtimes. For example, "py37" translates to the latest version of the Python 3.7.x series.
-        response_size_mb (Optional[int]): Maximum response size of function calls.
+        cpu_cores (dict[str, float]): The number of CPU cores per function exectuion (i.e. function call).
+        memory_gb (dict[str, float]): The amount of available memory in GB per function execution (i.e. function call).
+        runtimes (list[str]): Available runtimes. For example, "py37" translates to the latest version of the Python 3.7.x series.
+        response_size_mb (int | None): Maximum response size of function calls.
     """
 
     def __init__(
         self,
         timeout_minutes: int,
-        cpu_cores: Dict[str, float],
-        memory_gb: Dict[str, float],
-        runtimes: List[str],
-        response_size_mb: Optional[int] = None,
+        cpu_cores: dict[str, float],
+        memory_gb: dict[str, float],
+        runtimes: list[str],
+        response_size_mb: int | None = None,
     ) -> None:
         self.timeout_minutes = timeout_minutes
         self.cpu_cores = cpu_cores
@@ -393,7 +393,7 @@ class FunctionsLimits(CogniteResponse):
         self.response_size_mb = response_size_mb
 
     @classmethod
-    def _load(cls, api_response: Dict) -> FunctionsLimits:
+    def _load(cls, api_response: dict) -> FunctionsLimits:
         return cls(
             timeout_minutes=api_response["timeoutMinutes"],
             cpu_cores=api_response["cpuCores"],
@@ -417,7 +417,7 @@ class FunctionsStatus(CogniteResponse):
         self.status = status
 
     @classmethod
-    def _load(cls, api_response: Dict) -> FunctionsStatus:
+    def _load(cls, api_response: dict) -> FunctionsStatus:
         return cls(
             status=api_response["status"],
         )

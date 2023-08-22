@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Dict, Iterator, List, Literal, Optional, Sequence, Tuple, Union, cast, overload
+from typing import Any, Iterator, List, Literal, Sequence, Tuple, Union, cast, overload
 
 from typing_extensions import TypeAlias
 
@@ -54,55 +54,55 @@ class EventsAPI(APIClient):
 
     def __call__(
         self,
-        chunk_size: Optional[int] = None,
-        start_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
-        end_time: Optional[Union[Dict[str, Any], EndTimeFilter]] = None,
-        active_at_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
-        type: Optional[str] = None,
-        subtype: Optional[str] = None,
-        metadata: Optional[Dict[str, str]] = None,
-        asset_ids: Optional[Sequence[int]] = None,
-        asset_external_ids: Optional[Sequence[str]] = None,
-        asset_subtree_ids: Optional[Union[int, Sequence[int]]] = None,
-        asset_subtree_external_ids: Optional[Union[str, Sequence[str]]] = None,
-        data_set_ids: Optional[Union[int, Sequence[int]]] = None,
-        data_set_external_ids: Optional[Union[str, Sequence[str]]] = None,
-        source: Optional[str] = None,
-        created_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
-        last_updated_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
-        external_id_prefix: Optional[str] = None,
-        sort: Optional[Sequence[str]] = None,
-        limit: Optional[int] = None,
-        partitions: Optional[int] = None,
-    ) -> Union[Iterator[Event], Iterator[EventList]]:
+        chunk_size: int | None = None,
+        start_time: dict[str, Any] | TimestampRange | None = None,
+        end_time: dict[str, Any] | EndTimeFilter | None = None,
+        active_at_time: dict[str, Any] | TimestampRange | None = None,
+        type: str | None = None,
+        subtype: str | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: Sequence[str] | None = None,
+        asset_subtree_ids: int | Sequence[int] | None = None,
+        asset_subtree_external_ids: str | Sequence[str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | Sequence[str] | None = None,
+        source: str | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        external_id_prefix: str | None = None,
+        sort: Sequence[str] | None = None,
+        limit: int | None = None,
+        partitions: int | None = None,
+    ) -> Iterator[Event] | Iterator[EventList]:
         """Iterate over events
 
         Fetches events as they are iterated over, so you keep a limited number of events in memory.
 
         Args:
-            chunk_size (Optional[int]): Number of events to return in each chunk. Defaults to yielding one event a time.
-            start_time (Optional[Union[Dict[str, Any], TimestampRange]]): Range between two timestamps
-            end_time (Optional[Union[Dict[str, Any], EndTimeFilter]]): Range between two timestamps
-            active_at_time (Optional[Union[Dict[str, Any], TimestampRange]]): Event is considered active from its startTime to endTime inclusive. If startTime is null, event is never active. If endTime is null, event is active from startTime onwards. activeAtTime filter will match all events that are active at some point from min to max, from min, or to max, depending on which of min and max parameters are specified.
-            type (Optional[str]): Type of the event, e.g 'failure'.
-            subtype (Optional[str]): Subtype of the event, e.g 'electrical'.
-            metadata (Optional[Dict[str, str]]): Customizable extra data about the event. String key -> String value.
-            asset_ids (Optional[Sequence[int]]): Asset IDs of related equipments that this event relates to.
-            asset_external_ids (Optional[Sequence[str]]): Asset External IDs of related equipment that this event relates to.
-            asset_subtree_ids (Optional[Union[int, Sequence[int]]]): Asset subtree id or list of asset subtree ids to filter on.
-            asset_subtree_external_ids (Optional[Union[str, Sequence[str]]]): Asset subtree external id or list of asset subtree external ids to filter on.
-            data_set_ids (Optional[Union[int, Sequence[int]]]): Return only events in the specified data set(s) with this id / these ids.
-            data_set_external_ids (Optional[Union[str, Sequence[str]]]): Return only events in the specified data set(s) with this external id / these external ids.
-            source (Optional[str]): The source of this event.
-            created_time (Optional[Union[Dict[str, Any], TimestampRange]]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            last_updated_time (Optional[Union[Dict[str, Any], TimestampRange]]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            external_id_prefix (Optional[str]): External Id provided by client. Should be unique within the project
-            sort (Optional[Sequence[str]]): Sort by array of selected fields. Ex: ["startTime:desc']. Default sort order is asc when ommitted. Filter accepts following field names: startTime, endTime, createdTime, lastUpdatedTime. We only support 1 field for now.
-            limit (Optional[int]): Maximum number of events to return. Defaults to return all items.
-            partitions (Optional[int]): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
+            chunk_size (int | None): Number of events to return in each chunk. Defaults to yielding one event a time.
+            start_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
+            end_time (dict[str, Any] | EndTimeFilter | None): Range between two timestamps
+            active_at_time (dict[str, Any] | TimestampRange | None): Event is considered active from its startTime to endTime inclusive. If startTime is null, event is never active. If endTime is null, event is active from startTime onwards. activeAtTime filter will match all events that are active at some point from min to max, from min, or to max, depending on which of min and max parameters are specified.
+            type (str | None): Type of the event, e.g 'failure'.
+            subtype (str | None): Subtype of the event, e.g 'electrical'.
+            metadata (dict[str, str] | None): Customizable extra data about the event. String key -> String value.
+            asset_ids (Sequence[int] | None): Asset IDs of related equipments that this event relates to.
+            asset_external_ids (Sequence[str] | None): Asset External IDs of related equipment that this event relates to.
+            asset_subtree_ids (int | Sequence[int] | None): Asset subtree id or list of asset subtree ids to filter on.
+            asset_subtree_external_ids (str | Sequence[str] | None): Asset subtree external id or list of asset subtree external ids to filter on.
+            data_set_ids (int | Sequence[int] | None): Return only events in the specified data set(s) with this id / these ids.
+            data_set_external_ids (str | Sequence[str] | None): Return only events in the specified data set(s) with this external id / these external ids.
+            source (str | None): The source of this event.
+            created_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            last_updated_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            external_id_prefix (str | None): External Id provided by client. Should be unique within the project
+            sort (Sequence[str] | None): Sort by array of selected fields. Ex: ["startTime:desc']. Default sort order is asc when ommitted. Filter accepts following field names: startTime, endTime, createdTime, lastUpdatedTime. We only support 1 field for now.
+            limit (int | None): Maximum number of events to return. Defaults to return all items.
+            partitions (int | None): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
 
         Returns:
-            Union[Iterator[Event], Iterator[EventList]]: yields Event one by one if chunk_size is not specified, else EventList objects.
+            Iterator[Event] | Iterator[EventList]: yields Event one by one if chunk_size is not specified, else EventList objects.
         """
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
@@ -144,15 +144,15 @@ class EventsAPI(APIClient):
         """
         return cast(Iterator[Event], self())
 
-    def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Event]:
+    def retrieve(self, id: int | None = None, external_id: str | None = None) -> Event | None:
         """`Retrieve a single event by id. <https://developer.cognite.com/api#tag/Events/operation/getEventByInternalId>`_
 
         Args:
-            id (Optional[int]): ID
-            external_id (Optional[str]): External ID
+            id (int | None): ID
+            external_id (str | None): External ID
 
         Returns:
-            Optional[Event]: Requested event or None if it does not exist.
+            Event | None: Requested event or None if it does not exist.
 
         Examples:
 
@@ -173,15 +173,15 @@ class EventsAPI(APIClient):
 
     def retrieve_multiple(
         self,
-        ids: Optional[Sequence[int]] = None,
-        external_ids: Optional[Sequence[str]] = None,
+        ids: Sequence[int] | None = None,
+        external_ids: Sequence[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> EventList:
         """`Retrieve multiple events by id. <https://developer.cognite.com/api#tag/Events/operation/byIdsEvents>`_
 
         Args:
-            ids (Optional[Sequence[int]]): IDs
-            external_ids (Optional[Sequence[str]]): External IDs
+            ids (Sequence[int] | None): IDs
+            external_ids (Sequence[str] | None): External IDs
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -208,47 +208,47 @@ class EventsAPI(APIClient):
 
     def list(
         self,
-        start_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
-        end_time: Optional[Union[Dict[str, Any], EndTimeFilter]] = None,
-        active_at_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
-        type: Optional[str] = None,
-        subtype: Optional[str] = None,
-        metadata: Optional[Dict[str, str]] = None,
-        asset_ids: Optional[Sequence[int]] = None,
-        asset_external_ids: Optional[Sequence[str]] = None,
-        asset_subtree_ids: Optional[Union[int, Sequence[int]]] = None,
-        asset_subtree_external_ids: Optional[Union[str, Sequence[str]]] = None,
-        data_set_ids: Optional[Union[int, Sequence[int]]] = None,
-        data_set_external_ids: Optional[Union[str, Sequence[str]]] = None,
-        source: Optional[str] = None,
-        created_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
-        last_updated_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
-        external_id_prefix: Optional[str] = None,
-        sort: Optional[Sequence[str]] = None,
-        partitions: Optional[int] = None,
+        start_time: dict[str, Any] | TimestampRange | None = None,
+        end_time: dict[str, Any] | EndTimeFilter | None = None,
+        active_at_time: dict[str, Any] | TimestampRange | None = None,
+        type: str | None = None,
+        subtype: str | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: Sequence[str] | None = None,
+        asset_subtree_ids: int | Sequence[int] | None = None,
+        asset_subtree_external_ids: str | Sequence[str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | Sequence[str] | None = None,
+        source: str | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        external_id_prefix: str | None = None,
+        sort: Sequence[str] | None = None,
+        partitions: int | None = None,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> EventList:
         """`List events <https://developer.cognite.com/api#tag/Events/operation/advancedListEvents>`_
 
         Args:
-            start_time (Optional[Union[Dict[str, Any], TimestampRange]]): Range between two timestamps.
-            end_time (Optional[Union[Dict[str, Any], EndTimeFilter]]): Range between two timestamps.
-            active_at_time (Optional[Union[Dict[str, Any], TimestampRange]]): Event is considered active from its startTime to endTime inclusive. If startTime is null, event is never active. If endTime is null, event is active from startTime onwards. activeAtTime filter will match all events that are active at some point from min to max, from min, or to max, depending on which of min and max parameters are specified.
-            type (Optional[str]): Type of the event, e.g 'failure'.
-            subtype (Optional[str]): Subtype of the event, e.g 'electrical'.
-            metadata (Optional[Dict[str, str]]): Customizable extra data about the event. String key -> String value.
-            asset_ids (Optional[Sequence[int]]): Asset IDs of related equipments that this event relates to.
-            asset_external_ids (Optional[Sequence[str]]): Asset External IDs of related equipment that this event relates to.
-            asset_subtree_ids (Optional[Union[int, Sequence[int]]]): Asset subtree id or list of asset subtree ids to filter on.
-            asset_subtree_external_ids (Optional[Union[str, Sequence[str]]]): Asset subtree external id or list of asset subtree external ids to filter on.
-            data_set_ids (Optional[Union[int, Sequence[int]]]): Return only events in the specified data set(s) with this id / these ids.
-            data_set_external_ids (Optional[Union[str, Sequence[str]]]): Return only events in the specified data set(s) with this external id / these external ids.
-            source (Optional[str]): The source of this event.
-            created_time (Optional[Union[Dict[str, Any], TimestampRange]]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            last_updated_time (Optional[Union[Dict[str, Any], TimestampRange]]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            external_id_prefix (Optional[str]): External Id provided by client. Should be unique within the project.
-            sort (Optional[Sequence[str]]): Sort by array of selected fields. Ex: ["startTime:desc']. Default sort order is asc when ommitted. Filter accepts following field names: startTime, endTime, createdTime, lastUpdatedTime. We only support 1 field for now.
-            partitions (Optional[int]): Retrieve events in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
+            start_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
+            end_time (dict[str, Any] | EndTimeFilter | None): Range between two timestamps.
+            active_at_time (dict[str, Any] | TimestampRange | None): Event is considered active from its startTime to endTime inclusive. If startTime is null, event is never active. If endTime is null, event is active from startTime onwards. activeAtTime filter will match all events that are active at some point from min to max, from min, or to max, depending on which of min and max parameters are specified.
+            type (str | None): Type of the event, e.g 'failure'.
+            subtype (str | None): Subtype of the event, e.g 'electrical'.
+            metadata (dict[str, str] | None): Customizable extra data about the event. String key -> String value.
+            asset_ids (Sequence[int] | None): Asset IDs of related equipments that this event relates to.
+            asset_external_ids (Sequence[str] | None): Asset External IDs of related equipment that this event relates to.
+            asset_subtree_ids (int | Sequence[int] | None): Asset subtree id or list of asset subtree ids to filter on.
+            asset_subtree_external_ids (str | Sequence[str] | None): Asset subtree external id or list of asset subtree external ids to filter on.
+            data_set_ids (int | Sequence[int] | None): Return only events in the specified data set(s) with this id / these ids.
+            data_set_external_ids (str | Sequence[str] | None): Return only events in the specified data set(s) with this external id / these external ids.
+            source (str | None): The source of this event.
+            created_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            last_updated_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            external_id_prefix (str | None): External Id provided by client. Should be unique within the project.
+            sort (Sequence[str] | None): Sort by array of selected fields. Ex: ["startTime:desc']. Default sort order is asc when ommitted. Filter accepts following field names: startTime, endTime, createdTime, lastUpdatedTime. We only support 1 field for now.
+            partitions (int | None): Retrieve events in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
             limit (int): Maximum number of events to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
@@ -308,14 +308,14 @@ class EventsAPI(APIClient):
             sort=sort,
         )
 
-    def aggregate(self, filter: Optional[Union[EventFilter, Dict]] = None) -> List[AggregateResult]:
+    def aggregate(self, filter: EventFilter | dict | None = None) -> list[AggregateResult]:
         """`Aggregate events <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
 
         Args:
-            filter (Optional[Union[EventFilter, Dict]]): Filter on events filter with exact match
+            filter (EventFilter | dict | None): Filter on events filter with exact match
 
         Returns:
-            List[AggregateResult]: List of event aggregates
+            list[AggregateResult]: List of event aggregates
 
         Examples:
 
@@ -595,14 +595,14 @@ class EventsAPI(APIClient):
     def create(self, event: Event) -> Event:
         ...
 
-    def create(self, event: Union[Event, Sequence[Event]]) -> Union[Event, EventList]:
+    def create(self, event: Event | Sequence[Event]) -> Event | EventList:
         """`Create one or more events. <https://developer.cognite.com/api#tag/Events/operation/createEvents>`_
 
         Args:
-            event (Union[Event, Sequence[Event]]): Event or list of events to create.
+            event (Event | Sequence[Event]): Event or list of events to create.
 
         Returns:
-            Union[Event, EventList]: Created event(s)
+            Event | EventList: Created event(s)
 
         Examples:
 
@@ -618,15 +618,15 @@ class EventsAPI(APIClient):
 
     def delete(
         self,
-        id: Optional[Union[int, Sequence[int]]] = None,
-        external_id: Optional[Union[str, Sequence[str]]] = None,
+        id: int | Sequence[int] | None = None,
+        external_id: str | Sequence[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete one or more events <https://developer.cognite.com/api#tag/Events/operation/deleteEvents>`_
 
         Args:
-            id (Optional[Union[int, Sequence[int]]]): Id or list of ids
-            external_id (Optional[Union[str, Sequence[str]]]): External ID or list of external ids
+            id (int | Sequence[int] | None): Id or list of ids
+            external_id (str | Sequence[str] | None): External ID or list of external ids
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Examples:
@@ -644,21 +644,21 @@ class EventsAPI(APIClient):
         )
 
     @overload
-    def update(self, item: Sequence[Union[Event, EventUpdate]]) -> EventList:
+    def update(self, item: Sequence[Event | EventUpdate]) -> EventList:
         ...
 
     @overload
-    def update(self, item: Union[Event, EventUpdate]) -> Event:
+    def update(self, item: Event | EventUpdate) -> Event:
         ...
 
-    def update(self, item: Union[Event, EventUpdate, Sequence[Union[Event, EventUpdate]]]) -> Union[Event, EventList]:
+    def update(self, item: Event | EventUpdate | Sequence[Event | EventUpdate]) -> Event | EventList:
         """`Update one or more events <https://developer.cognite.com/api#tag/Events/operation/updateEvents>`_
 
         Args:
-            item (Union[Event, EventUpdate, Sequence[Union[Event, EventUpdate]]]): Event(s) to update
+            item (Event | EventUpdate | Sequence[Event | EventUpdate]): Event(s) to update
 
         Returns:
-            Union[Event, EventList]: Updated event(s)
+            Event | EventList: Updated event(s)
 
         Examples:
 
@@ -681,14 +681,14 @@ class EventsAPI(APIClient):
         return self._update_multiple(list_cls=EventList, resource_cls=Event, update_cls=EventUpdate, items=item)
 
     def search(
-        self, description: Optional[str] = None, filter: Optional[Union[EventFilter, Dict]] = None, limit: int = 100
+        self, description: str | None = None, filter: EventFilter | dict | None = None, limit: int = 100
     ) -> EventList:
         """`Search for events <https://developer.cognite.com/api#tag/Events/operation/searchEvents>`_
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:
-            description (Optional[str]): Fuzzy match on description.
-            filter (Optional[Union[EventFilter, Dict]]): Filter to apply. Performs exact match on these fields.
+            description (str | None): Fuzzy match on description.
+            filter (EventFilter | dict | None): Filter to apply. Performs exact match on these fields.
             limit (int): Maximum number of results to return.
 
         Returns:

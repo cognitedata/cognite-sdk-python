@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, get_args, get_type_hints
+from typing import Any, get_args, get_type_hints
 from unittest.mock import Mock, patch
 
 import pytest
@@ -11,7 +11,7 @@ from cognite.client.testing import monkeypatch_cognite_client
 
 
 @pytest.fixture
-def mock_base_job_response() -> Dict[str, Any]:
+def mock_base_job_response() -> dict[str, Any]:
     return {
         "status": "Completed",
         "createdTime": 1666601590000,

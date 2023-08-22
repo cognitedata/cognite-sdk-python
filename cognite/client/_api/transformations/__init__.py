@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Sequence
 
 from cognite.client._api.transformations.jobs import TransformationJobsAPI
 from cognite.client._api.transformations.notifications import TransformationNotificationsAPI
@@ -35,23 +35,21 @@ __all__ = [
 class TransformationsAPI(APIClient):
     _RESOURCE_PATH = "/transformations"
 
-    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.jobs = TransformationJobsAPI(config, api_version, cognite_client)
         self.schedules = TransformationSchedulesAPI(config, api_version, cognite_client)
         self.schema = TransformationSchemaAPI(config, api_version, cognite_client)
         self.notifications = TransformationNotificationsAPI(config, api_version, cognite_client)
 
-    def create(
-        self, transformation: Union[Transformation, Sequence[Transformation]]
-    ) -> Union[Transformation, TransformationList]:
+    def create(self, transformation: Transformation | Sequence[Transformation]) -> Transformation | TransformationList:
         """`Create one or more transformations. <https://developer.cognite.com/api#tag/Transformations/operation/createTransformations>`_
 
         Args:
-            transformation (Union[Transformation, Sequence[Transformation]]): Transformation or list of transformations to create.
+            transformation (Transformation | Sequence[Transformation]): Transformation or list of transformations to create.
 
         Returns:
-            Union[Transformation, TransformationList]: Created transformation(s)
+            Transformation | TransformationList: Created transformation(s)
 
         Examples:
 
@@ -100,7 +98,7 @@ class TransformationsAPI(APIClient):
 
         """
         if isinstance(transformation, Sequence):
-            sessions: Dict[str, NonceCredentials] = {}
+            sessions: dict[str, NonceCredentials] = {}
             transformation = [t.copy() for t in transformation]
             for t in transformation:
                 t._cognite_client = self._cognite_client
@@ -116,15 +114,15 @@ class TransformationsAPI(APIClient):
 
     def delete(
         self,
-        id: Optional[Union[int, Sequence[int]]] = None,
-        external_id: Optional[Union[str, Sequence[str]]] = None,
+        id: int | Sequence[int] | None = None,
+        external_id: str | Sequence[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete one or more transformations. <https://developer.cognite.com/api#tag/Transformations/operation/deleteTransformations>`_
 
         Args:
-            id (Optional[Union[int, Sequence[int]]]): Id or list of ids.
-            external_id (Optional[Union[str, Sequence[str]]]): External ID or list of external ids.
+            id (int | Sequence[int] | None): Id or list of ids.
+            external_id (str | Sequence[str] | None): External ID or list of external ids.
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Example:
@@ -144,35 +142,35 @@ class TransformationsAPI(APIClient):
     def list(
         self,
         include_public: bool = True,
-        name_regex: Optional[str] = None,
-        query_regex: Optional[str] = None,
-        destination_type: Optional[str] = None,
-        conflict_mode: Optional[str] = None,
-        cdf_project_name: Optional[str] = None,
-        has_blocked_error: Optional[bool] = None,
-        created_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
-        last_updated_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
-        data_set_ids: Optional[List[int]] = None,
-        data_set_external_ids: Optional[List[str]] = None,
-        tags: Optional[TagsFilter] = None,
-        limit: Optional[int] = LIST_LIMIT_DEFAULT,
+        name_regex: str | None = None,
+        query_regex: str | None = None,
+        destination_type: str | None = None,
+        conflict_mode: str | None = None,
+        cdf_project_name: str | None = None,
+        has_blocked_error: bool | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        data_set_ids: list[int] | None = None,
+        data_set_external_ids: list[str] | None = None,
+        tags: TagsFilter | None = None,
+        limit: int | None = LIST_LIMIT_DEFAULT,
     ) -> TransformationList:
         """`List all transformations. <https://developer.cognite.com/api#tag/Transformations/operation/getTransformations>`_
 
         Args:
             include_public (bool): Whether public transformations should be included in the results. (default true).
-            name_regex (Optional[str]): Regex expression to match the transformation name
-            query_regex (Optional[str]): Regex expression to match the transformation query
-            destination_type (Optional[str]): Transformation destination resource name to filter by.
-            conflict_mode (Optional[str]): Filters by a selected transformation action type: abort/create, upsert, update, delete
-            cdf_project_name (Optional[str]): Project name to filter by configured source and destination project
-            has_blocked_error (Optional[bool]): Whether only the blocked transformations should be included in the results.
-            created_time (Optional[Union[Dict[str, Any], TimestampRange]]): Range between two timestamps
-            last_updated_time (Optional[Union[Dict[str, Any], TimestampRange]]): Range between two timestamps
-            data_set_ids (Optional[List[int]]): Return only transformations in the specified data sets with these ids.
-            data_set_external_ids (Optional[List[str]]): Return only transformations in the specified data sets with these external ids.
-            tags (Optional[TagsFilter]): Return only the resource matching the specified tags constraints. It only supports ContainsAny as of now.
-            limit (Optional[int]): Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
+            name_regex (str | None): Regex expression to match the transformation name
+            query_regex (str | None): Regex expression to match the transformation query
+            destination_type (str | None): Transformation destination resource name to filter by.
+            conflict_mode (str | None): Filters by a selected transformation action type: abort/create, upsert, update, delete
+            cdf_project_name (str | None): Project name to filter by configured source and destination project
+            has_blocked_error (bool | None): Whether only the blocked transformations should be included in the results.
+            created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
+            last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
+            data_set_ids (list[int] | None): Return only transformations in the specified data sets with these ids.
+            data_set_external_ids (list[str] | None): Return only transformations in the specified data sets with these external ids.
+            tags (TagsFilter | None): Return only the resource matching the specified tags constraints. It only supports ContainsAny as of now.
+            limit (int | None): Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
 
         Returns:
             TransformationList: List of transformations
@@ -185,7 +183,7 @@ class TransformationsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> transformations_list = c.transformations.list()
         """
-        ds_ids: Optional[List[Dict[str, Any]]] = None
+        ds_ids: list[dict[str, Any]] | None = None
         if data_set_ids and data_set_external_ids:
             ds_ids = [*[{"id": i} for i in data_set_ids], *[{"externalId": i} for i in data_set_external_ids]]
         elif data_set_ids:
@@ -215,15 +213,15 @@ class TransformationsAPI(APIClient):
             filter=filter,
         )
 
-    def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Transformation]:
+    def retrieve(self, id: int | None = None, external_id: str | None = None) -> Transformation | None:
         """`Retrieve a single transformation by id. <https://developer.cognite.com/api#tag/Transformations/operation/getTransformationsByIds>`_
 
         Args:
-            id (Optional[int]): ID
-            external_id (Optional[str]): No description.
+            id (int | None): ID
+            external_id (str | None): No description.
 
         Returns:
-            Optional[Transformation]: Requested transformation or None if it does not exist.
+            Transformation | None: Requested transformation or None if it does not exist.
 
         Examples:
 
@@ -248,15 +246,15 @@ class TransformationsAPI(APIClient):
 
     def retrieve_multiple(
         self,
-        ids: Optional[Sequence[int]] = None,
-        external_ids: Optional[Sequence[str]] = None,
+        ids: Sequence[int] | None = None,
+        external_ids: Sequence[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> TransformationList:
         """`Retrieve multiple transformations. <https://developer.cognite.com/api#tag/Transformations/operation/getTransformationsByIds>`_
 
         Args:
-            ids (Optional[Sequence[int]]): List of ids to retrieve.
-            external_ids (Optional[Sequence[str]]): List of external ids to retrieve.
+            ids (Sequence[int] | None): List of ids to retrieve.
+            external_ids (Sequence[str] | None): List of external ids to retrieve.
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -279,15 +277,15 @@ class TransformationsAPI(APIClient):
         )
 
     def update(
-        self, item: Union[Transformation, TransformationUpdate, Sequence[Union[Transformation, TransformationUpdate]]]
-    ) -> Union[Transformation, TransformationList]:
+        self, item: Transformation | TransformationUpdate | Sequence[Transformation | TransformationUpdate]
+    ) -> Transformation | TransformationList:
         """`Update one or more transformations <https://developer.cognite.com/api#tag/Transformations/operation/updateTransformations>`_
 
         Args:
-            item (Union[Transformation, TransformationUpdate, Sequence[Union[Transformation, TransformationUpdate]]]): Transformation(s) to update
+            item (Transformation | TransformationUpdate | Sequence[Transformation | TransformationUpdate]): Transformation(s) to update
 
         Returns:
-            Union[Transformation, TransformationList]: Updated transformation(s)
+            Transformation | TransformationList: Updated transformation(s)
 
         Examples:
 
@@ -310,7 +308,7 @@ class TransformationsAPI(APIClient):
 
         if isinstance(item, Sequence):
             item = list(item).copy()
-            sessions: Dict[str, NonceCredentials] = {}
+            sessions: dict[str, NonceCredentials] = {}
             for i, t in enumerate(item):
                 if isinstance(t, Transformation):
                     t = t.copy()
@@ -332,18 +330,18 @@ class TransformationsAPI(APIClient):
 
     def run(
         self,
-        transformation_id: Optional[int] = None,
-        transformation_external_id: Optional[str] = None,
+        transformation_id: int | None = None,
+        transformation_external_id: str | None = None,
         wait: bool = True,
-        timeout: Optional[float] = None,
+        timeout: float | None = None,
     ) -> TransformationJob:
         """`Run a transformation. <https://developer.cognite.com/api#tag/Transformations/operation/runTransformation>`_
 
         Args:
-            transformation_id (Optional[int]): Transformation internal id
-            transformation_external_id (Optional[str]): Transformation external id
+            transformation_id (int | None): Transformation internal id
+            transformation_external_id (str | None): Transformation external id
             wait (bool): Wait until the transformation run is finished. Defaults to True.
-            timeout (Optional[float]): maximum time (s) to wait, default is None (infinite time). Once the timeout is reached, it returns with the current status. Won't have any effect if wait is False.
+            timeout (float | None): maximum time (s) to wait, default is None (infinite time). Once the timeout is reached, it returns with the current status. Won't have any effect if wait is False.
 
         Returns:
             TransformationJob: Created transformation job
@@ -378,16 +376,16 @@ class TransformationsAPI(APIClient):
 
     async def run_async(
         self,
-        transformation_id: Optional[int] = None,
-        transformation_external_id: Optional[str] = None,
-        timeout: Optional[float] = None,
+        transformation_id: int | None = None,
+        transformation_external_id: str | None = None,
+        timeout: float | None = None,
     ) -> TransformationJob:
         """`Run a transformation to completion asynchronously. <https://developer.cognite.com/api#tag/Transformations/operation/runTransformation>`_
 
         Args:
-            transformation_id (Optional[int]): internal Transformation id
-            transformation_external_id (Optional[str]): external Transformation id
-            timeout (Optional[float]): maximum time (s) to wait, default is None (infinite time). Once the timeout is reached, it returns with the current status.
+            transformation_id (int | None): internal Transformation id
+            transformation_external_id (str | None): external Transformation id
+            timeout (float | None): maximum time (s) to wait, default is None (infinite time). Once the timeout is reached, it returns with the current status.
 
         Returns:
             TransformationJob: Completed (if finished) or running (if timeout reached) transformation job.
@@ -414,12 +412,12 @@ class TransformationsAPI(APIClient):
         )
         return await job.wait_async(timeout=timeout)
 
-    def cancel(self, transformation_id: Optional[int] = None, transformation_external_id: Optional[str] = None) -> None:
+    def cancel(self, transformation_id: int | None = None, transformation_external_id: str | None = None) -> None:
         """`Cancel a running transformation. <https://developer.cognite.com/api#tag/Transformations/operation/cancelTransformation>`_
 
         Args:
-            transformation_id (Optional[int]): Transformation internal id
-            transformation_external_id (Optional[str]): Transformation external id
+            transformation_id (int | None): Transformation internal id
+            transformation_external_id (str | None): Transformation external id
 
         Examples:
 
@@ -441,20 +439,20 @@ class TransformationsAPI(APIClient):
 
     def preview(
         self,
-        query: Optional[str] = None,
+        query: str | None = None,
         convert_to_string: bool = False,
         limit: int = 100,
-        source_limit: Optional[int] = 100,
-        infer_schema_limit: Optional[int] = 1000,
+        source_limit: int | None = 100,
+        infer_schema_limit: int | None = 1000,
     ) -> TransformationPreviewResult:
         """`Preview the result of a query. <https://developer.cognite.com/api#tag/Transformations/operation/runPreview>`_
 
         Args:
-            query (Optional[str]): SQL query to run for preview.
+            query (str | None): SQL query to run for preview.
             convert_to_string (bool): Stringify values in the query results, default is False.
             limit (int): Maximum number of rows to return in the final result, default is 100.
-            source_limit (Optional[int]): Maximum number of items to read from the data source or None to run without limit, default is 100.
-            infer_schema_limit (Optional[int]): Limit for how many rows that are used for inferring result schema, default is 1000.
+            source_limit (int | None): Maximum number of items to read from the data source or None to run without limit, default is 100.
+            infer_schema_limit (int | None): Limit for how many rows that are used for inferring result schema, default is 1000.
 
         Returns:
             TransformationPreviewResult: Result of the executed query

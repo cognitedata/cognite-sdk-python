@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.contextualization import (
@@ -19,17 +19,17 @@ class VisionAPI(APIClient):
     _RESOURCE_PATH = "/context/vision"
 
     @staticmethod
-    def _process_file_ids(ids: Union[List[int], int, None], external_ids: Union[List[str], str, None]) -> List:
+    def _process_file_ids(ids: list[int] | int | None, external_ids: list[str] | str | None) -> list:
         """
         Utility for sanitizing a given lists of ids and external ids.
         Returns the concatenation of the ids an external ids in the format
         expected by the Context API.
 
         Args:
-            ids (Union[List[int], int, None]): No description.
-            external_ids (Union[List[str], str, None]): No description.
+            ids (list[int] | int | None): No description.
+            external_ids (list[str] | str | None): No description.
         Returns:
-            List: No description."""
+            list: No description."""
         identifier_sequence = IdentifierSequence.load(ids=ids, external_ids=external_ids).as_primitives()
         id_objs = [{"fileId": id} for id in identifier_sequence if isinstance(id, int)]
         external_id_objs = [
@@ -40,9 +40,9 @@ class VisionAPI(APIClient):
     def _run_job(
         self,
         job_path: str,
-        job_cls: Type[T_ContextualizationJob],
-        status_path: Optional[str] = None,
-        headers: Optional[Dict[str, Any]] = None,
+        job_cls: type[T_ContextualizationJob],
+        status_path: str | None = None,
+        headers: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> T_ContextualizationJob:
         if status_path is None:
@@ -61,18 +61,18 @@ class VisionAPI(APIClient):
 
     def extract(
         self,
-        features: Union[VisionFeature, List[VisionFeature]],
-        file_ids: Optional[List[int]] = None,
-        file_external_ids: Optional[List[str]] = None,
-        parameters: Optional[FeatureParameters] = None,
+        features: VisionFeature | list[VisionFeature],
+        file_ids: list[int] | None = None,
+        file_external_ids: list[str] | None = None,
+        parameters: FeatureParameters | None = None,
     ) -> VisionExtractJob:
         """Start an asynchronous job to extract features from image files.
 
         Args:
-            features (Union[VisionFeature, List[VisionFeature]]): The feature(s) to extract from the provided image files.
-            file_ids (Optional[List[int]]): IDs of the image files to analyze. The images must already be uploaded in the same CDF project.
-            file_external_ids (Optional[List[str]]): The external file ids of the image files to analyze.
-            parameters (Optional[FeatureParameters]): No description.
+            features (VisionFeature | list[VisionFeature]): The feature(s) to extract from the provided image files.
+            file_ids (list[int] | None): IDs of the image files to analyze. The images must already be uploaded in the same CDF project.
+            file_external_ids (list[str] | None): The external file ids of the image files to analyze.
+            parameters (FeatureParameters | None): No description.
         Returns:
             VisionExtractJob: Resulting queued job, which can be used to retrieve the status of the job or the prediction results if the job is finished. Note that .result property of this job will wait for the job to finish and returns the results.
 

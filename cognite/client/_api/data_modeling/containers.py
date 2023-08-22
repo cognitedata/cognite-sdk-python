@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterator, Optional, Sequence, cast, overload
+from typing import Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DATA_MODELING_LIST_LIMIT_DEFAULT
@@ -28,7 +28,7 @@ class ContainersAPI(APIClient):
         chunk_size: None = None,
         space: str | None = None,
         include_global: bool = False,
-        limit: Optional[int] = None,
+        limit: int | None = None,
     ) -> Iterator[Container]:
         ...
 
@@ -38,7 +38,7 @@ class ContainersAPI(APIClient):
         chunk_size: int,
         space: str | None = None,
         include_global: bool = False,
-        limit: Optional[int] = None,
+        limit: int | None = None,
     ) -> Iterator[ContainerList]:
         ...
 
@@ -47,7 +47,7 @@ class ContainersAPI(APIClient):
         chunk_size: int | None = None,
         space: str | None = None,
         include_global: bool = False,
-        limit: Optional[int] = None,
+        limit: int | None = None,
     ) -> Iterator[Container] | Iterator[ContainerList]:
         """Iterate over containers
 
@@ -57,7 +57,7 @@ class ContainersAPI(APIClient):
             chunk_size (int | None): Number of containers to return in each chunk. Defaults to yielding one container a time.
             space (str | None): The space to query.
             include_global (bool): Whether the global containers should be returned.
-            limit (Optional[int]): Maximum number of containers to return. Defaults to returning all items.
+            limit (int | None): Maximum number of containers to return. Defaults to returning all items.
 
         Returns:
             Iterator[Container] | Iterator[ContainerList]: yields Container one by one if chunk_size is not specified, else ContainerList objects.

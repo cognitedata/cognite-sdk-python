@@ -4,6 +4,9 @@ in an opinionated way. It makes it easy to keep docstrings up-to-date with the
 actual function- or method annotations; when typing info changes, new arguments
 are added/removed etc, they will be auto-updated, or, a verbose error will be
 raised, making sure the user making the commit aware of the issue(s).
+
+Should be used together with an appropriate linter, e.g. pydoclint, to verify
+the automatic changes being made.
 """
 from __future__ import annotations
 
@@ -295,24 +298,22 @@ class DocstrFormatter:
     def update_py_file(self, cls_or_fn, method_description) -> str:
         source_code = (path := Path(inspect.getsourcefile(cls_or_fn))).read_text()
 
-        if (n_matches := source_code.count(self.original_doc)) == 0:
+        if source_code.count(self.original_doc) == 0:
             return f"Couldn't fix docstring for '{method_description}', as the old doc was not found in the file"
 
-        elif n_matches == 1:
-            new_docstr = self.create_docstring()
-            if self.original_doc == new_docstr:
-                # Shouldn't be possible, but surely it will happen :D
-                raise RuntimeError(
-                    "Existing docstring was considered wrong, but the newly generated one was identical... "
-                    "If pre-commit does not report any other errors, consider committing using '--no-verify' "
-                    "and create an issue on github!"
-                )
+        new_docstr = self.create_docstring()
+        if self.original_doc == new_docstr:
+            # Shouldn't be possible, but surely it will happen :D
+            raise RuntimeError(
+                "Existing docstring was considered wrong, but the newly generated one was identical... "
+                "If pre-commit does not report any other errors, consider committing using '--no-verify' "
+                "and create an issue on github!"
+            )
 
-            path.write_text(source_code.replace(self.original_doc, new_docstr))
-            return f"Fixed docstring for '{method_description}'"
-
-        else:
-            return f"Couldn't fix docstring for '{method_description}', as the old doc was not unique to the file"
+        # Note: We can have multiple matches for generic docstrings, e.g. 'dump'. So to avoid next update failing
+        #       we only replace one at the time, even though it may be "the wrong one":
+        path.write_text(source_code.replace(self.original_doc, new_docstr, 1))
+        return f"Fixed docstring for '{method_description}'"
 
 
 def get_all_non_inherited_attributes(cls):

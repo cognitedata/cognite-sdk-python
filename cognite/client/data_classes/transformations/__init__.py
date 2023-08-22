@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Awaitable, Dict, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Awaitable, Dict, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -34,29 +34,29 @@ class SessionDetails:
     """Details of a source session.
 
     Args:
-        session_id (Optional[int]): CDF source session ID
-        client_id (Optional[str]): Idp source client ID
-        project_name (Optional[str]): CDF source project name
+        session_id (int | None): CDF source session ID
+        client_id (str | None): Idp source client ID
+        project_name (str | None): CDF source project name
     """
 
     def __init__(
         self,
-        session_id: Optional[int] = None,
-        client_id: Optional[str] = None,
-        project_name: Optional[str] = None,
+        session_id: int | None = None,
+        client_id: str | None = None,
+        project_name: str | None = None,
     ) -> None:
         self.session_id = session_id
         self.client_id = client_id
         self.project_name = project_name
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
             camel_case (bool): Use camelCase for attribute names. Defaults to False.
 
         Returns:
-            Dict[str, Any]: A dictionary representation of the instance.
+            dict[str, Any]: A dictionary representation of the instance.
         """
         ret = vars(self)
 
@@ -69,64 +69,64 @@ class Transformation(CogniteResource):
     """The transformations resource allows transforming data in CDF.
 
     Args:
-        id (Optional[int]): A server-generated ID for the object.
-        external_id (Optional[str]): The external ID provided by the client. Must be unique for the resource type.
-        name (Optional[str]): The name of the Transformation.
-        query (Optional[str]): SQL query of the transformation.
-        destination (Optional[TransformationDestination]): see TransformationDestination for options.
-        conflict_mode (Optional[str]): What to do in case of id collisions: either "abort", "upsert", "update" or "delete"
+        id (int | None): A server-generated ID for the object.
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        name (str | None): The name of the Transformation.
+        query (str | None): SQL query of the transformation.
+        destination (TransformationDestination | None): see TransformationDestination for options.
+        conflict_mode (str | None): What to do in case of id collisions: either "abort", "upsert", "update" or "delete"
         is_public (bool): Indicates if the transformation is visible to all in project or only to the owner.
         ignore_null_fields (bool): Indicates how null values are handled on updates: ignore or set null.
-        source_oidc_credentials (Optional[OidcCredentials]): Configures the transformation to authenticate with the given oidc credentials key on the destination.
-        destination_oidc_credentials (Optional[OidcCredentials]): Configures the transformation to authenticate with the given oidc credentials on the destination.
-        created_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        owner (Optional[str]): Owner of the transformation: requester's identity.
+        source_oidc_credentials (OidcCredentials | None): Configures the transformation to authenticate with the given oidc credentials key on the destination.
+        destination_oidc_credentials (OidcCredentials | None): Configures the transformation to authenticate with the given oidc credentials on the destination.
+        created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        owner (str | None): Owner of the transformation: requester's identity.
         owner_is_current_user (bool): Indicates if the transformation belongs to the current user.
-        has_source_oidc_credentials (Optional[bool]): Indicates if the transformation is configured with a source oidc credentials set.
-        has_destination_oidc_credentials (Optional[bool]): Indicates if the transformation is configured with a destination oidc credentials set.
-        running_job (Optional[TransformationJob]): Details for the job of this transformation currently running.
-        last_finished_job (Optional[TransformationJob]): Details for the last finished job of this transformation.
-        blocked (Optional[TransformationBlockedInfo]): Provides reason and time if the transformation is blocked.
-        schedule (Optional[TransformationSchedule]): Details for the schedule if the transformation is scheduled.
-        data_set_id (Optional[int]): No description.
-        cognite_client (Optional[CogniteClient]): The client to associate with this object.
-        source_nonce (Optional[NonceCredentials]): Single use credentials to bind to a CDF session for reading.
-        destination_nonce (Optional[NonceCredentials]): Single use credentials to bind to a CDF session for writing.
-        source_session (Optional[SessionDetails]): Details for the session used to read from the source project.
-        destination_session (Optional[SessionDetails]): Details for the session used to write to the destination project.
-        tags (Optional[List[str]]): No description.
+        has_source_oidc_credentials (bool | None): Indicates if the transformation is configured with a source oidc credentials set.
+        has_destination_oidc_credentials (bool | None): Indicates if the transformation is configured with a destination oidc credentials set.
+        running_job (TransformationJob | None): Details for the job of this transformation currently running.
+        last_finished_job (TransformationJob | None): Details for the last finished job of this transformation.
+        blocked (TransformationBlockedInfo | None): Provides reason and time if the transformation is blocked.
+        schedule (TransformationSchedule | None): Details for the schedule if the transformation is scheduled.
+        data_set_id (int | None): No description.
+        cognite_client (CogniteClient | None): The client to associate with this object.
+        source_nonce (NonceCredentials | None): Single use credentials to bind to a CDF session for reading.
+        destination_nonce (NonceCredentials | None): Single use credentials to bind to a CDF session for writing.
+        source_session (SessionDetails | None): Details for the session used to read from the source project.
+        destination_session (SessionDetails | None): Details for the session used to write to the destination project.
+        tags (list[str] | None): No description.
     """
 
     def __init__(
         self,
-        id: Optional[int] = None,
-        external_id: Optional[str] = None,
-        name: Optional[str] = None,
-        query: Optional[str] = None,
-        destination: Optional[TransformationDestination] = None,
-        conflict_mode: Optional[str] = None,
+        id: int | None = None,
+        external_id: str | None = None,
+        name: str | None = None,
+        query: str | None = None,
+        destination: TransformationDestination | None = None,
+        conflict_mode: str | None = None,
         is_public: bool = True,
         ignore_null_fields: bool = False,
-        source_oidc_credentials: Optional[OidcCredentials] = None,
-        destination_oidc_credentials: Optional[OidcCredentials] = None,
-        created_time: Optional[int] = None,
-        last_updated_time: Optional[int] = None,
-        owner: Optional[str] = None,
+        source_oidc_credentials: OidcCredentials | None = None,
+        destination_oidc_credentials: OidcCredentials | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+        owner: str | None = None,
         owner_is_current_user: bool = True,
-        has_source_oidc_credentials: Optional[bool] = None,
-        has_destination_oidc_credentials: Optional[bool] = None,
-        running_job: Optional[TransformationJob] = None,
-        last_finished_job: Optional[TransformationJob] = None,
-        blocked: Optional[TransformationBlockedInfo] = None,
-        schedule: Optional[TransformationSchedule] = None,
-        data_set_id: Optional[int] = None,
-        cognite_client: Optional[CogniteClient] = None,
-        source_nonce: Optional[NonceCredentials] = None,
-        destination_nonce: Optional[NonceCredentials] = None,
-        source_session: Optional[SessionDetails] = None,
-        destination_session: Optional[SessionDetails] = None,
-        tags: Optional[List[str]] = None,
+        has_source_oidc_credentials: bool | None = None,
+        has_destination_oidc_credentials: bool | None = None,
+        running_job: TransformationJob | None = None,
+        last_finished_job: TransformationJob | None = None,
+        blocked: TransformationBlockedInfo | None = None,
+        schedule: TransformationSchedule | None = None,
+        data_set_id: int | None = None,
+        cognite_client: CogniteClient | None = None,
+        source_nonce: NonceCredentials | None = None,
+        destination_nonce: NonceCredentials | None = None,
+        source_session: SessionDetails | None = None,
+        destination_session: SessionDetails | None = None,
+        tags: list[str] | None = None,
     ) -> None:
         self.id = id
         self.external_id = external_id
@@ -190,14 +190,12 @@ class Transformation(CogniteResource):
         )
 
     def _process_credentials(
-        self, sessions_cache: Optional[Dict[str, NonceCredentials]] = None, keep_none: bool = False
+        self, sessions_cache: dict[str, NonceCredentials] | None = None, keep_none: bool = False
     ) -> None:
         if sessions_cache is None:
             sessions_cache = {}
 
-        def try_get_or_create_nonce(
-            oidc_credentials: Optional[OidcCredentials], project: str
-        ) -> Optional[NonceCredentials]:
+        def try_get_or_create_nonce(oidc_credentials: OidcCredentials | None, project: str) -> NonceCredentials | None:
             if keep_none and oidc_credentials is None:
                 return None
 
@@ -236,7 +234,7 @@ class Transformation(CogniteResource):
             if self.destination_nonce:
                 self.destination_oidc_credentials = None
 
-    def run(self, wait: bool = True, timeout: Optional[float] = None) -> TransformationJob:
+    def run(self, wait: bool = True, timeout: float | None = None) -> TransformationJob:
         return self._cognite_client.transformations.run(transformation_id=self.id, wait=wait, timeout=timeout)
 
     def cancel(self) -> None:
@@ -245,14 +243,14 @@ class Transformation(CogniteResource):
         else:
             self._cognite_client.transformations.cancel(transformation_id=self.id)
 
-    def run_async(self, timeout: Optional[float] = None) -> Awaitable[TransformationJob]:
+    def run_async(self, timeout: float | None = None) -> Awaitable[TransformationJob]:
         return self._cognite_client.transformations.run_async(transformation_id=self.id, timeout=timeout)
 
     def jobs(self) -> TransformationJobList:
         return self._cognite_client.transformations.jobs.list(transformation_id=self.id)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> Transformation:
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Transformation:
         instance = super()._load(resource, cognite_client)
         if isinstance(instance.destination, dict):
             instance.destination = _load_destination_dct(instance.destination)
@@ -283,14 +281,14 @@ class Transformation(CogniteResource):
             instance.destination_session = SessionDetails(**snake_dict)
         return instance
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
             camel_case (bool): Use camelCase for attribute names. Defaults to False.
 
         Returns:
-            Dict[str, Any]: A dictionary representation of the instance.
+            dict[str, Any]: A dictionary representation of the instance.
         """
 
         ret = super().dump(camel_case=camel_case)
@@ -326,13 +324,13 @@ class TransformationUpdate(CogniteUpdate):
             return self._set(value)
 
     class _ListTransformationUpdate(CogniteListUpdate):
-        def set(self, value: List) -> TransformationUpdate:
+        def set(self, value: list) -> TransformationUpdate:
             return self._set(value)
 
-        def add(self, value: List) -> TransformationUpdate:
+        def add(self, value: list) -> TransformationUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> TransformationUpdate:
+        def remove(self, value: list) -> TransformationUpdate:
             return self._remove(value)
 
     @property
@@ -387,7 +385,7 @@ class TransformationUpdate(CogniteUpdate):
     def tags(self) -> _ListTransformationUpdate:
         return TransformationUpdate._ListTransformationUpdate(self, "tags")
 
-    def dump(self, camel_case: bool = True) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         obj = super().dump()
 
         for update in obj.get("update", {}).values():
@@ -421,7 +419,7 @@ class TransformationList(CogniteResourceList):
 
 class TagsFilter:
     @abstractmethod
-    def dump(self) -> Dict[str, Any]:
+    def dump(self) -> dict[str, Any]:
         ...
 
 
@@ -429,7 +427,7 @@ class ContainsAny(TagsFilter):
     """Return transformations that has one of the tags specified.
 
     Args:
-        tags (Optional[List[str]]): The resource item contains at least one of the listed tags. The tags are defined by a list of external ids.
+        tags (list[str] | None): The resource item contains at least one of the listed tags. The tags are defined by a list of external ids.
 
     Examples:
 
@@ -439,10 +437,10 @@ class ContainsAny(TagsFilter):
                 >>> my_tag_filter = ContainsAny(tags=["PUMP", "VALVE"])
     """
 
-    def __init__(self, tags: Optional[List[str]] = None) -> None:
+    def __init__(self, tags: list[str] | None = None) -> None:
         self.tags = tags
 
-    def dump(self, camel_case: bool = True) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         contains_any_key = "containsAny" if camel_case else "contains_any"
         return {contains_any_key: self.tags}
 
@@ -452,31 +450,31 @@ class TransformationFilter(CogniteFilter):
 
     Args:
         include_public (bool): Whether public transformations should be included in the results. The default is true.
-        name_regex (Optional[str]): Regex expression to match the transformation name
-        query_regex (Optional[str]): Regex expression to match the transformation query
-        destination_type (Optional[str]): Transformation destination resource name to filter by.
-        conflict_mode (Optional[str]): Filters by a selected transformation action type: abort/create, upsert, update, delete
-        cdf_project_name (Optional[str]): Project name to filter by configured source and destination project
-        has_blocked_error (Optional[bool]): Whether only the blocked transformations should be included in the results.
-        created_time (Optional[Union[Dict[str, Any], TimestampRange]]): Range between two timestamps
-        last_updated_time (Optional[Union[Dict[str, Any], TimestampRange]]): Range between two timestamps
-        data_set_ids (Optional[List[Dict[str, Any]]]): Return only transformations in the specified data sets with these ids.
-        tags (Optional[TagsFilter]): Return only the resource matching the specified tags constraints. It only supports ContainsAny as of now.
+        name_regex (str | None): Regex expression to match the transformation name
+        query_regex (str | None): Regex expression to match the transformation query
+        destination_type (str | None): Transformation destination resource name to filter by.
+        conflict_mode (str | None): Filters by a selected transformation action type: abort/create, upsert, update, delete
+        cdf_project_name (str | None): Project name to filter by configured source and destination project
+        has_blocked_error (bool | None): Whether only the blocked transformations should be included in the results.
+        created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
+        last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
+        data_set_ids (list[dict[str, Any]] | None): Return only transformations in the specified data sets with these ids.
+        tags (TagsFilter | None): Return only the resource matching the specified tags constraints. It only supports ContainsAny as of now.
     """
 
     def __init__(
         self,
         include_public: bool = True,
-        name_regex: Optional[str] = None,
-        query_regex: Optional[str] = None,
-        destination_type: Optional[str] = None,
-        conflict_mode: Optional[str] = None,
-        cdf_project_name: Optional[str] = None,
-        has_blocked_error: Optional[bool] = None,
-        created_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
-        last_updated_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
-        data_set_ids: Optional[List[Dict[str, Any]]] = None,
-        tags: Optional[TagsFilter] = None,
+        name_regex: str | None = None,
+        query_regex: str | None = None,
+        destination_type: str | None = None,
+        conflict_mode: str | None = None,
+        cdf_project_name: str | None = None,
+        has_blocked_error: bool | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        data_set_ids: list[dict[str, Any]] | None = None,
+        tags: TagsFilter | None = None,
     ) -> None:
         self.include_public = include_public
         self.name_regex = name_regex
@@ -491,7 +489,7 @@ class TransformationFilter(CogniteFilter):
         self.tags = tags
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str]) -> TransformationFilter:
+    def _load(cls, resource: dict | str) -> TransformationFilter:
         instance = super()._load(resource)
         if isinstance(resource, Dict):
             if instance.created_time is not None:
@@ -500,7 +498,7 @@ class TransformationFilter(CogniteFilter):
                 instance.last_updated_time = TimestampRange(**instance.last_updated_time)
         return instance
 
-    def dump(self, camel_case: bool = True) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         obj = super().dump(camel_case=camel_case)
         if obj.get("includePublic") is not None:
             is_public = obj.pop("includePublic")
@@ -515,25 +513,23 @@ class TransformationPreviewResult(CogniteResource):
     """Allows previewing the result of a sql transformation before executing it.
 
     Args:
-        schema (Optional[TransformationSchemaColumnList]): List of column descriptions.
-        results (Optional[List[Dict]]): List of resulting rows. Each row is a dictionary where the key is the column name and the value is the entrie.
-        cognite_client (Optional[CogniteClient]): No description.
+        schema (TransformationSchemaColumnList | None): List of column descriptions.
+        results (list[dict] | None): List of resulting rows. Each row is a dictionary where the key is the column name and the value is the entrie.
+        cognite_client (CogniteClient | None): No description.
     """
 
     def __init__(
         self,
-        schema: Optional[TransformationSchemaColumnList] = None,
-        results: Optional[List[Dict]] = None,
-        cognite_client: Optional[CogniteClient] = None,
+        schema: TransformationSchemaColumnList | None = None,
+        results: list[dict] | None = None,
+        cognite_client: CogniteClient | None = None,
     ) -> None:
         self.schema = schema
         self.results = results
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(
-        cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None
-    ) -> TransformationPreviewResult:
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TransformationPreviewResult:
         instance = super()._load(resource, cognite_client)
         if isinstance(instance.schema, Dict):
             items = instance.schema.get("items")
@@ -545,14 +541,14 @@ class TransformationPreviewResult(CogniteResource):
                 instance.results = items
         return instance
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
         Args:
             camel_case (bool): Use camelCase for attribute names. Defaults to False.
 
         Returns:
-            Dict[str, Any]: A dictionary representation of the instance.
+            dict[str, Any]: A dictionary representation of the instance.
         """
         ret = super().dump(camel_case=camel_case)
         ret["schema"] = ret["schema"].dump(camel_case=camel_case)

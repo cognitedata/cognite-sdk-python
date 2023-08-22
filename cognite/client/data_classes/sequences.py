@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import math
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Literal, Optional, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Literal, Union, cast
 from typing import Sequence as SequenceType
 
 from typing_extensions import TypeAlias
@@ -37,32 +37,32 @@ class Sequence(CogniteResource):
     """Information about the sequence stored in the database
 
     Args:
-        id (Optional[int]): Unique cognite-provided identifier for the sequence
-        name (Optional[str]): Name of the sequence
-        description (Optional[str]): Description of the sequence
-        asset_id (Optional[int]): Optional asset this sequence is associated with
-        external_id (Optional[str]): The external ID provided by the client. Must be unique for the resource type.
-        metadata (Optional[Dict[str, Any]]): Custom, application specific metadata. String key -> String value. Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        columns (Optional[SequenceType[Dict[str, Any]]]): List of column definitions
-        created_time (Optional[int]): Time when this sequence was created in CDF in milliseconds since Jan 1, 1970.
-        last_updated_time (Optional[int]): The last time this sequence was updated in CDF, in milliseconds since Jan 1, 1970.
-        data_set_id (Optional[int]): Data set that this sequence belongs to
-        cognite_client (Optional[CogniteClient]): The client to associate with this object.
+        id (int | None): Unique cognite-provided identifier for the sequence
+        name (str | None): Name of the sequence
+        description (str | None): Description of the sequence
+        asset_id (int | None): Optional asset this sequence is associated with
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        metadata (dict[str, Any] | None): Custom, application specific metadata. String key -> String value. Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        columns (SequenceType[dict[str, Any]] | None): List of column definitions
+        created_time (int | None): Time when this sequence was created in CDF in milliseconds since Jan 1, 1970.
+        last_updated_time (int | None): The last time this sequence was updated in CDF, in milliseconds since Jan 1, 1970.
+        data_set_id (int | None): Data set that this sequence belongs to
+        cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        id: Optional[int] = None,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        asset_id: Optional[int] = None,
-        external_id: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        columns: Optional[SequenceType[Dict[str, Any]]] = None,
-        created_time: Optional[int] = None,
-        last_updated_time: Optional[int] = None,
-        data_set_id: Optional[int] = None,
-        cognite_client: Optional[CogniteClient] = None,
+        id: int | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        asset_id: int | None = None,
+        external_id: str | None = None,
+        metadata: dict[str, Any] | None = None,
+        columns: SequenceType[dict[str, Any]] | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+        data_set_id: int | None = None,
+        cognite_client: CogniteClient | None = None,
     ) -> None:
         self.id = id
         self.name = name
@@ -76,7 +76,7 @@ class Sequence(CogniteResource):
         self.data_set_id = data_set_id
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def rows(self, start: int, end: int) -> List[dict]:
+    def rows(self, start: int, end: int) -> list[dict]:
         """Retrieves rows from this sequence.
 
         Args:
@@ -84,27 +84,27 @@ class Sequence(CogniteResource):
             end (int): No description.
 
         Returns:
-            List[dict]: List of sequence data.
+            list[dict]: List of sequence data.
         """
         identifier = Identifier.load(self.id, self.external_id).as_dict()
         return self._cognite_client.sequences.data.retrieve(**identifier, start=start, end=end)
 
     @property
-    def column_external_ids(self) -> List[str]:
+    def column_external_ids(self) -> list[str]:
         """Retrieves list of column external ids for the sequence, for use in e.g. data retrieve or insert methods
 
         Returns:
-            List[str]: List of sequence column external ids
+            list[str]: List of sequence column external ids
         """
         assert self.columns is not None
         return [cast(str, c.get("externalId")) for c in self.columns]
 
     @property
-    def column_value_types(self) -> List[str]:
+    def column_value_types(self) -> list[str]:
         """Retrieves list of column value types
 
         Returns:
-            List[str]: List of column value types
+            list[str]: List of column value types
         """
         assert self.columns is not None
         return [cast(str, c.get("valueType")) for c in self.columns]
@@ -114,28 +114,28 @@ class SequenceFilter(CogniteFilter):
     """No description.
 
     Args:
-        name (Optional[str]): Return only sequences with this *exact* name.
-        external_id_prefix (Optional[str]): Filter by this (case-sensitive) prefix for the external ID.
-        metadata (Optional[Dict[str, Any]]): Filter the sequences by metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
-        asset_ids (Optional[SequenceType[int]]): Return only sequences linked to one of the specified assets.
-        asset_subtree_ids (Optional[SequenceType[Dict[str, Any]]]): Only include sequences that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-        created_time (Optional[Union[Dict[str, Any], TimestampRange]]): Range between two timestamps.
-        last_updated_time (Optional[Union[Dict[str, Any], TimestampRange]]): Range between two timestamps.
-        data_set_ids (Optional[SequenceType[Dict[str, Any]]]): Only include sequences that belong to these datasets.
-        cognite_client (Optional[CogniteClient]): The client to associate with this object.
+        name (str | None): Return only sequences with this *exact* name.
+        external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
+        metadata (dict[str, Any] | None): Filter the sequences by metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
+        asset_ids (SequenceType[int] | None): Return only sequences linked to one of the specified assets.
+        asset_subtree_ids (SequenceType[dict[str, Any]] | None): Only include sequences that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
+        last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
+        data_set_ids (SequenceType[dict[str, Any]] | None): Only include sequences that belong to these datasets.
+        cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        name: Optional[str] = None,
-        external_id_prefix: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        asset_ids: Optional[SequenceType[int]] = None,
-        asset_subtree_ids: Optional[SequenceType[Dict[str, Any]]] = None,
-        created_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
-        last_updated_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
-        data_set_ids: Optional[SequenceType[Dict[str, Any]]] = None,
-        cognite_client: Optional[CogniteClient] = None,
+        name: str | None = None,
+        external_id_prefix: str | None = None,
+        metadata: dict[str, Any] | None = None,
+        asset_ids: SequenceType[int] | None = None,
+        asset_subtree_ids: SequenceType[dict[str, Any]] | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        data_set_ids: SequenceType[dict[str, Any]] | None = None,
+        cognite_client: CogniteClient | None = None,
     ) -> None:
         self.name = name
         self.external_id_prefix = external_id_prefix
@@ -148,7 +148,7 @@ class SequenceFilter(CogniteFilter):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str]) -> SequenceFilter:
+    def _load(cls, resource: dict | str) -> SequenceFilter:
         instance = super()._load(resource)
         if isinstance(resource, Dict):
             if instance.created_time is not None:
@@ -170,13 +170,13 @@ class SequenceColumnUpdate(CogniteUpdate):
             return self._set(value)
 
     class _ObjectSequenceColumnUpdate(CogniteObjectUpdate):
-        def set(self, value: Dict) -> SequenceColumnUpdate:
+        def set(self, value: dict) -> SequenceColumnUpdate:
             return self._set(value)
 
-        def add(self, value: Dict) -> SequenceColumnUpdate:
+        def add(self, value: dict) -> SequenceColumnUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> SequenceColumnUpdate:
+        def remove(self, value: list) -> SequenceColumnUpdate:
             return self._remove(value)
 
     @property
@@ -218,34 +218,34 @@ class SequenceUpdate(CogniteUpdate):
             return self._set(value)
 
     class _ObjectSequenceUpdate(CogniteObjectUpdate):
-        def set(self, value: Dict) -> SequenceUpdate:
+        def set(self, value: dict) -> SequenceUpdate:
             return self._set(value)
 
-        def add(self, value: Dict) -> SequenceUpdate:
+        def add(self, value: dict) -> SequenceUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> SequenceUpdate:
+        def remove(self, value: list) -> SequenceUpdate:
             return self._remove(value)
 
     class _ListSequenceUpdate(CogniteListUpdate):
-        def set(self, value: List) -> SequenceUpdate:
+        def set(self, value: list) -> SequenceUpdate:
             return self._set(value)
 
-        def add(self, value: List) -> SequenceUpdate:
+        def add(self, value: list) -> SequenceUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> SequenceUpdate:
+        def remove(self, value: list) -> SequenceUpdate:
             return self._remove(value)
 
     class _LabelSequenceUpdate(CogniteLabelUpdate):
-        def add(self, value: List) -> SequenceUpdate:
+        def add(self, value: list) -> SequenceUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> SequenceUpdate:
+        def remove(self, value: list) -> SequenceUpdate:
             return self._remove(value)
 
     class _ColumnsSequenceUpdate(CogniteListUpdate):
-        def add(self, value: Union[Dict, List[Dict]]) -> SequenceUpdate:
+        def add(self, value: dict | list[dict]) -> SequenceUpdate:
             single_item = not isinstance(value, list)
             if single_item:
                 value_list = cast(List[str], [value])
@@ -254,7 +254,7 @@ class SequenceUpdate(CogniteUpdate):
 
             return self._add(value_list)
 
-        def remove(self, value: Union[str, List[str]]) -> SequenceUpdate:
+        def remove(self, value: str | list[str]) -> SequenceUpdate:
             single_item = not isinstance(value, list)
             if single_item:
                 value_list = cast(List[str], [value])
@@ -263,7 +263,7 @@ class SequenceUpdate(CogniteUpdate):
 
             return self._remove([{"externalId": id} for id in value_list])
 
-        def modify(self, value: List[SequenceColumnUpdate]) -> SequenceUpdate:
+        def modify(self, value: list[SequenceColumnUpdate]) -> SequenceUpdate:
             return self._modify([col.dump() for col in value])
 
     @property
@@ -313,11 +313,11 @@ class SequenceAggregate(dict):
     """No description.
 
     Args:
-        count (Optional[int]): No description.
+        count (int | None): No description.
         **kwargs (Any): No description.
     """
 
-    def __init__(self, count: Optional[int] = None, **kwargs: Any) -> None:
+    def __init__(self, count: int | None = None, **kwargs: Any) -> None:
         self.count = count
         self.update(kwargs)
 
@@ -332,22 +332,22 @@ class SequenceData(CogniteResource):
     """An object representing a list of rows from a sequence.
 
     Args:
-        id (Optional[int]): Id of the sequence the data belong to
-        external_id (Optional[str]): External id of the sequence the data belong to
-        rows (Optional[SequenceType[dict]]): Combined row numbers and row data object from the API. If you pass this, row_numbers/values are ignored.
-        row_numbers (Optional[SequenceType[int]]): The data row numbers.
-        values (Optional[SequenceType[SequenceType[Union[int, str, float]]]]): The data values, one row at a time.
-        columns (Optional[SequenceType[Dict[str, Any]]]): SequenceType[dict]: The column information, in the format returned by the API.
+        id (int | None): Id of the sequence the data belong to
+        external_id (str | None): External id of the sequence the data belong to
+        rows (SequenceType[dict] | None): Combined row numbers and row data object from the API. If you pass this, row_numbers/values are ignored.
+        row_numbers (SequenceType[int] | None): The data row numbers.
+        values (SequenceType[SequenceType[int | str | float]] | None): The data values, one row at a time.
+        columns (SequenceType[dict[str, Any]] | None): SequenceType[dict]: The column information, in the format returned by the API.
     """
 
     def __init__(
         self,
-        id: Optional[int] = None,
-        external_id: Optional[str] = None,
-        rows: Optional[SequenceType[dict]] = None,
-        row_numbers: Optional[SequenceType[int]] = None,
-        values: Optional[SequenceType[SequenceType[Union[int, str, float]]]] = None,
-        columns: Optional[SequenceType[Dict[str, Any]]] = None,
+        id: int | None = None,
+        external_id: str | None = None,
+        rows: SequenceType[dict] | None = None,
+        row_numbers: SequenceType[int] | None = None,
+        values: SequenceType[SequenceType[int | str | float]] | None = None,
+        columns: SequenceType[dict[str, Any]] | None = None,
     ) -> None:
         if rows:
             row_numbers = [r["rowNumber"] for r in rows]
@@ -373,20 +373,20 @@ class SequenceData(CogniteResource):
             and self.values == other.values
         )
 
-    def __getitem__(self, item: int) -> SequenceType[Union[int, str, float]]:
+    def __getitem__(self, item: int) -> SequenceType[int | str | float]:
         # slow, should be replaced by dict cache if it sees more than incidental use
         if isinstance(item, slice):
             raise TypeError("Slicing SequenceData not supported")
         return self.values[self.row_numbers.index(item)]
 
-    def get_column(self, external_id: str) -> List[Union[int, str, float]]:
+    def get_column(self, external_id: str) -> list[int | str | float]:
         """Get a column by external_id.
 
         Args:
             external_id (str): External id of the column.
 
         Returns:
-            List[Union[int, str, float]]: A list of values for that column in the sequence
+            list[int | str | float]: A list of values for that column in the sequence
         """
         try:
             ix = self.column_external_ids.index(external_id)
@@ -396,19 +396,19 @@ class SequenceData(CogniteResource):
             )
         return [r[ix] for r in self.values]
 
-    def items(self) -> Generator[Tuple[int, List[Union[int, str, float]]], None, None]:
+    def items(self) -> Generator[tuple[int, list[int | str | float]], None, None]:
         """Returns an iterator over tuples of (row number, values)."""
         for row, values in zip(self.row_numbers, self.values):
             yield row, list(values)
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
         """Dump the sequence data into a json serializable Python data type.
 
         Args:
             camel_case (bool): Use camelCase for attribute names. Defaults to False.
 
         Returns:
-            Dict[str, Any]: A dictionary representing the instance.
+            dict[str, Any]: A dictionary representing the instance.
         """
         dumped = {
             "id": self.id,
@@ -452,21 +452,21 @@ class SequenceData(CogniteResource):
         )
 
     @property
-    def column_external_ids(self) -> List[str]:
+    def column_external_ids(self) -> list[str]:
         """Retrieves list of column external ids for the sequence, for use in e.g. data retrieve or insert methods.
 
         Returns:
-            List[str]: List of sequence column external ids.
+            list[str]: List of sequence column external ids.
         """
         assert self.columns is not None
         return [cast(str, c.get("externalId")) for c in self.columns]
 
     @property
-    def column_value_types(self) -> List[str]:
+    def column_value_types(self) -> list[str]:
         """Retrieves list of column value types.
 
         Returns:
-            List[str]: List of column value types
+            list[str]: List of column value types
         """
         assert self.columns is not None
         return [cast(str, c.get("valueType")) for c in self.columns]

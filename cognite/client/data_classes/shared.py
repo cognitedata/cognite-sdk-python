@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Literal
 
 from cognite.client.data_classes._base import CognitePropertyClassUtil, Geometry
 from cognite.client.utils._text import convert_all_keys_to_camel_case
@@ -10,12 +10,12 @@ class TimestampRange(dict):
     """Range between two timestamps.
 
     Args:
-        max (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        min (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        max (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        min (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         **kwargs (Any): No description.
     """
 
-    def __init__(self, max: Optional[int] = None, min: Optional[int] = None, **kwargs: Any) -> None:
+    def __init__(self, max: int | None = None, min: int | None = None, **kwargs: Any) -> None:
         self.max = max
         self.min = min
         self.update(kwargs)
@@ -28,11 +28,11 @@ class AggregateResult(dict):
     """Aggregation group
 
     Args:
-        count (Optional[int]): Size of the aggregation group
+        count (int | None): Size of the aggregation group
         **kwargs (Any): No description.
     """
 
-    def __init__(self, count: Optional[int] = None, **kwargs: Any) -> None:
+    def __init__(self, count: int | None = None, **kwargs: Any) -> None:
         super().__init__(count=count, **kwargs)
         self.count = count
 
@@ -41,12 +41,12 @@ class AggregateUniqueValuesResult(AggregateResult):
     """Aggregation group
 
     Args:
-        count (Optional[int]): Size of the aggregation group
-        value (Optional[Union[int, str]]): A unique value from the requested field
+        count (int | None): Size of the aggregation group
+        value (int | str | None): A unique value from the requested field
         **kwargs (Any): No description.
     """
 
-    def __init__(self, count: Optional[int] = None, value: Optional[Union[int, str]] = None, **kwargs: Any) -> None:
+    def __init__(self, count: int | None = None, value: int | str | None = None, **kwargs: Any) -> None:
         super().__init__(count=count, value=value, **kwargs)
         self.value = value
 
@@ -55,12 +55,12 @@ class AggregateBucketResult(AggregateResult):
     """Aggregation group
 
     Args:
-        count (Optional[int]): Size of the bucket
-        value (Optional[Union[int, str]]): A unique value for the bucket
+        count (int | None): Size of the bucket
+        value (int | str | None): A unique value for the bucket
         **kwargs (Any): No description.
     """
 
-    def __init__(self, count: Optional[int] = None, value: Optional[Union[int, str]] = None, **kwargs: Any) -> None:
+    def __init__(self, count: int | None = None, value: int | str | None = None, **kwargs: Any) -> None:
         super().__init__(count=count, value=value, **kwargs)
         self.value = value
 
@@ -70,7 +70,7 @@ class GeometryFilter(dict):
 
     Args:
         type (Literal["Point", "LineString", "MultiLineString", "Polygon", "MultiPolygon"]): The geometry type.
-        coordinates (List): An array of the coordinates of the geometry. The structure of the elements in this array is determined by the type of geometry.
+        coordinates (list): An array of the coordinates of the geometry. The structure of the elements in this array is determined by the type of geometry.
     """
 
     _VALID_TYPES = frozenset({"Point", "LineString", "MultiLineString", "Polygon", "MultiPolygon"})
@@ -78,7 +78,7 @@ class GeometryFilter(dict):
     def __init__(
         self,
         type: Literal["Point", "LineString", "MultiLineString", "Polygon", "MultiPolygon"],
-        coordinates: List,
+        coordinates: list,
     ) -> None:
         if type not in self._VALID_TYPES:
             raise ValueError(f"type must be one of {self._VALID_TYPES}")
@@ -95,12 +95,12 @@ class GeoLocation(dict):
     Args:
         type (Literal['Feature']): The GeoJSON type. Currently only 'Feature' is supported.
         geometry (Geometry): The geometry. One of 'Point', 'MultiPoint, 'LineString', 'MultiLineString', 'Polygon', or 'MultiPolygon'.
-        properties (Optional[dict]): Optional additional properties in a String key -> Object value format.
+        properties (dict | None): Optional additional properties in a String key -> Object value format.
     """
 
     _VALID_TYPES = frozenset({"Feature"})
 
-    def __init__(self, type: Literal["Feature"], geometry: Geometry, properties: Optional[dict] = None) -> None:
+    def __init__(self, type: Literal["Feature"], geometry: Geometry, properties: dict | None = None) -> None:
         if type not in self._VALID_TYPES:
             raise ValueError("Only the 'Feature' type is supported.")
         self.type = type
@@ -112,14 +112,14 @@ class GeoLocation(dict):
     properties = CognitePropertyClassUtil.declare_property("properties")
 
     @classmethod
-    def _load(cls, raw_geo_location: Dict[str, Any]) -> GeoLocation:
+    def _load(cls, raw_geo_location: dict[str, Any]) -> GeoLocation:
         return cls(
             type=raw_geo_location.get("type", "Feature"),
             geometry=raw_geo_location["geometry"],
             properties=raw_geo_location.get("properties"),
         )
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
         return convert_all_keys_to_camel_case(self) if camel_case else dict(self)
 
 
@@ -139,8 +139,8 @@ class GeoLocationFilter(dict):
     shape = CognitePropertyClassUtil.declare_property("shape")
 
     @classmethod
-    def _load(cls, raw_geo_location_filter: Dict[str, Any]) -> GeoLocationFilter:
+    def _load(cls, raw_geo_location_filter: dict[str, Any]) -> GeoLocationFilter:
         return cls(relation=raw_geo_location_filter["relation"], shape=raw_geo_location_filter["shape"])
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
         return convert_all_keys_to_camel_case(self) if camel_case else dict(self)

@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from enum import auto
-from typing import TYPE_CHECKING, Any, Optional, Type
+from typing import TYPE_CHECKING, Any
 
 from cognite.client.data_classes import Datapoints, filters
 from cognite.client.data_classes._base import (
@@ -46,9 +46,9 @@ class DatapointSubscriptionCore(CogniteResource):
         self,
         external_id: ExternalId,
         partition_count: int,
-        filter: Optional[Filter] = None,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
+        filter: Filter | None = None,
+        name: str | None = None,
+        description: str | None = None,
         **_: Any,
     ) -> None:
         self.external_id = external_id
@@ -59,7 +59,7 @@ class DatapointSubscriptionCore(CogniteResource):
 
     @classmethod
     def _load(
-        cls: Type[T_CogniteResource], resource: dict | str, cognite_client: Optional[CogniteClient] = None
+        cls: type[T_CogniteResource], resource: dict | str, cognite_client: CogniteClient | None = None
     ) -> T_CogniteResource:
         resource = json.loads(resource) if isinstance(resource, str) else resource
         if "filter" in resource:
@@ -85,9 +85,9 @@ class DatapointSubscription(DatapointSubscriptionCore):
         created_time (int): Time when the subscription was created in CDF in milliseconds since Jan 1, 1970.
         last_updated_time (int): Time when the subscription was last updated in CDF in milliseconds since Jan 1, 1970.
         time_series_count (int): The number of time series in the subscription.
-        filter (Optional[Filter]): If present, the subscription is defined by this filter.
-        name (Optional[str]): No description.
-        description (Optional[str]): A summary explanation for the subscription.
+        filter (Filter | None): If present, the subscription is defined by this filter.
+        name (str | None): No description.
+        description (str | None): A summary explanation for the subscription.
         **_ (Any): No description.
     """
 
@@ -98,9 +98,9 @@ class DatapointSubscription(DatapointSubscriptionCore):
         created_time: int,
         last_updated_time: int,
         time_series_count: int,
-        filter: Optional[Filter] = None,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
+        filter: Filter | None = None,
+        name: str | None = None,
+        description: str | None = None,
         **_: Any,
     ) -> None:
         super().__init__(external_id, partition_count, filter, name, description)
@@ -118,20 +118,20 @@ class DataPointSubscriptionCreate(DatapointSubscriptionCore):
     Args:
         external_id (str): Externally provided ID for the subscription. Must be unique.
         partition_count (int): The maximum effective parallelism of this subscription (the number of clients that can read from it concurrently) will be limited to this number, but a higher partition count will cause a higher time overhead. The partition count must be between 1 and 100. CAVEAT: This cannot change after the subscription has been created.
-        time_series_ids (Optional[list[ExternalId]]): List of (external) ids of time series that this subscription will listen to. Not compatible with filter.
-        filter (Optional[Filter]): A filter DSL (Domain Specific Language) to define advanced filter queries. Not compatible with time_series_ids.
-        name (Optional[str]): No description.
-        description (Optional[str]): A summary explanation for the subscription.
+        time_series_ids (list[ExternalId] | None): List of (external) ids of time series that this subscription will listen to. Not compatible with filter.
+        filter (Filter | None): A filter DSL (Domain Specific Language) to define advanced filter queries. Not compatible with time_series_ids.
+        name (str | None): No description.
+        description (str | None): A summary explanation for the subscription.
     """
 
     def __init__(
         self,
         external_id: str,
         partition_count: int,
-        time_series_ids: Optional[list[ExternalId]] = None,
-        filter: Optional[Filter] = None,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
+        time_series_ids: list[ExternalId] | None = None,
+        filter: Filter | None = None,
+        name: str | None = None,
+        description: str | None = None,
     ) -> None:
         if not exactly_one_is_not_none(time_series_ids, filter):
             raise ValueError("Exactly one of time_series_ids and filter must be given")
@@ -203,7 +203,7 @@ class TimeSeriesID(CogniteResource):
         self.external_id = external_id
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: Optional[CogniteClient] = None) -> TimeSeriesID:
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TimeSeriesID:
         resource = json.loads(resource) if isinstance(resource, str) else resource
         return cls(id=resource["id"], external_id=resource.get("externalId"))
 

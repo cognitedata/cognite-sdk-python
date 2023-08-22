@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 from cognite.client.data_classes.data_modeling.ids import DataModelId
 
@@ -11,8 +11,8 @@ class DMLApplyResult:
     space: str
     external_id: str
     version: str
-    name: Optional[str]
-    description: Optional[str]
+    name: str | None
+    description: str | None
     created_time: int
     last_updated_time: int
 

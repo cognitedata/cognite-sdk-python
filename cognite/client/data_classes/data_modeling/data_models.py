@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from operator import attrgetter
-from typing import Any, Generic, List, Literal, Optional, TypeVar, Union, cast
+from typing import Any, Generic, Literal, TypeVar, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -21,8 +21,8 @@ class DataModelCore(DataModelingResource):
         space (str): The workspace for the data model, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the data model.
         version (str): DMS version.
-        description (Optional[str]): Textual description of the data model
-        name (Optional[str]): Human readable name for the data model.
+        description (str | None): Textual description of the data model
+        name (str | None): Human readable name for the data model.
         **_ (Any): No description.
     """
 
@@ -31,8 +31,8 @@ class DataModelCore(DataModelingResource):
         space: str,
         external_id: str,
         version: str,
-        description: Optional[str] = None,
-        name: Optional[str] = None,
+        description: str | None = None,
+        name: str | None = None,
         **_: Any,
     ) -> None:
         self.space = space
@@ -52,9 +52,9 @@ class DataModelApply(DataModelCore):
         space (str): The workspace for the data model, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the data model.
         version (str): DMS version.
-        description (Optional[str]): Textual description of the data model
-        name (Optional[str]): Human readable name for the data model.
-        views (Optional[list[ViewId | ViewApply]]): List of views included in this data model.
+        description (str | None): Textual description of the data model
+        name (str | None): Human readable name for the data model.
+        views (list[ViewId | ViewApply] | None): List of views included in this data model.
     """
 
     def __init__(
@@ -62,9 +62,9 @@ class DataModelApply(DataModelCore):
         space: str,
         external_id: str,
         version: str,
-        description: Optional[str] = None,
-        name: Optional[str] = None,
-        views: Optional[list[ViewId | ViewApply]] = None,
+        description: str | None = None,
+        name: str | None = None,
+        views: list[ViewId | ViewApply] | None = None,
     ) -> None:
         validate_data_modeling_identifier(space, external_id)
         super().__init__(space, external_id, version, description, name)
@@ -107,9 +107,9 @@ class DataModel(DataModelCore, Generic[T_View]):
         is_global (bool): Whether this is a global data model.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        description (Optional[str]): Textual description of the data model
-        name (Optional[str]): Human readable name for the data model.
-        views (Optional[list[T_View]]): List of views included in this data model.
+        description (str | None): Textual description of the data model
+        name (str | None): Human readable name for the data model.
+        views (list[T_View] | None): List of views included in this data model.
         **_ (Any): No description.
     """
 
@@ -121,9 +121,9 @@ class DataModel(DataModelCore, Generic[T_View]):
         is_global: bool,
         last_updated_time: int,
         created_time: int,
-        description: Optional[str] = None,
-        name: Optional[str] = None,
-        views: Optional[list[T_View]] = None,
+        description: str | None = None,
+        name: str | None = None,
+        views: list[T_View] | None = None,
         **_: Any,
     ) -> None:
         super().__init__(space, external_id, version, description, name)
@@ -156,7 +156,7 @@ class DataModel(DataModelCore, Generic[T_View]):
         return output
 
     def as_apply(self) -> DataModelApply:
-        views: List[ViewId | ViewApply] = []
+        views: list[ViewId | ViewApply] = []
         for view in self.views:
             if isinstance(view, View):
                 views.append(view.as_apply())
@@ -231,7 +231,7 @@ class DataModelFilter(CogniteFilter):
     """Represent the filer arguments for the list endpoint.
 
     Args:
-        space (Optional[str]): The space to query
+        space (str | None): The space to query
         inline_views (bool): Whether to expand the referenced views inline in the returned result.
         all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
         include_global (bool): Whether to include global views.
@@ -239,7 +239,7 @@ class DataModelFilter(CogniteFilter):
 
     def __init__(
         self,
-        space: Optional[str] = None,
+        space: str | None = None,
         inline_views: bool = False,
         all_versions: bool = False,
         include_global: bool = False,

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, cast
+from typing import TYPE_CHECKING, cast
 
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList
 
@@ -12,24 +12,24 @@ class TransformationNotification(CogniteResource):
     """The transformation notification resource allows configuring email alerts on events related to a transformation run.
 
     Args:
-        id (Optional[int]): A server-generated ID for the object.
-        transformation_id (Optional[int]): Transformation Id.
-        transformation_external_id (Optional[str]): Transformation external Id.
-        destination (Optional[str]): Email address where notifications should be sent.
-        created_time (Optional[int]): Time when the notification was created.
-        last_updated_time (Optional[int]): Time when the notification was last updated.
-        cognite_client (Optional[CogniteClient]): The client to associate with this object.
+        id (int | None): A server-generated ID for the object.
+        transformation_id (int | None): Transformation Id.
+        transformation_external_id (str | None): Transformation external Id.
+        destination (str | None): Email address where notifications should be sent.
+        created_time (int | None): Time when the notification was created.
+        last_updated_time (int | None): Time when the notification was last updated.
+        cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        id: Optional[int] = None,
-        transformation_id: Optional[int] = None,
-        transformation_external_id: Optional[str] = None,
-        destination: Optional[str] = None,
-        created_time: Optional[int] = None,
-        last_updated_time: Optional[int] = None,
-        cognite_client: Optional[CogniteClient] = None,
+        id: int | None = None,
+        transformation_id: int | None = None,
+        transformation_external_id: str | None = None,
+        destination: str | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+        cognite_client: CogniteClient | None = None,
     ) -> None:
         self.id = id
         self.transformation_id = transformation_id
@@ -51,16 +51,16 @@ class TransformationNotificationFilter(CogniteFilter):
     """TransformationNotificationFilter
 
     Args:
-        transformation_id (Optional[int]): Filter by transformation internal numeric ID.
-        transformation_external_id (Optional[str]): Filter by transformation externalId.
-        destination (Optional[str]): Filter by notification destination.
+        transformation_id (int | None): Filter by transformation internal numeric ID.
+        transformation_external_id (str | None): Filter by transformation externalId.
+        destination (str | None): Filter by notification destination.
     """
 
     def __init__(
         self,
-        transformation_id: Optional[int] = None,
-        transformation_external_id: Optional[str] = None,
-        destination: Optional[str] = None,
+        transformation_id: int | None = None,
+        transformation_external_id: str | None = None,
+        destination: str | None = None,
     ) -> None:
         self.transformation_id = transformation_id
         self.transformation_external_id = transformation_external_id

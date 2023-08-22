@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import asdict, dataclass
-from typing import ClassVar, Optional
+from typing import ClassVar
 
 from cognite.client.data_classes.data_modeling.ids import ContainerId
 from cognite.client.utils._auxiliary import rename_and_exclude_keys
@@ -161,7 +161,7 @@ class SequenceReference(CDFExternalIdReference):
 @dataclass
 class DirectRelation(PropertyType):
     _type = "direct"
-    container: Optional[ContainerId] = None
+    container: ContainerId | None = None
 
     def dump(self, camel_case: bool = False) -> dict:
         output = super().dump(camel_case)

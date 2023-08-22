@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Iterator, Optional, Sequence, cast, overload
+from typing import Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DATA_MODELING_LIST_LIMIT_DEFAULT
@@ -22,7 +22,7 @@ class ViewsAPI(APIClient):
     def __call__(
         self,
         chunk_size: None = None,
-        limit: Optional[int] = None,
+        limit: int | None = None,
         space: str | None = None,
         include_inherited_properties: bool = True,
         all_versions: bool = False,
@@ -34,7 +34,7 @@ class ViewsAPI(APIClient):
     def __call__(
         self,
         chunk_size: int,
-        limit: Optional[int] = None,
+        limit: int | None = None,
         space: str | None = None,
         include_inherited_properties: bool = True,
         all_versions: bool = False,
@@ -44,8 +44,8 @@ class ViewsAPI(APIClient):
 
     def __call__(
         self,
-        chunk_size: Optional[int] = None,
-        limit: Optional[int] = None,
+        chunk_size: int | None = None,
+        limit: int | None = None,
         space: str | None = None,
         include_inherited_properties: bool = True,
         all_versions: bool = False,
@@ -56,8 +56,8 @@ class ViewsAPI(APIClient):
         Fetches views as they are iterated over, so you keep a limited number of views in memory.
 
         Args:
-            chunk_size (Optional[int]): Number of views to return in each chunk. Defaults to yielding one view at a time.
-            limit (Optional[int]): Maximum number of views to return. Defaults to returning all items.
+            chunk_size (int | None): Number of views to return in each chunk. Defaults to yielding one view at a time.
+            limit (int | None): Maximum number of views to return. Defaults to returning all items.
             space (str | None): (str | None): The space to query.
             include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
             all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.

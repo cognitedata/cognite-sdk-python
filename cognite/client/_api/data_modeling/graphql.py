@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import textwrap
-from typing import Any, Optional
+from typing import Any
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.data_modeling import DataModelIdentifier
@@ -25,18 +25,18 @@ class DataModelingGraphQLAPI(APIClient):
         self,
         id: DataModelIdentifier,
         dml: str,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        previous_version: Optional[str] = None,
+        name: str | None = None,
+        description: str | None = None,
+        previous_version: str | None = None,
     ) -> DMLApplyResult:
         """Apply the DML for a given data model.
 
         Args:
             id (DataModelIdentifier): The data model to apply DML to.
             dml (str): The DML to apply.
-            name (Optional[str]): The name of the data model.
-            description (Optional[str]): The description of the data model.
-            previous_version (Optional[str]): The previous version of the data model. Specify to reuse view versions from previous data model version.
+            name (str | None): The name of the data model.
+            description (str | None): The description of the data model.
+            previous_version (str | None): The previous version of the data model. Specify to reuse view versions from previous data model version.
 
         Returns:
             DMLApplyResult: The id of the updated data model.

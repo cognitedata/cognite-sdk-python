@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import reprlib
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Callable, Sequence
 
 if TYPE_CHECKING:
     from cognite.client.data_classes import AssetHierarchy
@@ -16,12 +16,12 @@ class CogniteException(Exception):
 @dataclass
 class GraphQLErrorSpec:
     message: str
-    hint: Optional[str]
-    kind: Optional[str]
-    location: Optional[dict[str, dict[str, int]]]
-    locations: Optional[list[dict[str, int]]]  # yes, the api distinguishes on plurality....
-    path: Optional[list[str]]
-    extensions: Optional[dict[str, str]]
+    hint: str | None
+    kind: str | None
+    location: dict[str, dict[str, int]] | None
+    locations: list[dict[str, int]] | None  # yes, the api distinguishes on plurality....
+    path: list[str] | None
+    extensions: dict[str, str] | None
 
     def __repr__(self) -> str:
         attrs_string = f"message={self.message}"
@@ -31,7 +31,7 @@ class GraphQLErrorSpec:
         return f"GraphQLErrorSpec({attrs_string})"
 
     @classmethod
-    def load(cls, data: Dict[str, Any]) -> GraphQLErrorSpec:
+    def load(cls, data: dict[str, Any]) -> GraphQLErrorSpec:
         return cls(
             message=data["message"],
             hint=data.get("hint"),
@@ -64,10 +64,10 @@ class CogniteReadTimeout(CogniteException):
 class CogniteMultiException(CogniteException):
     def __init__(
         self,
-        successful: Optional[Sequence] = None,
-        failed: Optional[Sequence] = None,
-        unknown: Optional[Sequence] = None,
-        unwrap_fn: Optional[Callable] = None,
+        successful: Sequence | None = None,
+        failed: Sequence | None = None,
+        unknown: Sequence | None = None,
+        unwrap_fn: Callable | None = None,
     ) -> None:
         self.successful = successful or []
         self.failed = failed or []
@@ -98,14 +98,14 @@ class CogniteAPIError(CogniteMultiException):
     Args:
         message (str): The error message produced by the API.
         code (int): The error code produced by the failure.
-        x_request_id (Optional[str]): The request-id generated for the failed request.
-        missing (Optional[Sequence]): (List) List of missing identifiers.
-        duplicated (Optional[Sequence]): (List) List of duplicated identifiers.
-        successful (Optional[Sequence]): List of items which were successfully processed.
-        failed (Optional[Sequence]): List of items which failed.
-        unknown (Optional[Sequence]): List of items which may or may not have been successfully processed.
-        unwrap_fn (Optional[Callable]): (Callable): Function to extract identifier from the Cognite resource.
-        extra (Optional[Dict]): A dict of any additional information.
+        x_request_id (str | None): The request-id generated for the failed request.
+        missing (Sequence | None): (List) List of missing identifiers.
+        duplicated (Sequence | None): (List) List of duplicated identifiers.
+        successful (Sequence | None): List of items which were successfully processed.
+        failed (Sequence | None): List of items which failed.
+        unknown (Sequence | None): List of items which may or may not have been successfully processed.
+        unwrap_fn (Callable | None): (Callable): Function to extract identifier from the Cognite resource.
+        extra (dict | None): A dict of any additional information.
 
     Examples:
         Catching an API-error and handling it based on the error code::
@@ -131,14 +131,14 @@ class CogniteAPIError(CogniteMultiException):
         self,
         message: str,
         code: int,
-        x_request_id: Optional[str] = None,
-        missing: Optional[Sequence] = None,
-        duplicated: Optional[Sequence] = None,
-        successful: Optional[Sequence] = None,
-        failed: Optional[Sequence] = None,
-        unknown: Optional[Sequence] = None,
-        unwrap_fn: Optional[Callable] = None,
-        extra: Optional[Dict] = None,
+        x_request_id: str | None = None,
+        missing: Sequence | None = None,
+        duplicated: Sequence | None = None,
+        successful: Sequence | None = None,
+        failed: Sequence | None = None,
+        unknown: Sequence | None = None,
+        unwrap_fn: Callable | None = None,
+        extra: dict | None = None,
     ) -> None:
         self.message = message
         self.code = code
@@ -167,20 +167,20 @@ class CogniteNotFoundError(CogniteMultiException):
     Raised if one or more of the referenced ids/external ids are not found.
 
     Args:
-        not_found (List): The ids not found.
-        successful (Optional[List]): List of items which were successfully processed.
-        failed (Optional[List]): List of items which failed.
-        unknown (Optional[List]): List of items which may or may not have been successfully processed.
-        unwrap_fn (Optional[Callable]): No description.
+        not_found (list): The ids not found.
+        successful (list | None): List of items which were successfully processed.
+        failed (list | None): List of items which failed.
+        unknown (list | None): List of items which may or may not have been successfully processed.
+        unwrap_fn (Callable | None): No description.
     """
 
     def __init__(
         self,
-        not_found: List,
-        successful: Optional[List] = None,
-        failed: Optional[List] = None,
-        unknown: Optional[List] = None,
-        unwrap_fn: Optional[Callable] = None,
+        not_found: list,
+        successful: list | None = None,
+        failed: list | None = None,
+        unknown: list | None = None,
+        unwrap_fn: Callable | None = None,
     ) -> None:
         self.not_found = not_found
         super().__init__(successful, failed, unknown, unwrap_fn)
@@ -197,20 +197,20 @@ class CogniteDuplicatedError(CogniteMultiException):
     Raised if one or more of the referenced ids/external ids have been duplicated in the request.
 
     Args:
-        duplicated (List): The duplicated ids.
-        successful (Optional[List]): List of items which were successfully processed.
-        failed (Optional[List]): List of items which failed.
-        unknown (Optional[List]): List of items which may or may not have been successfully processed.
-        unwrap_fn (Optional[Callable]): (Callable): Function to extract identifier from the Cognite resource.
+        duplicated (list): The duplicated ids.
+        successful (list | None): List of items which were successfully processed.
+        failed (list | None): List of items which failed.
+        unknown (list | None): List of items which may or may not have been successfully processed.
+        unwrap_fn (Callable | None): (Callable): Function to extract identifier from the Cognite resource.
     """
 
     def __init__(
         self,
-        duplicated: List,
-        successful: Optional[List] = None,
-        failed: Optional[List] = None,
-        unknown: Optional[List] = None,
-        unwrap_fn: Optional[Callable] = None,
+        duplicated: list,
+        successful: list | None = None,
+        failed: list | None = None,
+        unknown: list | None = None,
+        unwrap_fn: Callable | None = None,
     ) -> None:
         self.duplicated = duplicated
         super().__init__(successful, failed, unknown, unwrap_fn)
@@ -228,10 +228,10 @@ class CogniteImportError(CogniteException):
 
     Args:
         module (str): Name of the module which could not be imported
-        message (Optional[str]): The error message to output.
+        message (str | None): The error message to output.
     """
 
-    def __init__(self, module: str, message: Optional[str] = None) -> None:
+    def __init__(self, module: str, message: str | None = None) -> None:
         self.module = module
         self.message = message or f"The functionality you are trying to use requires '{self.module}' to be installed."
 

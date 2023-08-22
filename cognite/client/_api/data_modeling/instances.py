@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Literal, Optional, Sequence, Type, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Iterator, List, Literal, Optional, Sequence, Union, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import INSTANCES_LIST_LIMIT_DEFAULT
@@ -90,7 +90,7 @@ class _NodeOrEdgeList(CogniteResourceList):
 
 class _NodeOrEdgeResourceAdapter:
     @staticmethod
-    def _load(data: str | dict, cognite_client: Optional[CogniteClient] = None) -> Node | Edge:
+    def _load(data: str | dict, cognite_client: CogniteClient | None = None) -> Node | Edge:
         data = json.loads(data) if isinstance(data, str) else data
         if data["instanceType"] == "node":
             return Node.load(data)
@@ -117,7 +117,7 @@ class _NodeOrEdgeApplyResultList(CogniteResourceList):
 
 class _NodeOrEdgeApplyResultAdapter:
     @staticmethod
-    def _load(data: str | dict, cognite_client: Optional[CogniteClient] = None) -> NodeApplyResult | EdgeApplyResult:
+    def _load(data: str | dict, cognite_client: CogniteClient | None = None) -> NodeApplyResult | EdgeApplyResult:
         data = json.loads(data) if isinstance(data, str) else data
         if data["instanceType"] == "node":
             return NodeApplyResult.load(data)
@@ -126,7 +126,7 @@ class _NodeOrEdgeApplyResultAdapter:
 
 class _NodeOrEdgeApplyAdapter:
     @staticmethod
-    def _load(data: str | dict, cognite_client: Optional[CogniteClient] = None) -> NodeApply | EdgeApply:
+    def _load(data: str | dict, cognite_client: CogniteClient | None = None) -> NodeApply | EdgeApply:
         data = json.loads(data) if isinstance(data, str) else data
         if data["instanceType"] == "node":
             return NodeApply.load(data)
@@ -592,7 +592,7 @@ class InstancesAPI(APIClient):
         """
         self._validate_filter(filter)
         if instance_type == "node":
-            list_cls: Union[Type[NodeList], Type[EdgeList]] = NodeList
+            list_cls: type[NodeList] | type[EdgeList] = NodeList
         elif instance_type == "edge":
             list_cls = EdgeList
         else:
@@ -647,9 +647,9 @@ class InstancesAPI(APIClient):
         """
         if instance_type not in ("node", "edge"):
             raise ValueError(f"Invalid instance type: {instance_type}")
-        self._validate_filter(filter)
 
-        body: Dict[str, Any] = {"view": view.dump(camel_case=True), "instanceType": instance_type, "limit": limit}
+        self._validate_filter(filter)
+        body: dict[str, Any] = {"view": view.dump(camel_case=True), "instanceType": instance_type, "limit": limit}
         aggregate_seq: Sequence[Aggregation | dict] = aggregates if isinstance(aggregates, Sequence) else [aggregates]
         body["aggregates"] = [
             agg.dump(camel_case=True) if isinstance(agg, Aggregation) else agg for agg in aggregate_seq
@@ -729,9 +729,9 @@ class InstancesAPI(APIClient):
         """
         if instance_type not in ("node", "edge"):
             raise ValueError(f"Invalid instance type: {instance_type}")
-        self._validate_filter(filter)
 
-        body: Dict[str, Any] = {"view": view.dump(camel_case=True), "instanceType": instance_type, "limit": limit}
+        self._validate_filter(filter)
+        body: dict[str, Any] = {"view": view.dump(camel_case=True), "instanceType": instance_type, "limit": limit}
 
         if isinstance(histograms, Sequence):
             histogram_seq: Sequence[Histogram] = histograms

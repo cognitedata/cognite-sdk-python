@@ -10,7 +10,7 @@ from inspect import getdoc, getsource
 from numbers import Number
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Sequence, cast
 from zipfile import ZipFile
 
 from cognite.client import utils
@@ -61,7 +61,7 @@ def _get_function_internal_id(cognite_client: CogniteClient, identifier: Identif
     raise ValueError(f'Function with external ID "{primitive}" is not found')
 
 
-def _get_function_identifier(function_id: Optional[int], function_external_id: Optional[str]) -> Identifier:
+def _get_function_identifier(function_id: int | None, function_external_id: str | None) -> Identifier:
     identifier = IdentifierSequence.load(function_id, function_external_id, id_name="function")
     if identifier.is_singleton():
         return identifier[0]
@@ -71,7 +71,7 @@ def _get_function_identifier(function_id: Optional[int], function_external_id: O
 class FunctionsAPI(APIClient):
     _RESOURCE_PATH = "/functions"
 
-    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.calls = FunctionCallsAPI(config, api_version, cognite_client)
         self.schedules = FunctionSchedulesAPI(config, api_version, cognite_client)
@@ -81,21 +81,21 @@ class FunctionsAPI(APIClient):
     def create(
         self,
         name: str,
-        folder: Optional[str] = None,
-        file_id: Optional[int] = None,
+        folder: str | None = None,
+        file_id: int | None = None,
         function_path: str = HANDLER_FILE_NAME,
-        function_handle: Optional[Callable] = None,
-        external_id: Optional[str] = None,
-        description: Optional[str] = "",
-        owner: Optional[str] = "",
-        secrets: Optional[Dict] = None,
-        env_vars: Optional[Dict] = None,
-        cpu: Optional[Number] = None,
-        memory: Optional[Number] = None,
-        runtime: Optional[str] = None,
-        metadata: Optional[Dict] = None,
-        index_url: Optional[str] = None,
-        extra_index_urls: Optional[List[str]] = None,
+        function_handle: Callable | None = None,
+        external_id: str | None = None,
+        description: str | None = "",
+        owner: str | None = "",
+        secrets: dict | None = None,
+        env_vars: dict | None = None,
+        cpu: Number | None = None,
+        memory: Number | None = None,
+        runtime: str | None = None,
+        metadata: dict | None = None,
+        index_url: str | None = None,
+        extra_index_urls: list[str] | None = None,
     ) -> Function:
         '''`When creating a function, <https://developer.cognite.com/api#tag/Functions/operation/postFunctions>`_
         the source code can be specified in one of three ways:
@@ -111,21 +111,21 @@ class FunctionsAPI(APIClient):
 
         Args:
             name (str): The name of the function.
-            folder (Optional[str]): Path to the folder where the function source code is located.
-            file_id (Optional[int]): File ID of the code uploaded to the Files API.
+            folder (str | None): Path to the folder where the function source code is located.
+            file_id (int | None): File ID of the code uploaded to the Files API.
             function_path (str): Relative path from the root folder to the file containing the `handle` function. Defaults to `handler.py`. Must be on POSIX path format.
-            function_handle (Optional[Callable]): Reference to a function object, which must be named `handle`.
-            external_id (Optional[str]): External id of the function.
-            description (Optional[str]): Description of the function.
-            owner (Optional[str]): Owner of this function. Typically used to know who created it.
-            secrets (Optional[Dict]): Additional secrets as key/value pairs. These can e.g. password to simulators or other data sources. Keys must be lowercase characters, numbers or dashes (-) and at most 15 characters. You can create at most 30 secrets, all keys must be unique.
-            env_vars (Optional[Dict]): Environment variables as key/value pairs. Keys can contain only letters, numbers or the underscore character. You can create at most 100 environment variables.
-            cpu (Optional[Number]): Number of CPU cores per function. Allowed values are in the range [0.1, 0.6], and None translates to the API default which is 0.25 in GCP. The argument is unavailable in Azure.
-            memory (Optional[Number]): Memory per function measured in GB. Allowed values are in the range [0.1, 2.5], and None translates to the API default which is 1 GB in GCP. The argument is unavailable in Azure.
-            runtime (Optional[str]): The function runtime. Valid values are ["py37", "py38", "py39", "py310", `None`], and `None` translates to the API default which will change over time. The runtime "py38" resolves to the latest version of the Python 3.8 series.
-            metadata (Optional[Dict]): Metadata for the function as key/value pairs. Key & values can be at most 32, 512 characters long respectively. You can have at the most 16 key-value pairs, with a maximum size of 512 bytes.
-            index_url (Optional[str]): Index URL for Python Package Manager to use. Be aware of the intrinsic security implications of using the `index_url` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
-            extra_index_urls (Optional[List[str]]): Extra Index URLs for Python Package Manager to use. Be aware of the intrinsic security implications of using the `extra_index_urls` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
+            function_handle (Callable | None): Reference to a function object, which must be named `handle`.
+            external_id (str | None): External id of the function.
+            description (str | None): Description of the function.
+            owner (str | None): Owner of this function. Typically used to know who created it.
+            secrets (dict | None): Additional secrets as key/value pairs. These can e.g. password to simulators or other data sources. Keys must be lowercase characters, numbers or dashes (-) and at most 15 characters. You can create at most 30 secrets, all keys must be unique.
+            env_vars (dict | None): Environment variables as key/value pairs. Keys can contain only letters, numbers or the underscore character. You can create at most 100 environment variables.
+            cpu (Number | None): Number of CPU cores per function. Allowed values are in the range [0.1, 0.6], and None translates to the API default which is 0.25 in GCP. The argument is unavailable in Azure.
+            memory (Number | None): Memory per function measured in GB. Allowed values are in the range [0.1, 2.5], and None translates to the API default which is 1 GB in GCP. The argument is unavailable in Azure.
+            runtime (str | None): The function runtime. Valid values are ["py37", "py38", "py39", "py310", `None`], and `None` translates to the API default which will change over time. The runtime "py38" resolves to the latest version of the Python 3.8 series.
+            metadata (dict | None): Metadata for the function as key/value pairs. Key & values can be at most 32, 512 characters long respectively. You can have at the most 16 key-value pairs, with a maximum size of 512 bytes.
+            index_url (str | None): Index URL for Python Package Manager to use. Be aware of the intrinsic security implications of using the `index_url` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
+            extra_index_urls (list[str] | None): Extra Index URLs for Python Package Manager to use. Be aware of the intrinsic security implications of using the `extra_index_urls` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
 
         Returns:
             Function: The created function.
@@ -191,7 +191,7 @@ class FunctionsAPI(APIClient):
             raise OSError("Could not retrieve file from files API")
 
         url = "/functions"
-        function: Dict[str, Any] = {
+        function: dict[str, Any] = {
             "name": name,
             "description": description,
             "owner": owner,
@@ -219,14 +219,12 @@ class FunctionsAPI(APIClient):
         res = self._post(url, json=body)
         return Function._load(res.json()["items"][0], cognite_client=self._cognite_client)
 
-    def delete(
-        self, id: Optional[Union[int, Sequence[int]]] = None, external_id: Optional[Union[str, Sequence[str]]] = None
-    ) -> None:
+    def delete(self, id: int | Sequence[int] | None = None, external_id: str | Sequence[str] | None = None) -> None:
         """`Delete one or more functions. <https://developer.cognite.com/api#tag/Functions/operation/deleteFunctions>`_
 
         Args:
-            id (Optional[Union[int, Sequence[int]]]): Id or list of ids.
-            external_id (Optional[Union[str, Sequence[str]]]): External ID or list of external ids.
+            id (int | Sequence[int] | None): Id or list of ids.
+            external_id (str | Sequence[str] | None): External ID or list of external ids.
 
         Example:
 
@@ -240,24 +238,24 @@ class FunctionsAPI(APIClient):
 
     def list(
         self,
-        name: Optional[str] = None,
-        owner: Optional[str] = None,
-        file_id: Optional[int] = None,
-        status: Optional[str] = None,
-        external_id_prefix: Optional[str] = None,
-        created_time: Optional[Union[Dict[str, int], TimestampRange]] = None,
-        limit: Optional[int] = LIST_LIMIT_DEFAULT,
+        name: str | None = None,
+        owner: str | None = None,
+        file_id: int | None = None,
+        status: str | None = None,
+        external_id_prefix: str | None = None,
+        created_time: dict[str, int] | TimestampRange | None = None,
+        limit: int | None = LIST_LIMIT_DEFAULT,
     ) -> FunctionList:
         """`List all functions. <https://developer.cognite.com/api#tag/Functions/operation/listFunctions>`_
 
         Args:
-            name (Optional[str]): The name of the function.
-            owner (Optional[str]): Owner of the function.
-            file_id (Optional[int]): The file ID of the zip-file used to create the function.
-            status (Optional[str]): Status of the function. Possible values: ["Queued", "Deploying", "Ready", "Failed"].
-            external_id_prefix (Optional[str]): External ID prefix to filter on.
-            created_time (Optional[Union[Dict[str, int], TimestampRange]]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            limit (Optional[int]): Maximum number of functions to return. Pass in -1, float('inf') or None to list all.
+            name (str | None): The name of the function.
+            owner (str | None): Owner of the function.
+            file_id (int | None): The file ID of the zip-file used to create the function.
+            status (str | None): Status of the function. Possible values: ["Queued", "Deploying", "Ready", "Failed"].
+            external_id_prefix (str | None): External ID prefix to filter on.
+            created_time (dict[str, int] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            limit (int | None): Maximum number of functions to return. Pass in -1, float('inf') or None to list all.
 
         Returns:
             FunctionList: List of functions
@@ -285,17 +283,15 @@ class FunctionsAPI(APIClient):
 
         return FunctionList._load(res.json()["items"], cognite_client=self._cognite_client)
 
-    def retrieve(
-        self, id: Optional[int] = None, external_id: Optional[str] = None
-    ) -> Union[FunctionList, Function, None]:
+    def retrieve(self, id: int | None = None, external_id: str | None = None) -> FunctionList | Function | None:
         """`Retrieve a single function by id. <https://developer.cognite.com/api#tag/Functions/operation/byIdsFunctions>`_
 
         Args:
-            id (Optional[int]): ID
-            external_id (Optional[str]): External ID
+            id (int | None): ID
+            external_id (str | None): External ID
 
         Returns:
-            Union[FunctionList, Function, None]: Requested function or None if it does not exist.
+            FunctionList | Function | None: Requested function or None if it does not exist.
 
         Examples:
 
@@ -315,16 +311,16 @@ class FunctionsAPI(APIClient):
         return self._retrieve_multiple(identifiers=identifiers, resource_cls=Function, list_cls=FunctionList)
 
     def retrieve_multiple(
-        self, ids: Optional[Sequence[int]] = None, external_ids: Optional[Sequence[str]] = None
-    ) -> Union[FunctionList, Function, None]:
+        self, ids: Sequence[int] | None = None, external_ids: Sequence[str] | None = None
+    ) -> FunctionList | Function | None:
         """`Retrieve multiple functions by id. <https://developer.cognite.com/api#tag/Functions/operation/byIdsFunctions>`_
 
         Args:
-            ids (Optional[Sequence[int]]): IDs
-            external_ids (Optional[Sequence[str]]): External IDs
+            ids (Sequence[int] | None): IDs
+            external_ids (Sequence[str] | None): External IDs
 
         Returns:
-            Union[FunctionList, Function, None]: The requested functions.
+            FunctionList | Function | None: The requested functions.
 
         Examples:
 
@@ -350,17 +346,17 @@ class FunctionsAPI(APIClient):
 
     def call(
         self,
-        id: Optional[int] = None,
-        external_id: Optional[str] = None,
-        data: Optional[Dict] = None,
+        id: int | None = None,
+        external_id: str | None = None,
+        data: dict | None = None,
         wait: bool = True,
     ) -> FunctionCall:
         """`Call a function by its ID or external ID. <https://developer.cognite.com/api#tag/Functions/operation/postFunctionsCall>`_.
 
         Args:
-            id (Optional[int]): ID
-            external_id (Optional[str]): External ID
-            data (Optional[Dict]): Input data to the function (JSON serializable). This data is passed deserialized into the function through one of the arguments called data. **WARNING:** Secrets or other confidential information should not be passed via this argument. There is a dedicated `secrets` argument in FunctionsAPI.create() for this purpose.'
+            id (int | None): ID
+            external_id (str | None): External ID
+            data (dict | None): Input data to the function (JSON serializable). This data is passed deserialized into the function through one of the arguments called data. **WARNING:** Secrets or other confidential information should not be passed via this argument. There is a dedicated `secrets` argument in FunctionsAPI.create() for this purpose.'
             wait (bool): Wait until the function call is finished. Defaults to True.
 
         Returns:
@@ -414,7 +410,7 @@ class FunctionsAPI(APIClient):
         res = self._get("/functions/limits")
         return FunctionsLimits._load(res.json())
 
-    def _zip_and_upload_folder(self, folder: str, name: str, external_id: Optional[str] = None) -> int:
+    def _zip_and_upload_folder(self, folder: str, name: str, external_id: str | None = None) -> int:
         name = _sanitize_filename(name)
         current_dir = os.getcwd()
         os.chdir(folder)
@@ -436,7 +432,7 @@ class FunctionsAPI(APIClient):
         finally:
             os.chdir(current_dir)
 
-    def _zip_and_upload_handle(self, function_handle: Callable, name: str, external_id: Optional[str] = None) -> int:
+    def _zip_and_upload_handle(self, function_handle: Callable, name: str, external_id: str | None = None) -> int:
         name = _sanitize_filename(name)
         docstr_requirements = _get_fn_docstring_requirements(function_handle)
 
@@ -465,7 +461,7 @@ class FunctionsAPI(APIClient):
 
     @staticmethod
     def _assert_exactly_one_of_folder_or_file_id_or_function_handle(
-        folder: Optional[str], file_id: Optional[int], function_handle: Optional[Callable[..., Any]]
+        folder: str | None, file_id: int | None, function_handle: Callable[..., Any] | None
     ) -> None:
         source_code_options = {"folder": folder, "file_id": file_id, "function_handle": function_handle}
         given_source_code_options = [key for key in source_code_options.keys() if source_code_options[key]]
@@ -515,8 +511,8 @@ class FunctionsAPI(APIClient):
 
 def _create_session_and_return_nonce(
     client: CogniteClient,
-    client_credentials: Union[Dict, ClientCredentials, None] = None,
-) -> Optional[str]:
+    client_credentials: dict | ClientCredentials | None = None,
+) -> str | None:
     if client_credentials is None:
         if isinstance(client._config.credentials, OAuthClientCertificate):
             raise CogniteAuthError("Client certificate credentials is not supported with the Functions API")
@@ -565,16 +561,16 @@ def _validate_function_handle(function_handle: Callable[..., Any]) -> None:
         )
 
 
-def _extract_requirements_from_file(file_name: str) -> List[str]:
+def _extract_requirements_from_file(file_name: str) -> list[str]:
     """Extracts a list of library requirements from a file. Comments, lines starting with '#', are ignored.
 
     Args:
         file_name (str): name of the file to parse
 
     Returns:
-        List[str]: returns a list of library records
+        list[str]: returns a list of library records
     """
-    requirements: List[str] = []
+    requirements: list[str] = []
     with open(file_name, "r+") as f:
         for line in f:
             line = line.strip()
@@ -583,14 +579,14 @@ def _extract_requirements_from_file(file_name: str) -> List[str]:
     return requirements
 
 
-def _extract_requirements_from_doc_string(docstr: str) -> Optional[List[str]]:
+def _extract_requirements_from_doc_string(docstr: str) -> list[str] | None:
     """Extracts a list of library requirements defined between [requirements] and [/requirements] in a functions docstring.
 
     Args:
         docstr (str): the docstring to extract requirements from
 
     Returns:
-        Optional[List[str]]: returns a list of library records if requirements are defined in the docstring, else None
+        list[str] | None: returns a list of library records if requirements are defined in the docstring, else None
     """
     substr_start, substr_end = None, None
 
@@ -608,19 +604,19 @@ def _extract_requirements_from_doc_string(docstr: str) -> Optional[List[str]]:
     return None
 
 
-def _validate_and_parse_requirements(requirements: List[str]) -> List[str]:
+def _validate_and_parse_requirements(requirements: list[str]) -> list[str]:
     """Validates the requirement specifications
 
     Args:
-        requirements (List[str]): list of requirement specifications
+        requirements (list[str]): list of requirement specifications
     Raises:
         ValueError: if validation of requirements fails
     Returns:
-        List[str]: The parsed requirements
+        list[str]: The parsed requirements
     """
     constructors = cast(Any, utils._auxiliary.local_import("pip._internal.req.constructors"))
     install_req_from_line = constructors.install_req_from_line
-    parsed_reqs: List[str] = []
+    parsed_reqs: list[str] = []
     for req in requirements:
         try:
             parsed = install_req_from_line(req)
@@ -631,14 +627,14 @@ def _validate_and_parse_requirements(requirements: List[str]) -> List[str]:
     return parsed_reqs
 
 
-def _get_fn_docstring_requirements(fn: Callable) -> List[str]:
+def _get_fn_docstring_requirements(fn: Callable) -> list[str]:
     """Read requirements from a function docstring, validate them and return.
 
     Args:
         fn (Callable): the function to read requirements from
 
     Returns:
-        List[str]: A (possibly empty) list of requirements.
+        list[str]: A (possibly empty) list of requirements.
     """
     docstr = getdoc(fn)
 
@@ -663,24 +659,24 @@ class FunctionCallsAPI(APIClient):
 
     def list(
         self,
-        function_id: Optional[int] = None,
-        function_external_id: Optional[str] = None,
-        status: Optional[str] = None,
-        schedule_id: Optional[int] = None,
-        start_time: Optional[Dict[str, int]] = None,
-        end_time: Optional[Dict[str, int]] = None,
-        limit: Optional[int] = LIST_LIMIT_DEFAULT,
+        function_id: int | None = None,
+        function_external_id: str | None = None,
+        status: str | None = None,
+        schedule_id: int | None = None,
+        start_time: dict[str, int] | None = None,
+        end_time: dict[str, int] | None = None,
+        limit: int | None = LIST_LIMIT_DEFAULT,
     ) -> FunctionCallList:
         """`List all calls associated with a specific function id. <https://developer.cognite.com/api#tag/Function-calls/operation/listFunctionCalls>`_ Either function_id or function_external_id must be specified.
 
         Args:
-            function_id (Optional[int]): ID of the function on which the calls were made.
-            function_external_id (Optional[str]): External ID of the function on which the calls were made.
-            status (Optional[str]): Status of the call. Possible values ["Running", "Failed", "Completed", "Timeout"].
-            schedule_id (Optional[int]): Schedule id from which the call belongs (if any).
-            start_time (Optional[Dict[str, int]]): Start time of the call. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            end_time (Optional[Dict[str, int]]): End time of the call. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            limit (Optional[int]): Maximum number of function calls to list. Pass in -1, float('inf') or None to list all Function Calls.
+            function_id (int | None): ID of the function on which the calls were made.
+            function_external_id (str | None): External ID of the function on which the calls were made.
+            status (str | None): Status of the call. Possible values ["Running", "Failed", "Completed", "Timeout"].
+            schedule_id (int | None): Schedule id from which the call belongs (if any).
+            start_time (dict[str, int] | None): Start time of the call. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            end_time (dict[str, int] | None): End time of the call. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            limit (int | None): Maximum number of function calls to list. Pass in -1, float('inf') or None to list all Function Calls.
 
         Returns:
             FunctionCallList: List of function calls
@@ -717,17 +713,17 @@ class FunctionCallsAPI(APIClient):
         )
 
     def retrieve(
-        self, call_id: int, function_id: Optional[int] = None, function_external_id: Optional[str] = None
-    ) -> Union[FunctionCallList, FunctionCall, None]:
+        self, call_id: int, function_id: int | None = None, function_external_id: str | None = None
+    ) -> FunctionCallList | FunctionCall | None:
         """`Retrieve a single function call by id. <https://developer.cognite.com/api#tag/Function-calls/operation/byIdsFunctionCalls>`_
 
         Args:
             call_id (int): ID of the call.
-            function_id (Optional[int]): ID of the function on which the call was made.
-            function_external_id (Optional[str]): External ID of the function on which the call was made.
+            function_id (int | None): ID of the function on which the call was made.
+            function_external_id (str | None): External ID of the function on which the call was made.
 
         Returns:
-            Union[FunctionCallList, FunctionCall, None]: Requested function call.
+            FunctionCallList | FunctionCall | None: Requested function call.
 
         Examples:
 
@@ -759,17 +755,17 @@ class FunctionCallsAPI(APIClient):
         )
 
     def get_response(
-        self, call_id: int, function_id: Optional[int] = None, function_external_id: Optional[str] = None
-    ) -> Optional[Dict]:
+        self, call_id: int, function_id: int | None = None, function_external_id: str | None = None
+    ) -> dict | None:
         """`Retrieve the response from a function call. <https://developer.cognite.com/api#tag/Function-calls/operation/getFunctionCallResponse>`_
 
         Args:
             call_id (int): ID of the call.
-            function_id (Optional[int]): ID of the function on which the call was made.
-            function_external_id (Optional[str]): External ID of the function on which the call was made.
+            function_id (int | None): ID of the function on which the call was made.
+            function_external_id (str | None): External ID of the function on which the call was made.
 
         Returns:
-            Optional[Dict]: Response from the function call.
+            dict | None: Response from the function call.
 
         Examples:
 
@@ -794,14 +790,14 @@ class FunctionCallsAPI(APIClient):
         return self._get(resource_path).json().get("response")
 
     def get_logs(
-        self, call_id: int, function_id: Optional[int] = None, function_external_id: Optional[str] = None
+        self, call_id: int, function_id: int | None = None, function_external_id: str | None = None
     ) -> FunctionCallLog:
         """`Retrieve logs for function call. <https://developer.cognite.com/api#tag/Function-calls/operation/getFunctionCalls>`_
 
         Args:
             call_id (int): ID of the call.
-            function_id (Optional[int]): ID of the function on which the call was made.
-            function_external_id (Optional[str]): External ID of the function on which the call was made.
+            function_id (int | None): ID of the function on which the call was made.
+            function_external_id (str | None): External ID of the function on which the call was made.
 
         Returns:
             FunctionCallLog: Log for the function call.
@@ -832,18 +828,18 @@ class FunctionCallsAPI(APIClient):
 class FunctionSchedulesAPI(APIClient):
     _RESOURCE_PATH = "/functions/schedules"
 
-    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._LIST_LIMIT_CEILING = 10_000
 
-    def retrieve(self, id: int) -> Union[FunctionSchedule, FunctionSchedulesList, None]:
+    def retrieve(self, id: int) -> FunctionSchedule | FunctionSchedulesList | None:
         """`Retrieve a single function schedule by id. <https://developer.cognite.com/api#tag/Function-schedules/operation/byIdsFunctionSchedules>`_
 
         Args:
             id (int): ID
 
         Returns:
-            Union[FunctionSchedule, FunctionSchedulesList, None]: Requested function schedule.
+            FunctionSchedule | FunctionSchedulesList | None: Requested function schedule.
 
         Examples:
 
@@ -860,22 +856,22 @@ class FunctionSchedulesAPI(APIClient):
 
     def list(
         self,
-        name: Optional[str] = None,
-        function_id: Optional[int] = None,
-        function_external_id: Optional[str] = None,
-        created_time: Optional[Union[Dict[str, int], TimestampRange]] = None,
-        cron_expression: Optional[str] = None,
-        limit: Optional[int] = LIST_LIMIT_DEFAULT,
+        name: str | None = None,
+        function_id: int | None = None,
+        function_external_id: str | None = None,
+        created_time: dict[str, int] | TimestampRange | None = None,
+        cron_expression: str | None = None,
+        limit: int | None = LIST_LIMIT_DEFAULT,
     ) -> FunctionSchedulesList:
         """`List all schedules associated with a specific project. <https://developer.cognite.com/api#tag/Function-schedules/operation/listFunctionSchedules>`_
 
         Args:
-            name (Optional[str]): Name of the function schedule.
-            function_id (Optional[int]): ID of the function the schedules are linked to.
-            function_external_id (Optional[str]): External ID of the function the schedules are linked to.
-            created_time (Optional[Union[Dict[str, int], TimestampRange]]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            cron_expression (Optional[str]): Cron expression.
-            limit (Optional[int]): Maximum number of schedules to list. Pass in -1, float('inf') or None to list all.
+            name (str | None): Name of the function schedule.
+            function_id (int | None): ID of the function the schedules are linked to.
+            function_external_id (str | None): External ID of the function the schedules are linked to.
+            created_time (dict[str, int] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            cron_expression (str | None): Cron expression.
+            limit (int | None): Maximum number of schedules to list. Pass in -1, float('inf') or None to list all.
 
         Returns:
             FunctionSchedulesList: List of function schedules
@@ -921,22 +917,22 @@ class FunctionSchedulesAPI(APIClient):
         self,
         name: str,
         cron_expression: str,
-        function_id: Optional[int] = None,
-        function_external_id: Optional[str] = None,
-        client_credentials: Union[Dict, ClientCredentials, None] = None,
+        function_id: int | None = None,
+        function_external_id: str | None = None,
+        client_credentials: dict | ClientCredentials | None = None,
         description: str = "",
-        data: Optional[Dict] = None,
+        data: dict | None = None,
     ) -> FunctionSchedule:
         """`Create a schedule associated with a specific project. <https://developer.cognite.com/api#tag/Function-schedules/operation/postFunctionSchedules>`_
 
         Args:
             name (str): Name of the schedule.
             cron_expression (str): Cron expression.
-            function_id (Optional[int]): Id of the function. This is required if the schedule is created with client_credentials.
-            function_external_id (Optional[str]): External id of the function. **NOTE**: This is deprecated and will be removed in a future major version.
-            client_credentials (Union[Dict, ClientCredentials, None]): (optional, ClientCredentials, Dict): Instance of ClientCredentials or a dictionary containing client credentials: client_id client_secret
+            function_id (int | None): Id of the function. This is required if the schedule is created with client_credentials.
+            function_external_id (str | None): External id of the function. **NOTE**: This is deprecated and will be removed in a future major version.
+            client_credentials (dict | ClientCredentials | None): (optional, ClientCredentials, Dict): Instance of ClientCredentials or a dictionary containing client credentials: client_id client_secret
             description (str): Description of the schedule.
-            data (Optional[Dict]): Data to be passed to the scheduled run.
+            data (dict | None): Data to be passed to the scheduled run.
 
         Returns:
             FunctionSchedule: Created function schedule.
@@ -977,7 +973,7 @@ class FunctionSchedulesAPI(APIClient):
         """
         _get_function_identifier(function_id, function_external_id)
         nonce = _create_session_and_return_nonce(self._cognite_client, client_credentials)
-        body: Dict[str, List[Dict[str, Union[str, int, None, Dict]]]] = {
+        body: dict[str, list[dict[str, str | int | None | dict]]] = {
             "items": [
                 {
                     "name": name,
@@ -1015,14 +1011,13 @@ class FunctionSchedulesAPI(APIClient):
         url = f"{self._RESOURCE_PATH}/delete"
         self._post(url, json=body)
 
-    def get_input_data(self, id: int) -> Optional[Dict]:
+    def get_input_data(self, id: int) -> dict | None:
         """`Retrieve the input data to the associated function. <https://developer.cognite.com/api#tag/Function-schedules/operation/getFunctionScheduleInputData>`_
         Args:
             id (int): Id of the schedule
 
         Returns:
-            Optional[Dict]: Input data to the associated function or None if not set. This data is passed
-            deserialized into the function through the data argument.
+            dict | None: Input data to the associated function or None if not set. This data is passed deserialized into the function through the data argument.
 
         Examples:
 

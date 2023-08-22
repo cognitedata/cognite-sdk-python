@@ -3,7 +3,6 @@ from __future__ import annotations
 import getpass
 import pprint
 from contextlib import suppress
-from typing import Dict, Optional, Set
 
 from cognite.client._version import __api_subversion__
 from cognite.client.credentials import CredentialProvider
@@ -30,16 +29,16 @@ class GlobalConfig:
     """
 
     def __init__(self) -> None:
-        self.default_client_config: Optional[ClientConfig] = None
+        self.default_client_config: ClientConfig | None = None
         self.disable_gzip: bool = False
         self.disable_pypi_version_check: bool = False
-        self.status_forcelist: Set[int] = {429, 502, 503, 504}
+        self.status_forcelist: set[int] = {429, 502, 503, 504}
         self.max_retries: int = 10
         self.max_retries_connect: int = 3
         self.max_retry_backoff: int = 30
         self.max_connection_pool_size: int = 50
         self.disable_ssl: bool = False
-        self.proxies: Optional[Dict[str, str]] = {}
+        self.proxies: dict[str, str] | None = {}
 
 
 global_config = GlobalConfig()
@@ -52,12 +51,12 @@ class ClientConfig:
         client_name (str): A user-defined name for the client. Used to identify number of unique applications/scripts running on top of CDF.
         project (str): CDF Project name.
         credentials (CredentialProvider): Credentials. e.g. Token, ClientCredentials.
-        api_subversion (Optional[str]): API subversion
-        base_url (Optional[str]): Base url to send requests to. Defaults to "https://api.cognitedata.com"
-        max_workers (Optional[int]): Max number of workers to spawn when parallelizing data fetching. Defaults to 10.
-        headers (Optional[Dict[str, str]]): Additional headers to add to all requests.
-        timeout (Optional[int]): Timeout on requests sent to the api. Defaults to 30 seconds.
-        file_transfer_timeout (Optional[int]): Timeout on file upload/download requests. Defaults to 600 seconds.
+        api_subversion (str | None): API subversion
+        base_url (str | None): Base url to send requests to. Defaults to "https://api.cognitedata.com"
+        max_workers (int | None): Max number of workers to spawn when parallelizing data fetching. Defaults to 10.
+        headers (dict[str, str] | None): Additional headers to add to all requests.
+        timeout (int | None): Timeout on requests sent to the api. Defaults to 30 seconds.
+        file_transfer_timeout (int | None): Timeout on file upload/download requests. Defaults to 600 seconds.
         debug (bool): Configures logger to log extra request details to stderr.
     """
 
@@ -66,12 +65,12 @@ class ClientConfig:
         client_name: str,
         project: str,
         credentials: CredentialProvider,
-        api_subversion: Optional[str] = None,
-        base_url: Optional[str] = None,
-        max_workers: Optional[int] = None,
-        headers: Optional[Dict[str, str]] = None,
-        timeout: Optional[int] = None,
-        file_transfer_timeout: Optional[int] = None,
+        api_subversion: str | None = None,
+        base_url: str | None = None,
+        max_workers: int | None = None,
+        headers: dict[str, str] | None = None,
+        timeout: int | None = None,
+        file_transfer_timeout: int | None = None,
         debug: bool = False,
     ) -> None:
         self.client_name = client_name
@@ -109,7 +108,7 @@ class ClientConfig:
 
     @classmethod
     def default(
-        cls, project: str, cdf_cluster: str, credentials: CredentialProvider, client_name: Optional[str] = None
+        cls, project: str, cdf_cluster: str, credentials: CredentialProvider, client_name: str | None = None
     ) -> ClientConfig:
         """Create a default client config object.
 
@@ -117,7 +116,7 @@ class ClientConfig:
             project (str): CDF Project name.
             cdf_cluster (str): The CDF cluster where the CDF project is located.
             credentials (CredentialProvider): Credentials. e.g. Token, ClientCredentials.
-            client_name (Optional[str]): A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
+            client_name (str | None): A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
 
         Returns:
             ClientConfig: A default client config object.

@@ -4,7 +4,7 @@ import json
 from abc import ABC, abstractmethod
 from collections import UserDict
 from dataclasses import dataclass, field
-from typing import Any, Dict, Literal, Mapping, Optional, Type, cast
+from typing import Any, Literal, Mapping, cast
 
 from cognite.client.data_classes.data_modeling.ids import ViewId
 from cognite.client.data_classes.data_modeling.instances import (
@@ -43,10 +43,10 @@ class SourceSelector:
 class Select:
     sources: list[SourceSelector] = field(default_factory=list)
     sort: list[InstanceSort] = field(default_factory=list)
-    limit: Optional[int] = None
+    limit: int | None = None
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        output: Dict[str, Any] = {}
+        output: dict[str, Any] = {}
         if self.sources:
             output["sources"] = [
                 {"source": source.source.dump(camel_case), "properties": source.properties} for source in self.sources
@@ -73,16 +73,16 @@ class Query:
     Args:
         with\_ (dict[str, ResultSetExpression]): No description.
         select (dict[str, Select]): A dictionary of select expressions to use in the query. The keys must match the keys in the with\_ dictionary. The select expressions define which properties to include in the result set.
-        parameters (Optional[dict[str, PropertyValue]]): Values in filters can be parameterised. Parameters are provided as part of the query object, and referenced in the filter itself.
-        cursors (Optional[Mapping[str, Optional[str]]]): A dictionary of cursors to use in the query. These are for pagination purposes, for example, in the sync endpoint.
+        parameters (dict[str, PropertyValue] | None): Values in filters can be parameterised. Parameters are provided as part of the query object, and referenced in the filter itself.
+        cursors (Mapping[str, str | None] | None): A dictionary of cursors to use in the query. These are for pagination purposes, for example, in the sync endpoint.
     """
 
     def __init__(
         self,
         with_: dict[str, ResultSetExpression],
         select: dict[str, Select],
-        parameters: Optional[dict[str, PropertyValue]] = None,
-        cursors: Optional[Mapping[str, Optional[str]]] = None,
+        parameters: dict[str, PropertyValue] | None = None,
+        cursors: Mapping[str, str | None] | None = None,
     ) -> None:
         with_keys = set(with_)
         if not_matching := set(select) - with_keys:
@@ -95,11 +95,11 @@ class Query:
         self.parameters = parameters
         self.cursors = cursors or {k: None for k in select}
 
-    def instance_type_by_result_expression(self) -> dict[str, Type[NodeList] | Type[EdgeList]]:
+    def instance_type_by_result_expression(self) -> dict[str, type[NodeList] | type[EdgeList]]:
         return {k: NodeList if isinstance(v, NodeResultSetExpression) else EdgeList for k, v in self.with_.items()}
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        output: Dict[str, Any] = {
+        output: dict[str, Any] = {
             "with": {k: v.dump(camel_case) for k, v in self.with_.items()},
             "select": {k: v.dump(camel_case) for k, v in self.select.items()},
         }
@@ -121,7 +121,7 @@ class Query:
         if not (with_ := data.get("with")):
             raise ValueError("The query must contain a with key")
 
-        loaded: Dict[str, Any] = {"with_": {k: ResultSetExpression.load(v) for k, v in with_.items()}}
+        loaded: dict[str, Any] = {"with_": {k: ResultSetExpression.load(v) for k, v in with_.items()}}
         if not (select := data.get("select")):
             raise ValueError("The query must contain a select key")
         loaded["select"] = {k: Select.load(v) for k, v in select.items()}
@@ -179,10 +179,10 @@ class ResultSetExpression(ABC):
 class NodeResultSetExpression(ResultSetExpression):
     def __init__(
         self,
-        from_: Optional[str] = None,
-        filter: Optional[Filter] = None,
-        sort: Optional[list[InstanceSort]] = None,
-        limit: Optional[int] = None,
+        from_: str | None = None,
+        filter: Filter | None = None,
+        sort: list[InstanceSort] | None = None,
+        limit: int | None = None,
     ):
         self.from_ = from_
         self.filter = filter
@@ -190,7 +190,7 @@ class NodeResultSetExpression(ResultSetExpression):
         self.limit = limit
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        output: Dict[str, Any] = {"nodes": {}}
+        output: dict[str, Any] = {"nodes": {}}
         nodes = output["nodes"]
         if self.from_:
             nodes["from"] = self.from_
@@ -208,16 +208,16 @@ class NodeResultSetExpression(ResultSetExpression):
 class EdgeResultSetExpression(ResultSetExpression):
     def __init__(
         self,
-        from_: Optional[str] = None,
-        max_distance: Optional[int] = None,
+        from_: str | None = None,
+        max_distance: int | None = None,
         direction: Literal["outwards", "inwards"] = "outwards",
-        filter: Optional[Filter] = None,
-        node_filter: Optional[Filter] = None,
-        termination_filter: Optional[Filter] = None,
-        limit_each: Optional[int] = None,
-        sort: Optional[list[InstanceSort]] = None,
-        post_sort: Optional[list[InstanceSort]] = None,
-        limit: Optional[int] = None,
+        filter: Filter | None = None,
+        node_filter: Filter | None = None,
+        termination_filter: Filter | None = None,
+        limit_each: int | None = None,
+        sort: list[InstanceSort] | None = None,
+        post_sort: list[InstanceSort] | None = None,
+        limit: int | None = None,
     ):
         self.from_ = from_
         self.max_distance = max_distance
@@ -231,7 +231,7 @@ class EdgeResultSetExpression(ResultSetExpression):
         self.limit = limit
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        output: Dict[str, Any] = {"edges": {}}
+        output: dict[str, Any] = {"edges": {}}
         edges = output["edges"]
         if self.from_:
             edges["from"] = self.from_
@@ -270,7 +270,7 @@ class QueryResult(UserDict):
     def load(
         cls,
         data: dict[str, Any] | str,
-        default_by_reference: dict[str, Type[NodeList] | Type[EdgeList]],
+        default_by_reference: dict[str, type[NodeList] | type[EdgeList]],
         cursors: dict[str, Any] | None = None,
     ) -> QueryResult:
         data = json.loads(data) if isinstance(data, str) else data

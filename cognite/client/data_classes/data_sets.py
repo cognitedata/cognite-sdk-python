@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -25,28 +25,28 @@ class DataSet(CogniteResource):
     """No description.
 
     Args:
-        external_id (Optional[str]): The external ID provided by the client. Must be unique for the resource type.
-        name (Optional[str]): The name of the data set.
-        description (Optional[str]): The description of the data set.
-        metadata (Optional[Dict[str, str]]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
-        write_protected (Optional[bool]): To write data to a write-protected data set, you need to be a member of a group that has the "datasets:owner" action for the data set.  To learn more about write-protected data sets, follow this [guide](/cdf/data_governance/concepts/datasets/#write-protection)
-        id (Optional[int]): A server-generated ID for the object.
-        created_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (Optional[int]): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        cognite_client (Optional[CogniteClient]): The client to associate with this object.
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        name (str | None): The name of the data set.
+        description (str | None): The description of the data set.
+        metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
+        write_protected (bool | None): To write data to a write-protected data set, you need to be a member of a group that has the "datasets:owner" action for the data set.  To learn more about write-protected data sets, follow this [guide](/cdf/data_governance/concepts/datasets/#write-protection)
+        id (int | None): A server-generated ID for the object.
+        created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        external_id: Optional[str] = None,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        metadata: Optional[Dict[str, str]] = None,
-        write_protected: Optional[bool] = None,
-        id: Optional[int] = None,
-        created_time: Optional[int] = None,
-        last_updated_time: Optional[int] = None,
-        cognite_client: Optional[CogniteClient] = None,
+        external_id: str | None = None,
+        name: str | None = None,
+        description: str | None = None,
+        metadata: dict[str, str] | None = None,
+        write_protected: bool | None = None,
+        id: int | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+        cognite_client: CogniteClient | None = None,
     ) -> None:
         self.external_id = external_id
         self.name = name
@@ -63,22 +63,22 @@ class DataSetFilter(CogniteFilter):
     """Filter on data sets with strict matching.
 
     Args:
-        metadata (Optional[Dict[str, str]]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
-        created_time (Optional[Union[Dict[str, Any], TimestampRange]]): Range between two timestamps.
-        last_updated_time (Optional[Union[Dict[str, Any], TimestampRange]]): Range between two timestamps.
-        external_id_prefix (Optional[str]): Filter by this (case-sensitive) prefix for the external ID.
-        write_protected (Optional[bool]): No description.
-        cognite_client (Optional[CogniteClient]): The client to associate with this object.
+        metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 128 bytes, value 10240 bytes, up to 256 key-value pairs, of total size at most 10240.
+        created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
+        last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
+        external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
+        write_protected (bool | None): No description.
+        cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        metadata: Optional[Dict[str, str]] = None,
-        created_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
-        last_updated_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
-        external_id_prefix: Optional[str] = None,
-        write_protected: Optional[bool] = None,
-        cognite_client: Optional[CogniteClient] = None,
+        metadata: dict[str, str] | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        external_id_prefix: str | None = None,
+        write_protected: bool | None = None,
+        cognite_client: CogniteClient | None = None,
     ) -> None:
         self.metadata = metadata
         self.created_time = created_time
@@ -88,7 +88,7 @@ class DataSetFilter(CogniteFilter):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str]) -> DataSetFilter:
+    def _load(cls, resource: dict | str) -> DataSetFilter:
         instance = super()._load(resource)
         if isinstance(resource, Dict):
             if instance.created_time is not None:
@@ -111,30 +111,30 @@ class DataSetUpdate(CogniteUpdate):
             return self._set(value)
 
     class _ObjectDataSetUpdate(CogniteObjectUpdate):
-        def set(self, value: Dict) -> DataSetUpdate:
+        def set(self, value: dict) -> DataSetUpdate:
             return self._set(value)
 
-        def add(self, value: Dict) -> DataSetUpdate:
+        def add(self, value: dict) -> DataSetUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> DataSetUpdate:
+        def remove(self, value: list) -> DataSetUpdate:
             return self._remove(value)
 
     class _ListDataSetUpdate(CogniteListUpdate):
-        def set(self, value: List) -> DataSetUpdate:
+        def set(self, value: list) -> DataSetUpdate:
             return self._set(value)
 
-        def add(self, value: List) -> DataSetUpdate:
+        def add(self, value: list) -> DataSetUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> DataSetUpdate:
+        def remove(self, value: list) -> DataSetUpdate:
             return self._remove(value)
 
     class _LabelDataSetUpdate(CogniteLabelUpdate):
-        def add(self, value: List) -> DataSetUpdate:
+        def add(self, value: list) -> DataSetUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> DataSetUpdate:
+        def remove(self, value: list) -> DataSetUpdate:
             return self._remove(value)
 
     @property
@@ -173,11 +173,11 @@ class DataSetAggregate(dict):
     """Aggregation group of data sets
 
     Args:
-        count (Optional[int]): Size of the aggregation group
+        count (int | None): Size of the aggregation group
         **kwargs (Any): No description.
     """
 
-    def __init__(self, count: Optional[int] = None, **kwargs: Any) -> None:
+    def __init__(self, count: int | None = None, **kwargs: Any) -> None:
         self.count = count
         self.update(kwargs)
 

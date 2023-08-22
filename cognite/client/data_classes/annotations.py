@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -27,9 +27,9 @@ class Annotation(CogniteResource):
         status (str): The status of the annotation, e.g. "suggested", "approved", "rejected".
         creating_app (str): The name of the app from which this annotation was created.
         creating_app_version (str): The version of the app that created this annotation. Must be a valid semantic versioning (SemVer) string.
-        creating_user (Optional[str]): (str, optional): A username, or email, or name. This is not checked nor enforced. If the value is None, it means the annotation was created by a service.
+        creating_user (str | None): (str, optional): A username, or email, or name. This is not checked nor enforced. If the value is None, it means the annotation was created by a service.
         annotated_resource_type (str): Type name of the CDF resource that is annotated, e.g. "file".
-        annotated_resource_id (Optional[int]): The internal ID of the annotated resource.
+        annotated_resource_id (int | None): The internal ID of the annotated resource.
     """
 
     def __init__(
@@ -39,9 +39,9 @@ class Annotation(CogniteResource):
         status: str,
         creating_app: str,
         creating_app_version: str,
-        creating_user: Optional[str],
+        creating_user: str | None,
         annotated_resource_type: str,
-        annotated_resource_id: Optional[int] = None,
+        annotated_resource_id: int | None = None,
     ) -> None:
         self.annotation_type = annotation_type
         self.data = data
@@ -51,13 +51,13 @@ class Annotation(CogniteResource):
         self.creating_user = creating_user
         self.annotated_resource_type = annotated_resource_type
         self.annotated_resource_id = annotated_resource_id
-        self.id: Optional[int] = None  # Read only
-        self.created_time: Optional[int] = None  # Read only
-        self.last_updated_time: Optional[int] = None  # Read only
+        self.id: int | None = None  # Read only
+        self.created_time: int | None = None  # Read only
+        self.last_updated_time: int | None = None  # Read only
         self._cognite_client: CogniteClient = cast("CogniteClient", None)  # Read only
 
     @classmethod
-    def _load(cls, resource: Union[Dict[str, Any], str], cognite_client: Optional[CogniteClient] = None) -> Annotation:
+    def _load(cls, resource: dict[str, Any] | str, cognite_client: CogniteClient | None = None) -> Annotation:
         if isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
         elif isinstance(resource, dict):
@@ -65,7 +65,7 @@ class Annotation(CogniteResource):
         raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
 
     @classmethod
-    def from_dict(cls, resource: Dict[str, Any], cognite_client: Optional[CogniteClient] = None) -> Annotation:
+    def from_dict(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Annotation:
         # Create base annotation
         data = {to_snake_case(key): val for key, val in resource.items()}
         annotation = Annotation(
@@ -85,7 +85,7 @@ class Annotation(CogniteResource):
         annotation._cognite_client = cast("CogniteClient", cognite_client)
         return annotation
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
         result = super().dump(camel_case=camel_case)
         # Special handling of created_user, which has a valid None value
         key = "creatingUser" if camel_case else "creating_user"
@@ -98,23 +98,23 @@ class AnnotationReverseLookupFilter(CogniteFilter):
 
     Args:
         annotated_resource_type (str): The type of the CDF resource that is annotated, e.g. "file".
-        status (Optional[str]): Status of annotations to filter for, e.g. "suggested", "approved", "rejected".
-        creating_user (Optional[str]): Name of the user who created the annotations to filter for. Can be set explicitly to "None" to filter for annotations created by a service.
-        creating_app (Optional[str]): Name of the app from which the annotations to filter for where created.
-        creating_app_version (Optional[str]): Version of the app from which the annotations to filter for were created.
-        annotation_type (Optional[str]): Type name of the annotations.
-        data (Optional[Dict[str, Any]]): The annotation data to filter by. Example format: {"label": "cat", "confidence": 0.9}
+        status (str | None): Status of annotations to filter for, e.g. "suggested", "approved", "rejected".
+        creating_user (str | None): Name of the user who created the annotations to filter for. Can be set explicitly to "None" to filter for annotations created by a service.
+        creating_app (str | None): Name of the app from which the annotations to filter for where created.
+        creating_app_version (str | None): Version of the app from which the annotations to filter for were created.
+        annotation_type (str | None): Type name of the annotations.
+        data (dict[str, Any] | None): The annotation data to filter by. Example format: {"label": "cat", "confidence": 0.9}
     """
 
     def __init__(
         self,
         annotated_resource_type: str,
-        status: Optional[str] = None,
-        creating_user: Optional[str] = "",  # None means filtering for a service
-        creating_app: Optional[str] = None,
-        creating_app_version: Optional[str] = None,
-        annotation_type: Optional[str] = None,
-        data: Optional[Dict[str, Any]] = None,
+        status: str | None = None,
+        creating_user: str | None = "",  # None means filtering for a service
+        creating_app: str | None = None,
+        creating_app_version: str | None = None,
+        annotation_type: str | None = None,
+        data: dict[str, Any] | None = None,
     ) -> None:
         self.annotated_resource_type = annotated_resource_type
         self.status = status
@@ -124,7 +124,7 @@ class AnnotationReverseLookupFilter(CogniteFilter):
         self.annotation_type = annotation_type
         self.data = data
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
         result = super().dump(camel_case=camel_case)
         # Special handling for creating_user, which has a valid None value
         key = "creatingUser" if camel_case else "creating_user"
@@ -142,25 +142,25 @@ class AnnotationFilter(AnnotationReverseLookupFilter):
 
     Args:
         annotated_resource_type (str): The type of the CDF resource that is annotated, e.g. "file".
-        annotated_resource_ids (List[Dict[str, int]]): List of ids of the annotated CDF resources to filter in. Example format: [{"id": 1234}, {"id": "4567"}]. Must contain at least one item.
-        status (Optional[str]): Status of annotations to filter for, e.g. "suggested", "approved", "rejected".
-        creating_user (Optional[str]): Name of the user who created the annotations to filter for. Can be set explicitly to "None" to filter for annotations created by a service.
-        creating_app (Optional[str]): Name of the app from which the annotations to filter for where created.
-        creating_app_version (Optional[str]): Version of the app from which the annotations to filter for were created.
-        annotation_type (Optional[str]): Type name of the annotations.
-        data (Optional[Dict[str, Any]]): The annotation data to filter by. Example format: {"label": "cat", "confidence": 0.9}
+        annotated_resource_ids (list[dict[str, int]]): List of ids of the annotated CDF resources to filter in. Example format: [{"id": 1234}, {"id": "4567"}]. Must contain at least one item.
+        status (str | None): Status of annotations to filter for, e.g. "suggested", "approved", "rejected".
+        creating_user (str | None): Name of the user who created the annotations to filter for. Can be set explicitly to "None" to filter for annotations created by a service.
+        creating_app (str | None): Name of the app from which the annotations to filter for where created.
+        creating_app_version (str | None): Version of the app from which the annotations to filter for were created.
+        annotation_type (str | None): Type name of the annotations.
+        data (dict[str, Any] | None): The annotation data to filter by. Example format: {"label": "cat", "confidence": 0.9}
     """
 
     def __init__(
         self,
         annotated_resource_type: str,
-        annotated_resource_ids: List[Dict[str, int]],
-        status: Optional[str] = None,
-        creating_user: Optional[str] = "",  # None means filtering for a service
-        creating_app: Optional[str] = None,
-        creating_app_version: Optional[str] = None,
-        annotation_type: Optional[str] = None,
-        data: Optional[Dict[str, Any]] = None,
+        annotated_resource_ids: list[dict[str, int]],
+        status: str | None = None,
+        creating_user: str | None = "",  # None means filtering for a service
+        creating_app: str | None = None,
+        creating_app_version: str | None = None,
+        annotation_type: str | None = None,
+        data: dict[str, Any] | None = None,
     ) -> None:
         self.annotated_resource_ids = annotated_resource_ids
         super().__init__(
@@ -193,19 +193,19 @@ class AnnotationUpdate(CogniteUpdate):
     class _OptionalStrUpdate(CognitePrimitiveUpdate):
         """Set and set_null"""
 
-        def set(self, value: Optional[str]) -> AnnotationUpdate:
+        def set(self, value: str | None) -> AnnotationUpdate:
             return self._set(value)
 
     class _DictUpdate(CogniteObjectUpdate):
         """Only set, no set_null"""
 
-        def set(self, value: Dict[str, Any]) -> AnnotationUpdate:
+        def set(self, value: dict[str, Any]) -> AnnotationUpdate:
             return self._set(value)
 
     class _OptionalIntUpdate(CognitePrimitiveUpdate):
         """Set and set_null"""
 
-        def set(self, value: Optional[int]) -> AnnotationUpdate:
+        def set(self, value: int | None) -> AnnotationUpdate:
             return self._set(value)
 
     @property

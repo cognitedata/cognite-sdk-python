@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterator, Optional, Sequence, cast, overload
+from typing import Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import LIST_LIMIT_DEFAULT
@@ -17,7 +17,7 @@ class SpacesAPI(APIClient):
     def __call__(
         self,
         chunk_size: None = None,
-        limit: Optional[int] = None,
+        limit: int | None = None,
     ) -> Iterator[Space]:
         ...
 
@@ -25,22 +25,22 @@ class SpacesAPI(APIClient):
     def __call__(
         self,
         chunk_size: int,
-        limit: Optional[int] = None,
+        limit: int | None = None,
     ) -> Iterator[SpaceList]:
         ...
 
     def __call__(
         self,
-        chunk_size: Optional[int] = None,
-        limit: Optional[int] = None,
+        chunk_size: int | None = None,
+        limit: int | None = None,
     ) -> Iterator[Space] | Iterator[SpaceList]:
         """Iterate over spaces
 
         Fetches spaces as they are iterated over, so you keep a limited number of spaces in memory.
 
         Args:
-            chunk_size (Optional[int]): Number of spaces to return in each chunk. Defaults to yielding one space a time.
-            limit (Optional[int]): Maximum number of spaces to return. Defaults to returning all items.
+            chunk_size (int | None): Number of spaces to return in each chunk. Defaults to yielding one space a time.
+            limit (int | None): Maximum number of spaces to return. Defaults to returning all items.
 
         Returns:
             Iterator[Space] | Iterator[SpaceList]: yields Space one by one if chunk_size is not specified, else SpaceList objects.

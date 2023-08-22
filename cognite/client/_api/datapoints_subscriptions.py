@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Generator, Optional, Sequence
+from typing import TYPE_CHECKING, Generator, Sequence
 from warnings import warn
 
 from cognite.client._api_client import APIClient
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 class DatapointsSubscriptionAPI(APIClient):
     _RESOURCE_PATH = "/timeseries/subscriptions"
 
-    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._api_subversion = "beta"
 
@@ -102,7 +102,7 @@ class DatapointsSubscriptionAPI(APIClient):
             wrap_ids=True,
         )
 
-    def retrieve(self, external_id: str, ignore_unknown_ids: bool = False) -> Optional[DatapointSubscription]:
+    def retrieve(self, external_id: str, ignore_unknown_ids: bool = False) -> DatapointSubscription | None:
         """`Retrieve one subscription by external ID. <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/getSubscriptionsByIds>`_
 
         Args:
@@ -110,7 +110,7 @@ class DatapointsSubscriptionAPI(APIClient):
             ignore_unknown_ids (bool): Whether to ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
-            Optional[DatapointSubscription]: The requested subscription.
+            DatapointSubscription | None: The requested subscription.
 
         Examples:
 

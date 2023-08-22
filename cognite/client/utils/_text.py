@@ -4,7 +4,7 @@ import random
 import re
 import string
 from functools import lru_cache
-from typing import Any, Dict, Iterator, Sequence
+from typing import Any, Iterator, Sequence
 
 
 class DrawTables:
@@ -37,7 +37,7 @@ def iterable_to_case(seq: Sequence[str], camel_case: bool) -> Iterator[str]:
         yield from map(to_snake_case, seq)
 
 
-def convert_all_keys_to_camel_case(dct: Dict[str, Any]) -> Dict[str, Any]:
+def convert_all_keys_to_camel_case(dct: dict[str, Any]) -> dict[str, Any]:
     return dict(zip(map(to_camel_case, dct.keys()), dct.values()))
 
 
@@ -74,11 +74,11 @@ def convert_all_keys_recursive(dct: dict[str, Any], camel_case: bool = False) ->
     }
 
 
-def convert_all_keys_to_snake_case(dct: Dict[str, Any]) -> Dict[str, Any]:
+def convert_all_keys_to_snake_case(dct: dict[str, Any]) -> dict[str, Any]:
     return dict(zip(map(to_snake_case, dct.keys()), dct.values()))
 
 
-def convert_dict_to_case(dct: Dict[str, Any], camel_case: bool) -> Dict[str, Any]:
+def convert_dict_to_case(dct: dict[str, Any], camel_case: bool) -> dict[str, Any]:
     if camel_case:
         return convert_all_keys_to_camel_case(dct)
     return convert_all_keys_to_snake_case(dct)
