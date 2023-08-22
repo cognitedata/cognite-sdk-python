@@ -78,6 +78,7 @@ class APIClient:
             "/raw/dbs/[^/]+/tables/[^/]+",
             "/context/entitymatching/(byids|list|jobs)",
             "/sessions/revoke",
+            "/models/.*",
         )
     }
 
