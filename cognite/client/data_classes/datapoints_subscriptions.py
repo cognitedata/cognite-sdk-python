@@ -375,7 +375,7 @@ class _DatapointSubscriptionFilterProperties:
         return ["externalId"]
 
     @staticmethod
-    def metadata(key) -> list[str]:
+    def metadata(key: str) -> list[str]:
         return ["metadata", key]
 
     @property
