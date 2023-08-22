@@ -10,6 +10,8 @@ from cognite.client.utils._auxiliary import is_unlimited, local_import
 from cognite.client.utils._identifier import Identifier
 
 if TYPE_CHECKING:
+    import builtins
+
     import pandas
 
     from cognite.client import CogniteClient
@@ -567,7 +569,7 @@ class RawRowsAPI(APIClient):
             raise summary.exceptions[0]
         return RowList(summary.joined_results())
 
-    def _make_columns_param(self, columns: list[str] | None) -> str | None:
+    def _make_columns_param(self, columns: builtins.list[str] | None) -> str | None:
         if columns is None:
             return None
         if not isinstance(columns, List):
@@ -583,7 +585,7 @@ class RawRowsAPI(APIClient):
         table_name: str,
         min_last_updated_time: int | None = None,
         max_last_updated_time: int | None = None,
-        columns: list[str] | None = None,
+        columns: builtins.list[str] | None = None,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> pandas.DataFrame:
         """`Retrieve rows in a table as a pandas dataframe. <https://developer.cognite.com/api#tag/Raw/operation/getRows>`_
@@ -595,7 +597,7 @@ class RawRowsAPI(APIClient):
             table_name (str): Name of the table.
             min_last_updated_time (int | None): Rows must have been last updated after this time. ms since epoch.
             max_last_updated_time (int | None): Rows must have been last updated before this time. ms since epoch.
-            columns (list[str] | None): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
+            columns (builtins.list[str] | None): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
             limit (int): The number of rows to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:

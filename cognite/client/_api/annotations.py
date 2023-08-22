@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Any, Literal, Sequence, overload
+from typing import TYPE_CHECKING, Any, Literal, Sequence, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import LIST_LIMIT_DEFAULT
@@ -12,6 +12,9 @@ from cognite.client.data_classes.contextualization import ResourceReference, Res
 from cognite.client.utils._auxiliary import assert_type
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._text import to_camel_case
+
+if TYPE_CHECKING:
+    import builtins
 
 
 class AnnotationsAPI(APIClient):
@@ -110,7 +113,7 @@ class AnnotationsAPI(APIClient):
     def _convert_resource_to_patch_object(
         cls,
         resource: CogniteResource,
-        update_attributes: list[PropertySpec],
+        update_attributes: builtins.list[PropertySpec],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> dict[str, dict[str, dict]]:
         if not isinstance(resource, Annotation):

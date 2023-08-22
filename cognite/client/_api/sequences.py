@@ -29,6 +29,8 @@ from cognite.client.utils._text import convert_all_keys_to_camel_case
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 
 if TYPE_CHECKING:
+    import builtins
+
     import pandas
 
     from cognite.client import CogniteClient
@@ -267,14 +269,14 @@ class SequencesAPI(APIClient):
         ).dump(camel_case=True)
         return self._list(list_cls=SequenceList, resource_cls=Sequence, method="POST", filter=filter, limit=limit)
 
-    def aggregate(self, filter: SequenceFilter | dict | None = None) -> list[SequenceAggregate]:
+    def aggregate(self, filter: SequenceFilter | dict | None = None) -> builtins.list[SequenceAggregate]:
         """`Aggregate sequences <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
 
         Args:
             filter (SequenceFilter | dict | None): Filter on sequence filter with exact match
 
         Returns:
-            list[SequenceAggregate]: List of sequence aggregates
+            builtins.list[SequenceAggregate]: List of sequence aggregates
 
         Examples:
 

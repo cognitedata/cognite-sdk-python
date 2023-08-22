@@ -33,6 +33,8 @@ from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 
 if TYPE_CHECKING:
+    import builtins
+
     from requests import Response
 
 
@@ -350,14 +352,14 @@ class FilesAPI(APIClient):
             list_cls=FileMetadataList, resource_cls=FileMetadata, method="POST", limit=limit, filter=filter
         )
 
-    def aggregate(self, filter: FileMetadataFilter | dict | None = None) -> list[FileAggregate]:
+    def aggregate(self, filter: FileMetadataFilter | dict | None = None) -> builtins.list[FileAggregate]:
         """`Aggregate files <https://developer.cognite.com/api#tag/Files/operation/aggregateFiles>`_
 
         Args:
             filter (FileMetadataFilter | dict | None): Filter on file metadata filter with exact match
 
         Returns:
-            list[FileAggregate]: List of file aggregates
+            builtins.list[FileAggregate]: List of file aggregates
 
         Examples:
 

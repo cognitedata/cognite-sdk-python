@@ -23,6 +23,8 @@ from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 
 if TYPE_CHECKING:
+    import builtins
+
     from cognite.client import CogniteClient
     from cognite.client.config import ClientConfig
 
@@ -300,14 +302,14 @@ class TimeSeriesAPI(APIClient):
             partitions=partitions,
         )
 
-    def aggregate(self, filter: TimeSeriesFilter | dict | None = None) -> list[TimeSeriesAggregate]:
+    def aggregate(self, filter: TimeSeriesFilter | dict | None = None) -> builtins.list[TimeSeriesAggregate]:
         """`Aggregate time series <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
 
         Args:
             filter (TimeSeriesFilter | dict | None): Filter on time series filter with exact match
 
         Returns:
-            list[TimeSeriesAggregate]: List of sequence aggregates
+            builtins.list[TimeSeriesAggregate]: List of sequence aggregates
 
         Examples:
 

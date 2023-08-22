@@ -53,6 +53,7 @@ from cognite.client.utils._text import to_camel_case
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 
 if TYPE_CHECKING:
+    import builtins
     from concurrent.futures import Future
 
     from cognite.client.utils._priority_tpe import PriorityThreadPoolExecutor
@@ -348,14 +349,14 @@ class AssetsAPI(APIClient):
             partitions=partitions,
         )
 
-    def aggregate(self, filter: AssetFilter | dict | None = None) -> list[AssetAggregate]:
+    def aggregate(self, filter: AssetFilter | dict | None = None) -> builtins.list[AssetAggregate]:
         """`Aggregate assets <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
         Args:
             filter (AssetFilter | dict | None): Filter on assets filter with exact match
 
         Returns:
-            list[AssetAggregate]: List of asset aggregates
+            builtins.list[AssetAggregate]: List of asset aggregates
 
         Examples:
 
@@ -1116,7 +1117,7 @@ class AssetsAPI(APIClient):
         subtree = self._get_asset_subtree([asset], current_depth=0, depth=depth)
         return AssetList(subtree, self._cognite_client)
 
-    def _get_asset_subtree(self, assets: list, current_depth: int, depth: int | None) -> list:
+    def _get_asset_subtree(self, assets: builtins.list, current_depth: int, depth: int | None) -> builtins.list:
         subtree = assets
         if depth is None or current_depth < depth:
             children = self._get_children(assets)
@@ -1124,7 +1125,7 @@ class AssetsAPI(APIClient):
                 subtree.extend(self._get_asset_subtree(children, current_depth + 1, depth))
         return subtree
 
-    def _get_children(self, assets: list) -> list:
+    def _get_children(self, assets: builtins.list) -> builtins.list:
         ids = [a.id for a in assets]
         tasks = []
         chunk_size = 100

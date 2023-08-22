@@ -48,6 +48,9 @@ _FILTERS_SUPPORTED: frozenset[type[Filter]] = frozenset(
     }
 )
 
+if TYPE_CHECKING:
+    import builtins
+
 
 class EventsAPI(APIClient):
     _RESOURCE_PATH = "/events"
@@ -308,14 +311,14 @@ class EventsAPI(APIClient):
             sort=sort,
         )
 
-    def aggregate(self, filter: EventFilter | dict | None = None) -> list[AggregateResult]:
+    def aggregate(self, filter: EventFilter | dict | None = None) -> builtins.list[AggregateResult]:
         """`Aggregate events <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
 
         Args:
             filter (EventFilter | dict | None): Filter on events filter with exact match
 
         Returns:
-            list[AggregateResult]: List of event aggregates
+            builtins.list[AggregateResult]: List of event aggregates
 
         Examples:
 

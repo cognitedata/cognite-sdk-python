@@ -15,6 +15,8 @@ from cognite.client.data_classes import (
 from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
+    import builtins
+
     from cognite.client import CogniteClient
     from cognite.client.config import ClientConfig
 
@@ -210,14 +212,14 @@ class DataSetsAPI(APIClient):
         ).dump(camel_case=True)
         return self._list(list_cls=DataSetList, resource_cls=DataSet, method="POST", limit=limit, filter=filter)
 
-    def aggregate(self, filter: DataSetFilter | dict | None = None) -> list[DataSetAggregate]:
+    def aggregate(self, filter: DataSetFilter | dict | None = None) -> builtins.list[DataSetAggregate]:
         """`Aggregate data sets <https://developer.cognite.com/api#tag/Data-sets/operation/aggregateDataSets>`_
 
         Args:
             filter (DataSetFilter | dict | None): Filter on data set filter with exact match
 
         Returns:
-            list[DataSetAggregate]: List of data set aggregates
+            builtins.list[DataSetAggregate]: List of data set aggregates
 
         Examples:
 
