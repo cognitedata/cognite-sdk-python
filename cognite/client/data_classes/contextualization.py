@@ -4,7 +4,7 @@ import time
 import warnings
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Type, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Sequence, Type, TypeVar, Union, cast
 
 from requests.utils import CaseInsensitiveDict
 
@@ -548,11 +548,11 @@ class VisionFeature(str, Enum):
 
 @dataclass
 class VisionExtractPredictions(VisionResource):
-    text_predictions: Optional[List[TextRegion]] = None
-    asset_tag_predictions: Optional[List[AssetLink]] = None
-    industrial_object_predictions: Optional[List[ObjectDetection]] = None
-    people_predictions: Optional[List[ObjectDetection]] = None
-    personal_protective_equipment_predictions: Optional[List[ObjectDetection]] = None
+    text_predictions: list[TextRegion] | None = None
+    asset_tag_predictions: list[AssetLink] | None = None
+    industrial_object_predictions: list[ObjectDetection] | None = None
+    people_predictions: list[ObjectDetection] | None = None
+    personal_protective_equipment_predictions: list[ObjectDetection] | None = None
 
 
 VISION_FEATURE_MAP: dict[str, Any] = {
