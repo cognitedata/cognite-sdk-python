@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import time
 from io import BytesIO
 from pathlib import Path
@@ -8,13 +9,22 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import aggregations, filters
-from cognite.client.data_classes.documents import DocumentProperty, SortableDocumentProperty, SourceFileProperty
+from cognite.client.data_classes.documents import (
+    DocumentProperty,
+    SortableDocumentProperty,
+    SourceFile,
+    SourceFileProperty,
+)
 from cognite.client.data_classes.files import FileMetadata, FileMetadataList
 from tests.utils import dict_without
 
 RESOURCES = Path(__file__).resolve().parent / "documents_resources"
 
 _FILE_PREFIX = "document_api_integration"
+
+_SYMMETRIC_DIFFERENCE_FILEMETADATA_SOURCEFILE: frozenset[str] = frozenset(
+    set(inspect.signature(FileMetadata.__init__).parameters) ^ set(inspect.signature(SourceFile.__init__).parameters)
+)
 
 
 @pytest.fixture(scope="session")
@@ -75,20 +85,17 @@ class TestDocumentsAPI:
         documents = cognite_client.documents.list(limit=5, filter=is_integration_test)
 
         assert len(documents) >= len(document_list)
-        file_only_keys = {"uploaded_time", "uploaded"}
+        exclude = set(_SYMMETRIC_DIFFERENCE_FILEMETADATA_SOURCEFILE)
         retrieved_text = documents.get(id=text_file.id)
         assert retrieved_text is not None, "Expected to retrieve the text file to be the list"
-        assert dict_without(retrieved_text.as_file().dump(), file_only_keys) == dict_without(
-            text_file.dump(), file_only_keys
-        )
+        assert dict_without(retrieved_text.source_file.dump(), exclude) == dict_without(text_file.dump(), exclude)
 
     def test_list_lorem_ipsum(
         self,
         cognite_client: CogniteClient,
         document_list: FileMetadataList,
-        text_file_content_pair: tuple[FileMetadata, str],
+        pdf_file: FileMetadata,
     ):
-        text_file, _ = text_file_content_pair
         is_integration_test = filters.Prefix("externalId", _FILE_PREFIX)
         is_lorem = filters.Search(DocumentProperty.content, "lorem ipsum")
 
@@ -96,12 +103,10 @@ class TestDocumentsAPI:
 
         # Both the files in the document list have "lorem ipsum" in the content
         assert len(documents) >= len(document_list)
-        file_only_keys = {"uploaded_time", "uploaded"}
-        retrieved_text = documents.get(id=text_file.id)
-        assert retrieved_text is not None, "Expected to retrieve the text file to be the list"
-        assert dict_without(retrieved_text.as_file().dump(), file_only_keys) == dict_without(
-            text_file.dump(), file_only_keys
-        )
+        retrieved_pdf = documents.get(id=pdf_file.id)
+        assert retrieved_pdf is not None, "Expected to retrieve the pdf file to be the list"
+        exclude = set(_SYMMETRIC_DIFFERENCE_FILEMETADATA_SOURCEFILE)
+        assert dict_without(retrieved_pdf.source_file.dump(), exclude) == dict_without(pdf_file.dump(), exclude)
 
     def test_retrieve_content(self, cognite_client: CogniteClient, text_file_content_pair):
         doc, content = text_file_content_pair
