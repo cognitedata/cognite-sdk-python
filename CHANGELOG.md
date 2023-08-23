@@ -26,7 +26,8 @@ Changes are grouped as follows
   methods `.aggregate_count(...)`, `aggregate_cardinality_values(...)`, `aggregate_cardinality_properties(...)`, 
   `.aggregate_unique_values(...)`, and `.aggregate_unique_properties(...)`. For example, 
   `client.assets.aggregate_count(...)`. 
-- Added helper methods `as_external_ids` and `as_ids` for `EventList`, `TimeSeriesList`, `AssetList` and `SequenceList`.
+- Added helper methods `as_external_ids` and `as_ids` for `EventList`, `TimeSeriesList`, `AssetList`, `SequenceList`,
+  `FileMetaDataList`, and `FunctionList`.
 
 ### Deprecated
 - Added `DeprecationWarning` to methods `client.assets.aggregate_metadata_keys` and 
