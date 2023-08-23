@@ -4,13 +4,19 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Sequence, Tuple, Union, cast, final
 
+from typing_extensions import TypeAlias
+
+from cognite.client.data_classes._base import EnumProperty, Geometry
+from cognite.client.data_classes.labels import Label
+from cognite.client.utils._text import to_camel_case
+
 if TYPE_CHECKING:
     from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
 
 
-PropertyReference = Union[Tuple[str, ...], List[str]]
+PropertyReference: TypeAlias = Union[str, Tuple[str, ...], List[str], EnumProperty]
 
-RawValue = Union[str, float, bool, Sequence, Mapping[str, Any]]
+RawValue: TypeAlias = Union[str, float, bool, Sequence, Mapping[str, Any], Label]
 
 
 @dataclass
@@ -29,7 +35,11 @@ FilterValueList = Union[Sequence[RawValue], PropertyReferenceValue, ParameterVal
 
 def _dump_filter_value(filter_value: FilterValueList | FilterValue) -> Any:
     if isinstance(filter_value, PropertyReferenceValue):
-        return {"property": filter_value.property}
+        return {
+            "property": filter_value.property.as_reference()
+            if isinstance(filter_value.property, EnumProperty)
+            else filter_value.property
+        }
     if isinstance(filter_value, ParameterValue):
         return {"parameter": filter_value.parameter}
     else:
@@ -46,11 +56,23 @@ def _load_filter_value(value: Any) -> FilterValue | FilterValueList:
     return value
 
 
+def _dump_property(property_: PropertyReference, camel_case: bool) -> list[str] | tuple[str, ...]:
+    if isinstance(property_, EnumProperty):
+        return property_.as_reference()
+    elif isinstance(property_, str):
+        return [to_camel_case(property_) if camel_case else property_]
+    elif isinstance(property_, (list, tuple)):
+        output = [to_camel_case(p) if camel_case else p for p in property_]
+        return tuple(output) if isinstance(property_, tuple) else output
+    else:
+        raise ValueError(f"Invalid property format {property_}")
+
+
 class Filter(ABC):
     _filter_name: str
 
-    def dump(self) -> dict[str, Any]:
-        return {self._filter_name: self._filter_body()}
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        return {self._filter_name: self._filter_body(camel_case)}
 
     @classmethod
     def load(cls, filter_: dict[str, Any]) -> Filter:
@@ -108,11 +130,41 @@ class Filter(ABC):
                 property=filter_body["property"],
                 values=cast(FilterValueList, _load_filter_value(filter_body["values"])),
             )
+        elif filter_name == ContainsAll._filter_name:
+            return ContainsAll(
+                property=filter_body["property"],
+                values=cast(FilterValueList, _load_filter_value(filter_body["values"])),
+            )
+        elif filter_name == GeoJSONIntersects._filter_name:
+            return GeoJSONIntersects(
+                property=filter_body["property"],
+                geometry=Geometry._load(filter_body["geometry"]),
+            )
+        elif filter_name == GeoJSONDisjoint._filter_name:
+            return GeoJSONDisjoint(
+                property=filter_body["property"],
+                geometry=Geometry._load(filter_body["geometry"]),
+            )
+        elif filter_name == GeoJSONWithin._filter_name:
+            return GeoJSONWithin(
+                property=filter_body["property"],
+                geometry=Geometry._load(filter_body["geometry"]),
+            )
+        elif filter_name == InAssetSubtree._filter_name:
+            return InAssetSubtree(
+                property=filter_body["property"],
+                value=_load_filter_value(filter_body["value"]),
+            )
+        elif filter_name == Search._filter_name:
+            return Search(
+                property=filter_body["property"],
+                value=_load_filter_value(filter_body["value"]),
+            )
         else:
             raise ValueError(f"Unknown filter type: {filter_name}")
 
     @abstractmethod
-    def _filter_body(self) -> list | dict:
+    def _filter_body(self, camel_case_property: bool) -> list | dict:
         ...
 
     def _involved_filter_types(self) -> set[type[Filter]]:
@@ -123,14 +175,22 @@ class Filter(ABC):
         return output
 
 
+def _validate_filter(filter: Filter | dict | None, supported_filters: frozenset[type[Filter]], api_name: str) -> None:
+    if filter is None or isinstance(filter, dict):
+        return
+    if not_supported := (filter._involved_filter_types() - supported_filters):
+        names = [f.__name__ for f in not_supported]
+        raise ValueError(f"The filters {names} are not supported for {api_name}")
+
+
 class CompoundFilter(Filter):
     _filter_name = "compound"
 
     def __init__(self, *filters: Filter):
         self._filters = filters
 
-    def _filter_body(self) -> list | dict:
-        return [filter_.dump() for filter_ in self._filters]
+    def _filter_body(self, camel_case_property: bool) -> list | dict:
+        return [filter_.dump(camel_case_property) for filter_ in self._filters]
 
 
 class FilterWithProperty(Filter):
@@ -139,8 +199,11 @@ class FilterWithProperty(Filter):
     def __init__(self, property: PropertyReference):
         self._property = property
 
-    def _filter_body(self) -> dict:
-        return {"property": self._property}
+    def _dump_property(self, camel_case: bool) -> list[str] | tuple[str, ...]:
+        return _dump_property(self._property, camel_case)
+
+    def _filter_body(self, camel_case_property: bool) -> dict:
+        return {"property": self._dump_property(camel_case_property)}
 
 
 class FilterWithPropertyAndValue(FilterWithProperty):
@@ -150,8 +213,8 @@ class FilterWithPropertyAndValue(FilterWithProperty):
         super().__init__(property)
         self._value = value
 
-    def _filter_body(self) -> dict[str, Any]:
-        return {"property": self._property, "value": _dump_filter_value(self._value)}
+    def _filter_body(self, camel_case_property: bool) -> dict[str, Any]:
+        return {"property": self._dump_property(camel_case_property), "value": _dump_filter_value(self._value)}
 
 
 class FilterWithPropertyAndValueList(FilterWithProperty):
@@ -161,8 +224,8 @@ class FilterWithPropertyAndValueList(FilterWithProperty):
         super().__init__(property)
         self._values = values
 
-    def _filter_body(self) -> dict[str, Any]:
-        return {"property": self._property, "values": _dump_filter_value(self._values)}
+    def _filter_body(self, camel_case_property: bool) -> dict[str, Any]:
+        return {"property": self._dump_property(camel_case_property), "values": _dump_filter_value(self._values)}
 
 
 @final
@@ -182,8 +245,8 @@ class Not(CompoundFilter):
     def __init__(self, filter: Filter):
         super().__init__(filter)
 
-    def _filter_body(self) -> dict:
-        return self._filters[0].dump()
+    def _filter_body(self, camel_case_property: bool) -> dict:
+        return self._filters[0].dump(camel_case_property)
 
 
 @final
@@ -194,15 +257,15 @@ class Nested(Filter):
         self._scope = scope
         self._filter = filter
 
-    def _filter_body(self) -> dict[str, Any]:
-        return {"scope": self._scope, "filter": self._filter.dump()}
+    def _filter_body(self, camel_case_property: bool) -> dict[str, Any]:
+        return {"scope": self._scope, "filter": self._filter.dump(camel_case_property)}
 
 
 @final
 class MatchAll(Filter):
     _filter_name = "matchAll"
 
-    def _filter_body(self) -> dict[str, Any]:
+    def _filter_body(self, camel_case_property: bool) -> dict[str, Any]:
         return {}
 
 
@@ -220,7 +283,7 @@ class HasData(Filter):
         self.__containers: List[ContainerId] = [ContainerId.load(container) for container in (containers or [])]
         self.__views: List[ViewId] = [ViewId.load(view) for view in (views or [])]
 
-    def _filter_body(self) -> dict:
+    def _filter_body(self, camel_case_property: bool) -> dict:
         return {
             "views": [view.as_tuple() for view in self.__views],
             "containers": [container.as_tuple() for container in self.__containers],
@@ -245,8 +308,8 @@ class Range(FilterWithProperty):
         self._lt = lt
         self._lte = lte
 
-    def _filter_body(self) -> dict[str, Any]:
-        body = {"property": self._property}
+    def _filter_body(self, camel_case_property: bool) -> dict[str, Any]:
+        body = {"property": self._dump_property(camel_case_property)}
         if self._gt is not None:
             body["gt"] = _dump_filter_value(self._gt)
         if self._gte is not None:
@@ -278,10 +341,10 @@ class Overlaps(Filter):
         self._lt = lt
         self._lte = lte
 
-    def _filter_body(self) -> dict[str, Any]:
+    def _filter_body(self, camel_case_property: bool) -> dict[str, Any]:
         body = {
-            "startProperty": self._start_property,
-            "endProperty": self._end_property,
+            "startProperty": _dump_property(self._start_property, camel_case_property),
+            "endProperty": _dump_property(self._end_property, camel_case_property),
         }
 
         if self._gt is not None:
@@ -323,3 +386,39 @@ class ContainsAny(FilterWithPropertyAndValueList):
 @final
 class ContainsAll(FilterWithPropertyAndValueList):
     _filter_name = "containsAll"
+
+
+class GeoJSON(FilterWithProperty, ABC):
+    _filter_name = "geojson"
+
+    def __init__(self, property: PropertyReference, geometry: Geometry):
+        super().__init__(property)
+        self._geometry = geometry
+
+    def _filter_body(self, camel_case_property: bool) -> dict[str, Any]:
+        return {"property": self._dump_property(camel_case_property), "geometry": self._geometry.dump(camel_case=True)}
+
+
+@final
+class GeoJSONIntersects(GeoJSON):
+    _filter_name = "geojsonIntersects"
+
+
+@final
+class GeoJSONDisjoint(GeoJSON):
+    _filter_name = "geojsonDisjoint"
+
+
+@final
+class GeoJSONWithin(GeoJSON):
+    _filter_name = "geojsonWithin"
+
+
+@final
+class InAssetSubtree(FilterWithPropertyAndValue):
+    _filter_name = "inAssetSubtree"
+
+
+@final
+class Search(FilterWithPropertyAndValue):
+    _filter_name = "search"

@@ -14,7 +14,7 @@ from cognite.client.data_classes._base import (
     PropertySpec,
     T_CogniteResource,
 )
-from cognite.client.data_classes.filters import Filter
+from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.utils._auxiliary import exactly_one_is_not_none
 from cognite.client.utils._text import convert_all_keys_to_snake_case
 
@@ -23,26 +23,20 @@ if TYPE_CHECKING:
 
 ExternalId = str
 
-_FILTERS_SUPPORTED: set[type[Filter]] = {
-    filters.And,
-    filters.Or,
-    filters.Not,
-    filters.In,
-    filters.Equals,
-    filters.Exists,
-    filters.Range,
-    filters.Prefix,
-    filters.ContainsAny,
-    filters.ContainsAll,
-}
-
-
-def _validate_filter(filter: Filter | None) -> None:
-    if filter is None:
-        return
-    if not_supported := (filter._involved_filter_types() - _FILTERS_SUPPORTED):
-        names = [f.__name__ for f in not_supported]
-        raise ValueError(f"The filters {names} are not supported for DataPointSubscriptions")
+_DATAPOINT_SUBSCRIPTION_SUPPORTED_FILTERS: frozenset[type[Filter]] = frozenset(
+    {
+        filters.And,
+        filters.Or,
+        filters.Not,
+        filters.In,
+        filters.Equals,
+        filters.Exists,
+        filters.Range,
+        filters.Prefix,
+        filters.ContainsAny,
+        filters.ContainsAll,
+    }
+)
 
 
 class DatapointSubscriptionCore(CogniteResource):
@@ -145,7 +139,7 @@ class DataPointSubscriptionCreate(DatapointSubscriptionCore):
     ):
         if not exactly_one_is_not_none(time_series_ids, filter):
             raise ValueError("Exactly one of time_series_ids and filter must be given")
-        _validate_filter(filter)
+        _validate_filter(filter, _DATAPOINT_SUBSCRIPTION_SUPPORTED_FILTERS, "DataPointSubscriptions")
         super().__init__(external_id, partition_count, filter, name, description)
         self.time_series_ids = time_series_ids
 

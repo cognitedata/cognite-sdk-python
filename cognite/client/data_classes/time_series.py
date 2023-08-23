@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Union, cast
+
+from typing_extensions import TypeAlias
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -13,7 +15,10 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    EnumProperty,
+    IdTransformerMixin,
     PropertySpec,
+    Sort,
 )
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._identifier import Identifier
@@ -304,5 +309,54 @@ class TimeSeriesAggregate(dict):
     count = CognitePropertyClassUtil.declare_property("count")
 
 
-class TimeSeriesList(CogniteResourceList[TimeSeries]):
+class TimeSeriesList(CogniteResourceList[TimeSeries], IdTransformerMixin):
     _RESOURCE = TimeSeries
+
+
+class TimeSeriesProperty(EnumProperty):
+    description = "description"
+    external_id = "externalId"
+    name = "name"
+    unit = "unit"
+    asset_id = "assetId"
+    asset_root_id = "assetRootId"
+    created_time = "createdTime"
+    data_set_id = "dataSetId"
+    id = "id"
+    last_updated_time = "lastUpdatedTime"
+    is_step = "isStep"
+    is_string = "isString"
+    access_categories = "accessCategories"
+    security_categories = "securityCategories"
+    metadata = "metadata"
+
+    @staticmethod
+    def metadata_key(key: str) -> list[str]:
+        return ["metadata", key]
+
+
+class SortableTimeSeriesProperty(EnumProperty):
+    asset_id = "assetId"
+    created_time = "createdTime"
+    data_set_id = "dataSetId"
+    description = "description"
+    external_id = "externalId"
+    last_updated_time = "lastUpdatedTime"
+    name = "name"
+
+    @staticmethod
+    def metadata_key(key: str) -> list[str]:
+        return ["metadata", key]
+
+
+SortableTimeSeriesPropertyLike: TypeAlias = Union[SortableTimeSeriesProperty, str, List[str]]
+
+
+class TimeSeriesSort(Sort):
+    def __init__(
+        self,
+        property: SortableTimeSeriesProperty,
+        order: Literal["asc", "desc"] = "asc",
+        nulls: Literal["auto", "first", "last"] = "auto",
+    ):
+        super().__init__(property, order, nulls)

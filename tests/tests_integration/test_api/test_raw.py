@@ -37,6 +37,7 @@ class TestRawTablesAPI:
         assert table not in cognite_client.raw.tables.list(db.name)
 
 
+@pytest.mark.skip("RAW API is failing with 500")
 class TestRawRowsAPI:
     def test_list_rows(self, cognite_client):
         rows = cognite_client.raw.rows.list(db_name="test__database1", table_name="test__table_1", limit=10000)

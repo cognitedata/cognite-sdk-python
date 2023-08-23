@@ -9,6 +9,7 @@ from cognite.client._api import (
     data_sets,
     datapoints,
     datapoints_subscriptions,
+    documents,
     entity_matching,
     events,
     files,
@@ -55,6 +56,9 @@ class TestDocstringExamples:
 
     def test_files(self):
         run_docstring_tests(files)
+
+    def test_documents(self):
+        run_docstring_tests(documents)
 
     @pytest.mark.dsl
     def test_raw(self):

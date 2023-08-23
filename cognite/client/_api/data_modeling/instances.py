@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Literal, Optional, Sequence, Type, Union, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import INSTANCES_LIST_LIMIT_DEFAULT
+from cognite.client.data_classes import filters
 from cognite.client.data_classes._base import CogniteResourceList
-from cognite.client.data_classes.data_modeling.aggregations import (
+from cognite.client.data_classes.aggregations import (
     Aggregation,
     Histogram,
     HistogramValue,
@@ -41,7 +43,7 @@ from cognite.client.data_classes.data_modeling.query import (
     QueryResult,
 )
 from cognite.client.data_classes.data_modeling.views import View
-from cognite.client.data_classes.filters import Filter
+from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
 
 from ._data_modeling_executor import get_data_modeling_executor
@@ -49,13 +51,32 @@ from ._data_modeling_executor import get_data_modeling_executor
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
+_DATA_MODELING_SUPPORTED_FILTERS: frozenset[type[Filter]] = frozenset(
+    {
+        filters.And,
+        filters.Or,
+        filters.Not,
+        filters.In,
+        filters.Equals,
+        filters.Exists,
+        filters.Range,
+        filters.Prefix,
+        filters.ContainsAny,
+        filters.ContainsAll,
+        filters.Nested,
+        filters.HasData,
+        filters.MatchAll,
+        filters.Overlaps,
+    }
+)
+
 
 class _NodeOrEdgeList(CogniteResourceList):
     _RESOURCE = (Node, Edge)  # type: ignore[assignment]
 
     @classmethod
     def _load(
-        cls, resource_list: list[dict[str, Any]] | str, cognite_client: Optional[CogniteClient] = None
+        cls, resource_list: Iterable[dict[str, Any]] | str, cognite_client: Optional[CogniteClient] = None
     ) -> _NodeOrEdgeList:
         resource_list = json.loads(resource_list) if isinstance(resource_list, str) else resource_list
         resources: list[Node | Edge] = [
@@ -81,7 +102,7 @@ class _NodeOrEdgeApplyResultList(CogniteResourceList):
 
     @classmethod
     def _load(
-        cls, resource_list: list[dict[str, Any]] | str, cognite_client: Optional[CogniteClient] = None
+        cls, resource_list: Iterable[dict[str, Any]] | str, cognite_client: Optional[CogniteClient] = None
     ) -> _NodeOrEdgeApplyResultList:
         resource_list = json.loads(resource_list) if isinstance(resource_list, str) else resource_list
         resources: list[NodeApplyResult | EdgeApplyResult] = [
@@ -193,6 +214,7 @@ class InstancesAPI(APIClient):
         Yields:
             Edge | Node | EdgeList | NodeList: yields Instance one by one if chunk_size is not specified, else NodeList/EdgeList objects.
         """
+        self._validate_filter(filter)
         other_params = self._create_other_params(
             include_typing=include_typing, instance_type=instance_type, sort=sort, sources=sources
         )
@@ -580,6 +602,7 @@ class InstancesAPI(APIClient):
                 ... query="Quentin", properties=["name"], filter=born_after_1970)
 
         """
+        self._validate_filter(filter)
         if instance_type == "node":
             list_cls: Union[Type[NodeList], Type[EdgeList]] = NodeList
         elif instance_type == "edge":
@@ -640,6 +663,8 @@ class InstancesAPI(APIClient):
         """
         if instance_type not in ("node", "edge"):
             raise ValueError(f"Invalid instance type: {instance_type}")
+        self._validate_filter(filter)
+
         body: Dict[str, Any] = {"view": view.dump(camel_case=True), "instanceType": instance_type, "limit": limit}
         aggregate_seq: Sequence[Aggregation | dict] = aggregates if isinstance(aggregates, Sequence) else [aggregates]
         body["aggregates"] = [
@@ -723,6 +748,8 @@ class InstancesAPI(APIClient):
         """
         if instance_type not in ("node", "edge"):
             raise ValueError(f"Invalid instance type: {instance_type}")
+        self._validate_filter(filter)
+
         body: Dict[str, Any] = {"view": view.dump(camel_case=True), "instanceType": instance_type, "limit": limit}
 
         if isinstance(histograms, Sequence):
@@ -912,6 +939,7 @@ class InstancesAPI(APIClient):
                 >>> for instance_list in c.data_modeling.instances(chunk_size=100):
                 ...     instance_list # do something with the instances
         """
+        self._validate_filter(filter)
         other_params = self._create_other_params(
             include_typing=include_typing, instance_type=instance_type, sort=sort, sources=sources
         )
@@ -935,3 +963,6 @@ class InstancesAPI(APIClient):
                 other_params=other_params,
             ),
         )
+
+    def _validate_filter(self, filter: Filter | dict | None) -> None:
+        _validate_filter(filter, _DATA_MODELING_SUPPORTED_FILTERS, type(self).__name__)

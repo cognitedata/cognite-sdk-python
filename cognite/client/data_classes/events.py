@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Union, cast
+
+from typing_extensions import TypeAlias
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -12,7 +14,10 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    EnumProperty,
+    IdTransformerMixin,
     PropertySpec,
+    Sort,
 )
 from cognite.client.data_classes.shared import TimestampRange
 
@@ -263,5 +268,59 @@ class EventUpdate(CogniteUpdate):
         ]
 
 
-class EventList(CogniteResourceList[Event]):
+class EventList(CogniteResourceList[Event], IdTransformerMixin):
     _RESOURCE = Event
+
+
+class EventProperty(EnumProperty):
+    asset_ids = "assetIds"
+    created_time = "createdTime"
+    data_set_id = "dataSetId"
+    end_time = "endTime"
+    id = "id"
+    last_updated_time = "lastUpdatedTime"
+    start_time = "startTime"
+    description = "description"
+    external_id = "externalId"
+    metadata = "metadata"
+    source = "source"
+    subtype = "subtype"
+    type = "type"
+
+    @staticmethod
+    def metadata_key(key: str) -> list[str]:
+        return ["metadata", key]
+
+
+EventPropertyLike: TypeAlias = Union[EventProperty, str, List[str]]
+
+
+class SortableEventProperty(EnumProperty):
+    created_time = "createdTime"
+    data_set_id = "dataSetId"
+    description = "description"
+    end_time = "endTime"
+    external_id = "externalId"
+    last_updated_time = "lastUpdatedTime"
+    source = "source"
+    start_time = "startTime"
+    subtype = "subtype"
+    type = "type"
+    score = "_score_"
+
+    @staticmethod
+    def metadata_key(key: str) -> list[str]:
+        return ["metadata", key]
+
+
+SortableEventPropertyLike: TypeAlias = Union[SortableEventProperty, str, List[str]]
+
+
+class EventSort(Sort):
+    def __init__(
+        self,
+        property: SortableEventPropertyLike,
+        order: Literal["asc", "desc"] = "asc",
+        nulls: Literal["auto", "first", "last"] = "auto",
+    ):
+        super().__init__(property, order, nulls)

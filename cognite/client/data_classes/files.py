@@ -12,6 +12,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    IdTransformerMixin,
     PropertySpec,
 )
 from cognite.client.data_classes.labels import Label, LabelFilter
@@ -314,5 +315,5 @@ class FileAggregate(dict):
     count = CognitePropertyClassUtil.declare_property("count")
 
 
-class FileMetadataList(CogniteResourceList[FileMetadata]):
+class FileMetadataList(CogniteResourceList[FileMetadata], IdTransformerMixin):
     _RESOURCE = FileMetadata

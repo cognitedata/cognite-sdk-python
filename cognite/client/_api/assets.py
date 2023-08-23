@@ -5,6 +5,7 @@ import heapq
 import itertools
 import math
 import operator as op
+import warnings
 from functools import cached_property
 from types import MappingProxyType
 from typing import (
@@ -27,6 +28,8 @@ from typing import (
     overload,
 )
 
+from typing_extensions import TypeAlias
+
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client._constants import LIST_LIMIT_DEFAULT
@@ -40,7 +43,11 @@ from cognite.client.data_classes import (
     GeoLocationFilter,
     LabelFilter,
     TimestampRange,
+    filters,
 )
+from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
+from cognite.client.data_classes.assets import AssetPropertyLike, AssetSort, SortableAssetProperty
+from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.data_classes.shared import AggregateBucketResult
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._auxiliary import split_into_n_parts
@@ -53,6 +60,31 @@ if TYPE_CHECKING:
     from concurrent.futures import Future
 
     from cognite.client.utils._priority_tpe import PriorityThreadPoolExecutor
+
+
+SortSpec: TypeAlias = Union[
+    AssetSort,
+    str,
+    SortableAssetProperty,
+    Tuple[str, Literal["asc", "desc"]],
+    Tuple[str, Literal["asc", "desc"], Literal["auto", "first", "last"]],
+]
+
+_FILTERS_SUPPORTED: frozenset[type[Filter]] = frozenset(
+    {
+        filters.And,
+        filters.Or,
+        filters.Not,
+        filters.In,
+        filters.Equals,
+        filters.Exists,
+        filters.Range,
+        filters.Prefix,
+        filters.ContainsAny,
+        filters.ContainsAll,
+        filters.Search,
+    }
+)
 
 
 class AssetsAPI(APIClient):
@@ -369,6 +401,9 @@ class AssetsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> aggregate_by_prefix = c.assets.aggregate_metadata_keys(filter={"external_id_prefix": "prefix"})
         """
+        warnings.warn(
+            "This method is deprecated and will be removed in future versions of the SDK.", DeprecationWarning
+        )
         return self._aggregate(filter=filter, aggregate="metadataKeys", cls=AggregateBucketResult)
 
     def aggregate_metadata_values(
@@ -397,7 +432,236 @@ class AssetsAPI(APIClient):
                 ...     filter={"external_id_prefix": "prefix"}
                 ... )
         """
+        warnings.warn(
+            "This method is deprecated and will be removed in future versions of the SDK.", DeprecationWarning
+        )
         return self._aggregate(filter=filter, aggregate="metadataValues", keys=keys, cls=AggregateBucketResult)
+
+    def aggregate_count(
+        self,
+        property: AssetPropertyLike | None = None,
+        advanced_filter: Filter | dict | None = None,
+        filter: AssetFilter | dict | None = None,
+    ) -> int:
+        """`Count of assets matching the specified filters. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
+
+        Args:
+            property (AssetPropertyLike): If specified, get an approximate number of asset with a specific property
+                                                                                        (property is not null) and matching the filters.
+            advanced_filter (Filter | dict | None): The filter to narrow down the asset to count.
+            filter (AssetFilter | dict | None): The filter to narrow down asset to count requirering exact match.
+
+        Returns:
+            int: The number of assets matching the specified filters.
+
+        Examples:
+
+        Count the number of assets in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> c = CogniteClient()
+            >>> count = c.assets.aggregate_count()
+
+        Count the number of assets with the metadata key "timezone" in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes import filters
+            >>> from cognite.client.data_classes.assets import AssetProperty
+            >>> c = CogniteClient()
+            >>> has_timezone = filters.ContainsAny(AssetProperty.metadata, "timezone")
+            >>> asset_count = c.assets.aggregate_count(advanced_filter=has_timezone)
+
+        """
+        self._validate_filter(advanced_filter)
+        return self._advanced_aggregate(
+            "count",
+            properties=property,
+            filter=filter,
+            advanced_filter=advanced_filter,
+        )
+
+    def aggregate_cardinality_values(
+        self,
+        property: AssetPropertyLike,
+        advanced_filter: Filter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict | None = None,
+        filter: AssetFilter | dict | None = None,
+    ) -> int:
+        """`Find approximate property count for assets. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
+
+        Args:
+            property (AssetPropertyLike): The property to count the cardinality of.
+            advanced_filter (Filter | dict | None): The filter to narrow down the assets to count cardinality.
+            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
+            filter (AssetFilter | dict | None): The filter to narrow down the assets to count requirering exact match.
+        Returns:
+            int: The number of properties matching the specified filters and search.
+
+        Examples:
+
+        Count the number of labels used by assets in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes.assets import AssetProperty
+            >>> c = CogniteClient()
+            >>> label_count = c.assets.aggregate_cardinality_values(AssetProperty.labels)
+
+        Count the number of timezones (metadata key) for assets with the word "critical" in the description
+        in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes import filters
+            >>> from cognite.client.data_classes.assets import AssetProperty
+            >>> c = CogniteClient()
+            >>> is_critical = filters.Search(AssetProperty.description, "critical")
+            >>> critical_assets = c.assets.aggregate_cardinality_values(AssetProperty.metadata_key("timezone"), advanced_filter=is_critical)
+
+        """
+        self._validate_filter(advanced_filter)
+        return self._advanced_aggregate(
+            "cardinalityValues",
+            properties=property,
+            filter=filter,
+            advanced_filter=advanced_filter,
+            aggregate_filter=aggregate_filter,
+        )
+
+    def aggregate_cardinality_properties(
+        self,
+        path: AssetPropertyLike,
+        advanced_filter: Filter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict | None = None,
+        filter: AssetFilter | dict | None = None,
+    ) -> int:
+        """`Find approximate paths count for assets.  <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
+
+        Args:
+            path (AssetPropertyLike): The scope in every document to aggregate properties.  The only value allowed now is ["metadata"].
+                                      It means to aggregate only metadata properties (aka keys).
+            advanced_filter (Filter | dict | None): The filter to narrow down the assets to count cardinality.
+            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
+            filter (AssetFilter | dict | None): The filter to narrow down the assets to count requirering exact match.
+        Returns:
+            int: The number of properties matching the specified filters.
+
+        Examples:
+
+        Count the number of unique metadata keys used by assets in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes.assets import AssetProperty
+            >>> c = CogniteClient()
+            >>> key_count = c.assets.aggregate_cardinality_properties(AssetProperty.metadata)
+        """
+        self._validate_filter(advanced_filter)
+        return self._advanced_aggregate(
+            "cardinalityProperties",
+            path=path,
+            filter=filter,
+            advanced_filter=advanced_filter,
+            aggregate_filter=aggregate_filter,
+        )
+
+    def aggregate_unique_values(
+        self,
+        property: AssetPropertyLike,
+        advanced_filter: Filter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict | None = None,
+        filter: AssetFilter | dict | None = None,
+    ) -> UniqueResultList:
+        """`Get unique properties with counts for assets. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
+
+        Args:
+            property (AssetPropertyLike): The property to group by.
+            advanced_filter (Filter | dict | None): The filter to narrow down the assets to count cardinality.
+            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
+            filter (AssetFilter | dict | None): The filter to narrow down the assets to count requirering exact match.
+
+        Returns:
+            UniqueResultList: List of unique values of assets matching the specified filters and search.
+
+        Examples:
+
+        Get the timezones (metadata key) with count for your assets in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes.assets import AssetProperty
+            >>> c = CogniteClient()
+            >>> result = c.assets.aggregate_unique_values(AssetProperty.metadata_key("timezone"))
+            >>> print(result.unique)
+
+        Get the different labels with count used for assets created after 2020-01-01 in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes import filters
+            >>> from cognite.client.data_classes.assets import AssetProperty
+            >>> from cognite.client.utils import timestamp_to_ms
+            >>> from datetime import datetime
+            >>> c = CogniteClient()
+            >>> created_after_2020 = filters.Range(AssetProperty.created_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
+            >>> result = c.assets.aggregate_unique_values(AssetProperty.labels, advanced_filter=created_after_2020)
+            >>> print(result.unique)
+
+        Get the different labels with count for assets updated after 2020-01-01 in your CDF project, but exclude all labels that
+        starts with "test":
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes.assets import AssetProperty
+            >>> from cognite.client.data_classes import aggregations, filters
+            >>> c = CogniteClient()
+            >>> a = aggregations
+            >>> not_test = a.Not(a.Prefix("test"))
+            >>> created_after_2020 = filters.Range(AssetProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
+            >>> result = c.assets.aggregate_unique_values(AssetProperty.labels, advanced_filter=created_after_2020, aggregate_filter=not_test)
+            >>> print(result.unique)
+
+        """
+        self._validate_filter(advanced_filter)
+        return self._advanced_aggregate(
+            aggregate="uniqueValues",
+            properties=property,
+            filter=filter,
+            advanced_filter=advanced_filter,
+            aggregate_filter=aggregate_filter,
+        )
+
+    def aggregate_unique_properties(
+        self,
+        path: AssetPropertyLike,
+        advanced_filter: Filter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict | None = None,
+        filter: AssetFilter | dict | None = None,
+    ) -> UniqueResultList:
+        """`Get unique paths with counts for assets. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
+
+        Args:
+            path (AssetPropertyLike): The scope in every document to aggregate properties.  The only value allowed now is ["metadata"].
+                                      It means to aggregate only metadata properties (aka keys).
+            advanced_filter (Filter | dict | None): The filter to narrow down the assets to count cardinality.
+            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
+            filter (AssetFilter | dict | None): The filter to narrow down the assets to count requirering exact match.
+
+        Returns:
+            UniqueResultList: List of unique values of assets matching the specified filters and search.
+
+        Examples:
+
+        Get the metadata keys with counts for your assets in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes.assets import AssetProperty
+            >>> c = CogniteClient()
+            >>> result = c.assets.aggregate_unique_properties(AssetProperty.metadata)
+
+        """
+        self._validate_filter(advanced_filter)
+        return self._advanced_aggregate(
+            aggregate="uniqueProperties",
+            path=path,
+            filter=filter,
+            advanced_filter=advanced_filter,
+            aggregate_filter=aggregate_filter,
+        )
 
     @overload
     def create(self, asset: Sequence[Asset]) -> AssetList:
@@ -715,6 +979,81 @@ class AssetsAPI(APIClient):
             input_resource_cls=Asset,
             mode=mode,
         )
+
+    def filter(
+        self,
+        filter: Filter | dict,
+        sort: SortSpec | List[SortSpec] | None = None,
+        aggregated_properties: Sequence[Literal["child_count", "path", "depth"]] | None = None,
+        limit: int = LIST_LIMIT_DEFAULT,
+    ) -> AssetList:
+        """`Advanced filter assets <https://developer.cognite.com/api#tag/Assets/operation/listAssets>`_
+
+        Advanced filter lets you create complex filtering expressions that combine simple operations,
+        such as equals, prefix, exists, etc., using boolean operators and, or, and not.
+        It applies to basic fields as well as metadata.
+
+        Args:
+            filter: Filter to apply.
+            sort: The criteria to sort by. Can be up to two properties to sort by default to ascending order.
+            aggregated_properties: Set of aggregated properties to include. Options are childCount, path, depth.
+            limit: Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None
+                   to return all items.
+
+        Returns:
+            AssetList: List of assets that match the filter criteria.
+
+        Examples:
+
+            Find all assets that have a metadata key 'timezone' starting with 'Europe',
+            and sort by external id ascending:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> c = CogniteClient()
+                >>> f = filters
+                >>> in_timezone = f.Prefix(["metadata", "timezone"], "Europe")
+                >>> res = c.assets.filter(filter=in_timezone,
+                ...                       sort=("external_id", "asc"))
+
+            Note that you can check the API documentation above to see which properties you can filter on
+            with which filters.
+
+            To make it easier to avoid spelling mistakes and easier to look up available properties
+            for filtering and sorting, you can also use the `AssetProperty` and `SortableAssetProperty` Enums.
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes.assets import AssetProperty, SortableAssetProperty
+                >>> c = CogniteClient()
+                >>> f = filters
+                >>> in_timezone = f.Prefix(AssetProperty.metadata_key("timezone"), "Europe")
+                >>> res = c.assets.filter(filter=in_timezone,
+                ...                       sort=(SortableAssetProperty.external_id, "asc"))
+
+        """
+        self._validate_filter(filter)
+        if sort is None:
+            sort = []
+        elif not isinstance(sort, list):
+            sort = [sort]
+        if aggregated_properties:
+            aggregated_properties_camel = [to_camel_case(prop) for prop in aggregated_properties]
+        else:
+            aggregated_properties_camel = None
+
+        return self._list(
+            list_cls=AssetList,
+            resource_cls=Asset,
+            method="POST",
+            limit=limit,
+            advanced_filter=filter.dump(camel_case=True) if isinstance(filter, Filter) else filter,
+            sort=[AssetSort.load(item).dump(camel_case=True) for item in sort],
+            other_params={"aggregatedProperties": aggregated_properties_camel} if aggregated_properties_camel else {},
+        )
+
+    def _validate_filter(self, filter: Filter | dict | None) -> None:
+        _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)
 
     def search(
         self,
