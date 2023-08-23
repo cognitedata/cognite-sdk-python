@@ -10,6 +10,7 @@ from cognite.client import CogniteClient
 from cognite.client.data_classes import aggregations, filters
 from cognite.client.data_classes.documents import DocumentProperty, SortableDocumentProperty, SourceFileProperty
 from cognite.client.data_classes.files import FileMetadata, FileMetadataList
+from tests.utils import dict_without
 
 RESOURCES = Path(__file__).resolve().parent / "documents_resources"
 
@@ -68,13 +69,18 @@ class TestDocumentsAPI:
         document_list: FileMetadataList,
         text_file_content_pair: tuple[FileMetadata, str],
     ):
-        doc, content = text_file_content_pair
+        text_file, _ = text_file_content_pair
         is_integration_test = filters.Prefix("externalId", _FILE_PREFIX)
 
         documents = cognite_client.documents.list(limit=5, filter=is_integration_test)
 
-        assert len(documents) >= len(document_list), "Expected to retrieve at least one document."
-        assert any(doc.metadata == d.source_file.metadata for d in documents)
+        assert len(documents) >= len(document_list)
+        file_only_keys = {"uploaded_time", "uploaded"}
+        retrieved_text = documents.get(id=text_file.id)
+        assert retrieved_text is not None, "Expected to retrieve the text file to be the list"
+        assert dict_without(retrieved_text.as_file().dump(), file_only_keys) == dict_without(
+            text_file.dump(), file_only_keys
+        )
 
     def test_list_lorem_ipsum(
         self,
@@ -82,14 +88,20 @@ class TestDocumentsAPI:
         document_list: FileMetadataList,
         text_file_content_pair: tuple[FileMetadata, str],
     ):
-        doc, content = text_file_content_pair
+        text_file, _ = text_file_content_pair
+        is_integration_test = filters.Prefix("externalId", _FILE_PREFIX)
         is_lorem = filters.Search(DocumentProperty.content, "lorem ipsum")
 
-        documents = cognite_client.documents.list(filter=is_lorem, limit=5)
+        documents = cognite_client.documents.list(filter=filters.And(is_lorem, is_integration_test), limit=5)
 
-        # Bot the files in the document list has "lorem ipsum" in the content
-        assert len(documents) >= len(document_list), "Expected to retrieve at least one document."
-        assert any(doc.metadata == d.source_file.metadata for d in documents)
+        # Both the files in the document list have "lorem ipsum" in the content
+        assert len(documents) >= len(document_list)
+        file_only_keys = {"uploaded_time", "uploaded"}
+        retrieved_text = documents.get(id=text_file.id)
+        assert retrieved_text is not None, "Expected to retrieve the text file to be the list"
+        assert dict_without(retrieved_text.as_file().dump(), file_only_keys) == dict_without(
+            text_file.dump(), file_only_keys
+        )
 
     def test_retrieve_content(self, cognite_client: CogniteClient, text_file_content_pair):
         doc, content = text_file_content_pair

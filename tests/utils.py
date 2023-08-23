@@ -8,7 +8,7 @@ import math
 import os
 import random
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Literal, cast
+from typing import TYPE_CHECKING, Any, Literal, Mapping, TypeVar, cast
 
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
 from cognite.client.data_classes.datapoints import ALL_SORTED_DP_AGGS
@@ -221,3 +221,49 @@ def cdf_aggregate(
         .shift(-step)
         .iloc[::step]
     )
+
+
+T = TypeVar("T")
+K = TypeVar("K")
+V = TypeVar("V")
+
+
+def dict_without(input_dict: Mapping[K, V], without_keys: set[str]) -> dict[K, V]:
+    """Copy `input_dict`, but exclude the keys in `without_keys`.
+
+    >>> a = {"foo": "bar", "bar": "baz", "zip": "zap"}
+    >>> b = dict_without(a, {"foo", "bar"})
+    >>> b
+    {'zip': 'zap'}
+    >>> b["foo"] = "not bar"
+    >>> a
+    {'foo': 'bar', 'bar': 'baz', 'zip': 'zap'}
+    """
+    return {k: v for k, v in input_dict.items() if k not in without_keys}
+
+
+def dict_with(input_dict: dict[K, V], with_keys: set[str]) -> dict[K, V]:
+    """Copy `input_dict`, including only keys in `with_keys`.
+
+    >>> a = {"foo": "bar", "bar": "baz", "zip": "zap"}
+    >>> b = dict_with(a, {"foo", "bar"})
+    >>> b
+    {'foo': 'bar', 'bar': 'baz'}
+    >>> b["foo"] = "not bar"
+    >>> a
+    {'foo': 'bar', 'bar': 'baz', 'zip': 'zap'}
+    """
+    return {k: v for k, v in input_dict.items() if k in with_keys}
+
+
+def compare_dicts_without(a: dict, b: dict, without_keys: set[str]) -> bool:
+    """Check whether `a` and `b` are equal, ignoring `without_keys`
+
+    >>> a = {"foo": "bar", "bar": "baz", "zip": "zap"}
+    >>> b = {"foo": "bar"}
+    >>> compare_dicts_without(a, b, {"bar", "zip"})
+    True
+    >>> compare_dicts_without(a, b, {"bar"})
+    False
+    """
+    return dict_without(a, without_keys) == dict_without(b, without_keys)

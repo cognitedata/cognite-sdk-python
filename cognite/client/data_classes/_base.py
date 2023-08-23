@@ -269,7 +269,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
         return [resource.dump(camel_case) for resource in self.data]
 
     def get(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[T_CogniteResource]:
-        """Get an item from this list by id or exernal_id.
+        """Get an item from this list by id or external_id.
 
         Args:
             id (int): The id of the item to get.

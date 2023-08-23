@@ -8,6 +8,7 @@ from typing_extensions import TypeAlias
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, EnumProperty, Sort
 from cognite.client.data_classes.aggregations import UniqueResult
+from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.labels import Label, LabelDefinition
 from cognite.client.data_classes.shared import GeoLocation
 from cognite.client.utils._text import convert_all_keys_to_snake_case
@@ -176,6 +177,33 @@ class Document(CogniteResource):
         if self.geo_location:
             output[("geoLocation" if camel_case else "geo_location")] = self.geo_location.dump(camel_case)
         return output
+
+    def as_file(self) -> FileMetadata:
+        """
+        Returns a FileMetadata object with the same properties as the Document object
+
+        Note that the Document + SourceFile objects do not have exactly the same properties as the FileMetadata object,
+        so, for example, Uploaded, and UploadedTime will be None.
+
+        Returns:
+            FileMetadata: A FileMetadata object with the same properties as the Document + SourceFile object
+        """
+        return FileMetadata(
+            external_id=self.external_id,
+            name=self.source_file.name,
+            source=self.source_file.source,
+            mime_type=self.source_file.mime_type,
+            metadata=self.source_file.metadata,
+            directory=self.source_file.directory,
+            asset_ids=self.source_file.asset_ids,
+            labels=self.source_file.labels,
+            geo_location=self.source_file.geo_location,
+            created_time=self.created_time,
+            last_updated_time=self.modified_time,
+            security_categories=self.source_file.security_categories,
+            id=self.id,
+            cognite_client=self._cognite_client,
+        )
 
 
 class DocumentList(CogniteResourceList[Document]):
