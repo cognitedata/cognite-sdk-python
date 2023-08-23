@@ -20,6 +20,8 @@ from typing import (
     NamedTuple,
     NoReturn,
     Sequence,
+    Tuple,
+    Union,
     cast,
     overload,
 )
@@ -325,8 +327,7 @@ class AssetsAPI(APIClient):
         """`Count of assets matching the specified filters. <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
         Args:
-            property (AssetPropertyLike): If specified, get an approximate number of asset with a specific property
-                                                                                        (property is not null) and matching the filters.
+            property (AssetPropertyLike | None): If specified, get an approximate number of asset with a specific property (property is not null) and matching the filters.
             advanced_filter (Filter | dict | None): The filter to narrow down the asset to count.
             filter (AssetFilter | dict | None): The filter to narrow down asset to count requirering exact match.
 
@@ -378,23 +379,21 @@ class AssetsAPI(APIClient):
 
         Examples:
 
-        Count the number of labels used by assets in your CDF project:
+            Count the number of labels used by assets in your CDF project:
 
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes.assets import AssetProperty
-            >>> c = CogniteClient()
-            >>> label_count = c.assets.aggregate_cardinality_values(AssetProperty.labels)
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.assets import AssetProperty
+                >>> c = CogniteClient()
+                >>> label_count = c.assets.aggregate_cardinality_values(AssetProperty.labels)
 
-        Count the number of timezones (metadata key) for assets with the word "critical" in the description
-        in your CDF project:
+            Count the number of timezones (metadata key) for assets with the word "critical" in the description in your CDF project:
 
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes import filters
-            >>> from cognite.client.data_classes.assets import AssetProperty
-            >>> c = CogniteClient()
-            >>> is_critical = filters.Search(AssetProperty.description, "critical")
-            >>> critical_assets = c.assets.aggregate_cardinality_values(AssetProperty.metadata_key("timezone"), advanced_filter=is_critical)
-
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes.assets import AssetProperty
+                >>> c = CogniteClient()
+                >>> is_critical = filters.Search(AssetProperty.description, "critical")
+                >>> critical_assets = c.assets.aggregate_cardinality_values(AssetProperty.metadata_key("timezone"), advanced_filter=is_critical)
         """
         self._validate_filter(advanced_filter)
         return self._advanced_aggregate(
@@ -416,7 +415,7 @@ class AssetsAPI(APIClient):
 
         Args:
             path (AssetPropertyLike): The scope in every document to aggregate properties.  The only value allowed now is ["metadata"].
-                                      It means to aggregate only metadata properties (aka keys).
+                It means to aggregate only metadata properties (aka keys).
             advanced_filter (Filter | dict | None): The filter to narrow down the assets to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
             filter (AssetFilter | dict | None): The filter to narrow down the assets to count requirering exact match.
@@ -425,12 +424,12 @@ class AssetsAPI(APIClient):
 
         Examples:
 
-        Count the number of unique metadata keys used by assets in your CDF project:
+            Count the number of unique metadata keys used by assets in your CDF project:
 
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes.assets import AssetProperty
-            >>> c = CogniteClient()
-            >>> key_count = c.assets.aggregate_cardinality_properties(AssetProperty.metadata)
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.assets import AssetProperty
+                >>> c = CogniteClient()
+                >>> key_count = c.assets.aggregate_cardinality_properties(AssetProperty.metadata)
         """
         self._validate_filter(advanced_filter)
         return self._advanced_aggregate(
@@ -515,7 +514,7 @@ class AssetsAPI(APIClient):
 
         Args:
             path (AssetPropertyLike): The scope in every document to aggregate properties.  The only value allowed now is ["metadata"].
-                                      It means to aggregate only metadata properties (aka keys).
+                It means to aggregate only metadata properties (aka keys).
             advanced_filter (Filter | dict | None): The filter to narrow down the assets to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
             filter (AssetFilter | dict | None): The filter to narrow down the assets to count requirering exact match.
@@ -525,13 +524,12 @@ class AssetsAPI(APIClient):
 
         Examples:
 
-        Get the metadata keys with counts for your assets in your CDF project:
+            Get the metadata keys with counts for your assets in your CDF project:
 
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes.assets import AssetProperty
-            >>> c = CogniteClient()
-            >>> result = c.assets.aggregate_unique_properties(AssetProperty.metadata)
-
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.assets import AssetProperty
+                >>> c = CogniteClient()
+                >>> result = c.assets.aggregate_unique_properties(AssetProperty.metadata)
         """
         self._validate_filter(advanced_filter)
         return self._advanced_aggregate(
@@ -857,7 +855,7 @@ class AssetsAPI(APIClient):
     def filter(
         self,
         filter: Filter | dict,
-        sort: SortSpec | List[SortSpec] | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
         aggregated_properties: Sequence[Literal["child_count", "path", "depth"]] | None = None,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> AssetList:
@@ -868,11 +866,10 @@ class AssetsAPI(APIClient):
         It applies to basic fields as well as metadata.
 
         Args:
-            filter: Filter to apply.
-            sort: The criteria to sort by. Can be up to two properties to sort by default to ascending order.
-            aggregated_properties: Set of aggregated properties to include. Options are childCount, path, depth.
-            limit: Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None
-                   to return all items.
+            filter (Filter | dict): Filter to apply.
+            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Can be up to two properties to sort by default to ascending order.
+            aggregated_properties (Sequence[Literal["child_count", "path", "depth"]] | None): Set of aggregated properties to include. Options are childCount, path, depth.
+            limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             AssetList: List of assets that match the filter criteria.

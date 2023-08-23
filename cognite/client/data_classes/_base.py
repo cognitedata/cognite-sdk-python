@@ -15,11 +15,11 @@ from typing import (
     Iterator,
     List,
     Literal,
-    Optional,
     Protocol,
     Sequence,
     SupportsIndex,
     TypeVar,
+    Union,
     cast,
     overload,
 )
@@ -315,7 +315,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
     @classmethod
     def _load(
         cls: type[T_CogniteResourceList],
-        resource_list: str | Iterable[Dict[str, Any]],
+        resource_list: str | Iterable[dict[str, Any]],
         cognite_client: CogniteClient | None = None,
     ) -> T_CogniteResourceList:
         if isinstance(resource_list, str):
@@ -550,51 +550,48 @@ class Geometry(dict):
     """Represents the points, curves and surfaces in the coordinate space.
 
     Args:
-        type (str): The geometry type. One of 'Point', 'MultiPoint', 'LineString', 'MultiLineString', 'Polygon', or 'MultiPolygon'.
-        coordinates (List): An array of the coordinates of the geometry. The structure of the elements in this array is determined by the type of geometry.
+        type (Literal["Point", "MultiPoint", "LineString", "MultiLineString", "Polygon", "MultiPolygon"]): The geometry type.
+        coordinates (list): An array of the coordinates of the geometry. The structure of the elements in this array is determined by the type of geometry.
+        geometries (Collection[Geometry] | None): No description.
 
-            Point:
-                Coordinates of a point in 2D space, described as an array of 2 numbers.
+    Examples:
+        Point:
+            Coordinates of a point in 2D space, described as an array of 2 numbers.
 
-                Example: `[4.306640625, 60.205710352530346]`
+            Example: `[4.306640625, 60.205710352530346]`
 
+        LineString:
+            Coordinates of a line described by a list of two or more points.
+            Each point is defined as a pair of two numbers in an array, representing coordinates of a point in 2D space.
 
-            LineString:
-                Coordinates of a line described by a list of two or more points.
+            Example: `[[30, 10], [10, 30], [40, 40]]`
+
+        Polygon:
+            List of one or more linear rings representing a shape.
+            A linear ring is the boundary of a surface or the boundary of a hole in a surface. It is defined as a list consisting of 4 or more Points, where the first and last Point is equivalent.
+            Each Point is defined as an array of 2 numbers, representing coordinates of a point in 2D space.
+
+            Example: `[[[35, 10], [45, 45], [15, 40], [10, 20], [35, 10]], [[20, 30], [35, 35], [30, 20], [20, 30]]]`
+            type: array
+
+        MultiPoint:
+            List of Points. Each Point is defined as an array of 2 numbers, representing coordinates of a point in 2D space.
+
+            Example: `[[35, 10], [45, 45]]`
+
+        MultiLineString:
+                List of lines where each line (LineString) is defined as a list of two or more points.
                 Each point is defined as a pair of two numbers in an array, representing coordinates of a point in 2D space.
 
-                Example: `[[30, 10], [10, 30], [40, 40]]`
+                Example: `[[[30, 10], [10, 30]], [[35, 10], [10, 30], [40, 40]]]`
 
+        MultiPolygon:
+            List of multiple polygons.
 
-            Polygon:
-                List of one or more linear rings representing a shape.
-                A linear ring is the boundary of a surface or the boundary of a hole in a surface. It is defined as a list consisting of 4 or more Points, where the first and last Point is equivalent.
-                Each Point is defined as an array of 2 numbers, representing coordinates of a point in 2D space.
-
-                Example: `[[[35, 10], [45, 45], [15, 40], [10, 20], [35, 10]], [[20, 30], [35, 35], [30, 20], [20, 30]]]`
-                type: array
-
-            MultiPoint:
-                List of Points. Each Point is defined as an array of 2 numbers, representing coordinates of a point in 2D space.
-
-                Example: `[[35, 10], [45, 45]]`
-
-            MultiLineString:
-                    List of lines where each line (LineString) is defined as a list of two or more points.
-                    Each point is defined as a pair of two numbers in an array, representing coordinates of a point in 2D space.
-
-                    Example: `[[[30, 10], [10, 30]], [[35, 10], [10, 30], [40, 40]]]`
-
-            MultiPolygon:
-                List of multiple polygons.
-
-                Each polygon is defined as a list of one or more linear rings representing a shape.
-
-                A linear ring is the boundary of a surface or the boundary of a hole in a surface. It is defined as a list consisting of 4 or more Points, where the first and last Point is equivalent.
-
-                Each Point is defined as an array of 2 numbers, representing coordinates of a point in 2D space.
-
-                Example: `[[[[30, 20], [45, 40], [10, 40], [30, 20]]], [[[15, 5], [40, 10], [10, 20], [5, 10], [15, 5]]]]`
+            Each polygon is defined as a list of one or more linear rings representing a shape.
+            A linear ring is the boundary of a surface or the boundary of a hole in a surface. It is defined as a list consisting of 4 or more Points, where the first and last Point is equivalent.
+            Each Point is defined as an array of 2 numbers, representing coordinates of a point in 2D space.
+            Example: `[[[[30, 20], [45, 40], [10, 40], [30, 20]]], [[[15, 5], [40, 10], [10, 20], [5, 10], [15, 5]]]]`
     """
 
     _VALID_TYPES = frozenset({"Point", "MultiPoint", "LineString", "MultiLineString", "Polygon", "MultiPolygon"})
@@ -602,9 +599,9 @@ class Geometry(dict):
     def __init__(
         self,
         type: Literal["Point", "MultiPoint", "LineString", "MultiLineString", "Polygon", "MultiPolygon"],
-        coordinates: List,
+        coordinates: list,
         geometries: Collection[Geometry] | None = None,
-    ):
+    ) -> None:
         if type not in self._VALID_TYPES:
             raise ValueError(f"type must be one of {self._VALID_TYPES}")
         self.type = type
@@ -615,14 +612,14 @@ class Geometry(dict):
     coordinates = CognitePropertyClassUtil.declare_property("coordinates")
 
     @classmethod
-    def _load(cls, raw_geometry: Dict[str, Any]) -> Geometry:
+    def _load(cls, raw_geometry: dict[str, Any]) -> Geometry:
         return cls(
             type=raw_geometry["type"],
             coordinates=raw_geometry["coordinates"],
             geometries=raw_geometry.get("geometries"),
         )
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
         output = dict(convert_all_keys_to_camel_case(self) if camel_case else self)
         if self.geometries:
             output["geometries"] = [g.dump(camel_case) for g in self.geometries]
@@ -647,7 +644,7 @@ class Sort:
 
     @classmethod
     def load(
-        cls: Type[T_Sort],
+        cls: type[T_Sort],
         data: dict[str, Any]
         | tuple[SortableProperty, Literal["asc", "desc"]]
         | tuple[SortableProperty, Literal["asc", "desc"], Literal["auto", "first", "last"]]
@@ -698,11 +695,11 @@ T_Sort = TypeVar("T_Sort", bound=Sort)
 
 class HasExternalAndInternalId(Protocol):
     @property
-    def external_id(self) -> Optional[str]:
+    def external_id(self) -> str | None:
         ...
 
     @property
-    def id(self) -> Optional[int]:
+    def id(self) -> int | None:
         ...
 
 

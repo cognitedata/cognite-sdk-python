@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 import math
-from typing import TYPE_CHECKING, Any, Iterator, List, Literal, cast, overload
+from typing import TYPE_CHECKING, Any, Iterator, List, Literal, Tuple, Union, cast, overload
 from typing import Sequence as SequenceType
 
 from typing_extensions import TypeAlias
@@ -225,7 +225,7 @@ class SequencesAPI(APIClient):
 
         Args:
             advanced_filter (Filter | dict | None): The filter to narrow down the sequences to count.
-            filter (TimeSeriesFilter | dict | None): The filter to narrow down sequences to count requirering exact match.
+            filter (SequenceFilter | dict | None): The filter to narrow down sequences to count requirering exact match.
 
         Returns:
             int: The number of sequences matching the specified filters and search.
@@ -263,7 +263,7 @@ class SequencesAPI(APIClient):
 
     def aggregate_cardinality_values(
         self,
-        property: SequenceProperty | str | List[str],
+        property: SequenceProperty | str | list[str],
         advanced_filter: Filter | dict | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: SequenceFilter | dict | None = None,
@@ -271,8 +271,7 @@ class SequencesAPI(APIClient):
         """`Find approximate property count for sequences. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
 
         Args:
-            property (SequenceProperty | str | List[str]): The property to count the cardinality of.
-            query (str | None): The free text search query, for details see the documentation referenced above.
+            property (SequenceProperty | str | list[str]): The property to count the cardinality of.
             advanced_filter (Filter | dict | None): The filter to narrow down the sequences to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
             filter (SequenceFilter | dict | None): The filter to narrow down the sequences  to count requirering exact match.
@@ -322,7 +321,7 @@ class SequencesAPI(APIClient):
 
     def aggregate_cardinality_properties(
         self,
-        path: SequenceProperty | str | List[str],
+        path: SequenceProperty | str | list[str],
         advanced_filter: Filter | dict | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: SequenceFilter | dict | None = None,
@@ -330,9 +329,7 @@ class SequencesAPI(APIClient):
         """`Find approximate paths count for sequences.  <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
 
         Args:
-            path (SequenceProperty | str | List[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
-                                                       It means to aggregate only metadata properties (aka keys).
-            query (str | None): The free text search query, for details see the documentation referenced above.
+            path (SequenceProperty | str | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
             advanced_filter (Filter | dict | None): The filter to narrow down the sequences to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
             filter (SequenceFilter | dict | None): The filter to narrow down the sequences  to count requirering exact match.
@@ -341,12 +338,12 @@ class SequencesAPI(APIClient):
 
         Examples:
 
-        Count the number of different metadata keys in your CDF project:
+            Count the number of different metadata keys in your CDF project:
 
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes.sequences import SequenceProperty
-            >>> c = CogniteClient()
-            >>> count = c.sequences.aggregate_cardinality_values(SequenceProperty.metadata)
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.sequences import SequenceProperty
+                >>> c = CogniteClient()
+                >>> count = c.sequences.aggregate_cardinality_values(SequenceProperty.metadata)
 
         """
         self._validate_filter(advanced_filter)
@@ -366,7 +363,7 @@ class SequencesAPI(APIClient):
 
     def aggregate_unique_values(
         self,
-        property: SequenceProperty | str | List[str],
+        property: SequenceProperty | str | list[str],
         advanced_filter: Filter | dict | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: SequenceFilter | dict | None = None,
@@ -374,7 +371,7 @@ class SequencesAPI(APIClient):
         """`Get unique paths with counts for sequences. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
 
         Args:
-            property (SequenceProperty | str | List[str]): The property to group by.
+            property (SequenceProperty | str | list[str]): The property to group by.
             advanced_filter (Filter | dict | None): The filter to narrow down the sequences to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
             filter (SequenceFilter | dict | None): The filter to narrow down the sequences to count requirering exact match.
@@ -445,7 +442,7 @@ class SequencesAPI(APIClient):
 
     def aggregate_unique_properties(
         self,
-        path: SequenceProperty | str | List[str],
+        path: SequenceProperty | str | list[str],
         advanced_filter: Filter | dict | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: SequenceFilter | dict | None = None,
@@ -453,8 +450,7 @@ class SequencesAPI(APIClient):
         """`Find approximate unique sequence properties. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
 
         Args:
-            path (SequenceProperty | str | List[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
-                                                       It means to aggregate only metadata properties (aka keys).
+            path (SequenceProperty | str | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
             advanced_filter (Filter | dict | None): The filter to narrow down the sequences to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
             filter (SequenceFilter | dict | None): The filter to narrow down the sequences to count requirering exact match.
@@ -464,13 +460,12 @@ class SequencesAPI(APIClient):
 
         Examples:
 
-        Get the metadata keys with count for your sequences in your CDF project:
+            Get the metadata keys with count for your sequences in your CDF project:
 
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes.sequences import SequenceProperty
-            >>> c = CogniteClient()
-            >>> result = c.sequences.aggregate_unique_properties(SequenceProperty.metadata)
-
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.sequences import SequenceProperty
+                >>> c = CogniteClient()
+                >>> result = c.sequences.aggregate_unique_properties(SequenceProperty.metadata)
         """
         self._validate_filter(advanced_filter)
 
@@ -753,7 +748,7 @@ class SequencesAPI(APIClient):
     def filter(
         self,
         filter: Filter | dict,
-        sort: SortSpec | List[SortSpec] | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> SequenceList:
         """`Advanced filter sequences <https://developer.cognite.com/api#tag/Sequences/operation/advancedListSequences>`_
@@ -763,10 +758,9 @@ class SequencesAPI(APIClient):
         It applies to basic fields as well as metadata.
 
         Args:
-            filter: Filter to apply.
-            sort: The criteria to sort by. Can be up to two properties to sort by default to ascending order.
-            limit: Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None
-                   to return all items.
+            filter (Filter | dict): Filter to apply.
+            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Can be up to two properties to sort by default to ascending order.
+            limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             SequenceList: List of sequences that match the filter criteria.

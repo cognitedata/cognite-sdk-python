@@ -19,6 +19,7 @@ from typing import (
     Optional,
     Sequence,
     TextIO,
+    Union,
     cast,
 )
 

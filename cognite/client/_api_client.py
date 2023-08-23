@@ -15,7 +15,6 @@ from typing import (
     Literal,
     MutableMapping,
     NoReturn,
-    Optional,
     Sequence,
     TypeVar,
     Union,
@@ -374,7 +373,7 @@ class APIClient:
         partitions: int | None = None,
         headers: dict[str, Any] | None = None,
         initial_cursor: str | None = None,
-        advanced_filter: Optional[dict | Filter] = None,
+        advanced_filter: dict | Filter | None = None,
     ) -> Iterator[T_CogniteResourceList] | Iterator[T_CogniteResource]:
         if is_unlimited(limit):
             limit = None
@@ -505,7 +504,7 @@ class APIClient:
         sort: Sequence[str] | None = None,
         headers: dict | None = None,
         initial_cursor: str | None = None,
-        advanced_filter: Optional[dict | Filter] = None,
+        advanced_filter: dict | Filter | None = None,
     ) -> T_CogniteResourceList:
         if partitions:
             if not is_unlimited(limit):
@@ -551,7 +550,7 @@ class APIClient:
         filter: dict | None = None,
         other_params: dict | None = None,
         headers: dict | None = None,
-        advanced_filter: Optional[dict | Filter] = None,
+        advanced_filter: dict | Filter | None = None,
     ) -> T_CogniteResourceList:
         def get_partition(partition: int) -> list[dict[str, Any]]:
             next_cursor = None

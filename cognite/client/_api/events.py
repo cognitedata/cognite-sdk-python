@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Iterator, List, Literal, Sequence, Tuple, Union, cast, overload
+from typing import Any, Iterator, Literal, Sequence, Tuple, Union, cast, overload
 
 from typing_extensions import TypeAlias
 
@@ -233,7 +233,7 @@ class EventsAPI(APIClient):
         property: EventPropertyLike | None = None,
         advanced_filter: Filter | dict | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
-    ) -> List[AggregateUniqueValuesResult]:
+    ) -> list[AggregateUniqueValuesResult]:
         ...
 
     @overload
@@ -254,18 +254,18 @@ class EventsAPI(APIClient):
         property: EventPropertyLike | None = None,
         advanced_filter: Filter | dict | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
-    ) -> List[AggregateUniqueValuesResult] | UniqueResultList:
+    ) -> list[AggregateUniqueValuesResult] | UniqueResultList:
         """`Get unique properties with counts for events. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
 
         Args:
-            fields (Sequence[str]): The fields to return. Defaults to ["count"].
+            fields (Sequence[str] | None): The fields to return. Defaults to ["count"].
             filter (EventFilter | dict | None): The filter to narrow down the events to count requirering exact match.
-            property (EventPropertyLike): The property name(s) to apply the aggregation on.
+            property (EventPropertyLike | None): The property name(s) to apply the aggregation on.
             advanced_filter (Filter | dict | None): The filter to narrow down the events to consider.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
 
         Returns:
-            UniqueResultList: List of unique values of events matching the specified filters and search.
+            list[AggregateUniqueValuesResult] | UniqueResultList: List of unique values of events matching the specified filters and search.
 
         Examples:
 
@@ -330,7 +330,7 @@ class EventsAPI(APIClient):
 
         Args:
             property (EventPropertyLike | None): If specified, Get an approximate number of Events with a specific property
-                                                                                               (property is not null) and matching the filters.
+                (property is not null) and matching the filters.
             advanced_filter (Filter | dict | None): The filter to narrow down the events to count.
             filter (EventFilter | dict | None): The filter to narrow down the events to count requirering exact match.
 
@@ -339,21 +339,20 @@ class EventsAPI(APIClient):
 
         Examples:
 
-        Count the number of events in your CDF project:
+            Count the number of events in your CDF project:
 
-            >>> from cognite.client import CogniteClient
-            >>> c = CogniteClient()
-            >>> count = c.events.aggregate_count()
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> count = c.events.aggregate_count()
 
-        Count the number of workorder events in your CDF project:
+            Count the number of workorder events in your CDF project:
 
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes import filters
-            >>> from cognite.client.data_classes.events import EventProperty
-            >>> c = CogniteClient()
-            >>> is_workorder = filters.Equals(EventProperty.type, "workorder")
-            >>> workorder_count = c.events.aggregate_count(advanced_filter=is_workorder)
-
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes.events import EventProperty
+                >>> c = CogniteClient()
+                >>> is_workorder = filters.Equals(EventProperty.type, "workorder")
+                >>> workorder_count = c.events.aggregate_count(advanced_filter=is_workorder)
         """
         self._validate_filter(advanced_filter)
         return self._advanced_aggregate(
@@ -420,7 +419,7 @@ class EventsAPI(APIClient):
 
         Args:
             path (EventPropertyLike): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
-                                      It means to aggregate only metadata properties (aka keys).
+                It means to aggregate only metadata properties (aka keys).
             advanced_filter (Filter | dict | None): The filter to narrow down the events to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
             filter (EventFilter | dict | None): The filter to narrow down the events to count requirering exact match.
@@ -429,12 +428,12 @@ class EventsAPI(APIClient):
 
         Examples:
 
-        Count the number of metadata keys for events in your CDF project:
+            Count the number of metadata keys for events in your CDF project:
 
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes.events import EventProperty
-            >>> c = CogniteClient()
-            >>> type_count = c.events.aggregate_cardinality_properties(EventProperty.metadata)
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.events import EventProperty
+                >>> c = CogniteClient()
+                >>> type_count = c.events.aggregate_cardinality_properties(EventProperty.metadata)
 
         """
         self._validate_filter(advanced_filter)
@@ -457,7 +456,7 @@ class EventsAPI(APIClient):
 
         Args:
             path (EventPropertyLike): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
-                                      It means to aggregate only metadata properties (aka keys).
+                It means to aggregate only metadata properties (aka keys).
             advanced_filter (Filter | dict | None): The filter to narrow down the events to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
             filter (EventFilter | dict | None): The filter to narrow down the events to count requirering exact match.
@@ -467,14 +466,13 @@ class EventsAPI(APIClient):
 
         Examples:
 
-        Get the unique metadata keys with count of events in your CDF project:
+            Get the unique metadata keys with count of events in your CDF project:
 
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes.events import EventProperty
-            >>> c = CogniteClient()
-            >>> result = c.events.aggregate_unique_properties(EventProperty.metadata)
-            >>> print(result.unique)
-
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.events import EventProperty
+                >>> c = CogniteClient()
+                >>> result = c.events.aggregate_unique_properties(EventProperty.metadata)
+                >>> print(result.unique)
         """
         self._validate_filter(advanced_filter)
         return self._advanced_aggregate(
@@ -648,7 +646,7 @@ class EventsAPI(APIClient):
     def filter(
         self,
         filter: Filter | dict,
-        sort: SortSpec | List[SortSpec] | None = None,
+        sort: SortSpec | list[SortSpec] | None = None,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> EventList:
         """`Advanced filter events <https://developer.cognite.com/api#tag/Events/operation/advancedListEvents>`_
@@ -658,10 +656,9 @@ class EventsAPI(APIClient):
         It applies to basic fields as well as metadata.
 
         Args:
-            filter: Filter to apply.
-            sort: The criteria to sort by. Can be up to two properties to sort by default to ascending order.
-            limit: Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None
-                   to return all items.
+            filter (Filter | dict): Filter to apply.
+            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Can be up to two properties to sort by default to ascending order.
+            limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             EventList: List of events that match the filter criteria.
@@ -695,7 +692,6 @@ class EventsAPI(APIClient):
                 >>> has_failure = f.Search(EventProperty.description, "failure")
                 >>> res = c.events.filter(filter=f.And(is_workorder, has_failure),
                 ...                       sort=(SortableEventProperty.start_time, "desc"))
-
         """
         self._validate_filter(filter)
         if sort is None:
