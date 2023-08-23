@@ -11,6 +11,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    IdTransformerMixin,
     PropertySpec,
 )
 from cognite.client.data_classes.shared import TimestampRange
@@ -211,7 +212,7 @@ class ExtractionPipelineUpdate(CogniteUpdate):
         ]
 
 
-class ExtractionPipelineList(CogniteResourceList[ExtractionPipeline]):
+class ExtractionPipelineList(CogniteResourceList[ExtractionPipeline], IdTransformerMixin):
     _RESOURCE = ExtractionPipeline
 
 

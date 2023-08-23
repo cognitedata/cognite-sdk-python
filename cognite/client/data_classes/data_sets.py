@@ -12,6 +12,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    IdTransformerMixin,
     PropertySpec,
 )
 from cognite.client.data_classes.shared import TimestampRange
@@ -182,5 +183,5 @@ class DataSetAggregate(dict):
     count = CognitePropertyClassUtil.declare_property("count")
 
 
-class DataSetList(CogniteResourceList[DataSet]):
+class DataSetList(CogniteResourceList[DataSet], IdTransformerMixin):
     _RESOURCE = DataSet
