@@ -15,8 +15,6 @@ from cognite.client.data_classes import (
 from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
-    import builtins
-
     from cognite.client import CogniteClient
     from cognite.client.config import ClientConfig
 
@@ -158,6 +156,55 @@ class DataSetsAPI(APIClient):
             list_cls=DataSetList, resource_cls=DataSet, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
 
+    def aggregate(self, filter: DataSetFilter | dict | None = None) -> list[DataSetAggregate]:
+        """`Aggregate data sets <https://developer.cognite.com/api#tag/Data-sets/operation/aggregateDataSets>`_
+
+        Args:
+            filter (DataSetFilter | dict | None): Filter on data set filter with exact match
+
+        Returns:
+            list[DataSetAggregate]: List of data set aggregates
+
+        Examples:
+
+            Aggregate data_sets:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> aggregate_protected = c.data_sets.aggregate(filter={"write_protected": True})
+        """
+
+        return self._aggregate(filter=filter, cls=DataSetAggregate)
+
+    def update(self, item: DataSet | DataSetUpdate | Sequence[DataSet | DataSetUpdate]) -> DataSet | DataSetList:
+        """`Update one or more data sets <https://developer.cognite.com/api#tag/Data-sets/operation/updateDataSets>`_
+
+        Args:
+            item (DataSet | DataSetUpdate | Sequence[DataSet | DataSetUpdate]): Data set(s) to update
+
+        Returns:
+            DataSet | DataSetList: Updated data set(s)
+
+        Examples:
+
+            Update a data set that you have fetched. This will perform a full update of the data set::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> data_set = c.data_sets.retrieve(id=1)
+                >>> data_set.description = "New description"
+                >>> res = c.data_sets.update(data_set)
+
+            Perform a partial update on a data set, updating the description and removing a field from metadata::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import DataSetUpdate
+                >>> c = CogniteClient()
+                >>> my_update = DataSetUpdate(id=1).description.set("New description").metadata.remove(["key"])
+                >>> res = c.data_sets.update(my_update)
+        """
+        return self._update_multiple(list_cls=DataSetList, resource_cls=DataSet, update_cls=DataSetUpdate, items=item)
+
     def list(
         self,
         metadata: dict[str, str] | None = None,
@@ -211,52 +258,3 @@ class DataSetsAPI(APIClient):
             write_protected=write_protected,
         ).dump(camel_case=True)
         return self._list(list_cls=DataSetList, resource_cls=DataSet, method="POST", limit=limit, filter=filter)
-
-    def aggregate(self, filter: DataSetFilter | dict | None = None) -> builtins.list[DataSetAggregate]:
-        """`Aggregate data sets <https://developer.cognite.com/api#tag/Data-sets/operation/aggregateDataSets>`_
-
-        Args:
-            filter (DataSetFilter | dict | None): Filter on data set filter with exact match
-
-        Returns:
-            builtins.list[DataSetAggregate]: List of data set aggregates
-
-        Examples:
-
-            Aggregate data_sets:
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> aggregate_protected = c.data_sets.aggregate(filter={"write_protected": True})
-        """
-
-        return self._aggregate(filter=filter, cls=DataSetAggregate)
-
-    def update(self, item: DataSet | DataSetUpdate | Sequence[DataSet | DataSetUpdate]) -> DataSet | DataSetList:
-        """`Update one or more data sets <https://developer.cognite.com/api#tag/Data-sets/operation/updateDataSets>`_
-
-        Args:
-            item (DataSet | DataSetUpdate | Sequence[DataSet | DataSetUpdate]): Data set(s) to update
-
-        Returns:
-            DataSet | DataSetList: Updated data set(s)
-
-        Examples:
-
-            Update a data set that you have fetched. This will perform a full update of the data set::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> data_set = c.data_sets.retrieve(id=1)
-                >>> data_set.description = "New description"
-                >>> res = c.data_sets.update(data_set)
-
-            Perform a partial update on a data set, updating the description and removing a field from metadata::
-
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import DataSetUpdate
-                >>> c = CogniteClient()
-                >>> my_update = DataSetUpdate(id=1).description.set("New description").metadata.remove(["key"])
-                >>> res = c.data_sets.update(my_update)
-        """
-        return self._update_multiple(list_cls=DataSetList, resource_cls=DataSet, update_cls=DataSetUpdate, items=item)

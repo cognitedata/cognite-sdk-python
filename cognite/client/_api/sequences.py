@@ -29,8 +29,6 @@ from cognite.client.utils._text import convert_all_keys_to_camel_case
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 
 if TYPE_CHECKING:
-    import builtins
-
     import pandas
 
     from cognite.client import CogniteClient
@@ -198,85 +196,14 @@ class SequencesAPI(APIClient):
             list_cls=SequenceList, resource_cls=Sequence, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
 
-    def list(
-        self,
-        name: str | None = None,
-        external_id_prefix: str | None = None,
-        metadata: dict[str, str] | None = None,
-        asset_ids: SequenceType[int] | None = None,
-        asset_subtree_ids: int | SequenceType[int] | None = None,
-        asset_subtree_external_ids: str | SequenceType[str] | None = None,
-        data_set_ids: int | SequenceType[int] | None = None,
-        data_set_external_ids: str | SequenceType[str] | None = None,
-        created_time: dict[str, Any] | TimestampRange | None = None,
-        last_updated_time: dict[str, Any] | TimestampRange | None = None,
-        limit: int | None = LIST_LIMIT_DEFAULT,
-    ) -> SequenceList:
-        """`Iterate over sequences <https://developer.cognite.com/api#tag/Sequences/operation/advancedListSequences>`_
-
-        Fetches sequences as they are iterated over, so you keep a limited number of objects in memory.
-
-        Args:
-            name (str | None): Filter out sequences that do not have this *exact* name.
-            external_id_prefix (str | None): Filter out sequences that do not have this string as the start of the externalId
-            metadata (dict[str, str] | None): Filter out sequences that do not match these metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
-            asset_ids (SequenceType[int] | None): Filter out sequences that are not linked to any of these assets.
-            asset_subtree_ids (int | SequenceType[int] | None): Asset subtree id or list of asset subtree ids to filter on.
-            asset_subtree_external_ids (str | SequenceType[str] | None): Asset subtree external id or list of asset subtree external ids to filter on.
-            data_set_ids (int | SequenceType[int] | None): Return only sequences in the specified data set(s) with this id / these ids.
-            data_set_external_ids (str | SequenceType[str] | None): Return only sequences in the specified data set(s) with this external id / these external ids.
-            created_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            last_updated_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            limit (int | None): Max number of sequences to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
-
-        Returns:
-            SequenceList: The requested sequences.
-
-        Examples:
-
-            List sequences::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.sequences.list(limit=5)
-
-            Iterate over sequences::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for seq in c.sequences:
-                ...     seq # do something with the sequences
-
-            Iterate over chunks of sequences to reduce memory load::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for seq_list in c.sequences(chunk_size=2500):
-                ...     seq_list # do something with the sequences
-        """
-        asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
-        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
-
-        filter = SequenceFilter(
-            name=name,
-            metadata=metadata,
-            external_id_prefix=external_id_prefix,
-            asset_ids=asset_ids,
-            asset_subtree_ids=asset_subtree_ids_processed,
-            created_time=created_time,
-            last_updated_time=last_updated_time,
-            data_set_ids=data_set_ids_processed,
-        ).dump(camel_case=True)
-        return self._list(list_cls=SequenceList, resource_cls=Sequence, method="POST", filter=filter, limit=limit)
-
-    def aggregate(self, filter: SequenceFilter | dict | None = None) -> builtins.list[SequenceAggregate]:
+    def aggregate(self, filter: SequenceFilter | dict | None = None) -> list[SequenceAggregate]:
         """`Aggregate sequences <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
 
         Args:
             filter (SequenceFilter | dict | None): Filter on sequence filter with exact match
 
         Returns:
-            builtins.list[SequenceAggregate]: List of sequence aggregates
+            list[SequenceAggregate]: List of sequence aggregates
 
         Examples:
 
@@ -897,6 +824,77 @@ class SequencesAPI(APIClient):
 
     def _validate_filter(self, filter: Filter | dict | None) -> None:
         _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)
+
+    def list(
+        self,
+        name: str | None = None,
+        external_id_prefix: str | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: SequenceType[int] | None = None,
+        asset_subtree_ids: int | SequenceType[int] | None = None,
+        asset_subtree_external_ids: str | SequenceType[str] | None = None,
+        data_set_ids: int | SequenceType[int] | None = None,
+        data_set_external_ids: str | SequenceType[str] | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        limit: int | None = LIST_LIMIT_DEFAULT,
+    ) -> SequenceList:
+        """`Iterate over sequences <https://developer.cognite.com/api#tag/Sequences/operation/advancedListSequences>`_
+
+        Fetches sequences as they are iterated over, so you keep a limited number of objects in memory.
+
+        Args:
+            name (str | None): Filter out sequences that do not have this *exact* name.
+            external_id_prefix (str | None): Filter out sequences that do not have this string as the start of the externalId
+            metadata (dict[str, str] | None): Filter out sequences that do not match these metadata fields and values (case-sensitive). Format is {"key1":"value1","key2":"value2"}.
+            asset_ids (SequenceType[int] | None): Filter out sequences that are not linked to any of these assets.
+            asset_subtree_ids (int | SequenceType[int] | None): Asset subtree id or list of asset subtree ids to filter on.
+            asset_subtree_external_ids (str | SequenceType[str] | None): Asset subtree external id or list of asset subtree external ids to filter on.
+            data_set_ids (int | SequenceType[int] | None): Return only sequences in the specified data set(s) with this id / these ids.
+            data_set_external_ids (str | SequenceType[str] | None): Return only sequences in the specified data set(s) with this external id / these external ids.
+            created_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            last_updated_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            limit (int | None): Max number of sequences to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+
+        Returns:
+            SequenceList: The requested sequences.
+
+        Examples:
+
+            List sequences::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.sequences.list(limit=5)
+
+            Iterate over sequences::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> for seq in c.sequences:
+                ...     seq # do something with the sequences
+
+            Iterate over chunks of sequences to reduce memory load::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> for seq_list in c.sequences(chunk_size=2500):
+                ...     seq_list # do something with the sequences
+        """
+        asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
+        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
+
+        filter = SequenceFilter(
+            name=name,
+            metadata=metadata,
+            external_id_prefix=external_id_prefix,
+            asset_ids=asset_ids,
+            asset_subtree_ids=asset_subtree_ids_processed,
+            created_time=created_time,
+            last_updated_time=last_updated_time,
+            data_set_ids=data_set_ids_processed,
+        ).dump(camel_case=True)
+        return self._list(list_cls=SequenceList, resource_cls=Sequence, method="POST", filter=filter, limit=limit)
 
 
 class SequencesDataAPI(APIClient):

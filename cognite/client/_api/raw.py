@@ -10,8 +10,6 @@ from cognite.client.utils._auxiliary import is_unlimited, local_import
 from cognite.client.utils._identifier import Identifier
 
 if TYPE_CHECKING:
-    import builtins
-
     import pandas
 
     from cognite.client import CogniteClient
@@ -252,6 +250,16 @@ class RawTablesAPI(APIClient):
             task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda el: el["name"]
         )
 
+    def _set_db_name_on_tables(self, tb: Table | TableList, db_name: str) -> Table | TableList:
+        if isinstance(tb, Table):
+            tb._db_name = db_name
+            return tb
+        elif isinstance(tb, TableList):
+            for t in tb:
+                t._db_name = db_name
+            return tb
+        raise TypeError("tb must be Table or TableList")
+
     def list(self, db_name: str, limit: int = LIST_LIMIT_DEFAULT) -> TableList:
         """`List tables <https://developer.cognite.com/api#tag/Raw/operation/getTables>`_
 
@@ -292,16 +300,6 @@ class RawTablesAPI(APIClient):
             limit=limit,
         )
         return cast(TableList, self._set_db_name_on_tables(tb, db_name))
-
-    def _set_db_name_on_tables(self, tb: Table | TableList, db_name: str) -> Table | TableList:
-        if isinstance(tb, Table):
-            tb._db_name = db_name
-            return tb
-        elif isinstance(tb, TableList):
-            for t in tb:
-                t._db_name = db_name
-            return tb
-        raise TypeError("tb must be Table or TableList")
 
 
 class RawRowsAPI(APIClient):
@@ -491,6 +489,54 @@ class RawRowsAPI(APIClient):
             identifier=Identifier(key),
         )
 
+    def _make_columns_param(self, columns: list[str] | None) -> str | None:
+        if columns is None:
+            return None
+        if not isinstance(columns, List):
+            raise ValueError("Expected a list for argument columns")
+        if len(columns) == 0:
+            return ","
+        else:
+            return ",".join([str(x) for x in columns])
+
+    def retrieve_dataframe(
+        self,
+        db_name: str,
+        table_name: str,
+        min_last_updated_time: int | None = None,
+        max_last_updated_time: int | None = None,
+        columns: list[str] | None = None,
+        limit: int = LIST_LIMIT_DEFAULT,
+    ) -> pandas.DataFrame:
+        """`Retrieve rows in a table as a pandas dataframe. <https://developer.cognite.com/api#tag/Raw/operation/getRows>`_
+
+        Rowkeys are used as the index.
+
+        Args:
+            db_name (str): Name of the database.
+            table_name (str): Name of the table.
+            min_last_updated_time (int | None): Rows must have been last updated after this time. ms since epoch.
+            max_last_updated_time (int | None): Rows must have been last updated before this time. ms since epoch.
+            columns (list[str] | None): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
+            limit (int): The number of rows to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
+
+        Returns:
+            pandas.DataFrame: The requested rows in a pandas dataframe.
+
+        Examples:
+
+            Get dataframe::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> df = c.raw.rows.retrieve_dataframe("db1", "t1", limit=5)
+        """
+        pd = cast(Any, local_import("pandas"))
+        rows = self.list(db_name, table_name, min_last_updated_time, max_last_updated_time, columns, limit)
+        idx = [r.key for r in rows]
+        cols = [r.columns for r in rows]
+        return pd.DataFrame(cols, index=idx)
+
     def list(
         self,
         db_name: str,
@@ -568,51 +614,3 @@ class RawRowsAPI(APIClient):
         if summary.exceptions:
             raise summary.exceptions[0]
         return RowList(summary.joined_results())
-
-    def _make_columns_param(self, columns: builtins.list[str] | None) -> str | None:
-        if columns is None:
-            return None
-        if not isinstance(columns, List):
-            raise ValueError("Expected a list for argument columns")
-        if len(columns) == 0:
-            return ","
-        else:
-            return ",".join([str(x) for x in columns])
-
-    def retrieve_dataframe(
-        self,
-        db_name: str,
-        table_name: str,
-        min_last_updated_time: int | None = None,
-        max_last_updated_time: int | None = None,
-        columns: builtins.list[str] | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
-    ) -> pandas.DataFrame:
-        """`Retrieve rows in a table as a pandas dataframe. <https://developer.cognite.com/api#tag/Raw/operation/getRows>`_
-
-        Rowkeys are used as the index.
-
-        Args:
-            db_name (str): Name of the database.
-            table_name (str): Name of the table.
-            min_last_updated_time (int | None): Rows must have been last updated after this time. ms since epoch.
-            max_last_updated_time (int | None): Rows must have been last updated before this time. ms since epoch.
-            columns (builtins.list[str] | None): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
-            limit (int): The number of rows to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
-
-        Returns:
-            pandas.DataFrame: The requested rows in a pandas dataframe.
-
-        Examples:
-
-            Get dataframe::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> df = c.raw.rows.retrieve_dataframe("db1", "t1", limit=5)
-        """
-        pd = cast(Any, local_import("pandas"))
-        rows = self.list(db_name, table_name, min_last_updated_time, max_last_updated_time, columns, limit)
-        idx = [r.key for r in rows]
-        cols = [r.columns for r in rows]
-        return pd.DataFrame(cols, index=idx)

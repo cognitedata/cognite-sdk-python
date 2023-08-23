@@ -23,8 +23,6 @@ from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 
 if TYPE_CHECKING:
-    import builtins
-
     from cognite.client import CogniteClient
     from cognite.client.config import ClientConfig
 
@@ -210,106 +208,14 @@ class TimeSeriesAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def list(
-        self,
-        name: str | None = None,
-        unit: str | None = None,
-        is_string: bool | None = None,
-        is_step: bool | None = None,
-        asset_ids: Sequence[int] | None = None,
-        asset_external_ids: Sequence[str] | None = None,
-        asset_subtree_ids: int | Sequence[int] | None = None,
-        asset_subtree_external_ids: str | Sequence[str] | None = None,
-        data_set_ids: int | Sequence[int] | None = None,
-        data_set_external_ids: str | Sequence[str] | None = None,
-        metadata: dict[str, Any] | None = None,
-        external_id_prefix: str | None = None,
-        created_time: dict[str, Any] | None = None,
-        last_updated_time: dict[str, Any] | None = None,
-        partitions: int | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
-    ) -> TimeSeriesList:
-        """`List over time series <https://developer.cognite.com/api#tag/Time-series/operation/listTimeSeries>`_
-
-        Fetches time series as they are iterated over, so you keep a limited number of objects in memory.
-
-        Args:
-            name (str | None): Name of the time series. Often referred to as tag.
-            unit (str | None): Unit of the time series.
-            is_string (bool | None): Whether the time series is an string time series.
-            is_step (bool | None): Whether the time series is a step (piecewise constant) time series.
-            asset_ids (Sequence[int] | None): List time series related to these assets.
-            asset_external_ids (Sequence[str] | None): List time series related to these assets.
-            asset_subtree_ids (int | Sequence[int] | None): Asset subtree id or list of asset subtree ids to filter on.
-            asset_subtree_external_ids (str | Sequence[str] | None): Asset external id or list of asset subtree external ids to filter on.
-            data_set_ids (int | Sequence[int] | None): Return only time series in the specified data set(s) with this id / these ids.
-            data_set_external_ids (str | Sequence[str] | None): Return only time series in the specified data set(s) with this external id / these external ids.
-            metadata (dict[str, Any] | None): Custom, application specific metadata. String key -> String value
-            external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
-            created_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            last_updated_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            partitions (int | None): Retrieve time series in parallel using this number of workers. Also requires `limit=None` to be passed.
-            limit (int): Maximum number of time series to return.  Defaults to 25. Set to -1, float("inf") or None to return all items.
-
-        Returns:
-            TimeSeriesList: The requested time series.
-
-        Examples:
-
-            List time series::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.time_series.list(limit=5)
-
-            Iterate over time series::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for ts in c.time_series:
-                ...     ts # do something with the time_series
-
-            Iterate over chunks of time series to reduce memory load::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for ts_list in c.time_series(chunk_size=2500):
-                ...     ts_list # do something with the time_series
-        """
-        asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
-        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
-
-        filter = TimeSeriesFilter(
-            name=name,
-            unit=unit,
-            is_step=is_step,
-            is_string=is_string,
-            asset_ids=asset_ids,
-            asset_external_ids=asset_external_ids,
-            asset_subtree_ids=asset_subtree_ids_processed,
-            metadata=metadata,
-            data_set_ids=data_set_ids_processed,
-            created_time=created_time,
-            last_updated_time=last_updated_time,
-            external_id_prefix=external_id_prefix,
-        ).dump(camel_case=True)
-        return self._list(
-            list_cls=TimeSeriesList,
-            resource_cls=TimeSeries,
-            method="POST",
-            filter=filter,
-            limit=limit,
-            partitions=partitions,
-        )
-
-    def aggregate(self, filter: TimeSeriesFilter | dict | None = None) -> builtins.list[TimeSeriesAggregate]:
+    def aggregate(self, filter: TimeSeriesFilter | dict | None = None) -> list[TimeSeriesAggregate]:
         """`Aggregate time series <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
 
         Args:
             filter (TimeSeriesFilter | dict | None): Filter on time series filter with exact match
 
         Returns:
-            builtins.list[TimeSeriesAggregate]: List of sequence aggregates
+            list[TimeSeriesAggregate]: List of sequence aggregates
 
         Examples:
 
@@ -839,3 +745,95 @@ class TimeSeriesAPI(APIClient):
 
     def _validate_filter(self, filter: Filter | dict | None) -> None:
         _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)
+
+    def list(
+        self,
+        name: str | None = None,
+        unit: str | None = None,
+        is_string: bool | None = None,
+        is_step: bool | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: Sequence[str] | None = None,
+        asset_subtree_ids: int | Sequence[int] | None = None,
+        asset_subtree_external_ids: str | Sequence[str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | Sequence[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+        external_id_prefix: str | None = None,
+        created_time: dict[str, Any] | None = None,
+        last_updated_time: dict[str, Any] | None = None,
+        partitions: int | None = None,
+        limit: int = LIST_LIMIT_DEFAULT,
+    ) -> TimeSeriesList:
+        """`List over time series <https://developer.cognite.com/api#tag/Time-series/operation/listTimeSeries>`_
+
+        Fetches time series as they are iterated over, so you keep a limited number of objects in memory.
+
+        Args:
+            name (str | None): Name of the time series. Often referred to as tag.
+            unit (str | None): Unit of the time series.
+            is_string (bool | None): Whether the time series is an string time series.
+            is_step (bool | None): Whether the time series is a step (piecewise constant) time series.
+            asset_ids (Sequence[int] | None): List time series related to these assets.
+            asset_external_ids (Sequence[str] | None): List time series related to these assets.
+            asset_subtree_ids (int | Sequence[int] | None): Asset subtree id or list of asset subtree ids to filter on.
+            asset_subtree_external_ids (str | Sequence[str] | None): Asset external id or list of asset subtree external ids to filter on.
+            data_set_ids (int | Sequence[int] | None): Return only time series in the specified data set(s) with this id / these ids.
+            data_set_external_ids (str | Sequence[str] | None): Return only time series in the specified data set(s) with this external id / these external ids.
+            metadata (dict[str, Any] | None): Custom, application specific metadata. String key -> String value
+            external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
+            created_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            last_updated_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            partitions (int | None): Retrieve time series in parallel using this number of workers. Also requires `limit=None` to be passed.
+            limit (int): Maximum number of time series to return.  Defaults to 25. Set to -1, float("inf") or None to return all items.
+
+        Returns:
+            TimeSeriesList: The requested time series.
+
+        Examples:
+
+            List time series::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.time_series.list(limit=5)
+
+            Iterate over time series::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> for ts in c.time_series:
+                ...     ts # do something with the time_series
+
+            Iterate over chunks of time series to reduce memory load::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> for ts_list in c.time_series(chunk_size=2500):
+                ...     ts_list # do something with the time_series
+        """
+        asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
+        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
+
+        filter = TimeSeriesFilter(
+            name=name,
+            unit=unit,
+            is_step=is_step,
+            is_string=is_string,
+            asset_ids=asset_ids,
+            asset_external_ids=asset_external_ids,
+            asset_subtree_ids=asset_subtree_ids_processed,
+            metadata=metadata,
+            data_set_ids=data_set_ids_processed,
+            created_time=created_time,
+            last_updated_time=last_updated_time,
+            external_id_prefix=external_id_prefix,
+        ).dump(camel_case=True)
+        return self._list(
+            list_cls=TimeSeriesList,
+            resource_cls=TimeSeries,
+            method="POST",
+            filter=filter,
+            limit=limit,
+            partitions=partitions,
+        )

@@ -53,7 +53,6 @@ from cognite.client.utils._text import to_camel_case
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 
 if TYPE_CHECKING:
-    import builtins
     from concurrent.futures import Future
 
     from cognite.client.utils._priority_tpe import PriorityThreadPoolExecutor
@@ -242,121 +241,14 @@ class AssetsAPI(APIClient):
             list_cls=AssetList, resource_cls=Asset, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
 
-    def list(
-        self,
-        name: str | None = None,
-        parent_ids: Sequence[int] | None = None,
-        parent_external_ids: Sequence[str] | None = None,
-        asset_subtree_ids: int | Sequence[int] | None = None,
-        asset_subtree_external_ids: str | Sequence[str] | None = None,
-        data_set_ids: int | Sequence[int] | None = None,
-        data_set_external_ids: str | Sequence[str] | None = None,
-        labels: LabelFilter | None = None,
-        geo_location: GeoLocationFilter | None = None,
-        metadata: dict[str, str] | None = None,
-        source: str | None = None,
-        created_time: dict[str, Any] | TimestampRange | None = None,
-        last_updated_time: dict[str, Any] | TimestampRange | None = None,
-        root: bool | None = None,
-        external_id_prefix: str | None = None,
-        aggregated_properties: Sequence[str] | None = None,
-        partitions: int | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
-    ) -> AssetList:
-        """`List assets <https://developer.cognite.com/api#tag/Assets/operation/listAssets>`_
-
-        Args:
-            name (str | None): Name of asset. Often referred to as tag.
-            parent_ids (Sequence[int] | None): Return only the direct descendants of the specified assets.
-            parent_external_ids (Sequence[str] | None): Return only the direct descendants of the specified assets.
-            asset_subtree_ids (int | Sequence[int] | None): Asset subtree id or list of asset subtree ids to filter on.
-            asset_subtree_external_ids (str | Sequence[str] | None): Asset subtree external id or list of asset subtree external ids to filter on.
-            data_set_ids (int | Sequence[int] | None): Return only assets in the specified data set(s) with this id / these ids.
-            data_set_external_ids (str | Sequence[str] | None): Return only assets in the specified data set(s) with this external id / these external ids.
-            labels (LabelFilter | None): Return only the assets matching the specified label filter.
-            geo_location (GeoLocationFilter | None): Only include files matching the specified geographic relation.
-            metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value.
-            source (str | None): The source of this asset.
-            created_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            last_updated_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            root (bool | None): filtered assets are root assets or not.
-            external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
-            aggregated_properties (Sequence[str] | None): Set of aggregated properties to include.
-            partitions (int | None): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
-            limit (int): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
-
-        Returns:
-            AssetList: List of requested assets
-
-        Examples:
-
-            List assets::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> asset_list = c.assets.list(limit=5)
-
-            Iterate over assets::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for asset in c.assets:
-                ...     asset # do something with the asset
-
-            Iterate over chunks of assets to reduce memory load::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for asset_list in c.assets(chunk_size=2500):
-                ...     asset_list # do something with the assets
-
-            Filter assets based on labels::
-
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import LabelFilter
-                >>> c = CogniteClient()
-                >>> my_label_filter = LabelFilter(contains_all=["PUMP", "VERIFIED"])
-                >>> asset_list = c.assets.list(labels=my_label_filter)
-        """
-        if aggregated_properties:
-            aggregated_properties = [to_camel_case(s) for s in aggregated_properties]
-
-        asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
-        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
-
-        filter = AssetFilter(
-            name=name,
-            parent_ids=parent_ids,
-            parent_external_ids=parent_external_ids,
-            asset_subtree_ids=asset_subtree_ids_processed,
-            data_set_ids=data_set_ids_processed,
-            labels=labels,
-            geo_location=geo_location,
-            metadata=metadata,
-            source=source,
-            created_time=created_time,
-            last_updated_time=last_updated_time,
-            root=root,
-            external_id_prefix=external_id_prefix,
-        ).dump(camel_case=True)
-        return self._list(
-            list_cls=AssetList,
-            resource_cls=Asset,
-            method="POST",
-            limit=limit,
-            filter=filter,
-            other_params={"aggregatedProperties": aggregated_properties} if aggregated_properties else {},
-            partitions=partitions,
-        )
-
-    def aggregate(self, filter: AssetFilter | dict | None = None) -> builtins.list[AssetAggregate]:
+    def aggregate(self, filter: AssetFilter | dict | None = None) -> list[AssetAggregate]:
         """`Aggregate assets <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
         Args:
             filter (AssetFilter | dict | None): Filter on assets filter with exact match
 
         Returns:
-            builtins.list[AssetAggregate]: List of asset aggregates
+            list[AssetAggregate]: List of asset aggregates
 
         Examples:
 
@@ -1117,7 +1009,7 @@ class AssetsAPI(APIClient):
         subtree = self._get_asset_subtree([asset], current_depth=0, depth=depth)
         return AssetList(subtree, self._cognite_client)
 
-    def _get_asset_subtree(self, assets: builtins.list, current_depth: int, depth: int | None) -> builtins.list:
+    def _get_asset_subtree(self, assets: list, current_depth: int, depth: int | None) -> list:
         subtree = assets
         if depth is None or current_depth < depth:
             children = self._get_children(assets)
@@ -1125,7 +1017,7 @@ class AssetsAPI(APIClient):
                 subtree.extend(self._get_asset_subtree(children, current_depth + 1, depth))
         return subtree
 
-    def _get_children(self, assets: builtins.list) -> builtins.list:
+    def _get_children(self, assets: list) -> list:
         ids = [a.id for a in assets]
         tasks = []
         chunk_size = 100
@@ -1138,6 +1030,113 @@ class AssetsAPI(APIClient):
         for res in res_list:
             children.extend(res)
         return children
+
+    def list(
+        self,
+        name: str | None = None,
+        parent_ids: Sequence[int] | None = None,
+        parent_external_ids: Sequence[str] | None = None,
+        asset_subtree_ids: int | Sequence[int] | None = None,
+        asset_subtree_external_ids: str | Sequence[str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | Sequence[str] | None = None,
+        labels: LabelFilter | None = None,
+        geo_location: GeoLocationFilter | None = None,
+        metadata: dict[str, str] | None = None,
+        source: str | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        root: bool | None = None,
+        external_id_prefix: str | None = None,
+        aggregated_properties: Sequence[str] | None = None,
+        partitions: int | None = None,
+        limit: int = LIST_LIMIT_DEFAULT,
+    ) -> AssetList:
+        """`List assets <https://developer.cognite.com/api#tag/Assets/operation/listAssets>`_
+
+        Args:
+            name (str | None): Name of asset. Often referred to as tag.
+            parent_ids (Sequence[int] | None): Return only the direct descendants of the specified assets.
+            parent_external_ids (Sequence[str] | None): Return only the direct descendants of the specified assets.
+            asset_subtree_ids (int | Sequence[int] | None): Asset subtree id or list of asset subtree ids to filter on.
+            asset_subtree_external_ids (str | Sequence[str] | None): Asset subtree external id or list of asset subtree external ids to filter on.
+            data_set_ids (int | Sequence[int] | None): Return only assets in the specified data set(s) with this id / these ids.
+            data_set_external_ids (str | Sequence[str] | None): Return only assets in the specified data set(s) with this external id / these external ids.
+            labels (LabelFilter | None): Return only the assets matching the specified label filter.
+            geo_location (GeoLocationFilter | None): Only include files matching the specified geographic relation.
+            metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value.
+            source (str | None): The source of this asset.
+            created_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            last_updated_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            root (bool | None): filtered assets are root assets or not.
+            external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
+            aggregated_properties (Sequence[str] | None): Set of aggregated properties to include.
+            partitions (int | None): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
+            limit (int): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+
+        Returns:
+            AssetList: List of requested assets
+
+        Examples:
+
+            List assets::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> asset_list = c.assets.list(limit=5)
+
+            Iterate over assets::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> for asset in c.assets:
+                ...     asset # do something with the asset
+
+            Iterate over chunks of assets to reduce memory load::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> for asset_list in c.assets(chunk_size=2500):
+                ...     asset_list # do something with the assets
+
+            Filter assets based on labels::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import LabelFilter
+                >>> c = CogniteClient()
+                >>> my_label_filter = LabelFilter(contains_all=["PUMP", "VERIFIED"])
+                >>> asset_list = c.assets.list(labels=my_label_filter)
+        """
+        if aggregated_properties:
+            aggregated_properties = [to_camel_case(s) for s in aggregated_properties]
+
+        asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
+        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
+
+        filter = AssetFilter(
+            name=name,
+            parent_ids=parent_ids,
+            parent_external_ids=parent_external_ids,
+            asset_subtree_ids=asset_subtree_ids_processed,
+            data_set_ids=data_set_ids_processed,
+            labels=labels,
+            geo_location=geo_location,
+            metadata=metadata,
+            source=source,
+            created_time=created_time,
+            last_updated_time=last_updated_time,
+            root=root,
+            external_id_prefix=external_id_prefix,
+        ).dump(camel_case=True)
+        return self._list(
+            list_cls=AssetList,
+            resource_cls=Asset,
+            method="POST",
+            limit=limit,
+            filter=filter,
+            other_params={"aggregatedProperties": aggregated_properties} if aggregated_properties else {},
+            partitions=partitions,
+        )
 
 
 class _CreateTask(NamedTuple):

@@ -33,8 +33,6 @@ from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 
 if TYPE_CHECKING:
-    import builtins
-
     from requests import Response
 
 
@@ -234,132 +232,14 @@ class FilesAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def list(
-        self,
-        name: str | None = None,
-        mime_type: str | None = None,
-        metadata: dict[str, str] | None = None,
-        asset_ids: Sequence[int] | None = None,
-        asset_external_ids: Sequence[str] | None = None,
-        asset_subtree_ids: int | Sequence[int] | None = None,
-        asset_subtree_external_ids: str | Sequence[str] | None = None,
-        data_set_ids: int | Sequence[int] | None = None,
-        data_set_external_ids: str | Sequence[str] | None = None,
-        labels: LabelFilter | None = None,
-        geo_location: GeoLocationFilter | None = None,
-        source: str | None = None,
-        created_time: dict[str, Any] | TimestampRange | None = None,
-        last_updated_time: dict[str, Any] | TimestampRange | None = None,
-        source_created_time: dict[str, Any] | TimestampRange | None = None,
-        source_modified_time: dict[str, Any] | TimestampRange | None = None,
-        uploaded_time: dict[str, Any] | TimestampRange | None = None,
-        external_id_prefix: str | None = None,
-        directory_prefix: str | None = None,
-        uploaded: bool | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
-    ) -> FileMetadataList:
-        """`List files <https://developer.cognite.com/api#tag/Files/operation/advancedListFiles>`_
-
-        Args:
-            name (str | None): Name of the file.
-            mime_type (str | None): File type. E.g. text/plain, application/pdf, ..
-            metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value
-            asset_ids (Sequence[int] | None): Only include files that reference these specific asset IDs.
-            asset_external_ids (Sequence[str] | None): No description.
-            asset_subtree_ids (int | Sequence[int] | None): Asset subtree id or list of asset subtree ids to filter on.
-            asset_subtree_external_ids (str | Sequence[str] | None): Asset subtree external id or list of asset subtree external ids to filter on.
-            data_set_ids (int | Sequence[int] | None): Return only files in the specified data set(s) with this id / these ids.
-            data_set_external_ids (str | Sequence[str] | None): Return only files in the specified data set(s) with this external id / these external ids.
-            labels (LabelFilter | None): Return only the files matching the specified label filter(s).
-            geo_location (GeoLocationFilter | None): Only include files matching the specified geographic relation.
-            source (str | None): The source of this event.
-            created_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            last_updated_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            source_created_time (dict[str, Any] | TimestampRange | None): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
-            source_modified_time (dict[str, Any] | TimestampRange | None): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
-            uploaded_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
-            external_id_prefix (str | None): External Id provided by client. Should be unique within the project.
-            directory_prefix (str | None): Filter by this (case-sensitive) prefix for the directory provided by the client.
-            uploaded (bool | None): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
-            limit (int): Max number of files to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
-
-        Returns:
-            FileMetadataList: The requested files.
-
-        Examples:
-
-            List files metadata and filter on external id prefix::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> file_list = c.files.list(limit=5, external_id_prefix="prefix")
-
-            Iterate over files metadata::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for file_metadata in c.files:
-                ...     file_metadata # do something with the file metadata
-
-            Iterate over chunks of files metadata to reduce memory load::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for file_list in c.files(chunk_size=2500):
-                ...     file_list # do something with the files
-
-            Filter files based on labels::
-
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import LabelFilter
-                >>> c = CogniteClient()
-                >>> my_label_filter = LabelFilter(contains_all=["WELL LOG", "VERIFIED"])
-                >>> file_list = c.files.list(labels=my_label_filter)
-
-            Filter files based on geoLocation::
-
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import GeoLocationFilter, GeometryFilter
-                >>> c = CogniteClient()
-                >>> my_geo_location_filter = GeoLocationFilter(relation="intersects", shape=GeometryFilter(type="Point", coordinates=[35,10]))
-                >>> file_list = c.files.list(geo_location=my_geo_location_filter)
-        """
-        asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
-        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
-
-        filter = FileMetadataFilter(
-            name=name,
-            mime_type=mime_type,
-            metadata=metadata,
-            asset_ids=asset_ids,
-            asset_external_ids=asset_external_ids,
-            asset_subtree_ids=asset_subtree_ids_processed,
-            labels=labels,
-            geo_location=geo_location,
-            source=source,
-            created_time=created_time,
-            last_updated_time=last_updated_time,
-            uploaded_time=uploaded_time,
-            source_created_time=source_created_time,
-            source_modified_time=source_modified_time,
-            external_id_prefix=external_id_prefix,
-            directory_prefix=directory_prefix,
-            uploaded=uploaded,
-            data_set_ids=data_set_ids_processed,
-        ).dump(camel_case=True)
-
-        return self._list(
-            list_cls=FileMetadataList, resource_cls=FileMetadata, method="POST", limit=limit, filter=filter
-        )
-
-    def aggregate(self, filter: FileMetadataFilter | dict | None = None) -> builtins.list[FileAggregate]:
+    def aggregate(self, filter: FileMetadataFilter | dict | None = None) -> list[FileAggregate]:
         """`Aggregate files <https://developer.cognite.com/api#tag/Files/operation/aggregateFiles>`_
 
         Args:
             filter (FileMetadataFilter | dict | None): Filter on file metadata filter with exact match
 
         Returns:
-            builtins.list[FileAggregate]: List of file aggregates
+            list[FileAggregate]: List of file aggregates
 
         Examples:
 
@@ -852,3 +732,121 @@ class FilesAPI(APIClient):
     def _download_file(self, download_link: str) -> bytes:
         res = self._http_client_with_retry.request("GET", download_link, timeout=self._config.file_transfer_timeout)
         return res.content
+
+    def list(
+        self,
+        name: str | None = None,
+        mime_type: str | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: Sequence[str] | None = None,
+        asset_subtree_ids: int | Sequence[int] | None = None,
+        asset_subtree_external_ids: str | Sequence[str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | Sequence[str] | None = None,
+        labels: LabelFilter | None = None,
+        geo_location: GeoLocationFilter | None = None,
+        source: str | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        source_created_time: dict[str, Any] | TimestampRange | None = None,
+        source_modified_time: dict[str, Any] | TimestampRange | None = None,
+        uploaded_time: dict[str, Any] | TimestampRange | None = None,
+        external_id_prefix: str | None = None,
+        directory_prefix: str | None = None,
+        uploaded: bool | None = None,
+        limit: int = LIST_LIMIT_DEFAULT,
+    ) -> FileMetadataList:
+        """`List files <https://developer.cognite.com/api#tag/Files/operation/advancedListFiles>`_
+
+        Args:
+            name (str | None): Name of the file.
+            mime_type (str | None): File type. E.g. text/plain, application/pdf, ..
+            metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value
+            asset_ids (Sequence[int] | None): Only include files that reference these specific asset IDs.
+            asset_external_ids (Sequence[str] | None): No description.
+            asset_subtree_ids (int | Sequence[int] | None): Asset subtree id or list of asset subtree ids to filter on.
+            asset_subtree_external_ids (str | Sequence[str] | None): Asset subtree external id or list of asset subtree external ids to filter on.
+            data_set_ids (int | Sequence[int] | None): Return only files in the specified data set(s) with this id / these ids.
+            data_set_external_ids (str | Sequence[str] | None): Return only files in the specified data set(s) with this external id / these external ids.
+            labels (LabelFilter | None): Return only the files matching the specified label filter(s).
+            geo_location (GeoLocationFilter | None): Only include files matching the specified geographic relation.
+            source (str | None): The source of this event.
+            created_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            last_updated_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            source_created_time (dict[str, Any] | TimestampRange | None): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
+            source_modified_time (dict[str, Any] | TimestampRange | None): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
+            uploaded_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
+            external_id_prefix (str | None): External Id provided by client. Should be unique within the project.
+            directory_prefix (str | None): Filter by this (case-sensitive) prefix for the directory provided by the client.
+            uploaded (bool | None): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
+            limit (int): Max number of files to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+
+        Returns:
+            FileMetadataList: The requested files.
+
+        Examples:
+
+            List files metadata and filter on external id prefix::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> file_list = c.files.list(limit=5, external_id_prefix="prefix")
+
+            Iterate over files metadata::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> for file_metadata in c.files:
+                ...     file_metadata # do something with the file metadata
+
+            Iterate over chunks of files metadata to reduce memory load::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> for file_list in c.files(chunk_size=2500):
+                ...     file_list # do something with the files
+
+            Filter files based on labels::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import LabelFilter
+                >>> c = CogniteClient()
+                >>> my_label_filter = LabelFilter(contains_all=["WELL LOG", "VERIFIED"])
+                >>> file_list = c.files.list(labels=my_label_filter)
+
+            Filter files based on geoLocation::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import GeoLocationFilter, GeometryFilter
+                >>> c = CogniteClient()
+                >>> my_geo_location_filter = GeoLocationFilter(relation="intersects", shape=GeometryFilter(type="Point", coordinates=[35,10]))
+                >>> file_list = c.files.list(geo_location=my_geo_location_filter)
+        """
+        asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
+        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
+
+        filter = FileMetadataFilter(
+            name=name,
+            mime_type=mime_type,
+            metadata=metadata,
+            asset_ids=asset_ids,
+            asset_external_ids=asset_external_ids,
+            asset_subtree_ids=asset_subtree_ids_processed,
+            labels=labels,
+            geo_location=geo_location,
+            source=source,
+            created_time=created_time,
+            last_updated_time=last_updated_time,
+            uploaded_time=uploaded_time,
+            source_created_time=source_created_time,
+            source_modified_time=source_modified_time,
+            external_id_prefix=external_id_prefix,
+            directory_prefix=directory_prefix,
+            uploaded=uploaded,
+            data_set_ids=data_set_ids_processed,
+        ).dump(camel_case=True)
+
+        return self._list(
+            list_cls=FileMetadataList, resource_cls=FileMetadata, method="POST", limit=limit, filter=filter
+        )

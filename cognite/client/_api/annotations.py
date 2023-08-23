@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Literal, Sequence, overload
+from typing import Any, Literal, Sequence, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import LIST_LIMIT_DEFAULT
@@ -12,9 +12,6 @@ from cognite.client.data_classes.contextualization import ResourceReference, Res
 from cognite.client.utils._auxiliary import assert_type
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._text import to_camel_case
-
-if TYPE_CHECKING:
-    import builtins
 
 
 class AnnotationsAPI(APIClient):
@@ -83,37 +80,11 @@ class AnnotationsAPI(APIClient):
             del item["status"]
         return item
 
-    def list(self, filter: AnnotationFilter | dict, limit: int = LIST_LIMIT_DEFAULT) -> AnnotationList:
-        """`List annotations. <https://developer.cognite.com/api#tag/Annotations/operation/annotationsFilter>`_
-
-        Args:
-            filter (AnnotationFilter | dict): Return annotations with parameter values that matches what is specified. Note that annotated_resource_type and annotated_resource_ids are always required.
-            limit (int): Maximum number of annotations to return. Defaults to 25.
-
-        Returns:
-            AnnotationList: list of annotations
-        """
-        assert_type(limit, "limit", [int], allow_none=False)
-        assert_type(filter, "filter", [AnnotationFilter, dict], allow_none=False)
-
-        if isinstance(filter, AnnotationFilter):
-            filter = filter.dump(camel_case=True)
-
-        elif isinstance(filter, dict):
-            filter = {to_camel_case(k): v for k, v in filter.items()}
-
-        if "annotatedResourceIds" in filter:
-            filter["annotatedResourceIds"] = [
-                {to_camel_case(k): v for k, v in f.items()} for f in filter["annotatedResourceIds"]
-            ]
-
-        return self._list(list_cls=AnnotationList, resource_cls=Annotation, method="POST", limit=limit, filter=filter)
-
     @classmethod
     def _convert_resource_to_patch_object(
         cls,
         resource: CogniteResource,
-        update_attributes: builtins.list[PropertySpec],
+        update_attributes: list[PropertySpec],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> dict[str, dict[str, dict]]:
         if not isinstance(resource, Annotation):
@@ -201,3 +172,29 @@ class AnnotationsAPI(APIClient):
             filter=filter.dump(camel_case=True),
             url_path=self._RESOURCE_PATH + "/reverselookup",
         )
+
+    def list(self, filter: AnnotationFilter | dict, limit: int = LIST_LIMIT_DEFAULT) -> AnnotationList:
+        """`List annotations. <https://developer.cognite.com/api#tag/Annotations/operation/annotationsFilter>`_
+
+        Args:
+            filter (AnnotationFilter | dict): Return annotations with parameter values that matches what is specified. Note that annotated_resource_type and annotated_resource_ids are always required.
+            limit (int): Maximum number of annotations to return. Defaults to 25.
+
+        Returns:
+            AnnotationList: list of annotations
+        """
+        assert_type(limit, "limit", [int], allow_none=False)
+        assert_type(filter, "filter", [AnnotationFilter, dict], allow_none=False)
+
+        if isinstance(filter, AnnotationFilter):
+            filter = filter.dump(camel_case=True)
+
+        elif isinstance(filter, dict):
+            filter = {to_camel_case(k): v for k, v in filter.items()}
+
+        if "annotatedResourceIds" in filter:
+            filter["annotatedResourceIds"] = [
+                {to_camel_case(k): v for k, v in f.items()} for f in filter["annotatedResourceIds"]
+            ]
+
+        return self._list(list_cls=AnnotationList, resource_cls=Annotation, method="POST", limit=limit, filter=filter)

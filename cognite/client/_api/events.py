@@ -48,9 +48,6 @@ _FILTERS_SUPPORTED: frozenset[type[Filter]] = frozenset(
     }
 )
 
-if TYPE_CHECKING:
-    import builtins
-
 
 class EventsAPI(APIClient):
     _RESOURCE_PATH = "/events"
@@ -209,116 +206,14 @@ class EventsAPI(APIClient):
             list_cls=EventList, resource_cls=Event, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
 
-    def list(
-        self,
-        start_time: dict[str, Any] | TimestampRange | None = None,
-        end_time: dict[str, Any] | EndTimeFilter | None = None,
-        active_at_time: dict[str, Any] | TimestampRange | None = None,
-        type: str | None = None,
-        subtype: str | None = None,
-        metadata: dict[str, str] | None = None,
-        asset_ids: Sequence[int] | None = None,
-        asset_external_ids: Sequence[str] | None = None,
-        asset_subtree_ids: int | Sequence[int] | None = None,
-        asset_subtree_external_ids: str | Sequence[str] | None = None,
-        data_set_ids: int | Sequence[int] | None = None,
-        data_set_external_ids: str | Sequence[str] | None = None,
-        source: str | None = None,
-        created_time: dict[str, Any] | TimestampRange | None = None,
-        last_updated_time: dict[str, Any] | TimestampRange | None = None,
-        external_id_prefix: str | None = None,
-        sort: Sequence[str] | None = None,
-        partitions: int | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
-    ) -> EventList:
-        """`List events <https://developer.cognite.com/api#tag/Events/operation/advancedListEvents>`_
-
-        Args:
-            start_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
-            end_time (dict[str, Any] | EndTimeFilter | None): Range between two timestamps.
-            active_at_time (dict[str, Any] | TimestampRange | None): Event is considered active from its startTime to endTime inclusive. If startTime is null, event is never active. If endTime is null, event is active from startTime onwards. activeAtTime filter will match all events that are active at some point from min to max, from min, or to max, depending on which of min and max parameters are specified.
-            type (str | None): Type of the event, e.g 'failure'.
-            subtype (str | None): Subtype of the event, e.g 'electrical'.
-            metadata (dict[str, str] | None): Customizable extra data about the event. String key -> String value.
-            asset_ids (Sequence[int] | None): Asset IDs of related equipments that this event relates to.
-            asset_external_ids (Sequence[str] | None): Asset External IDs of related equipment that this event relates to.
-            asset_subtree_ids (int | Sequence[int] | None): Asset subtree id or list of asset subtree ids to filter on.
-            asset_subtree_external_ids (str | Sequence[str] | None): Asset subtree external id or list of asset subtree external ids to filter on.
-            data_set_ids (int | Sequence[int] | None): Return only events in the specified data set(s) with this id / these ids.
-            data_set_external_ids (str | Sequence[str] | None): Return only events in the specified data set(s) with this external id / these external ids.
-            source (str | None): The source of this event.
-            created_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            last_updated_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            external_id_prefix (str | None): External Id provided by client. Should be unique within the project.
-            sort (Sequence[str] | None): Sort by array of selected fields. Ex: ["startTime:desc']. Default sort order is asc when ommitted. Filter accepts following field names: startTime, endTime, createdTime, lastUpdatedTime. We only support 1 field for now.
-            partitions (int | None): Retrieve events in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
-            limit (int): Maximum number of events to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
-
-        Returns:
-            EventList: List of requested events
-
-        Examples:
-
-            List events and filter on max start time::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> event_list = c.events.list(limit=5, start_time={"max": 1500000000})
-
-            Iterate over events::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for event in c.events:
-                ...     event # do something with the event
-
-            Iterate over chunks of events to reduce memory load::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> for event_list in c.events(chunk_size=2500):
-                ...     event_list # do something with the events
-        """
-        asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
-        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
-
-        if end_time and ("max" in end_time or "min" in end_time) and "isNull" in end_time:
-            raise ValueError("isNull cannot be used with min or max values")
-
-        filter = EventFilter(
-            start_time=start_time,
-            end_time=end_time,
-            active_at_time=active_at_time,
-            metadata=metadata,
-            asset_ids=asset_ids,
-            asset_external_ids=asset_external_ids,
-            asset_subtree_ids=asset_subtree_ids_processed,
-            source=source,
-            data_set_ids=data_set_ids_processed,
-            created_time=created_time,
-            last_updated_time=last_updated_time,
-            external_id_prefix=external_id_prefix,
-            type=type,
-            subtype=subtype,
-        ).dump(camel_case=True)
-        return self._list(
-            list_cls=EventList,
-            resource_cls=Event,
-            method="POST",
-            limit=limit,
-            filter=filter,
-            partitions=partitions,
-            sort=sort,
-        )
-
-    def aggregate(self, filter: EventFilter | dict | None = None) -> builtins.list[AggregateResult]:
+    def aggregate(self, filter: EventFilter | dict | None = None) -> list[AggregateResult]:
         """`Aggregate events <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
 
         Args:
             filter (EventFilter | dict | None): Filter on events filter with exact match
 
         Returns:
-            builtins.list[AggregateResult]: List of event aggregates
+            list[AggregateResult]: List of event aggregates
 
         Examples:
 
@@ -819,3 +714,105 @@ class EventsAPI(APIClient):
 
     def _validate_filter(self, filter: Filter | dict | None) -> None:
         _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)
+
+    def list(
+        self,
+        start_time: dict[str, Any] | TimestampRange | None = None,
+        end_time: dict[str, Any] | EndTimeFilter | None = None,
+        active_at_time: dict[str, Any] | TimestampRange | None = None,
+        type: str | None = None,
+        subtype: str | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: Sequence[str] | None = None,
+        asset_subtree_ids: int | Sequence[int] | None = None,
+        asset_subtree_external_ids: str | Sequence[str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | Sequence[str] | None = None,
+        source: str | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        external_id_prefix: str | None = None,
+        sort: Sequence[str] | None = None,
+        partitions: int | None = None,
+        limit: int = LIST_LIMIT_DEFAULT,
+    ) -> EventList:
+        """`List events <https://developer.cognite.com/api#tag/Events/operation/advancedListEvents>`_
+
+        Args:
+            start_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
+            end_time (dict[str, Any] | EndTimeFilter | None): Range between two timestamps.
+            active_at_time (dict[str, Any] | TimestampRange | None): Event is considered active from its startTime to endTime inclusive. If startTime is null, event is never active. If endTime is null, event is active from startTime onwards. activeAtTime filter will match all events that are active at some point from min to max, from min, or to max, depending on which of min and max parameters are specified.
+            type (str | None): Type of the event, e.g 'failure'.
+            subtype (str | None): Subtype of the event, e.g 'electrical'.
+            metadata (dict[str, str] | None): Customizable extra data about the event. String key -> String value.
+            asset_ids (Sequence[int] | None): Asset IDs of related equipments that this event relates to.
+            asset_external_ids (Sequence[str] | None): Asset External IDs of related equipment that this event relates to.
+            asset_subtree_ids (int | Sequence[int] | None): Asset subtree id or list of asset subtree ids to filter on.
+            asset_subtree_external_ids (str | Sequence[str] | None): Asset subtree external id or list of asset subtree external ids to filter on.
+            data_set_ids (int | Sequence[int] | None): Return only events in the specified data set(s) with this id / these ids.
+            data_set_external_ids (str | Sequence[str] | None): Return only events in the specified data set(s) with this external id / these external ids.
+            source (str | None): The source of this event.
+            created_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            last_updated_time (dict[str, Any] | TimestampRange | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            external_id_prefix (str | None): External Id provided by client. Should be unique within the project.
+            sort (Sequence[str] | None): Sort by array of selected fields. Ex: ["startTime:desc']. Default sort order is asc when ommitted. Filter accepts following field names: startTime, endTime, createdTime, lastUpdatedTime. We only support 1 field for now.
+            partitions (int | None): Retrieve events in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
+            limit (int): Maximum number of events to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+
+        Returns:
+            EventList: List of requested events
+
+        Examples:
+
+            List events and filter on max start time::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> event_list = c.events.list(limit=5, start_time={"max": 1500000000})
+
+            Iterate over events::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> for event in c.events:
+                ...     event # do something with the event
+
+            Iterate over chunks of events to reduce memory load::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> for event_list in c.events(chunk_size=2500):
+                ...     event_list # do something with the events
+        """
+        asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
+        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
+
+        if end_time and ("max" in end_time or "min" in end_time) and "isNull" in end_time:
+            raise ValueError("isNull cannot be used with min or max values")
+
+        filter = EventFilter(
+            start_time=start_time,
+            end_time=end_time,
+            active_at_time=active_at_time,
+            metadata=metadata,
+            asset_ids=asset_ids,
+            asset_external_ids=asset_external_ids,
+            asset_subtree_ids=asset_subtree_ids_processed,
+            source=source,
+            data_set_ids=data_set_ids_processed,
+            created_time=created_time,
+            last_updated_time=last_updated_time,
+            external_id_prefix=external_id_prefix,
+            type=type,
+            subtype=subtype,
+        ).dump(camel_case=True)
+        return self._list(
+            list_cls=EventList,
+            resource_cls=Event,
+            method="POST",
+            limit=limit,
+            filter=filter,
+            partitions=partitions,
+            sort=sort,
+        )
