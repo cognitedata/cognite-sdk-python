@@ -6,7 +6,13 @@ from typing import TYPE_CHECKING, Any, List, Literal, Optional, Union
 
 from typing_extensions import TypeAlias
 
-from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, EnumProperty, Sort
+from cognite.client.data_classes._base import (
+    CogniteResource,
+    CogniteResourceList,
+    EnumProperty,
+    IdTransformerMixin,
+    Sort,
+)
 from cognite.client.data_classes.aggregations import UniqueResult
 from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.labels import Label, LabelDefinition
@@ -206,7 +212,7 @@ class Document(CogniteResource):
         )
 
 
-class DocumentList(CogniteResourceList[Document]):
+class DocumentList(CogniteResourceList[Document], IdTransformerMixin):
     _RESOURCE = Document
 
 

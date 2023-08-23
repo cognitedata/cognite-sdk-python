@@ -40,6 +40,7 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     CogniteUpdate,
     EnumProperty,
+    IdTransformerMixin,
     PropertySpec,
     Sort,
 )
@@ -359,28 +360,12 @@ class AssetUpdate(CogniteUpdate):
         ]
 
 
-class AssetList(CogniteResourceList[Asset]):
+class AssetList(CogniteResourceList[Asset], IdTransformerMixin):
     _RESOURCE = Asset
 
     def __init__(self, resources: Collection[Any], cognite_client: Optional[CogniteClient] = None):
         super().__init__(resources, cognite_client)
         self._retrieve_chunk_size = 100
-
-    def as_external_ids(self) -> list[str]:
-        external_ids: list[str] = []
-        for x in self:
-            if x.external_id is None:
-                raise ValueError("All assets must have external_id")
-            external_ids.append(x.external_id)
-        return external_ids
-
-    def as_ids(self) -> list[int]:
-        ids: list[int] = []
-        for x in self:
-            if x.id is None:
-                raise ValueError("All assets must have id")
-            ids.append(x.id)
-        return ids
 
     def time_series(self) -> TimeSeriesList:
         """Retrieve all time series related to these assets.

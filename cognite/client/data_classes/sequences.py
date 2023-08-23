@@ -19,6 +19,7 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     CogniteUpdate,
     EnumProperty,
+    IdTransformerMixin,
     PropertySpec,
     Sort,
 )
@@ -318,24 +319,8 @@ class SequenceAggregate(dict):
     count = CognitePropertyClassUtil.declare_property("count")
 
 
-class SequenceList(CogniteResourceList[Sequence]):
+class SequenceList(CogniteResourceList[Sequence], IdTransformerMixin):
     _RESOURCE = Sequence
-
-    def as_external_ids(self) -> list[str]:
-        external_ids: list[str] = []
-        for x in self:
-            if x.external_id is None:
-                raise ValueError("All sequences must have external_id")
-            external_ids.append(x.external_id)
-        return external_ids
-
-    def as_ids(self) -> list[int]:
-        ids: list[int] = []
-        for x in self:
-            if x.id is None:
-                raise ValueError("All sequences must have id")
-            ids.append(x.id)
-        return ids
 
 
 class SequenceData(CogniteResource):

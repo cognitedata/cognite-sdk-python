@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from collections import UserList
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -16,6 +16,7 @@ from typing import (
     List,
     Literal,
     Optional,
+    Protocol,
     Sequence,
     SupportsIndex,
     Type,
@@ -694,3 +695,49 @@ class Sort:
 
 
 T_Sort = TypeVar("T_Sort", bound=Sort)
+
+
+class HasExternalAndInternalId(Protocol):
+    @property
+    def external_id(self) -> Optional[str]:
+        ...
+
+    @property
+    def id(self) -> Optional[int]:
+        ...
+
+
+class IdTransformerMixin(Sequence[HasExternalAndInternalId], ABC):
+    def as_external_ids(self) -> list[str]:
+        """
+        Returns the external ids of all resources.
+
+        Raises:
+            ValueError: If any resource in the list does not have an external id.
+
+        Returns:
+            list[str]: The external ids of all resources in the list.
+        """
+        external_ids: list[str] = []
+        for x in self:
+            if x.external_id is None:
+                raise ValueError(f"All {type(x).__name__} must have external_id")
+            external_ids.append(x.external_id)
+        return external_ids
+
+    def as_ids(self) -> list[int]:
+        """
+        Returns the ids of all resources.
+
+        Raises:
+            ValueError: If any resource in the list does not have an id.
+
+        Returns:
+            list[int]: The ids of all resources in the list.
+        """
+        ids: list[int] = []
+        for x in self:
+            if x.id is None:
+                raise ValueError(f"All {type(x).__name__} must have id")
+            ids.append(x.id)
+        return ids
