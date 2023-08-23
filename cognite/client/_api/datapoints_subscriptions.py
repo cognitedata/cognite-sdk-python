@@ -194,7 +194,7 @@ class DatapointsSubscriptionAPI(APIClient):
             limit (int): Approximate number of results to return across all partitions.
 
         Yields:
-            Generator[DatapointSubscriptionBatch, None, None]: Changes to the subscription and data in the subscribed time series.
+            DatapointSubscriptionBatch: Changes to the subscription and data in the subscribed time series.
 
         Examples:
 

@@ -102,13 +102,36 @@ class DocstrFormatter:
         self.lines_grouped, self.indentation = self._separate_docstring(doc)
         self.actual_annotations, self.actual_return_annotation = self._extract_annotations(method)
         self.parse_doc_and_store(self.lines_grouped, self.indentation)
+        if self.is_generator:
+            self.actual_return_annotation = self._extract_yields_return_annot(self.actual_return_annotation)
+
+    @staticmethod
+    def _extract_yields_return_annot(string):
+        # Example:
+        #   A return annotation like 'Generator[tuple[float, ...], list[str, int], int | float]'
+        #   should be marked as yielding: 'tuple[float, ...]'
+        # TODO: With 3.9 this gets much easier: get_args(get_type_hints(method)["return"])[0]
+
+        if not string.startswith("Generator["):
+            raise ValueError("All generators must be annotated using 'typing.Generator'")
+
+        bracket_count, letters = 0, []
+        for char in string[10:]:
+            if char == "," and bracket_count == 0:
+                break  # not inside nested brackets
+            letters.append(char)
+            if char == "[":
+                bracket_count += 1
+            elif char == "]":
+                bracket_count -= 1
+        return "".join(letters)
 
     def _extract_annotations(self, method):
-        def fix_literal(s):
+        def fix_literal(string):
             # Example: Union[Literal[('aaa', 'bbb')]] -> Union[Literal["aaa", "bbb"]]
-            if match := re.search(r"Literal\[(\((.*)\))\]", s):
-                return s.replace(match.group(1), match.group(2).replace("'", '"'))
-            return s
+            if match := re.search(r"Literal\[(\((.*)\))\]", string):
+                return string.replace(match.group(1), match.group(2).replace("'", '"'))
+            return string
 
         annots = {}
         if isinstance(method, property):

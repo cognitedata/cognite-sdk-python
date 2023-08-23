@@ -750,7 +750,7 @@ class SplittingFetchSubtask(SerialFetchSubtask):
             n_new_tasks (int): No description.
 
         Yields:
-            Generator[tuple[float, ...], None, None]: No description.
+            tuple[float, ...]: No description.
         """
         end = self.split_subidx
         self.split_subidx -= n_new_tasks

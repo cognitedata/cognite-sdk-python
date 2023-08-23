@@ -162,7 +162,7 @@ def monkeypatch_cognite_client() -> Generator[CogniteClientMock, None, None]:
     Will patch all clients and replace them with specced MagicMock objects.
 
     Yields:
-        Generator[CogniteClientMock, None, None]: The mock with which the CogniteClient has been replaced
+        CogniteClientMock: The mock with which the CogniteClient has been replaced
 
     Examples:
 

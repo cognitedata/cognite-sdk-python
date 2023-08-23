@@ -715,7 +715,7 @@ class GeospatialAPI(APIClient):
             allow_crs_transformation (bool): If true, then input geometries will be transformed into the Coordinate Reference System defined in the feature type specification. When it is false, then requests with geometries in Coordinate Reference System different from the ones defined in the feature type will result in CogniteAPIError exception.
 
         Yields:
-            Generator[Feature, None, None]: a generator for the filtered features
+            Feature: a generator for the filtered features
 
         Examples:
 
