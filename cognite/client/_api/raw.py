@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Iterator, List, Sequence, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Iterator, List, Sequence, cast, overload
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -174,10 +174,7 @@ class RawTablesAPI(APIClient):
             method="GET",
             limit=limit,
         )
-        return cast(
-            Union[Iterator[Table], Iterator[TableList]],
-            (self._set_db_name_on_tables(tbl, db_name) for tbl in table_iterator),
-        )
+        return self._set_db_name_on_tables_generator(table_iterator, db_name)
 
     @overload
     def create(self, db_name: str, name: str) -> Table:
@@ -259,6 +256,12 @@ class RawTablesAPI(APIClient):
                 t._db_name = db_name
             return tb
         raise TypeError("tb must be Table or TableList")
+
+    def _set_db_name_on_tables_generator(
+        self, table_iterator: Iterator[Table] | Iterator[TableList], db_name: str
+    ) -> Iterator[Table] | Iterator[TableList]:
+        for tbl in table_iterator:
+            yield self._set_db_name_on_tables(tbl, db_name)
 
     def list(self, db_name: str, limit: int = LIST_LIMIT_DEFAULT) -> TableList:
         """`List tables <https://developer.cognite.com/api#tag/Raw/operation/getTables>`_

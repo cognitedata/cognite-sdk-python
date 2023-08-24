@@ -587,10 +587,10 @@ class Geometry(dict):
 
         MultiPolygon:
             List of multiple polygons.
-
             Each polygon is defined as a list of one or more linear rings representing a shape.
             A linear ring is the boundary of a surface or the boundary of a hole in a surface. It is defined as a list consisting of 4 or more Points, where the first and last Point is equivalent.
             Each Point is defined as an array of 2 numbers, representing coordinates of a point in 2D space.
+
             Example: `[[[[30, 20], [45, 40], [10, 40], [30, 20]]], [[[15, 5], [40, 10], [10, 20], [5, 10], [15, 5]]]]`
     """
 
