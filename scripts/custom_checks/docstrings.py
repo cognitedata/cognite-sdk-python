@@ -408,11 +408,11 @@ def format_docstring_function(fn) -> list[str]:
     return []
 
 
-def find_all_classes_and_funcs_in_sdk():
+def find_all_classes_and_funcs(files: list[Path]):
     def predicate(obj):
         return inspect.isclass(obj) or inspect.isfunction(obj)
 
-    locations = [".".join(p.parts)[:-3] for p in Path("cognite/client/").glob("**/*.py") if "_pb2.py" not in str(p)]
+    locations = [".".join(f.with_suffix("").parts) for f in files if not f.match("cognite/client/_proto*/*")]
     return {
         cls_or_fn
         for loc in locations
@@ -421,5 +421,5 @@ def find_all_classes_and_funcs_in_sdk():
     }
 
 
-def format_docstrings() -> list[str]:
-    return "\n".join(itertools.chain.from_iterable(map(format_docstring, find_all_classes_and_funcs_in_sdk())))
+def format_docstrings(files: list[Path]) -> list[str]:
+    return "\n".join(itertools.chain.from_iterable(map(format_docstring, find_all_classes_and_funcs(files))))
