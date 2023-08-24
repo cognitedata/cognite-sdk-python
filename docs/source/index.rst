@@ -70,3 +70,4 @@ Contents
    exceptions
    utils
    testing
+   appendix

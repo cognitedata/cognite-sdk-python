@@ -60,25 +60,25 @@ class AssetsAPI(APIClient):
 
     def __call__(
         self,
-        chunk_size: int = None,
-        name: str = None,
-        parent_ids: Sequence[int] = None,
-        parent_external_ids: Sequence[str] = None,
-        asset_subtree_ids: Union[int, Sequence[int]] = None,
-        asset_subtree_external_ids: Union[str, Sequence[str]] = None,
-        metadata: Dict[str, str] = None,
-        data_set_ids: Union[int, Sequence[int]] = None,
-        data_set_external_ids: Union[str, Sequence[str]] = None,
-        labels: LabelFilter = None,
-        geo_location: GeoLocationFilter = None,
-        source: str = None,
-        created_time: Union[Dict[str, Any], TimestampRange] = None,
-        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        root: bool = None,
-        external_id_prefix: str = None,
-        aggregated_properties: Sequence[str] = None,
-        limit: int = None,
-        partitions: int = None,
+        chunk_size: Optional[int] = None,
+        name: Optional[str] = None,
+        parent_ids: Optional[Sequence[int]] = None,
+        parent_external_ids: Optional[Sequence[str]] = None,
+        asset_subtree_ids: Optional[Union[int, Sequence[int]]] = None,
+        asset_subtree_external_ids: Optional[Union[str, Sequence[str]]] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        data_set_ids: Optional[Union[int, Sequence[int]]] = None,
+        data_set_external_ids: Optional[Union[str, Sequence[str]]] = None,
+        labels: Optional[LabelFilter] = None,
+        geo_location: Optional[GeoLocationFilter] = None,
+        source: Optional[str] = None,
+        created_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        last_updated_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        root: Optional[bool] = None,
+        external_id_prefix: Optional[str] = None,
+        aggregated_properties: Optional[Sequence[str]] = None,
+        limit: Optional[int] = None,
+        partitions: Optional[int] = None,
     ) -> Union[Iterator[Asset], Iterator[AssetList]]:
         """Iterate over assets
 
@@ -218,23 +218,23 @@ class AssetsAPI(APIClient):
 
     def list(
         self,
-        name: str = None,
-        parent_ids: Sequence[int] = None,
-        parent_external_ids: Sequence[str] = None,
-        asset_subtree_ids: Union[int, Sequence[int]] = None,
-        asset_subtree_external_ids: Union[str, Sequence[str]] = None,
-        data_set_ids: Union[int, Sequence[int]] = None,
-        data_set_external_ids: Union[str, Sequence[str]] = None,
-        labels: LabelFilter = None,
-        geo_location: GeoLocationFilter = None,
-        metadata: Dict[str, str] = None,
-        source: str = None,
-        created_time: Union[Dict[str, Any], TimestampRange] = None,
-        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        root: bool = None,
-        external_id_prefix: str = None,
-        aggregated_properties: Sequence[str] = None,
-        partitions: int = None,
+        name: Optional[str] = None,
+        parent_ids: Optional[Sequence[int]] = None,
+        parent_external_ids: Optional[Sequence[str]] = None,
+        asset_subtree_ids: Optional[Union[int, Sequence[int]]] = None,
+        asset_subtree_external_ids: Optional[Union[str, Sequence[str]]] = None,
+        data_set_ids: Optional[Union[int, Sequence[int]]] = None,
+        data_set_external_ids: Optional[Union[str, Sequence[str]]] = None,
+        labels: Optional[LabelFilter] = None,
+        geo_location: Optional[GeoLocationFilter] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        source: Optional[str] = None,
+        created_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        last_updated_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        root: Optional[bool] = None,
+        external_id_prefix: Optional[str] = None,
+        aggregated_properties: Optional[Sequence[str]] = None,
+        partitions: Optional[int] = None,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> AssetList:
         """`List assets <https://developer.cognite.com/api#tag/Assets/operation/listAssets>`_.
@@ -328,8 +328,8 @@ class AssetsAPI(APIClient):
             partitions=partitions,
         )
 
-    def aggregate(self, filter: Union[AssetFilter, dict] = None) -> List[AssetAggregate]:
-        """`Aggregate assets <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_.
+    def aggregate(self, filter: Optional[Union[AssetFilter, dict]] = None) -> List[AssetAggregate]:
+        """`Aggregate assets <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_
 
         Args:
             filter (Union[AssetFilter, Dict]): Filter on assets filter with exact match
@@ -347,7 +347,9 @@ class AssetsAPI(APIClient):
         """
         return self._aggregate(filter=filter, cls=AssetAggregate)
 
-    def aggregate_metadata_keys(self, filter: Union[AssetFilter, dict] = None) -> Sequence[AggregateBucketResult]:
+    def aggregate_metadata_keys(
+        self, filter: Optional[Union[AssetFilter, dict]] = None
+    ) -> Sequence[AggregateBucketResult]:
         """`Aggregate asset metadata keys <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_.
 
         Note:
@@ -370,7 +372,7 @@ class AssetsAPI(APIClient):
         return self._aggregate(filter=filter, aggregate="metadataKeys", cls=AggregateBucketResult)
 
     def aggregate_metadata_values(
-        self, keys: Sequence[str], filter: Union[AssetFilter, dict] = None
+        self, keys: Sequence[str], filter: Optional[Union[AssetFilter, dict]] = None
     ) -> Sequence[AggregateBucketResult]:
         """`Aggregate asset metadata values <https://developer.cognite.com/api#tag/Assets/operation/aggregateAssets>`_.
 
@@ -474,10 +476,9 @@ class AssetsAPI(APIClient):
             3. Any assets have an ambiguous parent link (category: ``unsure_parents``)
             4. Any group of assets form a cycle, e.g. A->B->A (category: ``cycles``)
 
-        It is worth noting that validation is done "offline", i.e. existing assets in CDF are not inspected. This means:
-
-            1. All assets linking a parent by ID are assumed valid
-            2. All orphan assets are assumed valid. "Orphan" means the parent is not part of the given assets (category: ``orphans``)
+        As part of validation there is a fifth category that is ignored when using this method (for backwards compatability) and that
+        is orphan assets. These are assets linking a parent by an identifier that is not present among the given assets, and as such,
+        might contain links we are unable to vet ahead of insertion. These are thus assumed to be valid, but may fail.
 
         Tip:
             The different categories specified above corresponds to the name of the attribute you might access on the raised error to
@@ -572,8 +573,8 @@ class AssetsAPI(APIClient):
 
     def delete(
         self,
-        id: Union[int, Sequence[int]] = None,
-        external_id: Union[str, Sequence[str]] = None,
+        id: Optional[Union[int, Sequence[int]]] = None,
+        external_id: Optional[Union[str, Sequence[str]]] = None,
         recursive: bool = False,
         ignore_unknown_ids: bool = False,
     ) -> None:
@@ -671,12 +672,57 @@ class AssetsAPI(APIClient):
         """
         return self._update_multiple(list_cls=AssetList, resource_cls=Asset, update_cls=AssetUpdate, items=item)
 
+    @overload
+    def upsert(self, item: Sequence[Asset], mode: Literal["patch", "replace"] = "patch") -> AssetList:
+        ...
+
+    @overload
+    def upsert(self, item: Asset, mode: Literal["patch", "replace"] = "patch") -> Asset:
+        ...
+
+    def upsert(self, item: Asset | Sequence[Asset], mode: Literal["patch", "replace"] = "patch") -> Asset | AssetList:
+        """Upsert assets, i.e., update if it exists, and create if it does not exist.
+         Note this is a convenience method that handles the upserting for you by first calling update on all items,
+         and if any of them fail because they do not exist, it will create them instead.
+
+        For more details, see :ref:`appendix-upsert`.
+
+        Args:
+            item (Asset | Sequence[Asset]): Asset or list of assets to upsert.
+            mode (Literal["patch", "replace"]): Whether to patch or replace in the case the assets are existing. If
+                                                you set 'patch', the call will only update fields with non-null values (default).
+                                                Setting 'replace' will unset any fields that are not specified.
+
+        Returns:
+            Asset | AssetList: The upserted asset(s).
+
+        Examples:
+
+            Upsert for assets:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import Asset
+                >>> c = CogniteClient()
+                >>> existing_asset = c.assets.retrieve(id=1)
+                >>> existing_asset.description = "New description"
+                >>> new_asset = Asset(external_id="new_asset", description="New asset")
+                >>> res = c.assets.upsert([existing_asset, new_asset], mode="replace")
+        """
+        return self._upsert_multiple(
+            item,
+            list_cls=AssetList,
+            resource_cls=Asset,
+            update_cls=AssetUpdate,
+            input_resource_cls=Asset,
+            mode=mode,
+        )
+
     def search(
         self,
-        name: str = None,
-        description: str = None,
-        query: str = None,
-        filter: Union[AssetFilter, Dict] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        query: Optional[str] = None,
+        filter: Optional[Union[AssetFilter, Dict]] = None,
         limit: int = 100,
     ) -> AssetList:
         """`Search for assets <https://developer.cognite.com/api#tag/Assets/operation/searchAssets>`_.
@@ -733,7 +779,9 @@ class AssetsAPI(APIClient):
             limit=limit,
         )
 
-    def retrieve_subtree(self, id: int = None, external_id: str = None, depth: int = None) -> AssetList:
+    def retrieve_subtree(
+        self, id: Optional[int] = None, external_id: Optional[str] = None, depth: Optional[int] = None
+    ) -> AssetList:
         """Retrieve the subtree for this asset up to a specified depth.
 
         Args:
@@ -952,7 +1000,8 @@ class _AssetHierarchyCreator:
 
     @cached_property
     def clear_all_update(self) -> MappingProxyType[str, Dict[str, Any]]:
-        props = set(map(to_camel_case, AssetUpdate._get_update_properties()))
+        props = {to_camel_case(prop.name) for prop in AssetUpdate._get_update_properties()}
+
         # Does not support setNull:
         props -= {"name", "parentExternalId", "parentId"}
         dct: Dict[str, Dict[str, Any]] = {k: {"setNull": True} for k in props}

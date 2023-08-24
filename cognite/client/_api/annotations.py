@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Any, Collection, Dict, List, Optional, Sequence, Union, overload
+from typing import Any, Dict, List, Literal, Optional, Sequence, Union, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import Annotation, AnnotationFilter, AnnotationList, AnnotationUpdate
-from cognite.client.data_classes._base import CogniteResource
+from cognite.client.data_classes._base import CogniteResource, PropertySpec
+from cognite.client.data_classes.annotations import AnnotationReverseLookupFilter
+from cognite.client.data_classes.contextualization import ResourceReference, ResourceReferenceList
 from cognite.client.utils._auxiliary import assert_type
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._text import to_camel_case
@@ -104,9 +106,12 @@ class AnnotationsAPI(APIClient):
 
         return self._list(list_cls=AnnotationList, resource_cls=Annotation, method="POST", limit=limit, filter=filter)
 
-    @staticmethod
+    @classmethod
     def _convert_resource_to_patch_object(
-        resource: CogniteResource, update_attributes: Collection[str]
+        cls,
+        resource: CogniteResource,
+        update_attributes: List[PropertySpec],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Dict[str, Dict[str, Dict]]:
         if not isinstance(resource, Annotation):
             return APIClient._convert_resource_to_patch_object(resource, update_attributes)
@@ -115,7 +120,7 @@ class AnnotationsAPI(APIClient):
         assert annotation.id is not None
         annotation_update = AnnotationUpdate(id=annotation.id)
         for attr in update_attributes:
-            getattr(annotation_update, attr).set(getattr(annotation, attr))
+            getattr(annotation_update, attr.name).set(getattr(annotation, attr.name))
         return annotation_update.dump()
 
     @overload
@@ -169,3 +174,25 @@ class AnnotationsAPI(APIClient):
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=None).as_singleton()
         return self._retrieve_multiple(list_cls=AnnotationList, resource_cls=Annotation, identifiers=identifiers)
+
+    def reverse_lookup(self, filter: AnnotationReverseLookupFilter, limit: int | None = None) -> ResourceReferenceList:
+        """Reverse lookup annotated resources based on having annotations matching the filter.
+
+        Args:
+            filter (AnnotationReverseLookupFilter): Filter to apply
+            limit (int, optional): Maximum number of results to return. Defaults to None.
+
+        Returns:
+            ResourceReferenceList: List of resource references
+        """
+        assert_type(filter, "filter", types=[AnnotationReverseLookupFilter], allow_none=False)
+        assert_type(limit, "limit", [int, type(None)], allow_none=True)
+
+        return self._list(
+            list_cls=ResourceReferenceList,
+            resource_cls=ResourceReference,
+            method="POST",
+            limit=limit,
+            filter=filter.dump(camel_case=True),
+            url_path=self._RESOURCE_PATH + "/reverselookup",
+        )

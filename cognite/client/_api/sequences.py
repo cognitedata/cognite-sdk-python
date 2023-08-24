@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 import math
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Tuple, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Literal, Optional, Tuple, Union, cast, overload
 from typing import Sequence as SequenceType
 
 from cognite.client import utils
@@ -38,18 +38,18 @@ class SequencesAPI(APIClient):
 
     def __call__(
         self,
-        chunk_size: int = None,
-        name: str = None,
-        external_id_prefix: str = None,
-        metadata: Dict[str, str] = None,
-        asset_ids: SequenceType[int] = None,
-        asset_subtree_ids: Union[int, SequenceType[int]] = None,
-        asset_subtree_external_ids: Union[str, SequenceType[str]] = None,
-        data_set_ids: Union[int, SequenceType[int]] = None,
-        data_set_external_ids: Union[str, SequenceType[str]] = None,
-        created_time: Dict[str, Any] = None,
-        last_updated_time: Dict[str, Any] = None,
-        limit: int = None,
+        chunk_size: Optional[int] = None,
+        name: Optional[str] = None,
+        external_id_prefix: Optional[str] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        asset_ids: Optional[SequenceType[int]] = None,
+        asset_subtree_ids: Optional[Union[int, SequenceType[int]]] = None,
+        asset_subtree_external_ids: Optional[Union[str, SequenceType[str]]] = None,
+        data_set_ids: Optional[Union[int, SequenceType[int]]] = None,
+        data_set_external_ids: Optional[Union[str, SequenceType[str]]] = None,
+        created_time: Optional[Dict[str, Any]] = None,
+        last_updated_time: Optional[Dict[str, Any]] = None,
+        limit: Optional[int] = None,
     ) -> Union[Iterator[Sequence], Iterator[SequenceList]]:
         """Iterate over sequences
 
@@ -168,16 +168,16 @@ class SequencesAPI(APIClient):
 
     def list(
         self,
-        name: str = None,
-        external_id_prefix: str = None,
-        metadata: Dict[str, str] = None,
-        asset_ids: SequenceType[int] = None,
-        asset_subtree_ids: Union[int, SequenceType[int]] = None,
-        asset_subtree_external_ids: Union[str, SequenceType[str]] = None,
-        data_set_ids: Union[int, SequenceType[int]] = None,
-        data_set_external_ids: Union[str, SequenceType[str]] = None,
-        created_time: (Union[Dict[str, Any], TimestampRange]) = None,
-        last_updated_time: (Union[Dict[str, Any], TimestampRange]) = None,
+        name: Optional[str] = None,
+        external_id_prefix: Optional[str] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        asset_ids: Optional[SequenceType[int]] = None,
+        asset_subtree_ids: Optional[Union[int, SequenceType[int]]] = None,
+        asset_subtree_external_ids: Optional[Union[str, SequenceType[str]]] = None,
+        data_set_ids: Optional[Union[int, SequenceType[int]]] = None,
+        data_set_external_ids: Optional[Union[str, SequenceType[str]]] = None,
+        created_time: Optional[(Union[Dict[str, Any], TimestampRange])] = None,
+        last_updated_time: Optional[(Union[Dict[str, Any], TimestampRange])] = None,
         limit: Optional[int] = LIST_LIMIT_DEFAULT,
     ) -> SequenceList:
         """`Iterate over sequences <https://developer.cognite.com/api#tag/Sequences/operation/advancedListSequences>`_.
@@ -238,7 +238,7 @@ class SequencesAPI(APIClient):
         ).dump(camel_case=True)
         return self._list(list_cls=SequenceList, resource_cls=Sequence, method="POST", filter=filter, limit=limit)
 
-    def aggregate(self, filter: Union[SequenceFilter, Dict] = None) -> List[SequenceAggregate]:
+    def aggregate(self, filter: Optional[Union[SequenceFilter, Dict]] = None) -> List[SequenceAggregate]:
         """`Aggregate sequences <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_.
 
         Args:
@@ -302,8 +302,11 @@ class SequencesAPI(APIClient):
             sequence = self._clean_columns(sequence)
         return self._create_multiple(list_cls=SequenceList, resource_cls=Sequence, items=sequence)
 
-    def _clean_columns(self, sequence: Sequence) -> Sequence:
+    @staticmethod
+    def _clean_columns(sequence: Sequence) -> Sequence:
         sequence = copy.copy(sequence)
+        if not sequence.columns:
+            return sequence
         sequence.columns = [
             {
                 k: v
@@ -320,13 +323,17 @@ class SequencesAPI(APIClient):
         return sequence
 
     def delete(
-        self, id: Union[int, SequenceType[int]] = None, external_id: Union[str, SequenceType[str]] = None
+        self,
+        id: Optional[Union[int, SequenceType[int]]] = None,
+        external_id: Optional[Union[str, SequenceType[str]]] = None,
+        ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete one or more sequences <https://developer.cognite.com/api#tag/Sequences/operation/deleteSequences>`_.
 
         Args:
             id (Union[int, SequenceType[int]): Id or list of ids
             external_id (Union[str, SequenceType[str]]): External ID or list of external ids
+            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
             None
@@ -339,7 +346,11 @@ class SequencesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.sequences.delete(id=[1,2,3], external_id="3")
         """
-        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id, external_ids=external_id), wrap_ids=True)
+        self._delete_multiple(
+            identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
+            wrap_ids=True,
+            extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
+        )
 
     @overload
     def update(self, item: Union[Sequence, SequenceUpdate]) -> Sequence:
@@ -436,12 +447,59 @@ class SequencesAPI(APIClient):
             list_cls=SequenceList, resource_cls=Sequence, update_cls=SequenceUpdate, items=item
         )
 
+    @overload
+    def upsert(self, item: SequenceType[Sequence], mode: Literal["patch", "replace"] = "patch") -> SequenceList:
+        ...
+
+    @overload
+    def upsert(self, item: Sequence, mode: Literal["patch", "replace"] = "patch") -> Sequence:
+        ...
+
+    def upsert(
+        self, item: Sequence | SequenceType[Sequence], mode: Literal["patch", "replace"] = "patch"
+    ) -> Sequence | SequenceList:
+        """Upsert sequences, i.e., update if it exists, and create if it does not exist.
+         Note this is a convenience method that handles the upserting for you by first calling update on all items,
+         and if any of them fail because they do not exist, it will create them instead.
+
+         For more details, see :ref:`appendix-upsert`.
+
+        Args:
+            item (Sequence | Sequence[Sequence]): Sequence or list of sequences to upsert.
+            mode (Literal["patch", "replace"])): Whether to patch or replace in the case the sequences are existing. If
+                                                you set 'patch', the call will only update fields with non-null values (default).
+                                                Setting 'replace' will unset any fields that are not specified.
+
+        Returns:
+            Sequence | SequenceList: The upserted sequence(s).
+
+        Examples:
+
+            Upsert for sequences:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import Sequence
+                >>> c = CogniteClient()
+                >>> existing_sequence = c.sequences.retrieve(id=1)
+                >>> existing_sequence.description = "New description"
+                >>> new_sequence = Sequence(external_id="new_sequence", description="New sequence")
+                >>> res = c.sequences.upsert([existing_sequence, new_sequence], mode="replace")
+        """
+        return self._upsert_multiple(
+            item,
+            list_cls=SequenceList,
+            resource_cls=Sequence,
+            update_cls=SequenceUpdate,
+            input_resource_cls=Sequence,
+            mode=mode,
+        )
+
     def search(
         self,
-        name: str = None,
-        description: str = None,
-        query: str = None,
-        filter: Union[SequenceFilter, Dict] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        query: Optional[str] = None,
+        filter: Optional[Union[SequenceFilter, Dict]] = None,
         limit: int = 100,
     ) -> SequenceList:
         """`Search for sequences <https://developer.cognite.com/api#tag/Sequences/operation/searchSequences>`_.
@@ -493,8 +551,8 @@ class SequencesDataAPI(APIClient):
             SequenceData,
         ],
         column_external_ids: Optional[SequenceType[str]],
-        id: int = None,
-        external_id: str = None,
+        id: Optional[int] = None,
+        external_id: Optional[str] = None,
     ) -> None:
         """`Insert rows into a sequence <https://developer.cognite.com/api#tag/Sequences/operation/postSequenceData>`_.
 
@@ -566,7 +624,9 @@ class SequencesDataAPI(APIClient):
         summary = utils._concurrency.execute_tasks(self._insert_data, tasks, max_workers=self._config.max_workers)
         summary.raise_compound_exception_if_failed_tasks()
 
-    def insert_dataframe(self, dataframe: pandas.DataFrame, id: int = None, external_id: str = None) -> None:
+    def insert_dataframe(
+        self, dataframe: pandas.DataFrame, id: Optional[int] = None, external_id: Optional[str] = None
+    ) -> None:
         """`Insert a pandas dataframe <https://developer.cognite.com/api#tag/Sequences/operation/postSequenceData>`_.
 
         The index of the dataframe must contain the row numbers. The names of the remaining columns specify the column external ids.
@@ -596,7 +656,7 @@ class SequencesDataAPI(APIClient):
     def _insert_data(self, task: Dict[str, Any]) -> None:
         self._post(url_path=self._DATA_PATH, json={"items": [task]})
 
-    def delete(self, rows: SequenceType[int], id: int = None, external_id: str = None) -> None:
+    def delete(self, rows: SequenceType[int], id: Optional[int] = None, external_id: Optional[str] = None) -> None:
         """`Delete rows from a sequence <https://developer.cognite.com/api#tag/Sequences/operation/deleteSequenceData>`_.
 
         Args:
@@ -618,7 +678,9 @@ class SequencesDataAPI(APIClient):
 
         self._post(url_path=self._DATA_PATH + "/delete", json={"items": [post_obj]})
 
-    def delete_range(self, start: int, end: Union[int, None], id: int = None, external_id: str = None) -> None:
+    def delete_range(
+        self, start: int, end: Union[int, None], id: Optional[int] = None, external_id: Optional[str] = None
+    ) -> None:
         """`Delete a range of rows from a sequence <https://developer.cognite.com/api#tag/Sequences/operation/deleteSequenceData>`_.
 
         Note this operation is potentially slow, as retrieves each row before deleting.
@@ -653,9 +715,9 @@ class SequencesDataAPI(APIClient):
         start: int,
         end: Union[int, None],
         column_external_ids: Optional[SequenceType[str]] = None,
-        external_id: Union[str, SequenceType[str]] = None,
-        id: Union[int, SequenceType[int]] = None,
-        limit: int = None,
+        external_id: Optional[Union[str, SequenceType[str]]] = None,
+        id: Optional[Union[int, SequenceType[int]]] = None,
+        limit: Optional[int] = None,
     ) -> Union[SequenceData, SequenceDataList]:
         """`Retrieve data from a sequence <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceData>`_.
 
@@ -708,10 +770,10 @@ class SequencesDataAPI(APIClient):
 
     def retrieve_latest(
         self,
-        id: int = None,
-        external_id: str = None,
+        id: Optional[int] = None,
+        external_id: Optional[str] = None,
         column_external_ids: Optional[SequenceType[str]] = None,
-        before: int = None,
+        before: Optional[int] = None,
     ) -> SequenceData:
         """`Retrieve the last row (the row with the highest row number) in a sequence <https://developer.cognite.com/api#tag/Sequences/operation/getLatestSequenceRow>`_.
 
@@ -743,10 +805,10 @@ class SequencesDataAPI(APIClient):
         start: int,
         end: Union[int, None],
         column_external_ids: Optional[List[str]] = None,
-        external_id: str = None,
-        column_names: str = None,
-        id: int = None,
-        limit: int = None,
+        external_id: Optional[str] = None,
+        column_names: Optional[str] = None,
+        id: Optional[int] = None,
+        limit: Optional[int] = None,
     ) -> pandas.DataFrame:
         """`Retrieve data from a sequence as a pandas dataframe <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceData>`_.
 

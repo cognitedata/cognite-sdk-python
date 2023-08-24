@@ -39,24 +39,24 @@ class Function(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        name: str = None,
-        external_id: str = None,
-        description: str = None,
-        owner: str = None,
-        status: str = None,
-        file_id: int = None,
-        function_path: str = None,
-        created_time: int = None,
-        secrets: Dict = None,
-        env_vars: Dict = None,
-        cpu: Number = None,
-        memory: Number = None,
-        runtime: str = None,
-        runtime_version: str = None,
-        metadata: Dict = None,
-        error: Dict = None,
-        cognite_client: CogniteClient = None,
+        id: Optional[int] = None,
+        name: Optional[str] = None,
+        external_id: Optional[str] = None,
+        description: Optional[str] = None,
+        owner: Optional[str] = None,
+        status: Optional[str] = None,
+        file_id: Optional[int] = None,
+        function_path: Optional[str] = None,
+        created_time: Optional[int] = None,
+        secrets: Optional[Dict] = None,
+        env_vars: Optional[Dict] = None,
+        cpu: Optional[Number] = None,
+        memory: Optional[Number] = None,
+        runtime: Optional[str] = None,
+        runtime_version: Optional[str] = None,
+        metadata: Optional[Dict] = None,
+        error: Optional[Dict] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ) -> None:
         self.id = cast(int, id)
         self.name = cast(str, name)
@@ -170,12 +170,12 @@ class Function(CogniteResource):
 class FunctionFilter(CogniteFilter):
     def __init__(
         self,
-        name: str = None,
-        owner: str = None,
-        file_id: int = None,
-        status: str = None,
-        external_id_prefix: str = None,
-        created_time: Union[Dict[str, int], TimestampRange] = None,
+        name: Optional[str] = None,
+        owner: Optional[str] = None,
+        file_id: Optional[int] = None,
+        status: Optional[str] = None,
+        external_id_prefix: Optional[str] = None,
+        created_time: Optional[Union[Dict[str, int], TimestampRange]] = None,
     ) -> None:
         self.name = name
         self.owner = owner
@@ -188,10 +188,10 @@ class FunctionFilter(CogniteFilter):
 class FunctionCallsFilter(CogniteFilter):
     def __init__(
         self,
-        status: str = None,
-        schedule_id: int = None,
-        start_time: Union[Dict[str, int], TimestampRange] = None,
-        end_time: Union[Dict[str, int], TimestampRange] = None,
+        status: Optional[str] = None,
+        schedule_id: Optional[int] = None,
+        start_time: Optional[Union[Dict[str, int], TimestampRange]] = None,
+        end_time: Optional[Union[Dict[str, int], TimestampRange]] = None,
     ) -> None:
         self.status = status
         self.schedule_id = schedule_id
@@ -217,16 +217,16 @@ class FunctionSchedule(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        name: str = None,
-        function_id: str = None,
-        function_external_id: str = None,
-        description: str = None,
-        created_time: int = None,
-        cron_expression: str = None,
-        session_id: int = None,
-        when: str = None,
-        cognite_client: CogniteClient = None,
+        id: Optional[int] = None,
+        name: Optional[str] = None,
+        function_id: Optional[str] = None,
+        function_external_id: Optional[str] = None,
+        description: Optional[str] = None,
+        created_time: Optional[int] = None,
+        cron_expression: Optional[str] = None,
+        session_id: Optional[int] = None,
+        when: Optional[str] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ) -> None:
         self.id = id
         self.name = name
@@ -252,11 +252,11 @@ class FunctionSchedule(CogniteResource):
 class FunctionSchedulesFilter(CogniteFilter):
     def __init__(
         self,
-        name: str = None,
-        function_id: int = None,
-        function_external_id: str = None,
-        created_time: Union[Dict[str, int], TimestampRange] = None,
-        cron_expression: str = None,
+        name: Optional[str] = None,
+        function_id: Optional[int] = None,
+        function_external_id: Optional[str] = None,
+        created_time: Optional[Union[Dict[str, int], TimestampRange]] = None,
+        cron_expression: Optional[str] = None,
     ) -> None:
         self.name = name
         self.function_id = function_id
@@ -289,15 +289,15 @@ class FunctionCall(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        start_time: int = None,
-        end_time: int = None,
-        scheduled_time: int = None,
-        status: str = None,
-        schedule_id: int = None,
-        error: dict = None,
-        function_id: int = None,
-        cognite_client: CogniteClient = None,
+        id: Optional[int] = None,
+        start_time: Optional[int] = None,
+        end_time: Optional[int] = None,
+        scheduled_time: Optional[int] = None,
+        status: Optional[str] = None,
+        schedule_id: Optional[int] = None,
+        error: Optional[dict] = None,
+        function_id: Optional[int] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ) -> None:
         self.id = id
         self.start_time = start_time
@@ -356,9 +356,9 @@ class FunctionCallLogEntry(CogniteResource):
 
     def __init__(
         self,
-        timestamp: int = None,
-        message: str = None,
-        cognite_client: CogniteClient = None,
+        timestamp: Optional[int] = None,
+        message: Optional[str] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ):
         self.timestamp = timestamp
         self.message = message

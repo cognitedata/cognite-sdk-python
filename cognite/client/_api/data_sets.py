@@ -28,13 +28,13 @@ class DataSetsAPI(APIClient):
 
     def __call__(
         self,
-        chunk_size: int = None,
-        metadata: Dict[str, str] = None,
-        created_time: Union[Dict[str, Any], TimestampRange] = None,
-        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        external_id_prefix: str = None,
-        write_protected: bool = None,
-        limit: int = None,
+        chunk_size: Optional[int] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        created_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        last_updated_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        external_id_prefix: Optional[str] = None,
+        write_protected: Optional[bool] = None,
+        limit: Optional[int] = None,
     ) -> Union[Iterator[DataSet], Iterator[DataSetList]]:
         """Iterate over data sets
 
@@ -158,11 +158,11 @@ class DataSetsAPI(APIClient):
 
     def list(
         self,
-        metadata: Dict[str, str] = None,
-        created_time: Union[Dict[str, Any], TimestampRange] = None,
-        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        external_id_prefix: str = None,
-        write_protected: bool = None,
+        metadata: Optional[Dict[str, str]] = None,
+        created_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        last_updated_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        external_id_prefix: Optional[str] = None,
+        write_protected: Optional[bool] = None,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> DataSetList:
         """`List data sets <https://developer.cognite.com/api#tag/Data-sets/operation/listDataSets>`_.
@@ -211,7 +211,7 @@ class DataSetsAPI(APIClient):
         ).dump(camel_case=True)
         return self._list(list_cls=DataSetList, resource_cls=DataSet, method="POST", limit=limit, filter=filter)
 
-    def aggregate(self, filter: Union[DataSetFilter, Dict] = None) -> List[DataSetAggregate]:
+    def aggregate(self, filter: Optional[Union[DataSetFilter, Dict]] = None) -> List[DataSetAggregate]:
         """`Aggregate data sets <https://developer.cognite.com/api#tag/Data-sets/operation/aggregateDataSets>`_.
 
         Args:

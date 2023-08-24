@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterator, Literal, Sequence, cast, overload
+from typing import Iterator, Literal, Optional, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DATA_MODELING_LIST_LIMIT_DEFAULT
@@ -13,6 +13,8 @@ from cognite.client.data_classes.data_modeling.data_models import (
 from cognite.client.data_classes.data_modeling.ids import DataModelId, DataModelIdentifier, ViewId, _load_identifier
 from cognite.client.data_classes.data_modeling.views import View
 
+from ._data_modeling_executor import get_data_modeling_executor
+
 
 class DataModelsAPI(APIClient):
     _RESOURCE_PATH = "/models/datamodels"
@@ -21,7 +23,7 @@ class DataModelsAPI(APIClient):
     def __call__(
         self,
         chunk_size: None = None,
-        limit: int = None,
+        limit: Optional[int] = None,
         space: str | None = None,
         inline_views: bool = False,
         all_versions: bool = False,
@@ -33,7 +35,7 @@ class DataModelsAPI(APIClient):
     def __call__(
         self,
         chunk_size: int,
-        limit: int = None,
+        limit: Optional[int] = None,
         space: str | None = None,
         inline_views: bool = False,
         all_versions: bool = False,
@@ -44,7 +46,7 @@ class DataModelsAPI(APIClient):
     def __call__(
         self,
         chunk_size: int | None = None,
-        limit: int = None,
+        limit: Optional[int] = None,
         space: str | None = None,
         inline_views: bool = False,
         all_versions: bool = False,
@@ -102,7 +104,7 @@ class DataModelsAPI(APIClient):
     def retrieve(
         self, ids: DataModelIdentifier | Sequence[DataModelIdentifier], inline_views: bool = False
     ) -> DataModelList[ViewId] | DataModelList[View]:
-        """`Retrieve one or more data models by ID <https://developer.cognite.com/api#tag/Data-models/operation/byExternalIdsDataModels>`_
+        """`Retrieve one or more data models by ID <https://developer.cognite.com/api#tag/Data-models/operation/byExternalIdsDataModels>`_.
 
         Args:
             ids (DataModelId | Sequence[DataModelId]): Data Model identifier(s).
@@ -120,7 +122,11 @@ class DataModelsAPI(APIClient):
         """
         identifier = _load_identifier(ids, "data_model")
         return self._retrieve_multiple(
-            list_cls=DataModelList, resource_cls=DataModel, identifiers=identifier, params={"inlineViews": inline_views}
+            list_cls=DataModelList,
+            resource_cls=DataModel,
+            identifiers=identifier,
+            params={"inlineViews": inline_views},
+            executor=get_data_modeling_executor(),
         )
 
     def delete(self, ids: DataModelIdentifier | Sequence[DataModelIdentifier]) -> list[DataModelId]:
@@ -140,7 +146,12 @@ class DataModelsAPI(APIClient):
         """
         deleted_data_models = cast(
             list,
-            self._delete_multiple(identifiers=_load_identifier(ids, "data_model"), wrap_ids=True, returns_items=True),
+            self._delete_multiple(
+                identifiers=_load_identifier(ids, "data_model"),
+                wrap_ids=True,
+                returns_items=True,
+                executor=get_data_modeling_executor(),
+            ),
         )
         return [DataModelId(item["space"], item["externalId"], item["version"]) for item in deleted_data_models]
 
@@ -249,5 +260,9 @@ class DataModelsAPI(APIClient):
                 >>> res = c.data_modeling.data_models.apply(data_models)
         """
         return self._create_multiple(
-            list_cls=DataModelList, resource_cls=DataModel, items=data_model, input_resource_cls=DataModelApply
+            list_cls=DataModelList,
+            resource_cls=DataModel,
+            items=data_model,
+            input_resource_cls=DataModelApply,
+            executor=get_data_modeling_executor(),
         )

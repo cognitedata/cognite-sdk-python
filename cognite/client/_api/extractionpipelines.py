@@ -156,7 +156,9 @@ class ExtractionPipelinesAPI(APIClient):
             list_cls=ExtractionPipelineList, resource_cls=ExtractionPipeline, items=extraction_pipeline
         )
 
-    def delete(self, id: Union[int, Sequence[int]] = None, external_id: Union[str, Sequence[str]] = None) -> None:
+    def delete(
+        self, id: Optional[Union[int, Sequence[int]]] = None, external_id: Optional[Union[str, Sequence[str]]] = None
+    ) -> None:
         """`Delete one or more extraction pipelines <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/deleteExtPipes>`_.
 
         Args:
@@ -222,9 +224,9 @@ class ExtractionPipelineRunsAPI(APIClient):
     def list(
         self,
         external_id: str,
-        statuses: Sequence[str] = None,
-        message_substring: str = None,
-        created_time: Union[Dict[str, Any], TimestampRange] = None,
+        statuses: Optional[Sequence[str]] = None,
+        message_substring: Optional[str] = None,
+        created_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> ExtractionPipelineRunList:
         """`List runs for an extraction pipeline with given external ID <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/filterRuns>`_.
@@ -378,7 +380,7 @@ class ExtractionPipelineConfigsAPI(APIClient):
             Create a config revision::
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.config import ExtractionPipelineConfig
+                >>> from cognite.client.data_classes import ExtractionPipelineConfig
                 >>> c = CogniteClient()
                 >>> res = c.extraction_pipelines.config.create(ExtractionPipelineConfig(external_id="extId", config="my config contents"))
         """

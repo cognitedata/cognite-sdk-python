@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, cast
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, CogniteResponse
 from cognite.client.utils._text import convert_all_keys_to_camel_case
@@ -26,14 +26,14 @@ class Group(CogniteResource):
 
     def __init__(
         self,
-        name: str = None,
-        source_id: str = None,
-        capabilities: List[Dict[str, Any]] = None,
-        id: int = None,
-        is_deleted: bool = None,
-        deleted_time: int = None,
-        metadata: Dict[str, Any] = None,
-        cognite_client: CogniteClient = None,
+        name: Optional[str] = None,
+        source_id: Optional[str] = None,
+        capabilities: Optional[List[Dict[str, Any]]] = None,
+        id: Optional[int] = None,
+        is_deleted: Optional[bool] = None,
+        deleted_time: Optional[int] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ):
         self.name = name
         self.source_id = source_id
@@ -58,7 +58,9 @@ class SecurityCategory(CogniteResource):
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
-    def __init__(self, name: str = None, id: int = None, cognite_client: CogniteClient = None):
+    def __init__(
+        self, name: Optional[str] = None, id: Optional[int] = None, cognite_client: Optional[CogniteClient] = None
+    ):
         self.name = name
         self.id = id
         self._cognite_client = cast("CogniteClient", cognite_client)
@@ -131,12 +133,12 @@ class CreatedSession(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        type: str = None,
-        status: str = None,
-        nonce: str = None,
-        client_id: str = None,
-        cognite_client: CogniteClient = None,
+        id: Optional[int] = None,
+        type: Optional[str] = None,
+        status: Optional[str] = None,
+        nonce: Optional[str] = None,
+        client_id: Optional[str] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ):
         self.id = id
         self.type = type
@@ -159,13 +161,13 @@ class Session(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        type: str = None,
-        status: str = None,
-        creation_time: int = None,
-        expiration_time: int = None,
-        client_id: str = None,
-        cognite_client: CogniteClient = None,
+        id: Optional[int] = None,
+        type: Optional[str] = None,
+        status: Optional[str] = None,
+        creation_time: Optional[int] = None,
+        expiration_time: Optional[int] = None,
+        client_id: Optional[str] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ):
         self.id = id
         self.type = type

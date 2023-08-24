@@ -1,9 +1,3 @@
-"""Utilities for Cognite API SDK
-
-This module provides helper methods and different utilities for the Cognite API Python SDK.
-
-This module is protected and should not be used by end-users.
-"""
 from __future__ import annotations
 
 import functools
@@ -103,6 +97,26 @@ def assert_type(var: Any, var_name: str, types: List[type], allow_none: bool = F
 
 def interpolate_and_url_encode(path: str, *args: Any) -> str:
     return path.format(*[quote(str(arg), safe="") for arg in args])
+
+
+@overload
+def local_import(m1: str, /) -> ModuleType:
+    ...
+
+
+@overload
+def local_import(m1: str, m2: str, /) -> Tuple[ModuleType, ModuleType]:
+    ...
+
+
+@overload
+def local_import(m1: str, m2: str, m3: str, /) -> Tuple[ModuleType, ModuleType, ModuleType]:
+    ...
+
+
+@overload
+def local_import(m1: str, m2: str, m3: str, m4: str, /) -> Tuple[ModuleType, ModuleType, ModuleType, ModuleType]:
+    ...
 
 
 def local_import(*module: str) -> Union[ModuleType, Tuple[ModuleType, ...]]:
@@ -223,7 +237,7 @@ def exactly_one_is_not_none(*args: Any) -> bool:
 
 
 def rename_and_exclude_keys(
-    dct: dict[str, Any], aliases: dict[str, str] = None, exclude: set[str] = None
+    dct: dict[str, Any], aliases: Optional[dict[str, str]] = None, exclude: Optional[set[str]] = None
 ) -> dict[str, Any]:
     aliases = aliases or {}
     exclude = exclude or set()

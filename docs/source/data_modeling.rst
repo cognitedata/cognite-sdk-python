@@ -83,14 +83,23 @@ Instances
 
    CogniteClient.data_modeling.instances
 
-Instances data classes
-^^^^^^^^^^^^^^^^^^^^^^^^
+Instances core data classes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autosummary::
    :classes:
    :toctree: generated/
    :template: custom-automodule-template.rst
 
    data_classes.data_modeling.instances
+
+Instances query data classes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. autosummary::
+   :classes:
+   :toctree: generated/
+   :template: custom-automodule-template.rst
+
+   data_classes.data_modeling.query
 
 IDs data classes
 ^^^^^^^^^^^^^^^^
@@ -100,3 +109,21 @@ IDs data classes
    :template: custom-automodule-template.rst
 
    data_classes.data_modeling.ids
+
+Data Modeling Filtering data classes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. autosummary::
+   :classes:
+   :toctree: generated/
+   :template: custom-automodule-template.rst
+
+   data_classes.filters
+
+GraphQL
+-------
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
+
+   CogniteClient.data_modeling.graphql

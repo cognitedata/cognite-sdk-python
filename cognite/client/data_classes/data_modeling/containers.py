@@ -39,12 +39,12 @@ class ContainerCore(DataModelingResource):
         space: str,
         external_id: str,
         properties: dict[str, ContainerProperty],
-        description: str = None,
-        name: str = None,
-        used_for: Literal["node", "edge", "all"] = None,
-        constraints: dict[str, Constraint] = None,
-        indexes: dict[str, Index] = None,
-        **_: dict,
+        description: Optional[str] = None,
+        name: Optional[str] = None,
+        used_for: Optional[Literal["node", "edge", "all"]] = None,
+        constraints: Optional[dict[str, Constraint]] = None,
+        indexes: Optional[dict[str, Index]] = None,
+        **_: Any,
     ):
         self.space = space
         self.external_id = external_id
@@ -100,11 +100,11 @@ class ContainerApply(ContainerCore):
         space: str,
         external_id: str,
         properties: dict[str, ContainerProperty],
-        description: str = None,
-        name: str = None,
-        used_for: Literal["node", "edge", "all"] = None,
-        constraints: dict[str, Constraint] = None,
-        indexes: dict[str, Index] = None,
+        description: Optional[str] = None,
+        name: Optional[str] = None,
+        used_for: Optional[Literal["node", "edge", "all"]] = None,
+        constraints: Optional[dict[str, Constraint]] = None,
+        indexes: Optional[dict[str, Index]] = None,
     ):
         validate_data_modeling_identifier(space, external_id)
         super().__init__(space, external_id, properties, description, name, used_for, constraints, indexes)
@@ -135,11 +135,12 @@ class Container(ContainerCore):
         is_global: bool,
         last_updated_time: int,
         created_time: int,
-        description: str = None,
-        name: str = None,
+        description: Optional[str] = None,
+        name: Optional[str] = None,
         used_for: Literal["node", "edge", "all"] = "node",
-        constraints: dict[str, Constraint] = None,
-        indexes: dict[str, Index] = None,
+        constraints: Optional[dict[str, Constraint]] = None,
+        indexes: Optional[dict[str, Index]] = None,
+        **_: Any,
     ):
         super().__init__(space, external_id, properties, description, name, used_for, constraints, indexes)
         self.is_global = is_global
@@ -162,17 +163,33 @@ class Container(ContainerCore):
 class ContainerList(CogniteResourceList[Container]):
     _RESOURCE = Container
 
-
-class ContainerApplyList(CogniteResourceList[ContainerApply]):
-    _RESOURCE = ContainerApply
-
     def as_apply(self) -> ContainerApplyList:
-        """Convert to a container an apply list.
+        """Convert to a ContainerApply list.
 
         Returns:
             ContainerApplyList: The container apply list.
         """
-        return ContainerApplyList(resources=[v.as_apply() for v in self.items])
+        return ContainerApplyList(resources=[v.as_apply() for v in self])
+
+    def as_ids(self) -> list[ContainerId]:
+        """Convert to a container id list.
+
+        Returns:
+            list[ContainerId]: The container id list.
+        """
+        return [v.as_id() for v in self]
+
+
+class ContainerApplyList(CogniteResourceList[ContainerApply]):
+    _RESOURCE = ContainerApply
+
+    def as_ids(self) -> list[ContainerId]:
+        """Convert to a container id list.
+
+        Returns:
+            list[ContainerId]: The container id list.
+        """
+        return [v.as_id() for v in self]
 
 
 class ContainerFilter(CogniteFilter):
@@ -183,7 +200,7 @@ class ContainerFilter(CogniteFilter):
         include_global (bool): Whether the global containers should be included.
     """
 
-    def __init__(self, space: str = None, include_global: bool = False):
+    def __init__(self, space: Optional[str] = None, include_global: bool = False):
         self.space = space
         self.include_global = include_global
 
@@ -276,10 +293,15 @@ class UniquenessConstraintDefinition(Constraint):
 class Index:
     properties: list[str]
     index_type: Literal["btree"] | str = "btree"
+    cursorable: bool = False
 
     @classmethod
     def load(cls, data: dict[str, Any]) -> Index:
-        return cls(**convert_all_keys_to_snake_case(data))
+        data = convert_all_keys_to_snake_case(data)
+        # We want to avoid repeating the default values here (e.g. cursorable = False):
+        for key in set(data) - set(cls.__dataclass_fields__):
+            del data[key]
+        return cls(**data)
 
     def dump(self, camel_case: bool = False) -> dict[str, str | dict]:
         output = asdict(self)

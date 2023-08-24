@@ -37,7 +37,7 @@ class VisionAPI(APIClient):
         job_path: str,
         job_cls: Type[T_ContextualizationJob],
         status_path: Optional[str] = None,
-        headers: Dict[str, Any] = None,
+        headers: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> T_ContextualizationJob:
         if status_path is None:

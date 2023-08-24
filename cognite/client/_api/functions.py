@@ -219,7 +219,9 @@ class FunctionsAPI(APIClient):
         res = self._post(url, json=body)
         return Function._load(res.json()["items"][0], cognite_client=self._cognite_client)
 
-    def delete(self, id: Union[int, Sequence[int]] = None, external_id: Union[str, Sequence[str]] = None) -> None:
+    def delete(
+        self, id: Optional[Union[int, Sequence[int]]] = None, external_id: Optional[Union[str, Sequence[str]]] = None
+    ) -> None:
         """`Delete one or more functions <https://developer.cognite.com/api#tag/Functions/operation/deleteFunctions>`_.
 
         Args:
@@ -241,12 +243,12 @@ class FunctionsAPI(APIClient):
 
     def list(
         self,
-        name: str = None,
-        owner: str = None,
-        file_id: int = None,
-        status: str = None,
-        external_id_prefix: str = None,
-        created_time: Union[Dict[str, int], TimestampRange] = None,
+        name: Optional[str] = None,
+        owner: Optional[str] = None,
+        file_id: Optional[int] = None,
+        status: Optional[str] = None,
+        external_id_prefix: Optional[str] = None,
+        created_time: Optional[Union[Dict[str, int], TimestampRange]] = None,
         limit: Optional[int] = LIST_LIMIT_DEFAULT,
     ) -> FunctionList:
         """`List all functions <https://developer.cognite.com/api#tag/Functions/operation/listFunctions>`_.
@@ -864,11 +866,11 @@ class FunctionSchedulesAPI(APIClient):
 
     def list(
         self,
-        name: str = None,
-        function_id: int = None,
-        function_external_id: str = None,
-        created_time: Union[Dict[str, int], TimestampRange] = None,
-        cron_expression: str = None,
+        name: Optional[str] = None,
+        function_id: Optional[int] = None,
+        function_external_id: Optional[str] = None,
+        created_time: Optional[Union[Dict[str, int], TimestampRange]] = None,
+        cron_expression: Optional[str] = None,
         limit: Optional[int] = LIST_LIMIT_DEFAULT,
     ) -> FunctionSchedulesList:
         """`List all schedules associated with a specific project <https://developer.cognite.com/api#tag/Function-schedules/operation/listFunctionSchedules>`_.

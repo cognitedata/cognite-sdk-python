@@ -165,7 +165,7 @@ class TemplateGroupsAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def list(self, limit: int = LIST_LIMIT_DEFAULT, owners: Sequence[str] = None) -> TemplateGroupList:
+    def list(self, limit: int = LIST_LIMIT_DEFAULT, owners: Optional[Sequence[str]] = None) -> TemplateGroupList:
         """`Lists template groups stored in the project based on a query filter given in the payload of this request.`
 
         Up to 1000 template groups can be retrieved in one operation.

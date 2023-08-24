@@ -41,7 +41,7 @@ def all_mock_children(mock, parent_name=()):
 
 
 @contextmanager
-def rng_context(seed: int):
+def rng_context(seed: int | str):
     """Temporarily override internal random state for deterministic behaviour without side-effects
 
     Idea stolen from pandas source `class RNGContext`.

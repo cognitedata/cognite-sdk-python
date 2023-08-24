@@ -1,4 +1,7 @@
-from cognite.client.data_classes.data_modeling import aggregations, filters
+from __future__ import annotations
+
+from cognite.client.data_classes import filters
+from cognite.client.data_classes.data_modeling import aggregations, query
 from cognite.client.data_classes.data_modeling.aggregations import AggregatedValue, Aggregation
 from cognite.client.data_classes.data_modeling.containers import (
     Constraint,
@@ -39,7 +42,6 @@ from cognite.client.data_classes.data_modeling.data_types import (
     TimeSeriesReference,
     Timestamp,
 )
-from cognite.client.data_classes.data_modeling.filters import Filter
 from cognite.client.data_classes.data_modeling.ids import (
     ContainerId,
     ContainerIdentifier,
@@ -55,19 +57,24 @@ from cognite.client.data_classes.data_modeling.ids import (
 from cognite.client.data_classes.data_modeling.instances import (
     Edge,
     EdgeApply,
+    EdgeApplyList,
     EdgeApplyResult,
     EdgeApplyResultList,
     EdgeList,
+    EdgeListWithCursor,
     InstanceApply,
+    InstancesApply,
     InstancesApplyResult,
     InstancesDeleteResult,
     InstanceSort,
     InstancesResult,
     Node,
     NodeApply,
+    NodeApplyList,
     NodeApplyResult,
     NodeApplyResultList,
     NodeList,
+    NodeListWithCursor,
     NodeOrEdgeData,
 )
 from cognite.client.data_classes.data_modeling.spaces import Space, SpaceApply, SpaceApplyList, SpaceList
@@ -82,6 +89,7 @@ from cognite.client.data_classes.data_modeling.views import (
     ViewFilter,
     ViewList,
 )
+from cognite.client.data_classes.filters import Filter
 
 # TODO: Remove these in next major version, there just here to ensure backwards compatibility after renaming and
 #  removing some data classes.
@@ -103,11 +111,11 @@ __all__ = [
     "DataModelingId",
     "ContainerIdentifier",
     "DataModelIdentifier",
-    "filters",
     "DirectRelation",
     "ViewDirectRelation",
     "ContainerDirectRelation",
     "Filter",
+    "filters",
     "DirectRelationReference",
     "DataModel",
     "DataModelList",
@@ -156,14 +164,18 @@ __all__ = [
     "PropertyType",
     "Node",
     "NodeList",
+    "NodeListWithCursor",
     "NodeApply",
     "NodeApplyResult",
     "NodeApplyResultList",
+    "NodeApplyList",
     "Edge",
     "EdgeList",
+    "EdgeListWithCursor",
     "EdgeApply",
     "EdgeApplyResult",
     "EdgeApplyResultList",
+    "EdgeApplyList",
     "InstanceSort",
     "NodeOrEdgeData",
     "NodeId",
@@ -172,4 +184,6 @@ __all__ = [
     "InstancesDeleteResult",
     "InstancesResult",
     "InstanceApply",
+    "InstancesApply",
+    "query",
 ]

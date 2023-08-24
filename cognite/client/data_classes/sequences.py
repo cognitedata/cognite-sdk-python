@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import math
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Tuple, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Tuple, Union, cast
 from typing import Sequence as SequenceType
 
 from cognite.client import utils
@@ -16,6 +16,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    PropertySpec,
 )
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._identifier import Identifier
@@ -46,17 +47,17 @@ class Sequence(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        name: str = None,
-        description: str = None,
-        asset_id: int = None,
-        external_id: str = None,
-        metadata: Dict[str, Any] = None,
-        columns: SequenceType[Dict[str, Any]] = None,
-        created_time: int = None,
-        last_updated_time: int = None,
-        data_set_id: int = None,
-        cognite_client: CogniteClient = None,
+        id: Optional[int] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        asset_id: Optional[int] = None,
+        external_id: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        columns: Optional[SequenceType[Dict[str, Any]]] = None,
+        created_time: Optional[int] = None,
+        last_updated_time: Optional[int] = None,
+        data_set_id: Optional[int] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ):
         self.id = id
         self.name = name
@@ -117,15 +118,15 @@ class SequenceFilter(CogniteFilter):
 
     def __init__(
         self,
-        name: str = None,
-        external_id_prefix: str = None,
-        metadata: Dict[str, Any] = None,
-        asset_ids: SequenceType[int] = None,
-        asset_subtree_ids: SequenceType[Dict[str, Any]] = None,
-        created_time: Union[Dict[str, Any], TimestampRange] = None,
-        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        data_set_ids: SequenceType[Dict[str, Any]] = None,
-        cognite_client: CogniteClient = None,
+        name: Optional[str] = None,
+        external_id_prefix: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        asset_ids: Optional[SequenceType[int]] = None,
+        asset_subtree_ids: Optional[SequenceType[Dict[str, Any]]] = None,
+        created_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        last_updated_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        data_set_ids: Optional[SequenceType[Dict[str, Any]]] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ):
         self.name = name
         self.external_id_prefix = external_id_prefix
@@ -184,6 +185,15 @@ class SequenceColumnUpdate(CogniteUpdate):
     @property
     def metadata(self) -> _ObjectSequenceColumnUpdate:
         return SequenceColumnUpdate._ObjectSequenceColumnUpdate(self, "metadata")
+
+    @classmethod
+    def _get_update_properties(cls) -> list[PropertySpec]:
+        return [
+            PropertySpec("description"),
+            PropertySpec("external_id", is_nullable=False),
+            PropertySpec("name"),
+            PropertySpec("metadata", is_container=True),
+        ]
 
 
 class SequenceUpdate(CogniteUpdate):
@@ -275,6 +285,20 @@ class SequenceUpdate(CogniteUpdate):
     def columns(self) -> _ColumnsSequenceUpdate:
         return SequenceUpdate._ColumnsSequenceUpdate(self, "columns")
 
+    @classmethod
+    def _get_update_properties(cls) -> list[PropertySpec]:
+        return [
+            # External ID is nullable, but is used in the upsert logic and thus cannot be nulled out.
+            PropertySpec("external_id", is_nullable=False),
+            PropertySpec("name"),
+            PropertySpec("description"),
+            PropertySpec("asset_id"),
+            # Sequences do not support setting metadata to an empty array.
+            PropertySpec("metadata", is_container=True, is_nullable=False),
+            PropertySpec("data_set_id"),
+            # PropertySpec("columns", is_list=True),
+        ]
+
 
 class SequenceAggregate(dict):
     """No description.
@@ -283,7 +307,7 @@ class SequenceAggregate(dict):
         count (int): No description.
     """
 
-    def __init__(self, count: int = None, **kwargs: Any):
+    def __init__(self, count: Optional[int] = None, **kwargs: Any):
         self.count = count
         self.update(kwargs)
 
@@ -308,12 +332,12 @@ class SequenceData(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        external_id: str = None,
-        rows: SequenceType[dict] = None,
-        row_numbers: SequenceType[int] = None,
-        values: SequenceType[SequenceType[Union[int, str, float]]] = None,
-        columns: SequenceType[Dict[str, Any]] = None,
+        id: Optional[int] = None,
+        external_id: Optional[str] = None,
+        rows: Optional[SequenceType[dict]] = None,
+        row_numbers: Optional[SequenceType[int]] = None,
+        values: Optional[SequenceType[SequenceType[Union[int, str, float]]]] = None,
+        columns: Optional[SequenceType[Dict[str, Any]]] = None,
     ):
         if rows:
             row_numbers = [r["rowNumber"] for r in rows]

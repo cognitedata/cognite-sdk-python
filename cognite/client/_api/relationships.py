@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import copy
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Literal, Optional, Sequence, Union, cast, overload
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -25,18 +25,18 @@ class RelationshipsAPI(APIClient):
 
     def _create_filter(
         self,
-        source_external_ids: Sequence[str] = None,
-        source_types: Sequence[str] = None,
-        target_external_ids: Sequence[str] = None,
-        target_types: Sequence[str] = None,
-        data_set_ids: Sequence[Dict[str, Any]] = None,
-        start_time: Dict[str, int] = None,
-        end_time: Dict[str, int] = None,
-        confidence: Dict[str, int] = None,
-        last_updated_time: Dict[str, int] = None,
-        created_time: Dict[str, int] = None,
-        active_at_time: Dict[str, int] = None,
-        labels: LabelFilter = None,
+        source_external_ids: Optional[Sequence[str]] = None,
+        source_types: Optional[Sequence[str]] = None,
+        target_external_ids: Optional[Sequence[str]] = None,
+        target_types: Optional[Sequence[str]] = None,
+        data_set_ids: Optional[Sequence[Dict[str, Any]]] = None,
+        start_time: Optional[Dict[str, int]] = None,
+        end_time: Optional[Dict[str, int]] = None,
+        confidence: Optional[Dict[str, int]] = None,
+        last_updated_time: Optional[Dict[str, int]] = None,
+        created_time: Optional[Dict[str, int]] = None,
+        active_at_time: Optional[Dict[str, int]] = None,
+        labels: Optional[LabelFilter] = None,
     ) -> Dict[str, Any]:
         return RelationshipFilter(
             source_external_ids=source_external_ids,
@@ -55,23 +55,23 @@ class RelationshipsAPI(APIClient):
 
     def __call__(
         self,
-        source_external_ids: Sequence[str] = None,
-        source_types: Sequence[str] = None,
-        target_external_ids: Sequence[str] = None,
-        target_types: Sequence[str] = None,
-        data_set_ids: Union[int, Sequence[int]] = None,
-        data_set_external_ids: Union[str, Sequence[str]] = None,
-        start_time: Dict[str, int] = None,
-        end_time: Dict[str, int] = None,
-        confidence: Dict[str, int] = None,
-        last_updated_time: Dict[str, int] = None,
-        created_time: Dict[str, int] = None,
-        active_at_time: Dict[str, int] = None,
-        labels: LabelFilter = None,
-        limit: int = None,
+        source_external_ids: Optional[Sequence[str]] = None,
+        source_types: Optional[Sequence[str]] = None,
+        target_external_ids: Optional[Sequence[str]] = None,
+        target_types: Optional[Sequence[str]] = None,
+        data_set_ids: Optional[Union[int, Sequence[int]]] = None,
+        data_set_external_ids: Optional[Union[str, Sequence[str]]] = None,
+        start_time: Optional[Dict[str, int]] = None,
+        end_time: Optional[Dict[str, int]] = None,
+        confidence: Optional[Dict[str, int]] = None,
+        last_updated_time: Optional[Dict[str, int]] = None,
+        created_time: Optional[Dict[str, int]] = None,
+        active_at_time: Optional[Dict[str, int]] = None,
+        labels: Optional[LabelFilter] = None,
+        limit: Optional[int] = None,
         fetch_resources: bool = False,
-        chunk_size: int = None,
-        partitions: int = None,
+        chunk_size: Optional[int] = None,
+        partitions: Optional[int] = None,
     ) -> Union[Iterator[Relationship], Iterator[RelationshipList]]:
         """Iterate over relationships
 
@@ -199,21 +199,21 @@ class RelationshipsAPI(APIClient):
 
     def list(
         self,
-        source_external_ids: Sequence[str] = None,
-        source_types: Sequence[str] = None,
-        target_external_ids: Sequence[str] = None,
-        target_types: Sequence[str] = None,
-        data_set_ids: Union[int, Sequence[int]] = None,
-        data_set_external_ids: Union[str, Sequence[str]] = None,
-        start_time: Dict[str, int] = None,
-        end_time: Dict[str, int] = None,
-        confidence: Dict[str, int] = None,
-        last_updated_time: Dict[str, int] = None,
-        created_time: Dict[str, int] = None,
-        active_at_time: Dict[str, int] = None,
-        labels: LabelFilter = None,
+        source_external_ids: Optional[Sequence[str]] = None,
+        source_types: Optional[Sequence[str]] = None,
+        target_external_ids: Optional[Sequence[str]] = None,
+        target_types: Optional[Sequence[str]] = None,
+        data_set_ids: Optional[Union[int, Sequence[int]]] = None,
+        data_set_external_ids: Optional[Union[str, Sequence[str]]] = None,
+        start_time: Optional[Dict[str, int]] = None,
+        end_time: Optional[Dict[str, int]] = None,
+        confidence: Optional[Dict[str, int]] = None,
+        last_updated_time: Optional[Dict[str, int]] = None,
+        created_time: Optional[Dict[str, int]] = None,
+        active_at_time: Optional[Dict[str, int]] = None,
+        labels: Optional[LabelFilter] = None,
         limit: int = 100,
-        partitions: int = None,
+        partitions: Optional[int] = None,
         fetch_resources: bool = False,
     ) -> RelationshipList:
         """`Lists relationships stored in the project based on a query filter given in the payload of this request  <https://developer.cognite.com/api#tag/Relationships/operation/listRelationships>`_.
@@ -422,6 +422,53 @@ class RelationshipsAPI(APIClient):
         """
         return self._update_multiple(
             list_cls=RelationshipList, resource_cls=Relationship, update_cls=RelationshipUpdate, items=item
+        )
+
+    @overload
+    def upsert(self, item: Sequence[Relationship], mode: Literal["patch", "replace"] = "patch") -> RelationshipList:
+        ...
+
+    @overload
+    def upsert(self, item: Relationship, mode: Literal["patch", "replace"] = "patch") -> Relationship:
+        ...
+
+    def upsert(
+        self, item: Relationship | Sequence[Relationship], mode: Literal["patch", "replace"] = "patch"
+    ) -> Relationship | RelationshipList:
+        """Upsert relationships, i.e., update if it exists, and create if it does not exist.
+         Note this is a convenience method that handles the upserting for you by first calling update on all items,
+         and if any of them fail because they do not exist, it will create them instead.
+
+         For more details, see :ref:`appendix-upsert`.
+
+        Args:
+            item (Relationship | Sequence[Relationship]): Relationship or list of relationships to upsert.
+            mode (Literal["patch", "replace"])): Whether to patch or replace in the case the relationships are existing. If
+                                                you set 'patch', the call will only update fields with non-null values (default).
+                                                Setting 'replace' will unset any fields that are not specified.
+
+        Returns:
+            Relationship | RelationshipList: The upserted relationship(s).
+
+        Examples:
+
+            Upsert for relationships:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import Relationship
+                >>> c = CogniteClient()
+                >>> existing_relationship = c.relationships.retrieve(id=1)
+                >>> existing_relationship.description = "New description"
+                >>> new_relationship = Relationship(external_id="new_relationship", source_external_id="new_source")
+                >>> res = c.relationships.upsert([existing_relationship, new_relationship], mode="replace")
+        """
+        return self._upsert_multiple(
+            item,
+            list_cls=RelationshipList,
+            resource_cls=Relationship,
+            update_cls=RelationshipUpdate,
+            input_resource_cls=Relationship,
+            mode=mode,
         )
 
     def delete(self, external_id: Union[str, Sequence[str]], ignore_unknown_ids: bool = False) -> None:

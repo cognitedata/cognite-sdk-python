@@ -71,4 +71,3 @@ Data classes
    :template: custom-automodule-template.rst
 
    data_classes.three_d
-

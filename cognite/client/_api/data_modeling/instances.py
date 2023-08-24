@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Literal, Sequence, Type, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Literal, Optional, Sequence, Type, Union, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import INSTANCES_LIST_LIMIT_DEFAULT
@@ -12,7 +12,6 @@ from cognite.client.data_classes.data_modeling.aggregations import (
     HistogramValue,
     MetricAggregation,
 )
-from cognite.client.data_classes.data_modeling.filters import Filter
 from cognite.client.data_classes.data_modeling.ids import (
     EdgeId,
     NodeId,
@@ -37,8 +36,15 @@ from cognite.client.data_classes.data_modeling.instances import (
     NodeApplyResultList,
     NodeList,
 )
+from cognite.client.data_classes.data_modeling.query import (
+    Query,
+    QueryResult,
+)
 from cognite.client.data_classes.data_modeling.views import View
+from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
+
+from ._data_modeling_executor import get_data_modeling_executor
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -48,7 +54,9 @@ class _NodeOrEdgeList(CogniteResourceList):
     _RESOURCE = (Node, Edge)  # type: ignore[assignment]
 
     @classmethod
-    def _load(cls, resource_list: list[dict[str, Any]] | str, cognite_client: CogniteClient = None) -> _NodeOrEdgeList:
+    def _load(
+        cls, resource_list: list[dict[str, Any]] | str, cognite_client: Optional[CogniteClient] = None
+    ) -> _NodeOrEdgeList:
         resource_list = json.loads(resource_list) if isinstance(resource_list, str) else resource_list
         resources: list[Node | Edge] = [
             Node.load(data) if data["instanceType"] == "node" else Edge.load(data) for data in resource_list
@@ -60,8 +68,8 @@ class _NodeOrEdgeList(CogniteResourceList):
 
 
 class _NodeOrEdgeResourceAdapter:
-    @classmethod
-    def _load(cls, data: str | dict, cognite_client: CogniteClient = None) -> Node | Edge:
+    @staticmethod
+    def _load(data: str | dict, cognite_client: Optional[CogniteClient] = None) -> Node | Edge:
         data = json.loads(data) if isinstance(data, str) else data
         if data["instanceType"] == "node":
             return Node.load(data)
@@ -73,7 +81,7 @@ class _NodeOrEdgeApplyResultList(CogniteResourceList):
 
     @classmethod
     def _load(
-        cls, resource_list: list[dict[str, Any]] | str, cognite_client: CogniteClient = None
+        cls, resource_list: list[dict[str, Any]] | str, cognite_client: Optional[CogniteClient] = None
     ) -> _NodeOrEdgeApplyResultList:
         resource_list = json.loads(resource_list) if isinstance(resource_list, str) else resource_list
         resources: list[NodeApplyResult | EdgeApplyResult] = [
@@ -87,8 +95,8 @@ class _NodeOrEdgeApplyResultList(CogniteResourceList):
 
 
 class _NodeOrEdgeApplyResultAdapter:
-    @classmethod
-    def _load(cls, data: str | dict, cognite_client: CogniteClient = None) -> NodeApplyResult | EdgeApplyResult:
+    @staticmethod
+    def _load(data: str | dict, cognite_client: Optional[CogniteClient] = None) -> NodeApplyResult | EdgeApplyResult:
         data = json.loads(data) if isinstance(data, str) else data
         if data["instanceType"] == "node":
             return NodeApplyResult.load(data)
@@ -96,8 +104,8 @@ class _NodeOrEdgeApplyResultAdapter:
 
 
 class _NodeOrEdgeApplyAdapter:
-    @classmethod
-    def _load(cls, data: str | dict, cognite_client: CogniteClient = None) -> NodeApply | EdgeApply:
+    @staticmethod
+    def _load(data: str | dict, cognite_client: Optional[CogniteClient] = None) -> NodeApply | EdgeApply:
         data = json.loads(data) if isinstance(data, str) else data
         if data["instanceType"] == "node":
             return NodeApply.load(data)
@@ -280,6 +288,7 @@ class InstancesAPI(APIClient):
             resource_cls=_NodeOrEdgeResourceAdapter,  # type: ignore[type-var]
             identifiers=identifiers,
             other_params=other_params,
+            executor=get_data_modeling_executor(),
         )
 
         return InstancesResult(
@@ -292,13 +301,15 @@ class InstancesAPI(APIClient):
         nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None,
         edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None,
     ) -> DataModelingIdentifierSequence:
+        nodes_seq: Sequence[NodeId | tuple[str, str]]
         if isinstance(nodes, NodeId) or (isinstance(nodes, tuple) and isinstance(nodes[0], str)):
-            nodes_seq: Sequence[NodeId | tuple[str, str]] = [nodes]  # type: ignore[list-item]
+            nodes_seq = [nodes]  # type: ignore[list-item]
         else:
             nodes_seq = nodes  # type: ignore[assignment]
 
+        edges_seq: Sequence[EdgeId | tuple[str, str]]
         if isinstance(edges, EdgeId) or (isinstance(edges, tuple) and isinstance(edges[0], str)):
-            edges_seq: Sequence[EdgeId | tuple[str, str]] = [edges]  # type: ignore[list-item]
+            edges_seq = [edges]  # type: ignore[list-item]
         else:
             edges_seq = edges  # type: ignore[assignment]
 
@@ -332,7 +343,7 @@ class InstancesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> c.data_modeling.instances.delete(nodes=("myNode", "mySpace"))
+                >>> c.data_modeling.instances.delete(nodes=("mySpace", "myNode"))
 
             Delete nodes and edges using the built in data class
 
@@ -340,9 +351,23 @@ class InstancesAPI(APIClient):
                 >>> from cognite.client.data_classes.data_modeling import NodeId, EdgeId
                 >>> c = CogniteClient()
                 >>> c.data_modeling.instances.delete(NodeId('mySpace', 'myNode'), EdgeId('mySpace', 'myEdge'))
+
+            Delete all nodes from a NodeList
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId, EdgeId
+                >>> c = CogniteClient()
+                >>> my_view = c.data_modeling.views.retrieve('mySpace', 'myView')
+                >>> my_nodes = c.data_modeling.instances.list(instance_type='node', sources=my_view, limit=None)
+                >>> c.data_modeling.instances.delete(nodes=my_nodes.as_ids())
         """
         identifiers = self._load_node_and_edge_ids(nodes, edges)
-        deleted_instances = cast(List, self._delete_multiple(identifiers, wrap_ids=True, returns_items=True))
+        deleted_instances = cast(
+            List,
+            self._delete_multiple(
+                identifiers, wrap_ids=True, returns_items=True, executor=get_data_modeling_executor()
+            ),
+        )
         node_ids = [NodeId.load(item) for item in deleted_instances if item["instanceType"] == "node"]
         edge_ids = [EdgeId.load(item) for item in deleted_instances if item["instanceType"] == "edge"]
         return InstancesDeleteResult(node_ids, edge_ids)
@@ -358,11 +383,7 @@ class InstancesAPI(APIClient):
     ) -> dict[str, Any]:
         other_params: dict[str, Any] = {"includeTyping": include_typing}
         if sources:
-            other_params["sources"] = (
-                [cls._dump_instance_source(source) for source in sources]
-                if isinstance(sources, Sequence)
-                else [cls._dump_instance_source(sources)]
-            )
+            other_params["sources"] = cls._dump_instance_source(sources)
         if sort:
             if isinstance(sort, (InstanceSort, dict)):
                 other_params["sort"] = [cls._dump_instance_sort(sort)]
@@ -372,17 +393,14 @@ class InstancesAPI(APIClient):
             other_params["instanceType"] = instance_type
         return other_params
 
-    @classmethod
-    def _dump_instance_source(cls, source: ViewIdentifier | View) -> dict:
-        instance_source: ViewIdentifier
-        if isinstance(source, View):
-            instance_source = source.as_id()
-        else:
-            instance_source = source
-        return {"source": ViewId.load(instance_source).dump(camel_case=True)}
+    @staticmethod
+    def _dump_instance_source(sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View]) -> list[dict]:
+        return [
+            {"source": ViewId.load(dct).dump(camel_case=True)} for dct in _load_identifier(sources, "view").as_dicts()
+        ]
 
-    @classmethod
-    def _dump_instance_sort(cls, sort: InstanceSort | dict) -> dict:
+    @staticmethod
+    def _dump_instance_sort(sort: InstanceSort | dict) -> dict:
         return sort.dump(camel_case=True) if isinstance(sort, InstanceSort) else sort
 
     def apply(
@@ -486,6 +504,7 @@ class InstancesAPI(APIClient):
             resource_cls=_NodeOrEdgeApplyResultAdapter,  # type: ignore[type-var]
             extra_body_fields=other_parameters,
             input_resource_cls=_NodeOrEdgeApplyAdapter,  # type: ignore[arg-type]
+            executor=get_data_modeling_executor(),
         )
         return InstancesApplyResult(
             nodes=NodeApplyResultList([item for item in res if isinstance(item, NodeApplyResult)]),
@@ -554,7 +573,7 @@ class InstancesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling import ViewId
-                >>> import cognite.client.data_classes.data_modeling.filters as filters
+                >>> import cognite.client.data_classes.filters as filters
                 >>> c = CogniteClient()
                 >>> born_after_1970 = filters.Range(["mySpace", "PersonView/v1", "birthYear"], gt=1970)
                 >>> res = c.data_modeling.instances.search(ViewId("mySpace", "PersonView", "v1"),
@@ -732,6 +751,97 @@ class InstancesAPI(APIClient):
             return HistogramValue.load(res.json()["items"][0]["aggregates"][0])
         else:
             return [HistogramValue.load(item["aggregates"][0]) for item in res.json()["items"]]
+
+    def query(self, query: Query) -> QueryResult:
+        """`Advanced query interface for nodes/edges. <https://developer.cognite.com/api/v1/#tag/Instances/operation/queryContent>`_
+
+        The Data Modelling API exposes an advanced query interface. The query interface supports parameterization,
+        recursive edge traversal, chaining of result sets, and granular property selection.
+
+        Args:
+            query: Query.
+
+        Returns:
+            QueryResult: The resulting nodes and/or edges from the query.
+
+        Examples:
+
+            Find actors in movies released before 2000 sorted by actor name:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling.query import Query, Select, NodeResultSetExpression, EdgeResultSetExpression, SourceSelector
+                >>> from cognite.client.data_classes.filters import Range, Equals
+                >>> from cognite.client.data_classes.data_modeling.ids import ViewId
+                >>> c = CogniteClient()
+                >>> movie_id = ViewId("mySpace", "MovieView", "v1")
+                >>> actor_id = ViewId("mySpace", "ActorView", "v1")
+                >>> query = Query(
+                ...         with_ = {
+                ...             "movies": NodeResultSetExpression(filter=Range(movie_id.as_property_ref("releaseYear"), lt=2000)),
+                ...             "actors_in_movie": EdgeResultSetExpression(from_="movies", filter=Equals(["edge", "type"], {"space": movie_id.space, "externalId": "Movie.actors"})),
+                ...             "actors": NodeResultSetExpression(from_="actors_in_movie"),
+                ...         },
+                ...         select = {
+                ...             "actors": Select(
+                ...                            [SourceSelector(actor_id, ["name"])], sort=[actor_id.as_property_ref("name")]),
+                ...         },
+                ... )
+                >>> res = c.data_modeling.instances.query(query)
+        """
+        return self._query_or_sync(query, "query")
+
+    def sync(self, query: Query) -> QueryResult:
+        """`Subscription to changes for nodes/edges. <https://developer.cognite.com/api/v1/#tag/Instances/operation/syncContent>`_
+
+        Subscribe to changes for nodes and edges in a project, matching a supplied filter.
+
+        Args:
+            query: Query.
+
+        Returns:
+            QueryResult: The resulting nodes and/or edges from the query.
+
+        Examples:
+
+            Find actors in movies released before 2000 sorted by actor name:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling.query import Query, Select, NodeResultSetExpression, EdgeResultSetExpression, SourceSelector
+                >>> from cognite.client.data_classes.filters import Range, Equals
+                >>> from cognite.client.data_classes.data_modeling.ids import ViewId
+                >>> c = CogniteClient()
+                >>> movie_id = ViewId("mySpace", "MovieView", "v1")
+                >>> actor_id = ViewId("mySpace", "ActorView", "v1")
+                >>> query = Query(
+                ...         with_ = {
+                ...             "movies": NodeResultSetExpression(filter=Range(movie_id.as_property_ref("releaseYear"), lt=2000)),
+                ...             "actors_in_movie": EdgeResultSetExpression(from_="movies", filter=Equals(["edge", "type"], {"space": movie_id.space, "externalId": "Movie.actors"})),
+                ...             "actors": NodeResultSetExpression(from_="actors_in_movie"),
+                ...         },
+                ...         select = {
+                ...             "actors": Select(
+                ...                            [SourceSelector(actor_id, ["name"])], sort=[actor_id.as_property_ref("name")]),
+                ...         },
+                ... )
+                >>> res = c.data_modeling.instances.sync(query)
+                >>> # Added a new movie with actors released before 2000
+                >>> query.cursors = res.cursors
+                >>> res_new = c.data_modeling.instances.sync(query)
+
+            In the last example, the res_new will only contain the actors that have been added with the new movie.
+        """
+        return self._query_or_sync(query, "sync")
+
+    def _query_or_sync(self, query: Query, endpoint: Literal["query", "sync"]) -> QueryResult:
+        body = query.dump(camel_case=True)
+
+        result = self._post(url_path=self._RESOURCE_PATH + f"/{endpoint}", json=body)
+
+        json_payload = result.json()
+        default_by_reference = query.instance_type_by_result_expression()
+        results = QueryResult.load(json_payload["items"], default_by_reference, json_payload["nextCursor"])
+
+        return results
 
     @overload
     def list(

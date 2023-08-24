@@ -14,6 +14,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    PropertySpec,
 )
 from cognite.client.data_classes.annotation_types.images import AssetLink, ObjectDetection, TextRegion
 from cognite.client.data_classes.annotation_types.primitives import VisionResource
@@ -76,16 +77,16 @@ class ContextualizationJob(CogniteResource):
 
     def __init__(
         self,
-        job_id: int = None,
-        model_id: int = None,
-        status: str = None,
-        error_message: str = None,
-        created_time: int = None,
-        start_time: int = None,
-        status_time: int = None,
-        status_path: str = None,
-        job_token: str = None,
-        cognite_client: CogniteClient = None,
+        job_id: Optional[int] = None,
+        model_id: Optional[int] = None,
+        status: Optional[str] = None,
+        error_message: Optional[str] = None,
+        created_time: Optional[int] = None,
+        start_time: Optional[int] = None,
+        status_time: Optional[int] = None,
+        status_path: Optional[str] = None,
+        job_token: Optional[str] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ):
         """Data class for the result of a contextualization job."""
         self.job_id = job_id
@@ -117,7 +118,7 @@ class ContextualizationJob(CogniteResource):
         assert self.status is not None
         return self.status
 
-    def wait_for_completion(self, timeout: int = None, interval: int = 1) -> None:
+    def wait_for_completion(self, timeout: Optional[int] = None, interval: int = 1) -> None:
         """Waits for job completion. This is generally not needed to call directly, as `.result` will do so automatically.
 
         Args:
@@ -174,20 +175,20 @@ class EntityMatchingModel(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        status: str = None,
-        error_message: str = None,
-        created_time: int = None,
-        start_time: int = None,
-        status_time: int = None,
-        classifier: str = None,
-        feature_type: str = None,
-        match_fields: List[str] = None,
-        model_type: str = None,
-        name: str = None,
-        description: str = None,
-        external_id: str = None,
-        cognite_client: CogniteClient = None,
+        id: Optional[int] = None,
+        status: Optional[str] = None,
+        error_message: Optional[str] = None,
+        created_time: Optional[int] = None,
+        start_time: Optional[int] = None,
+        status_time: Optional[int] = None,
+        classifier: Optional[str] = None,
+        feature_type: Optional[str] = None,
+        match_fields: Optional[List[str]] = None,
+        model_type: Optional[str] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        external_id: Optional[str] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ):
         """Entity matching model. See the `fit` method for the meaning of these fields."""
         self.id = id
@@ -219,7 +220,7 @@ class EntityMatchingModel(CogniteResource):
         assert self.status is not None
         return self.status
 
-    def wait_for_completion(self, timeout: int = None, interval: int = 1) -> None:
+    def wait_for_completion(self, timeout: Optional[int] = None, interval: int = 1) -> None:
         """Waits for model completion. This is generally not needed to call directly, as `.result` will do so automatically.
 
         Args:
@@ -245,7 +246,7 @@ class EntityMatchingModel(CogniteResource):
         sources: Optional[List[Dict]] = None,
         targets: Optional[List[Dict]] = None,
         num_matches: int = 1,
-        score_threshold: float = None,
+        score_threshold: Optional[float] = None,
     ) -> ContextualizationJob:
         """Predict entity matching. NB. blocks and waits for the model to be ready if it has been recently created.
 
@@ -325,6 +326,13 @@ class EntityMatchingModelUpdate(CogniteUpdate):
     def description(self) -> _PrimitiveUpdate:
         return EntityMatchingModelUpdate._PrimitiveUpdate(self, "description")
 
+    @classmethod
+    def _get_update_properties(cls) -> list[PropertySpec]:
+        return [
+            PropertySpec("name", is_nullable=False),
+            PropertySpec("description", is_nullable=False),
+        ]
+
 
 class EntityMatchingModelList(CogniteResourceList[EntityMatchingModel]):
     _RESOURCE = EntityMatchingModel
@@ -360,7 +368,11 @@ class FileReference:
 
 class DiagramConvertPage(CogniteResource):
     def __init__(
-        self, page: int = None, png_url: str = None, svg_url: str = None, cognite_client: CogniteClient = None
+        self,
+        page: Optional[int] = None,
+        png_url: Optional[str] = None,
+        svg_url: Optional[str] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ):
         self.page = page
         self.png_url = png_url
@@ -375,10 +387,10 @@ class DiagramConvertPageList(CogniteResourceList[DiagramConvertPage]):
 class DiagramConvertItem(CogniteResource):
     def __init__(
         self,
-        file_id: int = None,
-        file_external_id: str = None,
-        results: list = None,
-        cognite_client: CogniteClient = None,
+        file_id: Optional[int] = None,
+        file_external_id: Optional[str] = None,
+        results: Optional[list] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ):
         self.file_id = file_id
         self.file_external_id = file_external_id
@@ -445,11 +457,11 @@ class DiagramConvertResults(ContextualizationJob):
 class DiagramDetectItem(CogniteResource):
     def __init__(
         self,
-        file_id: int = None,
-        file_external_id: str = None,
-        annotations: list = None,
-        error_message: str = None,
-        cognite_client: CogniteClient = None,
+        file_id: Optional[int] = None,
+        file_external_id: Optional[str] = None,
+        annotations: Optional[list] = None,
+        error_message: Optional[str] = None,
+        cognite_client: Optional[CogniteClient] = None,
         page_range: Optional[Dict[str, int]] = None,
         page_count: Optional[int] = None,
     ):
@@ -599,7 +611,7 @@ class DetectJobBundle:
     _STATUS_PATH = "/context/diagram/detect/status"
     _WAIT_TIME = 2
 
-    def __init__(self, job_ids: List[int], cognite_client: CogniteClient = None):
+    def __init__(self, job_ids: List[int], cognite_client: Optional[CogniteClient] = None):
         warnings.warn(
             "DetectJobBundle.result is calling a beta endpoint which is still in development. "
             "Breaking changes can happen in between patch versions."
@@ -627,7 +639,7 @@ class DetectJobBundle:
         if self._WAIT_TIME < 10:
             self._WAIT_TIME += 2
 
-    def wait_for_completion(self, timeout: int = None) -> None:
+    def wait_for_completion(self, timeout: Optional[int] = None) -> None:
         """Waits for all jobs to complete, generally not needed to call as it is called by result.
 
         Args:
@@ -705,11 +717,11 @@ class VisionJob(ContextualizationJob):
 class VisionExtractItem(CogniteResource):
     def __init__(
         self,
-        file_id: int = None,
-        predictions: Dict[str, Any] = None,
-        file_external_id: str = None,
-        error_message: str = None,
-        cognite_client: CogniteClient = None,
+        file_id: Optional[int] = None,
+        predictions: Optional[Dict[str, Any]] = None,
+        file_external_id: Optional[str] = None,
+        error_message: Optional[str] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ) -> None:
         """Data class for storing predictions for a single image file"""
         self.file_id = file_id
@@ -721,7 +733,7 @@ class VisionExtractItem(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> VisionExtractItem:
+    def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> VisionExtractItem:
         """Override CogniteResource._load so that we can convert the dicts returned by the API to data classes"""
         extracted_item = super()._load(resource, cognite_client=cognite_client)
         if isinstance(extracted_item.predictions, dict):
@@ -844,3 +856,16 @@ class VisionExtractJob(VisionJob):
         raise CogniteException(
             "Extract job is not completed. If the job is queued or running, wait for completion and try again"
         )
+
+
+class ResourceReference(CogniteResource):
+    def __init__(
+        self, id: int | None = None, external_id: str | None = None, cognite_client: None | CogniteClient = None
+    ):
+        self.id = id
+        self.external_id = external_id
+        self._cognite_client: CogniteClient = cast("CogniteClient", None)  # Read only
+
+
+class ResourceReferenceList(CogniteResourceList[ResourceReference]):
+    _RESOURCE = ResourceReference

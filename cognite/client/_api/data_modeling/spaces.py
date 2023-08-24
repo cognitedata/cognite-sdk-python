@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from typing import Iterator, Sequence, cast, overload
+from typing import Iterator, Optional, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes.data_modeling.ids import _load_space_identifier
 from cognite.client.data_classes.data_modeling.spaces import Space, SpaceApply, SpaceList
+
+from ._data_modeling_executor import get_data_modeling_executor
 
 
 class SpacesAPI(APIClient):
@@ -15,7 +17,7 @@ class SpacesAPI(APIClient):
     def __call__(
         self,
         chunk_size: None = None,
-        limit: int = None,
+        limit: Optional[int] = None,
     ) -> Iterator[Space]:
         ...
 
@@ -23,14 +25,14 @@ class SpacesAPI(APIClient):
     def __call__(
         self,
         chunk_size: int,
-        limit: int = None,
+        limit: Optional[int] = None,
     ) -> Iterator[SpaceList]:
         ...
 
     def __call__(
         self,
-        chunk_size: int = None,
-        limit: int = None,
+        chunk_size: Optional[int] = None,
+        limit: Optional[int] = None,
     ) -> Iterator[Space] | Iterator[SpaceList]:
         """Iterate over spaces
 
@@ -92,7 +94,9 @@ class SpacesAPI(APIClient):
 
         """
         identifier = _load_space_identifier(space)
-        return self._retrieve_multiple(list_cls=SpaceList, resource_cls=Space, identifiers=identifier)
+        return self._retrieve_multiple(
+            list_cls=SpaceList, resource_cls=Space, identifiers=identifier, executor=get_data_modeling_executor()
+        )
 
     def delete(self, space: str | Sequence[str]) -> list[str]:
         """`Delete one or more spaces <https://developer.cognite.com/api#tag/Spaces/operation/deleteSpacesV3>`_.
@@ -111,7 +115,12 @@ class SpacesAPI(APIClient):
         """
         deleted_spaces = cast(
             list,
-            self._delete_multiple(identifiers=_load_space_identifier(space), wrap_ids=True, returns_items=True),
+            self._delete_multiple(
+                identifiers=_load_space_identifier(space),
+                wrap_ids=True,
+                returns_items=True,
+                executor=get_data_modeling_executor(),
+            ),
         )
         return [item["space"] for item in deleted_spaces]
 
@@ -188,4 +197,10 @@ class SpacesAPI(APIClient):
                 ... SpaceApply(space="myOtherSpace", description="My second space", name="My Other Space")]
                 >>> res = c.data_modeling.spaces.apply(spaces)
         """
-        return self._create_multiple(list_cls=SpaceList, resource_cls=Space, items=space, input_resource_cls=SpaceApply)
+        return self._create_multiple(
+            list_cls=SpaceList,
+            resource_cls=Space,
+            items=space,
+            input_resource_cls=SpaceApply,
+            executor=get_data_modeling_executor(),
+        )

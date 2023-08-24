@@ -17,6 +17,143 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.14.2] - 2023-08-22
+### Fixed
+- All data modeling endpoints will now be retried. This was not the case for POST endpoints.
+
+
+## [6.14.1] - 2023-08-19
+### Fixed
+- Passing `sources` as a tuple no longer raises `ValueError` in `InstancesAPI.retrieve`.
+
+## [6.14.0] - 2023-08-14
+### Changed
+- Don't terminate client.timeseries.subscriptions.iterate_data() when `has_next=false` as more data
+may be returned in the future. Instead we return the `has_next` field in the batch, and let the user
+decide whether to terminate iteration. This is a breaking change, but this particular API is still
+in beta and thus we reserve the right to break it without bumping the major version.
+
+## [6.13.3] - 2023-08-14
+### Fixed
+- Fixed bug in `ViewApply.properties` had type hint `ConnectionDefinition` instead of `ConnectionDefinitionApply`.
+- Fixed bug in `dump` methods of `ViewApply.properties` causing the return code `400` with message
+  `Request had 1 constraint violations. Please fix the request and try again. [type must not be null]` to be returned
+  from the CDF API.
+
+## [6.13.2] - 2023-08-11
+### Fixed
+- Fixed bug in `Index.load` that would raise `TypeError` when trying to load `indexes`, when an unexpected field was
+  encountered (e.g. during a call to `client.data_modeling.container.list`).
+
+## [6.13.1] - 2023-08-09
+### Fixed
+- Fixed bug when calling a `retrieve`, `list`, or `create` in `client.data_modeling.container` raised a `TypeError`.
+  This is caused by additions of fields to the API, this is now fixed by ignoring unknown fields.
+
+## [6.13.0] - 2023-08-07
+### Fixed
+- Fixed a bug raising a `KeyError` when calling `client.data_modeling.graphql.apply_dml` with an invalid `DataModelingId`.
+- Fixed a bug raising `AttributeError` in `SpaceList.to_space_apply_list`, `DataModelList.to_data_model_apply_list`,
+  `ViewList.to_view_apply`. These methods have also been renamed to `.as_apply` for consistency
+  with the other data modeling resources.
+
+### Removed
+- The method `.as_apply` from `ContainerApplyList` as this method should be on the `ContainerList` instead.
+
+### Added
+- Missing `as_ids()` for `DataModelApplyList`, `ContainerList`, `ContainerApplyList`, `SpaceApplyList`, `SpaceList`,
+  `ViewApplyList`, `ViewList`.
+- Added helper method `.as_id` to `DMLApplyResult`.
+- Added helper method `.latest_version` to `DataModelList`.
+- Added helper method `.as_apply` to `ContainerList`.
+- Added container classes `NodeApplyList`, `EdgeApplyList`, and `InstancesApply`.
+
+## [6.12.2] - 2023-08-04
+### Fixed
+- Certain errors that were previously silently ignored in calls to `client.data_modeling.graphql.apply_dml` are now properly raised (used to fail as the API error was passed nested inside the API response).
+
+## [6.12.1] - 2023-08-03
+### Fixed
+- Changed the structure of the GraphQL query used when updating DML models through `client.data_modeling.graphql.apply_dml` to properly handle (i.e. escape) all valid symbols/characters.
+
+## [6.12.0] - 2023-07-26
+### Added
+- Added option `expand_metadata` to `.to_pandas()` method for list resource types which converts the metadata (if any) into separate columns in the returned dataframe. Also added `metadata_prefix` to control the naming of these columns (default is "metadata.").
+
+## [6.11.1] - 2023-07-19
+### Changed
+- Return type `SubscriptionTimeSeriesUpdate` in `client.time_series.subscriptions.iterate_data` is now required and not optional.
+
+## [6.11.0] - 2023-07-19
+### Added
+- Support for Data Point Subscription, `client.time_series.subscriptions`. Note this is an experimental feature.
+
+
+## [6.10.0] - 2023-07-19
+### Added
+- Upsert method for `assets`, `events`, `timeseries`, `sequences`, and `relationships`.
+- Added `ignore_unknown_ids` flag to `client.sequences.delete`
+
+## [6.9.0] - 2023-07-19
+### Added
+- Basic runtime validation of ClientConfig.project
+
+## [6.8.7] - 2023-07-18
+### Fixed
+- Dumping of `Relationship` with `labels` is not `yaml` serializable. This is now fixed.
+
+## [6.8.6] - 2023-07-18
+### Fixed
+- Include `version` in __repr__ for View and DataModel
+
+## [6.8.5] - 2023-07-18
+### Fixed
+- Change all implicit Optional types to explicit Optional types.
+
+## [6.8.4] - 2023-07-12
+### Fixed
+- `max_worker` limit match backend for `client.data_modeling`.
+
+## [6.8.3] - 2023-07-12
+### Fixed
+- `last_updated_time` and `created_time` are no longer optional on InstanceApplyResult
+
+## [6.8.2] - 2023-07-12
+### Fixed
+- The `.dump()` method for `InstanceAggregationResult` caused an `AttributeError` when called.
+
+## [6.8.1] - 2023-07-08
+### Changed
+- The `AssetHierarchy` class would consider assets linking their parent by ID only as orphans, contradicting the
+  docstring stating "All assets linking a parent by ID are assumed valid". This is now true (they are no longer
+  considered orphans).
+
+## [6.8.0] - 2023-07-07
+### Added
+- Support for annotations reverse lookup.
+
+## [6.7.1] - 2023-07-07
+### Fixed
+- Needless function "as_id" on View as it was already inherited
+### Added
+- Flag "all_versions" on data_modeling.data_models.retrieve() to retrieve all versions of a data model or only the latest one
+- Extra documentation on how to delete edges and nodes.
+- Support for using full Node and Edge objects when deleting instances.
+
+## [6.7.0] - 2023-07-07
+### Added
+- Support for applying graphql dml using `client.data_modeling.graphql.apply_dml()`.
+
+## [6.6.1] - 2023-07-07
+### Improved
+- Added convenience function to instantiate a `CogniteClient.default(...)` to save the users from typing the
+  default URLs.
+
+## [6.6.0] - 2023-07-06
+### Fixed
+- Support for query and sync endpoints across instances in the Data Modeling API with the implementation
+  `client.data_modeling.instances`, the methods `query` and `sync`.
+
 ## [6.5.8] - 2023-06-30
 ### Fixed
 - Serialization of `DataModel`. The bug caused `DataModel.load(data_model.dump(camel_case=True))` to fail with
@@ -24,12 +161,12 @@ Changes are grouped as follows
 
 ## [6.5.7] - 2023-06-29
 ### Fixed
-- A bug caused by use of snake case in field types causing `NodeApply.dump(camel_case=True)` 
-  trigger a 400 response from the API. 
+- A bug caused by use of snake case in field types causing `NodeApply.dump(camel_case=True)`
+  trigger a 400 response from the API.
 
 ## [6.5.6] - 2023-06-29
 ### Fixed
-- A bug causing `ClientConfig(debug=True)` to raise an AttributeError 
+- A bug causing `ClientConfig(debug=True)` to raise an AttributeError
 
 ## [6.5.5] - 2023-06-28
 ### Fixed
@@ -38,7 +175,7 @@ Changes are grouped as follows
 
 ## [6.5.4] - 2023-06-28
 ### Added
-- Missing query parameters: 
+- Missing query parameters:
      * `inline_views` in `data_modeling.data_models.retrieve()`.
      * `include_global` in `data_modeling.spaces.list()`.
      * `include_inherited_properties` in `data_modeling.views.retrieve()`.
@@ -59,12 +196,12 @@ Changes are grouped as follows
 
 ## [6.5.0] - 2023-06-27
 ### Added
-- Support for searching and aggregating across instances in the Data Modeling API with the implementation 
+- Support for searching and aggregating across instances in the Data Modeling API with the implementation
   `client.data_modeling.instances`, the methods `search`, `histogram` and `aggregate`.
 
 ## [6.4.8] - 2023-06-23
 ### Fixed
-- Handling non 200 responses in `data_modeling.spaces.apply`, `data_modeling.data_models.apply`, 
+- Handling non 200 responses in `data_modeling.spaces.apply`, `data_modeling.data_models.apply`,
   `data_modeling.views.apply` and `data_modeling.containers.apply`
 
 ## [6.4.7] - 2023-06-22
@@ -106,7 +243,7 @@ but we accept the cost of breaking a few consumers now early on the really nail 
 
 ## [6.4.2] - 2023-06-15
 ### Changed
-- When providing ids as tuples in `instances.retrieve` and `instances.delete` you should not 
+- When providing ids as tuples in `instances.retrieve` and `instances.delete` you should not
 have to specify the instance type in each tuple
 
 ### Fixed
@@ -118,7 +255,7 @@ have to specify the instance type in each tuple
 
 ## [6.4.0] - 2023-06-12
 ### Added
-- Partial support for the instance resource in the Data Modeling API with the implementation 
+- Partial support for the instance resource in the Data Modeling API with the implementation
   `client.data_modeling.instances`, the endpoints `list`, `delete`, `retrieve`, and `apply`
 
 ## [6.3.2] - 2023-06-08

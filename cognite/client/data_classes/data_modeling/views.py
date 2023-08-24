@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
-from typing import Any, Dict, Literal, Optional, Union, cast
+from typing import Any, Dict, Literal, Optional, TypeVar, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -16,8 +16,8 @@ from cognite.client.data_classes.data_modeling.data_types import (
     DirectRelationReference,
     PropertyType,
 )
-from cognite.client.data_classes.data_modeling.filters import Filter
 from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
+from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case_recursive,
     convert_all_keys_to_snake_case,
@@ -30,11 +30,11 @@ class ViewCore(DataModelingResource):
         space: str,
         external_id: str,
         version: str,
-        description: str = None,
-        name: str = None,
+        description: Optional[str] = None,
+        name: Optional[str] = None,
         filter: Filter | None = None,
-        implements: list[ViewId] = None,
-        **_: dict,
+        implements: Optional[list[ViewId]] = None,
+        **_: Any,
     ):
         self.space = space
         self.external_id = external_id
@@ -90,11 +90,11 @@ class ViewApply(ViewCore):
         space: str,
         external_id: str,
         version: str,
-        description: str = None,
-        name: str = None,
+        description: Optional[str] = None,
+        name: Optional[str] = None,
         filter: Filter | None = None,
-        implements: list[ViewId] = None,
-        properties: dict[str, MappedPropertyApply | ConnectionDefinition] = None,
+        implements: Optional[list[ViewId]] = None,
+        properties: Optional[dict[str, MappedPropertyApply | ConnectionDefinitionApply]] = None,
     ):
         validate_data_modeling_identifier(space, external_id)
         super().__init__(space, external_id, version, description, name, filter, implements)
@@ -143,14 +143,14 @@ class View(ViewCore):
         properties: dict[str, MappedProperty | ConnectionDefinition],
         last_updated_time: int,
         created_time: int,
-        description: str = None,
-        name: str = None,
+        description: Optional[str] = None,
+        name: Optional[str] = None,
         filter: Filter | None = None,
-        implements: list[ViewId] = None,
+        implements: Optional[list[ViewId]] = None,
         writable: bool = False,
         used_for: Literal["node", "edge", "all"] = "node",
         is_global: bool = False,
-        **_: dict,
+        **_: Any,
     ):
         super().__init__(
             space,
@@ -189,9 +189,15 @@ class View(ViewCore):
         Returns:
             ViewApply: The view apply.
         """
-        properties: Optional[Dict[str, Union[MappedPropertyApply, ConnectionDefinition]]] = None
+        properties: Optional[Dict[str, Union[MappedPropertyApply, ConnectionDefinitionApply]]] = None
         if self.properties:
-            properties = {k: (v.as_apply() if isinstance(v, MappedProperty) else v) for k, v in self.properties.items()}
+            for k, v in self.properties.items():
+                if isinstance(v, (MappedProperty, SingleHopConnectionDefinition)):
+                    if properties is None:
+                        properties = {}
+                    properties[k] = v.as_apply()
+                else:
+                    raise NotImplementedError(f"Unsupported conversion to apply for property type {type(v)}")
 
         return ViewApply(
             space=self.space,
@@ -204,29 +210,37 @@ class View(ViewCore):
             properties=properties,
         )
 
-    def as_id(self) -> ViewId:
-        """Convert to a view id.
-
-        Returns:
-            ViewId: The view id.
-        """
-        return ViewId(space=self.space, external_id=self.external_id, version=self.version)
-
 
 class ViewList(CogniteResourceList[View]):
     _RESOURCE = View
 
-    def to_view_apply(self) -> ViewApplyList:
+    def as_apply(self) -> ViewApplyList:
         """Convert to a view an apply list.
 
         Returns:
             ViewApplyList: The view apply list.
         """
-        return ViewApplyList(resources=[v.as_apply() for v in self.items])
+        return ViewApplyList(resources=[v.as_apply() for v in self])
+
+    def as_ids(self) -> list[ViewId]:
+        """Returns the list of ViewIds
+
+        Returns:
+            list[ViewId]: The list of ViewIds
+        """
+        return [v.as_id() for v in self]
 
 
 class ViewApplyList(CogniteResourceList[ViewApply]):
     _RESOURCE = ViewApply
+
+    def as_ids(self) -> list[ViewId]:
+        """Returns the list of ViewIds
+
+        Returns:
+            list[ViewId]: The list of ViewIds
+        """
+        return [v.as_id() for v in self]
 
 
 class ViewFilter(CogniteFilter):
@@ -242,7 +256,7 @@ class ViewFilter(CogniteFilter):
 
     def __init__(
         self,
-        space: str = None,
+        space: Optional[str] = None,
         include_inherited_properties: bool = True,
         all_versions: bool = False,
         include_global: bool = False,
@@ -297,10 +311,19 @@ class MappedPropertyApply(ViewPropertyApply):
         return output
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
-        output = asdict(self)
-        output["container"] = self.container.dump(camel_case)
-        if camel_case:
-            return convert_all_keys_to_camel_case_recursive(output)
+        output: dict[str, Any] = {
+            "container": self.container.dump(camel_case, include_type=True),
+            (
+                "containerPropertyIdentifier" if camel_case else "container_property_identifier"
+            ): self.container_property_identifier,
+        }
+        if self.name is not None:
+            output["name"] = self.name
+        if self.description is not None:
+            output["description"] = self.description
+        if self.source is not None:
+            output["source"] = self.source.dump(camel_case, include_type=True)
+
         return output
 
 
@@ -388,10 +411,23 @@ class SingleHopConnectionDefinition(ConnectionDefinition):
 
         return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
 
+    def as_apply(self) -> SingleHopConnectionDefinitionApply:
+        return SingleHopConnectionDefinitionApply(
+            type=self.type,
+            source=self.source,
+            name=self.name,
+            description=self.description,
+            edge_source=self.edge_source,
+            direction=self.direction,
+        )
+
 
 @dataclass
 class ConnectionDefinitionApply(ViewPropertyApply):
     ...
+
+
+T_ConnectionDefinitionApply = TypeVar("T_ConnectionDefinitionApply", bound=ConnectionDefinitionApply)
 
 
 @dataclass
@@ -415,15 +451,18 @@ class SingleHopConnectionDefinitionApply(ConnectionDefinitionApply):
         return output
 
     def dump(self, camel_case: bool = False) -> dict:
-        output = asdict(self)
+        output: dict[str, Any] = {
+            "type": self.type.dump(camel_case),
+            "source": self.source.dump(camel_case, include_type=True),
+            "direction": self.direction,
+        }
+        if self.name is not None:
+            output["name"] = self.name
+        if self.description is not None:
+            output["description"] = self.description
+        if self.edge_source is not None:
+            output[("edgeSource" if camel_case else "edge_source")] = self.edge_source.dump(
+                camel_case, include_type=True
+            )
 
-        if self.type:
-            output["type"] = self.type.dump(camel_case)
-
-        if self.source:
-            output["source"] = self.source.dump(camel_case)
-
-        if self.edge_source:
-            output["edge_source"] = self.edge_source.dump(camel_case)
-
-        return convert_all_keys_to_camel_case_recursive(output) if camel_case else output
+        return output

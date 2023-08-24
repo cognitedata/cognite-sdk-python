@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import asdict, dataclass, field
-from typing import Any, ClassVar, Literal, Optional, Sequence, Tuple, Type, TypeVar, Union, cast
+from typing import Any, ClassVar, Literal, Optional, Protocol, Sequence, Tuple, Type, TypeVar, Union, cast
 
 from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._identifier import DataModelingIdentifier, DataModelingIdentifierSequence
@@ -79,7 +79,7 @@ class VersionedDataModelingId(AbstractDataclass):
 T_Versioned_DataModeling_Id = TypeVar("T_Versioned_DataModeling_Id", bound=VersionedDataModelingId)
 
 
-@dataclass
+@dataclass(frozen=True)
 class InstanceId:
     _instance_type: ClassVar[Literal["node", "edge"]]
     space: str
@@ -105,14 +105,14 @@ class InstanceId:
 T_InstanceId = TypeVar("T_InstanceId", bound=InstanceId)
 
 
-@dataclass
+@dataclass(frozen=True)
 class NodeId(InstanceId):
-    _instance_type = "node"  # type: ignore[assignment]
+    _instance_type: ClassVar[Literal["node", "edge"]] = "node"
 
 
-@dataclass
+@dataclass(frozen=True)
 class EdgeId(InstanceId):
-    _instance_type = "edge"  # type: ignore[assignment]
+    _instance_type: ClassVar[Literal["node", "edge"]] = "edge"
 
 
 @dataclass(frozen=True)
@@ -142,13 +142,29 @@ class DataModelId(VersionedDataModelingId):
     _type = "datamodel"
 
 
+class IdLike(Protocol):
+    @property
+    def space(self) -> str:
+        ...
+
+    @property
+    def external_id(self) -> str:
+        ...
+
+
+class VersionedIdLike(IdLike):
+    @property
+    def version(self) -> Optional[str]:
+        ...
+
+
 ContainerIdentifier = Union[ContainerId, Tuple[str, str]]
 ViewIdentifier = Union[ViewId, Tuple[str, str], Tuple[str, str, str]]
 DataModelIdentifier = Union[DataModelId, Tuple[str, str], Tuple[str, str, str]]
 NodeIdentifier = Union[NodeId, Tuple[str, str, str]]
 EdgeIdentifier = Union[EdgeId, Tuple[str, str, str]]
 
-Id = Union[Tuple[str, str], Tuple[str, str, str], DataModelingId, VersionedDataModelingId, NodeId, EdgeId, InstanceId]
+Id = Union[Tuple[str, str], Tuple[str, str, str], IdLike, VersionedIdLike]
 
 
 def _load_space_identifier(ids: str | Sequence[str]) -> DataModelingIdentifierSequence:

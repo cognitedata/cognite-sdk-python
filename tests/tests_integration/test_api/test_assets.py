@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
+from cognite.client import CogniteClient
 from cognite.client.data_classes import (
     Asset,
     AssetFilter,
@@ -230,9 +231,38 @@ class TestAssetsAPI:
         finally:
             cognite_client.assets.delete(id=a.id)
 
+    def test_upsert_2_asset_one_preexisting(self, cognite_client: CogniteClient) -> None:
+        # Arrange
+        new_asset = Asset(external_id="test_upsert_2_asset_one_preexisting:new", name="my new asset")
+        preexisting = Asset(
+            external_id="test_upsert_2_asset_one_preexisting:preexisting",
+            name="my preexisting asset",
+        )
+        preexisting_update = Asset._load(preexisting.dump(camel_case=True))
+        preexisting_update.name = "my preexisting asset updated"
+
+        try:
+            created_existing = cognite_client.assets.create(preexisting)
+            assert created_existing.id is not None
+
+            # Act
+            res = cognite_client.assets.upsert([new_asset, preexisting_update], mode="replace")
+
+            # Assert
+            assert len(res) == 2
+            assert new_asset.external_id == res[0].external_id
+            assert preexisting.external_id == res[1].external_id
+            assert new_asset.name == res[0].name
+            assert preexisting_update.name == res[1].name
+        finally:
+            cognite_client.assets.delete(
+                external_id=[new_asset.external_id, preexisting.external_id], ignore_unknown_ids=True
+            )
+
 
 def generate_orphan_assets(n_id, n_xid, sample_from):
     # Orphans only: We link all assets to an existing asset (some by ID, others by XID):
+    # Note however that orphans linking with parent ID are ignored!
     s = random_string(20)
     id_assets = [
         Asset(name="a", external_id=f"child-by-id-{i}-{s}", parent_id=parent.id)
@@ -329,7 +359,7 @@ class TestAssetsAPICreateHierarchy:
         hierarchy_fails = AssetHierarchy(assets, ignore_orphans=False)
         hierarchy_succeeds = AssetHierarchy(assets, ignore_orphans=True)
 
-        with pytest.raises(CogniteAssetHierarchyError, match=r"^Asset hierarchy is not valid. Issue\(s\): 4 orphans$"):
+        with pytest.raises(CogniteAssetHierarchyError, match=r"^Asset hierarchy is not valid. Issue\(s\): 2 orphans$"):
             cognite_client.assets.create_hierarchy(hierarchy_fails, upsert=False)
 
         with create_hierarchy_with_cleanup(cognite_client, hierarchy_succeeds) as created:

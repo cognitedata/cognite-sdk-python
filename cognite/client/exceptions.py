@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import json
 import reprlib
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Sequence
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence
 
 if TYPE_CHECKING:
     from cognite.client.data_classes import AssetHierarchy
@@ -10,6 +11,41 @@ if TYPE_CHECKING:
 
 class CogniteException(Exception):
     pass
+
+
+@dataclass
+class GraphQLErrorSpec:
+    message: str
+    hint: Optional[str]
+    kind: Optional[str]
+    location: Optional[dict[str, dict[str, int]]]
+    locations: Optional[list[dict[str, int]]]  # yes, the api distinguishes on plurality....
+    path: Optional[list[str]]
+    extensions: Optional[dict[str, str]]
+
+    def __repr__(self) -> str:
+        attrs_string = f"message={self.message}"
+        for attr in ("hint", "kind", "location", "locations", "path", "extensions"):
+            if (value := getattr(self, attr)) is not None:
+                attrs_string += f", {attr}={value}"
+        return f"GraphQLErrorSpec({attrs_string})"
+
+    @classmethod
+    def load(cls, data: Dict[str, Any]) -> GraphQLErrorSpec:
+        return cls(
+            message=data["message"],
+            hint=data.get("hint"),
+            kind=data.get("kind"),
+            location=data.get("location"),
+            locations=data.get("locations"),
+            path=data.get("path"),
+            extensions=data.get("extensions"),
+        )
+
+
+class CogniteGraphQLError(CogniteException):
+    def __init__(self, errors: list[GraphQLErrorSpec]):
+        self.errors = errors
 
 
 class CogniteConnectionError(CogniteException):
@@ -27,7 +63,11 @@ class CogniteReadTimeout(CogniteException):
 
 class CogniteMultiException(CogniteException):
     def __init__(
-        self, successful: Sequence = None, failed: Sequence = None, unknown: Sequence = None, unwrap_fn: Callable = None
+        self,
+        successful: Optional[Sequence] = None,
+        failed: Optional[Sequence] = None,
+        unknown: Optional[Sequence] = None,
+        unwrap_fn: Optional[Callable] = None,
     ):
         self.successful = successful or []
         self.failed = failed or []
@@ -91,14 +131,14 @@ class CogniteAPIError(CogniteMultiException):
         self,
         message: str,
         code: int,
-        x_request_id: str = None,
-        missing: Sequence = None,
-        duplicated: Sequence = None,
-        successful: Sequence = None,
-        failed: Sequence = None,
-        unknown: Sequence = None,
-        unwrap_fn: Callable = None,
-        extra: Dict = None,
+        x_request_id: Optional[str] = None,
+        missing: Optional[Sequence] = None,
+        duplicated: Optional[Sequence] = None,
+        successful: Optional[Sequence] = None,
+        failed: Optional[Sequence] = None,
+        unknown: Optional[Sequence] = None,
+        unwrap_fn: Optional[Callable] = None,
+        extra: Optional[Dict] = None,
     ) -> None:
         self.message = message
         self.code = code
@@ -136,10 +176,10 @@ class CogniteNotFoundError(CogniteMultiException):
     def __init__(
         self,
         not_found: List,
-        successful: List = None,
-        failed: List = None,
-        unknown: List = None,
-        unwrap_fn: Callable = None,
+        successful: Optional[List] = None,
+        failed: Optional[List] = None,
+        unknown: Optional[List] = None,
+        unwrap_fn: Optional[Callable] = None,
     ):
         self.not_found = not_found
         super().__init__(successful, failed, unknown, unwrap_fn)
@@ -166,10 +206,10 @@ class CogniteDuplicatedError(CogniteMultiException):
     def __init__(
         self,
         duplicated: List,
-        successful: List = None,
-        failed: List = None,
-        unknown: List = None,
-        unwrap_fn: Callable = None,
+        successful: Optional[List] = None,
+        failed: Optional[List] = None,
+        unknown: Optional[List] = None,
+        unwrap_fn: Optional[Callable] = None,
     ):
         self.duplicated = duplicated
         super().__init__(successful, failed, unknown, unwrap_fn)
@@ -190,7 +230,7 @@ class CogniteImportError(CogniteException):
         message (str): The error message to output.
     """
 
-    def __init__(self, module: str, message: str = None):
+    def __init__(self, module: str, message: Optional[str] = None):
         self.module = module
         self.message = message or f"The functionality you are trying to use requires '{self.module}' to be installed."
 

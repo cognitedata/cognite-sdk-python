@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional
 
 from cognite.client.data_classes._base import (
     CogniteResourceList,
@@ -18,7 +18,7 @@ class SpaceCore(DataModelingResource):
         name (str): Human readable name for the space.
     """
 
-    def __init__(self, space: str, description: str = None, name: str = None):
+    def __init__(self, space: str, description: Optional[str] = None, name: Optional[str] = None):
         self.space = space
         self.description = description
         self.name = name
@@ -39,8 +39,8 @@ class SpaceApply(SpaceCore):
     def __init__(
         self,
         space: str,
-        description: str = None,
-        name: str = None,
+        description: Optional[str] = None,
+        name: Optional[str] = None,
         **_: Any,
     ):
         validate_data_modeling_identifier(space)
@@ -65,8 +65,8 @@ class Space(SpaceCore):
         is_global: bool,
         last_updated_time: int,
         created_time: int,
-        description: str = None,
-        name: str = None,
+        description: Optional[str] = None,
+        name: Optional[str] = None,
         **_: Any,
     ):
         super().__init__(space, description, name)
@@ -85,12 +85,36 @@ class Space(SpaceCore):
 class SpaceApplyList(CogniteResourceList[SpaceApply]):
     _RESOURCE = SpaceApply
 
+    def as_ids(self) -> list[str]:
+        """
+        Converts all the spaces to a space id list.
+
+        Returns:
+            list[str]: A list of space ids.
+        """
+        return [item.space for item in self]
+
 
 class SpaceList(CogniteResourceList[Space]):
     _RESOURCE = Space
 
-    def to_space_apply_list(self) -> SpaceApplyList:
+    def as_ids(self) -> list[str]:
+        """
+        Converts all the spaces to a space id list..
+
+        Returns:
+            list[str]: A list of space ids.
+        """
+        return [item.space for item in self]
+
+    def as_apply(self) -> SpaceApplyList:
+        """
+        Converts all the spaces to a space apply list.
+
+        Returns:
+            SpaceApplyList: A list of space applies.
+        """
         return SpaceApplyList(
-            resources=[item.as_apply() for item in self.items],
+            resources=[item.as_apply() for item in self],
             cognite_client=self._cognite_client,
         )

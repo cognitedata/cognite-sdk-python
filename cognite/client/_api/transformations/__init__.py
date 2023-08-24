@@ -116,8 +116,8 @@ class TransformationsAPI(APIClient):
 
     def delete(
         self,
-        id: Union[int, Sequence[int]] = None,
-        external_id: Union[str, Sequence[str]] = None,
+        id: Optional[Union[int, Sequence[int]]] = None,
+        external_id: Optional[Union[str, Sequence[str]]] = None,
         ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete one or more transformations <https://developer.cognite.com/api#tag/Transformations/operation/deleteTransformations>`_.
@@ -147,16 +147,16 @@ class TransformationsAPI(APIClient):
     def list(
         self,
         include_public: bool = True,
-        name_regex: str = None,
-        query_regex: str = None,
-        destination_type: str = None,
-        conflict_mode: str = None,
-        cdf_project_name: str = None,
-        has_blocked_error: bool = None,
-        created_time: Union[Dict[str, Any], TimestampRange] = None,
-        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        data_set_ids: List[int] = None,
-        data_set_external_ids: List[str] = None,
+        name_regex: Optional[str] = None,
+        query_regex: Optional[str] = None,
+        destination_type: Optional[str] = None,
+        conflict_mode: Optional[str] = None,
+        cdf_project_name: Optional[str] = None,
+        has_blocked_error: Optional[bool] = None,
+        created_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        last_updated_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        data_set_ids: Optional[List[int]] = None,
+        data_set_external_ids: Optional[List[str]] = None,
         tags: Optional[TagsFilter] = None,
         limit: Optional[int] = LIST_LIMIT_DEFAULT,
     ) -> TransformationList:
@@ -249,7 +249,10 @@ class TransformationsAPI(APIClient):
         )
 
     def retrieve_multiple(
-        self, ids: Sequence[int] = None, external_ids: Sequence[str] = None, ignore_unknown_ids: bool = False
+        self,
+        ids: Optional[Sequence[int]] = None,
+        external_ids: Optional[Sequence[str]] = None,
+        ignore_unknown_ids: bool = False,
     ) -> TransformationList:
         """`Retrieve multiple transformations by ID <https://developer.cognite.com/api#tag/Transformations/operation/getTransformationsByIds>`_.
 
@@ -331,8 +334,8 @@ class TransformationsAPI(APIClient):
 
     def run(
         self,
-        transformation_id: int = None,
-        transformation_external_id: str = None,
+        transformation_id: Optional[int] = None,
+        transformation_external_id: Optional[str] = None,
         wait: bool = True,
         timeout: Optional[float] = None,
     ) -> TransformationJob:
@@ -376,7 +379,10 @@ class TransformationsAPI(APIClient):
         return job
 
     async def run_async(
-        self, transformation_id: int = None, transformation_external_id: str = None, timeout: Optional[float] = None
+        self,
+        transformation_id: Optional[int] = None,
+        transformation_external_id: Optional[str] = None,
+        timeout: Optional[float] = None,
     ) -> TransformationJob:
         """`Run a transformation to completion asynchronously <https://developer.cognite.com/api#tag/Transformations/operation/runTransformation>`_.
 
@@ -410,7 +416,7 @@ class TransformationsAPI(APIClient):
         )
         return await job.wait_async(timeout=timeout)
 
-    def cancel(self, transformation_id: int = None, transformation_external_id: str = None) -> None:
+    def cancel(self, transformation_id: Optional[int] = None, transformation_external_id: Optional[str] = None) -> None:
         """`Cancel a running transformation <https://developer.cognite.com/api#tag/Transformations/operation/cancelTransformation>`_.
 
         Args:
@@ -437,7 +443,7 @@ class TransformationsAPI(APIClient):
 
     def preview(
         self,
-        query: str = None,
+        query: Optional[str] = None,
         convert_to_string: bool = False,
         limit: int = 100,
         source_limit: Optional[int] = 100,

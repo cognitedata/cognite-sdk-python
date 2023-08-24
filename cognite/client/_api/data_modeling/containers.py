@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterator, Sequence, cast, overload
+from typing import Iterator, Optional, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DATA_MODELING_LIST_LIMIT_DEFAULT
@@ -16,6 +16,8 @@ from cognite.client.data_classes.data_modeling.ids import (
     _load_identifier,
 )
 
+from ._data_modeling_executor import get_data_modeling_executor
+
 
 class ContainersAPI(APIClient):
     _RESOURCE_PATH = "/models/containers"
@@ -26,7 +28,7 @@ class ContainersAPI(APIClient):
         chunk_size: None = None,
         space: str | None = None,
         include_global: bool = False,
-        limit: int = None,
+        limit: Optional[int] = None,
     ) -> Iterator[Container]:
         ...
 
@@ -36,7 +38,7 @@ class ContainersAPI(APIClient):
         chunk_size: int,
         space: str | None = None,
         include_global: bool = False,
-        limit: int = None,
+        limit: Optional[int] = None,
     ) -> Iterator[ContainerList]:
         ...
 
@@ -45,7 +47,7 @@ class ContainersAPI(APIClient):
         chunk_size: int | None = None,
         space: str | None = None,
         include_global: bool = False,
-        limit: int = None,
+        limit: Optional[int] = None,
     ) -> Iterator[Container] | Iterator[ContainerList]:
         """Iterate over containers
 
@@ -53,7 +55,7 @@ class ContainersAPI(APIClient):
 
         Args:
             chunk_size (int, optional): Number of containers to return in each chunk. Defaults to yielding one container a time.
-            space (int, optional): The space to query.
+            space (str, optional): The space to query.
             include_global (bool, optional): Whether the global containers should be returned.
             limit (int, optional): Maximum number of containers to return. Default to return all items.
 
@@ -111,7 +113,12 @@ class ContainersAPI(APIClient):
                 >>> res = c.data_modeling.containers.retrieve(ContainerId(space='mySpace', external_id='myContainer'))
         """
         identifier = _load_identifier(ids, "container")
-        return self._retrieve_multiple(list_cls=ContainerList, resource_cls=Container, identifiers=identifier)
+        return self._retrieve_multiple(
+            list_cls=ContainerList,
+            resource_cls=Container,
+            identifiers=identifier,
+            executor=get_data_modeling_executor(),
+        )
 
     def delete(self, id: ContainerIdentifier | Sequence[ContainerIdentifier]) -> list[ContainerId]:
         """`Delete one or more containers <https://developer.cognite.com/api#tag/Containers/operation/deleteContainers>`_.
@@ -130,7 +137,12 @@ class ContainersAPI(APIClient):
         """
         deleted_containers = cast(
             list,
-            self._delete_multiple(identifiers=_load_identifier(id, "container"), wrap_ids=True, returns_items=True),
+            self._delete_multiple(
+                identifiers=_load_identifier(id, "container"),
+                wrap_ids=True,
+                returns_items=True,
+                executor=get_data_modeling_executor(),
+            ),
         )
         return [ContainerId(space=item["space"], external_id=item["externalId"]) for item in deleted_containers]
 
@@ -140,7 +152,7 @@ class ContainersAPI(APIClient):
         """`List containers <https://developer.cognite.com/api#tag/Containers/operation/listContainers>`_.
 
         Args:
-            space (int, optional): The space to query
+            space (str, optional): The space to query
             limit (int, optional): Maximum number of containers to return. Default to 10. Set to -1, float("inf") or None
                 to return all items.
             include_global (bool, optional): Whether the global containers should be returned.
@@ -209,5 +221,9 @@ class ContainersAPI(APIClient):
                 >>> res = c.data_modeling.containers.apply(container)
         """
         return self._create_multiple(
-            list_cls=ContainerList, resource_cls=Container, items=container, input_resource_cls=ContainerApply
+            list_cls=ContainerList,
+            resource_cls=Container,
+            items=container,
+            input_resource_cls=ContainerApply,
+            executor=get_data_modeling_executor(),
         )

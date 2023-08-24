@@ -10,7 +10,6 @@ from json.decoder import JSONDecodeError
 from typing import (
     TYPE_CHECKING,
     Any,
-    Collection,
     Dict,
     Iterator,
     List,
@@ -39,13 +38,21 @@ from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteResource,
     CogniteUpdate,
+    PropertySpec,
     T_CogniteResource,
     T_CogniteResourceList,
 )
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import is_unlimited, split_into_chunks
-from cognite.client.utils._identifier import IdentifierCore, IdentifierSequenceCore, SingletonIdentifierSequence
-from cognite.client.utils._text import convert_all_keys_to_camel_case, shorten, to_snake_case
+from cognite.client.utils._concurrency import TaskExecutor
+from cognite.client.utils._identifier import (
+    Identifier,
+    IdentifierCore,
+    IdentifierSequence,
+    IdentifierSequenceCore,
+    SingletonIdentifierSequence,
+)
+from cognite.client.utils._text import convert_all_keys_to_camel_case, shorten, to_camel_case, to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -71,6 +78,7 @@ class APIClient:
             "/raw/dbs/[^/]+/tables/[^/]+",
             "/context/entitymatching/(byids|list|jobs)",
             "/sessions/revoke",
+            "/models/.*",
         )
     }
 
@@ -250,9 +258,9 @@ class APIClient:
         self,
         identifier: IdentifierCore,
         cls: Type[T_CogniteResource],
-        resource_path: str = None,
-        params: Dict = None,
-        headers: Dict = None,
+        resource_path: Optional[str] = None,
+        params: Optional[Dict] = None,
+        headers: Optional[Dict] = None,
     ) -> Optional[T_CogniteResource]:
         resource_path = resource_path or self._RESOURCE_PATH
         try:
@@ -280,6 +288,7 @@ class APIClient:
         headers: Optional[Dict[str, Any]] = None,
         other_params: Optional[Dict[str, Any]] = None,
         params: Optional[Dict[str, Any]] = None,
+        executor: Optional[TaskExecutor] = None,
     ) -> Optional[T_CogniteResource]:
         ...
 
@@ -294,6 +303,7 @@ class APIClient:
         headers: Optional[Dict[str, Any]] = None,
         other_params: Optional[Dict[str, Any]] = None,
         params: Optional[Dict[str, Any]] = None,
+        executor: Optional[TaskExecutor] = None,
     ) -> T_CogniteResourceList:
         ...
 
@@ -307,6 +317,7 @@ class APIClient:
         headers: Optional[Dict[str, Any]] = None,
         other_params: Optional[Dict[str, Any]] = None,
         params: Optional[Dict[str, Any]] = None,
+        executor: Optional[TaskExecutor] = None,
     ) -> Union[T_CogniteResourceList, Optional[T_CogniteResource]]:
         resource_path = resource_path or self._RESOURCE_PATH
 
@@ -324,7 +335,9 @@ class APIClient:
             }
             for id_chunk in identifiers.chunked(self._RETRIEVE_LIMIT)
         ]
-        tasks_summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
+        tasks_summary = utils._concurrency.execute_tasks(
+            self._post, tasks, max_workers=self._config.max_workers, executor=executor
+        )
 
         if tasks_summary.exceptions:
             try:
@@ -608,6 +621,7 @@ class APIClient:
         extra_body_fields: Optional[Dict] = None,
         limit: Optional[int] = None,
         input_resource_cls: Optional[Type[CogniteResource]] = None,
+        executor: Optional[TaskExecutor] = None,
     ) -> T_CogniteResourceList:
         ...
 
@@ -623,6 +637,7 @@ class APIClient:
         extra_body_fields: Optional[Dict] = None,
         limit: Optional[int] = None,
         input_resource_cls: Optional[Type[CogniteResource]] = None,
+        executor: Optional[TaskExecutor] = None,
     ) -> T_CogniteResource:
         ...
 
@@ -637,6 +652,7 @@ class APIClient:
         extra_body_fields: Optional[Dict] = None,
         limit: Optional[int] = None,
         input_resource_cls: Optional[Type[CogniteResource]] = None,
+        executor: Optional[TaskExecutor] = None,
     ) -> Union[T_CogniteResourceList, T_CogniteResource]:
         resource_path = resource_path or self._RESOURCE_PATH
         input_resource_cls = input_resource_cls or resource_cls
@@ -651,7 +667,9 @@ class APIClient:
             (resource_path, task_items, params, headers)
             for task_items in self._prepare_item_chunks(items, limit, extra_body_fields)
         ]
-        summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
+        summary = utils._concurrency.execute_tasks(
+            self._post, tasks, max_workers=self._config.max_workers, executor=executor
+        )
 
         def unwrap_element(el: T) -> Union[CogniteResource, T]:
             if isinstance(el, dict):
@@ -687,6 +705,7 @@ class APIClient:
         headers: Optional[Dict[str, Any]] = None,
         extra_body_fields: Optional[Dict[str, Any]] = None,
         returns_items: bool = False,
+        executor: Optional[TaskExecutor] = None,
     ) -> list | None:
         resource_path = resource_path or self._RESOURCE_PATH
         tasks = [
@@ -701,7 +720,9 @@ class APIClient:
             }
             for chunk in identifiers.chunked(self._DELETE_LIMIT)
         ]
-        summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
+        summary = utils._concurrency.execute_tasks(
+            self._post, tasks, max_workers=self._config.max_workers, executor=executor
+        )
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task["json"]["items"],
             task_list_element_unwrap_fn=identifiers.unwrap_identifier,
@@ -718,9 +739,10 @@ class APIClient:
         list_cls: Type[T_CogniteResourceList],
         resource_cls: Type[T_CogniteResource],
         update_cls: Type[CogniteUpdate],
-        resource_path: str = None,
-        params: Dict = None,
-        headers: Dict = None,
+        resource_path: Optional[str] = None,
+        params: Optional[Dict] = None,
+        headers: Optional[Dict] = None,
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> T_CogniteResource:
         ...
 
@@ -731,9 +753,10 @@ class APIClient:
         list_cls: Type[T_CogniteResourceList],
         resource_cls: Type[T_CogniteResource],
         update_cls: Type[CogniteUpdate],
-        resource_path: str = None,
-        params: Dict = None,
-        headers: Dict = None,
+        resource_path: Optional[str] = None,
+        params: Optional[Dict] = None,
+        headers: Optional[Dict] = None,
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> T_CogniteResourceList:
         ...
 
@@ -743,9 +766,10 @@ class APIClient:
         list_cls: Type[T_CogniteResourceList],
         resource_cls: Type[T_CogniteResource],
         update_cls: Type[CogniteUpdate],
-        resource_path: str = None,
-        params: Dict = None,
-        headers: Dict = None,
+        resource_path: Optional[str] = None,
+        params: Optional[Dict] = None,
+        headers: Optional[Dict] = None,
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Union[T_CogniteResourceList, T_CogniteResource]:
         resource_path = resource_path or self._RESOURCE_PATH
         patch_objects = []
@@ -757,7 +781,9 @@ class APIClient:
 
         for index, item in enumerate(item_list):
             if isinstance(item, CogniteResource):
-                patch_objects.append(self._convert_resource_to_patch_object(item, update_cls._get_update_properties()))
+                patch_objects.append(
+                    self._convert_resource_to_patch_object(item, update_cls._get_update_properties(), mode)
+                )
             elif isinstance(item, CogniteUpdate):
                 patch_objects.append(item.dump(camel_case=True))
                 patch_object_update = patch_objects[index]["update"]
@@ -782,6 +808,102 @@ class APIClient:
         if single_item:
             return resource_cls._load(updated_items[0], cognite_client=self._cognite_client)
         return list_cls._load(updated_items, cognite_client=self._cognite_client)
+
+    def _upsert_multiple(
+        self,
+        items: CogniteResource | Sequence[CogniteResource],
+        list_cls: Type[T_CogniteResourceList],
+        resource_cls: Type[T_CogniteResource],
+        update_cls: Type[CogniteUpdate],
+        mode: Literal["patch", "replace"],
+        input_resource_cls: Optional[Type[CogniteResource]] = None,
+    ) -> T_CogniteResource | T_CogniteResourceList:
+        if mode not in ["patch", "replace"]:
+            raise ValueError(f"mode must be either 'patch' or 'replace', got {mode!r}")
+        is_single = isinstance(items, CogniteResource)
+        items = cast(Sequence[CogniteResource], [items] if is_single else items)
+        try:
+            result = self._update_multiple(items, list_cls, resource_cls, update_cls, mode=mode)
+        except CogniteNotFoundError as not_found_error:
+            items_by_external_id = {item.external_id: item for item in items if item.external_id is not None}
+            items_by_id = {item.id: item for item in items if hasattr(item, "id") and item.id is not None}
+            # Not found must have an external id as they do not exist in CDF:
+            try:
+                missing_external_ids = {entry["externalId"] for entry in not_found_error.not_found}
+            except KeyError:
+                # There is a not found internal id, which means we cannot identify it.
+                raise not_found_error
+            to_create = [
+                items_by_external_id[external_id]
+                for external_id in not_found_error.failed
+                if external_id in missing_external_ids
+            ]
+
+            # Updates can have either external id or id. If they have an id, they must exist in CDF.
+            to_update = [
+                items_by_external_id[identifier] if isinstance(identifier, str) else items_by_id[identifier]
+                for identifier in not_found_error.failed
+                if identifier not in missing_external_ids or isinstance(identifier, int)
+            ]
+
+            created: T_CogniteResourceList | None = None
+            updated: T_CogniteResourceList | None = None
+            try:
+                if to_create:
+                    created = self._create_multiple(
+                        to_create, list_cls=list_cls, resource_cls=resource_cls, input_resource_cls=input_resource_cls
+                    )
+                if to_update:
+                    updated = self._update_multiple(
+                        to_update,
+                        list_cls=list_cls,
+                        resource_cls=resource_cls,
+                        update_cls=update_cls,
+                        mode=mode,
+                    )
+            except CogniteAPIError as api_error:
+                successful = list(api_error.successful)
+                unknown = list(api_error.unknown)
+                failed = list(api_error.failed)
+
+                successful.extend(not_found_error.successful)
+                unknown.extend(not_found_error.unknown)
+                if created is not None:
+                    # The update call failed
+                    successful.extend(item.external_id for item in created)
+                if updated is None and created is not None:
+                    # The created call failed
+                    failed.extend(item.external_id if item.external_id is not None else item.id for item in to_update)
+                raise CogniteAPIError(
+                    api_error.message, code=api_error.code, successful=successful, failed=failed, unknown=unknown
+                )
+            # Need to retrieve the successful updated items from the first call.
+            successful_resources: T_CogniteResourceList | None = None
+            if not_found_error.successful:
+                identifiers = IdentifierSequence.of(*not_found_error.successful)
+                successful_resources = self._retrieve_multiple(
+                    list_cls=list_cls, resource_cls=resource_cls, identifiers=identifiers
+                )
+                if isinstance(successful_resources, resource_cls):
+                    successful_resources = list_cls([successful_resources], cognite_client=self._cognite_client)
+
+            result = list_cls(
+                (successful_resources or []) + (created or []) + (updated or []), cognite_client=self._cognite_client
+            )
+
+            # Reorder to match the order of the input items
+            result.data = [
+                result.get(
+                    **Identifier.load(item.id if hasattr(item, "id") else None, item.external_id).as_dict(
+                        camel_case=False
+                    )
+                )
+                for item in items
+            ]
+
+        if is_single:
+            return result[0]
+        return result
 
     def _search(
         self,
@@ -821,24 +943,47 @@ class APIClient:
             )
         ]
 
-    @staticmethod
+    @classmethod
     def _convert_resource_to_patch_object(
-        resource: CogniteResource, update_attributes: Collection[str]
+        cls,
+        resource: CogniteResource,
+        update_attributes: list[PropertySpec],
+        mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Dict[str, Dict[str, Dict]]:
         dumped_resource = resource.dump(camel_case=True)
         has_id = "id" in dumped_resource
         has_external_id = "externalId" in dumped_resource
 
-        patch_object: Dict[str, Dict[str, Dict]] = {"update": {}}
+        patch_object: dict[str, dict[str, dict]] = {"update": {}}
         if has_id:
             patch_object["id"] = dumped_resource.pop("id")
         elif has_external_id:
             patch_object["externalId"] = dumped_resource.pop("externalId")
 
+        update: dict[str, dict] = cls._clear_all_attributes(update_attributes) if mode == "replace" else {}
+
+        update_attribute_by_name = {prop.name: prop for prop in update_attributes}
         for key, value in dumped_resource.items():
-            if to_snake_case(key) in update_attributes:
-                patch_object["update"][key] = {"set": value}
+            if (snake := to_snake_case(key)) not in update_attribute_by_name:
+                continue
+            prop = update_attribute_by_name[snake]
+            if prop.is_container and mode == "patch":
+                update[key] = {"add": value}
+            else:
+                update[key] = {"set": value}
+
+        patch_object["update"] = update
         return patch_object
+
+    @staticmethod
+    def _clear_all_attributes(
+        update_attributes: list[PropertySpec],
+    ) -> dict[str, dict]:
+        return {
+            to_camel_case(prop.name): {"set": []} if prop.is_container else {"setNull": True}
+            for prop in update_attributes
+            if prop.is_nullable
+        }
 
     @staticmethod
     def _status_ok(status_code: int) -> bool:

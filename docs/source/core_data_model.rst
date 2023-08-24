@@ -11,6 +11,10 @@ Assets
 
    CogniteClient.assets
 
+Upsert assets
+^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.assets.AssetsAPI.upsert
+
 Asset Data classes
 ^^^^^^^^^^^^^^^^^^
 .. autosummary::
@@ -28,6 +32,10 @@ Events
    :template: custom-automethods-template.rst
 
    CogniteClient.events
+
+Upsert events
+^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.events.EventsAPI.upsert
 
 Events Data classes
 ^^^^^^^^^^^^^^^^^^^
@@ -114,6 +122,11 @@ Time series
 
    CogniteClient.time_series
 
+Upsert time series
+^^^^^^^^^^^^^^^^^^
+.. automethod:: cognite.client._api.time_series.TimeSeriesAPI.upsert
+
+
 Time Series Data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^
 .. autosummary::
@@ -133,6 +146,7 @@ Sequences
    CogniteClient.sequences
    CogniteClient.sequences.data
 
+
 Sequence Data classes
 ^^^^^^^^^^^^^^^^^^^^^
 .. autosummary::
@@ -141,3 +155,26 @@ Sequence Data classes
    :template: custom-automodule-template.rst
 
    data_classes.sequences
+
+Data Point Subscriptions
+---------------------------
+
+.. warning::
+    DataPoint Subscriptions are experimental and may be subject to breaking changes in future versions without notice.
+
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
+
+   CogniteClient.time_series.subscriptions
+
+
+Data Point Subscription classes
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. autosummary::
+   :classes:
+   :toctree: generated/
+   :template: custom-automodule-template.rst
+
+   data_classes.datapoints_subscriptions

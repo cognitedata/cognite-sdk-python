@@ -1,51 +1,57 @@
+from __future__ import annotations
+
 import json
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes.data_modeling import (
+    ContainerApply,
     ContainerId,
+    ContainerProperty,
+    DataModel,
+    DirectRelation,
+    DirectRelationReference,
     MappedPropertyApply,
     Space,
+    Text,
     View,
     ViewApply,
     ViewId,
     ViewList,
 )
+from cognite.client.data_classes.data_modeling.views import SingleHopConnectionDefinitionApply
 from cognite.client.exceptions import CogniteAPIError
 
 
-@pytest.fixture()
-def movie_views(cognite_client: CogniteClient) -> ViewList:
-    movie_view_ids = [
-        ViewId(space="IntegrationTestsImmutable", external_id="Actor", version="2"),
-        ViewId(space="IntegrationTestsImmutable", external_id="BestDirector", version="2"),
-        ViewId(space="IntegrationTestsImmutable", external_id="BestLeadingActor", version="2"),
-        ViewId(space="IntegrationTestsImmutable", external_id="BestLeadingActress", version="2"),
-        ViewId(space="IntegrationTestsImmutable", external_id="Director", version="2"),
-        ViewId(space="IntegrationTestsImmutable", external_id="Movie", version="2"),
-        ViewId(space="IntegrationTestsImmutable", external_id="Nomination", version="2"),
-        ViewId(space="IntegrationTestsImmutable", external_id="Person", version="2"),
-        ViewId(space="IntegrationTestsImmutable", external_id="Rating", version="2"),
-        ViewId(space="IntegrationTestsImmutable", external_id="Role", version="2"),
-    ]
+@pytest.fixture(scope="session")
+def movie_views(movie_model: DataModel[View]) -> ViewList:
+    return ViewList(movie_model.views)
 
-    movie_views = cognite_client.data_modeling.views.retrieve(ids=movie_view_ids)
-    assert len(movie_view_ids) == len(movie_views), "Some of the movie views are missing, please recreate them."
-    return movie_views
+
+@pytest.fixture()
+def person_view(movie_views: ViewList) -> View:
+    return cast(View, movie_views.get(external_id="Person"))
+
+
+@pytest.fixture()
+def movie_view(movie_views: ViewList) -> View:
+    return cast(View, movie_views.get(external_id="Movie"))
 
 
 class TestViewsAPI:
     def test_list(self, cognite_client: CogniteClient, movie_views: ViewList, integration_test_space: Space) -> None:
         # Arrange
         expected_views = ViewList([v for v in movie_views if v.space == integration_test_space.space])
+        expected_ids = set(expected_views.as_ids())
 
         # Act
         actual_views = cognite_client.data_modeling.views.list(space=integration_test_space.space, limit=-1)
 
         # Assert
-        assert sorted(actual_views, key=lambda v: v.external_id) == sorted(expected_views, key=lambda v: v.external_id)
+        assert expected_ids, "The movie model is missing views"
+        assert expected_ids <= set(actual_views.as_ids())
         assert all(v.space == integration_test_space.space for v in actual_views)
 
     def test_apply_retrieve_and_delete(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
@@ -67,25 +73,34 @@ class TestViewsAPI:
                 ),
             },
         )
-        new_id = ViewId(new_view.space, new_view.external_id, new_view.version)
 
-        # Act
-        created = cognite_client.data_modeling.views.apply(new_view)
-        retrieved = cognite_client.data_modeling.views.retrieve(new_id)[0]
+        created: View | None = None
+        deleted_ids: list[ViewId] = []
+        new_id = new_view.as_id()
+        try:
+            # Act
+            created = cognite_client.data_modeling.views.apply(new_view)
+            retrieved = cognite_client.data_modeling.views.retrieve(new_id)
 
-        # Assert
-        assert created.created_time
-        assert created.last_updated_time
-        assert created.as_apply().dump() == new_view.dump()
-        assert retrieved.dump() == created.dump()
+            # Assert
+            assert created.created_time
+            assert created.last_updated_time
+            assert created.as_apply().dump() == new_view.dump()
+            assert len(retrieved) == 1
+            assert retrieved[0].dump() == created.dump()
 
-        # Act
-        deleted_id = cognite_client.data_modeling.views.delete(new_id)
-        retrieved_deleted = cognite_client.data_modeling.views.retrieve(new_id)
+            # Act
+            deleted_ids = cognite_client.data_modeling.views.delete(new_id)
+            retrieved_deleted = cognite_client.data_modeling.views.retrieve(new_id)
 
-        # Assert
-        assert deleted_id[0] == new_id
-        assert not retrieved_deleted
+            # Assert
+            assert len(deleted_ids) == 1
+            assert deleted_ids[0] == new_id
+            assert not retrieved_deleted
+        finally:
+            # Cleanup
+            if created and not deleted_ids:
+                cognite_client.data_modeling.views.delete(new_id)
 
     def test_delete_non_existent(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
         space = integration_test_space.space
@@ -106,24 +121,24 @@ class TestViewsAPI:
 
     def test_retrieve_multiple(self, cognite_client: CogniteClient, movie_views: ViewList) -> None:
         # Arrange
-        ids = [ViewId(v.space, v.external_id, v.version) for v in movie_views]
+        ids = movie_views.as_ids()
 
         # Act
         retrieved = cognite_client.data_modeling.views.retrieve(ids)
 
         # Assert
-        assert [view.as_id() for view in retrieved] == ids
+        assert set(retrieved.as_ids()) == set(ids)
 
     def test_retrieve_multiple_with_missing(self, cognite_client: CogniteClient, movie_views: ViewList) -> None:
         # Arrange
-        ids_without_missing = [v.as_id() for v in movie_views]
+        ids_without_missing = movie_views.as_ids()
         ids_with_missing = [*ids_without_missing, ViewId("myNonExistingSpace", "myImaginaryView", "v0")]
 
         # Act
         retrieved = cognite_client.data_modeling.views.retrieve(ids_with_missing)
 
         # Assert
-        assert [view.as_id() for view in retrieved] == ids_without_missing
+        assert set(retrieved.as_ids()) == set(ids_without_missing)
 
     def test_retrieve_non_existent(self, cognite_client: CogniteClient) -> None:
         assert not cognite_client.data_modeling.views.retrieve(("myNonExistingSpace", "myImaginaryView", "v0"))
@@ -220,3 +235,76 @@ class TestViewsAPI:
 
         # Assert
         assert view == view_loaded
+
+    def test_apply_different_property_types(
+        self, cognite_client: CogniteClient, integration_test_space: Space, person_view: View, movie_view: View
+    ) -> None:
+        # Arrange
+        new_container = ContainerApply(
+            space=integration_test_space.space,
+            external_id="Critic",
+            name="Critic",
+            description="This is a test container, and should not persist.",
+            properties={
+                "reviews": ContainerProperty(type=Text(is_list=True)),
+                "person": ContainerProperty(
+                    type=DirectRelation(
+                        container=ContainerId(
+                            space=integration_test_space.space,
+                            external_id="Person",
+                        )
+                    )
+                ),
+            },
+        )
+
+        new_view = ViewApply(
+            space=integration_test_space.space,
+            external_id="Critic",
+            version="v1",
+            description="This i a test view, and should not persist.",
+            name="Critic",
+            properties={
+                "name": MappedPropertyApply(
+                    container=ContainerId(
+                        space=integration_test_space.space,
+                        external_id="Person",
+                    ),
+                    container_property_identifier="name",
+                    name="fullName",
+                ),
+                "person": MappedPropertyApply(
+                    container=new_container.as_id(),
+                    container_property_identifier="person",
+                    name="person",
+                    source=person_view.as_id(),
+                ),
+                "reviews": MappedPropertyApply(
+                    container=new_container.as_id(),
+                    container_property_identifier="reviews",
+                    name="reviews",
+                ),
+                "movies": SingleHopConnectionDefinitionApply(
+                    type=DirectRelationReference(
+                        space=integration_test_space.space,
+                        external_id="Critic.movies",
+                    ),
+                    source=movie_view.as_id(),
+                    name="movies",
+                    direction="outwards",
+                ),
+            },
+        )
+
+        try:
+            # Act
+            created_container = cognite_client.data_modeling.containers.apply(new_container)
+            created_view = cognite_client.data_modeling.views.apply(new_view)
+
+            # Assert
+            assert created_container.created_time
+            assert created_view.created_time
+        finally:
+            # Cleanup
+            cognite_client.data_modeling.views.delete(new_view.as_id())
+            cognite_client.data_modeling.containers.delete(new_container.as_id())

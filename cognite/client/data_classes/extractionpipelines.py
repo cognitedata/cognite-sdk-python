@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -11,6 +11,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    PropertySpec,
 )
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._text import convert_all_keys_to_camel_case
@@ -71,25 +72,25 @@ class ExtractionPipeline(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        external_id: str = None,
-        name: str = None,
-        description: str = None,
-        data_set_id: int = None,
-        raw_tables: List[Dict[str, str]] = None,
-        last_success: int = None,
-        last_failure: int = None,
-        last_message: str = None,
-        last_seen: int = None,
-        schedule: str = None,
-        contacts: List[ExtractionPipelineContact] = None,
-        metadata: Dict[str, str] = None,
-        source: str = None,
-        documentation: str = None,
-        created_time: int = None,
-        last_updated_time: int = None,
-        created_by: str = None,
-        cognite_client: CogniteClient = None,
+        id: Optional[int] = None,
+        external_id: Optional[str] = None,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        data_set_id: Optional[int] = None,
+        raw_tables: Optional[List[Dict[str, str]]] = None,
+        last_success: Optional[int] = None,
+        last_failure: Optional[int] = None,
+        last_message: Optional[str] = None,
+        last_seen: Optional[int] = None,
+        schedule: Optional[str] = None,
+        contacts: Optional[List[ExtractionPipelineContact]] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        source: Optional[str] = None,
+        documentation: Optional[str] = None,
+        created_time: Optional[int] = None,
+        last_updated_time: Optional[int] = None,
+        created_by: Optional[str] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ):
         self.id = id
         self.external_id = external_id
@@ -112,7 +113,7 @@ class ExtractionPipeline(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> ExtractionPipeline:
+    def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> ExtractionPipeline:
         instance = super()._load(resource, cognite_client)
         return instance
 
@@ -192,6 +193,23 @@ class ExtractionPipelineUpdate(CogniteUpdate):
     def contacts(self) -> _ListExtractionPipelineUpdate:
         return ExtractionPipelineUpdate._ListExtractionPipelineUpdate(self, "contacts")
 
+    @classmethod
+    def _get_update_properties(cls) -> list[PropertySpec]:
+        return [
+            PropertySpec("external_id", is_nullable=False),
+            PropertySpec("name", is_nullable=False),
+            PropertySpec("description", is_nullable=False),
+            PropertySpec("data_set_id", is_nullable=False),
+            PropertySpec("schedule", is_nullable=False),
+            PropertySpec("raw_tables", is_container=True),
+            PropertySpec("contacts", is_container=True),
+            PropertySpec("metadata", is_container=True),
+            PropertySpec("source", is_nullable=False),
+            PropertySpec("documentation", is_nullable=False),
+            # Not supported yet
+            # PropertySpec("notification_config", is_nullable=False),
+        ]
+
 
 class ExtractionPipelineList(CogniteResourceList[ExtractionPipeline]):
     _RESOURCE = ExtractionPipeline
@@ -211,12 +229,12 @@ class ExtractionPipelineRun(CogniteResource):
 
     def __init__(
         self,
-        extpipe_external_id: str = None,
-        status: str = None,
-        message: str = None,
-        created_time: int = None,
-        cognite_client: CogniteClient = None,
-        id: int = None,
+        extpipe_external_id: Optional[str] = None,
+        status: Optional[str] = None,
+        message: Optional[str] = None,
+        created_time: Optional[int] = None,
+        cognite_client: Optional[CogniteClient] = None,
+        id: Optional[int] = None,
     ):
         self.id = id
         self.extpipe_external_id = extpipe_external_id
@@ -226,7 +244,7 @@ class ExtractionPipelineRun(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> ExtractionPipelineRun:
+    def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> ExtractionPipelineRun:
         obj = super()._load(resource, cognite_client)
         # Note: The API ONLY returns IDs, but if they chose to change this, we're ready:
         if isinstance(resource, dict):
@@ -259,7 +277,7 @@ class StringFilter(CogniteFilter):
         substring (str): Part of message
     """
 
-    def __init__(self, substring: str = None):
+    def __init__(self, substring: Optional[str] = None):
         self.substring = substring
 
 
@@ -276,11 +294,11 @@ class ExtractionPipelineRunFilter(CogniteFilter):
 
     def __init__(
         self,
-        external_id: str = None,
-        statuses: Sequence[str] = None,
-        message: StringFilter = None,
-        created_time: Union[Dict[str, Any], TimestampRange] = None,
-        cognite_client: CogniteClient = None,
+        external_id: Optional[str] = None,
+        statuses: Optional[Sequence[str]] = None,
+        message: Optional[StringFilter] = None,
+        created_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ):
         self.external_id = external_id
         self.statuses = statuses
@@ -310,11 +328,11 @@ class ExtractionPipelineConfigRevision(CogniteResource):
 
     def __init__(
         self,
-        external_id: str = None,
-        revision: int = None,
-        description: str = None,
-        created_time: int = None,
-        cognite_client: CogniteClient = None,
+        external_id: Optional[str] = None,
+        revision: Optional[int] = None,
+        description: Optional[str] = None,
+        created_time: Optional[int] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ):
         self.external_id = external_id
         self.revision = revision
@@ -337,12 +355,12 @@ class ExtractionPipelineConfig(ExtractionPipelineConfigRevision):
 
     def __init__(
         self,
-        external_id: str = None,
-        config: str = None,
-        revision: int = None,
-        description: str = None,
-        created_time: int = None,
-        cognite_client: CogniteClient = None,
+        external_id: Optional[str] = None,
+        config: Optional[str] = None,
+        revision: Optional[int] = None,
+        description: Optional[str] = None,
+        created_time: Optional[int] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ):
         super().__init__(
             external_id=external_id,

@@ -290,7 +290,7 @@ class GeospatialAPI(APIClient):
         feature_type_external_id: str,
         feature: Feature,
         allow_crs_transformation: bool = False,
-        chunk_size: int = None,
+        chunk_size: Optional[int] = None,
     ) -> Feature:
         ...
 
@@ -300,7 +300,7 @@ class GeospatialAPI(APIClient):
         feature_type_external_id: str,
         feature: Union[Sequence[Feature], FeatureList],
         allow_crs_transformation: bool = False,
-        chunk_size: int = None,
+        chunk_size: Optional[int] = None,
     ) -> FeatureList:
         ...
 
@@ -309,7 +309,7 @@ class GeospatialAPI(APIClient):
         feature_type_external_id: str,
         feature: Union[Feature, Sequence[Feature], FeatureList],
         allow_crs_transformation: bool = False,
-        chunk_size: int = None,
+        chunk_size: Optional[int] = None,
     ) -> Union[Feature, FeatureList]:
         """`Create features <https://developer.cognite.com/api#tag/Geospatial/operation/createFeatures>`_.
 
@@ -365,7 +365,9 @@ class GeospatialAPI(APIClient):
             limit=chunk_size,
         )
 
-    def delete_features(self, feature_type_external_id: str, external_id: Union[str, Sequence[str]] = None) -> None:
+    def delete_features(
+        self, feature_type_external_id: str, external_id: Optional[Union[str, Sequence[str]]] = None
+    ) -> None:
         """`Delete one or more features <https://developer.cognite.com/api#tag/Geospatial/operation/deleteFeatures>`_.
 
         Args:
@@ -396,7 +398,7 @@ class GeospatialAPI(APIClient):
         self,
         feature_type_external_id: str,
         external_id: str,
-        properties: Dict[str, Any] = None,
+        properties: Optional[Dict[str, Any]] = None,
     ) -> Feature:
         ...
 
@@ -405,7 +407,7 @@ class GeospatialAPI(APIClient):
         self,
         feature_type_external_id: str,
         external_id: List[str],
-        properties: Dict[str, Any] = None,
+        properties: Optional[Dict[str, Any]] = None,
     ) -> FeatureList:
         ...
 
@@ -413,7 +415,7 @@ class GeospatialAPI(APIClient):
         self,
         feature_type_external_id: str,
         external_id: Union[str, List[str]],
-        properties: Dict[str, Any] = None,
+        properties: Optional[Dict[str, Any]] = None,
     ) -> Union[FeatureList, Feature]:
         """`Retrieve features <https://developer.cognite.com/api#tag/Geospatial/operation/getFeaturesByIds>`_.
 
@@ -451,7 +453,7 @@ class GeospatialAPI(APIClient):
         feature_type_external_id: str,
         feature: Union[Feature, Sequence[Feature]],
         allow_crs_transformation: bool = False,
-        chunk_size: int = None,
+        chunk_size: Optional[int] = None,
     ) -> FeatureList:
         """`Update features <https://developer.cognite.com/api#tag/Geospatial/operation/updateFeatures>`_.
 
@@ -506,7 +508,7 @@ class GeospatialAPI(APIClient):
         self,
         feature_type_external_id: str,
         filter: Optional[Dict[str, Any]] = None,
-        properties: Dict[str, Any] = None,
+        properties: Optional[Dict[str, Any]] = None,
         limit: int = 100,
         allow_crs_transformation: bool = False,
     ) -> FeatureList:
@@ -587,9 +589,9 @@ class GeospatialAPI(APIClient):
         self,
         feature_type_external_id: str,
         filter: Optional[Dict[str, Any]] = None,
-        properties: Dict[str, Any] = None,
+        properties: Optional[Dict[str, Any]] = None,
         limit: int = 100,
-        order_by: Sequence[OrderSpec] = None,
+        order_by: Optional[Sequence[OrderSpec]] = None,
         allow_crs_transformation: bool = False,
     ) -> FeatureList:
         """`Search for features <https://developer.cognite.com/api#tag/Geospatial/operation/searchFeatures>`_.
@@ -707,7 +709,7 @@ class GeospatialAPI(APIClient):
         self,
         feature_type_external_id: str,
         filter: Optional[Dict[str, Any]] = None,
-        properties: Dict[str, Any] = None,
+        properties: Optional[Dict[str, Any]] = None,
         allow_crs_transformation: bool = False,
     ) -> Generator[Feature, None, None]:
         """`Stream features <https://developer.cognite.com/api#tag/Geospatial/operation/searchFeaturesStreaming>`_.
@@ -772,12 +774,12 @@ class GeospatialAPI(APIClient):
     def aggregate_features(
         self,
         feature_type_external_id: str,
-        property: str = None,
-        aggregates: Sequence[str] = None,
+        property: Optional[str] = None,
+        aggregates: Optional[Sequence[str]] = None,
         filter: Optional[Dict[str, Any]] = None,
-        group_by: Sequence[str] = None,
-        order_by: Sequence[OrderSpec] = None,
-        output: Dict[str, Any] = None,
+        group_by: Optional[Sequence[str]] = None,
+        order_by: Optional[Sequence[OrderSpec]] = None,
+        output: Optional[Dict[str, Any]] = None,
     ) -> FeatureAggregateList:
         """`Aggregate filtered features <https://developer.cognite.com/api#tag/Geospatial/operation/aggregateFeatures>`_.
 
@@ -1077,7 +1079,7 @@ class GeospatialAPI(APIClient):
         feature_external_id: str,
         raster_property_name: str,
         raster_format: str,
-        raster_options: Dict[str, Any] = None,
+        raster_options: Optional[Dict[str, Any]] = None,
         raster_srid: Optional[int] = None,
         raster_scale_x: Optional[float] = None,
         raster_scale_y: Optional[float] = None,

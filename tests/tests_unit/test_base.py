@@ -19,8 +19,11 @@ from cognite.client.data_classes._base import (
     CogniteResourceList,
     CogniteResponse,
     CogniteUpdate,
+    PropertySpec,
 )
+from cognite.client.data_classes.events import Event, EventList
 from cognite.client.exceptions import CogniteMissingClientError
+from tests.utils import all_subclasses
 
 
 class MyResource(CogniteResource):
@@ -56,6 +59,17 @@ class MyUpdate(CogniteUpdate):
     def columns(self):
         # Not really a PrimitiveUpdate, but we have this to ensure it is skipped from updates
         return PrimitiveUpdate(self, "columns")
+
+    @classmethod
+    def _get_update_properties(cls) -> list[PropertySpec]:
+        return [
+            PropertySpec("string", is_nullable=False),
+            PropertySpec("list", is_container=True),
+            PropertySpec("object", is_container=True),
+            PropertySpec("labels", is_container=True),
+            # Columns are not supported
+            # PropertySpec("columns", is_nullable=False),
+        ]
 
 
 class PrimitiveUpdate(CognitePrimitiveUpdate):
@@ -225,6 +239,42 @@ class TestCogniteResourceList:
         resource_list = MyResourceList([MyResource(1), MyResource(2, 3)])
         expected_df = pd.DataFrame({"var_a": [1, 2], "var_b": [None, 3]})
         pd.testing.assert_frame_equal(resource_list.to_pandas(camel_case=False), expected_df)
+
+    @pytest.mark.dsl
+    def test_to_pandas_metadata(self):
+        import pandas as pd
+
+        event_list = EventList(
+            [
+                Event(external_id="ev1", metadata={"value1": 1, "value2": "hello"}),
+                Event(external_id="ev2", metadata={"value1": 2, "value2": "world"}),
+            ]
+        )
+
+        expected_df = pd.DataFrame(
+            data={"external_id": ["ev1", "ev2"], "metadata.value1": [1, 2], "metadata.value2": ["hello", "world"]},
+        )
+
+        actual_df = event_list.to_pandas(expand_metadata=True)
+        pd.testing.assert_frame_equal(expected_df, actual_df, check_like=False)
+
+    @pytest.mark.dsl
+    def test_to_pandas_metadata_some_nulls(self):
+        import pandas as pd
+
+        event_list = EventList(
+            [Event(external_id="ev1", metadata={"val1": 1}), Event(external_id="ev2", metadata={"val2": 2})]
+        )
+        expected_df = pd.DataFrame(
+            data={
+                "external_id": ["ev1", "ev2"],
+                "metadata.val1": [1, None],
+                "metadata.val2": [None, 2],
+            }
+        )
+
+        actual_df = event_list.to_pandas(expand_metadata=True)
+        pd.testing.assert_frame_equal(expected_df, actual_df)
 
     def test_load(self):
         resource_list = MyResourceList._load([{"varA": 1, "varB": 2}, {"varA": 2, "varB": 3}, {"varA": 3}])
@@ -438,9 +488,24 @@ class TestCogniteUpdate:
         ).object.set({"bla": "bla"}).string.set("bla").dump()
 
     def test_get_update_properties(self):
-        props = MyUpdate._get_update_properties()
+        props = {prop.name for prop in MyUpdate._get_update_properties()}
         assert hasattr(MyUpdate, "columns") and "columns" not in props
         assert {"string", "list", "object", "labels"} == set(props)
+
+    @pytest.mark.parametrize("cognite_update_subclass", all_subclasses(CogniteUpdate))
+    def test_correct_implementation_get_update_properties(self, cognite_update_subclass: CogniteUpdate):
+        # Arrange
+        expected = sorted(
+            key
+            for key in cognite_update_subclass.__dict__
+            if not key.startswith("_") and key not in {"columns", "dump"}
+        )
+
+        # Act
+        actual = sorted(prop.name for prop in cognite_update_subclass._get_update_properties())
+
+        # Assert
+        assert expected == actual
 
 
 class TestCogniteResponse:

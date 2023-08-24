@@ -5,7 +5,9 @@ from abc import abstractmethod
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import (
+    TYPE_CHECKING,
     Any,
+    Collection,
     Dict,
     ItemsView,
     Iterator,
@@ -44,6 +46,8 @@ from cognite.client.data_classes.data_modeling.ids import (
 )
 from cognite.client.utils._text import convert_all_keys_to_snake_case
 
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 PropertyValue = Union[str, int, float, bool, dict, List[str], List[int], List[float], List[bool], List[dict]]
 Space = str
 PropertyIdentifier = str
@@ -114,8 +118,8 @@ class InstanceApply(InstanceCore):
         space: str,
         external_id: str,
         instance_type: Literal["node", "edge"] = "node",
-        existing_version: int = None,
-        sources: list[NodeOrEdgeData] = None,
+        existing_version: Optional[int] = None,
+        sources: Optional[list[NodeOrEdgeData]] = None,
     ):
         validate_data_modeling_identifier(space, external_id)
         super().__init__(space, external_id, instance_type)
@@ -202,7 +206,9 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
         ...
 
     def get(
-        self, view: ViewIdentifier, default: Optional[MutableMapping[PropertyIdentifier, PropertyValue]] | _T = None
+        self,
+        view: ViewIdentifier,
+        default: Optional[Optional[MutableMapping[PropertyIdentifier, PropertyValue]] | _T] = None,
     ) -> Optional[MutableMapping[PropertyIdentifier, PropertyValue]] | _T:
         view_id = ViewId.load(view)
         return self.data.get(view_id, default)
@@ -245,9 +251,9 @@ class Instance(InstanceCore):
         last_updated_time: int,
         created_time: int,
         instance_type: Literal["node", "edge"] = "node",
-        deleted_time: int = None,
-        properties: Properties = None,
-        **_: dict,
+        deleted_time: Optional[int] = None,
+        properties: Optional[Properties] = None,
+        **_: Any,
     ):
         super().__init__(space, external_id, instance_type)
         self.version = version
@@ -296,9 +302,9 @@ class InstanceApplyResult(InstanceCore):
         external_id: str,
         version: str,
         was_modified: bool,
-        last_updated_time: int = None,
-        created_time: int = None,
-        **_: dict,
+        last_updated_time: int,
+        created_time: int,
+        **_: Any,
     ):
         super().__init__(space, external_id, instance_type)
         self.version = version
@@ -340,19 +346,18 @@ class InstanceAggregationResult(DataModelingResource):
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         """
-        Dumps the instance to a dictionary.
+        Dumps the aggregation results to a dictionary.
 
         Args:
             camel_case (bool): Whether to convert the keys to camel case.
 
         Returns:
-            A dictionary.
+            A dictionary with the instance results.
 
         """
         return {
             "aggregates": [agg.dump(camel_case) for agg in self.aggregates],
             "group": self.group,
-            ("instanceType" if camel_case else "instance_type"): self.instance_type,
         }
 
 
@@ -380,8 +385,8 @@ class NodeApply(InstanceApply):
         self,
         space: str,
         external_id: str,
-        existing_version: int = None,
-        sources: list[NodeOrEdgeData] = None,
+        existing_version: Optional[int] = None,
+        sources: Optional[list[NodeOrEdgeData]] = None,
     ):
         super().__init__(space, external_id, "node", existing_version, sources)
 
@@ -410,9 +415,9 @@ class Node(Instance):
         version: str,
         last_updated_time: int,
         created_time: int,
-        deleted_time: int = None,
-        properties: Properties = None,
-        **_: dict,
+        deleted_time: Optional[int] = None,
+        properties: Optional[Properties] = None,
+        **_: Any,
     ):
         super().__init__(space, external_id, version, last_updated_time, created_time, "node", deleted_time, properties)
 
@@ -469,9 +474,9 @@ class NodeApplyResult(InstanceApplyResult):
         external_id: str,
         version: str,
         was_modified: bool,
-        last_updated_time: int = None,
-        created_time: int = None,
-        **_: dict,
+        last_updated_time: int,
+        created_time: int,
+        **_: Any,
     ):
         super().__init__(
             instance_type="node",
@@ -513,8 +518,8 @@ class EdgeApply(InstanceApply):
         type: DirectRelationReference | tuple[str, str],
         start_node: DirectRelationReference | tuple[str, str],
         end_node: DirectRelationReference | tuple[str, str],
-        existing_version: int = None,
-        sources: list[NodeOrEdgeData] = None,
+        existing_version: Optional[int] = None,
+        sources: Optional[list[NodeOrEdgeData]] = None,
     ):
         super().__init__(space, external_id, "edge", existing_version, sources)
         self.type = type if isinstance(type, DirectRelationReference) else DirectRelationReference.load(type)
@@ -575,16 +580,18 @@ class Edge(Instance):
         created_time: int,
         start_node: DirectRelationReference,
         end_node: DirectRelationReference,
-        deleted_time: int = None,
-        properties: Properties = None,
-        **_: dict,
+        deleted_time: Optional[int] = None,
+        properties: Optional[Properties] = None,
+        **_: Any,
     ):
         super().__init__(space, external_id, version, last_updated_time, created_time, "edge", deleted_time, properties)
         self.type = type
         self.start_node = start_node
         self.end_node = end_node
 
-    def as_apply(self, source: ViewIdentifier | ContainerIdentifier, existing_version: int = None) -> EdgeApply:
+    def as_apply(
+        self, source: ViewIdentifier | ContainerIdentifier, existing_version: Optional[int] = None
+    ) -> EdgeApply:
         """
         This is a convenience function for converting the read to a write edge.
 
@@ -658,9 +665,9 @@ class EdgeApplyResult(InstanceApplyResult):
         external_id: str,
         version: str,
         was_modified: bool,
-        last_updated_time: int = None,
-        created_time: int = None,
-        **_: dict,
+        last_updated_time: int,
+        created_time: int,
+        **_: Any,
     ):
         super().__init__(
             instance_type="edge",
@@ -680,20 +687,70 @@ class NodeApplyResultList(CogniteResourceList[NodeApplyResult]):
     _RESOURCE = NodeApplyResult
 
     def as_ids(self) -> list[NodeId]:
+        """
+        Convert the list of nodes to a list of node ids.
+
+        Returns:
+            list[NodeId]: A list of node ids.
+        """
         return [result.as_id() for result in self]
+
+
+class NodeApplyList(CogniteResourceList[NodeApply]):
+    _RESOURCE = NodeApply
+
+    def as_ids(self) -> list[NodeId]:
+        """
+        Convert the list of nodes to a list of node ids.
+
+        Returns:
+            list[NodeId]: A list of node ids.
+        """
+        return [node.as_id() for node in self]
 
 
 class NodeList(CogniteResourceList[Node]):
     _RESOURCE = Node
 
     def as_ids(self) -> list[NodeId]:
+        """
+        Convert the list of nodes to a list of node ids.
+
+        Returns:
+            list[NodeId]: A list of node ids.
+        """
         return [node.as_id() for node in self]
+
+
+class NodeListWithCursor(NodeList):
+    def __init__(self, resources: Collection[Any], cognite_client: Optional[CogniteClient] = None):
+        super().__init__(resources, cognite_client)
+        self.cursor: str | None = None
 
 
 class EdgeApplyResultList(CogniteResourceList[EdgeApplyResult]):
     _RESOURCE = EdgeApplyResult
 
     def as_ids(self) -> list[EdgeId]:
+        """
+        Convert the list of edges to a list of edge ids.
+
+        Returns:
+            list[EdgeId]: A list of edge ids.
+        """
+        return [edge.as_id() for edge in self]
+
+
+class EdgeApplyList(CogniteResourceList[EdgeApply]):
+    _RESOURCE = EdgeApply
+
+    def as_ids(self) -> list[EdgeId]:
+        """
+        Convert the list of edges to a list of edge ids.
+
+        Returns:
+            list[EdgeId]: A list of edge ids.
+        """
         return [edge.as_id() for edge in self]
 
 
@@ -701,7 +758,33 @@ class EdgeList(CogniteResourceList[Edge]):
     _RESOURCE = Edge
 
     def as_ids(self) -> list[EdgeId]:
+        """
+        Convert the list of edges to a list of edge ids.
+
+        Returns:
+            list[EdgeId]: A list of edge ids.
+        """
         return [edge.as_id() for edge in self]
+
+
+class EdgeListWithCursor(EdgeList):
+    def __init__(self, resources: Collection[Any], cognite_client: Optional[CogniteClient] = None):
+        super().__init__(resources, cognite_client)
+        self.cursor: str | None = None
+
+
+@dataclass
+class InstancesApply:
+    """
+    This represents the write request of an instance query
+
+    Args:
+        nodes (NodeApplyList): A list of nodes.
+        edges (EdgeApplyList): A list of edges.
+    """
+
+    nodes: NodeApplyList
+    edges: EdgeApplyList
 
 
 class InstanceSort(CogniteFilter):
@@ -728,6 +811,10 @@ class InstancesResult:
 
     nodes: NodeList
     edges: EdgeList
+
+    @classmethod
+    def load(cls, data: str | dict) -> InstancesResult:
+        raise NotImplementedError()
 
 
 @dataclass

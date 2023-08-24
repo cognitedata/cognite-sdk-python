@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Iterator, Sequence, cast, overload
+from collections import defaultdict
+from typing import Iterator, Optional, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DATA_MODELING_LIST_LIMIT_DEFAULT
@@ -11,6 +12,8 @@ from cognite.client.data_classes.data_modeling.ids import (
 )
 from cognite.client.data_classes.data_modeling.views import View, ViewApply, ViewFilter, ViewList
 
+from ._data_modeling_executor import get_data_modeling_executor
+
 
 class ViewsAPI(APIClient):
     _RESOURCE_PATH = "/models/views"
@@ -19,7 +22,7 @@ class ViewsAPI(APIClient):
     def __call__(
         self,
         chunk_size: None = None,
-        limit: int = None,
+        limit: Optional[int] = None,
         space: str | None = None,
         include_inherited_properties: bool = True,
         all_versions: bool = False,
@@ -31,7 +34,7 @@ class ViewsAPI(APIClient):
     def __call__(
         self,
         chunk_size: int,
-        limit: int = None,
+        limit: Optional[int] = None,
         space: str | None = None,
         include_inherited_properties: bool = True,
         all_versions: bool = False,
@@ -41,8 +44,8 @@ class ViewsAPI(APIClient):
 
     def __call__(
         self,
-        chunk_size: int = None,
-        limit: int = None,
+        chunk_size: Optional[int] = None,
+        limit: Optional[int] = None,
         space: str | None = None,
         include_inherited_properties: bool = True,
         all_versions: bool = False,
@@ -82,18 +85,26 @@ class ViewsAPI(APIClient):
         Yields:
             View: yields Views one by one.
         """
-        return cast(Iterator[View], self())
+        return self()
+
+    def _get_latest_views(self, views: ViewList) -> ViewList:
+        views_by_space_and_xid = defaultdict(list)
+        for view in views:
+            views_by_space_and_xid[(view.space, view.external_id)].append(view)
+        return ViewList([max(views, key=lambda view: view.created_time) for views in views_by_space_and_xid.values()])
 
     def retrieve(
         self,
         ids: ViewIdentifier | Sequence[ViewIdentifier],
         include_inherited_properties: bool = True,
+        all_versions: bool = True,
     ) -> ViewList:
         """`Retrieve one or more views by ID <https://developer.cognite.com/api#tag/Views/operation/byExternalIdsViews>`_.
 
         Args:
-            ids (ViewId | Sequence[ViewId]): View dentifier(s)
+            ids (ViewId | Sequence[ViewId]): View identifier(s)
             include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
+            all_versions (bool): Whether to return all versions. If false, only the newest version is returned,
 
         Returns:
             Optional[View]: Requested view or None if it does not exist.
@@ -106,12 +117,17 @@ class ViewsAPI(APIClient):
 
         """
         identifier = _load_identifier(ids, "view")
-        return self._retrieve_multiple(
+        views = self._retrieve_multiple(
             list_cls=ViewList,
             resource_cls=View,
             identifiers=identifier,
             params={"includeInheritedProperties": include_inherited_properties},
+            executor=get_data_modeling_executor(),
         )
+        if all_versions is True:
+            return views
+        else:
+            return self._get_latest_views(views)
 
     def delete(self, ids: ViewIdentifier | Sequence[ViewIdentifier]) -> list[ViewId]:
         """`Delete one or more views <https://developer.cognite.com/api#tag/Views/operation/deleteViews>`_.
@@ -134,6 +150,7 @@ class ViewsAPI(APIClient):
                 identifiers=_load_identifier(ids, "view"),
                 wrap_ids=True,
                 returns_items=True,
+                executor=get_data_modeling_executor(),
             ),
         )
         return [ViewId(item["space"], item["externalId"], item["version"]) for item in deleted_views]
@@ -216,4 +233,10 @@ class ViewsAPI(APIClient):
                 ... ViewApply(space="mySpace",external_id="myOtherView",version="v1")]
                 >>> res = c.data_modeling.views.apply(views)
         """
-        return self._create_multiple(list_cls=ViewList, resource_cls=View, items=view, input_resource_cls=ViewApply)
+        return self._create_multiple(
+            list_cls=ViewList,
+            resource_cls=View,
+            items=view,
+            input_resource_cls=ViewApply,
+            executor=get_data_modeling_executor(),
+        )

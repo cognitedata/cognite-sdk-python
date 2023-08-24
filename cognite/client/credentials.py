@@ -172,7 +172,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         authority_url: str,
         client_id: str,
         scopes: List[str],
-        token_cache_path: Path = None,
+        token_cache_path: Optional[Path] = None,
         token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT,
     ) -> None:
         super().__init__(token_expiry_leeway_seconds)
@@ -250,7 +250,7 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         client_id: str,
         scopes: List[str],
         redirect_port: int = 53000,
-        token_cache_path: Path = None,
+        token_cache_path: Optional[Path] = None,
         token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT,
     ) -> None:
 
@@ -296,6 +296,41 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
 
         self._verify_credentials(credentials)
         return credentials["access_token"], time.time() + credentials["expires_in"]
+
+    @classmethod
+    def default_for_azure_ad(
+        cls,
+        tenant_id: str,
+        client_id: str,
+        cdf_cluster: str,
+        token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT,
+        **token_custom_args: Any,
+    ) -> OAuthInteractive:
+        """
+        Create an OAuthClientCredentials instance for Azure with default token URL and scopes.
+
+        The default configuration creates the URLs based on the tenant id and cluster:
+
+        * Authority URL: "https://login.microsoftonline.com/{tenant_id}"
+        * Scopes: [f"https://{cdf_cluster}.cognitedata.com/.default"]
+
+        Args:
+            tenant_id: The Azure tenant id
+            cdf_cluster: The CDF cluster where the CDF project is located.
+            client_id: Your application's client id.
+            token_expiry_leeway_seconds: The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 15 sec
+            **token_custom_args: Optional additional arguments to pass as query parameters to the token fetch request.
+
+        Returns:
+            An OAuthInteractive instance
+        """
+        return cls(
+            authority_url=f"https://login.microsoftonline.com/{tenant_id}",
+            client_id=client_id,
+            scopes=[f"https://{cdf_cluster}.cognitedata.com/.default"],
+            token_expiry_leeway_seconds=token_expiry_leeway_seconds,
+            **token_custom_args,
+        )
 
 
 class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
@@ -400,6 +435,44 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
             raise CogniteAuthError(
                 f"Error generating access token: {oauth_err.error}, {oauth_err.status_code}, {oauth_err.description}"
             ) from oauth_err
+
+    @classmethod
+    def default_for_azure_ad(
+        cls,
+        tenant_id: str,
+        client_id: str,
+        client_secret: str,
+        cdf_cluster: str,
+        token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT,
+        **token_custom_args: Any,
+    ) -> OAuthClientCredentials:
+        """
+        Create an OAuthClientCredentials instance for Azure with default token URL and scopes.
+
+        The default configuration creates the URLs based on the tenant id and cluster/oauth2/v2.0/token:
+
+        * Token URL: "https://login.microsoftonline.com/{tenant_id}"
+        * Scopes: [f"https://{cdf_cluster}.cognitedata.com/.default"]
+
+        Args:
+            tenant_id: The Azure tenant id
+            cdf_cluster: The CDF cluster where the CDF project is located.
+            client_id: Your application's client id.
+            client_secret: Your application's client secret.
+            token_expiry_leeway_seconds: The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 15 sec
+            **token_custom_args: Optional additional arguments to pass as query parameters to the token fetch request.
+
+        Returns:
+            An OAuthClientCredentials instance
+        """
+        return cls(
+            token_url=f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token",
+            client_id=client_id,
+            client_secret=client_secret,
+            scopes=[f"https://{cdf_cluster}.cognitedata.com/.default"],
+            token_expiry_leeway_seconds=token_expiry_leeway_seconds,
+            **token_custom_args,
+        )
 
 
 class OAuthClientCertificate(_OAuthCredentialProviderWithTokenRefresh):

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from operator import attrgetter
 from typing import Any, Generic, List, Literal, Optional, TypeVar, Union, cast
 
 from cognite.client.data_classes._base import (
@@ -29,9 +30,9 @@ class DataModelCore(DataModelingResource):
         space: str,
         external_id: str,
         version: str,
-        description: str = None,
-        name: str = None,
-        **_: dict,
+        description: Optional[str] = None,
+        name: Optional[str] = None,
+        **_: Any,
     ):
         self.space = space
         self.external_id = external_id
@@ -60,9 +61,9 @@ class DataModelApply(DataModelCore):
         space: str,
         external_id: str,
         version: str,
-        description: str = None,
-        name: str = None,
-        views: list[ViewId | ViewApply] = None,
+        description: Optional[str] = None,
+        name: Optional[str] = None,
+        views: Optional[list[ViewId | ViewApply]] = None,
     ):
         validate_data_modeling_identifier(space, external_id)
         super().__init__(space, external_id, version, description, name)
@@ -118,10 +119,10 @@ class DataModel(DataModelCore, Generic[T_View]):
         is_global: bool,
         last_updated_time: int,
         created_time: int,
-        description: str = None,
-        name: str = None,
+        description: Optional[str] = None,
+        name: Optional[str] = None,
         views: Optional[list[T_View]] = None,
-        **_: dict,
+        **_: Any,
     ):
         super().__init__(space, external_id, version, description, name)
         self.views: list[T_View] = views or []
@@ -175,12 +176,53 @@ class DataModel(DataModelCore, Generic[T_View]):
 class DataModelApplyList(CogniteResourceList[DataModelApply]):
     _RESOURCE = DataModelApply
 
+    def as_ids(self) -> list[DataModelId]:
+        """
+        Convert the list of data models to a list of data model ids.
+
+        Returns:
+            list[DataModelId]: The list of data model ids.
+        """
+        return [d.as_id() for d in self]
+
 
 class DataModelList(CogniteResourceList[DataModel[T_View]]):
     _RESOURCE = DataModel
 
-    def to_data_model_apply_list(self) -> DataModelApplyList:
-        return DataModelApplyList(resources=[d.as_apply() for d in self.items])
+    def as_apply(self) -> DataModelApplyList:
+        """
+        Convert the list of data models to a list of data model applies.
+
+        Returns:
+            DataModelApplyList: The list of data model applies.
+        """
+        return DataModelApplyList([d.as_apply() for d in self])
+
+    def latest_version(self, key: Literal["created_time", "last_updated_time"] = "created_time") -> DataModel[T_View]:
+        """
+        Get the data model in the list with the latest version. The latest version is determined based on the
+        created_time or last_updated_time field.
+
+        Args:
+            key (Literal["created_time", "last_updated_time"]): The field to use for determining the latest version.
+
+        Returns:
+            DataModel: The data model with the latest version.
+        """
+        if not self:
+            raise ValueError("No data models in list")
+        if key not in ("created_time", "last_updated_time"):
+            raise ValueError(f"Unexpected key {key}")
+        return max(self, key=attrgetter(key))
+
+    def as_ids(self) -> list[DataModelId]:
+        """
+        Convert the list of data models to a list of data model ids.
+
+        Returns:
+            list[DataModelId]: The list of data model ids.
+        """
+        return [d.as_id() for d in self]
 
 
 class DataModelFilter(CogniteFilter):
@@ -196,7 +238,7 @@ class DataModelFilter(CogniteFilter):
 
     def __init__(
         self,
-        space: str = None,
+        space: Optional[str] = None,
         inline_views: bool = False,
         all_versions: bool = False,
         include_global: bool = False,

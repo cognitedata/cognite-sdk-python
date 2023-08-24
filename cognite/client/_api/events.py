@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Iterator, List, Optional, Sequence, Union, cast, overload
+from typing import Any, Dict, Iterator, List, Literal, Optional, Sequence, Union, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import LIST_LIMIT_DEFAULT
@@ -23,26 +23,26 @@ class EventsAPI(APIClient):
 
     def __call__(
         self,
-        chunk_size: int = None,
-        start_time: Union[Dict[str, Any], TimestampRange] = None,
-        end_time: Union[Dict[str, Any], EndTimeFilter] = None,
-        active_at_time: Union[Dict[str, Any], TimestampRange] = None,
-        type: str = None,
-        subtype: str = None,
-        metadata: Dict[str, str] = None,
-        asset_ids: Sequence[int] = None,
-        asset_external_ids: Sequence[str] = None,
-        asset_subtree_ids: Union[int, Sequence[int]] = None,
-        asset_subtree_external_ids: Union[str, Sequence[str]] = None,
-        data_set_ids: Union[int, Sequence[int]] = None,
-        data_set_external_ids: Union[str, Sequence[str]] = None,
-        source: str = None,
-        created_time: Union[Dict[str, Any], TimestampRange] = None,
-        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        external_id_prefix: str = None,
-        sort: Sequence[str] = None,
-        limit: int = None,
-        partitions: int = None,
+        chunk_size: Optional[int] = None,
+        start_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        end_time: Optional[Union[Dict[str, Any], EndTimeFilter]] = None,
+        active_at_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        type: Optional[str] = None,
+        subtype: Optional[str] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        asset_ids: Optional[Sequence[int]] = None,
+        asset_external_ids: Optional[Sequence[str]] = None,
+        asset_subtree_ids: Optional[Union[int, Sequence[int]]] = None,
+        asset_subtree_external_ids: Optional[Union[str, Sequence[str]]] = None,
+        data_set_ids: Optional[Union[int, Sequence[int]]] = None,
+        data_set_external_ids: Optional[Union[str, Sequence[str]]] = None,
+        source: Optional[str] = None,
+        created_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        last_updated_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        external_id_prefix: Optional[str] = None,
+        sort: Optional[Sequence[str]] = None,
+        limit: Optional[int] = None,
+        partitions: Optional[int] = None,
     ) -> Union[Iterator[Event], Iterator[EventList]]:
         """Iterate over events
 
@@ -180,24 +180,24 @@ class EventsAPI(APIClient):
 
     def list(
         self,
-        start_time: Union[Dict[str, Any], TimestampRange] = None,
-        end_time: Union[Dict[str, Any], EndTimeFilter] = None,
-        active_at_time: Union[Dict[str, Any], TimestampRange] = None,
-        type: str = None,
-        subtype: str = None,
-        metadata: Dict[str, str] = None,
-        asset_ids: Sequence[int] = None,
-        asset_external_ids: Sequence[str] = None,
-        asset_subtree_ids: Union[int, Sequence[int]] = None,
-        asset_subtree_external_ids: Union[str, Sequence[str]] = None,
-        data_set_ids: Union[int, Sequence[int]] = None,
-        data_set_external_ids: Union[str, Sequence[str]] = None,
-        source: str = None,
-        created_time: Union[Dict[str, Any], TimestampRange] = None,
-        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        external_id_prefix: str = None,
-        sort: Sequence[str] = None,
-        partitions: int = None,
+        start_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        end_time: Optional[Union[Dict[str, Any], EndTimeFilter]] = None,
+        active_at_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        type: Optional[str] = None,
+        subtype: Optional[str] = None,
+        metadata: Optional[Dict[str, str]] = None,
+        asset_ids: Optional[Sequence[int]] = None,
+        asset_external_ids: Optional[Sequence[str]] = None,
+        asset_subtree_ids: Optional[Union[int, Sequence[int]]] = None,
+        asset_subtree_external_ids: Optional[Union[str, Sequence[str]]] = None,
+        data_set_ids: Optional[Union[int, Sequence[int]]] = None,
+        data_set_external_ids: Optional[Union[str, Sequence[str]]] = None,
+        source: Optional[str] = None,
+        created_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        last_updated_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        external_id_prefix: Optional[str] = None,
+        sort: Optional[Sequence[str]] = None,
+        partitions: Optional[int] = None,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> EventList:
         """`List events <https://developer.cognite.com/api#tag/Events/operation/advancedListEvents>`_.
@@ -284,7 +284,7 @@ class EventsAPI(APIClient):
             sort=sort,
         )
 
-    def aggregate(self, filter: Union[EventFilter, Dict] = None) -> List[AggregateResult]:
+    def aggregate(self, filter: Optional[Union[EventFilter, Dict]] = None) -> List[AggregateResult]:
         """`Aggregate events <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_.
 
         Args:
@@ -305,7 +305,7 @@ class EventsAPI(APIClient):
         return self._aggregate(filter=filter, cls=AggregateResult)
 
     def aggregate_unique_values(
-        self, filter: Union[EventFilter, Dict] = None, fields: Sequence[str] = None
+        self, filter: Optional[Union[EventFilter, Dict]] = None, fields: Optional[Sequence[str]] = None
     ) -> List[AggregateUniqueValuesResult]:
         """`Aggregate unique values for events <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_.
 
@@ -358,8 +358,8 @@ class EventsAPI(APIClient):
 
     def delete(
         self,
-        id: Union[int, Sequence[int]] = None,
-        external_id: Union[str, Sequence[str]] = None,
+        id: Optional[Union[int, Sequence[int]]] = None,
+        external_id: Optional[Union[str, Sequence[str]]] = None,
         ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete one or more events <https://developer.cognite.com/api#tag/Events/operation/deleteEvents>`_.
@@ -422,9 +422,10 @@ class EventsAPI(APIClient):
         """
         return self._update_multiple(list_cls=EventList, resource_cls=Event, update_cls=EventUpdate, items=item)
 
-    def search(self, description: str = None, filter: Union[EventFilter, Dict] = None, limit: int = 100) -> EventList:
+    def search(
+        self, description: Optional[str] = None, filter: Optional[Union[EventFilter, Dict]] = None, limit: int = 100
+    ) -> EventList:
         """`Search for events <https://developer.cognite.com/api#tag/Events/operation/searchEvents>`_.
-
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:
@@ -444,3 +445,48 @@ class EventsAPI(APIClient):
                 >>> res = c.events.search(description="some description")
         """
         return self._search(list_cls=EventList, search={"description": description}, filter=filter or {}, limit=limit)
+
+    @overload
+    def upsert(self, item: Sequence[Event], mode: Literal["patch", "replace"] = "patch") -> EventList:
+        ...
+
+    @overload
+    def upsert(self, item: Event, mode: Literal["patch", "replace"] = "patch") -> Event:
+        ...
+
+    def upsert(self, item: Event | Sequence[Event], mode: Literal["patch", "replace"] = "patch") -> Event | EventList:
+        """Upsert events, i.e., update if it exists, and create if it does not exist.
+         Note this is a convenience method that handles the upserting for you by first calling update on all items,
+         and if any of them fail because they do not exist, it will create them instead.
+
+         For more details, see :ref:`appendix-upsert`.
+
+        Args:
+            item (Event | Sequence[Event]): Event or list of events to upsert.
+            mode (Literal["patch", "replace"])): Whether to patch or replace in the case the events are existing. If
+                                                you set 'patch', the call will only update fields with non-null values (default).
+                                                Setting 'replace' will unset any fields that are not specified.
+
+        Returns:
+            Event | EventList: The upserted event(s).
+
+        Examples:
+
+            Upsert for events:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import Event
+                >>> c = CogniteClient()
+                >>> existing_event = c.events.retrieve(id=1)
+                >>> existing_event.description = "New description"
+                >>> new_event = Event(external_id="new_event", description="New event")
+                >>> res = c.events.upsert([existing_event, new_event], mode="replace")
+        """
+        return self._upsert_multiple(
+            item,
+            list_cls=EventList,
+            resource_cls=Event,
+            update_cls=EventUpdate,
+            input_resource_cls=Event,
+            mode=mode,
+        )

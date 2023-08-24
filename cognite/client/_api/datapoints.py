@@ -1240,8 +1240,8 @@ class DatapointsAPI(APIClient):
         | DatapointsArray
         | Sequence[dict[str, int | float | str | datetime]]
         | Sequence[tuple[int | float | datetime, int | float | str]],
-        id: int = None,
-        external_id: str = None,
+        id: Optional[int] = None,
+        external_id: Optional[str] = None,
     ) -> None:
         """Insert datapoints into a time series.
 
@@ -1347,7 +1347,11 @@ class DatapointsAPI(APIClient):
         dps_poster.insert(datapoints)
 
     def delete_range(
-        self, start: int | str | datetime, end: int | str | datetime, id: int = None, external_id: str = None
+        self,
+        start: int | str | datetime,
+        end: int | str | datetime,
+        id: Optional[int] = None,
+        external_id: Optional[str] = None,
     ) -> None:
         """Delete a range of datapoints from a time series.
 

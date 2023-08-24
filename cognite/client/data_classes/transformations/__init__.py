@@ -10,6 +10,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    PropertySpec,
 )
 from cognite.client.data_classes.iam import ClientCredentials
 from cognite.client.data_classes.shared import TimestampRange
@@ -40,9 +41,9 @@ class SessionDetails:
 
     def __init__(
         self,
-        session_id: int = None,
-        client_id: str = None,
-        project_name: str = None,
+        session_id: Optional[int] = None,
+        client_id: Optional[str] = None,
+        project_name: Optional[str] = None,
     ):
         self.session_id = session_id
         self.client_id = client_id
@@ -97,28 +98,28 @@ class Transformation(CogniteResource):
 
     def __init__(
         self,
-        id: int = None,
-        external_id: str = None,
-        name: str = None,
-        query: str = None,
-        destination: TransformationDestination = None,
-        conflict_mode: str = None,
+        id: Optional[int] = None,
+        external_id: Optional[str] = None,
+        name: Optional[str] = None,
+        query: Optional[str] = None,
+        destination: Optional[TransformationDestination] = None,
+        conflict_mode: Optional[str] = None,
         is_public: bool = True,
         ignore_null_fields: bool = False,
         source_oidc_credentials: Optional[OidcCredentials] = None,
         destination_oidc_credentials: Optional[OidcCredentials] = None,
         created_time: Optional[int] = None,
         last_updated_time: Optional[int] = None,
-        owner: str = None,
+        owner: Optional[str] = None,
         owner_is_current_user: bool = True,
         has_source_oidc_credentials: Optional[bool] = None,
         has_destination_oidc_credentials: Optional[bool] = None,
-        running_job: TransformationJob = None,
-        last_finished_job: TransformationJob = None,
-        blocked: TransformationBlockedInfo = None,
-        schedule: TransformationSchedule = None,
-        data_set_id: int = None,
-        cognite_client: CogniteClient = None,
+        running_job: Optional[TransformationJob] = None,
+        last_finished_job: Optional[TransformationJob] = None,
+        blocked: Optional[TransformationBlockedInfo] = None,
+        schedule: Optional[TransformationSchedule] = None,
+        data_set_id: Optional[int] = None,
+        cognite_client: Optional[CogniteClient] = None,
         source_nonce: Optional[NonceCredentials] = None,
         destination_nonce: Optional[NonceCredentials] = None,
         source_session: Optional[SessionDetails] = None,
@@ -186,7 +187,9 @@ class Transformation(CogniteResource):
             self.tags,
         )
 
-    def _process_credentials(self, sessions_cache: Dict[str, NonceCredentials] = None, keep_none: bool = False) -> None:
+    def _process_credentials(
+        self, sessions_cache: Optional[Dict[str, NonceCredentials]] = None, keep_none: bool = False
+    ) -> None:
         if sessions_cache is None:
             sessions_cache = {}
 
@@ -247,7 +250,7 @@ class Transformation(CogniteResource):
         return self._cognite_client.transformations.jobs.list(transformation_id=self.id)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> Transformation:
+    def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> Transformation:
         instance = super()._load(resource, cognite_client)
         if isinstance(instance.destination, dict):
             instance.destination = _load_destination_dct(instance.destination)
@@ -391,6 +394,24 @@ class TransformationUpdate(CogniteUpdate):
                 update["set"] = item.dump(camel_case=camel_case)
         return obj
 
+    @classmethod
+    def _get_update_properties(cls) -> list[PropertySpec]:
+        return [
+            PropertySpec("external_id", is_nullable=False),
+            PropertySpec("name", is_nullable=False),
+            PropertySpec("destination", is_nullable=False),
+            PropertySpec("conflict_mode", is_nullable=False),
+            PropertySpec("query", is_nullable=False),
+            PropertySpec("source_oidc_credentials"),
+            PropertySpec("destination_oidc_credentials"),
+            PropertySpec("source_nonce"),
+            PropertySpec("destination_nonce"),
+            PropertySpec("is_public", is_nullable=False),
+            PropertySpec("ignore_null_fields", is_nullable=False),
+            PropertySpec("data_set_id"),
+            PropertySpec("tags", is_container=True),
+        ]
+
 
 class TransformationList(CogniteResourceList):
     _RESOURCE = Transformation
@@ -412,11 +433,11 @@ class ContainsAny(TagsFilter):
 
             List only resources marked as a PUMP or as a VALVE::
 
-                >>> from cognite.client.data_classes import ContainsAny
+                >>> from cognite.client.data_classes.transformations import ContainsAny
                 >>> my_tag_filter = ContainsAny(tags=["PUMP", "VALVE"])
     """
 
-    def __init__(self, tags: List[str] = None):
+    def __init__(self, tags: Optional[List[str]] = None):
         self.tags = tags
 
     def dump(self, camel_case: bool = True) -> Dict[str, Any]:
@@ -444,16 +465,16 @@ class TransformationFilter(CogniteFilter):
     def __init__(
         self,
         include_public: bool = True,
-        name_regex: str = None,
-        query_regex: str = None,
-        destination_type: str = None,
-        conflict_mode: str = None,
-        cdf_project_name: str = None,
-        has_blocked_error: bool = None,
-        created_time: Union[Dict[str, Any], TimestampRange] = None,
-        last_updated_time: Union[Dict[str, Any], TimestampRange] = None,
-        data_set_ids: List[Dict[str, Any]] = None,
-        tags: TagsFilter = None,
+        name_regex: Optional[str] = None,
+        query_regex: Optional[str] = None,
+        destination_type: Optional[str] = None,
+        conflict_mode: Optional[str] = None,
+        cdf_project_name: Optional[str] = None,
+        has_blocked_error: Optional[bool] = None,
+        created_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        last_updated_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
+        data_set_ids: Optional[List[Dict[str, Any]]] = None,
+        tags: Optional[TagsFilter] = None,
     ):
         self.include_public = include_public
         self.name_regex = name_regex
@@ -498,16 +519,18 @@ class TransformationPreviewResult(CogniteResource):
 
     def __init__(
         self,
-        schema: TransformationSchemaColumnList = None,
-        results: List[Dict] = None,
-        cognite_client: CogniteClient = None,
+        schema: Optional[TransformationSchemaColumnList] = None,
+        results: Optional[List[Dict]] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ) -> None:
         self.schema = schema
         self.results = results
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: CogniteClient = None) -> TransformationPreviewResult:
+    def _load(
+        cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None
+    ) -> TransformationPreviewResult:
         instance = super()._load(resource, cognite_client)
         if isinstance(instance.schema, Dict):
             items = instance.schema.get("items")

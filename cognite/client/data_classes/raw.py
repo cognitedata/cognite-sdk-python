@@ -24,10 +24,10 @@ class Row(CogniteResource):
 
     def __init__(
         self,
-        key: str = None,
-        columns: Dict[str, Any] = None,
-        last_updated_time: int = None,
-        cognite_client: CogniteClient = None,
+        key: Optional[str] = None,
+        columns: Optional[Dict[str, Any]] = None,
+        last_updated_time: Optional[int] = None,
+        cognite_client: Optional[CogniteClient] = None,
     ):
         self.key = key
         self.columns = columns
@@ -66,14 +66,19 @@ class Table(CogniteResource):
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
-    def __init__(self, name: str = None, created_time: int = None, cognite_client: CogniteClient = None):
+    def __init__(
+        self,
+        name: Optional[str] = None,
+        created_time: Optional[int] = None,
+        cognite_client: Optional[CogniteClient] = None,
+    ):
         self.name = name
         self.created_time = created_time
         self._cognite_client = cast("CogniteClient", cognite_client)
 
         self._db_name: Optional[str] = None
 
-    def rows(self, key: str = None, limit: int = None) -> Union[Row, RowList]:
+    def rows(self, key: Optional[str] = None, limit: Optional[int] = None) -> Union[Row, RowList]:
         """Get the rows in this table.
 
         Args:
@@ -101,12 +106,17 @@ class Database(CogniteResource):
         cognite_client (CogniteClient): The client to associate with this object.
     """
 
-    def __init__(self, name: str = None, created_time: int = None, cognite_client: CogniteClient = None):
+    def __init__(
+        self,
+        name: Optional[str] = None,
+        created_time: Optional[int] = None,
+        cognite_client: Optional[CogniteClient] = None,
+    ):
         self.name = name
         self.created_time = created_time
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def tables(self, limit: int = None) -> TableList:
+    def tables(self, limit: Optional[int] = None) -> TableList:
         """Get the tables in this database.
 
         Args:
