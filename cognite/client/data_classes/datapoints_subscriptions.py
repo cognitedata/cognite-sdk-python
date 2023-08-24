@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from enum import auto
 from typing import TYPE_CHECKING, Any, Optional, Type
 
 from cognite.client.data_classes import Datapoints, filters
@@ -11,6 +12,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    EnumProperty,
     PropertySpec,
     T_CogniteResource,
 )
@@ -369,17 +371,17 @@ def _metadata(key: str) -> list[str]:
     return ["metadata", key]
 
 
-class DatapointSubscriptionFilterProperties:
-    description = ["description"]
-    external_id = ["externalId"]
+class DatapointSubscriptionFilterProperties(EnumProperty):
+    description = auto()
+    external_id = auto()
     metadata = _metadata
-    name = ["name"]
-    unit = ["unit"]
-    asset_id = ["assetId"]
-    asset_root_id = ["assetRootId"]
-    created_time = ["createdTime"]
-    data_set_id = ["dataSetId"]
-    id = ["id"]
-    last_updated_time = ["lastUpdatedTime"]
-    is_step = ["isStep"]
-    is_string = ["isString"]
+    name = auto()  # type: ignore [assignment]
+    unit = auto()
+    asset_id = auto()
+    asset_root_id = auto()
+    created_time = auto()
+    data_set_id = auto()
+    id = auto()
+    last_updated_time = auto()
+    is_step = auto()
+    is_string = auto()
