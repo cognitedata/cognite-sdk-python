@@ -538,6 +538,11 @@ T_CogniteFilter = TypeVar("T_CogniteFilter", bound=CogniteFilter)
 
 
 class EnumProperty(Enum):
+    @staticmethod
+    def _generate_next_value_(name: str, *_: Any) -> str:
+        # Allows the use of enum.auto() for member values avoiding camelCase typos
+        return to_camel_case(name)
+
     def as_reference(self) -> list[str]:
         return [self.value]
 
@@ -668,9 +673,7 @@ class Sort:
                 nulls=data[2],  # type: ignore[misc]
             )
         elif isinstance(data, (str, list, EnumProperty)):
-            return cls(
-                property=data,
-            )
+            return cls(property=data)
         else:
             raise ValueError(f"Unable to load {cls.__name__} from {data}")
 
@@ -685,10 +688,7 @@ class Sort:
         else:
             raise ValueError(f"Unable to dump {type(self).__name__} with property {prop}")
 
-        output: dict[str, str | list[str]] = {
-            "property": prop,
-            "order": self.order,
-        }
+        output: dict[str, str | list[str]] = {"property": prop, "order": self.order}
         if self.nulls is not None:
             output["nulls"] = self.nulls
         return output

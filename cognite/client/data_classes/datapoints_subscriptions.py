@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, Optional, Type
+from enum import auto
+from typing import TYPE_CHECKING, Any, Optional, Type
 
 from cognite.client.data_classes import Datapoints, filters
 from cognite.client.data_classes._base import (
@@ -11,6 +12,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    EnumProperty,
     PropertySpec,
     T_CogniteResource,
 )
@@ -365,58 +367,21 @@ class DatapointSubscriptionList(CogniteResourceList[DatapointSubscription]):
     _RESOURCE = DatapointSubscription
 
 
-class _DatapointSubscriptionFilterProperties:
-    @property
-    def description(self) -> list[Literal["description"]]:
-        return ["description"]
-
-    @property
-    def external_id(self) -> list[Literal["externalId"]]:
-        return ["externalId"]
-
-    @staticmethod
-    def metadata(key: str) -> list[str]:
-        return ["metadata", key]
-
-    @property
-    def name(self) -> list[Literal["name"]]:
-        return ["name"]
-
-    @property
-    def unit(self) -> list[Literal["unit"]]:
-        return ["unit"]
-
-    @property
-    def asset_id(self) -> list[Literal["assetId"]]:
-        return ["assetId"]
-
-    @property
-    def asset_root_id(self) -> list[Literal["assetRootId"]]:
-        return ["assetRootId"]
-
-    @property
-    def created_time(self) -> list[Literal["createdTime"]]:
-        return ["createdTime"]
-
-    @property
-    def data_set_id(self) -> list[Literal["dataSetId"]]:
-        return ["dataSetId"]
-
-    @property
-    def id(self) -> list[Literal["id"]]:
-        return ["id"]
-
-    @property
-    def last_updated_time(self) -> list[Literal["lastUpdatedTime"]]:
-        return ["lastUpdatedTime"]
-
-    @property
-    def is_step(self) -> list[Literal["isStep"]]:
-        return ["isStep"]
-
-    @property
-    def is_string(self) -> list[Literal["isString"]]:
-        return ["isString"]
+def _metadata(key: str) -> list[str]:
+    return ["metadata", key]
 
 
-DatapointSubscriptionFilterProperties = _DatapointSubscriptionFilterProperties()
+class DatapointSubscriptionFilterProperties(EnumProperty):
+    description = auto()
+    external_id = auto()
+    metadata = _metadata
+    name = auto()  # type: ignore [assignment]
+    unit = auto()
+    asset_id = auto()
+    asset_root_id = auto()
+    created_time = auto()
+    data_set_id = auto()
+    id = auto()
+    last_updated_time = auto()
+    is_step = auto()
+    is_string = auto()
