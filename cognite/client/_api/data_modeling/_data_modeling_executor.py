@@ -21,10 +21,10 @@ def get_data_modeling_executor() -> TaskExecutor:
 
     if ConcurrencySettings.executor_type == "threadpool":
         try:
-            executor: TaskExecutor = _THREAD_POOL_EXECUTOR_SINGLETON
+            executor: TaskExecutor = _THREAD_POOL_EXECUTOR_SINGLETON  # type: ignore
         except NameError:
             # TPE has not been initialized
-            executor = _THREAD_POOL_EXECUTOR_SINGLETON = ThreadPoolExecutor(_MAX_WORKERS)
+            executor = _THREAD_POOL_EXECUTOR_SINGLETON = ThreadPoolExecutor(_MAX_WORKERS)  # type: ignore
     elif ConcurrencySettings.executor_type == "mainthread":
         executor = _MAIN_THREAD_EXECUTOR_SINGLETON
     else:

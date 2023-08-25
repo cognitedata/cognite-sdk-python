@@ -155,7 +155,7 @@ class DiagramsAPI(APIClient):
         *,
         multiple_jobs: bool = False,
     ) -> Union[DiagramDetectResults, Tuple[Optional[DetectJobBundle], List[Dict[str, Any]]]]:
-        """Detect entities in a PNID. The results are not written to CDF.
+        """Detect entities in a P&ID. The results are not written to CDF.
 
         Note:
             All users on this CDF subscription with assets read-all and files read-all capabilities in the project,
@@ -237,6 +237,14 @@ class DiagramsAPI(APIClient):
         )
 
     def get_detect_jobs(self, job_ids: List[int]) -> List[DiagramDetectResults]:
+        """Get detection jobs result status.
+
+        Args:
+            job_ids (List[int]): ...
+
+        Returns:
+            List[DiagramDetectResults]: ...
+        """
         if self._cognite_client is None:
             raise CogniteMissingClientError
         res = self._cognite_client.diagrams._post("/context/diagram/detect/status", json={"items": job_ids})

@@ -104,7 +104,7 @@ class DataModelsAPI(APIClient):
     def retrieve(
         self, ids: DataModelIdentifier | Sequence[DataModelIdentifier], inline_views: bool = False
     ) -> DataModelList[ViewId] | DataModelList[View]:
-        """`Retrieve data_model(s) by id(s). <https://developer.cognite.com/api#tag/Data-models/operation/byExternalIdsDataModels>`_
+        """`Retrieve one or more data models by ID <https://developer.cognite.com/api#tag/Data-models/operation/byExternalIdsDataModels>`_.
 
         Args:
             ids (DataModelId | Sequence[DataModelId]): Data Model identifier(s).
@@ -130,7 +130,7 @@ class DataModelsAPI(APIClient):
         )
 
     def delete(self, ids: DataModelIdentifier | Sequence[DataModelIdentifier]) -> list[DataModelId]:
-        """`Delete one or more data model <https://developer.cognite.com/api#tag/Data-models/operation/deleteDataModels>`_
+        """`Delete one or more data models <https://developer.cognite.com/api#tag/Data-models/operation/deleteDataModels>`_.
 
         Args:
             ids (DataModelId | Sequence[DataModelId]): Data Model identifier(s).
@@ -185,7 +185,7 @@ class DataModelsAPI(APIClient):
         all_versions: bool = False,
         include_global: bool = False,
     ) -> DataModelList[View] | DataModelList[ViewId]:
-        """`List data models <https://developer.cognite.com/api#tag/Data-models/operation/listDataModels>`_
+        """`List data models <https://developer.cognite.com/api#tag/Data-models/operation/listDataModels>`_.
 
         Args:
             inline_views (bool): Whether to expand the referenced views inline in the returned result.
@@ -240,7 +240,7 @@ class DataModelsAPI(APIClient):
         ...
 
     def apply(self, data_model: DataModelApply | Sequence[DataModelApply]) -> DataModel | DataModelList:
-        """`Create or update one or more data model. <https://developer.cognite.com/api#tag/Data-models/operation/createDataModels>`_
+        """`Create or update one or more data models <https://developer.cognite.com/api#tag/Data-models/operation/createDataModels>`_.
 
         Args:
             data_model (data_model: DataModelApply | Sequence[DataModelApply]): DataModel or data model to create or update (upsert).

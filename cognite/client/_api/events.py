@@ -148,7 +148,7 @@ class EventsAPI(APIClient):
         return cast(Iterator[Event], self())
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Event]:
-        """`Retrieve a single event by id. <https://developer.cognite.com/api#tag/Events/operation/getEventByInternalId>`_
+        """`Retrieve a single event by ID <https://developer.cognite.com/api#tag/Events/operation/getEventByInternalId>`_.
 
         Args:
             id (int, optional): ID
@@ -180,7 +180,7 @@ class EventsAPI(APIClient):
         external_ids: Optional[Sequence[str]] = None,
         ignore_unknown_ids: bool = False,
     ) -> EventList:
-        """`Retrieve multiple events by id. <https://developer.cognite.com/api#tag/Events/operation/byIdsEvents>`_
+        """`Retrieve multiple events by ID <https://developer.cognite.com/api#tag/Events/operation/byIdsEvents>`_.
 
         Args:
             ids (Sequence[int], optional): IDs
@@ -231,7 +231,7 @@ class EventsAPI(APIClient):
         partitions: Optional[int] = None,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> EventList:
-        """`List events <https://developer.cognite.com/api#tag/Events/operation/advancedListEvents>`_
+        """`List events <https://developer.cognite.com/api#tag/Events/operation/advancedListEvents>`_.
 
         Args:
             start_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
@@ -316,7 +316,7 @@ class EventsAPI(APIClient):
         )
 
     def aggregate(self, filter: Optional[Union[EventFilter, Dict]] = None) -> List[AggregateResult]:
-        """`Aggregate events <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
+        """`Aggregate events <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_.
 
         Args:
             filter (Union[EventFilter, Dict]): Filter on events filter with exact match
@@ -364,7 +364,7 @@ class EventsAPI(APIClient):
         advanced_filter: Filter | dict | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
     ) -> List[AggregateUniqueValuesResult] | UniqueResultList:
-        """`Get unique properties with counts for events. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
+        """`Get unique properties with counts for events <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_.
 
         Args:
             fields (Sequence[str]): The fields to return. Defaults to ["count"].
@@ -435,7 +435,7 @@ class EventsAPI(APIClient):
         advanced_filter: Filter | dict | None = None,
         filter: EventFilter | dict | None = None,
     ) -> int:
-        """`Count of event matching the specified filters. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
+        """`Count of event matching the specified filters <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_.
 
         Args:
             property (EventPropertyLike | None): If specified, Get an approximate number of Events with a specific property
@@ -479,7 +479,7 @@ class EventsAPI(APIClient):
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: EventFilter | dict | None = None,
     ) -> int:
-        """`Find approximate property count for events. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
+        """`Find approximate property count for events <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_.
 
         Args:
             property (EventPropertyLike): The property to count the cardinality of.
@@ -525,7 +525,7 @@ class EventsAPI(APIClient):
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: EventFilter | dict | None = None,
     ) -> int:
-        """`Find approximate paths count for events. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
+        """`Find approximate paths count for events <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_.
 
         Args:
             path (EventPropertyLike): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
@@ -562,7 +562,7 @@ class EventsAPI(APIClient):
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: EventFilter | dict | None = None,
     ) -> UniqueResultList:
-        """`Get unique paths with counts for events. <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_
+        """`Get unique paths with counts for events <https://developer.cognite.com/api#tag/Events/operation/aggregateEvents>`_.
 
         Args:
             path (EventPropertyLike): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
@@ -603,7 +603,7 @@ class EventsAPI(APIClient):
         ...
 
     def create(self, event: Union[Event, Sequence[Event]]) -> Union[Event, EventList]:
-        """`Create one or more events. <https://developer.cognite.com/api#tag/Events/operation/createEvents>`_
+        """`Create one or more events <https://developer.cognite.com/api#tag/Events/operation/createEvents>`_.
 
         Args:
             event (Union[Event, Sequence[Event]]): Event or list of events to create.
@@ -629,7 +629,7 @@ class EventsAPI(APIClient):
         external_id: Optional[Union[str, Sequence[str]]] = None,
         ignore_unknown_ids: bool = False,
     ) -> None:
-        """`Delete one or more events <https://developer.cognite.com/api#tag/Events/operation/deleteEvents>`_
+        """`Delete one or more events <https://developer.cognite.com/api#tag/Events/operation/deleteEvents>`_.
 
         Args:
             id (Union[int, Sequence[int]): Id or list of ids
@@ -661,7 +661,7 @@ class EventsAPI(APIClient):
         ...
 
     def update(self, item: Union[Event, EventUpdate, Sequence[Union[Event, EventUpdate]]]) -> Union[Event, EventList]:
-        """`Update one or more events <https://developer.cognite.com/api#tag/Events/operation/updateEvents>`_
+        """`Update one or more events <https://developer.cognite.com/api#tag/Events/operation/updateEvents>`_.
 
         Args:
             item (Union[Event, EventUpdate, Sequence[Union[Event, EventUpdate]]]): Event(s) to update
@@ -692,7 +692,7 @@ class EventsAPI(APIClient):
     def search(
         self, description: Optional[str] = None, filter: Optional[Union[EventFilter, Dict]] = None, limit: int = 100
     ) -> EventList:
-        """`Search for events <https://developer.cognite.com/api#tag/Events/operation/searchEvents>`_
+        """`Search for events <https://developer.cognite.com/api#tag/Events/operation/searchEvents>`_.
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:

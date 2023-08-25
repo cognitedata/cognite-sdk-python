@@ -82,7 +82,8 @@ class NodeOrEdgeData:
 
 
 class InstanceCore(DataModelingResource):
-    """A node or edge
+    """A node or edge.
+
     Args:
         instance_type (Literal["node", "edge"]) The type of instance.
         space (str): The workspace for the instance.a unique identifier for the space.

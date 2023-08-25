@@ -26,7 +26,7 @@ class AnnotationsAPI(APIClient):
         ...
 
     def create(self, annotations: Union[Annotation, Sequence[Annotation]]) -> Union[Annotation, AnnotationList]:
-        """`Create annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsCreate>`_
+        """`Create one or more annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsCreate>`_.
 
         Args:
             annotations (Union[Annotation, Sequence[Annotation]]): annotation(s) to create
@@ -48,7 +48,7 @@ class AnnotationsAPI(APIClient):
         ...
 
     def suggest(self, annotations: Union[Annotation, Sequence[Annotation]]) -> Union[Annotation, AnnotationList]:
-        """`Suggest annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsSuggest>`_
+        """`Suggest one or more annotations, i.e. create them view status 'suggested' <https://developer.cognite.com/api#tag/Annotations/operation/annotationsSuggest>`_.
 
         Args:
             annotations (Union[Annotation, Sequence[Annotation]]): annotation(s) to suggest. They must have status set to "suggested".
@@ -81,7 +81,7 @@ class AnnotationsAPI(APIClient):
         return item
 
     def list(self, filter: Union[AnnotationFilter, Dict], limit: int = LIST_LIMIT_DEFAULT) -> AnnotationList:
-        """`List annotations. <https://developer.cognite.com/api#tag/Annotations/operation/annotationsFilter>`_
+        """`List annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsFilter>`_.
 
         Args:
             limit (int): Maximum number of annotations to return. Defaults to 25.
@@ -134,7 +134,7 @@ class AnnotationsAPI(APIClient):
     def update(
         self, item: Union[Annotation, AnnotationUpdate, Sequence[Union[Annotation, AnnotationUpdate]]]
     ) -> Union[Annotation, AnnotationList]:
-        """`Update annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsUpdate>`_
+        """`Update one or more annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsUpdate>`_.
 
         Args:
             item (Union[Annotation, AnnotationUpdate, Sequence[Union[Annotation, AnnotationUpdate]]]): Annotation or list of annotations to update (or patch or list of patches to apply)
@@ -144,7 +144,7 @@ class AnnotationsAPI(APIClient):
         )
 
     def delete(self, id: Union[int, Sequence[int]]) -> None:
-        """`Delete annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsDelete>`_
+        """`Delete one or more annotations <https://developer.cognite.com/api#tag/Annotations/operation/annotationsDelete>`_.
 
         Args:
             id (Union[int, Sequence[int]]): ID or list of IDs to be deleted
@@ -152,7 +152,7 @@ class AnnotationsAPI(APIClient):
         self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=True)
 
     def retrieve_multiple(self, ids: Sequence[int]) -> AnnotationList:
-        """`Retrieve annotations by IDs <https://developer.cognite.com/api#tag/Annotations/operation/annotationsByids>`_`
+        """`Retrieve annotations by IDs <https://developer.cognite.com/api#tag/Annotations/operation/annotationsByids>`_.
 
         Args:
             ids (Sequence[int]]: list of IDs to be retrieved
@@ -164,7 +164,7 @@ class AnnotationsAPI(APIClient):
         return self._retrieve_multiple(list_cls=AnnotationList, resource_cls=Annotation, identifiers=identifiers)
 
     def retrieve(self, id: int) -> Optional[Annotation]:
-        """`Retrieve an annotation by id <https://developer.cognite.com/api#tag/Annotations/operation/annotationsGet>`_
+        """`Retrieve an annotation by ID <https://developer.cognite.com/api#tag/Annotations/operation/annotationsGet>`_.
 
         Args:
             id (int): id of the annotation to be retrieved

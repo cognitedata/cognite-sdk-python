@@ -54,7 +54,7 @@ class RawDatabasesAPI(APIClient):
         ...
 
     def create(self, name: Union[str, List[str]]) -> Union[Database, DatabaseList]:
-        """`Create one or more databases. <https://developer.cognite.com/api#tag/Raw/operation/createDBs>`_
+        """`Create one or more databases <https://developer.cognite.com/api#tag/Raw/operation/createDBs>`_.
 
         Args:
             name (Union[str, List[str]]): A db name or list of db names to create.
@@ -78,7 +78,7 @@ class RawDatabasesAPI(APIClient):
         return self._create_multiple(list_cls=DatabaseList, resource_cls=Database, items=items)
 
     def delete(self, name: Union[str, Sequence[str]], recursive: bool = False) -> None:
-        """`Delete one or more databases. <https://developer.cognite.com/api#tag/Raw/operation/deleteDBs>`_
+        """`Delete one or more databases <https://developer.cognite.com/api#tag/Raw/operation/deleteDBs>`_.
 
         Args:
             name (Union[str, Sequence[str]]): A db name or list of db names to delete.
@@ -110,7 +110,7 @@ class RawDatabasesAPI(APIClient):
         )
 
     def list(self, limit: int = LIST_LIMIT_DEFAULT) -> DatabaseList:
-        """`List databases <https://developer.cognite.com/api#tag/Raw/operation/getDBs>`_
+        """`List databases <https://developer.cognite.com/api#tag/Raw/operation/getDBs>`_.
 
         Args:
             limit (int, optional): Maximum number of databases to return. Defaults to 25. Set to -1, float("inf") or None
@@ -178,7 +178,7 @@ class RawTablesAPI(APIClient):
         ...
 
     def create(self, db_name: str, name: Union[str, List[str]]) -> Union[Table, TableList]:
-        """`Create one or more tables. <https://developer.cognite.com/api#tag/Raw/operation/createTables>`_
+        """`Create one or more tables <https://developer.cognite.com/api#tag/Raw/operation/createTables>`_.
 
         Args:
             db_name (str): Database to create the tables in.
@@ -209,7 +209,7 @@ class RawTablesAPI(APIClient):
         return self._set_db_name_on_tables(tb, db_name)
 
     def delete(self, db_name: str, name: Union[str, Sequence[str]]) -> None:
-        """`Delete one or more tables. <https://developer.cognite.com/api#tag/Raw/operation/deleteTables>`_
+        """`Delete one or more tables <https://developer.cognite.com/api#tag/Raw/operation/deleteTables>`_.
 
         Args:
             db_name (str): Database to delete tables from.
@@ -244,7 +244,7 @@ class RawTablesAPI(APIClient):
         )
 
     def list(self, db_name: str, limit: int = LIST_LIMIT_DEFAULT) -> TableList:
-        """`List tables <https://developer.cognite.com/api#tag/Raw/operation/getTables>`_
+        """`List tables in a database <https://developer.cognite.com/api#tag/Raw/operation/getTables>`_.
 
         Args:
             db_name (str): The database to list tables from.
@@ -344,7 +344,7 @@ class RawRowsAPI(APIClient):
     def insert(
         self, db_name: str, table_name: str, row: Union[Sequence[Row], Row, Dict], ensure_parent: bool = False
     ) -> None:
-        """`Insert one or more rows into a table. <https://developer.cognite.com/api#tag/Raw/operation/postRows>`_
+        """`Insert one or more rows into a table <https://developer.cognite.com/api#tag/Raw/operation/postRows>`_.
 
         Args:
             db_name (str): Name of the database.
@@ -380,7 +380,7 @@ class RawRowsAPI(APIClient):
         )
 
     def insert_dataframe(self, db_name: str, table_name: str, dataframe: Any, ensure_parent: bool = False) -> None:
-        """`Insert pandas dataframe into a table <https://developer.cognite.com/api#tag/Raw/operation/postRows>`_
+        """`Insert pandas dataframe into a table <https://developer.cognite.com/api#tag/Raw/operation/postRows>`_.
 
         Use index as rowkeys.
 
@@ -425,7 +425,7 @@ class RawRowsAPI(APIClient):
         return utils._auxiliary.split_into_chunks(rows, self._CREATE_LIMIT)
 
     def delete(self, db_name: str, table_name: str, key: Union[str, Sequence[str]]) -> None:
-        """`Delete rows from a table. <https://developer.cognite.com/api#tag/Raw/operation/deleteRows>`_
+        """`Delete one or more rows from a table <https://developer.cognite.com/api#tag/Raw/operation/deleteRows>`_.
 
         Args:
             db_name (str): Name of the database.
@@ -465,7 +465,7 @@ class RawRowsAPI(APIClient):
         )
 
     def retrieve(self, db_name: str, table_name: str, key: str) -> Optional[Row]:
-        """`Retrieve a single row by key. <https://developer.cognite.com/api#tag/Raw/operation/getRow>`_
+        """`Retrieve a single row from a table by key <https://developer.cognite.com/api#tag/Raw/operation/getRow>`_.
 
         Args:
             db_name (str): Name of the database.
@@ -498,7 +498,7 @@ class RawRowsAPI(APIClient):
         columns: Optional[List[str]] = None,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> RowList:
-        """`List rows in a table. <https://developer.cognite.com/api#tag/Raw/operation/getRows>`_
+        """`List rows in a table <https://developer.cognite.com/api#tag/Raw/operation/getRows>`_.
 
         Args:
             db_name (str): Name of the database.
@@ -586,7 +586,7 @@ class RawRowsAPI(APIClient):
         columns: Optional[List[str]] = None,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> pandas.DataFrame:
-        """`Retrieve rows in a table as a pandas dataframe. <https://developer.cognite.com/api#tag/Raw/operation/getRows>`_
+        """`Retrieve rows in a table as a pandas dataframe <https://developer.cognite.com/api#tag/Raw/operation/getRows>`_.
 
         Rowkeys are used as the index.
 

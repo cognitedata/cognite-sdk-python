@@ -37,7 +37,7 @@ class DatapointsSubscriptionAPI(APIClient):
         )
 
     def create(self, subscription: DataPointSubscriptionCreate) -> DatapointSubscription:
-        """`Create a subscription <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/postSubscriptions>`_
+        """`Create a subscription <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/postSubscriptions>`_.
 
         Create a subscription that can be used to listen for changes in data points for a set of time series.
 
@@ -81,7 +81,9 @@ class DatapointsSubscriptionAPI(APIClient):
         )
 
     def delete(self, external_id: str | Sequence[str], ignore_unknown_ids: bool = False) -> None:
-        """`Delete subscription(s). This operation cannot be undone. <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/deleteSubscriptions>`_
+        """`Delete subscription(s) <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/deleteSubscriptions>`_.
+
+        This operation cannot be undone.
 
         Args:
             external_id (str | Sequence[str]): External ID or list of external IDs of subscriptions to delete.
@@ -108,7 +110,7 @@ class DatapointsSubscriptionAPI(APIClient):
         )
 
     def retrieve(self, external_id: str, ignore_unknown_ids: bool = False) -> Optional[DatapointSubscription]:
-        """`Retrieve one or more subscriptions by external ID. <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/getSubscriptionsByIds>`_
+        """`Retrieve one or more subscriptions by external ID <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/getSubscriptionsByIds>`_.
 
         Args:
             external_id (str | Sequence[str]): External ID or list of external IDs of subscriptions to retrieve.
@@ -140,7 +142,7 @@ class DatapointsSubscriptionAPI(APIClient):
             return None
 
     def update(self, update: DataPointSubscriptionUpdate) -> DatapointSubscription:
-        """`Update a subscriptions <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/updateSubscriptions>`_
+        """`Update a subscriptions <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/updateSubscriptions>`_.
 
         Update a subscription. Note that Fields that are not included in the request are not changed.
         Furthermore, the subscription partition cannot be changed.
@@ -186,7 +188,7 @@ class DatapointsSubscriptionAPI(APIClient):
         start: str | None = None,
         limit: int = DATAPOINT_SUBSCRIPTION_DATA_LIST_LIMIT_DEFAULT,
     ) -> Iterator[DatapointSubscriptionBatch]:
-        """`Iterate over data from a given subscription. <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/listSubscriptionData>`_
+        """`Iterate over data from a given subscription <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/listSubscriptionData>`_.
 
         Data can be ingested datapoints and time ranges where data is deleted. This endpoint will also return changes to
         the subscription itself, that is, if time series are added or removed from the subscription.
@@ -250,7 +252,7 @@ class DatapointsSubscriptionAPI(APIClient):
             current_partitions = batch.partitions
 
     def list(self, limit: int = DATAPOINT_SUBSCRIPTIONS_LIST_LIMIT_DEFAULT) -> DatapointSubscriptionList:
-        """`List data point subscriptions <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/listSubscriptions>`_
+        """`List data point subscriptions <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/listSubscriptions>`_.
 
         Args:
             limit (int, optional): Maximum number of subscriptions to return. Defaults to 100. Set to -1, float("inf") or None

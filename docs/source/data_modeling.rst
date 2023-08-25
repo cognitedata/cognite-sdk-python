@@ -1,162 +1,129 @@
 Data Modeling
 =============
+.. currentmodule:: cognite.client
 
 Data Models
 ------------
-Retrieve data models by id(s)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.data_models.DataModelsAPI.retrieve
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-List data models
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.data_models.DataModelsAPI.list
-
-Apply data models
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.data_models.DataModelsAPI.apply
-
-Delete data models
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.data_models.DataModelsAPI.delete
+   CogniteClient.data_modeling.data_models
 
 Data model data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.data_modeling.data_models
-    :members:
-    :show-inheritance:
+.. autosummary::
+   :classes:
+   :toctree: generated/
+   :template: custom-automodule-template.rst
+
+   data_classes.data_modeling.data_models
 
 Spaces
 ------
-Retrieve a space by id
-^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.spaces.SpacesAPI.retrieve
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-List spaces
-^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.spaces.SpacesAPI.list
+   CogniteClient.data_modeling.spaces
 
-Apply spaces
-^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.spaces.SpacesAPI.apply
+Spaces data classes
+^^^^^^^^^^^^^^^^^^^
+.. autosummary::
+   :classes:
+   :toctree: generated/
+   :template: custom-automodule-template.rst
 
-Delete spaces
-^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.spaces.SpacesAPI.delete
-
-Data classes
-^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.data_modeling.spaces
-    :members:
-    :show-inheritance:
+   data_classes.data_modeling.spaces
 
 Views
 ------------
-Retrieve views by id(s)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.views.ViewsAPI.retrieve
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-List views
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.views.ViewsAPI.list
-
-Apply view
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.views.ViewsAPI.apply
-
-Delete views
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.views.ViewsAPI.delete
+   CogniteClient.data_modeling.views
 
 View data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.data_modeling.views
-    :members:
-    :show-inheritance:
+.. autosummary::
+   :classes:
+   :toctree: generated/
+   :template: custom-automodule-template.rst
+
+   data_classes.data_modeling.views
 
 Containers
 ------------
-Retrieve containers by id(s)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.containers.ContainersAPI.retrieve
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-List containers
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.containers.ContainersAPI.list
-
-Apply containers
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.containers.ContainersAPI.apply
-
-Delete containers
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.containers.ContainersAPI.delete
+   CogniteClient.data_modeling.containers
 
 Containers data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.data_modeling.containers
-    :members:
-    :show-inheritance:
+.. autosummary::
+   :classes:
+   :toctree: generated/
+   :template: custom-automodule-template.rst
+
+   data_classes.data_modeling.containers
 
 Instances
 ------------
-Retrieve instances by id(s)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.retrieve
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-List instances
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.list
-
-Apply instances
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.apply
-
-Search instances
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.search
-
-Aggregate instances
-^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.aggregate
-
-Query instances
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.query
-
-Sync instances
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.sync
-
-Delete instances
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.instances.InstancesAPI.delete
+   CogniteClient.data_modeling.instances
 
 Instances core data classes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.data_modeling.instances
-    :members:
-    :show-inheritance:
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. autosummary::
+   :classes:
+   :toctree: generated/
+   :template: custom-automodule-template.rst
+
+   data_classes.data_modeling.instances
 
 Instances query data classes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.data_modeling.query
-    :members:
-    :show-inheritance:
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. autosummary::
+   :classes:
+   :toctree: generated/
+   :template: custom-automodule-template.rst
+
+   data_classes.data_modeling.query
+
+IDs data classes
+^^^^^^^^^^^^^^^^
+.. autosummary::
+   :classes:
+   :toctree: generated/
+   :template: custom-automodule-template.rst
+
+   data_classes.data_modeling.ids
 
 Data Modeling Filtering data classes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.filters
-    :members:
-    :show-inheritance:
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. autosummary::
+   :classes:
+   :toctree: generated/
+   :template: custom-automodule-template.rst
 
-Data Modeling ID data classes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.data_modeling.ids
-    :members:
-    :show-inheritance:
+   data_classes.filters
 
 GraphQL
 -------
-Apply DML
-^^^^^^^^^
-.. automethod:: cognite.client._api.data_modeling.graphql.DataModelingGraphQLAPI.apply_dml
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
+
+   CogniteClient.data_modeling.graphql

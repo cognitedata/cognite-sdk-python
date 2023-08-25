@@ -1,86 +1,48 @@
 3D
 ==
+.. currentmodule:: cognite.client
+
 
 Models
 ^^^^^^
-Retrieve a model by ID
-~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.three_d.ThreeDModelsAPI.retrieve
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-List models
-~~~~~~~~~~~
-.. automethod:: cognite.client._api.three_d.ThreeDModelsAPI.list
-
-Create models
-~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.three_d.ThreeDModelsAPI.create
-
-Update models
-~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.three_d.ThreeDModelsAPI.update
-
-Delete models
-~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.three_d.ThreeDModelsAPI.delete
+   CogniteClient.three_d.models
 
 
 Revisions
 ^^^^^^^^^
-Retrieve a revision by ID
-~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.retrieve
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-Create a revision
-~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.create
+   CogniteClient.three_d.revisions
 
-List revisions
-~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.list
-
-Update revisions
-~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.update
-
-Delete revisions
-~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.delete
-
-Update a revision thumbnail
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.update_thumbnail
-
-List nodes
-~~~~~~~~~~
-.. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.list_nodes
-
-Filter nodes
-~~~~~~~~~~~~
-.. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.filter_nodes
-
-List ancestor nodes
-~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.three_d.ThreeDRevisionsAPI.list_ancestor_nodes
 
 Files
 ^^^^^
 Retrieve a 3D file
 ~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.three_d.ThreeDFilesAPI.retrieve
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
+
+   CogniteClient.three_d.files
+
 
 Asset mappings
 ^^^^^^^^^^^^^^
-Create an asset mapping
-~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.three_d.ThreeDAssetMappingAPI.create
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-List asset mappings
-~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.three_d.ThreeDAssetMappingAPI.list
-
-Delete asset mappings
-~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.three_d.ThreeDAssetMappingAPI.delete
+   CogniteClient.three_d.asset_mappings
 
 ..
     Reveal
@@ -103,6 +65,9 @@ Delete asset mappings
 
 Data classes
 ^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.three_d
-    :members:
-    :show-inheritance:
+.. autosummary::
+   :classes:
+   :toctree: generated/
+   :template: custom-automodule-template.rst
+
+   data_classes.three_d

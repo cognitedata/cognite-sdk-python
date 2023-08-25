@@ -51,9 +51,6 @@ pyodide = ["pyodide-http"]  # keep pyodide related dependencies outside of 'all'
 all = ["pandas", "geopandas", "shapely", "sympy", "pip", "backports-zoneinfo", "yaml"]
 
 [tool.poetry.group.dev.dependencies]
-docutils = "==0.15.2"
-sphinx = "^5.0.1"
-sphinx-rtd-theme = ">=1.0.0"
 pytest = ">=7"
 pytest-cov = ">=3"
 pytest-rerunfailures = ">=10"
@@ -74,6 +71,17 @@ packaging = ">=23"
 # Used in docstring examples
 IPython = ">=7.0.0"
 
+
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
+docutils = "^0.19"
+sphinx = "^6.0.0"
+sphinx-book-theme = ">=1"
+sphinx-autosummary-accessors = ">=2023.4.0"
+toml = "^0.10.2"
+sphinx-copybutton = "^0.5.2"
 
 [build-system]
 requires = ["poetry>=1.0"]

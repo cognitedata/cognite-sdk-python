@@ -135,7 +135,7 @@ class SequencesAPI(APIClient):
         return cast(Iterator[Sequence], self())
 
     def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[Sequence]:
-        """`Retrieve a single sequence by id. <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceById>`_
+        """`Retrieve a single sequence by ID <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceById>`_.
 
         Args:
             id (int, optional): ID
@@ -167,7 +167,7 @@ class SequencesAPI(APIClient):
         external_ids: Optional[SequenceType[str]] = None,
         ignore_unknown_ids: bool = False,
     ) -> SequenceList:
-        """`Retrieve multiple sequences by id. <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceById>`_
+        """`Retrieve multiple sequences by ID <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceById>`_.
 
         Args:
             ids (SequenceType[int], optional): IDs
@@ -210,7 +210,7 @@ class SequencesAPI(APIClient):
         last_updated_time: Optional[(Union[Dict[str, Any], TimestampRange])] = None,
         limit: Optional[int] = LIST_LIMIT_DEFAULT,
     ) -> SequenceList:
-        """`Iterate over sequences <https://developer.cognite.com/api#tag/Sequences/operation/advancedListSequences>`_
+        """`Iterate over sequences <https://developer.cognite.com/api#tag/Sequences/operation/advancedListSequences>`_.
 
         Fetches sequences as they are iterated over, so you keep a limited number of objects in memory.
 
@@ -269,7 +269,7 @@ class SequencesAPI(APIClient):
         return self._list(list_cls=SequenceList, resource_cls=Sequence, method="POST", filter=filter, limit=limit)
 
     def aggregate(self, filter: Optional[Union[SequenceFilter, Dict]] = None) -> List[SequenceAggregate]:
-        """`Aggregate sequences <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
+        """`Aggregate sequences <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_.
 
         Args:
             filter (Union[SequenceFilter, Dict]): Filter on sequence filter with exact match
@@ -293,7 +293,7 @@ class SequencesAPI(APIClient):
         advanced_filter: Filter | dict | None = None,
         filter: SequenceFilter | dict | None = None,
     ) -> int:
-        """`Count of sequences matching the specified filters and search. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
+        """`Count of sequences matching the specified filters and search <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_.
 
         Args:
             advanced_filter (Filter | dict | None): The filter to narrow down the sequences to count.
@@ -340,7 +340,7 @@ class SequencesAPI(APIClient):
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: SequenceFilter | dict | None = None,
     ) -> int:
-        """`Find approximate property count for sequences. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
+        """`Find approximate property count for sequences <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_.
 
         Args:
             property (SequenceProperty | str | List[str]): The property to count the cardinality of.
@@ -399,7 +399,7 @@ class SequencesAPI(APIClient):
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: SequenceFilter | dict | None = None,
     ) -> int:
-        """`Find approximate paths count for sequences.  <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
+        """`Find approximate paths count for sequences <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_.
 
         Args:
             path (SequenceProperty | str | List[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
@@ -443,7 +443,7 @@ class SequencesAPI(APIClient):
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: SequenceFilter | dict | None = None,
     ) -> UniqueResultList:
-        """`Get unique paths with counts for sequences. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
+        """`Get unique paths with counts for sequences <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_.
 
         Args:
             property (SequenceProperty | str | List[str]): The property to group by.
@@ -522,7 +522,7 @@ class SequencesAPI(APIClient):
         aggregate_filter: AggregationFilter | dict | None = None,
         filter: SequenceFilter | dict | None = None,
     ) -> UniqueResultList:
-        """`Find approximate unique sequence properties. <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_
+        """`Find approximate unique sequence properties <https://developer.cognite.com/api#tag/Sequences/operation/aggregateSequences>`_.
 
         Args:
             path (SequenceProperty | str | List[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
@@ -569,7 +569,7 @@ class SequencesAPI(APIClient):
         ...
 
     def create(self, sequence: Union[Sequence, SequenceType[Sequence]]) -> Union[Sequence, SequenceList]:
-        """`Create one or more sequences. <https://developer.cognite.com/api#tag/Sequences/operation/createSequence>`_
+        """`Create one or more sequences <https://developer.cognite.com/api#tag/Sequences/operation/createSequence>`_.
 
         Args:
             sequence (Union[Sequence, SequenceType[Sequence]]): Sequence or list of Sequence to create.
@@ -630,7 +630,7 @@ class SequencesAPI(APIClient):
         external_id: Optional[Union[str, SequenceType[str]]] = None,
         ignore_unknown_ids: bool = False,
     ) -> None:
-        """`Delete one or more sequences. <https://developer.cognite.com/api#tag/Sequences/operation/deleteSequences>`_
+        """`Delete one or more sequences <https://developer.cognite.com/api#tag/Sequences/operation/deleteSequences>`_.
 
         Args:
             id (Union[int, SequenceType[int]): Id or list of ids
@@ -665,7 +665,7 @@ class SequencesAPI(APIClient):
     def update(
         self, item: Union[Sequence, SequenceUpdate, SequenceType[Union[Sequence, SequenceUpdate]]]
     ) -> Union[Sequence, SequenceList]:
-        """`Update one or more sequences. <https://developer.cognite.com/api#tag/Sequences/operation/updateSequences>`_
+        """`Update one or more sequences <https://developer.cognite.com/api#tag/Sequences/operation/updateSequences>`_.
 
         Args:
             item (Union[Sequence, SequenceUpdate, SequenceType[Union[Sequence, SequenceUpdate]]]): Sequences to update
@@ -804,7 +804,8 @@ class SequencesAPI(APIClient):
         filter: Optional[Union[SequenceFilter, Dict]] = None,
         limit: int = 100,
     ) -> SequenceList:
-        """`Search for sequences. <https://developer.cognite.com/api#tag/Sequences/operation/searchSequences>`_
+        """`Search for sequences <https://developer.cognite.com/api#tag/Sequences/operation/searchSequences>`_.
+
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:
@@ -930,7 +931,7 @@ class SequencesDataAPI(APIClient):
         id: Optional[int] = None,
         external_id: Optional[str] = None,
     ) -> None:
-        """`Insert rows into a sequence <https://developer.cognite.com/api#tag/Sequences/operation/postSequenceData>`_
+        """`Insert rows into a sequence <https://developer.cognite.com/api#tag/Sequences/operation/postSequenceData>`_.
 
         Args:
             column_external_ids (Optional[SequenceType[str]]): List of external id for the columns of the sequence.
@@ -1003,7 +1004,7 @@ class SequencesDataAPI(APIClient):
     def insert_dataframe(
         self, dataframe: pandas.DataFrame, id: Optional[int] = None, external_id: Optional[str] = None
     ) -> None:
-        """`Insert a Pandas dataframe. <https://developer.cognite.com/api#tag/Sequences/operation/postSequenceData>`_
+        """`Insert a pandas dataframe <https://developer.cognite.com/api#tag/Sequences/operation/postSequenceData>`_.
 
         The index of the dataframe must contain the row numbers. The names of the remaining columns specify the column external ids.
         The sequence and columns must already exist.
@@ -1033,7 +1034,7 @@ class SequencesDataAPI(APIClient):
         self._post(url_path=self._DATA_PATH, json={"items": [task]})
 
     def delete(self, rows: SequenceType[int], id: Optional[int] = None, external_id: Optional[str] = None) -> None:
-        """`Delete rows from a sequence <https://developer.cognite.com/api#tag/Sequences/operation/deleteSequenceData>`_
+        """`Delete rows from a sequence <https://developer.cognite.com/api#tag/Sequences/operation/deleteSequenceData>`_.
 
         Args:
             rows (SequenceType[int]): List of row numbers.
@@ -1057,7 +1058,9 @@ class SequencesDataAPI(APIClient):
     def delete_range(
         self, start: int, end: Union[int, None], id: Optional[int] = None, external_id: Optional[str] = None
     ) -> None:
-        """`Delete a range of rows from a sequence. Note this operation is potentially slow, as retrieves each row before deleting. <https://developer.cognite.com/api#tag/Sequences/operation/deleteSequenceData>`_
+        """`Delete a range of rows from a sequence <https://developer.cognite.com/api#tag/Sequences/operation/deleteSequenceData>`_.
+
+        Note this operation is potentially slow, as retrieves each row before deleting.
 
         Args:
             start (int): Row number to start from (inclusive).
@@ -1093,7 +1096,7 @@ class SequencesDataAPI(APIClient):
         id: Optional[Union[int, SequenceType[int]]] = None,
         limit: Optional[int] = None,
     ) -> Union[SequenceData, SequenceDataList]:
-        """`Retrieve data from a sequence <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceData>`_
+        """`Retrieve data from a sequence <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceData>`_.
 
         Args:
             start (int): Row number to start from (inclusive).
@@ -1149,7 +1152,7 @@ class SequencesDataAPI(APIClient):
         column_external_ids: Optional[SequenceType[str]] = None,
         before: Optional[int] = None,
     ) -> SequenceData:
-        """`Retrieves the last row (i.e the row with the highest row number) in a sequence. <https://developer.cognite.com/api#tag/Sequences/operation/getLatestSequenceRow>`_
+        """`Retrieve the last row (the row with the highest row number) in a sequence <https://developer.cognite.com/api#tag/Sequences/operation/getLatestSequenceRow>`_.
 
         Args:
             id (optional, int): Id or list of ids.
@@ -1184,7 +1187,7 @@ class SequencesDataAPI(APIClient):
         id: Optional[int] = None,
         limit: Optional[int] = None,
     ) -> pandas.DataFrame:
-        """`Retrieve data from a sequence as a pandas dataframe <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceData>`_
+        """`Retrieve data from a sequence as a pandas dataframe <https://developer.cognite.com/api#tag/Sequences/operation/getSequenceData>`_.
 
         Args:
             start (int): (inclusive) row number to start from.

@@ -99,7 +99,7 @@ class ViewsAPI(APIClient):
         include_inherited_properties: bool = True,
         all_versions: bool = True,
     ) -> ViewList:
-        """`Retrieve a single view by id. <https://developer.cognite.com/api#tag/Views/operation/byExternalIdsViews>`_
+        """`Retrieve one or more views by ID <https://developer.cognite.com/api#tag/Views/operation/byExternalIdsViews>`_.
 
         Args:
             ids (ViewId | Sequence[ViewId]): View identifier(s)
@@ -130,7 +130,7 @@ class ViewsAPI(APIClient):
             return self._get_latest_views(views)
 
     def delete(self, ids: ViewIdentifier | Sequence[ViewIdentifier]) -> list[ViewId]:
-        """`Delete one or more views <https://developer.cognite.com/api#tag/Views/operation/deleteViews>`_
+        """`Delete one or more views <https://developer.cognite.com/api#tag/Views/operation/deleteViews>`_.
 
         Args:
             ids (ViewId | Sequence[ViewId]): View dentifier(s)
@@ -163,7 +163,7 @@ class ViewsAPI(APIClient):
         all_versions: bool = False,
         include_global: bool = False,
     ) -> ViewList:
-        """`List views <https://developer.cognite.com/api#tag/Views/operation/listViews>`_
+        """`List views <https://developer.cognite.com/api#tag/Views/operation/listViews>`_.
 
         Args:
             limit (int, optional): Maximum number of views to return. Defaults to 10. Set to -1, float("inf") or None
@@ -214,7 +214,7 @@ class ViewsAPI(APIClient):
         ...
 
     def apply(self, view: ViewApply | Sequence[ViewApply]) -> View | ViewList:
-        """`Create or update (upsert) one or more views. <https://developer.cognite.com/api#tag/Views/operation/ApplyViews>`_
+        """`Create or update (upsert) one or more views <https://developer.cognite.com/api#tag/Views/operation/ApplyViews>`_.
 
         Args:
             view (view: ViewApply | Sequence[ViewApply]): View or views of views to create or update.

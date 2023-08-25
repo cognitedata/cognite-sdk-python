@@ -2,57 +2,49 @@ Identity and access management
 ==============================
 Tokens
 ^^^^^^
-Inspect the token currently used by the client
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.TokenAPI.inspect
+.. currentmodule:: cognite.client
+
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
+
+   CogniteClient.iam.token
 
 Groups
 ^^^^^^
-List groups
-~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.GroupsAPI.list
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-Create groups
-~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.GroupsAPI.create
-
-Delete groups
-~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.GroupsAPI.delete
-
+   CogniteClient.iam.groups
 
 Security categories
 ^^^^^^^^^^^^^^^^^^^
-List security categories
-~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.SecurityCategoriesAPI.list
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-Create security categories
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.SecurityCategoriesAPI.create
-
-Delete security categories
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.SecurityCategoriesAPI.delete
+   CogniteClient.iam.security_categories
 
 
 Sessions
 ^^^^^^^^^^^^^^^^^^^
-List sessions
-~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.SessionsAPI.list
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-Create a session
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.SessionsAPI.create
-
-Revoke a session
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.SessionsAPI.revoke
+   CogniteClient.iam.sessions
 
 
 Data classes
 ^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.iam
-    :members:
-    :show-inheritance:
+.. autosummary::
+   :classes:
+   :toctree: generated/
+   :template: custom-automodule-template.rst
+
+   data_classes.iam
