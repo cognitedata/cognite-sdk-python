@@ -165,7 +165,7 @@ class TemplateGroupsAPI(APIClient):
         Up to 1000 template groups can be retrieved in one operation.
 
         Args:
-            limit (int): Maximum number of template groups to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of template groups to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
             owners (Sequence[str] | None): Include template groups that have any of these values in their `owner` field.
 
         Returns:
@@ -271,7 +271,7 @@ class TemplateGroupVersionsAPI(APIClient):
 
         Args:
             external_id (str): The external id of the template group.
-            limit (int): Maximum number of template group versions to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of template group versions to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
             min_version (int | None): (Optional[int]): Exclude versions with a version number smaller than this.
             max_version (int | None): (Optional[int]): Exclude versions with a version number larger than this.
 
@@ -489,7 +489,7 @@ class TemplateInstancesAPI(APIClient):
         Args:
             external_id (str): The external id of the template group.
             version (int): The version of the template group.
-            limit (int): Maximum number of template group versions to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of template group versions to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
             data_set_ids (Sequence[int] | None): (Optional[Sequence[int]]): Only include instances which has one of these values in their `data_set_id` field.
             template_names (Sequence[str] | None): (Optional[Sequence[str]]): Only include instances which has one of these values in their `template_name` field.
 
@@ -644,7 +644,7 @@ class TemplateViewsAPI(APIClient):
             version (int): The version of the template group.
             view_external_id (str): No description.
             input (dict[str, Any] | None): The input for the View.
-            limit (int): Maximum number of views to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of views to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             ViewResolveList: The resolved items.
@@ -673,8 +673,7 @@ class TemplateViewsAPI(APIClient):
         Args:
             external_id (str): The external id of the template group.
             version (int): The version of the template group.
-            limit (int): Maximum number of views to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
+            limit (int | None): Maximum number of views to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             ViewList: List of requested views

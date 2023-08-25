@@ -681,7 +681,7 @@ class TimeSeriesAPI(APIClient):
         Args:
             filter (Filter | dict): Filter to apply.
             sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Can be up to two properties to sort by default to ascending order.
-            limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             TimeSeriesList: List of time series that match the filter criteria.
@@ -774,7 +774,7 @@ class TimeSeriesAPI(APIClient):
             created_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             last_updated_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
             partitions (int | None): Retrieve time series in parallel using this number of workers. Also requires `limit=None` to be passed.
-            limit (int): Maximum number of time series to return.  Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of time series to return.  Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             TimeSeriesList: The requested time series.

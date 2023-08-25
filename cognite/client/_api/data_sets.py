@@ -222,7 +222,7 @@ class DataSetsAPI(APIClient):
             last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
             external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
             write_protected (bool | None): Specify whether the filtered data sets are write-protected, or not. Set to True to only list write-protected data sets.
-            limit (int): Maximum number of data sets to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of data sets to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             DataSetList: List of requested data sets

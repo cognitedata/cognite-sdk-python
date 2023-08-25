@@ -392,7 +392,7 @@ class DocumentsAPI(APIClient):
         query: str | None = None,
         filter: Filter | dict | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
-        limit: int | None = LIST_LIMIT_DEFAULT,
+        limit: int = LIST_LIMIT_DEFAULT,
     ) -> UniqueResultList:
         """`Get unique properties with counts for documents. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
 
@@ -454,13 +454,12 @@ class DocumentsAPI(APIClient):
         query: str | None = None,
         filter: Filter | dict | None = None,
         aggregate_filter: AggregationFilter | dict | None = None,
-        limit: int | None = LIST_LIMIT_DEFAULT,
+        limit: int = LIST_LIMIT_DEFAULT,
     ) -> UniqueResultList:
         """`Get unique paths with counts for documents. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
 
         Args:
-            path (DocumentProperty | SourceFileProperty | list[str] | str): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
-                                                                            It means to aggregate only metadata properties (aka keys).
+            path (DocumentProperty | SourceFileProperty | list[str] | str): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
             query (str | None): The free text search query, for details see the documentation referenced above.
             filter (Filter | dict | None): The filter to narrow down the documents to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
@@ -561,7 +560,7 @@ class DocumentsAPI(APIClient):
         highlight: Literal[False] = False,
         filter: Filter | dict | None = None,
         sort: DocumentSort | str | list[str] | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
-        limit: int | None = LIST_LIMIT_DEFAULT,
+        limit: int = LIST_LIMIT_DEFAULT,
     ) -> DocumentList:
         ...
 
@@ -572,7 +571,7 @@ class DocumentsAPI(APIClient):
         highlight: Literal[True],
         filter: Filter | dict | None = None,
         sort: DocumentSort | str | list[str] | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
-        limit: int | None = LIST_LIMIT_DEFAULT,
+        limit: int = LIST_LIMIT_DEFAULT,
     ) -> DocumentHighlightList:
         ...
 
@@ -582,7 +581,7 @@ class DocumentsAPI(APIClient):
         highlight: bool = False,
         filter: Filter | dict | None = None,
         sort: DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None = None,
-        limit: int | None = LIST_LIMIT_DEFAULT,
+        limit: int = LIST_LIMIT_DEFAULT,
     ) -> DocumentList | DocumentHighlightList:
         """`Search documents <https://developer.cognite.com/api#tag/Documents/operation/documentsSearch>`_
 
@@ -595,7 +594,7 @@ class DocumentsAPI(APIClient):
             highlight (bool): Whether or not matches in search results should be highlighted.
             filter (Filter | dict | None): The filter to narrow down the documents to search.
             sort (DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None): The property to sort by. The default order is ascending.
-            limit (int): Maximum number of items. When using highlights, the maximum value is reduced to 20. Defaults to 25.
+            limit (int): Maximum number of items to return. When using highlights, the maximum value is reduced to 20. Defaults to 25.
 
         Returns:
             DocumentList | DocumentHighlightList: List of search results. If highlight is True, a DocumentHighlightList is returned, otherwise a DocumentList is returned.
@@ -665,7 +664,7 @@ class DocumentsAPI(APIClient):
 
         Args:
             filter (Filter | dict | None): Filter | dict | None): The filter to narrow down the documents to return.
-            limit (int): Maximum number of documents to return. Defaults to 25. Set to None or -1 to return all documents.
+            limit (int | None): Maximum number of documents to return. Defaults to 25. Set to None or -1 to return all documents.
 
         Returns:
             DocumentList: List of documents

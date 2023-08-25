@@ -94,7 +94,7 @@ class ThreeDModelsAPI(APIClient):
 
         Args:
             published (bool | None): Filter based on whether or not the model has published revisions.
-            limit (int): Maximum number of models to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of models to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             ThreeDModelList: The list of 3d models.
@@ -286,14 +286,15 @@ class ThreeDRevisionsAPI(APIClient):
             items=revision,
         )
 
-    def list(self, model_id: int, published: bool = False, limit: int | None = LIST_LIMIT_DEFAULT) -> ThreeDModelRevisionList:
+    def list(
+        self, model_id: int, published: bool = False, limit: int | None = LIST_LIMIT_DEFAULT
+    ) -> ThreeDModelRevisionList:
         """`List 3d model revisions. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/get3DRevisions>`_
 
         Args:
             model_id (int): List revisions under the model with this id.
             published (bool): Filter based on whether or not the revision is published.
-            limit (int): Maximum number of models to retrieve. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
+            limit (int | None): Maximum number of models to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             ThreeDModelRevisionList: The list of 3d model revisions.
@@ -422,7 +423,7 @@ class ThreeDRevisionsAPI(APIClient):
             depth (int | None): Get sub nodes up to this many levels below the specified node. Depth 0 is the root node.
             sort_by_node_id (bool): Returns the nodes in `nodeId` order.
             partitions (int | None): The result is retrieved in this many parts in parallel. Requires `sort_by_node_id` to be set to `true`.
-            limit (int): Maximun number of nodes to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximun number of nodes to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             ThreeDNodeList: The list of 3d nodes.
@@ -463,7 +464,7 @@ class ThreeDRevisionsAPI(APIClient):
             model_id (int): Id of the model.
             revision_id (int): Id of the revision.
             properties (dict[str, dict[str, Sequence[str]]] | None): Properties for filtering. The object contains one or more category. Each category references one or more properties. Each property is associated with a list of values. For a node to satisfy the filter, it must, for each category/property in the filter, contain the catogery+property combination with a value that is contained within the corresponding list in the filter.
-            limit (int): Maximun number of nodes to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximun number of nodes to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
             partitions (int | None): The result is retrieved in this many parts in parallel. Requires `sort_by_node_id` to be set to `true`.
 
         Returns:
@@ -499,7 +500,7 @@ class ThreeDRevisionsAPI(APIClient):
             model_id (int): Id of the model.
             revision_id (int): Id of the revision.
             node_id (int | None): ID of the node to get the ancestors of.
-            limit (int): Maximun number of nodes to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximun number of nodes to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             ThreeDNodeList: The list of 3d nodes.
@@ -567,7 +568,7 @@ class ThreeDAssetMappingAPI(APIClient):
             revision_id (int): Id of the revision.
             node_id (int | None): List only asset mappings associated with this node.
             asset_id (int | None): List only asset mappings associated with this asset.
-            limit (int): Maximum number of asset mappings to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of asset mappings to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             ThreeDAssetMappingList: The list of asset mappings.

@@ -132,7 +132,7 @@ class SpacesAPI(APIClient):
         """`List spaces <https://developer.cognite.com/api#tag/Spaces/operation/listSpacesV3>`_
 
         Args:
-            limit (int): Maximum number of spaces to return. Defaults to 10. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of spaces to return. Defaults to 10. Set to -1, float("inf") or None to return all items.
             include_global (bool): Whether to include global spaces. Defaults to False.
 
         Returns:

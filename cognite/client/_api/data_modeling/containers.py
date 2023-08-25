@@ -156,7 +156,7 @@ class ContainersAPI(APIClient):
 
         Args:
             space (str | None): The space to query
-            limit (int): Maximum number of containers to return. Defaults to 10. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of containers to return. Defaults to 10. Set to -1, float("inf") or None to return all items.
             include_global (bool): Whether the global containers should be returned.
 
         Returns:
