@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Sequence, Union, cast
 
 from typing_extensions import TypeAlias
 
@@ -33,41 +33,41 @@ class TimeSeries(CogniteResource):
     """No description.
 
     Args:
-        id (int): A server-generated ID for the object.
-        external_id (str): The externally supplied ID for the time series.
-        name (str): The display short name of the time series. Note: Value of this field can differ from name presented by older versions of API 0.3-0.6.
-        is_string (bool): Whether the time series is string valued or not.
-        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        unit (str): The physical unit of the time series.
-        asset_id (int): Asset ID of equipment linked to this time series.
-        is_step (bool): Whether the time series is a step series or not.
-        description (str): Description of the time series.
-        security_categories (Sequence[int]): The required security categories to access this time series.
-        data_set_id (int): The dataSet Id for the item.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        legacy_name (str): Set a value for legacyName to allow applications using API v0.3, v04, v05, and v0.6 to access this time series. The legacy name is the human-readable name for the time series and is mapped to the name field used in API versions 0.3-0.6. The legacyName field value must be unique, and setting this value to an already existing value will return an error. We recommend that you set this field to the same value as externalId.
-        cognite_client (CogniteClient): The client to associate with this object.
+        id (int | None): A server-generated ID for the object.
+        external_id (str | None): The externally supplied ID for the time series.
+        name (str | None): The display short name of the time series. Note: Value of this field can differ from name presented by older versions of API 0.3-0.6.
+        is_string (bool | None): Whether the time series is string valued or not.
+        metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        unit (str | None): The physical unit of the time series.
+        asset_id (int | None): Asset ID of equipment linked to this time series.
+        is_step (bool | None): Whether the time series is a step series or not.
+        description (str | None): Description of the time series.
+        security_categories (Sequence[int] | None): The required security categories to access this time series.
+        data_set_id (int | None): The dataSet Id for the item.
+        created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        legacy_name (str | None): Set a value for legacyName to allow applications using API v0.3, v04, v05, and v0.6 to access this time series. The legacy name is the human-readable name for the time series and is mapped to the name field used in API versions 0.3-0.6. The legacyName field value must be unique, and setting this value to an already existing value will return an error. We recommend that you set this field to the same value as externalId.
+        cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        id: Optional[int] = None,
-        external_id: Optional[str] = None,
-        name: Optional[str] = None,
-        is_string: Optional[bool] = None,
-        metadata: Optional[Dict[str, str]] = None,
-        unit: Optional[str] = None,
-        asset_id: Optional[int] = None,
-        is_step: Optional[bool] = None,
-        description: Optional[str] = None,
-        security_categories: Optional[Sequence[int]] = None,
-        data_set_id: Optional[int] = None,
-        created_time: Optional[int] = None,
-        last_updated_time: Optional[int] = None,
-        legacy_name: Optional[str] = None,
-        cognite_client: Optional[CogniteClient] = None,
-    ):
+        id: int | None = None,
+        external_id: str | None = None,
+        name: str | None = None,
+        is_string: bool | None = None,
+        metadata: dict[str, str] | None = None,
+        unit: str | None = None,
+        asset_id: int | None = None,
+        is_step: bool | None = None,
+        description: str | None = None,
+        security_categories: Sequence[int] | None = None,
+        data_set_id: int | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+        legacy_name: str | None = None,
+        cognite_client: CogniteClient | None = None,
+    ) -> None:
         self.id = id
         self.external_id = external_id
         self.name = name
@@ -107,22 +107,24 @@ class TimeSeries(CogniteResource):
         )
         return sum(dps.count)
 
-    def latest(self, before: Optional[Union[int, str, datetime]] = None) -> Optional[Datapoint]:
+    def latest(self, before: int | str | datetime | None = None) -> Datapoint | None:
         """Returns the latest datapoint in this time series. If empty, returns None.
 
+        Args:
+            before (int | str | datetime | None): No description.
         Returns:
-            Datapoint: A datapoint object containing the value and timestamp of the latest datapoint.
+            Datapoint | None: A datapoint object containing the value and timestamp of the latest datapoint.
         """
         identifier = Identifier.load(self.id, self.external_id).as_dict()
         if dps := self._cognite_client.time_series.data.retrieve_latest(**identifier, before=before):
             return dps[0]
         return None
 
-    def first(self) -> Optional[Datapoint]:
+    def first(self) -> Datapoint | None:
         """Returns the first datapoint in this time series. If empty, returns None.
 
         Returns:
-            Datapoint: A datapoint object containing the value and timestamp of the first datapoint.
+            Datapoint | None: A datapoint object containing the value and timestamp of the first datapoint.
         """
         identifier = Identifier.load(self.id, self.external_id).as_dict()
         dps = self._cognite_client.time_series.data.retrieve(
@@ -137,6 +139,8 @@ class TimeSeries(CogniteResource):
 
         Returns:
             Asset: The asset given by its `asset_id`.
+        Raises:
+            ValueError: If asset_id is missing.
         """
         if self.asset_id is None:
             raise ValueError("asset_id is None")
@@ -147,37 +151,37 @@ class TimeSeriesFilter(CogniteFilter):
     """No description.
 
     Args:
-        name (str): Filter on name.
-        unit (str): Filter on unit.
-        is_string (bool): Filter on isString.
-        is_step (bool): Filter on isStep.
-        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        asset_ids (Sequence[int]): Only include time series that reference these specific asset IDs.
-        asset_external_ids (Sequence[str]): Asset External IDs of related equipment that this time series relates to.
-        asset_subtree_ids (Sequence[Dict[str, Any]]): Only include time series that are related to an asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-        data_set_ids (Sequence[Dict[str, Any]]): No description.
-        external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
-        created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-        last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-        cognite_client (CogniteClient): The client to associate with this object.
+        name (str | None): Filter on name.
+        unit (str | None): Filter on unit.
+        is_string (bool | None): Filter on isString.
+        is_step (bool | None): Filter on isStep.
+        metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        asset_ids (Sequence[int] | None): Only include time series that reference these specific asset IDs.
+        asset_external_ids (Sequence[str] | None): Asset External IDs of related equipment that this time series relates to.
+        asset_subtree_ids (Sequence[dict[str, Any]] | None): Only include time series that are related to an asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        data_set_ids (Sequence[dict[str, Any]] | None): No description.
+        external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
+        created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
+        last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
+        cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        name: Optional[str] = None,
-        unit: Optional[str] = None,
-        is_string: Optional[bool] = None,
-        is_step: Optional[bool] = None,
-        metadata: Optional[Dict[str, str]] = None,
-        asset_ids: Optional[Sequence[int]] = None,
-        asset_external_ids: Optional[Sequence[str]] = None,
-        asset_subtree_ids: Optional[Sequence[Dict[str, Any]]] = None,
-        data_set_ids: Optional[Sequence[Dict[str, Any]]] = None,
-        external_id_prefix: Optional[str] = None,
-        created_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
-        last_updated_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
-        cognite_client: Optional[CogniteClient] = None,
-    ):
+        name: str | None = None,
+        unit: str | None = None,
+        is_string: bool | None = None,
+        is_step: bool | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: Sequence[str] | None = None,
+        asset_subtree_ids: Sequence[dict[str, Any]] | None = None,
+        data_set_ids: Sequence[dict[str, Any]] | None = None,
+        external_id_prefix: str | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        cognite_client: CogniteClient | None = None,
+    ) -> None:
         self.name = name
         self.unit = unit
         self.is_string = is_string
@@ -193,7 +197,7 @@ class TimeSeriesFilter(CogniteFilter):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str]) -> TimeSeriesFilter:
+    def _load(cls, resource: dict | str) -> TimeSeriesFilter:
         instance = super()._load(resource)
         if isinstance(resource, Dict):
             if instance.created_time is not None:
@@ -216,30 +220,30 @@ class TimeSeriesUpdate(CogniteUpdate):
             return self._set(value)
 
     class _ObjectTimeSeriesUpdate(CogniteObjectUpdate):
-        def set(self, value: Dict) -> TimeSeriesUpdate:
+        def set(self, value: dict) -> TimeSeriesUpdate:
             return self._set(value)
 
-        def add(self, value: Dict) -> TimeSeriesUpdate:
+        def add(self, value: dict) -> TimeSeriesUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> TimeSeriesUpdate:
+        def remove(self, value: list) -> TimeSeriesUpdate:
             return self._remove(value)
 
     class _ListTimeSeriesUpdate(CogniteListUpdate):
-        def set(self, value: List) -> TimeSeriesUpdate:
+        def set(self, value: list) -> TimeSeriesUpdate:
             return self._set(value)
 
-        def add(self, value: List) -> TimeSeriesUpdate:
+        def add(self, value: list) -> TimeSeriesUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> TimeSeriesUpdate:
+        def remove(self, value: list) -> TimeSeriesUpdate:
             return self._remove(value)
 
     class _LabelTimeSeriesUpdate(CogniteLabelUpdate):
-        def add(self, value: List) -> TimeSeriesUpdate:
+        def add(self, value: list) -> TimeSeriesUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> TimeSeriesUpdate:
+        def remove(self, value: list) -> TimeSeriesUpdate:
             return self._remove(value)
 
     @property
@@ -299,10 +303,11 @@ class TimeSeriesAggregate(dict):
     """No description.
 
     Args:
-        count (int): No description.
+        count (int | None): No description.
+        **kwargs (Any): No description.
     """
 
-    def __init__(self, count: Optional[int] = None, **kwargs: Any) -> None:
+    def __init__(self, count: int | None = None, **kwargs: Any) -> None:
         self.count = count
         self.update(kwargs)
 

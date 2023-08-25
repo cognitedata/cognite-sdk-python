@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, List, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, List, Literal, Union
 
 from typing_extensions import TypeAlias
 
@@ -28,38 +28,38 @@ class SourceFile(CogniteResource):
 
     Args:
         name (str): The name of the source file.
-        hash (str): The hash of the source file. This is a SHA256 hash of the original file. The hash only covers the
-                    file content, and not other CDF metadata.
-        directory (str): The directory the file can be found in.
-        source (str): The source of the file.
-        mime_type (str): The mime type of the file.
-        size (int): The size of the file in bytes.
-        asset_ids (list[int]): The ids of the assets related to this file.
-        labels (list[Label | str | LabelDefinition]): A list of labels associated with this document's source
-                                                      file in CDF.
-        geo_location (GeoLocation): The geolocation of the source file.
-        dataset_id (int): The id if the dataset this file belongs to, if any.
-        security_categories (list[int]): The security category IDs required to access this file.
-        metadata (dict[str, str]): Custom, application specific metadata. String key -> String value.
+        hash (str | None): The hash of the source file. This is a SHA256 hash of the original file. The hash only covers the file content, and not other CDF metadata.
+        directory (str | None): The directory the file can be found in.
+        source (str | None): The source of the file.
+        mime_type (str | None): The mime type of the file.
+        size (int | None): The size of the file in bytes.
+        asset_ids (list[int] | None): The ids of the assets related to this file.
+        labels (list[Label | str | LabelDefinition] | None): A list of labels associated with this document's source file in CDF.
+        geo_location (GeoLocation | None): The geolocation of the source file.
+        dataset_id (int | None): The id if the dataset this file belongs to, if any.
+        security_categories (list[int] | None): The security category IDs required to access this file.
+        metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value.
+        cognite_client (CogniteClient | None): No description.
+        **_ (Any): No description.
     """
 
     def __init__(
         self,
         name: str,
-        hash: Optional[str] = None,
-        directory: Optional[str] = None,
-        source: Optional[str] = None,
-        mime_type: Optional[str] = None,
-        size: Optional[int] = None,
-        asset_ids: Optional[list[int]] = None,
-        labels: Optional[list[Label | str | LabelDefinition]] = None,
-        geo_location: Optional[GeoLocation] = None,
-        dataset_id: Optional[int] = None,
-        security_categories: Optional[list[int]] = None,
-        metadata: Optional[dict[str, str]] = None,
-        cognite_client: Optional[CogniteClient] = None,
+        hash: str | None = None,
+        directory: str | None = None,
+        source: str | None = None,
+        mime_type: str | None = None,
+        size: int | None = None,
+        asset_ids: list[int] | None = None,
+        labels: list[Label | str | LabelDefinition] | None = None,
+        geo_location: GeoLocation | None = None,
+        dataset_id: int | None = None,
+        security_categories: list[int] | None = None,
+        metadata: dict[str, str] | None = None,
+        cognite_client: CogniteClient | None = None,
         **_: Any,
-    ):
+    ) -> None:
         self.name = name
         self.hash = hash
         self.directory = directory
@@ -75,7 +75,7 @@ class SourceFile(CogniteResource):
         self._cognite_client = cognite_client
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: Optional[CogniteClient] = None) -> SourceFile:
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> SourceFile:
         resource = json.loads(resource) if isinstance(resource, str) else resource
         instance = cls(**convert_all_keys_to_snake_case(resource), cognite_client=cognite_client)
         if isinstance(instance.geo_location, dict):
@@ -103,24 +103,23 @@ class Document(CogniteResource):
         id (int): A server-generated ID for the object.
         created_time (int): The creation time of the document in CDF in milliseconds since Jan 1, 1970.
         source_file (SourceFile): The source file that this document is derived from.
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        title (str): The title of the document.
-        author (str): The author of the document.
-        producer (str): The producer of the document. Many document types contain metadata indicating what software
-                        or system was used to create the document.
-        modified_time (int): The last time the document was modified in CDF in milliseconds since Jan 1, 1970.
-        last_indexed_time (int): The last time the document was indexed in the search engine, measured in milliseconds
-                                 since Jan 1, 1970.
-        mime_type (str): The detected mime type of the document.
-        extension (str): Extension of the file (always in lowercase)
-        page_count (int): The number of pages in the document.
-        type (str): The detected type of the document.
-        language (str): The detected language of the document.
-        truncated_content (str): The truncated content of the document.
-        asset_ids (list[int]): The ids of any assets referred to in the document.
-        labels (list[Label | str | LabelDefinition]): The labels attached to the document.
-        geo_location (GeoLocation): The geolocation of the document.
-
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        title (str | None): The title of the document.
+        author (str | None): The author of the document.
+        producer (str | None): The producer of the document. Many document types contain metadata indicating what software or system was used to create the document.
+        modified_time (int | None): The last time the document was modified in CDF in milliseconds since Jan 1, 1970.
+        last_indexed_time (int | None): The last time the document was indexed in the search engine, measured in milliseconds since Jan 1, 1970.
+        mime_type (str | None): The detected mime type of the document.
+        extension (str | None): Extension of the file (always in lowercase)
+        page_count (int | None): The number of pages in the document.
+        type (str | None): The detected type of the document.
+        language (str | None): The detected language of the document.
+        truncated_content (str | None): The truncated content of the document.
+        asset_ids (list[int] | None): The ids of any assets referred to in the document.
+        labels (list[Label | str | LabelDefinition] | None): The labels attached to the document.
+        geo_location (GeoLocation | None): The geolocation of the document.
+        cognite_client (CogniteClient | None): No description.
+        **_ (Any): No description.
     """
 
     def __init__(
@@ -128,24 +127,24 @@ class Document(CogniteResource):
         id: int,
         created_time: int,
         source_file: SourceFile,
-        external_id: Optional[str] = None,
-        title: Optional[str] = None,
-        author: Optional[str] = None,
-        producer: Optional[str] = None,
-        modified_time: Optional[int] = None,
-        last_indexed_time: Optional[int] = None,
-        mime_type: Optional[str] = None,
-        extension: Optional[str] = None,
-        page_count: Optional[int] = None,
-        type: Optional[str] = None,
-        language: Optional[str] = None,
-        truncated_content: Optional[str] = None,
-        asset_ids: Optional[list[int]] = None,
-        labels: Optional[list[Label | str | LabelDefinition]] = None,
-        geo_location: Optional[GeoLocation] = None,
-        cognite_client: Optional[CogniteClient] = None,
+        external_id: str | None = None,
+        title: str | None = None,
+        author: str | None = None,
+        producer: str | None = None,
+        modified_time: int | None = None,
+        last_indexed_time: int | None = None,
+        mime_type: str | None = None,
+        extension: str | None = None,
+        page_count: int | None = None,
+        type: str | None = None,
+        language: str | None = None,
+        truncated_content: str | None = None,
+        asset_ids: list[int] | None = None,
+        labels: list[Label | str | LabelDefinition] | None = None,
+        geo_location: GeoLocation | None = None,
+        cognite_client: CogniteClient | None = None,
         **_: Any,
-    ):
+    ) -> None:
         self.id = id
         self.created_time = created_time
         self.source_file = source_file
@@ -167,7 +166,7 @@ class Document(CogniteResource):
         self._cognite_client = cognite_client
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: Optional[CogniteClient] = None) -> Document:
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Document:
         resource = json.loads(resource) if isinstance(resource, str) else resource
 
         instance = cls(**convert_all_keys_to_snake_case(resource), cognite_client=cognite_client)
@@ -230,7 +229,7 @@ class DocumentHighlight(CogniteResource):
     document: Document
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: Optional[CogniteClient] = None) -> DocumentHighlight:
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> DocumentHighlight:
         resource = json.loads(resource) if isinstance(resource, str) else resource
 
         instance = cls(**convert_all_keys_to_snake_case(resource))

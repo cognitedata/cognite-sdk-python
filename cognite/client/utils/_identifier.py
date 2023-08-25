@@ -3,18 +3,13 @@ from __future__ import annotations
 import numbers
 from abc import ABC
 from typing import (
-    Dict,
     Generic,
     Iterable,
-    List,
     Literal,
     NoReturn,
-    Optional,
     Protocol,
     Sequence,
-    Tuple,
     TypeVar,
-    Union,
     cast,
     overload,
 )
@@ -38,7 +33,7 @@ class Identifier(Generic[T_ID]):
         self.__value: T_ID = value
 
     @classmethod
-    def of_either(cls, id: Optional[int], external_id: Optional[str]) -> Identifier:
+    def of_either(cls, id: int | None, external_id: str | None) -> Identifier:
         if id is external_id is None:
             raise ValueError("Exactly one of id or external id must be specified, got neither")
         elif id is not None:
@@ -49,7 +44,7 @@ class Identifier(Generic[T_ID]):
         return Identifier(id or external_id)
 
     @classmethod
-    def load(cls, id: Optional[int] = None, external_id: Optional[str] = None) -> Identifier:
+    def load(cls, id: int | None = None, external_id: str | None = None) -> Identifier:
         if id is not None:
             return Identifier(id)
         if external_id is not None:
@@ -72,10 +67,10 @@ class Identifier(Generic[T_ID]):
     def is_external_id(self) -> bool:
         return isinstance(self.as_primitive(), str)
 
-    def as_dict(self, camel_case: bool = True) -> Dict[str, T_ID]:
+    def as_dict(self, camel_case: bool = True) -> dict[str, T_ID]:
         return {self.name(camel_case): self.__value}
 
-    def as_tuple(self, camel_case: bool = True) -> Tuple[str, T_ID]:
+    def as_tuple(self, camel_case: bool = True) -> tuple[str, T_ID]:
         return self.name(camel_case), self.__value
 
 
@@ -119,7 +114,7 @@ T_Identifier = TypeVar("T_Identifier", bound=IdentifierCore)
 
 
 class IdentifierSequenceCore(Generic[T_Identifier], ABC):
-    def __init__(self, identifiers: List[T_Identifier], is_singleton: bool) -> None:
+    def __init__(self, identifiers: list[T_Identifier], is_singleton: bool) -> None:
         if not identifiers:
             raise ValueError("No identifiers specified")
         self._identifiers = identifiers
@@ -158,7 +153,7 @@ class IdentifierSequenceCore(Generic[T_Identifier], ABC):
         return len(self) == len(set(self.as_primitives()))
 
     @staticmethod
-    def unwrap_identifier(identifier: Union[str, int, Dict]) -> Union[str, int]:
+    def unwrap_identifier(identifier: str | int | dict) -> str | int:
         if isinstance(identifier, (str, int)):
             return identifier
         if "externalId" in identifier:
@@ -173,16 +168,16 @@ class IdentifierSequenceCore(Generic[T_Identifier], ABC):
 class IdentifierSequence(IdentifierSequenceCore[Identifier]):
     @overload
     @classmethod
-    def of(cls, *ids: List[Union[int, str]]) -> IdentifierSequence:
+    def of(cls, *ids: list[int | str]) -> IdentifierSequence:
         ...
 
     @overload
     @classmethod
-    def of(cls, *ids: Union[int, str]) -> IdentifierSequence:
+    def of(cls, *ids: int | str) -> IdentifierSequence:
         ...
 
     @classmethod
-    def of(cls, *ids: Union[int, str, Sequence[int | str]]) -> IdentifierSequence:
+    def of(cls, *ids: int | str | Sequence[int | str]) -> IdentifierSequence:
         if len(ids) == 1 and isinstance(ids[0], Sequence) and not isinstance(ids[0], str):
             return cls([Identifier(val) for val in ids[0]], is_singleton=False)
         else:
@@ -191,15 +186,15 @@ class IdentifierSequence(IdentifierSequenceCore[Identifier]):
     @classmethod
     def load(
         cls,
-        ids: Optional[Union[int, Sequence[int]]] = None,
-        external_ids: Optional[Union[str, Sequence[str]]] = None,
+        ids: int | Sequence[int] | None = None,
+        external_ids: str | Sequence[str] | None = None,
         *,
         id_name: str = "",
     ) -> IdentifierSequence:
         if id_name and not id_name.endswith("_"):
             id_name += "_"
         value_passed_as_primitive = False
-        all_identifiers: List[Union[int, str]] = []
+        all_identifiers: list[int | str] = []
 
         if ids is not None:
             if isinstance(ids, numbers.Integral):

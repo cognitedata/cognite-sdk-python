@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from abc import ABC
 from dataclasses import asdict, dataclass
-from typing import Any, Literal, Optional, cast
+from typing import Any, Literal, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -26,12 +26,13 @@ class ContainerCore(DataModelingResource):
     Args:
         space (str): The workspace for the view, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the view.
-        description (str): Textual description of the view
-        name (str): Human readable name for the view.
-        used_for (Literal['node', 'edge', 'all']): Should this operation apply to nodes, edges or both.
         properties (dict[str, ContainerProperty]): We index the property by a local unique identifier.
-        constraints (dict[str, Constraint]): Set of constraints to apply to the container
-        indexes (dict[str, Index]): Set of indexes to apply to the container.
+        description (str | None): Textual description of the view
+        name (str | None): Human readable name for the view.
+        used_for (Literal["node", "edge", "all"] | None): Should this operation apply to nodes, edges or both.
+        constraints (dict[str, Constraint] | None): Set of constraints to apply to the container
+        indexes (dict[str, Index] | None): Set of indexes to apply to the container.
+        **_ (Any): No description.
     """
 
     def __init__(
@@ -39,13 +40,13 @@ class ContainerCore(DataModelingResource):
         space: str,
         external_id: str,
         properties: dict[str, ContainerProperty],
-        description: Optional[str] = None,
-        name: Optional[str] = None,
-        used_for: Optional[Literal["node", "edge", "all"]] = None,
-        constraints: Optional[dict[str, Constraint]] = None,
-        indexes: Optional[dict[str, Index]] = None,
+        description: str | None = None,
+        name: str | None = None,
+        used_for: Literal["node", "edge", "all"] | None = None,
+        constraints: dict[str, Constraint] | None = None,
+        indexes: dict[str, Index] | None = None,
         **_: Any,
-    ):
+    ) -> None:
         self.space = space
         self.external_id = external_id
         self.description = description
@@ -87,12 +88,12 @@ class ContainerApply(ContainerCore):
     Args:
         space (str): The workspace for the view, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the view.
-        description (str): Textual description of the view
-        name (str): Human readable name for the view.
-        used_for (Literal['node', 'edge', 'all']): Should this operation apply to nodes, edges or both.
         properties (dict[str, ContainerProperty]): We index the property by a local unique identifier.
-        constraints (dict[str, Constraint]): Set of constraints to apply to the container
-        indexes (dict[str, Index]): Set of indexes to apply to the container.
+        description (str | None): Textual description of the view
+        name (str | None): Human readable name for the view.
+        used_for (Literal["node", "edge", "all"] | None): Should this operation apply to nodes, edges or both.
+        constraints (dict[str, Constraint] | None): Set of constraints to apply to the container
+        indexes (dict[str, Index] | None): Set of indexes to apply to the container.
     """
 
     def __init__(
@@ -100,12 +101,12 @@ class ContainerApply(ContainerCore):
         space: str,
         external_id: str,
         properties: dict[str, ContainerProperty],
-        description: Optional[str] = None,
-        name: Optional[str] = None,
-        used_for: Optional[Literal["node", "edge", "all"]] = None,
-        constraints: Optional[dict[str, Constraint]] = None,
-        indexes: Optional[dict[str, Index]] = None,
-    ):
+        description: str | None = None,
+        name: str | None = None,
+        used_for: Literal["node", "edge", "all"] | None = None,
+        constraints: dict[str, Constraint] | None = None,
+        indexes: dict[str, Index] | None = None,
+    ) -> None:
         validate_data_modeling_identifier(space, external_id)
         super().__init__(space, external_id, properties, description, name, used_for, constraints, indexes)
 
@@ -116,15 +117,16 @@ class Container(ContainerCore):
     Args:
         space (str): The workspace for the view, a unique identifier for the space.
         external_id (str): Combined with the space is the unique identifier of the view.
-        description (str): Textual description of the view
-        name (str): Human readable name for the view.
-        is_global (bool): Whether this is a global container, i.e., one of the out-of-the-box models.
-        used_for (Literal['node', 'edge', 'all']): Should this operation apply to nodes, edges or both.
         properties (dict[str, ContainerProperty]): We index the property by a local unique identifier.
-        constraints (dict[str, Constraint]): Set of constraints to apply to the container
-        indexes (dict[str, Index]): Set of indexes to apply to the container.
+        is_global (bool): Whether this is a global container, i.e., one of the out-of-the-box models.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        description (str | None): Textual description of the view
+        name (str | None): Human readable name for the view.
+        used_for (Literal["node", "edge", "all"]): Should this operation apply to nodes, edges or both.
+        constraints (dict[str, Constraint] | None): Set of constraints to apply to the container
+        indexes (dict[str, Index] | None): Set of indexes to apply to the container.
+        **_ (Any): No description.
     """
 
     def __init__(
@@ -135,13 +137,13 @@ class Container(ContainerCore):
         is_global: bool,
         last_updated_time: int,
         created_time: int,
-        description: Optional[str] = None,
-        name: Optional[str] = None,
+        description: str | None = None,
+        name: str | None = None,
         used_for: Literal["node", "edge", "all"] = "node",
-        constraints: Optional[dict[str, Constraint]] = None,
-        indexes: Optional[dict[str, Index]] = None,
+        constraints: dict[str, Constraint] | None = None,
+        indexes: dict[str, Index] | None = None,
         **_: Any,
-    ):
+    ) -> None:
         super().__init__(space, external_id, properties, description, name, used_for, constraints, indexes)
         self.is_global = is_global
         self.last_updated_time = last_updated_time
@@ -196,11 +198,11 @@ class ContainerFilter(CogniteFilter):
     """Represent the filter arguments for the list endpoint.
 
     Args:
-        space (str): The space to query
+        space (str | None): The space to query
         include_global (bool): Whether the global containers should be included.
     """
 
-    def __init__(self, space: Optional[str] = None, include_global: bool = False):
+    def __init__(self, space: str | None = None, include_global: bool = False) -> None:
         self.space = space
         self.include_global = include_global
 
@@ -210,7 +212,7 @@ class ContainerProperty:
     type: PropertyType
     nullable: bool = True
     auto_increment: bool = False
-    name: Optional[str] = None
+    name: str | None = None
     default_value: str | int | dict | None = None
     description: str | None = None
 

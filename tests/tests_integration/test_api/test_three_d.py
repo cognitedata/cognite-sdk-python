@@ -28,7 +28,7 @@ class TestThreeDModelsAPI:
     def test_list_and_retrieve(self, cognite_client):
         res = cognite_client.three_d.models.list(limit=1)
         assert 1 == len(res)
-        res = [r for r in cognite_client.three_d.models(limit=None) if r.name == "MyModel775"][0]
+        res = next(r for r in cognite_client.three_d.models(limit=None) if r.name == "MyModel775")
         assert res == cognite_client.three_d.models.retrieve(res.id)
 
     def test_update_with_resource(self, new_model, cognite_client):

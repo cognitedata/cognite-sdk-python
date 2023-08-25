@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, Iterator, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Iterator, Sequence, cast
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 
 
 class ThreeDAPI(APIClient):
-    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.models = ThreeDModelsAPI(config, api_version, cognite_client)
         self.revisions = ThreeDRevisionsAPI(config, api_version, cognite_client)
@@ -37,19 +37,19 @@ class ThreeDModelsAPI(APIClient):
     _RESOURCE_PATH = "/3d/models"
 
     def __call__(
-        self, chunk_size: Optional[int] = None, published: Optional[bool] = None, limit: Optional[int] = None
-    ) -> Union[Iterator[ThreeDModel], Iterator[ThreeDModelList]]:
+        self, chunk_size: int | None = None, published: bool | None = None, limit: int | None = None
+    ) -> Iterator[ThreeDModel] | Iterator[ThreeDModelList]:
         """Iterate over 3d models
 
         Fetches 3d models as they are iterated over, so you keep a limited number of 3d models in memory.
 
         Args:
-            chunk_size (int, optional): Number of 3d models to return in each chunk. Defaults to yielding one model a time.
-            published (bool): Filter based on whether or not the model has published revisions.
-            limit (int, optional): Maximum number of 3d models to return. Defaults to return all items.
+            chunk_size (int | None): Number of 3d models to return in each chunk. Defaults to yielding one model a time.
+            published (bool | None): Filter based on whether or not the model has published revisions.
+            limit (int | None): Maximum number of 3d models to return. Defaults to return all items.
 
-        Yields:
-            Union[ThreeDModel, ThreeDModelList]: yields ThreeDModel one by one if chunk is not specified, else ThreeDModelList objects.
+        Returns:
+            Iterator[ThreeDModel] | Iterator[ThreeDModelList]: yields ThreeDModel one by one if chunk is not specified, else ThreeDModelList objects.
         """
         return self._list_generator(
             list_cls=ThreeDModelList,
@@ -65,19 +65,19 @@ class ThreeDModelsAPI(APIClient):
 
         Fetches models as they are iterated over, so you keep a limited number of models in memory.
 
-        Yields:
-            ThreeDModel: yields models one by one.
+        Returns:
+            Iterator[ThreeDModel]: yields models one by one.
         """
         return cast(Iterator[ThreeDModel], self())
 
-    def retrieve(self, id: int) -> Optional[ThreeDModel]:
+    def retrieve(self, id: int) -> ThreeDModel | None:
         """`Retrieve a 3d model by id <https://developer.cognite.com/api#tag/3D-Models/operation/get3DModel>`_
 
         Args:
             id (int): Get the model with this id.
 
         Returns:
-            ThreeDModel: The requested 3d model.
+            ThreeDModel | None: The requested 3d model.
 
         Example:
 
@@ -89,13 +89,12 @@ class ThreeDModelsAPI(APIClient):
         """
         return self._retrieve(cls=ThreeDModel, identifier=InternalId(id))
 
-    def list(self, published: Optional[bool] = None, limit: int = LIST_LIMIT_DEFAULT) -> ThreeDModelList:
+    def list(self, published: bool | None = None, limit: int = LIST_LIMIT_DEFAULT) -> ThreeDModelList:
         """`List 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/get3DModels>`_
 
         Args:
-            published (bool): Filter based on whether or not the model has published revisions.
-            limit (int): Maximum number of models to retrieve. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
+            published (bool | None): Filter based on whether or not the model has published revisions.
+            limit (int): Maximum number of models to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             ThreeDModelList: The list of 3d models.
@@ -130,14 +129,14 @@ class ThreeDModelsAPI(APIClient):
             limit=limit,
         )
 
-    def create(self, name: Union[str, Sequence[str]]) -> Union[ThreeDModel, ThreeDModelList]:
+    def create(self, name: str | Sequence[str]) -> ThreeDModel | ThreeDModelList:
         """`Create new 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/create3DModels>`_
 
         Args:
-            name (Union[str, Sequence[str]): The name of the 3d model(s) to create.
+            name (str | Sequence[str]): The name of the 3d model(s) to create.
 
         Returns:
-            Union[ThreeDModel, ThreeDModelList]: The created 3d model(s).
+            ThreeDModel | ThreeDModelList: The created 3d model(s).
 
         Example:
 
@@ -149,21 +148,21 @@ class ThreeDModelsAPI(APIClient):
         """
         utils._auxiliary.assert_type(name, "name", [str, Sequence])
         if isinstance(name, str):
-            name_processed: Union[Dict[str, Any], Sequence[Dict[str, Any]]] = {"name": name}
+            name_processed: dict[str, Any] | Sequence[dict[str, Any]] = {"name": name}
         else:
             name_processed = [{"name": n} for n in name]
         return self._create_multiple(list_cls=ThreeDModelList, resource_cls=ThreeDModel, items=name_processed)
 
     def update(
-        self, item: Union[ThreeDModel, ThreeDModelUpdate, Sequence[Union[ThreeDModel, ThreeDModelUpdate]]]
-    ) -> Union[ThreeDModel, ThreeDModelList]:
+        self, item: ThreeDModel | ThreeDModelUpdate | Sequence[ThreeDModel | ThreeDModelUpdate]
+    ) -> ThreeDModel | ThreeDModelList:
         """`Update 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/update3DModels>`_
 
         Args:
-            item (Union[ThreeDModel, ThreeDModelUpdate, Sequence[Union[ThreeDModel, ThreeDModelUpdate]]]): ThreeDModel(s) to update
+            item (ThreeDModel | ThreeDModelUpdate | Sequence[ThreeDModel | ThreeDModelUpdate]): ThreeDModel(s) to update
 
         Returns:
-            Union[ThreeDModel, ThreeDModelList]: Updated ThreeDModel(s)
+            ThreeDModel | ThreeDModelList: Updated ThreeDModel(s)
 
         Examples:
 
@@ -188,14 +187,11 @@ class ThreeDModelsAPI(APIClient):
             list_cls=ThreeDModelList, resource_cls=ThreeDModel, update_cls=ThreeDModelUpdate, items=item
         )
 
-    def delete(self, id: Union[int, Sequence[int]]) -> None:
+    def delete(self, id: int | Sequence[int]) -> None:
         """`Delete 3d models. <https://developer.cognite.com/api#tag/3D-Models/operation/delete3DModels>`_
 
         Args:
-            id (Union[int, Sequence[int]]): ID or list of IDs to delete.
-
-        Returns:
-            None
+            id (int | Sequence[int]): ID or list of IDs to delete.
 
         Example:
 
@@ -212,21 +208,20 @@ class ThreeDRevisionsAPI(APIClient):
     _RESOURCE_PATH = "/3d/models/{}/revisions"
 
     def __call__(
-        self, model_id: int, chunk_size: Optional[int] = None, published: bool = False, limit: Optional[int] = None
-    ) -> Union[Iterator[ThreeDModelRevision], Iterator[ThreeDModelRevisionList]]:
+        self, model_id: int, chunk_size: int | None = None, published: bool = False, limit: int | None = None
+    ) -> Iterator[ThreeDModelRevision] | Iterator[ThreeDModelRevisionList]:
         """Iterate over 3d model revisions
 
         Fetches 3d model revisions as they are iterated over, so you keep a limited number of 3d model revisions in memory.
 
         Args:
             model_id (int): Iterate over revisions for the model with this id.
-            chunk_size (int, optional): Number of 3d model revisions to return in each chunk. Defaults to yielding one model a time.
+            chunk_size (int | None): Number of 3d model revisions to return in each chunk. Defaults to yielding one model a time.
             published (bool): Filter based on whether or not the revision has been published.
-            limit (int, optional): Maximum number of 3d model revisions to return. Defaults to return all items.
+            limit (int | None): Maximum number of 3d model revisions to return. Defaults to return all items.
 
-        Yields:
-            Union[ThreeDModelRevision, ThreeDModelRevisionList]: yields ThreeDModelRevision one by one if chunk is not
-                specified, else ThreeDModelRevisionList objects.
+        Returns:
+            Iterator[ThreeDModelRevision] | Iterator[ThreeDModelRevisionList]: yields ThreeDModelRevision one by one if chunk is not specified, else ThreeDModelRevisionList objects.
         """
         return self._list_generator(
             list_cls=ThreeDModelRevisionList,
@@ -238,7 +233,7 @@ class ThreeDRevisionsAPI(APIClient):
             limit=limit,
         )
 
-    def retrieve(self, model_id: int, id: int) -> Optional[ThreeDModelRevision]:
+    def retrieve(self, model_id: int, id: int) -> ThreeDModelRevision | None:
         """`Retrieve a 3d model revision by id <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/get3DRevision>`_
 
         Args:
@@ -246,7 +241,7 @@ class ThreeDRevisionsAPI(APIClient):
             id (int): Get the model revision with this id.
 
         Returns:
-            Optional[ThreeDModelRevision]: The requested 3d model revision.
+            ThreeDModelRevision | None: The requested 3d model revision.
 
         Example:
 
@@ -263,16 +258,16 @@ class ThreeDRevisionsAPI(APIClient):
         )
 
     def create(
-        self, model_id: int, revision: Union[ThreeDModelRevision, Sequence[ThreeDModelRevision]]
-    ) -> Union[ThreeDModelRevision, ThreeDModelRevisionList]:
+        self, model_id: int, revision: ThreeDModelRevision | Sequence[ThreeDModelRevision]
+    ) -> ThreeDModelRevision | ThreeDModelRevisionList:
         """`Create a revisions for a specified 3d model. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/create3DRevisions>`_
 
         Args:
             model_id (int): Create revisions for this model.
-            revision (Union[ThreeDModelRevision, Sequence[ThreeDModelRevision]]): The revision(s) to create.
+            revision (ThreeDModelRevision | Sequence[ThreeDModelRevision]): The revision(s) to create.
 
         Returns:
-            Union[ThreeDModelRevision, ThreeDModelRevisionList]: The created revision(s)
+            ThreeDModelRevision | ThreeDModelRevisionList: The created revision(s)
 
         Example:
 
@@ -323,21 +318,18 @@ class ThreeDRevisionsAPI(APIClient):
     def update(
         self,
         model_id: int,
-        item: Union[
-            ThreeDModelRevision,
-            ThreeDModelRevisionUpdate,
-            Sequence[Union[ThreeDModelRevision, ThreeDModelRevisionUpdate]],
-        ],
-    ) -> Union[ThreeDModelRevision, ThreeDModelRevisionList]:
+        item: ThreeDModelRevision
+        | ThreeDModelRevisionUpdate
+        | Sequence[ThreeDModelRevision | ThreeDModelRevisionUpdate],
+    ) -> ThreeDModelRevision | ThreeDModelRevisionList:
         """`Update 3d model revisions. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/update3DRevisions>`_
 
         Args:
             model_id (int): Update the revision under the model with this id.
-            item (Union[ThreeDModelRevision, ThreeDModelRevisionUpdate, Sequence[Union[ThreeDModelRevision, ThreeDModelRevisionUpdate]]]):
-                ThreeDModelRevision(s) to update
+            item (ThreeDModelRevision | ThreeDModelRevisionUpdate | Sequence[ThreeDModelRevision | ThreeDModelRevisionUpdate]): ThreeDModelRevision(s) to update
 
         Returns:
-            Union[ThreeDModelRevision, ThreeDModelRevisionList]: Updated ThreeDModelRevision(s)
+            ThreeDModelRevision | ThreeDModelRevisionList: Updated ThreeDModelRevision(s)
 
         Examples:
 
@@ -365,15 +357,12 @@ class ThreeDRevisionsAPI(APIClient):
             items=item,
         )
 
-    def delete(self, model_id: int, id: Union[int, Sequence[int]]) -> None:
+    def delete(self, model_id: int, id: int | Sequence[int]) -> None:
         """`Delete 3d model revisions. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/delete3DRevisions>`_
 
         Args:
             model_id (int): Delete the revision under the model with this id.
-            id (Union[int, Sequence[int]]): ID or list of IDs to delete.
-
-        Returns:
-            None
+            id (int | Sequence[int]): ID or list of IDs to delete.
 
         Example:
 
@@ -397,9 +386,6 @@ class ThreeDRevisionsAPI(APIClient):
             revision_id (int): Id of the revision.
             file_id (int): Id of the thumbnail file in the Files API.
 
-        Returns:
-            None
-
         Example:
 
             Update revision thumbnail::
@@ -418,10 +404,10 @@ class ThreeDRevisionsAPI(APIClient):
         self,
         model_id: int,
         revision_id: int,
-        node_id: Optional[int] = None,
-        depth: Optional[int] = None,
+        node_id: int | None = None,
+        depth: int | None = None,
         sort_by_node_id: bool = False,
-        partitions: Optional[int] = None,
+        partitions: int | None = None,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> ThreeDNodeList:
         """`Retrieves a list of nodes from the hierarchy in the 3D Model. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/get3DNodes>`_
@@ -432,12 +418,11 @@ class ThreeDRevisionsAPI(APIClient):
         Args:
             model_id (int): Id of the model.
             revision_id (int): Id of the revision.
-            node_id (int): ID of the root node of the subtree you request (default is the root node).
-            depth (int): Get sub nodes up to this many levels below the specified node. Depth 0 is the root node.
-            limit (int): Maximun number of nodes to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
+            node_id (int | None): ID of the root node of the subtree you request (default is the root node).
+            depth (int | None): Get sub nodes up to this many levels below the specified node. Depth 0 is the root node.
             sort_by_node_id (bool): Returns the nodes in `nodeId` order.
-            partitions (int): The result is retrieved in this many parts in parallel. Requires `sort_by_node_id` to be set to `true`.
+            partitions (int | None): The result is retrieved in this many parts in parallel. Requires `sort_by_node_id` to be set to `true`.
+            limit (int): Maximun number of nodes to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             ThreeDNodeList: The list of 3d nodes.
@@ -468,19 +453,18 @@ class ThreeDRevisionsAPI(APIClient):
         self,
         model_id: int,
         revision_id: int,
-        properties: Optional[Dict[str, Dict[str, Sequence[str]]]] = None,
+        properties: dict[str, dict[str, Sequence[str]]] | None = None,
         limit: int = LIST_LIMIT_DEFAULT,
-        partitions: Optional[int] = None,
+        partitions: int | None = None,
     ) -> ThreeDNodeList:
         """`List nodes in a revision, filtered by node property values. <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/filter3DNodes>`_
 
         Args:
             model_id (int): Id of the model.
             revision_id (int): Id of the revision.
-            properties (Dict[str, Dict[str, Sequence[str]]]): Properties for filtering. The object contains one or more category. Each category references one or more properties. Each property is associated with a list of values. For a node to satisfy the filter, it must, for each category/property in the filter, contain the catogery+property combination with a value that is contained within the corresponding list in the filter.
-            limit (int): Maximun number of nodes to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
-            partitions (int): The result is retrieved in this many parts in parallel. Requires `sort_by_node_id` to be set to `true`.
+            properties (dict[str, dict[str, Sequence[str]]] | None): Properties for filtering. The object contains one or more category. Each category references one or more properties. Each property is associated with a list of values. For a node to satisfy the filter, it must, for each category/property in the filter, contain the catogery+property combination with a value that is contained within the corresponding list in the filter.
+            limit (int): Maximun number of nodes to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            partitions (int | None): The result is retrieved in this many parts in parallel. Requires `sort_by_node_id` to be set to `true`.
 
         Returns:
             ThreeDNodeList: The list of 3d nodes.
@@ -507,16 +491,15 @@ class ThreeDRevisionsAPI(APIClient):
         )
 
     def list_ancestor_nodes(
-        self, model_id: int, revision_id: int, node_id: Optional[int] = None, limit: int = LIST_LIMIT_DEFAULT
+        self, model_id: int, revision_id: int, node_id: int | None = None, limit: int = LIST_LIMIT_DEFAULT
     ) -> ThreeDNodeList:
         """`Retrieves a list of ancestor nodes of a given node, including itself, in the hierarchy of the 3D model <https://developer.cognite.com/api#tag/3D-Model-Revisions/operation/get3DNodeAncestors>`_
 
         Args:
             model_id (int): Id of the model.
             revision_id (int): Id of the revision.
-            node_id (int): ID of the node to get the ancestors of.
-            limit (int): Maximun number of nodes to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
+            node_id (int | None): ID of the node to get the ancestors of.
+            limit (int): Maximun number of nodes to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             ThreeDNodeList: The list of 3d nodes.
@@ -573,8 +556,8 @@ class ThreeDAssetMappingAPI(APIClient):
         self,
         model_id: int,
         revision_id: int,
-        node_id: Optional[int] = None,
-        asset_id: Optional[int] = None,
+        node_id: int | None = None,
+        asset_id: int | None = None,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> ThreeDAssetMappingList:
         """`List 3D node asset mappings. <https://developer.cognite.com/api#tag/3D-Asset-Mapping/operation/get3DMappings>`_
@@ -582,10 +565,9 @@ class ThreeDAssetMappingAPI(APIClient):
         Args:
             model_id (int): Id of the model.
             revision_id (int): Id of the revision.
-            node_id (int): List only asset mappings associated with this node.
-            asset_id (int): List only asset mappings associated with this asset.
-            limit (int): Maximum number of asset mappings to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
+            node_id (int | None): List only asset mappings associated with this node.
+            asset_id (int | None): List only asset mappings associated with this asset.
+            limit (int): Maximum number of asset mappings to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             ThreeDAssetMappingList: The list of asset mappings.
@@ -609,17 +591,17 @@ class ThreeDAssetMappingAPI(APIClient):
         )
 
     def create(
-        self, model_id: int, revision_id: int, asset_mapping: Union[ThreeDAssetMapping, Sequence[ThreeDAssetMapping]]
-    ) -> Union[ThreeDAssetMapping, ThreeDAssetMappingList]:
+        self, model_id: int, revision_id: int, asset_mapping: ThreeDAssetMapping | Sequence[ThreeDAssetMapping]
+    ) -> ThreeDAssetMapping | ThreeDAssetMappingList:
         """`Create 3d node asset mappings. <https://developer.cognite.com/api#tag/3D-Asset-Mapping/operation/create3DMappings>`_
 
         Args:
             model_id (int): Id of the model.
             revision_id (int): Id of the revision.
-            asset_mapping (Union[ThreeDAssetMapping, Sequence[ThreeDAssetMapping]]): The asset mapping(s) to create.
+            asset_mapping (ThreeDAssetMapping | Sequence[ThreeDAssetMapping]): The asset mapping(s) to create.
 
         Returns:
-            Union[ThreeDAssetMapping, ThreeDAssetMappingList]: The created asset mapping(s).
+            ThreeDAssetMapping | ThreeDAssetMappingList: The created asset mapping(s).
 
         Example:
 
@@ -637,17 +619,14 @@ class ThreeDAssetMappingAPI(APIClient):
         )
 
     def delete(
-        self, model_id: int, revision_id: int, asset_mapping: Union[ThreeDAssetMapping, Sequence[ThreeDAssetMapping]]
+        self, model_id: int, revision_id: int, asset_mapping: ThreeDAssetMapping | Sequence[ThreeDAssetMapping]
     ) -> None:
         """`Delete 3d node asset mappings. <https://developer.cognite.com/api#tag/3D-Asset-Mapping/operation/delete3DMappings>`_
 
         Args:
             model_id (int): Id of the model.
             revision_id (int): Id of the revision.
-            asset_mapping (Union[ThreeDAssetMapping, Sequence[ThreeDAssetMapping]]): The asset mapping(s) to delete.
-
-        Returns:
-            None
+            asset_mapping (ThreeDAssetMapping | Sequence[ThreeDAssetMapping]): The asset mapping(s) to delete.
 
         Example:
 

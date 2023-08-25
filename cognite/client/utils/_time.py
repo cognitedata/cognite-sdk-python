@@ -8,7 +8,7 @@ import time
 from abc import ABC, abstractmethod
 from contextlib import suppress
 from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union, cast, overload
+from typing import TYPE_CHECKING, Any, cast, overload
 
 from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._auxiliary import local_import
@@ -68,7 +68,7 @@ def datetime_to_ms(dt: datetime) -> int:
         dt (datetime): Naive or aware datetime object. Naive datetimes are interpreted as local time.
 
     Returns:
-        ms: Milliseconds since epoch (negative for time prior to 1970-01-01)
+        int: Milliseconds since epoch (negative for time prior to 1970-01-01)
     """
     try:
         return int(1000 * dt.timestamp())
@@ -81,11 +81,11 @@ def datetime_to_ms(dt: datetime) -> int:
         ) from e
 
 
-def ms_to_datetime(ms: Union[int, float]) -> datetime:
+def ms_to_datetime(ms: int | float) -> datetime:
     """Converts valid Cognite timestamps, i.e. milliseconds since epoch, to datetime object.
 
     Args:
-        ms (Union[int, float]): Milliseconds since epoch.
+        ms (int | float): Milliseconds since epoch.
 
     Raises:
         ValueError: On invalid Cognite timestamps.
@@ -100,7 +100,7 @@ def ms_to_datetime(ms: Union[int, float]) -> datetime:
     return datetime(1970, 1, 1, tzinfo=timezone.utc) + timedelta(milliseconds=ms)
 
 
-def time_string_to_ms(pattern: str, string: str, unit_in_ms: Dict[str, int]) -> Optional[int]:
+def time_string_to_ms(pattern: str, string: str, unit_in_ms: dict[str, int]) -> int | None:
     pattern = pattern.format("|".join(unit_in_ms))
     if res := re.fullmatch(pattern, string):
         magnitude = int(res[1])
@@ -137,11 +137,11 @@ def time_ago_to_ms(time_ago_string: str) -> int:
     return ms
 
 
-def timestamp_to_ms(timestamp: Union[int, float, str, datetime]) -> int:
+def timestamp_to_ms(timestamp: int | float | str | datetime) -> int:
     """Returns the ms representation of some timestamp given by milliseconds, time-ago format or datetime object
 
     Args:
-        timestamp (Union[int, float, str, datetime]): Convert this timestamp to ms.
+        timestamp (int | float | str | datetime): Convert this timestamp to ms.
 
     Returns:
         int: Milliseconds since epoch representation of timestamp
@@ -175,7 +175,7 @@ TIME_ATTRIBUTES = {
 }
 
 
-def _convert_time_attributes_in_dict(item: Dict) -> Dict:
+def _convert_time_attributes_in_dict(item: dict) -> dict:
     new_item = {}
     for k, v in item.items():
         if k in TIME_ATTRIBUTES:
@@ -188,16 +188,16 @@ def _convert_time_attributes_in_dict(item: Dict) -> Dict:
 
 
 @overload
-def convert_time_attributes_to_datetime(item: Dict) -> Dict:
+def convert_time_attributes_to_datetime(item: dict) -> dict:
     ...
 
 
 @overload
-def convert_time_attributes_to_datetime(item: List[Dict]) -> List[Dict]:
+def convert_time_attributes_to_datetime(item: list[dict]) -> list[dict]:
     ...
 
 
-def convert_time_attributes_to_datetime(item: Union[Dict, List[Dict]]) -> Union[Dict, List[Dict]]:
+def convert_time_attributes_to_datetime(item: dict | list[dict]) -> dict | list[dict]:
     if isinstance(item, dict):
         return _convert_time_attributes_in_dict(item)
     if isinstance(item, list):
@@ -205,7 +205,7 @@ def convert_time_attributes_to_datetime(item: Union[Dict, List[Dict]]) -> Union[
     raise TypeError("item must be dict or list of dicts")
 
 
-def align_start_and_end_for_granularity(start: int, end: int, granularity: str) -> Tuple[int, int]:
+def align_start_and_end_for_granularity(start: int, end: int, granularity: str) -> tuple[int, int]:
     # Note the API always aligns `start` with 1s, 1m, 1h or 1d (even when given e.g. 73h)
     if remainder := start % granularity_unit_to_ms(granularity):
         # Floor `start` when not exactly at boundary
@@ -268,7 +268,11 @@ class WeekAligner(DateTimeAligner):
         Ceils the date to the next monday
         >>> WeekAligner.ceil(datetime(2023, 4, 9 ))
         datetime.datetime(2023, 4, 10, 0, 0)
-        """
+
+        Args:
+            date (datetime): No description.
+        Returns:
+            datetime: No description."""
         date = cls.normalize(date)
         if (weekday := date.weekday()) != 0:
             return date + timedelta(days=7 - weekday)
@@ -280,7 +284,11 @@ class WeekAligner(DateTimeAligner):
         Floors the date to the nearest monday
         >>> WeekAligner.floor(datetime(2023, 4, 9))
         datetime.datetime(2023, 4, 3, 0, 0)
-        """
+
+        Args:
+            date (datetime): No description.
+        Returns:
+            datetime: No description."""
         date = cls.normalize(date)
         if (weekday := date.weekday()) != 0:
             return date - timedelta(days=weekday)
@@ -309,7 +317,11 @@ class MonthAligner(DateTimeAligner):
         datetime.datetime(2024, 1, 1, 0, 0)
         >>> MonthAligner.ceil(datetime(2024, 1, 10))
         datetime.datetime(2024, 2, 1, 0, 0)
-        """
+
+        Args:
+            date (datetime): No description.
+        Returns:
+            datetime: No description."""
         if date == datetime(year=date.year, month=date.month, day=1, tzinfo=date.tzinfo):
             return date
         extra, month = divmod(date.month + 1, 12)
@@ -341,7 +353,11 @@ class QuarterAligner(DateTimeAligner):
         datetime.datetime(2024, 1, 1, 0, 0)
         >>> QuarterAligner.ceil(datetime(2023, 1, 1))
         datetime.datetime(2023, 1, 1, 0, 0)
-        """
+
+        Args:
+            date (datetime): No description.
+        Returns:
+            datetime: No description."""
         if any(date == datetime(date.year, month, 1, tzinfo=date.tzinfo) for month in [1, 4, 7, 10]):
             return date
         month = 3 * ((date.month - 1) // 3 + 1) + 1
@@ -358,7 +374,11 @@ class QuarterAligner(DateTimeAligner):
         datetime.datetime(2023, 7, 1, 0, 0)
         >>> QuarterAligner.floor(datetime(2023, 12, 1))
         datetime.datetime(2023, 10, 1, 0, 0)
-        """
+
+        Args:
+            date (datetime): No description.
+        Returns:
+            datetime: No description."""
         month = 3 * ((date.month - 1) // 3) + 1
         return cls.normalize(date.replace(month=month, day=1))
 
@@ -398,12 +418,12 @@ def align_large_granularity(start: datetime, end: datetime, granularity: str) ->
     This is done to get consistent behavior with the Cognite Datapoints API.
 
     Args:
-        start: Start time
-        end: End time
-        granularity: The large granularity, day|week|month|quarter|year.
+        start (datetime): Start time
+        end (datetime): End time
+        granularity (str): The large granularity, day|week|month|quarter|year.
 
     Returns:
-        start and end aligned with granularity
+        tuple[datetime, datetime]: start and end aligned with granularity
     """
     multiplier, unit = get_granularity_multiplier_and_unit(granularity)
     # Can be replaced by a single dispatch pattern, but kept more explicit for readability.
@@ -425,7 +445,7 @@ def align_large_granularity(start: datetime, end: datetime, granularity: str) ->
     return start, end
 
 
-def split_time_range(start: int, end: int, n_splits: int, granularity_in_ms: int) -> List[int]:
+def split_time_range(start: int, end: int, n_splits: int, granularity_in_ms: int) -> list[int]:
     if n_splits < 1:
         raise ValueError(f"Cannot split into less than 1 piece, got {n_splits=}")
     tot_ms = end - start
@@ -539,7 +559,14 @@ def pandas_date_range_tz(start: datetime, end: datetime, freq: str, inclusive: s
     This function overcomes that limitation.
 
     Assumes that start and end have the same timezone.
-    """
+
+    Args:
+        start (datetime): No description.
+        end (datetime): No description.
+        freq (str): No description.
+        inclusive (str): No description.
+    Returns:
+        pandas.DatetimeIndex: No description."""
     pd = cast(Any, local_import("pandas"))
     # There is a bug in date_range which makes it fail to handle ambiguous timestamps when you use time zone aware
     # datetimes. This is a workaround by passing the time zone as an argument to the function.
@@ -573,7 +600,12 @@ def _timezones_are_equal(start_tz: tzinfo, end_tz: tzinfo) -> bool:
     Note:
         We do not consider timezones with different keys, but equal fixed offsets from UTC to be equal. An example
         would be Zulu Time (which is +00:00 ahead of UTC) and UTC.
-    """
+
+    Args:
+        start_tz (tzinfo): No description.
+        end_tz (tzinfo): No description.
+    Returns:
+        bool: No description."""
     if start_tz is end_tz:
         return True
     ZoneInfo, ZoneInfoNotFoundError = import_zoneinfo(), _import_zoneinfo_not_found_error()
@@ -630,7 +662,12 @@ def _unit_in_days(unit: str, ceil: bool = True) -> float:
     **Caveat** Should not be used for precise calculations, as month, quarter, and year
     do not have a precise timespan in days. Instead, the ceil argument is used to select between
     the maximum and minimum length of a year, quarter, and month.
-    """
+
+    Args:
+        unit (str): No description.
+        ceil (bool): No description.
+    Returns:
+        float: No description."""
     if unit in {"w", "d", "h", "m", "s"}:
         unit = GRANULARITY_IN_TIMEDELTA_UNIT[unit]
         arg = {unit: 1}
@@ -650,12 +687,11 @@ def in_timedelta(granularity: str, ceil: bool = True) -> timedelta:
     Converts the granularity to a timedelta.
 
     Args:
-        granularity: The granularity.
-        ceil: In the case the unit is month, quarter or year. Ceil = True will use 31, 92, 366 days for these
-              timespans, and if ceil is false 28, 91, 365
+        granularity (str): The granularity.
+        ceil (bool): In the case the unit is month, quarter or year. Ceil = True will use 31, 92, 366 days for these timespans, and if ceil is false 28, 91, 365
 
     Returns:
-        A timespan for the granularity
+        timedelta: A timespan for the granularity
     """
     multiplier, unit = get_granularity_multiplier_and_unit(granularity, standardize=True)
     if unit in {"w", "d", "h", "m", "s"}:

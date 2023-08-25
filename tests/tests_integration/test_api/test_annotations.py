@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 from copy import deepcopy
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import pytest
 
@@ -13,9 +13,7 @@ from cognite.client.data_classes.annotations import AnnotationReverseLookupFilte
 from cognite.client.exceptions import CogniteAPIError
 
 
-def delete_with_check(
-    cognite_client: CogniteClient, delete_ids: List[int], check_ids: Optional[List[int]] = None
-) -> None:
+def delete_with_check(cognite_client: CogniteClient, delete_ids: list[int], check_ids: list[int] | None = None) -> None:
     if check_ids is None:
         check_ids = delete_ids
     cognite_client.annotations.delete(id=delete_ids)
@@ -28,7 +26,7 @@ def delete_with_check(
         assert sorted(check_ids) == sorted(missing)
 
 
-def remove_None_from_nested_dict(d: Dict[str, Any]) -> Dict[str, Any]:
+def remove_None_from_nested_dict(d: dict[str, Any]) -> dict[str, Any]:
     new_dict = {}
     for key, val in d.items():
         if isinstance(val, dict):
@@ -135,7 +133,7 @@ def asset_link_annotation(permanent_file_id: int, cognite_client: CogniteClient)
     return cognite_client.annotations.create(annotation)
 
 
-def assert_payload_dict(local: Dict[str, Any], remote: Dict[str, Any]) -> None:
+def assert_payload_dict(local: dict[str, Any], remote: dict[str, Any]) -> None:
     for k, local_v in local.items():
         if local_v is None:
             continue

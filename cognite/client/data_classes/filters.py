@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, List, Mapping, Optional, Sequence, Tuple, Union, cast, final
+from typing import TYPE_CHECKING, Any, List, Mapping, Sequence, Tuple, Union, cast, final
 
 from typing_extensions import TypeAlias
 
@@ -186,7 +186,7 @@ def _validate_filter(filter: Filter | dict | None, supported_filters: frozenset[
 class CompoundFilter(Filter):
     _filter_name = "compound"
 
-    def __init__(self, *filters: Filter):
+    def __init__(self, *filters: Filter) -> None:
         self._filters = filters
 
     def _filter_body(self, camel_case_property: bool) -> list | dict:
@@ -196,7 +196,7 @@ class CompoundFilter(Filter):
 class FilterWithProperty(Filter):
     _filter_name = "propertyFilter"
 
-    def __init__(self, property: PropertyReference):
+    def __init__(self, property: PropertyReference) -> None:
         self._property = property
 
     def _dump_property(self, camel_case: bool) -> list[str] | tuple[str, ...]:
@@ -209,7 +209,7 @@ class FilterWithProperty(Filter):
 class FilterWithPropertyAndValue(FilterWithProperty):
     _filter_name = "propertyAndValueFilter"
 
-    def __init__(self, property: PropertyReference, value: FilterValue):
+    def __init__(self, property: PropertyReference, value: FilterValue) -> None:
         super().__init__(property)
         self._value = value
 
@@ -220,7 +220,7 @@ class FilterWithPropertyAndValue(FilterWithProperty):
 class FilterWithPropertyAndValueList(FilterWithProperty):
     _filter_name = "propertyAndValueListFilter"
 
-    def __init__(self, property: PropertyReference, values: FilterValueList):
+    def __init__(self, property: PropertyReference, values: FilterValueList) -> None:
         super().__init__(property)
         self._values = values
 
@@ -242,7 +242,7 @@ class Or(CompoundFilter):
 class Not(CompoundFilter):
     _filter_name = "not"
 
-    def __init__(self, filter: Filter):
+    def __init__(self, filter: Filter) -> None:
         super().__init__(filter)
 
     def _filter_body(self, camel_case_property: bool) -> dict:
@@ -275,13 +275,13 @@ class HasData(Filter):
 
     def __init__(
         self,
-        containers: Optional[Sequence[tuple[str, str] | ContainerId]] = None,
-        views: Optional[Sequence[tuple[str, str, str] | ViewId]] = None,
-    ):
+        containers: Sequence[tuple[str, str] | ContainerId] | None = None,
+        views: Sequence[tuple[str, str, str] | ViewId] | None = None,
+    ) -> None:
         from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
 
-        self.__containers: List[ContainerId] = [ContainerId.load(container) for container in (containers or [])]
-        self.__views: List[ViewId] = [ViewId.load(view) for view in (views or [])]
+        self.__containers: list[ContainerId] = [ContainerId.load(container) for container in (containers or [])]
+        self.__views: list[ViewId] = [ViewId.load(view) for view in (views or [])]
 
     def _filter_body(self, camel_case_property: bool) -> dict:
         return {
@@ -297,11 +297,11 @@ class Range(FilterWithProperty):
     def __init__(
         self,
         property: PropertyReference,
-        gt: Optional[FilterValue] = None,
-        gte: Optional[FilterValue] = None,
-        lt: Optional[FilterValue] = None,
-        lte: Optional[FilterValue] = None,
-    ):
+        gt: FilterValue | None = None,
+        gte: FilterValue | None = None,
+        lt: FilterValue | None = None,
+        lte: FilterValue | None = None,
+    ) -> None:
         super().__init__(property)
         self._gt = gt
         self._gte = gte
@@ -329,11 +329,11 @@ class Overlaps(Filter):
         self,
         start_property: PropertyReference,
         end_property: PropertyReference,
-        gt: Optional[FilterValue] = None,
-        gte: Optional[FilterValue] = None,
-        lt: Optional[FilterValue] = None,
-        lte: Optional[FilterValue] = None,
-    ):
+        gt: FilterValue | None = None,
+        gte: FilterValue | None = None,
+        lt: FilterValue | None = None,
+        lte: FilterValue | None = None,
+    ) -> None:
         self._start_property = start_property
         self._end_property = end_property
         self._gt = gt

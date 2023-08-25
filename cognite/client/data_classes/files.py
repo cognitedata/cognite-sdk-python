@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Sequence, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -26,49 +26,49 @@ class FileMetadata(CogniteResource):
     """No description.
 
     Args:
-        external_id (str): The external ID provided by the client. Must be unique for the resource type.
-        name (str): Name of the file.
-        source (str): The source of the file.
-        mime_type (str): File type. E.g. text/plain, application/pdf, ..
-        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        directory (str): Directory associated with the file. Must be an absolute, unix-style path.
-        asset_ids (Sequence[int]): No description.
-        data_set_id (int): The dataSet Id for the item.
-        labels (Sequence[Label]): A list of the labels associated with this resource item.
-        geo_location (GeoLocation): The geographic metadata of the file.
-        source_created_time (int): The timestamp for when the file was originally created in the source system.
-        source_modified_time (int): The timestamp for when the file was last modified in the source system.
-        security_categories (Sequence[int]): The security category IDs required to access this file.
-        id (int): A server-generated ID for the object.
-        uploaded (bool): Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body.
-        uploaded_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
-        cognite_client (CogniteClient): The client to associate with this object.
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
+        name (str | None): Name of the file.
+        source (str | None): The source of the file.
+        mime_type (str | None): File type. E.g. text/plain, application/pdf, ..
+        metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        directory (str | None): Directory associated with the file. Must be an absolute, unix-style path.
+        asset_ids (Sequence[int] | None): No description.
+        data_set_id (int | None): The dataSet Id for the item.
+        labels (Sequence[Label] | None): A list of the labels associated with this resource item.
+        geo_location (GeoLocation | None): The geographic metadata of the file.
+        source_created_time (int | None): The timestamp for when the file was originally created in the source system.
+        source_modified_time (int | None): The timestamp for when the file was last modified in the source system.
+        security_categories (Sequence[int] | None): The security category IDs required to access this file.
+        id (int | None): A server-generated ID for the object.
+        uploaded (bool | None): Whether or not the actual file is uploaded.  This field is returned only by the API, it has no effect in a post body.
+        uploaded_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        last_updated_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        external_id: Optional[str] = None,
-        name: Optional[str] = None,
-        source: Optional[str] = None,
-        mime_type: Optional[str] = None,
-        metadata: Optional[Dict[str, str]] = None,
-        directory: Optional[str] = None,
-        asset_ids: Optional[Sequence[int]] = None,
-        data_set_id: Optional[int] = None,
-        labels: Optional[Sequence[Label]] = None,
-        geo_location: Optional[GeoLocation] = None,
-        source_created_time: Optional[int] = None,
-        source_modified_time: Optional[int] = None,
-        security_categories: Optional[Sequence[int]] = None,
-        id: Optional[int] = None,
-        uploaded: Optional[bool] = None,
-        uploaded_time: Optional[int] = None,
-        created_time: Optional[int] = None,
-        last_updated_time: Optional[int] = None,
-        cognite_client: Optional[CogniteClient] = None,
-    ):
+        external_id: str | None = None,
+        name: str | None = None,
+        source: str | None = None,
+        mime_type: str | None = None,
+        metadata: dict[str, str] | None = None,
+        directory: str | None = None,
+        asset_ids: Sequence[int] | None = None,
+        data_set_id: int | None = None,
+        labels: Sequence[Label] | None = None,
+        geo_location: GeoLocation | None = None,
+        source_created_time: int | None = None,
+        source_modified_time: int | None = None,
+        security_categories: Sequence[int] | None = None,
+        id: int | None = None,
+        uploaded: bool | None = None,
+        uploaded_time: int | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+        cognite_client: CogniteClient | None = None,
+    ) -> None:
         if geo_location is not None and not isinstance(geo_location, GeoLocation):
             raise TypeError("FileMetadata.geo_location should be of type GeoLocation")
         self.external_id = external_id
@@ -92,7 +92,7 @@ class FileMetadata(CogniteResource):
         self._cognite_client = cast("CogniteClient", cognite_client)
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> FileMetadata:
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> FileMetadata:
         instance = super()._load(resource, cognite_client)
         instance.labels = Label._load_list(instance.labels)
         if instance.geo_location is not None:
@@ -104,49 +104,49 @@ class FileMetadataFilter(CogniteFilter):
     """No description.
 
     Args:
-        name (str): Name of the file.
-        mime_type (str): File type. E.g. text/plain, application/pdf, ..
-        metadata (Dict[str, str]): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
-        asset_ids (Sequence[int]): Only include files that reference these specific asset IDs.
-        asset_external_ids (Sequence[str]): Only include files that reference these specific asset external IDs.
-        data_set_ids (Sequence[Dict[str, Any]]): Only include files that belong to these datasets.
-        labels (LabelFilter): Return only the files matching the specified label(s).
-        geo_location (GeoLocationFilter): Only include files matching the specified geographic relation.
-        asset_subtree_ids (Sequence[Dict[str, Any]]): Only include files that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
-        source (str): The source of this event.
-        created_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-        last_updated_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-        uploaded_time (Union[Dict[str, Any], TimestampRange]): Range between two timestamps.
-        source_created_time (Dict[str, Any]): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
-        source_modified_time (Dict[str, Any]): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
-        external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
-        directory_prefix (str): Filter by this (case-sensitive) prefix for the directory provided by the client.
-        uploaded (bool): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
-        cognite_client (CogniteClient): The client to associate with this object.
+        name (str | None): Name of the file.
+        mime_type (str | None): File type. E.g. text/plain, application/pdf, ..
+        metadata (dict[str, str] | None): Custom, application specific metadata. String key -> String value. Limits: Maximum length of key is 32 bytes, value 512 bytes, up to 16 key-value pairs.
+        asset_ids (Sequence[int] | None): Only include files that reference these specific asset IDs.
+        asset_external_ids (Sequence[str] | None): Only include files that reference these specific asset external IDs.
+        data_set_ids (Sequence[dict[str, Any]] | None): Only include files that belong to these datasets.
+        labels (LabelFilter | None): Return only the files matching the specified label(s).
+        geo_location (GeoLocationFilter | None): Only include files matching the specified geographic relation.
+        asset_subtree_ids (Sequence[dict[str, Any]] | None): Only include files that have a related asset in a subtree rooted at any of these assetIds (including the roots given). If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
+        source (str | None): The source of this event.
+        created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
+        last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
+        uploaded_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
+        source_created_time (dict[str, Any] | None): Filter for files where the sourceCreatedTime field has been set and is within the specified range.
+        source_modified_time (dict[str, Any] | None): Filter for files where the sourceModifiedTime field has been set and is within the specified range.
+        external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
+        directory_prefix (str | None): Filter by this (case-sensitive) prefix for the directory provided by the client.
+        uploaded (bool | None): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
+        cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        name: Optional[str] = None,
-        mime_type: Optional[str] = None,
-        metadata: Optional[Dict[str, str]] = None,
-        asset_ids: Optional[Sequence[int]] = None,
-        asset_external_ids: Optional[Sequence[str]] = None,
-        data_set_ids: Optional[Sequence[Dict[str, Any]]] = None,
-        labels: Optional[LabelFilter] = None,
-        geo_location: Optional[GeoLocationFilter] = None,
-        asset_subtree_ids: Optional[Sequence[Dict[str, Any]]] = None,
-        source: Optional[str] = None,
-        created_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
-        last_updated_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
-        uploaded_time: Optional[Union[Dict[str, Any], TimestampRange]] = None,
-        source_created_time: Optional[Dict[str, Any]] = None,
-        source_modified_time: Optional[Dict[str, Any]] = None,
-        external_id_prefix: Optional[str] = None,
-        directory_prefix: Optional[str] = None,
-        uploaded: Optional[bool] = None,
-        cognite_client: Optional[CogniteClient] = None,
-    ):
+        name: str | None = None,
+        mime_type: str | None = None,
+        metadata: dict[str, str] | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: Sequence[str] | None = None,
+        data_set_ids: Sequence[dict[str, Any]] | None = None,
+        labels: LabelFilter | None = None,
+        geo_location: GeoLocationFilter | None = None,
+        asset_subtree_ids: Sequence[dict[str, Any]] | None = None,
+        source: str | None = None,
+        created_time: dict[str, Any] | TimestampRange | None = None,
+        last_updated_time: dict[str, Any] | TimestampRange | None = None,
+        uploaded_time: dict[str, Any] | TimestampRange | None = None,
+        source_created_time: dict[str, Any] | None = None,
+        source_modified_time: dict[str, Any] | None = None,
+        external_id_prefix: str | None = None,
+        directory_prefix: str | None = None,
+        uploaded: bool | None = None,
+        cognite_client: CogniteClient | None = None,
+    ) -> None:
         self.name = name
         self.mime_type = mime_type
         self.metadata = metadata
@@ -173,7 +173,7 @@ class FileMetadataFilter(CogniteFilter):
             raise TypeError("FileMetadata.geo_location should be of type GeoLocationFilter")
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str]) -> FileMetadataFilter:
+    def _load(cls, resource: dict | str) -> FileMetadataFilter:
         instance = super()._load(resource)
         if isinstance(resource, Dict):
             if instance.created_time is not None:
@@ -188,7 +188,7 @@ class FileMetadataFilter(CogniteFilter):
                 instance.geo_location = GeoLocationFilter._load(**instance.geo_location)
         return instance
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
         result = super().dump(camel_case)
         if isinstance(self.labels, LabelFilter):
             result["labels"] = self.labels.dump(camel_case)
@@ -208,30 +208,30 @@ class FileMetadataUpdate(CogniteUpdate):
             return self._set(value)
 
     class _ObjectFileMetadataUpdate(CogniteObjectUpdate):
-        def set(self, value: Dict) -> FileMetadataUpdate:
+        def set(self, value: dict) -> FileMetadataUpdate:
             return self._set(value)
 
-        def add(self, value: Dict) -> FileMetadataUpdate:
+        def add(self, value: dict) -> FileMetadataUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> FileMetadataUpdate:
+        def remove(self, value: list) -> FileMetadataUpdate:
             return self._remove(value)
 
     class _ListFileMetadataUpdate(CogniteListUpdate):
-        def set(self, value: List) -> FileMetadataUpdate:
+        def set(self, value: list) -> FileMetadataUpdate:
             return self._set(value)
 
-        def add(self, value: List) -> FileMetadataUpdate:
+        def add(self, value: list) -> FileMetadataUpdate:
             return self._add(value)
 
-        def remove(self, value: List) -> FileMetadataUpdate:
+        def remove(self, value: list) -> FileMetadataUpdate:
             return self._remove(value)
 
     class _LabelFileMetadataUpdate(CogniteLabelUpdate):
-        def add(self, value: Union[str, List[str]]) -> FileMetadataUpdate:
+        def add(self, value: str | list[str]) -> FileMetadataUpdate:
             return self._add(value)
 
-        def remove(self, value: Union[str, List[str]]) -> FileMetadataUpdate:
+        def remove(self, value: str | list[str]) -> FileMetadataUpdate:
             return self._remove(value)
 
     @property
@@ -305,10 +305,11 @@ class FileAggregate(dict):
     """Aggregation results for files
 
     Args:
-        count (int): Number of filtered items included in aggregation
+        count (int | None): Number of filtered items included in aggregation
+        **kwargs (Any): No description.
     """
 
-    def __init__(self, count: Optional[int] = None, **kwargs: Any) -> None:
+    def __init__(self, count: int | None = None, **kwargs: Any) -> None:
         self.count = count
         self.update(kwargs)
 
