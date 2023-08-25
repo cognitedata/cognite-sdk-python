@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterator, Literal, Optional, Sequence, cast, overload
+from typing import Iterator, Literal, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DATA_MODELING_LIST_LIMIT_DEFAULT
@@ -23,7 +23,7 @@ class DataModelsAPI(APIClient):
     def __call__(
         self,
         chunk_size: None = None,
-        limit: Optional[int] = None,
+        limit: int | None = None,
         space: str | None = None,
         inline_views: bool = False,
         all_versions: bool = False,
@@ -35,7 +35,7 @@ class DataModelsAPI(APIClient):
     def __call__(
         self,
         chunk_size: int,
-        limit: Optional[int] = None,
+        limit: int | None = None,
         space: str | None = None,
         inline_views: bool = False,
         all_versions: bool = False,
@@ -46,7 +46,7 @@ class DataModelsAPI(APIClient):
     def __call__(
         self,
         chunk_size: int | None = None,
-        limit: Optional[int] = None,
+        limit: int | None = None,
         space: str | None = None,
         inline_views: bool = False,
         all_versions: bool = False,
@@ -57,16 +57,15 @@ class DataModelsAPI(APIClient):
         Fetches data model as they are iterated over, so you keep a limited number of data model in memory.
 
         Args:
-            chunk_size (int, optional): Number of data model to return in each chunk. Defaults to yielding one data_model a time.
-            limit (int, optional): Maximum number of data model to return. Default to return all items.
-            space: (str | None): The space to query.
+            chunk_size (int | None): Number of data model to return in each chunk. Defaults to yielding one data_model a time.
+            limit (int | None): Maximum number of data model to return. Defaults to returning all items.
+            space (str | None): The space to query.
             inline_views (bool): Whether to expand the referenced views inline in the returned result.
-            all_versions (bool): Whether to return all versions. If false, only the newest version is returned,
-                                 which is determined based on the 'createdTime' field.
+            all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
             include_global (bool): Whether to include global views.
 
-        Yields:
-            Union[DataModel, DataModelList]: yields DataModel one by one if chunk_size is not specified, else DataModelList objects.
+        Returns:
+            Iterator[DataModel] | Iterator[DataModelList]: yields DataModel one by one if chunk_size is not specified, else DataModelList objects.
         """
         filter = DataModelFilter(space, inline_views, all_versions, include_global)
 
@@ -84,8 +83,8 @@ class DataModelsAPI(APIClient):
 
         Fetches data model as they are iterated over, so you keep a limited number of data model in memory.
 
-        Yields:
-            DataModel: yields DataModels one by one.
+        Returns:
+            Iterator[DataModel]: yields DataModels one by one.
         """
         return cast(Iterator[DataModel], self())
 
@@ -107,11 +106,11 @@ class DataModelsAPI(APIClient):
         """`Retrieve data_model(s) by id(s). <https://developer.cognite.com/api#tag/Data-models/operation/byExternalIdsDataModels>`_
 
         Args:
-            ids (DataModelId | Sequence[DataModelId]): Data Model identifier(s).
+            ids (DataModelIdentifier | Sequence[DataModelIdentifier]): Data Model identifier(s).
             inline_views (bool): Whether to expand the referenced views inline in the returned result.
 
         Returns:
-            Optional[DataModel]: Requested data_model or None if it does not exist.
+            DataModelList[ViewId] | DataModelList[View]: Requested data_model or None if it does not exist.
 
         Examples:
 
@@ -133,9 +132,9 @@ class DataModelsAPI(APIClient):
         """`Delete one or more data model <https://developer.cognite.com/api#tag/Data-models/operation/deleteDataModels>`_
 
         Args:
-            ids (DataModelId | Sequence[DataModelId]): Data Model identifier(s).
+            ids (DataModelIdentifier | Sequence[DataModelIdentifier]): Data Model identifier(s).
         Returns:
-            The data_model(s) which has been deleted. None if nothing was deleted.
+            list[DataModelId]: The data_model(s) which has been deleted. None if nothing was deleted.
         Examples:
 
             Delete data model by id::
@@ -189,15 +188,13 @@ class DataModelsAPI(APIClient):
 
         Args:
             inline_views (bool): Whether to expand the referenced views inline in the returned result.
-            limit (int, optional): Maximum number of data model to return. Default to 10. Set to -1, float("inf") or None
-                to return all items.
-            space: (str | None): The space to query.
-            all_versions (bool): Whether to return all versions. If false, only the newest version is returned,
-                                 which is determined based on the 'createdTime' field.
+            limit (int): Maximum number of data model to return. Defaults to 10. Set to -1, float("inf") or None to return all items.
+            space (str | None): The space to query.
+            all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
             include_global (bool): Whether to include global data models.
 
         Returns:
-            DataModelList: List of requested data models
+            DataModelList[View] | DataModelList[ViewId]: List of requested data models
 
         Examples:
 
@@ -243,10 +240,10 @@ class DataModelsAPI(APIClient):
         """`Create or update one or more data model. <https://developer.cognite.com/api#tag/Data-models/operation/createDataModels>`_
 
         Args:
-            data_model (data_model: DataModelApply | Sequence[DataModelApply]): DataModel or data model to create or update (upsert).
+            data_model (DataModelApply | Sequence[DataModelApply]): Data model(s) to create or update (upsert).
 
         Returns:
-            DataModel | DataModelList: Created data_model(s)
+            DataModel | DataModelList: Created data model(s)
 
         Examples:
 

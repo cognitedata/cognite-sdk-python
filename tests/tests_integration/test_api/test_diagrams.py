@@ -58,7 +58,6 @@ class TestPNIDParsingIntegration:
         assert len(failed) == 0
 
     def test_run_diagram_detect_with_page_range(self, cognite_client):
-
         entities = [{"name": "PH-ME-P-0156-001", "id": 1}, {"name": "PH-ME-P-0156-002", "id": 2}]
         # References to the above are expected on page 6 and page 11, and repeating every 11 pages.
 

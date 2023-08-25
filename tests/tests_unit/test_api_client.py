@@ -5,7 +5,7 @@ import math
 import random
 import unittest
 from collections import namedtuple
-from typing import Any
+from typing import Any, ClassVar
 
 import pytest
 from requests import Response
@@ -85,7 +85,7 @@ class TestBasicRequests:
             rsps.add(method, BASE_URL + URL_PATH, status=500, json={"error": "Server error"})
             rsps.add(method, BASE_URL + URL_PATH, status=400, json={"error": {"code": 400, "message": "Client error"}})
 
-    request_cases = [
+    request_cases: ClassVar = [
         lambda api_client: RequestCase(
             name="post", method=api_client._post, kwargs={"url_path": URL_PATH, "json": {"any": "ok"}}
         ),
@@ -464,7 +464,7 @@ class TestStandardList:
         assert "Client Error" == e.value.message
 
     NUMBER_OF_ITEMS_FOR_AUTOPAGING = 11500
-    ITEMS_TO_GET_WHILE_AUTOPAGING = [{"x": 1, "y": 1} for _ in range(NUMBER_OF_ITEMS_FOR_AUTOPAGING)]
+    ITEMS_TO_GET_WHILE_AUTOPAGING: ClassVar = [{"x": 1, "y": 1} for _ in range(NUMBER_OF_ITEMS_FOR_AUTOPAGING)]
 
     def test_list_partitions(self, api_client_with_token, rsps):
         rsps.add(rsps.POST, BASE_URL + URL_PATH + "/list", status=200, json={"items": [{"x": 1, "y": 2}, {"x": 1}]})

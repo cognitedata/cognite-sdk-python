@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from pathlib import Path
-from typing import IO, TYPE_CHECKING, BinaryIO, Literal, Optional, cast, overload
+from typing import IO, TYPE_CHECKING, BinaryIO, Literal, cast, overload
 
 from requests import Response
 
@@ -54,7 +54,7 @@ class DocumentPreviewAPI(APIClient):
 
         Args:
             id (int): The server-generated ID for the document you want to retrieve the preview of.
-            page_number (int, optional): Page number to preview. Starting at 1 for first page.
+            page_number (int): Page number to preview. Starting at 1 for first page.
 
         Returns:
             bytes: The png preview of the document.
@@ -85,20 +85,18 @@ class DocumentPreviewAPI(APIClient):
         """`Downloads an image preview for a specific page of the specified document. <https://developer.cognite.com/api#tag/Document-preview/operation/documentsPreviewImagePage>`_
 
         Args:
-            path (Path | str | IO): The path to save the png preview of the document. If the path is a directory, the
-                  file name will be '[id]_page[page_number].png'.
+            path (Path | str | IO): The path to save the png preview of the document. If the path is a directory, the file name will be '[id]_page[page_number].png'.
             id (int): The server-generated ID for the document you want to retrieve the preview of.
-            page_number (int, optional): Page number to preview. Starting at 1 for first page.
-            overwrite (bool, optional): Whether to overwrite existing file at the given path. Defaults to False.
+            page_number (int): Page number to preview. Starting at 1 for first page.
+            overwrite (bool): Whether to overwrite existing file at the given path. Defaults to False.
 
         Examples:
 
-        Download Image preview of page 5 of file with id 123 to folder "previews":
+            Download Image preview of page 5 of file with id 123 to folder "previews":
 
-            >>> from cognite.client import CogniteClient
-            >>> c = CogniteClient()
-            >>> c.documents.previews.download_page_as_png("previews", id=123, page_number=5)
-
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> c.documents.previews.download_page_as_png("previews", id=123, page_number=5)
         """
         if isinstance(path, IO):
             content = self.download_page_as_png_bytes(id)
@@ -146,22 +144,17 @@ class DocumentPreviewAPI(APIClient):
         Previews will be rendered if necessary during the request. Be prepared for the request to take a few seconds to complete.
 
         Args:
-            path (Path | str | IO): The path to save the pdf preview of the document. If the path is a directory, the
-                  file name will be '[id].pdf'.
+            path (Path | str | IO): The path to save the pdf preview of the document. If the path is a directory, the file name will be '[id].pdf'.
             id (int): The server-generated ID for the document you want to retrieve the preview of.
-            overwrite (bool, optional): Whether to overwrite existing file at the given path. Defaults to False.
-
-        Returns:
-            bytes: The pdf preview of the document.
+            overwrite (bool): Whether to overwrite existing file at the given path. Defaults to False.
 
         Examples:
 
-        Download PDF preview of file with id 123 to folder "previews":
+            Download PDF preview of file with id 123 to folder "previews":
 
-            >>> from cognite.client import CogniteClient
-            >>> c = CogniteClient()
-            >>> c.documents.previews.download_document_as_pdf("previews", id=123)
-
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> c.documents.previews.download_document_as_pdf("previews", id=123)
         """
         if isinstance(path, IO):
             content = self.download_document_as_pdf_bytes(id)
@@ -184,7 +177,7 @@ class DocumentPreviewAPI(APIClient):
             id (int): The server-generated ID for the document you want to retrieve the preview of.
 
         Returns:
-            A temporary link to download the pdf preview.
+            TemporaryLink: A temporary link to download the pdf preview.
 
         Examples:
 
@@ -201,7 +194,7 @@ class DocumentPreviewAPI(APIClient):
 class DocumentsAPI(APIClient):
     _RESOURCE_PATH = "/documents"
 
-    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.previews = DocumentPreviewAPI(config, api_version, cognite_client)
 
@@ -237,16 +230,13 @@ class DocumentsAPI(APIClient):
         Fetches documents as they are iterated over, so you keep a limited number of documents in memory.
 
         Args:
-            chunk_size (int, optional): Number of documents to return in each chunk. Defaults to yielding one document at a time.
-            filter(filter: Filter | dict | None): The filter to narrow down the documents to return.
-            limit (int, optional): Maximum number of documents to return. Default to return all items.
-            partitions (int): Retrieve documents in parallel using this number of workers. Also requires `limit=None` to be passed.
-                To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions.
-                When using more than 10 partitions, actual throughout decreases.
-                In future releases of the APIs, CDF may reject requests with more than 10 partitions.
+            chunk_size (int | None): Number of documents to return in each chunk. Defaults to yielding one document at a time.
+            filter (Filter | dict | None): Filter | dict | None): The filter to narrow down the documents to return.
+            limit (int | None): Maximum number of documents to return. Default to return all items.
+            partitions (int | None): Retrieve documents in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
 
-        Yields:
-            Document | DocumentList: yields Documents one by one if chunk_size is not specified, else DocumentList objects.
+        Returns:
+            Iterator[Document] | Iterator[DocumentList]: yields Documents one by one if chunk_size is not specified, else DocumentList objects.
         """
         self._validate_filter(filter)
         return self._list_generator(
@@ -264,8 +254,8 @@ class DocumentsAPI(APIClient):
 
         Fetches documents as they are iterated over, so you keep a limited number of documents in memory.
 
-        Yields:
-            Documents: yields documents one by one.
+        Returns:
+            Iterator[Document]: yields documents one by one.
         """
         return cast(Iterator[Document], self())
 
@@ -312,7 +302,7 @@ class DocumentsAPI(APIClient):
         """`Find approximate property count for documents. <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
 
         Args:
-            property (DocumentProperty | list[str] | str): The property to count the cardinality of.
+            property (DocumentProperty | SourceFileProperty | list[str] | str): The property to count the cardinality of.
             query (str | None): The free text search query, for details see the documentation referenced above.
             filter (Filter | dict | None): The filter to narrow down the documents to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
@@ -322,32 +312,31 @@ class DocumentsAPI(APIClient):
 
         Examples:
 
-        Count the number of types of documents in your CDF project:
+            Count the number of types of documents in your CDF project:
 
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes.documents import DocumentProperty
-            >>> c = CogniteClient()
-            >>> count = c.documents.aggregate_cardinality_values(DocumentProperty.type)
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.documents import DocumentProperty
+                >>> c = CogniteClient()
+                >>> count = c.documents.aggregate_cardinality_values(DocumentProperty.type)
 
-        Count the number of authors of plain/text documents in your CDF project:
+            Count the number of authors of plain/text documents in your CDF project:
 
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes import filters
-            >>> from cognite.client.data_classes.documents import DocumentProperty
-            >>> c = CogniteClient()
-            >>> is_plain_text = filters.Equals(DocumentProperty.mime_type, "text/plain")
-            >>> plain_text_author_count = c.documents.aggregate_cardinality_values(DocumentProperty.author, filter=is_plain_text)
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes.documents import DocumentProperty
+                >>> c = CogniteClient()
+                >>> is_plain_text = filters.Equals(DocumentProperty.mime_type, "text/plain")
+                >>> plain_text_author_count = c.documents.aggregate_cardinality_values(DocumentProperty.author, filter=is_plain_text)
 
-        Count the number of types of documents in your CDF project but exclude documents that start with "text":
+            Count the number of types of documents in your CDF project but exclude documents that start with "text":
 
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes.documents import DocumentProperty
-            >>> from cognite.client.data_classes import aggregations
-            >>> c = CogniteClient()
-            >>> agg = aggregations
-            >>> is_not_text = agg.Not(agg.Prefix("text"))
-            >>> type_count_excluded_text = c.documents.aggregate_cardinality_values(DocumentProperty.type, aggregate_filter=is_not_text)
-
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.documents import DocumentProperty
+                >>> from cognite.client.data_classes import aggregations
+                >>> c = CogniteClient()
+                >>> agg = aggregations
+                >>> is_not_text = agg.Not(agg.Prefix("text"))
+                >>> type_count_excluded_text = c.documents.aggregate_cardinality_values(DocumentProperty.type, aggregate_filter=is_not_text)
         """
         self._validate_filter(filter)
 
@@ -369,8 +358,7 @@ class DocumentsAPI(APIClient):
         """`Find approximate paths count for documents.  <https://developer.cognite.com/api#tag/Documents/operation/documentsAggregate>`_
 
         Args:
-            path (DocumentProperty | list[str] | str): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
-                                                        It means to aggregate only metadata properties (aka keys).
+            path (DocumentProperty | SourceFileProperty | list[str] | str): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
             query (str | None): The free text search query, for details see the documentation referenced above.
             filter (Filter | dict | None): The filter to narrow down the documents to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
@@ -546,22 +534,17 @@ class DocumentsAPI(APIClient):
 
         Args:
             id (int): The server-generated ID for the document you want to retrieve the content of.
-            buffer (BinaryIO): The document content is streamed directly into the buffer. This is useful for
-                         retriving large documents.
-
-        Returns:
-            None: None
+            buffer (BinaryIO): The document content is streamed directly into the buffer. This is useful for retriving large documents.
 
         Examples:
 
-        Retrieve the content of a document with id 123 into local file "my_text.txt":
+            Retrieve the content of a document with id 123 into local file "my_text.txt":
 
-            >>> from cognite.client import CogniteClient
-            >>> from pathlib import Path
-            >>> c = CogniteClient()
-            >>> with open(Path("my_file.txt"), "wb") as buffer:
-            ...     c.documents.retrieve_content_buffer(id=123, buffer=buffer)
-
+                >>> from cognite.client import CogniteClient
+                >>> from pathlib import Path
+                >>> c = CogniteClient()
+                >>> with Path("my_file.txt").open("wb") as buffer:
+                ...     c.documents.retrieve_content_buffer(id=123, buffer=buffer)
         """
         with self._do_request(
             "GET", f"{self._RESOURCE_PATH}/{id}/content", stream=True, accept="text/plain"
@@ -609,43 +592,40 @@ class DocumentsAPI(APIClient):
 
         Args:
             query (str): The free text search query.
-            highlight (bool, optional): Whether or not matches in search results should be highlighted.
-            filter (Filter | dict | None, optional): The filter to narrow down the documents to search.
-            sort (DocumentSort | str | list[str] | tuple[SortablePropertyLike, Literal["asc", "desc"]] | None, optional):
-                The property to sort by. The default order is ascending.
-            limit (int, optional): Maximum number of items. When using highlights, the maximum value is reduced to 20. Defaults to 25.
+            highlight (bool): Whether or not matches in search results should be highlighted.
+            filter (Filter | dict | None): The filter to narrow down the documents to search.
+            sort (DocumentSort | SortableProperty | tuple[SortableProperty, Literal["asc", "desc"]] | None): The property to sort by. The default order is ascending.
+            limit (int): Maximum number of items. When using highlights, the maximum value is reduced to 20. Defaults to 25.
 
         Returns:
-            DocumentList | DocumentHighlightList: List of search results. If highlight is True, a DocumentHighlightList
-                                                  is returned, otherwise a DocumentList is returned.
+            DocumentList | DocumentHighlightList: List of search results. If highlight is True, a DocumentHighlightList is returned, otherwise a DocumentList is returned.
 
         Examples:
 
-        Search for text "pump 123" in PDF documents in your CDF project:
+            Search for text "pump 123" in PDF documents in your CDF project:
 
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes import filters
-            >>> from cognite.client.data_classes.documents import DocumentProperty
-            >>> c = CogniteClient()
-            >>> is_pdf = filters.Equals(DocumentProperty.mime_type, "application/pdf")
-            >>> documents = c.documents.search("pump 123", filter=is_pdf)
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes.documents import DocumentProperty
+                >>> c = CogniteClient()
+                >>> is_pdf = filters.Equals(DocumentProperty.mime_type, "application/pdf")
+                >>> documents = c.documents.search("pump 123", filter=is_pdf)
 
-        Find all documents with exact text 'CPLEX Error 1217: No Solution exists.'
-        in plain text files created the last week in your CDF project and highlight the matches:
+            Find all documents with exact text 'CPLEX Error 1217: No Solution exists.'
+            in plain text files created the last week in your CDF project and highlight the matches:
 
-            >>> from datetime import datetime, timedelta
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes import filters
-            >>> from cognite.client.data_classes.documents import DocumentProperty
-            >>> from cognite.client.utils import timestamp_to_ms
-            >>> c = CogniteClient()
-            >>> is_plain_text = filters.Equals(DocumentProperty.mime_type, "text/plain")
-            >>> last_week = filters.Range(DocumentProperty.created_time,
-            ...     gt=timestamp_to_ms(datetime.now() - timedelta(days=7)))
-            >>> documents = c.documents.search('"CPLEX Error 1217: No Solution exists."',
-            ...     highlight=True,
-            ...     filter=filters.And(is_plain_text, last_week))
-
+                >>> from datetime import datetime, timedelta
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes.documents import DocumentProperty
+                >>> from cognite.client.utils import timestamp_to_ms
+                >>> c = CogniteClient()
+                >>> is_plain_text = filters.Equals(DocumentProperty.mime_type, "text/plain")
+                >>> last_week = filters.Range(DocumentProperty.created_time,
+                ...     gt=timestamp_to_ms(datetime.now() - timedelta(days=7)))
+                >>> documents = c.documents.search('"CPLEX Error 1217: No Solution exists."',
+                ...     highlight=True,
+                ...     filter=filters.And(is_plain_text, last_week))
         """
         self._validate_filter(filter)
         results = []
@@ -679,37 +659,35 @@ class DocumentsAPI(APIClient):
     def list(self, filter: Filter | dict | None = None, limit: int = LIST_LIMIT_DEFAULT) -> DocumentList:
         """`List documents <https://developer.cognite.com/api#tag/Documents/operation/documentsList>`_
 
-         You can use filters to narrow down the list. Unlike the search method, list does not restrict the number
-         of documents to return, meaning that setting the limit to -1 will return all the documents in your
-         project.
+        You can use filters to narrow down the list. Unlike the search method, list does not restrict the number
+        of documents to return, meaning that setting the limit to -1 will return all the documents in your
+        project.
 
         Args:
-            filter(filter: Filter | dict | None): The filter to narrow down the documents to return.
-            limit (int): Maximum number of documents to return. Defaults to 25. Set to None or -1 to return all
-                         documents.
+            filter (Filter | dict | None): Filter | dict | None): The filter to narrow down the documents to return.
+            limit (int): Maximum number of documents to return. Defaults to 25. Set to None or -1 to return all documents.
 
         Returns:
             DocumentList: List of documents
 
         Examples:
 
-        List all PDF documents in your CDF project:
+            List all PDF documents in your CDF project:
 
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes import filters
-            >>> from cognite.client.data_classes.documents import DocumentProperty
-            >>> c = CogniteClient()
-            >>> is_pdf = filters.Equals(DocumentProperty.mime_type, "application/pdf")
-            >>> pdf_documents = c.documents.list(filter=is_pdf)
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes.documents import DocumentProperty
+                >>> c = CogniteClient()
+                >>> is_pdf = filters.Equals(DocumentProperty.mime_type, "application/pdf")
+                >>> pdf_documents = c.documents.list(filter=is_pdf)
 
-        Iterate over all documents in your CDF project:
+            Iterate over all documents in your CDF project:
 
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes.documents import DocumentProperty
-            >>> c = CogniteClient()
-            >>> for document in c.documents:
-            ...    print(document.name)
-
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.documents import DocumentProperty
+                >>> c = CogniteClient()
+                >>> for document in c.documents:
+                ...    print(document.name)
         """
         self._validate_filter(filter)
         return self._list(

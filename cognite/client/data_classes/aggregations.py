@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, Sequence, Type, TypeVar, Union, cast, final
+from typing import TYPE_CHECKING, Any, ClassVar, Sequence, TypeVar, Union, cast, final
 
 from typing_extensions import TypeAlias
 
@@ -105,7 +105,7 @@ class AggregatedValue(ABC):
     property: str
 
     @classmethod
-    def load(cls: Type[T_AggregatedValue], aggregated_value: dict[str, Any]) -> T_AggregatedValue:
+    def load(cls: type[T_AggregatedValue], aggregated_value: dict[str, Any]) -> T_AggregatedValue:
         if "aggregate" not in aggregated_value:
             raise ValueError("Missing aggregate, this is required")
         aggregate = aggregated_value["aggregate"]
@@ -295,10 +295,10 @@ class Range(AggregationFilter):
 
     def __init__(
         self,
-        gt: Optional[str | int | float] = None,
-        gte: Optional[str | int | float] = None,
-        lt: Optional[str | int | float] = None,
-        lte: Optional[str | int | float] = None,
+        gt: str | int | float | None = None,
+        gte: str | int | float | None = None,
+        lt: str | int | float | None = None,
+        lte: str | int | float | None = None,
     ):
         self._gt = gt
         self._gte = gte
@@ -328,7 +328,7 @@ class UniqueResult(CogniteResource):
         return self.values[0]
 
     @classmethod
-    def _load(cls, resource: dict | str, cognite_client: Optional[CogniteClient] = None) -> UniqueResult:
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> UniqueResult:
         resource = json.loads(resource) if isinstance(resource, str) else resource
         return cls(
             count=resource["count"],

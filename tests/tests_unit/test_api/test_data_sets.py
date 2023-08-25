@@ -107,7 +107,6 @@ class TestDataset:
         assert mock_ds_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
     def test_event_update_object(self):
-
         assert isinstance(
             DataSetUpdate(1)
             .description.set("")

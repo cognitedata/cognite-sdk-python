@@ -158,7 +158,7 @@ def cdf_aggregate(
     aggregate: Literal["average", "sum", "count"],
     granularity: str,
     is_step: bool = False,
-    raw_freq: str = None,
+    raw_freq: str | None = None,
 ) -> pandas.DataFrame:
     """Aggregates the dataframe as CDF is doing it on the database layer.
 
