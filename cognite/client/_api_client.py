@@ -10,6 +10,7 @@ from json.decoder import JSONDecodeError
 from typing import (
     TYPE_CHECKING,
     Any,
+    ClassVar,
     Dict,
     Iterator,
     Literal,
@@ -64,23 +65,21 @@ T = TypeVar("T")
 
 class APIClient:
     _RESOURCE_PATH: str
-    _RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS = frozenset(
-        {
-            rf"^{path}(\?.*)?$"
-            for path in (
-                "/(assets|events|files|timeseries|sequences|datasets|relationships)/(list|byids|search|aggregate)",
-                "/files/downloadlink",
-                "/timeseries/data",
-                "/timeseries/data/(list|latest|delete)",
-                "/sequences/data",
-                "/sequences/data/(list|delete)",
-                "/raw/dbs/[^/]+/tables/[^/]+",
-                "/context/entitymatching/(byids|list|jobs)",
-                "/sessions/revoke",
-                "/models/.*",
-            )
-        }
-    )
+    _RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS: ClassVar[set[str]] = {
+        rf"^{path}(\?.*)?$"
+        for path in (
+            "/(assets|events|files|timeseries|sequences|datasets|relationships)/(list|byids|search|aggregate)",
+            "/files/downloadlink",
+            "/timeseries/data",
+            "/timeseries/data/(list|latest|delete)",
+            "/sequences/data",
+            "/sequences/data/(list|delete)",
+            "/raw/dbs/[^/]+/tables/[^/]+",
+            "/context/entitymatching/(byids|list|jobs)",
+            "/sessions/revoke",
+            "/models/.*",
+        )
+    }
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         self._config = config
