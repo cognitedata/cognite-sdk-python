@@ -99,7 +99,7 @@ class GroupsAPI(APIClient):
 class SecurityCategoriesAPI(APIClient):
     _RESOURCE_PATH = "/securitycategories"
 
-    def list(self, limit: int = LIST_LIMIT_DEFAULT) -> SecurityCategoryList:
+    def list(self, limit: int | None = LIST_LIMIT_DEFAULT) -> SecurityCategoryList:
         """`List security categories. <https://developer.cognite.com/api#tag/Security-categories/operation/getSecurityCategories>`_
 
         Args:

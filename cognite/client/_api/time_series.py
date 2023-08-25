@@ -670,7 +670,7 @@ class TimeSeriesAPI(APIClient):
         self,
         filter: Filter | dict,
         sort: SortSpec | list[SortSpec] | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = LIST_LIMIT_DEFAULT,
     ) -> TimeSeriesList:
         """`Advanced filter time series <https://developer.cognite.com/api#tag/Time-series/operation/listTimeSeries>`_
 
@@ -752,7 +752,7 @@ class TimeSeriesAPI(APIClient):
         created_time: dict[str, Any] | None = None,
         last_updated_time: dict[str, Any] | None = None,
         partitions: int | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = LIST_LIMIT_DEFAULT,
     ) -> TimeSeriesList:
         """`List over time series <https://developer.cognite.com/api#tag/Time-series/operation/listTimeSeries>`_
 

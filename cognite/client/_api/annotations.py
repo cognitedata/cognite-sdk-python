@@ -173,7 +173,7 @@ class AnnotationsAPI(APIClient):
             url_path=self._RESOURCE_PATH + "/reverselookup",
         )
 
-    def list(self, filter: AnnotationFilter | dict, limit: int = LIST_LIMIT_DEFAULT) -> AnnotationList:
+    def list(self, filter: AnnotationFilter | dict, limit: int | None = LIST_LIMIT_DEFAULT) -> AnnotationList:
         """`List annotations. <https://developer.cognite.com/api#tag/Annotations/operation/annotationsFilter>`_
 
         Args:

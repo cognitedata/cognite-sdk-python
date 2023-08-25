@@ -126,7 +126,7 @@ class SpacesAPI(APIClient):
 
     def list(
         self,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = LIST_LIMIT_DEFAULT,
         include_global: bool = False,
     ) -> SpaceList:
         """`List spaces <https://developer.cognite.com/api#tag/Spaces/operation/listSpacesV3>`_

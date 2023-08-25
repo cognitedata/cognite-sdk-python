@@ -158,7 +158,7 @@ class DataModelsAPI(APIClient):
     def list(
         self,
         inline_views: Literal[True],
-        limit: int = DATA_MODELING_LIST_LIMIT_DEFAULT,
+        limit: int | None = DATA_MODELING_LIST_LIMIT_DEFAULT,
         space: str | None = None,
         all_versions: bool = False,
         include_global: bool = False,
@@ -169,7 +169,7 @@ class DataModelsAPI(APIClient):
     def list(
         self,
         inline_views: Literal[False] = False,
-        limit: int = DATA_MODELING_LIST_LIMIT_DEFAULT,
+        limit: int | None = DATA_MODELING_LIST_LIMIT_DEFAULT,
         space: str | None = None,
         all_versions: bool = False,
         include_global: bool = False,
@@ -179,7 +179,7 @@ class DataModelsAPI(APIClient):
     def list(
         self,
         inline_views: bool = False,
-        limit: int = DATA_MODELING_LIST_LIMIT_DEFAULT,
+        limit: int | None = DATA_MODELING_LIST_LIMIT_DEFAULT,
         space: str | None = None,
         all_versions: bool = False,
         include_global: bool = False,

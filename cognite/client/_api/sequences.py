@@ -748,7 +748,7 @@ class SequencesAPI(APIClient):
         self,
         filter: Filter | dict,
         sort: SortSpec | list[SortSpec] | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = LIST_LIMIT_DEFAULT,
     ) -> SequenceList:
         """`Advanced filter sequences <https://developer.cognite.com/api#tag/Sequences/operation/advancedListSequences>`_
 

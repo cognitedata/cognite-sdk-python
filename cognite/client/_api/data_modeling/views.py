@@ -156,7 +156,7 @@ class ViewsAPI(APIClient):
 
     def list(
         self,
-        limit: int = DATA_MODELING_LIST_LIMIT_DEFAULT,
+        limit: int | None = DATA_MODELING_LIST_LIMIT_DEFAULT,
         space: str | None = None,
         include_inherited_properties: bool = True,
         all_versions: bool = False,

@@ -827,7 +827,7 @@ class FilesAPI(APIClient):
         external_id_prefix: str | None = None,
         directory_prefix: str | None = None,
         uploaded: bool | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = LIST_LIMIT_DEFAULT,
     ) -> FileMetadataList:
         """`List files <https://developer.cognite.com/api#tag/Files/operation/advancedListFiles>`_
 

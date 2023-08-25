@@ -147,7 +147,10 @@ class ContainersAPI(APIClient):
         return [ContainerId(space=item["space"], external_id=item["externalId"]) for item in deleted_containers]
 
     def list(
-        self, space: str | None = None, limit: int = DATA_MODELING_LIST_LIMIT_DEFAULT, include_global: bool = False
+        self,
+        space: str | None = None,
+        limit: int | None = DATA_MODELING_LIST_LIMIT_DEFAULT,
+        include_global: bool = False,
     ) -> ContainerList:
         """`List containers <https://developer.cognite.com/api#tag/Containers/operation/listContainers>`_
 

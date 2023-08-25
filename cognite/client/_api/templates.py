@@ -160,7 +160,7 @@ class TemplateGroupsAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def list(self, limit: int = LIST_LIMIT_DEFAULT, owners: Sequence[str] | None = None) -> TemplateGroupList:
+    def list(self, limit: int | None = LIST_LIMIT_DEFAULT, owners: Sequence[str] | None = None) -> TemplateGroupList:
         """`Lists template groups stored in the project based on a query filter given in the payload of this request.`
         Up to 1000 template groups can be retrieved in one operation.
 
@@ -262,7 +262,7 @@ class TemplateGroupVersionsAPI(APIClient):
     def list(
         self,
         external_id: str,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = LIST_LIMIT_DEFAULT,
         min_version: int | None = None,
         max_version: int | None = None,
     ) -> TemplateGroupVersionList:
@@ -479,7 +479,7 @@ class TemplateInstancesAPI(APIClient):
         self,
         external_id: str,
         version: int,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = LIST_LIMIT_DEFAULT,
         data_set_ids: Sequence[int] | None = None,
         template_names: Sequence[str] | None = None,
     ) -> TemplateInstanceList:
@@ -634,7 +634,7 @@ class TemplateViewsAPI(APIClient):
         version: int,
         view_external_id: str,
         input: dict[str, Any] | None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = LIST_LIMIT_DEFAULT,
     ) -> ViewResolveList:
         """`Resolves a View.`
         It resolves the source specified in a View with the provided input and applies the mapping rules to the response.
@@ -666,7 +666,7 @@ class TemplateViewsAPI(APIClient):
             other_params={"externalId": view_external_id, "input": input},
         )
 
-    def list(self, external_id: str, version: int, limit: int = LIST_LIMIT_DEFAULT) -> ViewList:
+    def list(self, external_id: str, version: int, limit: int | None = LIST_LIMIT_DEFAULT) -> ViewList:
         """`Lists view in a template group.`
         Up to 1000 views can be retrieved in one operation.
 

@@ -647,7 +647,7 @@ class EventsAPI(APIClient):
         self,
         filter: Filter | dict,
         sort: SortSpec | list[SortSpec] | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = LIST_LIMIT_DEFAULT,
     ) -> EventList:
         """`Advanced filter events <https://developer.cognite.com/api#tag/Events/operation/advancedListEvents>`_
 
@@ -731,7 +731,7 @@ class EventsAPI(APIClient):
         external_id_prefix: str | None = None,
         sort: Sequence[str] | None = None,
         partitions: int | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = LIST_LIMIT_DEFAULT,
     ) -> EventList:
         """`List events <https://developer.cognite.com/api#tag/Events/operation/advancedListEvents>`_
 

@@ -51,7 +51,7 @@ class LabelsAPI(APIClient):
         external_id_prefix: str | None = None,
         data_set_ids: int | Sequence[int] | None = None,
         data_set_external_ids: str | Sequence[str] | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = LIST_LIMIT_DEFAULT,
     ) -> LabelDefinitionList:
         """`List Labels <https://developer.cognite.com/api#tag/Labels/operation/listLabels>`_
 

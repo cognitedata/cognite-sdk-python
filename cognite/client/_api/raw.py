@@ -114,7 +114,7 @@ class RawDatabasesAPI(APIClient):
             task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda el: el["name"]
         )
 
-    def list(self, limit: int = LIST_LIMIT_DEFAULT) -> DatabaseList:
+    def list(self, limit: int | None = LIST_LIMIT_DEFAULT) -> DatabaseList:
         """`List databases <https://developer.cognite.com/api#tag/Raw/operation/getDBs>`_
 
         Args:
@@ -263,7 +263,7 @@ class RawTablesAPI(APIClient):
         for tbl in table_iterator:
             yield self._set_db_name_on_tables(tbl, db_name)
 
-    def list(self, db_name: str, limit: int = LIST_LIMIT_DEFAULT) -> TableList:
+    def list(self, db_name: str, limit: int | None = LIST_LIMIT_DEFAULT) -> TableList:
         """`List tables <https://developer.cognite.com/api#tag/Raw/operation/getTables>`_
 
         Args:
@@ -509,7 +509,7 @@ class RawRowsAPI(APIClient):
         min_last_updated_time: int | None = None,
         max_last_updated_time: int | None = None,
         columns: list[str] | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = LIST_LIMIT_DEFAULT,
     ) -> pandas.DataFrame:
         """`Retrieve rows in a table as a pandas dataframe. <https://developer.cognite.com/api#tag/Raw/operation/getRows>`_
 
@@ -547,7 +547,7 @@ class RawRowsAPI(APIClient):
         min_last_updated_time: int | None = None,
         max_last_updated_time: int | None = None,
         columns: list[str] | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = LIST_LIMIT_DEFAULT,
     ) -> RowList:
         """`List rows in a table. <https://developer.cognite.com/api#tag/Raw/operation/getRows>`_
 

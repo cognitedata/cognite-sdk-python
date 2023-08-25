@@ -212,7 +212,7 @@ class DataSetsAPI(APIClient):
         last_updated_time: dict[str, Any] | TimestampRange | None = None,
         external_id_prefix: str | None = None,
         write_protected: bool | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = LIST_LIMIT_DEFAULT,
     ) -> DataSetList:
         """`List data sets <https://developer.cognite.com/api#tag/Data-sets/operation/listDataSets>`_
 

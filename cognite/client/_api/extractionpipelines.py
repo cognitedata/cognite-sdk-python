@@ -100,7 +100,7 @@ class ExtractionPipelinesAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def list(self, limit: int = LIST_LIMIT_DEFAULT) -> ExtractionPipelineList:
+    def list(self, limit: int | None = LIST_LIMIT_DEFAULT) -> ExtractionPipelineList:
         """`List extraction pipelines <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/listExtPipes>`_
 
         Args:
@@ -220,7 +220,7 @@ class ExtractionPipelineRunsAPI(APIClient):
         statuses: Sequence[str] | None = None,
         message_substring: str | None = None,
         created_time: dict[str, Any] | TimestampRange | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = LIST_LIMIT_DEFAULT,
     ) -> ExtractionPipelineRunList:
         """`List runs for an extraction pipeline with given external_id <https://developer.cognite.com/api#tag/Extraction-Pipelines/operation/filterRuns>`_
 

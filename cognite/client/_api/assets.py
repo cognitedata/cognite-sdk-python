@@ -856,7 +856,7 @@ class AssetsAPI(APIClient):
         filter: Filter | dict,
         sort: SortSpec | list[SortSpec] | None = None,
         aggregated_properties: Sequence[Literal["child_count", "path", "depth"]] | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = LIST_LIMIT_DEFAULT,
     ) -> AssetList:
         """`Advanced filter assets <https://developer.cognite.com/api#tag/Assets/operation/listAssets>`_
 
@@ -1046,7 +1046,7 @@ class AssetsAPI(APIClient):
         external_id_prefix: str | None = None,
         aggregated_properties: Sequence[str] | None = None,
         partitions: int | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = LIST_LIMIT_DEFAULT,
     ) -> AssetList:
         """`List assets <https://developer.cognite.com/api#tag/Assets/operation/listAssets>`_
 
