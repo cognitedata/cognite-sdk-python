@@ -38,10 +38,13 @@ from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteResource,
     CogniteUpdate,
+    EnumProperty,
     PropertySpec,
     T_CogniteResource,
     T_CogniteResourceList,
 )
+from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
+from cognite.client.data_classes.filters import Filter
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import is_unlimited, split_into_chunks
 from cognite.client.utils._concurrency import TaskExecutor
@@ -368,11 +371,12 @@ class APIClient:
         limit: Optional[int] = None,
         chunk_size: Optional[int] = None,
         filter: Optional[Dict[str, Any]] = None,
-        sort: Optional[Sequence[str]] = None,
+        sort: Optional[Sequence[str | dict]] = None,
         other_params: Optional[Dict[str, Any]] = None,
         partitions: Optional[int] = None,
         headers: Optional[Dict[str, Any]] = None,
         initial_cursor: Optional[str] = None,
+        advanced_filter: Optional[dict | Filter] = None,
     ) -> Union[Iterator[T_CogniteResourceList], Iterator[T_CogniteResource]]:
         if is_unlimited(limit):
             limit = None
@@ -419,6 +423,12 @@ class APIClient:
                     body: dict[str, Any] = {"limit": current_limit, "cursor": next_cursor, **(other_params or {})}
                     if filter:
                         body["filter"] = filter
+                    if advanced_filter:
+                        body["advancedFilter"] = (
+                            advanced_filter.dump(camel_case=True)
+                            if isinstance(advanced_filter, Filter)
+                            else advanced_filter
+                        )
                     if sort is not None:
                         body["sort"] = sort
                     res = self._post(url_path=url_path or resource_path + "/list", json=body, headers=headers)
@@ -494,9 +504,10 @@ class APIClient:
         filter: Optional[Dict] = None,
         other_params: Optional[Dict] = None,
         partitions: Optional[int] = None,
-        sort: Optional[Sequence[str]] = None,
+        sort: Optional[Sequence[str | dict]] = None,
         headers: Optional[Dict] = None,
         initial_cursor: Optional[str] = None,
+        advanced_filter: Optional[dict | Filter] = None,
     ) -> T_CogniteResourceList:
         if partitions:
             if not is_unlimited(limit):
@@ -528,6 +539,7 @@ class APIClient:
             other_params=other_params,
             headers=headers,
             initial_cursor=initial_cursor,
+            advanced_filter=advanced_filter,
         ):
             items.extend(resource_list.data)
         return list_cls(items, cognite_client=self._cognite_client)
@@ -541,6 +553,7 @@ class APIClient:
         filter: Optional[Dict] = None,
         other_params: Optional[Dict] = None,
         headers: Optional[Dict] = None,
+        advanced_filter: Optional[dict | Filter] = None,
     ) -> T_CogniteResourceList:
         def get_partition(partition: int) -> List[Dict[str, Any]]:
             next_cursor = None
@@ -554,6 +567,12 @@ class APIClient:
                         "partition": partition,
                         **(other_params or {}),
                     }
+                    if advanced_filter:
+                        body["advancedFilter"] = (
+                            advanced_filter.dump(camel_case=True)
+                            if isinstance(advanced_filter, Filter)
+                            else advanced_filter
+                        )
                     res = self._post(
                         url_path=(resource_path or self._RESOURCE_PATH) + "/list", json=body, headers=headers
                     )
@@ -608,6 +627,122 @@ class APIClient:
             body["keys"] = keys
         res = self._post(url_path=resource_path + "/aggregate", json=body, headers=headers)
         return [cls(**agg) for agg in res.json()["items"]]
+
+    @overload
+    def _advanced_aggregate(
+        self,
+        aggregate: Literal["count", "cardinalityValues", "cardinalityProperties"],
+        properties: EnumProperty
+        | str
+        | list[str]
+        | tuple[EnumProperty | str | list[str], AggregationFilter]
+        | None = None,
+        path: EnumProperty | str | list[str] | None = None,
+        query: str | None = None,
+        filter: CogniteFilter | dict | None = None,
+        advanced_filter: Filter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict | None = None,
+        limit: int | None = None,
+    ) -> int:
+        ...
+
+    @overload
+    def _advanced_aggregate(
+        self,
+        aggregate: Literal["uniqueValues", "uniqueProperties"],
+        properties: EnumProperty
+        | str
+        | list[str]
+        | tuple[EnumProperty | str | list[str], AggregationFilter]
+        | None = None,
+        path: EnumProperty | str | list[str] | None = None,
+        query: str | None = None,
+        filter: CogniteFilter | dict | None = None,
+        advanced_filter: Filter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict | None = None,
+        limit: int | None = None,
+    ) -> UniqueResultList:
+        ...
+
+    def _advanced_aggregate(
+        self,
+        aggregate: Literal["count", "cardinalityValues", "cardinalityProperties", "uniqueValues", "uniqueProperties"],
+        properties: EnumProperty
+        | str
+        | list[str]
+        | tuple[EnumProperty | str | list[str], AggregationFilter]
+        | None = None,
+        path: EnumProperty | str | list[str] | None = None,
+        query: str | None = None,
+        filter: CogniteFilter | dict | None = None,
+        advanced_filter: Filter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict | None = None,
+        limit: int | None = None,
+    ) -> int | UniqueResultList:
+        if aggregate not in ["count", "cardinalityValues", "cardinalityProperties", "uniqueValues", "uniqueProperties"]:
+            raise ValueError(
+                f"Invalid aggregate '{aggregate}'. Valid aggregates are 'count', 'cardinalityValues', "
+                f"'cardinalityProperties', 'uniqueValues', and 'uniqueProperties'."
+            )
+
+        body: dict[str, Any] = {
+            "aggregate": aggregate,
+        }
+        if properties is not None:
+            if isinstance(properties, tuple):
+                properties, property_aggregation_filter = properties
+            else:
+                property_aggregation_filter = None
+            if isinstance(properties, EnumProperty):
+                dumped_properties = properties.as_reference()
+            elif isinstance(properties, str):
+                dumped_properties = [to_camel_case(properties)]
+            elif isinstance(properties, list):
+                dumped_properties = [to_camel_case(p) for p in properties]
+            else:
+                raise ValueError(f"Unknown property format: {properties}")
+            body["properties"] = [{"property": dumped_properties}]
+            if property_aggregation_filter is not None:
+                body["properties"][0]["filter"] = property_aggregation_filter.dump()
+        if path is not None:
+            if isinstance(path, EnumProperty):
+                dumped_path = path.as_reference()
+            elif isinstance(path, str):
+                dumped_path = [path]
+            elif isinstance(path, list):
+                dumped_path = path
+            else:
+                raise ValueError(f"Unknown path format: {path}")
+            body["path"] = dumped_path
+        if query is not None:
+            body["search"] = {"query": query}
+        if filter is not None:
+            utils._auxiliary.assert_type(filter, "filter", [dict, CogniteFilter], allow_none=False)
+            if isinstance(filter, CogniteFilter):
+                dumped_filter = filter.dump(camel_case=True)
+            elif isinstance(filter, Dict):
+                dumped_filter = convert_all_keys_to_camel_case(filter)
+            else:
+                raise ValueError(f"Unknown filter format: {filter}")
+            body["filter"] = dumped_filter
+        if advanced_filter is not None:
+            body["advancedFilter"] = advanced_filter.dump() if isinstance(advanced_filter, Filter) else advanced_filter
+
+        if aggregate_filter is not None:
+            body["aggregateFilter"] = (
+                aggregate_filter.dump() if isinstance(aggregate_filter, AggregationFilter) else aggregate_filter
+            )
+        if limit is not None:
+            body["limit"] = limit
+
+        res = self._post(url_path=f"{self._RESOURCE_PATH}/aggregate", json=body)
+        json_items = res.json()["items"]
+        if aggregate in {"count", "cardinalityValues", "cardinalityProperties"}:
+            return json_items[0]["count"]
+        elif aggregate in {"uniqueValues", "uniqueProperties"}:
+            return UniqueResultList._load(json_items, cognite_client=self._cognite_client)
+        else:
+            raise ValueError(f"Unknown aggregate: {aggregate}")
 
     @overload
     def _create_multiple(

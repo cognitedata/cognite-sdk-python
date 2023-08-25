@@ -17,6 +17,24 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.15.0] - 2023-08-18
+### Added
+- Support for the DocumentsAPI with the implementation `client.documents`.
+- Support for advanced filtering for `Events`, `TimeSeries`, `Assets` and `Sequences`. This is available through the 
+  `.filter()` method, for example, `client.events.filter`.
+- Extended aggregation support for `Events`, `TimeSeries`, `Assets` and `Sequences`. This is available through the five 
+  methods `.aggregate_count(...)`, `aggregate_cardinality_values(...)`, `aggregate_cardinality_properties(...)`, 
+  `.aggregate_unique_values(...)`, and `.aggregate_unique_properties(...)`. For example, 
+  `client.assets.aggregate_count(...)`. 
+- Added helper methods `as_external_ids` and `as_ids` for `EventList`, `TimeSeriesList`, `AssetList`, `SequenceList`,
+  `FileMetaDataList`, `FunctionList`, `ExtractionPipelineList`, and `DataSetList`.
+
+### Deprecated
+- Added `DeprecationWarning` to methods `client.assets.aggregate_metadata_keys` and 
+  `client.assets.aggregate_metadata_values`. The use parameter the `fields` in 
+  `client.events.aggregate_unique_values` will also lead to a deprecation warning. The reason is that the endpoints 
+  these methods are using have been deprecated in the CDF API.
+
 ## [6.14.2] - 2023-08-22
 ### Fixed
 - All data modeling endpoints will now be retried. This was not the case for POST endpoints.

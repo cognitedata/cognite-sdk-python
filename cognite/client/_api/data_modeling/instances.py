@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Literal, Optional, Sequence, Type, Union, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import INSTANCES_LIST_LIMIT_DEFAULT
+from cognite.client.data_classes import filters
 from cognite.client.data_classes._base import CogniteResourceList
-from cognite.client.data_classes.data_modeling.aggregations import (
+from cognite.client.data_classes.aggregations import (
     Aggregation,
     Histogram,
     HistogramValue,
@@ -41,7 +43,7 @@ from cognite.client.data_classes.data_modeling.query import (
     QueryResult,
 )
 from cognite.client.data_classes.data_modeling.views import View
-from cognite.client.data_classes.filters import Filter
+from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
 
 from ._data_modeling_executor import get_data_modeling_executor
@@ -49,13 +51,32 @@ from ._data_modeling_executor import get_data_modeling_executor
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
+_DATA_MODELING_SUPPORTED_FILTERS: frozenset[type[Filter]] = frozenset(
+    {
+        filters.And,
+        filters.Or,
+        filters.Not,
+        filters.In,
+        filters.Equals,
+        filters.Exists,
+        filters.Range,
+        filters.Prefix,
+        filters.ContainsAny,
+        filters.ContainsAll,
+        filters.Nested,
+        filters.HasData,
+        filters.MatchAll,
+        filters.Overlaps,
+    }
+)
+
 
 class _NodeOrEdgeList(CogniteResourceList):
     _RESOURCE = (Node, Edge)  # type: ignore[assignment]
 
     @classmethod
     def _load(
-        cls, resource_list: list[dict[str, Any]] | str, cognite_client: Optional[CogniteClient] = None
+        cls, resource_list: Iterable[dict[str, Any]] | str, cognite_client: Optional[CogniteClient] = None
     ) -> _NodeOrEdgeList:
         resource_list = json.loads(resource_list) if isinstance(resource_list, str) else resource_list
         resources: list[Node | Edge] = [
@@ -81,7 +102,7 @@ class _NodeOrEdgeApplyResultList(CogniteResourceList):
 
     @classmethod
     def _load(
-        cls, resource_list: list[dict[str, Any]] | str, cognite_client: Optional[CogniteClient] = None
+        cls, resource_list: Iterable[dict[str, Any]] | str, cognite_client: Optional[CogniteClient] = None
     ) -> _NodeOrEdgeApplyResultList:
         resource_list = json.loads(resource_list) if isinstance(resource_list, str) else resource_list
         resources: list[NodeApplyResult | EdgeApplyResult] = [
@@ -178,6 +199,7 @@ class InstancesAPI(APIClient):
         filter: Filter | dict | None = None,
     ) -> Iterator[Edge] | Iterator[EdgeList] | Iterator[Node] | Iterator[NodeList]:
         """Iterate over nodes or edges.
+
         Fetches instances as they are iterated over, so you keep a limited number of instances in memory.
 
         Args:
@@ -193,6 +215,7 @@ class InstancesAPI(APIClient):
         Yields:
             Edge | Node | EdgeList | NodeList: yields Instance one by one if chunk_size is not specified, else NodeList/EdgeList objects.
         """
+        self._validate_filter(filter)
         other_params = self._create_other_params(
             include_typing=include_typing, instance_type=instance_type, sort=sort, sources=sources
         )
@@ -219,7 +242,8 @@ class InstancesAPI(APIClient):
         )
 
     def __iter__(self) -> Iterator[Node]:
-        """Iterate over instances
+        """Iterate over instances.
+
         Fetches instances as they are iterated over, so you keep a limited number of instances in memory.
         Yields:
             Instance: yields Instances one by one.
@@ -580,6 +604,7 @@ class InstancesAPI(APIClient):
                 ... query="Quentin", properties=["name"], filter=born_after_1970)
 
         """
+        self._validate_filter(filter)
         if instance_type == "node":
             list_cls: Union[Type[NodeList], Type[EdgeList]] = NodeList
         elif instance_type == "edge":
@@ -640,6 +665,8 @@ class InstancesAPI(APIClient):
         """
         if instance_type not in ("node", "edge"):
             raise ValueError(f"Invalid instance type: {instance_type}")
+        self._validate_filter(filter)
+
         body: Dict[str, Any] = {"view": view.dump(camel_case=True), "instanceType": instance_type, "limit": limit}
         aggregate_seq: Sequence[Aggregation | dict] = aggregates if isinstance(aggregates, Sequence) else [aggregates]
         body["aggregates"] = [
@@ -723,6 +750,8 @@ class InstancesAPI(APIClient):
         """
         if instance_type not in ("node", "edge"):
             raise ValueError(f"Invalid instance type: {instance_type}")
+        self._validate_filter(filter)
+
         body: Dict[str, Any] = {"view": view.dump(camel_case=True), "instanceType": instance_type, "limit": limit}
 
         if isinstance(histograms, Sequence):
@@ -753,7 +782,7 @@ class InstancesAPI(APIClient):
             return [HistogramValue.load(item["aggregates"][0]) for item in res.json()["items"]]
 
     def query(self, query: Query) -> QueryResult:
-        """`Advanced query interface for nodes/edges. <https://developer.cognite.com/api/v1/#tag/Instances/operation/queryContent>`_
+        """`Advanced query interface for nodes/edges <https://developer.cognite.com/api/v1/#tag/Instances/operation/queryContent>`_.
 
         The Data Modelling API exposes an advanced query interface. The query interface supports parameterization,
         recursive edge traversal, chaining of result sets, and granular property selection.
@@ -791,7 +820,7 @@ class InstancesAPI(APIClient):
         return self._query_or_sync(query, "query")
 
     def sync(self, query: Query) -> QueryResult:
-        """`Subscription to changes for nodes/edges. <https://developer.cognite.com/api/v1/#tag/Instances/operation/syncContent>`_
+        """`Subscription to changes for nodes/edges <https://developer.cognite.com/api/v1/#tag/Instances/operation/syncContent>`_.
 
         Subscribe to changes for nodes and edges in a project, matching a supplied filter.
 
@@ -912,6 +941,7 @@ class InstancesAPI(APIClient):
                 >>> for instance_list in c.data_modeling.instances(chunk_size=100):
                 ...     instance_list # do something with the instances
         """
+        self._validate_filter(filter)
         other_params = self._create_other_params(
             include_typing=include_typing, instance_type=instance_type, sort=sort, sources=sources
         )
@@ -935,3 +965,6 @@ class InstancesAPI(APIClient):
                 other_params=other_params,
             ),
         )
+
+    def _validate_filter(self, filter: Filter | dict | None) -> None:
+        _validate_filter(filter, _DATA_MODELING_SUPPORTED_FILTERS, type(self).__name__)

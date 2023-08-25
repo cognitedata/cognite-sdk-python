@@ -55,6 +55,7 @@ Contents
    core_data_model
    3d
    contextualization
+   documents
    data_ingestion
    data_organization
    transformations

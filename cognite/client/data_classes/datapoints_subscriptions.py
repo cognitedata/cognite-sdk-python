@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from enum import auto
 from typing import TYPE_CHECKING, Any, Optional, Type
 
 from cognite.client.data_classes import Datapoints, filters
@@ -11,10 +12,11 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    EnumProperty,
     PropertySpec,
     T_CogniteResource,
 )
-from cognite.client.data_classes.filters import Filter
+from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.utils._auxiliary import exactly_one_is_not_none
 from cognite.client.utils._text import convert_all_keys_to_snake_case
 
@@ -23,26 +25,20 @@ if TYPE_CHECKING:
 
 ExternalId = str
 
-_FILTERS_SUPPORTED: set[type[Filter]] = {
-    filters.And,
-    filters.Or,
-    filters.Not,
-    filters.In,
-    filters.Equals,
-    filters.Exists,
-    filters.Range,
-    filters.Prefix,
-    filters.ContainsAny,
-    filters.ContainsAll,
-}
-
-
-def _validate_filter(filter: Filter | None) -> None:
-    if filter is None:
-        return
-    if not_supported := (filter._involved_filter_types() - _FILTERS_SUPPORTED):
-        names = [f.__name__ for f in not_supported]
-        raise ValueError(f"The filters {names} are not supported for DataPointSubscriptions")
+_DATAPOINT_SUBSCRIPTION_SUPPORTED_FILTERS: frozenset[type[Filter]] = frozenset(
+    {
+        filters.And,
+        filters.Or,
+        filters.Not,
+        filters.In,
+        filters.Equals,
+        filters.Exists,
+        filters.Range,
+        filters.Prefix,
+        filters.ContainsAny,
+        filters.ContainsAll,
+    }
+)
 
 
 class DatapointSubscriptionCore(CogniteResource):
@@ -145,7 +141,7 @@ class DataPointSubscriptionCreate(DatapointSubscriptionCore):
     ):
         if not exactly_one_is_not_none(time_series_ids, filter):
             raise ValueError("Exactly one of time_series_ids and filter must be given")
-        _validate_filter(filter)
+        _validate_filter(filter, _DATAPOINT_SUBSCRIPTION_SUPPORTED_FILTERS, "DataPointSubscriptions")
         super().__init__(external_id, partition_count, filter, name, description)
         self.time_series_ids = time_series_ids
 
@@ -375,17 +371,17 @@ def _metadata(key: str) -> list[str]:
     return ["metadata", key]
 
 
-class DatapointSubscriptionFilterProperties:
-    description = ["description"]
-    external_id = ["externalId"]
+class DatapointSubscriptionFilterProperties(EnumProperty):
+    description = auto()
+    external_id = auto()
     metadata = _metadata
-    name = ["name"]
-    unit = ["unit"]
-    asset_id = ["assetId"]
-    asset_root_id = ["assetRootId"]
-    created_time = ["createdTime"]
-    data_set_id = ["dataSetId"]
-    id = ["id"]
-    last_updated_time = ["lastUpdatedTime"]
-    is_step = ["isStep"]
-    is_string = ["isString"]
+    name = auto()  # type: ignore [assignment]
+    unit = auto()
+    asset_id = auto()
+    asset_root_id = auto()
+    created_time = auto()
+    data_set_id = auto()
+    id = auto()
+    last_updated_time = auto()
+    is_step = auto()
+    is_string = auto()

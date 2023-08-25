@@ -4,7 +4,8 @@ from unittest import mock
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import TimeSeries, TimeSeriesFilter, TimeSeriesUpdate
+from cognite.client.data_classes import TimeSeries, TimeSeriesFilter, TimeSeriesList, TimeSeriesUpdate, filters
+from cognite.client.data_classes.time_series import TimeSeriesProperty
 from cognite.client.utils._time import MAX_TIMESTAMP_MS, MIN_TIMESTAMP_MS
 from tests.utils import set_request_limit
 
@@ -43,6 +44,30 @@ def test_ts_numeric(test_tss):
 @pytest.fixture
 def test_ts_string(test_tss):
     return test_tss[1]
+
+
+@pytest.fixture
+def time_series_list(cognite_client: CogniteClient) -> TimeSeriesList:
+    prefix = "integration_test:"
+    time_series = TimeSeriesList(
+        [
+            TimeSeries(
+                external_id=f"{prefix}timeseries1",
+                unit="$",
+                metadata={"market": "Nordpool", "timezone": "Europe/Oslo"},
+            ),
+            TimeSeries(
+                external_id=f"{prefix}timeseries2",
+                metadata={"market": "Balancing", "timezone": "Europe/London"},
+            ),
+        ]
+    )
+    retrieved = cognite_client.time_series.retrieve_multiple(
+        external_ids=time_series.as_external_ids(), ignore_unknown_ids=True
+    )
+    if len(retrieved) == len(time_series):
+        return retrieved
+    return cognite_client.time_series.upsert(time_series, mode="replace")
 
 
 class TestTimeSeriesAPI:
@@ -149,6 +174,72 @@ class TestTimeSeriesAPI:
             cognite_client.time_series.delete(
                 external_id=[new_times_series.external_id, preexisting.external_id], ignore_unknown_ids=True
             )
+
+    def test_filter_is_numeric(self, cognite_client: CogniteClient, test_tss: TimeSeriesList) -> None:
+        # Arrange
+        f = filters
+        is_integration_test = f.Prefix(TimeSeriesProperty.external_id, "PYSDK integration test")
+        is_numeric = f.Equals(TimeSeriesProperty.is_string, False)
+
+        # Act
+        result = cognite_client.time_series.filter(
+            f.And(is_integration_test, is_numeric), sort=TimeSeriesProperty.external_id
+        )
+
+        # Assert
+        assert result, "There should be at least one numeric time series"
+
+    def test_aggregate_count(self, cognite_client: CogniteClient, time_series_list: TimeSeriesList) -> None:
+        f = filters
+        is_integration_test = f.Prefix("externalId", "integration_test:")
+
+        count = cognite_client.time_series.aggregate_count(advanced_filter=is_integration_test)
+
+        assert count >= len(time_series_list)
+
+    def test_aggregate_unit(self, cognite_client: CogniteClient, time_series_list: TimeSeriesList) -> None:
+        f = filters
+        is_integration_test = f.Prefix("externalId", "integration_test:")
+
+        count = cognite_client.time_series.aggregate_cardinality_values(TimeSeriesProperty.unit, is_integration_test)
+
+        assert count >= len({t.unit for t in time_series_list if t.unit})
+
+    def test_aggregate_metadata_keys_count(
+        self, cognite_client: CogniteClient, time_series_list: TimeSeriesList
+    ) -> None:
+        f = filters
+        is_integration_test = f.Prefix("externalId", "integration_test:")
+
+        count = cognite_client.time_series.aggregate_cardinality_properties(
+            TimeSeriesProperty.metadata, advanced_filter=is_integration_test
+        )
+
+        assert count >= len({k for t in time_series_list for k in t.metadata.keys()})
+
+    def test_aggregate_unique_units(self, cognite_client: CogniteClient, time_series_list: TimeSeriesList) -> None:
+        f = filters
+        is_integration_test = f.Prefix("externalId", "integration_test:")
+
+        result = cognite_client.time_series.aggregate_unique_values(TimeSeriesProperty.unit, is_integration_test)
+
+        assert result
+        assert set(result.unique) >= {t.unit for t in time_series_list if t.unit}
+
+    def test_aggregate_unique_metadata_keys(
+        self, cognite_client: CogniteClient, time_series_list: TimeSeriesList
+    ) -> None:
+        f = filters
+        is_integration_test = f.Prefix("externalId", "integration_test:")
+
+        result = cognite_client.time_series.aggregate_unique_properties(
+            TimeSeriesProperty.metadata, advanced_filter=is_integration_test
+        )
+
+        assert result
+        assert {tuple(item.value["property"]) for item in result} >= {
+            ("metadata", key.casefold()) for a in time_series_list for key in a.metadata or []
+        }
 
 
 class TestTimeSeriesHelperMethods:

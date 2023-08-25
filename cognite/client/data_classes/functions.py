@@ -5,7 +5,13 @@ from numbers import Number
 from typing import TYPE_CHECKING, Dict, List, Optional, Union, cast
 
 from cognite.client._constants import LIST_LIMIT_DEFAULT
-from cognite.client.data_classes._base import CogniteFilter, CogniteResource, CogniteResourceList, CogniteResponse
+from cognite.client.data_classes._base import (
+    CogniteFilter,
+    CogniteResource,
+    CogniteResourceList,
+    CogniteResponse,
+    IdTransformerMixin,
+)
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._auxiliary import is_unlimited
 
@@ -269,7 +275,7 @@ class FunctionSchedulesList(CogniteResourceList[FunctionSchedule]):
     _RESOURCE = FunctionSchedule
 
 
-class FunctionList(CogniteResourceList[Function]):
+class FunctionList(CogniteResourceList[Function], IdTransformerMixin):
     _RESOURCE = Function
 
 

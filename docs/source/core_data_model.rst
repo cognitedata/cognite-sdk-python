@@ -11,10 +11,6 @@ Assets
 
    CogniteClient.assets
 
-Upsert assets
-^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.assets.AssetsAPI.upsert
-
 Asset Data classes
 ^^^^^^^^^^^^^^^^^^
 .. autosummary::
@@ -32,10 +28,6 @@ Events
    :template: custom-automethods-template.rst
 
    CogniteClient.events
-
-Upsert events
-^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.events.EventsAPI.upsert
 
 Events Data classes
 ^^^^^^^^^^^^^^^^^^^
@@ -105,7 +97,6 @@ Geospatial Data classes
 
 Synthetic time series
 ---------------------
-.. currentmodule:: cognite.client
 .. autosummary::
    :methods:
    :toctree: generated/
@@ -121,11 +112,6 @@ Time series
    :template: custom-automethods-template.rst
 
    CogniteClient.time_series
-
-Upsert time series
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.time_series.TimeSeriesAPI.upsert
-
 
 Time Series Data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^

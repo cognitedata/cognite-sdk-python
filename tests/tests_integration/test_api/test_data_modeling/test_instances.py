@@ -6,6 +6,7 @@ from typing import Any, cast
 import pytest
 
 from cognite.client import CogniteClient
+from cognite.client.data_classes.aggregations import HistogramValue
 from cognite.client.data_classes.data_modeling import (
     DataModel,
     DirectRelationReference,
@@ -32,7 +33,6 @@ from cognite.client.data_classes.data_modeling import (
     filters,
     query,
 )
-from cognite.client.data_classes.data_modeling.aggregations import HistogramValue
 from cognite.client.exceptions import CogniteAPIError
 
 
@@ -437,7 +437,7 @@ class TestInstancesAPI:
     def test_aggregate_count_persons(self, cognite_client: CogniteClient, person_view: View) -> None:
         # Arrange
         view_id = person_view.as_id()
-        count_agg = aggregations.Count("externalId")
+        count_agg = aggregations.Count("name")
 
         # Act
         counts = cognite_client.data_modeling.instances.aggregate(

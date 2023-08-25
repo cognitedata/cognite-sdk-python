@@ -11,6 +11,7 @@ from cognite.client._api.assets import AssetsAPI
 from cognite.client._api.data_modeling import DataModelingAPI
 from cognite.client._api.data_sets import DataSetsAPI
 from cognite.client._api.diagrams import DiagramsAPI
+from cognite.client._api.documents import DocumentsAPI
 from cognite.client._api.entity_matching import EntityMatchingAPI
 from cognite.client._api.events import EventsAPI
 from cognite.client._api.extractionpipelines import ExtractionPipelinesAPI
@@ -41,6 +42,7 @@ if _build_docs:
     from cognite.client._api.data_modeling.views import ViewsAPI
     from cognite.client._api.datapoints import DatapointsAPI
     from cognite.client._api.datapoints_subscriptions import DatapointsSubscriptionAPI
+    from cognite.client._api.documents import DocumentPreviewAPI
     from cognite.client._api.extractionpipelines import (
         ExtractionPipelineConfigsAPI,
         ExtractionPipelineRunsAPI,
@@ -112,6 +114,7 @@ class CogniteClient:
         self.annotations = AnnotationsAPI(self._config, self._API_VERSION, self)
         self.functions = FunctionsAPI(self._config, self._API_VERSION, self)
         self.data_modeling = DataModelingAPI(self._config, self._API_VERSION, self)
+        self.documents = DocumentsAPI(self._config, self._API_VERSION, self)
 
         # APIs just using base_url:
         self._api_client = APIClient(self._config, api_version=None, cognite_client=self)
@@ -316,6 +319,8 @@ def _make_accessors_for_building_docs() -> None:
     CogniteClient.data_modeling.containers = ContainersAPI  # type: ignore
     CogniteClient.data_modeling.instances = InstancesAPI  # type: ignore
     CogniteClient.data_modeling.graphql = DataModelingGraphQLAPI  # type: ignore
+    CogniteClient.documents = DocumentsAPI  # type: ignore
+    CogniteClient.documents.previews = DocumentPreviewAPI  # type: ignore
 
 
 if _build_docs == "true":

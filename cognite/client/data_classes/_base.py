@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from collections import UserList
+from collections.abc import Iterable
 from dataclasses import dataclass
+from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -12,7 +14,9 @@ from typing import (
     Generic,
     Iterator,
     List,
+    Literal,
     Optional,
+    Protocol,
     Sequence,
     SupportsIndex,
     Type,
@@ -22,11 +26,13 @@ from typing import (
     overload,
 )
 
+from typing_extensions import TypeAlias
+
 from cognite.client import utils
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._pandas_helpers import convert_nullable_int_cols, notebook_display_with_fallback
-from cognite.client.utils._text import convert_all_keys_to_camel_case, to_snake_case
+from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case, to_snake_case
 from cognite.client.utils._time import convert_time_attributes_to_datetime
 
 if TYPE_CHECKING:
@@ -264,7 +270,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
         return [resource.dump(camel_case) for resource in self.data]
 
     def get(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[T_CogniteResource]:
-        """Get an item from this list by id or exernal_id.
+        """Get an item from this list by id or external_id.
 
         Args:
             id (int): The id of the item to get.
@@ -312,14 +318,16 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
     @classmethod
     def _load(
         cls: Type[T_CogniteResourceList],
-        resource_list: Union[List, str],
+        resource_list: str | Iterable[Dict[str, Any]],
         cognite_client: Optional[CogniteClient] = None,
     ) -> T_CogniteResourceList:
         if isinstance(resource_list, str):
             return cls._load(json.loads(resource_list), cognite_client=cognite_client)
-        elif isinstance(resource_list, List):
+        elif isinstance(resource_list, Iterable):
             resources = [cls._RESOURCE._load(resource, cognite_client=cognite_client) for resource in resource_list]
             return cls(resources, cognite_client=cognite_client)
+        else:
+            raise NotImplementedError(f"Resource list must be iterable or json str, not {type(resource_list)}")
 
 
 T_CogniteResourceList = TypeVar("T_CogniteResourceList", bound=CogniteResourceList)
@@ -527,3 +535,209 @@ class CogniteFilter:
 
 
 T_CogniteFilter = TypeVar("T_CogniteFilter", bound=CogniteFilter)
+
+
+class EnumProperty(Enum):
+    @staticmethod
+    def _generate_next_value_(name: str, *_: Any) -> str:
+        # Allows the use of enum.auto() for member values avoiding camelCase typos
+        return to_camel_case(name)
+
+    def as_reference(self) -> list[str]:
+        return [self.value]
+
+
+class Geometry(dict):
+    """Represents the points, curves and surfaces in the coordinate space.
+
+    Args:
+        type (str): The geometry type. One of 'Point', 'MultiPoint', 'LineString', 'MultiLineString', 'Polygon', or 'MultiPolygon'.
+        coordinates (List): An array of the coordinates of the geometry. The structure of the elements in this array is determined by the type of geometry.
+
+            Point:
+                Coordinates of a point in 2D space, described as an array of 2 numbers.
+
+                Example: `[4.306640625, 60.205710352530346]`
+
+
+            LineString:
+                Coordinates of a line described by a list of two or more points.
+                Each point is defined as a pair of two numbers in an array, representing coordinates of a point in 2D space.
+
+                Example: `[[30, 10], [10, 30], [40, 40]]`
+
+
+            Polygon:
+                List of one or more linear rings representing a shape.
+                A linear ring is the boundary of a surface or the boundary of a hole in a surface. It is defined as a list consisting of 4 or more Points, where the first and last Point is equivalent.
+                Each Point is defined as an array of 2 numbers, representing coordinates of a point in 2D space.
+
+                Example: `[[[35, 10], [45, 45], [15, 40], [10, 20], [35, 10]], [[20, 30], [35, 35], [30, 20], [20, 30]]]`
+                type: array
+
+            MultiPoint:
+                List of Points. Each Point is defined as an array of 2 numbers, representing coordinates of a point in 2D space.
+
+                Example: `[[35, 10], [45, 45]]`
+
+            MultiLineString:
+                    List of lines where each line (LineString) is defined as a list of two or more points.
+                    Each point is defined as a pair of two numbers in an array, representing coordinates of a point in 2D space.
+
+                    Example: `[[[30, 10], [10, 30]], [[35, 10], [10, 30], [40, 40]]]`
+
+            MultiPolygon:
+                List of multiple polygons.
+
+                Each polygon is defined as a list of one or more linear rings representing a shape.
+
+                A linear ring is the boundary of a surface or the boundary of a hole in a surface. It is defined as a list consisting of 4 or more Points, where the first and last Point is equivalent.
+
+                Each Point is defined as an array of 2 numbers, representing coordinates of a point in 2D space.
+
+                Example: `[[[[30, 20], [45, 40], [10, 40], [30, 20]]], [[[15, 5], [40, 10], [10, 20], [5, 10], [15, 5]]]]`
+    """
+
+    _VALID_TYPES = frozenset({"Point", "MultiPoint", "LineString", "MultiLineString", "Polygon", "MultiPolygon"})
+
+    def __init__(
+        self,
+        type: Literal["Point", "MultiPoint", "LineString", "MultiLineString", "Polygon", "MultiPolygon"],
+        coordinates: List,
+        geometries: Collection[Geometry] | None = None,
+    ):
+        if type not in self._VALID_TYPES:
+            raise ValueError(f"type must be one of {self._VALID_TYPES}")
+        self.type = type
+        self.coordinates = coordinates
+        self.geometries = geometries
+
+    type = CognitePropertyClassUtil.declare_property("type")
+    coordinates = CognitePropertyClassUtil.declare_property("coordinates")
+
+    @classmethod
+    def _load(cls, raw_geometry: Dict[str, Any]) -> Geometry:
+        return cls(
+            type=raw_geometry["type"],
+            coordinates=raw_geometry["coordinates"],
+            geometries=raw_geometry.get("geometries"),
+        )
+
+    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+        output = dict(convert_all_keys_to_camel_case(self) if camel_case else self)
+        if self.geometries:
+            output["geometries"] = [g.dump(camel_case) for g in self.geometries]
+        else:
+            output.pop("geometries", None)
+        return output
+
+
+SortableProperty: TypeAlias = Union[str, List[str], EnumProperty]
+
+
+class Sort:
+    def __init__(
+        self,
+        property: SortableProperty,
+        order: Literal["asc", "desc"] = "asc",
+        nulls: Literal["auto", "first", "last"] | None = None,
+    ):
+        self.property = property
+        self.order = order
+        self.nulls = nulls
+
+    @classmethod
+    def load(
+        cls: Type[T_Sort],
+        data: dict[str, Any]
+        | tuple[SortableProperty, Literal["asc", "desc"]]
+        | tuple[SortableProperty, Literal["asc", "desc"], Literal["auto", "first", "last"]]
+        | SortableProperty
+        | T_Sort,
+    ) -> T_Sort:
+        if isinstance(data, cls):
+            return data
+        elif isinstance(data, dict):
+            return cls(property=data["property"], order=data.get("order", "asc"), nulls=data.get("nulls"))
+        elif isinstance(data, tuple) and len(data) == 2 and data[1] in ["asc", "desc"]:
+            return cls(property=data[0], order=data[1])
+        elif (
+            isinstance(data, tuple)
+            and len(data) == 3
+            and data[1] in ["asc", "desc"]
+            and data[2] in ["auto", "first", "last"]  # type: ignore[misc]
+        ):
+            return cls(
+                property=data[0],
+                order=data[1],
+                nulls=data[2],  # type: ignore[misc]
+            )
+        elif isinstance(data, (str, list, EnumProperty)):
+            return cls(property=data)
+        else:
+            raise ValueError(f"Unable to load {cls.__name__} from {data}")
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        prop = self.property
+        if isinstance(prop, EnumProperty):
+            prop = prop.as_reference()
+        elif isinstance(prop, str):
+            prop = [to_camel_case(prop)]
+        elif isinstance(prop, list):
+            prop = [to_camel_case(p) for p in prop]
+        else:
+            raise ValueError(f"Unable to dump {type(self).__name__} with property {prop}")
+
+        output: dict[str, str | list[str]] = {"property": prop, "order": self.order}
+        if self.nulls is not None:
+            output["nulls"] = self.nulls
+        return output
+
+
+T_Sort = TypeVar("T_Sort", bound=Sort)
+
+
+class HasExternalAndInternalId(Protocol):
+    @property
+    def external_id(self) -> Optional[str]:
+        ...
+
+    @property
+    def id(self) -> Optional[int]:
+        ...
+
+
+class IdTransformerMixin(Sequence[HasExternalAndInternalId], ABC):
+    def as_external_ids(self) -> list[str]:
+        """
+        Returns the external ids of all resources.
+
+        Raises:
+            ValueError: If any resource in the list does not have an external id.
+
+        Returns:
+            list[str]: The external ids of all resources in the list.
+        """
+        external_ids: list[str] = []
+        for x in self:
+            if x.external_id is None:
+                raise ValueError(f"All {type(x).__name__} must have external_id")
+            external_ids.append(x.external_id)
+        return external_ids
+
+    def as_ids(self) -> list[int]:
+        """
+        Returns the ids of all resources.
+
+        Raises:
+            ValueError: If any resource in the list does not have an id.
+
+        Returns:
+            list[int]: The ids of all resources in the list.
+        """
+        ids: list[int] = []
+        for x in self:
+            if x.id is None:
+                raise ValueError(f"All {type(x).__name__} must have id")
+            ids.append(x.id)
+        return ids
