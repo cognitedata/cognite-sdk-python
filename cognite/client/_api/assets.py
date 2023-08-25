@@ -485,10 +485,9 @@ class AssetsAPI(APIClient):
 
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.assets import AssetProperty
-            >>> from cognite.client.data_classes import aggregations, filters
+            >>> from cognite.client.data_classes import aggregations as aggs, filters
             >>> c = CogniteClient()
-            >>> a = aggregations
-            >>> not_test = a.Not(a.Prefix("test"))
+            >>> not_test = aggs.Not(aggs.Prefix("test"))
             >>> created_after_2020 = filters.Range(AssetProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
             >>> result = c.assets.aggregate_unique_values(AssetProperty.labels, advanced_filter=created_after_2020, aggregate_filter=not_test)
             >>> print(result.unique)
