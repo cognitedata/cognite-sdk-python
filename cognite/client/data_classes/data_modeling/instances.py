@@ -74,8 +74,7 @@ class NodeOrEdgeData:
         return cls(**convert_all_keys_to_snake_case(data))
 
     def dump(self, camel_case: bool = False) -> NodeOrEdgeDataDict:
-        return {"properties": dict(self.properties.items()),
-                "source": self.source.dump(camel_case)}
+        return {"properties": dict(self.properties.items()), "source": self.source.dump(camel_case)}
 
 
 class InstanceCore(DataModelingResource):
