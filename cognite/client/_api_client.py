@@ -10,7 +10,6 @@ from json.decoder import JSONDecodeError
 from typing import (
     TYPE_CHECKING,
     Any,
-    ClassVar,
     Dict,
     Iterator,
     Literal,
@@ -65,7 +64,7 @@ T = TypeVar("T")
 
 class APIClient:
     _RESOURCE_PATH: str
-    _RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS: ClassVar[set[str]] = {
+    _RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS: frozenset[str] = frozenset(
         rf"^{path}(\?.*)?$"
         for path in (
             "/(assets|events|files|timeseries|sequences|datasets|relationships)/(list|byids|search|aggregate)",
@@ -79,7 +78,7 @@ class APIClient:
             "/sessions/revoke",
             "/models/.*",
         )
-    }
+    )
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         self._config = config
