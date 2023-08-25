@@ -19,6 +19,7 @@ from typing import (
     Optional,
     Tuple,
     Type,
+    TypedDict,
     TypeVar,
     Union,
     ValuesView,
@@ -53,6 +54,11 @@ Space = str
 PropertyIdentifier = str
 
 
+class NodeOrEdgeDataDict(TypedDict):
+    properties: dict
+    source: dict
+
+
 @dataclass
 class NodeOrEdgeData:
     """This represents the data values of a node or edge.
@@ -69,15 +75,12 @@ class NodeOrEdgeData:
     def load(cls, data: dict) -> NodeOrEdgeData:
         return cls(**convert_all_keys_to_snake_case(data))
 
-    def dump(self, camel_case: bool = False) -> dict:
-        output: Dict[str, Any] = {"properties": dict(self.properties.items())}
-        if self.source:
-            if isinstance(self.source, (ContainerId, ViewId)):
-                output["source"] = self.source.dump(camel_case)
-            elif isinstance(self.source, dict):
-                output["source"] = self.source
-            else:
-                raise TypeError(f"source must be ContainerId, ViewId or a dict, but was {type(self.source)}")
+    def dump(self, camel_case: bool = False) -> NodeOrEdgeDataDict:
+        output = {"properties": dict(self.properties.items())}
+        if isinstance(self.source, (ContainerId, ViewId)):
+            output["source"] = self.source.dump(camel_case)
+        else:
+            raise TypeError(f"source must be ContainerId or ViewId, but was {type(self.source)}")
         return output
 
 
