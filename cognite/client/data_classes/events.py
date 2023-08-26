@@ -119,7 +119,6 @@ class EventFilter(CogniteFilter):
         created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
         last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
         external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
-        cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -138,7 +137,6 @@ class EventFilter(CogniteFilter):
         created_time: dict[str, Any] | TimestampRange | None = None,
         last_updated_time: dict[str, Any] | TimestampRange | None = None,
         external_id_prefix: str | None = None,
-        cognite_client: CogniteClient | None = None,
     ) -> None:
         self.start_time = start_time
         self.end_time = end_time
@@ -154,23 +152,6 @@ class EventFilter(CogniteFilter):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.external_id_prefix = external_id_prefix
-        self._cognite_client = cast("CogniteClient", cognite_client)
-
-    @classmethod
-    def _load(cls, resource: dict | str) -> EventFilter:
-        instance = super()._load(resource)
-        if isinstance(resource, Dict):
-            if instance.start_time is not None:
-                instance.start_time = TimestampRange(**instance.start_time)
-            if instance.end_time is not None:
-                instance.end_time = EndTimeFilter(**instance.end_time)
-            if instance.active_at_time is not None:
-                instance.active_at_time = TimestampRange(**instance.active_at_time)
-            if instance.created_time is not None:
-                instance.created_time = TimestampRange(**instance.created_time)
-            if instance.last_updated_time is not None:
-                instance.last_updated_time = TimestampRange(**instance.last_updated_time)
-        return instance
 
 
 class EventUpdate(CogniteUpdate):

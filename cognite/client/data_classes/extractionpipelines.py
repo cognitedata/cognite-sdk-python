@@ -290,7 +290,6 @@ class ExtractionPipelineRunFilter(CogniteFilter):
         statuses (Sequence[str] | None): success/failure/seen.
         message (StringFilter | None): message filter.
         created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
-        cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -299,21 +298,11 @@ class ExtractionPipelineRunFilter(CogniteFilter):
         statuses: Sequence[str] | None = None,
         message: StringFilter | None = None,
         created_time: dict[str, Any] | TimestampRange | None = None,
-        cognite_client: CogniteClient | None = None,
     ) -> None:
         self.external_id = external_id
         self.statuses = statuses
         self.message = message
         self.created_time = created_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
-
-    @classmethod
-    def _load(cls, resource: dict | str) -> ExtractionPipelineRunFilter:
-        instance = super()._load(resource)
-        if isinstance(resource, Dict):
-            if instance.created_time is not None:
-                instance.created_time = TimestampRange(**instance.created_time)
-        return instance
 
 
 class ExtractionPipelineConfigRevision(CogniteResource):
