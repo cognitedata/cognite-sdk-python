@@ -57,7 +57,7 @@ class CogniteResponse:
         return str(self)
 
     def __eq__(self, other: Any) -> bool:
-        return type(other) == type(self) and other.dump() == self.dump()
+        return type(other) is type(self) and other.dump() == self.dump()
 
     def __getattribute__(self, item: Any) -> Any:
         attr = super().__getattribute__(item)
@@ -98,7 +98,7 @@ class CogniteResource:
         return obj
 
     def __eq__(self, other: Any) -> bool:
-        return type(self) == type(other) and self.dump() == other.dump()
+        return type(self) is type(other) and self.dump() == other.dump()
 
     def __str__(self) -> str:
         item = convert_time_attributes_to_datetime(self.dump())
@@ -343,7 +343,7 @@ class CogniteUpdate:
         self._update_object: dict[str, Any] = {}
 
     def __eq__(self, other: Any) -> bool:
-        return type(self) == type(other) and self.dump() == other.dump()
+        return type(self) is type(other) and self.dump() == other.dump()
 
     def __str__(self) -> str:
         return json.dumps(self.dump(), default=utils._auxiliary.json_dump_default, indent=4)
@@ -492,7 +492,7 @@ class CogniteLabelUpdate(Generic[T_CogniteUpdate]):
 
 class CogniteFilter:
     def __eq__(self, other: Any) -> bool:
-        return type(self) == type(other) and self.dump() == other.dump()
+        return type(self) is type(other) and self.dump() == other.dump()
 
     def __str__(self) -> str:
         item = convert_time_attributes_to_datetime(self.dump())
