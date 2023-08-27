@@ -62,7 +62,7 @@ class CogniteResponse:
     def __getattribute__(self, item: Any) -> Any:
         attr = super().__getattribute__(item)
         if item == "_cognite_client" and attr is None:
-            raise CogniteMissingClientError
+            raise CogniteMissingClientError(self)
         return attr
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -107,7 +107,7 @@ class CogniteResource:
     def __getattribute__(self, item: Any) -> Any:
         attr = super().__getattribute__(item)
         if item == "_cognite_client" and attr is None:
-            raise CogniteMissingClientError
+            raise CogniteMissingClientError(self)
         return attr
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -214,7 +214,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
     def __getattribute__(self, item: Any) -> Any:
         attr = super().__getattribute__(item)
         if item == "_cognite_client" and attr is None:
-            raise CogniteMissingClientError
+            raise CogniteMissingClientError(self)
         return attr
 
     def pop(self, i: int = -1) -> T_CogniteResource:
