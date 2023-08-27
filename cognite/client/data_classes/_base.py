@@ -502,25 +502,6 @@ class CogniteFilter:
     def __repr__(self) -> str:
         return str(self)
 
-    def __getattribute__(self, item: Any) -> Any:
-        attr = super().__getattribute__(item)
-        if item == "_cognite_client" and attr is None:
-            raise CogniteMissingClientError
-        return attr
-
-    @classmethod
-    def _load(cls: type[T_CogniteFilter], resource: dict | str) -> T_CogniteFilter:
-        if isinstance(resource, str):
-            return cls._load(json.loads(resource))
-        elif isinstance(resource, Dict):
-            instance = cls()
-            for key, value in resource.items():
-                snake_case_key = to_snake_case(key)
-                if hasattr(instance, snake_case_key):
-                    setattr(instance, snake_case_key, value)
-            return instance
-        raise TypeError(f"Resource must be json str or dict, not {type(resource)}")
-
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
