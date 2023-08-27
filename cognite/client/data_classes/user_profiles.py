@@ -1,0 +1,50 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, cast
+
+from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
+
+
+class UserProfile(CogniteResource):
+    """User profiles is an authoritative source of core user profile information (email, name, job title, etc.)
+    for principals based on data from the identity provider configured for the CDF project.
+
+    Args:
+        user_identifier (str | None): Uniquely identifies the principal the profile is associated with. This property is guaranteed to be immutable.
+        given_name (str | None): The user's first name.
+        surname (str | None): The user's last name.
+        email (str | None): The user's email address (if any). The email address is is returned directly from the identity provider and not guaranteed
+            to be verified. Note that the email is mutable and can be updated in the identity provider. It should not be used to uniquely identify as a
+            user. Use the user_identifier property instead.
+        display_name (str | None): The display name for the user.
+        job_title (str | None): The user's job title.
+        last_updated_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        cognite_client (CogniteClient | None): No description.
+    """
+
+    def __init__(
+        self,
+        user_identifier: str | None = None,
+        given_name: str | None = None,
+        surname: str | None = None,
+        email: str | None = None,
+        display_name: str | None = None,
+        job_title: str | None = None,
+        last_updated_time: int | None = None,
+        cognite_client: CogniteClient | None = None,
+    ) -> None:
+        self.user_identifier = user_identifier
+        self.given_name = given_name
+        self.surname = surname
+        self.email = email
+        self.display_name = display_name
+        self.job_title = job_title
+        self.last_updated_time = last_updated_time
+        self._cognite_client = cast("CogniteClient", cognite_client)
+
+
+class UserProfileList(CogniteResourceList[UserProfile]):
+    _RESOURCE = UserProfile

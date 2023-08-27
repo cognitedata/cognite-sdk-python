@@ -57,6 +57,7 @@ from cognite.client._api.transformations import (
     TransformationSchedulesAPI,
     TransformationSchemaAPI,
 )
+from cognite.client._api.user_profiles import UserProfilesAPI
 from cognite.client._api.vision import VisionAPI
 
 
@@ -115,6 +116,7 @@ class CogniteClientMock(MagicMock):
         self.iam.groups = MagicMock(spec_set=GroupsAPI)
         self.iam.security_categories = MagicMock(spec_set=SecurityCategoriesAPI)
         self.iam.sessions = MagicMock(spec_set=SessionsAPI)
+        self.iam.user_profiles = MagicMock(spec_set=UserProfilesAPI)
         self.iam.token = MagicMock(spec_set=TokenAPI)
 
         self.labels = MagicMock(spec_set=LabelsAPI)
