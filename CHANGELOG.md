@@ -19,7 +19,7 @@ Changes are grouped as follows
 
 ## [6.15.1] - 2023-08-28
 ### Fixed
-- Bugfix for `InstanceSort._load` that always raised `TypeError` (now public, `.load`). Also and indirect fix for `Select.load` for non-empty `sort`.
+- Bugfix for `InstanceSort._load` that always raised `TypeError` (now public, `.load`). Also, indirect fix for `Select.load` for non-empty `sort`.
 
 ## [6.15.0] - 2023-08-23
 ### Added
