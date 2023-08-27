@@ -66,7 +66,7 @@ class DataModelingSort:
         instance = cls(property=resource["property"])
         if "direction" in resource:
             instance.direction = resource["direction"]
-        if "nulls_first" in resource:
+        if "nullsFirst" in resource:
             instance.nulls_first = resource["nullsFirst"]
 
         return instance
