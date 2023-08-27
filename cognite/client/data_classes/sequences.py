@@ -366,7 +366,7 @@ class SequenceData(CogniteResource):
 
     def __eq__(self, other: Any) -> bool:
         return (
-            type(self) == type(other)
+            type(self) is type(other)
             and self.id == other.id
             and self.external_id == other.external_id
             and self.row_numbers == other.row_numbers

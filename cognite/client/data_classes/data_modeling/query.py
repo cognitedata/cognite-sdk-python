@@ -133,7 +133,7 @@ class Query:
         return cls(**loaded)
 
     def __eq__(self, other: Any) -> bool:
-        return type(other) == type(self) and self.dump() == other.dump()
+        return type(other) is type(self) and self.dump() == other.dump()
 
 
 class ResultSetExpression(ABC):
@@ -173,7 +173,7 @@ class ResultSetExpression(ABC):
             raise NotImplementedError(f"Unknown query type: {query}")
 
     def __eq__(self, other: Any) -> bool:
-        return type(other) == type(self) and self.dump() == other.dump()
+        return type(other) is type(self) and self.dump() == other.dump()
 
 
 class NodeResultSetExpression(ResultSetExpression):
