@@ -52,6 +52,9 @@ class DataModelingSort:
         self.direction = direction
         self.nulls_first = nulls_first
 
+    def __eq__(self, other: Any) -> bool:
+        return type(other) is type(self) and self.dump() == other.dump()
+
     def __str__(self) -> str:
         return json.dumps(self.dump(), default=json_dump_default, indent=4)
 

@@ -4,7 +4,7 @@ import pytest
 from _pytest.mark import ParameterSet
 
 from cognite.client.data_classes import filters as f
-from cognite.client.data_classes.data_modeling import ViewId
+from cognite.client.data_classes.data_modeling import InstanceSort, ViewId
 from cognite.client.data_classes.data_modeling import query as q
 
 
@@ -86,10 +86,18 @@ def select_load_and_dump_equals_data() -> Iterator[ParameterSet]:
                 "properties": ["title"],
                 "source": {"externalId": "Movie", "space": "IntegrationTestsImmutable", "type": "view", "version": "2"},
             }
-        ]
+        ],
+        "sort": [
+            {
+                "property": ("IntegrationTestSpace", "Person", "name"),
+                "direction": "descending",
+                "nullsFirst": True,
+            }
+        ],
     }
     loaded = q.Select(
-        [q.SourceSelector(ViewId(space="IntegrationTestsImmutable", external_id="Movie", version="2"), ["title"])]
+        [q.SourceSelector(ViewId(space="IntegrationTestsImmutable", external_id="Movie", version="2"), ["title"])],
+        [InstanceSort(("IntegrationTestSpace", "Person", "name"), direction="descending", nulls_first=True)],
     )
     yield pytest.param(raw, loaded, id="Select single property")
 
