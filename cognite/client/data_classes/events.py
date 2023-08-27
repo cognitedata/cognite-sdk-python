@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, List, Literal, Sequence, Union, cast
 
 from typing_extensions import TypeAlias
 
@@ -13,11 +13,11 @@ from cognite.client.data_classes._base import (
     CognitePropertyClassUtil,
     CogniteResource,
     CogniteResourceList,
+    CogniteSort,
     CogniteUpdate,
     EnumProperty,
     IdTransformerMixin,
     PropertySpec,
-    Sort,
 )
 from cognite.client.data_classes.shared import TimestampRange
 
@@ -298,7 +298,7 @@ class SortableEventProperty(EnumProperty):
 SortableEventPropertyLike: TypeAlias = Union[SortableEventProperty, str, List[str]]
 
 
-class EventSort(Sort):
+class EventSort(CogniteSort):
     def __init__(
         self,
         property: SortableEventPropertyLike,

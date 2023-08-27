@@ -35,11 +35,11 @@ from cognite.client.data_classes._base import (
     CognitePropertyClassUtil,
     CogniteResource,
     CogniteResourceList,
+    CogniteSort,
     CogniteUpdate,
     EnumProperty,
     IdTransformerMixin,
     PropertySpec,
-    Sort,
 )
 from cognite.client.data_classes.labels import Label, LabelDefinition, LabelFilter
 from cognite.client.data_classes.shared import GeoLocation, GeoLocationFilter, TimestampRange
@@ -909,7 +909,7 @@ class SortableAssetProperty(EnumProperty):
 SortableAssetPropertyLike: TypeAlias = Union[SortableAssetProperty, str, List[str]]
 
 
-class AssetSort(Sort):
+class AssetSort(CogniteSort):
     def __init__(
         self,
         property: SortableAssetProperty,

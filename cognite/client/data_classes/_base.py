@@ -10,7 +10,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Collection,
-    Dict,
     Generic,
     Iterator,
     List,
@@ -128,7 +127,7 @@ class CogniteResource:
     ) -> T_CogniteResource:
         if isinstance(resource, str):
             return cls._load(json.loads(resource), cognite_client=cognite_client)
-        elif isinstance(resource, Dict):
+        elif isinstance(resource, dict):
             instance = cls(cognite_client=cognite_client)
             for key, value in resource.items():
                 snake_case_key = to_snake_case(key)
@@ -612,7 +611,7 @@ class Geometry(dict):
 SortableProperty: TypeAlias = Union[str, List[str], EnumProperty]
 
 
-class Sort:
+class CogniteSort:
     def __init__(
         self,
         property: SortableProperty,
@@ -623,15 +622,21 @@ class Sort:
         self.order = order
         self.nulls = nulls
 
+    def __str__(self) -> str:
+        return json.dumps(self.dump(), default=utils._auxiliary.json_dump_default, indent=4)
+
+    def __repr__(self) -> str:
+        return str(self)
+
     @classmethod
     def load(
-        cls: type[T_Sort],
+        cls: type[T_CogniteSort],
         data: dict[str, Any]
         | tuple[SortableProperty, Literal["asc", "desc"]]
         | tuple[SortableProperty, Literal["asc", "desc"], Literal["auto", "first", "last"]]
         | SortableProperty
-        | T_Sort,
-    ) -> T_Sort:
+        | T_CogniteSort,
+    ) -> T_CogniteSort:
         if isinstance(data, cls):
             return data
         elif isinstance(data, dict):
@@ -671,7 +676,7 @@ class Sort:
         return output
 
 
-T_Sort = TypeVar("T_Sort", bound=Sort)
+T_CogniteSort = TypeVar("T_CogniteSort", bound=CogniteSort)
 
 
 class HasExternalAndInternalId(Protocol):

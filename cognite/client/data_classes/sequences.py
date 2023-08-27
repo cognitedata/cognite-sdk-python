@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import math
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Literal, Union, cast
+from typing import TYPE_CHECKING, Any, Iterator, List, Literal, Union, cast
 from typing import Sequence as SequenceType
 
 from typing_extensions import TypeAlias
@@ -17,11 +17,11 @@ from cognite.client.data_classes._base import (
     CognitePropertyClassUtil,
     CogniteResource,
     CogniteResourceList,
+    CogniteSort,
     CogniteUpdate,
     EnumProperty,
     IdTransformerMixin,
     PropertySpec,
-    Sort,
 )
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._identifier import Identifier
@@ -513,7 +513,7 @@ class SortableSequenceProperty(EnumProperty):
 SortableSequencePropertyLike: TypeAlias = Union[SortableSequenceProperty, str, List[str]]
 
 
-class SequenceSort(Sort):
+class SequenceSort(CogniteSort):
     def __init__(
         self,
         property: SortableSequenceProperty,

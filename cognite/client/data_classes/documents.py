@@ -9,9 +9,9 @@ from typing_extensions import TypeAlias
 from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
+    CogniteSort,
     EnumProperty,
     IdTransformerMixin,
-    Sort,
 )
 from cognite.client.data_classes.aggregations import UniqueResult
 from cognite.client.data_classes.labels import Label, LabelDefinition
@@ -328,7 +328,7 @@ class DocumentProperty(EnumProperty):
 SortableProperty: TypeAlias = Union[SortableSourceFileProperty, SortableDocumentProperty, str, List[str]]
 
 
-class DocumentSort(Sort):
+class DocumentSort(CogniteSort):
     def __init__(self, property: SortableProperty, order: Literal["asc", "desc"] = "asc"):
         super().__init__(property, order)
 

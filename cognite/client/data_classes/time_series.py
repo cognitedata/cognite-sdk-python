@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, List, Literal, Sequence, Union, cast
 
 from typing_extensions import TypeAlias
 
@@ -14,11 +14,11 @@ from cognite.client.data_classes._base import (
     CognitePropertyClassUtil,
     CogniteResource,
     CogniteResourceList,
+    CogniteSort,
     CogniteUpdate,
     EnumProperty,
     IdTransformerMixin,
     PropertySpec,
-    Sort,
 )
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._identifier import Identifier
@@ -344,7 +344,7 @@ class SortableTimeSeriesProperty(EnumProperty):
 SortableTimeSeriesPropertyLike: TypeAlias = Union[SortableTimeSeriesProperty, str, List[str]]
 
 
-class TimeSeriesSort(Sort):
+class TimeSeriesSort(CogniteSort):
     def __init__(
         self,
         property: SortableTimeSeriesProperty,
