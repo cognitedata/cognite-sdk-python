@@ -51,3 +51,10 @@ repos:
         language: system
         pass_filenames: false
     repo: local
+
+  - repo: https://github.com/python-poetry/poetry
+    rev: 1.5.1
+    hooks:
+      - id: poetry-lock
+      - id: poetry-export
+        args: ["--with", "docs", "-f", "requirements.txt", "-o", "./docs/requirements.txt"]
