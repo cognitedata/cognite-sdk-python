@@ -110,6 +110,8 @@ class DiagramsAPI(APIClient):
         file_ids: Optional[Union[int, Sequence[int]]] = None,
         file_external_ids: Optional[Union[str, Sequence[str]]] = None,
         file_references: Union[List[FileReference], FileReference, None] = None,
+        pattern_mode: bool = False,
+        configuration: Optional[Dict[str, Any]] = None,
         *,
         multiple_jobs: Literal[False],
     ) -> DiagramDetectResults:
@@ -125,6 +127,8 @@ class DiagramsAPI(APIClient):
         file_ids: Optional[Union[int, Sequence[int]]] = None,
         file_external_ids: Optional[Union[str, Sequence[str]]] = None,
         file_references: Union[List[FileReference], FileReference, None] = None,
+        pattern_mode: bool = False,
+        configuration: Optional[Dict[str, Any]] = None,
         *,
         multiple_jobs: Literal[True],
     ) -> Tuple[Optional[DetectJobBundle], List[Dict[str, Any]]]:
@@ -140,6 +144,8 @@ class DiagramsAPI(APIClient):
         file_ids: Optional[Union[int, Sequence[int]]] = None,
         file_external_ids: Optional[Union[str, Sequence[str]]] = None,
         file_references: Union[List[FileReference], FileReference, None] = None,
+        pattern_mode: bool = False,
+        configuration: Optional[Dict[str, Any]] = None,
     ) -> DiagramDetectResults:
         ...
 
@@ -152,6 +158,8 @@ class DiagramsAPI(APIClient):
         file_ids: Optional[Union[int, Sequence[int]]] = None,
         file_external_ids: Optional[Union[str, Sequence[str]]] = None,
         file_references: Union[List[FileReference], FileReference, None] = None,
+        pattern_mode: bool | None = None,
+        configuration: Optional[Dict[str, Any]] = None,
         *,
         multiple_jobs: bool = False,
     ) -> Union[DiagramDetectResults, Tuple[Optional[DetectJobBundle], List[Dict[str, Any]]]]:
@@ -191,6 +199,9 @@ class DiagramsAPI(APIClient):
         entities = [
             entity.dump(camel_case=True) if isinstance(entity, CogniteResource) else entity for entity in entities
         ]
+        beta_parameters = dict(pattern_mode=pattern_mode, configuration=configuration)
+        beta_parameters = {k: v for k, v in beta_parameters.items() if v is not None}
+
         if multiple_jobs:
             num_new_jobs = ceil(len(items) / self._DETECT_API_FILE_LIMIT)
             if num_new_jobs > self._DETECT_API_STATUS_JOB_LIMIT:
@@ -213,6 +224,7 @@ class DiagramsAPI(APIClient):
                         search_field=search_field,
                         min_tokens=min_tokens,
                         job_cls=DiagramDetectResults,
+                        **beta_parameters,
                     )
                     jobs.append(posted_job)
                 except CogniteAPIError as exc:
@@ -234,6 +246,7 @@ class DiagramsAPI(APIClient):
             search_field=search_field,
             min_tokens=min_tokens,
             job_cls=DiagramDetectResults,
+            **beta_parameters,
         )
 
     def get_detect_jobs(self, job_ids: List[int]) -> List[DiagramDetectResults]:
