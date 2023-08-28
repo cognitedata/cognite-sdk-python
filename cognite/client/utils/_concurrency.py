@@ -219,10 +219,10 @@ def get_executor(max_workers: int) -> TaskExecutor:
 
     if ConcurrencySettings.executor_type == "threadpool":
         try:
-            executor: TaskExecutor = _THREAD_POOL_EXECUTOR_SINGLETON  # type: ignore
+            executor: TaskExecutor = _THREAD_POOL_EXECUTOR_SINGLETON
         except NameError:
             # TPE has not been initialized
-            executor = _THREAD_POOL_EXECUTOR_SINGLETON = ThreadPoolExecutor(max_workers)  # type: ignore
+            executor = _THREAD_POOL_EXECUTOR_SINGLETON = ThreadPoolExecutor(max_workers)
     elif ConcurrencySettings.executor_type == "mainthread":
         executor = _MAIN_THREAD_EXECUTOR_SINGLETON
     else:
