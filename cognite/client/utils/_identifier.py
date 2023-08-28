@@ -252,7 +252,7 @@ class UserIdentifierSequence(IdentifierSequenceCore[UserIdentifier]):
 
         raise TypeError(f"user_identifiers must be of type str or Sequence[str]. Found {type(user_identifiers)}")
 
-    def chunked(self, chunk_size: int) -> list[UserIdentifierSequence]:
+    def chunked(self, chunk_size: int) -> list[UserIdentifierSequence]:  # type: ignore [override]
         return [
             UserIdentifierSequence(chunk, is_singleton=self.is_singleton())
             for chunk in split_into_chunks(self._identifiers, chunk_size)
@@ -262,8 +262,8 @@ class UserIdentifierSequence(IdentifierSequenceCore[UserIdentifier]):
         if not self.is_singleton():
             raise ValueError("Exactly one user identifier (string) must be specified")
 
-    def as_dicts(self) -> list[dict[str, str]]:
-        return super().as_dicts()
+    def as_dicts(self) -> list[dict[str, str]]:  # type: ignore [override]
+        return [identifier.as_dict() for identifier in self._identifiers]
 
-    def as_primitives(self) -> list[str]:
-        return super().as_primitives()
+    def as_primitives(self) -> list[str]:  # type: ignore [override]
+        return [identifier.as_primitive() for identifier in self._identifiers]
