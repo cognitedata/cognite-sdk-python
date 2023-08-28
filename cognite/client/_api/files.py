@@ -646,10 +646,10 @@ class FilesAPI(APIClient):
                     ids.append({"id": _id})
                     file_folders.append(file_folder)
 
-                    for file_folder in set(file_folders):
-                        file_folder.mkdir(parents=True, exist_ok=True)
+            for file_folder in set(file_folders):
+                file_folder.mkdir(parents=True, exist_ok=True)
 
-                self._download_files_to_directory(directory=file_folders, all_ids=ids, id_to_metadata=id_to_metadata)
+            self._download_files_to_directory(directory=file_folders, all_ids=ids, id_to_metadata=id_to_metadata)
 
     def _get_id_to_metadata_map(self, all_ids: Sequence[dict]) -> dict[str | int, FileMetadata]:
         ids = [id["id"] for id in all_ids if "id" in id]
