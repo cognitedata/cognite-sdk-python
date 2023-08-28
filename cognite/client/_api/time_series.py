@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Literal, Optional, Sequence, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Iterator, Literal, Sequence, Tuple, Union, cast, overload
+
+from typing_extensions import TypeAlias
 
 from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.datapoints_subscriptions import DatapointsSubscriptionAPI
@@ -12,7 +14,11 @@ from cognite.client.data_classes import (
     TimeSeriesFilter,
     TimeSeriesList,
     TimeSeriesUpdate,
+    filters,
 )
+from cognite.client.data_classes.aggregations import AggregationFilter, UniqueResultList
+from cognite.client.data_classes.filters import Filter, _validate_filter
+from cognite.client.data_classes.time_series import SortableTimeSeriesProperty, TimeSeriesProperty, TimeSeriesSort
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 
@@ -20,60 +26,85 @@ if TYPE_CHECKING:
     from cognite.client import CogniteClient
     from cognite.client.config import ClientConfig
 
+SortSpec: TypeAlias = Union[
+    TimeSeriesSort,
+    str,
+    SortableTimeSeriesProperty,
+    Tuple[str, Literal["asc", "desc"]],
+    Tuple[str, Literal["asc", "desc"], Literal["auto", "first", "last"]],
+]
+
+_FILTERS_SUPPORTED: frozenset[type[Filter]] = frozenset(
+    {
+        filters.And,
+        filters.Or,
+        filters.Not,
+        filters.In,
+        filters.Equals,
+        filters.Exists,
+        filters.Range,
+        filters.Prefix,
+        filters.ContainsAny,
+        filters.ContainsAll,
+        filters.InAssetSubtree,
+        filters.Search,
+    }
+)
+
 
 class TimeSeriesAPI(APIClient):
     _RESOURCE_PATH = "/timeseries"
 
-    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.data = DatapointsAPI(config, api_version, cognite_client)
         self.subscriptions = DatapointsSubscriptionAPI(config, api_version, cognite_client)
 
     def __call__(
         self,
-        chunk_size: Optional[int] = None,
-        name: Optional[str] = None,
-        unit: Optional[str] = None,
-        is_string: Optional[bool] = None,
-        is_step: Optional[bool] = None,
-        asset_ids: Optional[Sequence[int]] = None,
-        asset_external_ids: Optional[Sequence[str]] = None,
-        asset_subtree_ids: Optional[Union[int, Sequence[int]]] = None,
-        asset_subtree_external_ids: Optional[Union[str, Sequence[str]]] = None,
-        data_set_ids: Optional[Union[int, Sequence[int]]] = None,
-        data_set_external_ids: Optional[Union[str, Sequence[str]]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        external_id_prefix: Optional[str] = None,
-        created_time: Optional[Dict[str, Any]] = None,
-        last_updated_time: Optional[Dict[str, Any]] = None,
-        limit: Optional[int] = None,
-        partitions: Optional[int] = None,
-    ) -> Union[Iterator[TimeSeries], Iterator[TimeSeriesList]]:
+        chunk_size: int | None = None,
+        name: str | None = None,
+        unit: str | None = None,
+        is_string: bool | None = None,
+        is_step: bool | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: Sequence[str] | None = None,
+        asset_subtree_ids: int | Sequence[int] | None = None,
+        asset_subtree_external_ids: str | Sequence[str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | Sequence[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+        external_id_prefix: str | None = None,
+        created_time: dict[str, Any] | None = None,
+        last_updated_time: dict[str, Any] | None = None,
+        limit: int | None = None,
+        partitions: int | None = None,
+    ) -> Iterator[TimeSeries] | Iterator[TimeSeriesList]:
         """Iterate over time series
 
         Fetches time series as they are iterated over, so you keep a limited number of objects in memory.
 
         Args:
-            chunk_size (int, optional): Number of time series to return in each chunk. Defaults to yielding one time series a time.
-            name (str): Name of the time series. Often referred to as tag.
-            unit (str): Unit of the time series.
-            is_string (bool): Whether the time series is an string time series.
-            is_step (bool): Whether the time series is a step (piecewise constant) time series.
-            asset_ids (Sequence[int], optional): List time series related to these assets.
-            asset_external_ids  (Sequence[str], optional): List time series related to these assets.
-            asset_subtree_ids (Union[int, Sequence[int]]): Asset subtree id or list of asset subtree ids to filter on.
-            asset_subtree_external_ids (Union[str, Sequence[str]]): Asset external id or list of asset subtree external ids to filter on.
-            data_set_ids (Union[int, Sequence[int]]): Return only time series in the specified data set(s) with this id / these ids.
-            data_set_external_ids (Union[str, Sequence[str]]): Return only time series in the specified data set(s) with this external id / these external ids.
-            metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
-            created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
-            limit (int, optional): Maximum number of time series to return. Defaults to return all items.
-            partitions (int): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed.
+            chunk_size (int | None): Number of time series to return in each chunk. Defaults to yielding one time series a time.
+            name (str | None): Name of the time series. Often referred to as tag.
+            unit (str | None): Unit of the time series.
+            is_string (bool | None): Whether the time series is an string time series.
+            is_step (bool | None): Whether the time series is a step (piecewise constant) time series.
+            asset_ids (Sequence[int] | None): List time series related to these assets.
+            asset_external_ids (Sequence[str] | None): List time series related to these assets.
+            asset_subtree_ids (int | Sequence[int] | None): Asset subtree id or list of asset subtree ids to filter on.
+            asset_subtree_external_ids (str | Sequence[str] | None): Asset external id or list of asset subtree external ids to filter on.
+            data_set_ids (int | Sequence[int] | None): Return only time series in the specified data set(s) with this id / these ids.
+            data_set_external_ids (str | Sequence[str] | None): Return only time series in the specified data set(s) with this external id / these external ids.
+            metadata (dict[str, Any] | None): Custom, application specific metadata. String key -> String value
+            external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
+            created_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            last_updated_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            limit (int | None): Maximum number of time series to return. Defaults to return all items.
+            partitions (int | None): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed.
 
-        Yields:
-            Union[TimeSeries, TimeSeriesList]: yields TimeSeries one by one if chunk_size is not specified, else TimeSeriesList objects.
+        Returns:
+            Iterator[TimeSeries] | Iterator[TimeSeriesList]: yields TimeSeries one by one if chunk_size is not specified, else TimeSeriesList objects.
         """
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
@@ -107,20 +138,20 @@ class TimeSeriesAPI(APIClient):
 
         Fetches time series as they are iterated over, so you keep a limited number of metadata objects in memory.
 
-        Yields:
-            TimeSeries: yields TimeSeries one by one.
+        Returns:
+            Iterator[TimeSeries]: yields TimeSeries one by one.
         """
         return cast(Iterator[TimeSeries], self())
 
-    def retrieve(self, id: Optional[int] = None, external_id: Optional[str] = None) -> Optional[TimeSeries]:
+    def retrieve(self, id: int | None = None, external_id: str | None = None) -> TimeSeries | None:
         """`Retrieve a single time series by id. <https://developer.cognite.com/api#tag/Time-series/operation/getTimeSeriesByIds>`_
 
         Args:
-            id (int, optional): ID
-            external_id (str, optional): External ID
+            id (int | None): ID
+            external_id (str | None): External ID
 
         Returns:
-            Optional[TimeSeries]: Requested time series or None if it does not exist.
+            TimeSeries | None: Requested time series or None if it does not exist.
 
         Examples:
 
@@ -141,15 +172,15 @@ class TimeSeriesAPI(APIClient):
 
     def retrieve_multiple(
         self,
-        ids: Optional[Sequence[int]] = None,
-        external_ids: Optional[Sequence[str]] = None,
+        ids: Sequence[int] | None = None,
+        external_ids: Sequence[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> TimeSeriesList:
         """`Retrieve multiple time series by id. <https://developer.cognite.com/api#tag/Time-series/operation/getTimeSeriesByIds>`_
 
         Args:
-            ids (Sequence[int], optional): IDs
-            external_ids (Sequence[str], optional): External IDs
+            ids (Sequence[int] | None): IDs
+            external_ids (Sequence[str] | None): External IDs
             ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
@@ -177,23 +208,552 @@ class TimeSeriesAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
+    def aggregate(self, filter: TimeSeriesFilter | dict | None = None) -> list[TimeSeriesAggregate]:
+        """`Aggregate time series <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
+
+        Args:
+            filter (TimeSeriesFilter | dict | None): Filter on time series filter with exact match
+
+        Returns:
+            list[TimeSeriesAggregate]: List of sequence aggregates
+
+        Examples:
+
+            List time series::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.time_series.aggregate(filter={"unit": "kpa"})
+        """
+
+        return self._aggregate(filter=filter, cls=TimeSeriesAggregate)
+
+    def aggregate_count(
+        self,
+        advanced_filter: Filter | dict | None = None,
+        filter: TimeSeriesFilter | dict | None = None,
+    ) -> int:
+        """`Count of time series matching the specified filters and search. <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
+
+        Args:
+            advanced_filter (Filter | dict | None): The filter to narrow down the time series to count.
+            filter (TimeSeriesFilter | dict | None): The filter to narrow down time series to count requirering exact match.
+
+        Returns:
+            int: The number of time series matching the specified filters and search.
+
+        Examples:
+
+        Count the number of time series in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> c = CogniteClient()
+            >>> count = c.time_series.aggregate_count()
+
+        Count the number of numeric time series in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes import filters
+            >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
+            >>> c = CogniteClient()
+            >>> is_numeric = filters.Equals(TimeSeriesProperty.is_string, False)
+            >>> count = c.time_series.aggregate_count(advanced_filter=is_numeric)
+
+        """
+        self._validate_filter(advanced_filter)
+
+        api_version = self._api_subversion
+        try:
+            self._api_subversion = "beta"
+            return self._advanced_aggregate(
+                "count",
+                filter=filter,
+                advanced_filter=advanced_filter,
+            )
+        finally:
+            self._api_subversion = api_version
+
+    def aggregate_cardinality_values(
+        self,
+        property: TimeSeriesProperty | str | list[str],
+        advanced_filter: Filter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict | None = None,
+        filter: TimeSeriesFilter | dict | None = None,
+    ) -> int:
+        """`Find approximate property count for time series. <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
+
+        Args:
+            property (TimeSeriesProperty | str | list[str]): The property to count the cardinality of.
+            advanced_filter (Filter | dict | None): The filter to narrow down the time series to count cardinality.
+            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
+            filter (TimeSeriesFilter | dict | None): The filter to narrow down the time series to count requirering exact match.
+        Returns:
+            int: The number of properties matching the specified filters and search.
+
+        Examples:
+
+        Count the number of different units used for time series in your CDF project:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
+            >>> c = CogniteClient()
+            >>> unit_count = c.time_series.aggregate_cardinality_values(TimeSeriesProperty.unit)
+
+        Count the number of timezones (metadata key) for time series with the word "critical" in the description
+        in your CDF project, but exclude timezones from america:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes import filters, aggregations
+            >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
+            >>> c = CogniteClient()
+            >>> a = aggregations
+            >>> not_america = a.Not(a.Prefix("america"))
+            >>> is_critical = filters.Search(TimeSeriesProperty.description, "critical")
+            >>> timezone_count = c.time_series.aggregate_cardinality_values(
+            ...     TimeSeriesProperty.metadata_key("timezone"),
+            ...     advanced_filter=is_critical,
+            ...     aggregate_filter=not_america)
+
+        """
+        self._validate_filter(advanced_filter)
+
+        api_version = self._api_subversion
+
+        try:
+            self._api_subversion = "beta"
+            return self._advanced_aggregate(
+                "cardinalityValues",
+                properties=property,
+                filter=filter,
+                advanced_filter=advanced_filter,
+                aggregate_filter=aggregate_filter,
+            )
+        finally:
+            self._api_subversion = api_version
+
+    def aggregate_cardinality_properties(
+        self,
+        path: TimeSeriesProperty | str | list[str],
+        advanced_filter: Filter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict | None = None,
+        filter: TimeSeriesFilter | dict | None = None,
+    ) -> int:
+        """`Find approximate paths count for time series.  <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
+
+        Args:
+            path (TimeSeriesProperty | str | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
+            advanced_filter (Filter | dict | None): The filter to narrow down the time series to count cardinality.
+            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
+            filter (TimeSeriesFilter | dict | None): The filter to narrow down the time series to count requirering exact match.
+        Returns:
+            int: The number of properties matching the specified filters and search.
+
+        Examples:
+
+            Count the number of metadata keys in your CDF project:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
+                >>> c = CogniteClient()
+                >>> key_count = c.time_series.aggregate_cardinality_properties(TimeSeriesProperty.metadata)
+        """
+        self._validate_filter(advanced_filter)
+
+        api_version = self._api_subversion
+
+        try:
+            self._api_subversion = "beta"
+            return self._advanced_aggregate(
+                "cardinalityProperties",
+                path=path,
+                filter=filter,
+                advanced_filter=advanced_filter,
+                aggregate_filter=aggregate_filter,
+            )
+        finally:
+            self._api_subversion = api_version
+
+    def aggregate_unique_values(
+        self,
+        property: TimeSeriesProperty | str | list[str],
+        advanced_filter: Filter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict | None = None,
+        filter: TimeSeriesFilter | dict | None = None,
+    ) -> UniqueResultList:
+        """`Get unique properties with counts for time series. <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
+
+        Args:
+            property (TimeSeriesProperty | str | list[str]): The property to group by.
+            advanced_filter (Filter | dict | None): The filter to narrow down the time series to count cardinality.
+            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
+            filter (TimeSeriesFilter | dict | None): The filter to narrow down the time series to count requirering exact match.
+
+        Returns:
+            UniqueResultList: List of unique values of time series matching the specified filters and search.
+
+        Examples:
+
+            Get the timezones (metadata key) with count for your time series in your CDF project:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
+                >>> c = CogniteClient()
+                >>> result = c.time_series.aggregate_unique_values(TimeSeriesProperty.metadata_key("timezone"))
+                >>> print(result.unique)
+
+            Get the different units with count used for time series created after 2020-01-01 in your CDF project:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
+                >>> from cognite.client.utils import timestamp_to_ms
+                >>> from datetime import datetime
+                >>> c = CogniteClient()
+                >>> created_after_2020 = filters.Range(TimeSeriesProperty.created_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
+                >>> result = c.time_series.aggregate_unique_values(TimeSeriesProperty.unit, advanced_filter=created_after_2020)
+                >>> print(result.unique)
+
+            Get the different units with count for time series updated after 2020-01-01 in your CDF project, but exclude all units that
+            start with "test":
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
+                >>> from cognite.client.data_classes import aggregations, filters
+                >>> c = CogniteClient()
+                >>> a = aggregations
+                >>> not_test = a.Not(a.Prefix("test"))
+                >>> created_after_2020 = filters.Range(TimeSeriesProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
+                >>> result = c.time_series.aggregate_unique_values(TimeSeriesProperty.unit, advanced_filter=created_after_2020, aggregate_filter=not_test)
+                >>> print(result.unique)
+        """
+        self._validate_filter(advanced_filter)
+
+        api_version = self._api_subversion
+
+        try:
+            self._api_subversion = "beta"
+            return self._advanced_aggregate(
+                aggregate="uniqueValues",
+                properties=property,
+                filter=filter,
+                advanced_filter=advanced_filter,
+                aggregate_filter=aggregate_filter,
+            )
+        finally:
+            self._api_subversion = api_version
+
+    def aggregate_unique_properties(
+        self,
+        path: TimeSeriesProperty | str | list[str],
+        advanced_filter: Filter | dict | None = None,
+        aggregate_filter: AggregationFilter | dict | None = None,
+        filter: TimeSeriesFilter | dict | None = None,
+    ) -> UniqueResultList:
+        """`Get unique paths with counts for time series. <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
+
+        Args:
+            path (TimeSeriesProperty | str | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
+            advanced_filter (Filter | dict | None): The filter to narrow down the time series to count cardinality.
+            aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
+            filter (TimeSeriesFilter | dict | None): The filter to narrow down the time series to count requirering exact match.
+
+        Returns:
+            UniqueResultList: List of unique values of time series matching the specified filters and search.
+
+        Examples:
+
+            Get the metadata keys with count for your time series in your CDF project:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
+                >>> c = CogniteClient()
+                >>> result = c.time_series.aggregate_unique_values(TimeSeriesProperty.metadata)
+        """
+        self._validate_filter(advanced_filter)
+
+        api_version = self._api_subversion
+
+        try:
+            self._api_subversion = "beta"
+            return self._advanced_aggregate(
+                aggregate="uniqueProperties",
+                path=path,
+                filter=filter,
+                advanced_filter=advanced_filter,
+                aggregate_filter=aggregate_filter,
+            )
+        finally:
+            self._api_subversion = api_version
+
+    @overload
+    def create(self, time_series: Sequence[TimeSeries]) -> TimeSeriesList:
+        ...
+
+    @overload
+    def create(self, time_series: TimeSeries) -> TimeSeries:
+        ...
+
+    def create(self, time_series: TimeSeries | Sequence[TimeSeries]) -> TimeSeries | TimeSeriesList:
+        """`Create one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/postTimeSeries>`_
+
+        Args:
+            time_series (TimeSeries | Sequence[TimeSeries]): TimeSeries or list of TimeSeries to create.
+
+        Returns:
+            TimeSeries | TimeSeriesList: The created time series.
+
+        Examples:
+
+            Create a new time series::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import TimeSeries
+                >>> c = CogniteClient()
+                >>> ts = c.time_series.create(TimeSeries(name="my ts"))
+        """
+        return self._create_multiple(list_cls=TimeSeriesList, resource_cls=TimeSeries, items=time_series)
+
+    def delete(
+        self,
+        id: int | Sequence[int] | None = None,
+        external_id: str | Sequence[str] | None = None,
+        ignore_unknown_ids: bool = False,
+    ) -> None:
+        """`Delete one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/deleteTimeSeries>`_
+
+        Args:
+            id (int | Sequence[int] | None): Id or list of ids
+            external_id (str | Sequence[str] | None): External ID or list of external ids
+            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
+
+        Examples:
+
+            Delete time series by id or external id::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> c.time_series.delete(id=[1,2,3], external_id="3")
+        """
+        self._delete_multiple(
+            identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
+            wrap_ids=True,
+            extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
+        )
+
+    @overload
+    def update(self, item: Sequence[TimeSeries | TimeSeriesUpdate]) -> TimeSeriesList:
+        ...
+
+    @overload
+    def update(self, item: TimeSeries | TimeSeriesUpdate) -> TimeSeries:
+        ...
+
+    def update(
+        self, item: TimeSeries | TimeSeriesUpdate | Sequence[TimeSeries | TimeSeriesUpdate]
+    ) -> TimeSeries | TimeSeriesList:
+        """`Update one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/alterTimeSeries>`_
+
+        Args:
+            item (TimeSeries | TimeSeriesUpdate | Sequence[TimeSeries | TimeSeriesUpdate]): Time series to update
+
+        Returns:
+            TimeSeries | TimeSeriesList: Updated time series.
+
+        Examples:
+
+            Update a time series that you have fetched. This will perform a full update of the time series::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.time_series.retrieve(id=1)
+                >>> res.description = "New description"
+                >>> res = c.time_series.update(res)
+
+            Perform a partial update on a time series, updating the description and adding a new field to metadata::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import TimeSeriesUpdate
+                >>> c = CogniteClient()
+                >>> my_update = TimeSeriesUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
+                >>> res = c.time_series.update(my_update)
+        """
+        return self._update_multiple(
+            list_cls=TimeSeriesList, resource_cls=TimeSeries, update_cls=TimeSeriesUpdate, items=item
+        )
+
+    @overload
+    def upsert(self, item: Sequence[TimeSeries], mode: Literal["patch", "replace"] = "patch") -> TimeSeriesList:
+        ...
+
+    @overload
+    def upsert(self, item: TimeSeries, mode: Literal["patch", "replace"] = "patch") -> TimeSeries:
+        ...
+
+    def upsert(
+        self, item: TimeSeries | Sequence[TimeSeries], mode: Literal["patch", "replace"] = "patch"
+    ) -> TimeSeries | TimeSeriesList:
+        """Upsert time series, i.e., update if it exists, and create if it does not exist.
+            Note this is a convenience method that handles the upserting for you by first calling update on all items,
+            and if any of them fail because they do not exist, it will create them instead.
+
+            For more details, see :ref:`appendix-upsert`.
+
+        Args:
+            item (TimeSeries | Sequence[TimeSeries]): TimeSeries or list of TimeSeries to upsert.
+            mode (Literal["patch", "replace"]): Whether to patch or replace in the case the time series are existing. If you set 'patch', the call will only update fields with non-null values (default). Setting 'replace' will unset any fields that are not specified.
+
+        Returns:
+            TimeSeries | TimeSeriesList: The upserted time series(s).
+
+        Examples:
+
+            Upsert for TimeSeries::
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import TimeSeries
+                >>> c = CogniteClient()
+                >>> existing_time_series = c.time_series.retrieve(id=1)
+                >>> existing_time_series.description = "New description"
+                >>> new_time_series = TimeSeries(external_id="new_timeSeries", description="New timeSeries")
+                >>> res = c.time_series.upsert([existing_time_series, new_time_series], mode="replace")
+        """
+        return self._upsert_multiple(
+            item,
+            list_cls=TimeSeriesList,
+            resource_cls=TimeSeries,
+            update_cls=TimeSeriesUpdate,
+            input_resource_cls=TimeSeries,
+            mode=mode,
+        )
+
+    def search(
+        self,
+        name: str | None = None,
+        description: str | None = None,
+        query: str | None = None,
+        filter: TimeSeriesFilter | dict | None = None,
+        limit: int = 100,
+    ) -> TimeSeriesList:
+        """`Search for time series. <https://developer.cognite.com/api#tag/Time-series/operation/searchTimeSeries>`_
+        Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
+
+        Args:
+            name (str | None): Prefix and fuzzy search on name.
+            description (str | None): Prefix and fuzzy search on description.
+            query (str | None): Search on name and description using wildcard search on each of the words (separated by spaces). Retrieves results where at least one word must match. Example: 'some other'
+            filter (TimeSeriesFilter | dict | None): Filter to apply. Performs exact match on these fields.
+            limit (int): Max number of results to return.
+
+        Returns:
+            TimeSeriesList: List of requested time series.
+
+        Examples:
+
+            Search for a time series::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.time_series.search(name="some name")
+
+            Search for all time series connected to asset with id 123::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.time_series.search(filter={"asset_ids":[123]})
+        """
+        return self._search(
+            list_cls=TimeSeriesList,
+            search={"name": name, "description": description, "query": query},
+            filter=filter or {},
+            limit=limit,
+        )
+
+    def filter(
+        self,
+        filter: Filter | dict,
+        sort: SortSpec | list[SortSpec] | None = None,
+        limit: int = LIST_LIMIT_DEFAULT,
+    ) -> TimeSeriesList:
+        """`Advanced filter time series <https://developer.cognite.com/api#tag/Time-series/operation/listTimeSeries>`_
+
+        Advanced filter lets you create complex filtering expressions that combine simple operations,
+        such as equals, prefix, exists, etc., using boolean operators and, or, and not.
+        It applies to basic fields as well as metadata.
+
+        Args:
+            filter (Filter | dict): Filter to apply.
+            sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Can be up to two properties to sort by default to ascending order.
+            limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+
+        Returns:
+            TimeSeriesList: List of time series that match the filter criteria.
+
+        Examples:
+
+            Find all numeric time series and return them sorted by external id:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> c = CogniteClient()
+                >>> f = filters
+                >>> is_numeric = f.Equals("is_string", False)
+                >>> res = c.time_series.filter(filter=is_numeric, sort="external_id")
+
+            Note that you can check the API documentation above to see which properties you can filter on
+            with which filters.
+
+            To make it easier to avoid spelling mistakes and easiser to look up available properties
+            for filtering and sorting, you can also use the `TimeSeriesProperty` and `SortableTimeSeriesProperty` enums.
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes.time_series import TimeSeriesProperty, SortableTimeSeriesProperty
+                >>> c = CogniteClient()
+                >>> f = filters
+                >>> is_numeric = f.Equals(TimeSeriesProperty.is_string, False)
+                >>> res = c.time_series.filter(filter=is_numeric, sort=SortableTimeSeriesProperty.external_id)
+        """
+        self._validate_filter(filter)
+        if sort is None:
+            sort = []
+        elif not isinstance(sort, list):
+            sort = [sort]
+
+        api_version = self._api_subversion
+
+        try:
+            self._api_subversion = "beta"
+            return self._list(
+                list_cls=TimeSeriesList,
+                resource_cls=TimeSeries,
+                method="POST",
+                limit=limit,
+                advanced_filter=filter.dump(camel_case=True) if isinstance(filter, Filter) else filter,
+                sort=[TimeSeriesSort.load(item).dump(camel_case=True) for item in sort],
+            )
+        finally:
+            self._api_subversion = api_version
+
+    def _validate_filter(self, filter: Filter | dict | None) -> None:
+        _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)
+
     def list(
         self,
-        name: Optional[str] = None,
-        unit: Optional[str] = None,
-        is_string: Optional[bool] = None,
-        is_step: Optional[bool] = None,
-        asset_ids: Optional[Sequence[int]] = None,
-        asset_external_ids: Optional[Sequence[str]] = None,
-        asset_subtree_ids: Optional[Union[int, Sequence[int]]] = None,
-        asset_subtree_external_ids: Optional[Union[str, Sequence[str]]] = None,
-        data_set_ids: Optional[Union[int, Sequence[int]]] = None,
-        data_set_external_ids: Optional[Union[str, Sequence[str]]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        external_id_prefix: Optional[str] = None,
-        created_time: Optional[Dict[str, Any]] = None,
-        last_updated_time: Optional[Dict[str, Any]] = None,
-        partitions: Optional[int] = None,
+        name: str | None = None,
+        unit: str | None = None,
+        is_string: bool | None = None,
+        is_step: bool | None = None,
+        asset_ids: Sequence[int] | None = None,
+        asset_external_ids: Sequence[str] | None = None,
+        asset_subtree_ids: int | Sequence[int] | None = None,
+        asset_subtree_external_ids: str | Sequence[str] | None = None,
+        data_set_ids: int | Sequence[int] | None = None,
+        data_set_external_ids: str | Sequence[str] | None = None,
+        metadata: dict[str, Any] | None = None,
+        external_id_prefix: str | None = None,
+        created_time: dict[str, Any] | None = None,
+        last_updated_time: dict[str, Any] | None = None,
+        partitions: int | None = None,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> TimeSeriesList:
         """`List over time series <https://developer.cognite.com/api#tag/Time-series/operation/listTimeSeries>`_
@@ -201,23 +761,22 @@ class TimeSeriesAPI(APIClient):
         Fetches time series as they are iterated over, so you keep a limited number of objects in memory.
 
         Args:
-            name (str): Name of the time series. Often referred to as tag.
-            unit (str): Unit of the time series.
-            is_string (bool): Whether the time series is an string time series.
-            is_step (bool): Whether the time series is a step (piecewise constant) time series.
-            asset_ids (Sequence[int], optional): List time series related to these assets.
-            asset_external_ids (Sequence[str], optional): List time series related to these assets.
-            asset_subtree_ids (Union[int, Sequence[int]]): Asset subtree id or list of asset subtree ids to filter on.
-            asset_subtree_external_ids (Union[str, Sequence[str]]): Asset external id or list of asset subtree external ids to filter on.
-            data_set_ids (Union[int, Sequence[int]]): Return only time series in the specified data set(s) with this id / these ids.
-            data_set_external_ids (Union[str, Sequence[str]]): Return only time series in the specified data set(s) with this external id / these external ids.
-            metadata (Dict[str, Any]): Custom, application specific metadata. String key -> String value
-            created_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            last_updated_time (Union[Dict[str, int], TimestampRange]):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
-            external_id_prefix (str): Filter by this (case-sensitive) prefix for the external ID.
-            limit (int, optional): Maximum number of time series to return.  Defaults to 25. Set to -1, float("inf") or None to return all items.
-            partitions (int): Retrieve time series in parallel using this number of workers. Also requires `limit=None` to be passed.
-
+            name (str | None): Name of the time series. Often referred to as tag.
+            unit (str | None): Unit of the time series.
+            is_string (bool | None): Whether the time series is an string time series.
+            is_step (bool | None): Whether the time series is a step (piecewise constant) time series.
+            asset_ids (Sequence[int] | None): List time series related to these assets.
+            asset_external_ids (Sequence[str] | None): List time series related to these assets.
+            asset_subtree_ids (int | Sequence[int] | None): Asset subtree id or list of asset subtree ids to filter on.
+            asset_subtree_external_ids (str | Sequence[str] | None): Asset external id or list of asset subtree external ids to filter on.
+            data_set_ids (int | Sequence[int] | None): Return only time series in the specified data set(s) with this id / these ids.
+            data_set_external_ids (str | Sequence[str] | None): Return only time series in the specified data set(s) with this external id / these external ids.
+            metadata (dict[str, Any] | None): Custom, application specific metadata. String key -> String value
+            external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
+            created_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            last_updated_time (dict[str, Any] | None):  Range between two timestamps. Possible keys are `min` and `max`, with values given as time stamps in ms.
+            partitions (int | None): Retrieve time series in parallel using this number of workers. Also requires `limit=None` to be passed.
+            limit (int): Maximum number of time series to return.  Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             TimeSeriesList: The requested time series.
@@ -268,213 +827,4 @@ class TimeSeriesAPI(APIClient):
             filter=filter,
             limit=limit,
             partitions=partitions,
-        )
-
-    def aggregate(self, filter: Optional[Union[TimeSeriesFilter, Dict]] = None) -> List[TimeSeriesAggregate]:
-        """`Aggregate time series <https://developer.cognite.com/api#tag/Time-series/operation/aggregateTimeSeries>`_
-
-        Args:
-            filter (Union[TimeSeriesFilter, Dict]): Filter on time series filter with exact match
-
-        Returns:
-            List[TimeSeriesAggregate]: List of sequence aggregates
-
-        Examples:
-
-            List time series::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.time_series.aggregate(filter={"unit": "kpa"})
-        """
-
-        return self._aggregate(filter=filter, cls=TimeSeriesAggregate)
-
-    @overload
-    def create(self, time_series: Sequence[TimeSeries]) -> TimeSeriesList:
-        ...
-
-    @overload
-    def create(self, time_series: TimeSeries) -> TimeSeries:
-        ...
-
-    def create(self, time_series: Union[TimeSeries, Sequence[TimeSeries]]) -> Union[TimeSeries, TimeSeriesList]:
-        """`Create one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/postTimeSeries>`_
-
-        Args:
-            time_series (Union[TimeSeries, Sequence[TimeSeries]]): TimeSeries or list of TimeSeries to create.
-
-        Returns:
-            Union[TimeSeries, TimeSeriesList]: The created time series.
-
-        Examples:
-
-            Create a new time series::
-
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import TimeSeries
-                >>> c = CogniteClient()
-                >>> ts = c.time_series.create(TimeSeries(name="my ts"))
-        """
-        return self._create_multiple(list_cls=TimeSeriesList, resource_cls=TimeSeries, items=time_series)
-
-    def delete(
-        self,
-        id: Optional[Union[int, Sequence[int]]] = None,
-        external_id: Optional[Union[str, Sequence[str]]] = None,
-        ignore_unknown_ids: bool = False,
-    ) -> None:
-        """`Delete one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/deleteTimeSeries>`_
-
-        Args:
-            id (Union[int, Sequence[int]): Id or list of ids
-            external_id (Union[str, Sequence[str]]): External ID or list of external ids
-            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
-
-        Returns:
-            None
-
-        Examples:
-
-            Delete time series by id or external id::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> c.time_series.delete(id=[1,2,3], external_id="3")
-        """
-        self._delete_multiple(
-            identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
-            wrap_ids=True,
-            extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
-        )
-
-    @overload
-    def update(self, item: Sequence[Union[TimeSeries, TimeSeriesUpdate]]) -> TimeSeriesList:
-        ...
-
-    @overload
-    def update(self, item: Union[TimeSeries, TimeSeriesUpdate]) -> TimeSeries:
-        ...
-
-    def update(
-        self, item: Union[TimeSeries, TimeSeriesUpdate, Sequence[Union[TimeSeries, TimeSeriesUpdate]]]
-    ) -> Union[TimeSeries, TimeSeriesList]:
-        """`Update one or more time series. <https://developer.cognite.com/api#tag/Time-series/operation/alterTimeSeries>`_
-
-        Args:
-            item (Union[TimeSeries, TimeSeriesUpdate, Sequence[Union[TimeSeries, TimeSeriesUpdate]]]): Time series to update
-
-        Returns:
-            Union[TimeSeries, TimeSeriesList]: Updated time series.
-
-        Examples:
-
-            Update a time series that you have fetched. This will perform a full update of the time series::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.time_series.retrieve(id=1)
-                >>> res.description = "New description"
-                >>> res = c.time_series.update(res)
-
-            Perform a partial update on a time series, updating the description and adding a new field to metadata::
-
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import TimeSeriesUpdate
-                >>> c = CogniteClient()
-                >>> my_update = TimeSeriesUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
-                >>> res = c.time_series.update(my_update)
-        """
-        return self._update_multiple(
-            list_cls=TimeSeriesList, resource_cls=TimeSeries, update_cls=TimeSeriesUpdate, items=item
-        )
-
-    @overload
-    def upsert(self, item: Sequence[TimeSeries], mode: Literal["patch", "replace"] = "patch") -> TimeSeriesList:
-        ...
-
-    @overload
-    def upsert(self, item: TimeSeries, mode: Literal["patch", "replace"] = "patch") -> TimeSeries:
-        ...
-
-    def upsert(
-        self, item: TimeSeries | Sequence[TimeSeries], mode: Literal["patch", "replace"] = "patch"
-    ) -> TimeSeries | TimeSeriesList:
-        """Upsert time series, i.e., update if it exists, and create if it does not exist.
-         Note this is a convenience method that handles the upserting for you by first calling update on all items,
-         and if any of them fail because they do not exist, it will create them instead.
-
-         For more details, see :ref:`appendix-upsert`.
-
-        Args:
-            item (TimeSeries | Sequence[TimeSeries]): TimeSeries or list of TimeSeries to upsert.
-            mode (Literal["patch", "replace"])): Whether to patch or replace in the case the time series are existing. If
-                                                you set 'patch', the call will only update fields with non-null values (default).
-                                                Setting 'replace' will unset any fields that are not specified.
-
-        Returns:
-            TimeSeries | TimeSeriesList: The upserted time series(s).
-
-        Examples:
-
-            Upsert for TimeSeries::
-
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes import TimeSeries
-                >>> c = CogniteClient()
-                >>> existing_time_series = c.time_series.retrieve(id=1)
-                >>> existing_time_series.description = "New description"
-                >>> new_time_series = TimeSeries(external_id="new_timeSeries", description="New timeSeries")
-                >>> res = c.time_series.upsert([existing_time_series, new_time_series], mode="replace")
-        """
-        return self._upsert_multiple(
-            item,
-            list_cls=TimeSeriesList,
-            resource_cls=TimeSeries,
-            update_cls=TimeSeriesUpdate,
-            input_resource_cls=TimeSeries,
-            mode=mode,
-        )
-
-    def search(
-        self,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        query: Optional[str] = None,
-        filter: Optional[Union[TimeSeriesFilter, Dict]] = None,
-        limit: int = 100,
-    ) -> TimeSeriesList:
-        """`Search for time series. <https://developer.cognite.com/api#tag/Time-series/operation/searchTimeSeries>`_
-        Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
-
-        Args:
-            name (str, optional): Prefix and fuzzy search on name.
-            description (str, optional): Prefix and fuzzy search on description.
-            query (str, optional): Search on name and description using wildcard search on each of the words (separated
-                by spaces). Retrieves results where at least one word must match. Example: 'some other'
-            filter (Union[TimeSeriesFilter, Dict], optional): Filter to apply. Performs exact match on these fields.
-            limit (int, optional): Max number of results to return.
-
-        Returns:
-            TimeSeriesList: List of requested time series.
-
-        Examples:
-
-            Search for a time series::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.time_series.search(name="some name")
-
-            Search for all time series connected to asset with id 123::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.time_series.search(filter={"asset_ids":[123]})
-        """
-        return self._search(
-            list_cls=TimeSeriesList,
-            search={"name": name, "description": description, "query": query},
-            filter=filter or {},
-            limit=limit,
         )

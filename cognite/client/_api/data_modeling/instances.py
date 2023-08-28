@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Literal, Optional, Sequence, Type, Union, cast, overload
+from collections.abc import Iterable
+from typing import TYPE_CHECKING, Any, Iterator, List, Literal, Sequence, Union, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import INSTANCES_LIST_LIMIT_DEFAULT
+from cognite.client.data_classes import filters
 from cognite.client.data_classes._base import CogniteResourceList
-from cognite.client.data_classes.data_modeling.aggregations import (
+from cognite.client.data_classes.aggregations import (
     Aggregation,
     Histogram,
     HistogramValue,
@@ -41,7 +43,7 @@ from cognite.client.data_classes.data_modeling.query import (
     QueryResult,
 )
 from cognite.client.data_classes.data_modeling.views import View
-from cognite.client.data_classes.filters import Filter
+from cognite.client.data_classes.filters import Filter, _validate_filter
 from cognite.client.utils._identifier import DataModelingIdentifierSequence
 
 from ._data_modeling_executor import get_data_modeling_executor
@@ -49,13 +51,32 @@ from ._data_modeling_executor import get_data_modeling_executor
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
+_DATA_MODELING_SUPPORTED_FILTERS: frozenset[type[Filter]] = frozenset(
+    {
+        filters.And,
+        filters.Or,
+        filters.Not,
+        filters.In,
+        filters.Equals,
+        filters.Exists,
+        filters.Range,
+        filters.Prefix,
+        filters.ContainsAny,
+        filters.ContainsAll,
+        filters.Nested,
+        filters.HasData,
+        filters.MatchAll,
+        filters.Overlaps,
+    }
+)
+
 
 class _NodeOrEdgeList(CogniteResourceList):
     _RESOURCE = (Node, Edge)  # type: ignore[assignment]
 
     @classmethod
     def _load(
-        cls, resource_list: list[dict[str, Any]] | str, cognite_client: Optional[CogniteClient] = None
+        cls, resource_list: Iterable[dict[str, Any]] | str, cognite_client: CogniteClient | None = None
     ) -> _NodeOrEdgeList:
         resource_list = json.loads(resource_list) if isinstance(resource_list, str) else resource_list
         resources: list[Node | Edge] = [
@@ -68,8 +89,8 @@ class _NodeOrEdgeList(CogniteResourceList):
 
 
 class _NodeOrEdgeResourceAdapter:
-    @classmethod
-    def _load(cls, data: str | dict, cognite_client: Optional[CogniteClient] = None) -> Node | Edge:
+    @staticmethod
+    def _load(data: str | dict, cognite_client: CogniteClient | None = None) -> Node | Edge:
         data = json.loads(data) if isinstance(data, str) else data
         if data["instanceType"] == "node":
             return Node.load(data)
@@ -81,7 +102,7 @@ class _NodeOrEdgeApplyResultList(CogniteResourceList):
 
     @classmethod
     def _load(
-        cls, resource_list: list[dict[str, Any]] | str, cognite_client: Optional[CogniteClient] = None
+        cls, resource_list: Iterable[dict[str, Any]] | str, cognite_client: CogniteClient | None = None
     ) -> _NodeOrEdgeApplyResultList:
         resource_list = json.loads(resource_list) if isinstance(resource_list, str) else resource_list
         resources: list[NodeApplyResult | EdgeApplyResult] = [
@@ -95,10 +116,8 @@ class _NodeOrEdgeApplyResultList(CogniteResourceList):
 
 
 class _NodeOrEdgeApplyResultAdapter:
-    @classmethod
-    def _load(
-        cls, data: str | dict, cognite_client: Optional[CogniteClient] = None
-    ) -> NodeApplyResult | EdgeApplyResult:
+    @staticmethod
+    def _load(data: str | dict, cognite_client: CogniteClient | None = None) -> NodeApplyResult | EdgeApplyResult:
         data = json.loads(data) if isinstance(data, str) else data
         if data["instanceType"] == "node":
             return NodeApplyResult.load(data)
@@ -106,8 +125,8 @@ class _NodeOrEdgeApplyResultAdapter:
 
 
 class _NodeOrEdgeApplyAdapter:
-    @classmethod
-    def _load(cls, data: str | dict, cognite_client: Optional[CogniteClient] = None) -> NodeApply | EdgeApply:
+    @staticmethod
+    def _load(data: str | dict, cognite_client: CogniteClient | None = None) -> NodeApply | EdgeApply:
         data = json.loads(data) if isinstance(data, str) else data
         if data["instanceType"] == "node":
             return NodeApply.load(data)
@@ -183,18 +202,18 @@ class InstancesAPI(APIClient):
         Fetches instances as they are iterated over, so you keep a limited number of instances in memory.
 
         Args:
-            chunk_size (int, optional): Number of data_models to return in each chunk. Defaults to yielding
-                                        one instance at a time.
-            instance_type(Literal["node", "edge"]): Whether to query for nodes or edges.
-            limit (int, optional): Maximum number of instances to return. Default to return all items.
+            chunk_size (int | None): Number of data_models to return in each chunk. Defaults to yielding one instance at a time.
+            instance_type (Literal["node", "edge"]): Whether to query for nodes or edges.
+            limit (int | None): Maximum number of instances to return. Defaults to returning all items.
             include_typing (bool): Whether to return property type information as part of the result.
-            sources (list[ViewId] | ViewId): Views to retrieve properties from.
-            sort (list[InstanceSort | dict] | InstanceSort | dict): How you want the listed instances information ordered.
-            filter (dict | Filter): Advanced filtering of instances.
+            sources (list[ViewId] | ViewId | None): Views to retrieve properties from.
+            sort (list[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
+            filter (Filter | dict | None): Advanced filtering of instances.
 
-        Yields:
-            Edge | Node | EdgeList | NodeList: yields Instance one by one if chunk_size is not specified, else NodeList/EdgeList objects.
+        Returns:
+            Iterator[Edge] | Iterator[EdgeList] | Iterator[Node] | Iterator[NodeList]: yields Instance one by one if chunk_size is not specified, else NodeList/EdgeList objects.
         """
+        self._validate_filter(filter)
         other_params = self._create_other_params(
             include_typing=include_typing, instance_type=instance_type, sort=sort, sources=sources
         )
@@ -223,8 +242,9 @@ class InstancesAPI(APIClient):
     def __iter__(self) -> Iterator[Node]:
         """Iterate over instances
         Fetches instances as they are iterated over, so you keep a limited number of instances in memory.
-        Yields:
-            Instance: yields Instances one by one.
+
+        Returns:
+            Iterator[Node]: yields Instances one by one.
         """
         return cast(Iterator[Node], self(None, "node"))
 
@@ -240,7 +260,7 @@ class InstancesAPI(APIClient):
         Args:
             nodes (NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Node ids
             edges (EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Edge ids
-            sources (ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence(View) None): Retrieve properties from the listed - by reference - views.
+            sources (ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None): Retrieve properties from the listed - by reference - views.
             include_typing (bool): Whether to return property type information as part of the result.
 
         Returns:
@@ -337,7 +357,7 @@ class InstancesAPI(APIClient):
             edges (EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Edge ids
 
         Returns:
-            The instance(s) which has been deleted. Empty list if nothing was deleted.
+            InstancesDeleteResult: The instance(s) which has been deleted. Empty list if nothing was deleted.
 
         Examples:
 
@@ -385,11 +405,7 @@ class InstancesAPI(APIClient):
     ) -> dict[str, Any]:
         other_params: dict[str, Any] = {"includeTyping": include_typing}
         if sources:
-            other_params["sources"] = (
-                [cls._dump_instance_source(source) for source in sources]
-                if isinstance(sources, Sequence)
-                else [cls._dump_instance_source(sources)]
-            )
+            other_params["sources"] = cls._dump_instance_source(sources)
         if sort:
             if isinstance(sort, (InstanceSort, dict)):
                 other_params["sort"] = [cls._dump_instance_sort(sort)]
@@ -399,17 +415,14 @@ class InstancesAPI(APIClient):
             other_params["instanceType"] = instance_type
         return other_params
 
-    @classmethod
-    def _dump_instance_source(cls, source: ViewIdentifier | View) -> dict:
-        instance_source: ViewIdentifier
-        if isinstance(source, View):
-            instance_source = source.as_id()
-        else:
-            instance_source = source
-        return {"source": ViewId.load(instance_source).dump(camel_case=True)}
+    @staticmethod
+    def _dump_instance_source(sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View]) -> list[dict]:
+        return [
+            {"source": ViewId.load(dct).dump(camel_case=True)} for dct in _load_identifier(sources, "view").as_dicts()
+        ]
 
-    @classmethod
-    def _dump_instance_sort(cls, sort: InstanceSort | dict) -> dict:
+    @staticmethod
+    def _dump_instance_sort(sort: InstanceSort | dict) -> dict:
         return sort.dump(camel_case=True) if isinstance(sort, InstanceSort) else sort
 
     def apply(
@@ -425,22 +438,13 @@ class InstancesAPI(APIClient):
         """`Add or update (upsert) instances. <https://developer.cognite.com/api#tag/Instances/tag/Instances/operation/applyNodeAndEdges>`_
 
         Args:
-            nodes (NodeApply | Sequence[NodeApply] | None = None): Nodes to apply
-            edges (EdgeApply | Sequence[EdgeApply] | None = None): Edges to apply
-            auto_create_start_nodes (bool): Whether to create missing start nodes for edges when ingesting. By default,
-                                            the start node of an edge must exist before it can be ingestested.
-            auto_create_end_nodes (bool): Whether to create missing end nodes for edges when ingesting. By default,
-                                          the end node of an edge must exist before it can be ingestested.
+            nodes (NodeApply | Sequence[NodeApply] | None): Nodes to apply
+            edges (EdgeApply | Sequence[EdgeApply] | None): Edges to apply
+            auto_create_start_nodes (bool): Whether to create missing start nodes for edges when ingesting. By default, the start node of an edge must exist before it can be ingested.
+            auto_create_end_nodes (bool): Whether to create missing end nodes for edges when ingesting. By default, the end node of an edge must exist before it can be ingested.
             auto_create_direct_relations (bool): Whether to create missing direct relation targets when ingesting.
-            skip_on_version_conflict (bool): If existingVersion is specified on any of the nodes/edges in the input,
-                                             the default behaviour is that the entire ingestion will fail when version
-                                             conflicts occur. If skipOnVersionConflict is set to true, items with
-                                             version conflicts will be skipped instead. If no version is specified for
-                                             nodes/edges, it will do the writing directly.
-            replace (bool): How do we behave when a property value exists? Do we replace all matching and existing
-                            values with the supplied values (true)? Or should we merge in new values for properties
-                            together with the existing values (false)? Note: This setting applies for all nodes or
-                            edges specified in the ingestion call.
+            skip_on_version_conflict (bool): If existingVersion is specified on any of the nodes/edges in the input, the default behaviour is that the entire ingestion will fail when version conflicts occur. If skipOnVersionConflict is set to true, items with version conflicts will be skipped instead. If no version is specified for nodes/edges, it will do the writing directly.
+            replace (bool): How do we behave when a property value exists? Do we replace all matching and existing values with the supplied values (true)? Or should we merge in new values for properties together with the existing values (false)? Note: This setting applies for all nodes or edges specified in the ingestion call.
         Returns:
             InstancesApplyResult: Created instance(s)
 
@@ -559,15 +563,12 @@ class InstancesAPI(APIClient):
             view (ViewId): View to search in.
             query (str): Query string that will be parsed and used for search.
             instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
-            properties (list[str]): Optional array of properties you want to search through.
-                                    If you do not specify one or more properties, the service will
-                                    search all text fields within the view.
-            filter (dict | Filter): Advnanced filtering of instances.
-            limit (int, optional): Maximum number of instances to return. Default to 1000. Set to -1, float("inf") or None
-                to return all items.
+            properties (list[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
+            filter (Filter | dict | None): Advnanced filtering of instances.
+            limit (int): Maximum number of instances to return. Defaults to 1000. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            EdgeList | NodeList: Search result with matching nodes or edges.
+            NodeList | EdgeList: Search result with matching nodes or edges.
 
         Examples:
 
@@ -589,8 +590,9 @@ class InstancesAPI(APIClient):
                 ... query="Quentin", properties=["name"], filter=born_after_1970)
 
         """
+        self._validate_filter(filter)
         if instance_type == "node":
-            list_cls: Union[Type[NodeList], Type[EdgeList]] = NodeList
+            list_cls: type[NodeList] | type[EdgeList] = NodeList
         elif instance_type == "edge":
             list_cls = EdgeList
         else:
@@ -622,15 +624,11 @@ class InstancesAPI(APIClient):
             view (ViewId): View to to aggregate over.
             aggregates (MetricAggregation | dict | Sequence[MetricAggregation | dict]):  The properties to aggregate over.
             instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
-            group_by (Optional[Sequence[str]]): The selection of fields to group the results by when doing aggregations.
-                                  You can specify up to 5 items to group by.
-            query (Optional[str]): Query string that will be parsed and used for search.
-            properties (Optional[Sequence[str]]): Optional array of properties you want to search through.
-                                    If you do not specify one or more properties, the service will
-                                    search all text fields within the view.
-            filter (Optional[Filter]): Advnanced filtering of instances.
-            limit (int, optional): Maximum number of instances to return. Default to 1000. Set to -1, float("inf") or None
-                to return all items.
+            group_by (Sequence[str] | None): The selection of fields to group the results by when doing aggregations. You can specify up to 5 items to group by.
+            query (str | None): Query string that will be parsed and used for search.
+            properties (Sequence[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
+            filter (Filter | None): Advnanced filtering of instances.
+            limit (int): Maximum number of instances to return. Defaults to 1000. Set to -1, float("inf") or None to return all items.
 
         Returns:
             InstanceAggregationResultList: Node or edge aggregation results.
@@ -649,7 +647,9 @@ class InstancesAPI(APIClient):
         """
         if instance_type not in ("node", "edge"):
             raise ValueError(f"Invalid instance type: {instance_type}")
-        body: Dict[str, Any] = {"view": view.dump(camel_case=True), "instanceType": instance_type, "limit": limit}
+
+        self._validate_filter(filter)
+        body: dict[str, Any] = {"view": view.dump(camel_case=True), "instanceType": instance_type, "limit": limit}
         aggregate_seq: Sequence[Aggregation | dict] = aggregates if isinstance(aggregates, Sequence) else [aggregates]
         body["aggregates"] = [
             agg.dump(camel_case=True) if isinstance(agg, Aggregation) else agg for agg in aggregate_seq
@@ -708,16 +708,13 @@ class InstancesAPI(APIClient):
             view (ViewId): View to to aggregate over.
             histograms (Histogram | Sequence[Histogram]):  The properties to aggregate over.
             instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
-            query (Optional[str]): Query string that will be parsed and used for search.
-            properties (Optional[Sequence[str]]): Optional array of properties you want to search through.
-                                    If you do not specify one or more properties, the service will
-                                    search all text fields within the view.
-            filter (Optional[Filter]): Advnanced filtering of instances.
-            limit (int, optional): Maximum number of instances to return. Default to 1000. Set to -1, float("inf") or None
-                to return all items.
+            query (str | None): Query string that will be parsed and used for search.
+            properties (Sequence[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
+            filter (Filter | None): Advnanced filtering of instances.
+            limit (int): Maximum number of instances to return. Defaults to 1000. Set to -1, float("inf") or None to return all items.
 
         Returns:
-            list[HistogramValue]: Node or edge aggregation results.
+            HistogramValue | list[HistogramValue]: Node or edge aggregation results.
 
         Examples:
 
@@ -732,7 +729,9 @@ class InstancesAPI(APIClient):
         """
         if instance_type not in ("node", "edge"):
             raise ValueError(f"Invalid instance type: {instance_type}")
-        body: Dict[str, Any] = {"view": view.dump(camel_case=True), "instanceType": instance_type, "limit": limit}
+
+        self._validate_filter(filter)
+        body: dict[str, Any] = {"view": view.dump(camel_case=True), "instanceType": instance_type, "limit": limit}
 
         if isinstance(histograms, Sequence):
             histogram_seq: Sequence[Histogram] = histograms
@@ -768,7 +767,7 @@ class InstancesAPI(APIClient):
         recursive edge traversal, chaining of result sets, and granular property selection.
 
         Args:
-            query: Query.
+            query (Query): Query.
 
         Returns:
             QueryResult: The resulting nodes and/or edges from the query.
@@ -805,7 +804,7 @@ class InstancesAPI(APIClient):
         Subscribe to changes for nodes and edges in a project, matching a supplied filter.
 
         Args:
-            query: Query.
+            query (Query): Query.
 
         Returns:
             QueryResult: The resulting nodes and/or edges from the query.
@@ -888,16 +887,15 @@ class InstancesAPI(APIClient):
         """`List instances <https://developer.cognite.com/api#tag/Instances/tag/Instances/operation/advancedListInstance>`_
 
         Args:
-            instance_type(Literal["node", "edge"]): Whether to query for nodes or edges.
+            instance_type (Literal["node", "edge"]): Whether to query for nodes or edges.
             include_typing (bool): Whether to return property type information as part of the result.
-            sources (ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence(View) | None): Views to retrieve properties from.
-            limit (int, optional): Maximum number of instances to return. Default to 1000. Set to -1, float("inf") or None
-                to return all items.
-            sort (Sequence[InstanceSost] | InstanceSort | dict): How you want the listed instances information ordered.
-            filter (dict | Filter): Advanced filtering of instances.
+            sources (ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None): Views to retrieve properties from.
+            limit (int): Maximum number of instances to return. Defaults to 1000. Set to -1, float("inf") or None to return all items.
+            sort (Sequence[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
+            filter (Filter | dict | None): Advanced filtering of instances.
 
         Returns:
-            Union[EdgeList, NodeList]: List of requested instances
+            NodeList | EdgeList: List of requested instances
 
         Examples:
 
@@ -921,6 +919,7 @@ class InstancesAPI(APIClient):
                 >>> for instance_list in c.data_modeling.instances(chunk_size=100):
                 ...     instance_list # do something with the instances
         """
+        self._validate_filter(filter)
         other_params = self._create_other_params(
             include_typing=include_typing, instance_type=instance_type, sort=sort, sources=sources
         )
@@ -944,3 +943,6 @@ class InstancesAPI(APIClient):
                 other_params=other_params,
             ),
         )
+
+    def _validate_filter(self, filter: Filter | dict | None) -> None:
+        _validate_filter(filter, _DATA_MODELING_SUPPORTED_FILTERS, type(self).__name__)

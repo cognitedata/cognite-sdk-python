@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import asdict, dataclass, field
-from typing import Any, ClassVar, Literal, Optional, Sequence, Tuple, Type, TypeVar, Union, cast
+from typing import Any, ClassVar, Literal, Protocol, Sequence, Tuple, TypeVar, Union, cast
 
 from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._identifier import DataModelingIdentifier, DataModelingIdentifierSequence
@@ -33,7 +33,7 @@ class DataModelingId(AbstractDataclass):
         return convert_all_keys_recursive(output, camel_case)
 
     @classmethod
-    def load(cls: Type[T_DataModelingId], data: dict | T_DataModelingId | tuple[str, str]) -> T_DataModelingId:
+    def load(cls: type[T_DataModelingId], data: dict | T_DataModelingId | tuple[str, str]) -> T_DataModelingId:
         if isinstance(data, cls):
             return data
         elif isinstance(data, tuple):
@@ -51,9 +51,9 @@ class VersionedDataModelingId(AbstractDataclass):
     _type: ClassVar[str] = field(init=False)
     space: str
     external_id: str
-    version: Optional[str] = None
+    version: str | None = None
 
-    def as_tuple(self) -> tuple[str, str, Optional[str]]:
+    def as_tuple(self) -> tuple[str, str, str | None]:
         return self.space, self.external_id, self.version
 
     def dump(self, camel_case: bool = False, include_type: bool = True) -> dict[str, str]:
@@ -64,7 +64,7 @@ class VersionedDataModelingId(AbstractDataclass):
 
     @classmethod
     def load(
-        cls: Type[T_Versioned_DataModeling_Id],
+        cls: type[T_Versioned_DataModeling_Id],
         data: dict | T_Versioned_DataModeling_Id | tuple[str, str] | tuple[str, str, str],
     ) -> T_Versioned_DataModeling_Id:
         if isinstance(data, cls):
@@ -92,7 +92,7 @@ class InstanceId:
         return convert_all_keys_recursive(output, camel_case)
 
     @classmethod
-    def load(cls: Type[T_InstanceId], data: dict) -> T_InstanceId:
+    def load(cls: type[T_InstanceId], data: dict) -> T_InstanceId:
         return cls(
             **convert_all_keys_to_snake_case(rename_and_exclude_keys(data, exclude={"instanceType", "instance_type"}))
         )
@@ -142,13 +142,29 @@ class DataModelId(VersionedDataModelingId):
     _type = "datamodel"
 
 
+class IdLike(Protocol):
+    @property
+    def space(self) -> str:
+        ...
+
+    @property
+    def external_id(self) -> str:
+        ...
+
+
+class VersionedIdLike(IdLike):
+    @property
+    def version(self) -> str | None:
+        ...
+
+
 ContainerIdentifier = Union[ContainerId, Tuple[str, str]]
 ViewIdentifier = Union[ViewId, Tuple[str, str], Tuple[str, str, str]]
 DataModelIdentifier = Union[DataModelId, Tuple[str, str], Tuple[str, str, str]]
 NodeIdentifier = Union[NodeId, Tuple[str, str, str]]
 EdgeIdentifier = Union[EdgeId, Tuple[str, str, str]]
 
-Id = Union[Tuple[str, str], Tuple[str, str, str], DataModelingId, VersionedDataModelingId, NodeId, EdgeId, InstanceId]
+Id = Union[Tuple[str, str], Tuple[str, str, str], IdLike, VersionedIdLike]
 
 
 def _load_space_identifier(ids: str | Sequence[str]) -> DataModelingIdentifierSequence:
@@ -169,7 +185,7 @@ def _load_identifier(
     if not is_sequence:
         id_list = [ids]
 
-    def create_args(id_: Id) -> tuple[str, str, Optional[str], Optional[Literal["node", "edge"]]]:
+    def create_args(id_: Id) -> tuple[str, str, str | None, Literal["node", "edge"] | None]:
         if isinstance(id_, tuple) and is_instance:
             if len(id_) == 2:
                 return id_[0], id_[1], None, id_type  # type: ignore[misc, return-value]

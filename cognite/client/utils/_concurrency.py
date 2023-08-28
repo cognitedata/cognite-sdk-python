@@ -9,17 +9,12 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
     Iterable,
     Iterator,
-    List,
     Literal,
-    Optional,
     Protocol,
     Sequence,
-    Tuple,
     TypeVar,
-    Union,
 )
 
 from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, CogniteNotFoundError
@@ -31,15 +26,15 @@ if TYPE_CHECKING:
 
 class TasksSummary:
     def __init__(
-        self, successful_tasks: List, unknown_tasks: List, failed_tasks: List, results: List, exceptions: List
-    ):
+        self, successful_tasks: list, unknown_tasks: list, failed_tasks: list, results: list, exceptions: list
+    ) -> None:
         self.successful_tasks = successful_tasks
         self.unknown_tasks = unknown_tasks
         self.failed_tasks = failed_tasks
         self.results = results
         self.exceptions = exceptions
 
-    def joined_results(self, unwrap_fn: Optional[Callable] = None) -> list:
+    def joined_results(self, unwrap_fn: Callable | None = None) -> list:
         unwrap_fn = unwrap_fn or (lambda x: x)
         joined_results: list = []
         for result in self.results:
@@ -52,9 +47,9 @@ class TasksSummary:
 
     def raise_compound_exception_if_failed_tasks(
         self,
-        task_unwrap_fn: Optional[Callable] = None,
-        task_list_element_unwrap_fn: Optional[Callable] = None,
-        str_format_element_fn: Optional[Callable] = None,
+        task_unwrap_fn: Callable | None = None,
+        task_list_element_unwrap_fn: Callable | None = None,
+        str_format_element_fn: Callable | None = None,
     ) -> None:
         if not self.exceptions:
             return None
@@ -80,17 +75,17 @@ class TasksSummary:
 
 
 def collect_exc_info_and_raise(
-    exceptions: List[Exception],
-    successful: Optional[List] = None,
-    failed: Optional[List] = None,
-    unknown: Optional[List] = None,
-    unwrap_fn: Optional[Callable] = None,
+    exceptions: list[Exception],
+    successful: list | None = None,
+    failed: list | None = None,
+    unknown: list | None = None,
+    unwrap_fn: Callable | None = None,
 ) -> None:
-    missing: List = []
-    duplicated: List = []
+    missing: list = []
+    duplicated: list = []
     missing_exc = None
     dup_exc = None
-    unknown_exc: Optional[Exception] = None
+    unknown_exc: Exception | None = None
     for exc in exceptions:
         if isinstance(exc, CogniteAPIError):
             if exc.code in [400, 422] and exc.missing is not None:
@@ -145,9 +140,9 @@ class TaskFuture(Protocol[T_Result]):
 
 
 class SyncFuture(TaskFuture[T_Result]):
-    def __init__(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any):
+    def __init__(self, fn: Callable[..., T_Result], *args: Any, **kwargs: Any) -> None:
         self._task = functools.partial(fn, *args, **kwargs)
-        self._result: Optional[T_Result] = None
+        self._result: T_Result | None = None
         self._is_cancelled = False
 
     def result(self) -> T_Result:
@@ -195,9 +190,9 @@ class MainThreadExecutor(TaskExecutor):
 
     def __exit__(
         self,
-        type: Optional[type[BaseException]],
-        value: Optional[BaseException],
-        traceback: Optional[TracebackType],
+        type: type[BaseException] | None,
+        value: BaseException | None,
+        traceback: TracebackType | None,
     ) -> None:
         self.shutdown()
 
@@ -244,14 +239,21 @@ def get_priority_executor(max_workers: int) -> PriorityThreadPoolExecutor:
 
 def execute_tasks(
     func: Callable[..., T_Result],
-    tasks: Union[Sequence[Tuple], List[Dict]],
+    tasks: Sequence[tuple] | list[dict],
     max_workers: int,
-    executor: Optional[TaskExecutor] = None,
+    executor: TaskExecutor | None = None,
 ) -> TasksSummary:
     """
     Will use a default executor if one is not passed explicitly. The default executor type uses a thread pool but can
     be changed using ExecutorSettings.executor_type.
-    """
+
+    Args:
+        func (Callable[..., T_Result]): No description.
+        tasks (Sequence[tuple] | list[dict]): No description.
+        max_workers (int): No description.
+        executor (TaskExecutor | None): No description.
+    Returns:
+        TasksSummary: No description."""
     executor = executor or get_executor(max_workers)
     futures = []
     for task in tasks:

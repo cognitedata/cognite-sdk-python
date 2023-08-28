@@ -1,11 +1,19 @@
 from __future__ import annotations
 
-from abc import ABC
+import json
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, ClassVar, Type, TypeVar, cast, final
+from typing import TYPE_CHECKING, Any, ClassVar, Sequence, TypeVar, Union, cast, final
 
+from typing_extensions import TypeAlias
+
+from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
+from cognite.client.data_classes.labels import Label
 from cognite.client.utils._auxiliary import rename_and_exclude_keys
 from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_snake_case
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 @dataclass
@@ -97,7 +105,7 @@ class AggregatedValue(ABC):
     property: str
 
     @classmethod
-    def load(cls: Type[T_AggregatedValue], aggregated_value: dict[str, Any]) -> T_AggregatedValue:
+    def load(cls: type[T_AggregatedValue], aggregated_value: dict[str, Any]) -> T_AggregatedValue:
         if "aggregate" not in aggregated_value:
             raise ValueError("Missing aggregate, this is required")
         aggregate = aggregated_value["aggregate"]
@@ -194,3 +202,146 @@ class HistogramValue(AggregatedValue):
         output["interval"] = self.interval
         output["buckets"] = [bucket.dump(camel_case) for bucket in self.buckets]
         return output
+
+
+FilterValue: TypeAlias = Union[str, float, bool, Label]
+
+
+class AggregationFilter(ABC):
+    _filter_name: ClassVar[str]
+
+    def dump(self) -> dict[str, Any]:
+        return {self._filter_name: self._filter_body()}
+
+    @classmethod
+    def load(cls, filter_: dict[str, Any]) -> AggregationFilter:
+        ...
+
+    @abstractmethod
+    def _filter_body(self) -> list | dict:
+        raise NotImplementedError
+
+
+class CompoundFilter(AggregationFilter):
+    _filter_name = "compound"
+
+    def __init__(self, *filters: AggregationFilter):
+        self._filters = filters
+
+    def _filter_body(self) -> list | dict:
+        return [filter_.dump() for filter_ in self._filters]
+
+
+def _dump_value(value: FilterValue) -> dict[str, str] | str | bool | int | float:
+    if isinstance(value, Label):
+        return {"externalId": value.external_id}
+    return value
+
+
+class FilterWithValue(AggregationFilter):
+    _filter_name = "valueFilter"
+
+    def __init__(self, value: FilterValue):
+        self._value = value
+
+    def _filter_body(self) -> dict:
+        return {"value": _dump_value(self._value)}
+
+
+class FilterWithValueList(AggregationFilter):
+    _filter_name = "valueListFilter"
+
+    def __init__(self, values: Sequence[FilterValue]):
+        self._values = values
+
+    def _filter_body(self) -> dict[str, Any]:
+        return {"values": [_dump_value(value) for value in self._values]}
+
+
+@final
+class And(CompoundFilter):
+    _filter_name = "and"
+
+
+@final
+class Or(CompoundFilter):
+    _filter_name = "or"
+
+
+@final
+class Not(CompoundFilter):
+    _filter_name = "not"
+
+    def __init__(self, filter: AggregationFilter):
+        super().__init__(filter)
+
+    def _filter_body(self) -> dict:
+        return self._filters[0].dump()
+
+
+@final
+class Prefix(FilterWithValue):
+    _filter_name = "prefix"
+
+
+@final
+class In(FilterWithValueList):
+    _filter_name = "in"
+
+
+@final
+class Range(AggregationFilter):
+    _filter_name = "range"
+
+    def __init__(
+        self,
+        gt: str | int | float | None = None,
+        gte: str | int | float | None = None,
+        lt: str | int | float | None = None,
+        lte: str | int | float | None = None,
+    ):
+        self._gt = gt
+        self._gte = gte
+        self._lt = lt
+        self._lte = lte
+
+    def _filter_body(self) -> dict[str, Any]:
+        body: dict[str, str | int | float] = {}
+        if self._gt is not None:
+            body["gt"] = self._gt
+        if self._gte is not None:
+            body["gte"] = self._gte
+        if self._lt is not None:
+            body["lt"] = self._lt
+        if self._lte is not None:
+            body["lte"] = self._lte
+        return body
+
+
+@dataclass
+class UniqueResult(CogniteResource):
+    count: int
+    values: list[str | int | float | Label]
+
+    @property
+    def value(self) -> str | int | float | Label:
+        return self.values[0]
+
+    @classmethod
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> UniqueResult:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        return cls(
+            count=resource["count"],
+            values=resource["values"],
+        )
+
+
+T_UniqueResult = TypeVar("T_UniqueResult", bound="UniqueResult")
+
+
+class UniqueResultList(CogniteResourceList):
+    _RESOURCE = UniqueResult
+
+    @property
+    def unique(self) -> list[str | int | float | Label]:
+        return [item.value for item in self]

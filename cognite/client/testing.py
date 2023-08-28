@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-from typing import Any, Iterator
+from typing import Any, Generator
 from unittest.mock import MagicMock
 
 from cognite.client import CogniteClient
@@ -18,6 +18,7 @@ from cognite.client._api.data_sets import DataSetsAPI
 from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.datapoints_subscriptions import DatapointsSubscriptionAPI
 from cognite.client._api.diagrams import DiagramsAPI
+from cognite.client._api.documents import DocumentPreviewAPI, DocumentsAPI
 from cognite.client._api.entity_matching import EntityMatchingAPI
 from cognite.client._api.events import EventsAPI
 from cognite.client._api.extractionpipelines import (
@@ -63,7 +64,10 @@ class CogniteClientMock(MagicMock):
     """Mock for CogniteClient object
 
     All APIs are replaced with specced MagicMock objects.
-    """
+
+    Args:
+        *args (Any): No description.
+        **kwargs (Any): No description."""
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         if "parent" in kwargs:
@@ -90,6 +94,8 @@ class CogniteClientMock(MagicMock):
         self.data_sets = MagicMock(spec_set=DataSetsAPI)
 
         self.diagrams = MagicMock(spec_set=DiagramsAPI)
+        self.documents = MagicMock(spec=DocumentsAPI)
+        self.documents.previews = MagicMock(spec_set=DocumentPreviewAPI)
         self.entity_matching = MagicMock(spec_set=EntityMatchingAPI)
         self.events = MagicMock(spec_set=EventsAPI)
 
@@ -150,7 +156,7 @@ class CogniteClientMock(MagicMock):
 
 
 @contextmanager
-def monkeypatch_cognite_client() -> Iterator[CogniteClientMock]:
+def monkeypatch_cognite_client() -> Generator[CogniteClientMock, None, None]:
     """Context manager for monkeypatching the CogniteClient.
 
     Will patch all clients and replace them with specced MagicMock objects.

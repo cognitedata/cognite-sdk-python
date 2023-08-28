@@ -137,16 +137,21 @@ def mock_file_download_response_with_folder_structure(rsps, cognite_client):
         rsps.POST,
         cognite_client.files._get_base_url_with_base_path() + "/files/byids",
         status=200,
-        json={"items": [{"id": 1, "name": "file_a", "directory": "/rootdir/subdir"}, {"id": 2, "name": "file_a"}]},
+        json={
+            "items": [
+                {"id": 1, "name": "file_a", "directory": "/rootdir/subdir"},
+                {"id": 10, "externalId": "2", "name": "file_a"},
+            ]
+        },
     )
 
     def download_link_callback(request):
         identifier = jsgz_load(request.body)["items"][0]
         response = {}
-        if "id" in identifier and identifier.get("id") == 1:
+        if identifier.get("id") == 1:
             response = {"items": [{"id": 1, "downloadUrl": "https://download.fileFromSubdir.here"}]}
-        if "id" in identifier and identifier.get("id") == 2:
-            response = {"items": [{"id": 2, "downloadUrl": "https://download.fileNoDir.here"}]}
+        if identifier.get("id") == 10:
+            response = {"items": [{"id": 10, "externalId": "2", "downloadUrl": "https://download.fileNoDir.here"}]}
         return 200, {}, json.dumps(response)
 
     rsps.add_callback(
@@ -522,7 +527,10 @@ class TestFilesAPI:
 
     def test_download_with_folder_structure(self, cognite_client, mock_file_download_response_with_folder_structure):
         with TemporaryDirectory() as dir:
-            cognite_client.files.download(directory=dir, id=[1, 2], keep_folder_structure=True)
+            cognite_client.files.download(directory=dir, id=[1], external_id=["2"], keep_folder_structure=True)
+            assert {"ignoreUnknownIds": False, "items": [{"id": 1}, {"externalId": "2"}]} == jsgz_load(
+                mock_file_download_response_with_folder_structure.calls[0].request.body
+            )
 
             fp1 = os.path.join(dir, "rootdir/subdir/file_a")
             fp2 = os.path.join(dir, "file_a")

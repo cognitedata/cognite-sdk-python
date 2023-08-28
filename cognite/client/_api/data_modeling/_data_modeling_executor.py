@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from concurrent.futures import ThreadPoolExecutor
 
 from cognite.client.utils._concurrency import ConcurrencySettings, MainThreadExecutor, TaskExecutor
@@ -13,7 +15,7 @@ def get_data_modeling_executor() -> TaskExecutor:
     Thus, we use a dedicated executor for these endpoints to match the backend.
 
     Returns:
-        The data modeling executor.
+        TaskExecutor: The data modeling executor.
     """
     global _THREAD_POOL_EXECUTOR_SINGLETON
 

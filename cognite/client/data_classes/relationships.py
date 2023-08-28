@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import copy
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union, cast
+from typing import TYPE_CHECKING, Any, cast
 from typing import Sequence as SequenceType
 
 from cognite.client.data_classes._base import (
@@ -28,43 +28,43 @@ class Relationship(CogniteResource):
     """Representation of a relationship in CDF, consists of a source and a target and some additional parameters.
 
     Args:
-        external_id (str): External id of the relationship, must be unique within the project.
-        source_external_id (str): External id of the CDF resource that constitutes the relationship source.
-        source_type (str): The CDF resource type of the relationship source. Must be one of the specified values.
-        source (Union[Asset, TimeSeries, FileMetadata, Event, Sequence, Dict]): The full resource referenced by the source_external_id and source_type fields.
-        target_external_id (str): External id of the CDF resource that constitutes the relationship target.
-        target_type (str): The CDF resource type of the relationship target. Must be one of the specified values.
-        target (Union[Asset, TimeSeries, FileMetadata, Event, Sequence, Dict]): The full resource referenced by the target_external_id and target_type fields.
-        start_time (int): Time, in milliseconds since Jan. 1, 1970, when the relationship became active. If there is no startTime, relationship is active from the beginning of time until endTime.
-        end_time (int): Time, in milliseconds since Jan. 1, 1970, when the relationship became inactive. If there is no endTime, relationship is active from startTime until the present or any point in the future. If endTime and startTime are set, then endTime must be strictly greater than startTime.
-        confidence (float): Confidence value of the existence of this relationship. Generated relationships should provide a realistic score on the likelihood of the existence of the relationship. Relationships without a confidence value can be interpreted at the discretion of each project.
-        data_set_id (int): The id of the dataset this relationship belongs to.
-        labels (SequenceType[Label]): A list of the labels associated with this resource item.
-        created_time (int): Time, in milliseconds since Jan. 1, 1970, when this relationship was created in CDF.
-        last_updated_time (int): Time, in milliseconds since Jan. 1, 1970, when this relationship was last updated in CDF.
-        cognite_client (CogniteClient): The client to associate with this object.
+        external_id (str | None): External id of the relationship, must be unique within the project.
+        source_external_id (str | None): External id of the CDF resource that constitutes the relationship source.
+        source_type (str | None): The CDF resource type of the relationship source. Must be one of the specified values.
+        source (Asset | TimeSeries | FileMetadata | Sequence | Event | dict | None): The full resource referenced by the source_external_id and source_type fields.
+        target_external_id (str | None): External id of the CDF resource that constitutes the relationship target.
+        target_type (str | None): The CDF resource type of the relationship target. Must be one of the specified values.
+        target (Asset | TimeSeries | FileMetadata | Sequence | Event | dict | None): The full resource referenced by the target_external_id and target_type fields.
+        start_time (int | None): Time, in milliseconds since Jan. 1, 1970, when the relationship became active. If there is no startTime, relationship is active from the beginning of time until endTime.
+        end_time (int | None): Time, in milliseconds since Jan. 1, 1970, when the relationship became inactive. If there is no endTime, relationship is active from startTime until the present or any point in the future. If endTime and startTime are set, then endTime must be strictly greater than startTime.
+        confidence (float | None): Confidence value of the existence of this relationship. Generated relationships should provide a realistic score on the likelihood of the existence of the relationship. Relationships without a confidence value can be interpreted at the discretion of each project.
+        data_set_id (int | None): The id of the dataset this relationship belongs to.
+        labels (SequenceType[Label | str | LabelDefinition | dict] | None): A list of the labels associated with this resource item.
+        created_time (int | None): Time, in milliseconds since Jan. 1, 1970, when this relationship was created in CDF.
+        last_updated_time (int | None): Time, in milliseconds since Jan. 1, 1970, when this relationship was last updated in CDF.
+        cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     _RESOURCE_TYPES = frozenset({"asset", "timeseries", "file", "event", "sequence"})
 
     def __init__(
         self,
-        external_id: Optional[str] = None,
-        source_external_id: Optional[str] = None,
-        source_type: Optional[str] = None,
-        source: Optional[Union[Asset, TimeSeries, FileMetadata, Sequence, Event, Dict]] = None,
-        target_external_id: Optional[str] = None,
-        target_type: Optional[str] = None,
-        target: Optional[Union[Asset, TimeSeries, FileMetadata, Sequence, Event, Dict]] = None,
-        start_time: Optional[int] = None,
-        end_time: Optional[int] = None,
-        confidence: Optional[float] = None,
-        data_set_id: Optional[int] = None,
-        labels: Optional[SequenceType[Union[Label, str, LabelDefinition, dict]]] = None,
-        created_time: Optional[int] = None,
-        last_updated_time: Optional[int] = None,
-        cognite_client: Optional[CogniteClient] = None,
-    ):
+        external_id: str | None = None,
+        source_external_id: str | None = None,
+        source_type: str | None = None,
+        source: Asset | TimeSeries | FileMetadata | Sequence | Event | dict | None = None,
+        target_external_id: str | None = None,
+        target_type: str | None = None,
+        target: Asset | TimeSeries | FileMetadata | Sequence | Event | dict | None = None,
+        start_time: int | None = None,
+        end_time: int | None = None,
+        confidence: float | None = None,
+        data_set_id: int | None = None,
+        labels: SequenceType[Label | str | LabelDefinition | dict] | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+        cognite_client: CogniteClient | None = None,
+    ) -> None:
         self.external_id = external_id
         self.source_external_id = source_external_id
         self.source_type = source_type
@@ -87,12 +87,12 @@ class Relationship(CogniteResource):
         self._validate_resource_type(rel.target_type)
         return rel
 
-    def _validate_resource_type(self, resource_type: Optional[str]) -> None:
+    def _validate_resource_type(self, resource_type: str | None) -> None:
         if resource_type is None or resource_type.lower() not in self._RESOURCE_TYPES:
             raise TypeError(f"Invalid source or target '{resource_type}' in relationship")
 
     @classmethod
-    def _load(cls, resource: Union[Dict, str], cognite_client: Optional[CogniteClient] = None) -> Relationship:
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Relationship:
         instance = super()._load(resource, cognite_client)
         if instance.source is not None:
             instance.source = instance._convert_resource(instance.source, instance.source_type)  # type: ignore
@@ -108,9 +108,9 @@ class Relationship(CogniteResource):
         return result
 
     def _convert_resource(
-        self, resource: Dict[str, Any], resource_type: Optional[str]
-    ) -> Union[Dict[str, Any], CogniteResource]:
-        resource_map: Dict[str, Type[CogniteResource]] = {
+        self, resource: dict[str, Any], resource_type: str | None
+    ) -> dict[str, Any] | CogniteResource:
+        resource_map: dict[str, type[CogniteResource]] = {
             "timeSeries": TimeSeries,
             "asset": Asset,
             "sequence": Sequence,
@@ -126,37 +126,37 @@ class RelationshipFilter(CogniteFilter):
     """Filter on relationships with exact match. Multiple filter elements in one property, e.g. `sourceExternalIds: [ "a", "b" ]`, will return all relationships where the `sourceExternalId` field is either `a` or `b`. Filters in multiple properties will return the relationships that match all criteria. If the filter is not specified it default to an empty filter.
 
     Args:
-        source_external_ids (Sequence[str]): Include relationships that have any of these values in their `sourceExternalId` field
-        source_types (Sequence[str]): Include relationships that have any of these values in their `sourceType` field
-        target_external_ids (Sequence[str]): Include relationships that have any of these values in their `targetExternalId` field
-        target_types (Sequence[str]): Include relationships that have any of these values in their `targetType` field
-        data_set_ids (Sequence[Dict[str, Any]]): Either one of `internalId` (int) or `externalId` (str)
-        start_time (Dict[str, int]): Range between two timestamps, minimum and maximum milliseconds (inclusive)
-        end_time (Dict[str, int]): Range between two timestamps, minimum and maximum milliseconds (inclusive)
-        confidence (Dict[str, int]): Range to filter the field for (inclusive).
-        last_updated_time (Dict[str, Any]): Range to filter the field for (inclusive).
-        created_time (Dict[str, int]): Range to filter the field for (inclusive).
-        active_at_time (Dict[str, int]): Limits results to those active at any point within the given time range, i.e. if there is any overlap in the intervals [activeAtTime.min, activeAtTime.max] and [startTime, endTime], where both intervals are inclusive. If a relationship does not have a startTime, it is regarded as active from the begining of time by this filter. If it does not have an endTime is will be regarded as active until the end of time. Similarly, if a min is not supplied to the filter, the min will be implicitly set to the beginning of time, and if a max is not supplied, the max will be implicitly set to the end of time.
-        labels (LabelFilter): Return only the resource matching the specified label constraints.
-        cognite_client (CogniteClient): The client to associate with this object.
+        source_external_ids (SequenceType[str] | None): Include relationships that have any of these values in their `sourceExternalId` field
+        source_types (SequenceType[str] | None): Include relationships that have any of these values in their `sourceType` field
+        target_external_ids (SequenceType[str] | None): Include relationships that have any of these values in their `targetExternalId` field
+        target_types (SequenceType[str] | None): Include relationships that have any of these values in their `targetType` field
+        data_set_ids (SequenceType[dict[str, Any]] | None): Either one of `internalId` (int) or `externalId` (str)
+        start_time (dict[str, int] | None): Range between two timestamps, minimum and maximum milliseconds (inclusive)
+        end_time (dict[str, int] | None): Range between two timestamps, minimum and maximum milliseconds (inclusive)
+        confidence (dict[str, int] | None): Range to filter the field for (inclusive).
+        last_updated_time (dict[str, int] | None): Range to filter the field for (inclusive).
+        created_time (dict[str, int] | None): Range to filter the field for (inclusive).
+        active_at_time (dict[str, int] | None): Limits results to those active at any point within the given time range, i.e. if there is any overlap in the intervals [activeAtTime.min, activeAtTime.max] and [startTime, endTime], where both intervals are inclusive. If a relationship does not have a startTime, it is regarded as active from the begining of time by this filter. If it does not have an endTime is will be regarded as active until the end of time. Similarly, if a min is not supplied to the filter, the min will be implicitly set to the beginning of time, and if a max is not supplied, the max will be implicitly set to the end of time.
+        labels (LabelFilter | None): Return only the resource matching the specified label constraints.
+        cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
         self,
-        source_external_ids: Optional[SequenceType[str]] = None,
-        source_types: Optional[SequenceType[str]] = None,
-        target_external_ids: Optional[SequenceType[str]] = None,
-        target_types: Optional[SequenceType[str]] = None,
-        data_set_ids: Optional[SequenceType[Dict[str, Any]]] = None,
-        start_time: Optional[Dict[str, int]] = None,
-        end_time: Optional[Dict[str, int]] = None,
-        confidence: Optional[Dict[str, int]] = None,
-        last_updated_time: Optional[Dict[str, int]] = None,
-        created_time: Optional[Dict[str, int]] = None,
-        active_at_time: Optional[Dict[str, int]] = None,
-        labels: Optional[LabelFilter] = None,
-        cognite_client: Optional[CogniteClient] = None,
-    ):
+        source_external_ids: SequenceType[str] | None = None,
+        source_types: SequenceType[str] | None = None,
+        target_external_ids: SequenceType[str] | None = None,
+        target_types: SequenceType[str] | None = None,
+        data_set_ids: SequenceType[dict[str, Any]] | None = None,
+        start_time: dict[str, int] | None = None,
+        end_time: dict[str, int] | None = None,
+        confidence: dict[str, int] | None = None,
+        last_updated_time: dict[str, int] | None = None,
+        created_time: dict[str, int] | None = None,
+        active_at_time: dict[str, int] | None = None,
+        labels: LabelFilter | None = None,
+        cognite_client: CogniteClient | None = None,
+    ) -> None:
         self.source_external_ids = source_external_ids
         self.source_types = source_types
         self.target_external_ids = target_external_ids
@@ -171,7 +171,7 @@ class RelationshipFilter(CogniteFilter):
         self.labels = labels
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def dump(self, camel_case: bool = False) -> Dict[str, Any]:
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
         result = super().dump(camel_case)
         if isinstance(self.labels, LabelFilter):
             result["labels"] = self.labels.dump(camel_case)
@@ -187,7 +187,7 @@ class RelationshipUpdate(CogniteUpdate):
     """
 
     # Relationships have only an external_id and do not expose id
-    def __init__(self, external_id: str):
+    def __init__(self, external_id: str) -> None:
         self._id = None
         self._external_id = external_id
         self._update_object = {}
@@ -197,10 +197,10 @@ class RelationshipUpdate(CogniteUpdate):
             return self._set(value)
 
     class _LabelRelationshipUpdate(CogniteLabelUpdate):
-        def add(self, value: Union[str, List[str]]) -> RelationshipUpdate:
+        def add(self, value: str | list[str]) -> RelationshipUpdate:
             return self._add(value)
 
-        def remove(self, value: Union[str, List[str]]) -> RelationshipUpdate:
+        def remove(self, value: str | list[str]) -> RelationshipUpdate:
             return self._remove(value)
 
     @property

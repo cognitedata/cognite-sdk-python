@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Sequence, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Iterator, List, Sequence, cast, overload
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 class RawAPI(APIClient):
-    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.databases = RawDatabasesAPI(config, api_version, cognite_client)
         self.tables = RawTablesAPI(config, api_version, cognite_client)
@@ -28,21 +28,29 @@ class RawDatabasesAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs"
 
     def __call__(
-        self, chunk_size: Optional[int] = None, limit: Optional[int] = None
-    ) -> Union[Iterator[Database], Iterator[DatabaseList]]:
+        self, chunk_size: int | None = None, limit: int | None = None
+    ) -> Iterator[Database] | Iterator[DatabaseList]:
         """Iterate over databases
 
         Fetches dbs as they are iterated over, so you keep a limited number of dbs in memory.
 
         Args:
-            chunk_size (int, optional): Number of dbs to return in each chunk. Defaults to yielding one db a time.
-            limit (int, optional): Maximum number of dbs to return. Defaults to return all items.
+            chunk_size (int | None): Number of dbs to return in each chunk. Defaults to yielding one db a time.
+            limit (int | None): Maximum number of dbs to return. Defaults to return all items.
+
+        Returns:
+            Iterator[Database] | Iterator[DatabaseList]: No description.
         """
         return self._list_generator(
             list_cls=DatabaseList, resource_cls=Database, chunk_size=chunk_size, method="GET", limit=limit
         )
 
     def __iter__(self) -> Iterator[Database]:
+        """Iterate over databases
+
+        Returns:
+            Iterator[Database]: yields Database one by one.
+        """
         return cast(Iterator[Database], self())
 
     @overload
@@ -50,17 +58,17 @@ class RawDatabasesAPI(APIClient):
         ...
 
     @overload
-    def create(self, name: List[str]) -> DatabaseList:
+    def create(self, name: list[str]) -> DatabaseList:
         ...
 
-    def create(self, name: Union[str, List[str]]) -> Union[Database, DatabaseList]:
+    def create(self, name: str | list[str]) -> Database | DatabaseList:
         """`Create one or more databases. <https://developer.cognite.com/api#tag/Raw/operation/createDBs>`_
 
         Args:
-            name (Union[str, List[str]]): A db name or list of db names to create.
+            name (str | list[str]): A db name or list of db names to create.
 
         Returns:
-            Union[Database, DatabaseList]: Database or list of databases that has been created.
+            Database | DatabaseList: Database or list of databases that has been created.
 
         Examples:
 
@@ -72,20 +80,17 @@ class RawDatabasesAPI(APIClient):
         """
         utils._auxiliary.assert_type(name, "name", [str, Sequence])
         if isinstance(name, str):
-            items: Union[Dict[str, Any], List[Dict[str, Any]]] = {"name": name}
+            items: dict[str, Any] | list[dict[str, Any]] = {"name": name}
         else:
             items = [{"name": n} for n in name]
         return self._create_multiple(list_cls=DatabaseList, resource_cls=Database, items=items)
 
-    def delete(self, name: Union[str, Sequence[str]], recursive: bool = False) -> None:
+    def delete(self, name: str | Sequence[str], recursive: bool = False) -> None:
         """`Delete one or more databases. <https://developer.cognite.com/api#tag/Raw/operation/deleteDBs>`_
 
         Args:
-            name (Union[str, Sequence[str]]): A db name or list of db names to delete.
+            name (str | Sequence[str]): A db name or list of db names to delete.
             recursive (bool): Recursively delete all tables in the database(s).
-
-        Returns:
-            None
 
         Examples:
 
@@ -113,8 +118,7 @@ class RawDatabasesAPI(APIClient):
         """`List databases <https://developer.cognite.com/api#tag/Raw/operation/getDBs>`_
 
         Args:
-            limit (int, optional): Maximum number of databases to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
+            limit (int): Maximum number of databases to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             DatabaseList: List of requested databases.
@@ -148,44 +152,47 @@ class RawTablesAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs/{}/tables"
 
     def __call__(
-        self, db_name: str, chunk_size: Optional[int] = None, limit: Optional[int] = None
-    ) -> Union[Iterator[Table], Iterator[TableList]]:
+        self, db_name: str, chunk_size: int | None = None, limit: int | None = None
+    ) -> Iterator[Table] | Iterator[TableList]:
         """Iterate over tables
 
         Fetches tables as they are iterated over, so you keep a limited number of tables in memory.
 
         Args:
             db_name (str): Name of the database to iterate over tables for
-            chunk_size (int, optional): Number of tables to return in each chunk. Defaults to yielding one table a time.
-            limit (int, optional): Maximum number of tables to return. Defaults to return all items.
+            chunk_size (int | None): Number of tables to return in each chunk. Defaults to yielding one table a time.
+            limit (int | None): Maximum number of tables to return. Defaults to return all items.
+
+        Returns:
+            Iterator[Table] | Iterator[TableList]: No description.
         """
-        for tb in self._list_generator(
+        table_iterator = self._list_generator(
             list_cls=TableList,
             resource_cls=Table,
             resource_path=utils._auxiliary.interpolate_and_url_encode(self._RESOURCE_PATH, db_name),
             chunk_size=chunk_size,
             method="GET",
             limit=limit,
-        ):
-            yield self._set_db_name_on_tables(tb, db_name)
+        )
+        return self._set_db_name_on_tables_generator(table_iterator, db_name)
 
     @overload
     def create(self, db_name: str, name: str) -> Table:
         ...
 
     @overload
-    def create(self, db_name: str, name: List[str]) -> TableList:
+    def create(self, db_name: str, name: list[str]) -> TableList:
         ...
 
-    def create(self, db_name: str, name: Union[str, List[str]]) -> Union[Table, TableList]:
+    def create(self, db_name: str, name: str | list[str]) -> Table | TableList:
         """`Create one or more tables. <https://developer.cognite.com/api#tag/Raw/operation/createTables>`_
 
         Args:
             db_name (str): Database to create the tables in.
-            name (Union[str, List[str]]): A table name or list of table names to create.
+            name (str | list[str]): A table name or list of table names to create.
 
         Returns:
-            Union[Table, TableList]: Table or list of tables that has been created.
+            Table | TableList: Table or list of tables that has been created.
 
         Examples:
 
@@ -197,7 +204,7 @@ class RawTablesAPI(APIClient):
         """
         utils._auxiliary.assert_type(name, "name", [str, Sequence])
         if isinstance(name, str):
-            items: Union[Dict[str, Any], List[Dict[str, Any]]] = {"name": name}
+            items: dict[str, Any] | list[dict[str, Any]] = {"name": name}
         else:
             items = [{"name": n} for n in name]
         tb = self._create_multiple(
@@ -208,15 +215,12 @@ class RawTablesAPI(APIClient):
         )
         return self._set_db_name_on_tables(tb, db_name)
 
-    def delete(self, db_name: str, name: Union[str, Sequence[str]]) -> None:
+    def delete(self, db_name: str, name: str | Sequence[str]) -> None:
         """`Delete one or more tables. <https://developer.cognite.com/api#tag/Raw/operation/deleteTables>`_
 
         Args:
             db_name (str): Database to delete tables from.
-            name (Union[str, Sequence[str]]): A table name or list of table names to delete.
-
-        Returns:
-            None
+            name (str | Sequence[str]): A table name or list of table names to delete.
 
         Examples:
 
@@ -243,13 +247,28 @@ class RawTablesAPI(APIClient):
             task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda el: el["name"]
         )
 
+    def _set_db_name_on_tables(self, tb: Table | TableList, db_name: str) -> Table | TableList:
+        if isinstance(tb, Table):
+            tb._db_name = db_name
+            return tb
+        elif isinstance(tb, TableList):
+            for t in tb:
+                t._db_name = db_name
+            return tb
+        raise TypeError("tb must be Table or TableList")
+
+    def _set_db_name_on_tables_generator(
+        self, table_iterator: Iterator[Table] | Iterator[TableList], db_name: str
+    ) -> Iterator[Table] | Iterator[TableList]:
+        for tbl in table_iterator:
+            yield self._set_db_name_on_tables(tbl, db_name)
+
     def list(self, db_name: str, limit: int = LIST_LIMIT_DEFAULT) -> TableList:
         """`List tables <https://developer.cognite.com/api#tag/Raw/operation/getTables>`_
 
         Args:
             db_name (str): The database to list tables from.
-            limit (int, optional): Maximum number of tables to return. Defaults to 25. Set to -1, float("inf") or None
-                to return all items.
+            limit (int): Maximum number of tables to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             TableList: List of requested tables.
@@ -285,21 +304,11 @@ class RawTablesAPI(APIClient):
         )
         return cast(TableList, self._set_db_name_on_tables(tb, db_name))
 
-    def _set_db_name_on_tables(self, tb: Union[Table, TableList], db_name: str) -> Union[Table, TableList]:
-        if isinstance(tb, Table):
-            tb._db_name = db_name
-            return tb
-        elif isinstance(tb, TableList):
-            for t in tb:
-                t._db_name = db_name
-            return tb
-        raise TypeError("tb must be Table or TableList")
-
 
 class RawRowsAPI(APIClient):
     _RESOURCE_PATH = "/raw/dbs/{}/tables/{}/rows"
 
-    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._CREATE_LIMIT = 5000
         self._LIST_LIMIT = 10000
@@ -308,12 +317,12 @@ class RawRowsAPI(APIClient):
         self,
         db_name: str,
         table_name: str,
-        chunk_size: Optional[int] = None,
-        limit: Optional[int] = None,
-        min_last_updated_time: Optional[int] = None,
-        max_last_updated_time: Optional[int] = None,
-        columns: Optional[List[str]] = None,
-    ) -> Union[Iterator[Row], Iterator[RowList]]:
+        chunk_size: int | None = None,
+        limit: int | None = None,
+        min_last_updated_time: int | None = None,
+        max_last_updated_time: int | None = None,
+        columns: list[str] | None = None,
+    ) -> Iterator[Row] | Iterator[RowList]:
         """Iterate over rows.
 
         Fetches rows as they are iterated over, so you keep a limited number of rows in memory.
@@ -321,11 +330,14 @@ class RawRowsAPI(APIClient):
         Args:
             db_name (str): Name of the database
             table_name (str): Name of the table to iterate over rows for
-            chunk_size (int, optional): Number of rows to return in each chunk. Defaults to yielding one row a time.
-            limit (int, optional): Maximum number of rows to return. Defaults to return all items.
-            min_last_updated_time (int): Rows must have been last updated after this time (exclusive). ms since epoch.
-            max_last_updated_time (int): Rows must have been last updated before this time (inclusive). ms since epoch.
-            columns (List[str]): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
+            chunk_size (int | None): Number of rows to return in each chunk. Defaults to yielding one row a time.
+            limit (int | None): Maximum number of rows to return. Defaults to return all items.
+            min_last_updated_time (int | None): Rows must have been last updated after this time (exclusive). ms since epoch.
+            max_last_updated_time (int | None): Rows must have been last updated before this time (inclusive). ms since epoch.
+            columns (list[str] | None): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
+
+        Returns:
+            Iterator[Row] | Iterator[RowList]: No description.
         """
         return self._list_generator(
             list_cls=RowList,
@@ -342,18 +354,15 @@ class RawRowsAPI(APIClient):
         )
 
     def insert(
-        self, db_name: str, table_name: str, row: Union[Sequence[Row], Row, Dict], ensure_parent: bool = False
+        self, db_name: str, table_name: str, row: Sequence[Row] | Row | dict, ensure_parent: bool = False
     ) -> None:
         """`Insert one or more rows into a table. <https://developer.cognite.com/api#tag/Raw/operation/postRows>`_
 
         Args:
             db_name (str): Name of the database.
             table_name (str): Name of the table.
-            row (Union[Sequence[Row], Row, Dict]): The row(s) to insert
+            row (Sequence[Row] | Row | dict): The row(s) to insert
             ensure_parent (bool): Create database/table if they don't already exist.
-
-        Returns:
-            None
 
         Examples:
 
@@ -387,11 +396,8 @@ class RawRowsAPI(APIClient):
         Args:
             db_name (str): Name of the database.
             table_name (str): Name of the table.
-            dataframe (pandas.DataFrame): The dataframe to insert. Index will be used as rowkeys.
+            dataframe (Any): The dataframe to insert. Index will be used as rowkeys.
             ensure_parent (bool): Create database/table if they don't already exist.
-
-        Returns:
-            None
 
         Examples:
 
@@ -408,7 +414,7 @@ class RawRowsAPI(APIClient):
         rows = [Row(key=key, columns=cols) for key, cols in df_dict.items()]
         self.insert(db_name=db_name, table_name=table_name, row=rows, ensure_parent=ensure_parent)
 
-    def _process_row_input(self, row: Union[Sequence[Row], Row, Dict]) -> List[List[Dict]]:
+    def _process_row_input(self, row: Sequence[Row] | Row | dict) -> list[list[dict]]:
         utils._auxiliary.assert_type(row, "row", [Sequence, dict, Row])
         rows = []
         if isinstance(row, dict):
@@ -424,16 +430,13 @@ class RawRowsAPI(APIClient):
             rows.append(row.dump(camel_case=True))
         return utils._auxiliary.split_into_chunks(rows, self._CREATE_LIMIT)
 
-    def delete(self, db_name: str, table_name: str, key: Union[str, Sequence[str]]) -> None:
+    def delete(self, db_name: str, table_name: str, key: str | Sequence[str]) -> None:
         """`Delete rows from a table. <https://developer.cognite.com/api#tag/Raw/operation/deleteRows>`_
 
         Args:
             db_name (str): Name of the database.
             table_name (str): Name of the table.
-            key (Union[str, Sequence[str]]): The key(s) of the row(s) to delete.
-
-        Returns:
-            None
+            key (str | Sequence[str]): The key(s) of the row(s) to delete.
 
         Examples:
 
@@ -464,7 +467,7 @@ class RawRowsAPI(APIClient):
             task_unwrap_fn=lambda task: task["json"]["items"], task_list_element_unwrap_fn=lambda el: el["key"]
         )
 
-    def retrieve(self, db_name: str, table_name: str, key: str) -> Optional[Row]:
+    def retrieve(self, db_name: str, table_name: str, key: str) -> Row | None:
         """`Retrieve a single row by key. <https://developer.cognite.com/api#tag/Raw/operation/getRow>`_
 
         Args:
@@ -473,7 +476,7 @@ class RawRowsAPI(APIClient):
             key (str): The key of the row to retrieve.
 
         Returns:
-            Optional[Row]: The requested row.
+            Row | None: The requested row.
 
         Examples:
 
@@ -489,13 +492,61 @@ class RawRowsAPI(APIClient):
             identifier=Identifier(key),
         )
 
+    def _make_columns_param(self, columns: list[str] | None) -> str | None:
+        if columns is None:
+            return None
+        if not isinstance(columns, List):
+            raise ValueError("Expected a list for argument columns")
+        if len(columns) == 0:
+            return ","
+        else:
+            return ",".join([str(x) for x in columns])
+
+    def retrieve_dataframe(
+        self,
+        db_name: str,
+        table_name: str,
+        min_last_updated_time: int | None = None,
+        max_last_updated_time: int | None = None,
+        columns: list[str] | None = None,
+        limit: int = LIST_LIMIT_DEFAULT,
+    ) -> pandas.DataFrame:
+        """`Retrieve rows in a table as a pandas dataframe. <https://developer.cognite.com/api#tag/Raw/operation/getRows>`_
+
+        Rowkeys are used as the index.
+
+        Args:
+            db_name (str): Name of the database.
+            table_name (str): Name of the table.
+            min_last_updated_time (int | None): Rows must have been last updated after this time. ms since epoch.
+            max_last_updated_time (int | None): Rows must have been last updated before this time. ms since epoch.
+            columns (list[str] | None): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
+            limit (int): The number of rows to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
+
+        Returns:
+            pandas.DataFrame: The requested rows in a pandas dataframe.
+
+        Examples:
+
+            Get dataframe::
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> df = c.raw.rows.retrieve_dataframe("db1", "t1", limit=5)
+        """
+        pd = cast(Any, local_import("pandas"))
+        rows = self.list(db_name, table_name, min_last_updated_time, max_last_updated_time, columns, limit)
+        idx = [r.key for r in rows]
+        cols = [r.columns for r in rows]
+        return pd.DataFrame(cols, index=idx)
+
     def list(
         self,
         db_name: str,
         table_name: str,
-        min_last_updated_time: Optional[int] = None,
-        max_last_updated_time: Optional[int] = None,
-        columns: Optional[List[str]] = None,
+        min_last_updated_time: int | None = None,
+        max_last_updated_time: int | None = None,
+        columns: list[str] | None = None,
         limit: int = LIST_LIMIT_DEFAULT,
     ) -> RowList:
         """`List rows in a table. <https://developer.cognite.com/api#tag/Raw/operation/getRows>`_
@@ -503,9 +554,9 @@ class RawRowsAPI(APIClient):
         Args:
             db_name (str): Name of the database.
             table_name (str): Name of the table.
-            min_last_updated_time (int): Rows must have been last updated after this time (exclusive). ms since epoch.
-            max_last_updated_time (int): Rows must have been last updated before this time (inclusive). ms since epoch.
-            columns (List[str]): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
+            min_last_updated_time (int | None): Rows must have been last updated after this time (exclusive). ms since epoch.
+            max_last_updated_time (int | None): Rows must have been last updated before this time (inclusive). ms since epoch.
+            columns (list[str] | None): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
             limit (int): The number of rows to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
@@ -566,51 +617,3 @@ class RawRowsAPI(APIClient):
         if summary.exceptions:
             raise summary.exceptions[0]
         return RowList(summary.joined_results())
-
-    def _make_columns_param(self, columns: Optional[List[str]]) -> Optional[str]:
-        if columns is None:
-            return None
-        if not isinstance(columns, List):
-            raise ValueError("Expected a list for argument columns")
-        if len(columns) == 0:
-            return ","
-        else:
-            return ",".join([str(x) for x in columns])
-
-    def retrieve_dataframe(
-        self,
-        db_name: str,
-        table_name: str,
-        min_last_updated_time: Optional[int] = None,
-        max_last_updated_time: Optional[int] = None,
-        columns: Optional[List[str]] = None,
-        limit: int = LIST_LIMIT_DEFAULT,
-    ) -> pandas.DataFrame:
-        """`Retrieve rows in a table as a pandas dataframe. <https://developer.cognite.com/api#tag/Raw/operation/getRows>`_
-
-        Rowkeys are used as the index.
-
-        Args:
-            db_name (str): Name of the database.
-            table_name (str): Name of the table.
-            min_last_updated_time (int): Rows must have been last updated after this time. ms since epoch.
-            max_last_updated_time (int): Rows must have been last updated before this time. ms since epoch.
-            columns (List[str]): List of column keys. Set to `None` for retrieving all, use [] to retrieve only row keys.
-            limit (int): The number of rows to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
-
-        Returns:
-            pandas.DataFrame: The requested rows in a pandas dataframe.
-
-        Examples:
-
-            Get dataframe::
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> df = c.raw.rows.retrieve_dataframe("db1", "t1", limit=5)
-        """
-        pd = cast(Any, local_import("pandas"))
-        rows = self.list(db_name, table_name, min_last_updated_time, max_last_updated_time, columns, limit)
-        idx = [r.key for r in rows]
-        cols = [r.columns for r in rows]
-        return pd.DataFrame(cols, index=idx)
