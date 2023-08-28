@@ -4,7 +4,7 @@ import json as complexjson
 import numbers
 import urllib.parse
 import warnings
-from typing import Any, Generator, Sequence, cast, overload
+from typing import Any, Iterator, Sequence, cast, overload
 
 from requests.exceptions import ChunkedEncodingError
 
@@ -700,7 +700,7 @@ class GeospatialAPI(APIClient):
         filter: dict[str, Any] | None = None,
         properties: dict[str, Any] | None = None,
         allow_crs_transformation: bool = False,
-    ) -> Generator[Feature, None, None]:
+    ) -> Iterator[Feature]:
         """`Stream features`
         <https://developer.cognite.com/api#tag/Geospatial/operation/searchFeaturesStreaming>
 
