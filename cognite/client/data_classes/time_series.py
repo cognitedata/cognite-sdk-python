@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, List, Literal, Sequence, Union, cast
 
 from typing_extensions import TypeAlias
 
@@ -14,11 +14,11 @@ from cognite.client.data_classes._base import (
     CognitePropertyClassUtil,
     CogniteResource,
     CogniteResourceList,
+    CogniteSort,
     CogniteUpdate,
     EnumProperty,
     IdTransformerMixin,
     PropertySpec,
-    Sort,
 )
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._identifier import Identifier
@@ -163,7 +163,6 @@ class TimeSeriesFilter(CogniteFilter):
         external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
         created_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
         last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
-        cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -180,7 +179,6 @@ class TimeSeriesFilter(CogniteFilter):
         external_id_prefix: str | None = None,
         created_time: dict[str, Any] | TimestampRange | None = None,
         last_updated_time: dict[str, Any] | TimestampRange | None = None,
-        cognite_client: CogniteClient | None = None,
     ) -> None:
         self.name = name
         self.unit = unit
@@ -194,17 +192,6 @@ class TimeSeriesFilter(CogniteFilter):
         self.external_id_prefix = external_id_prefix
         self.created_time = created_time
         self.last_updated_time = last_updated_time
-        self._cognite_client = cast("CogniteClient", cognite_client)
-
-    @classmethod
-    def _load(cls, resource: dict | str) -> TimeSeriesFilter:
-        instance = super()._load(resource)
-        if isinstance(resource, Dict):
-            if instance.created_time is not None:
-                instance.created_time = TimestampRange(**instance.created_time)
-            if instance.last_updated_time is not None:
-                instance.last_updated_time = TimestampRange(**instance.last_updated_time)
-        return instance
 
 
 class TimeSeriesUpdate(CogniteUpdate):
@@ -357,7 +344,7 @@ class SortableTimeSeriesProperty(EnumProperty):
 SortableTimeSeriesPropertyLike: TypeAlias = Union[SortableTimeSeriesProperty, str, List[str]]
 
 
-class TimeSeriesSort(Sort):
+class TimeSeriesSort(CogniteSort):
     def __init__(
         self,
         property: SortableTimeSeriesProperty,

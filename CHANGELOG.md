@@ -17,7 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [6.15.0] - 2023-08-18
+## [6.15.1] - 2023-08-28
+### Fixed
+- Bugfix for `InstanceSort._load` that always raised `TypeError` (now public, `.load`). Also, indirect fix for `Select.load` for non-empty `sort`.
+
+## [6.15.0] - 2023-08-23
 ### Added
 - Support for the DocumentsAPI with the implementation `client.documents`.
 - Support for advanced filtering for `Events`, `TimeSeries`, `Assets` and `Sequences`. This is available through the

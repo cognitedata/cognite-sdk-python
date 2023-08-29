@@ -54,7 +54,6 @@ class TestListAndIterSignatures:
             del list_parameters[name]
 
         filter_parameters = dict(inspect.signature(filter.__init__).parameters)
-        del filter_parameters["cognite_client"]
 
         iter_parameters = {v.name for _, v in iter_parameters.items()}
         filter_parameters = {v.name for _, v in filter_parameters.items()}

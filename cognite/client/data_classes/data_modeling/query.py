@@ -62,7 +62,7 @@ class Select:
         data = json.loads(data) if isinstance(data, str) else data
         return cls(
             sources=[SourceSelector.load(source) for source in data.get("sources", [])],
-            sort=[InstanceSort._load(s) for s in data.get("sort", [])],
+            sort=[InstanceSort.load(s) for s in data.get("sort", [])],
             limit=data.get("limit"),
         )
 

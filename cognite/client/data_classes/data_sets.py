@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -68,7 +68,6 @@ class DataSetFilter(CogniteFilter):
         last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
         external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
         write_protected (bool | None): No description.
-        cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -78,24 +77,12 @@ class DataSetFilter(CogniteFilter):
         last_updated_time: dict[str, Any] | TimestampRange | None = None,
         external_id_prefix: str | None = None,
         write_protected: bool | None = None,
-        cognite_client: CogniteClient | None = None,
     ) -> None:
         self.metadata = metadata
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.external_id_prefix = external_id_prefix
         self.write_protected = write_protected
-        self._cognite_client = cast("CogniteClient", cognite_client)
-
-    @classmethod
-    def _load(cls, resource: dict | str) -> DataSetFilter:
-        instance = super()._load(resource)
-        if isinstance(resource, Dict):
-            if instance.created_time is not None:
-                instance.created_time = TimestampRange(**instance.created_time)
-            if instance.last_updated_time is not None:
-                instance.last_updated_time = TimestampRange(**instance.last_updated_time)
-        return instance
 
 
 class DataSetUpdate(CogniteUpdate):

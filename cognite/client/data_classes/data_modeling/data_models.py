@@ -4,11 +4,8 @@ import json
 from operator import attrgetter
 from typing import Any, Generic, Literal, TypeVar, Union, cast
 
-from cognite.client.data_classes._base import (
-    CogniteFilter,
-    CogniteResourceList,
-)
-from cognite.client.data_classes.data_modeling._core import DataModelingResource
+from cognite.client.data_classes._base import CogniteFilter, CogniteResourceList
+from cognite.client.data_classes.data_modeling._core import DataModelingResource, DataModelingSort
 from cognite.client.data_classes.data_modeling._validation import validate_data_modeling_identifier
 from cognite.client.data_classes.data_modeling.ids import DataModelId, ViewId
 from cognite.client.data_classes.data_modeling.views import View, ViewApply
@@ -250,7 +247,7 @@ class DataModelFilter(CogniteFilter):
         self.include_global = include_global
 
 
-class DataModelsSort(CogniteFilter):
+class DataModelsSort(DataModelingSort):
     def __init__(
         self,
         property: Literal[
@@ -259,6 +256,4 @@ class DataModelsSort(CogniteFilter):
         direction: Literal["ascending", "descending"] = "ascending",
         nulls_first: bool = False,
     ) -> None:
-        self.property = property
-        self.direction = direction
-        self.nulls_first = nulls_first
+        super().__init__(property, direction, nulls_first)
