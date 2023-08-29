@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
 
 
-class WorkflowTasks(APIClient):
+class WorkflowTaskAPI(APIClient):
     _RESOURCE_PATH = "/workflows/tasks"
 
     def __init__(
@@ -32,7 +32,7 @@ class WorkflowTasks(APIClient):
         ...
 
 
-class WorkflowExecutions(APIClient):
+class WorkflowExecutionAPI(APIClient):
     _RESOURCE_PATH = "/workflows/executions"
 
     def __init__(
@@ -64,7 +64,7 @@ class WorkflowExecutions(APIClient):
         ...
 
 
-class WorkflowDefinitions(APIClient):
+class WorkflowDefinitionAPI(APIClient):
     _RESOURCE_PATH = "/workflows"
 
     def __init__(
@@ -76,7 +76,7 @@ class WorkflowDefinitions(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._api_subversion = "beta"
 
-    def apply(self, workflow_definition: WorkflowDefinitions) -> Workflow:
+    def apply(self, workflow_definition: WorkflowDefinitionAPI) -> Workflow:
         ...
 
     def delete(
@@ -102,9 +102,9 @@ class WorkflowAPI(APIClient):
     ) -> None:
         super().__init__(config, api_version, cognite_client)
         self._api_subversion = "beta"
-        self.definitions = WorkflowDefinitions(config, api_version, cognite_client)
-        self.executions = WorkflowExecutions(config, api_version, cognite_client)
-        self.tasks = WorkflowTasks(config, api_version, cognite_client)
+        self.definitions = WorkflowDefinitionAPI(config, api_version, cognite_client)
+        self.executions = WorkflowExecutionAPI(config, api_version, cognite_client)
+        self.tasks = WorkflowTaskAPI(config, api_version, cognite_client)
 
     def create(self, workflow: WorkflowCreate) -> Workflow:
         ...
