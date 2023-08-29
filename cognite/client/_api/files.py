@@ -658,10 +658,11 @@ class FilesAPI(APIClient):
                 full_file_names.append(str((file_directory / cast(str, _metadata.name)).resolve()))
 
         full_duplicate_names = [name for name, count in collections.Counter(full_file_names).items() if count > 1]
-        warning_message = f"""There are {len(full_duplicate_names)} duplicate file names.
-    Only the contents of one of the files with the same name will be downloaded to the same directory.
-    This concerns: {full_duplicate_names}"""
-        warnings.warn(message=warning_message, stacklevel=2)
+        if full_duplicate_names:
+            warning_message = f"""There are {len(full_duplicate_names)} duplicate file names.
+        Only the contents of one of the files with the same name will be downloaded to the same directory.
+        This concerns: {full_duplicate_names}"""
+            warnings.warn(message=warning_message, stacklevel=2)
 
         for file_folder in set(file_directories):
             file_folder.mkdir(parents=True, exist_ok=True)
