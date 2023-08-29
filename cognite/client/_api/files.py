@@ -635,7 +635,9 @@ class FilesAPI(APIClient):
         id_to_metadata = self._get_id_to_metadata_map(all_ids)
 
         if not keep_directory_structure:
-            all_file_names = [cast(str, _metadata.name) for _id, _metadata in id_to_metadata.items() if isinstance(_id, int)]
+            all_file_names = [
+                cast(str, _metadata.name) for _id, _metadata in id_to_metadata.items() if isinstance(_id, int)
+            ]
             duplicate_names = [name for name, count in collections.Counter(all_file_names).items() if count > 1]
             if duplicate_names:
                 duplicate_names.sort()
