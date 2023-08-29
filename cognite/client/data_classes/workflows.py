@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Literal
 
 from cognite.client.data_classes._base import (
     CogniteResource,
+    CogniteResourceList,
 )
 
 
@@ -22,6 +24,10 @@ class Workflow(WorkflowCreate):
     ):
         super().__init__(external_id, description)
         self.created_time = created_time
+
+
+class WorkflowList(CogniteResourceList[Workflow]):
+    _RESOURCE = Workflow
 
 
 class Parameters(CogniteResource):
@@ -163,7 +169,7 @@ class WorkflowDefinition(CogniteResource):
         self.description = description
 
 
-class WorkflowExecution:
+class WorkflowExecution(CogniteResource):
     def __init__(
         self,
         id: str,
@@ -171,9 +177,29 @@ class WorkflowExecution:
         workflow_definition: WorkflowDefinition,
         version: str,
         status: Literal["running", "completed", "failed", "timed_out", "terminated", "paused"],
+        input: dict | None = None,
+        created_time: int | None = None,
+        started_time: int | None = None,
+        end_time: int | None = None,
+        reason_for_incompletion: str | None = None,
     ):
         self.id = id
         self.workflow_external_id = workflow_external_id
         self.workflow_definition = workflow_definition
         self.version = version
         self.status = status
+        self.input = input
+        self.created_time = created_time
+        self.started_time = started_time
+        self.end_time = end_time
+        self.reason_for_incompletion = reason_for_incompletion
+
+
+class WorkflowExecutionList(CogniteResourceList[WorkflowExecution]):
+    _RESOURCE = WorkflowExecution
+
+
+@dataclass
+class WorkflowId:
+    external_id: str
+    version: str | None = None
