@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import math
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Literal, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Literal, Union, cast
 from typing import Sequence as SequenceType
 
 from typing_extensions import TypeAlias
@@ -396,7 +396,7 @@ class SequenceData(CogniteResource):
             )
         return [r[ix] for r in self.values]
 
-    def items(self) -> Generator[tuple[int, list[int | str | float]], None, None]:
+    def items(self) -> Iterator[tuple[int, list[int | str | float]]]:
         """Returns an iterator over tuples of (row number, values)."""
         for row, values in zip(self.row_numbers, self.values):
             yield row, list(values)

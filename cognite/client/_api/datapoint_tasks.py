@@ -15,7 +15,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    Generator,
     Generic,
     Hashable,
     Iterator,
@@ -740,7 +739,7 @@ class SplittingFetchSubtask(SerialFetchSubtask):
             return self._split_self_into_new_subtasks_if_needed(last_ts)
         return None
 
-    def _create_subtasks_idxs(self, n_new_tasks: int) -> Generator[tuple[float, ...], None, None]:
+    def _create_subtasks_idxs(self, n_new_tasks: int) -> Iterator[tuple[float, ...]]:
         # Since this task may decide to split itself multiple times, we count backwards to keep order
         # (we rely on tuple sorting logic). Example using `self.subtask_idx=(4,)`:
         # - First split into e.g. 3 parts: (4,-3), (4,-2), (4,-1)
