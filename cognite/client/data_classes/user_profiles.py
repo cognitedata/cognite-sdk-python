@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Sequence, cast
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 
@@ -48,3 +48,20 @@ class UserProfile(CogniteResource):
 
 class UserProfileList(CogniteResourceList[UserProfile]):
     _RESOURCE = UserProfile
+
+    def __init__(self, resources: Sequence[UserProfile], cognite_client: CogniteClient | None = None) -> None:
+        super().__init__(resources, cognite_client)
+
+        del self._id_to_item, self._external_id_to_item
+        self._user_identifier_to_item = {item.user_identifier: item for item in self.data or []}
+
+    def get(self, user_identifier: str) -> UserProfile | None:  # type: ignore [override]
+        """Get an item from this list by user_identifier.
+
+        Args:
+            user_identifier (str): The user_identifier of the item to get.
+
+        Returns:
+            UserProfile | None: The requested item or None if not found.
+        """
+        return self._user_identifier_to_item.get(user_identifier)
