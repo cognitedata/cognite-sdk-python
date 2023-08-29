@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-from typing import Any, Generator
+from typing import Any, Iterator
 from unittest.mock import MagicMock
 
 from cognite.client import CogniteClient
@@ -156,7 +156,7 @@ class CogniteClientMock(MagicMock):
 
 
 @contextmanager
-def monkeypatch_cognite_client() -> Generator[CogniteClientMock, None, None]:
+def monkeypatch_cognite_client() -> Iterator[CogniteClientMock]:
     """Context manager for monkeypatching the CogniteClient.
 
     Will patch all clients and replace them with specced MagicMock objects.

@@ -109,11 +109,14 @@ class DocstrFormatter:
     def _extract_yields_return_annot(string):
         # Example:
         #   A return annotation like 'Generator[tuple[float, ...], list[str, int], int | float]'
-        #   should be marked as yielding: 'tuple[float, ...]'
+        #   should be marked as yielding: 'tuple[float, ...]', and similarly, Iterator[int] --> int.
         # TODO: With 3.9 this gets much easier: get_args(get_type_hints(method)["return"])[0]
 
+        if string.startswith("Iterator["):
+            return string[9:-1]
+
         if not string.startswith("Generator["):
-            raise ValueError("All generators must be annotated using 'typing.Generator'")
+            raise ValueError("All generators must be annotated using 'Generator' or 'Iterator'")
 
         bracket_count, letters = 0, []
         for char in string[10:]:
