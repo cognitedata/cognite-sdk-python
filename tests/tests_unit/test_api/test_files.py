@@ -527,7 +527,7 @@ class TestFilesAPI:
 
     def test_download_with_folder_structure(self, cognite_client, mock_file_download_response_with_folder_structure):
         with TemporaryDirectory() as dir:
-            cognite_client.files.download(directory=dir, id=[1], external_id=["2"], keep_folder_structure=True)
+            cognite_client.files.download(directory=dir, id=[1], external_id=["2"], keep_directory_structure=True)
             assert {"ignoreUnknownIds": False, "items": [{"id": 1}, {"externalId": "2"}]} == jsgz_load(
                 mock_file_download_response_with_folder_structure.calls[0].request.body
             )

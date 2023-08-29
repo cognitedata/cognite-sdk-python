@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import collections
 import copy
 import os
+import warnings
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -600,19 +602,21 @@ class FilesAPI(APIClient):
         directory: str | Path,
         id: int | Sequence[int] | None = None,
         external_id: str | Sequence[str] | None = None,
-        keep_folder_structure: bool = False,
+        keep_directory_structure: bool = False,
     ) -> None:
         """`Download files by id or external id. <https://developer.cognite.com/api#tag/Files/operation/downloadLinks>`_
 
         This method will stream all files to disk, never keeping more than 2MB in memory per worker.
         The files will be stored in the provided directory using the file name retrieved from the file metadata in CDF.
-        You can also choose to keep the folder structure from CDF, where the files will be stored in subfolders under directory named after the directory field in CDF.
+        You can also choose to keep the directory structure from CDF, where the files will be stored in subdirectories under the directory field in the arguments.
+        If several files in CDF has the same name in the folder they are downloaded to, only one will be kept locally.
 
         Args:
             directory (str | Path): Directory to download the file(s) to.
             id (int | Sequence[int] | None): Id or list of ids
             external_id (str | Sequence[str] | None): External ID or list of external ids.
-            keep_folder_structure (bool): Whether or not to keep the folder structure from CDF.
+            keep_directory_structure (bool): Whether or not to keep the directory structure from CDF,
+                where the files will be stored in subdirectories under the directory field in the arguments.
 
         Examples:
 
@@ -630,26 +634,39 @@ class FilesAPI(APIClient):
         all_ids = IdentifierSequence.load(id, external_id).as_dicts()
         id_to_metadata = self._get_id_to_metadata_map(all_ids)
 
-        if not keep_folder_structure:
+        if not keep_directory_structure:
+            all_file_names = [cast(str, metadata.name) for metadata in id_to_metadata.values()]
+            duplicate_names = [name for name, count in collections.Counter(all_file_names).items() if count > 1]
+            warning_message = f"""There are {len(duplicate_names)} duplicate file names.
+    Only the contents of one of the files with the same name will be downloaded to the same directory.
+    This concerns: {duplicate_names}"""
+            warnings.warn(message=warning_message, stacklevel=2)
             self._download_files_to_directory(directory, all_ids, id_to_metadata)
-        else:
-            ids: list[dict[str, int | str]] = []
-            file_folders: list[Path] = []
-            for _id, _metadata in id_to_metadata.items():
-                if isinstance(_id, int):
-                    if _metadata.directory:
-                        cdf_directory = Path(_metadata.directory[1:])  # Making the directory relative
-                    else:
-                        cdf_directory = Path("")
-                    file_folder = directory / cdf_directory
+            return
 
-                    ids.append({"id": _id})
-                    file_folders.append(file_folder)
+        ids: list[dict[str, int | str]] = []
+        file_directories: list[Path] = []
+        full_file_names: list[str] = []
+        for _id, _metadata in id_to_metadata.items():
+            if isinstance(_id, int):
+                file_directory = directory
+                if _metadata.directory:
+                    file_directory /= Path(_metadata.directory[1:])  # Making the directory relative
 
-            for file_folder in set(file_folders):
-                file_folder.mkdir(parents=True, exist_ok=True)
+                ids.append({"id": _id})
+                file_directories.append(file_directory)
+                full_file_names.append(str((file_directory / cast(str, _metadata.name)).resolve()))
 
-            self._download_files_to_directory(directory=file_folders, all_ids=ids, id_to_metadata=id_to_metadata)
+        full_duplicate_names = [name for name, count in collections.Counter(full_file_names).items() if count > 1]
+        warning_message = f"""There are {len(full_duplicate_names)} duplicate file names.
+    Only the contents of one of the files with the same name will be downloaded to the same directory.
+    This concerns: {full_duplicate_names}"""
+        warnings.warn(message=warning_message, stacklevel=2)
+
+        for file_folder in set(file_directories):
+            file_folder.mkdir(parents=True, exist_ok=True)
+
+        self._download_files_to_directory(directory=file_directories, all_ids=ids, id_to_metadata=id_to_metadata)
 
     def _get_id_to_metadata_map(self, all_ids: Sequence[dict]) -> dict[str | int, FileMetadata]:
         ids = [id["id"] for id in all_ids if "id" in id]

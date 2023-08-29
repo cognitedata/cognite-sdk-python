@@ -21,6 +21,7 @@ Changes are grouped as follows
 ### Added
 - Added parameter `keep_folder_structure`to `client.files.download` to allow downloading files to a folder structure matching the one in CDF.
 This also keeps all files when downloading, and avoid the problem of files being ignored if they have the same name in different folders.
+
 ## [6.15.0] - 2023-08-18
 ### Added
 - Support for the DocumentsAPI with the implementation `client.documents`.
