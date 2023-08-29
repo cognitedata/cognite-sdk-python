@@ -1,12 +1,18 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
+    T_CogniteResource,
 )
+from cognite.client.utils._text import convert_all_keys_to_snake_case
+
+if TYPE_CHECKING:
+    from cognite.client import CogniteClient
 
 
 class WorkflowCreate(CogniteResource):
@@ -14,12 +20,23 @@ class WorkflowCreate(CogniteResource):
         self.external_id = external_id
         self.description = description
 
+    @classmethod
+    def _load(
+        cls: type[T_CogniteResource],
+        resource: dict | str,
+        cognite_client: CogniteClient | None = None,
+    ) -> T_CogniteResource:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+
+        resource = convert_all_keys_to_snake_case(resource)
+        return cls(**resource)
+
 
 class Workflow(WorkflowCreate):
     def __init__(
         self,
         external_id: str,
-        created_time: int,
+        created_time: str,
         description: str | None = None,
     ):
         super().__init__(external_id, description)

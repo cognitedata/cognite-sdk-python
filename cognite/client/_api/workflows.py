@@ -11,6 +11,7 @@ from cognite.client.data_classes.workflows import (
     WorkflowId,
     WorkflowList,
 )
+from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
@@ -107,10 +108,16 @@ class WorkflowAPI(APIClient):
         self.tasks = WorkflowTaskAPI(config, api_version, cognite_client)
 
     def create(self, workflow: WorkflowCreate) -> Workflow:
-        ...
+        response = self._post(url_path=self._RESOURCE_PATH, json=workflow.dump(camel_case=True))
+        return Workflow._load(response.json())
 
     def delete(self, external_id: str | Sequence[str], ignore_unknown_ids: bool = False) -> None:
-        ...
+        self._post(
+            url_path=self._RESOURCE_PATH + "/delete",
+            json=IdentifierSequence.load(external_ids=external_id).as_dicts(),
+            params={"ignoreUnknownIds": ignore_unknown_ids},
+        )
 
     def list(self) -> WorkflowList:
-        ...
+        response = self._get(url_path=self._RESOURCE_PATH)
+        return WorkflowList._load(response.json()["items"])

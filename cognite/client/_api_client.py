@@ -29,7 +29,11 @@ from requests import Response
 from requests.structures import CaseInsensitiveDict
 
 from cognite.client import utils
-from cognite.client._http_client import HTTPClient, HTTPClientConfig, get_global_requests_session
+from cognite.client._http_client import (
+    HTTPClient,
+    HTTPClientConfig,
+    get_global_requests_session,
+)
 from cognite.client.config import global_config
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -52,7 +56,12 @@ from cognite.client.utils._identifier import (
     IdentifierSequenceCore,
     SingletonIdentifierSequence,
 )
-from cognite.client.utils._text import convert_all_keys_to_camel_case, shorten, to_camel_case, to_snake_case
+from cognite.client.utils._text import (
+    convert_all_keys_to_camel_case,
+    shorten,
+    to_camel_case,
+    to_snake_case,
+)
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -81,7 +90,12 @@ class APIClient:
         )
     )
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(
+        self,
+        config: ClientConfig,
+        api_version: str | None,
+        cognite_client: CogniteClient,
+    ) -> None:
         self._config = config
         self._api_version = api_version
         self._api_subversion = config.api_subversion
@@ -124,32 +138,64 @@ class APIClient:
         )
 
     def _delete(
-        self, url_path: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None
-    ) -> Response:
-        return self._do_request("DELETE", url_path, params=params, headers=headers, timeout=self._config.timeout)
-
-    def _get(
-        self, url_path: str, params: dict[str, Any] | None = None, headers: dict[str, Any] | None = None
-    ) -> Response:
-        return self._do_request("GET", url_path, params=params, headers=headers, timeout=self._config.timeout)
-
-    def _post(
         self,
         url_path: str,
-        json: dict[str, Any] | None = None,
         params: dict[str, Any] | None = None,
         headers: dict[str, Any] | None = None,
     ) -> Response:
         return self._do_request(
-            "POST", url_path, json=json, headers=headers, params=params, timeout=self._config.timeout
+            "DELETE",
+            url_path,
+            params=params,
+            headers=headers,
+            timeout=self._config.timeout,
+        )
+
+    def _get(
+        self,
+        url_path: str,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
+    ) -> Response:
+        return self._do_request(
+            "GET",
+            url_path,
+            params=params,
+            headers=headers,
+            timeout=self._config.timeout,
+        )
+
+    def _post(
+        self,
+        url_path: str,
+        json: dict[str, Any] | list[Any] | None = None,
+        params: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
+    ) -> Response:
+        return self._do_request(
+            "POST",
+            url_path,
+            json=json,
+            headers=headers,
+            params=params,
+            timeout=self._config.timeout,
         )
 
     def _put(
-        self, url_path: str, json: dict[str, Any] | None = None, headers: dict[str, Any] | None = None
+        self,
+        url_path: str,
+        json: dict[str, Any] | None = None,
+        headers: dict[str, Any] | None = None,
     ) -> Response:
         return self._do_request("PUT", url_path, json=json, headers=headers, timeout=self._config.timeout)
 
-    def _do_request(self, method: str, url_path: str, accept: str = "application/json", **kwargs: Any) -> Response:
+    def _do_request(
+        self,
+        method: str,
+        url_path: str,
+        accept: str = "application/json",
+        **kwargs: Any,
+    ) -> Response:
         is_retryable, full_url = self._resolve_url(method, url_path)
 
         json_payload = kwargs.get("json")
@@ -158,7 +204,11 @@ class APIClient:
 
         if json_payload:
             try:
-                data = _json.dumps(json_payload, default=utils._auxiliary.json_dump_default, allow_nan=False)
+                data = _json.dumps(
+                    json_payload,
+                    default=utils._auxiliary.json_dump_default,
+                    allow_nan=False,
+                )
             except ValueError as e:
                 # A lot of work to give a more human friendly error message when nans and infs are present:
                 msg = "Out of range float values are not JSON compliant"
@@ -209,7 +259,10 @@ class APIClient:
         return headers
 
     def _refresh_auth_header(self, headers: MutableMapping[str, Any]) -> None:
-        auth_header_name, auth_header_value = self._config.credentials.authorization_header()
+        (
+            auth_header_name,
+            auth_header_value,
+        ) = self._config.credentials.authorization_header()
         headers[auth_header_name] = auth_header_value
 
     def _resolve_url(self, method: str, url_path: str) -> tuple[bool, str]:
@@ -414,9 +467,17 @@ class APIClient:
                     if sort is not None:
                         params["sort"] = sort
                     params.update(other_params or {})
-                    res = self._get(url_path=url_path or resource_path, params=params, headers=headers)
+                    res = self._get(
+                        url_path=url_path or resource_path,
+                        params=params,
+                        headers=headers,
+                    )
                 elif method == "POST":
-                    body: dict[str, Any] = {"limit": current_limit, "cursor": next_cursor, **(other_params or {})}
+                    body: dict[str, Any] = {
+                        "limit": current_limit,
+                        "cursor": next_cursor,
+                        **(other_params or {}),
+                    }
                     if filter:
                         body["filter"] = filter
                     if advanced_filter:
@@ -427,7 +488,11 @@ class APIClient:
                         )
                     if sort is not None:
                         body["sort"] = sort
-                    res = self._post(url_path=url_path or resource_path + "/list", json=body, headers=headers)
+                    res = self._post(
+                        url_path=url_path or resource_path + "/list",
+                        json=body,
+                        headers=headers,
+                    )
                 else:
                     raise ValueError(f"_list_generator parameter `method` must be GET or POST, not {method}")
                 last_received_items = res.json()["items"]
@@ -478,7 +543,9 @@ class APIClient:
 
         while len(next_cursors) > 0:
             tasks_summary = utils._concurrency.execute_tasks(
-                get_partition, [(partition,) for partition in next_cursors], max_workers=partitions
+                get_partition,
+                [(partition,) for partition in next_cursors],
+                max_workers=partitions,
             )
             if tasks_summary.exceptions:
                 raise tasks_summary.exceptions[0]
@@ -570,7 +637,9 @@ class APIClient:
                             else advanced_filter
                         )
                     res = self._post(
-                        url_path=(resource_path or self._RESOURCE_PATH) + "/list", json=body, headers=headers
+                        url_path=(resource_path or self._RESOURCE_PATH) + "/list",
+                        json=body,
+                        headers=headers,
                     )
                 elif method == "GET":
                     params = {
@@ -580,7 +649,11 @@ class APIClient:
                         "partition": partition,
                         **(other_params or {}),
                     }
-                    res = self._get(url_path=(resource_path or self._RESOURCE_PATH), params=params, headers=headers)
+                    res = self._get(
+                        url_path=(resource_path or self._RESOURCE_PATH),
+                        params=params,
+                        headers=headers,
+                    )
                 else:
                     raise ValueError(f"Unsupported method: {method}")
                 retrieved_items.extend(res.json()["items"])
@@ -662,7 +735,13 @@ class APIClient:
 
     def _advanced_aggregate(
         self,
-        aggregate: Literal["count", "cardinalityValues", "cardinalityProperties", "uniqueValues", "uniqueProperties"],
+        aggregate: Literal[
+            "count",
+            "cardinalityValues",
+            "cardinalityProperties",
+            "uniqueValues",
+            "uniqueProperties",
+        ],
         properties: EnumProperty
         | str
         | list[str]
@@ -675,7 +754,13 @@ class APIClient:
         aggregate_filter: AggregationFilter | dict | None = None,
         limit: int | None = None,
     ) -> int | UniqueResultList:
-        if aggregate not in ["count", "cardinalityValues", "cardinalityProperties", "uniqueValues", "uniqueProperties"]:
+        if aggregate not in [
+            "count",
+            "cardinalityValues",
+            "cardinalityProperties",
+            "uniqueValues",
+            "uniqueProperties",
+        ]:
             raise ValueError(
                 f"Invalid aggregate '{aggregate}'. Valid aggregates are 'count', 'cardinalityValues', "
                 f"'cardinalityProperties', 'uniqueValues', and 'uniqueProperties'."
@@ -925,7 +1010,12 @@ class APIClient:
         patch_object_chunks = split_into_chunks(patch_objects, self._UPDATE_LIMIT)
 
         tasks = [
-            {"url_path": resource_path + "/update", "json": {"items": chunk}, "params": params, "headers": headers}
+            {
+                "url_path": resource_path + "/update",
+                "json": {"items": chunk},
+                "params": params,
+                "headers": headers,
+            }
             for chunk in patch_object_chunks
         ]
 
@@ -982,7 +1072,10 @@ class APIClient:
             try:
                 if to_create:
                     created = self._create_multiple(
-                        to_create, list_cls=list_cls, resource_cls=resource_cls, input_resource_cls=input_resource_cls
+                        to_create,
+                        list_cls=list_cls,
+                        resource_cls=resource_cls,
+                        input_resource_cls=input_resource_cls,
                     )
                 if to_update:
                     updated = self._update_multiple(
@@ -1006,20 +1099,27 @@ class APIClient:
                     # The created call failed
                     failed.extend(item.external_id if item.external_id is not None else item.id for item in to_update)
                 raise CogniteAPIError(
-                    api_error.message, code=api_error.code, successful=successful, failed=failed, unknown=unknown
+                    api_error.message,
+                    code=api_error.code,
+                    successful=successful,
+                    failed=failed,
+                    unknown=unknown,
                 )
             # Need to retrieve the successful updated items from the first call.
             successful_resources: T_CogniteResourceList | None = None
             if not_found_error.successful:
                 identifiers = IdentifierSequence.of(*not_found_error.successful)
                 successful_resources = self._retrieve_multiple(
-                    list_cls=list_cls, resource_cls=resource_cls, identifiers=identifiers
+                    list_cls=list_cls,
+                    resource_cls=resource_cls,
+                    identifiers=identifiers,
                 )
                 if isinstance(successful_resources, resource_cls):
                     successful_resources = list_cls([successful_resources], cognite_client=self._cognite_client)
 
             result = list_cls(
-                (successful_resources or []) + (created or []) + (updated or []), cognite_client=self._cognite_client
+                (successful_resources or []) + (created or []) + (updated or []),
+                cognite_client=self._cognite_client,
             )
 
             # Reorder to match the order of the input items
@@ -1160,7 +1260,10 @@ class APIClient:
                 log.debug(
                     f"REDIRECT AFTER HTTP Error {res_hist.status_code} {res_hist.request.method} {res_hist.request.url}: {res_hist.content.decode()}"
                 )
-        log.debug(f"HTTP Error {code} {res.request.method} {res.request.url}: {msg}", extra=error_details)
+        log.debug(
+            f"HTTP Error {code} {res.request.method} {res.request.url}: {msg}",
+            extra=error_details,
+        )
         raise CogniteAPIError(msg, code, x_request_id, missing=missing, duplicated=duplicated, extra=extra)
 
     def _log_request(self, res: Response, **kwargs: Any) -> None:
