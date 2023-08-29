@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from cognite.client import utils
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import (
@@ -15,13 +13,13 @@ class TransformationSchemaAPI(APIClient):
     _RESOURCE_PATH = "/transformations/schema"
 
     def retrieve(
-        self, destination: TransformationDestination, conflict_mode: Optional[str] = None
+        self, destination: TransformationDestination, conflict_mode: str | None = None
     ) -> TransformationSchemaColumnList:
         """`Get expected schema for a transformation destination. <https://developer.cognite.com/api#tag/Schema/operation/getTransformationSchema>`_
 
         Args:
             destination (TransformationDestination): destination for which the schema is requested.
-            conflict_mode (Optional[str]): conflict mode for which the schema is requested.
+            conflict_mode (str | None): conflict mode for which the schema is requested.
 
         Returns:
             TransformationSchemaColumnList: List of column descriptions

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from cognite.client.data_classes._base import Geometry
 from cognite.client.data_classes.annotations import (
     Annotation,
     AnnotationFilter,
@@ -44,6 +45,13 @@ from cognite.client.data_classes.datapoints_subscriptions import (
     DataPointSubscriptionCreate,
     DatapointSubscriptionList,
     DataPointSubscriptionUpdate,
+)
+from cognite.client.data_classes.documents import (
+    Document,
+    DocumentHighlight,
+    DocumentHighlightList,
+    DocumentList,
+    SourceFile,
 )
 from cognite.client.data_classes.events import EndTimeFilter, Event, EventFilter, EventList, EventUpdate
 from cognite.client.data_classes.extractionpipelines import (
@@ -130,7 +138,6 @@ from cognite.client.data_classes.shared import (
     AggregateUniqueValuesResult,
     GeoLocation,
     GeoLocationFilter,
-    Geometry,
     GeometryFilter,
     TimestampRange,
 )
@@ -247,6 +254,11 @@ __all__ = [
     "FileMetadataFilter",
     "FileMetadataList",
     "FileMetadataUpdate",
+    "SourceFile",
+    "Document",
+    "DocumentList",
+    "DocumentHighlight",
+    "DocumentHighlightList",
     "ClientCredentials",
     "CreatedSession",
     "Group",
@@ -334,8 +346,8 @@ __all__ = [
     "AggregateUniqueValuesResult",
     "GeoLocation",
     "GeoLocationFilter",
-    "Geometry",
     "GeometryFilter",
+    "Geometry",
     "TimestampRange",
     "Datapoint",
     "Datapoints",

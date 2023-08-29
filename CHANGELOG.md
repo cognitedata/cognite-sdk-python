@@ -17,10 +17,27 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.15.0] - 2023-08-18
+### Added
+- Support for the DocumentsAPI with the implementation `client.documents`.
+- Support for advanced filtering for `Events`, `TimeSeries`, `Assets` and `Sequences`. This is available through the
+  `.filter()` method, for example, `client.events.filter`.
+- Extended aggregation support for `Events`, `TimeSeries`, `Assets` and `Sequences`. This is available through the five
+  methods `.aggregate_count(...)`, `aggregate_cardinality_values(...)`, `aggregate_cardinality_properties(...)`,
+  `.aggregate_unique_values(...)`, and `.aggregate_unique_properties(...)`. For example,
+  `client.assets.aggregate_count(...)`.
+- Added helper methods `as_external_ids` and `as_ids` for `EventList`, `TimeSeriesList`, `AssetList`, `SequenceList`,
+  `FileMetaDataList`, `FunctionList`, `ExtractionPipelineList`, and `DataSetList`.
+
+### Deprecated
+- Added `DeprecationWarning` to methods `client.assets.aggregate_metadata_keys` and
+  `client.assets.aggregate_metadata_values`. The use parameter the `fields` in
+  `client.events.aggregate_unique_values` will also lead to a deprecation warning. The reason is that the endpoints
+  these methods are using have been deprecated in the CDF API.
+
 ## [6.14.2] - 2023-08-22
 ### Fixed
 - All data modeling endpoints will now be retried. This was not the case for POST endpoints.
-
 
 ## [6.14.1] - 2023-08-19
 ### Fixed
@@ -28,7 +45,7 @@ Changes are grouped as follows
 
 ## [6.14.0] - 2023-08-14
 ### Changed
-- Don't terminate client.timeseries.subscriptions.iterate_data() when `has_next=false` as more data
+- Don't terminate client.time_series.subscriptions.iterate_data() when `has_next=false` as more data
 may be returned in the future. Instead we return the `has_next` field in the batch, and let the user
 decide whether to terminate iteration. This is a breaking change, but this particular API is still
 in beta and thus we reserve the right to break it without bumping the major version.
@@ -358,7 +375,7 @@ have to specify the instance type in each tuple
 
 ## [6.0.0] - 2023-04-19
 ### Removed
-- Removed support for legacy auth (apikeys, serviceaccounts, login.status)
+- Removed support for legacy auth (API keys, service accounts, login.status)
 - Removed the deprecated `extractionPipeline` argument to `client.extraction_pipelines.create`. Only `extraction_pipeline` is accepted now.
 - Removed the deprecated `client.datapoints` accessor attribute. The datapoints API can only be accessed through `client.time_series.data` now.
 - Removed the deprecated `client.extraction_pipeline_runs` accessor attribute. The extraction pipeline run API can only be accessed through `client.extraction_pipelines.runs` now.

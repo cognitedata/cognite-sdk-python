@@ -129,9 +129,7 @@ class TestDatapointSubscriptions:
         # Arrange
         f = filters
         p = DatapointSubscriptionFilterProperties
-        numerical_timeseries = f.And(
-            f.Equals(p.is_string, False),
-        )
+        numerical_timeseries = f.And(f.Equals(p.is_string, False))
 
         new_subscription = DataPointSubscriptionCreate(
             external_id="PYSDKFilterDefinedDataPointSubscriptionUpdateTest",

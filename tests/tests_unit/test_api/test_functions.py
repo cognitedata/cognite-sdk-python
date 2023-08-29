@@ -512,7 +512,6 @@ class TestFunctionsAPI:
         assert mock_functions_filter_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
 
     def test_list_with_limits(self, mock_functions_filter_response, cognite_client):
-
         res = cognite_client.functions.list(limit=1)
         assert isinstance(res, FunctionList)
         assert len(res) == 1
@@ -601,7 +600,6 @@ class TestFunctionsAPI:
 
     @pytest.mark.usefixtures("mock_sessions_bad_request_response")
     def test_function_call_with_failing_token_exchange_flow(self, cognite_client_with_token):
-
         with pytest.raises(CogniteAPIError) as excinfo:
             cognite_client_with_token.functions.call(id=FUNCTION_ID)
         assert excinfo.value.code == 403
@@ -687,7 +685,7 @@ class TestRequirementsParser:
         with open(file, "w+") as f:
             f.writelines("\n".join(["# this should not be included", "     " + req]))
         reqs = _extract_requirements_from_file(file_name=file)
-        assert type(reqs) == list
+        assert type(reqs) is list  # noqa E721
         assert len(reqs) == 1
         assert req in reqs
 
@@ -1099,14 +1097,14 @@ def test__zip_and_upload_handle__call_signature(fns_api_with_mock_client, xid, o
 
     mock.files.upload_bytes.assert_called_once()
     call = mock.files.upload_bytes.call_args
-    assert len(call.args) == 1 and type(call.args[0]) is bytes
+    assert len(call.args) == 1 and type(call.args[0]) is bytes  # noqa: E721
     assert call.kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite}
 
 
 @pytest.mark.parametrize("xid, overwrite", ((None, False), ("xid", True)))
 def test__zip_and_upload_handle__zip_file_content(fns_api_with_mock_client, xid, overwrite, function_handle_with_reqs):
     def validate_file_upload_call(*args, **kwargs):
-        assert len(args) == 1 and type(args[0]) is bytes
+        assert len(args) == 1 and type(args[0]) is bytes  # noqa: E721
         assert kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite}
 
         with io.BytesIO(args[0]) as wrapped_binary, ZipFile(wrapped_binary, "r") as zip_file:
@@ -1134,7 +1132,6 @@ def test__zip_and_upload_handle__zip_file_content(fns_api_with_mock_client, xid,
 
 @pytest.mark.parametrize("xid, overwrite", ((None, False), ("xid", True)))
 def test__zip_and_upload_folder__call_signature(fns_api_with_mock_client, xid, overwrite):
-
     mock = fns_api_with_mock_client._cognite_client
     mock.files.upload_bytes.return_value = FileMetadata(id=123)
 
@@ -1144,14 +1141,14 @@ def test__zip_and_upload_folder__call_signature(fns_api_with_mock_client, xid, o
 
     mock.files.upload_bytes.assert_called_once()
     call = mock.files.upload_bytes.call_args
-    assert len(call.args) == 1 and type(call.args[0]) is bytes
+    assert len(call.args) == 1 and type(call.args[0]) is bytes  # noqa: E721
     assert call.kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite}
 
 
 @pytest.mark.parametrize("xid, overwrite", ((None, False), ("xid", True)))
 def test__zip_and_upload_folder__zip_file_content(fns_api_with_mock_client, xid, overwrite):
     def validate_file_upload_call(*args, **kwargs):
-        assert len(args) == 1 and type(args[0]) is bytes
+        assert len(args) == 1 and type(args[0]) is bytes  # noqa: E721
         assert kwargs == {"name": "name.zip", "external_id": xid, "overwrite": overwrite}
 
         with io.BytesIO(args[0]) as wrapped_binary, ZipFile(wrapped_binary, "r") as zip_file:

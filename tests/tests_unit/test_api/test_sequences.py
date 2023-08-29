@@ -502,7 +502,7 @@ class TestSequences:
         assert r1.__eq__(r2)
         assert str(r1) == str(r2)
         assert r1.dump() == r2.dump()
-        list_request = [call for call in mock_get_sequence_data.calls if "/data/list" in call.request.url][0]
+        list_request = next(call for call in mock_get_sequence_data.calls if "/data/list" in call.request.url)
         response = list_request.response.json()
         data_dump = r1.dump(camel_case=True)
         for f in ["columns", "rows", "id"]:

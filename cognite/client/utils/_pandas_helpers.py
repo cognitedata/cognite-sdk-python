@@ -5,7 +5,7 @@ import warnings
 from inspect import signature
 from itertools import chain
 from numbers import Integral
-from typing import TYPE_CHECKING, Any, Sequence, Union, cast
+from typing import TYPE_CHECKING, Any, Sequence, cast
 
 from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._auxiliary import local_import
@@ -42,7 +42,7 @@ def pandas_major_version() -> int:
     return int(__version__.split(".")[0])
 
 
-def notebook_display_with_fallback(inst: Union[T_CogniteResource, T_CogniteResourceList], **kwargs: Any) -> str:
+def notebook_display_with_fallback(inst: T_CogniteResource | T_CogniteResourceList, **kwargs: Any) -> str:
     if "camel_case" in signature(inst.to_pandas).parameters:
         # Default of False enforced (when accepted by method):
         kwargs["camel_case"] = False

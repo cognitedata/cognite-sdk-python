@@ -3,7 +3,7 @@ from typing import Iterator
 import pytest
 from _pytest.mark import ParameterSet
 
-from cognite.client.data_classes.data_modeling.aggregations import AggregatedValue, Aggregation
+from cognite.client.data_classes.aggregations import AggregatedValue, Aggregation
 
 
 def aggregation_load_and_dump_equals_data() -> Iterator[ParameterSet]:

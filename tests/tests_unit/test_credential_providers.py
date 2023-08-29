@@ -1,4 +1,5 @@
 import datetime
+from typing import ClassVar
 from unittest.mock import Mock, patch
 
 import pytest
@@ -23,7 +24,7 @@ class TestToken:
 
 
 class TestOauthClientCredentials:
-    DEFAULT_PROVIDER_ARGS = {
+    DEFAULT_PROVIDER_ARGS: ClassVar = {
         "client_id": "azure-client-id",
         "client_secret": "azure-client-secret",
         "token_url": "https://login.microsoftonline.com/testingabc123/oauth2/v2.0/token",
@@ -68,7 +69,7 @@ class TestOauthClientCredentials:
 
 
 class TestOAuthClientCertificate:
-    DEFAULT_PROVIDER_ARGS = {
+    DEFAULT_PROVIDER_ARGS: ClassVar = {
         "authority_url": "https://login.microsoftonline.com/xyz",
         "client_id": "azure-client-id",
         "cert_thumbprint": "XYZ123",

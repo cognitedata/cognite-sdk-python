@@ -35,7 +35,6 @@ class DebugLogFormatter(logging.Formatter):
         super().__init__(fmt, datefmt)
 
     def format(self, record: logging.LogRecord) -> str:
-
         record.message = record.getMessage()
         if self.usesTime():
             record.asctime = self.formatTime(record, self.datefmt)

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Dict
 
 from cognite.client.data_classes.annotation_types.primitives import (
     BoundingBox,
@@ -15,11 +15,11 @@ from cognite.client.data_classes.annotation_types.primitives import (
 @dataclass
 class ObjectDetection(VisionResource):
     label: str
-    confidence: Optional[float]
+    confidence: float | None
     # A valid object detection instance needs to have *exactly one* of these
-    bounding_box: Optional[BoundingBox] = None
-    polygon: Optional[Polygon] = None
-    polyline: Optional[PolyLine] = None
+    bounding_box: BoundingBox | None = None
+    polygon: Polygon | None = None
+    polyline: PolyLine | None = None
 
     def __post_init__(self) -> None:
         if isinstance(self.bounding_box, Dict):
@@ -34,7 +34,7 @@ class ObjectDetection(VisionResource):
 class TextRegion(VisionResource):
     text: str
     text_region: BoundingBox
-    confidence: Optional[float] = None
+    confidence: float | None = None
 
     def __post_init__(self) -> None:
         if isinstance(self.text_region, Dict):
@@ -46,7 +46,7 @@ class AssetLink(VisionResource):
     text: str
     text_region: BoundingBox
     asset_ref: CdfResourceRef
-    confidence: Optional[float] = None
+    confidence: float | None = None
 
     def __post_init__(self) -> None:
         if isinstance(self.text_region, Dict):

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from cognite.client._api.data_modeling.containers import ContainersAPI
 from cognite.client._api.data_modeling.data_models import DataModelsAPI
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 
 class DataModelingAPI(APIClient):
-    def __init__(self, config: ClientConfig, api_version: Optional[str], cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.containers = ContainersAPI(config, api_version, cognite_client)
         self.data_models = DataModelsAPI(config, api_version, cognite_client)
