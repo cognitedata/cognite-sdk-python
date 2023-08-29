@@ -635,9 +635,10 @@ class FilesAPI(APIClient):
         id_to_metadata = self._get_id_to_metadata_map(all_ids)
 
         if not keep_directory_structure:
-            all_file_names = [cast(str, metadata.name) for metadata in id_to_metadata.values()]
+            all_file_names = [cast(str, _metadata.name) for _id, _metadata in id_to_metadata.items() if isinstance(_id, int)]
             duplicate_names = [name for name, count in collections.Counter(all_file_names).items() if count > 1]
             if duplicate_names:
+                duplicate_names.sort()
                 warning_message = f"""There are {len(duplicate_names)} duplicate file names.
     Only the contents of one of the files with the same name will be downloaded to the same directory.
     This concerns: {duplicate_names}"""
@@ -660,6 +661,7 @@ class FilesAPI(APIClient):
 
         full_duplicate_names = [name for name, count in collections.Counter(full_file_names).items() if count > 1]
         if full_duplicate_names:
+            full_duplicate_names.sort()
             warning_message = f"""There are {len(full_duplicate_names)} duplicate file names.
     Only the contents of one of the files with the same name will be downloaded to the same directory.
     This concerns: {full_duplicate_names}"""
