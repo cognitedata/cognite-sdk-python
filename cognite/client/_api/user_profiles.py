@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Sequence
+from typing import List, Sequence, cast
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import LIST_LIMIT_DEFAULT
@@ -108,11 +108,23 @@ class UserProfilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.iam.user_profiles.retrieve_multiple(["foo", "bar"])
         """
+        if isinstance(user_identifiers, str):
+            user_identifiers = [user_identifiers]
+
         identifiers = UserIdentifierSequence.load(user_identifiers)
-        return self._retrieve_multiple(
-            list_cls=UserProfileList,
-            resource_cls=UserProfile,
-            identifiers=identifiers,
+        unsorted_profiles = cast(
+            UserProfileList,
+            self._retrieve_multiple(
+                list_cls=UserProfileList,
+                resource_cls=UserProfile,
+                identifiers=identifiers,
+            ),
+        )
+        # TODO: The API does not guarantee any ordering (against style guidelines, no timeline for fix)
+        #       so we sort manually for now:
+        return UserProfileList(
+            cast(List[UserProfile], [unsorted_profiles.get(user) for user in user_identifiers]),
+            cognite_client=unsorted_profiles._cognite_client,
         )
 
     def search(self, name: str, limit: int = 100) -> UserProfileList:
