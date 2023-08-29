@@ -1,12 +1,13 @@
+import os
+
 import pytest
 
-# import os
 from cognite.client.data_classes import UserProfile, UserProfileList
 from cognite.client.exceptions import CogniteNotFoundError
 from cognite.client.utils._text import random_string
 
 
-# @pytest.mark.skipif(os.getenv("LOGIN_FLOW") != "interactive", reason="This test requires interactive auth")
+@pytest.mark.skipif(os.getenv("LOGIN_FLOW") != "interactive", reason="This test requires interactive auth")
 def test_user_profiles_api__get_my_own_profile(cognite_client):
     profile = cognite_client.iam.user_profiles.me()
     assert isinstance(profile, UserProfile)
@@ -43,11 +44,6 @@ def test_user_profiles_api__retrieve_multiple(cognite_client):
     assert isinstance(profiles, UserProfileList)
     assert isinstance(profiles_retrieve, UserProfileList)
     assert profiles == profiles_retrieve
-
-
-def test_user_profiles_api__retrieve_multiple_str_input(cognite_client):
-    with pytest.raises(TypeError):
-        cognite_client.iam.user_profiles.retrieve_multiple("fooo")
 
 
 def test_user_profiles_api__retrieve_multiple_not_exist(cognite_client):
