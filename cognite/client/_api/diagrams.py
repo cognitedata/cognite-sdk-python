@@ -199,8 +199,8 @@ class DiagramsAPI(APIClient):
         entities = [
             entity.dump(camel_case=True) if isinstance(entity, CogniteResource) else entity for entity in entities
         ]
-        beta_parameters = dict(pattern_mode=pattern_mode, configuration=configuration)
-        beta_parameters = {k: v for k, v in beta_parameters.items() if v is not None}
+        beta_parameters = [pattern_mode, configuration]
+        any(parameter is not None for parameter in beta_parameters)
 
         if multiple_jobs:
             num_new_jobs = ceil(len(items) / self._DETECT_API_FILE_LIMIT)
@@ -215,16 +215,30 @@ class DiagramsAPI(APIClient):
                 batch = items[(self._DETECT_API_FILE_LIMIT * i) : self._DETECT_API_FILE_LIMIT * (i + 1)]
 
                 try:
-                    posted_job = self._run_job(
-                        job_path="/detect",
-                        status_path="/detect/",
-                        items=batch,
-                        entities=entities,
-                        partial_match=partial_match,
-                        search_field=search_field,
-                        min_tokens=min_tokens,
-                        job_cls=DiagramDetectResults,
-                        **beta_parameters,
+                    posted_job = (
+                        self._run_job(
+                            job_path="/detect",
+                            status_path="/detect/",
+                            items=batch,
+                            entities=entities,
+                            partial_match=partial_match,
+                            search_field=search_field,
+                            min_tokens=min_tokens,
+                            job_cls=DiagramDetectResults,
+                            pattern_mode=pattern_mode,
+                            configuration=configuration,
+                        )
+                        if beta_parameters
+                        else self._run_job(
+                            job_path="/detect",
+                            status_path="/detect/",
+                            items=batch,
+                            entities=entities,
+                            partial_match=partial_match,
+                            search_field=search_field,
+                            min_tokens=min_tokens,
+                            job_cls=DiagramDetectResults,
+                        )
                     )
                     jobs.append(posted_job)
                 except CogniteAPIError as exc:
@@ -237,16 +251,30 @@ class DiagramsAPI(APIClient):
                 )
             return res, unposted_files
 
-        return self._run_job(
-            job_path="/detect",
-            status_path="/detect/",
-            items=items,
-            entities=entities,
-            partial_match=partial_match,
-            search_field=search_field,
-            min_tokens=min_tokens,
-            job_cls=DiagramDetectResults,
-            **beta_parameters,
+        return (
+            self._run_job(
+                job_path="/detect",
+                status_path="/detect/",
+                items=items,
+                entities=entities,
+                partial_match=partial_match,
+                search_field=search_field,
+                min_tokens=min_tokens,
+                job_cls=DiagramDetectResults,
+                pattern_mode=pattern_mode,
+                configuration=configuration,
+            )
+            if beta_parameters
+            else self._run_job(
+                job_path="/detect",
+                status_path="/detect/",
+                items=items,
+                entities=entities,
+                partial_match=partial_match,
+                search_field=search_field,
+                min_tokens=min_tokens,
+                job_cls=DiagramDetectResults,
+            )
         )
 
     def get_detect_jobs(self, job_ids: list[int]) -> list[DiagramDetectResults]:
