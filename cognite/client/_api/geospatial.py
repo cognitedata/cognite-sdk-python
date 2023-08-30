@@ -9,6 +9,7 @@ from typing import Any, Iterator, Sequence, cast, overload
 from requests.exceptions import ChunkedEncodingError
 
 from cognite.client._api_client import APIClient
+from cognite.client._constants import SEARCH_LIMIT_DEFAULT
 from cognite.client.data_classes.geospatial import (
     CoordinateReferenceSystem,
     CoordinateReferenceSystemList,
@@ -581,7 +582,7 @@ class GeospatialAPI(APIClient):
         feature_type_external_id: str,
         filter: dict[str, Any] | None = None,
         properties: dict[str, Any] | None = None,
-        limit: int = 100,
+        limit: int = SEARCH_LIMIT_DEFAULT,
         order_by: Sequence[OrderSpec] | None = None,
         allow_crs_transformation: bool = False,
     ) -> FeatureList:

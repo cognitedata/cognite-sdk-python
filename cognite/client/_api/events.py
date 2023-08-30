@@ -6,7 +6,7 @@ from typing import Any, Iterator, Literal, Sequence, Tuple, Union, cast, overloa
 from typing_extensions import TypeAlias
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import LIST_LIMIT_DEFAULT, SEARCH_LIMIT_DEFAULT
 from cognite.client.data_classes import (
     AggregateResult,
     AggregateUniqueValuesResult,
@@ -577,7 +577,10 @@ class EventsAPI(APIClient):
         return self._update_multiple(list_cls=EventList, resource_cls=Event, update_cls=EventUpdate, items=item)
 
     def search(
-        self, description: str | None = None, filter: EventFilter | dict | None = None, limit: int = 100
+        self,
+        description: str | None = None,
+        filter: EventFilter | dict | None = None,
+        limit: int = SEARCH_LIMIT_DEFAULT,
     ) -> EventList:
         """`Search for events <https://developer.cognite.com/api#tag/Events/operation/searchEvents>`_
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.

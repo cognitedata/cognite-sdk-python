@@ -7,7 +7,7 @@ from typing_extensions import TypeAlias
 from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.datapoints_subscriptions import DatapointsSubscriptionAPI
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import LIST_LIMIT_DEFAULT, SEARCH_LIMIT_DEFAULT
 from cognite.client.data_classes import (
     TimeSeries,
     TimeSeriesAggregate,
@@ -630,7 +630,7 @@ class TimeSeriesAPI(APIClient):
         description: str | None = None,
         query: str | None = None,
         filter: TimeSeriesFilter | dict | None = None,
-        limit: int = 100,
+        limit: int = SEARCH_LIMIT_DEFAULT,
     ) -> TimeSeriesList:
         """`Search for time series. <https://developer.cognite.com/api#tag/Time-series/operation/searchTimeSeries>`_
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.

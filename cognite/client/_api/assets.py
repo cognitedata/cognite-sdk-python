@@ -30,7 +30,7 @@ from typing_extensions import TypeAlias
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import LIST_LIMIT_DEFAULT, SEARCH_LIMIT_DEFAULT
 from cognite.client.data_classes import (
     Asset,
     AssetAggregate,
@@ -931,7 +931,7 @@ class AssetsAPI(APIClient):
         description: str | None = None,
         query: str | None = None,
         filter: AssetFilter | dict | None = None,
-        limit: int = 100,
+        limit: int = SEARCH_LIMIT_DEFAULT,
     ) -> AssetList:
         """`Search for assets <https://developer.cognite.com/api#tag/Assets/operation/searchAssets>`_
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.

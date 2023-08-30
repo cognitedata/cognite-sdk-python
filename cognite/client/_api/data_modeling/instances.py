@@ -5,7 +5,7 @@ from collections.abc import Iterable
 from typing import TYPE_CHECKING, Any, Iterator, List, Literal, Sequence, Union, cast, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import LIST_LIMIT_DEFAULT, SEARCH_LIMIT_DEFAULT
 from cognite.client.data_classes import filters
 from cognite.client.data_classes._base import CogniteResourceList
 from cognite.client.data_classes.aggregations import (
@@ -532,7 +532,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node"] = "node",
         properties: list[str] | None = None,
         filter: Filter | dict | None = None,
-        limit: int = 100,
+        limit: int = SEARCH_LIMIT_DEFAULT,
     ) -> NodeList:
         ...
 
@@ -544,7 +544,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["edge"],
         properties: list[str] | None = None,
         filter: Filter | dict | None = None,
-        limit: int = 100,
+        limit: int = SEARCH_LIMIT_DEFAULT,
     ) -> EdgeList:
         ...
 
@@ -555,7 +555,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node", "edge"] = "node",
         properties: list[str] | None = None,
         filter: Filter | dict | None = None,
-        limit: int = 100,
+        limit: int = SEARCH_LIMIT_DEFAULT,
     ) -> NodeList | EdgeList:
         """`Search instances <https://developer.cognite.com/api/v1/#tag/Instances/operation/searchInstances>`_
 
@@ -616,7 +616,7 @@ class InstancesAPI(APIClient):
         query: str | None = None,
         properties: Sequence[str] | None = None,
         filter: Filter | None = None,
-        limit: int = 100,
+        limit: int = SEARCH_LIMIT_DEFAULT,
     ) -> InstanceAggregationResultList:
         """`Aggregate data across nodes/edges <https://developer.cognite.com/api/v1/#tag/Instances/operation/aggregateInstances>`_
 
@@ -675,7 +675,7 @@ class InstancesAPI(APIClient):
         query: str | None = None,
         properties: Sequence[str] | None = None,
         filter: Filter | None = None,
-        limit: int = 100,
+        limit: int = SEARCH_LIMIT_DEFAULT,
     ) -> HistogramValue:
         ...
 
@@ -688,7 +688,7 @@ class InstancesAPI(APIClient):
         query: str | None = None,
         properties: Sequence[str] | None = None,
         filter: Filter | None = None,
-        limit: int = 100,
+        limit: int = SEARCH_LIMIT_DEFAULT,
     ) -> list[HistogramValue]:
         ...
 
@@ -700,7 +700,7 @@ class InstancesAPI(APIClient):
         query: str | None = None,
         properties: Sequence[str] | None = None,
         filter: Filter | None = None,
-        limit: int = 100,
+        limit: int = SEARCH_LIMIT_DEFAULT,
     ) -> HistogramValue | list[HistogramValue]:
         """`Produces histograms for nodes/edges <https://developer.cognite.com/api/v1/#tag/Instances/operation/aggregateInstances>`_
 

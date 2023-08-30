@@ -5,6 +5,7 @@ import sys
 _RUNNING_IN_BROWSER = sys.platform == "emscripten" and "pyodide" in sys.modules
 
 LIST_LIMIT_DEFAULT = 25
+SEARCH_LIMIT_DEFAULT = 100
 # Max JavaScript-safe integer 2^53 - 1
 MAX_VALID_INTERNAL_ID = 9007199254740991
 DATA_MODELING_LIST_LIMIT_DEFAULT = 10

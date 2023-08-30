@@ -18,7 +18,7 @@ from typing import (
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client._constants import _RUNNING_IN_BROWSER, LIST_LIMIT_DEFAULT
+from cognite.client._constants import _RUNNING_IN_BROWSER, LIST_LIMIT_DEFAULT, SEARCH_LIMIT_DEFAULT
 from cognite.client.data_classes import (
     FileAggregate,
     FileMetadata,
@@ -335,7 +335,10 @@ class FilesAPI(APIClient):
         )
 
     def search(
-        self, name: str | None = None, filter: FileMetadataFilter | dict | None = None, limit: int = 100
+        self,
+        name: str | None = None,
+        filter: FileMetadataFilter | dict | None = None,
+        limit: int = SEARCH_LIMIT_DEFAULT,
     ) -> FileMetadataList:
         """`Search for files. <https://developer.cognite.com/api#tag/Files/operation/searchFiles>`_
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
