@@ -405,13 +405,27 @@ class TestFunctionsAPI:
             ("function_code", "./handler.py", None),
             ("bad_function_code", "handler.py", FileNotFoundError),
             ("bad_function_code2", "handler.py", TypeError),
+        ],
+    )
+    def test_validate_folder(self, function_folder, function_path, exception):
+        folder = os.path.join(os.path.dirname(__file__), "function_test_resources", function_folder)
+        if exception is None:
+            validate_function_folder(folder, function_path)
+        else:
+            with pytest.raises(exception):
+                validate_function_folder(folder, function_path)
+
+    @pytest.mark.skip(reason="We no longer import the function code, so unable to verify imports")
+    @pytest.mark.parametrize(
+        "function_folder, function_path, exception",
+        [
             ("./good_absolute_import/", "my_functions/handler.py", None),
             ("bad_absolute_import", "extra_root_folder/my_functions/handler.py", ModuleNotFoundError),
             ("relative_imports", "my_functions/good_relative_import.py", None),
             ("relative_imports", "bad_relative_import.py", ImportError),
         ],
     )
-    def test_validate_folder(self, function_folder, function_path, exception):
+    def test_imports_in_validate_folder(self, function_folder, function_path, exception):
         folder = os.path.join(os.path.dirname(__file__), "function_test_resources", function_folder)
         if exception is None:
             validate_function_folder(folder, function_path)
