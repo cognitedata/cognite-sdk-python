@@ -9,7 +9,7 @@ from inspect import getdoc, getsource
 from numbers import Number
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING, Any, Callable, Sequence, cast
+from typing import TYPE_CHECKING, Any, Callable, Sequence, cast, Optional
 from zipfile import ZipFile
 
 from cognite.client import utils
@@ -523,8 +523,8 @@ def convert_file_path_to_module_path(file_path: str) -> str:
     return ".".join(Path(file_path).with_suffix("").parts)
 
 
-def _get_handle_function_node(filename: str) -> ast.FunctionDef:
-    with open(filename) as f:
+def _get_handle_function_node(handler_path: Path) -> Optional[ast.FunctionDef]:
+    with handler_path.open() as f:
         node = ast.parse(f.read())
     for item in ast.walk(node):
         if isinstance(item, ast.FunctionDef) and item.name == "handle":
