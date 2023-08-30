@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import os
+from io import BufferedReader
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -16,7 +17,7 @@ from typing import (
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import _RUNNING_IN_BROWSER, LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import (
     FileAggregate,
     FileMetadata,
@@ -484,7 +485,11 @@ class FilesAPI(APIClient):
         raise ValueError(f"The path '{path}' does not exist")
 
     def _upload_file_from_path(self, file: FileMetadata, file_path: str, overwrite: bool) -> FileMetadata:
+        fh: bytes | BufferedReader
         with open(file_path, "rb") as fh:
+            if _RUNNING_IN_BROWSER:
+                # Pyodide doesn't handle file handles correctly, so we need to read everything into memory:
+                fh = fh.read()
             file_metadata = self.upload_bytes(fh, overwrite=overwrite, **file.dump())
         return file_metadata
 
