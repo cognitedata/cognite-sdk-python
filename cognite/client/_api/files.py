@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import os
+import re
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -29,6 +30,7 @@ from cognite.client.data_classes import (
     LabelFilter,
     TimestampRange,
 )
+from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 
@@ -563,7 +565,12 @@ class FilesAPI(APIClient):
         upload_response = self._http_client_with_retry.request(
             "PUT", upload_url, data=content, timeout=self._config.file_transfer_timeout, headers=headers
         )
-        upload_response.raise_for_status()
+        if not upload_response.ok:
+            request_id = r.group(1) if (r := re.search(r"\nRequestId:*(.+?)\n", upload_response.text)) else None
+            raise CogniteAPIError(
+                message=upload_response.text, code=upload_response.status_code, x_request_id=request_id
+            )
+
         return FileMetadata._load(returned_file_metadata)
 
     def retrieve_download_urls(
