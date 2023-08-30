@@ -77,23 +77,23 @@ class FunctionsAPI(APIClient):
         self._LIST_LIMIT_CEILING = 10_000
 
     def create(
-            self,
-            name: str,
-            folder: str | None = None,
-            file_id: int | None = None,
-            function_path: str = HANDLER_FILE_NAME,
-            function_handle: Callable | None = None,
-            external_id: str | None = None,
-            description: str | None = "",
-            owner: str | None = "",
-            secrets: dict | None = None,
-            env_vars: dict | None = None,
-            cpu: Number | None = None,
-            memory: Number | None = None,
-            runtime: str | None = None,
-            metadata: dict | None = None,
-            index_url: str | None = None,
-            extra_index_urls: list[str] | None = None,
+        self,
+        name: str,
+        folder: str | None = None,
+        file_id: int | None = None,
+        function_path: str = HANDLER_FILE_NAME,
+        function_handle: Callable | None = None,
+        external_id: str | None = None,
+        description: str | None = "",
+        owner: str | None = "",
+        secrets: dict | None = None,
+        env_vars: dict | None = None,
+        cpu: Number | None = None,
+        memory: Number | None = None,
+        runtime: str | None = None,
+        metadata: dict | None = None,
+        index_url: str | None = None,
+        extra_index_urls: list[str] | None = None,
     ) -> Function:
         '''`When creating a function, <https://developer.cognite.com/api#tag/Functions/operation/postFunctions>`_
         the source code can be specified in one of three ways:
@@ -235,14 +235,14 @@ class FunctionsAPI(APIClient):
         self._delete_multiple(identifiers=IdentifierSequence.load(ids=id, external_ids=external_id), wrap_ids=True)
 
     def list(
-            self,
-            name: str | None = None,
-            owner: str | None = None,
-            file_id: int | None = None,
-            status: str | None = None,
-            external_id_prefix: str | None = None,
-            created_time: dict[str, int] | TimestampRange | None = None,
-            limit: int | None = LIST_LIMIT_DEFAULT,
+        self,
+        name: str | None = None,
+        owner: str | None = None,
+        file_id: int | None = None,
+        status: str | None = None,
+        external_id_prefix: str | None = None,
+        created_time: dict[str, int] | TimestampRange | None = None,
+        limit: int | None = LIST_LIMIT_DEFAULT,
     ) -> FunctionList:
         """`List all functions. <https://developer.cognite.com/api#tag/Functions/operation/listFunctions>`_
 
@@ -309,7 +309,7 @@ class FunctionsAPI(APIClient):
         return self._retrieve_multiple(identifiers=identifiers, resource_cls=Function, list_cls=FunctionList)
 
     def retrieve_multiple(
-            self, ids: Sequence[int] | None = None, external_ids: Sequence[str] | None = None
+        self, ids: Sequence[int] | None = None, external_ids: Sequence[str] | None = None
     ) -> FunctionList | Function | None:
         """`Retrieve multiple functions by id. <https://developer.cognite.com/api#tag/Functions/operation/byIdsFunctions>`_
 
@@ -343,11 +343,11 @@ class FunctionsAPI(APIClient):
         )
 
     def call(
-            self,
-            id: int | None = None,
-            external_id: str | None = None,
-            data: dict | None = None,
-            wait: bool = True,
+        self,
+        id: int | None = None,
+        external_id: str | None = None,
+        data: dict | None = None,
+        wait: bool = True,
     ) -> FunctionCall:
         """`Call a function by its ID or external ID. <https://developer.cognite.com/api#tag/Functions/operation/postFunctionsCall>`_.
 
@@ -459,7 +459,7 @@ class FunctionsAPI(APIClient):
 
     @staticmethod
     def _assert_exactly_one_of_folder_or_file_id_or_function_handle(
-            folder: str | None, file_id: int | None, function_handle: Callable[..., Any] | None
+        folder: str | None, file_id: int | None, function_handle: Callable[..., Any] | None
     ) -> None:
         source_code_options = {"folder": folder, "file_id": file_id, "function_handle": function_handle}
         given_source_code_options = [key for key in source_code_options.keys() if source_code_options[key]]
@@ -508,8 +508,8 @@ class FunctionsAPI(APIClient):
 
 
 def _create_session_and_return_nonce(
-        client: CogniteClient,
-        client_credentials: dict | ClientCredentials | None = None,
+    client: CogniteClient,
+    client_credentials: dict | ClientCredentials | None = None,
 ) -> str | None:
     if client_credentials is None:
         if isinstance(client._config.credentials, OAuthClientCertificate):
@@ -524,7 +524,7 @@ def convert_file_path_to_module_path(file_path: str) -> str:
 
 
 def _get_handle_function_node(filename: str) -> ast.FunctionDef:
-    with open(filename, "r") as f:
+    with open(filename) as f:
         node = ast.parse(f.read())
     for item in ast.walk(node):
         if isinstance(item, ast.FunctionDef) and item.name == "handle":
@@ -566,13 +566,11 @@ def _validate_function_handle(function_handle: Callable[..., Any]) -> None:
     if function_name != "handle":
         raise TypeError(f"Function is named '{function_name}' but must be named 'handle'.")
 
-    function_args = set(function_handle.__code__.co_varnames[:function_handle.__code__.co_argcount])
+    function_args = set(function_handle.__code__.co_varnames[: function_handle.__code__.co_argcount])
     allowed_args = {"data", "client", "secrets", "function_call_info"}
 
     if not function_args.issubset(allowed_args):
-        raise TypeError(
-            f"Arguments {function_args} to the function must be a subset of {allowed_args}."
-        )
+        raise TypeError(f"Arguments {function_args} to the function must be a subset of {allowed_args}.")
 
 
 def _extract_requirements_from_file(file_name: str) -> list[str]:
@@ -672,14 +670,14 @@ class FunctionCallsAPI(APIClient):
     _RESOURCE_PATH_LOGS = "/functions/{}/calls/{}/logs"
 
     def list(
-            self,
-            function_id: int | None = None,
-            function_external_id: str | None = None,
-            status: str | None = None,
-            schedule_id: int | None = None,
-            start_time: dict[str, int] | None = None,
-            end_time: dict[str, int] | None = None,
-            limit: int | None = LIST_LIMIT_DEFAULT,
+        self,
+        function_id: int | None = None,
+        function_external_id: str | None = None,
+        status: str | None = None,
+        schedule_id: int | None = None,
+        start_time: dict[str, int] | None = None,
+        end_time: dict[str, int] | None = None,
+        limit: int | None = LIST_LIMIT_DEFAULT,
     ) -> FunctionCallList:
         """`List all calls associated with a specific function id. <https://developer.cognite.com/api#tag/Function-calls/operation/listFunctionCalls>`_ Either function_id or function_external_id must be specified.
 
@@ -727,7 +725,7 @@ class FunctionCallsAPI(APIClient):
         )
 
     def retrieve(
-            self, call_id: int, function_id: int | None = None, function_external_id: str | None = None
+        self, call_id: int, function_id: int | None = None, function_external_id: str | None = None
     ) -> FunctionCallList | FunctionCall | None:
         """`Retrieve a single function call by id. <https://developer.cognite.com/api#tag/Function-calls/operation/byIdsFunctionCalls>`_
 
@@ -769,7 +767,7 @@ class FunctionCallsAPI(APIClient):
         )
 
     def get_response(
-            self, call_id: int, function_id: int | None = None, function_external_id: str | None = None
+        self, call_id: int, function_id: int | None = None, function_external_id: str | None = None
     ) -> dict | None:
         """`Retrieve the response from a function call. <https://developer.cognite.com/api#tag/Function-calls/operation/getFunctionCallResponse>`_
 
@@ -804,7 +802,7 @@ class FunctionCallsAPI(APIClient):
         return self._get(resource_path).json().get("response")
 
     def get_logs(
-            self, call_id: int, function_id: int | None = None, function_external_id: str | None = None
+        self, call_id: int, function_id: int | None = None, function_external_id: str | None = None
     ) -> FunctionCallLog:
         """`Retrieve logs for function call. <https://developer.cognite.com/api#tag/Function-calls/operation/getFunctionCalls>`_
 
@@ -869,13 +867,13 @@ class FunctionSchedulesAPI(APIClient):
         )
 
     def list(
-            self,
-            name: str | None = None,
-            function_id: int | None = None,
-            function_external_id: str | None = None,
-            created_time: dict[str, int] | TimestampRange | None = None,
-            cron_expression: str | None = None,
-            limit: int | None = LIST_LIMIT_DEFAULT,
+        self,
+        name: str | None = None,
+        function_id: int | None = None,
+        function_external_id: str | None = None,
+        created_time: dict[str, int] | TimestampRange | None = None,
+        cron_expression: str | None = None,
+        limit: int | None = LIST_LIMIT_DEFAULT,
     ) -> FunctionSchedulesList:
         """`List all schedules associated with a specific project. <https://developer.cognite.com/api#tag/Function-schedules/operation/listFunctionSchedules>`_
 
@@ -928,14 +926,14 @@ class FunctionSchedulesAPI(APIClient):
 
     # TODO: Major version 7, remove 'function_external_id' which only worked when using API-keys.
     def create(
-            self,
-            name: str,
-            cron_expression: str,
-            function_id: int | None = None,
-            function_external_id: str | None = None,
-            client_credentials: dict | ClientCredentials | None = None,
-            description: str = "",
-            data: dict | None = None,
+        self,
+        name: str,
+        cron_expression: str,
+        function_id: int | None = None,
+        function_external_id: str | None = None,
+        client_credentials: dict | ClientCredentials | None = None,
+        description: str = "",
+        data: dict | None = None,
     ) -> FunctionSchedule:
         """`Create a schedule associated with a specific project. <https://developer.cognite.com/api#tag/Function-schedules/operation/postFunctionSchedules>`_
 
