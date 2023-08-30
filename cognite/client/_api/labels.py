@@ -60,7 +60,7 @@ class LabelsAPI(APIClient):
             external_id_prefix (str | None): filter label definitions with external ids starting with the prefix specified
             data_set_ids (int | Sequence[int] | None): return only labels in the data sets with this id / these ids.
             data_set_external_ids (str | Sequence[str] | None): return only labels in the data sets with this external id / these external ids.
-            limit (int | None): Maximum number of label definitions to return.
+            limit (int | None): Maximum number of label definitions to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             LabelDefinitionList: List of requested Labels

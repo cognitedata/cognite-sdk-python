@@ -103,7 +103,7 @@ class SecurityCategoriesAPI(APIClient):
         """`List security categories. <https://developer.cognite.com/api#tag/Security-categories/operation/getSecurityCategories>`_
 
         Args:
-            limit (int | None): Max number of security categories to return. Defaults to 25.
+            limit (int | None): Max number of security categories to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             SecurityCategoryList: List of security categories
