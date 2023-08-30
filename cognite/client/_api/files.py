@@ -17,7 +17,7 @@ from typing import (
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import _RUNNING_IN_BROWSER, LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import (
     FileAggregate,
     FileMetadata,
@@ -485,8 +485,6 @@ class FilesAPI(APIClient):
         raise ValueError(f"The path '{path}' does not exist")
 
     def _upload_file_from_path(self, file: FileMetadata, file_path: str, overwrite: bool) -> FileMetadata:
-        from cognite.client import _RUNNING_IN_BROWSER
-
         fh: bytes | BufferedReader
         with open(file_path, "rb") as fh:
             if _RUNNING_IN_BROWSER:
