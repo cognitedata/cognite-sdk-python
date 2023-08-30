@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.15.3] - 2023-08-29
+### Fixed
+- Bugfix for `FilesAPI.upload` and `FilesAPI.upload_bytes` not raising an error on file contents upload failure. Now `HTTPError` is raised based on upload response.
+
 ## [6.15.2] - 2023-08-29
 ### Improved
 - Improved error message for `CogniteMissingClientError`. Now includes the type of object missing the `CogniteClient` reference.

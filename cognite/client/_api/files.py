@@ -560,9 +560,10 @@ class FilesAPI(APIClient):
         returned_file_metadata = res.json()
         upload_url = returned_file_metadata["uploadUrl"]
         headers = {"Content-Type": file_metadata.mime_type}
-        self._http_client_with_retry.request(
+        upload_response = self._http_client_with_retry.request(
             "PUT", upload_url, data=content, timeout=self._config.file_transfer_timeout, headers=headers
         )
+        upload_response.raise_for_status()
         return FileMetadata._load(returned_file_metadata)
 
     def retrieve_download_urls(

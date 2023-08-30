@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "cognite-sdk"
 
-version = "6.15.2"
+version = "6.15.3"
 
 description = "Cognite Python SDK"
 readme = "README.md"
