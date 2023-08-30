@@ -503,7 +503,7 @@ class GeospatialAPI(APIClient):
         feature_type_external_id: str,
         filter: dict[str, Any] | None = None,
         properties: dict[str, Any] | None = None,
-        limit: int = 100,
+        limit: int | None = 100,
         allow_crs_transformation: bool = False,
     ) -> FeatureList:
         """`List features`
@@ -515,7 +515,7 @@ class GeospatialAPI(APIClient):
             feature_type_external_id (str): the feature type to list features for
             filter (dict[str, Any] | None): the list filter
             properties (dict[str, Any] | None): the output property selection
-            limit (int): Maximum number of features to return. Defaults to 25. Set to -1, float("inf") or None to return all features.
+            limit (int | None): Maximum number of features to return. Defaults to 25. Set to -1, float("inf") or None to return all features.
             allow_crs_transformation (bool): If true, then input geometries if existing in the filter will be transformed into the Coordinate Reference System defined in the feature type specification. When it is false, then requests with geometries in Coordinate Reference System different from the ones defined in the feature type will result in CogniteAPIError exception.
 
         Returns:
@@ -589,15 +589,15 @@ class GeospatialAPI(APIClient):
         <https://developer.cognite.com/api#tag/Geospatial/operation/searchFeatures>
 
         This method allows to order the result by one or more of the properties of the feature type.
-        However, the number of items returned is  limited to 1000 and there is no support for cursors yet.
+        However, the number of items returned is limited to 1000 and there is no support for cursors yet.
         If you need to return more than 1000 items, use the `stream_features(...)` method instead.
 
         Args:
-            feature_type_external_id (str): the feature type to search for
-            filter (dict[str, Any] | None): the search filter
-            properties (dict[str, Any] | None): the output property selection
-            limit (int): maximum number of results
-            order_by (Sequence[OrderSpec] | None): the order specification
+            feature_type_external_id (str): The feature type to search for
+            filter (dict[str, Any] | None): The search filter
+            properties (dict[str, Any] | None): The output property selection
+            limit (int): Maximum number of results
+            order_by (Sequence[OrderSpec] | None): The order specification
             allow_crs_transformation (bool): If true, then input geometries will be transformed into the Coordinate Reference System defined in the feature type specification. When it is false, then requests with geometries in Coordinate Reference System different from the ones defined in the feature type will result in CogniteAPIError exception.
 
         Returns:

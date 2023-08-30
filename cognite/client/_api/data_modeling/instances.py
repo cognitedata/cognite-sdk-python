@@ -532,7 +532,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node"] = "node",
         properties: list[str] | None = None,
         filter: Filter | dict | None = None,
-        limit: int = 1000,
+        limit: int = 100,
     ) -> NodeList:
         ...
 
@@ -544,7 +544,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["edge"],
         properties: list[str] | None = None,
         filter: Filter | dict | None = None,
-        limit: int = 1000,
+        limit: int = 100,
     ) -> EdgeList:
         ...
 
@@ -555,7 +555,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node", "edge"] = "node",
         properties: list[str] | None = None,
         filter: Filter | dict | None = None,
-        limit: int = 1000,
+        limit: int = 100,
     ) -> NodeList | EdgeList:
         """`Search instances <https://developer.cognite.com/api/v1/#tag/Instances/operation/searchInstances>`_
 
@@ -565,7 +565,7 @@ class InstancesAPI(APIClient):
             instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
             properties (list[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
             filter (Filter | dict | None): Advanced filtering of instances.
-            limit (int): Maximum number of instances to return. Defaults to 1000.
+            limit (int): Maximum number of instances to return. Defaults to 100.
 
         Returns:
             NodeList | EdgeList: Search result with matching nodes or edges.
@@ -616,7 +616,7 @@ class InstancesAPI(APIClient):
         query: str | None = None,
         properties: Sequence[str] | None = None,
         filter: Filter | None = None,
-        limit: int = 1000,
+        limit: int = 100,
     ) -> InstanceAggregationResultList:
         """`Aggregate data across nodes/edges <https://developer.cognite.com/api/v1/#tag/Instances/operation/aggregateInstances>`_
 
@@ -628,7 +628,7 @@ class InstancesAPI(APIClient):
             query (str | None): Query string that will be parsed and used for search.
             properties (Sequence[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
             filter (Filter | None): Advanced filtering of instances.
-            limit (int): Maximum number of instances to return. Defaults to 1000.
+            limit (int): Maximum number of instances to return. Defaults to 100.
 
         Returns:
             InstanceAggregationResultList: Node or edge aggregation results.
@@ -675,7 +675,7 @@ class InstancesAPI(APIClient):
         query: str | None = None,
         properties: Sequence[str] | None = None,
         filter: Filter | None = None,
-        limit: int = 1000,
+        limit: int = 100,
     ) -> HistogramValue:
         ...
 
@@ -688,7 +688,7 @@ class InstancesAPI(APIClient):
         query: str | None = None,
         properties: Sequence[str] | None = None,
         filter: Filter | None = None,
-        limit: int = 1000,
+        limit: int = 100,
     ) -> list[HistogramValue]:
         ...
 
@@ -700,7 +700,7 @@ class InstancesAPI(APIClient):
         query: str | None = None,
         properties: Sequence[str] | None = None,
         filter: Filter | None = None,
-        limit: int = 1000,
+        limit: int = 100,
     ) -> HistogramValue | list[HistogramValue]:
         """`Produces histograms for nodes/edges <https://developer.cognite.com/api/v1/#tag/Instances/operation/aggregateInstances>`_
 
@@ -711,7 +711,7 @@ class InstancesAPI(APIClient):
             query (str | None): Query string that will be parsed and used for search.
             properties (Sequence[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
             filter (Filter | None): Advanced filtering of instances.
-            limit (int): Maximum number of instances to return. Defaults to 1000.
+            limit (int): Maximum number of instances to return. Defaults to 100.
 
         Returns:
             HistogramValue | list[HistogramValue]: Node or edge aggregation results.
@@ -890,7 +890,7 @@ class InstancesAPI(APIClient):
             instance_type (Literal["node", "edge"]): Whether to query for nodes or edges.
             include_typing (bool): Whether to return property type information as part of the result.
             sources (ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None): Views to retrieve properties from.
-            limit (int | None): Maximum number of instances to return. Defaults to 1000. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of instances to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
             sort (Sequence[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
             filter (Filter | dict | None): Advanced filtering of instances.
 
