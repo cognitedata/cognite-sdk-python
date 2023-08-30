@@ -5,7 +5,7 @@ from collections.abc import Iterable
 from typing import TYPE_CHECKING, Any, Iterator, List, Literal, Sequence, Union, cast, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import INSTANCES_LIST_LIMIT_DEFAULT
+from cognite.client._constants import LIST_LIMIT_DEFAULT
 from cognite.client.data_classes import filters
 from cognite.client.data_classes._base import CogniteResourceList
 from cognite.client.data_classes.aggregations import (
@@ -857,7 +857,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node"] = "node",
         include_typing: bool = False,
         sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None = None,
-        limit: int | None = INSTANCES_LIST_LIMIT_DEFAULT,
+        limit: int | None = LIST_LIMIT_DEFAULT,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> NodeList:
@@ -869,7 +869,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["edge"],
         include_typing: bool = False,
         sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None = None,
-        limit: int | None = INSTANCES_LIST_LIMIT_DEFAULT,
+        limit: int | None = LIST_LIMIT_DEFAULT,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> EdgeList:
@@ -880,7 +880,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node", "edge"] = "node",
         include_typing: bool = False,
         sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None = None,
-        limit: int | None = INSTANCES_LIST_LIMIT_DEFAULT,
+        limit: int | None = LIST_LIMIT_DEFAULT,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> NodeList | EdgeList:
