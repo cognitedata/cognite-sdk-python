@@ -150,9 +150,9 @@ class IdentifierSequenceCore(Generic[T_Identifier], ABC):
         self.assert_singleton()
         return cast(SingletonIdentifierSequence, self)
 
-    def chunked(self, chunk_size: int) -> list[IdentifierSequence]:
+    def chunked(self: T_IdentifierSequenceCore, chunk_size: int) -> list[T_IdentifierSequenceCore]:
         return [
-            IdentifierSequence(chunk, is_singleton=self.is_singleton())
+            type(self)(chunk, is_singleton=self.is_singleton())
             for chunk in split_into_chunks(self._identifiers, chunk_size)
         ]
 
@@ -176,6 +176,9 @@ class IdentifierSequenceCore(Generic[T_Identifier], ABC):
         if "space" in identifier:
             return identifier["space"]
         raise ValueError(f"{identifier} does not contain 'id' or 'externalId' or 'space'")
+
+
+T_IdentifierSequenceCore = TypeVar("T_IdentifierSequenceCore", bound=IdentifierSequenceCore)
 
 
 class IdentifierSequence(IdentifierSequenceCore[Identifier]):
@@ -242,28 +245,17 @@ class DataModelingIdentifierSequence(IdentifierSequenceCore[DataModelingIdentifi
 
 
 class UserIdentifierSequence(IdentifierSequenceCore[UserIdentifier]):
+    # TODO: Inferred type from inherited methods 'as_dicts' and 'as_primitives' wrongly include 'int'
     @classmethod
     def load(cls, user_identifiers: str | Sequence[str]) -> UserIdentifierSequence:
         if isinstance(user_identifiers, str):
-            return cls(identifiers=[UserIdentifier(user_identifiers)], is_singleton=True)
+            return cls([UserIdentifier(user_identifiers)], is_singleton=True)
 
         elif isinstance(user_identifiers, Sequence):
-            return cls(identifiers=list(map(UserIdentifier, map(str, user_identifiers))), is_singleton=False)
+            return cls(list(map(UserIdentifier, map(str, user_identifiers))), is_singleton=False)
 
         raise TypeError(f"user_identifiers must be of type str or Sequence[str]. Found {type(user_identifiers)}")
-
-    def chunked(self, chunk_size: int) -> list[UserIdentifierSequence]:  # type: ignore [override]
-        return [
-            UserIdentifierSequence(chunk, is_singleton=self.is_singleton())
-            for chunk in split_into_chunks(self._identifiers, chunk_size)
-        ]
 
     def assert_singleton(self) -> None:
         if not self.is_singleton():
             raise ValueError("Exactly one user identifier (string) must be specified")
-
-    def as_dicts(self) -> list[dict[str, str]]:  # type: ignore [override]
-        return [identifier.as_dict() for identifier in self._identifiers]
-
-    def as_primitives(self) -> list[str]:  # type: ignore [override]
-        return [identifier.as_primitive() for identifier in self._identifiers]
