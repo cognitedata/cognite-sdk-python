@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Sequence, cast
+from typing import List, MutableSequence, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import LIST_LIMIT_DEFAULT
@@ -32,100 +32,53 @@ class UserProfilesAPI(APIClient):
         """
         return UserProfile._load(self._get(self._RESOURCE_PATH + "/me").json())
 
-    def list(self, limit: int | None = LIST_LIMIT_DEFAULT, initial_cursor: str | None = None) -> UserProfileList:
-        """`List user profiles <https://developer.cognite.com/api#tag/User-profiles/paths/~1profiles/get>`_
-
-        List all user profiles in the current CDF project. The results are ordered alphabetically by name.
-
-        Args:
-            limit (int | None): Maximum number of user profiles to return. Defaults to 25. Set to -1, float("inf") or None to return all.
-            initial_cursor (str | None): Start fetching from a specific cursor.
-
-        Returns:
-            UserProfileList: List of user profiles.
-
-        Examples:
-
-            List all user profiles:
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.iam.user_profiles.list(limit=None)
-        """
-        return self._list(
-            "GET",
-            list_cls=UserProfileList,
-            resource_cls=UserProfile,
-            limit=limit,
-            initial_cursor=initial_cursor,
-        )
-
+    @overload
     def retrieve(self, user_identifier: str) -> UserProfile | None:
-        """`Retrieve a single user profile by user identifier. <https://developer.cognite.com/api#tag/User-profiles/paths/~1profiles~1byids/post>`_
+        ...
 
-        Retrieves one user profile as indexed by the user identifier in the same CDF project.
+    @overload  # Note, can't use Sequence[str], as str itself matches this requirement...
+    def retrieve(self, user_identifier: MutableSequence[str] | tuple[str, ...]) -> UserProfileList:
+        ...
 
-        Args:
-            user_identifier (str): The user identifier of the user profile to retrieve.
-
-        Returns:
-            UserProfile | None: The requested user profile or None if it doesn't exist.
-
-        Examples:
-
-            Get user profile by user identifier:
-
-                >>> from cognite.client import CogniteClient
-                >>> c = CogniteClient()
-                >>> res = c.iam.user_profiles.retrieve("foo")
-        """
-        identifier = UserIdentifierSequence.load(user_identifier).as_singleton()
-        return self._retrieve_multiple(
-            list_cls=UserProfileList,
-            resource_cls=UserProfile,
-            identifiers=identifier,
-        )
-
-    def retrieve_multiple(self, user_identifiers: Sequence[str]) -> UserProfileList:
-        """`Retrieve multiple user profiles by user identifier. <https://developer.cognite.com/api#tag/User-profiles/paths/~1profiles~1byids/post>`_
+    def retrieve(
+        self, user_identifier: str | MutableSequence[str] | tuple[str, ...]
+    ) -> UserProfile | UserProfileList | None:
+        """`Retrieve user profiles by user identifier. <https://developer.cognite.com/api#tag/User-profiles/paths/~1profiles~1byids/post>`_
 
         Retrieves one or more user profiles indexed by the user identifier in the same CDF project.
 
         Args:
-            user_identifiers (Sequence[str]): The list of user identifiers to retrieve.
+            user_identifier (str | MutableSequence[str] | tuple[str, ...]): The single user identifier (or sequence of) to retrieve profile(s) for.
 
         Returns:
-            UserProfileList: The requested user profiles.
+            UserProfile | UserProfileList | None: UserProfileList if a sequence of user identifier were requested, else UserProfile. If a single user identifier is requested and it is not found, None is returned.
 
         Raises:
-            CogniteNotFoundError: One or more user identifiers does not exist.
+            CogniteNotFoundError: A sequences of user identifiers were requested, but one or more does not exist.
 
         Examples:
 
-            Get user profiles by user identifier:
+            Get a single user profile:
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.iam.user_profiles.retrieve_multiple(["foo", "bar"])
-        """
-        if isinstance(user_identifiers, str):
-            user_identifiers = [user_identifiers]
+                >>> res = c.iam.user_profiles.retrieve("foo")
 
-        identifiers = UserIdentifierSequence.load(user_identifiers)
-        unsorted_profiles = cast(
-            UserProfileList,
-            self._retrieve_multiple(
-                list_cls=UserProfileList,
-                resource_cls=UserProfile,
-                identifiers=identifiers,
-            ),
+            Get multiple user profiles:
+
+                >>> res = c.iam.user_profiles.retrieve(["bar", "baz"])
+        """
+        identifiers = UserIdentifierSequence.load(user_identifier)
+        profiles = self._retrieve_multiple(
+            list_cls=UserProfileList,
+            resource_cls=UserProfile,
+            identifiers=identifiers,
         )
+        if identifiers.is_singleton():
+            return profiles
         # TODO: The API does not guarantee any ordering (against style guidelines, no timeline for fix)
         #       so we sort manually for now:
-        return UserProfileList(
-            cast(List[UserProfile], [unsorted_profiles.get(user) for user in user_identifiers]),
-            cognite_client=unsorted_profiles._cognite_client,
-        )
+        return UserProfileList(cast(List[UserProfile], [profiles.get(user) for user in user_identifier]))
 
     def search(self, name: str, limit: int = 100) -> UserProfileList:
         """`Search for user profiles <https://developer.cognite.com/api#tag/User-profiles/paths/~1profiles~1search/post>`_
@@ -150,5 +103,31 @@ class UserProfilesAPI(APIClient):
             list_cls=UserProfileList,
             search={"name": name},
             filter={},
+            limit=limit,
+        )
+
+    def list(self, limit: int | None = LIST_LIMIT_DEFAULT) -> UserProfileList:
+        """`List user profiles <https://developer.cognite.com/api#tag/User-profiles/paths/~1profiles/get>`_
+
+        List all user profiles in the current CDF project. The results are ordered alphabetically by name.
+
+        Args:
+            limit (int | None): Maximum number of user profiles to return. Defaults to 25. Set to -1, float("inf") or None to return all.
+
+        Returns:
+            UserProfileList: List of user profiles.
+
+        Examples:
+
+            List all user profiles:
+
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> res = c.iam.user_profiles.list(limit=None)
+        """
+        return self._list(
+            "GET",
+            list_cls=UserProfileList,
+            resource_cls=UserProfile,
             limit=limit,
         )
