@@ -254,7 +254,7 @@ class TestRelationships:
         )
         assert {
             "filter": {"sourceTypes": ["asset"], "labels": {"containsAny": [{"externalId": "label_ext_id"}]}},
-            "limit": 100,
+            "limit": 25,
             "cursor": None,
             "fetchResources": False,
         } == jsgz_load(mock_rel_response.calls[0].request.body)
@@ -276,7 +276,7 @@ class TestRelationships:
                 "targetExternalIds": ["foo"],
                 "labels": {"containsAny": [{"externalId": "belongs_to"}]},
             },
-            "limit": 100,
+            "limit": 25,
             "cursor": None,
             "fetchResources": False,
         } == jsgz_load(mock_rel_response.calls[0].request.body)
@@ -312,7 +312,7 @@ class TestRelationships:
                 "targetExternalIds": target_external_ids,
                 "dataSetIds": data_sets,
             },
-            "limit": 100,
+            "limit": 25,
             "cursor": None,
             "fetchResources": False,
         } == jsgz_load(mock_rel_response.calls[0].request.body)
