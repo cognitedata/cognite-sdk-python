@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Sequence
 
 from cognite.client._api.user_profiles import UserProfilesAPI
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.config import ClientConfig
 from cognite.client.credentials import OAuthClientCredentials
 from cognite.client.data_classes import (
@@ -99,7 +99,7 @@ class GroupsAPI(APIClient):
 class SecurityCategoriesAPI(APIClient):
     _RESOURCE_PATH = "/securitycategories"
 
-    def list(self, limit: int | None = LIST_LIMIT_DEFAULT) -> SecurityCategoryList:
+    def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> SecurityCategoryList:
         """`List security categories. <https://developer.cognite.com/api#tag/Security-categories/operation/getSecurityCategories>`_
 
         Args:

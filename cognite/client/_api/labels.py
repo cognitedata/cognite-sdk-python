@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Iterator, Sequence, cast
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import LabelDefinition, LabelDefinitionFilter, LabelDefinitionList
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import process_data_set_ids
@@ -51,7 +51,7 @@ class LabelsAPI(APIClient):
         external_id_prefix: str | None = None,
         data_set_ids: int | Sequence[int] | None = None,
         data_set_external_ids: str | Sequence[str] | None = None,
-        limit: int | None = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> LabelDefinitionList:
         """`List Labels <https://developer.cognite.com/api#tag/Labels/operation/listLabels>`_
 

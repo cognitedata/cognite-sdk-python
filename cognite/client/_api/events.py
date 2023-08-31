@@ -6,7 +6,7 @@ from typing import Any, Iterator, Literal, Sequence, Tuple, Union, cast, overloa
 from typing_extensions import TypeAlias
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT, SEARCH_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     AggregateResult,
     AggregateUniqueValuesResult,
@@ -580,7 +580,7 @@ class EventsAPI(APIClient):
         self,
         description: str | None = None,
         filter: EventFilter | dict | None = None,
-        limit: int = SEARCH_LIMIT_DEFAULT,
+        limit: int = DEFAULT_LIMIT_READ,
     ) -> EventList:
         """`Search for events <https://developer.cognite.com/api#tag/Events/operation/searchEvents>`_
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
@@ -650,7 +650,7 @@ class EventsAPI(APIClient):
         self,
         filter: Filter | dict,
         sort: SortSpec | list[SortSpec] | None = None,
-        limit: int | None = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> EventList:
         """`Advanced filter events <https://developer.cognite.com/api#tag/Events/operation/advancedListEvents>`_
 
@@ -734,7 +734,7 @@ class EventsAPI(APIClient):
         external_id_prefix: str | None = None,
         sort: Sequence[str] | None = None,
         partitions: int | None = None,
-        limit: int | None = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> EventList:
         """`List events <https://developer.cognite.com/api#tag/Events/operation/advancedListEvents>`_
 

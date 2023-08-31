@@ -15,7 +15,7 @@ from zipfile import ZipFile
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.credentials import OAuthClientCertificate
 from cognite.client.data_classes import (
     ClientCredentials,
@@ -244,7 +244,7 @@ class FunctionsAPI(APIClient):
         status: str | None = None,
         external_id_prefix: str | None = None,
         created_time: dict[str, int] | TimestampRange | None = None,
-        limit: int | None = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> FunctionList:
         """`List all functions. <https://developer.cognite.com/api#tag/Functions/operation/listFunctions>`_
 
@@ -665,7 +665,7 @@ class FunctionCallsAPI(APIClient):
         schedule_id: int | None = None,
         start_time: dict[str, int] | None = None,
         end_time: dict[str, int] | None = None,
-        limit: int | None = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> FunctionCallList:
         """`List all calls associated with a specific function id. <https://developer.cognite.com/api#tag/Function-calls/operation/listFunctionCalls>`_ Either function_id or function_external_id must be specified.
 
@@ -860,7 +860,7 @@ class FunctionSchedulesAPI(APIClient):
         function_external_id: str | None = None,
         created_time: dict[str, int] | TimestampRange | None = None,
         cron_expression: str | None = None,
-        limit: int | None = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> FunctionSchedulesList:
         """`List all schedules associated with a specific project. <https://developer.cognite.com/api#tag/Function-schedules/operation/listFunctionSchedules>`_
 

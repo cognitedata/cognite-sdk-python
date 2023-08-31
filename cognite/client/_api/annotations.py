@@ -4,7 +4,7 @@ from copy import deepcopy
 from typing import Any, Literal, Sequence, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import Annotation, AnnotationFilter, AnnotationList, AnnotationUpdate
 from cognite.client.data_classes._base import CogniteResource, PropertySpec
 from cognite.client.data_classes.annotations import AnnotationReverseLookupFilter
@@ -173,7 +173,7 @@ class AnnotationsAPI(APIClient):
             url_path=self._RESOURCE_PATH + "/reverselookup",
         )
 
-    def list(self, filter: AnnotationFilter | dict, limit: int | None = LIST_LIMIT_DEFAULT) -> AnnotationList:
+    def list(self, filter: AnnotationFilter | dict, limit: int | None = DEFAULT_LIMIT_READ) -> AnnotationList:
         """`List annotations. <https://developer.cognite.com/api#tag/Annotations/operation/annotationsFilter>`_
 
         Args:

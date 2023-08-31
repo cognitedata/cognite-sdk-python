@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Iterator, Literal, Sequence, cast, overlo
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import Relationship, RelationshipFilter, RelationshipList, RelationshipUpdate
 from cognite.client.data_classes.labels import LabelFilter
 from cognite.client.utils._auxiliary import is_unlimited
@@ -218,7 +218,7 @@ class RelationshipsAPI(APIClient):
         created_time: dict[str, int] | None = None,
         active_at_time: dict[str, int] | None = None,
         labels: LabelFilter | None = None,
-        limit: int | None = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
         partitions: int | None = None,
         fetch_resources: bool = False,
     ) -> RelationshipList:

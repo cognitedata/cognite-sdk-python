@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, List, Sequence, cast
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.templates import (
     GraphQlResponse,
     TemplateGroup,
@@ -160,7 +160,7 @@ class TemplateGroupsAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def list(self, limit: int | None = LIST_LIMIT_DEFAULT, owners: Sequence[str] | None = None) -> TemplateGroupList:
+    def list(self, limit: int | None = DEFAULT_LIMIT_READ, owners: Sequence[str] | None = None) -> TemplateGroupList:
         """`Lists template groups stored in the project based on a query filter given in the payload of this request.`
         Up to 1000 template groups can be retrieved in one operation.
 
@@ -262,7 +262,7 @@ class TemplateGroupVersionsAPI(APIClient):
     def list(
         self,
         external_id: str,
-        limit: int | None = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
         min_version: int | None = None,
         max_version: int | None = None,
     ) -> TemplateGroupVersionList:
@@ -479,7 +479,7 @@ class TemplateInstancesAPI(APIClient):
         self,
         external_id: str,
         version: int,
-        limit: int | None = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
         data_set_ids: Sequence[int] | None = None,
         template_names: Sequence[str] | None = None,
     ) -> TemplateInstanceList:
@@ -634,7 +634,7 @@ class TemplateViewsAPI(APIClient):
         version: int,
         view_external_id: str,
         input: dict[str, Any] | None,
-        limit: int | None = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> ViewResolveList:
         """`Resolves a View.`
         It resolves the source specified in a View with the provided input and applies the mapping rules to the response.
@@ -666,7 +666,7 @@ class TemplateViewsAPI(APIClient):
             other_params={"externalId": view_external_id, "input": input},
         )
 
-    def list(self, external_id: str, version: int, limit: int | None = LIST_LIMIT_DEFAULT) -> ViewList:
+    def list(self, external_id: str, version: int, limit: int | None = DEFAULT_LIMIT_READ) -> ViewList:
         """`Lists view in a template group.`
         Up to 1000 views can be retrieved in one operation.
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import DATA_MODELING_LIST_LIMIT_DEFAULT
+from cognite.client._constants import DATA_MODELING_DEFAULT_LIMIT_READ
 from cognite.client.data_classes.data_modeling.containers import (
     Container,
     ContainerApply,
@@ -149,7 +149,7 @@ class ContainersAPI(APIClient):
     def list(
         self,
         space: str | None = None,
-        limit: int | None = DATA_MODELING_LIST_LIMIT_DEFAULT,
+        limit: int | None = DATA_MODELING_DEFAULT_LIMIT_READ,
         include_global: bool = False,
     ) -> ContainerList:
         """`List containers <https://developer.cognite.com/api#tag/Containers/operation/listContainers>`_

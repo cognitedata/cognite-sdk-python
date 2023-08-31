@@ -5,7 +5,7 @@ from collections.abc import Iterable
 from typing import TYPE_CHECKING, Any, Iterator, List, Literal, Sequence, Union, cast, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT, SEARCH_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import filters
 from cognite.client.data_classes._base import CogniteResourceList
 from cognite.client.data_classes.aggregations import (
@@ -532,7 +532,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node"] = "node",
         properties: list[str] | None = None,
         filter: Filter | dict | None = None,
-        limit: int = SEARCH_LIMIT_DEFAULT,
+        limit: int = DEFAULT_LIMIT_READ,
     ) -> NodeList:
         ...
 
@@ -544,7 +544,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["edge"],
         properties: list[str] | None = None,
         filter: Filter | dict | None = None,
-        limit: int = SEARCH_LIMIT_DEFAULT,
+        limit: int = DEFAULT_LIMIT_READ,
     ) -> EdgeList:
         ...
 
@@ -555,7 +555,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node", "edge"] = "node",
         properties: list[str] | None = None,
         filter: Filter | dict | None = None,
-        limit: int = SEARCH_LIMIT_DEFAULT,
+        limit: int = DEFAULT_LIMIT_READ,
     ) -> NodeList | EdgeList:
         """`Search instances <https://developer.cognite.com/api/v1/#tag/Instances/operation/searchInstances>`_
 
@@ -616,7 +616,7 @@ class InstancesAPI(APIClient):
         query: str | None = None,
         properties: Sequence[str] | None = None,
         filter: Filter | None = None,
-        limit: int = SEARCH_LIMIT_DEFAULT,
+        limit: int = DEFAULT_LIMIT_READ,
     ) -> InstanceAggregationResultList:
         """`Aggregate data across nodes/edges <https://developer.cognite.com/api/v1/#tag/Instances/operation/aggregateInstances>`_
 
@@ -675,7 +675,7 @@ class InstancesAPI(APIClient):
         query: str | None = None,
         properties: Sequence[str] | None = None,
         filter: Filter | None = None,
-        limit: int = SEARCH_LIMIT_DEFAULT,
+        limit: int = DEFAULT_LIMIT_READ,
     ) -> HistogramValue:
         ...
 
@@ -688,7 +688,7 @@ class InstancesAPI(APIClient):
         query: str | None = None,
         properties: Sequence[str] | None = None,
         filter: Filter | None = None,
-        limit: int = SEARCH_LIMIT_DEFAULT,
+        limit: int = DEFAULT_LIMIT_READ,
     ) -> list[HistogramValue]:
         ...
 
@@ -700,7 +700,7 @@ class InstancesAPI(APIClient):
         query: str | None = None,
         properties: Sequence[str] | None = None,
         filter: Filter | None = None,
-        limit: int = SEARCH_LIMIT_DEFAULT,
+        limit: int = DEFAULT_LIMIT_READ,
     ) -> HistogramValue | list[HistogramValue]:
         """`Produces histograms for nodes/edges <https://developer.cognite.com/api/v1/#tag/Instances/operation/aggregateInstances>`_
 
@@ -857,7 +857,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node"] = "node",
         include_typing: bool = False,
         sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None = None,
-        limit: int | None = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> NodeList:
@@ -869,7 +869,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["edge"],
         include_typing: bool = False,
         sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None = None,
-        limit: int | None = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> EdgeList:
@@ -880,7 +880,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node", "edge"] = "node",
         include_typing: bool = False,
         sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None = None,
-        limit: int | None = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> NodeList | EdgeList:

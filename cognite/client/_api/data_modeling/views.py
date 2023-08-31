@@ -4,7 +4,7 @@ from collections import defaultdict
 from typing import Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import DATA_MODELING_LIST_LIMIT_DEFAULT
+from cognite.client._constants import DATA_MODELING_DEFAULT_LIMIT_READ
 from cognite.client.data_classes.data_modeling.ids import (
     ViewId,
     ViewIdentifier,
@@ -156,7 +156,7 @@ class ViewsAPI(APIClient):
 
     def list(
         self,
-        limit: int | None = DATA_MODELING_LIST_LIMIT_DEFAULT,
+        limit: int | None = DATA_MODELING_DEFAULT_LIMIT_READ,
         space: str | None = None,
         include_inherited_properties: bool = True,
         all_versions: bool = False,

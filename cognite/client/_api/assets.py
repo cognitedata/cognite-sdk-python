@@ -30,7 +30,7 @@ from typing_extensions import TypeAlias
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT, SEARCH_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     Asset,
     AssetAggregate,
@@ -856,7 +856,7 @@ class AssetsAPI(APIClient):
         filter: Filter | dict,
         sort: SortSpec | list[SortSpec] | None = None,
         aggregated_properties: Sequence[Literal["child_count", "path", "depth"]] | None = None,
-        limit: int | None = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> AssetList:
         """`Advanced filter assets <https://developer.cognite.com/api#tag/Assets/operation/listAssets>`_
 
@@ -931,7 +931,7 @@ class AssetsAPI(APIClient):
         description: str | None = None,
         query: str | None = None,
         filter: AssetFilter | dict | None = None,
-        limit: int = SEARCH_LIMIT_DEFAULT,
+        limit: int = DEFAULT_LIMIT_READ,
     ) -> AssetList:
         """`Search for assets <https://developer.cognite.com/api#tag/Assets/operation/searchAssets>`_
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
@@ -1046,7 +1046,7 @@ class AssetsAPI(APIClient):
         external_id_prefix: str | None = None,
         aggregated_properties: Sequence[str] | None = None,
         partitions: int | None = None,
-        limit: int | None = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> AssetList:
         """`List assets <https://developer.cognite.com/api#tag/Assets/operation/listAssets>`_
 
