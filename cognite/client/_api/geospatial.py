@@ -504,7 +504,7 @@ class GeospatialAPI(APIClient):
         feature_type_external_id: str,
         filter: dict[str, Any] | None = None,
         properties: dict[str, Any] | None = None,
-        limit: int | None = 100,
+        limit: int | None = DEFAULT_LIMIT_READ,
         allow_crs_transformation: bool = False,
     ) -> FeatureList:
         """`List features`

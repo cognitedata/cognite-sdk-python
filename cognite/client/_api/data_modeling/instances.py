@@ -565,7 +565,7 @@ class InstancesAPI(APIClient):
             instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
             properties (list[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
             filter (Filter | dict | None): Advanced filtering of instances.
-            limit (int): Maximum number of instances to return. Defaults to 100.
+            limit (int): Maximum number of instances to return. Defaults to 25.
 
         Returns:
             NodeList | EdgeList: Search result with matching nodes or edges.
@@ -628,7 +628,7 @@ class InstancesAPI(APIClient):
             query (str | None): Query string that will be parsed and used for search.
             properties (Sequence[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
             filter (Filter | None): Advanced filtering of instances.
-            limit (int): Maximum number of instances to return. Defaults to 100.
+            limit (int): Maximum number of instances to return. Defaults to 25.
 
         Returns:
             InstanceAggregationResultList: Node or edge aggregation results.
@@ -711,7 +711,7 @@ class InstancesAPI(APIClient):
             query (str | None): Query string that will be parsed and used for search.
             properties (Sequence[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
             filter (Filter | None): Advanced filtering of instances.
-            limit (int): Maximum number of instances to return. Defaults to 100.
+            limit (int): Maximum number of instances to return. Defaults to 25.
 
         Returns:
             HistogramValue | list[HistogramValue]: Node or edge aggregation results.

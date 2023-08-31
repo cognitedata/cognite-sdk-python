@@ -239,7 +239,7 @@ class DatapointsSubscriptionAPI(APIClient):
         """`List data point subscriptions <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/listSubscriptions>`_
 
         Args:
-            limit (int | None): Maximum number of subscriptions to return. Defaults to 100. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of subscriptions to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
         Returns:
             DatapointSubscriptionList: List of requested datapoint subscriptions
 
