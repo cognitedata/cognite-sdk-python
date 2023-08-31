@@ -17,9 +17,13 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [6.15.3] - 2023-08-29
+## [6.15.4] - 2023-08-31
 ### Fixed
 - Bugfix for `FilesAPI.upload` and `FilesAPI.upload_bytes` not raising an error on file contents upload failure. Now `CogniteAPIError` is raised based on upload response.
+
+## [6.15.3] - 2023-08-30
+### Fixed
+- Uploading files using `client.files.upload` now works when running with `pyodide`.
 
 ## [6.15.2] - 2023-08-29
 ### Improved
