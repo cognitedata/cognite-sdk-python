@@ -61,13 +61,9 @@ List user profiles
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.iam.UserProfilesAPI.list
 
-Retrieve a single user profile
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Retrieve one or more user profiles
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automethod:: cognite.client._api.iam.UserProfilesAPI.retrieve
-
-Retrieve multiple user profiles
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.UserProfilesAPI.retrieve_multiple
 
 Search for user profiles
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
