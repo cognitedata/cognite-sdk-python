@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import ast
+import importlib
 import os
 import re
+import sys
 import textwrap
 import time
 from inspect import getdoc, getsource
@@ -94,6 +96,7 @@ class FunctionsAPI(APIClient):
         metadata: dict | None = None,
         index_url: str | None = None,
         extra_index_urls: list[str] | None = None,
+        validate_folder_structure_and_imports: bool = True,
     ) -> Function:
         '''`When creating a function, <https://developer.cognite.com/api#tag/Functions/operation/postFunctions>`_
         the source code can be specified in one of three ways:
@@ -124,7 +127,7 @@ class FunctionsAPI(APIClient):
             metadata (dict | None): Metadata for the function as key/value pairs. Key & values can be at most 32, 512 characters long respectively. You can have at the most 16 key-value pairs, with a maximum size of 512 bytes.
             index_url (str | None): Index URL for Python Package Manager to use. Be aware of the intrinsic security implications of using the `index_url` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
             extra_index_urls (list[str] | None): Extra Index URLs for Python Package Manager to use. Be aware of the intrinsic security implications of using the `extra_index_urls` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
-
+            validate_folder_structure_and_imports (bool): Whether to validate the folder structure and imports, requires the packages imported in your source code to be installed locally. Defaults to True.
         Returns:
             Function: The created function.
 
@@ -134,19 +137,19 @@ class FunctionsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> function = c.functions.create(name="myfunction", folder="path/to/code", function_path="path/to/function.py")
+                >>> function = c.functions.create(name="myfunction",folder="path/to/code",function_path="path/to/function.py")
 
             Create function with file_id from already uploaded source code::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> function = c.functions.create(name="myfunction", file_id=123, function_path="path/to/function.py")
+                >>> function = c.functions.create(name="myfunction",file_id=123,function_path="path/to/function.py")
 
             Create function with predefined function object named `handle`::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> function = c.functions.create(name="myfunction", function_handle=handle)
+                >>> function = c.functions.create(name="myfunction",function_handle=handle)
 
             Create function with predefined function object named `handle` with dependencies::
 
@@ -161,7 +164,7 @@ class FunctionsAPI(APIClient):
                 >>>     ...
                 >>>
                 >>> c = CogniteClient()
-                >>> function = c.functions.create(name="myfunction", function_handle=handle)
+                >>> function = c.functions.create(name="myfunction",function_handle=handle)
 
             .. note::
                 When using a predefined function object, you can list dependencies between the tags `[requirements]` and `[/requirements]` in the function's docstring. The dependencies will be parsed and validated in accordance with requirement format specified in `PEP 508 <https://peps.python.org/pep-0508/>`_.
@@ -169,7 +172,7 @@ class FunctionsAPI(APIClient):
         self._assert_exactly_one_of_folder_or_file_id_or_function_handle(folder, file_id, function_handle)
 
         if folder:
-            validate_function_folder(folder, function_path)
+            validate_function_folder(folder, function_path, check_imports=True)
             file_id = self._zip_and_upload_folder(folder, name, external_id)
         elif function_handle:
             _validate_function_handle(function_handle)
@@ -546,7 +549,7 @@ def _validate_function_from_ast(node: ast.FunctionDef) -> None:
         )
 
 
-def validate_function_folder(root_path: str, function_path: str) -> None:
+def validate_function_folder(root_path: str, function_path: str, check_imports: bool) -> None:
     if Path(function_path).suffix != ".py":
         raise TypeError(f"{function_path} is not a valid value for function_path. File extension must be .py.")
 
@@ -559,6 +562,19 @@ def validate_function_folder(root_path: str, function_path: str) -> None:
         raise TypeError(f"{function_path} must contain a function named 'handle'.")
 
     _validate_function_from_ast(handle_function_node)
+
+    # Opt-in import checks
+    if check_imports:
+        module_name = function_path_full.stem
+        sys.path.insert(0, str(function_path_full.parent))
+
+        try:
+            # Try to dynamically import the module to check for any import-related errors
+            importlib.import_module(module_name)
+        except (ImportError, ModuleNotFoundError) as e:
+            raise e
+        finally:
+            sys.path.remove(str(function_path_full.parent))
 
 
 def _validate_function_handle(function_handle: Callable[..., Any]) -> None:
@@ -961,26 +977,14 @@ class FunctionSchedulesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ClientCredentials
                 >>> c = CogniteClient()
-                >>> schedule = c.functions.schedules.create(
-                ...     name="My schedule",
-                ...     function_id=123,
-                ...     cron_expression="*/5 * * * *",
-                ...     client_credentials=ClientCredentials("my-client-id", os.environ["MY_CLIENT_SECRET"]),
-                ...     description="This schedule does magic stuff.",
-                ...     data={"magic": "stuff"},
-                ... )
+                >>> schedule = c.functions.schedules.create(name="My schedule",description="This schedule does magic stuff.")
 
             You may also create a schedule that runs with your -current- credentials, i.e. the same credentials you used
             to instantiate the ``CogniteClient`` (that you're using right now). **Note**: Unless you happen to already use
             client credentials, *this is not a recommended way to create schedules*, as it will create an explicit dependency
             on your user account, which it will run the function "on behalf of" (until the schedule is eventually removed)::
 
-                >>> schedule = c.functions.schedules.create(
-                ...     name="My schedule",
-                ...     function_id=456,
-                ...     cron_expression="*/5 * * * *",
-                ...     description="A schedule just used for some temporary testing.",
-                ... )
+                >>> schedule = c.functions.schedules.create(name="My schedule",description="A schedule just used for some temporary testing.")
 
         """
         _get_function_identifier(function_id, function_external_id)
