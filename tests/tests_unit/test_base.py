@@ -108,13 +108,9 @@ class LabelUpdate(CogniteLabelUpdate):
 
 
 class MyFilter(CogniteFilter):
-    def __init__(self, var_a=None, var_b=None, cognite_client=None):
+    def __init__(self, var_a=None, var_b=None):
         self.var_a = var_a
         self.var_b = var_b
-        self._cognite_client = cognite_client
-
-    def use(self):
-        return self._cognite_client
 
 
 class MyResourceList(CogniteResourceList):
@@ -392,7 +388,6 @@ class TestCogniteFilter:
 
     def test_eq(self):
         assert MyFilter(1, 2) == MyFilter(1, 2)
-        assert MyFilter(1, 2) == MyFilter(1, 2, cognite_client=mock.MagicMock())
         assert MyFilter(1) != MyFilter(1, 2)
         assert MyFilter() == MyFilter()
 
@@ -402,11 +397,6 @@ class TestCogniteFilter:
 
     def test_repr(self):
         assert json.dumps({"var_a": 1}, indent=4) == repr(MyFilter(1))
-
-    def test_use_method_which_requires_cognite_client__client_not_set(self):
-        mr = MyFilter()
-        with pytest.raises(CogniteMissingClientError):
-            mr.use()
 
 
 class TestCogniteUpdate:

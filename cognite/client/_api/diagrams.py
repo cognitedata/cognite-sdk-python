@@ -279,7 +279,7 @@ class DiagramsAPI(APIClient):
 
     def get_detect_jobs(self, job_ids: list[int]) -> list[DiagramDetectResults]:
         if self._cognite_client is None:
-            raise CogniteMissingClientError
+            raise CogniteMissingClientError(self)
         res = self._cognite_client.diagrams._post("/context/diagram/detect/status", json={"items": job_ids})
         jobs = res.json()["items"]
         return [

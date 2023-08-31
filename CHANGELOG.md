@@ -17,7 +17,19 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [6.15.0] - 2023-08-18
+## [6.15.3] - 2023-08-30
+### Fixed
+- Uploading files using `client.files.upload` now works when running with `pyodide`.
+
+## [6.15.2] - 2023-08-29
+### Improved
+- Improved error message for `CogniteMissingClientError`. Now includes the type of object missing the `CogniteClient` reference.
+
+## [6.15.1] - 2023-08-29
+### Fixed
+- Bugfix for `InstanceSort._load` that always raised `TypeError` (now public, `.load`). Also, indirect fix for `Select.load` for non-empty `sort`.
+
+## [6.15.0] - 2023-08-23
 ### Added
 - Support for the DocumentsAPI with the implementation `client.documents`.
 - Support for advanced filtering for `Events`, `TimeSeries`, `Assets` and `Sequences`. This is available through the
