@@ -172,8 +172,7 @@ class TestRelationshipscognite_client:
         new_rel, ext_id = new_relationship
         pre_existing_data_set = cognite_client.data_sets.retrieve(external_id="pre_existing_data_set")
         res = cognite_client.relationships.list(
-            source_external_ids=[ext_id],
-            data_set_external_ids=[pre_existing_data_set.external_id],
+            source_external_ids=[ext_id], data_set_external_ids=[pre_existing_data_set.external_id]
         )
         res2 = cognite_client.relationships.list(target_external_ids=[ext_id], data_set_ids=[pre_existing_data_set.id])
         assert res == res2
@@ -268,14 +267,8 @@ class TestRelationshipscognite_client:
             assert preexisting_update.target_external_id == res[1].target_external_id
         finally:
             cognite_client.relationships.delete(
-                external_id=[new_relationship.external_id, preexisting.external_id],
-                ignore_unknown_ids=True,
+                external_id=[new_relationship.external_id, preexisting.external_id], ignore_unknown_ids=True
             )
             cognite_client.assets.delete(
-                external_id=[
-                    asset1.external_id,
-                    asset2.external_id,
-                    asset3.external_id,
-                ],
-                ignore_unknown_ids=True,
+                external_id=[asset1.external_id, asset2.external_id, asset3.external_id], ignore_unknown_ids=True
             )

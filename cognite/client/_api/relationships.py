@@ -5,12 +5,7 @@ from typing import TYPE_CHECKING, Any, Iterator, Literal, Sequence, cast, overlo
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import (
-    Relationship,
-    RelationshipFilter,
-    RelationshipList,
-    RelationshipUpdate,
-)
+from cognite.client.data_classes import Relationship, RelationshipFilter, RelationshipList, RelationshipUpdate
 from cognite.client.data_classes.labels import LabelFilter
 from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._identifier import IdentifierSequence
@@ -426,10 +421,7 @@ class RelationshipsAPI(APIClient):
                 >>> res = c.relationships.update(my_update)
         """
         return self._update_multiple(
-            list_cls=RelationshipList,
-            resource_cls=Relationship,
-            update_cls=RelationshipUpdate,
-            items=item,
+            list_cls=RelationshipList, resource_cls=Relationship, update_cls=RelationshipUpdate, items=item
         )
 
     @overload
