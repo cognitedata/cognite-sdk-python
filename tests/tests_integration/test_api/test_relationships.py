@@ -172,7 +172,8 @@ class TestRelationshipscognite_client:
         new_rel, ext_id = new_relationship
         pre_existing_data_set = cognite_client.data_sets.retrieve(external_id="pre_existing_data_set")
         res = cognite_client.relationships.list(
-            source_external_ids=[ext_id], data_set_external_ids=[pre_existing_data_set.external_id]
+            source_external_ids=[ext_id],
+            data_set_external_ids=[pre_existing_data_set.external_id],
         )
         res2 = cognite_client.relationships.list(target_external_ids=[ext_id], data_set_ids=[pre_existing_data_set.id])
         assert res == res2
@@ -197,6 +198,18 @@ class TestRelationshipscognite_client:
         res = cognite_client.relationships.retrieve_multiple(external_ids=[ext_id], fetch_resources=True)
         assert res[0].source == asset
         assert res[0].target == time_series
+
+    def test_retrieve_unknown_raises_error(self, cognite_client: CogniteClient):
+        with pytest.raises(CogniteNotFoundError) as e:
+            cognite_client.relationships.retrieve_multiple(external_ids=["this does not exist"])
+
+        assert e.value.not_found[0]["externalId"] == "this does not exist"
+
+    def test_retrieve_unknown_ignore_unknowns(self, cognite_client: CogniteClient):
+        res = cognite_client.relationships.retrieve_multiple(
+            external_ids=["this does not exist"], ignore_unknown_ids=True
+        )
+        assert len(res) == 0
 
     def test_deletes_ignore_unknown_ids(self, cognite_client):
         cognite_client.relationships.delete(external_id=["non_existing_rel"], ignore_unknown_ids=True)
@@ -255,8 +268,14 @@ class TestRelationshipscognite_client:
             assert preexisting_update.target_external_id == res[1].target_external_id
         finally:
             cognite_client.relationships.delete(
-                external_id=[new_relationship.external_id, preexisting.external_id], ignore_unknown_ids=True
+                external_id=[new_relationship.external_id, preexisting.external_id],
+                ignore_unknown_ids=True,
             )
             cognite_client.assets.delete(
-                external_id=[asset1.external_id, asset2.external_id, asset3.external_id], ignore_unknown_ids=True
+                external_id=[
+                    asset1.external_id,
+                    asset2.external_id,
+                    asset3.external_id,
+                ],
+                ignore_unknown_ids=True,
             )
