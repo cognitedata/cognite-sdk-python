@@ -76,15 +76,15 @@ class Sequence(CogniteResource):
         self.data_set_id = data_set_id
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def rows(self, start: int, end: int) -> list[dict]:
+    def rows(self, start: int, end: int | None) -> SequenceData:
         """Retrieves rows from this sequence.
 
         Args:
-            start (int): No description.
-            end (int): No description.
+            start (int): Row number to start from (inclusive).
+            end (int | None): Upper limit on the row number (exclusive). Set to None or -1 to get all rows until end of sequence.
 
         Returns:
-            list[dict]: List of sequence data.
+            SequenceData: List of sequence data.
         """
         identifier = Identifier.load(self.id, self.external_id).as_dict()
         return self._cognite_client.sequences.data.retrieve(**identifier, start=start, end=end)

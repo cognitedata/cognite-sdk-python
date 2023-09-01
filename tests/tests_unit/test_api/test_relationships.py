@@ -66,7 +66,7 @@ class TestRelationships:
         res = cognite_client.relationships.retrieve_multiple(external_ids=["a"])
         assert isinstance(res, RelationshipList)
         assert mock_rel_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
-        assert {"items": [{"externalId": "a"}], "fetchResources": False} == jsgz_load(
+        assert {"items": [{"externalId": "a"}], "fetchResources": False, "ignoreUnknownIds": False} == jsgz_load(
             mock_rel_response.calls[0].request.body
         )
 
