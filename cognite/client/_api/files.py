@@ -4,7 +4,6 @@ import copy
 import os
 import warnings
 from io import BufferedReader
-
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
