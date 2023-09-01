@@ -532,10 +532,11 @@ def convert_file_path_to_module_path(root_path: str, file_path: Path) -> str:
     the function will return "dir.module".
 
     Args:
-        root_path (str): No description.
-        file_path (Path): No description.
+        root_path (str): The root directory from which the module import path should be determined.
+        file_path (Path): The full path to the Python file.
     Returns:
-        str: No description."""
+        str: The importable module path for the given file.
+    """
     relative_path = Path(file_path).relative_to(root_path)  # get the relative path
     module_path = ".".join(relative_path.with_suffix("").parts)
     return module_path
