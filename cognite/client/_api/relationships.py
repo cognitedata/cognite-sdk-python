@@ -24,12 +24,7 @@ if TYPE_CHECKING:
 class RelationshipsAPI(APIClient):
     _RESOURCE_PATH = "/relationships"
 
-    def __init__(
-        self,
-        config: ClientConfig,
-        api_version: str | None,
-        cognite_client: CogniteClient,
-    ) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._LIST_SUBQUERY_LIMIT = 1000
 
@@ -182,10 +177,7 @@ class RelationshipsAPI(APIClient):
         )
 
     def retrieve_multiple(
-        self,
-        external_ids: Sequence[str],
-        fetch_resources: bool = False,
-        ignore_unknown_ids: bool = False,
+        self, external_ids: Sequence[str], fetch_resources: bool = False, ignore_unknown_ids: bool = False
     ) -> RelationshipList:
         """`Retrieve multiple relationships by external id.  <https://developer.cognite.com/api#tag/Relationships/operation/byidsRelationships>`_
 
@@ -386,8 +378,7 @@ class RelationshipsAPI(APIClient):
         return self._create_multiple(list_cls=RelationshipList, resource_cls=Relationship, items=relationship)
 
     def update(
-        self,
-        item: Relationship | RelationshipUpdate | Sequence[Relationship | RelationshipUpdate],
+        self, item: Relationship | RelationshipUpdate | Sequence[Relationship | RelationshipUpdate]
     ) -> Relationship | RelationshipList:
         """`Update one or more relationships <https://developer.cognite.com/api#tag/Relationships/operation/updateRelationships>`_
         Currently, a full replacement of labels on a relationship is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.
@@ -450,9 +441,7 @@ class RelationshipsAPI(APIClient):
         ...
 
     def upsert(
-        self,
-        item: Relationship | Sequence[Relationship],
-        mode: Literal["patch", "replace"] = "patch",
+        self, item: Relationship | Sequence[Relationship], mode: Literal["patch", "replace"] = "patch"
     ) -> Relationship | RelationshipList:
         """Upsert relationships, i.e., update if it exists, and create if it does not exist.
             Note this is a convenience method that handles the upserting for you by first calling update on all items,
