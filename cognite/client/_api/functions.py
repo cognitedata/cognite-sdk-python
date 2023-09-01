@@ -530,7 +530,12 @@ def convert_file_path_to_module_path(root_path: str, file_path: Path) -> str:
     Example:
     If root_path is "/path/to/your/" and file_path is "/path/to/your/dir/module.py",
     the function will return "dir.module".
-    """
+
+    Args:
+        root_path (str): No description.
+        file_path (Path): No description.
+    Returns:
+        str: No description."""
     relative_path = Path(file_path).relative_to(root_path)  # get the relative path
     module_path = ".".join(relative_path.with_suffix("").parts)
     return module_path
