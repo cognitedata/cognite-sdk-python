@@ -18,13 +18,12 @@ Changes are grouped as follows
 - `Security` in case of vulnerabilities.
 
 
-## [6.18.0] - 2023-08-28
+## [6.18.0] - 2023-09-02
 ### Added
-- Added parameter `keep_directory_structure`to `client.files.download` to allow downloading files to a folder structure matching the one in CDF.
+- Added parameter `keep_directory_structure` to `client.files.download` to allow downloading files to a folder structure matching the one in CDF.
 
 ### Improved
-- Using `client.files.download` will still skip files with the same name when writing to disk, but now a `UserWarning` is raised, specifying which files are concerned.
-
+- Using `client.files.download` will still skip files with the same name when writing to disk, but now a `UserWarning` is raised, specifying which files are affected.
 
 ## [6.17.0] - 2023-09-01
 ### Added
@@ -47,7 +46,6 @@ Changes are grouped as follows
 - Bugfix for `InstanceSort._load` that always raised `TypeError` (now public, `.load`). Also, indirect fix for `Select.load` for non-empty `sort`.
 
 ## [6.15.0] - 2023-08-23
-
 ### Added
 - Support for the DocumentsAPI with the implementation `client.documents`.
 - Support for advanced filtering for `Events`, `TimeSeries`, `Assets` and `Sequences`. This is available through the

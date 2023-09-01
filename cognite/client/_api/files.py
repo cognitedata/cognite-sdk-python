@@ -613,15 +613,19 @@ class FilesAPI(APIClient):
 
         This method will stream all files to disk, never keeping more than 2MB in memory per worker.
         The files will be stored in the provided directory using the file name retrieved from the file metadata in CDF.
-        You can also choose to keep the directory structure from CDF, where the files will be stored in subdirectories under the directory field in the arguments.
-        If several files in CDF has the same name in the folder they are downloaded to, only one will be kept locally.
+        You can also choose to keep the directory structure from CDF so that the files will be stored in subdirectories
+        matching the directory attribute on the files. When missing, the (root) directory is used.
+
+        Warning:
+            If you are downloading several files at once, be aware that file name collisions lead to all-but-one of
+            the files missing. A warning is issued when this happens, listing the affected files.
 
         Args:
             directory (str | Path): Directory to download the file(s) to.
             id (int | Sequence[int] | None): Id or list of ids
             external_id (str | Sequence[str] | None): External ID or list of external ids.
-            keep_directory_structure (bool): Whether or not to keep the directory structure from CDF,
-                where the files will be stored in subdirectories under the directory field in the arguments.
+            keep_directory_structure (bool): Whether or not to keep the directory hierarchy in CDF,
+                creating subdirectories as needed below the given directory.
 
         Examples:
 
@@ -630,56 +634,65 @@ class FilesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> c.files.download(directory="my_directory", id=[1,2,3], external_id=["abc", "def"])
+
+            Download files by id to the current directory::
+
+                >>> c.files.download(directory=".", id=[1,2,3])
         """
-
-        if isinstance(directory, str):
-            directory = Path(directory)
+        directory = Path(directory)
         if not directory.is_dir():
-            raise NotADirectoryError(f"{directory} is not a directory")
+            raise NotADirectoryError(str(directory))
 
-        all_ids = IdentifierSequence.load(id, external_id).as_dicts()
-        id_to_metadata = self._get_id_to_metadata_map(all_ids)
+        all_identifiers = IdentifierSequence.load(id, external_id).as_dicts()
+        id_to_metadata = self._get_id_to_metadata_map(all_identifiers)
 
-        def duplicate_warnings(all_file_names: str) -> None:
-            duplicate_file_names = sorted(find_duplicates(all_file_names))
-            if not duplicate_file_names:
-                return
-            warning_message = (
-                f"There are {len(duplicate_file_names)} duplicate file names. Only the contents of one of the files "
-                f"with the same name will be downloaded to the same directory. \nThis concerns: {[str(i) for i in duplicate_file_names]}"
-            )
-            warnings.warn(message=warning_message, stacklevel=2)
-
-        if not keep_directory_structure:
-            all_file_names = [
-                cast(str, directory / _metadata.name)
-                for _id, _metadata in id_to_metadata.items()
-                if isinstance(_id, int)
+        if keep_directory_structure:
+            all_ids, filepaths, file_directories = self._prepare_file_hierarchy(directory, id_to_metadata)
+            self._download_files_to_directory(file_directories, all_ids, id_to_metadata, filepaths)
+        else:
+            filepaths = [
+                directory / cast(str, metadata.name)
+                for identifier, metadata in id_to_metadata.items()
+                if isinstance(identifier, int)
             ]
-            duplicate_warnings(all_file_names=all_file_names)
+            self._download_files_to_directory(directory, all_identifiers, id_to_metadata, filepaths)
 
-            self._download_files_to_directory(directory, all_ids, id_to_metadata)
-            return
+    @staticmethod
+    def _prepare_file_hierarchy(
+        directory: Path, id_to_metadata: dict[str | int, FileMetadata]
+    ) -> tuple[list[dict[str, str | int]], list[Path], list[Path]]:
+        # Note on type hint: Too much of the SDK is wrongly typed with 'dict[str, str | int]',
+        # instead of 'dict[str, str] | dict[str, int]', so we pretend dict-value type can also be str:
+        ids: list[dict[str, str | int]] = []
+        filepaths, file_directories = [], []
+        for identifier, metadata in id_to_metadata.items():
+            if not isinstance(identifier, int):
+                continue
+            file_directory = directory
+            if metadata.directory:
+                # CDF enforces absolute, unix-style paths (i.e. always stating with '/'). We strip to make it relative:
+                file_directory /= metadata.directory[1:]
 
-        ids: list[dict[str, int | str]] = []
-        file_directories: list[Path] = []
-        full_file_names: list[str] = []
-        for _id, _metadata in id_to_metadata.items():
-            if isinstance(_id, int):
-                file_directory = directory
-                if _metadata.directory:
-                    file_directory /= Path(_metadata.directory[1:])  # Making the directory relative
-
-                ids.append({"id": _id})
-                file_directories.append(file_directory)
-                full_file_names.append(str(file_directory / _metadata.name))
-
-        duplicate_warnings(all_file_names=full_file_names)
+            ids.append({"id": identifier})
+            file_directories.append(file_directory)
+            filepaths.append(file_directory / cast(str, metadata.name))
 
         for file_folder in set(file_directories):
             file_folder.mkdir(parents=True, exist_ok=True)
 
-        self._download_files_to_directory(directory=file_directories, all_ids=ids, id_to_metadata=id_to_metadata)
+        return ids, filepaths, file_directories
+
+    @staticmethod
+    def _warn_on_duplicate_filenames(filepaths: list[Path]) -> None:
+        if duplicates := sorted(find_duplicates(filepaths)):
+            warnings.warn(
+                (
+                    f"There are {len(duplicates)} duplicate file name(s). Only one of each duplicate will be "
+                    f"downloaded, per directory. The affected files: {list(map(str, duplicates))}"
+                ),
+                UserWarning,
+                stacklevel=2,
+            )
 
     def _get_id_to_metadata_map(self, all_ids: Sequence[dict]) -> dict[str | int, FileMetadata]:
         ids = [id["id"] for id in all_ids if "id" in id]
@@ -700,7 +713,9 @@ class FilesAPI(APIClient):
         directory: Path | Sequence[Path],
         all_ids: Sequence[dict[str, int | str]],
         id_to_metadata: dict[str | int, FileMetadata],
+        filepaths: list[Path],
     ) -> None:
+        self._warn_on_duplicate_filenames(filepaths)
         if isinstance(directory, Path):
             tasks = [(directory, id, id_to_metadata) for id in all_ids]
         else:
