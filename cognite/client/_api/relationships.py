@@ -198,10 +198,8 @@ class RelationshipsAPI(APIClient):
             list_cls=RelationshipList,
             resource_cls=Relationship,
             identifiers=identifiers,
-            other_params={
-                "fetchResources": fetch_resources,
-                "ignoreUnknownIds": ignore_unknown_ids,
-            },
+            other_params={"fetchResources": fetch_resources},
+            ignore_unknown_ids=ignore_unknown_ids,
         )
 
     def list(
