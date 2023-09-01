@@ -17,14 +17,37 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [6.16.0] - 2023-08-28
+
+## [6.18.0] - 2023-08-28
 ### Added
 - Added parameter `keep_directory_structure`to `client.files.download` to allow downloading files to a folder structure matching the one in CDF.
 
 ### Improved
 - Using `client.files.download` will still skip files with the same name when writing to disk, but now a `UserWarning` is raised, specifying which files are concerned.
 
-## [6.15.0] - 2023-08-18
+
+## [6.17.0] - 2023-09-01
+### Added
+- Support for the UserProfilesAPI with the implementation `client.iam.user_profiles`.
+
+## [6.16.0] - 2023-09-01
+### Added
+- Support for `ignore_unknown_ids` in `client.relationships.retrieve_multiple` method.
+
+## [6.15.3] - 2023-08-30
+### Fixed
+- Uploading files using `client.files.upload` now works when running with `pyodide`.
+
+## [6.15.2] - 2023-08-29
+### Improved
+- Improved error message for `CogniteMissingClientError`. Now includes the type of object missing the `CogniteClient` reference.
+
+## [6.15.1] - 2023-08-29
+### Fixed
+- Bugfix for `InstanceSort._load` that always raised `TypeError` (now public, `.load`). Also, indirect fix for `Select.load` for non-empty `sort`.
+
+## [6.15.0] - 2023-08-23
+
 ### Added
 - Support for the DocumentsAPI with the implementation `client.documents`.
 - Support for advanced filtering for `Events`, `TimeSeries`, `Assets` and `Sequences`. This is available through the

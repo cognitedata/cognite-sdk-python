@@ -1,7 +1,7 @@
 import pytest
 
 from cognite.client._constants import MAX_VALID_INTERNAL_ID
-from cognite.client.utils._identifier import Identifier, IdentifierSequence
+from cognite.client.utils._identifier import Identifier, IdentifierSequence, UserIdentifier, UserIdentifierSequence
 
 
 class TestIdentifier:
@@ -83,3 +83,29 @@ class TestIdentifierSequence:
 
         seq = IdentifierSequence.of(external_ids)
         assert seq.is_singleton() is is_singleton
+
+
+class TestUserIdentifier:
+    def test_methods(self):
+        user_id = UserIdentifier("foo")
+        assert user_id.as_primitive() == "foo"
+        assert user_id.as_dict(camel_case=True) == {"userIdentifier": "foo"}
+        assert user_id.as_dict(camel_case=False) == {"user_identifier": "foo"}
+
+
+class TestUserIdentifierSequence:
+    @pytest.mark.parametrize(
+        "user_ids, exp_dcts, exp_primitives",
+        (
+            ("foo", [{"userIdentifier": "foo"}], ["foo"]),
+            (["foo", "bar"], [{"userIdentifier": "foo"}, {"userIdentifier": "bar"}], ["foo", "bar"]),
+        ),
+    )
+    def test_load_and_dump(self, user_ids, exp_dcts, exp_primitives):
+        user_id_seq = UserIdentifierSequence.load(user_ids)
+        assert user_id_seq.as_primitives() == exp_primitives
+        assert user_id_seq.as_dicts() == exp_dcts
+
+    def test_load_wrong_type(self):
+        with pytest.raises(TypeError):
+            UserIdentifierSequence.load(123)

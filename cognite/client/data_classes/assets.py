@@ -35,11 +35,11 @@ from cognite.client.data_classes._base import (
     CognitePropertyClassUtil,
     CogniteResource,
     CogniteResourceList,
+    CogniteSort,
     CogniteUpdate,
     EnumProperty,
     IdTransformerMixin,
     PropertySpec,
-    Sort,
 )
 from cognite.client.data_classes.labels import Label, LabelDefinition, LabelFilter
 from cognite.client.data_classes.shared import GeoLocation, GeoLocationFilter, TimestampRange
@@ -449,7 +449,6 @@ class AssetFilter(CogniteFilter):
         external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
         labels (LabelFilter | None): Return only the resource matching the specified label constraints.
         geo_location (GeoLocationFilter | None): Only include files matching the specified geographic relation.
-        cognite_client (CogniteClient | None): The client to associate with this object.
     """
 
     def __init__(
@@ -467,7 +466,6 @@ class AssetFilter(CogniteFilter):
         external_id_prefix: str | None = None,
         labels: LabelFilter | None = None,
         geo_location: GeoLocationFilter | None = None,
-        cognite_client: CogniteClient | None = None,
     ) -> None:
         self.name = name
         self.parent_ids = parent_ids
@@ -482,20 +480,9 @@ class AssetFilter(CogniteFilter):
         self.external_id_prefix = external_id_prefix
         self.labels = labels
         self.geo_location = geo_location
-        self._cognite_client = cast("CogniteClient", cognite_client)
 
         if labels is not None and not isinstance(labels, LabelFilter):
             raise TypeError("AssetFilter.labels must be of type LabelFilter")
-
-    @classmethod
-    def _load(cls, resource: dict | str) -> AssetFilter:
-        instance = super()._load(resource)
-        if isinstance(resource, Dict):
-            if instance.created_time is not None:
-                instance.created_time = TimestampRange(**instance.created_time)
-            if instance.last_updated_time is not None:
-                instance.last_updated_time = TimestampRange(**instance.last_updated_time)
-        return instance
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
         result = super().dump(camel_case)
@@ -922,7 +909,7 @@ class SortableAssetProperty(EnumProperty):
 SortableAssetPropertyLike: TypeAlias = Union[SortableAssetProperty, str, List[str]]
 
 
-class AssetSort(Sort):
+class AssetSort(CogniteSort):
     def __init__(
         self,
         property: SortableAssetProperty,

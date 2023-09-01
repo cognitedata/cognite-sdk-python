@@ -171,13 +171,16 @@ class RelationshipsAPI(APIClient):
             other_params={"fetchResources": fetch_resources},
         )
 
-    def retrieve_multiple(self, external_ids: Sequence[str], fetch_resources: bool = False) -> RelationshipList:
+    def retrieve_multiple(
+        self, external_ids: Sequence[str], fetch_resources: bool = False, ignore_unknown_ids: bool = False
+    ) -> RelationshipList:
         """`Retrieve multiple relationships by external id.  <https://developer.cognite.com/api#tag/Relationships/operation/byidsRelationships>`_
 
         Args:
             external_ids (Sequence[str]): External IDs
             fetch_resources (bool): if true, will try to return the full resources referenced by the relationship in the
                 source and target fields.
+            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
             RelationshipList: The requested relationships.
@@ -195,7 +198,10 @@ class RelationshipsAPI(APIClient):
             list_cls=RelationshipList,
             resource_cls=Relationship,
             identifiers=identifiers,
-            other_params={"fetchResources": fetch_resources},
+            other_params={
+                "fetchResources": fetch_resources,
+                "ignoreUnknownIds": ignore_unknown_ids,
+            },
         )
 
     def list(

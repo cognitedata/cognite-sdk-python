@@ -21,12 +21,12 @@ repos:
       - id: black
         exclude: ^cognite/client/_proto.*$
         args:
-          - --line-length
-          - '120'
-          - --target-version
-          - py38
-          - --include
-          - \.py$
+          - --line-length=120
+          - --target-version=py38
+          - --target-version=py39
+          - --target-version=py310
+          - --target-version=py311
+          - --include=\.py$
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
