@@ -5,7 +5,12 @@ from typing import TYPE_CHECKING, Any, Iterator, Literal, Sequence, cast, overlo
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes import Relationship, RelationshipFilter, RelationshipList, RelationshipUpdate
+from cognite.client.data_classes import (
+    Relationship,
+    RelationshipFilter,
+    RelationshipList,
+    RelationshipUpdate,
+)
 from cognite.client.data_classes.labels import LabelFilter
 from cognite.client.utils._auxiliary import is_unlimited
 from cognite.client.utils._identifier import IdentifierSequence
@@ -19,7 +24,12 @@ if TYPE_CHECKING:
 class RelationshipsAPI(APIClient):
     _RESOURCE_PATH = "/relationships"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(
+        self,
+        config: ClientConfig,
+        api_version: str | None,
+        cognite_client: CogniteClient,
+    ) -> None:
         super().__init__(config, api_version, cognite_client)
         self._LIST_SUBQUERY_LIMIT = 1000
 
@@ -171,13 +181,19 @@ class RelationshipsAPI(APIClient):
             other_params={"fetchResources": fetch_resources},
         )
 
-    def retrieve_multiple(self, external_ids: Sequence[str], fetch_resources: bool = False) -> RelationshipList:
+    def retrieve_multiple(
+        self,
+        external_ids: Sequence[str],
+        fetch_resources: bool = False,
+        ignore_unknown_ids: bool = False,
+    ) -> RelationshipList:
         """`Retrieve multiple relationships by external id.  <https://developer.cognite.com/api#tag/Relationships/operation/byidsRelationships>`_
 
         Args:
             external_ids (Sequence[str]): External IDs
             fetch_resources (bool): if true, will try to return the full resources referenced by the relationship in the
                 source and target fields.
+            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
             RelationshipList: The requested relationships.
@@ -195,7 +211,10 @@ class RelationshipsAPI(APIClient):
             list_cls=RelationshipList,
             resource_cls=Relationship,
             identifiers=identifiers,
-            other_params={"fetchResources": fetch_resources},
+            other_params={
+                "fetchResources": fetch_resources,
+                "ignoreUnknownIds": ignore_unknown_ids,
+            },
         )
 
     def list(
@@ -367,7 +386,8 @@ class RelationshipsAPI(APIClient):
         return self._create_multiple(list_cls=RelationshipList, resource_cls=Relationship, items=relationship)
 
     def update(
-        self, item: Relationship | RelationshipUpdate | Sequence[Relationship | RelationshipUpdate]
+        self,
+        item: Relationship | RelationshipUpdate | Sequence[Relationship | RelationshipUpdate],
     ) -> Relationship | RelationshipList:
         """`Update one or more relationships <https://developer.cognite.com/api#tag/Relationships/operation/updateRelationships>`_
         Currently, a full replacement of labels on a relationship is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.
@@ -415,7 +435,10 @@ class RelationshipsAPI(APIClient):
                 >>> res = c.relationships.update(my_update)
         """
         return self._update_multiple(
-            list_cls=RelationshipList, resource_cls=Relationship, update_cls=RelationshipUpdate, items=item
+            list_cls=RelationshipList,
+            resource_cls=Relationship,
+            update_cls=RelationshipUpdate,
+            items=item,
         )
 
     @overload
@@ -427,7 +450,9 @@ class RelationshipsAPI(APIClient):
         ...
 
     def upsert(
-        self, item: Relationship | Sequence[Relationship], mode: Literal["patch", "replace"] = "patch"
+        self,
+        item: Relationship | Sequence[Relationship],
+        mode: Literal["patch", "replace"] = "patch",
     ) -> Relationship | RelationshipList:
         """Upsert relationships, i.e., update if it exists, and create if it does not exist.
             Note this is a convenience method that handles the upserting for you by first calling update on all items,
