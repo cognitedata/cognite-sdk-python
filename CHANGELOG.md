@@ -17,6 +17,10 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.16.0] - 2023-09-01
+### Added
+- Support for `ignore_unknown_ids` in `client.relationships.retrieve_multiple` method.
+
 ## [6.15.3] - 2023-08-30
 ### Fixed
 - Uploading files using `client.files.upload` now works when running with `pyodide`.
