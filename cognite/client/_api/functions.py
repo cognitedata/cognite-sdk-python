@@ -579,7 +579,7 @@ def validate_function_folder(root_path: str, function_path: str, check_imports: 
         sys.path.insert(0, root_path)
 
         try:
-            # Necessary to clear the cache if you have previously imported the module
+            # Necessary to clear the cache if we have previously imported the module
             module_name = convert_file_path_to_module_path(root_path, function_path_full)
             cached_module = sys.modules.get(module_name)
             if cached_module:
