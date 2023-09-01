@@ -6,6 +6,7 @@ import os
 import re
 import sys
 import textwrap
+import threading
 import time
 from inspect import getdoc, getsource
 from numbers import Number
@@ -46,6 +47,8 @@ MAX_RETRIES = 5
 REQUIREMENTS_FILE_NAME = "requirements.txt"
 REQUIREMENTS_REG = re.compile(r"(\[\/?requirements\]){1}$", flags=re.M)  # Matches [requirements] and [/requirements]
 UNCOMMENTED_LINE_REG = re.compile(r"^[^\#]]*.*")
+
+_import_lock = threading.Lock()
 
 
 def _get_function_internal_id(cognite_client: CogniteClient, identifier: Identifier) -> int:
@@ -581,21 +584,23 @@ def validate_function_folder(root_path: str, function_path: str, check_imports: 
 
     # Opt-in import checks
     if check_imports:
-        # Add the root directory to sys.path
-        sys.path.insert(0, root_path)
+        with _import_lock:
+            # Get the current set of loaded modules
+            before_imports = set(sys.modules.keys())
 
-        try:
-            # Necessary to clear the cache if we have previously imported the module
-            module_name = convert_file_path_to_module_path(root_path, function_path_full)
-            cached_module = sys.modules.get(module_name)
-            if cached_module:
-                del sys.modules[module_name]
+            # Try importing the module
+            try:
+                sys.path.insert(0, root_path)
+                module_name = convert_file_path_to_module_path(root_path, function_path_full)
+                handler = importlib.import_module(module_name)
+                _validate_function_handle(handler.handle)
+            finally:
+                sys.path.remove(root_path)
 
-            # This will raise an ImportError if the module or its imports have problems
-            importlib.import_module(module_name)
-        finally:
-            # Always remove the added path, whether or not an error was raised
-            sys.path.remove(root_path)
+                # Clear out newly imported modules
+                after_imports = set(sys.modules.keys())
+                for new_module in after_imports - before_imports:
+                    sys.modules.pop(new_module, None)
 
 
 def _validate_function_handle(function_handle: Callable[..., Any]) -> None:
