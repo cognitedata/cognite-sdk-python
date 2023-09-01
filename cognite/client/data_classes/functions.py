@@ -143,14 +143,14 @@ class Function(CogniteResource):
 
         return (schedules_by_external_id + schedules_by_id)[:limit]
 
-    def retrieve_call(self, id: int) -> FunctionCall:
+    def retrieve_call(self, id: int) -> FunctionCall | None:
         """`Retrieve call by id. <https://docs.cognite.com/api/v1/#operation/getFunctionCall>`_
 
         Args:
             id (int): ID of the call.
 
         Returns:
-            FunctionCall: Function call.
+            FunctionCall | None: Requested function call or None if not found.
         """
         return self._cognite_client.functions.calls.retrieve(call_id=id, function_id=self.id)
 

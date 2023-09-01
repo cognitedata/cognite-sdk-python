@@ -284,7 +284,7 @@ class FunctionsAPI(APIClient):
 
         return FunctionList._load(res.json()["items"], cognite_client=self._cognite_client)
 
-    def retrieve(self, id: int | None = None, external_id: str | None = None) -> FunctionList | Function | None:
+    def retrieve(self, id: int | None = None, external_id: str | None = None) -> Function | None:
         """`Retrieve a single function by id. <https://developer.cognite.com/api#tag/Functions/operation/byIdsFunctions>`_
 
         Args:
@@ -292,7 +292,7 @@ class FunctionsAPI(APIClient):
             external_id (str | None): External ID
 
         Returns:
-            FunctionList | Function | None: Requested function or None if it does not exist.
+            Function | None: Requested function or None if it does not exist.
 
         Examples:
 
@@ -306,10 +306,10 @@ class FunctionsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.functions.retrieve(external_id="1")
+                >>> res = c.functions.retrieve(external_id="abc")
         """
-        identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
-        return self._retrieve_multiple(identifiers=identifiers, resource_cls=Function, list_cls=FunctionList)
+        identifier = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
+        return self._retrieve_multiple(identifiers=identifier, resource_cls=Function, list_cls=FunctionList)
 
     def retrieve_multiple(
         self, ids: Sequence[int] | None = None, external_ids: Sequence[str] | None = None
@@ -742,7 +742,7 @@ class FunctionCallsAPI(APIClient):
 
     def retrieve(
         self, call_id: int, function_id: int | None = None, function_external_id: str | None = None
-    ) -> FunctionCallList | FunctionCall | None:
+    ) -> FunctionCall | None:
         """`Retrieve a single function call by id. <https://developer.cognite.com/api#tag/Function-calls/operation/byIdsFunctionCalls>`_
 
         Args:
@@ -751,7 +751,7 @@ class FunctionCallsAPI(APIClient):
             function_external_id (str | None): External ID of the function on which the call was made.
 
         Returns:
-            FunctionCallList | FunctionCall | None: Requested function call.
+            FunctionCall | None: Requested function call or None if either call ID or function identifier is not found.
 
         Examples:
 
@@ -767,17 +767,15 @@ class FunctionCallsAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> func = c.functions.retrieve(id=1)
                 >>> call = func.retrieve_call(id=2)
-
         """
         identifier = _get_function_identifier(function_id, function_external_id)
         function_id = _get_function_internal_id(self._cognite_client, identifier)
 
         resource_path = self._RESOURCE_PATH.format(function_id)
-        identifiers = IdentifierSequence.load(ids=call_id).as_singleton()
 
         return self._retrieve_multiple(
             resource_path=resource_path,
-            identifiers=identifiers,
+            identifiers=IdentifierSequence.load(ids=call_id).as_singleton(),
             resource_cls=FunctionCall,
             list_cls=FunctionCallList,
         )
@@ -860,14 +858,14 @@ class FunctionSchedulesAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._LIST_LIMIT_CEILING = 10_000
 
-    def retrieve(self, id: int) -> FunctionSchedule | FunctionSchedulesList | None:
+    def retrieve(self, id: int) -> FunctionSchedule | None:
         """`Retrieve a single function schedule by id. <https://developer.cognite.com/api#tag/Function-schedules/operation/byIdsFunctionSchedules>`_
 
         Args:
-            id (int): ID
+            id (int): Schedule ID
 
         Returns:
-            FunctionSchedule | FunctionSchedulesList | None: Requested function schedule.
+            FunctionSchedule | None: Requested function schedule or None if not found.
 
         Examples:
 
@@ -878,8 +876,9 @@ class FunctionSchedulesAPI(APIClient):
                 >>> res = c.functions.schedules.retrieve(id=1)
 
         """
+        identifier = IdentifierSequence.load(ids=id).as_singleton()
         return self._retrieve_multiple(
-            identifiers=IdentifierSequence.load(ids=id), resource_cls=FunctionSchedule, list_cls=FunctionSchedulesList
+            identifiers=identifier, resource_cls=FunctionSchedule, list_cls=FunctionSchedulesList
         )
 
     def list(
