@@ -2,7 +2,6 @@ import json
 import os
 import re
 from io import BufferedReader
-from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
@@ -526,21 +525,19 @@ class TestFilesAPI:
             with open(fp2, "rb") as fh:
                 assert b"content2" == fh.read()
 
-    def test_download_with_folder_structure(self, cognite_client, mock_file_download_response_with_folder_structure):
-        with TemporaryDirectory() as dir:
-            cognite_client.files.download(directory=dir, id=[1], external_id=["2"], keep_directory_structure=True)
-            assert {"ignoreUnknownIds": False, "items": [{"id": 1}, {"externalId": "2"}]} == jsgz_load(
-                mock_file_download_response_with_folder_structure.calls[0].request.body
-            )
-
-            fp1 = Path(dir) / "rootdir/subdir/file_a"
-            fp2 = Path(dir) / "file_a"
-            assert fp1.is_file()
-            assert fp2.is_file()
-            with open(fp1, "rb") as fh:
-                assert b"contentSubDir" == fh.read()
-            with open(fp2, "rb") as fh:
-                assert b"contentNoDir" == fh.read()
+    def test_download_with_folder_structure(
+        self, tmp_path, cognite_client, mock_file_download_response_with_folder_structure
+    ):
+        cognite_client.files.download(directory=tmp_path, id=[1], external_id=["2"], keep_directory_structure=True)
+        assert {"ignoreUnknownIds": False, "items": [{"id": 1}, {"externalId": "2"}]} == jsgz_load(
+            mock_file_download_response_with_folder_structure.calls[0].request.body
+        )
+        fp1 = tmp_path / "rootdir/subdir/file_a"
+        fp2 = tmp_path / "file_a"
+        assert fp1.is_file()
+        assert fp2.is_file()
+        assert fp1.read_text() == "contentSubDir"
+        assert fp2.read_text() == "contentNoDir"
 
     @pytest.fixture
     def mock_byids_response__file_with_double_dots(self, rsps, cognite_client):
