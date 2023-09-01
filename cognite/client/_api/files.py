@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import collections
 import copy
 import os
 import warnings
@@ -31,6 +30,7 @@ from cognite.client.data_classes import (
     LabelFilter,
     TimestampRange,
 )
+from cognite.client.utils._auxiliary import find_duplicates
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 
@@ -629,22 +629,30 @@ class FilesAPI(APIClient):
 
         if isinstance(directory, str):
             directory = Path(directory)
-        assert directory.is_dir(), f"{directory} is not a directory"
+        if not directory.is_dir():
+            raise NotADirectoryError(f"{directory} is not a directory")
 
         all_ids = IdentifierSequence.load(id, external_id).as_dicts()
         id_to_metadata = self._get_id_to_metadata_map(all_ids)
 
+        def duplicate_warnings(all_file_names: str) -> None:
+            duplicate_file_names = sorted(find_duplicates(all_file_names))
+            if not duplicate_file_names:
+                return
+            warning_message = (
+                f"There are {len(duplicate_file_names)} duplicate file names. Only the contents of one of the files "
+                f"with the same name will be downloaded to the same directory. \nThis concerns: {[str(i) for i in duplicate_file_names]}"
+            )
+            warnings.warn(message=warning_message, stacklevel=2)
+
         if not keep_directory_structure:
             all_file_names = [
-                cast(str, _metadata.name) for _id, _metadata in id_to_metadata.items() if isinstance(_id, int)
+                cast(str, directory / _metadata.name)
+                for _id, _metadata in id_to_metadata.items()
+                if isinstance(_id, int)
             ]
-            duplicate_names = [name for name, count in collections.Counter(all_file_names).items() if count > 1]
-            if duplicate_names:
-                duplicate_names.sort()
-                warning_message = f"""There are {len(duplicate_names)} duplicate file names.
-    Only the contents of one of the files with the same name will be downloaded to the same directory.
-    This concerns: {duplicate_names}"""
-                warnings.warn(message=warning_message, stacklevel=2)
+            duplicate_warnings(all_file_names=all_file_names)
+
             self._download_files_to_directory(directory, all_ids, id_to_metadata)
             return
 
@@ -659,15 +667,9 @@ class FilesAPI(APIClient):
 
                 ids.append({"id": _id})
                 file_directories.append(file_directory)
-                full_file_names.append(str((file_directory / cast(str, _metadata.name)).resolve()))
+                full_file_names.append(str(file_directory / _metadata.name))
 
-        full_duplicate_names = [name for name, count in collections.Counter(full_file_names).items() if count > 1]
-        if full_duplicate_names:
-            full_duplicate_names.sort()
-            warning_message = f"""There are {len(full_duplicate_names)} duplicate file names.
-    Only the contents of one of the files with the same name will be downloaded to the same directory.
-    This concerns: {full_duplicate_names}"""
-            warnings.warn(message=warning_message, stacklevel=2)
+        duplicate_warnings(all_file_names=full_file_names)
 
         for file_folder in set(file_directories):
             file_folder.mkdir(parents=True, exist_ok=True)

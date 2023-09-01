@@ -19,8 +19,10 @@ Changes are grouped as follows
 
 ## [6.16.0] - 2023-08-28
 ### Added
-- Added parameter `keep_folder_structure`to `client.files.download` to allow downloading files to a folder structure matching the one in CDF.
-This also keeps all files when downloading, and avoid the problem of files being ignored if they have the same name in different folders.
+- Added parameter `keep_directory_structure`to `client.files.download` to allow downloading files to a folder structure matching the one in CDF.
+
+### Improved
+- Using `client.files.download` will still skip files with the same name when writing to disk, but now a `UserWarning` is raised, specifying which files are concerned.
 
 ## [6.15.0] - 2023-08-18
 ### Added

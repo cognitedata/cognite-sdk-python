@@ -2,6 +2,7 @@ import json
 import os
 import re
 from io import BufferedReader
+from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
@@ -532,10 +533,10 @@ class TestFilesAPI:
                 mock_file_download_response_with_folder_structure.calls[0].request.body
             )
 
-            fp1 = os.path.join(dir, "rootdir/subdir/file_a")
-            fp2 = os.path.join(dir, "file_a")
-            assert os.path.isfile(fp1)
-            assert os.path.isfile(fp2)
+            fp1 = Path(dir) / "rootdir/subdir/file_a"
+            fp2 = Path(dir) / "file_a"
+            assert fp1.is_file()
+            assert fp2.is_file()
             with open(fp1, "rb") as fh:
                 assert b"contentSubDir" == fh.read()
             with open(fp2, "rb") as fh:
