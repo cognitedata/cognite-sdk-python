@@ -522,8 +522,18 @@ def _create_session_and_return_nonce(
     return client.iam.sessions.create(client_credentials).nonce
 
 
-def convert_file_path_to_module_path(file_path: str) -> str:
-    return ".".join(Path(file_path).with_suffix("").parts)
+def convert_file_path_to_module_path(root_path: str, file_path: Path) -> str:
+    """
+    Given a root directory and a full file path, this function will determine the relative
+    module path that can be used for importing.
+
+    Example:
+    If root_path is "/path/to/your/" and file_path is "/path/to/your/dir/module.py",
+    the function will return "dir.module".
+    """
+    relative_path = Path(file_path).relative_to(root_path)  # get the relative path
+    module_path = ".".join(relative_path.with_suffix("").parts)
+    return module_path
 
 
 def _get_handle_function_node(handler_path: Path) -> ast.FunctionDef | None:
@@ -565,16 +575,21 @@ def validate_function_folder(root_path: str, function_path: str, check_imports: 
 
     # Opt-in import checks
     if check_imports:
-        module_name = function_path_full.stem
-        sys.path.insert(0, str(function_path_full.parent))
+        # Add the root directory to sys.path
+        sys.path.insert(0, root_path)
 
         try:
-            # Try to dynamically import the module to check for any import-related errors
+            # Necessary to clear the cache if you have previously imported the module
+            module_name = convert_file_path_to_module_path(root_path, function_path_full)
+            cached_module = sys.modules.get(module_name)
+            if cached_module:
+                del sys.modules[module_name]
+
+            # This will raise an ImportError if the module or its imports have problems
             importlib.import_module(module_name)
-        except (ImportError, ModuleNotFoundError) as e:
-            raise e
         finally:
-            sys.path.remove(str(function_path_full.parent))
+            # Always remove the added path, whether or not an error was raised
+            sys.path.remove(root_path)
 
 
 def _validate_function_handle(function_handle: Callable[..., Any]) -> None:
