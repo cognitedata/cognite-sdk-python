@@ -14,14 +14,15 @@ if TYPE_CHECKING:
 class DataModelingResource(CogniteResource):
     def __repr__(self) -> str:
         args = []
+        # TODO: Need newer mypy version to understand the below hasattr's:
         if hasattr(self, "space"):
-            space = self.space
+            space = self.space  # type: ignore [attr-defined]
             args.append(f"{space=}")
         if hasattr(self, "external_id"):
-            external_id = self.external_id
+            external_id = self.external_id  # type: ignore [attr-defined]
             args.append(f"{external_id=}")
         if hasattr(self, "version"):
-            version = self.version
+            version = self.version  # type: ignore [attr-defined]
             args.append(f"{version=}")
 
         return f"<{type(self).__qualname__}({', '.join(args)}) at {id(self):#x}>"

@@ -522,7 +522,7 @@ class FunctionsAPI(APIClient):
 def _create_session_and_return_nonce(
     client: CogniteClient,
     client_credentials: dict | ClientCredentials | None = None,
-) -> str | None:
+) -> str:
     if client_credentials is None:
         if isinstance(client._config.credentials, OAuthClientCertificate):
             raise CogniteAuthError("Client certificate credentials is not supported with the Functions API")

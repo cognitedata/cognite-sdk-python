@@ -312,11 +312,11 @@ class FunctionCall(CogniteResource):
         self.function_id = function_id
         self._cognite_client = cast("CogniteClient", cognite_client)
 
-    def get_response(self) -> dict:
+    def get_response(self) -> dict | None:
         """Retrieve the response from this function call.
 
         Returns:
-            dict: Response from the function call.
+            dict | None: Response from the function call.
         """
         if self.id is None or self.function_id is None:
             raise ValueError("FunctionCall is missing one or more of: [id, function_id]")

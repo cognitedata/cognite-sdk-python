@@ -565,7 +565,7 @@ class APIClient:
             advanced_filter=advanced_filter,
             api_subversion=api_subversion,
         ):
-            items.extend(resource_list.data)
+            items.extend(cast(T_CogniteResourceList, resource_list).data)
         return list_cls(items, cognite_client=self._cognite_client)
 
     def _list_partitioned(
@@ -986,12 +986,12 @@ class APIClient:
         if mode not in ["patch", "replace"]:
             raise ValueError(f"mode must be either 'patch' or 'replace', got {mode!r}")
         is_single = isinstance(items, CogniteResource)
-        items = cast(Sequence[CogniteResource], [items] if is_single else items)
+        items = cast(Sequence[T_CogniteResource], [items] if is_single else items)
         try:
             result = self._update_multiple(items, list_cls, resource_cls, update_cls, mode=mode)
         except CogniteNotFoundError as not_found_error:
-            items_by_external_id = {item.external_id: item for item in items if item.external_id is not None}
-            items_by_id = {item.id: item for item in items if hasattr(item, "id") and item.id is not None}
+            items_by_external_id = {item.external_id: item for item in items if item.external_id is not None}  # type: ignore [attr-defined]
+            items_by_id = {item.id: item for item in items if hasattr(item, "id") and item.id is not None}  # type: ignore [attr-defined]
             # Not found must have an external id as they do not exist in CDF:
             try:
                 missing_external_ids = {entry["externalId"] for entry in not_found_error.not_found}
@@ -1038,7 +1038,7 @@ class APIClient:
                     successful.extend(item.external_id for item in created)
                 if updated is None and created is not None:
                     # The created call failed
-                    failed.extend(item.external_id if item.external_id is not None else item.id for item in to_update)
+                    failed.extend(item.external_id if item.external_id is not None else item.id for item in to_update)  # type: ignore [attr-defined]
                 raise CogniteAPIError(
                     api_error.message, code=api_error.code, successful=successful, failed=failed, unknown=unknown
                 )
@@ -1059,7 +1059,7 @@ class APIClient:
             # Reorder to match the order of the input items
             result.data = [
                 result.get(
-                    **Identifier.load(item.id if hasattr(item, "id") else None, item.external_id).as_dict(
+                    **Identifier.load(item.id if hasattr(item, "id") else None, item.external_id).as_dict(  # type: ignore [attr-defined]
                         camel_case=False
                     )
                 )
