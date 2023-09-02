@@ -17,10 +17,14 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.25.1] - 2023-09-15
+### Fixed
+- An `AttributeError` can no longer be raised in `client.transformations.[create, update]` when processing credentials.
+
 ## [6.25.0] - 2023-09-14
 ### Added
 - Support for `ignore_unknown_ids` in `client.functions.retrieve_multiple` method.
-- 
+-
 ## [6.24.1] - 2023-09-13
 ### Fixed
 - Bugfix for `AssetsAPI.create_hierarchy` when running in upsert mode: It could skip certain updates above
@@ -51,7 +55,7 @@ data modeling query and receive updates through a provided callback.
 ### Added
 - Supporting pattern mode and extra configuration for diagram detect in beta.
 
-## [6.20.0] - 2023-09-05
+## [6.20.0] - 2023-09-06
 ### Fixed
 - When creating functions with `client.functions.create` using the `folder` argument, a trial-import is executed as part of
   the verification process. This could leave leftover modules still in scope, possibly affecting subsequent calls. This is
