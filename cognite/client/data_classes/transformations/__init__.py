@@ -223,13 +223,13 @@ class Transformation(CogniteResource):
             return ret
 
         if self.source_nonce is None and self.source_oidc_credentials:
-            project = self.source_oidc_credentials.cdf_project_name or self._cognite_client.project
+            project = self.source_oidc_credentials.cdf_project_name or self._cognite_client.config.project
             self.source_nonce = try_get_or_create_nonce(self.source_oidc_credentials, project)
             if self.source_nonce:
                 self.source_oidc_credentials = None
 
         if self.destination_nonce is None and self.destination_oidc_credentials:
-            project = self.destination_oidc_credentials.cdf_project_name or self._cognite_client.project
+            project = self.destination_oidc_credentials.cdf_project_name or self._cognite_client.config.project
             self.destination_nonce = try_get_or_create_nonce(self.destination_oidc_credentials, project)
             if self.destination_nonce:
                 self.destination_oidc_credentials = None
