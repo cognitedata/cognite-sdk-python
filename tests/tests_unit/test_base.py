@@ -26,6 +26,13 @@ from cognite.client.exceptions import CogniteMissingClientError
 from tests.utils import all_subclasses
 
 
+@pytest.fixture
+def simple_mock_client():
+    # We allow the mock to pass isinstance checks
+    (client := mock.MagicMock()).__class__ = CogniteClient
+    return client
+
+
 class MyResource(CogniteResource):
     def __init__(self, var_a=None, var_b=None, id=None, external_id=None, cognite_client=None):
         self.var_a = var_a
@@ -121,12 +128,8 @@ class MyResourceList(CogniteResourceList):
 
 
 class MyResponse(CogniteResponse):
-    def __init__(self, var_a=None, cognite_client=None):
+    def __init__(self, var_a=None):
         self.var_a = var_a
-        self._cognite_client = cognite_client
-
-    def use(self):
-        return self._cognite_client
 
 
 class TestCogniteResource:
@@ -148,9 +151,9 @@ class TestCogniteResource:
     def test_load_object_attr(self):
         assert {"var_a": 1, "var_b": {"camelCase": 1}} == MyResource._load({"varA": 1, "varB": {"camelCase": 1}}).dump()
 
-    def test_eq(self):
+    def test_eq(self, simple_mock_client):
         assert MyResource(1, "s") == MyResource(1, "s")
-        assert MyResource(1, "s") == MyResource(1, "s", cognite_client=mock.MagicMock())
+        assert MyResource(1, "s") == MyResource(1, "s", cognite_client=simple_mock_client)
         assert MyResource() == MyResource()
         assert MyResource(1, "s") != MyResource(1)
         assert MyResource(1, "s") != MyResource(2, "t")
@@ -283,9 +286,8 @@ class TestCogniteResourceList:
         assert MyResourceList([MyResource(1, 2), MyResource(2, 3)]) == resource_list[:]
         assert isinstance(resource_list[:], MyResourceList)
 
-    def test_slice_list_client_remains(self):
-        mock_client = mock.MagicMock()
-        rl = MyResourceList([MyResource(1, 2)], cognite_client=mock_client)
+    def test_slice_list_client_remains(self, simple_mock_client):
+        rl = MyResourceList([MyResource(1, 2)], cognite_client=simple_mock_client)
         rl_sliced = rl[:]
         assert rl._cognite_client == rl_sliced._cognite_client
 
@@ -513,7 +515,6 @@ class TestCogniteResponse:
 
     def test_eq(self):
         assert MyResponse(1) == MyResponse(1)
-        assert MyResponse(1) == MyResponse(1, cognite_client=mock.MagicMock())
         assert MyResponse(1) != MyResponse(2)
         assert MyResponse(1) != MyResponse()
 
@@ -523,7 +524,7 @@ class TestCogniteResponse:
             MyResource(1)._cognite_client
         assert MyResource(1, cognite_client=c)._cognite_client == c
 
-    def test_use_method_which_requires_cognite_client__client_not_set(self):
-        mr = MyResponse()
-        with pytest.raises(CogniteMissingClientError):
-            mr.use()
+    def test_response_no_cogclient_ref(self):
+        # CogniteResponse does not have a reference to the cognite client:
+        with pytest.raises(AttributeError):
+            MyResponse(1)._cognite_client

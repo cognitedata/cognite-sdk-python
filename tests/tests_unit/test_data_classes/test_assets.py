@@ -11,6 +11,7 @@ from unittest.mock import call
 
 import pytest
 
+from cognite.client import CogniteClient
 from cognite.client.data_classes import (
     Asset,
     AssetHierarchy,
@@ -116,7 +117,8 @@ class TestAssetList:
         resources_a2 = resource_list_class([r2, r3])
         resources_a3 = resource_list_class([r2, r3])
 
-        mock_cognite_client = mock.MagicMock()
+        # Make a mock that pass isinstance checks for 'CogniteClient':
+        (mock_cognite_client := mock.MagicMock()).__class__ = CogniteClient
         mock_method = getattr(mock_cognite_client, method)
         mock_method.list.side_effect = [resources_a1, resources_a2, resources_a3]
         mock_method._config = mock.Mock(max_workers=3)
