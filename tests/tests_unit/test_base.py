@@ -135,8 +135,8 @@ class TestCogniteResource:
 
     def test_load(self):
         assert MyResource(1).dump() == MyResource._load({"varA": 1}).dump()
-        assert MyResource(1, 2).dump() == MyResource._load({"var_a": 1, "var_b": 2}).dump()
-        assert {"var_a": 1} == MyResource._load({"var_a": 1, "var_c": 1}).dump()
+        assert MyResource().dump() == MyResource._load({"var_a": 1, "var_b": 2}).dump()
+        assert {"var_a": 1} == MyResource._load({"varA": 1, "varC": 1}).dump()
 
     def test_load_unknown_attribute(self):
         assert {"var_a": 1, "var_b": 2} == MyResource._load({"varA": 1, "varB": 2, "varC": 3}).dump()
