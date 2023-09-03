@@ -490,12 +490,11 @@ class TransformationFilter(CogniteFilter):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         obj = super().dump(camel_case=camel_case)
-        if obj.get("includePublic") is not None:
-            is_public = obj.pop("includePublic")
-            obj["isPublic"] = is_public
-        if obj.get("tags"):
-            tags = obj.pop("tags")
-            obj["tags"] = tags.dump(camel_case)
+        if (value := obj.pop("includePublic" if camel_case else "include_public", None)) is not None:
+            obj["isPublic" if camel_case else "is_public"] = value
+
+        if (value := obj.pop("tags", None)) is not None:
+            obj["tags"] = value.dump(camel_case)
         return obj
 
 
