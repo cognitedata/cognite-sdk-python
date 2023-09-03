@@ -144,7 +144,7 @@ class TimeSeries(CogniteResource):
         """
         if self.asset_id is None:
             raise ValueError("asset_id is None")
-        return cast(Asset, self._cognite_client.assets.retrieve(id=self.asset_id))
+        return cast("Asset", self._cognite_client.assets.retrieve(id=self.asset_id))
 
 
 class TimeSeriesFilter(CogniteFilter):
