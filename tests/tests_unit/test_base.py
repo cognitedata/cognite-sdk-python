@@ -494,6 +494,11 @@ class TestCogniteUpdate:
 
 
 class TestCogniteResponse:
+    def test_load(self):
+        # No base implementation of _load for CogniteResponse subclasses
+        with pytest.raises(NotImplementedError):
+            MyResponse._load({"varA": 1})
+
     def test_dump(self):
         assert {"var_a": 1} == MyResponse(1).dump()
         assert {"varA": 1} == MyResponse(1).dump(camel_case=True)
