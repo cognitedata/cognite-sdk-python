@@ -1284,7 +1284,7 @@ class _AssetHierarchyCreator:
     def _update_post(self, items: list[AssetUpdate]) -> list[Asset] | None:
         try:
             resp = self.assets_api._post(self.resource_path + "/update", json=self._dump_assets(items))
-            updated = list(map(Asset._load, resp.json()["items"]))
+            updated = [Asset._load(item) for item in resp.json()["items"]]
             self.latest_exception = None  # Update worked, so we hide exception
             return updated
         except Exception as err:

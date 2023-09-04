@@ -10,6 +10,7 @@ from json.decoder import JSONDecodeError
 from typing import (
     TYPE_CHECKING,
     Any,
+    ClassVar,
     Dict,
     Iterator,
     Literal,
@@ -64,7 +65,7 @@ T = TypeVar("T")
 
 class APIClient:
     _RESOURCE_PATH: str
-    _RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS: frozenset[str] = frozenset(
+    _RETRYABLE_POST_ENDPOINT_REGEX_PATTERNS: ClassVar[frozenset[str]] = frozenset(
         rf"^{path}(\?.*)?$"
         for path in (
             "/(assets|events|files|timeseries|sequences|datasets|relationships)/(list|byids|search|aggregate)",
