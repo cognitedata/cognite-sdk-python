@@ -132,6 +132,40 @@ def mock_file_download_response(rsps, cognite_client):
 
 
 @pytest.fixture
+def mock_file_download_response_with_folder_structure(rsps, cognite_client):
+    rsps.add(
+        rsps.POST,
+        cognite_client.files._get_base_url_with_base_path() + "/files/byids",
+        status=200,
+        json={
+            "items": [
+                {"id": 1, "name": "file_a", "directory": "/rootdir/subdir"},
+                {"id": 10, "externalId": "2", "name": "file_a"},
+            ]
+        },
+    )
+
+    def download_link_callback(request):
+        identifier = jsgz_load(request.body)["items"][0]
+        response = {}
+        if identifier.get("id") == 1:
+            response = {"items": [{"id": 1, "downloadUrl": "https://download.fileFromSubdir.here"}]}
+        if identifier.get("id") == 10:
+            response = {"items": [{"id": 10, "externalId": "2", "downloadUrl": "https://download.fileNoDir.here"}]}
+        return 200, {}, json.dumps(response)
+
+    rsps.add_callback(
+        rsps.POST,
+        cognite_client.files._get_base_url_with_base_path() + "/files/downloadlink",
+        callback=download_link_callback,
+        content_type="application/json",
+    )
+    rsps.add(rsps.GET, "https://download.fileFromSubdir.here", status=200, body="contentSubDir")
+    rsps.add(rsps.GET, "https://download.fileNoDir.here", status=200, body="contentNoDir")
+    yield rsps
+
+
+@pytest.fixture
 def mock_file_download_response_one_fails(rsps, cognite_client):
     rsps.add(
         rsps.POST,
@@ -490,6 +524,20 @@ class TestFilesAPI:
                 assert b"content1" == fh.read()
             with open(fp2, "rb") as fh:
                 assert b"content2" == fh.read()
+
+    def test_download_with_folder_structure(
+        self, tmp_path, cognite_client, mock_file_download_response_with_folder_structure
+    ):
+        cognite_client.files.download(directory=tmp_path, id=[1], external_id=["2"], keep_directory_structure=True)
+        assert {"ignoreUnknownIds": False, "items": [{"id": 1}, {"externalId": "2"}]} == jsgz_load(
+            mock_file_download_response_with_folder_structure.calls[0].request.body
+        )
+        fp1 = tmp_path / "rootdir/subdir/file_a"
+        fp2 = tmp_path / "file_a"
+        assert fp1.is_file()
+        assert fp2.is_file()
+        assert fp1.read_text() == "contentSubDir"
+        assert fp2.read_text() == "contentNoDir"
 
     @pytest.fixture
     def mock_byids_response__file_with_double_dots(self, rsps, cognite_client):
