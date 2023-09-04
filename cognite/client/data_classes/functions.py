@@ -36,7 +36,7 @@ class Function(CogniteResource):
         env_vars (dict | None): User specified environment variables on the function ((key, value) pairs).
         cpu (Number | None): Number of CPU cores per function. Defaults to 0.25. Allowed values are in the range [0.1, 0.6].
         memory (Number | None): Memory per function measured in GB. Defaults to 1. Allowed values are in the range [0.1, 2.5].
-        runtime (str | None): Runtime of the function. Allowed values are ["py37", "py38", "py39"]. The runtime "py38" resolves to the latest version of the Python 3.8 series. Will default to "py38" if not specified.
+        runtime (str | None): Runtime of the function. Allowed values are ["py38", "py39","py310"]. The runtime "py38" resolves to the latest version of the Python 3.8 series. Will default to "py38" if not specified.
         runtime_version (str | None): The complete specification of the function runtime with major, minor and patch version numbers.
         metadata (dict | None): Metadata associated with a function as a set of key:value pairs.
         error (dict | None): Dictionary with keys "message" and "trace", which is populated if deployment fails.
@@ -374,7 +374,7 @@ class FunctionsLimits(CogniteResponse):
         timeout_minutes (int): Timeout of each function call.
         cpu_cores (dict[str, float]): The number of CPU cores per function exectuion (i.e. function call).
         memory_gb (dict[str, float]): The amount of available memory in GB per function execution (i.e. function call).
-        runtimes (list[str]): Available runtimes. For example, "py37" translates to the latest version of the Python 3.7.x series.
+        runtimes (list[str]): Available runtimes. For example, "py39" translates to the latest version of the Python 3.9.x series.
         response_size_mb (int | None): Maximum response size of function calls.
     """
 
