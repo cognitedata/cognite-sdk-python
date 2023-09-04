@@ -36,7 +36,7 @@ class Function(CogniteResource):
         env_vars (dict | None): User specified environment variables on the function ((key, value) pairs).
         cpu (Number | None): Number of CPU cores per function. Defaults to 0.25. Allowed values are in the range [0.1, 0.6].
         memory (Number | None): Memory per function measured in GB. Defaults to 1. Allowed values are in the range [0.1, 2.5].
-        runtime (str | None): Runtime of the function. Allowed values are ["py37", "py38", "py39"]. The runtime "py38" resolves to the latest version of the Python 3.8 series. Will default to "py38" if not specified.
+        runtime (str | None): Runtime of the function. Allowed values are ["py38", "py39","py310"]. The runtime "py38" resolves to the latest version of the Python 3.8 series. Will default to "py38" if not specified.
         runtime_version (str | None): The complete specification of the function runtime with major, minor and patch version numbers.
         metadata (dict | None): Metadata associated with a function as a set of key:value pairs.
         error (dict | None): Dictionary with keys "message" and "trace", which is populated if deployment fails.
@@ -246,6 +246,8 @@ class FunctionSchedule(CogniteResource):
         Returns:
             dict | None: Input data to the associated function or None if not set. This data is passed deserialized into the function through the data argument.
         """
+        if self.id is None:
+            raise ValueError("FunctionSchedule is missing 'id'")
         return self._cognite_client.functions.schedules.get_input_data(id=self.id)
 
 
@@ -316,6 +318,9 @@ class FunctionCall(CogniteResource):
         Returns:
             dict: Response from the function call.
         """
+        if self.id is None or self.function_id is None:
+            raise ValueError("FunctionCall is missing one or more of: [id, function_id]")
+
         return self._cognite_client.functions.calls.get_response(call_id=self.id, function_id=self.function_id)
 
     def get_logs(self) -> FunctionCallLog:
@@ -324,11 +329,15 @@ class FunctionCall(CogniteResource):
         Returns:
             FunctionCallLog: Log for the function call.
         """
+        if self.id is None or self.function_id is None:
+            raise ValueError("FunctionCall is missing one or more of: [id, function_id]")
         return self._cognite_client.functions.calls.get_logs(call_id=self.id, function_id=self.function_id)
 
     def update(self) -> None:
         """Update the function call object. Can be useful if the call was made with wait=False."""
         latest = self._cognite_client.functions.calls.retrieve(call_id=self.id, function_id=self.function_id)
+        if latest is None:
+            raise RuntimeError("Unable to update the function call object (it was not found)")
         self.status = latest.status
         self.end_time = latest.end_time
         self.error = latest.error
@@ -372,9 +381,9 @@ class FunctionsLimits(CogniteResponse):
 
     Args:
         timeout_minutes (int): Timeout of each function call.
-        cpu_cores (dict[str, float]): The number of CPU cores per function exectuion (i.e. function call).
+        cpu_cores (dict[str, float]): The number of CPU cores per function execution (i.e. function call).
         memory_gb (dict[str, float]): The amount of available memory in GB per function execution (i.e. function call).
-        runtimes (list[str]): Available runtimes. For example, "py37" translates to the latest version of the Python 3.7.x series.
+        runtimes (list[str]): Available runtimes. For example, "py39" translates to the latest version of the Python 3.9.x series.
         response_size_mb (int | None): Maximum response size of function calls.
     """
 
@@ -410,14 +419,9 @@ class FunctionsStatus(CogniteResponse):
         status (str): Activation Status for the associated project.
     """
 
-    def __init__(
-        self,
-        status: str,
-    ) -> None:
+    def __init__(self, status: str) -> None:
         self.status = status
 
     @classmethod
     def _load(cls, api_response: dict) -> FunctionsStatus:
-        return cls(
-            status=api_response["status"],
-        )
+        return cls(status=api_response["status"])

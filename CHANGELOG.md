@@ -17,9 +17,17 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [6.17.1] - 2023-09-02
+
+## [6.18.1] - 2023-09-03
 ### Fixed
 - An `AttributeError` can no longer be raised in `client.transformations.[create, update]` when processing credentials.
+
+## [6.18.0] - 2023-09-02
+### Added
+- Added parameter `keep_directory_structure` to `client.files.download` to allow downloading files to a folder structure matching the one in CDF.
+
+### Improved
+- Using `client.files.download` will still skip files with the same name when writing to disk, but now a `UserWarning` is raised, specifying which files are affected.
 
 ## [6.17.0] - 2023-09-01
 ### Added

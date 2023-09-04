@@ -17,6 +17,14 @@ from cognite.client.data_classes import (
 from cognite.client.utils._text import random_string
 
 
+def await_file_upload(client, file_id):
+    for i in range(50):
+        if client.files.retrieve(id=file_id).uploaded:
+            return
+        time.sleep(0.5 + i / 10)
+    raise RuntimeError(f"Test file id={file_id} never changed status to 'uploaded=True'")
+
+
 @pytest.fixture(scope="class")
 def mock_geo_location():
     geometry = Geometry(type="LineString", coordinates=[[30, 10], [10, 30], [40, 40]])
@@ -25,11 +33,8 @@ def mock_geo_location():
 
 @pytest.fixture(scope="class")
 def new_file(cognite_client):
-    res = cognite_client.files.upload_bytes(content="blabla", name="myspecialfile")
-    while True:
-        if cognite_client.files.retrieve(id=res.id).uploaded:
-            break
-        time.sleep(0.5)
+    res = cognite_client.files.upload_bytes(content="blabla", name="myspecialfile", directory="/foo/bar/baz")
+    await_file_upload(cognite_client, res.id)
     yield res
     cognite_client.files.delete(id=res.id)
     assert cognite_client.files.retrieve(id=res.id) is None
@@ -39,10 +44,7 @@ def new_file(cognite_client):
 def empty_file(cognite_client):
     name = "empty_" + random_string(10)
     res = cognite_client.files.upload_bytes(content=b"", name=name, external_id=name)
-    while True:
-        if cognite_client.files.retrieve(id=res.id).uploaded:
-            break
-        time.sleep(0.5)
+    await_file_upload(cognite_client, res.id)
     yield res
     cognite_client.files.delete(id=res.id)
 
@@ -50,10 +52,7 @@ def empty_file(cognite_client):
 @pytest.fixture(scope="class")
 def new_file_with_geoLocation(mock_geo_location, cognite_client):
     res = cognite_client.files.upload_bytes(content="blabla", name="geoLocationFile", geo_location=mock_geo_location)
-    while True:
-        if cognite_client.files.retrieve(id=res.id).uploaded:
-            break
-        time.sleep(0.5)
+    await_file_upload(cognite_client, res.id)
     yield res
     cognite_client.files.delete(id=res.id)
     assert cognite_client.files.retrieve(id=res.id) is None
@@ -66,10 +65,7 @@ def new_file_with_label(cognite_client):
     file = cognite_client.files.upload_bytes(
         content="blabla", name="myspecialfile", labels=[Label(external_id=label_external_id)]
     )
-    while True:
-        if cognite_client.files.retrieve(id=file.id).uploaded:
-            break
-        time.sleep(0.5)
+    await_file_upload(cognite_client, file.id)
     yield file, label.external_id
     cognite_client.files.delete(id=file.id)
     cognite_client.labels.delete(external_id=label_external_id)
@@ -152,6 +148,22 @@ class TestFilesAPI:
         res = cognite_client.files.update(update_file)
         assert {"bla": "bla"} == res.metadata
 
+    def test_download_multiple__name_conflict(self, tmp_path, cognite_client, new_file, new_file_with_label):
+        new_file2 = new_file_with_label[0]
+        assert new_file.directory is not None
+        assert new_file2.directory is None
+
+        # Both files are named the same, so this should trigger the duplicate warning:
+        with pytest.warns(UserWarning, match=r"^There are 1 duplicate file name\(s\)"):
+            cognite_client.files.download(
+                directory=tmp_path,
+                id=[new_file.id, new_file2.id],
+                keep_directory_structure=False,
+            )
+        downloaded = list(tmp_path.rglob("*"))
+        assert len(downloaded) == 1  # On name conflict, only 1 survive
+        assert downloaded[0].stem == new_file.name
+
     def test_update_directory(self, cognite_client, new_file):
         dir = "/some/directory"
         res = cognite_client.files.update(FileMetadata(id=new_file.id, directory=dir))
@@ -168,7 +180,6 @@ class TestFilesAPI:
     def test_download_empty_file(self, cognite_client, empty_file, tmp_path):
         content = cognite_client.files.download_bytes(external_id=empty_file.external_id)
         assert content == b""
-
         cognite_client.files.download(directory=tmp_path, external_id=empty_file.external_id)
 
         tmp_file = tmp_path / empty_file.name
