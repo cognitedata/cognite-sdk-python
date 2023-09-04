@@ -267,6 +267,8 @@ class ThreeDModelRevisionUpdate(CogniteUpdate):
             PropertySpec("published", is_nullable=False),
             PropertySpec("rotation", is_nullable=False),
             PropertySpec("camera", is_nullable=False),
+            PropertySpec("scale", is_nullable=False),
+            PropertySpec("translation", is_nullable=False),
             PropertySpec("metadata", is_container=True),
         ]
 
