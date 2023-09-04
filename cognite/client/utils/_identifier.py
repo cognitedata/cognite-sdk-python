@@ -4,7 +4,6 @@ import numbers
 from abc import ABC
 from typing import (
     Generic,
-    Iterable,
     Literal,
     NoReturn,
     Protocol,
@@ -52,7 +51,7 @@ class Identifier(Generic[T_ID]):
         raise ValueError("At least one of id and external id must be specified")
 
     def name(self, camel_case: bool = False) -> str:
-        if isinstance(self.__value, int):
+        if self.is_id:
             return "id"
         return "externalId" if camel_case else "external_id"
 
@@ -61,17 +60,31 @@ class Identifier(Generic[T_ID]):
 
     @property
     def is_id(self) -> bool:
-        return isinstance(self.as_primitive(), int)
+        return isinstance(self.__value, int)
 
     @property
     def is_external_id(self) -> bool:
-        return isinstance(self.as_primitive(), str)
+        return isinstance(self.__value, str)
 
     def as_dict(self, camel_case: bool = True) -> dict[str, T_ID]:
         return {self.name(camel_case): self.__value}
 
     def as_tuple(self, camel_case: bool = True) -> tuple[str, T_ID]:
         return self.name(camel_case), self.__value
+
+
+class UserIdentifier:
+    def __init__(self, value: str) -> None:
+        self.__value: str = value
+
+    def name(self, camel_case: bool = False) -> str:
+        return "userIdentifier" if camel_case else "user_identifier"
+
+    def as_dict(self, camel_case: bool = True) -> dict[str, str]:
+        return {self.name(camel_case): self.__value}
+
+    def as_primitive(self) -> str:
+        return self.__value
 
 
 class DataModelingIdentifier:
@@ -137,9 +150,9 @@ class IdentifierSequenceCore(Generic[T_Identifier], ABC):
         self.assert_singleton()
         return cast(SingletonIdentifierSequence, self)
 
-    def chunked(self, chunk_size: int) -> Iterable[IdentifierSequence]:
+    def chunked(self: T_IdentifierSequenceCore, chunk_size: int) -> list[T_IdentifierSequenceCore]:
         return [
-            IdentifierSequence(chunk, is_singleton=self.is_singleton())
+            type(self)(chunk, is_singleton=self.is_singleton())
             for chunk in split_into_chunks(self._identifiers, chunk_size)
         ]
 
@@ -163,6 +176,9 @@ class IdentifierSequenceCore(Generic[T_Identifier], ABC):
         if "space" in identifier:
             return identifier["space"]
         raise ValueError(f"{identifier} does not contain 'id' or 'externalId' or 'space'")
+
+
+T_IdentifierSequenceCore = TypeVar("T_IdentifierSequenceCore", bound=IdentifierSequenceCore)
 
 
 class IdentifierSequence(IdentifierSequenceCore[Identifier]):
@@ -226,3 +242,20 @@ class SingletonIdentifierSequence(IdentifierSequenceCore[Identifier]):
 
 class DataModelingIdentifierSequence(IdentifierSequenceCore[DataModelingIdentifier]):
     ...
+
+
+class UserIdentifierSequence(IdentifierSequenceCore[UserIdentifier]):
+    # TODO: Inferred type from inherited methods 'as_dicts' and 'as_primitives' wrongly include 'int'
+    @classmethod
+    def load(cls, user_identifiers: str | Sequence[str]) -> UserIdentifierSequence:
+        if isinstance(user_identifiers, str):
+            return cls([UserIdentifier(user_identifiers)], is_singleton=True)
+
+        elif isinstance(user_identifiers, Sequence):
+            return cls(list(map(UserIdentifier, map(str, user_identifiers))), is_singleton=False)
+
+        raise TypeError(f"user_identifiers must be of type str or Sequence[str]. Found {type(user_identifiers)}")
+
+    def assert_singleton(self) -> None:
+        if not self.is_singleton():
+            raise ValueError("Exactly one user identifier (string) must be specified")
