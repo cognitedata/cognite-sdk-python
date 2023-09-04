@@ -17,6 +17,11 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.18.0] - 2023-09-04
+### Added
+- Supporting pattern mode and extra configuration for diagram detect in beta.
+
+
 ## [6.17.0] - 2023-09-01
 ### Added
 - Support for the UserProfilesAPI with the implementation `client.iam.user_profiles`.
