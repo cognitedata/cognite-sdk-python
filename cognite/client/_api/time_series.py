@@ -303,11 +303,10 @@ class TimeSeriesAPI(APIClient):
         in your CDF project, but exclude timezones from america:
 
             >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes import filters, aggregations
+            >>> from cognite.client.data_classes import filters, aggregations as aggs
             >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
             >>> c = CogniteClient()
-            >>> a = aggregations
-            >>> not_america = a.Not(a.Prefix("america"))
+            >>> not_america = aggs.Not(aggs.Prefix("america"))
             >>> is_critical = filters.Search(TimeSeriesProperty.description, "critical")
             >>> timezone_count = c.time_series.aggregate_cardinality_values(
             ...     TimeSeriesProperty.metadata_key("timezone"),
@@ -418,10 +417,9 @@ class TimeSeriesAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.time_series import TimeSeriesProperty
-                >>> from cognite.client.data_classes import aggregations, filters
+                >>> from cognite.client.data_classes import aggregations as aggs, filters
                 >>> c = CogniteClient()
-                >>> a = aggregations
-                >>> not_test = a.Not(a.Prefix("test"))
+                >>> not_test = aggs.Not(aggs.Prefix("test"))
                 >>> created_after_2020 = filters.Range(TimeSeriesProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
                 >>> result = c.time_series.aggregate_unique_values(TimeSeriesProperty.unit, advanced_filter=created_after_2020, aggregate_filter=not_test)
                 >>> print(result.unique)

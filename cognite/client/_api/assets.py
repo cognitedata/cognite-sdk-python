@@ -485,10 +485,9 @@ class AssetsAPI(APIClient):
 
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.assets import AssetProperty
-            >>> from cognite.client.data_classes import aggregations, filters
+            >>> from cognite.client.data_classes import aggregations as aggs, filters
             >>> c = CogniteClient()
-            >>> a = aggregations
-            >>> not_test = a.Not(a.Prefix("test"))
+            >>> not_test = aggs.Not(aggs.Prefix("test"))
             >>> created_after_2020 = filters.Range(AssetProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
             >>> result = c.assets.aggregate_unique_values(AssetProperty.labels, advanced_filter=created_after_2020, aggregate_filter=not_test)
             >>> print(result.unique)
@@ -1234,7 +1233,7 @@ class _AssetHierarchyCreator:
     ) -> _TaskResult:
         try:
             resp = self.assets_api._post(self.resource_path, self._dump_assets(assets))
-            successful = AssetList._load(resp.json()["items"]).data
+            successful = list(map(Asset._load, resp.json()["items"]))
             return _TaskResult(successful, failed=[], unknown=[])
         except Exception as err:
             self.latest_exception = err
@@ -1285,7 +1284,7 @@ class _AssetHierarchyCreator:
     def _update_post(self, items: list[AssetUpdate]) -> list[Asset] | None:
         try:
             resp = self.assets_api._post(self.resource_path + "/update", json=self._dump_assets(items))
-            updated = AssetList._load(resp.json()["items"]).data
+            updated = [Asset._load(item) for item in resp.json()["items"]]
             self.latest_exception = None  # Update worked, so we hide exception
             return updated
         except Exception as err:
