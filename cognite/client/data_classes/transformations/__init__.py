@@ -215,7 +215,7 @@ class Transformation(CogniteResource):
                 else:
                     credentials = None
                 try:
-                    session = self._cognite_client.iam.sessions.create(credentials, project=project)
+                    session = self._cognite_client.iam.sessions.create(credentials)
                     ret = NonceCredentials(session.id, session.nonce, project)
                     sessions_cache[key] = ret
                 except Exception:
