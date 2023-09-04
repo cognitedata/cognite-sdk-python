@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import os
+import warnings
 from io import BufferedReader
 from pathlib import Path
 from typing import (
@@ -30,6 +31,7 @@ from cognite.client.data_classes import (
     LabelFilter,
     TimestampRange,
 )
+from cognite.client.utils._auxiliary import find_duplicates
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 
@@ -605,17 +607,25 @@ class FilesAPI(APIClient):
         directory: str | Path,
         id: int | Sequence[int] | None = None,
         external_id: str | Sequence[str] | None = None,
+        keep_directory_structure: bool = False,
     ) -> None:
         """`Download files by id or external id. <https://developer.cognite.com/api#tag/Files/operation/downloadLinks>`_
 
         This method will stream all files to disk, never keeping more than 2MB in memory per worker.
-        The files will be stored in the provided directory using the name retrieved from the file metadata in CDF.
+        The files will be stored in the provided directory using the file name retrieved from the file metadata in CDF.
+        You can also choose to keep the directory structure from CDF so that the files will be stored in subdirectories
+        matching the directory attribute on the files. When missing, the (root) directory is used.
 
+        Warning:
+            If you are downloading several files at once, be aware that file name collisions lead to all-but-one of
+            the files missing. A warning is issued when this happens, listing the affected files.
 
         Args:
             directory (str | Path): Directory to download the file(s) to.
             id (int | Sequence[int] | None): Id or list of ids
             external_id (str | Sequence[str] | None): External ID or list of external ids.
+            keep_directory_structure (bool): Whether or not to keep the directory hierarchy in CDF,
+                creating subdirectories as needed below the given directory.
 
         Examples:
 
@@ -624,13 +634,65 @@ class FilesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> c.files.download(directory="my_directory", id=[1,2,3], external_id=["abc", "def"])
+
+            Download files by id to the current directory::
+
+                >>> c.files.download(directory=".", id=[1,2,3])
         """
-        if isinstance(directory, str):
-            directory = Path(directory)
-        all_ids = IdentifierSequence.load(id, external_id).as_dicts()
-        id_to_metadata = self._get_id_to_metadata_map(all_ids)
-        assert directory.is_dir(), f"{directory} is not a directory"
-        self._download_files_to_directory(directory, all_ids, id_to_metadata)
+        directory = Path(directory)
+        if not directory.is_dir():
+            raise NotADirectoryError(str(directory))
+
+        all_identifiers = IdentifierSequence.load(id, external_id).as_dicts()
+        id_to_metadata = self._get_id_to_metadata_map(all_identifiers)
+
+        if keep_directory_structure:
+            all_ids, filepaths, file_directories = self._prepare_file_hierarchy(directory, id_to_metadata)
+            self._download_files_to_directory(file_directories, all_ids, id_to_metadata, filepaths)
+        else:
+            filepaths = [
+                directory / cast(str, metadata.name)
+                for identifier, metadata in id_to_metadata.items()
+                if isinstance(identifier, int)
+            ]
+            self._download_files_to_directory(directory, all_identifiers, id_to_metadata, filepaths)
+
+    @staticmethod
+    def _prepare_file_hierarchy(
+        directory: Path, id_to_metadata: dict[str | int, FileMetadata]
+    ) -> tuple[list[dict[str, str | int]], list[Path], list[Path]]:
+        # Note on type hint: Too much of the SDK is wrongly typed with 'dict[str, str | int]',
+        # instead of 'dict[str, str] | dict[str, int]', so we pretend dict-value type can also be str:
+        ids: list[dict[str, str | int]] = []
+        filepaths, file_directories = [], []
+        for identifier, metadata in id_to_metadata.items():
+            if not isinstance(identifier, int):
+                continue
+            file_directory = directory
+            if metadata.directory:
+                # CDF enforces absolute, unix-style paths (i.e. always stating with '/'). We strip to make it relative:
+                file_directory /= metadata.directory[1:]
+
+            ids.append({"id": identifier})
+            file_directories.append(file_directory)
+            filepaths.append(file_directory / cast(str, metadata.name))
+
+        for file_folder in set(file_directories):
+            file_folder.mkdir(parents=True, exist_ok=True)
+
+        return ids, filepaths, file_directories
+
+    @staticmethod
+    def _warn_on_duplicate_filenames(filepaths: list[Path]) -> None:
+        if duplicates := sorted(find_duplicates(filepaths)):
+            warnings.warn(
+                (
+                    f"There are {len(duplicates)} duplicate file name(s). Only one of each duplicate will be "
+                    f"downloaded, per directory. The affected files: {list(map(str, duplicates))}"
+                ),
+                UserWarning,
+                stacklevel=2,
+            )
 
     def _get_id_to_metadata_map(self, all_ids: Sequence[dict]) -> dict[str | int, FileMetadata]:
         ids = [id["id"] for id in all_ids if "id" in id]
@@ -648,11 +710,16 @@ class FilesAPI(APIClient):
 
     def _download_files_to_directory(
         self,
-        directory: Path,
+        directory: Path | Sequence[Path],
         all_ids: Sequence[dict[str, int | str]],
         id_to_metadata: dict[str | int, FileMetadata],
+        filepaths: list[Path],
     ) -> None:
-        tasks = [(directory, id, id_to_metadata) for id in all_ids]
+        self._warn_on_duplicate_filenames(filepaths)
+        if isinstance(directory, Path):
+            tasks = [(directory, id, id_to_metadata) for id in all_ids]
+        else:
+            tasks = [(dir, id, id_to_metadata) for dir, id in zip(directory, all_ids)]
         tasks_summary = utils._concurrency.execute_tasks(
             self._process_file_download, tasks, max_workers=self._config.max_workers
         )
