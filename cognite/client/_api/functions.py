@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import ast
-import importlib
 import os
 import re
-import sys
 import textwrap
 import time
 from inspect import getdoc, getsource
+from multiprocessing import Pipe, Process
 from numbers import Number
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -172,7 +171,7 @@ class FunctionsAPI(APIClient):
         self._assert_exactly_one_of_folder_or_file_id_or_function_handle(folder, file_id, function_handle)
 
         if folder:
-            validate_function_folder(folder, function_path, check_imports=True)
+            validate_function_folder(folder, function_path, should_check_imports=True)
             file_id = self._zip_and_upload_folder(folder, name, external_id)
         elif function_handle:
             _validate_function_handle(function_handle)
@@ -522,81 +521,72 @@ def _create_session_and_return_nonce(
     return client.iam.sessions.create(client_credentials).nonce
 
 
-def convert_file_path_to_module_path(root_path: str, file_path: Path) -> str:
-    """
-    Given a root directory and a full file path, this function will determine the relative
-    module path that can be used for importing.
-
-    Example:
-    If root_path is "/path/to/your/" and file_path is "/path/to/your/dir/module.py",
-    the function will return "dir.module".
-
-    Args:
-        root_path (str): The root directory from which the module import path should be determined.
-        file_path (Path): The full path to the Python file.
-    Returns:
-        str: The importable module path for the given file.
-    """
-    relative_path = Path(file_path).relative_to(root_path)  # get the relative path
-    module_path = ".".join(relative_path.with_suffix("").parts)
-    return module_path
+def get_relative_module_path(root_path: str, file_path: Path) -> str:
+    relative_path = file_path.relative_to(root_path)
+    return ".".join(relative_path.with_suffix("").parts)
 
 
-def _get_handle_function_node(handler_path: Path) -> ast.FunctionDef | None:
-    with handler_path.open() as f:
-        node = ast.parse(f.read())
-    for item in ast.walk(node):
-        if isinstance(item, ast.FunctionDef) and item.name == "handle":
-            return item
-    return None
-
-
-def _validate_function_from_ast(node: ast.FunctionDef) -> None:
-    # Ensure the function's name is "handle"
-    if node.name != "handle":
-        raise TypeError("Function referenced by function_handle must be named handle.")
-
-    # Validate function's arguments
-    arg_names = [arg.arg for arg in node.args.args]
-    allowed_args = {"data", "client", "secrets", "function_call_info"}
-    if not set(arg_names).issubset(allowed_args):
-        raise TypeError(
-            "Arguments to function referenced by function_handle must be a subset of (data, client, secrets, function_call_info)"
+def get_handle_function_node(file_path: Path) -> ast.FunctionDef | None:
+    with file_path.open() as f:
+        return next(
+            (
+                item
+                for item in ast.walk(ast.parse(f.read()))
+                if isinstance(item, ast.FunctionDef) and item.name == "handle"
+            ),
+            None,
         )
 
 
-def validate_function_folder(root_path: str, function_path: str, check_imports: bool) -> None:
-    if Path(function_path).suffix != ".py":
-        raise TypeError(f"{function_path} is not a valid value for function_path. File extension must be .py.")
+def validate_function_args(node, allowed_args: set) -> None:
+    arg_names = [arg.arg for arg in node.args.args]
+    if not set(arg_names).issubset(allowed_args):
+        raise TypeError(f"Arguments must be a subset of {allowed_args}.")
 
-    function_path_full = Path(root_path, function_path)
-    if not function_path_full.is_file():
-        raise FileNotFoundError(f"No file found at location '{function_path}' in '{root_path}'.")
 
-    handle_function_node = _get_handle_function_node(function_path_full)
-    if handle_function_node is None:
+def run_import_check(conn, root_path, module_path):
+    import importlib
+    import sys
+
+    sys.path.insert(0, root_path)
+    try:
+        importlib.import_module(module_path)
+        conn.send(("success", "Import successful", None))
+    except Exception as e:
+        conn.send(("failure", str(e), type(e).__name__))
+
+
+def check_imports(root_path, module_path):
+    parent_conn, child_conn = Pipe()
+    p = Process(target=run_import_check, args=(child_conn, root_path, module_path))
+    p.start()
+    status, result, exc_type = parent_conn.recv()
+    p.join()
+    if status == "failure":
+        if exc_type == "ModuleNotFoundError":
+            raise ModuleNotFoundError(f"Module {module_path} could not be imported")
+        elif exc_type == "ImportError":
+            raise ImportError(f"Module {module_path} could not be imported")
+
+
+def validate_function_folder(root_path: str, function_path: str, should_check_imports: bool) -> None:
+    if not function_path.endswith(".py"):
+        raise TypeError(f"{function_path} must be a Python file.")
+
+    file_path = Path(root_path, function_path)
+    if not file_path.is_file():
+        raise FileNotFoundError(f"No file found at '{file_path}'.")
+
+    node = get_handle_function_node(file_path)
+    if not node:
         raise TypeError(f"{function_path} must contain a function named 'handle'.")
 
-    _validate_function_from_ast(handle_function_node)
+    allowed_args = {"data", "client", "secrets", "function_call_info"}
+    validate_function_args(node, allowed_args)
 
-    # Opt-in import checks
-    if check_imports:
-        # Get the current set of loaded modules
-        before_imports = set(sys.modules.keys())
-
-        # Try importing the module
-        try:
-            sys.path.insert(0, root_path)
-            module_name = convert_file_path_to_module_path(root_path, function_path_full)
-            handler = importlib.import_module(module_name)
-            _validate_function_handle(handler.handle)
-        finally:
-            sys.path.remove(root_path)
-
-            # Clear out newly imported modules
-            after_imports = set(sys.modules.keys())
-            for new_module in after_imports - before_imports:
-                sys.modules.pop(new_module, None)
+    if should_check_imports:
+        module_path = get_relative_module_path(root_path, file_path)
+        check_imports(root_path, module_path)
 
 
 def _validate_function_handle(function_handle: Callable[..., Any]) -> None:
