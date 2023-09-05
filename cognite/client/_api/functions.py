@@ -95,7 +95,7 @@ class FunctionsAPI(APIClient):
         metadata: dict | None = None,
         index_url: str | None = None,
         extra_index_urls: list[str] | None = None,
-        validate_folder_structure_and_imports: bool = True,
+        validate_function_imports: bool = True,
     ) -> Function:
         '''`When creating a function, <https://developer.cognite.com/api#tag/Functions/operation/postFunctions>`_
         the source code can be specified in one of three ways:
@@ -126,7 +126,7 @@ class FunctionsAPI(APIClient):
             metadata (dict | None): Metadata for the function as key/value pairs. Key & values can be at most 32, 512 characters long respectively. You can have at the most 16 key-value pairs, with a maximum size of 512 bytes.
             index_url (str | None): Index URL for Python Package Manager to use. Be aware of the intrinsic security implications of using the `index_url` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
             extra_index_urls (list[str] | None): Extra Index URLs for Python Package Manager to use. Be aware of the intrinsic security implications of using the `extra_index_urls` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
-            validate_folder_structure_and_imports (bool): Whether to validate the folder structure and imports, requires the packages imported in your source code to be installed locally. Defaults to True.
+            validate_function_imports (bool): Whether to validate the folder structure and imports, requires the packages imported in your source code to be installed locally. Defaults to True.
         Returns:
             Function: The created function.
 
@@ -171,7 +171,7 @@ class FunctionsAPI(APIClient):
         self._assert_exactly_one_of_folder_or_file_id_or_function_handle(folder, file_id, function_handle)
 
         if folder:
-            validate_function_folder(folder, function_path, should_check_imports=True)
+            validate_function_folder(folder, function_path, should_check_imports=validate_function_imports)
             file_id = self._zip_and_upload_folder(folder, name, external_id)
         elif function_handle:
             _validate_function_handle(function_handle)
