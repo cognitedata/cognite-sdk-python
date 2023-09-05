@@ -125,11 +125,6 @@ class MyResponse(CogniteResponse):
         self.var_a = var_a
         self._cognite_client = cognite_client
 
-    @classmethod
-    def _load(cls, api_response):
-        data = api_response["data"]
-        return cls(data["varA"])
-
     def use(self):
         return self._cognite_client
 
@@ -500,8 +495,9 @@ class TestCogniteUpdate:
 
 class TestCogniteResponse:
     def test_load(self):
-        res = MyResponse._load({"data": {"varA": 1}})
-        assert 1 == res.var_a
+        # No base implementation of _load for CogniteResponse subclasses
+        with pytest.raises(NotImplementedError):
+            MyResponse._load({"varA": 1})
 
     def test_dump(self):
         assert {"var_a": 1} == MyResponse(1).dump()

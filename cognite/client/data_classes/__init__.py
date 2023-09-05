@@ -208,6 +208,7 @@ from cognite.client.data_classes.transformations.schema import (
     TransformationSchemaColumn,
     TransformationSchemaColumnList,
 )
+from cognite.client.data_classes.user_profiles import UserProfile, UserProfileList
 
 __all__ = [
     "Annotation",
@@ -377,4 +378,6 @@ __all__ = [
     "FeatureTypeUpdateList",
     "CoordinateReferenceSystemList",
     "CoordinateReferenceSystem",
+    "UserProfile",
+    "UserProfileList",
 ]

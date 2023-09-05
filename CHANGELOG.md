@@ -17,9 +17,30 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [6.15.4] - 2023-08-31
+## [6.19.1] - 2023-08-31
+### Changed
+- Import-checks when deploying a new function can be disabled with `functions.create(..., validate_function_imports=False)`. 
 ### Improved
 - Improved validation of functions when deploying. Now uses AST parsing instead of relying on importing. 
+
+## [6.19.0] - 2023-09-04
+## Added
+- Now possible to retrieve and update translation and scale of 3D model revisions.
+
+## [6.18.0] - 2023-09-04
+### Added
+- Added parameter `keep_directory_structure` to `client.files.download` to allow downloading files to a folder structure matching the one in CDF.
+
+### Improved
+- Using `client.files.download` will still skip files with the same name when writing to disk, but now a `UserWarning` is raised, specifying which files are affected.
+
+## [6.17.0] - 2023-09-01
+### Added
+- Support for the UserProfilesAPI with the implementation `client.iam.user_profiles`.
+
+## [6.16.0] - 2023-09-01
+### Added
+- Support for `ignore_unknown_ids` in `client.relationships.retrieve_multiple` method.
 
 ## [6.15.3] - 2023-08-30
 ### Fixed

@@ -4,7 +4,7 @@ from collections import defaultdict
 from typing import Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import DATA_MODELING_LIST_LIMIT_DEFAULT
+from cognite.client._constants import DATA_MODELING_DEFAULT_LIMIT_READ
 from cognite.client.data_classes.data_modeling.ids import (
     ViewId,
     ViewIdentifier,
@@ -156,7 +156,7 @@ class ViewsAPI(APIClient):
 
     def list(
         self,
-        limit: int = DATA_MODELING_LIST_LIMIT_DEFAULT,
+        limit: int | None = DATA_MODELING_DEFAULT_LIMIT_READ,
         space: str | None = None,
         include_inherited_properties: bool = True,
         all_versions: bool = False,
@@ -165,7 +165,7 @@ class ViewsAPI(APIClient):
         """`List views <https://developer.cognite.com/api#tag/Views/operation/listViews>`_
 
         Args:
-            limit (int): Maximum number of views to return. Defaults to 10. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of views to return. Defaults to 10. Set to -1, float("inf") or None to return all items.
             space (str | None): (str | None): The space to query.
             include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
             all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.

@@ -5,8 +5,7 @@ from warnings import warn
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import (
-    DATAPOINT_SUBSCRIPTION_DATA_LIST_LIMIT_DEFAULT,
-    DATAPOINT_SUBSCRIPTIONS_LIST_LIMIT_DEFAULT,
+    DEFAULT_LIMIT_READ,
 )
 from cognite.client.data_classes.datapoints_subscriptions import (
     DatapointSubscription,
@@ -177,7 +176,7 @@ class DatapointsSubscriptionAPI(APIClient):
         self,
         external_id: str,
         start: str | None = None,
-        limit: int = DATAPOINT_SUBSCRIPTION_DATA_LIST_LIMIT_DEFAULT,
+        limit: int = DEFAULT_LIMIT_READ,
     ) -> Iterator[DatapointSubscriptionBatch]:
         """`Iterate over data from a given subscription. <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/listSubscriptionData>`_
 
@@ -236,11 +235,11 @@ class DatapointsSubscriptionAPI(APIClient):
 
             current_partitions = batch.partitions
 
-    def list(self, limit: int | None = DATAPOINT_SUBSCRIPTIONS_LIST_LIMIT_DEFAULT) -> DatapointSubscriptionList:
+    def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> DatapointSubscriptionList:
         """`List data point subscriptions <https://pr-2221.specs.preview.cogniteapp.com/20230101-beta.json.html#tag/Data-point-subscriptions/operation/listSubscriptions>`_
 
         Args:
-            limit (int | None): Maximum number of subscriptions to return. Defaults to 100. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of subscriptions to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
         Returns:
             DatapointSubscriptionList: List of requested datapoint subscriptions
 

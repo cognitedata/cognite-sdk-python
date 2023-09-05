@@ -9,7 +9,7 @@ from typing_extensions import TypeAlias
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     Sequence,
     SequenceAggregate,
@@ -142,17 +142,17 @@ class SequencesAPI(APIClient):
             external_id (str | None): External ID
 
         Returns:
-            Sequence | None: Requested sequences or None if it does not exist.
+            Sequence | None: Requested sequence or None if it does not exist.
 
         Examples:
 
-            Get sequences by id::
+            Get sequence by id::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
                 >>> res = c.sequences.retrieve(id=1)
 
-            Get sequences by external id::
+            Get sequence by external id::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
@@ -232,20 +232,20 @@ class SequencesAPI(APIClient):
 
         Examples:
 
-        Count the number of time series in your CDF project:
+            Count the number of time series in your CDF project:
 
-            >>> from cognite.client import CogniteClient
-            >>> c = CogniteClient()
-            >>> count = c.sequences.aggregate_count()
+                >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
+                >>> count = c.sequences.aggregate_count()
 
-        Count the number of sequences with external id prefixed with "mapping:" in your CDF project:
+            Count the number of sequences with external id prefixed with "mapping:" in your CDF project:
 
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes import filters
-            >>> from cognite.client.data_classes.sequences import SequenceProperty
-            >>> c = CogniteClient()
-            >>> is_mapping = filters.Prefix(SequenceProperty.external_id, "mapping:")
-            >>> count = c.sequences.aggregate_count(advanced_filter=is_mapping)
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes.sequences import SequenceProperty
+                >>> c = CogniteClient()
+                >>> is_mapping = filters.Prefix(SequenceProperty.external_id, "mapping:")
+                >>> count = c.sequences.aggregate_count(advanced_filter=is_mapping)
 
         """
         self._validate_filter(advanced_filter)
@@ -275,33 +275,32 @@ class SequencesAPI(APIClient):
             advanced_filter (Filter | dict | None): The filter to narrow down the sequences to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
             filter (SequenceFilter | dict | None): The filter to narrow down the sequences  to count requirering exact match.
+
         Returns:
             int: The number of properties matching the specified filters and search.
 
         Examples:
 
-        Count the number of different values for the metadata key "efficiency" used for sequences in your CDF project:
+            Count the number of different values for the metadata key "efficiency" used for sequences in your CDF project:
 
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes.sequences import SequenceProperty
-            >>> c = CogniteClient()
-            >>> count = c.sequences.aggregate_cardinality_values(SequenceProperty.metadata_key("efficiency"))
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.sequences import SequenceProperty
+                >>> c = CogniteClient()
+                >>> count = c.sequences.aggregate_cardinality_values(SequenceProperty.metadata_key("efficiency"))
 
-        Count the number of timezones (metadata key) for sequences with the word "critical" in the description
-        in your CDF project, but exclude timezones from america:
+            Count the number of timezones (metadata key) for sequences with the word "critical" in the description
+            in your CDF project, but exclude timezones from america:
 
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes import filters, aggregations
-            >>> from cognite.client.data_classes.sequences import SequenceProperty
-            >>> c = CogniteClient()
-            >>> a = aggregations
-            >>> not_america = a.Not(a.Prefix("america"))
-            >>> is_critical = filters.Search(SequenceProperty.description, "critical")
-            >>> timezone_count = c.sequences.aggregate_cardinality_values(
-            ...     SequenceProperty.metadata_key("timezone"),
-            ...     advanced_filter=is_critical,
-            ...     aggregate_filter=not_america)
-
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters, aggregations as aggs
+                >>> from cognite.client.data_classes.sequences import SequenceProperty
+                >>> c = CogniteClient()
+                >>> not_america = aggs.Not(aggs.Prefix("america"))
+                >>> is_critical = filters.Search(SequenceProperty.description, "critical")
+                >>> timezone_count = c.sequences.aggregate_cardinality_values(
+                ...     SequenceProperty.metadata_key("timezone"),
+                ...     advanced_filter=is_critical,
+                ...     aggregate_filter=not_america)
         """
         self._validate_filter(advanced_filter)
 
@@ -333,6 +332,7 @@ class SequencesAPI(APIClient):
             advanced_filter (Filter | dict | None): The filter to narrow down the sequences to count cardinality.
             aggregate_filter (AggregationFilter | dict | None): The filter to apply to the resulting buckets.
             filter (SequenceFilter | dict | None): The filter to narrow down the sequences  to count requirering exact match.
+
         Returns:
             int: The number of properties matching the specified filters and search.
 
@@ -344,7 +344,6 @@ class SequencesAPI(APIClient):
                 >>> from cognite.client.data_classes.sequences import SequenceProperty
                 >>> c = CogniteClient()
                 >>> count = c.sequences.aggregate_cardinality_values(SequenceProperty.metadata)
-
         """
         self._validate_filter(advanced_filter)
         api_version = self._api_subversion
@@ -381,39 +380,37 @@ class SequencesAPI(APIClient):
 
         Examples:
 
-        Get the timezones (metadata key) with count for your sequences in your CDF project:
+            Get the timezones (metadata key) with count for your sequences in your CDF project:
 
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes.sequences import SequenceProperty
-            >>> c = CogniteClient()
-            >>> result = c.sequences.aggregate_unique_values(SequenceProperty.metadata_key("timezone"))
-            >>> print(result.unique)
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.sequences import SequenceProperty
+                >>> c = CogniteClient()
+                >>> result = c.sequences.aggregate_unique_values(SequenceProperty.metadata_key("timezone"))
+                >>> print(result.unique)
 
-        Get the different metadata keys with count used for sequences created after 2020-01-01 in your CDF project:
+            Get the different metadata keys with count used for sequences created after 2020-01-01 in your CDF project:
 
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes import filters
-            >>> from cognite.client.data_classes.sequences import SequenceProperty
-            >>> from cognite.client.utils import timestamp_to_ms
-            >>> from datetime import datetime
-            >>> c = CogniteClient()
-            >>> created_after_2020 = filters.Range(SequenceProperty.created_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
-            >>> result = c.sequences.aggregate_unique_values(SequenceProperty.metadata, advanced_filter=created_after_2020)
-            >>> print(result.unique)
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import filters
+                >>> from cognite.client.data_classes.sequences import SequenceProperty
+                >>> from cognite.client.utils import timestamp_to_ms
+                >>> from datetime import datetime
+                >>> c = CogniteClient()
+                >>> created_after_2020 = filters.Range(SequenceProperty.created_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
+                >>> result = c.sequences.aggregate_unique_values(SequenceProperty.metadata, advanced_filter=created_after_2020)
+                >>> print(result.unique)
 
-        Get the different metadata keys with count for sequences updated after 2020-01-01 in your CDF project, but exclude all metadata keys that
-        starts with "test":
+            Get the different metadata keys with count for sequences updated after 2020-01-01 in your CDF project, but exclude all metadata keys that
+            starts with "test":
 
-            >>> from cognite.client import CogniteClient
-            >>> from cognite.client.data_classes.sequences import SequenceProperty
-            >>> from cognite.client.data_classes import aggregations, filters
-            >>> c = CogniteClient()
-            >>> a = aggregations
-            >>> not_test = a.Not(a.Prefix("test"))
-            >>> created_after_2020 = filters.Range(SequenceProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
-            >>> result = c.sequences.aggregate_unique_values(SequenceProperty.metadata, advanced_filter=created_after_2020, aggregate_filter=not_test)
-            >>> print(result.unique)
-
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.sequences import SequenceProperty
+                >>> from cognite.client.data_classes import aggregations as aggs, filters
+                >>> c = CogniteClient()
+                >>> not_test = aggs.Not(aggs.Prefix("test"))
+                >>> created_after_2020 = filters.Range(SequenceProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
+                >>> result = c.sequences.aggregate_unique_values(SequenceProperty.metadata, advanced_filter=created_after_2020, aggregate_filter=not_test)
+                >>> print(result.unique)
         """
         self._validate_filter(advanced_filter)
 
@@ -498,7 +495,7 @@ class SequencesAPI(APIClient):
             sequence (Sequence | SequenceType[Sequence]): Sequence or list of Sequence to create. The Sequence columns parameter is a list of objects with fields `externalId` (external id of the column, when omitted, they will be given ids of 'column0, column1, ...'), `valueType` (data type of the column, either STRING, LONG, or DOUBLE, with default DOUBLE), `name`, `description`, `metadata` (optional fields to describe and store information about the data in the column). Other fields will be removed automatically, so a columns definition from a different sequence object can be passed here.
 
         Returns:
-            Sequence | SequenceList: The created sequences.
+            Sequence | SequenceList: The created sequence(s).
 
         Examples:
 
@@ -507,7 +504,9 @@ class SequencesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import Sequence
                 >>> c = CogniteClient()
-                >>> column_def = [{"valueType":"STRING","externalId":"user","description":"some description"}, {"valueType":"DOUBLE","externalId":"amount"}]
+                >>> column_def = [
+                ...     {"valueType": "STRING", "externalId": "user", "description": "some description"},
+                ...     {"valueType": "DOUBLE", "externalId": "amount"}]
                 >>> seq = c.sequences.create(Sequence(external_id="my_sequence", columns=column_def))
 
             Create a new sequence with the same column specifications as an existing sequence::
@@ -715,7 +714,7 @@ class SequencesAPI(APIClient):
         description: str | None = None,
         query: str | None = None,
         filter: SequenceFilter | dict | None = None,
-        limit: int = 100,
+        limit: int = DEFAULT_LIMIT_READ,
     ) -> SequenceList:
         """`Search for sequences. <https://developer.cognite.com/api#tag/Sequences/operation/searchSequences>`_
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
@@ -728,7 +727,7 @@ class SequencesAPI(APIClient):
             limit (int): Max number of results to return.
 
         Returns:
-            SequenceList: List of requested sequences.
+            SequenceList: The search result as a SequenceList
 
         Examples:
 
@@ -749,7 +748,7 @@ class SequencesAPI(APIClient):
         self,
         filter: Filter | dict,
         sort: SortSpec | list[SortSpec] | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> SequenceList:
         """`Advanced filter sequences <https://developer.cognite.com/api#tag/Sequences/operation/advancedListSequences>`_
 
@@ -760,7 +759,7 @@ class SequencesAPI(APIClient):
         Args:
             filter (Filter | dict): Filter to apply.
             sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Can be up to two properties to sort by default to ascending order.
-            limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             SequenceList: List of sequences that match the filter criteria.
@@ -831,7 +830,7 @@ class SequencesAPI(APIClient):
         data_set_external_ids: str | SequenceType[str] | None = None,
         created_time: dict[str, Any] | TimestampRange | None = None,
         last_updated_time: dict[str, Any] | TimestampRange | None = None,
-        limit: int | None = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> SequenceList:
         """`Iterate over sequences <https://developer.cognite.com/api#tag/Sequences/operation/advancedListSequences>`_
 
@@ -896,9 +895,9 @@ class SequencesDataAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        self._SEQ_POST_LIMIT_ROWS = 10000
-        self._SEQ_POST_LIMIT_VALUES = 100000
-        self._SEQ_RETRIEVE_LIMIT = 10000
+        self._SEQ_POST_LIMIT_ROWS = 10_000
+        self._SEQ_POST_LIMIT_VALUES = 100_000
+        self._SEQ_RETRIEVE_LIMIT = 10_000
 
     def insert(
         self,
@@ -1017,7 +1016,7 @@ class SequencesDataAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> c.sequences.data.delete(id=0, rows=[1,2,42])
+                >>> c.sequences.data.delete(id=1, rows=[1,2,42])
         """
         post_obj = Identifier.of_either(id, external_id).as_dict()
         post_obj["rows"] = rows
@@ -1037,7 +1036,7 @@ class SequencesDataAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> c.sequences.data.delete_range(id=0, start=0, end=None)
+                >>> c.sequences.data.delete_range(id=1, start=0, end=None)
         """
         sequence = self._cognite_client.sequences.retrieve(id=id, external_id=external_id)
         assert sequence is not None
@@ -1065,16 +1064,16 @@ class SequencesDataAPI(APIClient):
             column_external_ids (SequenceType[str] | None): List of external id for the columns of the sequence. If 'None' is passed, all columns will be retrieved.
             external_id (str | SequenceType[str] | None): External id of sequence.
             id (int | SequenceType[int] | None): Id of sequence.
-            limit (int | None): Maximum number of rows to return per sequence. 10000 is the maximum limit per request.
+            limit (int | None): Maximum number of rows to return per sequence. Pass None to fetch all (possibly limited by 'end').
 
         Returns:
-            SequenceData | SequenceDataList: List of sequence data
+            SequenceData | SequenceDataList: SequenceData if single identifier was given, else SequenceDataList
 
         Examples:
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> res = c.sequences.data.retrieve(id=0, start=0, end=None)
+                >>> res = c.sequences.data.retrieve(id=1, start=0, end=None)
                 >>> tuples = [(r,v) for r,v in res.items()] # You can use this iterator in for loops and list comprehensions,
                 >>> single_value = res[23] # ... get the values at a single row number,
                 >>> col = res.get_column(external_id='columnExtId') # ... get the array of values for a specific column,
@@ -1164,7 +1163,7 @@ class SequencesDataAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> df = c.sequences.data.retrieve_dataframe(id=0, start=0, end=None)
+                >>> df = c.sequences.data.retrieve_dataframe(id=1, start=0, end=None)
         """
         if isinstance(external_id, List) or isinstance(id, List) or (id is not None and external_id is not None):
             column_names_default = "externalId|columnExternalId"
