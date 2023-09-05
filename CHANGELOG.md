@@ -17,11 +17,16 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [6.19.1] - 2023-08-31
-### Changed
-- Import-checks when deploying a new function can be disabled with `functions.create(..., validate_function_imports=False)`. 
-### Improved
-- Improved validation of functions when deploying. Now uses AST parsing instead of relying on importing. 
+## [6.20.0] - 2023-09-05
+### Fixed
+- When creating functions with `client.functions.create` using the `folder` argument, a trial-import is executed as part of
+  the verification process. This could leave leftover modules still in scope, possibly affecting subsequent calls. This is
+  now done in a separate process to guarantee it has no side-effects on the main process.
+- For pyodide/WASM users, a backup implementation is used, with an improved cleanup procedure.
+
+### Added
+- The import-check in `client.functions.create` (when `folder` is used) can now be disabled by passing
+  `skip_folder_validation=True`. Basic validation is still done, now additionally by parsing the AST.
 
 ## [6.19.0] - 2023-09-04
 ## Added

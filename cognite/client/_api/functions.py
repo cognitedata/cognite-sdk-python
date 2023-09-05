@@ -98,7 +98,7 @@ class FunctionsAPI(APIClient):
         metadata: dict | None = None,
         index_url: str | None = None,
         extra_index_urls: list[str] | None = None,
-        validate_function_imports: bool = True,
+        skip_folder_validation: bool = False,
     ) -> Function:
         '''`When creating a function, <https://developer.cognite.com/api#tag/Functions/operation/postFunctions>`_
         the source code can be specified in one of three ways:
@@ -129,7 +129,8 @@ class FunctionsAPI(APIClient):
             metadata (dict | None): Metadata for the function as key/value pairs. Key & values can be at most 32, 512 characters long respectively. You can have at the most 16 key-value pairs, with a maximum size of 512 bytes.
             index_url (str | None): Index URL for Python Package Manager to use. Be aware of the intrinsic security implications of using the `index_url` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
             extra_index_urls (list[str] | None): Extra Index URLs for Python Package Manager to use. Be aware of the intrinsic security implications of using the `extra_index_urls` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
-            validate_function_imports (bool): Whether to validate the folder structure and imports, requires the packages imported in your source code to be installed locally. Defaults to True.
+            skip_folder_validation (bool): When creating a function using the 'folder' argument, pass True to skip the extra validation step that attempts to import the module. Skipping can be useful when your function requires several heavy packages to already be installed locally. Defaults to False.
+
         Returns:
             Function: The created function.
 
@@ -139,23 +140,28 @@ class FunctionsAPI(APIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> function = c.functions.create(name="myfunction",folder="path/to/code",function_path="path/to/function.py")
+                >>> function = c.functions.create(
+                ...     name="myfunction",
+                ...     folder="path/to/code",
+                ...     function_path="path/to/function.py")
 
             Create function with file_id from already uploaded source code::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> function = c.functions.create(name="myfunction",file_id=123,function_path="path/to/function.py")
+                >>> function = c.functions.create(
+                ...     name="myfunction", file_id=123, function_path="path/to/function.py")
 
             Create function with predefined function object named `handle`::
 
                 >>> from cognite.client import CogniteClient
                 >>> c = CogniteClient()
-                >>> function = c.functions.create(name="myfunction",function_handle=handle)
+                >>> function = c.functions.create(name="myfunction", function_handle=handle)
 
             Create function with predefined function object named `handle` with dependencies::
 
                 >>> from cognite.client import CogniteClient
+                >>> c = CogniteClient()
                 >>>
                 >>> def handle(client, data):
                 >>>     """
@@ -165,8 +171,7 @@ class FunctionsAPI(APIClient):
                 >>>     """
                 >>>     ...
                 >>>
-                >>> c = CogniteClient()
-                >>> function = c.functions.create(name="myfunction",function_handle=handle)
+                >>> function = c.functions.create(name="myfunction", function_handle=handle)
 
             .. note::
                 When using a predefined function object, you can list dependencies between the tags `[requirements]` and `[/requirements]` in the function's docstring. The dependencies will be parsed and validated in accordance with requirement format specified in `PEP 508 <https://peps.python.org/pep-0508/>`_.
@@ -174,7 +179,7 @@ class FunctionsAPI(APIClient):
         self._assert_exactly_one_of_folder_or_file_id_or_function_handle(folder, file_id, function_handle)
 
         if folder:
-            validate_function_folder(folder, function_path, should_check_imports=validate_function_imports)
+            validate_function_folder(folder, function_path, skip_folder_validation)
             file_id = self._zip_and_upload_folder(folder, name, external_id)
         elif function_handle:
             _validate_function_handle(function_handle)
@@ -218,8 +223,7 @@ class FunctionsAPI(APIClient):
         if index_url:
             function["indexUrl"] = index_url
 
-        body = {"items": [function]}
-        res = self._post(url, json=body)
+        res = self._post(url, json={"items": [function]})
         return Function._load(res.json()["items"][0], cognite_client=self._cognite_client)
 
     def delete(self, id: int | Sequence[int] | None = None, external_id: str | Sequence[str] | None = None) -> None:
@@ -386,14 +390,12 @@ class FunctionsAPI(APIClient):
 
         if data is None:
             data = {}
-        body = {"data": data, "nonce": nonce}
         url = f"/functions/{id}/call"
-        res = self._post(url, json=body)
+        res = self._post(url, json={"data": data, "nonce": nonce})
 
         function_call = FunctionCall._load(res.json(), cognite_client=self._cognite_client)
         if wait:
             function_call.wait()
-
         return function_call
 
     def limits(self) -> FunctionsLimits:
@@ -573,7 +575,7 @@ def _check_imports(root_path: str, module_path: str) -> None:
     try:
         validator.start()
     except OSError:
-        # Pyodide/WASM: OSError: [Errno 52] Function not implemented
+        # Handle Pyodide/WASM exception: 'OSError: [Errno 52] Function not implemented'
         _run_import_check_backup(root_path, module_path)
     else:
         validator.join()
@@ -581,7 +583,7 @@ def _check_imports(root_path: str, module_path: str) -> None:
             raise error
 
 
-def validate_function_folder(root_path: str, function_path: str, should_check_imports: bool) -> None:
+def validate_function_folder(root_path: str, function_path: str, skip_folder_validation: bool) -> None:
     if not function_path.endswith(".py"):
         raise TypeError(f"{function_path} must be a Python file.")
 
@@ -594,7 +596,7 @@ def validate_function_folder(root_path: str, function_path: str, should_check_im
     else:
         raise TypeError(f"{function_path} must contain a function named 'handle'.")
 
-    if should_check_imports:
+    if not skip_folder_validation:
         module_path = ".".join(Path(function_path).with_suffix("").parts)
         _check_imports(root_path, module_path)
 
@@ -1059,9 +1061,8 @@ class FunctionSchedulesAPI(APIClient):
                 >>> c.functions.schedules.delete(id = 123)
 
         """
-        body = {"items": [{"id": id}]}
         url = f"{self._RESOURCE_PATH}/delete"
-        self._post(url, json=body)
+        self._post(url, json={"items": [{"id": id}]})
 
     def get_input_data(self, id: int) -> dict | None:
         """`Retrieve the input data to the associated function. <https://developer.cognite.com/api#tag/Function-schedules/operation/getFunctionScheduleInputData>`_
