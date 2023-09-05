@@ -9,7 +9,7 @@ from typing_extensions import TypeAlias
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     Sequence,
     SequenceAggregate,
@@ -714,7 +714,7 @@ class SequencesAPI(APIClient):
         description: str | None = None,
         query: str | None = None,
         filter: SequenceFilter | dict | None = None,
-        limit: int = 100,
+        limit: int = DEFAULT_LIMIT_READ,
     ) -> SequenceList:
         """`Search for sequences. <https://developer.cognite.com/api#tag/Sequences/operation/searchSequences>`_
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
@@ -748,7 +748,7 @@ class SequencesAPI(APIClient):
         self,
         filter: Filter | dict,
         sort: SortSpec | list[SortSpec] | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> SequenceList:
         """`Advanced filter sequences <https://developer.cognite.com/api#tag/Sequences/operation/advancedListSequences>`_
 
@@ -759,7 +759,7 @@ class SequencesAPI(APIClient):
         Args:
             filter (Filter | dict): Filter to apply.
             sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Can be up to two properties to sort by default to ascending order.
-            limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             SequenceList: List of sequences that match the filter criteria.
@@ -830,7 +830,7 @@ class SequencesAPI(APIClient):
         data_set_external_ids: str | SequenceType[str] | None = None,
         created_time: dict[str, Any] | TimestampRange | None = None,
         last_updated_time: dict[str, Any] | TimestampRange | None = None,
-        limit: int | None = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> SequenceList:
         """`Iterate over sequences <https://developer.cognite.com/api#tag/Sequences/operation/advancedListSequences>`_
 

@@ -397,7 +397,7 @@ class TestFilesAPI:
     def test_search(self, cognite_client, mock_files_response):
         res = cognite_client.files.search(filter=FileMetadataFilter(external_id_prefix="abc"))
         assert mock_files_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
-        assert {"search": {"name": None}, "filter": {"externalIdPrefix": "abc"}, "limit": 100} == jsgz_load(
+        assert {"search": {"name": None}, "filter": {"externalIdPrefix": "abc"}, "limit": 25} == jsgz_load(
             mock_files_response.calls[0].request.body
         )
 
@@ -405,7 +405,7 @@ class TestFilesAPI:
     def test_search_dict_filter(self, cognite_client, mock_files_response, filter_field):
         res = cognite_client.files.search(filter={filter_field: "abc"})
         assert mock_files_response.calls[0].response.json()["items"] == res.dump(camel_case=True)
-        assert {"search": {"name": None}, "filter": {"externalIdPrefix": "abc"}, "limit": 100} == jsgz_load(
+        assert {"search": {"name": None}, "filter": {"externalIdPrefix": "abc"}, "limit": 25} == jsgz_load(
             mock_files_response.calls[0].request.body
         )
 

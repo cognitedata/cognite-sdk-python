@@ -18,7 +18,7 @@ from typing import (
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client._constants import _RUNNING_IN_BROWSER, LIST_LIMIT_DEFAULT
+from cognite.client._constants import _RUNNING_IN_BROWSER, DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     FileAggregate,
     FileMetadata,
@@ -335,7 +335,10 @@ class FilesAPI(APIClient):
         )
 
     def search(
-        self, name: str | None = None, filter: FileMetadataFilter | dict | None = None, limit: int = 100
+        self,
+        name: str | None = None,
+        filter: FileMetadataFilter | dict | None = None,
+        limit: int = DEFAULT_LIMIT_READ,
     ) -> FileMetadataList:
         """`Search for files. <https://developer.cognite.com/api#tag/Files/operation/searchFiles>`_
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
@@ -827,7 +830,7 @@ class FilesAPI(APIClient):
         external_id_prefix: str | None = None,
         directory_prefix: str | None = None,
         uploaded: bool | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> FileMetadataList:
         """`List files <https://developer.cognite.com/api#tag/Files/operation/advancedListFiles>`_
 
@@ -852,7 +855,7 @@ class FilesAPI(APIClient):
             external_id_prefix (str | None): External Id provided by client. Should be unique within the project.
             directory_prefix (str | None): Filter by this (case-sensitive) prefix for the directory provided by the client.
             uploaded (bool | None): Whether or not the actual file is uploaded. This field is returned only by the API, it has no effect in a post body.
-            limit (int): Max number of files to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Max number of files to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             FileMetadataList: The requested files.

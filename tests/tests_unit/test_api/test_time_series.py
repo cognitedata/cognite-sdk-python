@@ -148,7 +148,7 @@ class TestTimeSeries:
         assert {
             "search": {"name": None, "description": None, "query": None},
             "filter": {"isString": True},
-            "limit": 100,
+            "limit": 25,
         } == jsgz_load(mock_ts_response.calls[0].request.body)
 
     @pytest.mark.parametrize("filter_field", ["is_string", "isString"])
@@ -158,7 +158,7 @@ class TestTimeSeries:
         assert {
             "search": {"name": None, "description": None, "query": None},
             "filter": {"isString": True},
-            "limit": 100,
+            "limit": 25,
         } == jsgz_load(mock_ts_response.calls[0].request.body)
 
     def test_search_with_filter(self, cognite_client, mock_ts_response):

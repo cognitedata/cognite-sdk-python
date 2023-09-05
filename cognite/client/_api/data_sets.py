@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Iterator, Sequence, cast
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     DataSet,
     DataSetAggregate,
@@ -212,7 +212,7 @@ class DataSetsAPI(APIClient):
         last_updated_time: dict[str, Any] | TimestampRange | None = None,
         external_id_prefix: str | None = None,
         write_protected: bool | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> DataSetList:
         """`List data sets <https://developer.cognite.com/api#tag/Data-sets/operation/listDataSets>`_
 
@@ -222,7 +222,7 @@ class DataSetsAPI(APIClient):
             last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
             external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
             write_protected (bool | None): Specify whether the filtered data sets are write-protected, or not. Set to True to only list write-protected data sets.
-            limit (int): Maximum number of data sets to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of data sets to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             DataSetList: List of requested data sets

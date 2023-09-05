@@ -30,7 +30,7 @@ from typing_extensions import TypeAlias
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     Asset,
     AssetAggregate,
@@ -856,7 +856,7 @@ class AssetsAPI(APIClient):
         filter: Filter | dict,
         sort: SortSpec | list[SortSpec] | None = None,
         aggregated_properties: Sequence[Literal["child_count", "path", "depth"]] | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> AssetList:
         """`Advanced filter assets <https://developer.cognite.com/api#tag/Assets/operation/listAssets>`_
 
@@ -868,7 +868,7 @@ class AssetsAPI(APIClient):
             filter (Filter | dict): Filter to apply.
             sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Can be up to two properties to sort by default to ascending order.
             aggregated_properties (Sequence[Literal["child_count", "path", "depth"]] | None): Set of aggregated properties to include. Options are childCount, path, depth.
-            limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             AssetList: List of assets that match the filter criteria.
@@ -931,7 +931,7 @@ class AssetsAPI(APIClient):
         description: str | None = None,
         query: str | None = None,
         filter: AssetFilter | dict | None = None,
-        limit: int = 100,
+        limit: int = DEFAULT_LIMIT_READ,
     ) -> AssetList:
         """`Search for assets <https://developer.cognite.com/api#tag/Assets/operation/searchAssets>`_
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
@@ -1046,7 +1046,7 @@ class AssetsAPI(APIClient):
         external_id_prefix: str | None = None,
         aggregated_properties: Sequence[str] | None = None,
         partitions: int | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> AssetList:
         """`List assets <https://developer.cognite.com/api#tag/Assets/operation/listAssets>`_
 
@@ -1068,7 +1068,7 @@ class AssetsAPI(APIClient):
             external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
             aggregated_properties (Sequence[str] | None): Set of aggregated properties to include.
             partitions (int | None): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
-            limit (int): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             AssetList: List of requested assets

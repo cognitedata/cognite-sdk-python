@@ -4,7 +4,7 @@ import time
 from numbers import Number
 from typing import TYPE_CHECKING, cast
 
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteResource,
@@ -101,7 +101,7 @@ class Function(CogniteResource):
         schedule_id: int | None = None,
         start_time: dict[str, int] | None = None,
         end_time: dict[str, int] | None = None,
-        limit: int | None = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> FunctionCallList:
         """List all calls to this function.
 
@@ -124,7 +124,7 @@ class Function(CogniteResource):
             limit=limit,
         )
 
-    def list_schedules(self, limit: int | None = LIST_LIMIT_DEFAULT) -> FunctionSchedulesList:
+    def list_schedules(self, limit: int | None = DEFAULT_LIMIT_READ) -> FunctionSchedulesList:
         """`List all schedules associated with this function. <https://docs.cognite.com/api/v1/#operation/getFunctionSchedules>`_
 
         Args:
