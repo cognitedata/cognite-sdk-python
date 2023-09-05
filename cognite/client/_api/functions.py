@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import ast
+import importlib
 import os
 import re
+import sys
 import textwrap
 import time
-from inspect import getdoc, getsource
-from multiprocessing import Pipe, Process
-from multiprocessing.connection import Connection
+from inspect import getdoc, getsource, signature
+from multiprocessing import Process, Queue
 from numbers import Number
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -46,6 +47,7 @@ MAX_RETRIES = 5
 REQUIREMENTS_FILE_NAME = "requirements.txt"
 REQUIREMENTS_REG = re.compile(r"(\[\/?requirements\]){1}$", flags=re.M)  # Matches [requirements] and [/requirements]
 UNCOMMENTED_LINE_REG = re.compile(r"^[^\#]]*.*")
+ALLOWED_HANDLE_ARGS = frozenset({"data", "client", "secrets", "function_call_info"})
 
 
 def _get_function_internal_id(cognite_client: CogniteClient, identifier: Identifier) -> int:
@@ -522,52 +524,61 @@ def _create_session_and_return_nonce(
     return client.iam.sessions.create(client_credentials).nonce
 
 
-def get_relative_module_path(root_path: str, file_path: Path) -> str:
-    relative_path = file_path.relative_to(root_path)
-    return ".".join(relative_path.with_suffix("").parts)
-
-
 def get_handle_function_node(file_path: Path) -> ast.FunctionDef | None:
-    with file_path.open() as f:
-        return next(
-            (
-                item
-                for item in ast.walk(ast.parse(f.read()))
-                if isinstance(item, ast.FunctionDef) and item.name == "handle"
-            ),
-            None,
-        )
+    return next(
+        (
+            item
+            for item in ast.walk(ast.parse(file_path.read_text()))
+            if isinstance(item, ast.FunctionDef) and item.name == "handle"
+        ),
+        None,
+    )
 
 
-def validate_function_args(node: ast.FunctionDef, allowed_args: set) -> None:
-    arg_names = [arg.arg for arg in node.args.args]
-    if not set(arg_names).issubset(allowed_args):
-        raise TypeError(f"Arguments must be a subset of {allowed_args}.")
+def _run_import_check(queue: Queue, root_path: str, module_path: str) -> None:
+    if __name__ == "__main__":
+        raise RuntimeError("This should not be run in the main process (has side-effects)")
+
+    import sys as internal_sys  # let's not shadow outer scope
+
+    internal_sys.path.insert(0, root_path)
+    try:
+        importlib.import_module(module_path)
+        queue.put(None)
+    except Exception as err:
+        queue.put(err)
 
 
-def run_import_check(conn: Connection, root_path: str, module_path: str) -> None:
-    import importlib
-    import sys
-
+def _run_import_check_backup(root_path: str, module_path: str) -> None:
+    existing_modules = set(sys.modules)
     sys.path.insert(0, root_path)
     try:
         importlib.import_module(module_path)
-        conn.send(("success", "Import successful", None))
-    except Exception as e:
-        conn.send(("failure", str(e), type(e).__name__))
+    finally:
+        sys.path.remove(root_path)
+        # Properly unloading modules is not supported in Python, but we can come close:
+        # https://github.com/python/cpython/issues/53318
+        for new_mod in set(sys.modules) - existing_modules:
+            sys.modules.pop(new_mod, None)
 
 
-def check_imports(root_path: str, module_path: str) -> None:
-    parent_conn, child_conn = Pipe()
-    p = Process(target=run_import_check, args=(child_conn, root_path, module_path))
-    p.start()
-    status, result, exc_type = parent_conn.recv()
-    p.join()
-    if status == "failure":
-        if exc_type == "ModuleNotFoundError":
-            raise ModuleNotFoundError(f"Module {module_path} could not be imported")
-        elif exc_type == "ImportError":
-            raise ImportError(f"Module {module_path} could not be imported")
+def _check_imports(root_path: str, module_path: str) -> None:
+    queue: Queue[Exception | None] = Queue()
+    validator = Process(
+        target=_run_import_check,
+        name="import-validator",
+        args=(queue, root_path, module_path),
+        daemon=True,
+    )
+    try:
+        validator.start()
+    except OSError:
+        # Pyodide/WASM: OSError: [Errno 52] Function not implemented
+        _run_import_check_backup(root_path, module_path)
+    else:
+        validator.join()
+        if (error := queue.get_nowait()) is not None:
+            raise error
 
 
 def validate_function_folder(root_path: str, function_path: str, should_check_imports: bool) -> None:
@@ -578,28 +589,29 @@ def validate_function_folder(root_path: str, function_path: str, should_check_im
     if not file_path.is_file():
         raise FileNotFoundError(f"No file found at '{file_path}'.")
 
-    node = get_handle_function_node(file_path)
-    if not node:
+    if node := get_handle_function_node(file_path):
+        _validate_function_handle(node)
+    else:
         raise TypeError(f"{function_path} must contain a function named 'handle'.")
 
-    allowed_args = {"data", "client", "secrets", "function_call_info"}
-    validate_function_args(node, allowed_args)
-
     if should_check_imports:
-        module_path = get_relative_module_path(root_path, file_path)
-        check_imports(root_path, module_path)
+        module_path = ".".join(Path(function_path).with_suffix("").parts)
+        _check_imports(root_path, module_path)
 
 
-def _validate_function_handle(function_handle: Callable[..., Any]) -> None:
-    function_name = function_handle.__code__.co_name
-    if function_name != "handle":
-        raise TypeError(f"Function is named '{function_name}' but must be named 'handle'.")
+def _validate_function_handle(handle_obj: Callable | ast.FunctionDef) -> None:
+    if isinstance(handle_obj, ast.FunctionDef):
+        name = handle_obj.name
+        accepts_args = set(arg.arg for arg in handle_obj.args.args)
+    else:
+        name = handle_obj.__name__
+        accepts_args = set(signature(handle_obj).parameters)
 
-    function_args = set(function_handle.__code__.co_varnames[: function_handle.__code__.co_argcount])
-    allowed_args = {"data", "client", "secrets", "function_call_info"}
+    if name != "handle":
+        raise TypeError(f"Function is named '{name}' but must be named 'handle'.")
 
-    if not function_args.issubset(allowed_args):
-        raise TypeError(f"Arguments {function_args} to the function must be a subset of {allowed_args}.")
+    if not accepts_args <= ALLOWED_HANDLE_ARGS:
+        raise TypeError(f"Arguments {accepts_args} to the function must be a subset of {ALLOWED_HANDLE_ARGS}.")
 
 
 def _extract_requirements_from_file(file_name: str) -> list[str]:
