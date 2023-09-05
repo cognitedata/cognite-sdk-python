@@ -7,6 +7,7 @@ import textwrap
 import time
 from inspect import getdoc, getsource
 from multiprocessing import Pipe, Process
+from multiprocessing.connection import Connection
 from numbers import Number
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -538,13 +539,13 @@ def get_handle_function_node(file_path: Path) -> ast.FunctionDef | None:
         )
 
 
-def validate_function_args(node, allowed_args: set) -> None:
+def validate_function_args(node: ast.FunctionDef, allowed_args: set) -> None:
     arg_names = [arg.arg for arg in node.args.args]
     if not set(arg_names).issubset(allowed_args):
         raise TypeError(f"Arguments must be a subset of {allowed_args}.")
 
 
-def run_import_check(conn, root_path, module_path):
+def run_import_check(conn: Connection, root_path: str, module_path: str) -> None:
     import importlib
     import sys
 
@@ -556,7 +557,7 @@ def run_import_check(conn, root_path, module_path):
         conn.send(("failure", str(e), type(e).__name__))
 
 
-def check_imports(root_path, module_path):
+def check_imports(root_path: str, module_path: str) -> None:
     parent_conn, child_conn = Pipe()
     p = Process(target=run_import_check, args=(child_conn, root_path, module_path))
     p.start()
