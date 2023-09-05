@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+import logging
 from abc import abstractmethod
-from copy import copy
 from typing import TYPE_CHECKING, Any, Awaitable, Dict, cast
 
 from cognite.client.data_classes._base import (
@@ -25,10 +25,15 @@ from cognite.client.data_classes.transformations.common import (
 from cognite.client.data_classes.transformations.jobs import TransformationJob, TransformationJobList
 from cognite.client.data_classes.transformations.schedules import TransformationSchedule
 from cognite.client.data_classes.transformations.schema import TransformationSchemaColumnList
+from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._auxiliary import patch_attribute
 from cognite.client.utils._text import convert_all_keys_to_camel_case, convert_all_keys_to_snake_case
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
+
+
+logger = logging.getLogger("cognite-sdk")
 
 
 class SessionDetails:
@@ -203,29 +208,21 @@ class Transformation(CogniteResource):
             # MyPy requires this to make sure it's not changed to None after inner declaration
             assert sessions_cache is not None
 
-            key = (
-                f"{oidc_credentials.client_id}:{hash(oidc_credentials.client_secret)}:{project}"
-                if oidc_credentials
-                else "DEFAULT"
-            )
+            key = "DEFAULT"
+            if oidc_credentials:
+                key = f"{oidc_credentials.client_id}:{hash(oidc_credentials.client_secret)}:{project}"
 
-            ret = sessions_cache.get(key)
-            if not ret:
+            if (ret := sessions_cache.get(key)) is None:
+                credentials = None
                 if oidc_credentials and oidc_credentials.client_id and oidc_credentials.client_secret:
                     credentials = ClientCredentials(oidc_credentials.client_id, oidc_credentials.client_secret)
-                else:
-                    credentials = None
-                try:
-                    client = self._cognite_client
-                    if project != self._cognite_client.config.project:
-                        cnf = copy(self._cognite_client.config)
-                        cnf.project = project
-                        client = CogniteClient(cnf)
-                    session = client.iam.sessions.create(credentials)
-                    ret = NonceCredentials(session.id, session.nonce, project)
-                    sessions_cache[key] = ret
-                except Exception:
-                    ret = None
+
+                with patch_attribute(self._cognite_client.config, "project", project):
+                    try:
+                        session = self._cognite_client.iam.sessions.create(credentials)
+                        ret = sessions_cache[key] = NonceCredentials(session.id, session.nonce, project)
+                    except CogniteAPIError as err:
+                        logger.debug(f"Unable to create a session and get a nonce towards {project=}: {err!r}")
             return ret
 
         if self.source_nonce is None and self.source_oidc_credentials:
