@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from copy import copy
 from typing import TYPE_CHECKING, Any, Awaitable, Dict, cast
 
 from cognite.client.data_classes._base import (
@@ -215,7 +216,12 @@ class Transformation(CogniteResource):
                 else:
                     credentials = None
                 try:
-                    session = self._cognite_client.iam.sessions.create(credentials)
+                    client = self._cognite_client
+                    if project != self._cognite_client.config.project:
+                        cnf = copy(self._cognite_client.config)
+                        cnf.project = project
+                        client = CogniteClient(cnf)
+                    session = client.iam.sessions.create(credentials)
                     ret = NonceCredentials(session.id, session.nonce, project)
                     sessions_cache[key] = ret
                 except Exception:
