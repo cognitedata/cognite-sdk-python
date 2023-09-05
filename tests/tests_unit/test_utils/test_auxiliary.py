@@ -7,6 +7,7 @@ from itertools import zip_longest
 
 import pytest
 
+from cognite.client.data_classes import Asset
 from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._auxiliary import (
     assert_type,
@@ -16,6 +17,7 @@ from cognite.client.utils._auxiliary import (
     interpolate_and_url_encode,
     json_dump_default,
     local_import,
+    patch_attribute,
     split_into_chunks,
     split_into_n_parts,
 )
@@ -273,3 +275,79 @@ class TestExactlyOneIsNotNone:
     )
     def test_exactly_one_is_not_none(self, inp, expected):
         assert exactly_one_is_not_none(*inp) == expected
+
+
+@pytest.fixture
+def test_class():
+    class Foo:
+        @staticmethod
+        def static():
+            return "s"
+
+        @classmethod
+        def classy(cls):
+            return "c"
+
+        @property
+        def proppy(self):
+            return "p"
+
+        def __repr__(self):
+            return "r"
+
+    return Foo
+
+
+class TestPatchAttribute:
+    # Note: Probably a good thing to not use getattr in these tests just to make parametrize work.
+    def test_instance_unknown_attribute(self):
+        with pytest.raises(AttributeError, match=" has no attribute 'not_id'$"):
+            with patch_attribute(Asset(), "not_id", ""):
+                ...
+
+    def test_instance(self):
+        old, new = 1, 42
+        instance = Asset(id=old)
+        with patch_attribute(instance, "id", new):
+            assert instance.id == new
+        assert instance.id == old
+
+    def test_instance_exception_raised(self):
+        old, new = 1, 42
+        instance = Asset(id=old)
+        with pytest.raises(ValueError), patch_attribute(instance, "id", new):
+            assert instance.id == new
+            raise ValueError("foo")
+        assert instance.id == old
+
+    def test_class_normal_dunder_method(self, test_class):
+        old, new = test_class.__repr__, 42
+        with patch_attribute(test_class, "__repr__", new):
+            assert test_class.__repr__ == new
+
+        assert test_class.__repr__ is old
+        assert repr(test_class()) == "r"
+
+    def test_class_staticmethod(self, test_class):
+        old, new = test_class.static, 42
+        with patch_attribute(test_class, "static", new):
+            assert test_class.static == new
+
+        assert test_class.static is old
+        assert test_class.static() == "s"
+
+    def test_class_classmethod(self, test_class):
+        old, new = test_class.classy, 42
+        with patch_attribute(test_class, "classy", new):
+            assert test_class.classy == new
+
+        assert test_class.classy == old
+        assert test_class.classy() == "c"
+
+    def test_class_property(self, test_class):
+        old, new = test_class.proppy, 42
+        with patch_attribute(test_class, "proppy", new):
+            assert test_class.proppy == new
+
+        assert test_class.proppy is old
+        assert test_class().proppy == "p"

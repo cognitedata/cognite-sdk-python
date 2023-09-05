@@ -187,7 +187,7 @@ class Transformation(CogniteResource):
             self.blocked,
             self.schedule,
             self.data_set_id,
-            None,
+            None,  # skip cognite client
             self.source_nonce,
             self.destination_nonce,
             self.source_session,

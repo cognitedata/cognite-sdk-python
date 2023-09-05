@@ -19,7 +19,8 @@ Changes are grouped as follows
 
 ## [6.25.1] - 2023-09-15
 ### Fixed
-- An `AttributeError` can no longer be raised in `client.transformations.[create, update]` when processing credentials.
+- While processing source- and destination credentials in `client.transformations.[create, update]`, an `AttributeError`
+  can no longer be raised (by not specifying project). Additionally, the automatic creation of a session no longer fails silently.
 
 ## [6.25.0] - 2023-09-14
 ### Added
