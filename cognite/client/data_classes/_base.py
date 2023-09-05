@@ -37,12 +37,10 @@ if TYPE_CHECKING:
 
     from cognite.client import CogniteClient
 
-EXCLUDE_VALUE = [None]
-
 
 def basic_instance_dump(obj: Any, camel_case: bool) -> dict[str, Any]:
     # TODO: Consider using inheritance?
-    dumped = {k: v for k, v in vars(obj).items() if v not in EXCLUDE_VALUE and not k.startswith("_")}
+    dumped = {k: v for k, v in vars(obj).items() if v is not None and not k.startswith("_")}
     if camel_case:
         return convert_all_keys_to_camel_case(dumped)
     return dumped
@@ -57,7 +55,7 @@ class CogniteResponse:
         return str(self)
 
     def __eq__(self, other: Any) -> bool:
-        return type(other) == type(self) and other.dump() == self.dump()
+        return type(other) is type(self) and other.dump() == self.dump()
 
     def __getattribute__(self, item: Any) -> Any:
         attr = super().__getattribute__(item)
@@ -98,7 +96,7 @@ class CogniteResource:
         return obj
 
     def __eq__(self, other: Any) -> bool:
-        return type(self) == type(other) and self.dump() == other.dump()
+        return type(self) is type(other) and self.dump() == other.dump()
 
     def __str__(self) -> str:
         item = convert_time_attributes_to_datetime(self.dump())
@@ -343,7 +341,7 @@ class CogniteUpdate:
         self._update_object: dict[str, Any] = {}
 
     def __eq__(self, other: Any) -> bool:
-        return type(self) == type(other) and self.dump() == other.dump()
+        return type(self) is type(other) and self.dump() == other.dump()
 
     def __str__(self) -> str:
         return json.dumps(self.dump(), default=utils._auxiliary.json_dump_default, indent=4)
@@ -492,7 +490,7 @@ class CogniteLabelUpdate(Generic[T_CogniteUpdate]):
 
 class CogniteFilter:
     def __eq__(self, other: Any) -> bool:
-        return type(self) == type(other) and self.dump() == other.dump()
+        return type(self) is type(other) and self.dump() == other.dump()
 
     def __str__(self) -> str:
         item = convert_time_attributes_to_datetime(self.dump())

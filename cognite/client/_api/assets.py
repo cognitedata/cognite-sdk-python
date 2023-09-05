@@ -30,7 +30,7 @@ from typing_extensions import TypeAlias
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     Asset,
     AssetAggregate,
@@ -485,10 +485,9 @@ class AssetsAPI(APIClient):
 
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.assets import AssetProperty
-            >>> from cognite.client.data_classes import aggregations, filters
+            >>> from cognite.client.data_classes import aggregations as aggs, filters
             >>> c = CogniteClient()
-            >>> a = aggregations
-            >>> not_test = a.Not(a.Prefix("test"))
+            >>> not_test = aggs.Not(aggs.Prefix("test"))
             >>> created_after_2020 = filters.Range(AssetProperty.last_updated_time, gte=timestamp_to_ms(datetime(2020, 1, 1)))
             >>> result = c.assets.aggregate_unique_values(AssetProperty.labels, advanced_filter=created_after_2020, aggregate_filter=not_test)
             >>> print(result.unique)
@@ -857,7 +856,7 @@ class AssetsAPI(APIClient):
         filter: Filter | dict,
         sort: SortSpec | list[SortSpec] | None = None,
         aggregated_properties: Sequence[Literal["child_count", "path", "depth"]] | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> AssetList:
         """`Advanced filter assets <https://developer.cognite.com/api#tag/Assets/operation/listAssets>`_
 
@@ -869,7 +868,7 @@ class AssetsAPI(APIClient):
             filter (Filter | dict): Filter to apply.
             sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Can be up to two properties to sort by default to ascending order.
             aggregated_properties (Sequence[Literal["child_count", "path", "depth"]] | None): Set of aggregated properties to include. Options are childCount, path, depth.
-            limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             AssetList: List of assets that match the filter criteria.
@@ -932,7 +931,7 @@ class AssetsAPI(APIClient):
         description: str | None = None,
         query: str | None = None,
         filter: AssetFilter | dict | None = None,
-        limit: int = 100,
+        limit: int = DEFAULT_LIMIT_READ,
     ) -> AssetList:
         """`Search for assets <https://developer.cognite.com/api#tag/Assets/operation/searchAssets>`_
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
@@ -1047,7 +1046,7 @@ class AssetsAPI(APIClient):
         external_id_prefix: str | None = None,
         aggregated_properties: Sequence[str] | None = None,
         partitions: int | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> AssetList:
         """`List assets <https://developer.cognite.com/api#tag/Assets/operation/listAssets>`_
 
@@ -1069,7 +1068,7 @@ class AssetsAPI(APIClient):
             external_id_prefix (str | None): Filter by this (case-sensitive) prefix for the external ID.
             aggregated_properties (Sequence[str] | None): Set of aggregated properties to include.
             partitions (int | None): Retrieve assets in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
-            limit (int): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of assets to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             AssetList: List of requested assets
@@ -1234,7 +1233,7 @@ class _AssetHierarchyCreator:
     ) -> _TaskResult:
         try:
             resp = self.assets_api._post(self.resource_path, self._dump_assets(assets))
-            successful = AssetList._load(resp.json()["items"]).data
+            successful = list(map(Asset._load, resp.json()["items"]))
             return _TaskResult(successful, failed=[], unknown=[])
         except Exception as err:
             self.latest_exception = err
@@ -1285,7 +1284,7 @@ class _AssetHierarchyCreator:
     def _update_post(self, items: list[AssetUpdate]) -> list[Asset] | None:
         try:
             resp = self.assets_api._post(self.resource_path + "/update", json=self._dump_assets(items))
-            updated = AssetList._load(resp.json()["items"]).data
+            updated = [Asset._load(item) for item in resp.json()["items"]]
             self.latest_exception = None  # Update worked, so we hide exception
             return updated
         except Exception as err:

@@ -17,6 +17,17 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
+## [6.19.0] - 2023-09-04
+## Added
+- Now possible to retrieve and update translation and scale of 3D model revisions.
+
+## [6.18.0] - 2023-09-04
+### Added
+- Added parameter `keep_directory_structure` to `client.files.download` to allow downloading files to a folder structure matching the one in CDF.
+
+### Improved
+- Using `client.files.download` will still skip files with the same name when writing to disk, but now a `UserWarning` is raised, specifying which files are affected.
+
 ## [6.17.0] - 2023-09-01
 ### Added
 - Support for the UserProfilesAPI with the implementation `client.iam.user_profiles`.

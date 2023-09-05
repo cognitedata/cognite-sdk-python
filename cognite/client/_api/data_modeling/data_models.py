@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Iterator, Literal, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import DATA_MODELING_LIST_LIMIT_DEFAULT
+from cognite.client._constants import DATA_MODELING_DEFAULT_LIMIT_READ
 from cognite.client.data_classes.data_modeling.data_models import (
     DataModel,
     DataModelApply,
@@ -158,7 +158,7 @@ class DataModelsAPI(APIClient):
     def list(
         self,
         inline_views: Literal[True],
-        limit: int = DATA_MODELING_LIST_LIMIT_DEFAULT,
+        limit: int | None = DATA_MODELING_DEFAULT_LIMIT_READ,
         space: str | None = None,
         all_versions: bool = False,
         include_global: bool = False,
@@ -169,7 +169,7 @@ class DataModelsAPI(APIClient):
     def list(
         self,
         inline_views: Literal[False] = False,
-        limit: int = DATA_MODELING_LIST_LIMIT_DEFAULT,
+        limit: int | None = DATA_MODELING_DEFAULT_LIMIT_READ,
         space: str | None = None,
         all_versions: bool = False,
         include_global: bool = False,
@@ -179,7 +179,7 @@ class DataModelsAPI(APIClient):
     def list(
         self,
         inline_views: bool = False,
-        limit: int = DATA_MODELING_LIST_LIMIT_DEFAULT,
+        limit: int | None = DATA_MODELING_DEFAULT_LIMIT_READ,
         space: str | None = None,
         all_versions: bool = False,
         include_global: bool = False,
@@ -188,7 +188,7 @@ class DataModelsAPI(APIClient):
 
         Args:
             inline_views (bool): Whether to expand the referenced views inline in the returned result.
-            limit (int): Maximum number of data model to return. Defaults to 10. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of data model to return. Defaults to 10. Set to -1, float("inf") or None to return all items.
             space (str | None): The space to query.
             all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
             include_global (bool): Whether to include global data models.
