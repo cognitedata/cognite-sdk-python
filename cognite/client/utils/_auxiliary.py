@@ -3,6 +3,7 @@ from __future__ import annotations
 import functools
 import importlib
 import inspect
+import keyword
 import math
 import numbers
 import platform
@@ -244,6 +245,8 @@ def rename_and_exclude_keys(
 def patch_attribute(obj: object, attr: str, new_value: object) -> Iterator[None]:
     if "." in attr:
         raise ValueError("Dotted attribute access not supported, pass inner-most object")
+    elif keyword.iskeyword(attr) or not attr.isidentifier():
+        raise ValueError(f"{attr!r} is an invalid attribute name")
 
     try:
         before = getattr(obj, attr)

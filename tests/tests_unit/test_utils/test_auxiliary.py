@@ -305,6 +305,17 @@ class TestPatchAttribute:
             with patch_attribute(Asset(), "not_id", ""):
                 ...
 
+    def test_instance_dotted_attribute(self, cognite_client):
+        with pytest.raises(ValueError, match="^Dotted attribute access not supported"):
+            with patch_attribute(cognite_client, "iam.user_profiles.me", "you"):
+                ...
+
+    @pytest.mark.parametrize("bad_attr", ("no-dash", "class"))
+    def test_instance_invalid_attribute(self, bad_attr, cognite_client):
+        with pytest.raises(ValueError, match=f"^'{bad_attr}' is an invalid attribute name$"):
+            with patch_attribute(cognite_client, bad_attr, "iam"):
+                ...
+
     def test_instance(self):
         old, new = 1, 42
         instance = Asset(id=old)
