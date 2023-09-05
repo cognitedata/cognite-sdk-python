@@ -989,14 +989,26 @@ class FunctionSchedulesAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import ClientCredentials
                 >>> c = CogniteClient()
-                >>> schedule = c.functions.schedules.create(name="My schedule",description="This schedule does magic stuff.")
+                >>> schedule = c.functions.schedules.create(
+                ...     name="My schedule",
+                ...     function_id=123,
+                ...     cron_expression="*/5 * * * *",
+                ...     client_credentials=ClientCredentials("my-client-id", os.environ["MY_CLIENT_SECRET"]),
+                ...     description="This schedule does magic stuff.",
+                ...     data={"magic": "stuff"},
+                ... )
 
             You may also create a schedule that runs with your -current- credentials, i.e. the same credentials you used
             to instantiate the ``CogniteClient`` (that you're using right now). **Note**: Unless you happen to already use
             client credentials, *this is not a recommended way to create schedules*, as it will create an explicit dependency
             on your user account, which it will run the function "on behalf of" (until the schedule is eventually removed)::
 
-                >>> schedule = c.functions.schedules.create(name="My schedule",description="A schedule just used for some temporary testing.")
+                >>> schedule = c.functions.schedules.create(
+                ...     name="My schedule",
+                ...     function_id=456,
+                ...     cron_expression="*/5 * * * *",
+                ...     description="A schedule just used for some temporary testing.",
+                ... )
 
         """
         _get_function_identifier(function_id, function_external_id)
