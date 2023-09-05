@@ -67,7 +67,7 @@ data modeling query and receive updates through a provided callback.
   `skip_folder_validation=True`. Basic validation is still done, now additionally by parsing the AST.
 
 ## [6.19.0] - 2023-09-04
-### Added
+## Added
 - Now possible to retrieve and update translation and scale of 3D model revisions.
 
 ## [6.18.0] - 2023-09-04
