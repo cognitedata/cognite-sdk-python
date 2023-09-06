@@ -174,7 +174,7 @@ class TaskExecution:
         self.output = output
 
 
-class WorkflowDefinitionCreate(CogniteResource):
+class WorkflowVersionCreate(CogniteResource):
     def __init__(
         self,
         workflow_external_id: str,
@@ -188,7 +188,7 @@ class WorkflowDefinitionCreate(CogniteResource):
         self.description = description
 
 
-class WorkflowDefinition(CogniteResource):
+class WorkflowVersion(CogniteResource):
     def __init__(
         self,
         hash: str,
@@ -205,7 +205,7 @@ class WorkflowExecution(CogniteResource):
         self,
         id: str,
         workflow_external_id: str,
-        workflow_definition: WorkflowDefinition,
+        workflow_definition: WorkflowVersion,
         version: str,
         status: Literal["running", "completed", "failed", "timed_out", "terminated", "paused"],
         input: dict | None = None,

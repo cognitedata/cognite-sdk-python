@@ -6,12 +6,12 @@ from cognite.client._api_client import APIClient
 from cognite.client.data_classes.workflows import (
     Workflow,
     WorkflowCreate,
-    WorkflowDefinition,
-    WorkflowDefinitionCreate,
     WorkflowExecution,
     WorkflowExecutionList,
     WorkflowId,
     WorkflowList,
+    WorkflowVersion,
+    WorkflowVersionCreate,
 )
 from cognite.client.utils._identifier import IdentifierSequence
 
@@ -67,7 +67,7 @@ class WorkflowExecutionAPI(APIClient):
         ...
 
 
-class WorkflowDefinitionAPI(APIClient):
+class WorkflowVersionAPI(APIClient):
     _RESOURCE_PATH = "/workflows"
 
     def __init__(
@@ -79,13 +79,13 @@ class WorkflowDefinitionAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._api_subversion = "beta"
 
-    def apply(self, definition: WorkflowDefinitionCreate) -> WorkflowDefinition:
+    def apply(self, definition: WorkflowVersionCreate) -> WorkflowVersion:
         response = self._post(
             url_path=f"{self._RESOURCE_PATH}/{definition.workflow_external_id}/versions",
             json=definition.dump(camel_case=True),
         )
 
-        return WorkflowDefinition._load(response.json())
+        return WorkflowVersion._load(response.json())
 
     # def delete(
     #     self,
@@ -114,7 +114,7 @@ class WorkflowAPI(APIClient):
     ) -> None:
         super().__init__(config, api_version, cognite_client)
         self._api_subversion = "beta"
-        self.definitions = WorkflowDefinitionAPI(config, api_version, cognite_client)
+        self.versions = WorkflowVersionAPI(config, api_version, cognite_client)
         self.executions = WorkflowExecutionAPI(config, api_version, cognite_client)
         self.tasks = WorkflowTaskAPI(config, api_version, cognite_client)
 

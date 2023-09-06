@@ -71,9 +71,9 @@ from cognite.client._api.user_profiles import UserProfilesAPI
 from cognite.client._api.vision import VisionAPI
 from cognite.client._api.workflows import (
     WorkflowAPI,
-    WorkflowDefinitionAPI,
     WorkflowExecutionAPI,
     WorkflowTaskAPI,
+    WorkflowVersionAPI,
 )
 
 
@@ -170,7 +170,7 @@ class CogniteClientMock(MagicMock):
         self.vision = MagicMock(spec_set=VisionAPI)
 
         self.workflows = MagicMock(spec=WorkflowAPI)
-        self.workflows.definitions = MagicMock(spec_set=WorkflowDefinitionAPI)
+        self.workflows.definitions = MagicMock(spec_set=WorkflowVersionAPI)
         self.workflows.executions = MagicMock(spec_set=WorkflowExecutionAPI)
         self.workflows.tasks = MagicMock(spec_set=WorkflowTaskAPI)
 

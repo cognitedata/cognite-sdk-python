@@ -8,9 +8,9 @@ from cognite.client.data_classes.workflows import (
     Task,
     Workflow,
     WorkflowCreate,
-    WorkflowDefinition,
-    WorkflowDefinitionCreate,
     WorkflowList,
+    WorkflowVersion,
+    WorkflowVersionCreate,
 )
 from cognite.client.exceptions import CogniteAPIError
 
@@ -85,9 +85,9 @@ class TestWorkflows:
         assert "Workflow not found" in str(e.value)
 
 
-class TestWorkflowDefinitions:
+class TestWorkflowVersions:
     def test_create_delete(self, cognite_client: CogniteClient) -> None:
-        definition = WorkflowDefinitionCreate(
+        definition = WorkflowVersionCreate(
             workflow_external_id="integration_test:workflow_definitions:test_create_delete",
             version="1",
             tasks=[
@@ -102,17 +102,17 @@ class TestWorkflowDefinitions:
             ],
             description="This is ephemeral workflow definition for testing purposes",
         )
-        cognite_client.workflows.definitions.delete(
+        cognite_client.workflows.versions.delete(
             definition.workflow_external_id, definition.version, ignore_unknown_ids=True
         )
 
-        created_definition: WorkflowDefinition | None = None
+        created_definition: WorkflowVersion | None = None
         try:
-            created_definition = cognite_client.workflows.definitions.apply(definition)
+            created_definition = cognite_client.workflows.versions.apply(definition)
 
             assert created_definition.external_id == definition.external_id
             assert created_definition.description == definition.description
             assert created_definition.created_time is not None
         finally:
             if created_definition is not None:
-                cognite_client.workflows.definitions.delete(created_definition.external_id, definition.version)
+                cognite_client.workflows.versions.delete(created_definition.external_id, definition.version)
