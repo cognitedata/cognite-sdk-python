@@ -173,12 +173,7 @@ class HTTPClient:
     ) -> bool:
         """requests does not use the "raise ... from ..." syntax, so we need to access the underlying exceptions using
         the __context__ attribute.
-
-        Args:
-            exc (BaseException): No description.
-            exc_types (tuple[type[BaseException], ...] | type[BaseException]): No description.
-        Returns:
-            bool: No description."""
+        """
         if isinstance(exc, exc_types):
             return True
         if exc.__context__ is None:
