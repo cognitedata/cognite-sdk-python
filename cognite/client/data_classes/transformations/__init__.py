@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from abc import abstractmethod
+from copy import copy
 from typing import TYPE_CHECKING, Any, Awaitable, Dict, cast
 
 from cognite.client.data_classes._base import (
@@ -219,7 +220,7 @@ class Transformation(CogniteResource):
 
                 client = self._cognite_client
                 if project != self._cognite_client.config.project:
-                    config = self._cognite_client.config.copy()
+                    config = copy(self._cognite_client.config)
                     config.project = project
                     config.credentials = oidc_credentials.as_valid_credentials()
                     client = CogniteClient(config)

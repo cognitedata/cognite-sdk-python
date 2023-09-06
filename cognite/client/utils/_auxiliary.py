@@ -2,13 +2,10 @@ from __future__ import annotations
 
 import functools
 import importlib
-import inspect
-import keyword
 import math
 import numbers
 import platform
 import warnings
-from contextlib import contextmanager
 from decimal import Decimal
 from types import ModuleType
 from typing import (
@@ -239,26 +236,3 @@ def rename_and_exclude_keys(
     aliases = aliases or {}
     exclude = exclude or set()
     return {aliases.get(k, k): v for k, v in dct.items() if k not in exclude}
-
-
-@contextmanager
-def patch_attribute(obj: object, attr: str, new_value: object) -> Iterator[None]:
-    if "." in attr:
-        raise ValueError("Dotted attribute access not supported, pass inner-most object")
-    elif keyword.iskeyword(attr) or not attr.isidentifier():
-        raise ValueError(f"{attr!r} is an invalid attribute name")
-
-    try:
-        before = getattr(obj, attr)
-    except AttributeError:
-        raise AttributeError(f"Object {obj!r} has no attribute {attr!r}") from None
-
-    # Avoid invoking descriptor protocol for static- & classmethods:
-    if inspect.isclass(obj):
-        before = obj.__dict__[attr]
-
-    setattr(obj, attr, new_value)
-    try:
-        yield
-    finally:
-        setattr(obj, attr, before)
