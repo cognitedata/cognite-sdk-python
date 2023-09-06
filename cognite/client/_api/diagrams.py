@@ -199,8 +199,7 @@ class DiagramsAPI(APIClient):
         entities = [
             entity.dump(camel_case=True) if isinstance(entity, CogniteResource) else entity for entity in entities
         ]
-        beta_parameters = [pattern_mode, configuration]
-        any(parameter is not None for parameter in beta_parameters)
+        beta_parameters = [p for p in [pattern_mode, configuration] if p is not None]
 
         if multiple_jobs:
             num_new_jobs = ceil(len(items) / self._DETECT_API_FILE_LIMIT)
