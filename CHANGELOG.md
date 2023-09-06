@@ -31,7 +31,6 @@ Changes are grouped as follows
 
 ### Improved
 - Using `client.files.download` will still skip files with the same name when writing to disk, but now a `UserWarning` is raised, specifying which files are affected.
->>>>>>> e7dd74b0414e8735728dc6869805a0db04c41b7e
 
 ## [6.17.0] - 2023-09-01
 ### Added
