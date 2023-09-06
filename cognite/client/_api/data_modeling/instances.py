@@ -5,7 +5,7 @@ from collections.abc import Iterable
 from typing import TYPE_CHECKING, Any, Iterator, List, Literal, Sequence, Union, cast, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import INSTANCES_LIST_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import filters
 from cognite.client.data_classes._base import CogniteResourceList
 from cognite.client.data_classes.aggregations import (
@@ -532,7 +532,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node"] = "node",
         properties: list[str] | None = None,
         filter: Filter | dict | None = None,
-        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
+        limit: int = DEFAULT_LIMIT_READ,
     ) -> NodeList:
         ...
 
@@ -544,7 +544,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["edge"],
         properties: list[str] | None = None,
         filter: Filter | dict | None = None,
-        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
+        limit: int = DEFAULT_LIMIT_READ,
     ) -> EdgeList:
         ...
 
@@ -555,7 +555,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node", "edge"] = "node",
         properties: list[str] | None = None,
         filter: Filter | dict | None = None,
-        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
+        limit: int = DEFAULT_LIMIT_READ,
     ) -> NodeList | EdgeList:
         """`Search instances <https://developer.cognite.com/api/v1/#tag/Instances/operation/searchInstances>`_
 
@@ -564,8 +564,8 @@ class InstancesAPI(APIClient):
             query (str): Query string that will be parsed and used for search.
             instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
             properties (list[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
-            filter (Filter | dict | None): Advnanced filtering of instances.
-            limit (int): Maximum number of instances to return. Defaults to 1000. Set to -1, float("inf") or None to return all items.
+            filter (Filter | dict | None): Advanced filtering of instances.
+            limit (int): Maximum number of instances to return. Defaults to 25.
 
         Returns:
             NodeList | EdgeList: Search result with matching nodes or edges.
@@ -616,7 +616,7 @@ class InstancesAPI(APIClient):
         query: str | None = None,
         properties: Sequence[str] | None = None,
         filter: Filter | None = None,
-        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
+        limit: int = DEFAULT_LIMIT_READ,
     ) -> InstanceAggregationResultList:
         """`Aggregate data across nodes/edges <https://developer.cognite.com/api/v1/#tag/Instances/operation/aggregateInstances>`_
 
@@ -627,8 +627,8 @@ class InstancesAPI(APIClient):
             group_by (Sequence[str] | None): The selection of fields to group the results by when doing aggregations. You can specify up to 5 items to group by.
             query (str | None): Query string that will be parsed and used for search.
             properties (Sequence[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
-            filter (Filter | None): Advnanced filtering of instances.
-            limit (int): Maximum number of instances to return. Defaults to 1000. Set to -1, float("inf") or None to return all items.
+            filter (Filter | None): Advanced filtering of instances.
+            limit (int): Maximum number of instances to return. Defaults to 25.
 
         Returns:
             InstanceAggregationResultList: Node or edge aggregation results.
@@ -675,7 +675,7 @@ class InstancesAPI(APIClient):
         query: str | None = None,
         properties: Sequence[str] | None = None,
         filter: Filter | None = None,
-        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
+        limit: int = DEFAULT_LIMIT_READ,
     ) -> HistogramValue:
         ...
 
@@ -688,7 +688,7 @@ class InstancesAPI(APIClient):
         query: str | None = None,
         properties: Sequence[str] | None = None,
         filter: Filter | None = None,
-        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
+        limit: int = DEFAULT_LIMIT_READ,
     ) -> list[HistogramValue]:
         ...
 
@@ -700,7 +700,7 @@ class InstancesAPI(APIClient):
         query: str | None = None,
         properties: Sequence[str] | None = None,
         filter: Filter | None = None,
-        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
+        limit: int = DEFAULT_LIMIT_READ,
     ) -> HistogramValue | list[HistogramValue]:
         """`Produces histograms for nodes/edges <https://developer.cognite.com/api/v1/#tag/Instances/operation/aggregateInstances>`_
 
@@ -710,8 +710,8 @@ class InstancesAPI(APIClient):
             instance_type (Literal["node", "edge"]): Whether to search for nodes or edges.
             query (str | None): Query string that will be parsed and used for search.
             properties (Sequence[str] | None): Optional array of properties you want to search through. If you do not specify one or more properties, the service will search all text fields within the view.
-            filter (Filter | None): Advnanced filtering of instances.
-            limit (int): Maximum number of instances to return. Defaults to 1000. Set to -1, float("inf") or None to return all items.
+            filter (Filter | None): Advanced filtering of instances.
+            limit (int): Maximum number of instances to return. Defaults to 25.
 
         Returns:
             HistogramValue | list[HistogramValue]: Node or edge aggregation results.
@@ -784,15 +784,15 @@ class InstancesAPI(APIClient):
                 >>> movie_id = ViewId("mySpace", "MovieView", "v1")
                 >>> actor_id = ViewId("mySpace", "ActorView", "v1")
                 >>> query = Query(
-                ...         with_ = {
-                ...             "movies": NodeResultSetExpression(filter=Range(movie_id.as_property_ref("releaseYear"), lt=2000)),
-                ...             "actors_in_movie": EdgeResultSetExpression(from_="movies", filter=Equals(["edge", "type"], {"space": movie_id.space, "externalId": "Movie.actors"})),
-                ...             "actors": NodeResultSetExpression(from_="actors_in_movie"),
-                ...         },
-                ...         select = {
-                ...             "actors": Select(
-                ...                            [SourceSelector(actor_id, ["name"])], sort=[actor_id.as_property_ref("name")]),
-                ...         },
+                ...     with_ = {
+                ...         "movies": NodeResultSetExpression(filter=Range(movie_id.as_property_ref("releaseYear"), lt=2000)),
+                ...         "actors_in_movie": EdgeResultSetExpression(from_="movies", filter=Equals(["edge", "type"], {"space": movie_id.space, "externalId": "Movie.actors"})),
+                ...         "actors": NodeResultSetExpression(from_="actors_in_movie"),
+                ...     },
+                ...     select = {
+                ...         "actors": Select(
+                ...             [SourceSelector(actor_id, ["name"])], sort=[actor_id.as_property_ref("name")]),
+                ...     },
                 ... )
                 >>> res = c.data_modeling.instances.query(query)
         """
@@ -821,15 +821,15 @@ class InstancesAPI(APIClient):
                 >>> movie_id = ViewId("mySpace", "MovieView", "v1")
                 >>> actor_id = ViewId("mySpace", "ActorView", "v1")
                 >>> query = Query(
-                ...         with_ = {
-                ...             "movies": NodeResultSetExpression(filter=Range(movie_id.as_property_ref("releaseYear"), lt=2000)),
-                ...             "actors_in_movie": EdgeResultSetExpression(from_="movies", filter=Equals(["edge", "type"], {"space": movie_id.space, "externalId": "Movie.actors"})),
-                ...             "actors": NodeResultSetExpression(from_="actors_in_movie"),
-                ...         },
-                ...         select = {
-                ...             "actors": Select(
-                ...                            [SourceSelector(actor_id, ["name"])], sort=[actor_id.as_property_ref("name")]),
-                ...         },
+                ...     with_ = {
+                ...         "movies": NodeResultSetExpression(filter=Range(movie_id.as_property_ref("releaseYear"), lt=2000)),
+                ...         "actors_in_movie": EdgeResultSetExpression(from_="movies", filter=Equals(["edge", "type"], {"space": movie_id.space, "externalId": "Movie.actors"})),
+                ...         "actors": NodeResultSetExpression(from_="actors_in_movie"),
+                ...     },
+                ...     select = {
+                ...         "actors": Select(
+                ...             [SourceSelector(actor_id, ["name"])], sort=[actor_id.as_property_ref("name")]),
+                ...     },
                 ... )
                 >>> res = c.data_modeling.instances.sync(query)
                 >>> # Added a new movie with actors released before 2000
@@ -857,7 +857,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node"] = "node",
         include_typing: bool = False,
         sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None = None,
-        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> NodeList:
@@ -869,7 +869,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["edge"],
         include_typing: bool = False,
         sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None = None,
-        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> EdgeList:
@@ -880,7 +880,7 @@ class InstancesAPI(APIClient):
         instance_type: Literal["node", "edge"] = "node",
         include_typing: bool = False,
         sources: ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None = None,
-        limit: int = INSTANCES_LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict | None = None,
     ) -> NodeList | EdgeList:
@@ -890,7 +890,7 @@ class InstancesAPI(APIClient):
             instance_type (Literal["node", "edge"]): Whether to query for nodes or edges.
             include_typing (bool): Whether to return property type information as part of the result.
             sources (ViewIdentifier | Sequence[ViewIdentifier] | View | Sequence[View] | None): Views to retrieve properties from.
-            limit (int): Maximum number of instances to return. Defaults to 1000. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of instances to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
             sort (Sequence[InstanceSort | dict] | InstanceSort | dict | None): How you want the listed instances information ordered.
             filter (Filter | dict | None): Advanced filtering of instances.
 

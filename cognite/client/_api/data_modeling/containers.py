@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Iterator, Sequence, cast, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import DATA_MODELING_LIST_LIMIT_DEFAULT
+from cognite.client._constants import DATA_MODELING_DEFAULT_LIMIT_READ
 from cognite.client.data_classes.data_modeling.containers import (
     Container,
     ContainerApply,
@@ -147,13 +147,16 @@ class ContainersAPI(APIClient):
         return [ContainerId(space=item["space"], external_id=item["externalId"]) for item in deleted_containers]
 
     def list(
-        self, space: str | None = None, limit: int = DATA_MODELING_LIST_LIMIT_DEFAULT, include_global: bool = False
+        self,
+        space: str | None = None,
+        limit: int | None = DATA_MODELING_DEFAULT_LIMIT_READ,
+        include_global: bool = False,
     ) -> ContainerList:
         """`List containers <https://developer.cognite.com/api#tag/Containers/operation/listContainers>`_
 
         Args:
             space (str | None): The space to query
-            limit (int): Maximum number of containers to return. Defaults to 10. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of containers to return. Defaults to 10. Set to -1, float("inf") or None to return all items.
             include_global (bool): Whether the global containers should be returned.
 
         Returns:

@@ -4,7 +4,7 @@ from typing import Sequence
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     TransformationJob,
     TransformationJobFilter,
@@ -20,7 +20,7 @@ class TransformationJobsAPI(APIClient):
 
     def list(
         self,
-        limit: int | None = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
         transformation_id: int | None = None,
         transformation_external_id: str | None = None,
     ) -> TransformationJobList:

@@ -6,7 +6,7 @@ from typing import Any, Iterator, Literal, Sequence, Tuple, Union, cast, overloa
 from typing_extensions import TypeAlias
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     AggregateResult,
     AggregateUniqueValuesResult,
@@ -577,7 +577,10 @@ class EventsAPI(APIClient):
         return self._update_multiple(list_cls=EventList, resource_cls=Event, update_cls=EventUpdate, items=item)
 
     def search(
-        self, description: str | None = None, filter: EventFilter | dict | None = None, limit: int = 100
+        self,
+        description: str | None = None,
+        filter: EventFilter | dict | None = None,
+        limit: int = DEFAULT_LIMIT_READ,
     ) -> EventList:
         """`Search for events <https://developer.cognite.com/api#tag/Events/operation/searchEvents>`_
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
@@ -647,7 +650,7 @@ class EventsAPI(APIClient):
         self,
         filter: Filter | dict,
         sort: SortSpec | list[SortSpec] | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> EventList:
         """`Advanced filter events <https://developer.cognite.com/api#tag/Events/operation/advancedListEvents>`_
 
@@ -658,7 +661,7 @@ class EventsAPI(APIClient):
         Args:
             filter (Filter | dict): Filter to apply.
             sort (SortSpec | list[SortSpec] | None): The criteria to sort by. Can be up to two properties to sort by default to ascending order.
-            limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             EventList: List of events that match the filter criteria.
@@ -731,7 +734,7 @@ class EventsAPI(APIClient):
         external_id_prefix: str | None = None,
         sort: Sequence[str] | None = None,
         partitions: int | None = None,
-        limit: int = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> EventList:
         """`List events <https://developer.cognite.com/api#tag/Events/operation/advancedListEvents>`_
 
@@ -754,7 +757,7 @@ class EventsAPI(APIClient):
             external_id_prefix (str | None): External Id provided by client. Should be unique within the project.
             sort (Sequence[str] | None): Sort by array of selected fields. Ex: ["startTime:desc']. Default sort order is asc when ommitted. Filter accepts following field names: startTime, endTime, createdTime, lastUpdatedTime. We only support 1 field for now.
             partitions (int | None): Retrieve events in parallel using this number of workers. Also requires `limit=None` to be passed. To prevent unexpected problems and maximize read throughput, API documentation recommends at most use 10 partitions. When using more than 10 partitions, actual throughout decreases. In future releases of the APIs, CDF may reject requests with more than 10 partitions.
-            limit (int): Maximum number of events to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of events to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             EventList: List of requested events

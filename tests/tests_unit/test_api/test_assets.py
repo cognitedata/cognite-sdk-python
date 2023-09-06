@@ -260,7 +260,7 @@ class TestAssets:
         assert {
             "search": {"name": None, "description": None, "query": None},
             "filter": {"name": "1"},
-            "limit": 100,
+            "limit": 25,
         } == jsgz_load(mock_assets_response.calls[0].request.body)
 
     @pytest.mark.parametrize("filter_field", ["parent_ids", "parentIds"])
@@ -270,7 +270,7 @@ class TestAssets:
         assert {
             "search": {"name": None, "description": None, "query": None},
             "filter": {"parentIds": "bla"},
-            "limit": 100,
+            "limit": 25,
         } == jsgz_load(mock_assets_response.calls[0].request.body)
 
     def test_get_subtree(self, cognite_client, mock_get_subtree):

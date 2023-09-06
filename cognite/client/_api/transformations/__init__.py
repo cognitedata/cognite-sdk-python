@@ -7,7 +7,7 @@ from cognite.client._api.transformations.notifications import TransformationNoti
 from cognite.client._api.transformations.schedules import TransformationSchedulesAPI
 from cognite.client._api.transformations.schema import TransformationSchemaAPI
 from cognite.client._api_client import APIClient
-from cognite.client._constants import LIST_LIMIT_DEFAULT
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import Transformation, TransformationJob, TransformationList
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.data_classes.transformations import (
@@ -153,7 +153,7 @@ class TransformationsAPI(APIClient):
         data_set_ids: list[int] | None = None,
         data_set_external_ids: list[str] | None = None,
         tags: TagsFilter | None = None,
-        limit: int | None = LIST_LIMIT_DEFAULT,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> TransformationList:
         """`List all transformations. <https://developer.cognite.com/api#tag/Transformations/operation/getTransformations>`_
 

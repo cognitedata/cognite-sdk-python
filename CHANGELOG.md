@@ -17,9 +17,39 @@ Changes are grouped as follows
 - `Fixed` for any bug fixes.
 - `Security` in case of vulnerabilities.
 
-## [6.15.4] - 2023-08-31
 ### Fixed
 - Bugfix for `FilesAPI.upload` and `FilesAPI.upload_bytes` not raising an error on file contents upload failure. Now `CogniteAPIError` is raised based on upload response.
+
+
+## [6.20.0] - 2023-09-05
+### Fixed
+- When creating functions with `client.functions.create` using the `folder` argument, a trial-import is executed as part of
+  the verification process. This could leave leftover modules still in scope, possibly affecting subsequent calls. This is
+  now done in a separate process to guarantee it has no side-effects on the main process.
+- For pyodide/WASM users, a backup implementation is used, with an improved cleanup procedure.
+
+### Added
+- The import-check in `client.functions.create` (when `folder` is used) can now be disabled by passing
+  `skip_folder_validation=True`. Basic validation is still done, now additionally by parsing the AST.
+
+## [6.19.0] - 2023-09-04
+## Added
+- Now possible to retrieve and update translation and scale of 3D model revisions.
+
+## [6.18.0] - 2023-09-04
+### Added
+- Added parameter `keep_directory_structure` to `client.files.download` to allow downloading files to a folder structure matching the one in CDF.
+
+### Improved
+- Using `client.files.download` will still skip files with the same name when writing to disk, but now a `UserWarning` is raised, specifying which files are affected.
+
+## [6.17.0] - 2023-09-01
+### Added
+- Support for the UserProfilesAPI with the implementation `client.iam.user_profiles`.
+
+## [6.16.0] - 2023-09-01
+### Added
+- Support for `ignore_unknown_ids` in `client.relationships.retrieve_multiple` method.
 
 ## [6.15.3] - 2023-08-30
 ### Fixed

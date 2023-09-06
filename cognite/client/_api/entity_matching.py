@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Sequence, TypeVar
 
 from cognite.client._api_client import APIClient
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes._base import CogniteResource
 from cognite.client.data_classes.contextualization import (
     ContextualizationJob,
@@ -96,7 +97,7 @@ class EntityMatchingAPI(APIClient):
         original_id: int | None = None,
         feature_type: str | None = None,
         classifier: str | None = None,
-        limit: int | None = 100,
+        limit: int | None = DEFAULT_LIMIT_READ,
     ) -> EntityMatchingModelList:
         """List models
 
@@ -106,7 +107,7 @@ class EntityMatchingAPI(APIClient):
             original_id (int | None): id of the original model for models that were created with refit.
             feature_type (str | None): feature type that defines the combination of features used.
             classifier (str | None): classifier used in training.
-            limit (int | None): Maximum number of items to return. Defaults to 100. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of items to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
             EntityMatchingModelList: List of models.
@@ -123,9 +124,7 @@ class EntityMatchingAPI(APIClient):
         filter = {k: v for k, v in filter.items() if v is not None}
         # NB no pagination support yet
         models = self._post(self._RESOURCE_PATH + "/list", json={"filter": filter, "limit": limit}).json()["items"]
-        return EntityMatchingModelList(
-            [EntityMatchingModel._load(model, cognite_client=self._cognite_client) for model in models]
-        )
+        return EntityMatchingModelList._load(models, cognite_client=self._cognite_client)
 
     def list_jobs(self) -> ContextualizationJobList:
         """List jobs, typically model fit and predict runs.

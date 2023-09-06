@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Iterator, Literal, Sequence, cast, overlo
 
 from cognite.client import utils
 from cognite.client._api_client import APIClient
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import Relationship, RelationshipFilter, RelationshipList, RelationshipUpdate
 from cognite.client.data_classes.labels import LabelFilter
 from cognite.client.utils._auxiliary import is_unlimited
@@ -171,13 +172,16 @@ class RelationshipsAPI(APIClient):
             other_params={"fetchResources": fetch_resources},
         )
 
-    def retrieve_multiple(self, external_ids: Sequence[str], fetch_resources: bool = False) -> RelationshipList:
+    def retrieve_multiple(
+        self, external_ids: Sequence[str], fetch_resources: bool = False, ignore_unknown_ids: bool = False
+    ) -> RelationshipList:
         """`Retrieve multiple relationships by external id.  <https://developer.cognite.com/api#tag/Relationships/operation/byidsRelationships>`_
 
         Args:
             external_ids (Sequence[str]): External IDs
             fetch_resources (bool): if true, will try to return the full resources referenced by the relationship in the
                 source and target fields.
+            ignore_unknown_ids (bool): Ignore IDs and external IDs that are not found rather than throw an exception.
 
         Returns:
             RelationshipList: The requested relationships.
@@ -196,6 +200,7 @@ class RelationshipsAPI(APIClient):
             resource_cls=Relationship,
             identifiers=identifiers,
             other_params={"fetchResources": fetch_resources},
+            ignore_unknown_ids=ignore_unknown_ids,
         )
 
     def list(
@@ -213,7 +218,7 @@ class RelationshipsAPI(APIClient):
         created_time: dict[str, int] | None = None,
         active_at_time: dict[str, int] | None = None,
         labels: LabelFilter | None = None,
-        limit: int = 100,
+        limit: int | None = DEFAULT_LIMIT_READ,
         partitions: int | None = None,
         fetch_resources: bool = False,
     ) -> RelationshipList:
@@ -233,7 +238,7 @@ class RelationshipsAPI(APIClient):
             created_time (dict[str, int] | None): Range to filter the field for (inclusive).
             active_at_time (dict[str, int] | None): Limits results to those active at any point within the given time range, i.e. if there is any overlap in the intervals [activeAtTime.min, activeAtTime.max] and [startTime, endTime], where both intervals are inclusive. If a relationship does not have a startTime, it is regarded as active from the begining of time by this filter. If it does not have an endTime is will be regarded as active until the end of time. Similarly, if a min is not supplied to the filter, the min will be implicitly set to the beginning of time, and if a max is not supplied, the max will be implicitly set to the end of time.
             labels (LabelFilter | None): Return only the resource matching the specified label constraints.
-            limit (int): Maximum number of relationships to return. Defaults to 100. Set to -1, float("inf") or None to return all items.
+            limit (int | None): Maximum number of relationships to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
             partitions (int | None): Retrieve relationships in parallel using this number of workers. Also requires `limit=None` to be passed.
             fetch_resources (bool): if true, will try to return the full resources referenced by the relationship in the source and target fields.
 

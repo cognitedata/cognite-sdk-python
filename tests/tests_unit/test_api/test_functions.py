@@ -357,7 +357,7 @@ def mock_functions_limit_response(rsps, cognite_client):
         "cpuCores": {"min": 0.1, "max": 0.6, "default": 0.25},
         "memoryGb": {"min": 0.1, "max": 2.5, "default": 1.0},
         "responseSizeMb": 1,
-        "runtimes": ["py37", "py38", "py39"],
+        "runtimes": ["py38", "py39", "py310"],
     }
     url = full_url(cognite_client, "/functions/limits")
     rsps.add(rsps.GET, url, status=200, json=response_body)
@@ -405,19 +405,32 @@ class TestFunctionsAPI:
             ("function_code", "./handler.py", None),
             ("bad_function_code", "handler.py", FileNotFoundError),
             ("bad_function_code2", "handler.py", TypeError),
+        ],
+    )
+    def test_validate_folder(self, function_folder, function_path, exception):
+        folder = os.path.join(os.path.dirname(__file__), "function_test_resources", function_folder)
+        if exception is None:
+            validate_function_folder(folder, function_path, skip_folder_validation=True)
+        else:
+            with pytest.raises(exception):
+                validate_function_folder(folder, function_path, skip_folder_validation=True)
+
+    @pytest.mark.parametrize(
+        "function_folder, function_path, exception",
+        [
             ("./good_absolute_import/", "my_functions/handler.py", None),
             ("bad_absolute_import", "extra_root_folder/my_functions/handler.py", ModuleNotFoundError),
             ("relative_imports", "my_functions/good_relative_import.py", None),
             ("relative_imports", "bad_relative_import.py", ImportError),
         ],
     )
-    def test_validate_folder(self, function_folder, function_path, exception):
+    def test_imports_in_validate_folder(self, function_folder, function_path, exception):
         folder = os.path.join(os.path.dirname(__file__), "function_test_resources", function_folder)
         if exception is None:
-            validate_function_folder(folder, function_path)
+            validate_function_folder(folder, function_path, skip_folder_validation=False)
         else:
             with pytest.raises(exception):
-                validate_function_folder(folder, function_path)
+                validate_function_folder(folder, function_path, skip_folder_validation=False)
 
     @pytest.mark.parametrize(
         "function_folder, function_name, exception",

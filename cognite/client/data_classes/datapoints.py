@@ -463,7 +463,7 @@ class Datapoints(CogniteResource):
 
     def __eq__(self, other: Any) -> bool:
         return (
-            type(self) == type(other)
+            type(self) is type(other)
             and self.id == other.id
             and self.external_id == other.external_id
             and list(self._get_non_empty_data_fields()) == list(other._get_non_empty_data_fields())
