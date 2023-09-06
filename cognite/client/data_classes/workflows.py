@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, Sequence
 
 from cognite.client.data_classes._base import (
     CogniteResource,
@@ -113,13 +113,13 @@ class CDFRequestParameters(Parameters):
         method: Literal["GET", "POST", "PUT", "DELETE"],
         query_parameters: dict | None = None,
         body: dict | None = None,
-        request_timeout_millis: int = 10000,
+        request_timeout_in_millis: int = 10000,
     ):
         self.resource_path = resource_path
         self.method = method
         self.query_parameters = query_parameters or {}
         self.body = body or {}
-        self.request_timeout_millis = request_timeout_millis
+        self.request_timeout_in_millis = request_timeout_in_millis
 
     @classmethod
     def _load(
@@ -134,7 +134,7 @@ class CDFRequestParameters(Parameters):
             method=cdf_request["method"],
             query_parameters=cdf_request.get("queryParameters"),
             body=cdf_request.get("body"),
-            request_timeout_millis=cdf_request.get("requestTimeoutMillis"),
+            request_timeout_in_millis=cdf_request.get("requestTimeoutInMillis"),
         )
 
     def dump(self, camel_case: bool = False) -> dict[str, Any]:
@@ -351,9 +351,18 @@ class WorkflowVersion(WorkflowVersionCreate):
         output[("workflowDefinition" if camel_case else "workflow_definition")]["hash"] = self.hash
         return output
 
+    def as_id(self) -> WorkflowId:
+        return WorkflowId(
+            external_id=self.workflow_external_id,
+            version=self.version,
+        )
+
 
 class WorkflowVersionList(CogniteResourceList[WorkflowVersion]):
     _RESOURCE = WorkflowVersion
+
+    def as_ids(self) -> WorkflowIds:
+        return WorkflowIds([workflow_version.as_id() for workflow_version in self.data])
 
 
 class WorkflowExecution(CogniteResource):
@@ -387,6 +396,47 @@ class WorkflowExecutionList(CogniteResourceList[WorkflowExecution]):
 
 
 @dataclass
-class WorkflowId:
+class WorkflowId(CogniteResource):
     external_id: str
     version: str | None = None
+
+    @classmethod
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> WorkflowId:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        return cls(
+            external_id=resource["externalId"],
+            version=resource.get("version"),
+        )
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        output: dict[str, Any] = {
+            ("externalId" if camel_case else "external_id"): self.external_id,
+        }
+        if self.version:
+            output["version"] = self.version
+        return output
+
+
+class WorkflowIds(CogniteResourceList[WorkflowId]):
+    _RESOURCE = WorkflowId
+
+    @classmethod
+    def _load(cls, resource: Any, cognite_client: CogniteClient | None = None) -> WorkflowIds:
+        workflow_ids: Sequence[WorkflowId]
+        if isinstance(resource, tuple) and len(resource) == 2 and all(isinstance(x, str) for x in resource):
+            workflow_ids = [WorkflowId(*resource)]
+        elif isinstance(resource, WorkflowId):
+            workflow_ids = [resource]
+        elif isinstance(resource, str):
+            workflow_ids = [WorkflowId(external_id=resource)]
+        elif isinstance(resource, dict):
+            workflow_ids = [WorkflowId._load(resource)]
+        elif isinstance(resource, Sequence) and resource and isinstance(resource[0], tuple):
+            workflow_ids = [WorkflowId(*x) for x in resource]
+        elif isinstance(resource, Sequence) and resource and isinstance(resource[0], WorkflowId):
+            workflow_ids = resource
+        elif isinstance(resource, Sequence) and resource and isinstance(resource[0], str):
+            workflow_ids = [WorkflowId(external_id=x) for x in resource]
+        else:
+            raise ValueError("Invalid input to WorkflowIds")
+        return cls(workflow_ids)

@@ -4,8 +4,10 @@ import pytest
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes.workflows import (
+    CDFRequestParameters,
     FunctionParameters,
     Task,
+    TransformationParameters,
     Workflow,
     WorkflowCreate,
     WorkflowList,
@@ -39,16 +41,45 @@ def workflow_list(cognite_client: CogniteClient) -> WorkflowList:
     return listed
 
 
+@pytest.fixture
 def workflow_version_list(cognite_client: CogniteClient) -> WorkflowVersionList:
-    pass
-    # version1 = WorkflowVersionCreate(
-    #     workflow_external_id=workflow_id,
-    #     version="1",
-    #     tasks=[
-    #         Task(
-    #         )]
-    #
-    # )
+    workflow_id = "integration_test:workflow_with_versions"
+    version1 = WorkflowVersionCreate(
+        workflow_external_id=workflow_id,
+        version="1",
+        tasks=[
+            Task(
+                external_id=f"{workflow_id}:1:task1",
+                parameters=TransformationParameters(
+                    external_id="None-existing-transformation",
+                ),
+            )
+        ],
+    )
+    version2 = WorkflowVersionCreate(
+        workflow_external_id=workflow_id,
+        version="2",
+        tasks=[
+            Task(
+                external_id=f"{workflow_id}:2:task1",
+                parameters=CDFRequestParameters(
+                    resource_path="/dummy/no/real/resource/path",
+                    method="GET",
+                    body={"limit": 1},
+                ),
+            )
+        ],
+    )
+    listed = cognite_client.workflows.versions.list(workflow_id=workflow_id)
+    existing = {w.version for w in listed}
+    call_list = False
+    for version in [version1, version2]:
+        if version.version not in existing:
+            call_list = True
+            cognite_client.workflows.versions.create(version)
+    if call_list:
+        return cognite_client.workflows.versions.list(workflow_external_id=workflow_id)
+    return listed
 
 
 class TestWorkflows:
@@ -127,3 +158,11 @@ class TestWorkflowVersions:
             if created_version is not None:
                 cognite_client.workflows.versions.delete(created_version.workflow_external_id, version.version)
                 cognite_client.workflows.delete(created_version.workflow_external_id)
+
+    def test_list_workflow_versions(
+        self, cognite_client: CogniteClient, workflow_version_list: WorkflowVersionList
+    ) -> None:
+        listed = cognite_client.workflows.versions.list(workflow_version_list.as_ids())
+
+        assert len(listed) == len(workflow_version_list)
+        assert listed == workflow_version_list

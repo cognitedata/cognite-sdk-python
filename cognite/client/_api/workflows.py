@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, Sequence
+from typing import TYPE_CHECKING, Literal, MutableSequence, Sequence
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.workflows import (
@@ -9,9 +9,11 @@ from cognite.client.data_classes.workflows import (
     WorkflowExecution,
     WorkflowExecutionList,
     WorkflowId,
+    WorkflowIds,
     WorkflowList,
     WorkflowVersion,
     WorkflowVersionCreate,
+    WorkflowVersionList,
 )
 from cognite.client.utils._identifier import (
     IdentifierSequence,
@@ -96,8 +98,25 @@ class WorkflowVersionAPI(BetaAPIClient):
 
         return WorkflowVersion._load(response.json())
 
-    def list(self, workflow_external_id: str, version: str | None = None) -> WorkflowList:
-        ...
+    def list(
+        self,
+        workflow_id: WorkflowId
+        | str
+        | tuple[str, str]
+        | MutableSequence[WorkflowId]
+        | MutableSequence[tuple[str, str]]
+        | MutableSequence[str]
+        | None = None,
+    ) -> WorkflowVersionList:
+        body: dict | None
+        if workflow_id is None:
+            body = None
+        else:
+            body = {"filter": {"workflowFilters": WorkflowIds._load(workflow_id).dump(camel_case=True)}}
+
+        response = self._post(url_path=self._RESOURCE_PATH + "/list", json=body)
+
+        return WorkflowVersionList._load(response.json()["items"])
 
 
 class WorkflowAPI(BetaAPIClient):
