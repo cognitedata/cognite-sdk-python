@@ -35,10 +35,7 @@ from cognite.client.data_classes import (
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._auxiliary import find_duplicates
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
-from cognite.client.utils._validation import (
-    process_asset_subtree_ids,
-    process_data_set_ids,
-)
+from cognite.client.utils._validation import process_asset_subtree_ids, process_data_set_ids
 
 if TYPE_CHECKING:
     from requests import Response
@@ -103,12 +100,8 @@ class FilesAPI(APIClient):
         Returns:
             Iterator[FileMetadata] | Iterator[FileMetadataList]: yields FileMetadata one by one if chunk_size is not specified, else FileMetadataList objects.
         """
-        asset_subtree_ids_processed = process_asset_subtree_ids(
-            asset_subtree_ids, asset_subtree_external_ids
-        )
-        data_set_ids_processed = process_data_set_ids(
-            data_set_ids, data_set_external_ids
-        )
+        asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
+        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
         filter = FileMetadataFilter(
             name=name,
@@ -149,9 +142,7 @@ class FilesAPI(APIClient):
         """
         return cast(Iterator[FileMetadata], self())
 
-    def create(
-        self, file_metadata: FileMetadata, overwrite: bool = False
-    ) -> tuple[FileMetadata, str]:
+    def create(self, file_metadata: FileMetadata, overwrite: bool = False) -> tuple[FileMetadata, str]:
         """Create file without uploading content.
 
         Args:
@@ -174,18 +165,14 @@ class FilesAPI(APIClient):
         """
 
         res = self._post(
-            url_path=self._RESOURCE_PATH,
-            json=file_metadata.dump(camel_case=True),
-            params={"overwrite": overwrite},
+            url_path=self._RESOURCE_PATH, json=file_metadata.dump(camel_case=True), params={"overwrite": overwrite}
         )
         returned_file_metadata = res.json()
         upload_url = returned_file_metadata["uploadUrl"]
         file_metadata = FileMetadata._load(returned_file_metadata)
         return (file_metadata, upload_url)
 
-    def retrieve(
-        self, id: int | None = None, external_id: str | None = None
-    ) -> FileMetadata | None:
+    def retrieve(self, id: int | None = None, external_id: str | None = None) -> FileMetadata | None:
         """`Retrieve a single file metadata by id. <https://developer.cognite.com/api#tag/Files/operation/getFileByInternalId>`_
 
         Args:
@@ -209,14 +196,8 @@ class FilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> res = c.files.retrieve(external_id="1")
         """
-        identifiers = IdentifierSequence.load(
-            ids=id, external_ids=external_id
-        ).as_singleton()
-        return self._retrieve_multiple(
-            list_cls=FileMetadataList,
-            resource_cls=FileMetadata,
-            identifiers=identifiers,
-        )
+        identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
+        return self._retrieve_multiple(list_cls=FileMetadataList, resource_cls=FileMetadata, identifiers=identifiers)
 
     def retrieve_multiple(
         self,
@@ -256,9 +237,7 @@ class FilesAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def aggregate(
-        self, filter: FileMetadataFilter | dict | None = None
-    ) -> list[FileAggregate]:
+    def aggregate(self, filter: FileMetadataFilter | dict | None = None) -> list[FileAggregate]:
         """`Aggregate files <https://developer.cognite.com/api#tag/Files/operation/aggregateFiles>`_
 
         Args:
@@ -278,11 +257,7 @@ class FilesAPI(APIClient):
 
         return self._aggregate(filter=filter, cls=FileAggregate)
 
-    def delete(
-        self,
-        id: int | Sequence[int] | None = None,
-        external_id: str | Sequence[str] | None = None,
-    ) -> None:
+    def delete(self, id: int | Sequence[int] | None = None, external_id: str | Sequence[str] | None = None) -> None:
         """`Delete files <https://developer.cognite.com/api#tag/Files/operation/deleteFiles>`_
 
         Args:
@@ -297,26 +272,18 @@ class FilesAPI(APIClient):
                 >>> c = CogniteClient()
                 >>> c.files.delete(id=[1,2,3], external_id="3")
         """
-        self._delete_multiple(
-            identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
-            wrap_ids=True,
-        )
+        self._delete_multiple(identifiers=IdentifierSequence.load(ids=id, external_ids=external_id), wrap_ids=True)
 
     @overload
     def update(self, item: FileMetadata | FileMetadataUpdate) -> FileMetadata:
         ...
 
     @overload
-    def update(
-        self, item: Sequence[FileMetadata | FileMetadataUpdate]
-    ) -> FileMetadataList:
+    def update(self, item: Sequence[FileMetadata | FileMetadataUpdate]) -> FileMetadataList:
         ...
 
     def update(
-        self,
-        item: FileMetadata
-        | FileMetadataUpdate
-        | Sequence[FileMetadata | FileMetadataUpdate],
+        self, item: FileMetadata | FileMetadataUpdate | Sequence[FileMetadata | FileMetadataUpdate]
     ) -> FileMetadata | FileMetadataList:
         """`Update files <https://developer.cognite.com/api#tag/Files/operation/updateFiles>`_
         Currently, a full replacement of labels on a file is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.
@@ -401,12 +368,7 @@ class FilesAPI(APIClient):
                 >>> my_label_filter = LabelFilter(contains_all=["WELL LOG"])
                 >>> res = c.assets.search(name="xyz",filter=FileMetadataFilter(labels=my_label_filter))
         """
-        return self._search(
-            list_cls=FileMetadataList,
-            search={"name": name},
-            filter=filter or {},
-            limit=limit,
-        )
+        return self._search(list_cls=FileMetadataList, search={"name": name}, filter=filter or {}, limit=limit)
 
     def upload(
         self,
@@ -525,15 +487,11 @@ class FilesAPI(APIClient):
             tasks_summary = utils._concurrency.execute_tasks(
                 self._upload_file_from_path, tasks, self._config.max_workers
             )
-            tasks_summary.raise_compound_exception_if_failed_tasks(
-                task_unwrap_fn=lambda x: x[0].name
-            )
+            tasks_summary.raise_compound_exception_if_failed_tasks(task_unwrap_fn=lambda x: x[0].name)
             return FileMetadataList(tasks_summary.results)
         raise ValueError(f"The path '{path}' does not exist")
 
-    def _upload_file_from_path(
-        self, file: FileMetadata, file_path: str, overwrite: bool
-    ) -> FileMetadata:
+    def _upload_file_from_path(self, file: FileMetadata, file_path: str, overwrite: bool) -> FileMetadata:
         fh: bytes | BufferedReader
         with open(file_path, "rb") as fh:
             if _RUNNING_IN_BROWSER:
@@ -609,26 +567,16 @@ class FilesAPI(APIClient):
         )
 
         res = self._post(
-            url_path=self._RESOURCE_PATH,
-            json=file_metadata.dump(camel_case=True),
-            params={"overwrite": overwrite},
+            url_path=self._RESOURCE_PATH, json=file_metadata.dump(camel_case=True), params={"overwrite": overwrite}
         )
         returned_file_metadata = res.json()
         upload_url = returned_file_metadata["uploadUrl"]
         headers = {"Content-Type": file_metadata.mime_type}
         upload_response = self._http_client_with_retry.request(
-            "PUT",
-            upload_url,
-            data=content,
-            timeout=self._config.file_transfer_timeout,
-            headers=headers,
+            "PUT", upload_url, data=content, timeout=self._config.file_transfer_timeout, headers=headers
         )
         if not upload_response.ok:
-            request_id = (
-                r.group(1)
-                if (r := re.search(r"\nRequestId:*(.+?)\n", upload_response.text))
-                else None
-            )
+            request_id = r.group(1) if (r := re.search(r"\nRequestId:*(.+?)\n", upload_response.text)) else None
             raise CogniteAPIError(
                 message=upload_response.text,
                 code=upload_response.status_code,
@@ -654,32 +602,18 @@ class FilesAPI(APIClient):
             dict[int | str, str]: Dictionary containing download urls.
         """
         batch_size = 100
-        id_batches = [
-            seq.as_dicts()
-            for seq in IdentifierSequence.load(id, external_id).chunked(batch_size)
-        ]
+        id_batches = [seq.as_dicts() for seq in IdentifierSequence.load(id, external_id).chunked(batch_size)]
         query_params = {}
         if extended_expiration:
             query_params["extendedExpiration"] = True
         tasks = [
-            dict(
-                url_path="/files/downloadlink",
-                json={"items": id_batch},
-                params=query_params,
-            )
+            dict(url_path="/files/downloadlink", json={"items": id_batch}, params=query_params)
             for id_batch in id_batches
         ]
-        tasks_summary = utils._concurrency.execute_tasks(
-            self._post, tasks, max_workers=self._config.max_workers
-        )
+        tasks_summary = utils._concurrency.execute_tasks(self._post, tasks, max_workers=self._config.max_workers)
         tasks_summary.raise_compound_exception_if_failed_tasks()
-        results = tasks_summary.joined_results(
-            unwrap_fn=lambda res: res.json()["items"]
-        )
-        return {
-            result.get("id") or result["externalId"]: result["downloadUrl"]
-            for result in results
-        }
+        results = tasks_summary.joined_results(unwrap_fn=lambda res: res.json()["items"])
+        return {result.get("id") or result["externalId"]: result["downloadUrl"] for result in results}
 
     def download(
         self,
@@ -726,21 +660,15 @@ class FilesAPI(APIClient):
         id_to_metadata = self._get_id_to_metadata_map(all_identifiers)
 
         if keep_directory_structure:
-            all_ids, filepaths, file_directories = self._prepare_file_hierarchy(
-                directory, id_to_metadata
-            )
-            self._download_files_to_directory(
-                file_directories, all_ids, id_to_metadata, filepaths
-            )
+            all_ids, filepaths, file_directories = self._prepare_file_hierarchy(directory, id_to_metadata)
+            self._download_files_to_directory(file_directories, all_ids, id_to_metadata, filepaths)
         else:
             filepaths = [
                 directory / cast(str, metadata.name)
                 for identifier, metadata in id_to_metadata.items()
                 if isinstance(identifier, int)
             ]
-            self._download_files_to_directory(
-                directory, all_identifiers, id_to_metadata, filepaths
-            )
+            self._download_files_to_directory(directory, all_identifiers, id_to_metadata, filepaths)
 
     @staticmethod
     def _prepare_file_hierarchy(
@@ -779,9 +707,7 @@ class FilesAPI(APIClient):
                 stacklevel=2,
             )
 
-    def _get_id_to_metadata_map(
-        self, all_ids: Sequence[dict]
-    ) -> dict[str | int, FileMetadata]:
+    def _get_id_to_metadata_map(self, all_ids: Sequence[dict]) -> dict[str | int, FileMetadata]:
         ids = [id["id"] for id in all_ids if "id" in id]
         external_ids = [id["externalId"] for id in all_ids if "externalId" in id]
 
@@ -811,16 +737,14 @@ class FilesAPI(APIClient):
             self._process_file_download, tasks, max_workers=self._config.max_workers
         )
         tasks_summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=lambda task: id_to_metadata[
-                IdentifierSequence.unwrap_identifier(task[1])
-            ],
+            task_unwrap_fn=lambda task: id_to_metadata[IdentifierSequence.unwrap_identifier(task[1])],
             str_format_element_fn=lambda metadata: metadata.id,
         )
 
     def _get_download_link(self, identifier: dict[str, int | str]) -> str:
-        return self._post(
-            url_path="/files/downloadlink", json={"items": [identifier]}
-        ).json()["items"][0]["downloadUrl"]
+        return self._post(url_path="/files/downloadlink", json={"items": [identifier]}).json()["items"][0][
+            "downloadUrl"
+        ]
 
     def _process_file_download(
         self,
@@ -833,20 +757,13 @@ class FilesAPI(APIClient):
         file_path = (directory / cast(str, file_metadata.name)).resolve()
         file_is_in_download_directory = directory.resolve() in file_path.parents
         if not file_is_in_download_directory:
-            raise RuntimeError(
-                f"Resolved file path '{file_path}' is not inside download directory"
-            )
+            raise RuntimeError(f"Resolved file path '{file_path}' is not inside download directory")
         download_link = self._get_download_link(identifier)
         self._download_file_to_path(download_link, file_path)
 
-    def _download_file_to_path(
-        self, download_link: str, path: Path, chunk_size: int = 2**21
-    ) -> None:
+    def _download_file_to_path(self, download_link: str, path: Path, chunk_size: int = 2**21) -> None:
         with self._http_client_with_retry.request(
-            "GET",
-            download_link,
-            stream=True,
-            timeout=self._config.file_transfer_timeout,
+            "GET", download_link, stream=True, timeout=self._config.file_transfer_timeout
         ) as r:
             r = cast("Response", r)
             with path.open("wb") as f:
@@ -854,9 +771,7 @@ class FilesAPI(APIClient):
                     if chunk:  # filter out keep-alive new chunks
                         f.write(chunk)
 
-    def download_to_path(
-        self, path: Path | str, id: int | None = None, external_id: str | None = None
-    ) -> None:
+    def download_to_path(self, path: Path | str, id: int | None = None, external_id: str | None = None) -> None:
         """Download a file to a specific target.
 
         Args:
@@ -878,9 +793,7 @@ class FilesAPI(APIClient):
         download_link = self._get_download_link(identifier)
         self._download_file_to_path(download_link, path)
 
-    def download_bytes(
-        self, id: int | None = None, external_id: str | None = None
-    ) -> bytes:
+    def download_bytes(self, id: int | None = None, external_id: str | None = None) -> bytes:
         """Download a file as bytes.
 
         Args:
@@ -902,9 +815,7 @@ class FilesAPI(APIClient):
         return self._download_file(download_link)
 
     def _download_file(self, download_link: str) -> bytes:
-        res = self._http_client_with_retry.request(
-            "GET", download_link, timeout=self._config.file_transfer_timeout
-        )
+        res = self._http_client_with_retry.request("GET", download_link, timeout=self._config.file_transfer_timeout)
         return res.content
 
     def list(
@@ -997,12 +908,8 @@ class FilesAPI(APIClient):
                 >>> my_geo_location_filter = GeoLocationFilter(relation="intersects", shape=GeometryFilter(type="Point", coordinates=[35,10]))
                 >>> file_list = c.files.list(geo_location=my_geo_location_filter)
         """
-        asset_subtree_ids_processed = process_asset_subtree_ids(
-            asset_subtree_ids, asset_subtree_external_ids
-        )
-        data_set_ids_processed = process_data_set_ids(
-            data_set_ids, data_set_external_ids
-        )
+        asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
+        data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
         filter = FileMetadataFilter(
             name=name,
@@ -1026,9 +933,5 @@ class FilesAPI(APIClient):
         ).dump(camel_case=True)
 
         return self._list(
-            list_cls=FileMetadataList,
-            resource_cls=FileMetadata,
-            method="POST",
-            limit=limit,
-            filter=filter,
+            list_cls=FileMetadataList, resource_cls=FileMetadata, method="POST", limit=limit, filter=filter
         )
