@@ -25,11 +25,11 @@ from cognite.client.exceptions import CogniteAPIError
 @pytest.fixture
 def workflow_list(cognite_client: CogniteClient) -> WorkflowList:
     workflow1 = WorkflowCreate(
-        external_id="integration_test:workflow1",
+        external_id="integration_test-workflow1",
         description="This is  workflow for testing purposes",
     )
     workflow2 = WorkflowCreate(
-        external_id="integration_test:workflow2",
+        external_id="integration_test-workflow2",
         description="This is  workflow for testing purposes",
     )
     workflows = [workflow1, workflow2]
@@ -47,13 +47,13 @@ def workflow_list(cognite_client: CogniteClient) -> WorkflowList:
 
 @pytest.fixture
 def workflow_version_list(cognite_client: CogniteClient) -> WorkflowVersionList:
-    workflow_id = "integration_test:workflow_with_versions"
+    workflow_id = "integration_test-workflow_with_versions"
     version1 = WorkflowVersionCreate(
         workflow_external_id=workflow_id,
         version="1",
         tasks=[
             Task(
-                external_id=f"{workflow_id}:1:task1",
+                external_id=f"{workflow_id}-1-task1",
                 parameters=TransformationParameters(
                     external_id="None-existing-transformation",
                 ),
@@ -65,7 +65,7 @@ def workflow_version_list(cognite_client: CogniteClient) -> WorkflowVersionList:
         version="2",
         tasks=[
             Task(
-                external_id=f"{workflow_id}:2:task1",
+                external_id=f"{workflow_id}-2-task1",
                 parameters=CDFRequestParameters(
                     resource_path="/dummy/no/real/resource/path",
                     method="GET",
@@ -82,13 +82,13 @@ def workflow_version_list(cognite_client: CogniteClient) -> WorkflowVersionList:
             call_list = True
             cognite_client.workflows.versions.create(version)
     if call_list:
-        return cognite_client.workflows.versions.list(workflow_external_id=workflow_id)
+        return cognite_client.workflows.versions.list(workflow_ids=workflow_id)
     return listed
 
 
 @pytest.fixture
 def cdf_function_add(cognite_client: CogniteClient) -> Function:
-    external_id = "integration_test:workflow:cdf_function_add"
+    external_id = "integration_test-workflow-cdf_function_add"
     add_function = cognite_client.functions.retrieve(external_id=external_id)
     if add_function is not None:
         return add_function
@@ -104,7 +104,7 @@ def cdf_function_add(cognite_client: CogniteClient) -> Function:
 
 @pytest.fixture
 def cdf_function_multiply(cognite_client: CogniteClient) -> Function:
-    external_id = "integration_test:workflow:cdf_function_multiply"
+    external_id = "integration_test-workflow-cdf_function_multiply"
     multiply_function = cognite_client.functions.retrieve(external_id=external_id)
     if multiply_function is not None:
         return multiply_function
@@ -122,20 +122,20 @@ def cdf_function_multiply(cognite_client: CogniteClient) -> Function:
 def add_multiply_workflow(
     cognite_client: CogniteClient, cdf_function_add: Function, cdf_function_multiply
 ) -> WorkflowVersion:
-    workflow_id = "integration_test:workflow:add_multiply"
+    workflow_id = "integration_test-workflow-add_multiply"
     version = WorkflowVersionCreate(
         workflow_external_id=workflow_id,
         version="1",
         tasks=[
             Task(
-                external_id=f"{workflow_id}:1:add",
+                external_id=f"{workflow_id}-1-add",
                 parameters=FunctionParameters(
                     external_id=cdf_function_add.external_id,
                     data={"a": 1, "b": 2},
                 ),
             ),
             Task(
-                external_id=f"{workflow_id}:1:multiply",
+                external_id=f"{workflow_id}-1-multiply",
                 parameters=FunctionParameters(
                     external_id=cdf_function_multiply.external_id,
                     data={"a": 3, "b": 4},
@@ -175,7 +175,7 @@ def workflow_execution_list(
 class TestWorkflows:
     def test_create_delete(self, cognite_client: CogniteClient) -> None:
         workflow = WorkflowCreate(
-            external_id="integration_test:test_create_delete",
+            external_id="integration_test-test_create_delete",
             description="This is ephemeral workflow for testing purposes",
         )
         cognite_client.workflows.delete(workflow.external_id, ignore_unknown_ids=True)
@@ -193,12 +193,12 @@ class TestWorkflows:
 
     def test_delete_non_existing_raise(self, cognite_client: CogniteClient) -> None:
         with pytest.raises(CogniteAPIError) as e:
-            cognite_client.workflows.delete("integration_test:non_existing_workflow", ignore_unknown_ids=False)
+            cognite_client.workflows.delete("integration_test-non_existing_workflow", ignore_unknown_ids=False)
 
         assert "workflows were not found" in str(e.value)
 
     def test_delete_non_existing(self, cognite_client: CogniteClient) -> None:
-        cognite_client.workflows.delete("integration_test:non_existing_workflow", ignore_unknown_ids=True)
+        cognite_client.workflows.delete("integration_test-non_existing_workflow", ignore_unknown_ids=True)
 
     def test_list_workflows(self, cognite_client: CogniteClient, workflow_list: WorkflowList) -> None:
         listed = cognite_client.workflows.list()
@@ -214,7 +214,7 @@ class TestWorkflows:
 
     def test_retrieve_non_existing_workflow(self, cognite_client: CogniteClient) -> None:
         with pytest.raises(CogniteAPIError) as e:
-            cognite_client.workflows.retrieve("integration_test:non_existing_workflow")
+            cognite_client.workflows.retrieve("integration_test-non_existing_workflow")
 
         assert "Workflow not found" in str(e.value)
 
@@ -222,13 +222,13 @@ class TestWorkflows:
 class TestWorkflowVersions:
     def test_create_delete(self, cognite_client: CogniteClient) -> None:
         version = WorkflowVersionCreate(
-            workflow_external_id="integration_test:workflow_versions:test_create_delete",
+            workflow_external_id="integration_test-workflow_versions-test_create_delete",
             version="1",
             tasks=[
                 Task(
-                    external_id="integration_test:workflow_definitions:test_create_delete:task1",
+                    external_id="integration_test-workflow_definitions-test_create_delete-task1",
                     parameters=FunctionParameters(
-                        external_id="integration_test:workflow_definitions:test_create_delete:task1:function",
+                        external_id="integration_test-workflow_definitions-test_create_delete-task1-function",
                         data={"a": 1, "b": 2},
                     ),
                 )
@@ -262,14 +262,14 @@ class TestWorkflowVersions:
     def test_delete_non_existing_raise(self, cognite_client: CogniteClient) -> None:
         with pytest.raises(CogniteAPIError) as e:
             cognite_client.workflows.versions.delete(
-                ("integration_test:non_existing_workflow_version", "1"), ignore_unknown_ids=False
+                ("integration_test-non_existing_workflow_version", "1"), ignore_unknown_ids=False
             )
 
         assert "not found" in str(e.value)
 
     def test_delete_non_existing(self, cognite_client: CogniteClient) -> None:
         cognite_client.workflows.versions.delete(
-            ("integration_test:non_existing_workflow_version", "1"), ignore_unknown_ids=True
+            ("integration_test-non_existing_workflow_version", "1"), ignore_unknown_ids=True
         )
 
     def test_retrieve_workflow(self, cognite_client: CogniteClient, workflow_version_list: WorkflowVersionList) -> None:
@@ -280,7 +280,7 @@ class TestWorkflowVersions:
         assert retrieved == workflow_version_list[0]
 
     def test_retrieve_non_existing_workflow(self, cognite_client: CogniteClient) -> None:
-        non_existing = cognite_client.workflows.versions.retrieve("integration_test:non_existing_workflow", "1")
+        non_existing = cognite_client.workflows.versions.retrieve("integration_test-non_existing_workflow", "1")
 
         assert non_existing is None
 
@@ -309,7 +309,7 @@ class TestWorkflowExecutions:
 
     def test_retrieve_non_existing_workflow_execution(self, cognite_client: CogniteClient) -> None:
         non_existing = cognite_client.workflows.executions.retrieve_detailed(
-            "integration_test:non_existing_workflow_execution"
+            "integration_test-non_existing_workflow_execution"
         )
 
         assert non_existing is None
