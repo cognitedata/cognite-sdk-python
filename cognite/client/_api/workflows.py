@@ -1,9 +1,12 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, MutableSequence, Sequence
+from typing import TYPE_CHECKING, Any, Literal, MutableSequence, Sequence
 
+from cognite.client._api.functions import _create_session_and_return_nonce
 from cognite.client._api_client import APIClient
+from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.workflows import (
+    TaskExecution,
     Workflow,
     WorkflowCreate,
     WorkflowExecution,
@@ -38,31 +41,56 @@ class BetaAPIClient(APIClient):
 class WorkflowTaskAPI(BetaAPIClient):
     _RESOURCE_PATH = "/workflows/tasks"
 
-    def update(self, task_id: str, status: Literal["completed", "failed"], output: dict) -> None:
-        ...
+    def update(self, task_id: str, status: Literal["completed", "failed"], output: dict) -> TaskExecution:
+        response = self._post(
+            url_path=f"{self._RESOURCE_PATH}/{task_id}/update",
+            json={"status": status, "output": output},
+        )
+        return TaskExecution._load(response.json())
 
 
 class WorkflowExecutionAPI(BetaAPIClient):
     _RESOURCE_PATH = "/workflows/executions"
 
     def retrieve(self, external_id: str) -> WorkflowExecution:
-        ...
+        response = self._get(url_path=f"{self._RESOURCE_PATH}/{external_id}")
+        return WorkflowExecution._load(response.json())
 
     def trigger(
         self,
-        workflow_id: WorkflowVersionId | tuple[str, str],
+        workflow_external_id: str,
+        version: str,
         input: dict,
-        authentication: dict,
-    ) -> dict:
-        ...
+    ) -> TaskExecution:
+        nonce = _create_session_and_return_nonce(self._cognite_client)
+        response = self._post(
+            url_path=f"/workflows/{workflow_external_id}/trigger/{version}",
+            json={"input": input, "authentication": {"nounc": nonce}},
+        )
+        return TaskExecution._load(response.json())
 
     def list(
         self,
-        ids: WorkflowVersionId | Sequence[WorkflowVersionId] | None = None,
+        workflow_ids: WorkflowVersionId | Sequence[WorkflowVersionId] | None = None,
         created_time_start: int | None = None,
         created_time_end: int | None = None,
+        limit: int = DEFAULT_LIMIT_READ,
     ) -> WorkflowExecutionList:
-        ...
+        filter_: dict[str, Any] = {}
+        if workflow_ids is not None:
+            filter_["workflowFilters"] = WorkflowIds._load(workflow_ids).dump(camel_case=True, as_external_id=True)
+        if created_time_start is not None:
+            filter_["createdTimeStart"] = created_time_start
+        if created_time_end is not None:
+            filter_["createdTimeEnd"] = created_time_end
+        if filter_:
+            body = {"filter": filter_}
+        else:
+            body = None
+
+        response = self._post(url_path=self._RESOURCE_PATH + "/list", json=body, params={"limit": limit})
+
+        return WorkflowExecutionList._load(response.json()["items"])
 
 
 class WorkflowVersionAPI(BetaAPIClient):
@@ -101,7 +129,7 @@ class WorkflowVersionAPI(BetaAPIClient):
 
     def list(
         self,
-        workflow_id: WorkflowVersionId
+        workflow_ids: WorkflowVersionId
         | str
         | tuple[str, str]
         | MutableSequence[WorkflowVersionId]
@@ -110,11 +138,13 @@ class WorkflowVersionAPI(BetaAPIClient):
         | None = None,
     ) -> WorkflowVersionList:
         body: dict | None
-        if workflow_id is None:
+        if workflow_ids is None:
             body = None
         else:
             body = {
-                "filter": {"workflowFilters": WorkflowIds._load(workflow_id).dump(camel_case=True, as_external_id=True)}
+                "filter": {
+                    "workflowFilters": WorkflowIds._load(workflow_ids).dump(camel_case=True, as_external_id=True)
+                }
             }
 
         response = self._post(url_path=self._RESOURCE_PATH + "/list", json=body)

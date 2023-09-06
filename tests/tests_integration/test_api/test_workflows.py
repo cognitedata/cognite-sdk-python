@@ -70,7 +70,7 @@ def workflow_version_list(cognite_client: CogniteClient) -> WorkflowVersionList:
             )
         ],
     )
-    listed = cognite_client.workflows.versions.list(workflow_id=workflow_id)
+    listed = cognite_client.workflows.versions.list(workflow_ids=workflow_id)
     existing = {w.version for w in listed}
     call_list = False
     for version in [version1, version2]:
@@ -194,3 +194,19 @@ class TestWorkflowVersions:
             cognite_client.workflows.versions.retrieve("integration_test:non_existing_workflow", "1")
 
         assert "not found" in str(e.value).lower()
+
+
+class TestWorkflowExecutions:
+    def test_list_workflow_executions(self, cognite_client: CogniteClient) -> None:
+        pass
+
+    def test_retrieve_workflow_execution(self, cognite_client: CogniteClient) -> None:
+        pass
+
+    def test_trigger_workflow_execution(self, cognite_client: CogniteClient) -> None:
+        pass
+
+
+class TestWorkflowTasks:
+    def test_update_task_status(self, cognite_client: CogniteClient) -> None:
+        pass

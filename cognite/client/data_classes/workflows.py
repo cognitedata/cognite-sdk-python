@@ -252,7 +252,7 @@ class DynamicTaskOutput(Output):
         self.tasks = tasks
 
 
-class TaskExecution:
+class TaskExecution(CogniteResource):
     def __init__(
         self,
         id: str,
@@ -267,20 +267,20 @@ class TaskExecution:
             "timed_out",
             "skipped",
         ],
-        task_type: Literal["function", "transformation", "http", "dynamic"],
         started_time: int,
         ended_time: int,
         input: dict,
         output: Output,
+        reason_for_incompletion: str | None = None,
     ):
         self.id = id
         self.external_id = external_id
         self.status = status
-        self.task_type = task_type
         self.started_time = started_time
         self.ended_time = ended_time
         self.input = input
         self.output = output
+        self.reason_for_incompletion = reason_for_incompletion
 
 
 class WorkflowVersionCreate(CogniteResource):
