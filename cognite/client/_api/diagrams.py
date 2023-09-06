@@ -178,7 +178,7 @@ class DiagramsAPI(APIClient):
             file_external_ids (str | Sequence[str] | None): File external ids.
             file_references (list[FileReference] | FileReference | None): File references (id or external id) with page ranges.
             pattern_mode (bool | None): If True, entities must be provided with a sample field. This enables detecting tags that are similar to the sample, but not necessarily identical. Defaults to False.
-            configuration (dict[str, Any] | None): Additional configuration for the detect algorithm.
+            configuration (dict[str, Any] | None): Additional configuration for the detect algorithm, see https://api-docs.cognite.com/20230101-beta/tag/Engineering-diagrams/operation/diagramDetect.
             multiple_jobs (bool): Enables you to publish multiple jobs. If True the method returns a tuple of DetectJobBundle and list of potentially unposted files. If False it will return a single DiagramDetectResults. Defaults to False.
         Returns:
             DiagramDetectResults | tuple[DetectJobBundle | None, list[dict[str, Any]]]: Resulting queued job or a bundle of jobs and a list of unposted files. Note that the .result property of the job or job bundle will block waiting for results.
