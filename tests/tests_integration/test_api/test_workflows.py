@@ -106,11 +106,11 @@ class TestWorkflowVersions:
 
         created_version: WorkflowVersion | None = None
         try:
-            created_version = cognite_client.workflows.versions.apply(version)
+            created_version = cognite_client.workflows.versions.create(version)
 
-            assert created_version.external_id == version.external_id
+            assert created_version.workflow_external_id == version.workflow_external_id
             assert created_version.description == version.description
-            assert created_version.created_time is not None
+            assert created_version.hash is not None
         finally:
             if created_version is not None:
-                cognite_client.workflows.versions.delete(created_version.external_id, version.version)
+                cognite_client.workflows.versions.delete(created_version.workflow_external_id, version.version)

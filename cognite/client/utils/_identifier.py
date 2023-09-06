@@ -87,6 +87,21 @@ class UserIdentifier:
         return self.__value
 
 
+class WorkflowVersionIdentifier:
+    def __init__(self, version: str, workflow_external_id: str) -> None:
+        self.__version: str = version
+        self.__workflow_external_id: str = workflow_external_id
+
+    def as_dict(self, camel_case: bool = True) -> dict[str, str]:
+        return {
+            "version": self.__version,
+            ("workflowExternalId" if camel_case else "workflow_external_id"): self.__workflow_external_id,
+        }
+
+    def as_primitive(self) -> NoReturn:
+        raise AttributeError(f"Not supported for {type(self).__name__} implementation")
+
+
 class DataModelingIdentifier:
     def __init__(
         self,
@@ -259,3 +274,19 @@ class UserIdentifierSequence(IdentifierSequenceCore[UserIdentifier]):
     def assert_singleton(self) -> None:
         if not self.is_singleton():
             raise ValueError("Exactly one user identifier (string) must be specified")
+
+
+class WorkflowVersionIdentifierSequence(IdentifierSequenceCore[WorkflowVersionIdentifier]):
+    @classmethod
+    def load(cls, versions: str | Sequence[str], workflow_external_id: str) -> WorkflowVersionIdentifierSequence:
+        if isinstance(versions, str):
+            return cls([WorkflowVersionIdentifier(versions, workflow_external_id)], is_singleton=True)
+        elif isinstance(versions, Sequence):
+            return cls(
+                [WorkflowVersionIdentifier(version, workflow_external_id) for version in versions], is_singleton=False
+            )
+        raise TypeError(f"versions must be of type str or Sequence[str]. Found {type(versions)}")
+
+    def assert_singleton(self) -> None:
+        if not self.is_singleton():
+            raise ValueError("Exactly one version must be specified")

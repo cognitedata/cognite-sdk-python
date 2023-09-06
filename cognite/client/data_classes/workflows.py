@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from cognite.client.data_classes._base import (
     CogniteResource,
@@ -62,10 +62,48 @@ class FunctionParameters(Parameters):
         self.data = data
         self.is_async_complete = is_async_complete
 
+    @classmethod
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> FunctionParameters:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        function: dict[str, Any] = resource["function"]
+
+        return cls(
+            external_id=function["externalId"],
+            data=function.get("data"),
+            is_async_complete=resource.get("isAsyncComplete", False),
+        )
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        function: dict[str, Any] = {
+            ("externalId" if camel_case else "external_id"): self.external_id,
+        }
+        if self.data:
+            function["data"] = self.data
+
+        output: dict[str, Any] = {
+            "function": function,
+            "isAsyncComplete": self.is_async_complete,
+        }
+        return output
+
 
 class TransformationParameters(Parameters):
     def __init__(self, external_id: str):
         self.external_id = external_id
+
+    @classmethod
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> TransformationParameters:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        return cls(
+            resource["transformation"]["externalId"],
+        )
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        return {
+            "transformation": {
+                ("externalId" if camel_case else "external_id"): self.external_id,
+            }
+        }
 
 
 class CDFRequestParameters(Parameters):
@@ -75,13 +113,35 @@ class CDFRequestParameters(Parameters):
         method: Literal["GET", "POST", "PUT", "DELETE"],
         query_parameters: dict | None = None,
         body: dict | None = None,
-        request_timeout_millis: int | None = None,
+        request_timeout_millis: int = 10000,
     ):
         self.resource_path = resource_path
         self.method = method
         self.query_parameters = query_parameters or {}
         self.body = body or {}
         self.request_timeout_millis = request_timeout_millis
+
+    @classmethod
+    def _load(
+        cls: type[T_CogniteResource], resource: dict | str, cognite_client: CogniteClient | None = None
+    ) -> T_CogniteResource:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+
+        cdf_request: dict[str, Any] = resource["cdfRequest"]
+
+        return cls(
+            resource_path=cdf_request["resourcePath"],
+            method=cdf_request["method"],
+            query_parameters=cdf_request.get("queryParameters"),
+            body=cdf_request.get("body"),
+            request_timeout_millis=cdf_request.get("requestTimeoutMillis"),
+        )
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        return {
+            ("cdfRequest" if camel_case else "cdfRequest"): output,
+        }
 
 
 class DynamicTaskParameters(Parameters):
@@ -109,6 +169,50 @@ class Task(CogniteResource):
         self.retries = retries
         self.timeout = timeout
         self.depends_on = depends_on
+
+    @classmethod
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> Task:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        type_ = resource["type"]
+        parameters: Parameters
+        if type_ == "function":
+            parameters = FunctionParameters._load(resource["parameters"])
+        elif type_ == "transformation":
+            parameters = TransformationParameters._load(resource["parameters"])
+        elif type_ == "cdf":
+            parameters = CDFRequestParameters._load(resource["parameters"])
+        elif type_ == "dynamic":
+            parameters = DynamicTaskParameters._load(resource["parameters"])
+        else:
+            raise ValueError(f"Unknown task type: {type_}")
+        return cls(
+            external_id=resource["externalId"],
+            type=resource["type"],
+            parameters=parameters,
+            name=resource.get("name"),
+            description=resource.get("description"),
+            retries=resource.get("retries", 3),
+            timeout=resource.get("timeout", 3600),
+            depends_on=[dependency["externalId"] for dependency in depends_on]
+            if (depends_on := resource.get("depends_on"))
+            else None,
+        )
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        output: dict[str, Any] = {
+            ("externalId" if camel_case else "external_id"): self.external_id,
+            "type": self.type,
+            "parameters": self.parameters.dump(camel_case),
+            "retries": self.retries,
+            "timeout": self.timeout,
+        }
+        if self.name:
+            output["name"] = self.name
+        if self.description:
+            output["description"] = self.description
+        if self.depends_on:
+            output["dependsOn"] = [{"externalId": dependency} for dependency in self.depends_on]
+        return output
 
 
 class Output:
@@ -183,17 +287,60 @@ class WorkflowVersionCreate(CogniteResource):
         self.tasks = tasks
         self.description = description
 
+    @classmethod
+    def _load(
+        cls: type[T_CogniteResource], resource: dict | str, cognite_client: CogniteClient | None = None
+    ) -> T_CogniteResource:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        workflow_definition: dict[str, Any] = resource["workflowDefinition"]
+        return cls(
+            workflow_external_id=resource["workflowExternalId"],
+            version=resource["version"],
+            tasks=[Task._load(task) for task in workflow_definition["tasks"]],
+            description=workflow_definition.get("description"),
+        )
 
-class WorkflowVersion(CogniteResource):
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        workflow_definition: dict[str, Any] = {
+            "tasks": [task.dump(camel_case) for task in self.tasks],
+        }
+        if self.description:
+            workflow_definition["description"] = self.description
+        return {
+            ("workflowExternalId" if camel_case else "workflow_external_id"): self.workflow_external_id,
+            "version": self.version,
+            ("workflowDefinition" if camel_case else "workflow_definition"): workflow_definition,
+        }
+
+
+class WorkflowVersion(WorkflowVersionCreate):
     def __init__(
         self,
+        workflow_external_id: str,
+        version: str,
         hash: str,
         tasks: list[Task],
         description: str | None = None,
     ):
+        super().__init__(workflow_external_id, version, tasks, description)
         self.hash = hash
-        self.tasks = tasks
-        self.description = description
+
+    @classmethod
+    def _load(cls, resource: dict | str, cognite_client: CogniteClient | None = None) -> WorkflowVersion:
+        resource = json.loads(resource) if isinstance(resource, str) else resource
+        workflow_definition: dict[str, Any] = resource["workflowDefinition"]
+        return cls(
+            hash=workflow_definition["hash"],
+            tasks=[Task._load(task) for task in workflow_definition["tasks"]],
+            description=workflow_definition.get("description"),
+            workflow_external_id=resource["workflowExternalId"],
+            version=resource["version"],
+        )
+
+    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        output[("workflowDefinition" if camel_case else "workflow_definition")]["hash"] = self.hash
+        return output
 
 
 class WorkflowExecution(CogniteResource):

@@ -13,7 +13,10 @@ from cognite.client.data_classes.workflows import (
     WorkflowVersion,
     WorkflowVersionCreate,
 )
-from cognite.client.utils._identifier import IdentifierSequence
+from cognite.client.utils._identifier import (
+    IdentifierSequence,
+    WorkflowVersionIdentifierSequence,
+)
 
 if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
@@ -61,27 +64,37 @@ class WorkflowExecutionAPI(BetaAPIClient):
 
 
 class WorkflowVersionAPI(BetaAPIClient):
-    _RESOURCE_PATH = "/workflows"
+    _RESOURCE_PATH = "/workflows/versions"
 
-    def apply(self, definition: WorkflowVersionCreate) -> WorkflowVersion:
+    def create(self, version: WorkflowVersionCreate) -> WorkflowVersion:
         response = self._post(
-            url_path=f"{self._RESOURCE_PATH}/{definition.workflow_external_id}/versions",
-            json=definition.dump(camel_case=True),
+            url_path=self._RESOURCE_PATH,
+            json={"items": [version.dump(camel_case=True)]},
+        )
+
+        return WorkflowVersion._load(response.json()["items"][0])
+
+    def delete(
+        self,
+        workflow_external_id: str,
+        versions: str | Sequence[str],
+        ignore_unknown_ids: bool = False,
+    ) -> None:
+        self._delete_multiple(
+            identifiers=WorkflowVersionIdentifierSequence.load(
+                versions=versions, workflow_external_id=workflow_external_id
+            ),
+            params={"ignoreUnknownIds": ignore_unknown_ids},
+            delete_limit=100,
+            wrap_ids=True,
+        )
+
+    def retrieve(self, workflow_external_id: str, version: str) -> WorkflowVersion:
+        response = self._get(
+            url_path=f"{self._RESOURCE_PATH}/{workflow_external_id}/versions/{version}",
         )
 
         return WorkflowVersion._load(response.json())
-
-    # def delete(
-    #     self,
-    #     workflow_external_id: str,
-    #     versions: str | Sequence[str],
-    #     ignore_unknown_ids: bool = False,
-    # ) -> None:
-    #     self._post(
-    #         url_path=f"{self._RESOURCE_PATH}/{workflow_external_id}/delete",
-    #         params={"ignoreUnknownIds": ignore_unknown_ids},
-    #         json=[versions] if isinstance(versions, str) else versions,
-    #     )
 
     def list(self, workflow_external_id: str, version: str | None = None) -> WorkflowList:
         ...
