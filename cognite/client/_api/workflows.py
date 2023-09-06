@@ -19,9 +19,7 @@ if TYPE_CHECKING:
     from cognite.client import ClientConfig, CogniteClient
 
 
-class WorkflowTaskAPI(APIClient):
-    _RESOURCE_PATH = "/workflows/tasks"
-
+class BetaAPIClient(APIClient):
     def __init__(
         self,
         config: ClientConfig,
@@ -30,22 +28,17 @@ class WorkflowTaskAPI(APIClient):
     ) -> None:
         super().__init__(config, api_version, cognite_client)
         self._api_subversion = "beta"
+
+
+class WorkflowTaskAPI(BetaAPIClient):
+    _RESOURCE_PATH = "/workflows/tasks"
 
     def update(self, task_id: str, status: Literal["completed", "failed"], output: dict) -> None:
         ...
 
 
-class WorkflowExecutionAPI(APIClient):
+class WorkflowExecutionAPI(BetaAPIClient):
     _RESOURCE_PATH = "/workflows/executions"
-
-    def __init__(
-        self,
-        config: ClientConfig,
-        api_version: str | None,
-        cognite_client: CogniteClient,
-    ) -> None:
-        super().__init__(config, api_version, cognite_client)
-        self._api_subversion = "beta"
 
     def retrieve(self, external_id: str) -> WorkflowExecution:
         ...
@@ -67,17 +60,8 @@ class WorkflowExecutionAPI(APIClient):
         ...
 
 
-class WorkflowVersionAPI(APIClient):
+class WorkflowVersionAPI(BetaAPIClient):
     _RESOURCE_PATH = "/workflows"
-
-    def __init__(
-        self,
-        config: ClientConfig,
-        api_version: str | None,
-        cognite_client: CogniteClient,
-    ) -> None:
-        super().__init__(config, api_version, cognite_client)
-        self._api_subversion = "beta"
 
     def apply(self, definition: WorkflowVersionCreate) -> WorkflowVersion:
         response = self._post(
@@ -103,7 +87,7 @@ class WorkflowVersionAPI(APIClient):
         ...
 
 
-class WorkflowAPI(APIClient):
+class WorkflowAPI(BetaAPIClient):
     _RESOURCE_PATH = "/workflows"
 
     def __init__(
@@ -113,7 +97,6 @@ class WorkflowAPI(APIClient):
         cognite_client: CogniteClient,
     ) -> None:
         super().__init__(config, api_version, cognite_client)
-        self._api_subversion = "beta"
         self.versions = WorkflowVersionAPI(config, api_version, cognite_client)
         self.executions = WorkflowExecutionAPI(config, api_version, cognite_client)
         self.tasks = WorkflowTaskAPI(config, api_version, cognite_client)
