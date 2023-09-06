@@ -202,6 +202,10 @@ class DocstrFormatter:
             elif len(first.split(self.RETURN_STRING)) > 1:
                 raise ValueError(f"'{self.RETURN_STRING}'-line contains additional text")
 
+        if self.line_args_group is self.line_return_group is None:
+            # Skip small docstrings; small as in the writer didnt specify args & return:
+            raise FalsePositiveDocstring
+
         self.add_space_after_args, self.add_space_after_returns = False, False
         if self.line_args_group is not None:
             self.parameters = list(map(Param, DocstrFormatter._parse_args_section(self.line_args_group, indentation)))
