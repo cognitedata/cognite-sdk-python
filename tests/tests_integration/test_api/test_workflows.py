@@ -73,6 +73,17 @@ class TestWorkflows:
         assert listed.get(external_id=workflow_list[0].external_id) == workflow_list[0]
         assert listed.get(external_id=workflow_list[1].external_id) == workflow_list[1]
 
+    def test_retrieve_workflow(self, cognite_client: CogniteClient, workflow_list: WorkflowList) -> None:
+        retrieved = cognite_client.workflows.retrieve(workflow_list[0].external_id)
+
+        assert retrieved == workflow_list[0]
+
+    def test_retrieve_non_existing_workflow(self, cognite_client: CogniteClient) -> None:
+        with pytest.raises(CogniteAPIError) as e:
+            cognite_client.workflows.retrieve("integration_test:non_existing_workflow")
+
+        assert "Workflow not found" in str(e.value)
+
 
 class TestWorkflowDefinitions:
     def test_create_delete(self, cognite_client: CogniteClient) -> None:

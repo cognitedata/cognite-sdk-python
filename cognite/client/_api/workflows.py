@@ -127,7 +127,7 @@ class WorkflowAPI(APIClient):
 
     def retrieve(self, external_id: str) -> Workflow:
         response = self._get(url_path=self._RESOURCE_PATH + f"/{external_id}")
-        return Workflow._load(response.json()["items"][0])
+        return Workflow._load(response.json())
 
     def delete(self, external_id: str | Sequence[str], ignore_unknown_ids: bool = False) -> None:
         self._delete_multiple(
