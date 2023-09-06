@@ -12,6 +12,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     CogniteUpdate,
+    IdTransformerMixin,
     PropertySpec,
 )
 from cognite.client.data_classes.shared import TimestampRange
@@ -230,7 +231,9 @@ class Transformation(CogniteResource):
                     session = client.iam.sessions.create(credentials)
                     ret = sessions_cache[key] = NonceCredentials(session.id, session.nonce, project)
                 except CogniteAPIError as err:
-                    # This is fine, we might be missing SessionsACL
+                    # This is fine, we might be missing SessionsACL. The OIDC credentials are passed
+                    # directly to the backend service. We do however not catch CogniteAuthError as that
+                    # would mean the credentials are invalid.
                     logger.debug(f"Unable to create a session and get a nonce towards {project=}: {err!r}")
             return ret
 
@@ -423,7 +426,7 @@ class TransformationUpdate(CogniteUpdate):
         ]
 
 
-class TransformationList(CogniteResourceList):
+class TransformationList(CogniteResourceList[Transformation], IdTransformerMixin):
     _RESOURCE = Transformation
 
 
