@@ -292,7 +292,7 @@ class OidcCredentials:
         self.audience = audience
         self.cdf_project_name = cdf_project_name
 
-    def as_valid_credentials(self) -> OAuthClientCredentials:
+    def as_credential_provider(self) -> OAuthClientCredentials:
         return OAuthClientCredentials(
             token_url=self.token_uri,
             client_id=self.client_id,

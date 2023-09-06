@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from abc import abstractmethod
-from copy import copy
+from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Awaitable, Dict, cast
 
 from cognite.client.data_classes._base import (
@@ -222,14 +222,15 @@ class Transformation(CogniteResource):
                 if project != self._cognite_client.config.project:
                     from cognite.client import CogniteClient
 
-                    config = copy(self._cognite_client.config)
+                    config = deepcopy(self._cognite_client.config)
                     config.project = project
-                    config.credentials = oidc_credentials.as_valid_credentials()
+                    config.credentials = oidc_credentials.as_credential_provider()
                     client = CogniteClient(config)
                 try:
                     session = client.iam.sessions.create(credentials)
                     ret = sessions_cache[key] = NonceCredentials(session.id, session.nonce, project)
                 except CogniteAPIError as err:
+                    # This is fine, we might be missing SessionsACL
                     logger.debug(f"Unable to create a session and get a nonce towards {project=}: {err!r}")
             return ret
 

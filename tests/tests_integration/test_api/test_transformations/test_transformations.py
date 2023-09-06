@@ -102,7 +102,7 @@ class TestTransformationsAPI:
         ts = cognite_client.transformations.create(transform)
         cognite_client.transformations.delete(id=ts.id)
 
-    @pytest.mark.skip(reason="Awaiting access to an additional CDF project")
+    @pytest.mark.skip(reason="Awaiting access to more than one CDF project for our credentials")
     def test_create_asset_with_source_destination_oidc_transformation(self, cognite_client):
         prefix = random_string(6, string.ascii_letters)
         transform = Transformation(
