@@ -10,6 +10,7 @@ from cognite.client.data_classes.workflows import (
     Workflow,
     WorkflowCreate,
     WorkflowExecution,
+    WorkflowExecutionDetailed,
     WorkflowExecutionList,
     WorkflowIds,
     WorkflowList,
@@ -18,6 +19,7 @@ from cognite.client.data_classes.workflows import (
     WorkflowVersionId,
     WorkflowVersionList,
 )
+from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._identifier import (
     IdentifierSequence,
     WorkflowVersionIdentifierSequence,
@@ -52,26 +54,35 @@ class WorkflowTaskAPI(BetaAPIClient):
 class WorkflowExecutionAPI(BetaAPIClient):
     _RESOURCE_PATH = "/workflows/executions"
 
-    def retrieve(self, external_id: str) -> WorkflowExecution:
-        response = self._get(url_path=f"{self._RESOURCE_PATH}/{external_id}")
-        return WorkflowExecution._load(response.json())
+    def retrieve_detailed(self, external_id: str) -> WorkflowExecutionDetailed | None:
+        try:
+            response = self._get(url_path=f"{self._RESOURCE_PATH}/{external_id}")
+        except CogniteAPIError as e:
+            if e.code == 400:
+                return None
+            raise e
+        return WorkflowExecutionDetailed._load(response.json())
 
     def trigger(
         self,
         workflow_external_id: str,
         version: str,
         input: dict,
-    ) -> TaskExecution:
+    ) -> WorkflowExecution:
         nonce = _create_session_and_return_nonce(self._cognite_client)
         response = self._post(
-            url_path=f"/workflows/{workflow_external_id}/trigger/{version}",
-            json={"input": input, "authentication": {"nounc": nonce}},
+            url_path=f"/workflows/{workflow_external_id}/versions/{version}/run",
+            json={"input": input, "authentication": {"nonce": nonce}},
         )
-        return TaskExecution._load(response.json())
+        return WorkflowExecution._load(response.json())
 
     def list(
         self,
-        workflow_ids: WorkflowVersionId | Sequence[WorkflowVersionId] | None = None,
+        workflow_ids: WorkflowVersionId
+        | tuple[str, str]
+        | MutableSequence[WorkflowVersionId]
+        | MutableSequence[tuple[str, str]]
+        | None = None,
         created_time_start: int | None = None,
         created_time_end: int | None = None,
         limit: int = DEFAULT_LIMIT_READ,
@@ -120,10 +131,15 @@ class WorkflowVersionAPI(BetaAPIClient):
             wrap_ids=True,
         )
 
-    def retrieve(self, workflow_external_id: str, version: str) -> WorkflowVersion:
-        response = self._get(
-            url_path=f"/workflows/{workflow_external_id}/versions/{version}",
-        )
+    def retrieve(self, workflow_external_id: str, version: str) -> WorkflowVersion | None:
+        try:
+            response = self._get(
+                url_path=f"/workflows/{workflow_external_id}/versions/{version}",
+            )
+        except CogniteAPIError as e:
+            if e.code == 404:
+                return None
+            raise e
 
         return WorkflowVersion._load(response.json())
 

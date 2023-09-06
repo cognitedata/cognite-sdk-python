@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections import UserList
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, Sequence
 
@@ -256,7 +257,7 @@ class TaskExecution(CogniteResource):
     def __init__(
         self,
         id: str,
-        external_id: str,
+        workflow_external_id: str,
         status: Literal[
             "in_progress",
             "cancelled",
@@ -267,19 +268,19 @@ class TaskExecution(CogniteResource):
             "timed_out",
             "skipped",
         ],
-        started_time: int,
-        ended_time: int,
-        input: dict,
-        output: Output,
+        created_time: int,
+        version: str | None = None,
+        start_time: int | None = None,
+        end_time: int | None = None,
         reason_for_incompletion: str | None = None,
     ):
         self.id = id
-        self.external_id = external_id
+        self.workflow_external_id = workflow_external_id
         self.status = status
-        self.started_time = started_time
-        self.ended_time = ended_time
-        self.input = input
-        self.output = output
+        self.created_time = created_time
+        self.version = version
+        self.start_time = start_time
+        self.end_time = end_time
         self.reason_for_incompletion = reason_for_incompletion
 
 
@@ -373,9 +374,8 @@ class WorkflowExecution(CogniteResource):
         workflow_definition: WorkflowVersion,
         version: str,
         status: Literal["running", "completed", "failed", "timed_out", "terminated", "paused"],
-        input: dict | None = None,
-        created_time: int | None = None,
-        started_time: int | None = None,
+        created_time: int,
+        start_time: int | None = None,
         end_time: int | None = None,
         reason_for_incompletion: str | None = None,
     ):
@@ -384,19 +384,28 @@ class WorkflowExecution(CogniteResource):
         self.workflow_definition = workflow_definition
         self.version = version
         self.status = status
-        self.input = input
         self.created_time = created_time
-        self.started_time = started_time
+        self.started_time = start_time
         self.end_time = end_time
         self.reason_for_incompletion = reason_for_incompletion
+
+    def as_workflow_id(self) -> WorkflowVersionId:
+        return WorkflowVersionId(
+            workflow_external_id=self.workflow_external_id,
+            version=self.version,
+        )
 
 
 class WorkflowExecutionList(CogniteResourceList[WorkflowExecution]):
     _RESOURCE = WorkflowExecution
 
 
-@dataclass
-class WorkflowVersionId(CogniteResource):
+class WorkflowExecutionDetailed(CogniteResource):
+    ...
+
+
+@dataclass(frozen=True)
+class WorkflowVersionId:
     workflow_external_id: str
     version: str | None = None
 
@@ -432,7 +441,7 @@ class WorkflowVersionId(CogniteResource):
         return output
 
 
-class WorkflowIds(CogniteResourceList[WorkflowVersionId]):
+class WorkflowIds(UserList):
     _RESOURCE = WorkflowVersionId
 
     @classmethod
