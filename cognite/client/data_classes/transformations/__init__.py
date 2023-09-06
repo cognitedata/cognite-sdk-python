@@ -13,7 +13,6 @@ from cognite.client.data_classes._base import (
     CogniteUpdate,
     PropertySpec,
 )
-from cognite.client.data_classes.iam import ClientCredentials
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.data_classes.transformations.common import (
     NonceCredentials,
@@ -26,7 +25,6 @@ from cognite.client.data_classes.transformations.jobs import TransformationJob, 
 from cognite.client.data_classes.transformations.schedules import TransformationSchedule
 from cognite.client.data_classes.transformations.schema import TransformationSchemaColumnList
 from cognite.client.exceptions import CogniteAPIError
-from cognite.client.utils._auxiliary import patch_attribute
 from cognite.client.utils._text import convert_all_keys_to_camel_case, convert_all_keys_to_snake_case
 
 if TYPE_CHECKING:
@@ -201,9 +199,11 @@ class Transformation(CogniteResource):
         if sessions_cache is None:
             sessions_cache = {}
 
-        def try_get_or_create_nonce(oidc_credentials: OidcCredentials | None, project: str) -> NonceCredentials | None:
+        def try_get_or_create_nonce(oidc_credentials: OidcCredentials) -> NonceCredentials | None:
             if keep_none and oidc_credentials is None:
                 return None
+
+            project = oidc_credentials.cdf_project_name or self._cognite_client.config.project
 
             # MyPy requires this to make sure it's not changed to None after inner declaration
             assert sessions_cache is not None
@@ -215,25 +215,28 @@ class Transformation(CogniteResource):
             if (ret := sessions_cache.get(key)) is None:
                 credentials = None
                 if oidc_credentials and oidc_credentials.client_id and oidc_credentials.client_secret:
-                    credentials = ClientCredentials(oidc_credentials.client_id, oidc_credentials.client_secret)
+                    credentials = oidc_credentials.as_client_credentials()
 
-                with patch_attribute(self._cognite_client.config, "project", project):
-                    try:
-                        session = self._cognite_client.iam.sessions.create(credentials)
-                        ret = sessions_cache[key] = NonceCredentials(session.id, session.nonce, project)
-                    except CogniteAPIError as err:
-                        logger.debug(f"Unable to create a session and get a nonce towards {project=}: {err!r}")
+                client = self._cognite_client
+                if project != self._cognite_client.config.project:
+                    config = self._cognite_client.config.copy()
+                    config.project = project
+                    config.credentials = oidc_credentials.as_valid_credentials()
+                    client = CogniteClient(config)
+                try:
+                    session = client.iam.sessions.create(credentials)
+                    ret = sessions_cache[key] = NonceCredentials(session.id, session.nonce, project)
+                except CogniteAPIError as err:
+                    logger.debug(f"Unable to create a session and get a nonce towards {project=}: {err!r}")
             return ret
 
         if self.source_nonce is None and self.source_oidc_credentials:
-            project = self.source_oidc_credentials.cdf_project_name or self._cognite_client.config.project
-            self.source_nonce = try_get_or_create_nonce(self.source_oidc_credentials, project)
+            self.source_nonce = try_get_or_create_nonce(self.source_oidc_credentials)
             if self.source_nonce:
                 self.source_oidc_credentials = None
 
         if self.destination_nonce is None and self.destination_oidc_credentials:
-            project = self.destination_oidc_credentials.cdf_project_name or self._cognite_client.config.project
-            self.destination_nonce = try_get_or_create_nonce(self.destination_oidc_credentials, project)
+            self.destination_nonce = try_get_or_create_nonce(self.destination_oidc_credentials)
             if self.destination_nonce:
                 self.destination_oidc_credentials = None
 
