@@ -87,7 +87,7 @@ class TestWorkflows:
 
 class TestWorkflowVersions:
     def test_create_delete(self, cognite_client: CogniteClient) -> None:
-        definition = WorkflowVersionCreate(
+        version = WorkflowVersionCreate(
             workflow_external_id="integration_test:workflow_definitions:test_create_delete",
             version="1",
             tasks=[
@@ -102,17 +102,15 @@ class TestWorkflowVersions:
             ],
             description="This is ephemeral workflow definition for testing purposes",
         )
-        cognite_client.workflows.versions.delete(
-            definition.workflow_external_id, definition.version, ignore_unknown_ids=True
-        )
+        cognite_client.workflows.versions.delete(version.workflow_external_id, version.version, ignore_unknown_ids=True)
 
-        created_definition: WorkflowVersion | None = None
+        created_version: WorkflowVersion | None = None
         try:
-            created_definition = cognite_client.workflows.versions.apply(definition)
+            created_version = cognite_client.workflows.versions.apply(version)
 
-            assert created_definition.external_id == definition.external_id
-            assert created_definition.description == definition.description
-            assert created_definition.created_time is not None
+            assert created_version.external_id == version.external_id
+            assert created_version.description == version.description
+            assert created_version.created_time is not None
         finally:
-            if created_definition is not None:
-                cognite_client.workflows.versions.delete(created_definition.external_id, definition.version)
+            if created_version is not None:
+                cognite_client.workflows.versions.delete(created_version.external_id, version.version)

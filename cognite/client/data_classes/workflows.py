@@ -68,24 +68,20 @@ class TransformationParameters(Parameters):
         self.external_id = external_id
 
 
-class HTTPRequestParameters(Parameters):
+class CDFRequestParameters(Parameters):
     def __init__(
         self,
-        url: str,
+        resource_path: str,
         method: Literal["GET", "POST", "PUT", "DELETE"],
+        query_parameters: dict | None = None,
         body: dict | None = None,
-        headers: dict | None = None,
         request_timeout_millis: int | None = None,
-        cdf_authenticate: bool | None = None,
-        is_async_complete: bool = False,
     ):
-        self.url = url
+        self.resource_path = resource_path
         self.method = method
-        self.body = body
-        self.headers = headers
+        self.query_parameters = query_parameters or {}
+        self.body = body or {}
         self.request_timeout_millis = request_timeout_millis
-        self.cdf_authenticate = cdf_authenticate
-        self.is_async_complete = is_async_complete
 
 
 class DynamicTaskParameters(Parameters):
@@ -97,7 +93,7 @@ class Task(CogniteResource):
     def __init__(
         self,
         external_id: str,
-        type: Literal["function", "transformation", "http", "dynamic"],
+        type: Literal["function", "transformation", "cdf", "dynamic"],
         parameters: Parameters,
         name: str | None = None,
         description: str | None = None,
