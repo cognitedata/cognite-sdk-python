@@ -174,6 +174,20 @@ class TaskExecution:
         self.output = output
 
 
+class WorkflowDefinitionCreate(CogniteResource):
+    def __init__(
+        self,
+        workflow_external_id: str,
+        version: str,
+        tasks: list[Task],
+        description: str | None = None,
+    ):
+        self.workflow_external_id = workflow_external_id
+        self.version = version
+        self.tasks = tasks
+        self.description = description
+
+
 class WorkflowDefinition(CogniteResource):
     def __init__(
         self,

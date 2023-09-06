@@ -3,7 +3,15 @@ from __future__ import annotations
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes.workflows import Workflow, WorkflowCreate, WorkflowList
+from cognite.client.data_classes.workflows import (
+    FunctionParameters,
+    Task,
+    Workflow,
+    WorkflowCreate,
+    WorkflowDefinition,
+    WorkflowDefinitionCreate,
+    WorkflowList,
+)
 from cognite.client.exceptions import CogniteAPIError
 
 
@@ -64,3 +72,36 @@ class TestWorkflows:
         assert len(listed) >= len(workflow_list)
         assert listed.get(external_id=workflow_list[0].external_id) == workflow_list[0]
         assert listed.get(external_id=workflow_list[1].external_id) == workflow_list[1]
+
+
+class TestWorkflowDefinitions:
+    def test_create_delete(self, cognite_client: CogniteClient) -> None:
+        definition = WorkflowDefinitionCreate(
+            workflow_external_id="integration_test:workflow_definitions:test_create_delete",
+            version="1",
+            tasks=[
+                Task(
+                    external_id="integration_test:workflow_definitions:test_create_delete:task1",
+                    type="function",
+                    parameters=FunctionParameters(
+                        external_id="integration_test:workflow_definitions:test_create_delete:task1:function",
+                        data={"a": 1, "b": 2},
+                    ),
+                )
+            ],
+            description="This is ephemeral workflow definition for testing purposes",
+        )
+        cognite_client.workflows.definitions.delete(
+            definition.workflow_external_id, definition.version, ignore_unknown_ids=True
+        )
+
+        created_definition: WorkflowDefinition | None = None
+        try:
+            created_definition = cognite_client.workflows.definitions.apply(definition)
+
+            assert created_definition.external_id == definition.external_id
+            assert created_definition.description == definition.description
+            assert created_definition.created_time is not None
+        finally:
+            if created_definition is not None:
+                cognite_client.workflows.definitions.delete(created_definition.external_id, definition.version)

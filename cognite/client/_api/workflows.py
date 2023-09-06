@@ -6,6 +6,8 @@ from cognite.client._api_client import APIClient
 from cognite.client.data_classes.workflows import (
     Workflow,
     WorkflowCreate,
+    WorkflowDefinition,
+    WorkflowDefinitionCreate,
     WorkflowExecution,
     WorkflowExecutionList,
     WorkflowId,
@@ -77,16 +79,25 @@ class WorkflowDefinitionAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._api_subversion = "beta"
 
-    def apply(self, workflow_definition: WorkflowDefinitionAPI) -> Workflow:
-        ...
+    def apply(self, definition: WorkflowDefinitionCreate) -> WorkflowDefinition:
+        response = self._post(
+            url_path=f"{self._RESOURCE_PATH}/{definition.workflow_external_id}/versions",
+            json=definition.dump(camel_case=True),
+        )
 
-    def delete(
-        self,
-        workflow_external_id: str,
-        versions: str | Sequence[str],
-        ignore_unknown_ids: bool = False,
-    ) -> None:
-        ...
+        return WorkflowDefinition._load(response.json())
+
+    # def delete(
+    #     self,
+    #     workflow_external_id: str,
+    #     versions: str | Sequence[str],
+    #     ignore_unknown_ids: bool = False,
+    # ) -> None:
+    #     self._post(
+    #         url_path=f"{self._RESOURCE_PATH}/{workflow_external_id}/delete",
+    #         params={"ignoreUnknownIds": ignore_unknown_ids},
+    #         json=[versions] if isinstance(versions, str) else versions,
+    #     )
 
     def list(self, workflow_external_id: str, version: str | None = None) -> WorkflowList:
         ...
@@ -108,14 +119,22 @@ class WorkflowAPI(APIClient):
         self.tasks = WorkflowTaskAPI(config, api_version, cognite_client)
 
     def create(self, workflow: WorkflowCreate) -> Workflow:
-        response = self._post(url_path=self._RESOURCE_PATH, json=workflow.dump(camel_case=True))
-        return Workflow._load(response.json())
+        response = self._post(
+            url_path=self._RESOURCE_PATH,
+            json={"items": [workflow.dump(camel_case=True)]},
+        )
+        return Workflow._load(response.json()["items"][0])
+
+    def retrieve(self, external_id: str) -> Workflow:
+        response = self._get(url_path=self._RESOURCE_PATH + f"/{external_id}")
+        return Workflow._load(response.json()["items"][0])
 
     def delete(self, external_id: str | Sequence[str], ignore_unknown_ids: bool = False) -> None:
-        self._post(
-            url_path=self._RESOURCE_PATH + "/delete",
-            json=IdentifierSequence.load(external_ids=external_id).as_dicts(),
+        self._delete_multiple(
+            identifiers=IdentifierSequence.load(external_ids=external_id),
             params={"ignoreUnknownIds": ignore_unknown_ids},
+            delete_limit=100,
+            wrap_ids=True,
         )
 
     def list(self) -> WorkflowList:
