@@ -21,6 +21,7 @@ Changes are grouped as follows
 ### Fixed
 - While processing source- and destination credentials in `client.transformations.[create, update]`, an `AttributeError`
   can no longer be raised (by not specifying project). Additionally, the automatic creation of a session no longer fails silently.
+- `TransformationList` now correctly inherits the two missing methods `as_ids()` and `as_external_ids()`
 
 ## [6.25.0] - 2023-09-14
 ### Added
