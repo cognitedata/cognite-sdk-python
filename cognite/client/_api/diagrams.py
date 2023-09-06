@@ -247,7 +247,7 @@ class DiagramsAPI(APIClient):
             search_field=search_field,
             min_tokens=min_tokens,
             job_cls=DiagramDetectResults,
-            **beta_parameters, # type: ignore[arg-type]
+            **beta_parameters,  # type: ignore[arg-type]
         )
 
     def get_detect_jobs(self, job_ids: list[int]) -> list[DiagramDetectResults]:
