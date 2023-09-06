@@ -43,10 +43,13 @@ class BetaAPIClient(APIClient):
 class WorkflowTaskAPI(BetaAPIClient):
     _RESOURCE_PATH = "/workflows/tasks"
 
-    def update(self, task_id: str, status: Literal["completed", "failed"], output: dict) -> TaskExecution:
+    def update(self, task_id: str, status: Literal["completed", "failed"], output: dict | None = None) -> TaskExecution:
+        body: dict[str, Any] = {"status": status.upper()}
+        if output is not None:
+            body["output"] = output
         response = self._post(
             url_path=f"{self._RESOURCE_PATH}/{task_id}/update",
-            json={"status": status, "output": output},
+            json=body,
         )
         return TaskExecution._load(response.json())
 

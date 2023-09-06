@@ -13,6 +13,7 @@ from cognite.client.data_classes.workflows import (
     TransformationParameters,
     Workflow,
     WorkflowCreate,
+    WorkflowDefinitionCreate,
     WorkflowExecutionList,
     WorkflowList,
     WorkflowVersion,
@@ -51,28 +52,32 @@ def workflow_version_list(cognite_client: CogniteClient) -> WorkflowVersionList:
     version1 = WorkflowVersionCreate(
         workflow_external_id=workflow_id,
         version="1",
-        tasks=[
-            Task(
-                external_id=f"{workflow_id}-1-task1",
-                parameters=TransformationParameters(
-                    external_id="None-existing-transformation",
-                ),
-            )
-        ],
+        workflow_definition=WorkflowDefinitionCreate(
+            tasks=[
+                Task(
+                    external_id=f"{workflow_id}-1-task1",
+                    parameters=TransformationParameters(
+                        external_id="None-existing-transformation",
+                    ),
+                )
+            ],
+        ),
     )
     version2 = WorkflowVersionCreate(
         workflow_external_id=workflow_id,
         version="2",
-        tasks=[
-            Task(
-                external_id=f"{workflow_id}-2-task1",
-                parameters=CDFRequestParameters(
-                    resource_path="/dummy/no/real/resource/path",
-                    method="GET",
-                    body={"limit": 1},
-                ),
-            )
-        ],
+        workflow_definition=WorkflowDefinitionCreate(
+            tasks=[
+                Task(
+                    external_id=f"{workflow_id}-2-task1",
+                    parameters=CDFRequestParameters(
+                        resource_path="/dummy/no/real/resource/path",
+                        method="GET",
+                        body={"limit": 1},
+                    ),
+                )
+            ],
+        ),
     )
     listed = cognite_client.workflows.versions.list(workflow_ids=workflow_id)
     existing = {w.version for w in listed}
@@ -126,25 +131,27 @@ def add_multiply_workflow(
     version = WorkflowVersionCreate(
         workflow_external_id=workflow_id,
         version="1",
-        tasks=[
-            Task(
-                external_id=f"{workflow_id}-1-add",
-                parameters=FunctionParameters(
-                    external_id=cdf_function_add.external_id,
-                    data={"a": 1, "b": 2},
+        workflow_definition=WorkflowDefinitionCreate(
+            tasks=[
+                Task(
+                    external_id=f"{workflow_id}-1-add",
+                    parameters=FunctionParameters(
+                        external_id=cdf_function_add.external_id,
+                        data={"a": 1, "b": 2},
+                    ),
                 ),
-            ),
-            Task(
-                external_id=f"{workflow_id}-1-multiply",
-                parameters=FunctionParameters(
-                    external_id=cdf_function_multiply.external_id,
-                    data={"a": 3, "b": 4},
-                    is_async_complete=True,
+                Task(
+                    external_id=f"{workflow_id}-1-multiply",
+                    parameters=FunctionParameters(
+                        external_id=cdf_function_multiply.external_id,
+                        data={"a": 3, "b": 4},
+                        is_async_complete=True,
+                    ),
+                    timeout=120,
+                    retries=2,
                 ),
-                timeout=120,
-                retries=2,
-            ),
-        ],
+            ],
+        ),
     )
     retrieved = cognite_client.workflows.versions.retrieve(workflow_id, version.version)
     if retrieved is not None:
@@ -156,7 +163,7 @@ def add_multiply_workflow(
 def workflow_execution_list(
     cognite_client: CogniteClient, add_multiply_workflow: WorkflowVersion
 ) -> WorkflowExecutionList:
-    executions = cognite_client.workflows.executions.list(workflow_external_id=add_multiply_workflow.as_id(), limit=5)
+    executions = cognite_client.workflows.executions.list(workflow_ids=add_multiply_workflow.as_id(), limit=5)
     if executions:
         return executions
     # Creating at least one execution
@@ -224,16 +231,18 @@ class TestWorkflowVersions:
         version = WorkflowVersionCreate(
             workflow_external_id="integration_test-workflow_versions-test_create_delete",
             version="1",
-            tasks=[
-                Task(
-                    external_id="integration_test-workflow_definitions-test_create_delete-task1",
-                    parameters=FunctionParameters(
-                        external_id="integration_test-workflow_definitions-test_create_delete-task1-function",
-                        data={"a": 1, "b": 2},
-                    ),
-                )
-            ],
-            description="This is ephemeral workflow definition for testing purposes",
+            workflow_definition=WorkflowDefinitionCreate(
+                tasks=[
+                    Task(
+                        external_id="integration_test-workflow_definitions-test_create_delete-task1",
+                        parameters=FunctionParameters(
+                            external_id="integration_test-workflow_definitions-test_create_delete-task1-function",
+                            data={"a": 1, "b": 2},
+                        ),
+                    )
+                ],
+                description="This is ephemeral workflow definition for testing purposes",
+            ),
         )
         cognite_client.workflows.versions.delete(version.as_id(), ignore_unknown_ids=True)
 
@@ -242,8 +251,8 @@ class TestWorkflowVersions:
             created_version = cognite_client.workflows.versions.create(version)
 
             assert created_version.workflow_external_id == version.workflow_external_id
-            assert created_version.description == version.description
-            assert created_version.hash is not None
+            assert created_version.workflow_definition.description == version.workflow_definition.description
+            assert created_version.workflow_definition.hash is not None
         finally:
             if created_version is not None:
                 cognite_client.workflows.versions.delete(
@@ -286,26 +295,25 @@ class TestWorkflowVersions:
 
 
 class TestWorkflowExecutions:
-    @pytest.mark.skip(reason="Under development")
     def test_list_workflow_executions(
         self, cognite_client: CogniteClient, workflow_execution_list: WorkflowExecutionList
     ) -> None:
         workflow_ids = set(w.as_workflow_id() for w in workflow_execution_list)
 
         listed = cognite_client.workflows.executions.list(
-            workflow_external_id=list(workflow_ids), limit=len(workflow_ids)
+            workflow_ids=list(workflow_ids), limit=len(workflow_execution_list)
         )
 
         assert len(listed) == len(workflow_execution_list)
         assert all(w.as_workflow_id() in workflow_ids for w in listed)
 
-    @pytest.mark.skip(reason="Under development")
-    def test_retrieve_workflow_execution(
+    def test_retrieve_workflow_execution_detailed(
         self, cognite_client: CogniteClient, workflow_execution_list: WorkflowExecutionList
     ) -> None:
-        retrieved = cognite_client.workflows.executions.retrieve(workflow_execution_list[0].external_id)
+        retrieved = cognite_client.workflows.executions.retrieve_detailed(workflow_execution_list[0].id)
 
-        assert retrieved == workflow_execution_list[0]
+        assert retrieved.as_execution().dump() == workflow_execution_list[0].dump()
+        assert retrieved.executed_tasks
 
     def test_retrieve_non_existing_workflow_execution(self, cognite_client: CogniteClient) -> None:
         non_existing = cognite_client.workflows.executions.retrieve_detailed(
@@ -314,19 +322,22 @@ class TestWorkflowExecutions:
 
         assert non_existing is None
 
-    @pytest.mark.skip(reason="Under development")
-    def test_trigger_workflow_execution_update_task(
+    def test_trigger_retrieve_detailed_update_update_task(
         self, cognite_client: CogniteClient, add_multiply_workflow: WorkflowVersion
     ) -> None:
-        task_execution = cognite_client.workflows.executions.trigger(
+        workflow_execution = cognite_client.workflows.executions.trigger(
             add_multiply_workflow.workflow_external_id, add_multiply_workflow.version, {"a": 41, "b": 1}
         )
 
-        assert task_execution.status
+        assert workflow_execution.status
 
-        async_task = add_multiply_workflow.tasks[1]
+        async_task = add_multiply_workflow.workflow_definition.tasks[1]
         assert isinstance(async_task.parameters, FunctionParameters)
         assert async_task.parameters.is_async_complete
-        task_execution = cognite_client.workflows.tasks.update(async_task.external_id, "completed")
-        time.sleep(1)
+
+        workflow_execution_detailed = cognite_client.workflows.executions.retrieve_detailed(workflow_execution.id)
+
+        task_execution = workflow_execution_detailed.executed_tasks[1]
+
+        task_execution = cognite_client.workflows.tasks.update(task_execution.id, "completed")
         assert task_execution.status == "completed"
