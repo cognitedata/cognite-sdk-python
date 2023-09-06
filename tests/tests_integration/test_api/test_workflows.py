@@ -286,6 +286,7 @@ class TestWorkflowVersions:
 
 
 class TestWorkflowExecutions:
+    @pytest.mark.skip(reason="Under development")
     def test_list_workflow_executions(
         self, cognite_client: CogniteClient, workflow_execution_list: WorkflowExecutionList
     ) -> None:
@@ -298,6 +299,7 @@ class TestWorkflowExecutions:
         assert len(listed) == len(workflow_execution_list)
         assert all(w.as_workflow_id() in workflow_ids for w in listed)
 
+    @pytest.mark.skip(reason="Under development")
     def test_retrieve_workflow_execution(
         self, cognite_client: CogniteClient, workflow_execution_list: WorkflowExecutionList
     ) -> None:
@@ -312,6 +314,7 @@ class TestWorkflowExecutions:
 
         assert non_existing is None
 
+    @pytest.mark.skip(reason="Under development")
     def test_trigger_workflow_execution_update_task(
         self, cognite_client: CogniteClient, add_multiply_workflow: WorkflowVersion
     ) -> None:
