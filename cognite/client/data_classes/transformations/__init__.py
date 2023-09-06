@@ -220,6 +220,8 @@ class Transformation(CogniteResource):
 
                 client = self._cognite_client
                 if project != self._cognite_client.config.project:
+                    from cognite.client import CogniteClient
+
                     config = copy(self._cognite_client.config)
                     config.project = project
                     config.credentials = oidc_credentials.as_valid_credentials()
